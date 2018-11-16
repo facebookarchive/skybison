@@ -96,13 +96,17 @@ char* OS::readFile(const char* filename, word* len_out) {
   word length = ::lseek(fd.get(), 0, SEEK_END);
   CHECK(length != -1, "lseek failure");
   ::lseek(fd.get(), 0, SEEK_SET);
-  auto result = new char[length];
-  ::read(fd.get(), result, length);
-
+  char* buffer = new char[length];
+  {
+    word result;
+    do {
+      result = ::read(fd.get(), buffer, length);
+    } while (result == -1 && errno == EINTR);
+  }
   if (len_out != nullptr) {
     *len_out = length;
   }
-  return result;
+  return buffer;
 }
 
 void OS::writeFileExcl(const char* filename, const char* contents, word len) {
@@ -111,7 +115,11 @@ void OS::writeFileExcl(const char* filename, const char* contents, word len) {
   if (len < 0) {
     len = strlen(contents);
   }
-  CHECK(::write(fd.get(), contents, len) == len, "Incomplete write");
+  word result;
+  do {
+    result = ::write(fd.get(), contents, len);
+  } while (result == -1 && errno == EINTR);
+  CHECK(result == len, "Incomplete write");
 }
 
 char* OS::temporaryDirectory(const char* prefix) {
