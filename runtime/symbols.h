@@ -18,6 +18,7 @@ class Runtime;
   V(Append, "append")                    \
   V(Builtins, "builtins")                \
   V(Classmethod, "classmethod")          \
+  V(Insert, "insert")                    \
   V(List, "list")                        \
   V(ObjectClassname, "object")
 // clang-format on

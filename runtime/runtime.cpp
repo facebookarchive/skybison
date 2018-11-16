@@ -402,6 +402,12 @@ void Runtime::initializeListClass() {
       nativeTrampoline<builtinListAppend>,
       unimplementedTrampoline);
 
+  classAddBuiltinFunction(
+      list,
+      symbols()->Insert(),
+      nativeTrampoline<builtinListInsert>,
+      unimplementedTrampoline);
+
   Handle<Function> dunder_new(
       &scope,
       newBuiltinFunction(

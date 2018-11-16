@@ -299,6 +299,29 @@ Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
   return None::object();
 }
 
+Object* builtinListInsert(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 3) {
+    return thread->throwTypeErrorFromCString(
+        "insert() takes exactly two arguments");
+  }
+  Arguments args(frame, nargs);
+  if (!args.get(0)->isList()) {
+    return thread->throwTypeErrorFromCString(
+        "descriptor 'insert' requires a 'list' object");
+  }
+  if (!args.get(1)->isInteger()) {
+    return thread->throwTypeErrorFromCString(
+        "index object cannot be interpreted as an integer");
+  }
+
+  HandleScope scope;
+  Handle<List> list(&scope, args.get(0));
+  word index = SmallInteger::cast(args.get(1))->value();
+  Handle<Object> value(&scope, args.get(2));
+  thread->runtime()->listInsert(list, value, index);
+  return None::object();
+}
+
 // Descriptor
 Object* functionDescriptorGet(
     Thread* thread,

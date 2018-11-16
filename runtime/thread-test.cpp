@@ -2095,6 +2095,48 @@ print(a[0], a[1], a[2][0])
   EXPECT_EQ(output, "1 2 3\n");
 }
 
+TEST(ThreadTest, ListInsert) {
+  const char* src = R"(
+a = list()
+a.append(0)
+a.append(2)
+a.insert(1, 5)
+print(a[0], a[1], a[2])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "0 5 2\n");
+}
+
+TEST(ThreadTest, ListInsertExcept) {
+  Runtime runtime;
+  const char* src1 = R"(
+a = [1, 2]
+a.insert()
+)";
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, src1),
+      "aborting due to pending exception: "
+      "insert\\(\\) takes exactly two arguments");
+
+  const char* src2 = R"(
+list.insert(1, 2, 3)
+)";
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, src2),
+      "aborting due to pending exception: "
+      "descriptor 'insert' requires a 'list' object");
+
+  const char* src3 = R"(
+a = [1, 2]
+a.insert("i", "val")
+)";
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, src3),
+      "aborting due to pending exception: "
+      "index object cannot be interpreted as an integer");
+}
+
 TEST(FormatTest, NoConvEmpty) {
   const char* src = R"(
 print(f'')
