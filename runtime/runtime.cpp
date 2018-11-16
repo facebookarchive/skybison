@@ -284,12 +284,7 @@ Object* Runtime::newClassWithMetaclass(LayoutId metaclass_id) {
 
 Object* Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
                               const Handle<Object>& name) {
-  if (!name->isStr()) {
-    // TODO(T25140871): Refactor into something like:
-    //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
-  }
-
+  DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
   Handle<Type> klass(&scope, *receiver);
   Handle<Type> meta_klass(&scope, typeOf(*receiver));
@@ -337,12 +332,7 @@ Object* Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
 Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
                               const Handle<Object>& name,
                               const Handle<Object>& value) {
-  if (!name->isStr()) {
-    // TODO(T25140871): Refactor into something like:
-    //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
-  }
-
+  DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
   Handle<Type> klass(&scope, *receiver);
   if (klass->isIntrinsicOrExtension()) {
@@ -413,12 +403,7 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
 // Generic attribute lookup code used for instance objects
 Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
                                  const Handle<Object>& name) {
-  if (!name->isStr()) {
-    // TODO(T25140871): Refactor into something like:
-    //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
-  }
-
+  DCHECK(name->isStr(), "Name is not a string");
   if (Str::cast(*name)->equals(symbols()->DunderClass())) {
     // TODO(T27735822): Make __class__ a descriptor
     return typeOf(*receiver);
@@ -466,12 +451,7 @@ Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
 Object* Runtime::instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
                                  const Handle<Object>& name,
                                  const Handle<Object>& value) {
-  if (!name->isStr()) {
-    // TODO(T25140871): Refactor into something like:
-    //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
-  }
-
+  DCHECK(name->isStr(), "Name is not a string");
   // Check for a data descriptor
   HandleScope scope(thread);
   Handle<Type> klass(&scope, typeOf(*receiver));
@@ -523,12 +503,7 @@ Object* Runtime::instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
 // We are targeting python 3.6 for now, so we won't worry about that.
 Object* Runtime::moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
                                const Handle<Object>& name) {
-  if (!name->isStr()) {
-    // TODO(T25140871): Refactor into something like:
-    //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
-  }
-
+  DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
   Handle<Module> mod(&scope, *receiver);
   Handle<Object> ret(&scope, moduleAt(mod, name));
@@ -545,12 +520,7 @@ Object* Runtime::moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
 Object* Runtime::moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
                                const Handle<Object>& name,
                                const Handle<Object>& value) {
-  if (!name->isStr()) {
-    // TODO(T25140871): Refactor into something like:
-    //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
-  }
-
+  DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
   Handle<Module> mod(&scope, *receiver);
   moduleAtPut(mod, name, value);
@@ -2608,6 +2578,10 @@ Object* Runtime::lookupNameInMro(Thread* thread, const Handle<Type>& type,
 
 Object* Runtime::attributeAt(Thread* thread, const Handle<Object>& receiver,
                              const Handle<Object>& name) {
+  if (!name->isStr()) {
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
+  }
+
   // A minimal implementation of getattr needed to get richards running.
   Object* result;
   HandleScope scope(thread);
@@ -2628,6 +2602,10 @@ Object* Runtime::attributeAt(Thread* thread, const Handle<Object>& receiver,
 Object* Runtime::attributeAtPut(Thread* thread, const Handle<Object>& receiver,
                                 const Handle<Object>& name,
                                 const Handle<Object>& value) {
+  if (!name->isStr()) {
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
+  }
+
   HandleScope scope(thread);
   Handle<Object> interned_name(&scope, internStr(name));
   // A minimal implementation of setattr needed to get richards running.

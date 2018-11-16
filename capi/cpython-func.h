@@ -36,6 +36,8 @@ PyAPI_FUNC(PyObject *) PyUnicode_FromString(const char *);
 PyAPI_FUNC(char *) PyUnicode_AsUTF8AndSize(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
 PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject *);
+PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *, PyObject *, PyObject *);
 
 PyAPI_FUNC(PyObject *) PyErr_Occurred(void);
 PyAPI_FUNC(PyObject *) PyErr_NoMemory(void);

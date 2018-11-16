@@ -285,6 +285,8 @@ Object* Thread::throwIndexErrorFromCStr(const char* message) {
   return throwIndexError(runtime()->newStrFromCStr(message));
 }
 
+bool Thread::hasPendingException() { return !pendingException()->isNone(); }
+
 void Thread::ignorePendingException() {
   HandleScope scope(this);
   Handle<Object> pending_exception(&scope, pendingException());
