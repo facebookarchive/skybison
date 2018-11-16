@@ -100,9 +100,45 @@ struct Bar {
 
 typedef int FooBar;
 
-#define Bar type *bar;
+#define Bar(o) Foo;
+
+#define FooBaz(o)       \\
+    { Baz(type) },
 """
         res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)["macro"]
+        self.assertListEqual(res, ["Foo", "Bar"])
+
+    def test_multiline_macro_regex_returns_symbol(self):
+        lines = """
+#define Foo(o)       \\
+    { Baz(o) },
+"""
+        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)[
+            "multiline_macro"
+        ]
+        self.assertEqual(res, ["Foo"])
+
+    def test_multiline_macro_regex_returns_multiple_symbols(self):
+        lines = """
+#define Foo       \\
+    { Baz(type) },
+
+typedef int FooBar;
+
+#define FooBaz(o) Foo,
+
+#define Bar(op)     \\
+    do {            \\
+        int a = 1;  \\
+        if (a == 1) \\
+          Foo       \\
+        else        \\
+          Baz(a)    \\
+    } while (0)
+"""
+        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)[
+            "multiline_macro"
+        ]
         self.assertListEqual(res, ["Foo", "Bar"])
 
 
@@ -248,13 +284,61 @@ typedef int FooBar;
 
 typedef int FooBar;
 
-#define Bar type *bar;
+#define Bar(o) Foo;
+
+#define FooBaz(o)       \\
+    { Baz(type) },
 """
         expected_lines = """
 typedef int FooBar;
 
+#define FooBaz(o)       \\
+    { Baz(type) },
 """
         symbols_to_replace = {"macro": ["Foo", "Bar"]}
+        res = gcs.modify_file(original_lines, symbols_to_replace)
+        self.assertEqual(res, expected_lines)
+
+    def test_multiline_macro_definition_is_replaced(self):
+        original_lines = """
+#define Foo(o)       \\
+    { Baz(o) },
+"""
+        expected_lines = """
+
+"""
+        symbols_to_replace = {"multiline_macro": ["Foo"]}
+        res = gcs.modify_file(original_lines, symbols_to_replace)
+        self.assertEqual(res, expected_lines)
+
+    def test_multiline_macro_definitions_are_replaced(self):
+        original_lines = """
+#define Foo       \\
+    { Baz(type) },
+
+typedef int FooBar;
+
+#define FooBaz(o) Foo,
+
+#define Bar(op)     \\
+    do {            \\
+        int a = 1;  \\
+        if (a == 1) \\
+          Foo    \\
+        else        \\
+          Baz(a)    \\
+    } while (0)
+"""
+        expected_lines = """
+
+
+typedef int FooBar;
+
+#define FooBaz(o) Foo,
+
+
+"""
+        symbols_to_replace = {"multiline_macro": ["Foo", "Bar"]}
         res = gcs.modify_file(original_lines, symbols_to_replace)
         self.assertEqual(res, expected_lines)
 

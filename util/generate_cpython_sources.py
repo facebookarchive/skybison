@@ -11,8 +11,8 @@ SYMBOL_REGEX = {
     "typedef": (re.compile("^typedef.*;", re.MULTILINE), 2),
     "multiline_typedef": (re.compile("^} .*;", re.MULTILINE), 0),
     "struct": (re.compile("^struct.*{", re.MULTILINE), 1),
-    "macro": (re.compile("^#define (.* |.*\()", re.MULTILINE), 0),
-    # TODO(eelizondo): Handle multiline macros
+    "macro": (re.compile("^#define.*[^\\\\]\n", re.MULTILINE), 1),
+    "multiline_macro": (re.compile("^#define.*\\\\", re.MULTILINE), 1),
 }
 
 
@@ -25,7 +25,11 @@ DEFINITIONS_REGEX = {
         -1,
     ),
     "struct": (re.compile("^struct(.|\\n)*?};", re.MULTILINE), 1),
-    "macro": (re.compile("^#define.*[^\\\]\n", re.MULTILINE), 1),
+    "macro": (re.compile("^#define.*[^\\\\]\n", re.MULTILINE), 1),
+    "multiline_macro": (
+        re.compile("^#define.*\\\\(\n.*\\\\)*\n.*", re.MULTILINE),
+        1,
+    ),
 }
 
 
@@ -41,7 +45,7 @@ def find_symbols_in_file(symbols_dict, lines):
             modified_match = re.sub("\)\(", " ", match)
             # Remove extra characters to standardize symbol location
             # type (*name variables...) -> type name variables
-            modified_match = re.sub(special_chars_regex, "", modified_match)
+            modified_match = re.sub(special_chars_regex, " ", modified_match)
             # Split and locate symbol based on its position
             modified_match = modified_match.split()[regex[1]]
             symbols_dict[symbol_type].append(modified_match)
