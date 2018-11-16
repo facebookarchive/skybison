@@ -746,6 +746,18 @@ Object* Runtime::findModule(const char* name) {
   return *value;
 }
 
+Object* Runtime::moduleAt(
+    const Handle<Module>& module,
+    const Handle<Object>& key) {
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, module->dictionary());
+  Handle<Object> value(&scope, None::object());
+  if (dictionaryAt(dict, key, value.pointer())) {
+    return ValueCell::cast(*value)->value();
+  }
+  return Error::object();
+}
+
 void Runtime::initializeModules() {
   modules_ = newDictionary();
   createBuiltinsModule();

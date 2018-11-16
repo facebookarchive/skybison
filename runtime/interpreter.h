@@ -28,6 +28,9 @@ class Interpreter {
   static Object*
   callBoundMethod(Thread* thread, Frame* frame, Object** sp, word nargs);
 
+  static Object*
+  callType(Thread* thread, Frame* frame, Object** sp, word nargs);
+
   static Object* callKw(Thread* thread, Frame* frame, Object** sp, word nargs);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);

@@ -99,6 +99,8 @@ class Runtime {
 
   Object* findModule(const char* name);
 
+  Object* moduleAt(const Handle<Module>& module, const Handle<Object>& key);
+
   Object* classAt(ClassId class_id);
   Object* classOf(Object* object);
 

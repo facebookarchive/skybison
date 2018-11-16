@@ -24,8 +24,7 @@ Interpreter::call(Thread* thread, Frame* frame, Object** sp, word nargs) {
       return callBoundMethod(thread, frame, sp, nargs);
     }
     case ClassId::kType: {
-      // TODO(T25382534): Handle classes
-      std::abort();
+      return callType(thread, frame, sp, nargs);
     }
     default: {
       // TODO(T25382628): Handle __call__
@@ -75,6 +74,49 @@ Object* Interpreter::callBoundMethod(
   // Call the bound function
   Function* function = Function::cast(frame->peek(nargs + 1));
   return function->entry()(thread, frame, nargs + 1);
+}
+
+Object*
+Interpreter::callType(Thread* thread, Frame* frame, Object** sp, word nargs) {
+  HandleScope scope;
+  Runtime* runtime = thread->runtime();
+
+  Handle<Class> klass(&scope, sp[nargs]);
+  Handle<Object> result(&scope, runtime->newInstance(klass->id()));
+
+  // Check for an __init__ method.
+  //
+  // If no __init__ method exists for this class we can just return the newly
+  // allocated instance.
+  Handle<Object> dunder_init(&scope, runtime->symbols()->DunderInit());
+  Handle<Object> init(
+      &scope, runtime->lookupNameInMro(thread, klass, dunder_init));
+  if (init->isError()) {
+    return *result;
+  }
+
+  // An __init__ method exists and now we will call it.
+  //
+  // Rewrite the type object call to an __init__ method call as follows
+  //   From: type, arg0, arg1, ... argN
+  //   To: function, instance, arg0, arg1, .. argN
+  // Increase the stack by one, copy all of the arguments up, and replace the
+  // type object with the function and the instance above it.
+  sp -= 1;
+  for (word i = 0; i < nargs; i++) {
+    sp[i] = sp[i + 1];
+  }
+
+  // Move the method and receiver into the expected location.
+  sp[nargs] = *result;
+  sp[nargs + 1] = *init;
+
+  // Call the initializer method.
+  frame->setValueStackTop(sp);
+  Function::cast(*init)->entry()(thread, frame, nargs + 1);
+
+  // Return the initialized instance.
+  return *result;
 }
 
 Object* Interpreter::execute(Thread* thread, Frame* frame) {

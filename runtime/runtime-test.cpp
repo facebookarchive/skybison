@@ -806,4 +806,92 @@ INSTANTIATE_TEST_CASE_P(
         LookupNameInMroData{"NonExistent", "xxx", Error::object()}),
     lookupNameInMroTestName);
 
+TEST(RuntimeTest, TypeCallNoInitMethod) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class MyClassWithNoInitMethod():
+  def m(self):
+    pass
+
+c = MyClassWithNoInitMethod()
+)";
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  runtime.run(buffer.get());
+  ClassId class_id = static_cast<ClassId>(ClassId::kLastId + 1);
+  Handle<Class> cls(&scope, runtime.classAt(class_id));
+
+  EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithNoInitMethod");
+  EXPECT_EQ(cls->instanceSize(), 0);
+
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Object> key(&scope, runtime.newStringFromCString("c"));
+  Handle<Object> instance(&scope, runtime.moduleAt(main, key));
+  ASSERT_TRUE(instance->isInstance());
+  EXPECT_EQ(instance->classId(), class_id);
+}
+
+TEST(RuntimeTest, TypeCallEmptyInitMethod) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class MyClassWithEmptyInitMethod():
+  def __init__(self):
+    pass
+  def m(self):
+    pass
+
+c = MyClassWithEmptyInitMethod()
+)";
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  runtime.run(buffer.get());
+  ClassId class_id = static_cast<ClassId>(ClassId::kLastId + 1);
+  Handle<Class> cls(&scope, runtime.classAt(class_id));
+
+  EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithEmptyInitMethod");
+  EXPECT_EQ(cls->instanceSize(), 0);
+
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Object> key(&scope, runtime.newStringFromCString("c"));
+  Handle<Object> instance(&scope, runtime.moduleAt(main, key));
+  ASSERT_TRUE(instance->isInstance());
+  EXPECT_EQ(instance->classId(), class_id);
+}
+
+TEST(RuntimeTest, TypeCallWithArguments) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class MyClassWithAttributes():
+  def __init__(self, x):
+    self.x = x
+  def m(self):
+    pass
+
+c = MyClassWithAttributes(1)
+)";
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  runtime.run(buffer.get());
+  ClassId class_id = static_cast<ClassId>(ClassId::kLastId + 1);
+  Handle<Class> cls(&scope, runtime.classAt(class_id));
+
+  EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithAttributes");
+  ASSERT_EQ(cls->instanceSize(), 1);
+
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Object> key(&scope, runtime.newStringFromCString("c"));
+  Handle<Object> instance(&scope, runtime.moduleAt(main, key));
+  ASSERT_TRUE(instance->isInstance());
+  ASSERT_EQ(instance->classId(), class_id);
+
+  Handle<Object> name(&scope, runtime.newStringFromCString("x"));
+  Handle<Object> value(
+      &scope, runtime.attributeAt(Thread::currentThread(), instance, name));
+  EXPECT_FALSE(value->isError());
+  EXPECT_EQ(*value, SmallInteger::fromWord(1));
+}
+
 } // namespace python
