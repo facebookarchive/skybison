@@ -283,8 +283,7 @@ class Runtime {
   //
   // Returns true if the key existed and sets the previous value in value.
   // Returns false otherwise.
-  bool dictRemove(const Handle<Dict>& dict, const Handle<Object>& key,
-                  Object** value);
+  Object* dictRemove(const Handle<Dict>& dict, const Handle<Object>& key);
 
   // Support explicit hash value of key to do dictAtPut.
   void dictAtPutWithHash(const Handle<Dict>& dict, const Handle<Object>& key,

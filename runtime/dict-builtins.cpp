@@ -54,7 +54,7 @@ Object* DictBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
   if (self->isDict()) {
     Handle<Dict> dict(&scope, *self);
     // Remove the key. If it doesn't exist, throw a KeyError.
-    if (!thread->runtime()->dictRemove(dict, key, nullptr)) {
+    if (thread->runtime()->dictRemove(dict, key)->isError()) {
       return thread->raiseKeyErrorWithCStr("missing key can't be deleted");
     }
     return NoneType::object();

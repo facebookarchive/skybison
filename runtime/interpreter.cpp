@@ -1073,7 +1073,7 @@ void Interpreter::doDeleteName(Context* ctx, word arg) {
   Handle<Dict> implicit_globals(&scope, frame->implicitGlobals());
   Object* names = Code::cast(frame->code())->names();
   Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
-  if (!thread->runtime()->dictRemove(implicit_globals, key, nullptr)) {
+  if (thread->runtime()->dictRemove(implicit_globals, key)->isError()) {
     UNIMPLEMENTED("item not found in delete name");
   }
 }

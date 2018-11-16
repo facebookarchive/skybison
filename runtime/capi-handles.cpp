@@ -156,7 +156,7 @@ void ApiHandle::dispose() {
 
   Handle<Object> key(&scope, asObject());
   Handle<Dict> dict(&scope, runtime->apiHandles());
-  runtime->dictRemove(dict, key, nullptr);
+  runtime->dictRemove(dict, key);
   std::free(this);
 }
 

@@ -135,8 +135,8 @@ TEST(RuntimeDictTest, Remove) {
   Handle<Object> key(&scope, SmallInt::fromWord(12345));
 
   // Removing a key that doesn't exist should fail
-  bool found = runtime.dictRemove(dict, key, nullptr);
-  EXPECT_FALSE(found);
+  bool is_missing = runtime.dictRemove(dict, key)->isError();
+  EXPECT_TRUE(is_missing);
 
   // Removing a key that exists should succeed and return the value that was
   // stored.
@@ -145,9 +145,8 @@ TEST(RuntimeDictTest, Remove) {
   runtime.dictAtPut(dict, key, stored);
   EXPECT_EQ(dict->numItems(), 1);
 
-  Object* retrieved;
-  found = runtime.dictRemove(dict, key, &retrieved);
-  ASSERT_TRUE(found);
+  Object* retrieved = runtime.dictRemove(dict, key);
+  ASSERT_FALSE(retrieved->isError());
   ASSERT_EQ(SmallInt::cast(retrieved)->value(),
             SmallInt::cast(*stored)->value());
 
@@ -171,8 +170,7 @@ TEST(RuntimeDictTest, Length) {
   // Remove half the items
   for (int i = 0; i < 5; i++) {
     Handle<Object> key(&scope, SmallInt::fromWord(i));
-    bool found = runtime.dictRemove(dict, key, nullptr);
-    ASSERT_TRUE(found);
+    ASSERT_FALSE(runtime.dictRemove(dict, key)->isError());
   }
   EXPECT_EQ(dict->numItems(), 5);
 }

@@ -392,7 +392,7 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
 
   // No delete descriptor found, attempt to delete from the klass dict
   Handle<Dict> klass_dict(&scope, klass->dict());
-  if (!dictRemove(klass_dict, name, nullptr)) {
+  if (dictRemove(klass_dict, name)->isError()) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
     return thread->raiseAttributeErrorWithCStr("missing attribute");
@@ -550,7 +550,7 @@ Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
   // No delete descriptor found, attempt to delete from the module dict
   Handle<Module> module(&scope, *receiver);
   Handle<Dict> module_dict(&scope, module->dict());
-  if (!dictRemove(module_dict, name, nullptr)) {
+  if (dictRemove(module_dict, name)->isError()) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
     return thread->raiseAttributeErrorWithCStr("missing attribute");
@@ -2288,22 +2288,21 @@ bool Runtime::dictIncludes(const Handle<Dict>& dict,
   return dictLookup(data, key, key_hash, &ignore);
 }
 
-bool Runtime::dictRemove(const Handle<Dict>& dict, const Handle<Object>& key,
-                         Object** value) {
+Object* Runtime::dictRemove(const Handle<Dict>& dict,
+                            const Handle<Object>& key) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
   Handle<Object> key_hash(&scope, hash(*key));
+  Handle<Object> result(&scope, Error::object());
   bool found = dictLookup(data, key, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
-    if (value != nullptr) {
-      *value = Dict::Bucket::value(*data, index);
-    }
+    result = Dict::Bucket::value(*data, index);
     Dict::Bucket::setTombstone(*data, index);
     dict->setNumItems(dict->numItems() - 1);
   }
-  return found;
+  return *result;
 }
 
 bool Runtime::dictLookup(const Handle<ObjectArray>& data,

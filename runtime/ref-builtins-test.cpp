@@ -26,7 +26,7 @@ weak = ref(a)
 
   Handle<Dict> globals(&scope, main->dict());
   Handle<Object> key(&scope, runtime.newStrFromCStr("a"));
-  runtime.dictRemove(globals, key, &a);
+  runtime.dictRemove(globals, key);
 
   runtime.collectGarbage();
   weak = moduleAt(&runtime, main, "weak");
@@ -56,7 +56,7 @@ weak = ref(a, f)
 
   Handle<Dict> globals(&scope, main->dict());
   Handle<Object> key(&scope, runtime.newStrFromCStr("a"));
-  runtime.dictRemove(globals, key, &a);
+  runtime.dictRemove(globals, key);
 
   runtime.collectGarbage();
   weak = moduleAt(&runtime, main, "weak");
