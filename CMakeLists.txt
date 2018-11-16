@@ -268,9 +268,7 @@ target_link_libraries(
 add_library(
   modules
   STATIC
-  ext/Modules/config.cpp
-  third-party/cpython/Modules/_stat.c
-  third-party/cpython/Modules/errnomodule.c)
+  ext/Modules/config.cpp)
 target_compile_options(
   modules
   PUBLIC
