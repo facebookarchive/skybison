@@ -172,7 +172,8 @@ add_library(
   ext/Python/_warnings.cpp
   ext/Python/errors.cpp
   ext/Python/modsupport.cpp
-  ext/Python/pylifecycle.cpp)
+  ext/Python/pylifecycle.cpp
+  ext/Python/pythonrun.cpp)
 target_compile_options(
   extension
   PUBLIC

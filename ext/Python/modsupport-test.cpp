@@ -1,60 +1,33 @@
-#include "gtest/gtest.h"
-
-#include "Python.h"
-#include "runtime.h"
-#include "test-utils.h"
+#include "capi-fixture.h"
 
 namespace python {
 
-using namespace testing;
-
-TEST(ModSupport, AddIntConstantAddsToModule) {
-  Runtime runtime;
-  HandleScope scope;
-
+TEST_F(ExtensionApi, ModSupportAddIntConstantAddsToModule) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
-      nullptr,
-      -1,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
   };
 
   PyObject* module = PyModule_Create(&def);
   ASSERT_NE(module, nullptr);
 
-  int result = PyModule_AddIntConstant(module, "myglobal", 123);
-  ASSERT_NE(result, -1);
+  int myglobal = PyModule_AddIntConstant(module, "myglobal", 123);
+  ASSERT_NE(myglobal, -1);
 
-  runtime.runFromCString(R"(
+  PyRun_SimpleString(R"(
 import mymodule
 x = mymodule.myglobal
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
-  ASSERT_TRUE(x->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*x)->value(), 123);
+  PyObject* x = _PyModuleGet("__main__", "x");
+  int result = PyLong_AsLong(x);
+  ASSERT_EQ(result, 123);
 }
 
-TEST(ModSupport, AddIntConstantWithNullNameFails) {
-  Runtime runtime;
-  HandleScope scope;
-
+TEST_F(ExtensionApi, ModSupportAddIntConstantWithNullNameFails) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
-      nullptr,
-      -1,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
   };
 
   PyObject* module = PyModule_Create(&def);
@@ -64,40 +37,29 @@ TEST(ModSupport, AddIntConstantWithNullNameFails) {
   ASSERT_EQ(result, -1);
 }
 
-TEST(ModSupport, RepeatedAddIntConstantOverwritesValue) {
-  Runtime runtime;
-  HandleScope scope;
-
+TEST_F(ExtensionApi, ModSupportRepeatedAddIntConstantOverwritesValue) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
-      nullptr,
-      -1,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
   };
 
   PyObject* module = PyModule_Create(&def);
   ASSERT_NE(module, nullptr);
 
-  int result = PyModule_AddIntConstant(module, "myglobal", 123);
-  ASSERT_NE(result, -1);
+  int myglobal = PyModule_AddIntConstant(module, "myglobal", 123);
+  ASSERT_NE(myglobal, -1);
 
-  result = PyModule_AddIntConstant(module, "myglobal", 456);
-  ASSERT_NE(result, -1);
+  myglobal = PyModule_AddIntConstant(module, "myglobal", 456);
+  ASSERT_NE(myglobal, -1);
 
-  runtime.runFromCString(R"(
+  PyRun_SimpleString(R"(
 import mymodule
 x = mymodule.myglobal
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
-  ASSERT_TRUE(x->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*x)->value(), 456);
+  PyObject* x = _PyModuleGet("__main__", "x");
+  int result = PyLong_AsLong(x);
+  ASSERT_EQ(result, 456);
 }
 
 }  // namespace python

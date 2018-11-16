@@ -302,6 +302,10 @@ typedef struct _typeobject {
   destructor tp_finalize;
 } PyTypeObject;
 
+typedef struct {
+  int cf_flags; /* bitmask of CO_xxx flags relevant to future */
+} PyCompilerFlags;
+
 #ifdef __cplusplus
 }
 #endif
