@@ -5,9 +5,9 @@
 namespace python {
 namespace testing {
 
-int exceptionMessageMatches(const char* message);
+bool exceptionMessageMatches(const char* message);
 PyObject* moduleGet(const char* module, const char* name);
-int isBorrowed(PyObject*);
+bool isBorrowed(PyObject* pyobj);
 
 }  // namespace testing
 }  // namespace python

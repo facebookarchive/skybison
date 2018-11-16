@@ -5,13 +5,13 @@
 namespace python {
 namespace testing {
 
-int exceptionMessageMatches(const char* message) {
+bool exceptionMessageMatches(const char* message) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
 
   Handle<Object> exception_obj(&scope, thread->pendingException());
   if (exception_obj->isNone()) {
-    return 0;
+    return false;
   }
   if (!exception_obj->isStr()) {
     UNIMPLEMENTED("Handle non string exception objects");
@@ -31,7 +31,7 @@ PyObject* moduleGet(const char* module, const char* name) {
   return ApiHandle::fromObject(*var)->asPyObject();
 }
 
-int isBorrowed(PyObject* pyobj) {
+bool isBorrowed(PyObject* pyobj) {
   return ApiHandle::fromPyObject(pyobj)->isBorrowed();
 }
 
