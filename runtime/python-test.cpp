@@ -67,20 +67,20 @@ void FailurePrinter::OnTestIterationEnd(const UnitTest& test, int iteration) {
 int main(int argc, char* argv[]) {
   testing::InitGoogleTest(&argc, argv);
 
-  bool failures_only = true;
+  bool hide_success = false;
   for (int i = 0; i < argc; ++i) {
-    if (strcmp(argv[i], "--show_success") == 0) {
-      failures_only = false;
+    if (strcmp(argv[i], "--hide_success") == 0) {
+      hide_success = true;
       break;
     }
     if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-      std::cout << "\nThis binary hides successful test names by default. To "
-                   "override this, use:\n  --show_success\n\n";
+      std::cout << "\nThis binary shows successful test names by default. To "
+                   "override this, use:\n  --hide_success\n\n";
       break;
     }
   }
 
-  if (failures_only) {
+  if (hide_success) {
     auto& listeners = testing::UnitTest::GetInstance()->listeners();
     auto default_printer =
         listeners.Release(listeners.default_result_printer());
