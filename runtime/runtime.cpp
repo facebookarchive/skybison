@@ -1633,6 +1633,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kStr, LayoutId::kString);
   moduleAddBuiltinType(module, SymbolId::kSystemExit, LayoutId::kSystemExit);
   moduleAddBuiltinType(module, SymbolId::kSuper, LayoutId::kSuper);
+  moduleAddBuiltinType(module, SymbolId::kTuple, LayoutId::kObjectArray);
   moduleAddBuiltinType(module, SymbolId::kType, LayoutId::kType);
   moduleAddBuiltinType(module, SymbolId::kTypeError, LayoutId::kTypeError);
 

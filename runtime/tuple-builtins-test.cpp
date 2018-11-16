@@ -40,6 +40,33 @@ slice = t[1:3]
   EXPECT_EQ(SmallInt::cast(tuple->at(1))->value(), 3);
 }
 
+TEST(TupleBuiltinsTest, DunderLen) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = (1, 2, 3)
+a_len = tuple.__len__(a)
+a_len_implicit = a.__len__()
+b = ()
+b_len = tuple.__len__(b)
+b_len_implicit = b.__len__()
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Int> a_len(&scope, moduleAt(&runtime, main, "a_len"));
+  Handle<Int> a_len_implicit(&scope,
+                             moduleAt(&runtime, main, "a_len_implicit"));
+  Handle<Int> b_len(&scope, moduleAt(&runtime, main, "b_len"));
+  Handle<Int> b_len_implicit(&scope,
+                             moduleAt(&runtime, main, "b_len_implicit"));
+
+  EXPECT_EQ(a_len->asWord(), 3);
+  EXPECT_EQ(a_len->asWord(), a_len_implicit->asWord());
+  EXPECT_EQ(b_len->asWord(), 0);
+  EXPECT_EQ(b_len->asWord(), b_len_implicit->asWord());
+}
+
 // Equivalent to evaluating "tuple(range(start, stop))" in Python
 static Object* tupleFromRange(word start, word stop) {
   Thread* thread = Thread::currentThread();

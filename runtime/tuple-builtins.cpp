@@ -13,6 +13,7 @@ namespace python {
 const BuiltinMethod TupleBuiltins::kMethods[] = {
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
+    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>}};
 
 void TupleBuiltins::initialize(Runtime* runtime) {
@@ -103,6 +104,22 @@ Object* TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   return thread->throwTypeErrorFromCString(
       "__getitem__() must be called with a tuple instance as the first "
       "argument");
+}
+
+Object* TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString(
+        "tuple.__len__ takes exactly 1 argument");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> obj(&scope, args.get(0));
+  if (!obj->isObjectArray()) {
+    return thread->throwTypeErrorFromCString(
+        "tuple.__len__(self): self is not a tuple");
+  }
+  Handle<ObjectArray> self(&scope, *obj);
+  return thread->runtime()->newInt(self->length());
 }
 
 Object* TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
