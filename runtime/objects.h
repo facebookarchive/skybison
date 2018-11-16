@@ -1677,7 +1677,7 @@ class Layout : public HeapObject {
   // Set the number of in-object attributes that may be stored on an instance
   // described by this layout.
   //
-  // N.B. - This will always be less than or equal to the length of the
+  // N.B. - This will always be larger than or equal to the length of the
   // ObjectArray returned by inObjectAttributes().
   void setNumInObjectAttributes(word count);
   word numInObjectAttributes();
