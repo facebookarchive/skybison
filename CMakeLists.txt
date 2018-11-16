@@ -85,3 +85,7 @@ target_link_libraries(
   gtest
   gtest_main
   runtime)
+
+add_custom_target(check
+        COMMAND python-tests
+        DEPENDS python-tests python)
