@@ -109,16 +109,17 @@ TEST(ThreadTest, OverlappingFrames) {
   auto frame = thread->pushFrame(*code, callerFrame);
 
   // Make sure we can read the args from the frame
-  Frame::Locals locals = frame->locals();
+  Object* local = frame->getLocal(0);
+  ASSERT_TRUE(local->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(local)->value(), arg1->value());
 
-  ASSERT_TRUE(locals.get(0)->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(locals.get(0))->value(), arg1->value());
+  local = frame->getLocal(1);
+  ASSERT_TRUE(local->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(local)->value(), arg2->value());
 
-  ASSERT_TRUE(locals.get(1)->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(locals.get(1))->value(), arg2->value());
-
-  ASSERT_TRUE(locals.get(2)->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(locals.get(2))->value(), arg3->value());
+  local = frame->getLocal(2);
+  ASSERT_TRUE(local->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(local)->value(), arg3->value());
 }
 
 TEST(ThreadTest, EncodeTryBlock) {

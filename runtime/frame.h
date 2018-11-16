@@ -131,32 +131,9 @@ class BlockStack {
  */
 class Frame {
  public:
-  class Locals {
-   public:
-    // Bias locals by 1 word to avoid doing the computation during array
-    // indexing
-    Locals(Object** locals, word nlocals)
-        : locals_(locals - 1), nlocals_(nlocals) {}
-
-    Object* get(word idx) {
-      assert(idx >= 0);
-      assert(idx < nlocals_);
-      return *(locals_ - idx);
-    }
-
-    void set(word idx, Object* object) {
-      assert(idx >= 0);
-      assert(idx < nlocals_);
-      *(locals_ - idx) = object;
-    }
-
-   private:
-    Object** locals_;
-    word nlocals_;
-  };
-
   // Function arguments, local variables, cell variables, and free variables
-  inline Locals locals();
+  inline Object* getLocal(word idx);
+  inline void setLocal(word idx, Object* local);
 
   inline void setNumLocals(word numLocals);
   inline word numLocals();
@@ -220,12 +197,14 @@ class Frame {
   static const int kLastInstructionOffset = kBuiltinsOffset + kPointerSize;
   static const int kBlockStackOffset = kLastInstructionOffset + kPointerSize;
   static const int kNumLocalsOffset = kBlockStackOffset + BlockStack::kSize;
-  static const int kSize = kNumLocalsOffset + kPointerSize;
+  static const int kLocalsOffset = kNumLocalsOffset + kPointerSize;
+  static const int kSize = kLocalsOffset + kPointerSize;
 
  private:
   inline uword address();
   inline Object* at(int offset);
   inline void atPut(int offset, Object* value);
+  inline Object** locals();
 
   DISALLOW_COPY_AND_ASSIGN(Frame);
 };
@@ -286,16 +265,29 @@ void Frame::setCode(Object* code) {
   atPut(kCodeOffset, code);
 }
 
-Frame::Locals Frame::locals() {
-  word nlocals = numLocals();
-  return Locals(
-      reinterpret_cast<Object**>(
-          address() + Frame::kSize + nlocals * kPointerSize),
-      nlocals);
+Object** Frame::locals() {
+  return reinterpret_cast<Object**>(at(kLocalsOffset));
+}
+
+Object* Frame::getLocal(word idx) {
+  assert(idx >= 0);
+  assert(idx < numLocals());
+  return *(locals() - idx);
+}
+
+void Frame::setLocal(word idx, Object* object) {
+  assert(idx >= 0);
+  assert(idx < numLocals());
+  *(locals() - idx) = object;
 }
 
 void Frame::setNumLocals(word numLocals) {
   atPut(kNumLocalsOffset, SmallInteger::fromWord(numLocals));
+  // Bias locals by 1 word to avoid doing so during {get,set}Local
+  Object* locals = reinterpret_cast<Object*>(
+      address() + Frame::kSize + ((numLocals - 1) * kPointerSize));
+  assert(locals->isSmallInteger());
+  atPut(kLocalsOffset, locals);
 }
 
 word Frame::numLocals() {
