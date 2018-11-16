@@ -23,10 +23,14 @@ class Marshal {
 
     int16 readShort();
 
-    const byte* readString(int length);
+    const byte* readBytes(int length);
 
     Object* readTypeString();
+    Object* readTypeAscii();
+    Object* readTypeAsciiInterned();
+    Object* readTypeUnicode();
     Object* readTypeShortAscii();
+    Object* readTypeShortAsciiInterned();
     Object* readTypeSmallTuple();
     Object* readTypeTuple();
     Object* readTypeCode();
@@ -40,6 +44,9 @@ class Marshal {
     word numRefs();
 
    private:
+    Object* readString(word length);
+    Object* readAndInternString(word length);
+
     Runtime* runtime_;
     Handle<List> refs_;
     bool isRef_;

@@ -102,8 +102,8 @@ class Thread {
 
   // Convenience method for throwing a ValueError exception with an error
   // message.
-  void throwValueError(String* message);
-  void throwValueErrorFromCString(const char* message);
+  Object* throwValueError(String* message);
+  Object* throwValueErrorFromCString(const char* message);
 
   // Convenience method for throwing an AttributeError exception with an error
   // message.

@@ -56,7 +56,7 @@ Marshal::Reader::Reader(
   end_ = start_ + length_;
 }
 
-const byte* Marshal::Reader::readString(int length) {
+const byte* Marshal::Reader::readBytes(int length) {
   const byte* result = &start_[pos_];
   pos_ += length;
   return result;
@@ -64,7 +64,7 @@ const byte* Marshal::Reader::readString(int length) {
 
 byte Marshal::Reader::readByte() {
   byte result = 0xFF;
-  const byte* buffer = readString(1);
+  const byte* buffer = readBytes(1);
   if (buffer != nullptr) {
     result = buffer[0];
   }
@@ -73,7 +73,7 @@ byte Marshal::Reader::readByte() {
 
 int16 Marshal::Reader::readShort() {
   int16 result = -1;
-  const byte* buffer = readString(sizeof(result));
+  const byte* buffer = readBytes(sizeof(result));
   if (buffer != nullptr) {
     result = buffer[0];
     result |= buffer[1] << 8;
@@ -83,7 +83,7 @@ int16 Marshal::Reader::readShort() {
 
 int32 Marshal::Reader::readLong() {
   int32 result = -1;
-  const byte* buffer = readString(4);
+  const byte* buffer = readBytes(4);
   if (buffer != nullptr) {
     result = buffer[0];
     result |= buffer[1] << 8;
@@ -174,24 +174,23 @@ Object* Marshal::Reader::readObject() {
       result = readTypeString();
       break;
 
+    case TYPE_INTERNED:
     case TYPE_ASCII_INTERNED:
-      UNIMPLEMENTED("TYPE_ASCII_INTERNED");
+      result = readTypeAsciiInterned();
       break;
 
+    case TYPE_UNICODE:
+    case TYPE_ASCII: {
+      result = readTypeAscii();
+      break;
+    }
+
     case TYPE_SHORT_ASCII_INTERNED:
-      result = readTypeShortAscii();
+      result = readTypeShortAsciiInterned();
       break;
 
     case TYPE_SHORT_ASCII:
       result = readTypeShortAscii();
-      break;
-
-    case TYPE_INTERNED:
-      UNIMPLEMENTED("TYPE_INTERNED");
-      break;
-
-    case TYPE_UNICODE:
-      UNIMPLEMENTED("TYPE_UNICODE");
       break;
 
     case TYPE_SMALL_TUPLE:
@@ -258,7 +257,7 @@ word Marshal::Reader::numRefs() {
 
 Object* Marshal::Reader::readTypeString() {
   int32 length = readLong();
-  const byte* data = readString(length);
+  const byte* data = readBytes(length);
   Object* result = runtime_->newByteArrayWithAll(View<byte>(data, length));
   if (isRef_) {
     addRef(result);
@@ -266,10 +265,51 @@ Object* Marshal::Reader::readTypeString() {
   return result;
 }
 
+Object* Marshal::Reader::readTypeAscii() {
+  word length = readLong();
+  if (length < 0) {
+    return Thread::currentThread()->throwValueErrorFromCString(
+        "bad marshal data (string size out of range)");
+  }
+  return readString(length);
+}
+
+Object* Marshal::Reader::readTypeAsciiInterned() {
+  word length = readLong();
+  if (length < 0) {
+    return Thread::currentThread()->throwValueErrorFromCString(
+        "bad marshal data (string size out of range)");
+  }
+  return readAndInternString(length);
+}
+
 Object* Marshal::Reader::readTypeShortAscii() {
-  int length = readByte();
-  const byte* data = readString(length);
+  word length = readByte();
+  return readString(length);
+}
+
+Object* Marshal::Reader::readTypeShortAsciiInterned() {
+  word length = readByte();
+  return readAndInternString(length);
+}
+
+Object* Marshal::Reader::readString(word length) {
+  const byte* data = readBytes(length);
   Object* result = runtime_->newStringWithAll(View<byte>(data, length));
+  if (isRef_) {
+    addRef(result);
+  }
+  return result;
+}
+
+Object* Marshal::Reader::readAndInternString(word length) {
+  const byte* data = readBytes(length);
+  HandleScope scope;
+  // TODO(T25820368): Intern strings iff the string isn't already part of the
+  // intern table.
+  Handle<Object> str(
+      &scope, runtime_->newStringWithAll(View<byte>(data, length)));
+  Object* result = runtime_->internString(str);
   if (isRef_) {
     addRef(result);
   }
