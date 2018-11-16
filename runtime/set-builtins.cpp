@@ -16,6 +16,7 @@ const BuiltinMethod SetBuiltins::kMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
     {SymbolId::kPop, nativeTrampoline<pop>}};
 
 void SetBuiltins::initialize(Runtime* runtime) {
@@ -130,6 +131,80 @@ Object* SetBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
         "__iter__() must be called with a set instance as the first argument");
   }
   return thread->runtime()->newSetIterator(self);
+}
+
+Object* SetBuiltins::isDisjoint(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->raiseTypeErrorWithCStr(
+        "isdisjoint() takes exactly one argument");
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> other(&scope, args.get(1));
+  Handle<Object> value(&scope, None::object());
+  if (self->isSet()) {
+    Handle<Set> a(&scope, *self);
+    if (a->numItems() == 0) {
+      return Bool::trueObj();
+    }
+    if (other->isSet()) {
+      Handle<Set> b(&scope, *other);
+      if (b->numItems() == 0) {
+        return Bool::trueObj();
+      }
+      // Iterate over the smaller set
+      if (a->numItems() > b->numItems()) {
+        a = *other;
+        b = *self;
+      }
+      Handle<SetIterator> set_iter(&scope, runtime->newSetIterator(a));
+      for (;;) {
+        value = set_iter->next();
+        if (value->isError()) {
+          break;
+        }
+        if (runtime->setIncludes(b, value)) {
+          return Bool::falseObj();
+        }
+      }
+      return Bool::trueObj();
+    }
+    // Generic iterator case
+    Handle<Object> iter_method(
+        &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), other,
+                                          SymbolId::kDunderIter));
+    if (iter_method->isError()) {
+      return thread->raiseTypeErrorWithCStr("object is not iterable");
+    }
+    Handle<Object> iterator(
+        &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
+                                         iter_method, other));
+    if (iterator->isError()) {
+      return thread->raiseTypeErrorWithCStr("object is not iterable");
+    }
+    Handle<Object> next_method(
+        &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                          iterator, SymbolId::kDunderNext));
+    if (next_method->isError()) {
+      return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
+    }
+    while (!runtime->isIteratorExhausted(thread, iterator)) {
+      value = Interpreter::callMethod1(thread, thread->currentFrame(),
+                                       next_method, iterator);
+      if (value->isError()) {
+        return *value;
+      }
+      if (runtime->setIncludes(a, value)) {
+        return Bool::falseObj();
+      }
+    }
+    return Bool::trueObj();
+  }
+  // TODO(jeethu): handle user-defined subtypes of set.
+  return thread->raiseTypeErrorWithCStr(
+      "descriptor 'is_disjoint' requires a 'set' object");
 }
 
 const BuiltinMethod SetIteratorBuiltins::kMethods[] = {

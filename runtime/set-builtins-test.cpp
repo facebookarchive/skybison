@@ -237,4 +237,95 @@ TEST(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedTupleIterator) {
   ASSERT_EQ(SmallInt::cast(*length_hint2)->value(), 0);
 }
 
+TEST(SetBuiltinsDeathTest, SetIsDisjointWithNonIterableArg) {
+  const char* src = R"(
+s = {1}
+s.isdisjoint(None)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "object is not iterable");
+}
+
+TEST(SetBuiltinsTest, SetIsDisjointWithSetArg) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Set> other(&scope, runtime.newSet());
+  Handle<Object> value(&scope, None::object());
+
+  // set().isdisjoint(set())
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *other);
+  Handle<Object> result(&scope, SetBuiltins::isDisjoint(thread, frame, 2));
+  ASSERT_TRUE(result->isBool());
+  EXPECT_EQ(*result, Bool::trueObj());
+
+  // set().isdisjoint({None})
+  runtime.setAdd(other, value);
+  Handle<Object> result1(&scope, SetBuiltins::isDisjoint(thread, frame, 2));
+  ASSERT_TRUE(result1->isBool());
+  EXPECT_EQ(*result1, Bool::trueObj());
+
+  // {None}.isdisjoint({None})
+  runtime.setAdd(set, value);
+  Handle<Object> result2(&scope, SetBuiltins::isDisjoint(thread, frame, 2));
+  ASSERT_TRUE(result2->isBool());
+  EXPECT_EQ(*result2, Bool::falseObj());
+
+  // {None}.isdisjoint({1})
+  other = runtime.newSet();
+  value = SmallInt::fromWord(1);
+  runtime.setAdd(other, value);
+  frame->setLocal(1, *other);
+  Handle<Object> result3(&scope, SetBuiltins::isDisjoint(thread, frame, 2));
+  ASSERT_TRUE(result3->isBool());
+  EXPECT_EQ(*result3, Bool::trueObj());
+
+  thread->popFrame();
+}
+
+TEST(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<List> other(&scope, runtime.newList());
+  Handle<Object> value(&scope, None::object());
+
+  // set().isdisjoint([])
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *other);
+  Handle<Object> result(&scope, SetBuiltins::isDisjoint(thread, frame, 2));
+  ASSERT_TRUE(result->isBool());
+  EXPECT_EQ(*result, Bool::trueObj());
+
+  // set().isdisjoint([None])
+  runtime.listAdd(other, value);
+  Handle<Object> result1(&scope, SetBuiltins::isDisjoint(thread, frame, 2));
+  ASSERT_TRUE(result1->isBool());
+  EXPECT_EQ(*result1, Bool::trueObj());
+
+  // {None}.isdisjoint([None])
+  runtime.setAdd(set, value);
+  Handle<Object> result2(&scope, SetBuiltins::isDisjoint(thread, frame, 2));
+  ASSERT_TRUE(result2->isBool());
+  EXPECT_EQ(*result2, Bool::falseObj());
+
+  // {None}.isdisjoint([1])
+  other = runtime.newList();
+  value = SmallInt::fromWord(1);
+  runtime.listAdd(other, value);
+  frame->setLocal(1, *other);
+  Handle<Object> result3(&scope, SetBuiltins::isDisjoint(thread, frame, 2));
+  ASSERT_TRUE(result3->isBool());
+  EXPECT_EQ(*result3, Bool::trueObj());
+
+  thread->popFrame();
+}
+
 }  // namespace python

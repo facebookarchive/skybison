@@ -158,6 +158,7 @@ class Runtime;
   V(Int, "int")                                                                \
   V(InterruptedError, "InterruptedError")                                      \
   V(IsADirectoryError, "IsADirectoryError")                                    \
+  V(IsDisjoint, "isdisjoint")                                                  \
   V(IsInstance, "isinstance")                                                  \
   V(IsSubclass, "issubclass")                                                  \
   V(Items, "items")                                                            \

@@ -18,6 +18,7 @@ class SetBuiltins {
   static Object* dunderIter(Thread* thread, Frame* frame, word nargs);
   static Object* dunderLen(Thread* thread, Frame* frame, word nargs);
   static Object* dunderNew(Thread* thread, Frame* frame, word nargs);
+  static Object* isDisjoint(Thread* thread, Frame* frame, word nargs);
   static Object* pop(Thread* thread, Frame* frame, word nargs);
 
  private:
