@@ -329,7 +329,7 @@ add_library(
   runtime/generator-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
-  runtime/import-builtins-test.cpp
+  runtime/imp-module-test.cpp
   runtime/int-builtins-test.cpp
   runtime/interpreter-test.cpp
   runtime/layout-test.cpp
@@ -350,14 +350,15 @@ add_library(
   runtime/test-utils-test.cpp
   runtime/test-utils.cpp
   runtime/test-utils.h
-  runtime/thread-builtins-test.cpp
+  runtime/thread-module-test.cpp
   runtime/thread-test.cpp
   runtime/time-module-test.cpp
   runtime/trampolines-test.cpp
   runtime/tuple-builtins-test.cpp
   runtime/type-builtins-test.cpp
   runtime/utils-test.cpp
-  runtime/vector-test.cpp)
+  runtime/vector-test.cpp
+  runtime/warnings-module-test.cpp)
 target_link_libraries(
   runtime-tests
   PUBLIC

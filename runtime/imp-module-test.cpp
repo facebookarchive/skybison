@@ -5,14 +5,13 @@
 
 namespace python {
 
-TEST(ImportBuiltinsTest, ModuleImporting) {
+TEST(ImpModuleTest, ModuleImporting) {
   Runtime runtime;
   runtime.runFromCStr(R"(
 import _imp
   )");
   HandleScope scope;
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  RawObject imp = testing::moduleAt(&runtime, main, "_imp");
+  RawObject imp = testing::moduleAt(&runtime, "__main__", "_imp");
   EXPECT_TRUE(imp->isModule());
 }
 

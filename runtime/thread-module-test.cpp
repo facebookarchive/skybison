@@ -5,14 +5,13 @@
 
 namespace python {
 
-TEST(ThreadBuiltinsTest, ModuleImporting) {
+TEST(ThreadModuleTest, ModuleImporting) {
   Runtime runtime;
   runtime.runFromCStr(R"(
 import _thread
   )");
   HandleScope scope;
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  RawObject threadModule = testing::moduleAt(&runtime, main, "_thread");
+  RawObject threadModule = testing::moduleAt(&runtime, "__main__", "_thread");
   EXPECT_TRUE(threadModule->isModule());
 }
 

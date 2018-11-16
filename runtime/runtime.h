@@ -148,6 +148,7 @@ class Runtime {
   void createImportModule();
   void createSysModule();
   void createTimeModule();
+  void createWarningsModule();
   void createWeakRefModule();
   void createThreadModule();
 

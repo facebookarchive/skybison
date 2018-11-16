@@ -246,6 +246,7 @@ class Runtime;
   V(TypeError, "TypeError")                                                    \
   V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderImp, "_imp")                                                          \
+  V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
   V(UnderThread, "_thread")                                                    \
   V(UnicodeDecodeError, "UnicodeDecodeError")                                  \

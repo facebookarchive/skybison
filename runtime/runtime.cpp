@@ -1515,6 +1515,7 @@ struct {
     {SymbolId::kTime, &Runtime::createTimeModule},
     {SymbolId::kUnderImp, &Runtime::createImportModule},
     {SymbolId::kUnderThread, &Runtime::createThreadModule},
+    {SymbolId::kUnderWarnings, &Runtime::createWarningsModule},
     {SymbolId::kUnderWeakRef, &Runtime::createWeakRefModule},
 };
 
@@ -1883,6 +1884,13 @@ void Runtime::createSysModule() {
 void Runtime::createImportModule() {
   HandleScope scope;
   Object name(&scope, symbols()->UnderImp());
+  Module module(&scope, newModule(name));
+  addModule(module);
+}
+
+void Runtime::createWarningsModule() {
+  HandleScope scope;
+  Object name(&scope, symbols()->UnderWarnings());
   Module module(&scope, newModule(name));
   addModule(module);
 }
