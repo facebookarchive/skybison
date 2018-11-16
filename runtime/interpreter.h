@@ -3,6 +3,7 @@
 #include "bytecode.h"
 #include "globals.h"
 #include "handles.h"
+#include "symbols.h"
 
 namespace python {
 
@@ -52,7 +53,7 @@ class Interpreter {
 
   static Object* lookupMethod(Thread* thread, Frame* caller,
                               const Handle<Object>& receiver,
-                              const Handle<Object>& selector);
+                              SymbolId selector);
 
   static Object* callMethod1(Thread* thread, Frame* caller,
                              const Handle<Object>& method,
@@ -78,7 +79,7 @@ class Interpreter {
 
   static Object* unaryOperation(Thread* thread, Frame* caller,
                                 const Handle<Object>& receiver,
-                                const Handle<Object>& selector);
+                                SymbolId selector);
 
   static Object* binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
                                  const Handle<Object>& left,

@@ -160,13 +160,13 @@ class Runtime {
 
   LayoutId newLayoutId();
 
-  Object* binaryOperationSelector(Interpreter::BinaryOp op);
-  Object* swappedBinaryOperationSelector(Interpreter::BinaryOp op);
+  SymbolId binaryOperationSelector(Interpreter::BinaryOp op);
+  SymbolId swappedBinaryOperationSelector(Interpreter::BinaryOp op);
 
-  Object* inplaceOperationSelector(Interpreter::BinaryOp op);
+  SymbolId inplaceOperationSelector(Interpreter::BinaryOp op);
 
-  Object* comparisonSelector(CompareOp op);
-  Object* swappedComparisonSelector(CompareOp op);
+  SymbolId comparisonSelector(CompareOp op);
+  SymbolId swappedComparisonSelector(CompareOp op);
 
   Object* buildClass() { return build_class_; }
 

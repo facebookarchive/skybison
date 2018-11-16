@@ -152,12 +152,12 @@ Object* Interpreter::callDescriptorSet(python::Thread* thread, Frame* caller,
 
 Object* Interpreter::lookupMethod(Thread* thread, Frame* caller,
                                   const Handle<Object>& receiver,
-                                  const Handle<Object>& selector) {
+                                  SymbolId selector) {
   HandleScope scope(thread->handles());
   Runtime* runtime = thread->runtime();
   Handle<Class> type(&scope, runtime->classOf(*receiver));
-  Handle<Object> method(&scope,
-                        runtime->lookupNameInMro(thread, type, selector));
+  Handle<Object> symbol(&scope, runtime->symbols()->at(selector));
+  Handle<Object> method(&scope, runtime->lookupNameInMro(thread, type, symbol));
   if (method->isFunction()) {
     // Do not create a short-lived bound method object.
     return *method;
@@ -233,7 +233,7 @@ Object* Interpreter::callMethod4(Thread* thread, Frame* caller,
 
 Object* Interpreter::unaryOperation(Thread* thread, Frame* caller,
                                     const Handle<Object>& self,
-                                    const Handle<Object>& selector) {
+                                    SymbolId selector) {
   HandleScope scope(thread->handles());
   Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
   CHECK(!method->isError(), "unknown unary operation");
@@ -252,14 +252,13 @@ Object* Interpreter::binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
       (*self_type != *other_type) &&
       (runtime->isSubClass(other_type, self_type) == Boolean::trueObj());
 
-  Handle<Object> selector(&scope, runtime->binaryOperationSelector(op));
+  SymbolId selector = runtime->binaryOperationSelector(op);
   Handle<Object> self_method(&scope,
                              lookupMethod(thread, caller, self, selector));
   Handle<Object> other_method(&scope,
                               lookupMethod(thread, caller, other, selector));
 
-  Handle<Object> swapped_selector(&scope,
-                                  runtime->swappedBinaryOperationSelector(op));
+  SymbolId swapped_selector = runtime->swappedBinaryOperationSelector(op);
   Handle<Object> self_reflected_method(
       &scope, lookupMethod(thread, caller, self, swapped_selector));
   Handle<Object> other_reflected_method(
@@ -298,7 +297,7 @@ Object* Interpreter::inplaceOperation(Thread* thread, Frame* caller,
                                       const Handle<Object>& other) {
   HandleScope scope(thread->handles());
   Runtime* runtime = thread->runtime();
-  Handle<Object> selector(&scope, runtime->inplaceOperationSelector(op));
+  SymbolId selector = runtime->inplaceOperationSelector(op);
   Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
   if (!method->isError()) {
     Object* result = callMethod2(thread, caller, method, self, other);
@@ -322,7 +321,7 @@ Object* Interpreter::compareOperation(Thread* thread, Frame* caller,
   bool has_different_type = (*left_type != *right_type);
   if (has_different_type && runtime->isSubClass(right_type, left_type)) {
     try_swapped = false;
-    Handle<Object> selector(&scope, runtime->swappedComparisonSelector(op));
+    SymbolId selector = runtime->swappedComparisonSelector(op);
     Handle<Object> method(&scope,
                           lookupMethod(thread, caller, right, selector));
     if (!method->isError()) {
@@ -332,7 +331,7 @@ Object* Interpreter::compareOperation(Thread* thread, Frame* caller,
       }
     }
   } else {
-    Handle<Object> selector(&scope, runtime->comparisonSelector(op));
+    SymbolId selector = runtime->comparisonSelector(op);
     Handle<Object> method(&scope, lookupMethod(thread, caller, left, selector));
     if (!method->isError()) {
       Object* result = callMethod2(thread, caller, method, left, right);
@@ -342,7 +341,7 @@ Object* Interpreter::compareOperation(Thread* thread, Frame* caller,
     }
   }
   if (has_different_type && try_swapped) {
-    Handle<Object> selector(&scope, runtime->swappedComparisonSelector(op));
+    SymbolId selector = runtime->swappedComparisonSelector(op);
     Handle<Object> method(&scope,
                           lookupMethod(thread, caller, right, selector));
     if (!method->isError()) {
@@ -364,10 +363,8 @@ Object* Interpreter::sequenceContains(Thread* thread, Frame* caller,
                                       const Handle<Object>& value,
                                       const Handle<Object>& container) {
   HandleScope scope(thread);
-  Handle<Object> selector(&scope,
-                          thread->runtime()->symbols()->DunderContains());
-  Handle<Object> method(&scope,
-                        lookupMethod(thread, caller, container, selector));
+  Handle<Object> method(&scope, lookupMethod(thread, caller, container,
+                                             SymbolId::kDunderContains));
   if (!method->isError()) {
     Handle<Object> result(
         &scope, callMethod2(thread, caller, method, container, value));
@@ -383,8 +380,8 @@ Object* Interpreter::sequenceContains(Thread* thread, Frame* caller,
 Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
   HandleScope scope(thread->handles());
   Handle<Object> self(&scope, caller->topValue());
-  Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderBool());
-  Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
+  Handle<Object> method(
+      &scope, lookupMethod(thread, caller, self, SymbolId::kDunderBool));
   if (!method->isError()) {
     Handle<Object> result(&scope, callMethod1(thread, caller, method, self));
     if (result->isBoolean()) {
@@ -396,8 +393,7 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
     }
     UNIMPLEMENTED("throw");
   }
-  selector = thread->runtime()->symbols()->DunderLen();
-  method = lookupMethod(thread, caller, self, selector);
+  method = lookupMethod(thread, caller, self, SymbolId::kDunderLen);
   if (!method->isError()) {
     Handle<Object> result(&scope, callMethod1(thread, caller, method, self));
     if (result->isInteger()) {
@@ -476,8 +472,8 @@ void Interpreter::doUnaryPositive(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
   Handle<Object> receiver(&scope, ctx->frame->topValue());
-  Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderPos());
-  Object* result = unaryOperation(thread, ctx->frame, receiver, selector);
+  Object* result =
+      unaryOperation(thread, ctx->frame, receiver, SymbolId::kDunderPos);
   ctx->frame->setTopValue(result);
 }
 
@@ -486,8 +482,8 @@ void Interpreter::doUnaryNegative(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
   Handle<Object> receiver(&scope, ctx->frame->topValue());
-  Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderNeg());
-  Object* result = unaryOperation(thread, ctx->frame, receiver, selector);
+  Object* result =
+      unaryOperation(thread, ctx->frame, receiver, SymbolId::kDunderNeg);
   ctx->frame->setTopValue(result);
 }
 
@@ -505,8 +501,8 @@ void Interpreter::doUnaryInvert(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
   Handle<Object> receiver(&scope, ctx->frame->topValue());
-  Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderInvert());
-  Object* result = unaryOperation(thread, ctx->frame, receiver, selector);
+  Object* result =
+      unaryOperation(thread, ctx->frame, receiver, SymbolId::kDunderInvert);
   ctx->frame->setTopValue(result);
 }
 
@@ -1239,10 +1235,9 @@ void Interpreter::doSetupWith(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   Frame* frame = ctx->frame;
   Handle<Object> mgr(&scope, frame->topValue());
-  Handle<Object> enter_selector(&scope, runtime->symbols()->DunderEnter());
   Handle<Object> exit_selector(&scope, runtime->symbols()->DunderExit());
-  Handle<Object> enter(&scope,
-                       lookupMethod(thread, frame, mgr, enter_selector));
+  Handle<Object> enter(
+      &scope, lookupMethod(thread, frame, mgr, SymbolId::kDunderEnter));
   Handle<BoundMethod> exit(&scope,
                            runtime->attributeAt(thread, mgr, exit_selector));
   frame->setTopValue(*exit);

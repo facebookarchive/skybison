@@ -45,6 +45,37 @@
 
 namespace python {
 
+static const SymbolId kBinaryOperationSelector[] = {
+    SymbolId::kDunderAdd,     SymbolId::kDunderSub,
+    SymbolId::kDunderMul,     SymbolId::kDunderMatmul,
+    SymbolId::kDunderTruediv, SymbolId::kDunderFloordiv,
+    SymbolId::kDunderMod,     SymbolId::kDunderDivmod,
+    SymbolId::kDunderPow,     SymbolId::kDunderLshift,
+    SymbolId::kDunderRshift,  SymbolId::kDunderAnd,
+    SymbolId::kDunderXor,     SymbolId::kDunderOr};
+
+static const SymbolId kSwappedBinaryOperationSelector[] = {
+    SymbolId::kDunderRadd,     SymbolId::kDunderRsub,
+    SymbolId::kDunderRmul,     SymbolId::kDunderRmatmul,
+    SymbolId::kDunderRtruediv, SymbolId::kDunderRfloordiv,
+    SymbolId::kDunderRmod,     SymbolId::kDunderRdivmod,
+    SymbolId::kDunderRpow,     SymbolId::kDunderRlshift,
+    SymbolId::kDunderRrshift,  SymbolId::kDunderRand,
+    SymbolId::kDunderRxor,     SymbolId::kDunderRor};
+
+static const SymbolId kInplaceOperationSelector[] = {
+    SymbolId::kDunderIadd,     SymbolId::kDunderIsub,
+    SymbolId::kDunderImul,     SymbolId::kDunderImatmul,
+    SymbolId::kDunderItruediv, SymbolId::kDunderIfloordiv,
+    SymbolId::kDunderImod,     SymbolId::kMaxId,
+    SymbolId::kDunderIpow,     SymbolId::kDunderIlshift,
+    SymbolId::kDunderIrshift,  SymbolId::kDunderIand,
+    SymbolId::kDunderIxor,     SymbolId::kDunderIor};
+
+static const SymbolId kComparisonSelector[] = {
+    SymbolId::kDunderLt, SymbolId::kDunderLe, SymbolId::kDunderEq,
+    SymbolId::kDunderNe, SymbolId::kDunderGt, SymbolId::kDunderGe};
+
 Runtime::Runtime(word heap_size)
     : heap_(heap_size),
       new_value_cell_callback_(this),
@@ -1306,131 +1337,27 @@ LayoutId Runtime::newLayoutId() {
   return static_cast<LayoutId>(result);
 }
 
-Object* Runtime::binaryOperationSelector(Interpreter::BinaryOp op) {
-  switch (op) {
-    case Interpreter::BinaryOp::ADD:
-      return symbols()->DunderAdd();
-    case Interpreter::BinaryOp::SUB:
-      return symbols()->DunderSub();
-    case Interpreter::BinaryOp::MUL:
-      return symbols()->DunderMul();
-    case Interpreter::BinaryOp::MATMUL:
-      return symbols()->DunderMatmul();
-    case Interpreter::BinaryOp::TRUEDIV:
-      return symbols()->DunderTruediv();
-    case Interpreter::BinaryOp::FLOORDIV:
-      return symbols()->DunderFloordiv();
-    case Interpreter::BinaryOp::MOD:
-      return symbols()->DunderMod();
-    case Interpreter::BinaryOp::DIVMOD:
-      return symbols()->DunderDivmod();
-    case Interpreter::BinaryOp::POW:
-      return symbols()->DunderPow();
-    case Interpreter::BinaryOp::LSHIFT:
-      return symbols()->DunderLshift();
-    case Interpreter::BinaryOp::RSHIFT:
-      return symbols()->DunderRshift();
-    case Interpreter::BinaryOp::AND:
-      return symbols()->DunderAnd();
-    case Interpreter::BinaryOp::XOR:
-      return symbols()->DunderXor();
-    case Interpreter::BinaryOp::OR:
-      return symbols()->DunderOr();
-    default:
-      UNREACHABLE("unknown binary operation");
-  }
+SymbolId Runtime::binaryOperationSelector(Interpreter::BinaryOp op) {
+  return kBinaryOperationSelector[static_cast<int>(op)];
 }
 
-Object* Runtime::swappedBinaryOperationSelector(Interpreter::BinaryOp op) {
-  switch (op) {
-    case Interpreter::BinaryOp::ADD:
-      return symbols()->DunderRadd();
-    case Interpreter::BinaryOp::SUB:
-      return symbols()->DunderRsub();
-    case Interpreter::BinaryOp::MUL:
-      return symbols()->DunderRmul();
-    case Interpreter::BinaryOp::MATMUL:
-      return symbols()->DunderRmatmul();
-    case Interpreter::BinaryOp::TRUEDIV:
-      return symbols()->DunderRtruediv();
-    case Interpreter::BinaryOp::FLOORDIV:
-      return symbols()->DunderRfloordiv();
-    case Interpreter::BinaryOp::MOD:
-      return symbols()->DunderRmod();
-    case Interpreter::BinaryOp::DIVMOD:
-      return symbols()->DunderRdivmod();
-    case Interpreter::BinaryOp::POW:
-      return symbols()->DunderRpow();
-    case Interpreter::BinaryOp::LSHIFT:
-      return symbols()->DunderRlshift();
-    case Interpreter::BinaryOp::RSHIFT:
-      return symbols()->DunderRrshift();
-    case Interpreter::BinaryOp::AND:
-      return symbols()->DunderRand();
-    case Interpreter::BinaryOp::XOR:
-      return symbols()->DunderRxor();
-    case Interpreter::BinaryOp::OR:
-      return symbols()->DunderRor();
-    default:
-      UNREACHABLE("unknown binary operation");
-  }
+SymbolId Runtime::swappedBinaryOperationSelector(Interpreter::BinaryOp op) {
+  return kSwappedBinaryOperationSelector[static_cast<int>(op)];
 }
 
-Object* Runtime::inplaceOperationSelector(Interpreter::BinaryOp op) {
-  switch (op) {
-    case Interpreter::BinaryOp::ADD:
-      return symbols()->DunderIadd();
-    case Interpreter::BinaryOp::SUB:
-      return symbols()->DunderIsub();
-    case Interpreter::BinaryOp::MUL:
-      return symbols()->DunderImul();
-    case Interpreter::BinaryOp::MATMUL:
-      return symbols()->DunderImatmul();
-    case Interpreter::BinaryOp::TRUEDIV:
-      return symbols()->DunderItruediv();
-    case Interpreter::BinaryOp::FLOORDIV:
-      return symbols()->DunderIfloordiv();
-    case Interpreter::BinaryOp::MOD:
-      return symbols()->DunderImod();
-    case Interpreter::BinaryOp::POW:
-      return symbols()->DunderIpow();
-    case Interpreter::BinaryOp::LSHIFT:
-      return symbols()->DunderIlshift();
-    case Interpreter::BinaryOp::RSHIFT:
-      return symbols()->DunderIrshift();
-    case Interpreter::BinaryOp::AND:
-      return symbols()->DunderIand();
-    case Interpreter::BinaryOp::XOR:
-      return symbols()->DunderIxor();
-    case Interpreter::BinaryOp::OR:
-      return symbols()->DunderIor();
-    default:
-      UNREACHABLE("unknown inplace operation");
-  }
+SymbolId Runtime::inplaceOperationSelector(Interpreter::BinaryOp op) {
+  DCHECK(op != Interpreter::BinaryOp::DIVMOD,
+         "DIVMOD is not a valid inplace op");
+  return kInplaceOperationSelector[static_cast<int>(op)];
 }
 
-Object* Runtime::comparisonSelector(CompareOp op) {
+SymbolId Runtime::comparisonSelector(CompareOp op) {
   DCHECK(op >= CompareOp::LT, "invalid compare op");
   DCHECK(op <= CompareOp::GE, "invalid compare op");
-  switch (op) {
-    case LT:
-      return symbols()->DunderLt();
-    case LE:
-      return symbols()->DunderLe();
-    case EQ:
-      return symbols()->DunderEq();
-    case NE:
-      return symbols()->DunderNe();
-    case GT:
-      return symbols()->DunderGt();
-    case GE:
-      return symbols()->DunderGe();
-    default:
-      UNREACHABLE("bad comparison op");
-  }
+  return kComparisonSelector[op];
 }
 
-Object* Runtime::swappedComparisonSelector(CompareOp op) {
+SymbolId Runtime::swappedComparisonSelector(CompareOp op) {
   DCHECK(op >= CompareOp::LT, "invalid compare op");
   DCHECK(op <= CompareOp::GE, "invalid compare op");
   CompareOp swapped_op = kSwappedCompareOp[op];

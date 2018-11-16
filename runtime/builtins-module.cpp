@@ -163,11 +163,9 @@ Object* builtinLen(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Handle<Object> self(&scope, args.get(0));
-  Handle<Object> selector(&scope, runtime->symbols()->DunderLen());
-  Handle<Object> method(
-      &scope, Interpreter::lookupMethod(thread, frame, self, selector));
+  Handle<Object> method(&scope, Interpreter::lookupMethod(
+                                    thread, frame, self, SymbolId::kDunderLen));
   if (method->isError()) {
     return thread->throwTypeErrorFromCString("object has no len()");
   }
