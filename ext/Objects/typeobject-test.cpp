@@ -30,7 +30,7 @@ extern "C" PyObject* PyType_GenericAlloc(PyTypeObject* type,
 TEST(TypeObject, ReadyInitializesType) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> extensions_dict(&scope, runtime.extensionTypes());
+  Handle<Dict> extensions_dict(&scope, runtime.extensionTypes());
 
   // Create a simple PyTypeObject
   PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
@@ -53,7 +53,7 @@ TEST(TypeObject, ReadyInitializesType) {
 TEST(TypeObject, ReadyCreatesRuntimeClass) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> extensions_dict(&scope, runtime.extensionTypes());
+  Handle<Dict> extensions_dict(&scope, runtime.extensionTypes());
 
   // Create a simple PyTypeObject
   PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
@@ -65,7 +65,7 @@ TEST(TypeObject, ReadyCreatesRuntimeClass) {
   Handle<Object> type_id(
       &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&empty_type)));
   Handle<Object> type_class_obj(&scope,
-                                runtime.dictionaryAt(extensions_dict, type_id));
+                                runtime.dictAt(extensions_dict, type_id));
   EXPECT_TRUE(type_class_obj->isType());
 
   // Confirm the class name
@@ -81,7 +81,7 @@ TEST(TypeObject, ReadyCreatesRuntimeClass) {
 TEST(TypeObject, ReadiedTypeCreatesRuntimeInstance) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> extensions_dict(&scope, runtime.extensionTypes());
+  Handle<Dict> extensions_dict(&scope, runtime.extensionTypes());
 
   // Create a simple PyTypeObject
   PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
@@ -90,8 +90,7 @@ TEST(TypeObject, ReadiedTypeCreatesRuntimeInstance) {
   PyType_Ready(&empty_type);
   Handle<Object> type_id(
       &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&empty_type)));
-  Handle<Type> type_class(&scope,
-                          runtime.dictionaryAt(extensions_dict, type_id));
+  Handle<Type> type_class(&scope, runtime.dictAt(extensions_dict, type_id));
 
   // Instantiate a class object
   Handle<Layout> layout(&scope, type_class->instanceLayout());
@@ -127,7 +126,7 @@ TEST(TypeObject, InitializeCustomTypeInstance) {
   // Instantiate module
   Handle<Object> module_name(&scope, runtime.newStringFromCString("custom"));
   Handle<Module> module(&scope, runtime.newModule(module_name));
-  Handle<Dictionary> module_dict(&scope, module->dictionary());
+  Handle<Dict> module_dict(&scope, module->dict());
   runtime.addModule(module);
 
   // Instantiate Type
@@ -145,10 +144,10 @@ TEST(TypeObject, InitializeCustomTypeInstance) {
   // Add class to the runtime
   Handle<Object> type_id(
       &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&custom_type)));
-  Handle<Dictionary> ext_dict(&scope, runtime.extensionTypes());
-  Handle<Object> type_class(&scope, runtime.dictionaryAt(ext_dict, type_id));
+  Handle<Dict> ext_dict(&scope, runtime.extensionTypes());
+  Handle<Object> type_class(&scope, runtime.dictAt(ext_dict, type_id));
   Handle<Object> ob_name(&scope, runtime.newStringFromCString("Custom"));
-  runtime.dictionaryAtPutInValueCell(module_dict, ob_name, type_class);
+  runtime.dictAtPutInValueCell(module_dict, ob_name, type_class);
 
   runtime.runFromCString(R"(
 import custom

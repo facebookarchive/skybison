@@ -80,20 +80,20 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
 
   // Create a new class for the PyTypeObject
   Handle<Type> type_class(&scope, runtime->newClass());
-  Handle<Dictionary> dictionary(&scope, runtime->newDictionary());
-  type_class->setDictionary(*dictionary);
+  Handle<Dict> dict(&scope, runtime->newDict());
+  type_class->setDict(*dict);
 
   // Add the PyTypeObject pointer to the class
   type_class->setExtensionType(runtime->newIntegerFromCPointer(type));
 
-  // Create the dictionary's ApiHandle
-  type->tp_dict = ApiHandle::fromObject(*dictionary)->asPyObject();
+  // Create the dict's ApiHandle
+  type->tp_dict = ApiHandle::fromObject(*dict)->asPyObject();
 
   // Set the class name
   Handle<Object> name(&scope, runtime->newStringFromCString(type->tp_name));
   type_class->setName(*name);
   Handle<Object> dict_key(&scope, runtime->symbols()->DunderName());
-  runtime->dictionaryAtPutInValueCell(dictionary, dict_key, name);
+  runtime->dictAtPutInValueCell(dict, dict_key, name);
 
   // Compute Mro
   Handle<ObjectArray> parents(&scope, runtime->newObjectArray(0));
@@ -121,11 +121,11 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   // TODO(T29618332): Implement missing PyType_Ready features
 
   // Add the runtime class object reference to PyTypeObject
-  Handle<Dictionary> extensions_dict(&scope, runtime->extensionTypes());
+  Handle<Dict> extensions_dict(&scope, runtime->extensionTypes());
   Handle<Object> type_class_obj(&scope, *type_class);
   Handle<Object> type_class_id(
       &scope, runtime->newIntegerFromCPointer(static_cast<void*>(type)));
-  runtime->dictionaryAtPut(extensions_dict, type_class_id, type_class_obj);
+  runtime->dictAtPut(extensions_dict, type_class_id, type_class_obj);
 
   // All done -- set the ready flag
   type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;

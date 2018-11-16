@@ -169,7 +169,7 @@ TEST(ModulesTest, TestCreate) {
   Handle<Object> name(&scope, runtime.newStringFromCString("mymodule"));
   Handle<Module> module(&scope, runtime.newModule(name));
   EXPECT_EQ(module->name(), *name);
-  EXPECT_TRUE(module->dictionary()->isDictionary());
+  EXPECT_TRUE(module->dict()->isDict());
 }
 
 TEST(SliceTest, adjustIndices) {

@@ -19,10 +19,10 @@ static inline void initFrame(Thread* thread, Function* function,
     // TODO: Set builtins appropriately
     // See PyFrame_New in cpython frameobject.c.
     // If caller_frame->globals() contains the __builtins__ key and the
-    // associated value is a module, use its dictionary. Otherwise, create a new
-    // dictionary that contains the single assoc
+    // associated value is a module, use its dict. Otherwise, create a new
+    // dict that contains the single assoc
     // ("None", None::object())
-    new_frame->setBuiltins(thread->runtime()->newDictionary());
+    new_frame->setBuiltins(thread->runtime()->newDict());
   }
   new_frame->setVirtualPC(0);
   new_frame->setFastGlobals(function->fastGlobals());
@@ -132,13 +132,13 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
   // because we arrived here via CALL_FUNCTION (and thus, no keywords were
   // supplied at the call site).
   if (code->kwonlyargcount() != 0 && !function->kwDefaults()->isNone()) {
-    Handle<Dictionary> kw_defaults(&scope, function->kwDefaults());
+    Handle<Dict> kw_defaults(&scope, function->kwDefaults());
     if (!kw_defaults->isNone()) {
       Handle<ObjectArray> formal_names(&scope, code->varnames());
       word first_kw = code->argcount();
       for (word i = 0; i < code->kwonlyargcount(); i++) {
         Handle<Object> name(&scope, formal_names->at(first_kw + i));
-        Object* val = thread->runtime()->dictionaryAt(kw_defaults, name);
+        Object* val = thread->runtime()->dictAt(kw_defaults, name);
         if (!val->isError()) {
           caller_frame->pushValue(val);
           argc++;
@@ -160,8 +160,8 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
 
   if (flags & Code::VARKEYARGS) {
     // VARKEYARGS - because we arrived via CALL_FUNCTION, no keyword arguments
-    // provided.  Just add an empty dictionary.
-    Handle<Object> kwdict(&scope, thread->runtime()->newDictionary());
+    // provided.  Just add an empty dict.
+    Handle<Object> kwdict(&scope, thread->runtime()->newDict());
     caller_frame->pushValue(*kwdict);
     argc++;
   }
@@ -264,10 +264,10 @@ Object* checkArgs(Function* function, Object** kw_arg_base,
       }
     } else if (!function->kwDefaults()->isNone()) {
       // How about a kwonly default?
-      Handle<Dictionary> kw_defaults(&scope, function->kwDefaults());
+      Handle<Dict> kw_defaults(&scope, function->kwDefaults());
       Thread* thread = Thread::currentThread();
       Handle<Object> name(&scope, formal_names->at(arg_pos + start));
-      Object* val = thread->runtime()->dictionaryAt(kw_defaults, name);
+      Object* val = thread->runtime()->dictAt(kw_defaults, name);
       if (!val->isError()) {
         *(kw_arg_base - arg_pos) = val;
         continue;  // Got it, move on to the next
@@ -339,8 +339,8 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
             "TypeError: Too many positional arguments");
       }
       // If we have keyword arguments that don't appear in the formal parameter
-      // list, add them to a keyword dictionary.
-      Handle<Dictionary> dict(&scope, thread->runtime()->newDictionary());
+      // list, add them to a keyword dict.
+      Handle<Dict> dict(&scope, thread->runtime()->newDict());
       Handle<List> saved_keyword_list(&scope, thread->runtime()->newList());
       Handle<List> saved_values(&scope, thread->runtime()->newList());
       word formal_parm_size = formal_parm_names->length();
@@ -355,7 +355,7 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
           runtime->listAdd(saved_values, value);
         } else {
           // New, add it and associated value to the varkeyargs dict
-          runtime->dictionaryAtPut(dict, key, value);
+          runtime->dictAtPut(dict, key, value);
           argc--;
         }
       }
@@ -397,7 +397,7 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
   // Now we've got the right number.  Do they match up?
   res = checkArgs(*function, kw_arg_base, *keywords, *formal_parm_names,
                   num_positional_args);
-  // If we're a vararg form, need to push the tuple/dictionary.
+  // If we're a vararg form, need to push the tuple/dict.
   if (res->isNone()) {
     if (flags & Code::VARARGS) {
       caller_frame->pushValue(*tmp_varargs);
@@ -425,11 +425,11 @@ Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word arg) {
   word argc = positional_args->length();
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
     Runtime* runtime = thread->runtime();
-    Handle<Dictionary> dict(&scope, *kw_dict);
-    Handle<ObjectArray> keys(&scope, runtime->dictionaryKeys(dict));
+    Handle<Dict> dict(&scope, *kw_dict);
+    Handle<ObjectArray> keys(&scope, runtime->dictKeys(dict));
     for (word i = 0; i < keys->length(); i++) {
       Handle<Object> key(&scope, keys->at(i));
-      caller_frame->pushValue(runtime->dictionaryAt(dict, key));
+      caller_frame->pushValue(runtime->dictAt(dict, key));
     }
     argc += keys->length();
     caller_frame->pushValue(*keys);

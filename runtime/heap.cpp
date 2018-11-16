@@ -141,16 +141,15 @@ Object* Heap::createComplex(double real, double imag) {
   return Complex::cast(result);
 }
 
-Object* Heap::createDictionary() {
-  word size = Dictionary::allocationSize();
+Object* Heap::createDict() {
+  word size = Dict::allocationSize();
   Object* raw = allocate(size, Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Dictionary*>(raw);
-  result->setHeader(Header::from(Dictionary::kSize / kPointerSize, 0,
-                                 LayoutId::kDictionary,
+  auto result = reinterpret_cast<Dict*>(raw);
+  result->setHeader(Header::from(Dict::kSize / kPointerSize, 0, LayoutId::kDict,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(Dictionary::kSize, None::object());
-  return Dictionary::cast(result);
+  result->initialize(Dict::kSize, None::object());
+  return Dict::cast(result);
 }
 
 Object* Heap::createFloat(double value) {

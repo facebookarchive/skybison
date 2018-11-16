@@ -113,10 +113,10 @@ Frame* Thread::pushModuleFunctionFrame(Module* module, Object* object) {
   HandleScope scope;
   Frame* result = pushFrame(object);
   Handle<Code> code(&scope, object);
-  Handle<Dictionary> globals(&scope, module->dictionary());
+  Handle<Dict> globals(&scope, module->dict());
   Handle<Object> name(&scope, runtime()->symbols()->Builtins());
-  Handle<Dictionary> builtins(
-      &scope, Module::cast(runtime()->findModule(name))->dictionary());
+  Handle<Dict> builtins(&scope,
+                        Module::cast(runtime()->findModule(name))->dict());
   result->setGlobals(*globals);
   result->setBuiltins(*builtins);
   result->setFastGlobals(
@@ -125,19 +125,19 @@ Frame* Thread::pushModuleFunctionFrame(Module* module, Object* object) {
   return result;
 }
 
-Frame* Thread::pushClassFunctionFrame(Object* function, Object* dictionary) {
+Frame* Thread::pushClassFunctionFrame(Object* function, Object* dict) {
   HandleScope scope;
   Handle<Code> code(&scope, Function::cast(function)->code());
   Frame* result = pushFrame(*code);
-  Handle<Dictionary> globals(&scope, Function::cast(function)->globals());
+  Handle<Dict> globals(&scope, Function::cast(function)->globals());
   Handle<Object> name(&scope, runtime()->symbols()->Builtins());
-  Handle<Dictionary> builtins(
-      &scope, Module::cast(runtime()->findModule(name))->dictionary());
+  Handle<Dict> builtins(&scope,
+                        Module::cast(runtime()->findModule(name))->dict());
   result->setGlobals(*globals);
   result->setBuiltins(*builtins);
   result->setFastGlobals(
       runtime()->computeFastGlobals(code, globals, builtins));
-  result->setImplicitGlobals(dictionary);
+  result->setImplicitGlobals(dict);
 
   word num_locals = code->nlocals();
   word num_cellvars = code->numCellvars();
@@ -190,8 +190,8 @@ Object* Thread::runModuleFunction(Module* module, Object* object) {
   return Interpreter::execute(this, frame);
 }
 
-Object* Thread::runClassFunction(Object* function, Object* dictionary) {
-  Frame* frame = pushClassFunctionFrame(function, dictionary);
+Object* Thread::runClassFunction(Object* function, Object* dict) {
+  Frame* frame = pushClassFunctionFrame(function, dict);
   return Interpreter::execute(this, frame);
 }
 

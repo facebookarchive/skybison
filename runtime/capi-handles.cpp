@@ -24,13 +24,13 @@ ApiHandle* ApiHandle::fromObject(Object* obj) {
   HandleScope scope(thread);
 
   Handle<Object> key(&scope, obj);
-  Handle<Dictionary> dict(&scope, runtime->apiHandles());
-  Object* value = runtime->dictionaryAt(dict, key);
+  Handle<Dict> dict(&scope, runtime->apiHandles());
+  Object* value = runtime->dictAt(dict, key);
   if (value->isError()) {
     ApiHandle* handle = ApiHandle::newHandle(obj);
     Handle<Object> object(
         &scope, runtime->newIntegerFromCPointer(static_cast<void*>(handle)));
-    runtime->dictionaryAtPut(dict, key, object);
+    runtime->dictAtPut(dict, key, object);
     return handle;
   }
   return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
@@ -42,13 +42,13 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
   HandleScope scope(thread);
 
   Handle<Object> key(&scope, obj);
-  Handle<Dictionary> dict(&scope, runtime->apiHandles());
-  Object* value = runtime->dictionaryAt(dict, key);
+  Handle<Dict> dict(&scope, runtime->apiHandles());
+  Object* value = runtime->dictAt(dict, key);
   if (value->isError()) {
     ApiHandle* handle = ApiHandle::newBorrowedHandle(obj);
     Handle<Object> object(
         &scope, runtime->newIntegerFromCPointer(static_cast<void*>(handle)));
-    runtime->dictionaryAtPut(dict, key, object);
+    runtime->dictAtPut(dict, key, object);
     return handle;
   }
   return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());

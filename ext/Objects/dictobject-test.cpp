@@ -6,13 +6,13 @@
 
 namespace python {
 
-TEST(DictObject, GetItemFromNonDictionaryReturnsNull) {
+TEST(DictObject, GetItemFromNonDictReturnsNull) {
   Runtime runtime;
   HandleScope scope;
 
   Handle<Object> non_dict(&scope, runtime.newInteger(10));
 
-  // Pass a non dictionary
+  // Pass a non dict
   PyObject* result =
       PyDict_GetItem(ApiHandle::fromObject(*non_dict)->asPyObject(),
                      ApiHandle::fromObject(*non_dict)->asPyObject());
@@ -23,7 +23,7 @@ TEST(DictObject, GetItemNonExistingKeyReturnsNull) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
   Handle<Object> nonkey(&scope, SmallInteger::fromWord(30));
 
   // Pass a non existing key
@@ -37,10 +37,10 @@ TEST(DictObject, GetItemReturnsValue) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
   Handle<Object> key(&scope, runtime.newInteger(10));
   Handle<Object> value(&scope, runtime.newInteger(20));
-  runtime.dictionaryAtPut(dict, key, value);
+  runtime.dictAtPut(dict, key, value);
 
   // Pass existing key
   PyObject* result = PyDict_GetItem(ApiHandle::fromObject(*dict)->asPyObject(),
@@ -58,10 +58,10 @@ TEST(DictObject, GetItemReturnsBorrowedReference) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
   Handle<Object> key(&scope, runtime.newInteger(10));
   Handle<Object> value(&scope, runtime.newInteger(20));
-  runtime.dictionaryAtPut(dict, key, value);
+  runtime.dictAtPut(dict, key, value);
 
   // Pass existing key
   PyObject* result = PyDict_GetItem(ApiHandle::fromObject(*dict)->asPyObject(),

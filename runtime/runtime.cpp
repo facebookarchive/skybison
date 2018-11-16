@@ -256,9 +256,9 @@ Object* Runtime::newClass() { return newClassWithMetaclass(LayoutId::kType); }
 Object* Runtime::newClassWithMetaclass(LayoutId metaclass_id) {
   HandleScope scope;
   Handle<Type> result(&scope, heap()->createClass(metaclass_id));
-  Handle<Dictionary> dict(&scope, newDictionary());
+  Handle<Dict> dict(&scope, newDict());
   result->setFlags(SmallInteger::fromWord(0));
-  result->setDictionary(*dict);
+  result->setDict(*dict);
   return *result;
 }
 
@@ -343,9 +343,9 @@ Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
     }
   }
 
-  // No data descriptor found, store the attribute in the klass dictionary
-  Handle<Dictionary> klass_dict(&scope, klass->dictionary());
-  dictionaryAtPutInValueCell(klass_dict, name, value);
+  // No data descriptor found, store the attribute in the klass dict
+  Handle<Dict> klass_dict(&scope, klass->dict());
+  dictAtPutInValueCell(klass_dict, name, value);
 
   return None::object();
 }
@@ -379,9 +379,9 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
     }
   }
 
-  // No delete descriptor found, attempt to delete from the klass dictionary
-  Handle<Dictionary> klass_dict(&scope, klass->dictionary());
-  if (!dictionaryRemove(klass_dict, name, nullptr)) {
+  // No delete descriptor found, attempt to delete from the klass dict
+  Handle<Dict> klass_dict(&scope, klass->dict());
+  if (!dictRemove(klass_dict, name, nullptr)) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
     return thread->throwAttributeErrorFromCString("missing attribute");
@@ -556,10 +556,10 @@ Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
     }
   }
 
-  // No delete descriptor found, attempt to delete from the module dictionary
+  // No delete descriptor found, attempt to delete from the module dict
   Handle<Module> module(&scope, *receiver);
-  Handle<Dictionary> module_dict(&scope, module->dictionary());
-  if (!dictionaryRemove(module_dict, name, nullptr)) {
+  Handle<Dict> module_dict(&scope, module->dict());
+  if (!dictRemove(module_dict, name, nullptr)) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
     return thread->throwAttributeErrorFromCString("missing attribute");
@@ -663,8 +663,8 @@ void Runtime::classAddBuiltinFunctionKwEx(const Handle<Type>& type,
       &scope, newBuiltinFunction(name, entry, entry_kw, entry_ex));
   Handle<Object> key(&scope, symbols()->at(name));
   Handle<Object> value(&scope, *function);
-  Handle<Dictionary> dict(&scope, type->dictionary());
-  dictionaryAtPutInValueCell(dict, key, value);
+  Handle<Dict> dict(&scope, type->dict());
+  dictAtPutInValueCell(dict, key, value);
 }
 
 void Runtime::classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
@@ -680,8 +680,8 @@ void Runtime::classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
   function->setEntryKw(extensionTrampolineKw);
   function->setEntryEx(extensionTrampolineEx);
   Handle<Object> value(&scope, *function);
-  Handle<Dictionary> dict(&scope, type->dictionary());
-  dictionaryAtPutInValueCell(dict, key, value);
+  Handle<Dict> dict(&scope, type->dict());
+  dictAtPutInValueCell(dict, key, value);
 }
 
 Object* Runtime::newList() {
@@ -703,12 +703,12 @@ Object* Runtime::newListIterator(const Handle<Object>& list) {
 Object* Runtime::newModule(const Handle<Object>& name) {
   HandleScope scope;
   Handle<Module> result(&scope, heap()->createModule());
-  Handle<Dictionary> dictionary(&scope, newDictionary());
-  result->setDictionary(*dictionary);
+  Handle<Dict> dict(&scope, newDict());
+  result->setDict(*dict);
   result->setName(*name);
   result->setDef(newIntegerFromCPointer(nullptr));
   Handle<Object> key(&scope, symbols()->DunderName());
-  dictionaryAtPutInValueCell(dictionary, key, name);
+  dictAtPutInValueCell(dict, key, name);
   return *result;
 }
 
@@ -1097,18 +1097,18 @@ void Runtime::initializeObjectArrayClass() {
 
 void Runtime::initializeDictClass() {
   HandleScope scope;
-  Handle<Type> dict_type(
-      &scope, addEmptyBuiltinClass(SymbolId::kDict, LayoutId::kDictionary,
-                                   LayoutId::kObject));
+  Handle<Type> dict_type(&scope,
+                         addEmptyBuiltinClass(SymbolId::kDict, LayoutId::kDict,
+                                              LayoutId::kObject));
 
   classAddBuiltinFunction(dict_type, SymbolId::kDunderEq,
-                          nativeTrampoline<builtinDictionaryEq>);
+                          nativeTrampoline<builtinDictEq>);
 
   classAddBuiltinFunction(dict_type, SymbolId::kDunderGetItem,
-                          nativeTrampoline<builtinDictionaryGetItem>);
+                          nativeTrampoline<builtinDictGetItem>);
 
   classAddBuiltinFunction(dict_type, SymbolId::kDunderLen,
-                          nativeTrampoline<builtinDictionaryLen>);
+                          nativeTrampoline<builtinDictLen>);
 }
 
 void Runtime::initializeClassMethodClass() {
@@ -1441,18 +1441,18 @@ void Runtime::visitThreadRoots(PointerVisitor* visitor) {
 
 void Runtime::addModule(const Handle<Module>& module) {
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, modules());
+  Handle<Dict> dict(&scope, modules());
   Handle<Object> key(&scope, module->name());
   Handle<Object> value(&scope, *module);
-  dictionaryAtPut(dict, key, value);
+  dictAtPut(dict, key, value);
 }
 
 Object* Runtime::findModule(const Handle<Object>& name) {
   DCHECK(name->isString(), "name not a string");
 
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, modules());
-  Object* value = dictionaryAt(dict, name);
+  Handle<Dict> dict(&scope, modules());
+  Object* value = dictAt(dict, name);
   if (value->isError()) {
     return None::object();
   }
@@ -1462,8 +1462,8 @@ Object* Runtime::findModule(const Handle<Object>& name) {
 Object* Runtime::moduleAt(const Handle<Module>& module,
                           const Handle<Object>& key) {
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, module->dictionary());
-  Handle<Object> value_cell(&scope, dictionaryAt(dict, key));
+  Handle<Dict> dict(&scope, module->dict());
+  Handle<Object> value_cell(&scope, dictAt(dict, key));
   if (value_cell->isError()) {
     return Error::object();
   }
@@ -1474,12 +1474,12 @@ void Runtime::moduleAtPut(const Handle<Module>& module,
                           const Handle<Object>& key,
                           const Handle<Object>& value) {
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, module->dictionary());
-  dictionaryAtPutInValueCell(dict, key, value);
+  Handle<Dict> dict(&scope, module->dict());
+  dictAtPutInValueCell(dict, key, value);
 }
 
 void Runtime::initializeModules() {
-  modules_ = newDictionary();
+  modules_ = newDict();
   createBuiltinsModule();
   createSysModule();
   createTimeModule();
@@ -1494,8 +1494,8 @@ struct ExtensionTypeInitializer {
 extern struct ExtensionTypeInitializer kExtensionTypeInitializers[];
 
 void Runtime::initializeApiHandles() {
-  api_handles_ = newDictionary();
-  extension_types_ = newDictionary();
+  api_handles_ = newDict();
+  extension_types_ = newDict();
   // Initialize the extension types
   for (int i = 0; kExtensionTypeInitializers[i].initfunc != nullptr; i++) {
     (*kExtensionTypeInitializers[i].initfunc)();
@@ -1566,8 +1566,8 @@ bool Runtime::isMethodOverloaded(Thread* thread, const Handle<Type>& type,
   DCHECK(mro->length() > 0, "empty MRO");
   for (word i = 0; i < mro->length() - 1; i++) {
     Handle<Type> mro_type(&scope, mro->at(i));
-    Handle<Dictionary> dict(&scope, mro_type->dictionary());
-    Handle<Object> value_cell(&scope, dictionaryAt(dict, key));
+    Handle<Dict> dict(&scope, mro_type->dict());
+    Handle<Object> value_cell(&scope, dictAt(dict, key));
     if (!value_cell->isError()) {
       return true;
     }
@@ -1578,9 +1578,9 @@ bool Runtime::isMethodOverloaded(Thread* thread, const Handle<Type>& type,
 Object* Runtime::moduleAddGlobal(const Handle<Module>& module, SymbolId name,
                                  const Handle<Object>& value) {
   HandleScope scope;
-  Handle<Dictionary> dictionary(&scope, module->dictionary());
+  Handle<Dict> dict(&scope, module->dict());
   Handle<Object> key(&scope, symbols()->at(name));
-  return dictionaryAtPutInValueCell(dictionary, key, value);
+  return dictAtPutInValueCell(dict, key, value);
 }
 
 Object* Runtime::moduleAddBuiltinFunction(const Handle<Module>& module,
@@ -1590,10 +1590,10 @@ Object* Runtime::moduleAddBuiltinFunction(const Handle<Module>& module,
                                           const Function::Entry entry_ex) {
   HandleScope scope;
   Handle<Object> key(&scope, symbols()->at(name));
-  Handle<Dictionary> dictionary(&scope, module->dictionary());
+  Handle<Dict> dict(&scope, module->dict());
   Handle<Object> value(&scope,
                        newBuiltinFunction(name, entry, entry_kw, entry_ex));
-  return dictionaryAtPutInValueCell(dictionary, key, value);
+  return dictAtPutInValueCell(dict, key, value);
 }
 
 void Runtime::createBuiltinsModule() {
@@ -1629,7 +1629,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kBaseException,
                        LayoutId::kBaseException);
   moduleAddBuiltinType(module, SymbolId::kClassmethod, LayoutId::kClassMethod);
-  moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDictionary);
+  moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDict);
   moduleAddBuiltinType(module, SymbolId::kException, LayoutId::kException);
   moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kFloat);
   moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInteger);
@@ -1801,10 +1801,10 @@ void Runtime::listExtend(const Handle<List>& dest,
         dest->atPut(index++, Set::Bucket::key(*data, i));
       }
     }
-  } else if (iterable->isDictionary()) {
-    Handle<Dictionary> dict(&scope, *iterable);
+  } else if (iterable->isDict()) {
+    Handle<Dict> dict(&scope, *iterable);
     if (dict->numItems() > 0) {
-      Handle<ObjectArray> keys(&scope, dictionaryKeys(dict));
+      Handle<ObjectArray> keys(&scope, dictKeys(dict));
       word new_capacity = index + dict->numItems();
       listEnsureCapacity(dest, new_capacity);
       dest->setAllocated(new_capacity);
@@ -1919,172 +1919,170 @@ char* Runtime::compile(const char* src) {
   return result;
 }
 
-// Dictionary
+// Dict
 
-Object* Runtime::newDictionary() {
+Object* Runtime::newDict() {
   HandleScope scope;
-  Handle<Dictionary> result(&scope, heap()->createDictionary());
+  Handle<Dict> result(&scope, heap()->createDict());
   result->setNumItems(0);
   result->setData(empty_object_array_);
   return *result;
 }
 
-Object* Runtime::newDictionary(word initial_size) {
+Object* Runtime::newDict(word initial_size) {
   HandleScope scope;
   // TODO: initialSize should be scaled up by a load factor.
   word initial_capacity = Utils::nextPowerOfTwo(initial_size);
   Handle<ObjectArray> array(
-      &scope, newObjectArray(
-                  Utils::maximum(static_cast<word>(kInitialDictionaryCapacity),
-                                 initial_capacity) *
-                  Dictionary::Bucket::kNumPointers));
-  Handle<Dictionary> result(&scope, newDictionary());
+      &scope,
+      newObjectArray(Utils::maximum(static_cast<word>(kInitialDictCapacity),
+                                    initial_capacity) *
+                     Dict::Bucket::kNumPointers));
+  Handle<Dict> result(&scope, newDict());
   result->setData(*array);
   return *result;
 }
 
-void Runtime::dictionaryAtPutWithHash(const Handle<Dictionary>& dict,
-                                      const Handle<Object>& key,
-                                      const Handle<Object>& value,
-                                      const Handle<Object>& key_hash) {
+void Runtime::dictAtPutWithHash(const Handle<Dict>& dict,
+                                const Handle<Object>& key,
+                                const Handle<Object>& value,
+                                const Handle<Object>& key_hash) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
-  bool found = dictionaryLookup(data, key, key_hash, &index);
+  bool found = dictLookup(data, key, key_hash, &index);
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    Handle<ObjectArray> new_data(&scope, dictionaryGrow(data));
-    dictionaryLookup(new_data, key, key_hash, &index);
+    Handle<ObjectArray> new_data(&scope, dictGrow(data));
+    dictLookup(new_data, key, key_hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
     dict->setData(*new_data);
-    Dictionary::Bucket::set(*new_data, index, *key_hash, *key, *value);
+    Dict::Bucket::set(*new_data, index, *key_hash, *key, *value);
   } else {
-    Dictionary::Bucket::set(*data, index, *key_hash, *key, *value);
+    Dict::Bucket::set(*data, index, *key_hash, *key, *value);
   }
   if (!found) {
     dict->setNumItems(dict->numItems() + 1);
   }
 }
 
-void Runtime::dictionaryAtPut(const Handle<Dictionary>& dict,
-                              const Handle<Object>& key,
-                              const Handle<Object>& value) {
+void Runtime::dictAtPut(const Handle<Dict>& dict, const Handle<Object>& key,
+                        const Handle<Object>& value) {
   HandleScope scope;
   Handle<Object> key_hash(&scope, hash(*key));
-  return dictionaryAtPutWithHash(dict, key, value, key_hash);
+  return dictAtPutWithHash(dict, key, value, key_hash);
 }
 
-ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
+ObjectArray* Runtime::dictGrow(const Handle<ObjectArray>& data) {
   HandleScope scope;
-  word new_length = data->length() * kDictionaryGrowthFactor;
+  word new_length = data->length() * kDictGrowthFactor;
   if (new_length == 0) {
-    new_length = kInitialDictionaryCapacity * Dictionary::Bucket::kNumPointers;
+    new_length = kInitialDictCapacity * Dict::Bucket::kNumPointers;
   }
   Handle<ObjectArray> new_data(&scope, newObjectArray(new_length));
   // Re-insert items
-  for (word i = 0; i < data->length(); i += Dictionary::Bucket::kNumPointers) {
-    if (Dictionary::Bucket::isEmpty(*data, i) ||
-        Dictionary::Bucket::isTombstone(*data, i)) {
+  for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
+    if (Dict::Bucket::isEmpty(*data, i) ||
+        Dict::Bucket::isTombstone(*data, i)) {
       continue;
     }
-    Handle<Object> key(&scope, Dictionary::Bucket::key(*data, i));
-    Handle<Object> hash(&scope, Dictionary::Bucket::hash(*data, i));
+    Handle<Object> key(&scope, Dict::Bucket::key(*data, i));
+    Handle<Object> hash(&scope, Dict::Bucket::hash(*data, i));
     word index = -1;
-    dictionaryLookup(new_data, key, hash, &index);
+    dictLookup(new_data, key, hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
-    Dictionary::Bucket::set(*new_data, index, *hash, *key,
-                            Dictionary::Bucket::value(*data, i));
+    Dict::Bucket::set(*new_data, index, *hash, *key,
+                      Dict::Bucket::value(*data, i));
   }
   return *new_data;
 }
 
-Object* Runtime::dictionaryAtWithHash(const Handle<Dictionary>& dict,
-                                      const Handle<Object>& key,
-                                      const Handle<Object>& key_hash) {
+Object* Runtime::dictAtWithHash(const Handle<Dict>& dict,
+                                const Handle<Object>& key,
+                                const Handle<Object>& key_hash) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
-  bool found = dictionaryLookup(data, key, key_hash, &index);
+  bool found = dictLookup(data, key, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
-    return Dictionary::Bucket::value(*data, index);
+    return Dict::Bucket::value(*data, index);
   }
   return Error::object();
 }
 
-Object* Runtime::dictionaryAt(const Handle<Dictionary>& dict,
-                              const Handle<Object>& key) {
+Object* Runtime::dictAt(const Handle<Dict>& dict, const Handle<Object>& key) {
   HandleScope scope;
   Handle<Object> key_hash(&scope, hash(*key));
-  return dictionaryAtWithHash(dict, key, key_hash);
+  return dictAtWithHash(dict, key, key_hash);
 }
 
-Object* Runtime::dictionaryAtIfAbsentPut(const Handle<Dictionary>& dict,
-                                         const Handle<Object>& key,
-                                         Callback<Object*>* thunk) {
+Object* Runtime::dictAtIfAbsentPut(const Handle<Dict>& dict,
+                                   const Handle<Object>& key,
+                                   Callback<Object*>* thunk) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
   Handle<Object> key_hash(&scope, hash(*key));
-  bool found = dictionaryLookup(data, key, key_hash, &index);
+  bool found = dictLookup(data, key, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
-    return Dictionary::Bucket::value(*data, index);
+    return Dict::Bucket::value(*data, index);
   }
   Handle<Object> value(&scope, thunk->call());
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    Handle<ObjectArray> new_data(&scope, dictionaryGrow(data));
-    dictionaryLookup(new_data, key, key_hash, &index);
+    Handle<ObjectArray> new_data(&scope, dictGrow(data));
+    dictLookup(new_data, key, key_hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
     dict->setData(*new_data);
-    Dictionary::Bucket::set(*new_data, index, *key_hash, *key, *value);
+    Dict::Bucket::set(*new_data, index, *key_hash, *key, *value);
   } else {
-    Dictionary::Bucket::set(*data, index, *key_hash, *key, *value);
+    Dict::Bucket::set(*data, index, *key_hash, *key, *value);
   }
   dict->setNumItems(dict->numItems() + 1);
   return *value;
 }
 
-Object* Runtime::dictionaryAtPutInValueCell(const Handle<Dictionary>& dict,
-                                            const Handle<Object>& key,
-                                            const Handle<Object>& value) {
-  Object* result = dictionaryAtIfAbsentPut(dict, key, newValueCellCallback());
+Object* Runtime::dictAtPutInValueCell(const Handle<Dict>& dict,
+                                      const Handle<Object>& key,
+                                      const Handle<Object>& value) {
+  Object* result = dictAtIfAbsentPut(dict, key, newValueCellCallback());
   ValueCell::cast(result)->setValue(*value);
   return result;
 }
 
-bool Runtime::dictionaryIncludes(const Handle<Dictionary>& dict,
-                                 const Handle<Object>& key) {
+bool Runtime::dictIncludes(const Handle<Dict>& dict,
+                           const Handle<Object>& key) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   Handle<Object> key_hash(&scope, hash(*key));
   word ignore;
-  return dictionaryLookup(data, key, key_hash, &ignore);
+  return dictLookup(data, key, key_hash, &ignore);
 }
 
-bool Runtime::dictionaryRemove(const Handle<Dictionary>& dict,
-                               const Handle<Object>& key, Object** value) {
+bool Runtime::dictRemove(const Handle<Dict>& dict, const Handle<Object>& key,
+                         Object** value) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
   Handle<Object> key_hash(&scope, hash(*key));
-  bool found = dictionaryLookup(data, key, key_hash, &index);
+  bool found = dictLookup(data, key, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
     if (value != nullptr) {
-      *value = Dictionary::Bucket::value(*data, index);
+      *value = Dict::Bucket::value(*data, index);
     }
-    Dictionary::Bucket::setTombstone(*data, index);
+    Dict::Bucket::setTombstone(*data, index);
     dict->setNumItems(dict->numItems() - 1);
   }
   return found;
 }
 
-bool Runtime::dictionaryLookup(const Handle<ObjectArray>& data,
-                               const Handle<Object>& key,
-                               const Handle<Object>& key_hash, word* index) {
-  word start = Dictionary::Bucket::getIndex(*data, *key_hash);
+bool Runtime::dictLookup(const Handle<ObjectArray>& data,
+                         const Handle<Object>& key,
+                         const Handle<Object>& key_hash, word* index) {
+  word start = Dict::Bucket::getIndex(*data, *key_hash);
   word current = start;
   word next_free_index = -1;
 
@@ -2096,19 +2094,19 @@ bool Runtime::dictionaryLookup(const Handle<ObjectArray>& data,
   }
 
   do {
-    if (Dictionary::Bucket::hasKey(*data, current, *key)) {
+    if (Dict::Bucket::hasKey(*data, current, *key)) {
       *index = current;
       return true;
     } else if (next_free_index == -1 &&
-               Dictionary::Bucket::isTombstone(*data, current)) {
+               Dict::Bucket::isTombstone(*data, current)) {
       next_free_index = current;
-    } else if (Dictionary::Bucket::isEmpty(*data, current)) {
+    } else if (Dict::Bucket::isEmpty(*data, current)) {
       if (next_free_index == -1) {
         next_free_index = current;
       }
       break;
     }
-    current = (current + Dictionary::Bucket::kNumPointers) % length;
+    current = (current + Dict::Bucket::kNumPointers) % length;
   } while (current != start);
 
   *index = next_free_index;
@@ -2116,16 +2114,16 @@ bool Runtime::dictionaryLookup(const Handle<ObjectArray>& data,
   return false;
 }
 
-ObjectArray* Runtime::dictionaryKeys(const Handle<Dictionary>& dict) {
+ObjectArray* Runtime::dictKeys(const Handle<Dict>& dict) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   Handle<ObjectArray> keys(&scope, newObjectArray(dict->numItems()));
   word num_keys = 0;
-  for (word i = 0; i < data->length(); i += Dictionary::Bucket::kNumPointers) {
-    if (Dictionary::Bucket::isFilled(*data, i)) {
+  for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
+    if (Dict::Bucket::isFilled(*data, i)) {
       DCHECK(num_keys < keys->length(), "%ld ! < %ld", num_keys,
              keys->length());
-      keys->atPut(num_keys, Dictionary::Bucket::key(*data, i));
+      keys->atPut(num_keys, Dict::Bucket::key(*data, i));
       num_keys++;
     }
   }
@@ -2306,7 +2304,7 @@ Object* Runtime::newValueCell() { return heap()->createValueCell(); }
 Object* Runtime::newWeakRef() { return heap()->createWeakRef(); }
 
 void Runtime::collectAttributes(const Handle<Code>& code,
-                                const Handle<Dictionary>& attributes) {
+                                const Handle<Dict>& attributes) {
   HandleScope scope;
   Handle<ByteArray> bc(&scope, code->code());
   Handle<ObjectArray> names(&scope, code->names());
@@ -2329,15 +2327,15 @@ void Runtime::collectAttributes(const Handle<Code>& code,
     }
     word name_index = bc->byteAt(i + 3);
     Handle<Object> name(&scope, names->at(name_index));
-    dictionaryAtPut(attributes, name, name);
+    dictAtPut(attributes, name, name);
   }
 }
 
 Object* Runtime::classConstructor(const Handle<Type>& type) {
   HandleScope scope;
-  Handle<Dictionary> type_dict(&scope, type->dictionary());
+  Handle<Dict> type_dict(&scope, type->dict());
   Handle<Object> init(&scope, symbols()->DunderInit());
-  Object* value = dictionaryAt(type_dict, init);
+  Object* value = dictAt(type_dict, init);
   if (value->isError()) {
     return None::object();
   }
@@ -2354,7 +2352,7 @@ Object* Runtime::computeInitialLayout(Thread* thread, const Handle<Type>& klass,
                                     View<BuiltinAttribute>(nullptr, 0)));
 
   Handle<ObjectArray> mro(&scope, klass->mro());
-  Handle<Dictionary> attrs(&scope, newDictionary());
+  Handle<Dict> attrs(&scope, newDict());
 
   // Collect set of in-object attributes by scanning the __init__ method of
   // each class in the MRO
@@ -2386,8 +2384,8 @@ Object* Runtime::lookupNameInMro(Thread* thread, const Handle<Type>& type,
   Handle<ObjectArray> mro(&scope, type->mro());
   for (word i = 0; i < mro->length(); i++) {
     Handle<Type> mro_type(&scope, mro->at(i));
-    Handle<Dictionary> dict(&scope, mro_type->dictionary());
-    Handle<Object> value_cell(&scope, dictionaryAt(dict, name));
+    Handle<Dict> dict(&scope, mro_type->dict());
+    Handle<Object> value_cell(&scope, dictAt(dict, name));
     if (!value_cell->isError()) {
       return ValueCell::cast(*value_cell)->value();
     }
@@ -2570,8 +2568,8 @@ Object* Runtime::stringFormat(Thread* thread, const Handle<String>& fmt,
 }
 
 Object* Runtime::computeFastGlobals(const Handle<Code>& code,
-                                    const Handle<Dictionary>& globals,
-                                    const Handle<Dictionary>& builtins) {
+                                    const Handle<Dict>& globals,
+                                    const Handle<Dict>& builtins) {
   HandleScope scope;
   Handle<ByteArray> bytes(&scope, code->code());
   Handle<ObjectArray> names(&scope, code->names());
@@ -2588,17 +2586,17 @@ Object* Runtime::computeFastGlobals(const Handle<Code>& code,
       continue;
     }
     Handle<Object> key(&scope, names->at(arg));
-    Object* value = dictionaryAt(globals, key);
+    Object* value = dictAt(globals, key);
     if (value->isError()) {
-      value = dictionaryAt(builtins, key);
+      value = dictAt(builtins, key);
       if (value->isError()) {
         // insert a place holder to allow {STORE|DELETE}_GLOBAL
         Handle<Object> handle(&scope, value);
-        value = dictionaryAtPutInValueCell(builtins, key, handle);
+        value = dictAtPutInValueCell(builtins, key, handle);
         ValueCell::cast(value)->makeUnbound();
       }
       Handle<Object> handle(&scope, value);
-      value = dictionaryAtPutInValueCell(globals, key, handle);
+      value = dictAtPutInValueCell(globals, key, handle);
     }
     DCHECK(value->isValueCell(), "not  value cell");
     fast_globals->atPut(arg, value);
@@ -2990,8 +2988,8 @@ Object* Runtime::superGetAttr(Thread* thread, const Handle<Object>& receiver,
   }
   for (; i < mro->length(); i++) {
     Handle<Type> type(&scope, mro->at(i));
-    Handle<Dictionary> dict(&scope, type->dictionary());
-    Handle<Object> value_cell(&scope, dictionaryAt(dict, name));
+    Handle<Dict> dict(&scope, type->dict());
+    Handle<Object> value_cell(&scope, dictAt(dict, name));
     if (value_cell->isError()) {
       continue;
     }
@@ -3017,10 +3015,10 @@ Object* Runtime::newExtensionInstance(ApiHandle* handle) {
   HandleScope scope(thread);
 
   // Get type class
-  Handle<Dictionary> extensions_dict(&scope, extensionTypes());
+  Handle<Dict> extensions_dict(&scope, extensionTypes());
   Handle<Object> type_id(
       &scope, newIntegerFromCPointer(static_cast<void*>(handle->type())));
-  Handle<Type> type_class(&scope, dictionaryAt(extensions_dict, type_id));
+  Handle<Type> type_class(&scope, dictAt(extensions_dict, type_id));
 
   // Create instance
   Handle<Layout> layout(&scope, type_class->instanceLayout());
@@ -3040,11 +3038,11 @@ void Runtime::freeTrackedAllocations() {
 
   // Clear the allocated ApiHandles
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, apiHandles());
-  Handle<ObjectArray> keys(&scope, dictionaryKeys(dict));
+  Handle<Dict> dict(&scope, apiHandles());
+  Handle<ObjectArray> keys(&scope, dictKeys(dict));
   for (word i = 0; i < keys->length(); i++) {
     Handle<Object> key(&scope, keys->at(i));
-    Object* value = dictionaryAt(dict, key);
+    Object* value = dictAt(dict, key);
     delete static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
   }
 }
@@ -3056,8 +3054,8 @@ Object* Runtime::lookupSymbolInMro(Thread* thread, const Handle<Type>& type,
   Handle<Object> key(&scope, symbols()->at(symbol));
   for (word i = 0; i < mro->length(); i++) {
     Handle<Type> mro_type(&scope, mro->at(i));
-    Handle<Dictionary> dict(&scope, mro_type->dictionary());
-    Handle<Object> value_cell(&scope, dictionaryAt(dict, key));
+    Handle<Dict> dict(&scope, mro_type->dict());
+    Handle<Object> value_cell(&scope, dictAt(dict, key));
     if (!value_cell->isError()) {
       return ValueCell::cast(*value_cell)->value();
     }

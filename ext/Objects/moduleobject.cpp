@@ -67,7 +67,7 @@ extern "C" PyObject* PyModule_GetDict(PyObject* pymodule) {
   HandleScope scope(thread);
 
   Handle<Module> module(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  return ApiHandle::fromObject(module->dictionary())->asPyObject();
+  return ApiHandle::fromObject(module->dict())->asPyObject();
 }
 
 }  // namespace python

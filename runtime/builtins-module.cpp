@@ -40,14 +40,14 @@ Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
     bases->atPut(i, args.get(j));
   }
 
-  Handle<Dictionary> dictionary(&scope, runtime->newDictionary());
+  Handle<Dict> dict(&scope, runtime->newDict());
   Handle<Object> key(&scope, runtime->symbols()->DunderName());
-  runtime->dictionaryAtPutInValueCell(dictionary, key, name);
+  runtime->dictAtPutInValueCell(dict, key, name);
   // TODO: might need to do some kind of callback here and we want backtraces to
   // work correctly.  The key to doing that would be to put some state on the
   // stack in between the the incoming arguments from the builtin' caller and
   // the on-stack state for the class body function call.
-  thread->runClassFunction(*body, *dictionary);
+  thread->runClassFunction(*body, *dict);
 
   Handle<Type> type(&scope, runtime->typeAt(LayoutId::kType));
   Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
@@ -57,7 +57,7 @@ Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   frame->pushValue(*type);
   frame->pushValue(*name);
   frame->pushValue(*bases);
-  frame->pushValue(*dictionary);
+  frame->pushValue(*dict);
   return Interpreter::call(thread, frame, 4);
 }
 
@@ -89,14 +89,14 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
     bases->atPut(i, args.get(j));
   }
 
-  Handle<Dictionary> dictionary(&scope, runtime->newDictionary());
+  Handle<Dict> dict(&scope, runtime->newDict());
   Handle<Object> key(&scope, runtime->symbols()->DunderName());
-  runtime->dictionaryAtPutInValueCell(dictionary, key, name);
+  runtime->dictAtPutInValueCell(dict, key, name);
   // TODO(zekun): might need to do some kind of callback here and we want
   // backtraces to work correctly.  The key to doing that would be to put some
   // state on the stack in between the the incoming arguments from the builtin'
   // caller and the on-stack state for the class body function call.
-  thread->runClassFunction(*body, *dictionary);
+  thread->runClassFunction(*body, *dict);
 
   Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
   Handle<Function> dunder_call(
@@ -105,7 +105,7 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   frame->pushValue(*metaclass);
   frame->pushValue(*name);
   frame->pushValue(*bases);
-  frame->pushValue(*dictionary);
+  frame->pushValue(*dict);
   return Interpreter::call(thread, frame, 4);
 }
 
@@ -255,16 +255,16 @@ static Object* doBuiltinPrint(const Arguments& args, word nargs,
         }
       }
       *ostream << ")";
-    } else if (arg->isDictionary()) {
+    } else if (arg->isDict()) {
       *ostream << "{";
       HandleScope scope;
-      Handle<Dictionary> dict(&scope, arg);
+      Handle<Dict> dict(&scope, arg);
       Handle<ObjectArray> data(&scope, dict->data());
       word items = dict->numItems();
       for (word i = 0; i < data->length(); i += 3) {
         if (!data->at(i)->isNone()) {
-          Handle<Object> key(&scope, Dictionary::Bucket::key(*data, i));
-          Handle<Object> value(&scope, Dictionary::Bucket::value(*data, i));
+          Handle<Object> key(&scope, Dict::Bucket::key(*data, i));
+          Handle<Object> value(&scope, Dict::Bucket::value(*data, i));
           if (key->isString()) {
             printQuotedString(String::cast(*key));
           } else if (supportedScalarType(*key)) {

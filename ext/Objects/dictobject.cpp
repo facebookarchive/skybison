@@ -32,14 +32,14 @@ extern "C" int PyDict_SetItem(PyObject* pydict, PyObject* key,
   HandleScope scope(thread);
 
   Handle<Object> dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
-  if (!dictobj->isDictionary()) {
+  if (!dictobj->isDict()) {
     return -1;
   }
 
   Handle<Object> keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Handle<Object> valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Handle<Dictionary> dict(&scope, *dictobj);
-  runtime->dictionaryAtPutInValueCell(dict, keyobj, valueobj);
+  Handle<Dict> dict(&scope, *dictobj);
+  runtime->dictAtPutInValueCell(dict, keyobj, valueobj);
   // TODO(eelizondo): increment the reference count through ApiHandle
   key->ob_refcnt++;
   value->ob_refcnt++;
@@ -62,7 +62,7 @@ extern "C" PyObject* PyDict_New() {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> value(&scope, runtime->newDictionary());
+  Handle<Object> value(&scope, runtime->newDict());
   return ApiHandle::fromObject(*value)->asPyObject();
 }
 
@@ -72,12 +72,12 @@ extern "C" PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
   HandleScope scope(thread);
 
   Handle<Object> dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
-  if (!dictobj->isDictionary()) {
+  if (!dictobj->isDict()) {
     return nullptr;
   }
-  Handle<Dictionary> dict(&scope, *dictobj);
+  Handle<Dict> dict(&scope, *dictobj);
   Handle<Object> key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
-  Object* value = runtime->dictionaryAt(dict, key_obj);
+  Object* value = runtime->dictAt(dict, key_obj);
   if (value->isError()) {
     return nullptr;
   }

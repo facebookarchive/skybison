@@ -7,8 +7,8 @@
 
 namespace python {
 
-Object* builtinDictionaryEq(Thread* thread, Frame* frame, word nargs);
-Object* builtinDictionaryGetItem(Thread* thread, Frame* frame, word nargs);
-Object* builtinDictionaryLen(Thread* thread, Frame* frame, word nargs);
+Object* builtinDictEq(Thread* thread, Frame* frame, word nargs);
+Object* builtinDictGetItem(Thread* thread, Frame* frame, word nargs);
+Object* builtinDictLen(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

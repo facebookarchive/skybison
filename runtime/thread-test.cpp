@@ -498,12 +498,12 @@ TEST(ThreadTest, LoadGlobal) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
 
-  Handle<Dictionary> globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
   Handle<ValueCell> value_cell(&scope, runtime.newValueCell());
   value_cell->setValue(SmallInteger::fromWord(1234));
   Handle<Object> value(&scope, *value_cell);
-  runtime.dictionaryAtPut(globals, key, value);
+  runtime.dictAtPut(globals, key, value);
   frame->setGlobals(*globals);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
@@ -643,14 +643,14 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
 
-  Handle<Dictionary> globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
   frame->setGlobals(*globals);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> value(&scope, runtime.dictionaryAt(globals, key));
+  Handle<Object> value(&scope, runtime.dictAt(globals, key));
   ASSERT_TRUE(value->isValueCell());
   EXPECT_EQ(*result, ValueCell::cast(*value)->value());
 }
@@ -680,16 +680,16 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   Handle<ValueCell> value_cell1(&scope, runtime.newValueCell());
   value_cell1->setValue(SmallInteger::fromWord(99));
 
-  Handle<Dictionary> globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
   Handle<Object> value(&scope, *value_cell1);
-  runtime.dictionaryAtPut(globals, key, value);
+  runtime.dictAtPut(globals, key, value);
   frame->setGlobals(*globals);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> value_cell2(&scope, runtime.dictionaryAt(globals, key));
+  Handle<Object> value_cell2(&scope, runtime.dictAt(globals, key));
   ASSERT_TRUE(value_cell2->isValueCell());
   EXPECT_EQ(*value_cell2, *value_cell1);
   EXPECT_EQ(SmallInteger::fromWord(42), value_cell1->value());
@@ -717,15 +717,15 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
 
-  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> implicit_globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
   frame->setImplicitGlobals(*implicit_globals);
   frame->setFastGlobals(
       runtime.computeFastGlobals(code, implicit_globals, builtins));
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> value(&scope, runtime.dictionaryAt(implicit_globals, key));
+  Handle<Object> value(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(value->isValueCell());
   EXPECT_EQ(*result, ValueCell::cast(*value)->value());
 }
@@ -744,10 +744,10 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
-  Handle<Dictionary> globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
   Handle<Object> builtins_value(&scope, runtime.newInteger(123));
-  runtime.dictionaryAtPutInValueCell(builtins, key, builtins_value);
+  runtime.dictAtPutInValueCell(builtins, key, builtins_value);
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -759,7 +759,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> value_cell(&scope, runtime.dictionaryAt(builtins, key));
+  Handle<Object> value_cell(&scope, runtime.dictAt(builtins, key));
   ASSERT_TRUE(value_cell->isValueCell());
   EXPECT_EQ(*builtins_value, ValueCell::cast(*value_cell)->value());
 }
@@ -783,8 +783,8 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
                            LOAD_NAME,  0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
-  Handle<Dictionary> globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -795,8 +795,8 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> val0(
-      &scope, runtime.dictionaryAt(globals, key));  // 2-level indirection
+  Handle<Object> val0(&scope,
+                      runtime.dictAt(globals, key));  // 2-level indirection
   ASSERT_TRUE(val0->isValueCell());
   Handle<Object> val1(&scope, ValueCell::cast(*val0));
   ASSERT_TRUE(val1->isValueCell());
@@ -822,8 +822,8 @@ TEST(ThreadTest, LoadNameInClassBodyFromGlobal) {
                            LOAD_NAME,  0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
-  Handle<Dictionary> globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -831,13 +831,13 @@ TEST(ThreadTest, LoadNameInClassBodyFromGlobal) {
   frame->setGlobals(*globals);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
-  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
+  Handle<Dict> implicit_globals(&scope, runtime.newDict());
   frame->setImplicitGlobals(*implicit_globals);  // simulate cls body
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> val0(
-      &scope, runtime.dictionaryAt(globals, key));  // 2-level indirection
+  Handle<Object> val0(&scope,
+                      runtime.dictAt(globals, key));  // 2-level indirection
   ASSERT_TRUE(val0->isValueCell());
   Handle<Object> val1(&scope, ValueCell::cast(*val0));
   ASSERT_TRUE(val1->isValueCell());
@@ -863,8 +863,8 @@ TEST(ThreadTest, LoadNameInClassBodyFromImplicitGlobals) {
                            LOAD_NAME,  0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
-  Handle<Dictionary> globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -872,12 +872,12 @@ TEST(ThreadTest, LoadNameInClassBodyFromImplicitGlobals) {
   frame->setGlobals(*globals);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
-  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
+  Handle<Dict> implicit_globals(&scope, runtime.newDict());
   frame->setImplicitGlobals(*implicit_globals);  // simulate cls body
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> val(&scope, runtime.dictionaryAt(implicit_globals, key));
+  Handle<Object> val(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(val->isValueCell());  // 1-level indirection
   EXPECT_EQ(*result, ValueCell::cast(*val)->value());
 }
@@ -909,16 +909,16 @@ TEST(ThreadTest, MakeFunction) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*module);
 
-  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> implicit_globals(&scope, runtime.newDict());
+  Handle<Dict> globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
   frame->setGlobals(*globals);
   frame->setBuiltins(*builtins);
   frame->setImplicitGlobals(*implicit_globals);
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> value(&scope, runtime.dictionaryAt(implicit_globals, key));
+  Handle<Object> value(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(value->isValueCell());
   ASSERT_TRUE(ValueCell::cast(*value)->value()->isFunction());
 
@@ -1230,13 +1230,13 @@ TEST(ThreadTest, UnaryNot) {
   EXPECT_TRUE(Boolean::cast(result)->value());
 }
 
-static Dictionary* getMainModuleDict(Runtime* runtime) {
+static Dict* getMainModuleDict(Runtime* runtime) {
   HandleScope scope;
   Handle<Module> mod(&scope, findModule(runtime, "__main__"));
   EXPECT_TRUE(mod->isModule());
 
-  Handle<Dictionary> dict(&scope, mod->dictionary());
-  EXPECT_TRUE(dict->isDictionary());
+  Handle<Dict> dict(&scope, mod->dict());
+  EXPECT_TRUE(dict->isDict());
   return *dict;
 }
 
@@ -1252,10 +1252,10 @@ class C:
   Object* result = runtime.runFromCString(src);
   ASSERT_EQ(result, None::object());  // returns None
 
-  Handle<Dictionary> dict(&scope, getMainModuleDict(&runtime));
+  Handle<Dict> dict(&scope, getMainModuleDict(&runtime));
 
   Handle<Object> key(&scope, runtime.newStringFromCString("C"));
-  Handle<Object> value(&scope, runtime.dictionaryAt(dict, key));
+  Handle<Object> value(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(value->isValueCell());
 
   Handle<Type> cls(&scope, ValueCell::cast(*value)->value());
@@ -1284,12 +1284,12 @@ class C:
   Handle<Module> mod(&scope, findModule(&runtime, "__main__"));
   ASSERT_TRUE(mod->isModule());
 
-  Handle<Dictionary> mod_dict(&scope, mod->dictionary());
-  ASSERT_TRUE(mod_dict->isDictionary());
+  Handle<Dict> mod_dict(&scope, mod->dict());
+  ASSERT_TRUE(mod_dict->isDict());
 
-  // Check for the class name in the module dictionary
+  // Check for the class name in the module dict
   Handle<Object> cls_name(&scope, runtime.newStringFromCString("C"));
-  Handle<Object> value(&scope, runtime.dictionaryAt(mod_dict, cls_name));
+  Handle<Object> value(&scope, runtime.dictAt(mod_dict, cls_name));
   ASSERT_TRUE(value->isValueCell());
   Handle<Type> cls(&scope, ValueCell::cast(*value)->value());
 
@@ -1303,13 +1303,13 @@ class C:
   ASSERT_TRUE(cls->name()->isSmallString());
   EXPECT_EQ(cls->name(), SmallString::fromCString("C"));
 
-  Handle<Dictionary> cls_dict(&scope, cls->dictionary());
-  ASSERT_TRUE(cls_dict->isDictionary());
+  Handle<Dict> cls_dict(&scope, cls->dict());
+  ASSERT_TRUE(cls_dict->isDict());
 
-  // Check for the __init__ method name in the dictionary
+  // Check for the __init__ method name in the dict
   Handle<Object> meth_name(&scope, runtime.symbols()->DunderInit());
-  ASSERT_TRUE(runtime.dictionaryIncludes(cls_dict, meth_name));
-  value = runtime.dictionaryAt(cls_dict, meth_name);
+  ASSERT_TRUE(runtime.dictIncludes(cls_dict, meth_name));
+  value = runtime.dictAt(cls_dict, meth_name);
   ASSERT_TRUE(value->isValueCell());
   ASSERT_TRUE(ValueCell::cast(*value)->value()->isFunction());
 }
@@ -1359,11 +1359,11 @@ static Object* getMro(Runtime* runtime, const char* src,
 
   Handle<Object> result(&scope, runtime->runFromCString(src));
 
-  Handle<Dictionary> mod_dict(&scope, getMainModuleDict(runtime));
+  Handle<Dict> mod_dict(&scope, getMainModuleDict(runtime));
   Handle<Object> class_name(&scope,
                             runtime->newStringFromCString(desired_class));
 
-  Handle<Object> value(&scope, runtime->dictionaryAt(mod_dict, class_name));
+  Handle<Object> value(&scope, runtime->dictAt(mod_dict, class_name));
   Handle<Type> cls(&scope, ValueCell::cast(*value)->value());
 
   return cls->mro();
@@ -1713,7 +1713,7 @@ TEST(ThreadDeathTest, SubscriptDict) {
   const char* src = R"(
 a = {"1": 2, 2: 3}
 print(a["1"])
-# exceeds kInitialDictionaryCapacity
+# exceeds kInitialDictCapacity
 b = { 0:0, 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11 }
 print(b[11])
 )";
@@ -1732,7 +1732,7 @@ TEST(ThreadTest, BuildDictNonLiteralKey) {
   const char* src = R"(
 b = "foo"
 a = { b: 3, 'c': 4 }
-# we need one dictionary that exceeds kInitialDictionaryCapacity
+# we need one dict that exceeds kInitialDictCapacity
 c = { b: 1, 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11 }
 print(a["foo"])
 print(a["c"])
@@ -2085,8 +2085,8 @@ b = {x:x for x in a}
   runtime.runFromCString(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
-  EXPECT_EQ(b->isDictionary(), true);
-  Handle<Dictionary> dict_b(&scope, *b);
+  EXPECT_EQ(b->isDict(), true);
+  Handle<Dict> dict_b(&scope, *b);
   EXPECT_EQ(dict_b->numItems(), 3);
 }
 
@@ -2369,15 +2369,15 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
 
-  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> implicit_globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
 
   frame->setImplicitGlobals(*implicit_globals);
   frame->setFastGlobals(
       runtime.computeFastGlobals(code, implicit_globals, builtins));
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
-  Handle<Object> value(&scope, runtime.dictionaryAt(implicit_globals, key));
+  Handle<Object> value(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(value->isValueCell());
   Object* value_obj = ValueCell::cast(*value)->value();
   EXPECT_TRUE(value_obj->isSmallInteger());
@@ -2490,8 +2490,8 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
 
-  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
-  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Dict> implicit_globals(&scope, runtime.newDict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
 
   frame->setImplicitGlobals(*implicit_globals);
   frame->setFastGlobals(
@@ -2682,8 +2682,8 @@ TEST(ThreadTest, BuildClassWithMetaClass2) {
   HandleScope scope;
   const char* src = R"(
 class Foo(type):
-  def __new__(mcls, name, bases, dictionary):
-    cls = super(Foo, mcls).__new__(mcls, name, bases, dictionary)
+  def __new__(mcls, name, bases, dict):
+    cls = super(Foo, mcls).__new__(mcls, name, bases, dict)
     cls.lalala = 123
     return cls
 class Bar(metaclass=Foo):

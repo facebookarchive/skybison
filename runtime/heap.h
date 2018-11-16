@@ -32,7 +32,7 @@ class Heap {
 
   Object* createComplex(double real, double imag);
 
-  Object* createDictionary();
+  Object* createDict();
 
   Object* createFloat(double value);
 

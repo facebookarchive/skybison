@@ -24,9 +24,9 @@ weak = ref(a)
   EXPECT_EQ(WeakRef::cast(weak)->referent(), a);
   EXPECT_EQ(WeakRef::cast(weak)->callback(), None::object());
 
-  Handle<Dictionary> globals(&scope, main->dictionary());
+  Handle<Dict> globals(&scope, main->dict());
   Handle<Object> key(&scope, runtime.newStringFromCString("a"));
-  runtime.dictionaryRemove(globals, key, &a);
+  runtime.dictRemove(globals, key, &a);
 
   runtime.collectGarbage();
   weak = moduleAt(&runtime, main, "weak");
@@ -54,9 +54,9 @@ weak = ref(a, f)
   EXPECT_EQ(WeakRef::cast(weak)->referent(), a);
   EXPECT_EQ(SmallInteger::cast(b)->value(), 1);
 
-  Handle<Dictionary> globals(&scope, main->dictionary());
+  Handle<Dict> globals(&scope, main->dict());
   Handle<Object> key(&scope, runtime.newStringFromCString("a"));
-  runtime.dictionaryRemove(globals, key, &a);
+  runtime.dictRemove(globals, key, &a);
 
   runtime.collectGarbage();
   weak = moduleAt(&runtime, main, "weak");

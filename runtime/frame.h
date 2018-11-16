@@ -159,15 +159,15 @@ class Frame {
   word virtualPC();
   void setVirtualPC(word pc);
 
-  // The builtins namespace (a Dictionary)
+  // The builtins namespace (a Dict)
   Object* builtins();
   void setBuiltins(Object* builtins);
 
-  // The (explicit) globals namespace (a Dictionary)
+  // The (explicit) globals namespace (a Dict)
   Object* globals();
   void setGlobals(Object* globals);
 
-  // The implicit globals namespace (a Dictionary)
+  // The implicit globals namespace (a Dict)
   Object* implicitGlobals();
   void setImplicitGlobals(Object* implicit_globals);
 

@@ -9,29 +9,29 @@
 
 namespace python {
 
-Object* builtinDictionaryEq(Thread* thread, Frame* frame, word nargs) {
+Object* builtinDictEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  if (args.get(0)->isDictionary() && args.get(1)->isDictionary()) {
+  if (args.get(0)->isDict() && args.get(1)->isDict()) {
     HandleScope scope(thread);
     Runtime* runtime = thread->runtime();
 
-    Handle<Dictionary> self(&scope, args.get(0));
-    Handle<Dictionary> other(&scope, args.get(1));
+    Handle<Dict> self(&scope, args.get(0));
+    Handle<Dict> other(&scope, args.get(1));
     if (self->numItems() != other->numItems()) {
       return Boolean::falseObj();
     }
-    Handle<ObjectArray> keys(&scope, runtime->dictionaryKeys(self));
+    Handle<ObjectArray> keys(&scope, runtime->dictKeys(self));
     Handle<Object> left_key(&scope, None::object());
     Handle<Object> left(&scope, None::object());
     Handle<Object> right(&scope, None::object());
     word length = keys->length();
     for (word i = 0; i < length; i++) {
       left_key = keys->at(i);
-      left = runtime->dictionaryAt(self, left_key);
-      right = runtime->dictionaryAt(other, left_key);
+      left = runtime->dictAt(self, left_key);
+      right = runtime->dictAt(other, left_key);
       if (right->isError()) {
         return Boolean::falseObj();
       }
@@ -43,26 +43,26 @@ Object* builtinDictionaryEq(Thread* thread, Frame* frame, word nargs) {
     }
     return Boolean::trueObj();
   }
-  // TODO(cshapiro): handle user-defined subtypes of dictionary.
+  // TODO(cshapiro): handle user-defined subtypes of dict.
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDictionaryLen(Thread* thread, Frame* frame, word nargs) {
+Object* builtinDictLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("__len__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
-  if (self->isDictionary()) {
-    return SmallInteger::fromWord(Dictionary::cast(*self)->numItems());
+  if (self->isDict()) {
+    return SmallInteger::fromWord(Dict::cast(*self)->numItems());
   }
-  // TODO(cshapiro): handle user-defined subtypes of dictionary.
+  // TODO(cshapiro): handle user-defined subtypes of dict.
   return thread->throwTypeErrorFromCString(
       "'__len__' requires a 'dict' object");
 }
 
-Object* builtinDictionaryGetItem(Thread* thread, Frame* frame, word nargs) {
+Object* builtinDictGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -70,21 +70,21 @@ Object* builtinDictionaryGetItem(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> key(&scope, args.get(1));
-  if (self->isDictionary()) {
-    Handle<Dictionary> dict(&scope, *self);
+  if (self->isDict()) {
+    Handle<Dict> dict(&scope, *self);
     Handle<Object> dunder_hash(
         &scope,
         Interpreter::lookupMethod(thread, frame, key, SymbolId::kDunderHash));
     Handle<Object> key_hash(
         &scope, Interpreter::callMethod1(thread, frame, dunder_hash, key));
     Handle<Object> value(
-        &scope, thread->runtime()->dictionaryAtWithHash(dict, key, key_hash));
+        &scope, thread->runtime()->dictAtWithHash(dict, key, key_hash));
     if (value->isError()) {
       return thread->throwKeyErrorFromCString("KeyError");
     }
     return *value;
   }
-  // TODO(jeethu): handle user-defined subtypes of dictionary.
+  // TODO(jeethu): handle user-defined subtypes of dict.
   return thread->throwTypeErrorFromCString(
       "__getitem__() must be called with a dict instance as the first "
       "argument");

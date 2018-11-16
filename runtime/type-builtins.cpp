@@ -69,16 +69,15 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   }
   result->setMro(*maybe_mro);
 
-  Handle<Dictionary> dictionary(&scope, args.get(3));
+  Handle<Dict> dict(&scope, args.get(3));
   Handle<Object> class_cell_key(&scope, runtime->symbols()->DunderClassCell());
-  Handle<Object> class_cell(&scope,
-                            runtime->dictionaryAt(dictionary, class_cell_key));
+  Handle<Object> class_cell(&scope, runtime->dictAt(dict, class_cell_key));
   if (!class_cell->isError()) {
     ValueCell::cast(ValueCell::cast(*class_cell)->value())->setValue(*result);
     Object* tmp;
-    runtime->dictionaryRemove(dictionary, class_cell_key, &tmp);
+    runtime->dictRemove(dict, class_cell_key, &tmp);
   }
-  result->setDictionary(*dictionary);
+  result->setDict(*dict);
 
   // Compute builtin base class
   LayoutId base_layout_id = runtime->computeBuiltinBaseClass(result);

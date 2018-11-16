@@ -19,7 +19,7 @@ namespace python {
   V(ByteArray)                                                                 \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
-  V(Dictionary)                                                                \
+  V(Dict)                                                                      \
   V(Float)                                                                     \
   V(Ellipsis)                                                                  \
   V(Exception)                                                                 \
@@ -83,7 +83,7 @@ enum class LayoutId : word {
   kClassMethod,
   kCode,
   kComplex,
-  kDictionary,
+  kDict,
   kFloat,
   kEllipsis,
   kException,
@@ -136,7 +136,7 @@ class Object {
   bool isClassMethod();
   bool isCode();
   bool isComplex();
-  bool isDictionary();
+  bool isDict();
   bool isFloat();
   bool isEllipsis();
   bool isException();
@@ -613,8 +613,8 @@ class Type : public HeapObject {
   void setFlag(Flag flag);
   bool hasFlag(Flag flag);
 
-  Object* dictionary();
-  void setDictionary(Object* name);
+  Object* dict();
+  void setDict(Object* name);
 
   // Integer holding a pointer to a PyTypeObject
   // Only set on classes that were initialized through PyType_Ready
@@ -638,8 +638,8 @@ class Type : public HeapObject {
   static const int kInstanceLayoutOffset = kMroOffset + kPointerSize;
   static const int kNameOffset = kInstanceLayoutOffset + kPointerSize;
   static const int kFlagsOffset = kNameOffset + kPointerSize;
-  static const int kDictionaryOffset = kFlagsOffset + kPointerSize;
-  static const int kBuiltinBaseClassOffset = kDictionaryOffset + kPointerSize;
+  static const int kDictOffset = kFlagsOffset + kPointerSize;
+  static const int kBuiltinBaseClassOffset = kDictOffset + kPointerSize;
   static const int kExtensionTypeOffset =
       kBuiltinBaseClassOffset + kPointerSize;
   static const int kSize = kExtensionTypeOffset + kPointerSize;
@@ -1100,7 +1100,7 @@ class Function : public HeapObject {
 
   // Getters and setters.
 
-  // A dictionary containing parameter annotations
+  // A dict containing parameter annotations
   Object* annotations();
   void setAnnotations(Object* annotations);
 
@@ -1138,12 +1138,12 @@ class Function : public HeapObject {
   inline Entry entryEx();
   inline void setEntryEx(Entry entry_ex);
 
-  // The dictionary that holds this function's global namespace. User-code
+  // The dict that holds this function's global namespace. User-code
   // cannot change this
   Object* globals();
   void setGlobals(Object* globals);
 
-  // A dictionary containing defaults for keyword-only parameters
+  // A dict containing defaults for keyword-only parameters
   Object* kwDefaults();
   void setKwDefaults(Object* kw_defaults);
 
@@ -1209,8 +1209,8 @@ class Module : public HeapObject {
   Object* name();
   void setName(Object* name);
 
-  Object* dictionary();
-  void setDictionary(Object* dictionary);
+  Object* dict();
+  void setDict(Object* dict);
 
   // Contains the numeric address of mode definition object for C-API modules or
   // zero if the module was not defined through the C-API.
@@ -1225,8 +1225,8 @@ class Module : public HeapObject {
 
   // Layout.
   static const int kNameOffset = HeapObject::kSize;
-  static const int kDictionaryOffset = kNameOffset + kPointerSize;
-  static const int kDefOffset = kDictionaryOffset + kPointerSize;
+  static const int kDictOffset = kNameOffset + kPointerSize;
+  static const int kDefOffset = kDictOffset + kPointerSize;
   static const int kSize = kDefOffset + kPointerSize;
 
  private:
@@ -1252,32 +1252,32 @@ class NotImplemented : public HeapObject {
 };
 
 /**
- * A simple dictionary that uses open addressing and linear probing.
+ * A simple dict that uses open addressing and linear probing.
  *
  * Layout:
  *
  *   [Type pointer]
- *   [NumItems     ] - Number of items currently in the dictionary
+ *   [NumItems     ] - Number of items currently in the dict
  *   [Items        ] - Pointer to an ObjectArray that stores the underlying
  * data.
  *
- * Dictionary entries are stored in buckets as a triple of (hash, key, value).
+ * Dict entries are stored in buckets as a triple of (hash, key, value).
  * Empty buckets are stored as (None, None, None).
  * Tombstone buckets are stored as (None, <not None>, <Any>).
  *
  */
-class Dictionary : public HeapObject {
+class Dict : public HeapObject {
  public:
   class Bucket;
 
   // Getters and setters.
-  static Dictionary* cast(Object* object);
+  static Dict* cast(Object* object);
 
-  // The ObjectArray backing the dictionary
+  // The ObjectArray backing the dict
   Object* data();
   void setData(Object* data);
 
-  // Number of items currently in the dictionary
+  // Number of items currently in the dict
   word numItems();
   void setNumItems(word num_items);
 
@@ -1290,12 +1290,12 @@ class Dictionary : public HeapObject {
   static const int kSize = kDataOffset + kPointerSize;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Dictionary);
+  DISALLOW_COPY_AND_ASSIGN(Dict);
 };
 
 // Helper class for manipulating buckets in the ObjectArray that backs the
-// dictionary
-class Dictionary::Bucket {
+// dict
+class Dict::Bucket {
  public:
   // none of these operations do bounds checking on the backing array
   static word getIndex(ObjectArray* data, Object* hash) {
@@ -1927,11 +1927,11 @@ inline bool Object::isInstance() {
          LayoutId::kLastBuiltinId;
 }
 
-inline bool Object::isDictionary() {
+inline bool Object::isDict() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kDictionary;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kDict;
 }
 
 inline bool Object::isFloat() {
@@ -2579,12 +2579,10 @@ inline bool Type::hasFlag(Type::Flag bit) {
   return (f & bit) != 0;
 }
 
-inline Object* Type::dictionary() {
-  return instanceVariableAt(kDictionaryOffset);
-}
+inline Object* Type::dict() { return instanceVariableAt(kDictOffset); }
 
-inline void Type::setDictionary(Object* dictionary) {
-  instanceVariableAtPut(kDictionaryOffset, dictionary);
+inline void Type::setDict(Object* dict) {
+  instanceVariableAtPut(kDictOffset, dict);
 }
 
 inline Object* Type::builtinBaseClass() {
@@ -3124,28 +3122,26 @@ inline word StaticMethod::allocationSize() {
   return Header::kSize + StaticMethod::kSize;
 }
 
-// Dictionary
+// Dict
 
-inline word Dictionary::allocationSize() {
-  return Header::kSize + Dictionary::kSize;
+inline word Dict::allocationSize() { return Header::kSize + Dict::kSize; }
+
+inline Dict* Dict::cast(Object* object) {
+  DCHECK(object->isDict(), "invalid cast, expected dict");
+  return reinterpret_cast<Dict*>(object);
 }
 
-inline Dictionary* Dictionary::cast(Object* object) {
-  DCHECK(object->isDictionary(), "invalid cast, expected dictionary");
-  return reinterpret_cast<Dictionary*>(object);
-}
-
-inline word Dictionary::numItems() {
+inline word Dict::numItems() {
   return SmallInteger::cast(instanceVariableAt(kNumItemsOffset))->value();
 }
 
-inline void Dictionary::setNumItems(word num_items) {
+inline void Dict::setNumItems(word num_items) {
   instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(num_items));
 }
 
-inline Object* Dictionary::data() { return instanceVariableAt(kDataOffset); }
+inline Object* Dict::data() { return instanceVariableAt(kDataOffset); }
 
-inline void Dictionary::setData(Object* data) {
+inline void Dict::setData(Object* data) {
   instanceVariableAtPut(kDataOffset, data);
 }
 
@@ -3332,18 +3328,16 @@ inline void Module::setName(Object* name) {
   instanceVariableAtPut(kNameOffset, name);
 }
 
-inline Object* Module::dictionary() {
-  return instanceVariableAt(kDictionaryOffset);
-}
+inline Object* Module::dict() { return instanceVariableAt(kDictOffset); }
 
-inline void Module::setDictionary(Object* dictionary) {
-  instanceVariableAtPut(kDictionaryOffset, dictionary);
+inline void Module::setDict(Object* dict) {
+  instanceVariableAtPut(kDictOffset, dict);
 }
 
 inline Object* Module::def() { return instanceVariableAt(kDefOffset); }
 
-inline void Module::setDef(Object* dictionary) {
-  instanceVariableAtPut(kDefOffset, dictionary);
+inline void Module::setDef(Object* dict) {
+  instanceVariableAtPut(kDefOffset, dict);
 }
 
 // NotImplemented

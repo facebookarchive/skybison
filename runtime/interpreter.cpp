@@ -916,26 +916,26 @@ void Interpreter::doEndFinally(Context* ctx, word) {
 void Interpreter::doStoreName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  DCHECK(frame->implicitGlobals()->isDictionary(), "expected dictionary");
+  DCHECK(frame->implicitGlobals()->isDict(), "expected dict");
   HandleScope scope;
-  Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
+  Handle<Dict> implicit_globals(&scope, frame->implicitGlobals());
   Object* names = Code::cast(frame->code())->names();
   Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
   Handle<Object> value(&scope, frame->popValue());
-  thread->runtime()->dictionaryAtPutInValueCell(implicit_globals, key, value);
+  thread->runtime()->dictAtPutInValueCell(implicit_globals, key, value);
 }
 
 // opcode 91
 void Interpreter::doDeleteName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  DCHECK(frame->implicitGlobals()->isDictionary(), "expected dictionary");
+  DCHECK(frame->implicitGlobals()->isDict(), "expected dict");
   HandleScope scope;
-  Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
+  Handle<Dict> implicit_globals(&scope, frame->implicitGlobals());
   Object* names = Code::cast(frame->code())->names();
   Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
   Object* value;
-  if (!thread->runtime()->dictionaryRemove(implicit_globals, key, &value)) {
+  if (!thread->runtime()->dictRemove(implicit_globals, key, &value)) {
     UNIMPLEMENTED("item not found in delete name");
   }
 }
@@ -1032,12 +1032,12 @@ void Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   CHECK(!value_cell->value()->isValueCell(), "Unbound Globals");
   Handle<Object> key(
       &scope, ObjectArray::cast(Code::cast(frame->code())->names())->at(arg));
-  Handle<Dictionary> builtins(&scope, frame->builtins());
+  Handle<Dict> builtins(&scope, frame->builtins());
   Runtime* runtime = thread->runtime();
-  Handle<Object> value_in_builtin(&scope, runtime->dictionaryAt(builtins, key));
+  Handle<Object> value_in_builtin(&scope, runtime->dictAt(builtins, key));
   if (value_in_builtin->isError()) {
     value_in_builtin =
-        runtime->dictionaryAtPutInValueCell(builtins, key, value_in_builtin);
+        runtime->dictAtPutInValueCell(builtins, key, value_in_builtin);
     ValueCell::cast(*value_in_builtin)->makeUnbound();
   }
   value_cell->setValue(*value_in_builtin);
@@ -1059,8 +1059,8 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
   Handle<Object> key(&scope, ObjectArray::cast(*names)->at(arg));
 
   // 1. implicitGlobals
-  Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
-  Object* value = runtime->dictionaryAt(implicit_globals, key);
+  Handle<Dict> implicit_globals(&scope, frame->implicitGlobals());
+  Object* value = runtime->dictAt(implicit_globals, key);
   if (value->isValueCell()) {
     // 3a. found in [implicit]/globals but with up to 2-layers of indirection
     DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound globals");
@@ -1074,11 +1074,11 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
   }
 
   // In the module body, globals == implicit_globals, so no need to check twice.
-  // However in class body, it is a different dictionary.
+  // However in class body, it is a different dict.
   if (frame->implicitGlobals() != frame->globals()) {
     // 2. globals
-    Handle<Dictionary> globals(&scope, frame->globals());
-    value = runtime->dictionaryAt(globals, key);
+    Handle<Dict> globals(&scope, frame->globals());
+    value = runtime->dictAt(globals, key);
   }
   if (value->isValueCell()) {
     // 3a. found in [implicit]/globals but with up to 2-layers of indirection
@@ -1093,8 +1093,8 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
   }
 
   // 3b. not found; check builtins -- one layer of indirection
-  Handle<Dictionary> builtins(&scope, frame->builtins());
-  value = runtime->dictionaryAt(builtins, key);
+  Handle<Dict> builtins(&scope, frame->builtins());
+  value = runtime->dictAt(builtins, key);
   if (value->isValueCell()) {
     DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound builtins");
     value = ValueCell::cast(value)->value();
@@ -1148,11 +1148,11 @@ void Interpreter::doBuildMap(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime->newDictionary(arg));
+  Handle<Dict> dict(&scope, runtime->newDict(arg));
   for (word i = 0; i < arg; i++) {
     Handle<Object> value(&scope, ctx->frame->popValue());
     Handle<Object> key(&scope, ctx->frame->popValue());
-    runtime->dictionaryAtPut(dict, key, value);
+    runtime->dictAtPut(dict, key, value);
   }
   ctx->frame->pushValue(*dict);
 }
@@ -1349,8 +1349,8 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   function->setName(frame->popValue());
   function->setCode(frame->popValue());
   function->setGlobals(frame->globals());
-  Handle<Dictionary> globals(&scope, frame->globals());
-  Handle<Dictionary> builtins(&scope, frame->builtins());
+  Handle<Dict> globals(&scope, frame->globals());
+  Handle<Dict> builtins(&scope, frame->builtins());
   Handle<Code> code(&scope, function->code());
   function->setFastGlobals(
       thread->runtime()->computeFastGlobals(code, globals, builtins));
@@ -1362,13 +1362,11 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
     function->setClosure(frame->popValue());
   }
   if (arg & MakeFunctionFlag::ANNOTATION_DICT) {
-    DCHECK((frame->topValue())->isDictionary(),
-           "Parameter annotations expect dictionary");
+    DCHECK((frame->topValue())->isDict(), "Parameter annotations expect dict");
     function->setAnnotations(frame->popValue());
   }
   if (arg & MakeFunctionFlag::DEFAULT_KW) {
-    DCHECK((frame->topValue())->isDictionary(),
-           "Keyword arguments expect dictionary");
+    DCHECK((frame->topValue())->isDict(), "Keyword arguments expect dict");
     function->setKwDefaults(frame->popValue());
   }
   if (arg & MakeFunctionFlag::DEFAULT) {
@@ -1470,8 +1468,8 @@ void Interpreter::doMapAdd(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Handle<Object> key(&scope, ctx->frame->popValue());
   Handle<Object> value(&scope, ctx->frame->popValue());
-  Handle<Dictionary> dict(&scope, Dictionary::cast(ctx->frame->peek(arg - 1)));
-  ctx->thread->runtime()->dictionaryAtPut(dict, key, value);
+  Handle<Dict> dict(&scope, Dict::cast(ctx->frame->peek(arg - 1)));
+  ctx->thread->runtime()->dictAtPut(dict, key, value);
 }
 
 // opcode 149
@@ -1550,12 +1548,11 @@ void Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<ObjectArray> keys(&scope, ctx->frame->popValue());
-  Handle<Dictionary> dict(&scope,
-                          thread->runtime()->newDictionary(keys->length()));
+  Handle<Dict> dict(&scope, thread->runtime()->newDict(keys->length()));
   for (word i = arg - 1; i >= 0; i--) {
     Handle<Object> key(&scope, keys->at(i));
     Handle<Object> value(&scope, ctx->frame->popValue());
-    thread->runtime()->dictionaryAtPut(dict, key, value);
+    thread->runtime()->dictAtPut(dict, key, value);
   }
   ctx->frame->pushValue(*dict);
 }

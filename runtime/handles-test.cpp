@@ -66,7 +66,7 @@ TEST(HandlesTest, IllegalCastRunTimeTest) {
   auto i1 = reinterpret_cast<SmallInteger*>(0xFEEDFACE);
   Handle<Object> h1(&scope, i1);
 
-  EXPECT_DEBUG_DEATH(Handle<Dictionary> h2(h1), "isDictionary");
+  EXPECT_DEBUG_DEATH(Handle<Dict> h2(h1), "isDict");
 }
 
 TEST(HandlesTest, VisitNoScopes) {

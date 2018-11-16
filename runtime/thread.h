@@ -5,7 +5,7 @@
 namespace python {
 
 class Type;
-class Dictionary;
+class Dict;
 class Frame;
 class FrameVisitor;
 class Function;
@@ -31,13 +31,13 @@ class Thread {
   Frame* pushFrame(Object* code);
   Frame* pushNativeFrame(void* fn, word nargs);
   Frame* pushModuleFunctionFrame(Module* module, Object* code);
-  Frame* pushClassFunctionFrame(Object* function, Object* dictionary);
+  Frame* pushClassFunctionFrame(Object* function, Object* dict);
 
   void popFrame();
 
   Object* run(Object* object);
   Object* runModuleFunction(Module* module, Object* object);
-  Object* runClassFunction(Object* function, Object* dictionary);
+  Object* runClassFunction(Object* function, Object* dict);
 
   Thread* next() { return next_; }
 

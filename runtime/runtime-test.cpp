@@ -35,9 +35,9 @@ TEST(RuntimeTest, BuiltinsModuleExists) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Dictionary> modules(&scope, runtime.modules());
+  Handle<Dict> modules(&scope, runtime.modules());
   Handle<Object> name(&scope, runtime.newStringFromCString("builtins"));
-  ASSERT_TRUE(runtime.dictionaryAt(modules, name)->isModule());
+  ASSERT_TRUE(runtime.dictAt(modules, name)->isModule());
 }
 
 class BuiltinClassIdsTest : public ::testing::TestWithParam<LayoutId> {};
@@ -64,86 +64,86 @@ static const LayoutId kBuiltinHeapClassIds[] = {
 INSTANTIATE_TEST_CASE_P(BuiltinClassIdsParameters, BuiltinClassIdsTest,
                         ::testing::ValuesIn(kBuiltinHeapClassIds));
 
-TEST(RuntimeDictionaryTest, EmptyDictionaryInvariants) {
+TEST(RuntimeDictTest, EmptyDictInvariants) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
 
   EXPECT_EQ(dict->numItems(), 0);
   ASSERT_TRUE(dict->data()->isObjectArray());
   EXPECT_EQ(ObjectArray::cast(dict->data())->length(), 0);
 }
 
-TEST(RuntimeDictionaryTest, GetSet) {
+TEST(RuntimeDictTest, GetSet) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
   Handle<Object> key(&scope, SmallInteger::fromWord(12345));
   Object* retrieved;
 
   // Looking up a key that doesn't exist should fail
-  EXPECT_TRUE(runtime.dictionaryAt(dict, key)->isError());
+  EXPECT_TRUE(runtime.dictAt(dict, key)->isError());
 
   // Store a value
   Handle<Object> stored(&scope, SmallInteger::fromWord(67890));
-  runtime.dictionaryAtPut(dict, key, stored);
+  runtime.dictAtPut(dict, key, stored);
   EXPECT_EQ(dict->numItems(), 1);
 
   // Retrieve the stored value
-  retrieved = runtime.dictionaryAt(dict, key);
+  retrieved = runtime.dictAt(dict, key);
   ASSERT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(retrieved)->value(),
             SmallInteger::cast(*stored)->value());
 
   // Overwrite the stored value
   Handle<Object> new_value(&scope, SmallInteger::fromWord(5555));
-  runtime.dictionaryAtPut(dict, key, new_value);
+  runtime.dictAtPut(dict, key, new_value);
   EXPECT_EQ(dict->numItems(), 1);
 
   // Get the new value
-  retrieved = runtime.dictionaryAt(dict, key);
+  retrieved = runtime.dictAt(dict, key);
   ASSERT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(retrieved)->value(),
             SmallInteger::cast(*new_value)->value());
 }
 
-TEST(RuntimeDictionaryTest, Remove) {
+TEST(RuntimeDictTest, Remove) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
   Handle<Object> key(&scope, SmallInteger::fromWord(12345));
   Object* retrieved;
 
   // Removing a key that doesn't exist should fail
-  bool found = runtime.dictionaryRemove(dict, key, &retrieved);
+  bool found = runtime.dictRemove(dict, key, &retrieved);
   EXPECT_FALSE(found);
 
   // Removing a key that exists should succeed and return the value that was
   // stored.
   Handle<Object> stored(&scope, SmallInteger::fromWord(54321));
 
-  runtime.dictionaryAtPut(dict, key, stored);
+  runtime.dictAtPut(dict, key, stored);
   EXPECT_EQ(dict->numItems(), 1);
 
-  found = runtime.dictionaryRemove(dict, key, &retrieved);
+  found = runtime.dictRemove(dict, key, &retrieved);
   ASSERT_TRUE(found);
   ASSERT_EQ(SmallInteger::cast(retrieved)->value(),
             SmallInteger::cast(*stored)->value());
 
   // Looking up a key that was deleted should fail
-  EXPECT_TRUE(runtime.dictionaryAt(dict, key)->isError());
+  EXPECT_TRUE(runtime.dictAt(dict, key)->isError());
   EXPECT_EQ(dict->numItems(), 0);
 }
 
-TEST(RuntimeDictionaryTest, Length) {
+TEST(RuntimeDictTest, Length) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
 
   // Add 10 items and make sure length reflects it
   for (int i = 0; i < 10; i++) {
     Handle<Object> key(&scope, SmallInteger::fromWord(i));
-    runtime.dictionaryAtPut(dict, key, key);
+    runtime.dictAtPut(dict, key, key);
   }
   EXPECT_EQ(dict->numItems(), 10);
 
@@ -151,20 +151,20 @@ TEST(RuntimeDictionaryTest, Length) {
   for (int i = 0; i < 5; i++) {
     Handle<Object> key(&scope, SmallInteger::fromWord(i));
     Object* retrieved;
-    bool found = runtime.dictionaryRemove(dict, key, &retrieved);
+    bool found = runtime.dictRemove(dict, key, &retrieved);
     ASSERT_TRUE(found);
   }
   EXPECT_EQ(dict->numItems(), 5);
 }
 
-TEST(RuntimeDictionaryTest, AtIfAbsentPutLength) {
+TEST(RuntimeDictTest, AtIfAbsentPutLength) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
 
   Handle<Object> k1(&scope, SmallInteger::fromWord(1));
   Handle<Object> v1(&scope, SmallInteger::fromWord(111));
-  runtime.dictionaryAtPut(dict, k1, v1);
+  runtime.dictAtPut(dict, k1, v1);
   EXPECT_EQ(dict->numItems(), 1);
 
   class SmallIntegerCallback : public Callback<Object*> {
@@ -179,32 +179,31 @@ TEST(RuntimeDictionaryTest, AtIfAbsentPutLength) {
   // Add new item
   Handle<Object> k2(&scope, SmallInteger::fromWord(2));
   SmallIntegerCallback cb(222);
-  Handle<Object> entry2(&scope, runtime.dictionaryAtIfAbsentPut(dict, k2, &cb));
+  Handle<Object> entry2(&scope, runtime.dictAtIfAbsentPut(dict, k2, &cb));
   EXPECT_EQ(dict->numItems(), 2);
-  Object* retrieved = runtime.dictionaryAt(dict, k2);
+  Object* retrieved = runtime.dictAt(dict, k2);
   EXPECT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(retrieved, SmallInteger::fromWord(222));
 
   // Don't overrwite existing item 1 -> v1
   Handle<Object> k3(&scope, SmallInteger::fromWord(1));
   SmallIntegerCallback cb3(333);
-  Handle<Object> entry3(&scope,
-                        runtime.dictionaryAtIfAbsentPut(dict, k3, &cb3));
+  Handle<Object> entry3(&scope, runtime.dictAtIfAbsentPut(dict, k3, &cb3));
   EXPECT_EQ(dict->numItems(), 2);
-  retrieved = runtime.dictionaryAt(dict, k3);
+  retrieved = runtime.dictAt(dict, k3);
   EXPECT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(retrieved, *v1);
 }
 
-TEST(RuntimeDictionaryTest, GrowWhenFull) {
+TEST(RuntimeDictTest, GrowWhenFull) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
 
   // Fill up the dict - we insert an initial key to force the allocation of the
   // backing ObjectArray.
   Handle<Object> init_key(&scope, SmallInteger::fromWord(0));
-  runtime.dictionaryAtPut(dict, init_key, init_key);
+  runtime.dictAtPut(dict, init_key, init_key);
   ASSERT_TRUE(dict->data()->isObjectArray());
   word init_data_size = ObjectArray::cast(dict->data())->length();
 
@@ -216,77 +215,77 @@ TEST(RuntimeDictionaryTest, GrowWhenFull) {
 
   // Fill in one fewer keys than would require growing the underlying object
   // array again
-  word num_keys = Runtime::kInitialDictionaryCapacity;
+  word num_keys = Runtime::kInitialDictCapacity;
   for (int i = 1; i < num_keys; i++) {
     Handle<Object> key(&scope, make_key(i));
     Handle<Object> value(&scope, make_value(i));
-    runtime.dictionaryAtPut(dict, key, value);
+    runtime.dictAtPut(dict, key, value);
   }
 
   // Add another key which should force us to double the capacity
   Handle<Object> straw(&scope, make_key(num_keys));
   Handle<Object> straw_value(&scope, make_value(num_keys));
-  runtime.dictionaryAtPut(dict, straw, straw_value);
+  runtime.dictAtPut(dict, straw, straw_value);
   ASSERT_TRUE(dict->data()->isObjectArray());
   word new_data_size = ObjectArray::cast(dict->data())->length();
-  EXPECT_EQ(new_data_size, Runtime::kDictionaryGrowthFactor * init_data_size);
+  EXPECT_EQ(new_data_size, Runtime::kDictGrowthFactor * init_data_size);
 
   // Make sure we can still read all the stored keys/values
   for (int i = 1; i <= num_keys; i++) {
     Handle<Object> key(&scope, make_key(i));
-    Object* value = runtime.dictionaryAt(dict, key);
+    Object* value = runtime.dictAt(dict, key);
     ASSERT_FALSE(value->isError());
     EXPECT_TRUE(Object::equals(value, make_value(i)));
   }
 }
 
-TEST(RuntimeDictionaryTest, CollidingKeys) {
+TEST(RuntimeDictTest, CollidingKeys) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
 
   // Add two different keys with different values using the same hash
   Handle<Object> key1(&scope, SmallInteger::fromWord(1));
-  runtime.dictionaryAtPut(dict, key1, key1);
+  runtime.dictAtPut(dict, key1, key1);
 
   Handle<Object> key2(&scope, Boolean::trueObj());
-  runtime.dictionaryAtPut(dict, key2, key2);
+  runtime.dictAtPut(dict, key2, key2);
 
   // Make sure we get both back
-  Object* retrieved = runtime.dictionaryAt(dict, key1);
+  Object* retrieved = runtime.dictAt(dict, key1);
   ASSERT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(retrieved)->value(),
             SmallInteger::cast(*key1)->value());
 
-  retrieved = runtime.dictionaryAt(dict, key2);
+  retrieved = runtime.dictAt(dict, key2);
   ASSERT_TRUE(retrieved->isBoolean());
   EXPECT_EQ(Boolean::cast(retrieved)->value(), Boolean::cast(*key2)->value());
 }
 
-TEST(RuntimeDictionaryTest, MixedKeys) {
+TEST(RuntimeDictTest, MixedKeys) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
 
   // Add keys of different type
   Handle<Object> int_key(&scope, SmallInteger::fromWord(100));
-  runtime.dictionaryAtPut(dict, int_key, int_key);
+  runtime.dictAtPut(dict, int_key, int_key);
 
   Handle<Object> str_key(&scope, runtime.newStringFromCString("testing 123"));
-  runtime.dictionaryAtPut(dict, str_key, str_key);
+  runtime.dictAtPut(dict, str_key, str_key);
 
   // Make sure we get the appropriate values back out
-  Object* retrieved = runtime.dictionaryAt(dict, int_key);
+  Object* retrieved = runtime.dictAt(dict, int_key);
   ASSERT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(retrieved)->value(),
             SmallInteger::cast(*int_key)->value());
 
-  retrieved = runtime.dictionaryAt(dict, str_key);
+  retrieved = runtime.dictAt(dict, str_key);
   ASSERT_TRUE(retrieved->isString());
   EXPECT_TRUE(Object::equals(*str_key, retrieved));
 }
 
-TEST(RuntimeDictionaryTest, GetKeys) {
+TEST(RuntimeDictTest, GetKeys) {
   Runtime runtime;
   HandleScope scope;
 
@@ -297,15 +296,15 @@ TEST(RuntimeDictionaryTest, GetKeys) {
   keys->atPut(2, Boolean::trueObj());
   keys->atPut(3, None::object());
 
-  // Add keys to dictionary
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  // Add keys to dict
+  Handle<Dict> dict(&scope, runtime.newDict());
   for (word i = 0; i < keys->length(); i++) {
     Handle<Object> key(&scope, keys->at(i));
-    runtime.dictionaryAtPut(dict, key, key);
+    runtime.dictAtPut(dict, key, key);
   }
 
   // Grab the keys and verify everything is there
-  Handle<ObjectArray> retrieved(&scope, runtime.dictionaryKeys(dict));
+  Handle<ObjectArray> retrieved(&scope, runtime.dictKeys(dict));
   ASSERT_EQ(retrieved->length(), keys->length());
   for (word i = 0; i < keys->length(); i++) {
     Handle<Object> key(&scope, keys->at(i));
@@ -576,13 +575,13 @@ TEST(RuntimeListTest, ListExtendDict) {
   Runtime runtime;
   HandleScope scope;
   Handle<List> list(&scope, runtime.newList());
-  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Dict> dict(&scope, runtime.newDict());
   Handle<Object> value(&scope, None::object());
   word sum = 0;
 
   for (word i = 0; i < 16; i++) {
     value = SmallInteger::fromWord(i);
-    runtime.dictionaryAtPut(dict, value, value);
+    runtime.dictAtPut(dict, value, value);
     sum += i;
   }
 
@@ -1012,14 +1011,14 @@ TEST(RuntimeTest, CollectAttributes) {
                      RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
-  Handle<Dictionary> attributes(&scope, runtime.newDictionary());
+  Handle<Dict> attributes(&scope, runtime.newDict());
   runtime.collectAttributes(code, attributes);
 
   // We should have collected a single attribute: 'foo'
   EXPECT_EQ(attributes->numItems(), 1);
 
   // Check that we collected 'foo'
-  Handle<Object> result(&scope, runtime.dictionaryAt(attributes, foo));
+  Handle<Object> result(&scope, runtime.dictAt(attributes, foo));
   ASSERT_TRUE(result->isString());
   EXPECT_TRUE(String::cast(*result)->equals(*foo));
 
@@ -1038,12 +1037,12 @@ TEST(RuntimeTest, CollectAttributes) {
   EXPECT_EQ(attributes->numItems(), 3);
 
   // Check that we collected 'bar'
-  result = runtime.dictionaryAt(attributes, bar);
+  result = runtime.dictAt(attributes, bar);
   ASSERT_TRUE(result->isString());
   EXPECT_TRUE(String::cast(*result)->equals(*bar));
 
   // Check that we collected 'baz'
-  result = runtime.dictionaryAt(attributes, baz);
+  result = runtime.dictAt(attributes, baz);
   ASSERT_TRUE(result->isString());
   EXPECT_TRUE(String::cast(*result)->equals(*baz));
 }
@@ -1076,14 +1075,14 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
                      STORE_ATTR, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
-  Handle<Dictionary> attributes(&scope, runtime.newDictionary());
+  Handle<Dict> attributes(&scope, runtime.newDict());
   runtime.collectAttributes(code, attributes);
 
   // We should have collected a single attribute: 'foo'
   EXPECT_EQ(attributes->numItems(), 1);
 
   // Check that we collected 'foo'
-  Handle<Object> result(&scope, runtime.dictionaryAt(attributes, foo));
+  Handle<Object> result(&scope, runtime.dictAt(attributes, foo));
   ASSERT_TRUE(result->isString());
   EXPECT_TRUE(String::cast(*result)->equals(*foo));
 }
@@ -1092,14 +1091,14 @@ TEST(RuntimeTest, GetClassConstructor) {
   Runtime runtime;
   HandleScope scope;
   Handle<Type> klass(&scope, runtime.newClass());
-  Handle<Dictionary> klass_dict(&scope, runtime.newDictionary());
-  klass->setDictionary(*klass_dict);
+  Handle<Dict> klass_dict(&scope, runtime.newDict());
+  klass->setDict(*klass_dict);
 
   EXPECT_EQ(runtime.classConstructor(klass), None::object());
 
   Handle<Object> init(&scope, runtime.symbols()->DunderInit());
   Handle<Object> func(&scope, runtime.newFunction());
-  runtime.dictionaryAtPutInValueCell(klass_dict, init, func);
+  runtime.dictAtPutInValueCell(klass_dict, init, func);
 
   EXPECT_EQ(runtime.classConstructor(klass), *func);
 }
@@ -1339,10 +1338,10 @@ TEST_P(LookupNameInMroTest, Lookup) {
 
   auto create_class_with_attr = [&](const char* attr, word value) {
     Handle<Type> klass(&scope, runtime.newClass());
-    Handle<Dictionary> dict(&scope, klass->dictionary());
+    Handle<Dict> dict(&scope, klass->dict());
     Handle<Object> key(&scope, runtime.newStringFromCString(attr));
     Handle<Object> val(&scope, SmallInteger::fromWord(value));
-    runtime.dictionaryAtPutInValueCell(dict, key, val);
+    runtime.dictAtPutInValueCell(dict, key, val);
     return *klass;
   };
 
@@ -1733,8 +1732,8 @@ static void setInClassDict(Runtime* runtime, const Handle<Object>& klass,
                            const Handle<Object>& value) {
   HandleScope scope;
   Handle<Type> k(&scope, *klass);
-  Handle<Dictionary> klass_dict(&scope, k->dictionary());
-  runtime->dictionaryAtPutInValueCell(klass_dict, attr, value);
+  Handle<Dict> klass_dict(&scope, k->dict());
+  runtime->dictAtPutInValueCell(klass_dict, attr, value);
 }
 
 static void setInMetaclass(Runtime* runtime, const Handle<Object>& klass,
@@ -1856,8 +1855,8 @@ TEST(ClassAttributeTest, SetAttrOnClass) {
       runtime.attributeAtPut(Thread::currentThread(), klass, attr, value);
   ASSERT_FALSE(result->isError());
 
-  Handle<Dictionary> klass_dict(&scope, Type::cast(*klass)->dictionary());
-  Handle<Object> value_cell(&scope, runtime.dictionaryAt(klass_dict, attr));
+  Handle<Dict> klass_dict(&scope, Type::cast(*klass)->dict());
+  Handle<Object> value_cell(&scope, runtime.dictAt(klass_dict, attr));
   ASSERT_TRUE(value_cell->isValueCell());
   EXPECT_EQ(ValueCell::cast(*value_cell)->value(), SmallInteger::fromWord(100));
 }
@@ -2361,7 +2360,7 @@ a = Foo()
   EXPECT_EQ(output, "New\nInit\n");
 }
 
-TEST(InstanceAttributeTest, NoInstanceDictionaryReturnsClassAttribute) {
+TEST(InstanceAttributeTest, NoInstanceDictReturnsClassAttribute) {
   Runtime runtime;
   HandleScope scope;
   Handle<Object> immediate(&scope, SmallInteger::fromWord(-1));

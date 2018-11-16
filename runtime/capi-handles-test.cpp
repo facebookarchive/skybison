@@ -9,14 +9,14 @@ namespace python {
 TEST(RuntimeApiHandlesTest, creatingApiHandles) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime.apiHandles());
+  Handle<Dict> dict(&scope, runtime.apiHandles());
 
   Handle<Object> obj(&scope, runtime.newInteger(15));
-  Object* value = runtime.dictionaryAt(dict, obj);
+  Object* value = runtime.dictAt(dict, obj);
   EXPECT_EQ(value->isError(), true);
 
   ApiHandle* integer_handle = ApiHandle::fromObject(*obj);
-  value = runtime.dictionaryAt(dict, obj);
+  value = runtime.dictAt(dict, obj);
   EXPECT_EQ(value->isError(), false);
 
   ApiHandle* integer_handle2 = ApiHandle::fromObject(*obj);

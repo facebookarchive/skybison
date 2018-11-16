@@ -58,8 +58,8 @@ class Runtime {
 
   Object* newComplex(double real, double imag);
 
-  Object* newDictionary();
-  Object* newDictionary(word initial_size);
+  Object* newDict();
+  Object* newDict(word initial_size);
 
   Object* newFloat(double value);
 
@@ -236,51 +236,46 @@ class Runtime {
   // Associate a value with the supplied key.
   //
   // This handles growing the backing ObjectArray if needed.
-  void dictionaryAtPut(const Handle<Dictionary>& dict,
-                       const Handle<Object>& key, const Handle<Object>& value);
+  void dictAtPut(const Handle<Dict>& dict, const Handle<Object>& key,
+                 const Handle<Object>& value);
 
   // Look up the value associated with key. Returns Error::object() if the
   // key was not found.
-  Object* dictionaryAt(const Handle<Dictionary>& dict,
-                       const Handle<Object>& key);
+  Object* dictAt(const Handle<Dict>& dict, const Handle<Object>& key);
 
   // Looks up and returns the value associated with the key.  If the key is
   // absent, calls thunk and inserts its result as the value.
-  Object* dictionaryAtIfAbsentPut(const Handle<Dictionary>& dict,
-                                  const Handle<Object>& key,
-                                  Callback<Object*>* thunk);
+  Object* dictAtIfAbsentPut(const Handle<Dict>& dict, const Handle<Object>& key,
+                            Callback<Object*>* thunk);
 
   // Stores value in a ValueCell stored at key in dict. Careful to
   // reuse an existing value cell if one exists since it may be shared.
-  Object* dictionaryAtPutInValueCell(const Handle<Dictionary>& dict,
-                                     const Handle<Object>& key,
-                                     const Handle<Object>& value);
+  Object* dictAtPutInValueCell(const Handle<Dict>& dict,
+                               const Handle<Object>& key,
+                               const Handle<Object>& value);
 
-  // Returns true if the dictionary contains the specified key.
-  bool dictionaryIncludes(const Handle<Dictionary>& dict,
-                          const Handle<Object>& key);
+  // Returns true if the dict contains the specified key.
+  bool dictIncludes(const Handle<Dict>& dict, const Handle<Object>& key);
 
-  // Delete a key from the dictionary.
+  // Delete a key from the dict.
   //
   // Returns true if the key existed and sets the previous value in value.
   // Returns false otherwise.
-  bool dictionaryRemove(const Handle<Dictionary>& dict,
-                        const Handle<Object>& key, Object** value);
+  bool dictRemove(const Handle<Dict>& dict, const Handle<Object>& key,
+                  Object** value);
 
-  // Support explicit hash value of key to do dictionaryAtPut.
-  void dictionaryAtPutWithHash(const Handle<Dictionary>& dict,
-                               const Handle<Object>& key,
-                               const Handle<Object>& value,
-                               const Handle<Object>& key_hash);
+  // Support explicit hash value of key to do dictAtPut.
+  void dictAtPutWithHash(const Handle<Dict>& dict, const Handle<Object>& key,
+                         const Handle<Object>& value,
+                         const Handle<Object>& key_hash);
 
-  // Support explicit hash value of key to do dictionaryAt.
-  Object* dictionaryAtWithHash(const Handle<Dictionary>& dict,
-                               const Handle<Object>& key,
-                               const Handle<Object>& key_hash);
+  // Support explicit hash value of key to do dictAt.
+  Object* dictAtWithHash(const Handle<Dict>& dict, const Handle<Object>& key,
+                         const Handle<Object>& key_hash);
 
-  ObjectArray* dictionaryKeys(const Handle<Dictionary>& dict);
+  ObjectArray* dictKeys(const Handle<Dict>& dict);
 
-  // Set related function, based on dictionary.
+  // Set related function, based on dict.
   // Add a value to set and return the object in set.
   Object* setAdd(const Handle<Set>& set, const Handle<Object>& value);
 
@@ -305,7 +300,7 @@ class Runtime {
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.
   void collectAttributes(const Handle<Code>& code,
-                         const Handle<Dictionary>& attributes);
+                         const Handle<Dict>& attributes);
 
   // Constructs the initial layout for instances of type.
   //
@@ -391,8 +386,8 @@ class Runtime {
 
   // Pre-computes fast_globals for functions.
   Object* computeFastGlobals(const Handle<Code>& code,
-                             const Handle<Dictionary>& globals,
-                             const Handle<Dictionary>& builtins);
+                             const Handle<Dict>& globals,
+                             const Handle<Dict>& builtins);
 
   LayoutId computeBuiltinBaseClass(const Handle<Type>& klass);
 
@@ -459,12 +454,12 @@ class Runtime {
   // Clear the allocated memory from all extension related objects
   void deallocExtensions();
 
-  static const int kDictionaryGrowthFactor = 2;
-  // Initial size of the dictionary. According to comments in CPython's
+  static const int kDictGrowthFactor = 2;
+  // Initial size of the dict. According to comments in CPython's
   // dictobject.c this accommodates the majority of dictionaries without needing
   // a resize (obviously this depends on the load factor used to resize the
   // dict).
-  static const int kInitialDictionaryCapacity = 8;
+  static const int kInitialDictCapacity = 8;
 
   // Initial data of the set.
   static const int kSetGrowthFactor = 2;
@@ -553,17 +548,16 @@ class Runtime {
   Object* createMro(const Handle<Layout>& subclass_layout,
                     LayoutId superclass_id);
 
-  ObjectArray* dictionaryGrow(const Handle<ObjectArray>& data);
+  ObjectArray* dictGrow(const Handle<ObjectArray>& data);
 
   // Looks up the supplied key
   //
   // If the key is found, this function returns true and sets index to the
   // index of the bucket that contains the value. If the key is not found, this
   // function returns false and sets index to the location where the key would
-  // be inserted. If the dictionary is full, it sets index to -1.
-  bool dictionaryLookup(const Handle<ObjectArray>& data,
-                        const Handle<Object>& key,
-                        const Handle<Object>& key_hash, word* index);
+  // be inserted. If the dict is full, it sets index to -1.
+  bool dictLookup(const Handle<ObjectArray>& data, const Handle<Object>& key,
+                  const Handle<Object>& key_hash, word* index);
 
   bool setLookup(const Handle<ObjectArray>& data, const Handle<Object>& key,
                  const Handle<Object>& key_hash, word* index);
