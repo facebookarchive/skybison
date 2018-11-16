@@ -1614,8 +1614,6 @@ void Runtime::createBuiltinsModule() {
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kChr, nativeTrampoline<builtinChr>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kInt, nativeTrampoline<builtinInt>,
-                           unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kRange,
                            nativeTrampoline<builtinRange>,
                            unimplementedTrampoline, unimplementedTrampoline);
@@ -1635,6 +1633,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDictionary);
   moduleAddBuiltinType(module, SymbolId::kException, LayoutId::kException);
   moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kDouble);
+  moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInteger);
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
   moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
   moduleAddBuiltinType(module, SymbolId::kProperty, LayoutId::kProperty);

@@ -124,17 +124,6 @@ Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
   return SmallString::fromCString(s);
 }
 
-Object* builtinInt(Thread* thread, Frame* frame_frame, word nargs) {
-  if (nargs != 1) {
-    return thread->throwTypeErrorFromCString(
-        "int() takes exactly 1 argument");  // TODO(rkng): base (kw/optional)
-  }
-  HandleScope scope(thread);
-  Arguments args(frame_frame, nargs);
-  Handle<Object> arg(&scope, args.get(0));
-  return IntegerBuiltins::intFromString(thread, *arg);
-}
-
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is
 // actually far more complicated than one might expect. This is enough to get
 // richards working.

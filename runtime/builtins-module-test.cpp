@@ -20,17 +20,6 @@ TEST(BuiltinsModuleDeathTest, BuiltinChr) {
       "aborting due to pending exception: Unsupported type in builtin 'chr'");
 }
 
-TEST(BuiltinsModuleTest, BuiltinInt) {  // pystone dependency
-  const char* src = R"(
-a = int("123")
-b = int("-987")
-print(a == 123, b == -987, a > b, a, b)
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "True True True 123 -987\n");
-}
-
 TEST(BuiltinsModuleDeathTest, BuiltinIsinstance) {
   Runtime runtime;
   HandleScope scope;

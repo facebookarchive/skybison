@@ -14,7 +14,6 @@ extern std::ostream* builtinStderr;
 Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs);
 Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs);
 Object* builtinChr(Thread* thread, Frame* frame, word nargs);
-Object* builtinInt(Thread* thread, Frame* frame, word nargs);
 Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs);
 Object* builtinLen(Thread* thread, Frame* frame, word nargs);
 Object* builtinOrd(Thread* thread, Frame* frame, word nargs);

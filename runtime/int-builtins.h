@@ -12,9 +12,12 @@ class IntegerBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* intFromString(Thread* thread, Object* str);
+  static Object* dunderNew(Thread* thread, Frame* frame, word nargs);
+  static Object* intFromString(Thread* thread, Object* str, int base);
 
  private:
+  static const BuiltinMethod kMethods[];
+
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntegerBuiltins);
 };
 

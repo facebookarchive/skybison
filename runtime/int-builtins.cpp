@@ -11,15 +11,80 @@
 
 namespace python {
 
+const BuiltinMethod IntegerBuiltins::kMethods[] = {
+    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+};
+
 void IntegerBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Class> type(
       &scope, runtime->addEmptyBuiltinClass(SymbolId::kInt, LayoutId::kInteger,
                                             LayoutId::kObject));
   type->setFlag(Class::Flag::kIntSubclass);
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(type, kMethods[i].name,
+                                     kMethods[i].address);
+  }
 }
 
-Object* IntegerBuiltins::intFromString(Thread* thread, Object* arg_raw) {
+Object* IntegerBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+  if (nargs == 0) {
+    return thread->throwTypeErrorFromCString(
+        "int.__new__(): not enough arguments");
+  }
+  if (nargs > 3) {
+    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+        "int() takes at most two arguments, %ld given", nargs - 1));
+  }
+
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+
+  Handle<Object> type_obj(&scope, args.get(0));
+  if (!runtime->hasSubClassFlag(*type_obj, Class::Flag::kClassSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "int.__new__(X): X is not a type object");
+  }
+
+  Handle<Class> type(&scope, *type_obj);
+  if (!type->hasFlag(Class::Flag::kIntSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "int.__new__(X): X is not a subtype of int");
+  }
+
+  Handle<Layout> layout(&scope, type->instanceLayout());
+  if (layout->id() != LayoutId::kInteger) {
+    // TODO(dulinr): Implement __new__ with subtypes of int.
+    UNIMPLEMENTED("int.__new__(<subtype of int>, ...)");
+  }
+
+  Handle<Object> arg(&scope, args.get(1));
+  if (!arg->isString()) {
+    // TODO(dulinr): Handle non-string types.
+    UNIMPLEMENTED("int(<non-string>)");
+  }
+
+  // No base argument, use 10 as the base.
+  if (nargs == 2) {
+    return intFromString(thread, *arg, 10);
+  }
+
+  // The third argument is the base of the integer represented in the string.
+  Handle<Object> base(&scope, args.get(2));
+  if (!base->isInteger()) {
+    // TODO(dulinr): Call __index__ on base to convert it.
+    UNIMPLEMENTED("Can't handle non-integer base");
+  }
+  return intFromString(thread, *arg, Integer::cast(*base)->asWord());
+}
+
+Object* IntegerBuiltins::intFromString(Thread* thread, Object* arg_raw,
+                                       int base) {
+  if (!(base == 0 || (base >= 2 && base <= 36))) {
+    return thread->throwValueErrorFromCString(
+        "Invalid base, must be between 2 and 36, or 0");
+  }
   HandleScope scope(thread);
   Handle<Object> arg(&scope, arg_raw);
   if (arg->isInteger()) {
@@ -34,7 +99,7 @@ Object* IntegerBuiltins::intFromString(Thread* thread, Object* arg_raw) {
   char* c_string = s->toCString();  // for strtol()
   char* end_ptr;
   errno = 0;
-  long res = std::strtol(c_string, &end_ptr, 10);
+  long res = std::strtol(c_string, &end_ptr, base);
   int saved_errno = errno;
   bool is_complete = (*end_ptr == '\0');
   free(c_string);
