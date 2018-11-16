@@ -102,6 +102,11 @@ class Handle : public T {
         next_(scope->push(this)),
         scope_(scope) {}
 
+  // Don't allow constructing a Handle directly from another Handle; require
+  // dereferencing the source.
+  template <typename S, bool checked>
+  Handle(HandleScope*, Handle<S, checked>) = delete;
+
   ~Handle() {
     DCHECK(scope_->list_ == reinterpret_cast<Handle<RawObject>*>(this),
            "unexpected this");

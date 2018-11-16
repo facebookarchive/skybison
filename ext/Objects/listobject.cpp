@@ -69,7 +69,7 @@ PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
     thread->raiseSystemErrorWithCStr("bad argument to internal function");
     return -1;
   }
-  List list(&scope, list_obj);
+  List list(&scope, *list_obj);
 
   runtime->listAdd(list, value);
   Py_INCREF(newitem);

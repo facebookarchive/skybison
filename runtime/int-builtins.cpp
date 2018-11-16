@@ -632,8 +632,8 @@ RawObject IntBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
         "descriptor '__or__' requires a 'int' object");
   }
   if (other->isInt()) {
-    Int self_int(&scope, self);
-    Int other_int(&scope, other);
+    Int self_int(&scope, *self);
+    Int other_int(&scope, *other);
     return runtime->intBinaryOr(thread, self_int, other_int);
   }
   // signal to binary dispatch to try another method
@@ -654,14 +654,14 @@ RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
         "'__lshift__' requires a 'int' object");
   }
   if (arg->isInt()) {
-    Int arg_int(&scope, arg);
+    Int arg_int(&scope, *arg);
     if (arg_int->isNegative()) {
       return thread->raiseValueErrorWithCStr("negative shift count");
     }
     if (arg_int->isLargeInt()) {
       return thread->raiseOverflowErrorWithCStr("shift count too large");
     }
-    Int self_int(&scope, self);
+    Int self_int(&scope, *self);
     return runtime->intBinaryLshift(thread, self_int, arg_int->asWord());
   }
   // signal to binary dispatch to try another method

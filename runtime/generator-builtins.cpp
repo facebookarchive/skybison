@@ -32,7 +32,7 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
         "send() must be called with a %s instance as the first argument",
         type_name));
   }
-  GeneratorBase gen(&scope, self);
+  GeneratorBase gen(&scope, *self);
   if (RawHeapFrame::cast(gen->heapFrame())->frame()->virtualPC() == 0 &&
       !args.get(1)->isNoneType()) {
     return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
@@ -85,7 +85,7 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
         "__next__() must be called with a generator instance as the first "
         "argument");
   }
-  Generator gen(&scope, self);
+  Generator gen(&scope, *self);
   Object value(&scope, NoneType::object());
   return thread->runtime()->genSend(thread, gen, value);
 }

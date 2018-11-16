@@ -136,7 +136,7 @@ RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
         "descriptor '__init__' requires a 'set' object");
   }
   if (nargs == 2) {
-    Set set(&scope, self);
+    Set set(&scope, *self);
     Object iterable(&scope, args.get(1));
     Object result(&scope, runtime->setUpdate(thread, set, iterable));
     if (result->isError()) {

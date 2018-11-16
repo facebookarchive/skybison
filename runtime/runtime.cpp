@@ -3133,7 +3133,7 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& klass,
     if (!maybe_init->isFunction()) {
       continue;
     }
-    Function init(&scope, maybe_init);
+    Function init(&scope, *maybe_init);
     RawObject maybe_code = init->code();
     if (!maybe_code->isCode()) {
       continue;
@@ -3950,8 +3950,8 @@ RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
   }
 
   HandleScope scope(thread);
-  Int longer(&scope, left_digits > right_digits ? left : right);
-  Int shorter(&scope, left_digits <= right_digits ? left : right);
+  Int longer(&scope, left_digits > right_digits ? *left : *right);
+  Int shorter(&scope, left_digits <= right_digits ? *left : *right);
   LargeInt result(&scope, heap()->createLargeInt(longer->numDigits()));
   for (word i = 0; i < shorter->numDigits(); i++) {
     result->digitAtPut(i, longer->digitAt(i) | shorter->digitAt(i));

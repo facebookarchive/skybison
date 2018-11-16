@@ -3671,7 +3671,7 @@ def gen():
   Code code(&scope, RawFunction::cast(*gen)->code());
   Object frame_obj(&scope, runtime.newHeapFrame(code));
   ASSERT_TRUE(frame_obj->isHeapFrame());
-  HeapFrame heap_frame(&scope, frame_obj);
+  HeapFrame heap_frame(&scope, *frame_obj);
   EXPECT_EQ(heap_frame->maxStackSize(), code->stacksize());
 }
 

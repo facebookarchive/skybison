@@ -158,7 +158,7 @@ template <typename T1, typename T2>
 
       case Value::Type::Int: {
         if (!actual_item->isInt()) return bad_type("int");
-        Int actual_val(&scope, actual_item);
+        Int actual_val(&scope, *actual_item);
         Int expected_val(&scope, runtime->newInt(expected_item.intVal()));
         if (actual_val->compare(*expected_val) != 0) {
           // TODO(bsimmers): Support multi-digit values when we can print them.
@@ -180,7 +180,7 @@ template <typename T1, typename T2>
 
       case Value::Type::Str: {
         if (!actual_item->isStr()) return bad_type("str");
-        Str actual_val(&scope, actual_item);
+        Str actual_val(&scope, *actual_item);
         const char* expected_val = expected_item.strVal();
         if (!actual_val->equalsCStr(expected_val)) {
           return badListValue(actual_expr, i, actual_val, expected_val);
@@ -271,7 +271,7 @@ RawObject moduleAt(Runtime* runtime, const char* module_name,
   if (mod_obj->isNoneType()) {
     return Error::object();
   }
-  Module module(&scope, mod_obj);
+  Module module(&scope, *mod_obj);
   return moduleAt(runtime, module, name);
 }
 
