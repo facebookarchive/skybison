@@ -17,6 +17,9 @@ const int kDoubleSize = sizeof(double);
 const int kBitsPerByte = 8;
 const int kBitsPerPointer = kBitsPerByte * kWordSize;
 
+const word kMinWord = INTPTR_MIN;
+const word kMaxWord = INTPTR_MAX;
+
 const int KiB = 1024;
 const int MiB = KiB * KiB;
 const int GiB = KiB * KiB * KiB;

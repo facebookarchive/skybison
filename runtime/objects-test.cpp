@@ -300,6 +300,90 @@ TEST(IntegerTest, IntegerTest) {
   EXPECT_EQ(*reinterpret_cast<int*>(i3->asCPointer()), 123);
 }
 
+TEST(IntegerTest, IsPositive) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Integer> zero(&scope, runtime.newInteger(0));
+  EXPECT_FALSE(zero->isPositive());
+
+  Handle<Integer> one(&scope, runtime.newInteger(1));
+  EXPECT_TRUE(one->isPositive());
+
+  Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
+  EXPECT_FALSE(neg_one->isPositive());
+
+  Handle<Integer> max_small_int(
+      &scope, runtime.newInteger(SmallInteger::kMaxValue));
+  EXPECT_TRUE(max_small_int->isPositive());
+
+  Handle<Integer> min_small_int(
+      &scope, runtime.newInteger(SmallInteger::kMinValue));
+  EXPECT_FALSE(min_small_int->isPositive());
+
+  Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
+  EXPECT_TRUE(max_word->isPositive());
+
+  Handle<Integer> min_word(&scope, runtime.newInteger(kMinWord));
+  EXPECT_FALSE(min_word->isPositive());
+}
+
+TEST(IntegerTest, IsNegative) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Integer> zero(&scope, runtime.newInteger(0));
+  EXPECT_FALSE(zero->isNegative());
+
+  Handle<Integer> one(&scope, runtime.newInteger(1));
+  EXPECT_FALSE(one->isNegative());
+
+  Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
+  EXPECT_TRUE(neg_one->isNegative());
+
+  Handle<Integer> max_small_int(
+      &scope, runtime.newInteger(SmallInteger::kMaxValue));
+  EXPECT_FALSE(max_small_int->isNegative());
+
+  Handle<Integer> min_small_int(
+      &scope, runtime.newInteger(SmallInteger::kMinValue));
+  EXPECT_TRUE(min_small_int->isNegative());
+
+  Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
+  EXPECT_FALSE(max_word->isNegative());
+
+  Handle<Integer> min_word(&scope, runtime.newInteger(kMinWord));
+  EXPECT_TRUE(min_word->isNegative());
+}
+
+TEST(IntegerTest, IsZero) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Integer> zero(&scope, runtime.newInteger(0));
+  EXPECT_TRUE(zero->isZero());
+
+  Handle<Integer> one(&scope, runtime.newInteger(1));
+  EXPECT_FALSE(one->isZero());
+
+  Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
+  EXPECT_FALSE(neg_one->isZero());
+
+  Handle<Integer> max_small_int(
+      &scope, runtime.newInteger(SmallInteger::kMaxValue));
+  EXPECT_FALSE(max_small_int->isZero());
+
+  Handle<Integer> min_small_int(
+      &scope, runtime.newInteger(SmallInteger::kMinValue));
+  EXPECT_FALSE(min_small_int->isZero());
+
+  Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
+  EXPECT_FALSE(max_word->isZero());
+
+  Handle<Integer> min_word(&scope, runtime.newInteger(kMinWord));
+  EXPECT_FALSE(min_word->isZero());
+}
+
 TEST(ListTest, EmptyListInvariants) {
   Runtime runtime;
   List* list = List::cast(runtime.newList());

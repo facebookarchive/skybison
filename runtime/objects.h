@@ -222,6 +222,10 @@ class Integer : public Object {
   word asWord();
   void* asCPointer();
 
+  bool isPositive();
+  bool isNegative();
+  bool isZero();
+
   // Casting.
   static Integer* cast(Object* object);
 
@@ -1817,6 +1821,27 @@ inline void* Integer::asCPointer() {
     return SmallInteger::cast(this)->asCPointer();
   }
   return LargeInteger::cast(this)->asCPointer();
+}
+
+inline bool Integer::isPositive() {
+  if (isSmallInteger()) {
+    return SmallInteger::cast(this)->value() > 0;
+  }
+  return LargeInteger::cast(this)->asWord() > 0;
+}
+
+inline bool Integer::isNegative() {
+  if (isSmallInteger()) {
+    return SmallInteger::cast(this)->value() < 0;
+  }
+  return LargeInteger::cast(this)->asWord() < 0;
+}
+
+inline bool Integer::isZero() {
+  if (isSmallInteger()) {
+    return SmallInteger::cast(this)->value() == 0;
+  }
+  return false;
 }
 
 // SmallInteger
