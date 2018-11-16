@@ -1021,6 +1021,8 @@ void Runtime::initializeExceptionClasses() {
   SystemExitBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kException, LayoutId::kException,
                        LayoutId::kBaseException);
+  addEmptyBuiltinClass(SymbolId::kNameError, LayoutId::kNameError,
+                       LayoutId::kException);
   StopIterationBuiltins::initialize(this);
 }
 
@@ -1636,6 +1638,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kFloat);
   moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInt);
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
+  moduleAddBuiltinType(module, SymbolId::kNameError, LayoutId::kNameError);
   moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
   moduleAddBuiltinType(module, SymbolId::kProperty, LayoutId::kProperty);
   moduleAddBuiltinType(module, SymbolId::kStaticMethod,

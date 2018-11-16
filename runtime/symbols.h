@@ -125,6 +125,7 @@ class Runtime;
   V(Method, "method")                                                          \
   V(Module, "module")                                                          \
   V(Modules, "modules")                                                        \
+  V(NameError, "NameError")                                                    \
   V(NoneType, "NoneType")                                                      \
   V(NotImplemented, "NotImplemented")                                          \
   V(NotImplementedType, "NotImplementedType")                                  \

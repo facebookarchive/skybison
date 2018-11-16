@@ -95,6 +95,7 @@ enum class LayoutId : word {
   kList,
   kListIterator,
   kModule,
+  kNameError,
   kNotImplemented,
   kObjectArray,
   kProperty,
