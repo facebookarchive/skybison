@@ -185,30 +185,33 @@ PyAPI_FUNC(void) Py_DECREF_Func(PyObject *);
 #define _Py_Dealloc \
     (*_Py_Dealloc_Func)
 
-#define PyBool_Check(op) (PyBool_Check_Func((PyObject*)op))
-#define PyByteArray_Check(op) (PyByteArray_Check_Func((PyObject*)op))
+/* Parentheses around the whole expressions are needed to compile
+ * "if PyDict_CheckExact(other) {". Parentheses around "op" are needed for
+ * "PyBytes_Check(state = PyTuple_GET_ITEM(args, 0))" */
+#define PyBool_Check(op) (PyBool_Check_Func((PyObject*)(op)))
+#define PyByteArray_Check(op) (PyByteArray_Check_Func((PyObject*)(op)))
 #define PyDict_Check(op) \
-  PyDict_Check_Func((PyObject*)op)
-#define PyDict_CheckExact(op) (PyDict_CheckExact_Func((PyObject*)op))
-#define PyFloat_Check(op) PyFloat_Check_Func((PyObject*)op)
-#define PyFloat_CheckExact(op) (PyFloat_CheckExact_Func((PyObject*)op))
+  (PyDict_Check_Func((PyObject*)(op)))
+#define PyDict_CheckExact(op) (PyDict_CheckExact_Func((PyObject*)(op)))
+#define PyFloat_Check(op) (PyFloat_Check_Func((PyObject*)(op)))
+#define PyFloat_CheckExact(op) (PyFloat_CheckExact_Func((PyObject*)(op)))
 #define PyList_Check(op) \
-  PyList_Check_Func((PyObject*)op)
-#define PyList_CheckExact(op) (PyList_CheckExact_Func((PyObject*)op))
+  (PyList_Check_Func((PyObject*)(op)))
+#define PyList_CheckExact(op) (PyList_CheckExact_Func((PyObject*)(op)))
 #define PyLong_Check(op) \
-  PyLong_Check_Func((PyObject*)op)
-#define PyLong_CheckExact(op) (PyLong_CheckExact_Func((PyObject*)op))
-#define PyModule_Check(op) PyModule_Check_Func((PyObject*)op)
-#define PyModule_CheckExact(op) (PyModule_CheckExact_Func((PyObject*)op))
+  (PyLong_Check_Func((PyObject*)(op)))
+#define PyLong_CheckExact(op) (PyLong_CheckExact_Func((PyObject*)(op)))
+#define PyModule_Check(op) (PyModule_Check_Func((PyObject*)(op)))
+#define PyModule_CheckExact(op) (PyModule_CheckExact_Func((PyObject*)(op)))
 #define PyTuple_Check(op) \
-  PyTuple_Check_Func((PyObject*)op)
-#define PyTuple_CheckExact(op) (PyTuple_CheckExact_Func((PyObject*)op))
+  (PyTuple_Check_Func((PyObject*)(op)))
+#define PyTuple_CheckExact(op) (PyTuple_CheckExact_Func((PyObject*)(op)))
 #define PyType_Check(op) \
-  PyType_Check_Func((PyObject*)op)
-#define PyType_CheckExact(op) (PyType_CheckExact_Func((PyObject*)op))
+  (PyType_Check_Func((PyObject*)(op)))
+#define PyType_CheckExact(op) (PyType_CheckExact_Func((PyObject*)(op)))
 #define PyUnicode_Check(op) \
-  PyUnicode_Check_Func((PyObject*)op)
-#define PyUnicode_CheckExact(op) (PyUnicode_CheckExact_Func((PyObject*)op))
+  (PyUnicode_Check_Func((PyObject*)(op)))
+#define PyUnicode_CheckExact(op) (PyUnicode_CheckExact_Func((PyObject*)(op)))
 
 #define PyByteArray_AS_STRING(self) \
     PyByteArray_AS_STRING_Func((PyObject*)self)
