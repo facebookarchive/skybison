@@ -72,6 +72,30 @@ enum class ExtensionTypes {
   kBool = 2,
 };
 
+class TrackedAllocation {
+ public:
+  static void* malloc(Runtime* runtime, word num_bytes);
+  static void freePtr(Runtime* runtime, void* ptr);
+  static void free(Runtime* runtime, TrackedAllocation* alloc);
+
+  static void insert(TrackedAllocation** head, TrackedAllocation* alloc);
+  static void remove(TrackedAllocation** head, TrackedAllocation* alloc);
+
+  TrackedAllocation* previous() {
+    return previous_;
+  }
+
+  TrackedAllocation* next() {
+    return next_;
+  }
+
+ private:
+  TrackedAllocation* previous_;
+  TrackedAllocation* next_;
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(TrackedAllocation);
+};
+
 class Runtime {
  public:
   class NewValueCellCallback : public Callback<Object*> {
@@ -517,9 +541,6 @@ class Runtime {
   // Accessor for Objects that have crossed the CPython boundary
   Object* asObject(PyObject* py_obj);
 
-  // Iterate the ApiHandles dictionary to free the allocated memory
-  void deallocApiHandles();
-
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
   // dictobject.c this accommodates the majority of dictionaries without needing
@@ -554,6 +575,14 @@ class Runtime {
   void addBuiltinExtensionType(void* static_extension) {
     builtin_extension_types_.push_back(static_extension);
   }
+
+  // Linked list of all tracked allocations
+  TrackedAllocation** trackedAllocations() {
+    return &tracked_allocations_;
+  }
+
+  // Clear the allocated memory from all extension related objects
+  void freeTrackedAllocations();
 
  private:
   void initializeThreads();
@@ -754,6 +783,8 @@ class Runtime {
   Symbols* symbols_;
 
   Vector<void*> builtin_extension_types_;
+
+  TrackedAllocation* tracked_allocations_;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

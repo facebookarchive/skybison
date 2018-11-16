@@ -2460,4 +2460,63 @@ a = Foo()
   EXPECT_EQ(output, "New\nInit\n");
 }
 
+TEST(RuntimeExtensionTest, CreateTrackedAllocation) {
+  Runtime runtime;
+  EXPECT_EQ(nullptr, *runtime.trackedAllocations());
+
+  TrackedAllocation::malloc(&runtime, 10);
+  ASSERT_NE(nullptr, *runtime.trackedAllocations());
+
+  TrackedAllocation* head = *runtime.trackedAllocations();
+  EXPECT_EQ(head->next(), head);
+  EXPECT_EQ(head->previous(), head);
+}
+
+TEST(RuntimeExtensionTest, InsertTrackedAllocation) {
+  Runtime runtime;
+  TrackedAllocation::malloc(&runtime, 10);
+  ASSERT_NE(nullptr, *runtime.trackedAllocations());
+  TrackedAllocation* head = *runtime.trackedAllocations();
+
+  void* mem = TrackedAllocation::malloc(&runtime, 15);
+  TrackedAllocation* tracked_alloc = static_cast<TrackedAllocation*>(mem) - 1;
+  EXPECT_EQ(head->next(), tracked_alloc);
+  EXPECT_EQ(head->previous(), tracked_alloc);
+  EXPECT_EQ(tracked_alloc->next(), head);
+  EXPECT_EQ(tracked_alloc->previous(), head);
+
+  void* mem2 = TrackedAllocation::malloc(&runtime, 20);
+  TrackedAllocation* tracked_alloc2 = static_cast<TrackedAllocation*>(mem2) - 1;
+  EXPECT_EQ(head->next(), tracked_alloc);
+  EXPECT_EQ(head->previous(), tracked_alloc2);
+  EXPECT_EQ(tracked_alloc->next(), tracked_alloc2);
+  EXPECT_EQ(tracked_alloc->previous(), head);
+  EXPECT_EQ(tracked_alloc2->next(), head);
+  EXPECT_EQ(tracked_alloc2->previous(), tracked_alloc);
+}
+
+TEST(RuntimeExtensionTest, RemoveTrackedAllocation) {
+  Runtime runtime;
+  TrackedAllocation::malloc(&runtime, 10);
+  ASSERT_NE(nullptr, *runtime.trackedAllocations());
+  TrackedAllocation* head = *runtime.trackedAllocations();
+  void* mem = TrackedAllocation::malloc(&runtime, 15);
+  TrackedAllocation* tracked_alloc = static_cast<TrackedAllocation*>(mem) - 1;
+  void* mem2 = TrackedAllocation::malloc(&runtime, 20);
+  TrackedAllocation* tracked_alloc2 = static_cast<TrackedAllocation*>(mem2) - 1;
+
+  TrackedAllocation::free(&runtime, tracked_alloc);
+  EXPECT_EQ(head->next(), tracked_alloc2);
+  EXPECT_EQ(head->previous(), tracked_alloc2);
+  EXPECT_EQ(tracked_alloc2->next(), head);
+  EXPECT_EQ(tracked_alloc2->previous(), head);
+
+  TrackedAllocation::freePtr(&runtime, mem2);
+  EXPECT_EQ(head->next(), head);
+  EXPECT_EQ(head->previous(), head);
+
+  TrackedAllocation::free(&runtime, head);
+  EXPECT_EQ(nullptr, *runtime.trackedAllocations());
+}
+
 } // namespace python
