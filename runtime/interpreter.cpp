@@ -81,25 +81,20 @@ Interpreter::callType(Thread* thread, Frame* frame, Object** sp, word nargs) {
   Runtime* runtime = thread->runtime();
   Handle<Class> klass(&scope, sp[nargs]);
 
-  // dispatch it as python function?
-  frame->setValueStackTop(sp);
   Handle<Object> name(&scope, runtime->symbols()->DunderNew());
   Handle<Function> dunder_new(
       &scope, runtime->lookupNameInMro(thread, klass, name));
-  Handle<Object> result(&scope, dunder_new->entry()(thread, frame, nargs));
 
-  Handle<Layout> layout(&scope, runtime->layoutAt(result->layoutId()));
-  if (result->isInstance() && layout->hasDelegateSlot()) {
-    // TODO(T27421748): pushing delegate __new__ into instance __new__
-    Handle<Class> base_class(&scope, klass->builtinBaseClass());
-    sp[nargs] = *base_class;
-    frame->setValueStackTop(sp);
-    Handle<Function> base_new(
-        &scope, runtime->lookupNameInMro(thread, base_class, name));
-    Handle<Object> delegate(&scope, base_new->entry()(thread, frame, nargs));
-    runtime->setInstanceDelegate(result, delegate);
-    sp[nargs] = *klass;
+  sp -= 1;
+  for (word i = 0; i < nargs; i++) {
+    sp[i] = sp[i + 1];
   }
+  sp[nargs] = *klass;
+  sp[nargs + 1] = *dunder_new;
+
+  // call the dunder new
+  frame->setValueStackTop(sp);
+  Handle<Object> result(&scope, dunder_new->entry()(thread, frame, nargs + 1));
 
   // Check for an __init__ method.
   //
@@ -108,21 +103,7 @@ Interpreter::callType(Thread* thread, Frame* frame, Object** sp, word nargs) {
   Handle<Object> dunder_init(&scope, runtime->symbols()->DunderInit());
   Handle<Object> init(
       &scope, runtime->lookupNameInMro(thread, klass, dunder_init));
-  if (init->isError()) {
-    return *result;
-  }
-
-  // An __init__ method exists and now we will call it.
-  //
-  // Rewrite the type object call to an __init__ method call as follows
-  //   From: type, arg0, arg1, ... argN
-  //   To: function, instance, arg0, arg1, .. argN
-  // Increase the stack by one, copy all of the arguments up, and replace the
-  // type object with the function and the instance above it.
-  sp -= 1;
-  for (word i = 0; i < nargs; i++) {
-    sp[i] = sp[i + 1];
-  }
+  CHECK(init->isFunction(), "instance is missing an init method");
 
   // Move the method and receiver into the expected location.
   sp[nargs] = *result;

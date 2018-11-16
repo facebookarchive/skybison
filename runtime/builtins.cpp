@@ -56,8 +56,9 @@ Object* builtinIsinstance(Thread* thread, Frame* caller, word nargs) {
 }
 
 Object* builtinGenericNew(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
   HandleScope scope(thread->handles());
-  Handle<Class> klass(&scope, frame->valueStackTop()[nargs]);
+  Handle<Class> klass(&scope, args.get(0));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   return thread->runtime()->newInstance(layout);
 }
@@ -104,13 +105,6 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
     return *mro;
   }
   result->setMro(*mro);
-
-  // Initialize __new__
-  thread->runtime()->classAddBuiltinFunction(
-      result,
-      thread->runtime()->symbols()->DunderNew(),
-      nativeTrampoline<builtinGenericNew>,
-      unimplementedTrampoline);
 
   // Initialize instance layout
   Handle<Layout> layout(&scope, runtime->computeInitialLayout(thread, result));
@@ -327,8 +321,25 @@ Object* listOrDelegate(Thread* thread, const Handle<Object>& instance) {
   return Error::object();
 }
 
-Object* builtinListNew(Thread* thread, Frame*, word) {
-  return thread->runtime()->newList();
+Object* builtinListNew(Thread* thread, Frame* caller, word nargs) {
+  if (nargs < 1) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  Arguments args(caller, nargs);
+  if (!args.get(0)->isClass()) {
+    thread->throwTypeErrorFromCString("not a type object");
+  }
+  HandleScope scope(thread->handles());
+  Handle<Class> type(&scope, args.get(0));
+  Handle<Layout> layout(&scope, type->instanceLayout());
+  if (layout->id() == IntrinsicLayoutId::kList) {
+    return thread->runtime()->newList();
+  }
+  CHECK(layout->hasDelegateSlot(), "must have a delegate slot");
+  Handle<Object> result(&scope, thread->runtime()->newInstance(layout));
+  Handle<Object> delegate(&scope, thread->runtime()->newList());
+  thread->runtime()->setInstanceDelegate(result, delegate);
+  return *result;
 }
 
 Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
