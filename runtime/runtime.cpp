@@ -1514,6 +1514,7 @@ struct {
     {SymbolId::kSys, &Runtime::createSysModule},
     {SymbolId::kTime, &Runtime::createTimeModule},
     {SymbolId::kUnderImp, &Runtime::createImportModule},
+    {SymbolId::kUnderThread, &Runtime::createThreadModule},
     {SymbolId::kUnderWeakRef, &Runtime::createWeakRefModule},
 };
 
@@ -1892,6 +1893,13 @@ void Runtime::createWeakRefModule() {
   Module module(&scope, newModule(name));
 
   moduleAddBuiltinType(module, SymbolId::kRef, LayoutId::kWeakRef);
+  addModule(module);
+}
+
+void Runtime::createThreadModule() {
+  HandleScope scope;
+  Object name(&scope, symbols()->UnderThread());
+  Module module(&scope, newModule(name));
   addModule(module);
 }
 

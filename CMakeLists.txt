@@ -350,6 +350,7 @@ add_library(
   runtime/test-utils-test.cpp
   runtime/test-utils.cpp
   runtime/test-utils.h
+  runtime/thread-builtins-test.cpp
   runtime/thread-test.cpp
   runtime/time-module-test.cpp
   runtime/trampolines-test.cpp

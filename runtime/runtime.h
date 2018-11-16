@@ -149,6 +149,7 @@ class Runtime {
   void createSysModule();
   void createTimeModule();
   void createWeakRefModule();
+  void createThreadModule();
 
   RawObject internStr(const Object& str);
   RawObject internStrFromCStr(const char* c_str);
