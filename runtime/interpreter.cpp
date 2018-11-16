@@ -452,7 +452,7 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
   if (self->isBool()) {
     return *self;
   }
-  if (self->isNone()) {
+  if (self->isNoneType()) {
     return Bool::falseObj();
   }
   Handle<Object> method(
@@ -490,7 +490,7 @@ Object* Interpreter::yieldFrom(Thread* thread, Frame* frame) {
   Handle<Object> value(&scope, frame->popValue());
   Handle<Object> iterator(&scope, frame->topValue());
   Handle<Object> result(&scope, NoneType::object());
-  if (value->isNone()) {
+  if (value->isNoneType()) {
     Handle<Object> next_method(
         &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
     if (next_method->isError()) {
@@ -980,7 +980,7 @@ void Interpreter::doBreakLoop(Context* ctx, word) {
 void Interpreter::doWithCleanupStart(Context* ctx, word) {
   HandleScope scope(ctx->thread);
   Handle<Object> exc(&scope, ctx->frame->popValue());
-  if (exc->isNone()) {
+  if (exc->isNoneType()) {
     // This is a bound method.
     Handle<Object> exit(&scope, ctx->frame->topValue());
     Handle<Object> none(&scope, NoneType::object());
@@ -999,7 +999,7 @@ void Interpreter::doWithCleanupFinish(Context* ctx, word) {
   HandleScope scope(ctx->thread);
   Handle<Object> result(&scope, ctx->frame->popValue());
   Handle<Object> exc(&scope, ctx->frame->popValue());
-  if (!exc->isNone()) {
+  if (!exc->isNoneType()) {
     UNIMPLEMENTED("exception handling in context manager");
   }
 }
@@ -1046,7 +1046,7 @@ void Interpreter::doPopBlock(Context* ctx, word) {
 
 void Interpreter::doEndFinally(Context* ctx, word) {
   Object* status = ctx->frame->popValue();
-  if (!status->isNone()) {
+  if (!status->isNoneType()) {
     UNIMPLEMENTED("exception handling in context manager");
   }
 }

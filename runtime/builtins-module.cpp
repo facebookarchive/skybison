@@ -357,7 +357,7 @@ static Object* doBuiltinPrint(const Arguments& args, word nargs,
       Handle<ObjectArray> data(&scope, dict->data());
       word items = dict->numItems();
       for (word i = 0; i < data->length(); i += 3) {
-        if (!data->at(i)->isNone()) {
+        if (!data->at(i)->isNoneType()) {
           Handle<Object> key(&scope, Dict::Bucket::key(*data, i));
           Handle<Object> value(&scope, Dict::Bucket::value(*data, i));
           if (supportedScalarType(*key)) {
@@ -377,7 +377,7 @@ static Object* doBuiltinPrint(const Arguments& args, word nargs,
         }
       }
       *ostream << "}";
-    } else if (arg->isNone()) {
+    } else if (arg->isNoneType()) {
       *ostream << "None";
     } else {
       UNIMPLEMENTED("Custom print unsupported");
@@ -386,7 +386,7 @@ static Object* doBuiltinPrint(const Arguments& args, word nargs,
       *ostream << separator;
     }
   }
-  if (end->isNone()) {
+  if (end->isNoneType()) {
     *ostream << "\n";
   } else if (end->isStr()) {
     printStr(Str::cast(*end), ostream);
@@ -440,7 +440,7 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
 
   Handle<Object> end_arg(&scope, kw_args.getKw(runtime->symbols()->End()));
   if (!end_arg->isError()) {
-    if ((end_arg->isStr() || end_arg->isNone())) {
+    if ((end_arg->isStr() || end_arg->isNoneType())) {
       end = *end_arg;
     } else {
       return thread->raiseTypeErrorWithCStr("Unsupported argument for 'end'");

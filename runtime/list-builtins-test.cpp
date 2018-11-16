@@ -457,14 +457,14 @@ TEST(ListBuiltinsTest, SetItem) {
 
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 1);
   Handle<Object> result(&scope, ListBuiltins::dunderSetItem(thread, frame, 3));
-  EXPECT_TRUE(result->isNone());
+  EXPECT_TRUE(result->isNoneType());
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 2);
 
   // Negative index
   frame->setLocal(1, SmallInt::fromWord(-1));
   EXPECT_EQ(SmallInt::cast(list->at(3))->value(), 4);
   Handle<Object> result1(&scope, ListBuiltins::dunderSetItem(thread, frame, 3));
-  EXPECT_TRUE(result1->isNone());
+  EXPECT_TRUE(result1->isNoneType());
   EXPECT_EQ(SmallInt::cast(list->at(3))->value(), 2);
 }
 

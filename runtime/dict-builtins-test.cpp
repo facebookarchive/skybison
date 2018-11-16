@@ -74,7 +74,7 @@ TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
   frame->setLocal(0, *dict);
   frame->setLocal(1, *key);
   Object* result = DictBuiltins::dunderDelItem(thread, frame, 2);
-  EXPECT_TRUE(result->isNone());
+  EXPECT_TRUE(result->isNoneType());
 }
 
 TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyThrowsKeyError) {
@@ -131,7 +131,7 @@ TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
   frame->setLocal(1, *key);
   frame->setLocal(2, *val2);
   Handle<Object> result(&scope, DictBuiltins::dunderSetItem(thread, frame, 3));
-  ASSERT_TRUE(result->isNone());
+  ASSERT_TRUE(result->isNoneType());
   ASSERT_EQ(dict->numItems(), 1);
   ASSERT_EQ(runtime.dictAt(dict, key), *val2);
 }
@@ -149,7 +149,7 @@ TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
   frame->setLocal(2, *val);
   ASSERT_EQ(dict->numItems(), 0);
   Handle<Object> result(&scope, DictBuiltins::dunderSetItem(thread, frame, 3));
-  ASSERT_TRUE(result->isNone());
+  ASSERT_TRUE(result->isNoneType());
   ASSERT_EQ(dict->numItems(), 1);
   ASSERT_EQ(runtime.dictAt(dict, key), *val);
 }

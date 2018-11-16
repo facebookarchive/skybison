@@ -269,7 +269,7 @@ class Object {
   bool isBool();
   bool isError();
   bool isHeader();
-  bool isNone();
+  bool isNoneType();
   bool isSmallInt();
   bool isSmallStr();
 
@@ -1575,7 +1575,7 @@ class Dict::Bucket {
   }
 
   static bool hasKey(ObjectArray* data, word index, Object* that_key) {
-    return !hash(data, index)->isNone() &&
+    return !hash(data, index)->isNoneType() &&
            Object::equals(key(data, index), that_key);
   }
 
@@ -1584,7 +1584,7 @@ class Dict::Bucket {
   }
 
   static bool isEmpty(ObjectArray* data, word index) {
-    return hash(data, index)->isNone() && key(data, index)->isNone();
+    return hash(data, index)->isNoneType() && key(data, index)->isNoneType();
   }
 
   static bool isFilled(ObjectArray* data, word index) {
@@ -1592,7 +1592,7 @@ class Dict::Bucket {
   }
 
   static bool isTombstone(ObjectArray* data, word index) {
-    return hash(data, index)->isNone() && !key(data, index)->isNone();
+    return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
   }
 
   static Object* key(ObjectArray* data, word index) {
@@ -1669,16 +1669,16 @@ class Set::Bucket {
   }
 
   static bool hasKey(ObjectArray* data, word index, Object* that_key) {
-    return !hash(data, index)->isNone() &&
+    return !hash(data, index)->isNoneType() &&
            Object::equals(key(data, index), that_key);
   }
 
   static bool isEmpty(ObjectArray* data, word index) {
-    return hash(data, index)->isNone() && key(data, index)->isNone();
+    return hash(data, index)->isNoneType() && key(data, index)->isNoneType();
   }
 
   static bool isTombstone(ObjectArray* data, word index) {
-    return hash(data, index)->isNone() && !key(data, index)->isNone();
+    return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
   }
 
   static Object* key(ObjectArray* data, word index) {
@@ -2110,7 +2110,7 @@ inline bool Object::isBool() {
   return tag == Bool::kTag;
 }
 
-inline bool Object::isNone() {
+inline bool Object::isNoneType() {
   uword tag = reinterpret_cast<uword>(this) & NoneType::kTagMask;
   return tag == NoneType::kTag;
 }
@@ -2533,7 +2533,7 @@ inline NoneType* NoneType::object() {
 }
 
 inline NoneType* NoneType::cast(Object* object) {
-  DCHECK(object->isNone(), "invalid cast, expected None");
+  DCHECK(object->isNoneType(), "invalid cast, expected None");
   return reinterpret_cast<NoneType*>(object);
 }
 
@@ -3028,8 +3028,9 @@ inline void Code::setCellvars(Object* value) {
 
 inline word Code::numCellvars() {
   Object* object = cellvars();
-  DCHECK(object->isNone() || object->isObjectArray(), "not an object array");
-  if (object->isNone()) {
+  DCHECK(object->isNoneType() || object->isObjectArray(),
+         "not an object array");
+  if (object->isNoneType()) {
     return 0;
   }
   return ObjectArray::cast(object)->length();
@@ -3083,8 +3084,9 @@ inline void Code::setFreevars(Object* value) {
 
 inline word Code::numFreevars() {
   Object* object = freevars();
-  DCHECK(object->isNone() || object->isObjectArray(), "not an object array");
-  if (object->isNone()) {
+  DCHECK(object->isNoneType() || object->isObjectArray(),
+         "not an object array");
+  if (object->isNoneType()) {
     return 0;
   }
   return ObjectArray::cast(object)->length();
@@ -3470,7 +3472,7 @@ inline void Function::setDefaults(Object* defaults) {
   return instanceVariableAtPut(kDefaultsOffset, defaults);
 }
 
-inline bool Function::hasDefaults() { return !defaults()->isNone(); }
+inline bool Function::hasDefaults() { return !defaults()->isNoneType(); }
 
 inline Object* Function::doc() { return instanceVariableAt(kDocOffset); }
 

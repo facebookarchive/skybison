@@ -108,7 +108,7 @@ Object* builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseAttributeErrorWithCStr("unreadable attribute");
   }
 
-  if (obj->isNone()) {
+  if (obj->isNoneType()) {
     return *property;
   }
 
@@ -132,7 +132,7 @@ Object* builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> obj(&scope, args.get(1));
   Handle<Object> value(&scope, args.get(2));
 
-  if (property->setter()->isNone()) {
+  if (property->setter()->isNoneType()) {
     return thread->raiseAttributeErrorWithCStr("can't set attribute");
   }
 

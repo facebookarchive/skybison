@@ -58,7 +58,7 @@ static inline Object* callNoChecks(Thread* thread, Function* function,
   initFrame(thread, function, callee_frame, caller_frame);
 
   Object* generator = checkCreateGenerator(code, thread);
-  if (!generator->isNone()) {
+  if (!generator->isNoneType()) {
     return generator;
   }
 
@@ -94,7 +94,7 @@ static inline Object* callCheckFreeCell(Thread* thread, Function* function,
   }
 
   Object* generator = checkCreateGenerator(code, thread);
-  if (!generator->isNone()) {
+  if (!generator->isNoneType()) {
     return generator;
   }
 
@@ -161,9 +161,9 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
   // If there are any keyword-only args, there must be defaults for them
   // because we arrived here via CALL_FUNCTION (and thus, no keywords were
   // supplied at the call site).
-  if (code->kwonlyargcount() != 0 && !function->kwDefaults()->isNone()) {
+  if (code->kwonlyargcount() != 0 && !function->kwDefaults()->isNoneType()) {
     Handle<Dict> kw_defaults(&scope, function->kwDefaults());
-    if (!kw_defaults->isNone()) {
+    if (!kw_defaults->isNoneType()) {
       Handle<ObjectArray> formal_names(&scope, code->varnames());
       word first_kw = code->argcount();
       for (word i = 0; i < code->kwonlyargcount(); i++) {
@@ -292,7 +292,7 @@ Object* checkArgs(Function* function, Object** kw_arg_base,
             default_args->at(absolute_pos - defaults_start);
         continue;  // Got it, move on to the next
       }
-    } else if (!function->kwDefaults()->isNone()) {
+    } else if (!function->kwDefaults()->isNoneType()) {
       // How about a kwonly default?
       Handle<Dict> kw_defaults(&scope, function->kwDefaults());
       Thread* thread = Thread::currentThread();
@@ -427,7 +427,7 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
   Object* res = checkArgs(*function, kw_arg_base, *keywords, *formal_parm_names,
                           num_positional_args);
   // If we're a vararg form, need to push the tuple/dict.
-  if (res->isNone()) {
+  if (res->isNoneType()) {
     if (flags & Code::VARARGS) {
       caller_frame->pushValue(*tmp_varargs);
     }

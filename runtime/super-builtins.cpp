@@ -84,7 +84,7 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
       obj_type = *obj_klass;
     }
   }
-  if (obj_type->isNone()) {
+  if (obj_type->isNoneType()) {
     return thread->raiseTypeErrorWithCStr(
         "obj must be an instance or subtype of type");
   }

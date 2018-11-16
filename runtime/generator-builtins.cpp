@@ -33,7 +33,7 @@ Object* GeneratorBaseBuiltins::send(Thread* thread, Frame* frame, word nargs) {
   }
   Handle<GeneratorBase> gen(self);
   if (HeapFrame::cast(gen->heapFrame())->frame()->virtualPC() == 0 &&
-      !args.get(1)->isNone()) {
+      !args.get(1)->isNoneType()) {
     return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
         "can't send non-None value to a just-started %s", type_name));
   }

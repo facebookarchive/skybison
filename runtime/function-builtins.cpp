@@ -16,7 +16,7 @@ Object* builtinFunctionGet(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> instance(&scope, args.get(1));
-  if (instance->isNone()) {
+  if (instance->isNoneType()) {
     return *self;
   }
   return thread->runtime()->newBoundMethod(self, instance);

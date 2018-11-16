@@ -298,7 +298,7 @@ Object* Thread::raiseStopIteration(Object* value) {
   return Error::object();
 }
 
-bool Thread::hasPendingException() { return !exception_type_->isNone(); }
+bool Thread::hasPendingException() { return !exception_type_->isNoneType(); }
 
 bool Thread::hasPendingStopIteration() {
   return exception_type_->isType() &&

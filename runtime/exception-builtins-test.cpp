@@ -245,7 +245,7 @@ exc = StopIteration()
   Handle<StopIteration> stop_iteration(&scope, *exc);
 
   // No constructor arguments so value should be none.
-  EXPECT_TRUE(stop_iteration->value()->isNone());
+  EXPECT_TRUE(stop_iteration->value()->isNoneType());
 
   // No constructor arguments means args should contain an empty tuple.
   ASSERT_TRUE(stop_iteration->args()->isObjectArray());
@@ -337,7 +337,7 @@ exc = SystemExit()
   ASSERT_TRUE(system_exit->args()->isObjectArray());
 
   // No constructor arguments so code should be none.
-  EXPECT_TRUE(system_exit->code()->isNone());
+  EXPECT_TRUE(system_exit->code()->isNoneType());
 
   // No constructor arguments means args should contain an empty tuple.
   Handle<ObjectArray> args(&scope, system_exit->args());

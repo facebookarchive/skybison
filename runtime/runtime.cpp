@@ -674,7 +674,8 @@ void Runtime::classAddBuiltinFunctionKwEx(const Handle<Type>& type,
 
 void Runtime::classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
                                         void* c_function) {
-  DCHECK(!type->extensionType()->isNone(), "Type must contain extension type");
+  DCHECK(!type->extensionType()->isNoneType(),
+         "Type must contain extension type");
 
   HandleScope scope;
   Handle<Function> function(&scope, newFunction());
@@ -1355,7 +1356,7 @@ extern "C" struct _inittab _PyImport_Inittab[];
 Object* Runtime::importModule(const Handle<Object>& name) {
   HandleScope scope;
   Handle<Object> cached_module(&scope, findModule(name));
-  if (!cached_module->isNone()) {
+  if (!cached_module->isNoneType()) {
     return *cached_module;
   } else {
     for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
@@ -1378,7 +1379,7 @@ Object* Runtime::importModuleFromBuffer(const char* buffer,
                                         const Handle<Object>& name) {
   HandleScope scope;
   Handle<Object> cached_module(&scope, findModule(name));
-  if (!cached_module->isNone()) {
+  if (!cached_module->isNoneType()) {
     return *cached_module;
   }
 
@@ -3071,7 +3072,7 @@ LayoutId Runtime::computeBuiltinBaseClass(const Handle<Type>& klass) {
   Handle<Type> object_klass(&scope, typeAt(LayoutId::kObject));
   Handle<Type> candidate(&scope, *object_klass);
   // Skip itself since builtin class won't go through this.
-  DCHECK(Type::cast(mro->at(0))->instanceLayout()->isNone(),
+  DCHECK(Type::cast(mro->at(0))->instanceLayout()->isNoneType(),
          "only user defined class should go through this via type_new, and at "
          "this point layout is not ready");
   for (word i = 1; i < mro->length(); i++) {

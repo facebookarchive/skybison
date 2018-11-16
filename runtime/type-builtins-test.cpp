@@ -108,7 +108,7 @@ c = C()
   Thread* thread = Thread::currentThread();
   Handle<Object> x(&scope, runtime.newStrFromCStr("x"));
   Object* attr = runtime.attributeAt(thread, c, x);
-  ASSERT_FALSE(attr->isNone());
+  ASSERT_FALSE(attr->isNoneType());
   ASSERT_TRUE(attr->isInt());
   ASSERT_EQ(SmallInt::cast(attr)->value(), 42);
 }

@@ -97,7 +97,7 @@ void Scavenger::processDelayedReferences() {
       weak->setReferent(referent->forward());
     } else {
       weak->setReferent(NoneType::object());
-      if (!weak->callback()->isNone()) {
+      if (!weak->callback()->isNoneType()) {
         WeakRef::enqueueReference(weak, &delayed_callbacks_);
       }
     }

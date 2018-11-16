@@ -70,9 +70,9 @@ x = property()
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(x->isProperty());
   Handle<Property> prop(&scope, *x);
-  ASSERT_TRUE(prop->getter()->isNone());
-  ASSERT_TRUE(prop->setter()->isNone());
-  ASSERT_TRUE(prop->deleter()->isNone());
+  ASSERT_TRUE(prop->getter()->isNoneType());
+  ASSERT_TRUE(prop->setter()->isNoneType());
+  ASSERT_TRUE(prop->deleter()->isNoneType());
 }
 
 TEST(DescriptorBuiltinsTest, PropertyCreateWithGetterSetterReturnsArgs) {
@@ -92,7 +92,7 @@ x = property(get_foo, set_foo)
   Handle<Property> prop(&scope, *x);
   ASSERT_TRUE(prop->getter()->isFunction());
   ASSERT_TRUE(prop->setter()->isFunction());
-  ASSERT_TRUE(prop->deleter()->isNone());
+  ASSERT_TRUE(prop->deleter()->isNoneType());
 }
 
 TEST(DescriptorBuiltinsTest, PropertyModifyViaGetterReturnsGetter) {
@@ -111,16 +111,16 @@ y = x.getter(get_foo)
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(x->isProperty());
   Handle<Property> x_prop(&scope, *x);
-  ASSERT_TRUE(x_prop->getter()->isNone());
+  ASSERT_TRUE(x_prop->getter()->isNoneType());
   ASSERT_TRUE(x_prop->setter()->isFunction());
-  ASSERT_TRUE(x_prop->deleter()->isNone());
+  ASSERT_TRUE(x_prop->deleter()->isNoneType());
 
   Handle<Object> y(&scope, moduleAt(&runtime, main, "y"));
   ASSERT_TRUE(y->isProperty());
   Handle<Property> y_prop(&scope, *y);
   ASSERT_TRUE(y_prop->getter()->isFunction());
   ASSERT_TRUE(y_prop->setter()->isFunction());
-  ASSERT_TRUE(y_prop->deleter()->isNone());
+  ASSERT_TRUE(y_prop->deleter()->isNoneType());
 }
 
 TEST(DescriptorBuiltinsTest, PropertyModifyViaSetterReturnsSetter) {
@@ -140,15 +140,15 @@ y = x.setter(set_foo)
   ASSERT_TRUE(x->isProperty());
   Handle<Property> x_prop(&scope, *x);
   ASSERT_TRUE(x_prop->getter()->isFunction());
-  ASSERT_TRUE(x_prop->setter()->isNone());
-  ASSERT_TRUE(x_prop->deleter()->isNone());
+  ASSERT_TRUE(x_prop->setter()->isNoneType());
+  ASSERT_TRUE(x_prop->deleter()->isNoneType());
 
   Handle<Object> y(&scope, moduleAt(&runtime, main, "y"));
   ASSERT_TRUE(y->isProperty());
   Handle<Property> y_prop(&scope, *y);
   ASSERT_TRUE(y_prop->getter()->isFunction());
   ASSERT_TRUE(y_prop->setter()->isFunction());
-  ASSERT_TRUE(y_prop->deleter()->isNone());
+  ASSERT_TRUE(y_prop->deleter()->isNoneType());
 }
 
 TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaInstance) {

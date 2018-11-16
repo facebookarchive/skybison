@@ -128,7 +128,7 @@ Object* moduleAt(Runtime* runtime, const Handle<Module>& module,
 Object* moduleAt(Runtime* runtime, const char* module_name, const char* name) {
   HandleScope scope;
   Handle<Object> mod_obj(&scope, findModule(runtime, module_name));
-  if (mod_obj->isNone()) {
+  if (mod_obj->isNoneType()) {
     return Error::object();
   }
   Handle<Module> module(mod_obj);

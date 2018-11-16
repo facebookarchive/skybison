@@ -116,7 +116,7 @@ word LargeInt::bitLength() {
 }
 
 void Slice::unpack(word* start, word* stop, word* step) {
-  if (this->step()->isNone()) {
+  if (this->step()->isNoneType()) {
     *step = 1;
   } else {
     // TODO(T27897506): CPython uses _PyEval_SliceIndex to convert any
@@ -135,13 +135,13 @@ void Slice::unpack(word* start, word* stop, word* step) {
     }
   }
 
-  if (this->start()->isNone()) {
+  if (this->start()->isNoneType()) {
     *start = (*step < 0) ? SmallInt::kMaxValue : 0;
   } else {
     *start = SmallInt::cast(this->start())->value();
   }
 
-  if (this->stop()->isNone()) {
+  if (this->stop()->isNoneType()) {
     *stop = (*step < 0) ? SmallInt::kMinValue : SmallInt::kMaxValue;
   } else {
     *stop = SmallInt::cast(this->stop())->value();

@@ -551,7 +551,7 @@ TEST(RuntimeListTest, ListExtendObjectArray) {
   object_array1->atPut(0, NoneType::object());
   runtime.listExtend(Thread::currentThread(), list, object_array1_handle);
   ASSERT_GE(list->allocated(), 5);
-  ASSERT_TRUE(list->at(4)->isNone());
+  ASSERT_TRUE(list->at(4)->isNoneType());
 
   for (word i = 0; i < 4; i++) {
     object_array16->atPut(i, SmallInt::fromWord(i));
@@ -743,19 +743,19 @@ TEST(RuntimeTest, NewCode) {
   EXPECT_EQ(code->cell2arg(), 0);
   ASSERT_TRUE(code->cellvars()->isObjectArray());
   EXPECT_EQ(ObjectArray::cast(code->cellvars())->length(), 0);
-  EXPECT_TRUE(code->code()->isNone());
-  EXPECT_TRUE(code->consts()->isNone());
-  EXPECT_TRUE(code->filename()->isNone());
+  EXPECT_TRUE(code->code()->isNoneType());
+  EXPECT_TRUE(code->consts()->isNoneType());
+  EXPECT_TRUE(code->filename()->isNoneType());
   EXPECT_EQ(code->firstlineno(), 0);
   EXPECT_EQ(code->flags(), 0);
   ASSERT_TRUE(code->freevars()->isObjectArray());
   EXPECT_EQ(ObjectArray::cast(code->freevars())->length(), 0);
   EXPECT_EQ(code->kwonlyargcount(), 0);
-  EXPECT_TRUE(code->lnotab()->isNone());
-  EXPECT_TRUE(code->name()->isNone());
+  EXPECT_TRUE(code->lnotab()->isNoneType());
+  EXPECT_TRUE(code->name()->isNoneType());
   EXPECT_EQ(code->nlocals(), 0);
   EXPECT_EQ(code->stacksize(), 0);
-  EXPECT_TRUE(code->varnames()->isNone());
+  EXPECT_TRUE(code->varnames()->isNoneType());
 }
 
 TEST(RuntimeTest, NewObjectArray) {

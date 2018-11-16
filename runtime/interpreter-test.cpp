@@ -885,7 +885,7 @@ sys.displayhook = my_displayhook
   code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
-  ASSERT_TRUE(result->isNone());
+  ASSERT_TRUE(result->isNoneType());
 
   Handle<Module> sys(&scope, testing::findModule(&runtime, "sys"));
   Handle<Object> displayhook(&scope,
