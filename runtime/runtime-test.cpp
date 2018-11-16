@@ -808,7 +808,7 @@ c = MyClassWithAttributes(1)
   Handle<Object> key(&scope, runtime.newStringFromCString("c"));
   Handle<Object> instance(&scope, runtime.moduleAt(main, key));
   ASSERT_TRUE(instance->isInstance());
-  ASSERT_EQ(instance->layoutId(), layout_id);
+  ASSERT_GT(instance->layoutId(), layout_id);
 
   Handle<Object> name(&scope, runtime.newStringFromCString("x"));
   Handle<Object> value(

@@ -1342,6 +1342,14 @@ class Layout : public HeapObject {
   inline Object* describedClass();
   inline void setDescribedClass(Object* klass);
 
+  // Set the number of in-object attributes that may be stored on an instance
+  // described by this layout.
+  //
+  // N.B. - This will always be less than or equal to the length of the
+  // ObjectArray returned by inObjectAttributes().
+  inline void setNumInObjectAttributes(word count);
+  inline word numInObjectAttributes();
+
   // Returns an ObjectArray describing the attributes stored directly in
   // in the instance.
   //
@@ -1419,11 +1427,14 @@ class Layout : public HeapObject {
   static const int kInstanceSizeOffset = kDeletionsOffset + kPointerSize;
   static const int kOverflowOffsetOffset = kInstanceSizeOffset + kPointerSize;
   static const int kDelegateOffsetOffset = kOverflowOffsetOffset + kPointerSize;
-  static const int kSize = kDelegateOffsetOffset + kPointerSize;
+  static const int kNumInObjectAttributesOffset =
+      kDelegateOffsetOffset + kPointerSize;
+  static const int kSize = kNumInObjectAttributesOffset + kPointerSize;
 
  private:
   inline void setDelegateOffset(word offset);
   inline void setOverflowOffset(word offset);
+  inline void updateInstanceSize();
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Layout);
 };
@@ -2978,15 +2989,6 @@ Object* Layout::describedClass() {
 
 void Layout::setInObjectAttributes(Object* attributes) {
   instanceVariableAtPut(kInObjectAttributesOffset, attributes);
-  word num_slots = ObjectArray::cast(attributes)->length();
-  setOverflowOffset(num_slots * kPointerSize);
-  // One extra slot for the overflow array
-  num_slots++;
-  if (hasDelegateSlot()) {
-    num_slots++;
-    setDelegateOffset(overflowOffset() + kPointerSize);
-  }
-  setInstanceSize(num_slots);
 }
 
 Object* Layout::inObjectAttributes() {
@@ -3059,7 +3061,30 @@ void Layout::addDelegateSlot() {
     return;
   }
   setDelegateOffset(overflowOffset() + kPointerSize);
-  setInstanceSize(instanceSize() + 1);
+  updateInstanceSize();
+}
+
+word Layout::numInObjectAttributes() {
+  return SmallInteger::cast(instanceVariableAt(kNumInObjectAttributesOffset))
+      ->value();
+}
+
+void Layout::setNumInObjectAttributes(word count) {
+  instanceVariableAtPut(
+      kNumInObjectAttributesOffset, SmallInteger::fromWord(count));
+  setOverflowOffset(count * kPointerSize);
+  if (hasDelegateSlot()) {
+    setDelegateOffset(overflowOffset() + kPointerSize);
+  }
+  updateInstanceSize();
+}
+
+void Layout::updateInstanceSize() {
+  word num_slots = numInObjectAttributes() + 1;
+  if (hasDelegateSlot()) {
+    num_slots += 1;
+  }
+  setInstanceSize(num_slots);
 }
 
 } // namespace python

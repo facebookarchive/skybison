@@ -8,6 +8,7 @@
 
 namespace python {
 
+class AttributeInfo;
 class Heap;
 class Object;
 class ObjectArray;
@@ -514,6 +515,14 @@ class Runtime {
       const Handle<List>& edges,
       const Handle<Object>& label,
       const Handle<Object>& layout);
+
+  // Create a new tuple for the name, info pair and return a new tuple
+  // containing entries + entry.
+  Object* layoutAddAttributeEntry(
+      Thread* thread,
+      const Handle<ObjectArray>& entries,
+      const Handle<Object>& name,
+      AttributeInfo info);
 
   // Follow the edge with the supplied label, if one exists.
   //

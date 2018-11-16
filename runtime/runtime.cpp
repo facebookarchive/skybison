@@ -73,6 +73,7 @@ Object* Runtime::newLayoutWithId(word layout_id) {
       "kSmallInteger must be the only even immediate layout id");
   HandleScope scope;
   Handle<Layout> layout(&scope, heap()->createLayout(layout_id));
+  layout->setNumInObjectAttributes(0);
   layout->setInObjectAttributes(empty_object_array_);
   layout->setOverflowAttributes(empty_object_array_);
   layout->setAdditions(newList());
@@ -396,7 +397,7 @@ Object* Runtime::newInstance(const Handle<Layout>& layout) {
       &scope, heap()->createInstance(layout_id, num_words));
   // Set the overflow array
   instance->instanceVariableAtPut(
-      (num_words - 1) * kPointerSize, empty_object_array_);
+      layout->overflowOffset(), empty_object_array_);
   return *instance;
 }
 
@@ -1728,8 +1729,7 @@ Object* Runtime::computeInitialLayout(
 
   // Create the layout
   Handle<Layout> layout(&scope, newLayout());
-  Handle<ObjectArray> names(&scope, dictionaryKeys(attrs));
-  layoutInitializeInObjectAttributes(thread, layout, names);
+  layout->setNumInObjectAttributes(attrs->numItems());
 
   return *layout;
 }
@@ -1980,26 +1980,17 @@ Object* Runtime::instanceAtPut(
     const Handle<Object>& value) {
   HandleScope scope(thread->handles());
 
-  // If the attribute doesn't exist, we'll need to grow the overflow array and
-  // transition the layout
+  // If the attribute doesn't exist we'll need to transition the layout
+  bool has_new_layout_id = false;
   Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
   Object* result = layoutFindAttribute(thread, layout, name);
   if (result->isError()) {
     // Transition the layout
     layout = layoutAddAttribute(thread, layout, name, 0);
+    has_new_layout_id = true;
+
     result = layoutFindAttribute(thread, layout, name);
     CHECK(!result->isError(), "couldn't find attribute on new layout");
-
-    // Build the new overflow array
-    Handle<ObjectArray> overflow(
-        &scope, instance->instanceVariableAt(layout->overflowOffset()));
-    Handle<ObjectArray> new_overflow(
-        &scope, newObjectArray(overflow->length() + 1));
-    overflow->copyTo(*new_overflow);
-    instance->instanceVariableAtPut(layout->overflowOffset(), *new_overflow);
-
-    // Update the instance's layout
-    instance->setHeader(instance->header()->withLayoutId(layout->id()));
   }
 
   // Store the attribute
@@ -2007,9 +1998,18 @@ Object* Runtime::instanceAtPut(
   if (info.isInObject()) {
     instance->instanceVariableAtPut(info.offset(), *value);
   } else {
+    // Build the new overflow array
     Handle<ObjectArray> overflow(
         &scope, instance->instanceVariableAt(layout->overflowOffset()));
-    overflow->atPut(info.offset(), *value);
+    Handle<ObjectArray> new_overflow(
+        &scope, newObjectArray(overflow->length() + 1));
+    overflow->copyTo(*new_overflow);
+    new_overflow->atPut(info.offset(), *value);
+    instance->instanceVariableAtPut(layout->overflowOffset(), *new_overflow);
+  }
+
+  if (has_new_layout_id) {
+    instance->setHeader(instance->header()->withLayoutId(layout->id()));
   }
 
   return None::object();
@@ -2038,23 +2038,6 @@ void Runtime::layoutAddEdge(
       "edges must contain an even number of elements");
   listAdd(edges, label);
   listAdd(edges, layout);
-}
-
-void Runtime::layoutInitializeInObjectAttributes(
-    Thread* thread,
-    const Handle<Layout>& layout,
-    const Handle<ObjectArray>& names) {
-  HandleScope scope(thread);
-  Handle<ObjectArray> attributes(&scope, newObjectArray(names->length()));
-  for (word i = 0; i < names->length(); i++) {
-    Handle<ObjectArray> info(&scope, newObjectArray(2));
-    Handle<Object> name(&scope, names->at(i));
-    info->atPut(0, internString(name));
-    AttributeInfo data(i * kPointerSize, AttributeInfo::Flag::kInObject);
-    info->atPut(1, data.asSmallInteger());
-    attributes->atPut(i, *info);
-  }
-  layout->setInObjectAttributes(*attributes);
 }
 
 Object* Runtime::layoutFindAttribute(
@@ -2090,10 +2073,29 @@ Object* Runtime::layoutCreateChild(
     const Handle<Layout>& layout) {
   HandleScope scope(thread->handles());
   Handle<Layout> new_layout(&scope, newLayout());
-  new_layout->setDescribedClass(layout->describedClass());
-  new_layout->setInObjectAttributes(layout->inObjectAttributes());
-  new_layout->setOverflowAttributes(layout->overflowAttributes());
+  std::memcpy(
+      reinterpret_cast<byte*>(new_layout->address()),
+      reinterpret_cast<byte*>(layout->address()),
+      Layout::kSize);
   return *new_layout;
+}
+
+Object* Runtime::layoutAddAttributeEntry(
+    Thread* thread,
+    const Handle<ObjectArray>& entries,
+    const Handle<Object>& name,
+    AttributeInfo info) {
+  HandleScope scope(thread);
+  Handle<ObjectArray> new_entries(
+      &scope, newObjectArray(entries->length() + 1));
+  entries->copyTo(*new_entries);
+
+  Handle<ObjectArray> entry(&scope, newObjectArray(2));
+  entry->atPut(0, *name);
+  entry->atPut(1, info.asSmallInteger());
+  new_entries->atPut(entries->length(), *entry);
+
+  return *new_entries;
 }
 
 Object* Runtime::layoutAddAttribute(
@@ -2101,9 +2103,6 @@ Object* Runtime::layoutAddAttribute(
     const Handle<Layout>& layout,
     const Handle<Object>& name,
     word flags) {
-  CHECK(
-      !(flags & AttributeInfo::Flag::kInObject),
-      "cannot add in-object properties");
   HandleScope scope(thread->handles());
   Handle<Object> iname(&scope, internString(name));
 
@@ -2114,21 +2113,21 @@ Object* Runtime::layoutAddAttribute(
     return result;
   }
 
-  // Create the new overflow array by copying the old
-  Handle<ObjectArray> overflow(&scope, layout->overflowAttributes());
-  Handle<ObjectArray> new_overflow(
-      &scope, newObjectArray(overflow->length() + 1));
-  overflow->copyTo(*new_overflow);
-
-  // Add the new attribute to the overflow array
-  Handle<ObjectArray> entry(&scope, newObjectArray(2));
-  entry->atPut(0, *iname);
-  entry->atPut(1, AttributeInfo(overflow->length(), flags).asSmallInteger());
-  new_overflow->atPut(overflow->length(), *entry);
-
-  // Create the new layout
+  // Create a new layout and figure out where to place the attribute
   Handle<Layout> new_layout(&scope, layoutCreateChild(thread, layout));
-  new_layout->setOverflowAttributes(*new_overflow);
+  Handle<ObjectArray> inobject(&scope, layout->inObjectAttributes());
+  if (inobject->length() < layout->numInObjectAttributes()) {
+    AttributeInfo info(
+        inobject->length() * kPointerSize,
+        flags | AttributeInfo::Flag::kInObject);
+    new_layout->setInObjectAttributes(
+        layoutAddAttributeEntry(thread, inobject, name, info));
+  } else {
+    Handle<ObjectArray> overflow(&scope, layout->overflowAttributes());
+    AttributeInfo info(overflow->length(), flags);
+    new_layout->setOverflowAttributes(
+        layoutAddAttributeEntry(thread, overflow, name, info));
+  }
 
   // Add the edge to the existing layout
   Handle<Object> value(&scope, *new_layout);

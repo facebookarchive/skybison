@@ -586,4 +586,24 @@ def test(x):
   EXPECT_EQ(callFunctionToString(test, args), "foo bar baz\naaa bbb ccc\n");
 }
 
+TEST(InstanceAttributeTest, FetchConditionalInstanceAttribute) {
+  Runtime runtime;
+  const char* src = R"(
+def false():
+  return False
+
+class Foo:
+  def __init__(self):
+    self.foo = 'foo'
+    if false():
+      self.bar = 'bar'
+
+foo = Foo()
+print(foo.bar)
+)";
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, src),
+      "aborting due to pending exception: missing attribute");
+}
+
 } // namespace python

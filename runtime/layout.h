@@ -85,8 +85,6 @@ class AttributeInfo {
 
  private:
   uword value_;
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(AttributeInfo);
 };
 
 word AttributeInfo::offset() {
