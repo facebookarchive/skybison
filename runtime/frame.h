@@ -89,7 +89,8 @@ const int kMaxBlockStackDepth = 20;
  *     Builtins
  *     Globals
  *     Code Object
- *     Stack top
+ *     Pointer to the top of the value stack
+ *     Saved stack pointer
  *     Saved frame pointer  <- Frame pointer
  *                          <- Top of stack / lower memory addresses
  */
@@ -137,8 +138,12 @@ class Frame {
   inline void setPreviousFrame(Frame* frame);
 
   // A pointer to the top of the value stack
-  inline Object** top();
-  inline void setTop(Object** top);
+  inline Object** valueStackTop();
+  inline void setValueStackTop(Object** top);
+
+  // The previous frame's stack pointer or nullptr if this is the first frame
+  inline byte* previousSp();
+  inline void setPreviousSp(byte* sp);
 
   // A pointer to the base of the value stack
   inline Object** base();
@@ -157,8 +162,9 @@ class Frame {
   static word allocationSize(Object* code);
 
   static const int kPreviousFrameOffset = 0;
-  static const int kTopOffset = kPreviousFrameOffset + kPointerSize;
-  static const int kCodeOffset = kTopOffset + kPointerSize;
+  static const int kPreviousSpOffset = kPreviousFrameOffset + kPointerSize;
+  static const int kValueStackTopOffset = kPreviousSpOffset + kPointerSize;
+  static const int kCodeOffset = kValueStackTopOffset + kPointerSize;
   static const int kGlobalsOffset = kCodeOffset + kPointerSize;
   static const int kBuiltinsOffset = kGlobalsOffset + kPointerSize;
   static const int kLastInstructionOffset = kBuiltinsOffset + kPointerSize;
@@ -264,22 +270,33 @@ void Frame::setPreviousFrame(Frame* frame) {
       SmallInteger::fromWord(reinterpret_cast<uword>(frame)));
 }
 
+byte* Frame::previousSp() {
+  Object* sp = at(kPreviousSpOffset);
+  return reinterpret_cast<byte*>(SmallInteger::cast(sp)->value());
+}
+
+void Frame::setPreviousSp(byte* sp) {
+  atPut(kPreviousSpOffset, SmallInteger::fromWord(reinterpret_cast<uword>(sp)));
+}
+
 Object** Frame::base() {
   return reinterpret_cast<Object**>(this);
 }
 
-Object** Frame::top() {
-  Object* top = at(kTopOffset);
+Object** Frame::valueStackTop() {
+  Object* top = at(kValueStackTopOffset);
   return reinterpret_cast<Object**>(SmallInteger::cast(top)->value());
 }
 
-void Frame::setTop(Object** top) {
-  atPut(kTopOffset, SmallInteger::fromWord(reinterpret_cast<uword>(top)));
+void Frame::setValueStackTop(Object** top) {
+  atPut(
+      kValueStackTopOffset,
+      SmallInteger::fromWord(reinterpret_cast<uword>(top)));
 }
 
 Object* Frame::peek(word offset) {
-  assert(top() + offset < base());
-  return *(top() + offset);
+  assert(valueStackTop() + offset < base());
+  return *(valueStackTop() + offset);
 }
 
 Function* Frame::function(word argc) {

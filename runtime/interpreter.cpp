@@ -14,7 +14,7 @@ namespace python {
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
   Code* code = Code::cast(frame->code());
   ByteArray* byteArray = ByteArray::cast(code->code());
-  Object** sp = frame->top();
+  Object** sp = frame->valueStackTop();
   Object** locals = frame->locals() + code->nlocals();
   word pc = 0;
   for (;;) {
@@ -61,7 +61,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
       case Bytecode::CALL_FUNCTION: {
-        frame->setTop(sp);
+        frame->setValueStackTop(sp);
         auto function = Function::cast(*(sp + arg));
         Object* result = function->entry()(thread, frame, arg);
         // Pop arguments + called function and push return value

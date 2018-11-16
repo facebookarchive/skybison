@@ -8,15 +8,6 @@ class Frame;
 class Object;
 class Thread;
 
-/**
- * An entry point into a function.
- *
- * A FunctionTrampoline is responsible for ensuring that the arguments on the
- * stack are in the canonical form, allocating a stack frame, calling into the
- * function, and cleaning up after itself.
- */
-using FunctionTrampoline = Object* (*)(Thread*, Frame*, word argc);
-
 // Entry point for an interpreted function with no defaults invoked via
 // CALL_FUNCTION
 Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc);

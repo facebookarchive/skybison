@@ -23,7 +23,10 @@ class Thread {
     return ptr_;
   }
 
+  Frame*
+  openAndLinkFrame(word localsSize, word stackSize, Frame* previousFrame);
   Frame* pushFrame(Object* code, Frame* previousFrame);
+
   void popFrame(Frame* frame);
 
   Object* run(Object* object);

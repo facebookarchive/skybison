@@ -17,6 +17,8 @@ include_directories(
 add_library(
   runtime
   STATIC
+  runtime/builtins.cpp
+  runtime/builtins.h
   runtime/bytecode.h
   runtime/frame.cpp
   runtime/frame.h

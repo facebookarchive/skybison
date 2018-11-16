@@ -2,7 +2,9 @@
 
 #include <cstdlib>
 
+#include "builtins.h"
 #include "frame.h"
+#include "globals.h"
 #include "interpreter.h"
 #include "objects.h"
 #include "thread.h"
