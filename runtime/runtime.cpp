@@ -1089,10 +1089,13 @@ void Runtime::initializeObjectArrayClass() {
   Handle<Type> type(
       &scope, addEmptyBuiltinClass(SymbolId::kTuple, LayoutId::kObjectArray,
                                    LayoutId::kObject));
+  type->setFlag(Type::Flag::kTupleSubclass);
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinTupleEq>);
   classAddBuiltinFunction(type, SymbolId::kDunderGetItem,
                           nativeTrampoline<builtinTupleGetItem>);
+  classAddBuiltinFunction(type, SymbolId::kDunderNew,
+                          nativeTrampoline<builtinTupleNew>);
 }
 
 void Runtime::initializeDictClass() {

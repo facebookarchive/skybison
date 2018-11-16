@@ -221,4 +221,15 @@ TEST(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
   ASSERT_EQ(*test1, *tuple1);
 }
 
+TEST(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+  frame->setLocal(0, runtime.typeAt(LayoutId::kObjectArray));
+  Handle<ObjectArray> ret(&scope, builtinTupleNew(thread, frame, 1));
+  EXPECT_EQ(ret->length(), 0);
+}
+
 }  // namespace python

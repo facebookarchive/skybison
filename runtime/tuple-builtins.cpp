@@ -87,4 +87,38 @@ Object* builtinTupleGetItem(Thread* thread, Frame* frame, word nargs) {
       "argument");
 }
 
+Object* builtinTupleNew(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1) {
+    return thread->throwTypeErrorFromCString(
+        "tuple.__new__(): not enough arguments");
+  }
+  if (nargs > 2) {
+    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+        "tuple() takes at most 1 argument (%ld given)", nargs - 1));
+  }
+
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> type_obj(&scope, args.get(0));
+  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kClassSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "tuple.__new__(X): X is not a type object");
+  }
+
+  Handle<Type> type(&scope, *type_obj);
+  if (!type->hasFlag(Type::Flag::kTupleSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "tuple.__new__(X): X is not a subclass of tuple");
+  }
+
+  // If no iterable is given as an argument, return an empty zero tuple.
+  if (nargs == 1) {
+    return runtime->newObjectArray(0);
+  }
+
+  // Construct a new tuple from the iterable.
+  UNIMPLEMENTED("Can't construct tuple from iterable");
+}
+
 }  // namespace python
