@@ -1257,9 +1257,9 @@ void Runtime::initializeRandom() {
 void Runtime::initializeSymbols() {
   HandleScope scope;
   symbols_ = new Symbols(this);
-  for (word i = 0; i < Symbols::kMaxSymbolId; i++) {
-    Handle<Object> symbol(
-        &scope, symbols_->at(static_cast<Symbols::SymbolId>(i)));
+  for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
+    SymbolId id = static_cast<SymbolId>(i);
+    Handle<Object> symbol(&scope, symbols_->at(id));
     internString(symbol);
   }
 }

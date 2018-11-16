@@ -14,9 +14,10 @@ static const char* kPredefinedSymbolLiterals[] = {
 // clang-format on
 
 Symbols::Symbols(Runtime* runtime) {
-  symbols_ = new Object*[kMaxSymbolId];
+  symbols_ = new Object*[static_cast<int>(SymbolId::kMaxId)];
 #define ADD_SYMBOL(symbol, value)                                              \
-  symbols_[k##symbol##Id] = runtime->newStringFromCString(value);
+  symbols_[static_cast<int>(SymbolId::k##symbol)] =                            \
+      runtime->newStringFromCString(value);
   FOREACH_SYMBOL(ADD_SYMBOL)
 #undef ADD_SYMBOL
 }
@@ -26,14 +27,15 @@ Symbols::~Symbols() {
 }
 
 void Symbols::visit(PointerVisitor* visitor) {
-  for (word i = 0; i < kMaxSymbolId; i++) {
+  for (word i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
     visitor->visitPointer(&symbols_[i]);
   }
 }
 
 const char* Symbols::literalAt(SymbolId id) {
-  DCHECK_INDEX(id, kMaxSymbolId);
-  return kPredefinedSymbolLiterals[id];
+  int index = static_cast<int>(id);
+  DCHECK_INDEX(index, static_cast<int>(SymbolId::kMaxId));
+  return kPredefinedSymbolLiterals[index];
 }
 
 } // namespace python

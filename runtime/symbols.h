@@ -115,24 +115,24 @@ class Runtime;
   V(Type, "type")                                                              \
   V(UnderWeakRef, "_weakref")
 
+// clang-format off
+enum class SymbolId {
+#define DEFINE_SYMBOL_INDEX(symbol, value) k##symbol,
+  FOREACH_SYMBOL(DEFINE_SYMBOL_INDEX)
+#undef DEFINE_SYMBOL_INDEX
+  kMaxId,
+};
+// clang-format on
+
 // Provides convenient, fast access to commonly used names. Stolen from Dart.
 class Symbols {
  public:
   explicit Symbols(Runtime* runtime);
   ~Symbols();
 
-  // clang-format off
-  enum SymbolId {
-#define DEFINE_SYMBOL_INDEX(symbol, value) k##symbol##Id,
-    FOREACH_SYMBOL(DEFINE_SYMBOL_INDEX)
-#undef DEFINE_SYMBOL_INDEX
-    kMaxSymbolId,
-  };
-  // clang-format on
-
 #define DEFINE_SYMBOL_ACCESSOR(symbol, value)                                  \
   Object* symbol() {                                                           \
-    return symbols_[k##symbol##Id];                                            \
+    return at(SymbolId::k##symbol);                                            \
   }
   FOREACH_SYMBOL(DEFINE_SYMBOL_ACCESSOR)
 #undef DEFINE_SYMBOL_ACCESSOR
@@ -140,8 +140,9 @@ class Symbols {
   void visit(PointerVisitor* visitor);
 
   Object* at(SymbolId id) {
-    DCHECK_INDEX(id, kMaxSymbolId);
-    return symbols_[id];
+    int index = static_cast<int>(id);
+    DCHECK_INDEX(index, static_cast<int>(SymbolId::kMaxId));
+    return symbols_[index];
   }
 
   const char* literalAt(SymbolId id);

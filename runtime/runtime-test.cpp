@@ -1189,8 +1189,8 @@ class MyClassWithAttributes():
 TEST(RuntimeTest, VerifySymbols) {
   Runtime runtime;
   Symbols* symbols = runtime.symbols();
-  for (word i = 0; i < Symbols::kMaxSymbolId; i++) {
-    Symbols::SymbolId id = static_cast<Symbols::SymbolId>(i);
+  for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
+    SymbolId id = static_cast<SymbolId>(i);
     Object* value = symbols->at(id);
     ASSERT_TRUE(value->isString());
     const char* expected = symbols->literalAt(id);
