@@ -143,7 +143,7 @@ TEST(ThreadTest, PushPopFrame) {
   code->setStacksize(3);
 
   auto thread = Thread::currentThread();
-  byte* prevSp = thread->ptr();
+  byte* prevSp = thread->stackPtr();
   auto frame = thread->pushFrame(*code);
 
   // Verify frame invariants post-push
@@ -152,12 +152,11 @@ TEST(ThreadTest, PushPopFrame) {
   EXPECT_EQ(frame->valueStackTop(), reinterpret_cast<Object**>(frame));
   EXPECT_EQ(frame->valueStackBase(), frame->valueStackTop());
   EXPECT_EQ(frame->numLocals(), 2);
-  EXPECT_EQ(frame->previousSp(), prevSp);
 
   // Make sure we restore the thread's stack pointer back to its previous
   // location
   thread->popFrame();
-  EXPECT_EQ(thread->ptr(), prevSp);
+  EXPECT_EQ(thread->stackPtr(), prevSp);
 }
 
 TEST(ThreadTest, PushFrameWithNoCellVars) {
@@ -168,10 +167,10 @@ TEST(ThreadTest, PushFrameWithNoCellVars) {
   code->setCellvars(None::object());
   code->setFreevars(runtime.newObjectArray(0));
   auto thread = Thread::currentThread();
-  byte* prevSp = thread->ptr();
+  byte* prevSp = thread->stackPtr();
   thread->pushFrame(*code);
 
-  EXPECT_EQ(thread->ptr(), prevSp - Frame::kSize - kPointerSize);
+  EXPECT_EQ(thread->stackPtr(), prevSp - Frame::kSize);
 }
 
 TEST(ThreadTest, PushFrameWithNoFreeVars) {
@@ -182,10 +181,10 @@ TEST(ThreadTest, PushFrameWithNoFreeVars) {
   code->setFreevars(None::object());
   code->setCellvars(runtime.newObjectArray(0));
   auto thread = Thread::currentThread();
-  byte* prevSp = thread->ptr();
+  byte* prevSp = thread->stackPtr();
   thread->pushFrame(*code);
 
-  EXPECT_EQ(thread->ptr(), prevSp - Frame::kSize - kPointerSize);
+  EXPECT_EQ(thread->stackPtr(), prevSp - Frame::kSize);
 }
 
 TEST(ThreadTest, ZeroInitializeBlockStack) {

@@ -19,12 +19,13 @@ thread_local Thread* current_thread_ = nullptr;
 Thread::Thread(word size)
     : handles_(new Handles()),
       size_(Utils::roundUp(size, kPointerSize)),
+      initialFrame_(nullptr),
       next_(nullptr),
       runtime_(nullptr),
       pending_exception_(None::object()) {
   start_ = new byte[size];
   // Stack growns down in order to match machine convention
-  end_ = ptr_ = start_ + size;
+  end_ = start_ + size;
   pushInitialFrame();
 }
 
@@ -46,6 +47,10 @@ void Thread::setCurrentThread(Thread* thread) {
   current_thread_ = thread;
 }
 
+byte* Thread::stackPtr() {
+  return reinterpret_cast<byte*>(currentFrame_->valueStackTop());
+}
+
 Frame* Thread::openAndLinkFrame(word numArgs, word numVars, word stackDepth) {
   CHECK(numArgs >= 0, "must have 0 or more arguments");
   CHECK(numVars >= 0, "must have 0 or more locals");
@@ -54,28 +59,19 @@ Frame* Thread::openAndLinkFrame(word numArgs, word numVars, word stackDepth) {
   // bound method
   stackDepth += 1;
 
-  word size = Frame::kSize + (numVars + stackDepth) * kPointerSize;
-
-  // allocate that much space on the stack
+  // Check that there is sufficient space on the stack
   // TODO: Grow stack
-  byte* prevSp = ptr_;
-  assert(ptr_ - size >= start_);
-  ptr_ -= size;
-
-  // Take care to align the frame such that the arguments that were pushed on
-  // the stack by the caller are adjacent to the locals of the callee.
-  byte* sp = ptr_;
-  if (!currentFrame_->isSentinelFrame()) {
-    sp = reinterpret_cast<byte*>(currentFrame_->valueStackTop()) - size;
-    CHECK(sp >= ptr_, "value stack overflow by %lu bytes\n", ptr_ - sp);
-  }
-  auto frame = reinterpret_cast<Frame*>(sp + stackDepth * kPointerSize);
+  byte* sp = reinterpret_cast<byte*>(currentFrame_->valueStackTop());
+  word maxSize = Frame::kSize + (numVars + stackDepth) * kPointerSize;
+  CHECK(sp - maxSize >= start_, "stack overflow");
 
   // Initialize the frame.
+  word size = Frame::kSize + numVars * kPointerSize;
+  sp -= size;
   std::memset(sp, 0, size);
+  auto frame = reinterpret_cast<Frame*>(sp);
   frame->setPreviousFrame(currentFrame_);
   frame->setValueStackTop(reinterpret_cast<Object**>(frame));
-  frame->setPreviousSp(prevSp);
   frame->setNumLocals(numArgs + numVars);
 
   currentFrame_ = frame;
@@ -126,12 +122,14 @@ Frame* Thread::pushClassFunctionFrame(Object* function, Object* dictionary) {
 }
 
 void Thread::pushInitialFrame() {
-  CHECK(ptr_ == end_, "stack must be empty when pushing initial frame");
-  CHECK(ptr_ - Frame::kSize > start_, "no space for initial frame");
+  CHECK(initialFrame_ == nullptr, "inital frame already pushed");
 
-  ptr_ -= Frame::kSize;
-  initialFrame_ = reinterpret_cast<Frame*>(ptr_);
+  byte* sp = end_ - Frame::kSize;
+  CHECK(sp > start_, "no space for initial frame");
+  initialFrame_ = reinterpret_cast<Frame*>(sp);
   initialFrame_->makeSentinel();
+  initialFrame_->setValueStackTop(reinterpret_cast<Object**>(sp));
+
   currentFrame_ = initialFrame_;
 }
 
@@ -139,21 +137,16 @@ void Thread::popFrame() {
   Frame* frame = currentFrame_;
   CHECK(!frame->isSentinelFrame(), "cannot pop initial frame");
   currentFrame_ = frame->previousFrame();
-  ptr_ = frame->previousSp();
 }
 
 Object* Thread::run(Object* object) {
-  CHECK(
-      ptr_ == reinterpret_cast<byte*>(initialFrame_),
-      "thread must be inactive");
+  CHECK(currentFrame_ == initialFrame_, "thread must be inactive");
   Frame* frame = pushFrame(object);
   return Interpreter::execute(this, frame);
 }
 
 Object* Thread::runModuleFunction(Module* module, Object* object) {
-  CHECK(
-      ptr_ == reinterpret_cast<byte*>(initialFrame_),
-      "thread must be inactive");
+  CHECK(currentFrame_ == initialFrame_, "thread must be inactive");
   Frame* frame = pushModuleFunctionFrame(module, object);
   return Interpreter::execute(this, frame);
 }

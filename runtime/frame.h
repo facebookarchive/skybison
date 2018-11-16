@@ -173,10 +173,6 @@ class Frame {
   inline Object** valueStackTop();
   inline void setValueStackTop(Object** top);
 
-  // The previous frame's stack pointer or nullptr if this is the first frame
-  inline byte* previousSp();
-  inline void setPreviousSp(byte* sp);
-
   inline Object** valueStackBase();
 
   // Return the object at offset from the top of the value stack (e.g. peek(0)
@@ -193,8 +189,7 @@ class Frame {
   static word allocationSize(Object* code);
 
   static const int kPreviousFrameOffset = 0;
-  static const int kPreviousSpOffset = kPreviousFrameOffset + kPointerSize;
-  static const int kValueStackTopOffset = kPreviousSpOffset + kPointerSize;
+  static const int kValueStackTopOffset = kPreviousFrameOffset + kPointerSize;
   static const int kCodeOffset = kValueStackTopOffset + kPointerSize;
   static const int kGlobalsOffset = kCodeOffset + kPointerSize;
   static const int kImplicitGlobalsOffset = kGlobalsOffset + kPointerSize;
@@ -323,15 +318,6 @@ void Frame::setPreviousFrame(Frame* frame) {
   atPut(
       kPreviousFrameOffset,
       SmallInteger::fromWord(reinterpret_cast<uword>(frame)));
-}
-
-byte* Frame::previousSp() {
-  Object* sp = at(kPreviousSpOffset);
-  return reinterpret_cast<byte*>(SmallInteger::cast(sp)->value());
-}
-
-void Frame::setPreviousSp(byte* sp) {
-  atPut(kPreviousSpOffset, SmallInteger::fromWord(reinterpret_cast<uword>(sp)));
 }
 
 Object** Frame::valueStackBase() {

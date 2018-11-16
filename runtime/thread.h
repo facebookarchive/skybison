@@ -27,10 +27,6 @@ class Thread {
   static Thread* currentThread();
   static void setCurrentThread(Thread* thread);
 
-  byte* ptr() {
-    return ptr_;
-  }
-
   Frame* openAndLinkFrame(word numArgs, word numVars, word stackDepth);
   Frame* pushFrame(Object* code);
   Frame* pushModuleFunctionFrame(Module* module, Object* code);
@@ -61,6 +57,10 @@ class Thread {
   Frame* currentFrame() {
     return currentFrame_;
   }
+
+  // The stack pointer is computed by taking the value stack top of the current
+  // frame.
+  byte* stackPtr();
 
   void visitRoots(PointerVisitor* visitor);
 
@@ -127,7 +127,6 @@ class Thread {
   word size_;
   byte* start_;
   byte* end_;
-  byte* ptr_;
 
   // initialFrame_ is a sentinel frame (all zeros) that is pushed onto the
   // stack when the thread is created.
