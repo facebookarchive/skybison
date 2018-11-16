@@ -1,6 +1,8 @@
 #pragma once
 
+#include "bytecode.h"
 #include "globals.h"
+#include "handles.h"
 
 namespace python {
 
@@ -11,6 +13,15 @@ class Thread;
 class Interpreter {
  public:
   static Object* execute(Thread* thread, Frame* frame);
+
+  static Object* compare(
+      CompareOp op,
+      const Handle<Object>& left,
+      const Handle<Object>& right);
+  static Object* richCompare(
+      CompareOp op,
+      const Handle<Object>& left,
+      const Handle<Object>& right);
 
  private:
   static Object* call(Thread* thread, Frame* frame, Object** sp, word nargs);

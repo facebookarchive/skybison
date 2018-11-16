@@ -1553,4 +1553,30 @@ def test(a, b):
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 }
 
+TEST(ThreadTest, CompareOpSmallInteger) {
+  Runtime runtime;
+  const char* src = R"(
+a = 1
+b = 2
+c = 1
+print(a < b)
+print(a <= b)
+print(a == b)
+print(a >= b)
+print(a > b)
+print(a is c)
+print(a is not c)
+)";
+  const char* expected = R"(True
+True
+False
+False
+False
+True
+False
+)";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
 } // namespace python

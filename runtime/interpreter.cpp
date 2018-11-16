@@ -4,9 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "bytecode.h"
 #include "frame.h"
-#include "handles.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
@@ -370,7 +368,16 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         *sp = SmallInteger::fromWord(left ^ right);
         break;
       }
-
+      case Bytecode::COMPARE_OP: {
+        HandleScope scope;
+        Handle<Object> right(&scope, *sp++);
+        Handle<Object> left(&scope, *sp++);
+        Object* res =
+            Interpreter::compare(static_cast<CompareOp>(arg), left, right);
+        assert(res->isBoolean());
+        *--sp = res;
+        break;
+      }
       // TODO: The implementation of the {BINARY,STORE}_SUBSCR opcodes are
       // enough to get richards working.
       case Bytecode::BINARY_SUBSCR: {
@@ -414,6 +421,83 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         abort();
     }
   }
+}
+
+Object* Interpreter::compare(
+    CompareOp op,
+    const Handle<Object>& left,
+    const Handle<Object>& right) {
+  bool res = false;
+  switch (op) {
+    case IS: {
+      res = (*left == *right);
+      break;
+    }
+    case IS_NOT: {
+      res = (*left != *right);
+      break;
+    }
+    case IN: {
+      // TODO: fill abstract sequence contains
+      abort();
+      break;
+    }
+    case NOT_IN: {
+      // TODO: fill abstract sequence contains
+      abort();
+      break;
+    }
+    case EXC_MATCH: {
+      // TODO: fill execption compare
+      abort();
+      break;
+    }
+    default:
+      return richCompare(op, left, right);
+  }
+  return Boolean::fromBool(res);
+}
+
+Object* Interpreter::richCompare(
+    CompareOp op,
+    const Handle<Object>& left,
+    const Handle<Object>& right) {
+  bool res = false;
+  // TODO: call rich comparison method
+  if (left->isSmallInteger() && right->isSmallInteger()) {
+    word sign = SmallInteger::cast(*left)->value() -
+        SmallInteger::cast(*right)->value();
+    switch (op) {
+      case LT: {
+        res = (sign < 0);
+        break;
+      }
+      case LE: {
+        res = (sign <= 0);
+        break;
+      }
+      case EQ: {
+        res = (sign == 0);
+        break;
+      }
+      case NE: {
+        res = (sign != 0);
+        break;
+      }
+      case GT: {
+        res = (sign > 0);
+        break;
+      }
+      case GE: {
+        res = (sign >= 0);
+        break;
+      }
+      default:
+        // PyErr_BadArgument - other cases should not go in here
+        abort();
+    }
+  }
+  return Boolean::fromBool(res);
 }
 
 } // namespace python

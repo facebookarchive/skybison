@@ -127,4 +127,19 @@ enum Bytecode {
   EXCEPT_HANDLER = 257,
 };
 
+enum CompareOp {
+  LT = 0,
+  LE = 1,
+  EQ = 2,
+  NE = 3,
+  GT = 4,
+  GE = 5,
+  IN,
+  NOT_IN,
+  IS,
+  IS_NOT,
+  EXC_MATCH,
+  BAD
+};
+
 } // namespace python
