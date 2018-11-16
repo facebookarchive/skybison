@@ -269,6 +269,21 @@ TEST(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
   EXPECT_EQ(ret->length(), 0);
 }
 
+TEST(TupleBuiltinsTest, DunderNewWithIterableReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+a = tuple.__new__(tuple, [1, 2, 3])
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+
+  ASSERT_EQ(a->length(), 3);
+  EXPECT_EQ(SmallInt::cast(a->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(a->at(1))->value(), 2);
+  EXPECT_EQ(SmallInt::cast(a->at(2))->value(), 3);
+}
+
 TEST(TupleBuiltinsTest, DunderReprWithManyPrimitives) {
   Runtime runtime;
   runtime.runFromCStr(R"(

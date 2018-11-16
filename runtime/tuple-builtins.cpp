@@ -198,7 +198,60 @@ Object* TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   // Construct a new tuple from the iterable.
-  UNIMPLEMENTED("Can't construct tuple from iterable");
+  Handle<Object> iterable(&scope, args.get(1));
+  Handle<Object> dunder_iter(&scope,
+                             Interpreter::lookupMethod(thread, frame, iterable,
+                                                       SymbolId::kDunderIter));
+  if (dunder_iter->isError()) {
+    return thread->throwTypeErrorFromCStr("object is not iterable");
+  }
+  Handle<Object> iterator(
+      &scope, Interpreter::callMethod1(thread, frame, dunder_iter, iterable));
+  Handle<Object> dunder_next(&scope,
+                             Interpreter::lookupMethod(thread, frame, iterator,
+                                                       SymbolId::kDunderNext));
+  word max_len = 10;
+  // If the iterator has a __length_hint__, use that as max_len to avoid
+  // resizes.
+  Handle<Type> iter_type(&scope, runtime->typeOf(*iterator));
+  Handle<Object> length_hint(
+      &scope, runtime->lookupSymbolInMro(thread, iter_type,
+                                         SymbolId::kDunderLengthHint));
+  if (length_hint->isSmallInt()) {
+    max_len = SmallInt::cast(*length_hint)->value();
+  }
+
+  word curr = 0;
+  Handle<ObjectArray> result(&scope, runtime->newObjectArray(max_len));
+  // Iterate through the iterable, copying elements into the tuple.
+  while (!runtime->isIteratorExhausted(thread, iterator)) {
+    Handle<Object> elem(
+        &scope, Interpreter::callMethod1(thread, frame, dunder_next, iterator));
+    DCHECK(!elem->isError(), "__next__ raised exception");
+    // If the capacity of the current result is reached, create a new larger
+    // tuple and copy over the contents.
+    if (curr == max_len) {
+      max_len *= 2;
+      Handle<ObjectArray> new_tuple(&scope, runtime->newObjectArray(max_len));
+      for (word i = 0; i < curr; i++) {
+        new_tuple->atPut(i, result->at(i));
+      }
+      result = *new_tuple;
+    }
+    result->atPut(curr++, *elem);
+  }
+
+  // If the result is perfectly sized, return it.
+  if (curr == max_len) {
+    return *result;
+  }
+
+  // The result was over-allocated, shrink it.
+  Handle<ObjectArray> new_tuple(&scope, runtime->newObjectArray(curr));
+  for (word i = 0; i < curr; i++) {
+    new_tuple->atPut(i, result->at(i));
+  }
+  return *new_tuple;
 }
 
 Object* TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
