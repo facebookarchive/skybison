@@ -1148,7 +1148,8 @@ void Runtime::initializeTypeClass() {
 
 void Runtime::initializeImmediateClasses() {
   initializeBooleanClass();
-  addEmptyBuiltinClass(SymbolId::kNoneType, LayoutId::kNone, LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kNoneType, LayoutId::kNoneType,
+                       LayoutId::kObject);
   addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallString,
                        LayoutId::kString);
   SmallIntegerBuiltins::initialize(this);

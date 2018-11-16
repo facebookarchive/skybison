@@ -10,7 +10,7 @@ namespace python {
   V(SmallInteger)                                                              \
   V(SmallString)                                                               \
   V(Boolean)                                                                   \
-  V(None)
+  V(NoneType)
 
 #define INTRINSIC_HEAP_CLASS_NAMES(V)                                          \
   V(Object)                                                                    \
@@ -69,7 +69,7 @@ enum class LayoutId : word {
   // implies that all other immediate class ids must be odd.
   kSmallInteger = 0,
   kBoolean = 7,
-  kNone = 15,
+  kNoneType = 15,
   // there is no class associated with the Error object type, this is here as a
   // placeholder.
   kError = 23,
