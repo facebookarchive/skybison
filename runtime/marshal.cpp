@@ -346,7 +346,7 @@ Object* Marshal::Reader::doTupleElements(int32 length) {
   if (isRef_) {
     addRef(result);
   }
-  for (int i = 0; i < length; i++) {
+  for (int32 i = 0; i < length; i++) {
     Object* value = readObject();
     ObjectArray::cast(result)->atPut(i, value);
   }

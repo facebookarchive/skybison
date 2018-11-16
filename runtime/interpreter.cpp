@@ -346,7 +346,7 @@ void BUILD_LIST(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<ObjectArray> array(&scope, thread->runtime()->newObjectArray(arg));
-  for (int i = arg - 1; i >= 0; i--) {
+  for (word i = arg - 1; i >= 0; i--) {
     array->atPut(i, *ctx->sp++);
   }
   List* list = List::cast(thread->runtime()->newList());
@@ -360,7 +360,7 @@ void BUILD_SET(Context* ctx, word arg) {
   HandleScope scope;
   Runtime* runtime = thread->runtime();
   Handle<Set> set(&scope, Set::cast(runtime->newSet()));
-  for (int i = arg - 1; i >= 0; i--) {
+  for (word i = arg - 1; i >= 0; i--) {
     runtime->setAdd(set, Handle<Object>(&scope, *ctx->sp++));
   }
   *--ctx->sp = *set;
@@ -381,7 +381,7 @@ void BUILD_TUPLE(Context* ctx, word arg) {
   HandleScope scope;
   Handle<ObjectArray> tuple(&scope, thread->runtime()->newObjectArray(arg));
   Object**& sp = ctx->sp;
-  for (int i = arg - 1; i >= 0; i--) {
+  for (word i = arg - 1; i >= 0; i--) {
     tuple->atPut(i, *sp++);
   }
   *--sp = *tuple;
@@ -393,7 +393,7 @@ void BUILD_MAP(Context* ctx, word arg) {
   HandleScope scope;
   Handle<Dictionary> dict(&scope, runtime->newDictionary(arg));
   Object**& sp = ctx->sp;
-  for (int i = 0; i < arg; i++) {
+  for (word i = 0; i < arg; i++) {
     Handle<Object> value(&scope, *sp++);
     Handle<Object> key(&scope, *sp++);
     runtime->dictionaryAtPut(dict, key, value);
@@ -679,7 +679,7 @@ void BUILD_CONST_KEY_MAP(Context* ctx, word arg) {
   Handle<ObjectArray> keys(&scope, *sp++);
   Handle<Dictionary> dict(
       &scope, thread->runtime()->newDictionary(keys->length()));
-  for (int i = arg - 1; i >= 0; i--) {
+  for (word i = arg - 1; i >= 0; i--) {
     Handle<Object> key(&scope, keys->at(i));
     Handle<Object> value(&scope, *sp++);
     thread->runtime()->dictionaryAtPut(dict, key, value);

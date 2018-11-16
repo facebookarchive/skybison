@@ -125,7 +125,7 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
 }
 
 static void printString(String* str) {
-  for (int i = 0; i < str->length(); i++) {
+  for (word i = 0; i < str->length(); i++) {
     *builtinPrintStream << str->charAt(i);
   }
 }

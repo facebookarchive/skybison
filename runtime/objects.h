@@ -2227,7 +2227,7 @@ void ObjectArray::copyTo(Object* array) {
   word len = length();
   ObjectArray* dst = ObjectArray::cast(array);
   DCHECK_BOUND(len, dst->length());
-  for (int i = 0; i < len; i++) {
+  for (word i = 0; i < len; i++) {
     Object* elem = at(i);
     dst->atPut(i, elem);
   }

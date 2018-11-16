@@ -51,7 +51,7 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
   // initialized cell var
   auto nLocals = code->nlocals();
   auto nCellvars = code->numCellvars();
-  for (int i = 0; i < code->numCellvars(); i++) {
+  for (word i = 0; i < code->numCellvars(); i++) {
     // TODO: implement cell2arg
     Handle<ValueCell> cell(&scope, thread->runtime()->newValueCell());
     frame->setLocal(nLocals + i, *cell);
@@ -63,7 +63,7 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
           code->numFreevars() ==
               ObjectArray::cast(function->closure())->length(),
       "Number of freevars is different than the closure.");
-  for (int i = 0; i < code->numFreevars(); i++) {
+  for (word i = 0; i < code->numFreevars(); i++) {
     frame->setLocal(
         nLocals + nCellvars + i, ObjectArray::cast(function->closure())->at(i));
   }
