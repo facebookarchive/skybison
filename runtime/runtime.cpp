@@ -795,9 +795,11 @@ RawObject Runtime::newRangeIterator(const Object& range) {
 
 RawObject Runtime::newSetIterator(const Object& set) {
   HandleScope scope;
-  SetIterator set_iterator(&scope, heap()->create<RawSetIterator>());
-  set_iterator->setSet(*set);
-  return *set_iterator;
+  SetIterator result(&scope, heap()->create<RawSetIterator>());
+  result->setSet(*set);
+  result->setIndex(0);
+  result->setConsumedCount(0);
+  return *result;
 }
 
 RawObject Runtime::newSlice(const Object& start, const Object& stop,
@@ -3220,9 +3222,10 @@ RawObject Runtime::newSuper() { return heap()->create<RawSuper>(); }
 
 RawObject Runtime::newTupleIterator(const Object& tuple) {
   HandleScope scope;
-  TupleIterator tuple_iterator(&scope, heap()->create<RawTupleIterator>());
-  tuple_iterator->setTuple(*tuple);
-  return *tuple_iterator;
+  TupleIterator result(&scope, heap()->create<RawTupleIterator>());
+  result->setIndex(0);
+  result->setTuple(*tuple);
+  return *result;
 }
 
 LayoutId Runtime::computeBuiltinBaseClass(const Type& klass) {

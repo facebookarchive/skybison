@@ -3678,8 +3678,6 @@ inline RawObject RawSetIterator::set() {
 
 inline void RawSetIterator::setSet(RawObject set) {
   instanceVariableAtPut(kSetOffset, set);
-  instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(0));
-  instanceVariableAtPut(kConsumedCountOffset, RawSmallInt::fromWord(0));
 }
 
 inline word RawSetIterator::consumedCount() {
@@ -3755,7 +3753,6 @@ inline RawObject RawTupleIterator::tuple() {
 
 inline void RawTupleIterator::setTuple(RawObject tuple) {
   instanceVariableAtPut(kTupleOffset, tuple);
-  instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(0));
 }
 
 inline word RawTupleIterator::index() {
