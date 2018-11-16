@@ -31,8 +31,9 @@ const BuiltinMethod StrBuiltins::kMethods[] = {
 
 void StrBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClass(SymbolId::kStr, LayoutId::kStr,
-                                             LayoutId::kObject, kMethods));
+  Type type(&scope,
+            runtime->addBuiltinClassWithMethods(SymbolId::kStr, LayoutId::kStr,
+                                                LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kStrSubclass);
 }
 

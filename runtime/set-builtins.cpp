@@ -25,8 +25,9 @@ const BuiltinMethod SetBuiltins::kMethods[] = {
 void SetBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
-  Type set(&scope, runtime->addBuiltinClass(SymbolId::kSet, LayoutId::kSet,
-                                            LayoutId::kObject, kMethods));
+  Type set(&scope,
+           runtime->addBuiltinClassWithMethods(SymbolId::kSet, LayoutId::kSet,
+                                               LayoutId::kObject, kMethods));
   set->setFlag(Type::Flag::kSetSubclass);
 }
 
@@ -307,9 +308,9 @@ const BuiltinMethod SetIteratorBuiltins::kMethods[] = {
 
 void SetIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type set_iter(&scope, runtime->addBuiltinClass(SymbolId::kSetIterator,
-                                                 LayoutId::kSetIterator,
-                                                 LayoutId::kObject, kMethods));
+  Type set_iter(&scope, runtime->addBuiltinClassWithMethods(
+                            SymbolId::kSetIterator, LayoutId::kSetIterator,
+                            LayoutId::kObject, kMethods));
 }
 
 RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

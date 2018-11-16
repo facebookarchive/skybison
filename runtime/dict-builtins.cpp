@@ -21,9 +21,9 @@ const BuiltinMethod DictBuiltins::kMethods[] = {
 
 void DictBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type dict_type(&scope,
-                 runtime->addBuiltinClass(SymbolId::kDict, LayoutId::kDict,
-                                          LayoutId::kObject, kMethods));
+  Type dict_type(&scope, runtime->addBuiltinClassWithMethods(
+                             SymbolId::kDict, LayoutId::kDict,
+                             LayoutId::kObject, kMethods));
   dict_type->setFlag(Type::Flag::kDictSubclass);
 }
 

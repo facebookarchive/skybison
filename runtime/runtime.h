@@ -203,15 +203,15 @@ class Runtime {
   // attributes and/or methods.
   RawObject addEmptyBuiltinClass(SymbolId name, LayoutId subclass_id,
                                  LayoutId superclass_id);
+  RawObject addBuiltinClassWithAttrs(SymbolId name, LayoutId subclass_id,
+                                     LayoutId superclass_id,
+                                     View<BuiltinAttribute> attrs);
+  RawObject addBuiltinClassWithMethods(SymbolId name, LayoutId subclass_id,
+                                       LayoutId superclass_id,
+                                       View<BuiltinMethod> methods);
   RawObject addBuiltinClass(SymbolId name, LayoutId subclass_id,
                             LayoutId superclass_id,
-                            View<BuiltinAttribute> attributes);
-  RawObject addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                            LayoutId superclass_id,
-                            View<BuiltinMethod> methods);
-  RawObject addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                            LayoutId superclass_id,
-                            View<BuiltinAttribute> attributes,
+                            View<BuiltinAttribute> attrs,
                             View<BuiltinMethod> methods);
 
   LayoutId reserveLayoutId();

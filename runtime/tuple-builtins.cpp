@@ -20,9 +20,9 @@ const BuiltinMethod TupleBuiltins::kMethods[] = {
 
 void TupleBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope,
-            runtime->addBuiltinClass(SymbolId::kTuple, LayoutId::kObjectArray,
-                                     LayoutId::kObject, kMethods));
+  Type type(&scope, runtime->addBuiltinClassWithMethods(
+                        SymbolId::kTuple, LayoutId::kObjectArray,
+                        LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kTupleSubclass);
 }
 
@@ -276,10 +276,10 @@ const BuiltinMethod TupleIteratorBuiltins::kMethods[] = {
 
 void TupleIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type tuple_iter(&scope,
-                  runtime->addBuiltinClass(SymbolId::kTupleIterator,
-                                           LayoutId::kTupleIterator,
-                                           LayoutId::kObject, kMethods));
+  Type tuple_iter(
+      &scope, runtime->addBuiltinClassWithMethods(SymbolId::kTupleIterator,
+                                                  LayoutId::kTupleIterator,
+                                                  LayoutId::kObject, kMethods));
 }
 
 RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

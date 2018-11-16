@@ -34,8 +34,9 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
 
 void IntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClass(SymbolId::kInt, LayoutId::kInt,
-                                             LayoutId::kObject, kMethods));
+  Type type(&scope,
+            runtime->addBuiltinClassWithMethods(SymbolId::kInt, LayoutId::kInt,
+                                                LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
   Type largeint_type(
       &scope, runtime->addEmptyBuiltinClass(
@@ -168,9 +169,9 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
 
 void SmallIntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope,
-            runtime->addBuiltinClass(SymbolId::kSmallInt, LayoutId::kSmallInt,
-                                     LayoutId::kInt, kMethods));
+  Type type(&scope, runtime->addBuiltinClassWithMethods(
+                        SymbolId::kSmallInt, LayoutId::kSmallInt,
+                        LayoutId::kInt, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
@@ -795,8 +796,9 @@ const BuiltinMethod BoolBuiltins::kMethods[] = {
 
 void BoolBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClass(SymbolId::kBool, LayoutId::kBool,
-                                             LayoutId::kInt, kMethods));
+  Type type(&scope,
+            runtime->addBuiltinClassWithMethods(
+                SymbolId::kBool, LayoutId::kBool, LayoutId::kInt, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
 }
 

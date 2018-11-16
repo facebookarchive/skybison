@@ -197,26 +197,28 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
 RawObject Runtime::addEmptyBuiltinClass(SymbolId name, LayoutId subclass_id,
                                         LayoutId superclass_id) {
   return addBuiltinClass(name, subclass_id, superclass_id,
-                         View<BuiltinAttribute>(nullptr, 0));
-}
-
-RawObject Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                                   LayoutId superclass_id,
-                                   View<BuiltinAttribute> attributes) {
-  return addBuiltinClass(name, subclass_id, superclass_id, attributes,
+                         View<BuiltinAttribute>(nullptr, 0),
                          View<BuiltinMethod>(nullptr, 0));
 }
 
-RawObject Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                                   LayoutId superclass_id,
-                                   View<BuiltinMethod> methods) {
+RawObject Runtime::addBuiltinClassWithAttrs(SymbolId name, LayoutId subclass_id,
+                                            LayoutId superclass_id,
+                                            View<BuiltinAttribute> attrs) {
+  return addBuiltinClass(name, subclass_id, superclass_id, attrs,
+                         View<BuiltinMethod>(nullptr, 0));
+}
+
+RawObject Runtime::addBuiltinClassWithMethods(SymbolId name,
+                                              LayoutId subclass_id,
+                                              LayoutId superclass_id,
+                                              View<BuiltinMethod> methods) {
   return addBuiltinClass(name, subclass_id, superclass_id,
                          View<BuiltinAttribute>(nullptr, 0), methods);
 }
 
 RawObject Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
                                    LayoutId superclass_id,
-                                   View<BuiltinAttribute> attributes,
+                                   View<BuiltinAttribute> attrs,
                                    View<BuiltinMethod> methods) {
   HandleScope scope;
 
@@ -224,8 +226,8 @@ RawObject Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
   Type subclass(&scope, newClass());
   subclass->setName(symbols()->at(name));
 
-  Layout layout(&scope, layoutCreateSubclassWithBuiltins(
-                            subclass_id, superclass_id, attributes));
+  Layout layout(&scope, layoutCreateSubclassWithBuiltins(subclass_id,
+                                                         superclass_id, attrs));
 
   // Assign the layout to the class
   layout->setDescribedClass(*subclass);

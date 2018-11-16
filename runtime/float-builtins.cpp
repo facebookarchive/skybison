@@ -27,8 +27,9 @@ const BuiltinMethod FloatBuiltins::kMethods[] = {
 
 void FloatBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClass(SymbolId::kFloat, LayoutId::kFloat,
-                                             LayoutId::kObject, kMethods));
+  Type type(&scope, runtime->addBuiltinClassWithMethods(
+                        SymbolId::kFloat, LayoutId::kFloat, LayoutId::kObject,
+                        kMethods));
   type->setFlag(Type::Flag::kFloatSubclass);
 }
 

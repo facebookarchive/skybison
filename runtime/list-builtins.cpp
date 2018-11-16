@@ -322,9 +322,9 @@ const BuiltinMethod ListIteratorBuiltins::kMethods[] = {
 
 void ListIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type list_iter(&scope, runtime->addBuiltinClass(SymbolId::kListIterator,
-                                                  LayoutId::kListIterator,
-                                                  LayoutId::kObject, kMethods));
+  Type list_iter(&scope, runtime->addBuiltinClassWithMethods(
+                             SymbolId::kListIterator, LayoutId::kListIterator,
+                             LayoutId::kObject, kMethods));
 }
 
 RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

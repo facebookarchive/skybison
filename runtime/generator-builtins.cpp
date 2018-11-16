@@ -51,9 +51,9 @@ const BuiltinMethod GeneratorBuiltins::kMethods[] = {
 
 void GeneratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type generator(&scope, runtime->addBuiltinClass(SymbolId::kGenerator,
-                                                  LayoutId::kGenerator,
-                                                  LayoutId::kObject, kMethods));
+  Type generator(&scope, runtime->addBuiltinClassWithMethods(
+                             SymbolId::kGenerator, LayoutId::kGenerator,
+                             LayoutId::kObject, kMethods));
 }
 
 RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
@@ -97,9 +97,9 @@ const BuiltinMethod CoroutineBuiltins::kMethods[] = {
 
 void CoroutineBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type coroutine(&scope, runtime->addBuiltinClass(SymbolId::kCoroutine,
-                                                  LayoutId::kCoroutine,
-                                                  LayoutId::kObject, kMethods));
+  Type coroutine(&scope, runtime->addBuiltinClassWithMethods(
+                             SymbolId::kCoroutine, LayoutId::kCoroutine,
+                             LayoutId::kObject, kMethods));
 }
 
 }  // namespace python

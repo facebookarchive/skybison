@@ -38,10 +38,10 @@ const BuiltinMethod RangeIteratorBuiltins::kMethods[] = {
 
 void RangeIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type range_iter(&scope,
-                  runtime->addBuiltinClass(SymbolId::kRangeIterator,
-                                           LayoutId::kRangeIterator,
-                                           LayoutId::kObject, kMethods));
+  Type range_iter(
+      &scope, runtime->addBuiltinClassWithMethods(SymbolId::kRangeIterator,
+                                                  LayoutId::kRangeIterator,
+                                                  LayoutId::kObject, kMethods));
 }
 
 RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

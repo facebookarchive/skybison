@@ -13,9 +13,9 @@ const BuiltinMethod ComplexBuiltins::kMethods[] = {
 
 void ComplexBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope,
-            runtime->addBuiltinClass(SymbolId::kComplex, LayoutId::kComplex,
-                                     LayoutId::kObject, kMethods));
+  Type type(&scope, runtime->addBuiltinClassWithMethods(
+                        SymbolId::kComplex, LayoutId::kComplex,
+                        LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kComplexSubclass);
 }
 

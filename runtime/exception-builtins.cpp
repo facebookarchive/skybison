@@ -138,7 +138,7 @@ const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
 
 void ImportErrorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClass(
+  Type type(&scope, runtime->addBuiltinClassWithAttrs(
                         SymbolId::kImportError, LayoutId::kImportError,
                         LayoutId::kException, kAttributes));
 }
