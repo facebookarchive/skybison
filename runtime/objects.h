@@ -582,13 +582,16 @@ class SystemExit : public BaseException {
 
 class Class : public HeapObject {
  public:
-  enum Flag {
+  enum Flag : word {
     kBaseExceptionSubclass = 1 << 0,
     kDictSubclass = 1 << 1,
     kListSubclass = 1 << 2,
     kStopIterationSubclass = 1 << 3,
     kSystemExitSubclass = 1 << 4,
+    kLast = kSystemExitSubclass,
   };
+  static_assert(Flag::kLast < SmallInteger::kMaxValue,
+                "Flags must be encodable in a SmallInteger");
 
   // Getters and setters.
   Object* instanceLayout();
@@ -2573,13 +2576,13 @@ inline void Class::setFlags(Object* value) {
 
 inline void Class::setFlag(Class::Flag bit) {
   word f = SmallInteger::cast(flags())->value();
-  Object* new_flag = SmallInteger::fromWord(f | (1 << bit));
+  Object* new_flag = SmallInteger::fromWord(f | bit);
   instanceVariableAtPut(kFlagsOffset, new_flag);
 }
 
 inline bool Class::hasFlag(Class::Flag bit) {
   word f = SmallInteger::cast(flags())->value();
-  return (f & (1 << bit)) != 0;
+  return (f & bit) != 0;
 }
 
 inline Object* Class::dictionary() {

@@ -435,4 +435,16 @@ TEST(WeakRefTest, SpliceQueue) {
   EXPECT_EQ(list, None::object());
 }
 
+TEST(ClassTest, SetFlagThenHasFlagReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Class> klass(&scope, runtime.newClass());
+  klass->setFlag(Class::Flag::kDictSubclass);
+  klass->setFlag(Class::Flag::kListSubclass);
+  EXPECT_TRUE(klass->hasFlag(Class::Flag::kDictSubclass));
+  EXPECT_TRUE(klass->hasFlag(Class::Flag::kListSubclass));
+  EXPECT_EQ(SmallInteger::cast(klass->flags())->value(),
+            Class::Flag::kDictSubclass | Class::Flag::kListSubclass);
+}
+
 }  // namespace python
