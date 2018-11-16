@@ -5,6 +5,13 @@ set(PYTHON_EXECUTABLE /usr/bin/python)
 
 set(CMAKE_CXX_STANDARD 11)
 
+if($ENV{PYRO_ENABLE_COVERAGE})
+  SET(COVERAGE_COMPILE_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage")
+  SET(COVERAGE_LINK_FLAGS "-lgcov")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILE_FLAGS}")
+  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${COVERAGE_LINK_FLAGS}")
+endif()
+
 add_subdirectory(third-party/googletest-1.8.0)
 include_directories(third-party/googletest-1.8.0/googletest/include)
 include_directories(third-party/googletest-1.8.0/googlemock/include)
