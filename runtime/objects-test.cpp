@@ -493,6 +493,56 @@ TEST(StringTest, CompareSmallStr) {
   EXPECT_FALSE(small->equalsCStr("123456789"));
 }
 
+TEST(StringIterTest, SimpleIter) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Str str(&scope, runtime.newStrFromCStr("test"));
+  EXPECT_TRUE(str->equalsCStr("test"));
+
+  StrIterator iter(&scope, runtime.newStrIterator(str));
+  Object ch(&scope, runtime.strIteratorNext(thread, iter));
+  ASSERT_TRUE(ch->isStr());
+  EXPECT_TRUE(RawStr::cast(ch)->equalsCStr("t"));
+
+  ch = runtime.strIteratorNext(thread, iter);
+  ASSERT_TRUE(ch->isStr());
+  EXPECT_TRUE(RawStr::cast(ch)->equalsCStr("e"));
+
+  ch = runtime.strIteratorNext(thread, iter);
+  ASSERT_TRUE(ch->isStr());
+  EXPECT_TRUE(RawStr::cast(ch)->equalsCStr("s"));
+
+  ch = runtime.strIteratorNext(thread, iter);
+  ASSERT_TRUE(ch->isStr());
+  EXPECT_TRUE(RawStr::cast(ch)->equalsCStr("t"));
+
+  ch = runtime.strIteratorNext(thread, iter);
+  ASSERT_TRUE(ch->isError());
+}
+
+TEST(StringIterTest, SetIndex) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Str str(&scope, runtime.newStrFromCStr("test"));
+  EXPECT_TRUE(str->equalsCStr("test"));
+
+  StrIterator iter(&scope, runtime.newStrIterator(str));
+  iter->setIndex(1);
+  Object ch(&scope, runtime.strIteratorNext(thread, iter));
+  ASSERT_TRUE(ch->isStr());
+  EXPECT_TRUE(RawStr::cast(ch)->equalsCStr("e"));
+
+  iter->setIndex(5);
+  ch = runtime.strIteratorNext(thread, iter);
+  // Index should not have advanced.
+  ASSERT_EQ(iter->index(), 5);
+  ASSERT_TRUE(ch->isError());
+}
+
 TEST(WeakRefTest, EnqueueAndDequeue) {
   Runtime runtime;
   HandleScope scope;

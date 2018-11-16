@@ -92,6 +92,7 @@ namespace python {
   V(StopAsyncIteration)                                                        \
   V(StopIteration)                                                             \
   V(Str)                                                                       \
+  V(StrIterator)                                                               \
   V(Super)                                                                     \
   V(SyntaxError)                                                               \
   V(SyntaxWarning)                                                             \
@@ -224,6 +225,7 @@ enum class LayoutId : word {
   kStopAsyncIteration,
   kStopIteration,
   kStr,
+  kStrIterator,
   kSuper,
   kSyntaxError,
   kSyntaxWarning,
@@ -342,6 +344,7 @@ class RawObject {
   bool isSlice();
   bool isStaticMethod();
   bool isStopIteration();
+  bool isStrIterator();
   bool isSuper();
   bool isSystemExit();
   bool isTupleIterator();
@@ -1123,6 +1126,23 @@ class RawStaticMethod : public RawHeapObject {
   static const int kSize = kFunctionOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(StaticMethod);
+};
+
+class RawStrIterator : public RawHeapObject {
+ public:
+  // Getters and setters.
+  word index();
+  void setIndex(word index);
+
+  RawObject str();
+  void setStr(RawObject str);
+
+  // RawLayout.
+  static const int kStrOffset = RawHeapObject::kSize;
+  static const int kIndexOffset = kStrOffset + kPointerSize;
+  static const int kSize = kIndexOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(StrIterator);
 };
 
 class RawListIterator : public RawHeapObject {
@@ -2171,6 +2191,10 @@ inline bool RawObject::isStopIteration() {
 }
 
 inline bool RawObject::isStr() { return isSmallStr() || isLargeStr(); }
+
+inline bool RawObject::isStrIterator() {
+  return isHeapObjectWithLayout(LayoutId::kStrIterator);
+}
 
 inline bool RawObject::isSystemExit() {
   return isHeapObjectWithLayout(LayoutId::kSystemExit);
@@ -3558,6 +3582,24 @@ inline void RawSetIterator::setIndex(word index) {
 inline word RawSetIterator::pendingLength() {
   RawSet set = RawSet::cast(instanceVariableAt(kSetOffset));
   return set->numItems() - consumedCount();
+}
+
+// RawStrIterator
+
+inline RawObject RawStrIterator::str() {
+  return instanceVariableAt(kStrOffset);
+}
+
+inline void RawStrIterator::setStr(RawObject str) {
+  instanceVariableAtPut(kStrOffset, str);
+}
+
+inline word RawStrIterator::index() {
+  return RawSmallInt::cast(instanceVariableAt(kIndexOffset))->value();
+}
+
+inline void RawStrIterator::setIndex(word index) {
+  instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
 }
 
 // RawSuper

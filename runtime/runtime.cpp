@@ -1027,6 +1027,7 @@ void Runtime::initializeHeapClasses() {
   initializeRefClass();
   SetBuiltins::initialize(this);
   SetIteratorBuiltins::initialize(this);
+  StrIteratorBuiltins::initialize(this);
   GeneratorBaseBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
   initializeStaticMethodClass();
@@ -3260,6 +3261,14 @@ RawObject Runtime::newClassMethod() { return heap()->create<RawClassMethod>(); }
 
 RawObject Runtime::newSuper() { return heap()->create<RawSuper>(); }
 
+RawObject Runtime::newStrIterator(const Object& str) {
+  HandleScope scope;
+  StrIterator result(&scope, heap()->create<RawStrIterator>());
+  result->setIndex(0);
+  result->setStr(*str);
+  return *result;
+}
+
 RawObject Runtime::newTupleIterator(const Object& tuple) {
   HandleScope scope;
   TupleIterator result(&scope, heap()->create<RawTupleIterator>());
@@ -3804,6 +3813,20 @@ RawObject Runtime::strStrip(const Str& src, const Str& str,
     last = strRSpan(src, str, first);
   }
   return strSubstr(src, first, length - first - last);
+}
+
+RawObject Runtime::strIteratorNext(Thread* thread, StrIterator& iter) {
+  HandleScope scope(thread);
+  word idx = iter.index();
+  Str underlying(&scope, iter.str());
+  if (idx >= underlying->length()) {
+    return Error::object();
+  }
+
+  char item = underlying->charAt(idx);
+  char buffer[] = {item, '\0'};
+  iter.setIndex(idx + 1);
+  return RawSmallStr::fromCStr(buffer);
 }
 
 RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,

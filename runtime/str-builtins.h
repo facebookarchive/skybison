@@ -40,4 +40,12 @@ class StrBuiltins {
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrBuiltins);
 };
 
+class StrIteratorBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(StrIteratorBuiltins);
+};
+
 }  // namespace python

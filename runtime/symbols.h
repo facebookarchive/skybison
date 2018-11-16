@@ -241,6 +241,7 @@ class Runtime;
   V(StopAsyncIteration, "StopAsyncIteration")                                  \
   V(StopIteration, "StopIteration")                                            \
   V(Str, "str")                                                                \
+  V(StrIterator, "str_iterator")                                               \
   V(Strip, "strip")                                                            \
   V(Super, "super")                                                            \
   V(SyntaxError, "SyntaxError")                                                \

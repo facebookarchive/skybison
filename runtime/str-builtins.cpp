@@ -681,4 +681,11 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   return runtime->strStrip(str, chars, StrStripDirection::Both);
 }
 
+void StrIteratorBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Type str_iter(&scope, runtime->addEmptyBuiltinClass(SymbolId::kStrIterator,
+                                                      LayoutId::kStrIterator,
+                                                      LayoutId::kObject));
+}
+
 }  // namespace python

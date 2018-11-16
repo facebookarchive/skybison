@@ -127,6 +127,8 @@ class Runtime {
   RawObject newStrFromFormat(const char* fmt, ...) FORMAT_ATTRIBUTE(2, 3);
   RawObject newStrWithAll(View<byte> code_units);
 
+  RawObject newStrIterator(const Object& iterable);
+
   RawObject newSuper();
 
   RawObject newTupleIterator(const Object& iterable);
@@ -139,6 +141,8 @@ class Runtime {
   RawObject strStripSpace(const Str& src, const StrStripDirection direction);
   RawObject strStrip(const Str& src, const Str& str,
                      StrStripDirection direction);
+
+  RawObject strIteratorNext(Thread* thread, StrIterator& iter);
 
   RawObject newValueCell();
 

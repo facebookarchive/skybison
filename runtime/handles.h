@@ -198,6 +198,7 @@ HANDLE_ALIAS(Slice);
 HANDLE_ALIAS(StaticMethod);
 HANDLE_ALIAS(ListIterator);
 HANDLE_ALIAS(SetIterator);
+HANDLE_ALIAS(StrIterator);
 HANDLE_ALIAS(TupleIterator);
 HANDLE_ALIAS(Code);
 HANDLE_ALIAS(Function);
