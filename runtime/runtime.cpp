@@ -1174,7 +1174,7 @@ void Runtime::initializeImmediateClasses() {
   addEmptyBuiltinClass(SymbolId::kNoneType, LayoutId::kNone, LayoutId::kObject);
   addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallString,
                        LayoutId::kString);
-  initializeSmallIntClass();
+  SmallIntegerBuiltins::initialize(this);
 }
 
 void Runtime::initializeBooleanClass() {
@@ -1269,73 +1269,6 @@ void Runtime::initializePropertyClass() {
 
   classAddBuiltinFunction(property, SymbolId::kSetter,
                           nativeTrampoline<builtinPropertySetter>);
-}
-
-void Runtime::initializeSmallIntClass() {
-  HandleScope scope;
-  Handle<Class> small_integer(
-      &scope, addEmptyBuiltinClass(SymbolId::kSmallInt, LayoutId::kSmallInteger,
-                                   LayoutId::kInteger));
-
-  classAddBuiltinFunction(small_integer, SymbolId::kBitLength,
-                          nativeTrampoline<builtinSmallIntegerBitLength>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderBool,
-                          nativeTrampoline<builtinSmallIntegerBool>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderEq,
-                          nativeTrampoline<builtinSmallIntegerEq>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderFloordiv,
-                          nativeTrampoline<builtinSmallIntegerFloorDiv>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderGe,
-                          nativeTrampoline<builtinSmallIntegerGe>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderGt,
-                          nativeTrampoline<builtinSmallIntegerGt>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderInvert,
-                          nativeTrampoline<builtinSmallIntegerInvert>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderLe,
-                          nativeTrampoline<builtinSmallIntegerLe>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderLt,
-                          nativeTrampoline<builtinSmallIntegerLt>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderMod,
-                          nativeTrampoline<builtinSmallIntegerMod>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderMul,
-                          nativeTrampoline<builtinSmallIntegerMul>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderNe,
-                          nativeTrampoline<builtinSmallIntegerNe>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderNeg,
-                          nativeTrampoline<builtinSmallIntegerNeg>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderPos,
-                          nativeTrampoline<builtinSmallIntegerPos>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderAdd,
-                          nativeTrampoline<builtinSmallIntegerAdd>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderSub,
-                          nativeTrampoline<builtinSmallIntegerSub>);
-
-  classAddBuiltinFunction(small_integer, SymbolId::kDunderXor,
-                          nativeTrampoline<builtinSmallIntegerXor>);
-
-  // We want to lookup the class of an immediate type by using the 5-bit tag
-  // value as an index into the class table.  Replicate the class object for
-  // SmallInteger to all locations that decode to a SmallInteger tag.
-  for (word i = 1; i < 16; i++) {
-    DCHECK(layoutAt(static_cast<LayoutId>(i << 1)) == None::object(),
-           "list collision");
-    layoutAtPut(static_cast<LayoutId>(i << 1), *small_integer);
-  }
 }
 
 void Runtime::initializeStaticMethodClass() {

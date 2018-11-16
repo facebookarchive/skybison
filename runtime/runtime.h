@@ -542,7 +542,6 @@ class Runtime {
   void initializePropertyClass();
   void initializeRefClass();
   void initializeSetClass();
-  void initializeSmallIntClass();
   void initializeStaticMethodClass();
   void initializeStrClass();
   void initializeSuperClass();

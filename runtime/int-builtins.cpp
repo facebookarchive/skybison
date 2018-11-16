@@ -3,12 +3,52 @@
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
-#include "runtime.h"
 #include "thread.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
-Object* builtinSmallIntegerBitLength(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod SmallIntegerBuiltins::kMethods[] = {
+    {SymbolId::kBitLength, nativeTrampoline<bitLength>},
+    {SymbolId::kDunderBool, nativeTrampoline<dunderBool>},
+    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
+    {SymbolId::kDunderInvert, nativeTrampoline<dunderInvert>},
+    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
+    {SymbolId::kDunderFloordiv, nativeTrampoline<dunderFloorDiv>},
+    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
+    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
+    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
+    {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
+    {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
+    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
+    {SymbolId::kDunderNeg, nativeTrampoline<dunderNeg>},
+    {SymbolId::kDunderPos, nativeTrampoline<dunderPos>},
+    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
+    {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
+    {SymbolId::kDunderXor, nativeTrampoline<dunderXor>},
+};
+
+void SmallIntegerBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Class> type(&scope, runtime->addEmptyBuiltinClass(
+                                 SymbolId::kSmallInt, LayoutId::kSmallInteger,
+                                 LayoutId::kInteger));
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(type, kMethods[i].name,
+                                     kMethods[i].address);
+  }
+  // We want to lookup the class of an immediate type by using the 5-bit tag
+  // value as an index into the class table.  Replicate the class object for
+  // SmallInteger to all locations that decode to a SmallInteger tag.
+  for (word i = 1; i < 16; i++) {
+    DCHECK(runtime->layoutAt(static_cast<LayoutId>(i << 1)) == None::object(),
+           "list collision");
+    runtime->layoutAtPut(static_cast<LayoutId>(i << 1), *type);
+  }
+}
+
+Object* SmallIntegerBuiltins::bitLength(Thread* thread, Frame* frame,
+                                        word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -23,7 +63,8 @@ Object* builtinSmallIntegerBitLength(Thread* thread, Frame* frame, word nargs) {
   return SmallInteger::fromWord(Utils::highestBit(number));
 }
 
-Object* builtinSmallIntegerBool(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderBool(Thread* thread, Frame* frame,
+                                         word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
@@ -34,7 +75,8 @@ Object* builtinSmallIntegerBool(Thread* thread, Frame* frame, word nargs) {
   return thread->throwTypeErrorFromCString("unsupported type for __bool__");
 }
 
-Object* builtinSmallIntegerEq(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderEq(Thread* thread, Frame* frame,
+                                       word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -47,7 +89,8 @@ Object* builtinSmallIntegerEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerInvert(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderInvert(Thread* thread, Frame* frame,
+                                           word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
@@ -59,7 +102,8 @@ Object* builtinSmallIntegerInvert(Thread* thread, Frame* frame, word nargs) {
   return thread->throwTypeErrorFromCString("unsupported type for __invert__");
 }
 
-Object* builtinSmallIntegerLe(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderLe(Thread* thread, Frame* frame,
+                                       word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -74,7 +118,8 @@ Object* builtinSmallIntegerLe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerFloorDiv(Thread* thread, Frame* caller, word nargs) {
+Object* SmallIntegerBuiltins::dunderFloorDiv(Thread* thread, Frame* caller,
+                                             word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -96,7 +141,8 @@ Object* builtinSmallIntegerFloorDiv(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerLt(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderLt(Thread* thread, Frame* frame,
+                                       word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -111,7 +157,8 @@ Object* builtinSmallIntegerLt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerGe(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderGe(Thread* thread, Frame* frame,
+                                       word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -126,7 +173,8 @@ Object* builtinSmallIntegerGe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerGt(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderGt(Thread* thread, Frame* frame,
+                                       word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -141,7 +189,8 @@ Object* builtinSmallIntegerGt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerMod(Thread* thread, Frame* caller, word nargs) {
+Object* SmallIntegerBuiltins::dunderMod(Thread* thread, Frame* caller,
+                                        word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -163,7 +212,8 @@ Object* builtinSmallIntegerMod(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerMul(Thread* thread, Frame* caller, word nargs) {
+Object* SmallIntegerBuiltins::dunderMul(Thread* thread, Frame* caller,
+                                        word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -186,7 +236,8 @@ Object* builtinSmallIntegerMul(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerNe(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderNe(Thread* thread, Frame* frame,
+                                       word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -199,7 +250,8 @@ Object* builtinSmallIntegerNe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerNeg(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderNeg(Thread* thread, Frame* frame,
+                                        word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
@@ -208,7 +260,8 @@ Object* builtinSmallIntegerNeg(Thread* thread, Frame* frame, word nargs) {
   return SmallInteger::fromWord(-tos->value());
 }
 
-Object* builtinSmallIntegerPos(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderPos(Thread* thread, Frame* frame,
+                                        word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
@@ -216,7 +269,8 @@ Object* builtinSmallIntegerPos(Thread* thread, Frame* frame, word nargs) {
   return SmallInteger::cast(args.get(0));
 }
 
-Object* builtinSmallIntegerAdd(Thread* thread, Frame* caller, word nargs) {
+Object* SmallIntegerBuiltins::dunderAdd(Thread* thread, Frame* caller,
+                                        word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -238,7 +292,8 @@ Object* builtinSmallIntegerAdd(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerSub(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderSub(Thread* thread, Frame* frame,
+                                        word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -260,7 +315,8 @@ Object* builtinSmallIntegerSub(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerXor(Thread* thread, Frame* frame, word nargs) {
+Object* SmallIntegerBuiltins::dunderXor(Thread* thread, Frame* frame,
+                                        word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }

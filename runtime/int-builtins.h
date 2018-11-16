@@ -3,26 +3,37 @@
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
+#include "runtime.h"
 #include "thread.h"
 
 namespace python {
 
-Object* builtinSmallIntegerBitLength(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerAdd(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerBool(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerEq(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerFloorDiv(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerGe(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerGt(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerInvert(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerLe(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerLt(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerMod(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerMul(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerNe(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerNeg(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerPos(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerSub(Thread* thread, Frame* frame, word nargs);
-Object* builtinSmallIntegerXor(Thread* thread, Frame* frame, word nargs);
+class SmallIntegerBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+  static Object* bitLength(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderBool(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderEq(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderFloorDiv(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderGe(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderGt(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderInvert(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderLe(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderLt(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderMod(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderMul(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderNe(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderNeg(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderPos(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderSub(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderXor(Thread* thread, Frame* frame, word nargs);
+
+ private:
+  static const BuiltinMethod kMethods[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallIntegerBuiltins);
+};
 
 }  // namespace python
