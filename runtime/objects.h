@@ -492,11 +492,6 @@ class HeapObject : public Object {
   friend class Runtime;
 };
 
-template <typename T>
-class Handle;
-
-class Thread;
-
 class Class : public HeapObject {
  public:
   enum Flag {
