@@ -96,6 +96,41 @@ typedef int FooBar;
         ]
         self.assertListEqual(res, ["Foo", "Bar"])
 
+    def test_pytypeobject_regex_returns_multiple_symbols(self):
+        lines = """
+extern "C" PyTypeObject* Foo_Type_Ptr() {
+  Thread* thread = Thread::currentThread();
+}
+
+extern "C" PyObject* Foo_Function(void) {
+  // Some implementation
+}
+
+extern "C" PyTypeObject *Bar_Type_Ptr() {
+  Thread* thread = Thread::currentThread();
+}
+"""
+        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)["pytypeobject"]
+        self.assertListEqual(res, ["Foo_Type", "Bar_Type"])
+
+    def test_pytypeobject_macro_regex_returns_multiple_symbols(self):
+        lines = """
+#define Foo_Type (*Foo_Type_Ptr())
+
+#define Foo       \\
+    { Baz(type) },
+
+typedef int FooBar;
+
+#define Bar_Type (*Bar_Type_Ptr())
+
+#define FooBaz(o) Foo,
+"""
+        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)[
+            "pytypeobject_macro"
+        ]
+        self.assertEqual(res, ["Foo_Type", "Bar_Type"])
+
 
 class TestDefinitionRegex(unittest.TestCase):
     def test_multiple_typedef_definitions_are_replaced(self):
@@ -225,6 +260,78 @@ typedef int FooBar;
 
 """
         symbols_to_replace = {"multiline_macro": ["Foo", "Bar"]}
+        res = gcs.modify_file(original_lines, symbols_to_replace)
+        self.assertEqual(res, expected_lines)
+
+    def test_pytypeobject_definitions_are_replaced(self):
+        original_lines = """
+PyObject *Foo_Function(void)
+{
+  // Some implementation
+};
+
+PyTypeObject Foo_Type = {
+  // Some implementation
+};
+
+PyObject *Bar_Function(void)
+{
+  // Some implementation
+};
+
+PyTypeObject Bar_Type = {
+  // Some implementation
+};
+
+PyTypeObject Baz_Type = {
+  // Some implementation
+};
+"""
+        expected_lines = """
+PyObject *Foo_Function(void)
+{
+  // Some implementation
+};
+
+
+PyObject *Bar_Function(void)
+{
+  // Some implementation
+};
+
+
+PyTypeObject Baz_Type = {
+  // Some implementation
+};
+"""
+        symbols_to_replace = {"pytypeobject": ["Foo_Type", "Bar_Type"]}
+        res = gcs.modify_file(original_lines, symbols_to_replace)
+        self.assertEqual(res, expected_lines)
+
+    def test_pytypeobject_macro_definitions_are_replaced(self):
+        original_lines = """
+PyAPI_DATA(PyTypeObject) Foo_Type;
+
+#define Foo       \\
+    { Baz(1) },
+
+typedef int FooBar;
+
+PyAPI_DATA(PyTypeObject) Bar_Type;
+
+#define FooBaz(o) Foo,
+"""
+        expected_lines = """
+
+#define Foo       \\
+    { Baz(1) },
+
+typedef int FooBar;
+
+
+#define FooBaz(o) Foo,
+"""
+        symbols_to_replace = {"pytypeobject_macro": ["Foo_Type", "Bar_Type"]}
         res = gcs.modify_file(original_lines, symbols_to_replace)
         self.assertEqual(res, expected_lines)
 

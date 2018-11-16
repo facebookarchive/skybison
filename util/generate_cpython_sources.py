@@ -25,6 +25,12 @@ SYMBOL_REGEX = {
     "multiline_macro": SymbolRegex(
         regex=re.compile("^#define.*\\\\", re.MULTILINE), pos=1
     ),
+    "pytypeobject": SymbolRegex(
+        regex=re.compile("^extern.*PyTypeObject.*_Type", re.MULTILINE), pos=3
+    ),
+    "pytypeobject_macro": SymbolRegex(
+        regex=re.compile("^#define.*_Type ", re.MULTILINE), pos=1
+    ),
 }
 
 
@@ -44,6 +50,13 @@ DEFINITIONS_REGEX = {
     ),
     "multiline_macro": SymbolRegex(
         regex=re.compile("^#define.*\\\\(\n.*\\\\)*\n.*\n", re.MULTILINE), pos=1
+    ),
+    "pytypeobject": SymbolRegex(
+        regex=re.compile("^PyTypeObject.*= {(.|\n)*?};.*\n", re.MULTILINE),
+        pos=1,
+    ),
+    "pytypeobject_macro": SymbolRegex(
+        regex=re.compile("^PyAPI_DATA\(.*;.*\n", re.MULTILINE), pos=2
     ),
 }
 
