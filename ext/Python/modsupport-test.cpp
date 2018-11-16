@@ -55,4 +55,43 @@ TEST_F(ModSupportExtensionApiTest, RepeatedAddObjectOverwritesValue) {
   ASSERT_TRUE(PyTuple_CheckExact(x));
 }
 
+TEST_F(ModSupportExtensionApiTest, AddStringConstantAddsToModule) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+
+  const char* c_str = "string";
+  ASSERT_EQ(PyModule_AddStringConstant(module, "mystr", c_str), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  testing::PyObjectPtr str(PyObject_GetAttrString(module, "mystr"));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, c_str));
+}
+
+TEST_F(ModSupportExtensionApiTest, RepeatedAddStringConstantOverwritesValue) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+
+  ASSERT_EQ(PyModule_AddStringConstant(module, "mystr", "hello"), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  const char* c_str = "world";
+  ASSERT_EQ(PyModule_AddStringConstant(module, "mystr", c_str), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  testing::PyObjectPtr str(PyObject_GetAttrString(module, "mystr"));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, c_str));
+}
+
 }  // namespace python

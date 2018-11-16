@@ -40,9 +40,13 @@ PY_EXPORT int PyModule_AddIntConstant(PyObject* m, const char* name,
   return -1;
 }
 
-PY_EXPORT int PyModule_AddStringConstant(PyObject* /* m */, const char* /* e */,
-                                         const char* /* e */) {
-  UNIMPLEMENTED("PyModule_AddStringConstant");
+PY_EXPORT int PyModule_AddStringConstant(PyObject* pymodule, const char* name,
+                                         const char* value) {
+  PyObject* str = PyUnicode_FromString(value);
+  if (!str) return -1;
+  if (PyModule_AddObject(pymodule, name, str) == 0) return 0;
+  Py_DECREF(str);
+  return -1;
 }
 
 PY_EXPORT PyObject* Py_BuildValue(const char* /* t */, ...) {
