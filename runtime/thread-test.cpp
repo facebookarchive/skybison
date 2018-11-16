@@ -1804,7 +1804,7 @@ TEST(ThreadTest, RaiseVarargs) {
   Runtime runtime;
   ASSERT_DEATH(
       compileAndRunToString(&runtime, "raise 1"),
-      "aborting due to unimplemented bytecode: RAISE_VARARGS");
+      "unimplemented: bytecode 'RAISE_VARARGS'");
 }
 
 TEST(ThreadTest, BuiltinIsinstance) {

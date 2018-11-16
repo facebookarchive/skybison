@@ -174,39 +174,50 @@ Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
 }
 
 namespace interpreter {
-enum class Result {
-  CONTINUE,
-  NOT_IMPLEMENTED,
-};
 struct Context {
   Thread* thread;
   Frame* frame;
   Object** sp;
   word pc;
 };
-Result INVALID_BYTECODE(Context*, word) {
-  // TODO: Distinguish between invalid & not implemented
-  return Result::NOT_IMPLEMENTED;
+
+Bytecode currentBytecode(const Context* ctx) {
+  ByteArray* code = ByteArray::cast(Code::cast(ctx->frame->code())->code());
+  word pc = ctx->pc;
+  word result;
+  do {
+    pc -= 2;
+    result = code->byteAt(pc);
+  } while (result == Bytecode::EXTENDED_ARG);
+  return static_cast<Bytecode>(result);
 }
-Result NOT_IMPLEMENTED(Context*, word) {
-  return Result::NOT_IMPLEMENTED;
+
+void INVALID_BYTECODE(Context* ctx, word) {
+  Bytecode bc = currentBytecode(ctx);
+  UNREACHABLE("bytecode '%s'", bytecode::name(bc));
 }
-Result LOAD_CONST(Context* ctx, word arg) {
+
+void NOT_IMPLEMENTED(Context* ctx, word) {
+  Bytecode bc = currentBytecode(ctx);
+  UNIMPLEMENTED("bytecode '%s'", bytecode::name(bc));
+}
+
+void LOAD_CONST(Context* ctx, word arg) {
   Object* consts = Code::cast(ctx->frame->code())->consts();
   *--ctx->sp = ObjectArray::cast(consts)->at(arg);
-  return Result::CONTINUE;
 }
-Result LOAD_FAST(Context* ctx, word arg) {
+
+void LOAD_FAST(Context* ctx, word arg) {
   // TODO: Need to handle unbound local error
   *--ctx->sp = ctx->frame->getLocal(arg);
-  return Result::CONTINUE;
 }
-Result STORE_FAST(Context* ctx, word arg) {
+
+void STORE_FAST(Context* ctx, word arg) {
   Object* value = *ctx->sp++;
   ctx->frame->setLocal(arg, value);
-  return Result::CONTINUE;
 }
-Result LOAD_NAME(Context* ctx, word arg) {
+
+void LOAD_NAME(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   // This is for module level lookup, behaves the same as LOAD_GLOBAL
   Object* value =
@@ -220,9 +231,9 @@ Result LOAD_NAME(Context* ctx, word arg) {
   }
 
   *--ctx->sp = value;
-  return Result::CONTINUE;
 }
-Result STORE_NAME(Context* ctx, word arg) {
+
+void STORE_NAME(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   assert(frame->implicitGlobals()->isDictionary());
@@ -232,50 +243,50 @@ Result STORE_NAME(Context* ctx, word arg) {
   Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
   Handle<Object> value(&scope, *ctx->sp++);
   thread->runtime()->dictionaryAtPutInValueCell(implicit_globals, key, value);
-  return Result::CONTINUE;
 }
-Result POP_TOP(Context* ctx, word) {
+
+void POP_TOP(Context* ctx, word) {
   ctx->sp++;
-  return Result::CONTINUE;
 }
-Result DUP_TOP(Context* ctx, word) {
+
+void DUP_TOP(Context* ctx, word) {
   Object* top = *ctx->sp;
   *--ctx->sp = top;
-  return Result::CONTINUE;
 }
-Result DUP_TOP_TWO(Context* ctx, word) {
+
+void DUP_TOP_TWO(Context* ctx, word) {
   Object* first = *ctx->sp;
   Object* second = *(ctx->sp + 1);
   *--ctx->sp = second;
   *--ctx->sp = first;
-  return Result::CONTINUE;
 }
-Result ROT_TWO(Context* ctx, word) {
+
+void ROT_TWO(Context* ctx, word) {
   Object* top = *ctx->sp;
   *ctx->sp = *(ctx->sp + 1);
   *(ctx->sp + 1) = top;
-  return Result::CONTINUE;
 }
-Result ROT_THREE(Context* ctx, word) {
+
+void ROT_THREE(Context* ctx, word) {
   Object* top = *ctx->sp;
   *ctx->sp = *(ctx->sp + 1);
   *(ctx->sp + 1) = *(ctx->sp + 2);
   *(ctx->sp + 2) = top;
-  return Result::CONTINUE;
 }
-Result CALL_FUNCTION(Context* ctx, word arg) {
+
+void CALL_FUNCTION(Context* ctx, word arg) {
   Object* result = Interpreter::call(ctx->thread, ctx->frame, ctx->sp, arg);
   ctx->sp += arg;
   *ctx->sp = result;
-  return Result::CONTINUE;
 }
-Result CALL_FUNCTION_KW(Context* ctx, word arg) {
+
+void CALL_FUNCTION_KW(Context* ctx, word arg) {
   Object* result = Interpreter::callKw(ctx->thread, ctx->frame, ctx->sp, arg);
   ctx->sp += arg + 1;
   *ctx->sp = result;
-  return Result::CONTINUE;
 }
-Result LOAD_GLOBAL(Context* ctx, word arg) {
+
+void LOAD_GLOBAL(Context* ctx, word arg) {
   Object* value =
       ValueCell::cast(ObjectArray::cast(ctx->frame->fastGlobals())->at(arg))
           ->value();
@@ -285,14 +296,14 @@ Result LOAD_GLOBAL(Context* ctx, word arg) {
   }
   *--ctx->sp = value;
   assert(*ctx->sp != Error::object());
-  return Result::CONTINUE;
 }
-Result STORE_GLOBAL(Context* ctx, word arg) {
+
+void STORE_GLOBAL(Context* ctx, word arg) {
   ValueCell::cast(ObjectArray::cast(ctx->frame->fastGlobals())->at(arg))
       ->setValue(*ctx->sp++);
-  return Result::CONTINUE;
 }
-Result DELETE_GLOBAL(Context* ctx, word arg) {
+
+void DELETE_GLOBAL(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -311,9 +322,9 @@ Result DELETE_GLOBAL(Context* ctx, word arg) {
     ValueCell::cast(*value_in_builtin)->makeUnbound();
   }
   value_cell->setValue(*value_in_builtin);
-  return Result::CONTINUE;
 }
-Result MAKE_FUNCTION(Context* ctx, word arg) {
+
+void MAKE_FUNCTION(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -342,18 +353,16 @@ Result MAKE_FUNCTION(Context* ctx, word arg) {
     function->setClosure(*ctx->sp++);
   }
   *--ctx->sp = *function;
-  return Result::CONTINUE;
 }
 
-Result LIST_APPEND(Context* ctx, word arg) {
+void LIST_APPEND(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Handle<Object> value(&scope, *ctx->sp++);
   Handle<List> list(&scope, List::cast(*(ctx->sp + arg - 1)));
   ctx->thread->runtime()->listAdd(list, value);
-  return Result::CONTINUE;
 }
 
-Result BUILD_LIST(Context* ctx, word arg) {
+void BUILD_LIST(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<ObjectArray> array(&scope, thread->runtime()->newObjectArray(arg));
@@ -364,9 +373,9 @@ Result BUILD_LIST(Context* ctx, word arg) {
   list->setItems(*array);
   list->setAllocated(array->length());
   *--ctx->sp = list;
-  return Result::CONTINUE;
 }
-Result BUILD_SET(Context* ctx, word arg) {
+
+void BUILD_SET(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Runtime* runtime = thread->runtime();
@@ -375,10 +384,9 @@ Result BUILD_SET(Context* ctx, word arg) {
     runtime->setAdd(set, Handle<Object>(&scope, *ctx->sp++));
   }
   *--ctx->sp = *set;
-  return Result::CONTINUE;
 }
 
-Result BUILD_SLICE(Context* ctx, word arg) {
+void BUILD_SLICE(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Handle<Object> step(&scope, (arg == 3) ? *ctx->sp++ : None::object());
@@ -386,10 +394,9 @@ Result BUILD_SLICE(Context* ctx, word arg) {
   Handle<Object> start(&scope, *ctx->sp); // TOP
   Handle<Slice> slice(&scope, thread->runtime()->newSlice(start, stop, step));
   *ctx->sp = *slice;
-  return Result::CONTINUE;
 }
 
-Result BUILD_TUPLE(Context* ctx, word arg) {
+void BUILD_TUPLE(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<ObjectArray> tuple(&scope, thread->runtime()->newObjectArray(arg));
@@ -398,9 +405,9 @@ Result BUILD_TUPLE(Context* ctx, word arg) {
     tuple->atPut(i, *sp++);
   }
   *--sp = *tuple;
-  return Result::CONTINUE;
 }
-Result BUILD_MAP(Context* ctx, word arg) {
+
+void BUILD_MAP(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
   HandleScope scope;
@@ -412,25 +419,25 @@ Result BUILD_MAP(Context* ctx, word arg) {
     runtime->dictionaryAtPut(dict, key, value);
   }
   *--sp = *dict;
-  return Result::CONTINUE;
 }
-Result POP_JUMP_IF_FALSE(Context* ctx, word arg) {
+
+void POP_JUMP_IF_FALSE(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Object* cond = *ctx->sp++;
   if (!thread->runtime()->isTruthy(cond)) {
     ctx->pc = arg;
   }
-  return Result::CONTINUE;
 }
-Result POP_JUMP_IF_TRUE(Context* ctx, word arg) {
+
+void POP_JUMP_IF_TRUE(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Object* cond = *ctx->sp++;
   if (thread->runtime()->isTruthy(cond)) {
     ctx->pc = arg;
   }
-  return Result::CONTINUE;
 }
-Result JUMP_IF_FALSE_OR_POP(Context* ctx, word arg) {
+
+void JUMP_IF_FALSE_OR_POP(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Object* cond = *ctx->sp;
   if (!thread->runtime()->isTruthy(cond)) {
@@ -438,9 +445,9 @@ Result JUMP_IF_FALSE_OR_POP(Context* ctx, word arg) {
   } else {
     ctx->sp++;
   }
-  return Result::CONTINUE;
 }
-Result JUMP_IF_TRUE_OR_POP(Context* ctx, word arg) {
+
+void JUMP_IF_TRUE_OR_POP(Context* ctx, word arg) {
   Object* cond = *ctx->sp;
   Thread* thread = ctx->thread;
   if (thread->runtime()->isTruthy(cond)) {
@@ -448,57 +455,55 @@ Result JUMP_IF_TRUE_OR_POP(Context* ctx, word arg) {
   } else {
     ctx->sp++;
   }
-  return Result::CONTINUE;
 }
-Result UNARY_NOT(Context* ctx, word) {
+
+void UNARY_NOT(Context* ctx, word) {
   Thread* thread = ctx->thread;
   bool negated = !thread->runtime()->isTruthy(*ctx->sp);
   *ctx->sp = Boolean::fromBool(negated);
-  return Result::CONTINUE;
 }
-Result LOAD_BUILD_CLASS(Context* ctx, word) {
+
+void LOAD_BUILD_CLASS(Context* ctx, word) {
   Thread* thread = ctx->thread;
   ValueCell* value_cell = ValueCell::cast(thread->runtime()->buildClass());
   *--ctx->sp = value_cell->value();
-  return Result::CONTINUE;
 }
-Result JUMP_ABSOLUTE(Context* ctx, word arg) {
+
+void JUMP_ABSOLUTE(Context* ctx, word arg) {
   ctx->pc = arg;
-  return Result::CONTINUE;
 }
-Result JUMP_FORWARD(Context* ctx, word arg) {
+
+void JUMP_FORWARD(Context* ctx, word arg) {
   ctx->pc += arg;
-  return Result::CONTINUE;
 }
-Result SETUP_LOOP(Context* ctx, word arg) {
+
+void SETUP_LOOP(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stackDepth = frame->valueStackBase() - ctx->sp;
   BlockStack* blockStack = frame->blockStack();
   blockStack->push(TryBlock(Bytecode::SETUP_LOOP, ctx->pc + arg, stackDepth));
-  return Result::CONTINUE;
 }
-Result POP_BLOCK(Context* ctx, word) {
+
+void POP_BLOCK(Context* ctx, word) {
   Frame* frame = ctx->frame;
   TryBlock block = frame->blockStack()->pop();
   ctx->sp = frame->valueStackBase() - block.level();
-  return Result::CONTINUE;
 }
 
-Result BREAK_LOOP(Context* ctx, word) {
+void BREAK_LOOP(Context* ctx, word) {
   Frame* frame = ctx->frame;
   TryBlock block = frame->blockStack()->pop();
   ctx->pc = block.handler();
-  return Result::CONTINUE;
 }
 
-Result GET_ITER(Context* ctx, word) {
+void GET_ITER(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
   Handle<Object> iterable(&scope, *ctx->sp);
   *ctx->sp = thread->runtime()->getIter(iterable);
-  return Result::CONTINUE;
 }
-Result FOR_ITER(Context* ctx, word arg) {
+
+void FOR_ITER(Context* ctx, word arg) {
   Object* top = *ctx->sp;
   Object* next = Error::object();
   if (top->isRangeIterator()) {
@@ -516,48 +521,46 @@ Result FOR_ITER(Context* ctx, word arg) {
   } else {
     *--ctx->sp = next;
   }
-
-  return Result::CONTINUE;
 }
 
-Result BINARY_AND(Context* ctx, word) {
+void BINARY_AND(Context* ctx, word) {
   word right = SmallInteger::cast(*ctx->sp++)->value();
   word left = SmallInteger::cast(*ctx->sp)->value();
   *ctx->sp = SmallInteger::fromWord(left & right);
-  return Result::CONTINUE;
 }
-Result BINARY_ADD(Context* ctx, word) {
+
+void BINARY_ADD(Context* ctx, word) {
   word right = SmallInteger::cast(*ctx->sp++)->value();
   word left = SmallInteger::cast(*ctx->sp)->value();
   *ctx->sp = SmallInteger::fromWord(left + right);
-  return Result::CONTINUE;
 }
-Result BINARY_FLOOR_DIVIDE(Context* ctx, word) {
+
+void BINARY_FLOOR_DIVIDE(Context* ctx, word) {
   word divisor = SmallInteger::cast(*ctx->sp++)->value();
   word dividend = SmallInteger::cast(*ctx->sp)->value();
   // TODO: Throw:
   //   ZeroDivisionError: integer division or modulo by zero
   assert(divisor != 0);
   *ctx->sp = SmallInteger::fromWord(dividend / divisor);
-  return Result::CONTINUE;
 }
-Result BINARY_MODULO(Context* ctx, word) {
+
+void BINARY_MODULO(Context* ctx, word) {
   word divisor = SmallInteger::cast(*ctx->sp++)->value();
   word dividend = SmallInteger::cast(*ctx->sp)->value();
   // TODO: Throw:
   //   ZeroDivisionError: integer division or modulo by zero
   assert(divisor != 0);
   *ctx->sp = SmallInteger::fromWord(dividend % divisor);
-  return Result::CONTINUE;
 }
-Result BINARY_SUBTRACT(Context* ctx, word) {
+
+void BINARY_SUBTRACT(Context* ctx, word) {
   word right = SmallInteger::cast(*ctx->sp++)->value();
   word left = SmallInteger::cast(*ctx->sp)->value();
   word result = left - right;
   *ctx->sp = SmallInteger::fromWord(result);
-  return Result::CONTINUE;
 }
-Result BINARY_MULTIPLY(Context* ctx, word) {
+
+void BINARY_MULTIPLY(Context* ctx, word) {
   Object**& sp = ctx->sp;
   if (sp[1]->isSmallInteger()) {
     word right = SmallInteger::cast(*sp++)->value();
@@ -572,15 +575,15 @@ Result BINARY_MULTIPLY(Context* ctx, word) {
     Handle<List> list(&scope, *sp);
     *sp = thread->runtime()->listReplicate(thread, list, ntimes);
   }
-  return Result::CONTINUE;
 }
-Result BINARY_XOR(Context* ctx, word) {
+
+void BINARY_XOR(Context* ctx, word) {
   word right = SmallInteger::cast(*ctx->sp++)->value();
   word left = SmallInteger::cast(*ctx->sp)->value();
   *ctx->sp = SmallInteger::fromWord(left ^ right);
-  return Result::CONTINUE;
 }
-Result BINARY_SUBSCR(Context* ctx, word) {
+
+void BINARY_SUBSCR(Context* ctx, word) {
   // TODO: The implementation of the {BINARY,STORE}_SUBSCR opcodes are
   // enough to get richards working.
   Object**& sp = ctx->sp;
@@ -622,17 +625,17 @@ Result BINARY_SUBSCR(Context* ctx, word) {
   } else {
     UNIMPLEMENTED("Custom Subscription");
   }
-  return Result::CONTINUE;
 }
-Result STORE_SUBSCR(Context* ctx, word) {
+
+void STORE_SUBSCR(Context* ctx, word) {
   // TODO: The implementation of the {BINARY,STORE}_SUBSCR opcodes are
   // enough to get richards working.
   word idx = SmallInteger::cast(*ctx->sp++)->value();
   auto list = List::cast(*ctx->sp++);
   list->atPut(idx, *ctx->sp++);
-  return Result::CONTINUE;
 }
-Result LOAD_ATTR(Context* ctx, word arg) {
+
+void LOAD_ATTR(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<Object> receiver(&scope, *ctx->sp);
@@ -640,9 +643,9 @@ Result LOAD_ATTR(Context* ctx, word arg) {
   Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
   *ctx->sp = thread->runtime()->attributeAt(ctx->thread, receiver, name);
   thread->abortOnPendingException();
-  return Result::CONTINUE;
 }
-Result STORE_ATTR(Context* ctx, word arg) {
+
+void STORE_ATTR(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<Object> receiver(&scope, *ctx->sp);
@@ -652,9 +655,9 @@ Result STORE_ATTR(Context* ctx, word arg) {
   ctx->sp += 2;
   thread->runtime()->attributeAtPut(thread, receiver, name, value);
   thread->abortOnPendingException();
-  return Result::CONTINUE;
 }
-Result COMPARE_OP(Context* ctx, word arg) {
+
+void COMPARE_OP(Context* ctx, word arg) {
   Object**& sp = ctx->sp;
   HandleScope scope;
   Handle<Object> right(&scope, *sp++);
@@ -662,9 +665,9 @@ Result COMPARE_OP(Context* ctx, word arg) {
   Object* res = Interpreter::compare(static_cast<CompareOp>(arg), left, right);
   assert(res->isBoolean());
   *--sp = res;
-  return Result::CONTINUE;
 }
-Result IMPORT_NAME(Context* ctx, word arg) {
+
+void IMPORT_NAME(Context* ctx, word arg) {
   HandleScope scope;
   Handle<Code> code(&scope, ctx->frame->code());
   Handle<Object> name(&scope, ObjectArray::cast(code->names())->at(arg));
@@ -674,9 +677,9 @@ Result IMPORT_NAME(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   *ctx->sp = runtime->importModule(name);
   thread->abortOnPendingException();
-  return Result::CONTINUE;
 }
-Result BUILD_CONST_KEY_MAP(Context* ctx, word arg) {
+
+void BUILD_CONST_KEY_MAP(Context* ctx, word arg) {
   Object**& sp = ctx->sp;
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -689,26 +692,26 @@ Result BUILD_CONST_KEY_MAP(Context* ctx, word arg) {
     thread->runtime()->dictionaryAtPut(dict, key, value);
   }
   *--sp = *dict;
-  return Result::CONTINUE;
 }
-Result STORE_DEREF(Context* ctx, word arg) {
+
+void STORE_DEREF(Context* ctx, word arg) {
   Code* code = Code::cast(ctx->frame->code());
   ValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))
       ->setValue(*ctx->sp++);
-  return Result::CONTINUE;
 }
-Result LOAD_DEREF(Context* ctx, word arg) {
+
+void LOAD_DEREF(Context* ctx, word arg) {
   Code* code = Code::cast(ctx->frame->code());
   *--ctx->sp =
       ValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))->value();
-  return Result::CONTINUE;
 }
-Result LOAD_CLOSURE(Context* ctx, word arg) {
+
+void LOAD_CLOSURE(Context* ctx, word arg) {
   Code* code = Code::cast(ctx->frame->code());
   *--ctx->sp = ctx->frame->getLocal(code->nlocals() + arg);
-  return Result::CONTINUE;
 }
-Result UNPACK_SEQUENCE(Context* ctx, word arg) {
+
+void UNPACK_SEQUENCE(Context* ctx, word arg) {
   Object* seq = *ctx->sp++;
   if (seq->isObjectArray()) {
     CHECK(
@@ -735,9 +738,9 @@ Result UNPACK_SEQUENCE(Context* ctx, word arg) {
   } else {
     UNIMPLEMENTED("Iterable unpack not supported.");
   }
-  return Result::CONTINUE;
 }
-Result BINARY_TRUE_DIVIDE(Context* ctx, word) {
+
+void BINARY_TRUE_DIVIDE(Context* ctx, word) {
   HandleScope scope;
   double dividend, divisor;
   Handle<Object> right(&scope, *ctx->sp++);
@@ -757,10 +760,9 @@ Result BINARY_TRUE_DIVIDE(Context* ctx, word) {
     UNIMPLEMENTED("Arbitrary object binary true divide not supported.");
   }
   *--ctx->sp = ctx->thread->runtime()->newDouble(divisor / dividend);
-  return Result::CONTINUE;
 }
 
-Result BUILD_STRING(Context* ctx, word arg) {
+void BUILD_STRING(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -777,11 +779,10 @@ Result BUILD_STRING(Context* ctx, word arg) {
       break;
     }
   }
-  return Result::CONTINUE;
 }
 
 // A incomplete impl of FORMAT_VALUE; assumes no conv
-Result FORMAT_VALUE(Context* ctx, word flags) {
+void FORMAT_VALUE(Context* ctx, word flags) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   int conv = (flags & FVC_MASK);
@@ -800,10 +801,9 @@ Result FORMAT_VALUE(Context* ctx, word flags) {
     Handle<String> value(&scope, *ctx->sp++);
     *--ctx->sp = thread->runtime()->stringConcat(fmt_str, value);
   } // else no-op
-  return Result::CONTINUE;
 }
 
-using Op = Result (*)(Context*, word);
+using Op = void (*)(Context*, word);
 const Op opTable[] = {
 #define HANDLER(name, value, handler) handler,
     FOREACH_BYTECODE(HANDLER)
@@ -838,17 +838,8 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         thread->popFrame();
         return result;
       }
-      default: {
-        Result r = opTable[bc](&ctx, arg);
-        if (r != Result::CONTINUE) {
-          assert(r == Result::NOT_IMPLEMENTED);
-          // TODO: Distinguish between intentionally unimplemented bytecode
-          // and unreachable code.
-          UNIMPLEMENTED(
-              "aborting due to unimplemented bytecode: %s\n",
-              bytecode::name(bc));
-        }
-      }
+      default:
+        opTable[bc](&ctx, arg);
     }
   }
 }
