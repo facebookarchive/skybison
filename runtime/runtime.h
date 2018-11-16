@@ -6,7 +6,12 @@
 #include "symbols.h"
 #include "view.h"
 
-typedef struct _object PyObject;
+// An isomorphic structure to CPython's PyObject
+struct ApiHandle {
+  void* reference;
+  long ob_refcnt;
+  void* ob_type;
+};
 
 namespace python {
 
@@ -407,10 +412,10 @@ class Runtime {
 
   // Wrap an Object as an ApiHandle to cross the CPython boundary
   // Create a new ApiHandle if there is not a pre-existing one
-  PyObject* asApiHandle(Object* obj);
+  ApiHandle* asApiHandle(Object* obj);
 
   // Accessor for Objects that have crossed the CPython boundary
-  Object* asObject(PyObject* py_obj);
+  Object* asObject(ApiHandle* py_obj);
 
   // Runtime allocation of a Handle
   Object* allocateApiHandle(Object* obj);
@@ -625,7 +630,7 @@ class Runtime {
 
   Symbols* symbols_;
 
-  Vector<void*> pyobject_store_;
+  Vector<void*> apihandle_store_;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

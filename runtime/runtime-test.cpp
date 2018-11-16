@@ -1031,11 +1031,11 @@ TEST(RuntimeTest, creatingApiHandles) {
   Object* value = runtime.dictionaryAt(dict, obj);
   EXPECT_EQ(value->isError(), true);
 
-  PyObject* integer_handle = runtime.asApiHandle(*obj);
+  ApiHandle* integer_handle = runtime.asApiHandle(*obj);
   value = runtime.dictionaryAt(dict, obj);
   EXPECT_EQ(value->isError(), false);
 
-  PyObject* integer_handle2 = runtime.asApiHandle(*obj);
+  ApiHandle* integer_handle2 = runtime.asApiHandle(*obj);
   EXPECT_EQ(integer_handle, integer_handle2);
 
   Handle<Integer> integer(&scope, runtime.asObject(integer_handle));

@@ -56,7 +56,7 @@ Runtime::~Runtime() {
     thread = thread->next();
     delete prev;
   }
-  for (void* ptr : pyobject_store_) {
+  for (void* ptr : apihandle_store_) {
     std::free(ptr);
   }
   delete symbols_;
@@ -2592,14 +2592,7 @@ Object* Runtime::superGetAttr(
   return instanceGetAttr(thread, receiver, name);
 }
 
-// An isomorphic structure to CPython's PyObject
-struct ApiHandle {
-  void* reference;
-  long ob_refcnt;
-  void* ob_type;
-};
-
-PyObject* Runtime::asApiHandle(Object* obj) {
+ApiHandle* Runtime::asApiHandle(Object* obj) {
   HandleScope scope;
   Handle<Object> key(&scope, obj);
   Handle<Dictionary> dict(&scope, apihandles());
@@ -2607,10 +2600,10 @@ PyObject* Runtime::asApiHandle(Object* obj) {
   if (value->isError()) {
     value = allocateApiHandle(obj);
   }
-  return static_cast<PyObject*>(Integer::cast(value)->asCPointer());
+  return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
 }
 
-Object* Runtime::asObject(PyObject* handle) {
+Object* Runtime::asObject(ApiHandle* handle) {
   return static_cast<Object*>(reinterpret_cast<ApiHandle*>(handle)->reference);
 }
 
