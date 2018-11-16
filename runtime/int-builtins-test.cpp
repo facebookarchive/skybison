@@ -581,13 +581,28 @@ TEST(IntBuiltinsTest, BitLength) {
   EXPECT_EQ(SmallInt::cast(*bit_length6)->value(), 64);
 
   uword digits[] = {0, kMaxInt32};
-  Handle<Object> large_int3(
-      &scope, runtime.newIntWithDigits(View<uword>(&digits[0], 2)));
+  Handle<Object> large_int3(&scope, runtime.newIntWithDigits(digits));
   frame->setLocal(0, *large_int3);
   Handle<Object> bit_length7(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length7->isSmallInt());
   // 31 bits for kMaxInt32 + 64 bits
   EXPECT_EQ(SmallInt::cast(*bit_length7)->value(), 95);
+
+  // (kMinInt64 * 4).bit_length() == 66
+  uword digits2[] = {0, kMaxUword - 1};
+  Handle<Object> large_int4(&scope, runtime.newIntWithDigits(digits2));
+  frame->setLocal(0, *large_int4);
+  Handle<Object> bit_length8(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length8->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*bit_length8)->value(), 66);
+
+  // (kMinInt64 * 4 + 3).bit_length() == 65
+  uword digits3[] = {3, kMaxUword - 1};
+  Handle<Object> large_int5(&scope, runtime.newIntWithDigits(digits3));
+  frame->setLocal(0, *large_int5);
+  Handle<Object> bit_length9(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length9->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*bit_length9)->value(), 65);
 }
 
 TEST(IntBuiltinsTest, CompareLargeIntEq) {
@@ -736,8 +751,8 @@ TEST(LargeIntBuiltinsTest, UnaryNegateTest) {
   Handle<Object> smallint_max1(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
   frame->setLocal(0, *smallint_max1);
   Handle<Object> b(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
-  ASSERT_TRUE(b->isLargeInt());
-  EXPECT_EQ(LargeInt::cast(*b)->asWord(), -(SmallInt::kMaxValue + 1));
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), SmallInt::kMinValue);
 
   Handle<Object> smallint_min(&scope, runtime.newInt(SmallInt::kMinValue));
   frame->setLocal(0, *smallint_min);
@@ -750,6 +765,18 @@ TEST(LargeIntBuiltinsTest, UnaryNegateTest) {
   Handle<Object> d(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
   ASSERT_TRUE(d->isLargeInt());
   EXPECT_EQ(LargeInt::cast(*d)->asWord(), -(SmallInt::kMinValue - 1));
+
+  Handle<Int> min_word(&scope, runtime.newInt(kMinWord));
+  frame->setLocal(0, *min_word);
+  Handle<Object> e(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
+  ASSERT_TRUE(e->isLargeInt());
+  Handle<LargeInt> large_e(e);
+  EXPECT_TRUE(large_e->isPositive());
+  Handle<Int> max_word(&scope, runtime.newInt(kMaxWord));
+  EXPECT_EQ(Int::cast(*large_e)->compare(*max_word), 1);
+  EXPECT_EQ(large_e->numDigits(), 2);
+  EXPECT_EQ(large_e->digitAt(0), 1ULL << (kBitsPerWord - 1));
+  EXPECT_EQ(large_e->digitAt(1), 0);
 }
 
 TEST(LargeIntBuiltinsTest, TruthyLargeInt) {

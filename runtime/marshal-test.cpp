@@ -358,6 +358,17 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
   EXPECT_TRUE(integer->isPositive());
   EXPECT_EQ(integer->digitAt(0), kMaxUint64 - 0xF);
   EXPECT_EQ(integer->digitAt(1), 0xF);
+
+  // marshal.dumps(1 << 63)
+  const char buf3[] =
+      "\xec\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00";
+
+  obj = Marshal::Reader(&scope, &runtime, buf3).readObject();
+  ASSERT_TRUE(obj->isLargeInt());
+  integer = LargeInt::cast(obj);
+  ASSERT_EQ(integer->numDigits(), 2);
+  EXPECT_EQ(integer->digitAt(0), 1ULL << (kBitsPerWord - 1));
+  EXPECT_EQ(integer->digitAt(1), 0);
 }
 
 TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
@@ -396,6 +407,15 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
   EXPECT_TRUE(integer2->isNegative());
   EXPECT_EQ(integer2->digitAt(0), 16);  // ~(kMaxUint64 << 4) + 1
   EXPECT_EQ(integer2->digitAt(1), ~(16ULL) + 1);
+
+  // marshal.dumps(-(1 << 63))
+  const char buf3[] =
+      "\xec\xfb\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00";
+  Object* obj3 = Marshal::Reader(&scope, &runtime, buf3).readObject();
+  ASSERT_TRUE(obj3->isLargeInt());
+  LargeInt* integer3 = LargeInt::cast(obj3);
+  ASSERT_EQ(integer3->numDigits(), 1);
+  EXPECT_EQ(integer3->digitAt(0), kMinWord);
 }
 
 TEST(MarshalReaderDeathTest, ReadUnknownTypeCode) {

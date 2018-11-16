@@ -33,6 +33,11 @@ char* SmallStr::toCStr() {
   return reinterpret_cast<char*>(result);
 }
 
+// SmallInt
+
+const word SmallInt::kMinValue;
+const word SmallInt::kMaxValue;
+
 // LargeStr
 
 bool LargeStr::equals(Object* that) {
@@ -63,6 +68,51 @@ char* LargeStr::toCStr() {
   copyTo(result, length);
   result[length] = '\0';
   return reinterpret_cast<char*>(result);
+}
+
+// LargeInt
+
+bool LargeInt::isValid() {
+  word digits = numDigits();
+  if (digits <= 0) {
+    return false;
+  }
+  if (digits == 1) {
+    // Enforce a canonical representation for all ints.
+    return !SmallInt::isValid(digitAt(0));
+  }
+
+  uword high_digit = digitAt(digits - 1);
+  uword next_sign_bit = digitAt(digits - 2) >> (kBitsPerWord - 1);
+
+  // Redundant sign-extension for negative values.
+  if (high_digit == kMaxUword && next_sign_bit == 1) {
+    return false;
+  }
+
+  // Redundant zero-extension for positive values.
+  if (high_digit == 0 && next_sign_bit == 0) {
+    return false;
+  }
+
+  return true;
+}
+
+word LargeInt::bitLength() {
+  word num_digits = numDigits();
+  uword high_digit = digitAt(num_digits - 1);
+
+  if (high_digit > static_cast<uword>(kMaxWord)) {
+    // We're negative. Calculate what high_digit would be after negation.
+    uword carry = [&] {
+      for (word i = 0; i < num_digits - 1; i++) {
+        if (digitAt(i) != 0) return 0;
+      }
+      return 1;
+    }();
+    high_digit = ~high_digit + carry;
+  }
+  return (num_digits - 1) * kBitsPerWord + Utils::highestBit(high_digit);
 }
 
 void Slice::unpack(word* start, word* stop, word* step) {

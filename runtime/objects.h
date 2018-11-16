@@ -249,7 +249,7 @@ class Int : public Object {
 
   double floatValue();
 
-  word highestBit();
+  word bitLength();
 
   bool isNegative();
   bool isPositive();
@@ -870,6 +870,13 @@ class LargeInt : public HeapObject {
   // Getters and setters.
   word asWord();
 
+  // Return whether or not this LargeInt obeys the following invariants:
+  // - numDigits() >= 1
+  // - The value does not fit in a SmallInt
+  // - Negative numbers do not have redundant sign-extended digits
+  // - Positive numbers do not have redundant zero-extended digits
+  bool isValid();
+
   // LargeInt is also used for storing native pointers.
   void* asCPtr();
 
@@ -883,13 +890,10 @@ class LargeInt : public HeapObject {
   uword digitAt(word index);
   void digitAtPut(word index, uword digit);
 
-  // Backing array of unsigned words
-  View<uword> digits();
-
   bool isNegative();
   bool isPositive();
 
-  word highestBit();
+  word bitLength();
 
   // Number of digits
   word numDigits();
@@ -901,6 +905,9 @@ class LargeInt : public HeapObject {
  private:
   friend class Int;
   friend class Runtime;
+
+  // Backing array of unsigned words. Extremely GC-unsafe; use with care.
+  View<uword> digits();
 
   DISALLOW_COPY_AND_ASSIGN(LargeInt);
 };
@@ -2498,12 +2505,12 @@ inline double Int::floatValue() {
   UNIMPLEMENTED("LargeInts with > 1 digit");
 }
 
-inline word Int::highestBit() {
+inline word Int::bitLength() {
   if (isSmallInt()) {
     uword self = static_cast<uword>(std::abs(SmallInt::cast(this)->value()));
     return Utils::highestBit(self);
   }
-  return LargeInt::cast(this)->highestBit();
+  return LargeInt::cast(this)->bitLength();
 }
 
 inline bool Int::isPositive() {
@@ -3288,12 +3295,6 @@ inline uword LargeInt::digitAt(word index) {
 inline void LargeInt::digitAtPut(word index, uword digit) {
   DCHECK_INDEX(index, numDigits());
   reinterpret_cast<uword*>(address() + kValueOffset)[index] = digit;
-}
-
-inline word LargeInt::highestBit() {
-  word num_digits = numDigits();
-  word highest_bit = Utils::highestBit(digitAt(num_digits - 1));
-  return highest_bit + ((num_digits - 1) * kBitsPerPointer);
 }
 
 inline word LargeInt::numDigits() { return headerCountOrOverflow(); }

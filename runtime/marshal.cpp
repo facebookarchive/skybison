@@ -406,7 +406,7 @@ Object* Marshal::Reader::readLongObject() {
     }
     uword unsigned_digit = static_cast<uword>(digit);
     if (word_offset + kBitsPerLongDigit <= kBitsPerWord) {
-      buf |= unsigned_digit << (word_offset);
+      buf |= unsigned_digit << word_offset;
       word_offset += kBitsPerLongDigit;
       if (word_offset == kBitsPerWord) {
         digits[digits_idx++] = buf;
@@ -425,8 +425,11 @@ Object* Marshal::Reader::readLongObject() {
   }
   if (word_offset > 0 && buf != 0) {
     digits[digits_idx++] = buf;
-  } else if (digits[digits_idx - 1] >> (kBitsPerWord - 1)) {
-    // Zero extend if the MSB is set in the top digit.
+  } else if (digits[digits_idx - 1] >> (kBitsPerWord - 1) &&
+             (n > 0 || digits[digits_idx - 1] << 1)) {
+    // Zero extend if the MSB is set in the top digit and either the result is
+    // positive or the top digit has at least one other bit set (in which case
+    // we need the extra digit for the negation).
     digits[digits_idx++] = 0;
   }
   if (n < 0) {

@@ -180,15 +180,44 @@ void SmallIntBuiltins::initialize(Runtime* runtime) {
   }
 }
 
+// Does this LargeInt use fewer digits now than it would after being negated?
+static bool negationOverflows(const Handle<LargeInt>& value) {
+  word num_digits = value->numDigits();
+  for (word i = 0; i < num_digits - 1; i++) {
+    if (value->digitAt(i) != 0) {
+      return false;
+    }
+  }
+  return value->digitAt(num_digits - 1) == (1ULL << (kBitsPerWord - 1));
+}
+
 Object* IntBuiltins::negateLargeInteger(Runtime* runtime,
-                                        const Handle<Object>& large_integer) {
+                                        const Handle<Object>& large_int_obj) {
   HandleScope scope;
-  View<uword> digits = LargeInt::cast(*large_integer)->digits();
-  Handle<LargeInt> result(&scope,
-                          runtime->heap()->createLargeInt(digits.length()));
+  Handle<LargeInt> src(&scope, *large_int_obj);
+
+  word num_digits = src->numDigits();
+  // -i needs more digits than i if negating it overflows.
+  if (negationOverflows(src)) {
+    Handle<LargeInt> result(&scope,
+                            runtime->heap()->createLargeInt(num_digits + 1));
+    for (word i = 0; i < num_digits; i++) {
+      result->digitAtPut(i, src->digitAt(i));
+    }
+    result->digitAtPut(num_digits, 0);
+    DCHECK(result->isValid(), "Invalid LargeInt");
+    return *result;
+  }
+
+  // -i fits in a SmallInt when i == SmallInt::kMaxValue + 1.
+  if (num_digits == 1 && src->digitAt(0) == SmallInt::kMaxValue + 1) {
+    return SmallInt::fromWord(SmallInt::kMinValue);
+  }
+
+  Handle<LargeInt> result(&scope, runtime->heap()->createLargeInt(num_digits));
   uword carry = 1;
-  for (word i = 0; i < digits.length(); i++) {
-    uword digit = digits.get(i) ^ kMaxUword;
+  for (word i = 0; i < num_digits; i++) {
+    uword digit = ~src->digitAt(i);
     uword sum = digit + carry;
     result->digitAtPut(i, sum);
     if (sum >= digit) {
@@ -196,6 +225,7 @@ Object* IntBuiltins::negateLargeInteger(Runtime* runtime,
     }
   }
   DCHECK(carry == 0, "Carry should be zero");
+  DCHECK(result->isValid(), "Invalid LargeInt");
   return *result;
 }
 
@@ -212,7 +242,7 @@ Object* IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr(
         "bit_length() must be called with int instance as the first argument");
   }
-  return SmallInt::fromWord(Int::cast(self)->highestBit());
+  return SmallInt::fromWord(Int::cast(self)->bitLength());
 }
 
 Object* IntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {

@@ -29,20 +29,38 @@ TEST(ComplexTest, ComplexTest) {
 
 TEST(IntTest, IntTest) {
   Runtime runtime;
-  Object* o1 = runtime.newInt(42);
-  EXPECT_FALSE(o1->isLargeInt());
-  Int* i1 = Int::cast(o1);
+  HandleScope scope;
+
+  Handle<Object> o1(&scope, runtime.newInt(42));
+  ASSERT_TRUE(o1->isSmallInt());
+  Handle<Int> i1(o1);
   EXPECT_EQ(i1->asWord(), 42);
 
-  Object* o2 = runtime.newInt(9223372036854775807L);
-  EXPECT_TRUE(o2->isLargeInt());
-  Int* i2 = Int::cast(o2);
+  Handle<Object> o2(&scope, runtime.newInt(9223372036854775807L));
+  ASSERT_TRUE(o2->isLargeInt());
+  Handle<Int> i2(o2);
   EXPECT_EQ(i2->asWord(), 9223372036854775807L);
 
   int stack_val = 123;
-  Object* o3 = runtime.newIntFromCPtr(&stack_val);
-  Int* i3 = Int::cast(o3);
+  Handle<Object> o3(&scope, runtime.newIntFromCPtr(&stack_val));
+  ASSERT_TRUE(o3->isInt());
+  Handle<Int> i3(o3);
   EXPECT_EQ(*reinterpret_cast<int*>(i3->asCPtr()), 123);
+
+  Handle<Object> o4(&scope, runtime.newInt(kMinWord));
+  ASSERT_TRUE(o4->isLargeInt());
+  EXPECT_EQ(LargeInt::cast(*o4)->numDigits(), 1);
+  EXPECT_EQ(LargeInt::cast(*o4)->asWord(), kMinWord);
+
+  uword digits[] = {kMaxUword, 0};
+  Handle<Int> o5(&scope, runtime.newIntWithDigits(digits));
+  EXPECT_TRUE(o5->isLargeInt());
+  EXPECT_EQ(o5->bitLength(), kBitsPerWord);
+
+  uword digits2[] = {kMaxUword, 1};
+  Handle<Int> o6(&scope, runtime.newIntWithDigits(digits2));
+  EXPECT_TRUE(o6->isLargeInt());
+  EXPECT_EQ(o6->bitLength(), kBitsPerWord + 1);
 }
 
 TEST(IntTest, IsPositive) {

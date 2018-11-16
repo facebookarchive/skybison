@@ -213,6 +213,7 @@ Object* Heap::createInstance(LayoutId layout_id, word num_attributes) {
 }
 
 Object* Heap::createLargeInt(word num_digits) {
+  DCHECK(num_digits > 0, "num_digits must be positive");
   word size = LargeInt::allocationSize(num_digits);
   Object* raw = allocate(size, LargeInt::headerSize(num_digits));
   CHECK(raw != Error::object(), "out of memory");

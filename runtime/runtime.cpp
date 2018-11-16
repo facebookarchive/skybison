@@ -757,6 +757,7 @@ Object* Runtime::newIntWithDigits(View<uword> digits) {
   for (word i = 0; i < digits.length(); i++) {
     result->digitAtPut(i, digits.get(i));
   }
+  DCHECK(result->isValid(), "Invalid digits");
   return *result;
 }
 
