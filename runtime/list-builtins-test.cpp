@@ -521,12 +521,12 @@ test6 = len(a)
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> test1(&scope, findInModule(&runtime, main, "test1"));
-  Handle<Object> test2(&scope, findInModule(&runtime, main, "test2"));
-  Handle<Object> test3(&scope, findInModule(&runtime, main, "test3"));
-  Handle<Object> test4(&scope, findInModule(&runtime, main, "test4"));
-  Handle<Object> test5(&scope, findInModule(&runtime, main, "test5"));
-  Handle<Object> test6(&scope, findInModule(&runtime, main, "test6"));
+  Handle<Object> test1(&scope, moduleAt(&runtime, main, "test1"));
+  Handle<Object> test2(&scope, moduleAt(&runtime, main, "test2"));
+  Handle<Object> test3(&scope, moduleAt(&runtime, main, "test3"));
+  Handle<Object> test4(&scope, moduleAt(&runtime, main, "test4"));
+  Handle<Object> test5(&scope, moduleAt(&runtime, main, "test5"));
+  Handle<Object> test6(&scope, moduleAt(&runtime, main, "test6"));
   EXPECT_EQ(*test1, SmallInt::fromWord(1));
   EXPECT_EQ(*test2, SmallStr::fromCStr("a"));
   EXPECT_EQ(*test3, SmallInt::fromWord(2));
@@ -547,8 +547,8 @@ e = a[0]
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> len(&scope, findInModule(&runtime, main, "l"));
-  Handle<Object> element(&scope, findInModule(&runtime, main, "e"));
+  Handle<Object> len(&scope, moduleAt(&runtime, main, "l"));
+  Handle<Object> element(&scope, moduleAt(&runtime, main, "e"));
   EXPECT_EQ(*len, SmallInt::fromWord(1));
   EXPECT_EQ(*element, SmallStr::fromCStr("foo"));
 }

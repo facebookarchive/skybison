@@ -135,13 +135,13 @@ def test(a, b):
   Handle<Module> main(&scope, object);
 
   // Create an instance of D
-  Handle<Object> type_d(&scope, findInModule(&runtime, main, "D"));
+  Handle<Object> type_d(&scope, moduleAt(&runtime, main, "D"));
   ASSERT_TRUE(type_d->isType());
   Handle<Layout> layout(&scope, Type::cast(*type_d)->instanceLayout());
   Handle<Object> instance(&scope, runtime.newInstance(layout));
 
   // Fetch the test function
-  object = findInModule(&runtime, main, "test");
+  object = moduleAt(&runtime, main, "test");
   ASSERT_TRUE(object->isFunction());
   Handle<Function> isinstance(&scope, object);
 
@@ -162,19 +162,19 @@ def test(a, b):
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(D(), C) should be true
-  Handle<Object> type_c(&scope, findInModule(&runtime, main, "C"));
+  Handle<Object> type_c(&scope, moduleAt(&runtime, main, "C"));
   ASSERT_TRUE(type_c->isType());
   args->atPut(1, *type_c);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(D(), B) should be true
-  Handle<Object> type_b(&scope, findInModule(&runtime, main, "B"));
+  Handle<Object> type_b(&scope, moduleAt(&runtime, main, "B"));
   ASSERT_TRUE(type_b->isType());
   args->atPut(1, *type_b);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(C(), A) should be true
-  Handle<Object> type_a(&scope, findInModule(&runtime, main, "A"));
+  Handle<Object> type_a(&scope, moduleAt(&runtime, main, "A"));
   ASSERT_TRUE(type_a->isType());
   args->atPut(1, *type_a);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");

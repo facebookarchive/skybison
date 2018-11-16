@@ -30,8 +30,8 @@ b = len(s)
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, findInModule(&runtime, main, "a"));
-  Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(SmallInt::cast(*a)->value(), 1);
   EXPECT_EQ(SmallInt::cast(*b)->value(), 0);
 }
@@ -44,7 +44,7 @@ s = set()
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> s(&scope, findInModule(&runtime, main, "s"));
+  Handle<Object> s(&scope, moduleAt(&runtime, main, "s"));
   EXPECT_TRUE(s->isSet());
   EXPECT_EQ(Set::cast(*s)->numItems(), 0);
 }
@@ -59,7 +59,7 @@ s.add("Hello, World")
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Set> s(&scope, findInModule(&runtime, main, "s"));
+  Handle<Set> s(&scope, moduleAt(&runtime, main, "s"));
   Handle<Object> one(&scope, runtime.newInt(1));
   Handle<Object> hello_world(&scope, runtime.newStrFromCStr("Hello, World"));
   EXPECT_EQ(s->numItems(), 2);

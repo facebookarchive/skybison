@@ -64,13 +64,6 @@ std::string compileAndRunToString(Runtime* runtime, const char* src) {
   return tmp_stdout.str();
 }
 
-Object* findInModule(Runtime* runtime, const Handle<Module>& module,
-                     const char* name) {
-  HandleScope scope;
-  Handle<Object> key(&scope, runtime->newStrFromCStr(name));
-  return runtime->moduleAt(module, key);
-}
-
 std::string callFunctionToString(const Handle<Function>& func,
                                  const Handle<ObjectArray>& args) {
   std::stringstream stream;
@@ -121,8 +114,7 @@ Object* moduleAt(Runtime* runtime, const Handle<Module>& module,
                  const char* name) {
   HandleScope scope;
   Handle<Object> key(&scope, runtime->newStrFromCStr(name));
-  Handle<Object> value(&scope, runtime->moduleAt(module, key));
-  return *value;
+  return runtime->moduleAt(module, key);
 }
 
 }  // namespace testing

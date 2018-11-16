@@ -1958,8 +1958,7 @@ class DataDescriptor:
   runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> descr_klass(&scope,
-                           findInModule(&runtime, main, "DataDescriptor"));
+  Handle<Type> descr_klass(&scope, moduleAt(&runtime, main, "DataDescriptor"));
 
   // Create the class
   Handle<Object> klass(&scope, createClass(&runtime));
@@ -1986,8 +1985,7 @@ class DataDescriptor:
   runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> descr_klass(&scope,
-                           findInModule(&runtime, main, "DataDescriptor"));
+  Handle<Type> descr_klass(&scope, moduleAt(&runtime, main, "DataDescriptor"));
 
   // Create the class
   Handle<Object> klass(&scope, createClass(&runtime));
@@ -2017,8 +2015,7 @@ class DataDescriptor:
   runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> descr_klass(&scope,
-                           findInModule(&runtime, main, "DataDescriptor"));
+  Handle<Type> descr_klass(&scope, moduleAt(&runtime, main, "DataDescriptor"));
 
   // Create the class
   Handle<Object> klass(&scope, createClass(&runtime));
@@ -2048,7 +2045,7 @@ class Foo(metaclass=MyMeta):
   runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> foo(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<Object> attr(&scope, runtime.newStrFromCStr("attr"));
   Handle<Object> result(
       &scope, runtime.attributeAt(Thread::currentThread(), foo, attr));
@@ -2069,8 +2066,8 @@ def test(x):
   runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
-  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
+  Handle<Type> klass(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
@@ -2093,8 +2090,8 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
-  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
+  Handle<Type> klass(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
@@ -2119,13 +2116,13 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
   // Run __init__
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   EXPECT_EQ(callFunctionToString(test, args), "testing 123\n");
 }
 
@@ -2148,13 +2145,13 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
   // Run __init__ then RMW the attribute
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   EXPECT_EQ(callFunctionToString(test, args), "testing 123\n321 testing\n");
 }
 
@@ -2180,7 +2177,7 @@ def test(x):
   // Create an instance of Foo
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   Handle<Instance> foo1(&scope, runtime.newInstance(layout));
   LayoutId original_layout_id = layout->id();
@@ -2188,7 +2185,7 @@ def test(x):
   // Add overflow attributes that should force layout transitions
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   args->atPut(0, *foo1);
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   EXPECT_EQ(callFunctionToString(test, args), "100 200 hello\naaa bbb ccc\n");
   EXPECT_NE(foo1->layoutId(), original_layout_id);
 
@@ -2221,13 +2218,13 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
   // Run __init__ then call the method
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   EXPECT_EQ(callFunctionToString(test, args), "testing 123\n321 testing\n");
 }
 
@@ -2249,8 +2246,8 @@ class Foo:
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> descr_klass(&scope, findInModule(&runtime, main, "DataDescr"));
-  Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> descr_klass(&scope, moduleAt(&runtime, main, "DataDescr"));
+  Handle<Object> klass(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<Object> attr(&scope, runtime.newStrFromCStr("attr"));
   Handle<Layout> descr_layout(&scope, descr_klass->instanceLayout());
   Handle<Object> descr(&scope, runtime.newInstance(descr_layout));
@@ -2282,8 +2279,8 @@ class Foo:
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> descr_klass(&scope, findInModule(&runtime, main, "Descr"));
-  Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> descr_klass(&scope, moduleAt(&runtime, main, "Descr"));
+  Handle<Object> klass(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<Object> attr(&scope, runtime.newStrFromCStr("attr"));
   Handle<Layout> descr_layout(&scope, descr_klass->instanceLayout());
   Handle<Object> descr(&scope, runtime.newInstance(descr_layout));
@@ -2322,13 +2319,13 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
   // Run the test
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   EXPECT_EQ(callFunctionToString(test, args), "foo bar baz\naaa bbb ccc\n");
 }
 
@@ -2405,7 +2402,7 @@ def test():
   compileAndRunToString(&runtime, src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(0));
   Handle<Object> result(&scope, callFunction(test, args));
   EXPECT_EQ(*result, None::object());
@@ -2431,16 +2428,16 @@ del foo.bar
 )";
   compileAndRunToString(&runtime, src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> data(&scope, findInModule(&runtime, main, "result"));
+  Handle<Object> data(&scope, moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(data->isObjectArray());
 
   Handle<ObjectArray> result(&scope, *data);
   ASSERT_EQ(result->length(), 2);
 
-  Handle<Object> descr(&scope, findInModule(&runtime, main, "descr"));
+  Handle<Object> descr(&scope, moduleAt(&runtime, main, "descr"));
   EXPECT_EQ(result->at(0), *descr);
 
-  Handle<Object> foo(&scope, findInModule(&runtime, main, "foo"));
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "foo"));
   EXPECT_EQ(result->at(1), *foo);
 }
 
@@ -2473,13 +2470,13 @@ del foo.bar
 )";
   compileAndRunToString(&runtime, src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> data(&scope, findInModule(&runtime, main, "result"));
+  Handle<Object> data(&scope, moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(data->isObjectArray());
 
   Handle<ObjectArray> result(&scope, *data);
   ASSERT_EQ(result->length(), 2);
 
-  Handle<Object> foo(&scope, findInModule(&runtime, main, "foo"));
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "foo"));
   EXPECT_EQ(result->at(0), *foo);
   ASSERT_TRUE(result->at(1)->isStr());
   EXPECT_PYSTRING_EQ(Str::cast(result->at(1)), "bar");
@@ -2505,13 +2502,13 @@ del bar.baz
 )";
   compileAndRunToString(&runtime, src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> data(&scope, findInModule(&runtime, main, "result"));
+  Handle<Object> data(&scope, moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(data->isObjectArray());
 
   Handle<ObjectArray> result(&scope, *data);
   ASSERT_EQ(result->length(), 2);
 
-  Handle<Object> bar(&scope, findInModule(&runtime, main, "bar"));
+  Handle<Object> bar(&scope, moduleAt(&runtime, main, "bar"));
   EXPECT_EQ(result->at(0), *bar);
   ASSERT_TRUE(result->at(1)->isStr());
   EXPECT_PYSTRING_EQ(Str::cast(result->at(1)), "baz");
@@ -2531,7 +2528,7 @@ def test():
   compileAndRunToString(&runtime, src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(0));
   Handle<Object> result(&scope, callFunction(test, args));
   EXPECT_EQ(*result, None::object());
@@ -2560,16 +2557,16 @@ del Foo.attr
 )";
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> data(&scope, findInModule(&runtime, main, "args"));
+  Handle<Object> data(&scope, moduleAt(&runtime, main, "args"));
   ASSERT_TRUE(data->isObjectArray());
 
   Handle<ObjectArray> args(&scope, *data);
   ASSERT_EQ(args->length(), 2);
 
-  Handle<Object> descr(&scope, findInModule(&runtime, main, "descr"));
+  Handle<Object> descr(&scope, moduleAt(&runtime, main, "descr"));
   EXPECT_EQ(args->at(0), *descr);
 
-  Handle<Object> foo(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
   EXPECT_EQ(args->at(1), *foo);
 }
 
@@ -2603,13 +2600,13 @@ del Foo.bar
 )";
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> data(&scope, findInModule(&runtime, main, "args"));
+  Handle<Object> data(&scope, moduleAt(&runtime, main, "args"));
   ASSERT_TRUE(data->isObjectArray());
 
   Handle<ObjectArray> args(&scope, *data);
   ASSERT_EQ(args->length(), 2);
 
-  Handle<Object> foo(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
   EXPECT_EQ(args->at(0), *foo);
 
   Handle<Object> attr(&scope, runtime.internStrFromCStr("bar"));
@@ -2625,7 +2622,7 @@ def test(module):
 )";
   compileAndRunToString(&runtime, src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   args->atPut(0, *main);
   EXPECT_DEATH(callFunction(test, args), "missing attribute");
@@ -2643,7 +2640,7 @@ def test(module):
 )";
   compileAndRunToString(&runtime, src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   args->atPut(0, *main);
   EXPECT_EQ(callFunction(test, args), SmallInt::fromWord(123));
@@ -2716,7 +2713,7 @@ class Foo:
 
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, moduleAt(&runtime, main, "Foo"));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   Handle<HeapObject> instance(&scope, runtime.newInstance(layout));
   Handle<Object> attr(&scope, runtime.newStrFromCStr("unknown"));
@@ -2740,7 +2737,7 @@ def new_foo():
   // Create an instance of Foo
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Function> new_foo(&scope, findInModule(&runtime, main, "new_foo"));
+  Handle<Function> new_foo(&scope, moduleAt(&runtime, main, "new_foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(0));
   Handle<HeapObject> instance(&scope, callFunction(new_foo, args));
 
@@ -2778,7 +2775,7 @@ def new_foo():
   // Create an instance of Foo
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Function> new_foo(&scope, findInModule(&runtime, main, "new_foo"));
+  Handle<Function> new_foo(&scope, moduleAt(&runtime, main, "new_foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(0));
   Handle<HeapObject> instance(&scope, callFunction(new_foo, args));
 

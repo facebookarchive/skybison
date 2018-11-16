@@ -1708,7 +1708,7 @@ class Foo(object):
   Object* object = findModule(&runtime, "__main__");
   ASSERT_TRUE(object->isModule());
   Handle<Module> main(&scope, object);
-  object = findInModule(&runtime, main, "Foo");
+  object = moduleAt(&runtime, main, "Foo");
   ASSERT_TRUE(object->isType());
   Handle<Type> type(&scope, object);
 
@@ -1984,7 +1984,7 @@ t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<Object> t(&scope, findInModule(&runtime, main, "t"));
+  Handle<Object> t(&scope, moduleAt(&runtime, main, "t"));
   EXPECT_TRUE(t->isObjectArray());
   Handle<ObjectArray> tuple_t(&scope, *t);
   EXPECT_EQ(tuple_t->length(), 6);
@@ -1992,7 +1992,7 @@ t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
     EXPECT_EQ(SmallInt::cast(tuple_t->at(i))->value(), i);
   }
 
-  Handle<Object> t1(&scope, findInModule(&runtime, main, "t1"));
+  Handle<Object> t1(&scope, moduleAt(&runtime, main, "t1"));
   EXPECT_TRUE(t1->isObjectArray());
   Handle<ObjectArray> tuple_t1(&scope, *t1);
   EXPECT_EQ(tuple_t1->length(), 6);
@@ -2013,7 +2013,7 @@ l = [*[0], *[1, 2], *[], *[3, 4, 5]]
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
+  Handle<Object> l(&scope, moduleAt(&runtime, main, "l"));
   EXPECT_TRUE(l->isList());
   Handle<List> list_l(&scope, *l);
   EXPECT_EQ(list_l->allocated(), 6);
@@ -2034,7 +2034,7 @@ s = {*[0, 1], *{2, 3}, *(4, 5), *[]}
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<Object> s(&scope, findInModule(&runtime, main, "s"));
+  Handle<Object> s(&scope, moduleAt(&runtime, main, "s"));
   EXPECT_TRUE(s->isSet());
   Handle<Set> set_s(&scope, *s);
   EXPECT_EQ(set_s->numItems(), 6);
@@ -2183,7 +2183,7 @@ b = {x for x in a}
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(b->isSet(), true);
   Handle<Set> set_b(&scope, *b);
   EXPECT_EQ(set_b->numItems(), 3);
@@ -2198,7 +2198,7 @@ b = {x:x for x in a}
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(b->isDict(), true);
   Handle<Dict> dict_b(&scope, *b);
   EXPECT_EQ(dict_b->numItems(), 3);
@@ -2282,10 +2282,10 @@ for el in l:
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, findInModule(&runtime, main, "a"));
-  Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
-  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
-  Handle<Object> s(&scope, findInModule(&runtime, main, "s"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Object> l(&scope, moduleAt(&runtime, main, "l"));
+  Handle<Object> s(&scope, moduleAt(&runtime, main, "s"));
 
   ASSERT_NE(SmallInt::cast(*a)->value(), 2);
   ASSERT_NE(SmallInt::cast(*b)->value(), 12);
@@ -2310,7 +2310,7 @@ l.insert(-100, 0)
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
+  Handle<Object> l(&scope, moduleAt(&runtime, main, "l"));
   Handle<List> list_l(&scope, *l);
   EXPECT_EQ(SmallInt::cast(list_l->at(0))->value(), 0);
   EXPECT_EQ(SmallInt::cast(list_l->at(1))->value(), 1);
@@ -2331,7 +2331,7 @@ l.insert(-1, 3)
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
+  Handle<Object> l(&scope, moduleAt(&runtime, main, "l"));
   Handle<List> list_l(&scope, *l);
   ASSERT_EQ(list_l->allocated(), 5);
   EXPECT_EQ(SmallInt::cast(list_l->at(0))->value(), 0);
@@ -2529,7 +2529,7 @@ for x in range(4):
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
+  Handle<Object> l(&scope, moduleAt(&runtime, main, "l"));
   EXPECT_TRUE(l->isList());
   Handle<List> list_l(&scope, *l);
   ASSERT_GE(list_l->allocated(), 3);
