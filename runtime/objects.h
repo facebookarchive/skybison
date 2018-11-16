@@ -2006,7 +2006,7 @@ inline uword HeapObject::address() {
 }
 
 inline uword HeapObject::baseAddress() {
-  word result = address() - Header::kSize;
+  uword result = address() - Header::kSize;
   if (header()->hasOverflow()) {
     result -= kPointerSize;
   }
