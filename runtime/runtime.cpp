@@ -978,7 +978,7 @@ void Runtime::initializeTypeClass() {
   classAddBuiltinFunction(
       type,
       symbols()->DunderCall(),
-      builtinTypeCall,
+      nativeTrampoline<builtinTypeCall>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
@@ -1646,7 +1646,7 @@ void Runtime::moduleAddBuiltinPrint(const Handle<Module>& module) {
       &scope,
       newBuiltinFunction(
           nativeTrampoline<builtinPrint>,
-          nativeTrampoline<builtinPrintKw>,
+          nativeTrampolineKw<builtinPrintKw>,
           unimplementedTrampoline));
 
   // Name
@@ -1667,7 +1667,7 @@ void Runtime::createBuiltinsModule() {
       module,
       symbols()->DunderBuildClass(),
       nativeTrampoline<builtinBuildClass>,
-      nativeTrampoline<builtinBuildClassKw>,
+      nativeTrampolineKw<builtinBuildClassKw>,
       unimplementedTrampoline);
   moduleAddBuiltinPrint(module);
   moduleAddBuiltinFunction(

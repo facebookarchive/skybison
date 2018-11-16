@@ -13,14 +13,9 @@
 
 namespace python {
 
-Object* builtinTypeCall(Thread* thread, Frame* caller, word nargs) {
+Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread->handles());
-
-  // Create a frame big enough to hold all of the outgoing arguments and the
-  // function object for the __new__ and __init__ calls.
-  Frame* frame = thread->openAndLinkFrame(nargs, 0, nargs + 1);
-
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
 
   Runtime* runtime = thread->runtime();
   Handle<Object> name(&scope, runtime->symbols()->DunderNew());
@@ -63,9 +58,6 @@ Object* builtinTypeCall(Thread* thread, Frame* caller, word nargs) {
   dunder_init->entry()(thread, frame, nargs);
 
   // TODO: throw a type error if the __init__ method does not return None.
-
-  thread->popFrame();
-
   return *result;
 }
 

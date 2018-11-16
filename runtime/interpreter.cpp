@@ -64,7 +64,7 @@ Interpreter::callKw(Thread* thread, Frame* frame, Object** sp, word nargs) {
   // Top of stack is a tuple of keyword argument names in the order they
   // appear on the stack.
   frame->setValueStackTop(sp);
-  auto function = Function::cast(*(sp + nargs + 1));
+  Function* function = Function::cast(*(sp + nargs + 1));
   return function->entryKw()(thread, frame, nargs);
 }
 
@@ -75,7 +75,7 @@ Interpreter::callEx(Thread* thread, Frame* frame, Object** sp, word flags) {
   // pointer.
   frame->setValueStackTop(sp);
   word function_position = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
-  auto function = Function::cast(*(sp + function_position));
+  Function* function = Function::cast(*(sp + function_position));
   return function->entryEx()(thread, frame, flags);
 }
 

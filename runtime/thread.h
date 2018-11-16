@@ -29,7 +29,7 @@ class Thread {
 
   Frame* openAndLinkFrame(word numArgs, word numVars, word stackDepth);
   Frame* pushFrame(Object* code);
-  Frame* pushNativeFrame(void* fn);
+  Frame* pushNativeFrame(void* fn, word nargs);
   Frame* pushModuleFunctionFrame(Module* module, Object* code);
   Frame* pushClassFunctionFrame(Object* function, Object* dictionary);
 

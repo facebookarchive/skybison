@@ -17,7 +17,8 @@ Object* builtinSysExit(Thread* thread, Frame* frame, word nargs) {
 
   word code = 0; // success
   if (nargs == 1) {
-    Object* arg = frame->valueStackTop()[0];
+    Arguments args(frame, nargs);
+    Object* arg = args.get(0);
     if (!arg->isSmallInteger()) {
       return thread->throwTypeErrorFromCString(
           "exit() expects numeric argument");

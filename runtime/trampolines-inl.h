@@ -12,18 +12,29 @@ namespace python {
 // TODO(t24656189) - replace with JITed code once we have the facilities for
 // that.
 template <Object* (*Fn)(Thread*, Frame*, word)>
-Object* nativeTrampoline(Thread* thread, Frame* previousFrame, word argc) {
+Object* nativeTrampoline(Thread* thread, Frame* /*previous_frame*/, word argc) {
   HandleScope scope(thread->handles());
-
-  thread->pushNativeFrame(Utils::castFnPtrToVoid(Fn));
-
-  Handle<Object> result(&scope, Fn(thread, previousFrame, argc));
+  Frame* frame = thread->pushNativeFrame(Utils::castFnPtrToVoid(Fn), argc);
+  Handle<Object> result(&scope, Fn(thread, frame, argc));
   Handle<Object> pendingException(&scope, thread->pendingException());
   DCHECK(
       result->isError() != pendingException->isNone(),
       "error/exception mismatch");
-  // TODO: pendingException should eventually be an instance of BaseException
-  // (or a subclass), and it should be thrown up into python.
+  thread->abortOnPendingException();
+  thread->popFrame();
+  return *result;
+}
+
+template <Object* (*Fn)(Thread*, Frame*, word)>
+Object*
+nativeTrampolineKw(Thread* thread, Frame* /*previous_frame*/, word argc) {
+  HandleScope scope(thread->handles());
+  Frame* frame = thread->pushNativeFrame(Utils::castFnPtrToVoid(Fn), argc + 1);
+  Handle<Object> result(&scope, Fn(thread, frame, argc + 1));
+  Handle<Object> pendingException(&scope, thread->pendingException());
+  DCHECK(
+      result->isError() != pendingException->isNone(),
+      "error/exception mismatch");
   thread->abortOnPendingException();
   thread->popFrame();
   return *result;

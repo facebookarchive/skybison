@@ -1,7 +1,9 @@
 #include "gtest/gtest.h"
 
+#include "frame.h"
 #include "runtime.h"
 #include "test-utils.h"
+#include "trampolines-inl.h"
 
 namespace python {
 using namespace testing;
@@ -438,6 +440,171 @@ foo(3, 4);
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
   EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
+}
+
+static Object* firstArg(Thread*, Frame* frame, word argc) {
+  if (argc == 0) {
+    return None::object();
+  }
+  Arguments args(frame, argc);
+  return args.get(0);
+}
+
+TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Create the builtin function
+  Handle<Function> callee(&scope, runtime.newFunction());
+  callee->setEntry(nativeTrampoline<firstArg>);
+
+  // Set up a code object that calls the builtin with a single argument.
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  consts->atPut(0, *callee);
+  consts->atPut(1, SmallInteger::fromWord(1111));
+  code->setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, CALL_FUNCTION, 1, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setStacksize(2);
+
+  // Execute the code and make sure we get back the result we expect
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  ASSERT_EQ(SmallInteger::cast(result)->value(), 1111);
+}
+
+// test "builtin-kw" func that returns a list of first position arg
+// and value of kw argument 'foo'
+static Object*
+returnsPositionalAndKeywordArgument(Thread* thread, Frame* frame, word argc) {
+  KwArguments args(frame, argc);
+  HandleScope scope(thread);
+  Handle<Object> foo_name(
+      &scope, thread->runtime()->newStringFromCString("foo"));
+  Handle<Object> foo_val(&scope, args.getKw(*foo_name));
+  Handle<ObjectArray> tuple(&scope, thread->runtime()->newObjectArray(2));
+  tuple->atPut(0, args.get(0));
+  tuple->atPut(1, *foo_val);
+  return *tuple;
+}
+
+TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Create the builtin kw function
+  Handle<Function> callee(&scope, runtime.newFunction());
+  callee->setEntryKw(nativeTrampolineKw<returnsPositionalAndKeywordArgument>);
+
+  // Set up a code object that calls the builtin with (1234, foo='bar')
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(4));
+  consts->atPut(0, *callee);
+  consts->atPut(1, SmallInteger::fromWord(1234));
+  consts->atPut(2, runtime.newStringFromCString("bar"));
+  Handle<ObjectArray> kw_tuple(&scope, runtime.newObjectArray(1));
+  kw_tuple->atPut(0, runtime.newStringFromCString("foo"));
+  consts->atPut(3, *kw_tuple);
+  code->setConsts(*consts);
+
+  // load arguments and call builtin kw function
+  const byte bytecode[] = {LOAD_CONST,
+                           0,
+                           LOAD_CONST,
+                           1,
+                           LOAD_CONST,
+                           2,
+                           LOAD_CONST,
+                           3,
+                           CALL_FUNCTION_KW,
+                           2,
+                           RETURN_VALUE,
+                           0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setStacksize(4);
+
+  // Execute the code and make sure we get back the result we expect
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isObjectArray());
+  Handle<ObjectArray> tuple(&scope, result);
+  ASSERT_EQ(tuple->length(), 2);
+  EXPECT_EQ(SmallInteger::cast(tuple->at(0))->value(), 1234);
+  EXPECT_TRUE(String::cast(tuple->at(1))->equalsCString("bar"));
+}
+
+// test "builtin-kw" func that returns a list of first position arg
+// and value of kw arguments 'foo' and 'bar'
+static Object* returnsPositionalAndTwoKeywordArguments(
+    Thread* thread,
+    Frame* frame,
+    word argc) {
+  Runtime* runtime = thread->runtime();
+  KwArguments args(frame, argc);
+  HandleScope scope;
+  Handle<Object> foo_name(&scope, runtime->newStringFromCString("foo"));
+  Handle<Object> bar_name(&scope, runtime->newStringFromCString("bar"));
+  Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(3));
+  tuple->atPut(0, args.get(0));
+  tuple->atPut(1, args.getKw(*foo_name));
+  tuple->atPut(2, args.getKw(*bar_name));
+  return *tuple;
+}
+
+TEST(
+    TrampolineTest,
+    CallNativeFunctionReceivesPositionalAndTwoKeywordArguments) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Create the builtin 'multi-kw' function
+  Handle<Function> callee(&scope, runtime.newFunction());
+  callee->setEntryKw(
+      nativeTrampolineKw<returnsPositionalAndTwoKeywordArguments>);
+
+  // Code object that calls func with (1234, (foo='foo_val', bar='bar_val'))
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(5));
+  consts->atPut(0, *callee);
+  consts->atPut(1, SmallInteger::fromWord(1234));
+  consts->atPut(2, runtime.newStringFromCString("foo_val"));
+  consts->atPut(3, runtime.newStringFromCString("bar_val"));
+  Handle<ObjectArray> kw_tuple(&scope, runtime.newObjectArray(2));
+  kw_tuple->atPut(0, runtime.newStringFromCString("foo"));
+  kw_tuple->atPut(1, runtime.newStringFromCString("bar"));
+  consts->atPut(4, *kw_tuple);
+  code->setConsts(*consts);
+
+  // load arguments and call builtin kw function
+  const byte bytecode[] = {LOAD_CONST,
+                           0,
+                           LOAD_CONST,
+                           1,
+                           LOAD_CONST,
+                           2,
+                           LOAD_CONST,
+                           3,
+                           LOAD_CONST,
+                           4,
+                           CALL_FUNCTION_KW,
+                           3,
+                           RETURN_VALUE,
+                           0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setStacksize(5);
+
+  // Execute the code and make sure we get back the result we expect
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isObjectArray());
+  Handle<ObjectArray> tuple(&scope, result);
+  ASSERT_EQ(tuple->length(), 3);
+  ASSERT_TRUE(tuple->at(0)->isInteger());
+  EXPECT_EQ(SmallInteger::cast(tuple->at(0))->value(), 1234);
+  ASSERT_TRUE(tuple->at(1)->isString());
+  EXPECT_TRUE(String::cast(tuple->at(1))->equalsCString("foo_val"));
+  ASSERT_TRUE(tuple->at(2)->isString());
+  EXPECT_TRUE(String::cast(tuple->at(2))->equalsCString("bar_val"));
 }
 
 } // namespace python

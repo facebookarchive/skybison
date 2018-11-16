@@ -130,7 +130,8 @@ Object* builtinSmallIntegerPos(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
-  return SmallInteger::cast(*caller->valueStackTop());
+  Arguments args(caller, nargs);
+  return SmallInteger::cast(args.get(0));
 }
 
 Object* builtinSmallIntegerSub(Thread* thread, Frame* caller, word nargs) {

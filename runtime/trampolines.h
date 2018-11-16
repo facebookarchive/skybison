@@ -33,6 +33,9 @@ Object* unimplementedTrampoline(Thread* thread, Frame* callerFrame, word argc)
 template <Object* (*Fn)(Thread*, Frame*, word)>
 Object* nativeTrampoline(Thread* thread, Frame* callerFrame, word argc)
     __attribute__((aligned(16)));
+template <Object* (*Fn)(Thread*, Frame*, word)>
+Object* nativeTrampolineKw(Thread* thread, Frame* callerFrame, word argc)
+    __attribute__((aligned(16)));
 
 Object* extensionTrampoline(Thread* thread, Frame* previousFrame, word argc)
     __attribute__((aligned(16)));

@@ -39,8 +39,8 @@ std::string callFunctionToString(
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Handle<Code> code(&scope, func->code());
-  Frame* frame =
-      thread->pushNativeFrame(Utils::castFnPtrToVoid(callFunctionToString));
+  Frame* frame = thread->pushNativeFrame(
+      Utils::castFnPtrToVoid(callFunctionToString), args->length());
 
   Object** sp = frame->valueStackTop();
   *--sp = *func;

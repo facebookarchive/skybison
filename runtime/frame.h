@@ -236,17 +236,14 @@ class FrameVisitor {
 
 class Arguments {
  public:
-  Arguments(Frame* caller, word nargs)
-      : Arguments(caller->valueStackTop(), nargs) {}
-
-  Arguments(Object** tos, word nargs) {
-    bos_ = tos + nargs - 1;
+  Arguments(Frame* caller, word nargs) {
+    frame_ = caller;
     num_args_ = nargs;
   }
 
   Object* get(word n) const {
     CHECK(n < num_args_, "index out of range");
-    return *(bos_ - n);
+    return frame_->getLocal(n);
   }
 
   word numArgs() const {
@@ -254,26 +251,22 @@ class Arguments {
   }
 
  protected:
-  Object** bos_;
+  Frame* frame_;
   word num_args_;
 };
 
 class KwArguments : public Arguments {
  public:
-  KwArguments(Frame* caller, word nargs)
-      : KwArguments(caller->valueStackTop(), nargs) {}
-
-  // +1 for the keywords names tuple
-  KwArguments(Object** tos, word nargs) : Arguments(tos, nargs + 1) {
-    kwnames_ = ObjectArray::cast(*tos);
+  KwArguments(Frame* caller, word nargs) : Arguments(caller, nargs) {
+    kwnames_ = ObjectArray::cast(caller->getLocal(nargs - 1));
     num_keywords_ = kwnames_->length();
-    num_args_ = nargs - num_keywords_;
+    num_args_ = nargs - num_keywords_ - 1;
   }
 
   Object* getKw(Object* name) const {
     for (word i = 0; i < num_keywords_; i++) {
       if (String::cast(name)->equals(kwnames_->at(i))) {
-        return *(bos_ - num_args_ - i);
+        return frame_->getLocal(num_args_ + i);
       }
     }
     CHECK(false, "keyword argument not found");

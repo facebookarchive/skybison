@@ -49,21 +49,23 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   thread->runClassFunction(*body, *dictionary);
 
   Object** sp = caller->valueStackTop();
-  *--sp = runtime->classAt(IntrinsicLayoutId::kType);
+  Handle<Class> klass(&scope, runtime->classAt(IntrinsicLayoutId::kType));
+  *--sp = *klass;
   *--sp = *name;
   *--sp = *bases;
   *--sp = *dictionary;
   caller->setValueStackTop(sp);
-  Handle<Class> result(&scope, builtinTypeCall(thread, caller, 4));
+  Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
+  Handle<Function> dunder_call(
+      &scope, runtime->lookupNameInMro(thread, klass, call_name));
+  Handle<Object> result(&scope, dunder_call->entry()(thread, caller, 4));
   caller->setValueStackTop(sp + 4);
-
   return *result;
 }
 
 Object* builtinBuildClassKw(Thread* thread, Frame* caller, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-
   KwArguments args(caller, nargs);
   if (args.numArgs() < 2) {
     return thread->throwTypeErrorFromCString(
@@ -100,7 +102,10 @@ Object* builtinBuildClassKw(Thread* thread, Frame* caller, word nargs) {
   *--sp = *bases;
   *--sp = *dictionary;
   caller->setValueStackTop(sp);
-  Handle<Class> result(&scope, builtinTypeCall(thread, caller, 4));
+  Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
+  Handle<Function> dunder_call(
+      &scope, runtime->lookupNameInMro(thread, metaclass, call_name));
+  Handle<Object> result(&scope, dunder_call->entry()(thread, caller, 4));
   caller->setValueStackTop(sp + 4);
 
   return *result;
@@ -110,7 +115,8 @@ Object* builtinChr(Thread* thread, Frame* caller_frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("Unexpected 1 argumment in 'chr'");
   }
-  Object* arg = caller_frame->valueStackTop()[0];
+  Arguments args(caller_frame, nargs);
+  Object* arg = args.get(0);
   if (!arg->isSmallInteger()) {
     return thread->throwTypeErrorFromCString(
         "Unsupported type in builtin 'chr'");
@@ -126,7 +132,8 @@ Object* builtinInt(Thread* thread, Frame* caller_frame, word nargs) {
         "int() takes exactly 1 argument"); // TODO(rkng): base (kw/optional)
   }
   HandleScope scope(thread);
-  Handle<Object> arg(&scope, *caller_frame->valueStackTop());
+  Arguments args(caller_frame, nargs);
+  Handle<Object> arg(&scope, args.get(0));
   return thread->runtime()->stringToInt(thread, arg);
 }
 
@@ -176,7 +183,8 @@ Object* builtinOrd(Thread* thread, Frame* caller_frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("Unexpected 1 argumment in 'ord'");
   }
-  Object* arg = caller_frame->valueStackTop()[0];
+  Arguments args(caller_frame, nargs);
+  Object* arg = args.get(0);
   if (!arg->isString()) {
     return thread->throwTypeErrorFromCString(
         "Unsupported type in builtin 'ord'");
@@ -326,9 +334,9 @@ Object* builtinPrint(Thread* thread, Frame* frame, word nargs) {
 }
 
 Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs + 1);
+  Arguments args(frame, nargs);
   HandleScope scope;
-  Handle<Object> last_arg(&scope, args.get(nargs));
+  Handle<Object> last_arg(&scope, args.get(nargs - 1));
   if (!last_arg->isObjectArray()) {
     thread->throwTypeErrorFromCString("Keyword argument names must be a tuple");
     return Error::object();
@@ -344,7 +352,7 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object* end = None::object();
   std::ostream* ostream = builtInStdout;
-  word num_positional = nargs - names->length();
+  word num_positional = nargs - names->length() - 1;
   for (word i = 0; i < names->length(); i++) {
     Handle<Object> key(&scope, names->at(i));
     DCHECK(key->isString(), "Keyword argument names must be strings");
@@ -383,10 +391,9 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   }
 
   // Remove kw arg tuple and the value for the end keyword argument
-  Arguments rest(
-      frame->valueStackTop() + 1 + num_keywords, nargs - num_keywords);
+  Arguments rest(frame, nargs - num_keywords - 1);
   Handle<Object> end_val(&scope, end);
-  return doBuiltinPrint(rest, nargs - num_keywords, end_val, ostream);
+  return doBuiltinPrint(rest, nargs - num_keywords - 1, end_val, ostream);
 }
 
 Object* builtinRange(Thread* thread, Frame* frame, word nargs) {

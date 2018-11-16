@@ -388,41 +388,6 @@ TEST(ThreadTest, CallFunction) {
   EXPECT_EQ(SmallInteger::cast(result)->value(), expected_result->value());
 }
 
-static Object* firstArg(Thread*, Frame* caller_frame, word argc)
-    __attribute__((aligned(16)));
-
-Object* firstArg(Thread*, Frame* caller_frame, word argc) {
-  if (argc == 0) {
-    return None::object();
-  }
-  return *(caller_frame->valueStackTop() + argc - 1);
-}
-
-TEST(ThreadTest, CallBuiltinFunction) {
-  Runtime runtime;
-  HandleScope scope;
-
-  // Create the builtin function
-  Handle<Function> callee(&scope, runtime.newFunction());
-  callee->setEntry(firstArg);
-
-  // Set up a code object that calls the builtin with a single argument.
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInteger::fromWord(1111));
-  code->setConsts(*consts);
-  const byte bytecode[] = {
-      LOAD_CONST, 0, LOAD_CONST, 1, CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
-  code->setStacksize(2);
-
-  // Execute the code and make sure we get back the result we expect
-  Object* result = Thread::currentThread()->run(*code);
-  ASSERT_TRUE(result->isSmallInteger());
-  ASSERT_EQ(SmallInteger::cast(result)->value(), 1111);
-}
-
 TEST(ThreadTest, ExtendedArg) {
   const word num_consts = 258;
   const byte bytecode[] = {EXTENDED_ARG, 1, LOAD_CONST, 1, RETURN_VALUE, 0};
