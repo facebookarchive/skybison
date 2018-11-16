@@ -2974,4 +2974,48 @@ foo = Foo(1111, b=2222, c=3333)
   EXPECT_EQ(SmallInt::cast(*result_c)->value(), 3333);
 }
 
+TEST(ThreadTest, LoadClassDeref) {
+  const char* src = R"(
+def foo():
+  a = 1
+  class Foo:
+    b = a
+  return Foo.b
+x = foo()
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
+  EXPECT_EQ(*x, SmallInt::fromWord(1));
+}
+
+TEST(ThreadTest, LoadClassDerefFromLocal) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInt::fromWord(1111));
+  Handle<ObjectArray> freevars(&scope, runtime.newObjectArray(1));
+  freevars->atPut(0, SmallStr::fromCStr("lalala"));
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  names->atPut(0, SmallStr::fromCStr("lalala"));
+  code->setConsts(*consts);
+  code->setNames(*names);
+  code->setFreevars(*freevars);
+  const byte bytecode[] = {LOAD_CONST,      0, STORE_NAME,   0,
+                           LOAD_CLASSDEREF, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setStacksize(2);
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code);
+  frame->setCode(*code);
+  Handle<Dict> implicit_global(&scope, runtime.newDict());
+  frame->setImplicitGlobals(*implicit_global);
+  Object* result = Interpreter::execute(thread, frame);
+  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(result)->value(), 1111);
+}
+
 }  // namespace python

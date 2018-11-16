@@ -1764,6 +1764,27 @@ void Interpreter::doMapAdd(Context* ctx, word arg) {
   ctx->thread->runtime()->dictAtPut(dict, key, value);
 }
 
+// opcode 148
+void Interpreter::doLoadClassDeref(Context* ctx, word arg) {
+  HandleScope scope(ctx->thread);
+  Handle<Code> code(&scope, ctx->frame->code());
+  word idx = arg - code->numCellvars();
+  Handle<Object> name(&scope, ObjectArray::cast(code->freevars())->at(idx));
+  Handle<Dict> implicit_global(&scope, ctx->frame->implicitGlobals());
+  Handle<Object> result(&scope,
+                        ctx->thread->runtime()->dictAt(implicit_global, name));
+  if (result->isError()) {
+    Handle<ValueCell> value_cell(&scope,
+                                 ctx->frame->getLocal(code->nlocals() + arg));
+    if (value_cell->isUnbound()) {
+      UNIMPLEMENTED("unbound free var %s", Str::cast(*name)->toCStr());
+    }
+    ctx->frame->pushValue(value_cell->value());
+  } else {
+    ctx->frame->pushValue(ValueCell::cast(*result)->value());
+  }
+}
+
 // opcode 149
 void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   Runtime* runtime = ctx->thread->runtime();
