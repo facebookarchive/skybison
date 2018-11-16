@@ -1814,62 +1814,6 @@ Object* Runtime::getIter(const Handle<Object>& iterable) {
   }
 }
 
-// Set
-
-// Helper class for manipulating buckets in the ObjectArray that backs the
-// Set, it has one less slot than Bucket.
-class SetBucket {
- public:
-  SetBucket(const Handle<ObjectArray>& data, word index)
-      : data_(data), index_(index) {}
-
-  Object* hash() {
-    return data_->at(index_ + kHashOffset);
-  }
-
-  Object* key() {
-    return data_->at(index_ + kKeyOffset);
-  }
-
-  void set(Object* hash, Object* key) {
-    data_->atPut(index_ + kHashOffset, hash);
-    data_->atPut(index_ + kKeyOffset, key);
-  }
-
-  bool hasKey(Object* thatKey) {
-    return !hash()->isNone() && Object::equals(key(), thatKey);
-  }
-
-  bool isTombstone() {
-    return hash()->isNone() && !key()->isNone();
-  }
-
-  void setTombstone() {
-    set(None::object(), Error::object());
-  }
-
-  bool isEmpty() {
-    return hash()->isNone() && key()->isNone();
-  }
-
-  static word getIndex(Object* data, Object* hash) {
-    word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
-    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
-    word value = SmallInteger::cast(hash)->value();
-    return (value & (nbuckets - 1)) * kNumPointers;
-  }
-
-  static const word kHashOffset = 0;
-  static const word kKeyOffset = kHashOffset + 1;
-  static const word kNumPointers = kKeyOffset + 1;
-
- private:
-  const Handle<ObjectArray>& data_;
-  word index_;
-
-  DISALLOW_HEAP_ALLOCATION();
-};
-
 // List
 
 void Runtime::listEnsureCapacity(const Handle<List>& list, word index) {
@@ -1877,15 +1821,15 @@ void Runtime::listEnsureCapacity(const Handle<List>& list, word index) {
     return;
   }
   HandleScope scope;
-  word newCapacity = (list->capacity() < kInitialEnsuredCapacity)
+  word new_capacity = (list->capacity() < kInitialEnsuredCapacity)
       ? kInitialEnsuredCapacity
       : list->capacity() << 1;
-  if (newCapacity < index)
-    newCapacity = Utils::nextPowerOfTwo(index);
-  Handle<ObjectArray> oldArray(&scope, list->items());
-  Handle<ObjectArray> newArray(&scope, newObjectArray(newCapacity));
-  oldArray->copyTo(*newArray);
-  list->setItems(*newArray);
+  if (new_capacity < index)
+    new_capacity = Utils::nextPowerOfTwo(index);
+  Handle<ObjectArray> old_array(&scope, list->items());
+  Handle<ObjectArray> new_array(&scope, newObjectArray(new_capacity));
+  old_array->copyTo(*new_array);
+  list->setItems(*new_array);
 }
 
 void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
@@ -1936,11 +1880,12 @@ void Runtime::listExtend(
       word new_capacity = index + set->numItems();
       listEnsureCapacity(dest, new_capacity);
       dest->setAllocated(new_capacity);
-      for (word i = 0; i < data->length(); i += SetBucket::kNumPointers) {
-        SetBucket bucket(data, i);
-        if (bucket.isEmpty() || bucket.isTombstone())
+      for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
+        if (Set::Bucket::isEmpty(*data, i) ||
+            Set::Bucket::isTombstone(*data, i)) {
           continue;
-        dest->atPut(index++, bucket.key());
+        }
+        dest->atPut(index++, Set::Bucket::key(*data, i));
       }
     }
   } else if (iterable->isDictionary()) {

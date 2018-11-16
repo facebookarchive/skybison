@@ -23,7 +23,7 @@ print(a[0], a[1], a[2][0])
   EXPECT_EQ(output, "1 2 3\n");
 }
 
-TEST(ThreadTest, ListExtend) {
+TEST(ListBuiltinsTest, ListExtend) {
   const char* src = R"(
 a = []
 b = [1, 2, 3]
@@ -35,7 +35,7 @@ print(r is None, len(b) == 3)
   EXPECT_EQ(output, "True True\n");
 }
 
-TEST(ListBuiltinsTest, ListInsertExcept) {
+TEST(ListBuiltinsDeathTest, ListInsertExcept) {
   Runtime runtime;
   const char* src1 = R"(
 a = [1, 2]
@@ -85,7 +85,7 @@ print(a.pop(), a.pop(0), a.pop(-2))
   EXPECT_EQ(output2, "5 1 2\n");
 }
 
-TEST(ListBuiltinsTest, ListPopExcept) {
+TEST(ListBuiltinsDeathTest, ListPopExcept) {
   Runtime runtime;
   const char* src1 = R"(
 a = [1, 2]
