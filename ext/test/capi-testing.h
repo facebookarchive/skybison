@@ -41,5 +41,9 @@ int moduleSet(const char* module, const char* name, PyObject*);
 // the type and value does not matter but reference count does.
 PyObject* createUniqueObject();
 
+// Returns a new reference to the already imported module with the given name.
+// If no module is found, return a nullptr
+PyObject* importGetModule(PyObject* name);
+
 }  // namespace testing
 }  // namespace python

@@ -1,3 +1,4 @@
+#include "cpython-func.h"
 #include "runtime.h"
 
 namespace python {
@@ -15,12 +16,29 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* /* e */,
   UNIMPLEMENTED("PyImport_ImportModuleLevelObject");
 }
 
-PY_EXPORT PyObject* PyImport_AddModule(const char* /* e */) {
-  UNIMPLEMENTED("PyImport_AddModule");
+PY_EXPORT PyObject* PyImport_AddModule(const char* name) {
+  PyObject* pyname = PyUnicode_FromString(name);
+  if (!pyname) return nullptr;
+  PyObject* module = PyImport_AddModuleObject(pyname);
+  Py_DECREF(pyname);
+  return module;
 }
 
-PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* /* e */) {
-  UNIMPLEMENTED("PyImport_AddModuleObject");
+PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Dict modules_dict(&scope, runtime->modules());
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Object module(&scope, runtime->dictAt(modules_dict, name_obj));
+  if (!module->isError() && module->isModule()) {
+    return ApiHandle::fromBorrowedObject(module);
+  }
+
+  Module new_module(&scope, runtime->newModule(name_obj));
+  runtime->addModule(new_module);
+  return ApiHandle::fromBorrowedObject(*new_module);
 }
 
 PY_EXPORT int PyImport_AppendInittab(const char* /* e */,

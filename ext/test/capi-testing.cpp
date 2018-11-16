@@ -60,5 +60,12 @@ PyObject* createUniqueObject() {
   return pytuple;
 }
 
+PyObject* importGetModule(PyObject* name) {
+  PyObject* modules_dict = PyImport_GetModuleDict();
+  PyObject* module = PyDict_GetItem(modules_dict, name);
+  Py_XINCREF(module);  // Return a new reference
+  return module;
+}
+
 }  // namespace testing
 }  // namespace python

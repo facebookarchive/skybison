@@ -117,6 +117,8 @@ PyAPI_FUNC(int) PyObject_SetAttr(PyObject*, PyObject*, PyObject*);
 PyAPI_FUNC(int) PyObject_SetAttrString(PyObject*, const char*, PyObject*);
 PyAPI_FUNC(int) PyModule_AddObject(PyObject*, const char*, PyObject*);
 PyAPI_FUNC(PyObject*) PyImport_GetModuleDict(void);
+PyAPI_FUNC(PyObject*) PyImport_AddModule(const char*);
+PyAPI_FUNC(PyObject*) PyImport_AddModuleObject(PyObject*);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject* args, const char* format, ...);
 PyAPI_FUNC(PyObject*) PyLong_FromLongLong(long long val);
 PyAPI_FUNC(PyObject*) PyLong_FromSsize_t(ssize_t val);

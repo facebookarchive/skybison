@@ -387,10 +387,12 @@ add_library(
   ext/Objects/unicodeobject-test.cpp
   ext/Python/errors-test.cpp
   ext/Python/getargs-test.cpp
+  ext/Python/import-test.cpp
   ext/Python/modsupport-test.cpp
   ext/test/capi-fixture.h
-  ext/test/capi-testing.h
-  ext/test/capi-testing.cpp)
+  ext/test/capi-testing-test.cpp
+  ext/test/capi-testing.cpp
+  ext/test/capi-testing.h)
 target_include_directories(
   extension-tests
   PRIVATE
