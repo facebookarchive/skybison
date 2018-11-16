@@ -82,7 +82,7 @@ TEST_F(SetExtensionApiTest, NewFromSet) {
 
   EXPECT_EQ(PySet_Contains(set_copy, one), 1);
   EXPECT_EQ(PySet_Contains(set_copy, two), 1);
-  // TODO(T35906055): EXPECT_EQ(PySet_Size(set_copy), 2);
+  EXPECT_EQ(PySet_Size(set_copy), 2);
 }
 
 TEST_F(SetExtensionApiTest, NewWithList) {
@@ -97,7 +97,7 @@ TEST_F(SetExtensionApiTest, NewWithList) {
   PyObjectPtr set(PySet_New(list));
   EXPECT_EQ(PySet_Contains(set, one), 1);
   EXPECT_EQ(PySet_Contains(set, two), 1);
-  // TODO(T35906055): EXPECT_EQ(PySet_Size(set), 2);
+  EXPECT_EQ(PySet_Size(set), 2);
 }
 
 TEST_F(SetExtensionApiTest, NewWithNonIterableReturnsNull) {
@@ -113,7 +113,31 @@ TEST_F(SetExtensionApiTest, NewWithNonIterableReturnsNull) {
 TEST_F(SetExtensionApiTest, NewWithNullReturnsEmpty) {
   PyObjectPtr set(PySet_New(nullptr));
   ASSERT_NE(set, nullptr);
-  // TODO(T35906055): EXPECT_EQ(PySet_Size(set), 0);
+  EXPECT_EQ(PySet_Size(set), 0);
+}
+
+TEST_F(SetExtensionApiTest, SizeIncreasesAfterAdd) {
+  PyObjectPtr set(PySet_New(nullptr));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+
+  EXPECT_EQ(PySet_Size(set), 0);
+  ASSERT_EQ(PySet_Add(set, one), 0);
+  EXPECT_EQ(PySet_Size(set), 1);
+  ASSERT_EQ(PySet_Add(set, one), 0);
+  EXPECT_EQ(PySet_Size(set), 1);
+  ASSERT_EQ(PySet_Add(set, two), 0);
+  EXPECT_EQ(PySet_Size(set), 2);
+}
+
+TEST_F(SetExtensionApiTest, SizeOfNonSetReturnsNegative) {
+  PyObjectPtr list(PyList_New(2));
+
+  EXPECT_EQ(PySet_Size(list), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  // TODO(wmeehan): replace with PyErr_ExceptionMatches(PyExc_SystemError);
+  const char* expected_message = "bad argument to internal function";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
 }
 
 }  // namespace python

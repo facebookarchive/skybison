@@ -83,8 +83,21 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
 
 PY_EXPORT PyObject* PySet_Pop(PyObject* /* t */) { UNIMPLEMENTED("PySet_Pop"); }
 
-PY_EXPORT Py_ssize_t PySet_Size(PyObject* /* t */) {
-  UNIMPLEMENTED("PySet_Size");
+PY_EXPORT Py_ssize_t PySet_Size(PyObject* anyset) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Object set_obj(&scope, ApiHandle::fromPyObject(anyset)->asObject());
+  // TODO(T28454727): test for FrozenSet
+  if (!runtime->isInstanceOfSet(set_obj)) {
+    // TODO(wmeehan) replace with PyErr_BadInternalCall
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return -1;
+  }
+
+  Set set(&scope, *set_obj);
+  return set->numItems();
 }
 
 }  // namespace python

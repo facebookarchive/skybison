@@ -237,6 +237,7 @@ PyAPI_FUNC(char*) PyByteArray_AS_STRING_Func(PyObject*);
 #define PyModule_Create(module) \
     PyModule_Create2(module, PYTHON_API_VERSION)
 
+#define PySet_GET_SIZE(op) PySet_Size((PyObject*)op)
 #define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
 // TODO(T33954927): redefine PyTuple_GET_ITEM in a way that doesnt break pyro
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem((PyObject*)op, i, v)
