@@ -26,13 +26,15 @@ Runtime::Runtime() : heap_(64 * MiB), new_value_cell_callback_(this) {
 }
 
 Runtime::~Runtime() {
-  for (Thread* thread = threads_; thread != nullptr; thread = thread->next()) {
+  for (Thread* thread = threads_; thread != nullptr;) {
     if (thread == Thread::currentThread()) {
       Thread::setCurrentThread(nullptr);
     } else {
       assert(0); // Not implemented.
     }
-    delete thread;
+    auto prev = thread;
+    thread = thread->next();
+    delete prev;
   }
 }
 
