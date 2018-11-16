@@ -48,7 +48,7 @@ TEST(ThreadTest, RunEmptyFunction) {
   ASSERT_EQ(result, None::object()); // returns None
 }
 
-TEST(ThreadTest, DISABLED_RunHelloWorld) {
+TEST(ThreadTest, RunHelloWorld) {
   Runtime runtime;
   HandleScope scope;
   const char* buffer =
@@ -72,8 +72,15 @@ TEST(ThreadTest, DISABLED_RunHelloWorld) {
   ASSERT_TRUE(code->isCode());
   EXPECT_EQ(Code::cast(code)->argcount(), 0);
 
-  Thread thread(1 * KiB);
-  Object* result = thread.run(code);
+  // TODO(cshapiro): abstract away retrieving the main module.
+  Handle<Dictionary> modules(&scope, runtime.modules());
+  Handle<Object> key(&scope, runtime.newStringFromCString("__main__"));
+  Handle<Object> value(&scope, None::object());
+  bool is_present = runtime.dictionaryAt(modules, key, value.pointer());
+  ASSERT_TRUE(is_present);
+  Handle<Module> main(&scope, *value);
+
+  Object* result = Thread::currentThread()->runModuleFunction(*main, code);
   ASSERT_EQ(result, None::object()); // returns None
 }
 
@@ -500,6 +507,93 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   ASSERT_TRUE(is_present);
   EXPECT_EQ(*value_cell2, *value_cell1);
   EXPECT_EQ(SmallInteger::fromWord(42), value_cell1->value());
+}
+
+TEST(ThreadTest, StoreNameCreateValueCell) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInteger::fromWord(42));
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+
+  const byte bytecode[] = {
+      LOAD_CONST, 0, STORE_NAME, 0, LOAD_NAME, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code, thread->initialFrame());
+
+  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
+  frame->setImplicitGlobals(*implicit_globals);
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+
+  Handle<Object> value(&scope, None::object());
+  bool is_present =
+      runtime.dictionaryAt(implicit_globals, key, value.pointer());
+  ASSERT_TRUE(is_present);
+  Handle<ValueCell> value_cell(&scope, *value);
+  EXPECT_EQ(*result, value_cell->value());
+}
+
+TEST(ThreadTest, MakeFunction) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> module(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
+  consts->atPut(0, runtime.newCode());
+  Handle<Object> key(&scope, runtime.newStringFromCString("hello"));
+  consts->atPut(1, *key);
+  consts->atPut(2, None::object());
+  module->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  names->atPut(0, runtime.newStringFromCString("hello"));
+  module->setNames(*names);
+
+  const byte bc[] = {LOAD_CONST,
+                     0,
+                     LOAD_CONST,
+                     1,
+                     MAKE_FUNCTION,
+                     0,
+                     STORE_NAME,
+                     0,
+                     LOAD_CONST,
+                     2,
+                     RETURN_VALUE,
+                     0};
+  module->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*module, thread->initialFrame());
+
+  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
+  frame->setImplicitGlobals(*implicit_globals);
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+
+  Handle<Object> value(&scope, None::object());
+  bool is_present =
+      runtime.dictionaryAt(implicit_globals, key, value.pointer());
+  ASSERT_TRUE(is_present);
+  Handle<ValueCell> value_cell(&scope, *value);
+  ASSERT_TRUE(value_cell->value()->isFunction());
+
+  Handle<Function> function(&scope, value_cell->value());
+  EXPECT_EQ(function->code(), consts->at(0));
+  EXPECT_EQ(function->name(), consts->at(1));
+  EXPECT_EQ(function->entry(), &interpreterTrampoline);
 }
 
 } // namespace python

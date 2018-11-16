@@ -23,7 +23,7 @@ Object* builtinPrint(Thread*, Frame* callerFrame, word argc) {
   Object** argv = callerFrame->valueStackTop();
 
   // Args come in in reverse order
-  for (int i = argc - 1; i >= 0; i--) {
+  for (word i = argc - 1; i >= 0; i--) {
     Object* arg = argv[i];
     if (arg->isString()) {
       printString(String::cast(arg));

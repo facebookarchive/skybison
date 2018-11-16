@@ -76,6 +76,15 @@ Frame* Thread::pushFrame(Object* object, Frame* previousFrame) {
   return frame;
 }
 
+Frame* Thread::pushModuleFunctionFrame(
+    Module* module,
+    Object* object,
+    Frame* previousFrame) {
+  Frame* result = pushFrame(object, previousFrame);
+  result->setImplicitGlobals(module->dictionary());
+  return result;
+}
+
 void Thread::pushInitialFrame() {
   assert(ptr_ == end_);
   assert(ptr_ - Frame::kSize > start_);
@@ -93,6 +102,12 @@ void Thread::popFrame(Frame* frame) {
 Object* Thread::run(Object* object) {
   assert(ptr_ == reinterpret_cast<byte*>(initialFrame_));
   Frame* frame = pushFrame(object, initialFrame_);
+  return Interpreter::execute(this, frame);
+}
+
+Object* Thread::runModuleFunction(Module* module, Object* object) {
+  assert(ptr_ == reinterpret_cast<byte*>(initialFrame_));
+  Frame* frame = pushModuleFunctionFrame(module, object, initialFrame_);
   return Interpreter::execute(this, frame);
 }
 

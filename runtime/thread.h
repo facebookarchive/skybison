@@ -6,6 +6,7 @@ namespace python {
 
 class Frame;
 class Handles;
+class Module;
 class Object;
 class Runtime;
 
@@ -26,10 +27,13 @@ class Thread {
   Frame*
   openAndLinkFrame(word localsSize, word stackSize, Frame* previousFrame);
   Frame* pushFrame(Object* code, Frame* previousFrame);
+  Frame*
+  pushModuleFunctionFrame(Module* module, Object* code, Frame* previousFrame);
 
   void popFrame(Frame* frame);
 
   Object* run(Object* object);
+  Object* runModuleFunction(Module* module, Object* object);
 
   Thread* next() {
     return next_;

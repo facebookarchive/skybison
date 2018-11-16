@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "builtins.h"
 #include "callback.h"
 #include "globals.h"
 #include "handles.h"
@@ -54,6 +55,15 @@ Object* Runtime::newByteArrayWithAll(const byte* data, word length) {
     ByteArray::cast(result)->byteAtPut(
         i, *reinterpret_cast<const byte*>(data + i));
   }
+  return result;
+}
+
+Object* Runtime::newBuiltinFunction(Function::Entry entry) {
+  Object* result = heap()->createFunction();
+  assert(result != nullptr);
+  auto function = Function::cast(result);
+  function->setEntry(entry);
+  function->setEntryKw(unimplementedTrampoline);
   return result;
 }
 
@@ -166,7 +176,7 @@ word Runtime::siphash24(const byte* src, word size) {
   ::halfsiphash(
       src,
       size,
-      reinterpret_cast<uint8_t*>(hash_secret_),
+      reinterpret_cast<const uint8_t*>(hash_secret_),
       reinterpret_cast<uint8_t*>(&result),
       sizeof(result));
   return result;
@@ -294,11 +304,27 @@ void Runtime::initializeModules() {
   createMainModule();
 }
 
+void Runtime::addModuleGlobal(
+    const Handle<Module>& module,
+    const Handle<Object>& key,
+    const Handle<Object>& value) {
+  HandleScope scope;
+  Handle<Dictionary> dictionary(&scope, module->dictionary());
+  Handle<ValueCell> value_cell(
+      &scope, dictionaryAtIfAbsentPut(dictionary, key, newValueCellCallback()));
+  value_cell->setValue(*value);
+}
+
 void Runtime::createBuiltinsModule() {
   HandleScope scope;
   Handle<Object> name(&scope, newStringFromCString("builtins"));
   Handle<Module> module(&scope, newModule(name));
+
   // Fill in builtins...
+  Handle<Object> key(&scope, newStringFromCString("print"));
+  Handle<Object> value(&scope, newBuiltinFunction(&builtinPrint));
+  addModuleGlobal(module, key, value);
+
   addModule(module);
 }
 
@@ -314,6 +340,11 @@ void Runtime::createMainModule() {
   HandleScope scope;
   Handle<Object> name(&scope, newStringFromCString("__main__"));
   Handle<Module> module(&scope, newModule(name));
+
+  Handle<Object> key(&scope, newStringFromCString("print"));
+  Handle<Object> value(&scope, newBuiltinFunction(&builtinPrint));
+  addModuleGlobal(module, key, value);
+
   // Fill in __main__...
   addModule(module);
 }

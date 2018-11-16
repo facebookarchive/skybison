@@ -45,6 +45,30 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
       case Bytecode::LOAD_NAME: {
+        HandleScope scope;
+        Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
+        Handle<Object> key(
+            &scope,
+            ObjectArray::cast(Code::cast(frame->code())->names())->at(arg));
+        Object* value = None::object();
+        thread->runtime()->dictionaryAt(implicit_globals, key, &value);
+        // TODO(cshapiro): check for unbound implicit global variables.
+        assert(value != None::object());
+        *--sp = ValueCell::cast(value)->value();
+        break;
+      }
+      case Bytecode::STORE_NAME: {
+        assert(frame->implicitGlobals()->isDictionary());
+        HandleScope scope;
+        Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
+        Object* names = Code::cast(frame->code())->names();
+        Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
+        Runtime* runtime = thread->runtime();
+        Handle<ValueCell> value_cell(
+            &scope,
+            runtime->dictionaryAtIfAbsentPut(
+                implicit_globals, key, runtime->newValueCellCallback()));
+        value_cell->setValue(*sp++);
         break;
       }
       case Bytecode::POP_TOP: {
@@ -105,6 +129,15 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
             runtime->dictionaryAtIfAbsentPut(
                 globals, key, runtime->newValueCellCallback()));
         value_cell->setValue(*sp++);
+        break;
+      }
+      case Bytecode::MAKE_FUNCTION: {
+        assert(arg == 0);
+        Function* function = Function::cast(thread->runtime()->newFunction());
+        function->setName(*sp++);
+        function->setCode(*sp++);
+        function->setEntry(interpreterTrampoline);
+        *--sp = function;
         break;
       }
       default:

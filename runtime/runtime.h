@@ -33,6 +33,7 @@ class Runtime {
 
   Object* newDictionary();
 
+  Object* newBuiltinFunction(Function::Entry entry);
   Object* newFunction();
 
   Object* newList();
@@ -62,6 +63,10 @@ class Runtime {
   void visitRoots(PointerVisitor* visitor);
 
   void addModule(const Handle<Module>& module);
+  void addModuleGlobal(
+      const Handle<Module>& module,
+      const Handle<Object>& key,
+      const Handle<Object>& value);
 
   Object* interned() {
     return interned_;
@@ -117,7 +122,7 @@ class Runtime {
 
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
-  // dictobject.c this accomodates the majority of dictionaries without needing
+  // dictobject.c this accommodates the majority of dictionaries without needing
   // a resize (obviously this depends on the load factor used to resize the
   // dict).
   static const int kInitialDictionaryCapacity = 8;

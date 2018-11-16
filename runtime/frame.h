@@ -109,14 +109,6 @@ class Frame {
   inline Object* activeBlock();
   inline void setActiveBlock(Object* activeBlock);
 
-  // Trace function
-  inline Object* traceFunc();
-  inline void setTraceFunc(Object* traceFunc);
-
-  // Tracing flags: emit per-line/per-opcode events?
-  inline Object* traceFlags();
-  inline void setTraceFlags(Object* traceFlags);
-
   // Index in the bytecode array of the last instruction that was executed
   inline Object* lastInstruction();
   inline void setLastInstruction(Object* lastInstruction);
@@ -125,9 +117,13 @@ class Frame {
   inline Object* builtins();
   inline void setBuiltins(Object* builtins);
 
-  // The globals namespace (a Dictionary)
+  // The (explicit) globals namespace (a Dictionary)
   inline Object* globals();
   inline void setGlobals(Object* globals);
+
+  // The implicit globals namespace (a Dictionary)
+  inline Object* implicitGlobals();
+  inline void setImplicitGlobals(Object* implicit_globals);
 
   // The code object
   inline Object* code();
@@ -166,11 +162,10 @@ class Frame {
   static const int kValueStackTopOffset = kPreviousSpOffset + kPointerSize;
   static const int kCodeOffset = kValueStackTopOffset + kPointerSize;
   static const int kGlobalsOffset = kCodeOffset + kPointerSize;
-  static const int kBuiltinsOffset = kGlobalsOffset + kPointerSize;
+  static const int kImplicitGlobalsOffset = kGlobalsOffset + kPointerSize;
+  static const int kBuiltinsOffset = kImplicitGlobalsOffset + kPointerSize;
   static const int kLastInstructionOffset = kBuiltinsOffset + kPointerSize;
-  static const int kTraceFlagsOffset = kLastInstructionOffset + kPointerSize;
-  static const int kTraceFuncOffset = kTraceFlagsOffset + kPointerSize;
-  static const int kActiveBlockOffset = kTraceFuncOffset + kPointerSize;
+  static const int kActiveBlockOffset = kLastInstructionOffset + kPointerSize;
   static const int kBlockStackOffset = kActiveBlockOffset + kPointerSize;
   static const int kSize =
       kBlockStackOffset + kMaxBlockStackDepth * kPointerSize;
@@ -207,22 +202,6 @@ void Frame::setActiveBlock(Object* activeBlock) {
   atPut(kActiveBlockOffset, activeBlock);
 }
 
-Object* Frame::traceFunc() {
-  return at(kTraceFuncOffset);
-}
-
-void Frame::setTraceFunc(Object* traceFunc) {
-  atPut(kTraceFuncOffset, traceFunc);
-}
-
-Object* Frame::traceFlags() {
-  return at(kTraceFlagsOffset);
-}
-
-void Frame::setTraceFlags(Object* traceFlags) {
-  atPut(kTraceFlagsOffset, traceFlags);
-}
-
 Object* Frame::lastInstruction() {
   return at(kLastInstructionOffset);
 }
@@ -245,6 +224,14 @@ Object* Frame::globals() {
 
 void Frame::setGlobals(Object* globals) {
   atPut(kGlobalsOffset, globals);
+}
+
+Object* Frame::implicitGlobals() {
+  return at(kImplicitGlobalsOffset);
+}
+
+void Frame::setImplicitGlobals(Object* implicit_globals) {
+  atPut(kImplicitGlobalsOffset, implicit_globals);
 }
 
 Object* Frame::code() {
