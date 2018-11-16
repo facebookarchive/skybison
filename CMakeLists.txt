@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.5)
 project(python)
 
 # Add -DPYRO_ASAN=1 to the cmake command line to enable asan.
