@@ -2714,33 +2714,32 @@ ApiHandle* Runtime::asApiHandle(Object* obj) {
   Handle<Dictionary> dict(&scope, apihandles());
   Object* value = dictionaryAt(dict, key);
   if (value->isError()) {
-    value = allocateApiHandle(obj);
+    ApiHandle* handle = ApiHandle::New(obj);
+    Handle<Object> object(
+        &scope, newIntegerFromCPointer(static_cast<void*>(handle)));
+    dictionaryAtPut(dict, key, object);
+    return handle;
   }
   return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
 }
 
-PyObject* Runtime::asPyObject(Object* obj) {
-  return asApiHandle(obj)->asPyObject();
+ApiHandle* Runtime::asBorrowedApiHandle(Object* obj) {
+  HandleScope scope;
+  Handle<Object> key(&scope, obj);
+  Handle<Dictionary> dict(&scope, apihandles());
+  Object* value = dictionaryAt(dict, key);
+  if (value->isError()) {
+    ApiHandle* handle = ApiHandle::NewBorrowed(obj);
+    Handle<Object> object(
+        &scope, newIntegerFromCPointer(static_cast<void*>(handle)));
+    dictionaryAtPut(dict, key, object);
+    return handle;
+  }
+  return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
 }
 
 Object* Runtime::asObject(PyObject* py_obj) {
   return reinterpret_cast<ApiHandle*>(py_obj)->asObject();
-}
-
-Object* Runtime::allocateApiHandle(Object* obj) {
-  HandleScope scope;
-  Handle<Object> key(&scope, obj);
-  Handle<Dictionary> dict(&scope, apihandles());
-
-  ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
-  handle->ob_refcnt = 1;
-  handle->ob_type = nullptr;
-  handle->reference = obj;
-
-  Handle<Object> object(
-      &scope, newIntegerFromCPointer(static_cast<void*>(handle)));
-  dictionaryAtPut(dict, key, object);
-  return *object;
 }
 
 void Runtime::deallocApiHandles() {
@@ -2750,7 +2749,7 @@ void Runtime::deallocApiHandles() {
   for (word i = 0; i < keys->length(); i++) {
     Handle<Object> key(&scope, keys->at(i));
     Object* value = dictionaryAt(dict, key);
-    std::free(Integer::cast(value)->asCPointer());
+    delete static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
   }
 }
 

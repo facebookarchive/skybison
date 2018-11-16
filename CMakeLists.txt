@@ -202,6 +202,7 @@ target_link_libraries(
 add_library(
   extension-tests
   STATIC
+  ext/Objects/dictobject-test.cpp
   ext/Objects/moduleobject-test.cpp
   ext/Objects/unicodeobject-test.cpp)
 target_include_directories(

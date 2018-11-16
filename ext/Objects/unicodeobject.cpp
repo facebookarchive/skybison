@@ -14,7 +14,7 @@ PyObject* PyUnicode_FromString(const char* c_string) {
   py::HandleScope scope(thread->handles());
 
   py::Handle<py::Object> value(&scope, runtime->newStringFromCString(c_string));
-  return runtime->asPyObject(*value);
+  return runtime->asApiHandle(*value)->asPyObject();
 }
 
 PyObject* _PyUnicode_FromId(_Py_Identifier* id) {
@@ -24,7 +24,7 @@ PyObject* _PyUnicode_FromId(_Py_Identifier* id) {
 
   py::Handle<py::Object> result(
       &scope, runtime->internStringFromCString(id->string));
-  return runtime->asPyObject(*result);
+  return runtime->asApiHandle(*result)->asPyObject();
 }
 
 char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {

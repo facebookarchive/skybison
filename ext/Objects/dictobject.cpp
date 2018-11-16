@@ -33,7 +33,8 @@ int PyDict_SetItemString(PyObject* pydict, const char* key, PyObject* value) {
   py::HandleScope scope(thread->handles());
 
   py::Handle<py::Object> keyobj(&scope, runtime->newStringFromCString(key));
-  return PyDict_SetItem(pydict, runtime->asPyObject(*keyobj), value);
+  return PyDict_SetItem(
+      pydict, runtime->asApiHandle(*keyobj)->asPyObject(), value);
 }
 
 PyObject* PyDict_New(void) {
@@ -42,5 +43,23 @@ PyObject* PyDict_New(void) {
   py::HandleScope scope(thread->handles());
 
   py::Handle<py::Object> value(&scope, runtime->newDictionary());
-  return runtime->asPyObject(*value);
+  return runtime->asApiHandle(*value)->asPyObject();
+}
+
+PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
+  py::Thread* thread = py::Thread::currentThread();
+  py::Runtime* runtime = thread->runtime();
+  py::HandleScope scope(thread->handles());
+
+  py::Handle<py::Object> dictobj(&scope, runtime->asObject(pydict));
+  if (!dictobj->isDictionary()) {
+    return nullptr;
+  }
+  py::Handle<py::Dictionary> dict(&scope, *dictobj);
+  py::Handle<py::Object> key_obj(&scope, runtime->asObject(key));
+  py::Object* value = runtime->dictionaryAt(dict, key_obj);
+  if (value->isError()) {
+    return nullptr;
+  }
+  return runtime->asBorrowedApiHandle(value)->asPyObject();
 }

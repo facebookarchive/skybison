@@ -20,17 +20,47 @@ class Thread;
 // An isomorphic structure to CPython's PyObject
 class ApiHandle {
  public:
+  static ApiHandle* New(Object* reference) {
+    return new ApiHandle(reference, 1);
+  }
+
+  static ApiHandle* NewBorrowed(Object* reference) {
+    return new ApiHandle(reference, kBorrowedBit);
+  }
+
   Object* asObject() {
-    return static_cast<Object*>(reference);
+    return static_cast<Object*>(reference_);
   }
 
   PyObject* asPyObject() {
     return reinterpret_cast<PyObject*>(this);
   }
 
-  void* reference;
-  long ob_refcnt;
-  void* ob_type;
+  bool isBorrowed() {
+    return (ob_refcnt_ & kBorrowedBit) != 0;
+  }
+
+  void setBorrowed() {
+    ob_refcnt_ |= kBorrowedBit;
+  }
+
+  void clearBorrowed() {
+    ob_refcnt_ &= ~kBorrowedBit;
+  }
+
+  void* obType() {
+    return ob_type_;
+  }
+
+ private:
+  ApiHandle(Object* reference, long refcnt)
+      : reference_(reference), ob_refcnt_(refcnt), ob_type_(nullptr) {}
+
+  void* reference_;
+  long ob_refcnt_;
+  void* ob_type_;
+
+  static const long kBorrowedBit = 1L << 31;
 };
 
 class Runtime {
@@ -430,14 +460,11 @@ class Runtime {
   // Create a new ApiHandle if there is not a pre-existing one
   ApiHandle* asApiHandle(Object* obj);
 
-  // Convenience function to call asApiHandle and return a casted PyObject
-  PyObject* asPyObject(Object* obj);
+  // Same as asApiHandle, but creates a borrowed ApiHandle if no handle exists
+  ApiHandle* asBorrowedApiHandle(Object* obj);
 
   // Accessor for Objects that have crossed the CPython boundary
   Object* asObject(PyObject* py_obj);
-
-  // Runtime allocation of a Handle
-  Object* allocateApiHandle(Object* obj);
 
   // Iterate the ApiHandles dictionary to free the allocated memory
   void deallocApiHandles();
