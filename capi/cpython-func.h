@@ -193,74 +193,55 @@ PyAPI_FUNC(void) Py_XINCREF_Func(PyObject*);
 PyAPI_FUNC(char*) PyByteArray_AS_STRING_Func(PyObject*);
 
 /* Macros */
-/* Multiline macros should retain their structure to get properly substituted */
-/* clang-format off */
-#define _Py_Dealloc \
-    (*_Py_Dealloc_Func)
+#define _Py_Dealloc (*_Py_Dealloc_Func)
 
 /* Parentheses around the whole expressions are needed to compile
  * "if PyDict_CheckExact(other) {". Parentheses around "op" are needed for
  * "PyBytes_Check(state = PyTuple_GET_ITEM(args, 0))" */
 #define PyBool_Check(op) (PyBool_Check_Func((PyObject*)(op)))
 #define PyByteArray_Check(op) (PyByteArray_Check_Func((PyObject*)(op)))
-#define PyBytes_Check(op) \
-  (PyBytes_Check_Func((PyObject*)(op)))
+#define PyBytes_Check(op) (PyBytes_Check_Func((PyObject*)(op)))
 #define PyBytes_CheckExact(op) (PyBytes_CheckExact_Func((PyObject*)(op)))
-#define PyDict_Check(op) \
-  (PyDict_Check_Func((PyObject*)(op)))
+#define PyDict_Check(op) (PyDict_Check_Func((PyObject*)(op)))
 #define PyDict_CheckExact(op) (PyDict_CheckExact_Func((PyObject*)(op)))
 #define PyFloat_Check(op) (PyFloat_Check_Func((PyObject*)(op)))
 #define PyFloat_CheckExact(op) (PyFloat_CheckExact_Func((PyObject*)(op)))
-#define PyList_Check(op) \
-  (PyList_Check_Func((PyObject*)(op)))
+#define PyList_Check(op) (PyList_Check_Func((PyObject*)(op)))
 #define PyList_CheckExact(op) (PyList_CheckExact_Func((PyObject*)(op)))
-#define PyLong_Check(op) \
-  (PyLong_Check_Func((PyObject*)(op)))
+#define PyLong_Check(op) (PyLong_Check_Func((PyObject*)(op)))
 #define PyLong_CheckExact(op) (PyLong_CheckExact_Func((PyObject*)(op)))
 #define PyModule_Check(op) (PyModule_Check_Func((PyObject*)(op)))
 #define PyModule_CheckExact(op) (PyModule_CheckExact_Func((PyObject*)(op)))
-#define PyTuple_Check(op) \
-  (PyTuple_Check_Func((PyObject*)(op)))
+#define PyTuple_Check(op) (PyTuple_Check_Func((PyObject*)(op)))
 #define PyTuple_CheckExact(op) (PyTuple_CheckExact_Func((PyObject*)(op)))
-#define PyType_Check(op) \
-  (PyType_Check_Func((PyObject*)(op)))
+#define PyType_Check(op) (PyType_Check_Func((PyObject*)(op)))
 #define PyType_CheckExact(op) (PyType_CheckExact_Func((PyObject*)(op)))
-#define PyUnicode_Check(op) \
-  (PyUnicode_Check_Func((PyObject*)(op)))
+#define PyUnicode_Check(op) (PyUnicode_Check_Func((PyObject*)(op)))
 #define PyUnicode_CheckExact(op) (PyUnicode_CheckExact_Func((PyObject*)(op)))
 
-#define PyByteArray_AS_STRING(self) \
-    PyByteArray_AS_STRING_Func((PyObject*)self)
+#define PyByteArray_AS_STRING(self) PyByteArray_AS_STRING_Func((PyObject*)self)
 
 #define PYTHON_API_VERSION 1013
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
-#define PyModule_Create(module) \
-    PyModule_Create2(module, PYTHON_API_VERSION)
+#define PyModule_Create(module) PyModule_Create2(module, PYTHON_API_VERSION)
 
 #define PySet_GET_SIZE(op) PySet_Size((PyObject*)op)
 #define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
 // TODO(T33954927): redefine PyTuple_GET_ITEM in a way that doesnt break pyro
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem((PyObject*)op, i, v)
 
-#define PyUnicode_READY(op) \
-  0
+#define PyUnicode_READY(op) 0
 
-#define Py_INCREF(op) (                         \
-    Py_INCREF_Func((PyObject*)op))
-#define Py_DECREF(op)                           \
-    Py_DECREF_Func((PyObject*)op)
+#define Py_INCREF(op) (Py_INCREF_Func((PyObject*)op))
+#define Py_DECREF(op) Py_DECREF_Func((PyObject*)op)
 #define Py_REFCNT(op) Py_REFCNT_Func((PyObject*)op)
-#define Py_XINCREF(op) (                         \
-    Py_XINCREF_Func((PyObject*)op))
-#define Py_XDECREF(op)                           \
-    Py_XDECREF_Func((PyObject*)op)
+#define Py_XINCREF(op) (Py_XINCREF_Func((PyObject*)op))
+#define Py_XDECREF(op) Py_XDECREF_Func((PyObject*)op)
 
-#define PyObject_INIT(op, typeobj) \
-    PyObject_Init((PyObject*)op, (PyTypeObject*)typeobj)
-#define PyObject_INIT_VAR(op, typeobj, size) \
-    PyObject_InitVar((PyVarObject*)op, (PyTypeObject*)typeobj, size)
-
-/* clang-format on */
+#define PyObject_INIT(op, typeobj)                                             \
+  PyObject_Init((PyObject*)op, (PyTypeObject*)typeobj)
+#define PyObject_INIT_VAR(op, typeobj, size)                                   \
+  PyObject_InitVar((PyVarObject*)op, (PyTypeObject*)typeobj, size)
 
 #ifdef __cplusplus
 }

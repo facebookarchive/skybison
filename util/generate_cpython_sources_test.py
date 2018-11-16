@@ -19,28 +19,7 @@ typedef foo_bar Baz;
 """
         symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
         res = symbols_dict["typedef"]
-        self.assertListEqual(res, ["Foo", "Bar", "Baz"])
-
-    def test_multiline_typedef_regex_returns_multiple_symbols(self):
-        lines = """
-typedef int Baz;
-
-typedef struct {
-  Foo *foo1;
-  Foo *foo2; /* Comment */
-} Foo;
-
-typedef struct {
-  int bar;
-} Bar;
-
-struct FooBarBaz {
-  Foobar* foobar;
-};
-"""
-        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
-        res = symbols_dict["multiline_typedef"]
-        self.assertListEqual(res, ["Foo", "Bar"])
+        self.assertListEqual(res, ["Foo", "Bar", "Baz", "Foo_Bar"])
 
     def test_struct_regex_returns_multiple_symbols(self):
         lines = """
@@ -74,29 +53,7 @@ typedef int FooBar;
 """
         symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
         res = symbols_dict["macro"]
-        self.assertListEqual(res, ["Foo", "Bar"])
-
-    def test_multiline_macro_regex_returns_multiple_symbols(self):
-        lines = """
-#define Foo       \\
-    { Baz(1) },
-
-typedef int FooBar;
-
-#define FooBaz(o) Foo,
-
-#define Bar(op)     \\
-    do {            \\
-        int a = 1;  \\
-        if (a == 1) \\
-          Foo       \\
-        else        \\
-          Baz(a)    \\
-    } while (0)
-"""
-        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
-        res = symbols_dict["multiline_macro"]
-        self.assertListEqual(res, ["Foo", "Bar"])
+        self.assertListEqual(res, ["Foo", "Bar", "FooBaz"])
 
     def test_pytypeobject_regex_returns_multiple_symbols(self):
         lines = """
@@ -227,7 +184,7 @@ struct FooBarBaz {
   Foobar* foobar;
 };
 """
-        symbols_to_replace = {"multiline_typedef": ["Foo", "Bar"]}
+        symbols_to_replace = {"typedef": ["Foo", "Bar"]}
         res = gcs.modify_file(
             original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
         )
@@ -309,7 +266,7 @@ typedef int FooBar;
 #define FooBaz(o) Foo,
 
 """
-        symbols_to_replace = {"multiline_macro": ["Foo", "Bar"]}
+        symbols_to_replace = {"macro": ["Foo", "Bar"]}
         res = gcs.modify_file(
             original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
         )
