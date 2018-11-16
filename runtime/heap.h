@@ -70,6 +70,8 @@ class Heap {
 
   Object* createStaticMethod();
 
+  Object* createSetIterator();
+
   Object* createSuper();
 
   Object* createTupleIterator();

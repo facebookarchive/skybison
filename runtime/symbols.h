@@ -165,6 +165,7 @@ class Runtime;
   V(Repr, "repr")                                                              \
   V(RuntimeError, "RuntimeError")                                              \
   V(Set, "set")                                                                \
+  V(SetIterator, "set_iterator")                                               \
   V(Setattr, "setattr")                                                        \
   V(Setter, "setter")                                                          \
   V(Size, "size")                                                              \

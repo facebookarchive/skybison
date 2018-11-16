@@ -356,6 +356,16 @@ Object* Heap::createStaticMethod() {
   return StaticMethod::cast(result);
 }
 
+Object* Heap::createSetIterator() {
+  Object* raw = allocate(SetIterator::allocationSize(), Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<SetIterator*>(raw);
+  result->setHeader(Header::from(SetIterator::kSize / kPointerSize, 0,
+                                 LayoutId::kSetIterator,
+                                 ObjectFormat::kObjectInstance));
+  return SetIterator::cast(result);
+}
+
 Object* Heap::createSuper() {
   word size = Super::allocationSize();
   Object* raw = allocate(size, Header::kSize);

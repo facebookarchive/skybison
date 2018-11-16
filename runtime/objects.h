@@ -112,6 +112,7 @@ enum class LayoutId : word {
   kRangeIterator,
   kRuntimeError,
   kSet,
+  kSetIterator,
   kSlice,
   kStaticMethod,
   kStopIteration,
@@ -176,6 +177,7 @@ class Object {
   bool isRangeIterator();
   bool isRuntimeError();
   bool isSet();
+  bool isSetIterator();
   bool isSlice();
   bool isStaticMethod();
   bool isStopIteration();
@@ -689,11 +691,12 @@ class Type : public HeapObject {
     kFloatSubclass = 1 << 3,
     kIntSubclass = 1 << 4,
     kListSubclass = 1 << 5,
-    kStopIterationSubclass = 1 << 6,
-    kStrSubclass = 1 << 7,
-    kSystemExitSubclass = 1 << 8,
-    kTupleSubclass = 1 << 9,
-    kTypeSubclass = 1 << 10,
+    kSetSubclass = 1 << 6,
+    kStopIterationSubclass = 1 << 7,
+    kStrSubclass = 1 << 8,
+    kSystemExitSubclass = 1 << 9,
+    kTupleSubclass = 1 << 10,
+    kTypeSubclass = 1 << 11,
     kLast = kTypeSubclass,
   };
   static_assert(Flag::kLast < SmallInt::kMaxValue,
@@ -1085,23 +1088,56 @@ class ListIterator : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListIterator);
 };
 
+class SetIterator : public HeapObject {
+ public:
+  // Getters and setters
+  word index();
+  void setIndex(word index);
+
+  Object* set();
+  void setSet(Object* set);
+
+  // Iteration.
+  Object* next();
+
+  // Number of unconsumed values in the set iterator
+  word pendingLength();
+
+  // Sizing.
+  static word allocationSize();
+
+  // Cast
+  static SetIterator* cast(Object* object);
+
+  // Layout
+  static const int kSetOffset = HeapObject::kSize;
+  static const int kIndexOffset = kSetOffset + kPointerSize;
+  static const int kConsumedCountOffset = kSetOffset + kPointerSize;
+  static const int kSize = kConsumedCountOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(SetIterator);
+};
+
 class TupleIterator : public HeapObject {
  public:
   // Getters and setters.
   word index();
+
   void setIndex(word index);
 
   Object* tuple();
-  void setTuple(Object* tuple);
 
-  // Iteration.
-  Object* next();
+  void setTuple(Object* tuple);
 
   // Sizing.
   static word allocationSize();
 
   // Casting.
   static TupleIterator* cast(Object* object);
+
+  // Iteration.
+  Object* next();
 
   // Layout.
   static const int kTupleOffset = HeapObject::kSize;
@@ -2088,6 +2124,13 @@ inline bool Object::isSet() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSet;
+}
+
+inline bool Object::isSetIterator() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSetIterator;
 }
 
 inline bool Object::isSuper() {
@@ -3941,6 +3984,63 @@ inline void Layout::setNumInObjectAttributes(word count) {
                         SmallInt::fromWord(count));
   setOverflowOffset(count * kPointerSize);
   setInstanceSize(numInObjectAttributes() + 1);
+}
+
+// SetIterator
+
+inline SetIterator* SetIterator::cast(Object* object) {
+  DCHECK(object->isSetIterator(), "invalid cast, expected set_iterator");
+  return reinterpret_cast<SetIterator*>(object);
+}
+
+inline word SetIterator::allocationSize() {
+  return Header::kSize + SetIterator::kSize;
+}
+
+inline Object* SetIterator::set() { return instanceVariableAt(kSetOffset); }
+
+inline void SetIterator::setSet(Object* set) {
+  instanceVariableAtPut(kSetOffset, set);
+  instanceVariableAtPut(kIndexOffset, SmallInt::fromWord(0));
+  instanceVariableAtPut(kConsumedCountOffset, SmallInt::fromWord(0));
+}
+
+inline word SetIterator::index() {
+  return SmallInt::cast(instanceVariableAt(kIndexOffset))->value();
+}
+
+inline void SetIterator::setIndex(word index) {
+  instanceVariableAtPut(kIndexOffset, SmallInt::fromWord(index));
+}
+
+inline Object* SetIterator::next() {
+  word idx = index();
+  Set* underlying = Set::cast(set());
+  ObjectArray* data = ObjectArray::cast(underlying->data());
+  if (idx >= data->length()) {
+    return Error::object();
+  }
+  // Find the next non empty bucket
+  while (idx < data->length() && (Set::Bucket::isTombstone(data, idx) ||
+                                  Set::Bucket::isEmpty(data, idx))) {
+    idx++;
+  }
+  setIndex(idx);
+  if (idx < data->length()) {
+    word consumed =
+        SmallInt::cast(instanceVariableAt(kConsumedCountOffset))->value();
+    instanceVariableAtPut(kConsumedCountOffset,
+                          SmallInt::fromWord(consumed + 1));
+    return Set::Bucket::key(data, idx);
+  } else {
+    return Error::object();
+  }
+}
+
+inline word SetIterator::pendingLength() {
+  Set* set = Set::cast(instanceVariableAt(kSetOffset));
+  return set->numItems() -
+         SmallInt::cast(instanceVariableAt(kConsumedCountOffset))->value();
 }
 
 // Super

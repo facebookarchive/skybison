@@ -96,6 +96,8 @@ class Runtime {
 
   Object* newRangeIterator(const Handle<Object>& iterable);
 
+  Object* newSetIterator(const Handle<Object>& set);
+
   Object* newSlice(const Handle<Object>& start, const Handle<Object>& stop,
                    const Handle<Object>& step);
 
@@ -503,7 +505,7 @@ class Runtime {
   void initializeObjectClass();
   void initializePropertyClass();
   void initializeRefClass();
-  void initializeSetClass();
+
   void initializeStaticMethodClass();
   void initializeStrClass();
   void initializeSuperClass();

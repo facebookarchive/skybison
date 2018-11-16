@@ -79,4 +79,137 @@ s.add(1, 2)
                "add\\(\\) takes exactly one argument");
 }
 
+TEST(SetBuiltinsTest, DunderIterReturnsSetIterator) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<Set> empty_set(&scope, runtime.newSet());
+
+  frame->setLocal(0, *empty_set);
+  Handle<Object> iter(&scope, SetBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isSetIterator());
+}
+
+TEST(SetIteratorBuiltinsTest, CallDunderNext) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Object> zero(&scope, SmallInt::fromWord(0));
+  Handle<Object> one(&scope, SmallInt::fromWord(1));
+  runtime.setAdd(set, zero);
+  runtime.setAdd(set, one);
+
+  frame->setLocal(0, *set);
+  Handle<Object> iter(&scope, SetBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isSetIterator());
+
+  Handle<Object> next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
+                                        SymbolId::kDunderNext));
+  ASSERT_FALSE(next_method->isError());
+
+  Handle<Object> item1(
+      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  ASSERT_TRUE(item1->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*item1)->value(), 0);
+
+  Handle<Object> item2(
+      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  ASSERT_TRUE(item2->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*item2)->value(), 1);
+}
+
+TEST(SetIteratorBuiltinsTes, DunderIterReturnsSelf) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<Set> empty_set(&scope, runtime.newSet());
+
+  frame->setLocal(0, *empty_set);
+  Handle<Object> iter(&scope, SetBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isSetIterator());
+
+  // Now call __iter__ on the iterator object
+  Handle<Object> iter_iter(
+      &scope,
+      Interpreter::lookupMethod(thread, frame, iter, SymbolId::kDunderIter));
+  ASSERT_FALSE(iter_iter->isError());
+  Handle<Object> result(
+      &scope, Interpreter::callMethod1(thread, frame, iter_iter, iter));
+  ASSERT_EQ(*result, *iter);
+}
+
+TEST(SetIteratorBuiltinsTest, DunderLengthHintOnEmptyTupleIterator) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<Set> empty_set(&scope, runtime.newSet());
+
+  frame->setLocal(0, *empty_set);
+  Handle<Object> iter(&scope, SetBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isSetIterator());
+
+  Handle<Object> length_hint_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
+                                        SymbolId::kDunderLengthHint));
+  ASSERT_FALSE(length_hint_method->isError());
+
+  Handle<Object> length_hint(
+      &scope,
+      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  ASSERT_TRUE(length_hint->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*length_hint)->value(), 0);
+}
+
+TEST(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedTupleIterator) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<Set> one_element_set(&scope, runtime.newSet());
+  Handle<Object> zero(&scope, SmallInt::fromWord(0));
+  runtime.setAdd(one_element_set, zero);
+
+  frame->setLocal(0, *one_element_set);
+  Handle<Object> iter(&scope, SetBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isSetIterator());
+
+  Handle<Object> length_hint_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
+                                        SymbolId::kDunderLengthHint));
+  ASSERT_FALSE(length_hint_method->isError());
+
+  Handle<Object> length_hint1(
+      &scope,
+      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  ASSERT_TRUE(length_hint1->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*length_hint1)->value(), 1);
+
+  // Consume the iterator
+  Handle<Object> next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
+                                        SymbolId::kDunderNext));
+  ASSERT_FALSE(next_method->isError());
+  Handle<Object> item1(
+      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  ASSERT_TRUE(item1->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*item1)->value(), 0);
+
+  Handle<Object> length_hint2(
+      &scope,
+      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  ASSERT_TRUE(length_hint1->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*length_hint2)->value(), 0);
+}
+
 }  // namespace python

@@ -780,6 +780,13 @@ Object* Runtime::newRangeIterator(const Handle<Object>& range) {
   return *range_iterator;
 }
 
+Object* Runtime::newSetIterator(const Handle<Object>& set) {
+  HandleScope scope;
+  Handle<SetIterator> set_iterator(&scope, heap()->createSetIterator());
+  set_iterator->setSet(*set);
+  return *set_iterator;
+}
+
 Object* Runtime::newSlice(const Handle<Object>& start,
                           const Handle<Object>& stop,
                           const Handle<Object>& step) {
@@ -1000,7 +1007,8 @@ void Runtime::initializeHeapClasses() {
   RangeBuiltins::initialize(this);
   RangeIteratorBuiltins::initialize(this);
   initializeRefClass();
-  initializeSetClass();
+  SetBuiltins::initialize(this);
+  SetIteratorBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
   initializeStaticMethodClass();
   initializeSuperClass();
@@ -1188,31 +1196,6 @@ void Runtime::initializeFloatClass() {
 
   classAddBuiltinFunction(float_type, SymbolId::kDunderSub,
                           nativeTrampoline<builtinDoubleSub>);
-}
-
-void Runtime::initializeSetClass() {
-  HandleScope scope;
-  Handle<Type> set_type(
-      &scope,
-      addEmptyBuiltinClass(SymbolId::kSet, LayoutId::kSet, LayoutId::kObject));
-
-  classAddBuiltinFunction(set_type, SymbolId::kAdd,
-                          nativeTrampoline<builtinSetAdd>);
-
-  classAddBuiltinFunction(set_type, SymbolId::kDunderContains,
-                          nativeTrampoline<builtinSetContains>);
-
-  classAddBuiltinFunction(set_type, SymbolId::kDunderInit,
-                          nativeTrampoline<builtinSetInit>);
-
-  classAddBuiltinFunction(set_type, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinSetNew>);
-
-  classAddBuiltinFunction(set_type, SymbolId::kDunderLen,
-                          nativeTrampoline<builtinSetLen>);
-
-  classAddBuiltinFunction(set_type, SymbolId::kPop,
-                          nativeTrampoline<builtinSetPop>);
 }
 
 void Runtime::initializePropertyClass() {
