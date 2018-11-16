@@ -433,7 +433,8 @@ TEST(TupleIteratorBuiltinsTest, DunderIterReturnsSelf) {
   ASSERT_EQ(*result, *iter);
 }
 
-TEST(TupleIteratorBuiltinsTest, DunderLengthHintOnEmptyTupleIterator) {
+TEST(TupleIteratorBuiltinsTest,
+     DunderLengthHintOnEmptyTupleIteratorReturnsZero) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(1, 0, 0);

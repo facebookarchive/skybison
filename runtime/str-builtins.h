@@ -17,6 +17,7 @@ class StrBuiltins {
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
@@ -44,7 +45,13 @@ class StrIteratorBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
+  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
+
  private:
+  static const BuiltinMethod kMethods[];
+
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrIteratorBuiltins);
 };
 

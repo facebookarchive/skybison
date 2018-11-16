@@ -15,6 +15,7 @@ const BuiltinMethod StrBuiltins::kMethods[] = {
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
     {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
@@ -437,6 +438,23 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
       "argument");
 }
 
+RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isStr()) {
+    if (thread->runtime()->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
+      UNIMPLEMENTED("str.__iter__(<subtype of str>)");
+    }
+    return thread->raiseTypeErrorWithCStr(
+        "__iter__() must be called with a str instance as the first argument");
+  }
+  return thread->runtime()->newStrIterator(self);
+}
+
 // Convert a byte to its hex digits, and write them out to buf.
 // Increments buf to point after the written characters.
 void StrBuiltins::byteToHex(byte** buf, byte convert) {
@@ -681,11 +699,75 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   return runtime->strStrip(str, chars, StrStripDirection::Both);
 }
 
+const BuiltinMethod StrIteratorBuiltins::kMethods[] = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
+
 void StrIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type str_iter(&scope, runtime->addEmptyBuiltinClass(SymbolId::kStrIterator,
-                                                      LayoutId::kStrIterator,
-                                                      LayoutId::kObject));
+  Type str_iter(&scope, runtime->addBuiltinClassWithMethods(
+                            SymbolId::kStrIterator, LayoutId::kStrIterator,
+                            LayoutId::kObject, kMethods));
+}
+
+RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                          word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isStrIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__iter__() must be called with a str iterator instance as the first "
+        "argument");
+  }
+  return *self;
+}
+
+// TODO(T35578204) Implement this for UTF-8. This probably means keeping extra
+// state and logic so that __next__() will advance to the next codepoint.
+
+RawObject StrIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                          word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isStrIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__next__() must be called with a str iterator instance as the first "
+        "argument");
+  }
+  StrIterator iter(&scope, *self);
+  Object value(&scope, thread->runtime()->strIteratorNext(thread, iter));
+  if (value->isError()) {
+    return thread->raiseStopIteration(NoneType::object());
+  }
+  return *value;
+}
+
+RawObject StrIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
+                                                word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr(
+        "__length_hint__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isStrIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__length_hint__() must be called with a str iterator instance as the "
+        "first argument");
+  }
+  StrIterator str_iterator(&scope, *self);
+  Str str(&scope, str_iterator->str());
+  return SmallInt::fromWord(str->length() - str_iterator->index());
 }
 
 }  // namespace python
