@@ -44,7 +44,7 @@ PyAPI_FUNC(PyObject *) PyErr_Occurred(void);
 
 PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(int) Py_FinalizeEx(void);
-PyAPI_FUNC(int) PyRun_SimpleString(const char *, PyCompilerFlags *flags);
+PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *flags);
 
 /* Non C-API functions */
 PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
