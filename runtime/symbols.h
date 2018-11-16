@@ -29,36 +29,36 @@ class Runtime;
   V(Builtins, "builtins")                \
   V(Chr, "chr")                          \
   V(Classmethod, "classmethod")          \
-  V(Float, "float")                      \
+  V(Dict, "dict")                        \
   V(End, "end")                          \
+  V(Exit, "exit")                        \
   V(File, "file")                        \
+  V(Float, "float")                      \
   V(Insert, "insert")                    \
   V(Int, "int")                          \
-  V(Metaclass, "metaclass")              \
-  V(Dict, "dict")                        \
-  V(Exit, "exit")                        \
   V(IsInstance, "isinstance")            \
   V(Len, "len")                          \
   V(List, "list")                        \
+  V(Metaclass, "metaclass")              \
   V(NotImplemented, "NotImplemented")    \
   V(ObjectClassname, "object")           \
   V(Ord, "ord")                          \
   V(Pop, "pop")                          \
   V(Range, "range")                      \
-  V(Super, "super")                      \
   V(Remove, "remove")                    \
-  V(Sys, "sys")                          \
-  V(Time, "time")                        \
-  V(Type, "type")                        \
   V(StaticMethod, "staticmethod")        \
   V(Stderr, "stderr")                    \
-  V(Stdout, "stdout")
+  V(Stdout, "stdout")                    \
+  V(Super, "super")                      \
+  V(Sys, "sys")                          \
+  V(Time, "time")                        \
+  V(Type, "type")
 // clang-format on
 
 // Provides convenient, fast access to commonly used names. Stolen from Dart.
 class Symbols {
  public:
-  Symbols(Runtime* runtime);
+  explicit Symbols(Runtime* runtime);
   ~Symbols();
 
   enum SymbolId {
