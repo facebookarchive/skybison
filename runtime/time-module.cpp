@@ -10,7 +10,7 @@
 namespace python {
 
 Object* builtinTime(Thread* thread, Frame*, word) {
-  return thread->runtime()->newDouble(OS::currentTime());
+  return thread->runtime()->newFloat(OS::currentTime());
 }
 
 }  // namespace python

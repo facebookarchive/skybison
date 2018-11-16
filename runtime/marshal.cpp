@@ -159,7 +159,7 @@ Object* Marshal::Reader::readObject() {
 
     case TYPE_BINARY_FLOAT: {
       double n = readBinaryFloat();
-      result = runtime_->newDouble(n);
+      result = runtime_->newFloat(n);
       if (isRef_) {
         addRef(result);
       }

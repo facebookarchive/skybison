@@ -625,19 +625,19 @@ void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
   Handle<Object> left(&scope, ctx->frame->popValue());
   if (right->isSmallInteger()) {
     dividend = SmallInteger::cast(*right)->value();
-  } else if (right->isDouble()) {
-    dividend = Double::cast(*right)->value();
+  } else if (right->isFloat()) {
+    dividend = Float::cast(*right)->value();
   } else {
     UNIMPLEMENTED("Arbitrary object binary true divide not supported.");
   }
   if (left->isSmallInteger()) {
     divisor = SmallInteger::cast(*left)->value();
-  } else if (left->isDouble()) {
-    divisor = Double::cast(*left)->value();
+  } else if (left->isFloat()) {
+    divisor = Float::cast(*left)->value();
   } else {
     UNIMPLEMENTED("Arbitrary object binary true divide not supported.");
   }
-  ctx->frame->pushValue(ctx->thread->runtime()->newDouble(divisor / dividend));
+  ctx->frame->pushValue(ctx->thread->runtime()->newFloat(divisor / dividend));
 }
 
 // opcode 28

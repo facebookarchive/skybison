@@ -20,7 +20,7 @@ namespace python {
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Dictionary)                                                                \
-  V(Double)                                                                    \
+  V(Float)                                                                     \
   V(Ellipsis)                                                                  \
   V(Exception)                                                                 \
   V(Function)                                                                  \
@@ -84,7 +84,7 @@ enum class LayoutId : word {
   kCode,
   kComplex,
   kDictionary,
-  kDouble,
+  kFloat,
   kEllipsis,
   kException,
   kFunction,
@@ -137,7 +137,7 @@ class Object {
   bool isCode();
   bool isComplex();
   bool isDictionary();
-  bool isDouble();
+  bool isFloat();
   bool isEllipsis();
   bool isException();
   bool isFunction();
@@ -191,7 +191,7 @@ class Integer : public Object {
 
   word compare(Integer* other);
 
-  double doubleValue();
+  double floatValue();
 
   word highestBit();
 
@@ -764,13 +764,13 @@ class LargeInteger : public HeapObject {
   DISALLOW_COPY_AND_ASSIGN(LargeInteger);
 };
 
-class Double : public HeapObject {
+class Float : public HeapObject {
  public:
   // Getters and setters.
   double value();
 
   // Casting.
-  static Double* cast(Object* object);
+  static Float* cast(Object* object);
 
   // Sizing.
   static word allocationSize();
@@ -783,7 +783,7 @@ class Double : public HeapObject {
   static const int kSize = kValueOffset + kDoubleSize;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Double);
+  DISALLOW_COPY_AND_ASSIGN(Float);
 };
 
 class Complex : public HeapObject {
@@ -1933,11 +1933,11 @@ inline bool Object::isDictionary() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kDictionary;
 }
 
-inline bool Object::isDouble() {
+inline bool Object::isFloat() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kDouble;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kFloat;
 }
 
 inline bool Object::isSet() {
@@ -2140,7 +2140,7 @@ inline word Integer::compareDigits(View<uword> lhs, View<uword> rhs) {
   return 0;
 }
 
-inline double Integer::doubleValue() {
+inline double Integer::floatValue() {
   if (isSmallInteger()) {
     return static_cast<double>(asWord());
   }
@@ -2885,20 +2885,20 @@ inline View<uword> LargeInteger::digits() {
                      headerCountOrOverflow());
 }
 
-// Double
+// Float
 
-inline double Double::value() {
+inline double Float::value() {
   return *reinterpret_cast<double*>(address() + kValueOffset);
 }
 
-inline word Double::allocationSize() { return Header::kSize + Double::kSize; }
+inline word Float::allocationSize() { return Header::kSize + Float::kSize; }
 
-inline Double* Double::cast(Object* object) {
-  DCHECK(object->isDouble(), "not a double");
-  return reinterpret_cast<Double*>(object);
+inline Float* Float::cast(Object* object) {
+  DCHECK(object->isFloat(), "not a float");
+  return reinterpret_cast<Float*>(object);
 }
 
-inline void Double::initialize(double value) {
+inline void Float::initialize(double value) {
   *reinterpret_cast<double*>(address() + kValueOffset) = value;
 }
 

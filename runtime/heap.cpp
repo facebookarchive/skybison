@@ -153,16 +153,16 @@ Object* Heap::createDictionary() {
   return Dictionary::cast(result);
 }
 
-Object* Heap::createDouble(double value) {
-  word size = Double::allocationSize();
+Object* Heap::createFloat(double value) {
+  word size = Float::allocationSize();
   Object* raw = allocate(size, Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Double*>(raw);
-  result->setHeader(Header::from(Double::kSize / kPointerSize, 0,
-                                 LayoutId::kDouble,
+  auto result = reinterpret_cast<Float*>(raw);
+  result->setHeader(Header::from(Float::kSize / kPointerSize, 0,
+                                 LayoutId::kFloat,
                                  ObjectFormat::kDataInstance));
   result->initialize(value);
-  return Double::cast(result);
+  return Float::cast(result);
 }
 
 Object* Heap::createEllipsis() {

@@ -733,8 +733,8 @@ Object* Runtime::newInteger(word value) {
   return newIntegerWithDigits(View<uword>(reinterpret_cast<uword*>(&value), 1));
 }
 
-Object* Runtime::newDouble(double value) {
-  return Double::cast(heap()->createDouble(value));
+Object* Runtime::newFloat(double value) {
+  return Float::cast(heap()->createFloat(value));
 }
 
 Object* Runtime::newComplex(double real, double imag) {
@@ -1165,7 +1165,7 @@ void Runtime::initializeBooleanClass() {
 void Runtime::initializeFloatClass() {
   HandleScope scope;
   Handle<Type> float_type(
-      &scope, addEmptyBuiltinClass(SymbolId::kFloat, LayoutId::kDouble,
+      &scope, addEmptyBuiltinClass(SymbolId::kFloat, LayoutId::kFloat,
                                    LayoutId::kObject));
   float_type->setFlag(Type::Flag::kFloatSubclass);
 
@@ -1631,7 +1631,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kClassmethod, LayoutId::kClassMethod);
   moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDictionary);
   moduleAddBuiltinType(module, SymbolId::kException, LayoutId::kException);
-  moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kDouble);
+  moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kFloat);
   moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInteger);
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
   moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
@@ -2498,9 +2498,9 @@ static word stringFormatBufferLength(const Handle<String>& fmt,
       } break;
       case 'g': {
         len--;
-        CHECK(args->at(arg_idx)->isDouble(), "Argument mismatch");
-        len += snprintf(nullptr, 0, "%g",
-                        Double::cast(args->at(arg_idx))->value());
+        CHECK(args->at(arg_idx)->isFloat(), "Argument mismatch");
+        len +=
+            snprintf(nullptr, 0, "%g", Float::cast(args->at(arg_idx))->value());
         arg_idx++;
       } break;
       case 's': {
@@ -2535,7 +2535,7 @@ static void stringFormatToBuffer(const Handle<String>& fmt,
         dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%ld", value);
       } break;
       case 'g': {
-        double value = Double::cast(args->at(arg_idx++))->value();
+        double value = Float::cast(args->at(arg_idx++))->value();
         dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%g", value);
       } break;
       case 's': {

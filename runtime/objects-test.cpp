@@ -12,9 +12,9 @@ using namespace testing;
 
 TEST(DoubleTest, DoubleTest) {
   Runtime runtime;
-  Object* o = runtime.newDouble(3.14);
-  ASSERT_TRUE(o->isDouble());
-  Double* d = Double::cast(o);
+  Object* o = runtime.newFloat(3.14);
+  ASSERT_TRUE(o->isFloat());
+  Float* d = Float::cast(o);
   EXPECT_EQ(d->value(), 3.14);
 }
 

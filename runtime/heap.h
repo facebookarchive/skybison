@@ -34,7 +34,7 @@ class Heap {
 
   Object* createDictionary();
 
-  Object* createDouble(double value);
+  Object* createFloat(double value);
 
   Object* createEllipsis();
 

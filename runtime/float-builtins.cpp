@@ -15,9 +15,9 @@ Object* builtinDoubleEq(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isDouble() && other->isDouble()) {
-    Double* left = Double::cast(self);
-    Double* right = Double::cast(other);
+  if (self->isFloat() && other->isFloat()) {
+    Float* left = Float::cast(self);
+    Float* right = Float::cast(other);
     return Boolean::fromBool(left->value() == right->value());
   } else if (self->isInteger() || other->isInteger()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -32,9 +32,9 @@ Object* builtinDoubleGe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isDouble() && other->isDouble()) {
-    Double* left = Double::cast(self);
-    Double* right = Double::cast(other);
+  if (self->isFloat() && other->isFloat()) {
+    Float* left = Float::cast(self);
+    Float* right = Float::cast(other);
     return Boolean::fromBool(left->value() >= right->value());
   } else if (self->isInteger() || other->isInteger()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -49,9 +49,9 @@ Object* builtinDoubleGt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isDouble() && other->isDouble()) {
-    Double* left = Double::cast(self);
-    Double* right = Double::cast(other);
+  if (self->isFloat() && other->isFloat()) {
+    Float* left = Float::cast(self);
+    Float* right = Float::cast(other);
     return Boolean::fromBool(left->value() > right->value());
   } else if (self->isInteger() || other->isInteger()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -66,9 +66,9 @@ Object* builtinDoubleLe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isDouble() && other->isDouble()) {
-    Double* left = Double::cast(self);
-    Double* right = Double::cast(other);
+  if (self->isFloat() && other->isFloat()) {
+    Float* left = Float::cast(self);
+    Float* right = Float::cast(other);
     return Boolean::fromBool(left->value() <= right->value());
   } else if (self->isInteger() || other->isInteger()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -83,9 +83,9 @@ Object* builtinDoubleLt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isDouble() && other->isDouble()) {
-    Double* left = Double::cast(self);
-    Double* right = Double::cast(other);
+  if (self->isFloat() && other->isFloat()) {
+    Float* left = Float::cast(self);
+    Float* right = Float::cast(other);
     return Boolean::fromBool(left->value() < right->value());
   } else if (self->isInteger() || other->isInteger()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -100,9 +100,9 @@ Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isDouble() && other->isDouble()) {
-    Double* left = Double::cast(self);
-    Double* right = Double::cast(other);
+  if (self->isFloat() && other->isFloat()) {
+    Float* left = Float::cast(self);
+    Float* right = Float::cast(other);
     return Boolean::fromBool(left->value() != right->value());
   } else if (self->isInteger() || other->isInteger()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -134,15 +134,15 @@ Object* builtinDoubleNew(Thread* thread, Frame* frame, word nargs) {
   }
   // No arguments.
   if (nargs == 1) {
-    return runtime->newDouble(0.0);
+    return runtime->newFloat(0.0);
   }
   Handle<Layout> layout(&scope, type->instanceLayout());
-  if (layout->id() != LayoutId::kDouble) {
+  if (layout->id() != LayoutId::kFloat) {
     // TODO(dulinr): Implement __new__ with subtypes of float.
     UNIMPLEMENTED("float.__new__(<subtype of float>, ...)");
   }
   Handle<Object> arg(&scope, args.get(1));
-  if (arg->isDouble()) {
+  if (arg->isFloat()) {
     return *arg;
   }
   UNIMPLEMENTED("Handle arguments to float() that aren't floats");
@@ -156,19 +156,19 @@ Object* builtinDoubleAdd(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (!self->isDouble()) {
+  if (!self->isFloat()) {
     return thread->throwTypeErrorFromCString(
         "__add__() must be called with float instance as first argument");
   }
 
-  double left = Double::cast(self)->value();
-  if (other->isDouble()) {
-    double right = Double::cast(other)->value();
-    return thread->runtime()->newDouble(left + right);
+  double left = Float::cast(self)->value();
+  if (other->isFloat()) {
+    double right = Float::cast(other)->value();
+    return thread->runtime()->newFloat(left + right);
   }
   if (other->isInteger()) {
-    double right = Integer::cast(other)->doubleValue();
-    return thread->runtime()->newDouble(left + right);
+    double right = Integer::cast(other)->floatValue();
+    return thread->runtime()->newFloat(left + right);
   }
   return thread->runtime()->notImplemented();
 }
@@ -181,19 +181,19 @@ Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (!self->isDouble()) {
+  if (!self->isFloat()) {
     return thread->throwTypeErrorFromCString(
         "__sub__() must be called with float instance as first argument");
   }
 
-  double left = Double::cast(self)->value();
-  if (other->isDouble()) {
-    double right = Double::cast(other)->value();
-    return thread->runtime()->newDouble(left - right);
+  double left = Float::cast(self)->value();
+  if (other->isFloat()) {
+    double right = Float::cast(other)->value();
+    return thread->runtime()->newFloat(left - right);
   }
   if (other->isInteger()) {
-    double right = Integer::cast(other)->doubleValue();
-    return thread->runtime()->newDouble(left - right);
+    double right = Integer::cast(other)->floatValue();
+    return thread->runtime()->newFloat(left - right);
   }
   return thread->runtime()->notImplemented();
 }

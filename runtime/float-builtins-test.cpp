@@ -159,8 +159,8 @@ c = a + b
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(c->isDouble());
-  EXPECT_EQ(Double::cast(*c)->value(), 3.5);
+  ASSERT_TRUE(c->isFloat());
+  EXPECT_EQ(Float::cast(*c)->value(), 3.5);
 }
 
 TEST(FloatBuiltinsTest, BinaryAddSmallInteger) {
@@ -175,8 +175,8 @@ c = a + b
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(c->isDouble());
-  EXPECT_EQ(Double::cast(*c)->value(), 3.5);
+  ASSERT_TRUE(c->isFloat());
+  EXPECT_EQ(Float::cast(*c)->value(), 3.5);
 }
 
 TEST(FloatBuiltinsDeathTest, AddWithNonFloatSelfThrows) {
@@ -208,8 +208,8 @@ c = a - b
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(c->isDouble());
-  EXPECT_EQ(Double::cast(*c)->value(), 0.5);
+  ASSERT_TRUE(c->isFloat());
+  EXPECT_EQ(Float::cast(*c)->value(), 0.5);
 }
 
 TEST(FloatBuiltinsTest, BinarySubtractSmallInteger) {
@@ -224,8 +224,8 @@ c = a - b
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(c->isDouble());
-  EXPECT_EQ(Double::cast(*c)->value(), 1.5);
+  ASSERT_TRUE(c->isFloat());
+  EXPECT_EQ(Float::cast(*c)->value(), 1.5);
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithNoArgsReturnsZero) {
@@ -238,8 +238,8 @@ a = float.__new__(float)
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_TRUE(a->isDouble());
-  EXPECT_EQ(Double::cast(*a)->value(), 0.0);
+  ASSERT_TRUE(a->isFloat());
+  EXPECT_EQ(Float::cast(*a)->value(), 0.0);
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithFloatArgReturnsSameValue) {
@@ -252,8 +252,8 @@ a = float.__new__(float, 1.0)
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_TRUE(a->isDouble());
-  EXPECT_EQ(Double::cast(*a)->value(), 1.0);
+  ASSERT_TRUE(a->isFloat());
+  EXPECT_EQ(Float::cast(*a)->value(), 1.0);
 }
 
 TEST(FloatBuiltinsDeathTest, SubWithNonFloatSelfThrows) {

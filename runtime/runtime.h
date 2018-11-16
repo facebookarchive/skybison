@@ -61,7 +61,7 @@ class Runtime {
   Object* newDictionary();
   Object* newDictionary(word initial_size);
 
-  Object* newDouble(double value);
+  Object* newFloat(double value);
 
   Object* newSet();
 

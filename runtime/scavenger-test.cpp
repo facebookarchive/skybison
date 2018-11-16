@@ -49,7 +49,7 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   // Create strongly referenced heap allocated objects.
   Handle<ObjectArray> strongrefs(&scope, runtime.newObjectArray(4));
   for (word i = 0; i < strongrefs->length(); i++) {
-    Handle<Double> elt(&scope, runtime.newDouble(i));
+    Handle<Float> elt(&scope, runtime.newFloat(i));
     strongrefs->atPut(i, *elt);
   }
 

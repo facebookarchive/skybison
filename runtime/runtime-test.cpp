@@ -1220,7 +1220,7 @@ TEST(RuntimeStringTest, StringFormat) {
 
   Handle<String> src(&scope, runtime.newStringFromCString("hello %d %g %s"));
   Handle<Object> arg0(&scope, SmallInteger::fromWord(123));
-  Handle<Object> arg1(&scope, runtime.newDouble(3.14));
+  Handle<Object> arg1(&scope, runtime.newFloat(3.14));
   Handle<Object> arg2(&scope, runtime.newStringFromCString("pyros"));
   Handle<ObjectArray> objs(&scope, runtime.newObjectArray(3));
   objs->atPut(0, *arg0);
