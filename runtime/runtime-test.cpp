@@ -531,7 +531,7 @@ TEST(RuntimeTest, GetClassConstructor) {
   EXPECT_EQ(runtime.classConstructor(klass), *func);
 }
 
-TEST(RuntimeTest, ComputeInstanceSize) {
+TEST(RuntimeTest, ComputeInstanceAttributeMap) {
   Runtime runtime;
   // Template bytecode for:
   //
@@ -555,11 +555,9 @@ TEST(RuntimeTest, ComputeInstanceSize) {
 
   // Creates a new class with a constructor that contains the bytecode
   // defined above.
-  auto createClass = [&](const char* name0, const char* name1) {
+  auto createClass = [&](const Handle<Object>& attr0,
+                         const Handle<Object>& attr1) {
     HandleScope scope;
-
-    Handle<Object> attr0(&scope, runtime.newStringFromCString(name0));
-    Handle<Object> attr1(&scope, runtime.newStringFromCString(name1));
 
     Handle<ObjectArray> names(&scope, runtime.newObjectArray(2));
     names->atPut(0, *attr0);
@@ -608,20 +606,40 @@ TEST(RuntimeTest, ComputeInstanceSize) {
   //     self.attr3 = None
   //     self.attr4 = None
   HandleScope scope;
-  Handle<Class> klass_a(&scope, createClass("attr0", "attr1"));
-  EXPECT_EQ(runtime.computeInstanceSize(klass_a), 2);
+  Handle<Object> attr0(&scope, runtime.newStringFromCString("attr0"));
+  Handle<Object> attr1(&scope, runtime.newStringFromCString("attr1"));
+  Handle<Class> klass_a(&scope, createClass(attr0, attr1));
+  Handle<ObjectArray> map_a(
+      &scope, runtime.computeInstanceAttributeMap(klass_a));
+  EXPECT_EQ(map_a->length(), 2);
+  EXPECT_TRUE(objectArrayContains(map_a, attr0));
+  EXPECT_TRUE(objectArrayContains(map_a, attr1));
 
-  Handle<Class> klass_b(&scope, createClass("attr0", "attr2"));
-  EXPECT_EQ(runtime.computeInstanceSize(klass_b), 2);
+  Handle<Object> attr2(&scope, runtime.newStringFromCString("attr2"));
+  Handle<Class> klass_b(&scope, createClass(attr0, attr2));
+  Handle<ObjectArray> map_b(
+      &scope, runtime.computeInstanceAttributeMap(klass_b));
+  EXPECT_EQ(map_b->length(), 2);
+  EXPECT_TRUE(objectArrayContains(map_b, attr0));
+  EXPECT_TRUE(objectArrayContains(map_b, attr2));
 
-  Handle<Class> klass_c(&scope, createClass("attr3", "attr4"));
+  Handle<Object> attr3(&scope, runtime.newStringFromCString("attr3"));
+  Handle<Object> attr4(&scope, runtime.newStringFromCString("attr4"));
+  Handle<Class> klass_c(&scope, createClass(attr3, attr4));
   Handle<ObjectArray> mro(&scope, runtime.newObjectArray(3));
   mro->atPut(0, *klass_c);
   mro->atPut(1, *klass_a);
   mro->atPut(2, *klass_b);
   klass_c->setMro(*mro);
   // Both A and B have "attr0" which should only be counted once
-  EXPECT_EQ(runtime.computeInstanceSize(klass_c), 5);
+  Handle<ObjectArray> map_c(
+      &scope, runtime.computeInstanceAttributeMap(klass_c));
+  EXPECT_EQ(map_c->length(), 5);
+  EXPECT_TRUE(objectArrayContains(map_c, attr0));
+  EXPECT_TRUE(objectArrayContains(map_c, attr1));
+  EXPECT_TRUE(objectArrayContains(map_c, attr2));
+  EXPECT_TRUE(objectArrayContains(map_c, attr3));
+  EXPECT_TRUE(objectArrayContains(map_c, attr4));
 }
 
 TEST(RuntimeTest, NewInstanceEmptyClass) {
@@ -662,6 +680,12 @@ class MyClassWithAttributes():
   ASSERT_TRUE(
       String::cast(cls->name())->equalsCString("MyClassWithAttributes"));
   ASSERT_EQ(cls->instanceSize(), 3);
+  ASSERT_TRUE(cls->instanceAttributeMap()->isObjectArray());
+  Handle<ObjectArray> attr_map(&scope, cls->instanceAttributeMap());
+  for (const char* raw_attr : {"a", "b", "c"}) {
+    Handle<Object> attr(&scope, runtime.newStringFromCString(raw_attr));
+    EXPECT_TRUE(objectArrayContains(attr_map, attr)) << "Missing " << raw_attr;
+  }
 
   Handle<Instance> instance(&scope, runtime.newInstance(class_id));
   EXPECT_TRUE(instance->isInstance());

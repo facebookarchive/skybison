@@ -16,6 +16,20 @@
     }                                                                          \
   } while (0)
 
+#define UNIMPLEMENTED(...)                                        \
+  do {                                                            \
+    fprintf(stderr, "%s:%d unimplemented: ", __FILE__, __LINE__); \
+    fprintf(stderr, __VA_ARGS__);                                 \
+    std::abort();                                                 \
+  } while (0)
+
+#define UNREACHABLE(...)                                        \
+  do {                                                          \
+    fprintf(stderr, "%s:%d unreachable: ", __FILE__, __LINE__); \
+    fprintf(stderr, __VA_ARGS__);                               \
+    std::abort();                                               \
+  } while (0)
+
 namespace python {
 
 class Utils {

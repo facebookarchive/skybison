@@ -318,4 +318,194 @@ class DataDescriptor:
       "custom descriptors are unsupported");
 }
 
+// Fetch an unknown attribute
+TEST(InstanceAttributeTest, GetMissing) {
+  Runtime runtime;
+  const char* src = R"(
+class Foo:
+  pass
+
+def test(x):
+  print(x.foo)
+)";
+  compileAndRunToString(&runtime, src);
+  HandleScope scope;
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, runtime.newInstance(klass->id()));
+
+  ASSERT_DEATH(callFunctionToString(test, args), "missing attribute");
+}
+
+// Fetch an attribute defined on the class
+TEST(InstanceAttributeTest, GetClassAttribute) {
+  Runtime runtime;
+  const char* src = R"(
+class Foo:
+  attr = 'testing 123'
+
+def test(x):
+  print(x.attr)
+)";
+  compileAndRunToString(&runtime, src);
+
+  // Create the instance
+  HandleScope scope;
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, runtime.newInstance(klass->id()));
+
+  EXPECT_EQ(callFunctionToString(test, args), "testing 123\n");
+}
+
+// Fetch an attribute defined in __init__
+TEST(InstanceAttributeTest, GetInstanceAttribute) {
+  Runtime runtime;
+  const char* src = R"(
+class Foo:
+  def __init__(self):
+    self.attr = 'testing 123'
+
+def test(x):
+  Foo.__init__(x)
+  print(x.attr)
+)";
+  compileAndRunToString(&runtime, src);
+
+  // Create the instance
+  HandleScope scope;
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, runtime.newInstance(klass->id()));
+
+  // Run __init__
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  EXPECT_EQ(callFunctionToString(test, args), "testing 123\n");
+}
+
+// Set an attribute defined in __init__
+TEST(InstanceAttributeTest, SetInstanceAttribute) {
+  Runtime runtime;
+  const char* src = R"(
+class Foo:
+  def __init__(self):
+    self.attr = 'testing 123'
+
+def test(x):
+  Foo.__init__(x)
+  print(x.attr)
+  x.attr = '321 testing'
+  print(x.attr)
+)";
+  compileAndRunToString(&runtime, src);
+
+  // Create the instance
+  HandleScope scope;
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, runtime.newInstance(klass->id()));
+
+  // Run __init__ then RMW the attribute
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  EXPECT_EQ(callFunctionToString(test, args), "testing 123\n321 testing\n");
+}
+
+// This is the real deal
+TEST(InstanceAttributeTest, CallInstanceMethod) {
+  Runtime runtime;
+  const char* src = R"(
+class Foo:
+  def __init__(self):
+    self.attr = 'testing 123'
+
+  def doit(self):
+    print(self.attr)
+    self.attr = '321 testing'
+    print(self.attr)
+
+def test(x):
+  Foo.__init__(x)
+  x.doit()
+)";
+  compileAndRunToString(&runtime, src);
+
+  // Create the instance
+  HandleScope scope;
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, runtime.newInstance(klass->id()));
+
+  // Run __init__ then call the method
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  EXPECT_EQ(callFunctionToString(test, args), "testing 123\n321 testing\n");
+}
+
+TEST(InstanceAttributeTest, GetDataDescriptor) {
+  Runtime runtime;
+  const char* src = R"(
+class DataDescr:
+  def __set__(self, instance, value):
+    pass
+
+  def __get__(self, instance, owner):
+    pass
+
+class Foo:
+  pass
+)";
+  compileAndRunToString(&runtime, src);
+
+  // Create an instance of the descriptor and store it on the class
+  HandleScope scope;
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Class> descr_klass(&scope, findInModule(&runtime, main, "DataDescr"));
+  Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
+  Handle<Object> descr(&scope, runtime.newInstance(descr_klass->id()));
+  setInClassDict(&runtime, klass, attr, descr);
+
+  // Fetch it from the instance
+  Handle<Object> instance(
+      &scope, runtime.newInstance(Class::cast(*klass)->id()));
+  ASSERT_DEATH(
+      runtime.attributeAt(Thread::currentThread(), instance, attr),
+      "custom descriptors are unsupported");
+}
+
+TEST(InstanceAttributeTest, GetNonDataDescriptor) {
+  Runtime runtime;
+  const char* src = R"(
+class Descr:
+  def __get__(self, instance, owner):
+    pass
+
+class Foo:
+  pass
+)";
+  compileAndRunToString(&runtime, src);
+
+  // Create an instance of the descriptor and store it on the class
+  HandleScope scope;
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Class> descr_klass(&scope, findInModule(&runtime, main, "Descr"));
+  Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
+  Handle<Object> descr(&scope, runtime.newInstance(descr_klass->id()));
+  setInClassDict(&runtime, klass, attr, descr);
+
+  // Fetch it from the instance
+  Handle<Object> instance(
+      &scope, runtime.newInstance(Class::cast(*klass)->id()));
+  ASSERT_DEATH(
+      runtime.attributeAt(Thread::currentThread(), instance, attr),
+      "custom descriptors are unsupported");
+}
+
 } // namespace python

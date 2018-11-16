@@ -70,5 +70,9 @@ std::string callFunctionToString(
     const Handle<Function>& func,
     const Handle<ObjectArray>& args);
 
+bool objectArrayContains(
+    const Handle<ObjectArray>& object_array,
+    const Handle<Object>& key);
+
 } // namespace testing
 } // namespace python

@@ -64,5 +64,16 @@ std::string callFunctionToString(
   return stream.str();
 }
 
+bool objectArrayContains(
+    const Handle<ObjectArray>& object_array,
+    const Handle<Object>& key) {
+  for (word i = 0; i < object_array->length(); i++) {
+    if (Object::equals(object_array->at(i), *key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 } // namespace testing
 } // namespace python

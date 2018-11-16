@@ -3,8 +3,11 @@
 #include <cstdint>
 
 #include "runtime.h"
+#include "test-utils.h"
 
 namespace python {
+
+using namespace testing;
 
 TEST(DictionaryTest, EmptyDictionaryInvariants) {
   Runtime runtime;
@@ -239,6 +242,33 @@ TEST(DictionaryTest, MixedKeys) {
   found = runtime.dictionaryAt(dict, strKey, &retrieved);
   EXPECT_TRUE(found);
   EXPECT_TRUE(Object::equals(*strKey, retrieved));
+}
+
+TEST(DictionaryTest, GetKeys) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Create keys
+  Handle<ObjectArray> keys(&scope, runtime.newObjectArray(4));
+  keys->atPut(0, SmallInteger::fromWord(100));
+  keys->atPut(1, runtime.newStringFromCString("testing 123"));
+  keys->atPut(2, Boolean::fromBool(true));
+  keys->atPut(3, None::object());
+
+  // Add keys to dictionary
+  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  for (word i = 0; i < keys->length(); i++) {
+    Handle<Object> key(&scope, keys->at(i));
+    runtime.dictionaryAtPut(dict, key, key);
+  }
+
+  // Grab the keys and verify everything is there
+  Handle<ObjectArray> retrieved(&scope, runtime.dictionaryKeys(dict));
+  ASSERT_EQ(retrieved->length(), keys->length());
+  for (word i = 0; i < keys->length(); i++) {
+    Handle<Object> key(&scope, keys->at(i));
+    EXPECT_TRUE(objectArrayContains(retrieved, key)) << " missing key " << i;
+  }
 }
 
 TEST(ListTest, EmptyListInvariants) {

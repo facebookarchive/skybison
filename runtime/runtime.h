@@ -175,6 +175,8 @@ class Runtime {
       const Handle<Object>& key,
       Object** value);
 
+  ObjectArray* dictionaryKeys(const Handle<Dictionary>& dict);
+
   // Set related function, based on dictionary.
   // Add a value to set and return the object in set.
   Object* setAdd(const Handle<Set>& set, const Handle<Object>& value);
@@ -197,10 +199,15 @@ class Runtime {
       const Handle<Code>& code,
       const Handle<Dictionary>& attributes);
 
-  // Returns the number of attributes that will be stored in instances of
-  // klass. This is computed by scanning the constructors of every klass in
-  // klass's MRO.
-  word computeInstanceSize(const Handle<Class>& klass);
+  // Constructs the mapping of where attributes are stored in instances.
+  //
+  // The result is an ObjectArray of attribute names. For a given attribute,
+  // its offset in an instance is the same as the offset of its name in the
+  // returned ObjectArray.
+  //
+  // This is computed by scanning the constructors of every klass in klass's
+  // MRO.
+  ObjectArray* computeInstanceAttributeMap(const Handle<Class>& klass);
 
   // Returns klass's __init__ method, or None
   Object* classConstructor(const Handle<Class>& klass);
@@ -294,6 +301,19 @@ class Runtime {
 
   // Generic attribute setting code used for class objects
   Object* classSetAttr(
+      Thread* thread,
+      const Handle<Object>& receiver,
+      const Handle<Object>& name,
+      const Handle<Object>& value);
+
+  // Generic attribute lookup code used for instance objects
+  Object* instanceGetAttr(
+      Thread* thread,
+      const Handle<Object>& receiver,
+      const Handle<Object>& name);
+
+  // Generic attribute setting code used for instance objects
+  Object* instanceSetAttr(
       Thread* thread,
       const Handle<Object>& receiver,
       const Handle<Object>& name,

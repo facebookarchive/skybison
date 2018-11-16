@@ -182,6 +182,93 @@ Object* Runtime::classSetAttr(
   return None::object();
 }
 
+// Generic attribute lookup code used for instance objects
+Object* Runtime::instanceGetAttr(
+    Thread* thread,
+    const Handle<Object>& receiver,
+    const Handle<Object>& name) {
+  if (!name->isString()) {
+    // TODO(T25140871): Refactor into something like:
+    //     thread->throwUnexpectedTypeError(expected, actual)
+    return thread->throwTypeErrorFromCString("attribute name must be a string");
+  }
+
+  // Look for the attribute in the class
+  HandleScope scope(thread->handles());
+  Handle<Class> klass(&scope, classOf(*receiver));
+  Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
+  if (isDataDescriptor(thread, klass_attr)) {
+    // TODO(T25692531): Call __get__ from klass_attr
+    UNIMPLEMENTED("custom descriptors are unsupported");
+  }
+
+  // No data descriptor found on the class, look at the in-instance
+  // attributes.
+  //
+  // TODO: Support overflow attributs
+  Handle<Instance> instance(&scope, *receiver);
+  Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
+  for (word i = 0; i < map->length(); i++) {
+    if (map->at(i) == *name) {
+      return instance->attributeAt(i);
+    }
+  }
+
+  // Nothing found in the instance, if we found a non-data descriptor via the
+  // class search, use it.
+  if (isNonDataDescriptor(thread, klass_attr)) {
+    if (klass_attr->isFunction()) {
+      Handle<Object> k(&scope, *klass);
+      return functionDescriptorGet(thread, klass_attr, receiver, k);
+    }
+    // TODO(T25692531): Call __get__ from klass_attr
+    UNIMPLEMENTED("custom descriptors are unsupported");
+  }
+
+  // If a regular attribute was found in the class, return it
+  if (!klass_attr->isError()) {
+    return *klass_attr;
+  }
+
+  // TODO(T25140871): Refactor this into something like:
+  //     thread->throwMissingAttributeError(name)
+  return thread->throwAttributeErrorFromCString("missing attribute");
+}
+
+Object* Runtime::instanceSetAttr(
+    Thread* thread,
+    const Handle<Object>& receiver,
+    const Handle<Object>& name,
+    const Handle<Object>& value) {
+  if (!name->isString()) {
+    // TODO(T25140871): Refactor into something like:
+    //     thread->throwUnexpectedTypeError(expected, actual)
+    return thread->throwTypeErrorFromCString("attribute name must be a string");
+  }
+
+  // Check for a data descriptor
+  HandleScope scope(thread->handles());
+  Handle<Class> klass(&scope, classOf(*receiver));
+  Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
+  if (isDataDescriptor(thread, klass_attr)) {
+    // TODO(T25692531): Call __set__ from klass_attr
+    UNIMPLEMENTED("custom descriptors are unsupported");
+  }
+
+  // No data descriptor found, store in the in-instance properties
+  Handle<Instance> instance(&scope, *receiver);
+  Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
+  for (word i = 0; i < map->length(); i++) {
+    if (map->at(i) == *name) {
+      instance->attributeAtPut(i, *value);
+      return None::object();
+    }
+  }
+
+  // TODO: Support overflow attributes.
+  UNIMPLEMENTED("unknown attribute '%s'", String::cast(*name)->toCString());
+}
+
 bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
   if (object->isFunction() || object->isError()) {
     return false;
@@ -218,7 +305,7 @@ Object* Runtime::newClassWithId(ClassId class_id) {
   HandleScope scope;
   Handle<Class> klass(&scope, heap()->createClass(class_id));
   List::cast(class_table_)->atPut(index, *klass);
-  klass->initialize(newDictionary());
+  klass->initialize(newDictionary(), empty_object_array_);
   return *klass;
 }
 
@@ -876,6 +963,10 @@ class Bucket {
     return hash()->isNone() && key()->isNone();
   }
 
+  bool isFilled() {
+    return !(isEmpty() || isTombstone());
+  }
+
   static inline word getIndex(Object* data, Object* hash) {
     word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
     assert(Utils::isPowerOfTwo(nbuckets));
@@ -1126,6 +1217,23 @@ bool Runtime::dictionaryLookup(
   return false;
 }
 
+ObjectArray* Runtime::dictionaryKeys(const Handle<Dictionary>& dict) {
+  HandleScope scope;
+  Handle<ObjectArray> data(&scope, dict->data());
+  Handle<ObjectArray> keys(&scope, newObjectArray(dict->numItems()));
+  word numKeys = 0;
+  for (word i = 0; i < data->length(); i += Bucket::kNumPointers) {
+    Bucket bucket(data, i);
+    if (bucket.isFilled()) {
+      assert(numKeys < keys->length());
+      keys->atPut(numKeys, bucket.key());
+      numKeys++;
+    }
+  }
+  assert(numKeys == keys->length());
+  return *keys;
+}
+
 Object* Runtime::newSet() {
   return heap()->createSet(empty_object_array_);
 }
@@ -1284,7 +1392,7 @@ Object* Runtime::classConstructor(const Handle<Class>& klass) {
   return ValueCell::cast(value)->value();
 }
 
-word Runtime::computeInstanceSize(const Handle<Class>& klass) {
+ObjectArray* Runtime::computeInstanceAttributeMap(const Handle<Class>& klass) {
   HandleScope scope;
   Handle<ObjectArray> mro(&scope, klass->mro());
   Handle<Dictionary> attrs(&scope, newDictionary());
@@ -1304,7 +1412,7 @@ word Runtime::computeInstanceSize(const Handle<Class>& klass) {
     collectAttributes(code, attrs);
   }
 
-  return attrs->numItems();
+  return dictionaryKeys(attrs);
 }
 
 Object* Runtime::lookupNameInMro(
@@ -1328,14 +1436,15 @@ Object* Runtime::attributeAt(
     Thread* thread,
     const Handle<Object>& receiver,
     const Handle<Object>& name) {
-  // A minimal implementation of getattr needed to get richards running. We
-  // still need to add support for instances.
+  // A minimal implementation of getattr needed to get richards running.
   Object* result;
   if (receiver->isClass()) {
     result = classGetAttr(thread, receiver, name);
+  } else if (receiver->isInstance()) {
+    result = instanceGetAttr(thread, receiver, name);
   } else {
     result = thread->throwTypeErrorFromCString(
-        "can only look up attributes from classes");
+        "can only look up attributes from classes or instances");
   }
   return result;
 }
@@ -1347,14 +1456,15 @@ Object* Runtime::attributeAtPut(
     const Handle<Object>& value) {
   HandleScope scope(thread->handles());
   Handle<Object> interned_name(&scope, internString(name));
-  // A minimal implementation of setattr needed to get richards running. We
-  // still need to add support for instances.
+  // A minimal implementation of setattr needed to get richards running.
   Object* result;
   if (receiver->isClass()) {
     result = classSetAttr(thread, receiver, interned_name, value);
+  } else if (receiver->isInstance()) {
+    result = instanceSetAttr(thread, receiver, interned_name, value);
   } else {
-    result =
-        thread->throwTypeErrorFromCString("can only set attributes on classes");
+    result = thread->throwTypeErrorFromCString(
+        "can only set attributes on classes or instances");
   }
   return result;
 }

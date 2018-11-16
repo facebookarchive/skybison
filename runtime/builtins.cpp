@@ -101,7 +101,7 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
     return *mro;
   }
   result->setMro(*mro);
-  result->setInstanceSize(runtime->computeInstanceSize(result));
+  result->setInstanceAttributeMap(runtime->computeInstanceAttributeMap(result));
 
   return *result;
 }
