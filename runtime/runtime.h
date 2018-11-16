@@ -17,7 +17,7 @@ class Runtime {
   ~Runtime();
 
   Object* newByteArray(word length);
-  Object* newByteArrayFromCString(const char* c_string, word length);
+  Object* newByteArrayWithAll(const byte* data, word length);
 
   Object* newCode();
 

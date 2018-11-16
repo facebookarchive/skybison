@@ -198,9 +198,9 @@ TEST(ThreadTest, CallFunction) {
   calleeCode->setStacksize(1);
   calleeCode->setConsts(runtime.newObjectArray(1));
   ObjectArray::cast(calleeCode->consts())->atPut(0, expectedResult);
-  const char bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
+  const byte callee_bc[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   calleeCode->setCode(
-      runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+      runtime.newByteArrayWithAll(callee_bc, ARRAYSIZE(callee_bc)));
 
   // Create the function object and bind it to the code object
   Handle<Function> callee(&scope, runtime.newFunction());
@@ -215,18 +215,18 @@ TEST(ThreadTest, CallFunction) {
   consts->atPut(1, SmallInteger::fromWord(1111));
   consts->atPut(2, SmallInteger::fromWord(2222));
   callerCode->setConsts(*consts);
-  const char callerBytecode[] = {LOAD_CONST,
-                                 0,
-                                 LOAD_CONST,
-                                 1,
-                                 LOAD_CONST,
-                                 2,
-                                 static_cast<char>(CALL_FUNCTION),
-                                 2,
-                                 RETURN_VALUE,
-                                 0};
-  callerCode->setCode(runtime.newByteArrayFromCString(
-      callerBytecode, ARRAYSIZE(callerBytecode)));
+  const byte caller_bc[] = {LOAD_CONST,
+                            0,
+                            LOAD_CONST,
+                            1,
+                            LOAD_CONST,
+                            2,
+                            CALL_FUNCTION,
+                            2,
+                            RETURN_VALUE,
+                            0};
+  callerCode->setCode(
+      runtime.newByteArrayWithAll(caller_bc, ARRAYSIZE(caller_bc)));
 
   // Execute the caller and make sure we get back the expected result
   Object* result = Thread::currentThread()->run(*callerCode);
@@ -255,15 +255,9 @@ TEST(ThreadTest, CallBuiltinFunction) {
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInteger::fromWord(1111));
   code->setConsts(*consts);
-  const char bytecode[] = {LOAD_CONST,
-                           0,
-                           LOAD_CONST,
-                           1,
-                           static_cast<char>(CALL_FUNCTION),
-                           1,
-                           RETURN_VALUE,
-                           0};
-  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, CALL_FUNCTION, 1, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
   code->setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -288,7 +282,7 @@ TEST(ThreadTest, CallBuiltinPrint) {
   consts->atPut(3, Boolean::fromBool(true));
   consts->atPut(4, Boolean::fromBool(false));
   code->setConsts(*consts);
-  const char bytecode[] = {LOAD_CONST,
+  const byte bytecode[] = {LOAD_CONST,
                            0,
                            LOAD_CONST,
                            1,
@@ -298,11 +292,11 @@ TEST(ThreadTest, CallBuiltinPrint) {
                            3,
                            LOAD_CONST,
                            4,
-                           static_cast<char>(CALL_FUNCTION),
+                           CALL_FUNCTION,
                            4,
                            RETURN_VALUE,
                            0};
-  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
   code->setStacksize(5);
 
   std::stringstream stream;
@@ -325,8 +319,8 @@ TEST(ThreadTest, ExecuteDupTop) {
   Handle<Code> code(&scope, runtime.newCode());
   code->setStacksize(2);
   code->setConsts(*consts);
-  const char bytecode[] = {LOAD_CONST, 0, DUP_TOP, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+  const byte bytecode[] = {LOAD_CONST, 0, DUP_TOP, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInteger());
@@ -343,9 +337,9 @@ TEST(ThreadTest, ExecuteRotTwo) {
   Handle<Code> code(&scope, runtime.newCode());
   code->setStacksize(2);
   code->setConsts(*consts);
-  const char bytecode[] = {
+  const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, ROT_TWO, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInteger());
@@ -362,9 +356,9 @@ TEST(ThreadTest, ExecuteJumpAbsolute) {
   Handle<Code> code(&scope, runtime.newCode());
   code->setStacksize(2);
   code->setConsts(*consts);
-  const char bytecode[] = {
+  const byte bytecode[] = {
       JUMP_ABSOLUTE, 4, LOAD_CONST, 0, LOAD_CONST, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInteger());
@@ -381,9 +375,9 @@ TEST(ThreadTest, ExecuteJumpForward) {
   Handle<Code> code(&scope, runtime.newCode());
   code->setStacksize(2);
   code->setConsts(*consts);
-  const char bytecode[] = {
+  const byte bytecode[] = {
       JUMP_FORWARD, 2, LOAD_CONST, 0, LOAD_CONST, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInteger());
@@ -399,9 +393,9 @@ TEST(ThreadTest, ExecuteStoreLoadFast) {
   consts->atPut(0, SmallInteger::fromWord(1111));
   code->setConsts(*consts);
   code->setNlocals(2);
-  const char bytecode[] = {
+  const byte bytecode[] = {
       LOAD_CONST, 0, STORE_FAST, 1, LOAD_FAST, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInteger());

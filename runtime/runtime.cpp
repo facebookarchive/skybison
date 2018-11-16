@@ -44,14 +44,14 @@ Object* Runtime::newCode() {
   return heap()->createCode(empty_object_array_);
 }
 
-Object* Runtime::newByteArrayFromCString(const char* c_string, word length) {
+Object* Runtime::newByteArrayWithAll(const byte* data, word length) {
   if (length == 0) {
     return empty_byte_array_;
   }
   Object* result = newByteArray(length);
   for (word i = 0; i < length; i++) {
     ByteArray::cast(result)->byteAtPut(
-        i, *reinterpret_cast<const byte*>(c_string + i));
+        i, *reinterpret_cast<const byte*>(data + i));
   }
   return result;
 }

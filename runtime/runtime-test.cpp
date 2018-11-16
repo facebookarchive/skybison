@@ -34,13 +34,16 @@ TEST(RuntimeTest, NewByteArray) {
   Handle<ByteArray> empty1(&scope, runtime.newByteArray(0));
   EXPECT_EQ(*empty0, *empty1);
 
-  Handle<ByteArray> b1(&scope, runtime.newByteArrayFromCString("\x42", 1));
+  const byte src1[] = {0x42};
+  Handle<ByteArray> b1(
+      &scope, runtime.newByteArrayWithAll(src1, ARRAYSIZE(src1)));
   EXPECT_EQ(b1->length(), 1);
   EXPECT_EQ(b1->size(), Utils::roundUp(kPointerSize + 1, kPointerSize));
   EXPECT_EQ(b1->byteAt(0), 0x42);
 
+  const byte src3[] = {0xAA, 0xBB, 0xCC};
   Handle<ByteArray> b3(
-      &scope, runtime.newByteArrayFromCString("\xAA\xBB\xCC", 3));
+      &scope, runtime.newByteArrayWithAll(src3, ARRAYSIZE(src3)));
   EXPECT_EQ(b3->length(), 3);
   EXPECT_EQ(b3->size(), Utils::roundUp(kPointerSize + 3, kPointerSize));
   EXPECT_EQ(b3->byteAt(0), 0xAA);
@@ -143,9 +146,9 @@ TEST(RuntimeTest, HashByteArrays) {
   HandleScope scope;
 
   // Strings have their hash codes computed lazily.
-  const char src1[] = {0x1, 0x2, 0x3};
+  const byte src1[] = {0x1, 0x2, 0x3};
   Handle<ByteArray> arr1(
-      &scope, runtime.newByteArrayFromCString(src1, ARRAYSIZE(src1)));
+      &scope, runtime.newByteArrayWithAll(src1, ARRAYSIZE(src1)));
   EXPECT_EQ(arr1->header()->hashCode(), 0);
   word hash1 = SmallInteger::cast(runtime.hash(*arr1))->value();
   EXPECT_NE(arr1->header()->hashCode(), 0);
@@ -156,9 +159,9 @@ TEST(RuntimeTest, HashByteArrays) {
   EXPECT_EQ(code1 & Header::kHashCodeMask, hash1);
 
   // String with different values should (ideally) hash differently.
-  const char src2[] = {0x3, 0x2, 0x1};
+  const byte src2[] = {0x3, 0x2, 0x1};
   Handle<ByteArray> arr2(
-      &scope, runtime.newByteArrayFromCString(src2, ARRAYSIZE(src2)));
+      &scope, runtime.newByteArrayWithAll(src2, ARRAYSIZE(src2)));
   word hash2 = SmallInteger::cast(runtime.hash(*arr2))->value();
   EXPECT_NE(hash1, hash2);
 
@@ -167,9 +170,9 @@ TEST(RuntimeTest, HashByteArrays) {
   EXPECT_EQ(code2 & Header::kHashCodeMask, hash2);
 
   // Strings with the same value should hash the same.
-  const char src3[] = {0x1, 0x2, 0x3};
+  const byte src3[] = {0x1, 0x2, 0x3};
   Handle<ByteArray> arr3(
-      &scope, runtime.newByteArrayFromCString(src3, ARRAYSIZE(src3)));
+      &scope, runtime.newByteArrayWithAll(src3, ARRAYSIZE(src3)));
   word hash3 = SmallInteger::cast(runtime.hash(*arr3))->value();
   EXPECT_EQ(hash1, hash3);
 
