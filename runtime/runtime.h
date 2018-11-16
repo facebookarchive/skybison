@@ -296,8 +296,6 @@ class Runtime {
   void createSysModule();
   Object* createMainModule();
 
-  void addBuiltins(const Handle<Module>& module);
-
   Object* executeModule(const char* buffer, const Handle<Module>& module);
 
   void visitRuntimeRoots(PointerVisitor* visitor);

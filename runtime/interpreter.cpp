@@ -157,19 +157,20 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
       case Bytecode::LOAD_NAME: {
-        HandleScope scope;
-        Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
-        Handle<Object> key(
-            &scope,
-            ObjectArray::cast(Code::cast(frame->code())->names())->at(arg));
-        Object* value = None::object();
-        thread->runtime()->dictionaryAt(implicit_globals, key, &value);
-        // TODO(cshapiro): check for unbound implicit global variables.
-        CHECK(
-            value != None::object(),
-            "unbound implicit global '%s'\n",
-            String::cast(*key)->toCString());
-        *--sp = ValueCell::cast(value)->value();
+        // This is for module level lookup, behaves the same as LOAD_GLOBAL
+        Object* value =
+            ValueCell::cast(ObjectArray::cast(frame->fastGlobals())->at(arg))
+                ->value();
+
+        if (value->isValueCell()) {
+          CHECK(
+              !ValueCell::cast(value)->isUnbound(),
+              "unbound implicit globals\n");
+
+          value = ValueCell::cast(value)->value();
+        }
+
+        *--sp = value;
         break;
       }
       case Bytecode::STORE_NAME: {

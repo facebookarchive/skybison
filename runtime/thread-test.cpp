@@ -563,7 +563,6 @@ print(a)
 def f():
   global isinstance
   isinstance = 2
-del isinstance  # remove once we remove our HACK of adding builtins to main
 f()
 print(isinstance)
 )",
@@ -599,7 +598,6 @@ f()
                                 R"(
 def f():
   global isinstance
-  del isinstance  # remove once we remove our HACK of adding builtins to main
   del isinstance
 f()
 )",
@@ -727,7 +725,10 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   Frame* frame = thread->pushFrame(*code, thread->initialFrame());
 
   Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
   frame->setImplicitGlobals(*implicit_globals);
+  frame->setFastGlobals(
+      runtime.computeFastGlobals(code, implicit_globals, builtins));
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 

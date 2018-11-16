@@ -392,7 +392,7 @@ Object* Runtime::newModule(const Handle<Object>& name) {
   HandleScope scope;
   Handle<Dictionary> dictionary(&scope, newDictionary());
   Handle<Object> key(&scope, symbols()->DunderName());
-  dictionaryAtPut(dictionary, key, name);
+  dictionaryAtPutInValueCell(dictionary, key, name);
   return heap()->createModule(*name, *dictionary);
 }
 
@@ -759,7 +759,6 @@ Object* Runtime::importModuleFromBuffer(
 
   Handle<Module> module(&scope, newModule(name));
   addModule(module);
-  addBuiltins(module);
   executeModule(buffer, module);
   return *module;
 }
@@ -934,48 +933,6 @@ void Runtime::createBuiltinsModule() {
   Handle<Module> module(&scope, newModule(name));
 
   // Fill in builtins...
-  addBuiltins(module);
-
-  // Add 'object'
-  Handle<Object> object(&scope, symbols()->ObjectClassname());
-  Handle<Object> value(&scope, classAt(ClassId::kObject));
-  moduleAddGlobal(module, object, value);
-
-  addModule(module);
-}
-
-void Runtime::createSysModule() {
-  HandleScope scope;
-  Handle<Object> name(&scope, newStringFromCString("sys"));
-  Handle<Module> module(&scope, newModule(name));
-
-  Handle<Object> modules_id(&scope, newStringFromCString("modules"));
-  Handle<Object> modules(&scope, modules_);
-  moduleAddGlobal(module, modules_id, modules);
-
-  // Fill in sys...
-  addModule(module);
-}
-
-Object* Runtime::createMainModule() {
-  HandleScope scope;
-  Handle<Object> name(&scope, symbols()->DunderMain());
-  Handle<Module> module(&scope, newModule(name));
-
-  // Fill in __main__...
-  // TODO: remove this call once we do builtin lookups correctly.
-  addBuiltins(module);
-
-  addModule(module);
-
-  return *module;
-}
-
-// TODO: fold this function into createBuiltinsModule once we don't
-// need to add builtins to every module individually.
-void Runtime::addBuiltins(const Handle<Module>& module) {
-  HandleScope scope;
-
   build_class_ = moduleAddBuiltinFunction(
       module,
       "__build_class__",
@@ -1007,6 +964,33 @@ void Runtime::addBuiltins(const Handle<Module>& module) {
   Handle<Object> object(&scope, symbols()->ObjectClassname());
   Handle<Object> value(&scope, classAt(ClassId::kObject));
   moduleAddGlobal(module, object, value);
+
+  addModule(module);
+}
+
+void Runtime::createSysModule() {
+  HandleScope scope;
+  Handle<Object> name(&scope, newStringFromCString("sys"));
+  Handle<Module> module(&scope, newModule(name));
+
+  Handle<Object> modules_id(&scope, newStringFromCString("modules"));
+  Handle<Object> modules(&scope, modules_);
+  moduleAddGlobal(module, modules_id, modules);
+
+  // Fill in sys...
+  addModule(module);
+}
+
+Object* Runtime::createMainModule() {
+  HandleScope scope;
+  Handle<Object> name(&scope, symbols()->DunderMain());
+  Handle<Module> module(&scope, newModule(name));
+
+  // Fill in __main__...
+
+  addModule(module);
+
+  return *module;
 }
 
 Object* Runtime::getIter(Object* o) {
@@ -1679,7 +1663,8 @@ Object* Runtime::computeFastGlobals(
       bc = static_cast<Bytecode>(bytes->byteAt(i));
       arg = (arg << 8) | bytes->byteAt(i + 1);
     }
-    if (bc != LOAD_GLOBAL && bc != STORE_GLOBAL && bc != DELETE_GLOBAL) {
+    if (bc != LOAD_GLOBAL && bc != STORE_GLOBAL && bc != DELETE_GLOBAL &&
+        bc != LOAD_NAME) {
       continue;
     }
     Handle<Object> key(&scope, names->at(arg));
