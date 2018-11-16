@@ -1092,6 +1092,12 @@ void Runtime::createSysModule() {
   moduleAddGlobal(module, modules_id, modules);
 
   // Fill in sys...
+  moduleAddBuiltinFunction(
+      module,
+      symbols()->Exit(),
+      nativeTrampoline<builtinSysExit>,
+      nativeTrampoline<unimplementedTrampoline>);
+
   addModule(module);
 }
 

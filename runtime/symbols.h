@@ -25,6 +25,7 @@ class Runtime;
   V(Classmethod, "classmethod")          \
   V(Insert, "insert")                    \
   V(Dict, "dict")                        \
+  V(Exit, "exit")                        \
   V(IsInstance, "isinstance")            \
   V(Len, "len")                          \
   V(List, "list")                        \

@@ -2975,4 +2975,24 @@ f(100)
   EXPECT_EQ(output, "100\n");
 }
 
+TEST(ThreadTest, SysExit) {
+  const char* src = R"(
+import sys
+sys.exit()
+)";
+  Runtime runtime;
+  ASSERT_EXIT(
+      compileAndRunToString(&runtime, src), ::testing::ExitedWithCode(0), "");
+}
+
+TEST(ThreadTest, SysExitCode) { // pystone dependency
+  const char* src = R"(
+import sys
+sys.exit(100)
+)";
+  Runtime runtime;
+  ASSERT_EXIT(
+      compileAndRunToString(&runtime, src), ::testing::ExitedWithCode(100), "");
+}
+
 } // namespace python
