@@ -2330,8 +2330,8 @@ void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
   thread->abortOnPendingException();
 }
 
-void Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
-                         const Handle<Object>& mapping) {
+Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
+                            const Handle<Object>& mapping) {
   HandleScope scope;
   Handle<Object> key(&scope, None::object());
   Handle<Object> value(&scope, None::object());
@@ -2346,7 +2346,7 @@ void Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
         dictAtPut(dict, key, value);
       }
     }
-    return;
+    return *dict;
   }
   Frame* frame = thread->currentFrame();
   Handle<Object> keys_method(
@@ -2354,9 +2354,7 @@ void Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       Interpreter::lookupMethod(thread, frame, mapping, SymbolId::kKeys));
 
   if (keys_method->isError()) {
-    thread->throwTypeErrorFromCStr("object is not a mapping");
-    thread->abortOnPendingException();
-    return;
+    return thread->throwTypeErrorFromCStr("object is not a mapping");
   }
 
   // Generic mapping, use keys() and __getitem__()
@@ -2364,9 +2362,7 @@ void Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       &scope, Interpreter::lookupMethod(thread, frame, mapping,
                                         SymbolId::kDunderGetItem));
   if (subscr_method->isError()) {
-    thread->throwTypeErrorFromCStr("object is not subscriptable");
-    thread->abortOnPendingException();
-    return;
+    return thread->throwTypeErrorFromCStr("object is not subscriptable");
   }
   Handle<Object> keys(
       &scope, Interpreter::callMethod1(thread, frame, keys_method, mapping));
@@ -2377,13 +2373,13 @@ void Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       value =
           Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
       if (value->isError()) {
-        thread->abortOnPendingException();
-        return;
+        return *value;
       }
       dictAtPut(dict, key, value);
     }
-    return;
+    return *dict;
   }
+
   if (keys->isObjectArray()) {
     Handle<ObjectArray> keys_tuple(&scope, *keys);
     for (word i = 0; i < keys_tuple->length(); ++i) {
@@ -2391,16 +2387,48 @@ void Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       value =
           Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
       if (value->isError()) {
-        thread->abortOnPendingException();
-        return;
+        return *value;
       }
       dictAtPut(dict, key, value);
     }
-    return;
+    return *dict;
   }
-  // Keys probably is an iterator
-  // TODO(T33562788): Support iterable keys in dictUpdate
-  UNIMPLEMENTED("non list/tuple keys in dictionary update");
+
+  // keys is probably an iterator
+  Handle<Object> iter_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), keys,
+                                        SymbolId::kDunderIter));
+  if (iter_method->isError()) {
+    return thread->throwTypeErrorFromCStr("o.keys() are not iterable");
+  }
+
+  Handle<Object> iterator(
+      &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
+                                       iter_method, keys));
+  if (iterator->isError()) {
+    return thread->throwTypeErrorFromCStr("o.keys() are not iterable");
+  }
+  Handle<Object> next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterator, SymbolId::kDunderNext));
+  if (next_method->isError()) {
+    thread->throwTypeErrorFromCStr("o.keys() are not iterable");
+    thread->abortOnPendingException();
+  }
+  while (!isIteratorExhausted(thread, iterator)) {
+    key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
+                                   iterator);
+    if (key->isError()) {
+      return *key;
+    }
+    value =
+        Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
+    if (value->isError()) {
+      return *value;
+    }
+    dictAtPut(dict, key, value);
+  }
+  return *dict;
 }
 
 Object* Runtime::newValueCell() { return heap()->createValueCell(); }

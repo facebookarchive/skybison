@@ -1144,6 +1144,71 @@ d = {**Foo(), 'd': 4}
   EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
 }
 
+TEST(InterpreterTest, BuildMapUnpackWithIterableKeysMapping) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+class KeysIter:
+    def __init__(self, keys):
+        self.idx = 0
+        self.keys = keys
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        r = self.keys[self.idx]
+        self.idx += 1
+        return r
+
+    def __length_hint__(self):
+        return len(self.keys) - self.idx
+
+class Foo:
+    def __init__(self):
+        self.idx = 0
+        self._items = [('a', 1), ('b', 2), ('c', 3)]
+
+    def keys(self):
+        return KeysIter([x[0] for x in self._items])
+
+    def __getitem__(self, key):
+        for k, v in self._items:
+            if key == k:
+                return v
+        raise KeyError()
+
+d = {**Foo(), 'd': 4}
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  ASSERT_TRUE(d->isDict());
+
+  Handle<Dict> dict(&scope, *d);
+  EXPECT_EQ(dict->numItems(), 4);
+
+  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
+  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el0->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+
+  key = SmallStr::fromCStr("b");
+  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el1->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+
+  key = SmallStr::fromCStr("c");
+  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el2->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+
+  key = SmallStr::fromCStr("d");
+  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el3->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+}
+
 TEST(InterpreterDeathTest, BuildMapUnpackWithNonMapping) {
   Runtime runtime;
   ASSERT_DEATH(runtime.runFromCStr(R"(
@@ -1171,7 +1236,7 @@ d = {**Foo(), 'd': 4}
                "object is not subscriptable");
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithBadKeys) {
+TEST(InterpreterDeathTest, BuildMapUnpackWithNonIterableKeys) {
   Runtime runtime;
   ASSERT_DEATH(runtime.runFromCStr(R"(
 class Foo:
@@ -1187,7 +1252,29 @@ class Foo:
 
 d = {**Foo(), 'd': 4}
   )"),
-               "non list/tuple keys in dictionary update");
+               R"(o.keys\(\) are not iterable)");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithBadIteratorKeys) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class KeysIter:
+    def __iter__(self):
+        return self
+
+class Foo:
+    def __init__(self):
+        pass
+
+    def keys(self):
+        return KeysIter()
+
+    def __getitem__(self, key):
+        pass
+
+d = {**Foo(), 'd': 4}
+  )"),
+               R"(o.keys\(\) are not iterable)");
 }
 
 TEST(InterpreterDeathTest, UnpackSequenceExWithTooFewObjectsBefore) {

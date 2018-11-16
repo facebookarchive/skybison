@@ -292,9 +292,10 @@ class Runtime {
   void setUpdate(Thread* thread, const Handle<Set>& set,
                  const Handle<Object>& iterable);
 
-  // Update a dictionary from another dictionary or an iterator.
-  void dictUpdate(Thread* thread, const Handle<Dict>& dict,
-                  const Handle<Object>& mapping);
+  // Updates a dictionary from another dictionary or a mapping.
+  // Returns the updated dictionary or an Error object.
+  Object* dictUpdate(Thread* thread, const Handle<Dict>& dict,
+                     const Handle<Object>& mapping);
 
   NewValueCellCallback* newValueCellCallback() {
     return &new_value_cell_callback_;
