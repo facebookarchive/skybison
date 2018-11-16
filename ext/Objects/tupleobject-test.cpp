@@ -1,186 +1,111 @@
-#include "gtest/gtest.h"
-
-#include "Python.h"
-#include "runtime.h"
-#include "test-utils.h"
+#include "capi-fixture.h"
 
 namespace python {
 
-TEST(TupleObject, New) {
-  Runtime runtime;
-  HandleScope scope;
+using TupleExtensionApiTest = ExtensionApi;
 
-  word length = 5;
-  PyObject* pyresult = PyTuple_New(length);
-  Handle<Object> result_obj(&scope,
-                            ApiHandle::fromPyObject(pyresult)->asObject());
-  ASSERT_TRUE(result_obj->isObjectArray());
-
-  Handle<ObjectArray> result(&scope, *result_obj);
-  EXPECT_EQ(length, result->length());
+TEST_F(TupleExtensionApiTest, NewAndSize) {
+  Py_ssize_t length = 5;
+  PyObject* pytuple = PyTuple_New(length);
+  Py_ssize_t result = PyTuple_Size(pytuple);
+  EXPECT_EQ(result, length);
 }
 
-TEST(TupleObject, Size) {
-  Runtime runtime;
-  HandleScope scope;
-
-  word length = 5;
-  Handle<ObjectArray> tuple(&scope, runtime.newObjectArray(length));
-  word pylength = PyTuple_Size(ApiHandle::fromObject(*tuple)->asPyObject());
-  EXPECT_EQ(length, pylength);
-}
-
-TEST(TupleObject, SetItemWithNonTupleReturnsNegative) {
-  Runtime runtime;
-
+TEST_F(TupleExtensionApiTest, SetItemWithNonTupleReturnsNegative) {
   int result = PyTuple_SetItem(Py_True, 0, Py_None);
   EXPECT_EQ(result, -1);
 
-  Object* exception = Thread::currentThread()->pendingException();
-  ASSERT_TRUE(exception->isString());
-  EXPECT_PYSTRING_EQ(String::cast(exception),
-                     "bad argument to internal function");
+  const char* expected_message = "bad argument to internal function";
+  EXPECT_TRUE(_PyErr_ExceptionMessageMatches(expected_message));
 }
 
-TEST(TupleObject, SetItemWithInvalidIndexReturnsNegative) {
-  Runtime runtime;
-
+TEST_F(TupleExtensionApiTest, SetItemWithInvalidIndexReturnsNegative) {
   PyObject* pytuple = PyTuple_New(1);
   int result = PyTuple_SetItem(pytuple, 2, Py_None);
   EXPECT_EQ(result, -1);
 
-  Object* exception = Thread::currentThread()->pendingException();
-  ASSERT_TRUE(exception->isString());
-  EXPECT_PYSTRING_EQ(String::cast(exception),
-                     "tuple assignment index out of range");
+  const char* expected_message = "tuple assignment index out of range";
+  EXPECT_TRUE(_PyErr_ExceptionMessageMatches(expected_message));
 }
 
-TEST(TupleObject, SetItemReturnsZero) {
-  Runtime runtime;
-
+TEST_F(TupleExtensionApiTest, SetItemReturnsZero) {
   PyObject* pytuple = PyTuple_New(1);
   int result = PyTuple_SetItem(pytuple, 0, Py_None);
   EXPECT_EQ(result, 0);
 }
 
-TEST(TupleObject, GetItemFromNonTupleReturnsNull) {
-  Runtime runtime;
-  HandleScope scope;
-
-  // Get item from non tuple
-  Handle<Int> not_tuple(&scope, runtime.newInt(7));
-  PyObject* pyresult =
-      PyTuple_GetItem(ApiHandle::fromObject(*not_tuple)->asPyObject(), 0);
-  EXPECT_EQ(nullptr, pyresult);
+TEST_F(TupleExtensionApiTest, GetItemFromNonTupleReturnsNull) {
+  PyObject* pytuple = PyTuple_GetItem(Py_None, 0);
+  EXPECT_EQ(nullptr, pytuple);
 }
 
-TEST(TupleObject, GetItemOutOfBoundsReturnsMinusOne) {
-  Runtime runtime;
-  HandleScope scope;
-
-  word pos = 3;
-  word length = 5;
-  word int_value = 10;
-  Handle<ObjectArray> tuple(&scope, runtime.newObjectArray(length));
-  Handle<Int> item(&scope, runtime.newInt(int_value));
-  tuple->atPut(pos, *item);
+TEST_F(TupleExtensionApiTest, GetItemOutOfBoundsReturnsMinusOne) {
+  Py_ssize_t length = 5;
+  PyObject* pytuple = PyTuple_New(length);
 
   // Get item out of bounds
-  PyObject* pyresult =
-      PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), -1);
+  PyObject* pyresult = PyTuple_GetItem(pytuple, -1);
   EXPECT_EQ(nullptr, pyresult);
-  pyresult =
-      PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), length);
+
+  pyresult = PyTuple_GetItem(pytuple, length);
   EXPECT_EQ(nullptr, pyresult);
 }
 
-TEST(TupleObject, GetItemReturnsSameItem) {
-  Runtime runtime;
-  HandleScope scope;
-
-  word pos = 3;
-  word length = 5;
-  word int_value = 10;
-  Handle<ObjectArray> tuple(&scope, runtime.newObjectArray(length));
-  Handle<Int> item(&scope, runtime.newInt(int_value));
-  tuple->atPut(pos, *item);
+TEST_F(TupleExtensionApiTest, GetItemReturnsSameItem) {
+  Py_ssize_t length = 5;
+  Py_ssize_t pos = 3;
+  Py_ssize_t int_value = 10;
+  PyObject* pytuple = PyTuple_New(length);
+  PyObject* pyitem = PyLong_FromLong(int_value);
+  ASSERT_EQ(PyTuple_SetItem(pytuple, pos, pyitem), 0);
 
   // Get item
-  PyObject* pyresult =
-      PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), pos);
+  PyObject* pyresult = PyTuple_GetItem(pytuple, pos);
   EXPECT_NE(nullptr, pyresult);
-  Handle<Object> result_obj(&scope,
-                            ApiHandle::fromPyObject(pyresult)->asObject());
-  ASSERT_TRUE(result_obj->isInt());
+  EXPECT_EQ(PyLong_AsLong(pyresult), int_value);
 }
 
-TEST(TupleObject, GetItemReturnsBorrowedReference) {
-  Runtime runtime;
-  HandleScope scope;
-
-  word pos = 3;
-  word length = 5;
-  word int_value = 10;
-  Handle<ObjectArray> tuple(&scope, runtime.newObjectArray(length));
-  Handle<Int> item(&scope, runtime.newInt(int_value));
-  tuple->atPut(pos, *item);
+TEST_F(TupleExtensionApiTest, GetItemReturnsBorrowedReference) {
+  Py_ssize_t length = 5;
+  Py_ssize_t pos = 3;
+  Py_ssize_t int_value = 10;
+  PyObject* pytuple = PyTuple_New(length);
+  PyObject* pyitem = PyLong_FromLong(int_value);
+  ASSERT_EQ(PyTuple_SetItem(pytuple, pos, pyitem), 0);
 
   // Verify borrowed handle
-  PyObject* pyresult =
-      PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), pos);
-  Handle<Object> result_obj(&scope,
-                            ApiHandle::fromPyObject(pyresult)->asObject());
-  ApiHandle* result_handle = ApiHandle::fromObject(*result_obj);
-  EXPECT_TRUE(result_handle->isBorrowed());
-  Handle<Int> result(&scope, result_handle->asObject());
-  EXPECT_EQ(int_value, result->asWord());
+  PyObject* pyresult = PyTuple_GetItem(pytuple, 0);
+  EXPECT_TRUE(_PyObject_IsBorrowed(pyresult));
 }
 
-TEST(TupleObject, PackZeroReturnsEmptyTuple) {
-  Runtime runtime;
-  HandleScope scope;
-
+TEST_F(TupleExtensionApiTest, PackZeroReturnsEmptyTuple) {
   PyObject* pytuple = PyTuple_Pack(0);
-  Handle<Object> result_obj(&scope,
-                            ApiHandle::fromPyObject(pytuple)->asObject());
-  ASSERT_TRUE(result_obj->isObjectArray());
-
-  Handle<ObjectArray> result(&scope, *result_obj);
-  EXPECT_EQ(0, result->length());
+  Py_ssize_t result = PyTuple_Size(pytuple);
+  EXPECT_EQ(result, 0);
 }
 
-TEST(TupleObject, PackOneValue) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(TupleExtensionApiTest, PackOneValue) {
+  Py_ssize_t length = 1;
+  const int int_value = 5;
+  PyObject* pylong = PyLong_FromLong(int_value);
+  PyObject* pytuple = PyTuple_Pack(length, pylong);
 
-  word length1 = 1;
-  PyObject* pyint = PyLong_FromLong(5);
-  PyObject* pytuple1 = PyTuple_Pack(length1, pyint);
-  Handle<Object> result_obj1(&scope,
-                             ApiHandle::fromPyObject(pytuple1)->asObject());
-  ASSERT_TRUE(result_obj1->isObjectArray());
-
-  Handle<ObjectArray> result1(&scope, *result_obj1);
-  EXPECT_EQ(length1, result1->length());
-  EXPECT_EQ(pyint, ApiHandle::fromObject(result1->at(0))->asPyObject());
+  PyObject* pyresult = PyTuple_GetItem(pytuple, 0);
+  EXPECT_EQ(PyLong_AsLong(pyresult), int_value);
 }
 
-TEST(TupleObject, PackTwoValues) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(TupleExtensionApiTest, PackTwoValues) {
+  Py_ssize_t length = 2;
+  const int int_value1 = 5;
+  const int int_value2 = 12;
+  PyObject* pylong1 = PyLong_FromLong(int_value1);
+  PyObject* pylong2 = PyLong_FromLong(int_value2);
+  PyObject* pytuple = PyTuple_Pack(length, pylong1, pylong2);
 
-  word length2 = 2;
-  PyObject* pyint = PyLong_FromLong(5);
-  PyObject* pybool = PyBool_FromLong(1);
-  PyObject* pytuple2 = PyTuple_Pack(length2, pybool, pyint);
-  Handle<Object> result_obj2(&scope,
-                             ApiHandle::fromPyObject(pytuple2)->asObject());
-  ASSERT_TRUE(result_obj2->isObjectArray());
-
-  Handle<ObjectArray> result2(&scope, *result_obj2);
-  EXPECT_EQ(length2, result2->length());
-  EXPECT_EQ(pybool, ApiHandle::fromObject(result2->at(0))->asPyObject());
-  EXPECT_EQ(pyint, ApiHandle::fromObject(result2->at(1))->asPyObject());
+  PyObject* pyresult1 = PyTuple_GetItem(pytuple, 0);
+  PyObject* pyresult2 = PyTuple_GetItem(pytuple, 1);
+  EXPECT_EQ(PyLong_AsLong(pyresult1), int_value1);
+  EXPECT_EQ(PyLong_AsLong(pyresult2), int_value2);
 }
 
 }  // namespace python

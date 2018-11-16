@@ -309,7 +309,8 @@ add_library(
   ext/Objects/unicodeobject-test.cpp
   ext/Python/errors-test.cpp
   ext/Python/modsupport-test.cpp
-  ext/test/capi-fixture.h)
+  ext/test/capi-fixture.h
+  ext/test/capi-fixture.cpp)
 target_include_directories(
   extension-tests
   PRIVATE
