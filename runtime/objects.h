@@ -132,6 +132,7 @@ enum IntrinsicLayoutId {
   kList,
   kListIterator,
   kModule,
+  kNotImplemented,
   kObjectArray,
   kRange,
   kRangeIterator,
@@ -174,6 +175,7 @@ class Object {
   inline bool isList();
   inline bool isListIterator();
   inline bool isModule();
+  inline bool isNotImplemented();
   inline bool isObjectArray();
   inline bool isLargeString();
   inline bool isLargeInteger();
@@ -1037,6 +1039,24 @@ class Module : public HeapObject {
   DISALLOW_COPY_AND_ASSIGN(Module);
 };
 
+class NotImplemented : public HeapObject {
+ public:
+  // Casting.
+  static inline NotImplemented* cast(Object* object);
+
+  // Sizing.
+  static inline word allocationSize();
+
+  // Layout
+  // kPaddingOffset is not used, but the GC expects the object to be
+  // at least one word.
+  static const int kPaddingOffset = HeapObject::kSize;
+  static const int kSize = kPaddingOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(NotImplemented);
+};
+
 /**
  * A simple dictionary that uses open addressing and linear probing.
  *
@@ -1642,6 +1662,14 @@ bool Object::isLargeInteger() {
 
 bool Object::isInteger() {
   return isSmallInteger() || isLargeInteger();
+}
+
+bool Object::isNotImplemented() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kNotImplemented;
 }
 
 bool Object::isRange() {
@@ -2726,6 +2754,17 @@ Object* Module::dictionary() {
 
 void Module::setDictionary(Object* dictionary) {
   instanceVariableAtPut(kDictionaryOffset, dictionary);
+}
+
+// NotImplemented
+
+word NotImplemented::allocationSize() {
+  return Header::kSize + NotImplemented::kSize;
+}
+
+NotImplemented* NotImplemented::cast(Object* object) {
+  assert(object->isNotImplemented());
+  return reinterpret_cast<NotImplemented*>(object);
 }
 
 // String

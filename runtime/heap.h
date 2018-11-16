@@ -54,6 +54,8 @@ class Heap {
 
   Object* createModule();
 
+  Object* createNotImplemented();
+
   Object* createObjectArray(word length, Object* value);
 
   Object* createLargeString(word length);

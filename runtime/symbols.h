@@ -27,6 +27,7 @@ class Runtime;
   V(IsInstance, "isinstance")            \
   V(Len, "len")                          \
   V(List, "list")                        \
+  V(NotImplemented, "NotImplemented")    \
   V(ObjectClassname, "object")           \
   V(Ord, "ord")                          \
   V(Pop, "pop")                          \

@@ -652,6 +652,7 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("list_iterator", IntrinsicLayoutId::kListIterator);
   initializeHeapClass("method", IntrinsicLayoutId::kBoundMethod);
   initializeHeapClass("module", IntrinsicLayoutId::kModule);
+  initializeHeapClass("NotImplementedType", IntrinsicLayoutId::kNotImplemented);
   initializeHeapClass("objectarray", IntrinsicLayoutId::kObjectArray);
   initializeHeapClass("str", IntrinsicLayoutId::kLargeString);
   initializeHeapClass("range", IntrinsicLayoutId::kRange);
@@ -810,6 +811,7 @@ void Runtime::initializePrimitiveInstances() {
   empty_object_array_ = heap()->createObjectArray(0, None::object());
   empty_byte_array_ = heap()->createByteArray(0);
   ellipsis_ = heap()->createEllipsis();
+  not_implemented_ = heap()->createNotImplemented();
 }
 
 void Runtime::initializeInterned() {
@@ -848,6 +850,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_byte_array_);
   visitor->visitPointer(&empty_object_array_);
   visitor->visitPointer(&ellipsis_);
+  visitor->visitPointer(&not_implemented_);
   visitor->visitPointer(&build_class_);
   visitor->visitPointer(&print_default_end_);
 
@@ -1022,6 +1025,10 @@ void Runtime::createBuiltinsModule() {
       module, IntrinsicLayoutId::kClassMethod, symbols()->Classmethod());
   moduleAddBuiltinType(
       module, IntrinsicLayoutId::kDictionary, symbols()->Dict());
+
+  Handle<Object> not_implemented_str(&scope, symbols()->NotImplemented());
+  Handle<Object> not_implemented(&scope, not_implemented_);
+  moduleAddGlobal(module, not_implemented_str, not_implemented);
 
   addModule(module);
 }

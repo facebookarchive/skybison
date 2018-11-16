@@ -290,6 +290,18 @@ Object* Heap::createModule() {
   return Module::cast(result);
 }
 
+Object* Heap::createNotImplemented() {
+  word size = NotImplemented::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<NotImplemented*>(raw);
+  result->setHeader(Header::from(
+      NotImplemented::kSize / kPointerSize,
+      0,
+      IntrinsicLayoutId::kNotImplemented,
+      ObjectFormat::kDataInstance));
+  return NotImplemented::cast(result);
+}
 Object* Heap::createObjectArray(word length, Object* value) {
   CHECK(!value->isHeapObject(), "value must be an immediate object");
   word size = ObjectArray::allocationSize(length);

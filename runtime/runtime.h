@@ -559,6 +559,7 @@ class Runtime {
   Object* empty_byte_array_;
   Object* empty_object_array_;
   Object* ellipsis_;
+  Object* not_implemented_;
   Object* build_class_;
   Object* print_default_end_;
 
