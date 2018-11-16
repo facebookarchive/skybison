@@ -558,4 +558,18 @@ TEST(SetTest, Grow) {
   }
 }
 
+TEST(StringTest, CompareSmallStr) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<String> small(&scope, runtime.newStringFromCString("foo"));
+  EXPECT_TRUE(small->isSmallString());
+
+  EXPECT_TRUE(small->equalsCString("foo"));
+  // This apparently stupid test is in response to a bug where we assumed
+  // that the c-string passed to SmallString::equalsCString would always
+  // be small itself.
+  EXPECT_FALSE(small->equalsCString("123456789"));
+}
+
 } // namespace python

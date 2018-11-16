@@ -53,17 +53,6 @@ bool LargeString::equals(Object* that) {
   return std::memcmp(s1, s2, length()) == 0;
 }
 
-bool LargeString::equalsCString(const char* c_string) {
-  const char* cp = c_string;
-  for (word i = 0; i < length(); i++, cp++) {
-    char ch = *cp;
-    if (ch == '\0' || ch != charAt(i)) {
-      return false;
-    }
-  }
-  return *cp == '\0';
-}
-
 void LargeString::copyTo(byte* dst, word length) {
   assert(length >= 0);
   assert(length <= this->length());

@@ -585,7 +585,6 @@ class LargeString : public Array {
 
   // Equality checks.
   bool equals(Object* that);
-  bool equalsCString(const char* c_string);
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
@@ -2342,6 +2341,18 @@ Object* Module::dictionary() {
 
 // String
 
+bool String::equalsCString(const char* c_string) {
+  const char* cp = c_string;
+  const word len = length();
+  for (word i = 0; i < len; i++, cp++) {
+    char ch = *cp;
+    if (ch == '\0' || ch != charAt(i)) {
+      return false;
+    }
+  }
+  return *cp == '\0';
+}
+
 String* String::cast(Object* object) {
   assert(object->isLargeString() || object->isSmallString());
   return reinterpret_cast<String*>(object);
@@ -2369,14 +2380,6 @@ bool String::equals(Object* that) {
   }
   assert(isLargeString());
   return LargeString::cast(this)->equals(that);
-}
-
-bool String::equalsCString(const char* c_string) {
-  if (isSmallString()) {
-    return this == SmallString::fromCString(c_string);
-  }
-  assert(isLargeString());
-  return LargeString::cast(this)->equalsCString(c_string);
 }
 
 void String::copyTo(byte* dst, word length) {
