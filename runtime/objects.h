@@ -1586,10 +1586,22 @@ class RawDictIteratorBase : public RawHeapObject {
   word index();
   void setIndex(word index);
 
+  /*
+   * This looks similar to index but is different and required in order to
+   * implement interators properly. We cannot use index in __length_hint__
+   * because index describes the position inside the internal buckets list of
+   * our implementation of dict -- not the logical number of iterms. Therefore
+   * we need an additional piece of state that refers to the logical number of
+   * items seen so far.
+   */
+  word numFound();
+  void setNumFound(word num_found);
+
   // Layout
   static const int kDictOffset = RawHeapObject::kSize;
   static const int kIndexOffset = kDictOffset + kPointerSize;
-  static const int kSize = kIndexOffset + kPointerSize;
+  static const int kNumFoundOffset = kIndexOffset + kPointerSize;
+  static const int kSize = kNumFoundOffset + kPointerSize;
 };
 
 class RawDictViewBase : public RawHeapObject {
@@ -3270,6 +3282,14 @@ inline word RawDictIteratorBase::index() {
 
 inline void RawDictIteratorBase::setIndex(word index) {
   instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
+}
+
+inline word RawDictIteratorBase::numFound() {
+  return RawSmallInt::cast(instanceVariableAt(kNumFoundOffset))->value();
+}
+
+inline void RawDictIteratorBase::setNumFound(word num_found) {
+  instanceVariableAtPut(kNumFoundOffset, RawSmallInt::fromWord(num_found));
 }
 
 // RawDictViewBase

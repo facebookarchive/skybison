@@ -17,6 +17,10 @@ const BuiltinMethod DictBuiltins::kMethods[] = {
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
+    {SymbolId::kDunderItems, nativeTrampoline<dunderItems>},
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+    {SymbolId::kDunderKeys, nativeTrampoline<dunderKeys>},
+    {SymbolId::kDunderValues, nativeTrampoline<dunderValues>},
 };
 
 void DictBuiltins::initialize(Runtime* runtime) {
@@ -174,34 +178,357 @@ RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
       "argument");
 }
 
-void DictItemIteratorBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinType(SymbolId::kDictItemIterator,
-                               LayoutId::kDictItemIterator, LayoutId::kObject);
+RawObject DictBuiltins::dunderItems(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__items__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDict()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__items__() must be called with a dict instance as the first "
+        "argument");
+  }
+
+  Dict dict(&scope, *self);
+  return thread->runtime()->newDictItems(dict);
 }
+
+RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDict()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__iter__() must be called with a dict instance as the first "
+        "argument");
+  }
+
+  Dict dict(&scope, *self);
+  // .iter() on a dict returns a keys iterator
+  return thread->runtime()->newDictKeyIterator(dict);
+}
+
+RawObject DictBuiltins::dunderKeys(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__keys__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDict()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__keys__() must be called with a dict instance as the first "
+        "argument");
+  }
+
+  Dict dict(&scope, *self);
+  return thread->runtime()->newDictKeys(dict);
+}
+
+RawObject DictBuiltins::dunderValues(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__values__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDict()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__values__() must be called with a dict instance as the first "
+        "argument");
+  }
+
+  Dict dict(&scope, *self);
+  return thread->runtime()->newDictValues(dict);
+}
+
+// TODO(T35787656): Instead of re-writing everything for every class, make a
+// helper function that takes a member function (type check) and string for the
+// Python symbol name
+const BuiltinMethod DictItemIteratorBuiltins::kMethods[] = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
+
+void DictItemIteratorBuiltins::initialize(Runtime* runtime) {
+  runtime->addBuiltinTypeWithMethods(SymbolId::kDictItemIterator,
+                                     LayoutId::kDictItemIterator,
+                                     LayoutId::kObject, kMethods);
+}
+
+RawObject DictItemIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                               word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictItemIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__iter__() must be called with a dict_itemiterator iterator instance "
+        "as the first argument");
+  }
+  return *self;
+}
+
+RawObject DictItemIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                               word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictItemIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__next__() must be called with a dict_itemiterator instance as the "
+        "first argument");
+  }
+  DictItemIterator iter(&scope, *self);
+  Object value(&scope, thread->runtime()->dictItemIteratorNext(thread, iter));
+  if (value->isError()) {
+    return thread->raiseStopIteration(NoneType::object());
+  }
+  return *value;
+}
+
+RawObject DictItemIteratorBuiltins::dunderLengthHint(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr(
+        "__length_hint__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictItemIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__length_hint__() must be called with a dict_itemiterator instance as "
+        "the first argument");
+  }
+  DictItemIterator iter(&scope, *self);
+  Dict dict(&scope, iter->dict());
+  return SmallInt::fromWord(dict->numItems() - iter->numFound());
+}
+
+const BuiltinMethod DictItemsBuiltins::kMethods[] = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>}};
 
 void DictItemsBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinType(SymbolId::kDictItems, LayoutId::kDictItems,
-                               LayoutId::kObject);
+  runtime->addBuiltinTypeWithMethods(SymbolId::kDictItems, LayoutId::kDictItems,
+                                     LayoutId::kObject, kMethods);
 }
+
+RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                        word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictItems()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__iter__() must be called with a dict_items instance as the first "
+        "argument");
+  }
+
+  Dict dict(&scope, DictItems::cast(*self)->dict());
+  return thread->runtime()->newDictItemIterator(dict);
+}
+
+const BuiltinMethod DictKeyIteratorBuiltins::kMethods[] = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
 
 void DictKeyIteratorBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinType(SymbolId::kDictKeyIterator,
-                               LayoutId::kDictKeyIterator, LayoutId::kObject);
+  runtime->addBuiltinTypeWithMethods(SymbolId::kDictKeyIterator,
+                                     LayoutId::kDictKeyIterator,
+                                     LayoutId::kObject, kMethods);
 }
+
+RawObject DictKeyIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                              word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictKeyIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__iter__() must be called with a dict_keyiterator iterator instance "
+        "as the first argument");
+  }
+  return *self;
+}
+
+RawObject DictKeyIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                              word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictKeyIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__next__() must be called with a dict_keyiterator instance as the "
+        "first argument");
+  }
+  DictKeyIterator iter(&scope, *self);
+  Object value(&scope, thread->runtime()->dictKeyIteratorNext(thread, iter));
+  if (value->isError()) {
+    return thread->raiseStopIteration(NoneType::object());
+  }
+  return *value;
+}
+
+RawObject DictKeyIteratorBuiltins::dunderLengthHint(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr(
+        "__length_hint__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictKeyIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__length_hint__() must be called with a dict_keyiterator instance as "
+        "the first argument");
+  }
+  DictKeyIterator iter(&scope, *self);
+  Dict dict(&scope, iter->dict());
+  return SmallInt::fromWord(dict->numItems() - iter->numFound());
+}
+
+const BuiltinMethod DictKeysBuiltins::kMethods[] = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>}};
 
 void DictKeysBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinType(SymbolId::kDictKeys, LayoutId::kDictKeys,
-                               LayoutId::kObject);
+  runtime->addBuiltinTypeWithMethods(SymbolId::kDictKeys, LayoutId::kDictKeys,
+                                     LayoutId::kObject, kMethods);
 }
+
+RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                       word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictKeys()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__iter__() must be called with a dict_keys instance as the first "
+        "argument");
+  }
+
+  Dict dict(&scope, DictKeys::cast(*self)->dict());
+  return thread->runtime()->newDictKeyIterator(dict);
+}
+
+const BuiltinMethod DictValueIteratorBuiltins::kMethods[] = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
 
 void DictValueIteratorBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinType(SymbolId::kDictValueIterator,
-                               LayoutId::kDictValueIterator, LayoutId::kObject);
+  runtime->addBuiltinTypeWithMethods(SymbolId::kDictValueIterator,
+                                     LayoutId::kDictValueIterator,
+                                     LayoutId::kObject, kMethods);
 }
 
+RawObject DictValueIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                                word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictValueIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__iter__() must be called with a dict_valueiterator iterator instance "
+        "as the first argument");
+  }
+  return *self;
+}
+
+RawObject DictValueIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                                word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictValueIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__next__() must be called with a dict_valueiterator instance as the "
+        "first argument");
+  }
+  DictValueIterator iter(&scope, *self);
+  Object value(&scope, thread->runtime()->dictValueIteratorNext(thread, iter));
+  if (value->isError()) {
+    return thread->raiseStopIteration(NoneType::object());
+  }
+  return *value;
+}
+
+RawObject DictValueIteratorBuiltins::dunderLengthHint(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr(
+        "__length_hint__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictValueIterator()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__length_hint__() must be called with a dict_valueiterator instance "
+        "as the first argument");
+  }
+  DictValueIterator iter(&scope, *self);
+  Dict dict(&scope, iter->dict());
+  return SmallInt::fromWord(dict->numItems() - iter->numFound());
+}
+
+const BuiltinMethod DictValuesBuiltins::kMethods[] = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>}};
+
 void DictValuesBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinType(SymbolId::kDictValues, LayoutId::kDictValues,
-                               LayoutId::kObject);
+  runtime->addBuiltinTypeWithMethods(SymbolId::kDictValues,
+                                     LayoutId::kDictValues, LayoutId::kObject,
+                                     kMethods);
+}
+
+RawObject DictValuesBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                         word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self->isDictValues()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__iter__() must be called with a dict_values instance as the first "
+        "argument");
+  }
+
+  Dict dict(&scope, DictValues::cast(*self)->dict());
+  return thread->runtime()->newDictValueIterator(dict);
 }
 
 }  // namespace python

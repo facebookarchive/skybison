@@ -71,8 +71,11 @@ class Runtime {
   RawObject newDictWithSize(word initial_size);
 
   RawObject newDictItemIterator(const Dict& dict);
+  RawObject newDictItems(const Dict& dict);
   RawObject newDictKeyIterator(const Dict& dict);
+  RawObject newDictKeys(const Dict& dict);
   RawObject newDictValueIterator(const Dict& dict);
+  RawObject newDictValues(const Dict& dict);
 
   RawObject newFloat(double value);
 

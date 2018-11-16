@@ -54,9 +54,11 @@ class Runtime;
   V(DunderIpow, "__ipow__")                                                    \
   V(DunderIrshift, "__irshift__")                                              \
   V(DunderIsub, "__isub__")                                                    \
+  V(DunderItems, "__items__")                                                  \
   V(DunderIter, "__iter__")                                                    \
   V(DunderItruediv, "__itruediv__")                                            \
   V(DunderIxor, "__ixor__")                                                    \
+  V(DunderKeys, "__keys__")                                                    \
   V(DunderLe, "__le__")                                                        \
   V(DunderLen, "__len__")                                                      \
   V(DunderLengthHint, "__length_hint__")                                       \
@@ -97,6 +99,7 @@ class Runtime;
   V(DunderStr, "__str__")                                                      \
   V(DunderSub, "__sub__")                                                      \
   V(DunderTruediv, "__truediv__")                                              \
+  V(DunderValues, "__values__")                                                \
   V(DunderXor, "__xor__")                                                      \
   V(AcquireLock, "acquire_lock")                                               \
   V(Add, "add")                                                                \

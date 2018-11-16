@@ -2441,6 +2441,16 @@ RawObject Runtime::newDictItemIterator(const Dict& dict) {
   DictItemIterator result(&scope, heap()->create<RawDictItemIterator>());
   result->setIndex(0);
   result->setDict(*dict);
+  result->setNumFound(0);
+  return *result;
+}
+
+// DictItems
+
+RawObject Runtime::newDictItems(const Dict& dict) {
+  HandleScope scope;
+  DictItems result(&scope, heap()->create<RawDictItems>());
+  result->setDict(*dict);
   return *result;
 }
 
@@ -2451,6 +2461,16 @@ RawObject Runtime::newDictKeyIterator(const Dict& dict) {
   DictKeyIterator result(&scope, heap()->create<RawDictKeyIterator>());
   result->setIndex(0);
   result->setDict(*dict);
+  result->setNumFound(0);
+  return *result;
+}
+
+// DictKeys
+
+RawObject Runtime::newDictKeys(const Dict& dict) {
+  HandleScope scope;
+  DictKeys result(&scope, heap()->create<RawDictKeys>());
+  result->setDict(*dict);
   return *result;
 }
 
@@ -2460,6 +2480,16 @@ RawObject Runtime::newDictValueIterator(const Dict& dict) {
   HandleScope scope;
   DictValueIterator result(&scope, heap()->create<RawDictValueIterator>());
   result->setIndex(0);
+  result->setDict(*dict);
+  result->setNumFound(0);
+  return *result;
+}
+
+// DictValues
+
+RawObject Runtime::newDictValues(const Dict& dict) {
+  HandleScope scope;
+  DictValues result(&scope, heap()->create<RawDictValues>());
   result->setDict(*dict);
   return *result;
 }
@@ -2982,6 +3012,7 @@ RawObject Runtime::dictItemIteratorNext(Thread* thread,
     kv_pair->atPut(0, *key);
     kv_pair->atPut(1, *value);
     iter.setIndex(i + jump);
+    iter.setNumFound(iter.numFound() + 1);
     return *kv_pair;
   }
 
@@ -3004,6 +3035,7 @@ RawObject Runtime::dictKeyIteratorNext(Thread* thread, DictKeyIterator& iter) {
   if (i < buckets->length()) {
     // At this point, we have found a valid index in the buckets.
     iter.setIndex(i + jump);
+    iter.setNumFound(iter.numFound() + 1);
     return Dict::Bucket::key(*buckets, i);
   }
 
@@ -3027,6 +3059,7 @@ RawObject Runtime::dictValueIteratorNext(Thread* thread,
   if (i < buckets->length()) {
     // At this point, we have found a valid index in the buckets.
     iter.setIndex(i + jump);
+    iter.setNumFound(iter.numFound() + 1);
     return Dict::Bucket::value(*buckets, i);
   }
 
