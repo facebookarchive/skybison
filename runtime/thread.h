@@ -146,6 +146,8 @@ class Thread {
   // managed code. Is set to None if there is no pending exception.
   Object* pending_exception_;
 
+  static thread_local Thread* current_thread_;
+
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
 

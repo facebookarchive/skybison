@@ -14,7 +14,7 @@
 
 namespace python {
 
-thread_local Thread* current_thread_ = nullptr;
+thread_local Thread* Thread::current_thread_ = nullptr;
 
 Thread::Thread(word size)
     : handles_(new Handles()),
@@ -49,11 +49,11 @@ void Thread::visitStackRoots(PointerVisitor* visitor) {
 }
 
 Thread* Thread::currentThread() {
-  return current_thread_;
+  return Thread::current_thread_;
 }
 
 void Thread::setCurrentThread(Thread* thread) {
-  current_thread_ = thread;
+  Thread::current_thread_ = thread;
 }
 
 byte* Thread::stackPtr() {
