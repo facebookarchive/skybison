@@ -621,10 +621,6 @@ Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
 given type object has a specified feature.
 */
 
-// TODO(T30506778): Create an ApiType in the runtime
-/* Set if the type is a builtin type */
-#define Py_TPFLAGS_BUILTIN (1UL << 8)
-
 /* Set if the type object is dynamically allocated */
 #define Py_TPFLAGS_HEAPTYPE (1UL << 9)
 

@@ -500,13 +500,13 @@ class Runtime {
   bool isDeleteDescriptor(Thread* thread, const Handle<Object>& object);
 
   // Returns a pointer of an initialized PyTypeObject
-  void* builtinExtensionTypes(ExtensionTypes type) {
-    return builtin_extension_types_[static_cast<int>(type)];
+  ApiTypeHandle* builtinTypeHandles(ExtensionTypes type) {
+    return builtin_type_handles_[static_cast<int>(type)];
   }
 
   // Saves an initialized PyTypeObject
-  void addBuiltinExtensionType(void* static_extension) {
-    builtin_extension_types_.push_back(static_extension);
+  void addBuiltinTypeHandle(ApiTypeHandle* type_handle) {
+    builtin_type_handles_.push_back(type_handle);
   }
 
   // Linked list of all tracked allocations
@@ -714,7 +714,7 @@ class Runtime {
 
   Symbols* symbols_;
 
-  Vector<void*> builtin_extension_types_;
+  Vector<ApiTypeHandle*> builtin_type_handles_;
 
   TrackedAllocation* tracked_allocations_;
 

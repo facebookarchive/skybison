@@ -115,7 +115,7 @@ Runtime::~Runtime() {
     delete prev;
   }
   threads_ = nullptr;
-  for (void* ptr : builtin_extension_types_) {
+  for (void* ptr : builtin_type_handles_) {
     std::free(ptr);
   }
   delete symbols_;

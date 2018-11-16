@@ -19,6 +19,25 @@ enum class ExtensionTypes {
   kTuple,
 };
 
+class ApiTypeHandle : public PyTypeObject {
+ public:
+  static ApiTypeHandle* fromPyTypeObject(PyTypeObject* pytype_obj) {
+    return reinterpret_cast<ApiTypeHandle*>(pytype_obj);
+  }
+
+  static ApiTypeHandle* newTypeHandle(const char* name, PyTypeObject* metatype);
+
+  PyTypeObject* asPyTypeObject() {
+    return reinterpret_cast<PyTypeObject*>(this);
+  }
+
+  bool isBuiltin() { return tp_flags == ApiTypeHandle::kFlagsBuiltin; }
+
+  // CPython's flags 15 and 16 are reserved for Stackless Python.
+  // These flags can be safely reused
+  static const int kFlagsBuiltin = 1 << 15;
+};
+
 class ApiHandle : public PyObject {
  public:
   // Wrap an Object as an ApiHandle to cross the CPython boundary
@@ -52,7 +71,7 @@ class ApiHandle : public PyObject {
 
   void clearBorrowed() { ob_refcnt &= ~kBorrowedBit; }
 
-  PyObject* type() { return reinterpret_cast<PyObject*>(ob_type); }
+  ApiTypeHandle* type() { return ApiTypeHandle::fromPyTypeObject(ob_type); }
 
  private:
   ApiHandle() = delete;
