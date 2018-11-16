@@ -1373,6 +1373,21 @@ ObjectArray* Runtime::ensureCapacity(
   return *newArray;
 }
 
+void Runtime::listEnsureDownsizeCapacity(const Handle<List>& list) {
+  HandleScope scope;
+  Handle<ObjectArray> items(&scope, list->items());
+  word allocated = list->allocated();
+  word capacity = items->length();
+  if (capacity > kInitialEnsuredCapacity && allocated < (capacity / 2)) {
+    word newCapacity = Utils::maximum(
+        static_cast<word>(kInitialEnsuredCapacity), capacity / 2);
+    Handle<ObjectArray> newItems(&scope, newObjectArray(newCapacity));
+    for (word i = 0; i < allocated; i++)
+      newItems->atPut(i, items->at(i));
+    list->setItems(*newItems);
+  }
+}
+
 void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   HandleScope scope;
   word index = list->allocated();
@@ -1454,8 +1469,8 @@ Object* Runtime::listPop(const Handle<List>& list, word index) {
   for (word i = index; i < last_index; i++) {
     list->atPut(i, list->at(i + 1));
   }
-  // TODO(T27814770): Reduce total size when appropriate (i.e. len(list)/2)
   list->setAllocated(list->allocated() - 1);
+  listEnsureDownsizeCapacity(list);
   return *popped;
 }
 
