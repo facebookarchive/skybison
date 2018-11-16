@@ -15,8 +15,8 @@ PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
   ApiHandle::fromPyObject(obj)->dispose();
 }
 
-PY_EXPORT Py_ssize_t Py_INCREF_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->incrementRefCnt();
+PY_EXPORT void Py_INCREF_Func(PyObject* obj) {
+  ApiHandle::fromPyObject(obj)->incrementRefCnt();
 }
 
 PY_EXPORT void Py_DECREF_Func(PyObject* obj) {

@@ -116,7 +116,7 @@ TEST_F(ObjectExtensionApiTest, RefCountDecreaseDeallocsHandle) {
 TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCount) {
   PyObject* o = PyLong_FromLong(42);
   EXPECT_EQ(Py_REFCNT(o), 1);
-  EXPECT_EQ(Py_INCREF(o), 2);
+  Py_INCREF(o);
   EXPECT_EQ(Py_REFCNT(o), 2);
   Py_DECREF(o);
   EXPECT_EQ(Py_REFCNT(o), 1);

@@ -178,7 +178,7 @@ PyAPI_FUNC(int) PyType_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyUnicode_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyUnicode_Check_Func(PyObject*);
 
-PyAPI_FUNC(Py_ssize_t) Py_INCREF_Func(PyObject*);
+PyAPI_FUNC(void) Py_INCREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_DECREF_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t) Py_REFCNT_Func(PyObject*);
 
