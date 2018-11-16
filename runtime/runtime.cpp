@@ -140,6 +140,7 @@ void Runtime::collectGarbage() {
 void Runtime::initializeThreads() {
   auto main_thread = new Thread(Thread::kDefaultStackSize);
   threads_ = main_thread;
+  main_thread->setRuntime(this);
   Thread::setCurrentThread(main_thread);
 }
 

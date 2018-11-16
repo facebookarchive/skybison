@@ -9,6 +9,12 @@
 
 namespace python {
 
+TEST(ThreadTest, CheckMainThreadRuntime) {
+  Runtime runtime;
+  auto thread = Thread::currentThread();
+  ASSERT_EQ(thread->runtime(), &runtime);
+}
+
 TEST(ThreadTest, RunEmptyFunction) {
   Runtime runtime;
   HandleScope scope;

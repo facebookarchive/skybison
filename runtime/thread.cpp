@@ -13,7 +13,8 @@ thread_local Thread* current_thread_ = nullptr;
 Thread::Thread(int size)
     : size_(Utils::roundUp(size, kPointerSize)),
       handles_(new Handles()),
-      next_(nullptr) {
+      next_(nullptr),
+      runtime_(nullptr) {
   start_ = new byte[size];
   // Stack growns down in order to match machine convention
   end_ = ptr_ = start_ + size;

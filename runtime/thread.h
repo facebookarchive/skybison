@@ -8,6 +8,7 @@ namespace python {
 class Frame;
 class Handles;
 class Object;
+class Runtime;
 
 class Thread {
  public:
@@ -44,6 +45,14 @@ class Thread {
     return handles_;
   }
 
+  Runtime* runtime() {
+    return runtime_;
+  }
+
+  void setRuntime(Runtime* runtime) {
+    runtime_ = runtime;
+  }
+
  private:
   Handles* handles_;
 
@@ -53,6 +62,7 @@ class Thread {
   byte* ptr_;
 
   Thread* next_;
+  Runtime* runtime_;
 
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
