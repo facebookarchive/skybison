@@ -195,6 +195,7 @@ def file_should_be_formatted(file: Path) -> bool:
         and "third-party" not in file_str
         and "ext/config" not in file_str
         and "ext/Include" not in file_str
+        and "library/importlib" not in file_str
     )
 
 
