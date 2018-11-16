@@ -100,7 +100,7 @@ TEST(ThreadTest, DunderCallInstanceWithDescriptor) {
   const char* src = R"(
 result = None
 
-def stage2(self, x):
+def stage2(x):
     global result
     result = x
 

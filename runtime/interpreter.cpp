@@ -15,9 +15,9 @@ Object* Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
                                          word callable_idx, word* nargs) {
   HandleScope scope(thread);
   Handle<Object> callable(&scope, frame->peek(callable_idx));
-  Handle<Object> target(&scope, None::object());
   DCHECK(!callable->isFunction(),
          "prepareCallableCall should only be called on non-function types");
+  bool is_bound;
   if (callable->isBoundMethod()) {
     // Shift all arguments on the stack down by 1 and unpack the BoundMethod.
     //
@@ -38,29 +38,53 @@ Object* Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
     // sensitive.
     Handle<BoundMethod> method(&scope, *callable);
     frame->insertValueAt(method->self(), callable_idx);
-    frame->setValueAt(method->function(), callable_idx + 1);
-    target = method->function();
+    is_bound = false;
+    callable = method->function();
   } else {
-    target = lookupMethod(thread, frame, callable, SymbolId::kDunderCall);
-    CHECK(!target->isError(), "object has no __call__ attribute");
-    CHECK(target->isFunction(),
-          "resolved __call__ attribute is not a function");
-    frame->insertValueAt(*target, callable_idx + 1);
+    Runtime* runtime = thread->runtime();
+    for (;;) {
+      Handle<Type> type(&scope, runtime->typeOf(*callable));
+      Handle<Object> attr(&scope, runtime->lookupSymbolInMro(
+                                      thread, type, SymbolId::kDunderCall));
+      if (!attr->isError()) {
+        if (attr->isFunction()) {
+          // Do not create a short-lived bound method object.
+          is_bound = false;
+          callable = *attr;
+          break;
+        }
+        if (runtime->isNonDataDescriptor(thread, attr)) {
+          Handle<Object> owner(&scope, *type);
+          callable = callDescriptorGet(thread, frame, attr, callable, owner);
+          if (callable->isFunction()) {
+            // Descriptors do not return unbound methods.
+            is_bound = true;
+            break;
+          } else {
+            // Retry the lookup using the object returned by the descriptor.
+            continue;
+          }
+        }
+      }
+      UNIMPLEMENTED("throw TypeError: object is not callable");
+    }
   }
-  *nargs += 1;
-  return *target;
+  if (is_bound) {
+    frame->setValueAt(*callable, callable_idx);
+  } else {
+    frame->insertValueAt(*callable, callable_idx + 1);
+    *nargs += 1;
+  }
+  return *callable;
 }
 
 Object* Interpreter::call(Thread* thread, Frame* frame, word nargs) {
   Object** sp = frame->valueStackTop() + nargs + 1;
-  Object* result;
   Object* callable = frame->peek(nargs);
-  if (callable->isFunction()) {
-    result = Function::cast(callable)->entry()(thread, frame, nargs);
-  } else {
+  if (!callable->isFunction()) {
     callable = prepareCallableCall(thread, frame, nargs, &nargs);
-    result = Function::cast(callable)->entry()(thread, frame, nargs);
   }
+  Object* result = Function::cast(callable)->entry()(thread, frame, nargs);
   // Clear the stack of the function object.
   frame->setValueStackTop(sp);
   return result;

@@ -606,4 +606,113 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
+TEST(InterpreterTest, LookupMethodInvokesDescriptor) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(R"(
+def f(): pass
+
+class D:
+    def __get__(self, obj, owner):
+        return f
+
+class C:
+    __call__ = D()
+
+c = C()
+  )");
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+  ASSERT_TRUE(frame->isSentinelFrame());
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  Handle<Object> f(&scope, testing::moduleAt(&runtime, main, "f"));
+  Handle<Object> method(&scope, Interpreter::lookupMethod(
+                                    thread, frame, c, SymbolId::kDunderCall));
+  EXPECT_EQ(*f, *method);
+}
+
+TEST(InterpreterDeathTest, CallingUncallableThrowsTypeError) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(R"(
+c = 1
+c()
+  )"),
+               "object is not callable");
+}
+
+TEST(InterpreterDeathTest, CallingUncallableDunderCallThrowsTypeError) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(R"(
+class C:
+  __call__ = 1
+
+c = C()
+c()
+  )"),
+               "object is not callable");
+}
+
+TEST(InterpreterDeathTest, CallingNonDescriptorDunderCallThrowsTypeError) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(R"(
+class D: pass
+
+class C:
+  __call__ = D()
+
+c = C()
+c()
+  )"),
+               "object is not callable");
+}
+
+TEST(InterpreterDeathTest, CallDescriptorReturningUncallableThrowsTypeError) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(R"(
+class D:
+  def __get__(self, instance, owner):
+    return 1
+
+class C:
+  __call__ = D()
+
+c = C()
+c()
+  )"),
+               "object is not callable");
+}
+
+TEST(InterpreterTest, LookupMethodLoopsOnCallBoundToDescriptor) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(R"(
+def f(args):
+    return args
+
+class C0:
+    def __get__(self, obj, owner):
+        return f
+
+class C1:
+    __call__ = C0()
+
+class C2:
+    def __get__(self, obj, owner):
+        return C1()
+
+class C3:
+    __call__ = C2()
+
+c = C3()
+result = c(42)
+  )");
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+  ASSERT_TRUE(frame->isSentinelFrame());
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> result(&scope, testing::moduleAt(&runtime, main, "result"));
+  EXPECT_EQ(*result, SmallInt::fromWord(42));
+}
+
 }  // namespace python
