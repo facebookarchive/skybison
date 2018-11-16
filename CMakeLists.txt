@@ -10,7 +10,10 @@ project(python)
 #
 # for cmake if you have trouble with asan.
 if (${PYRO_ASAN})
-  set(CMAKE_CXX_FLAGS "-fsanitize=address -lpthread")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -lpthread")
+  if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lrt -ldl")
+  endif()
 endif()
 
 add_subdirectory(third-party/benchmark-1.3.0)
