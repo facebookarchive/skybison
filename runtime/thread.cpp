@@ -35,8 +35,17 @@ Thread::~Thread() {
 }
 
 void Thread::visitRoots(PointerVisitor* visitor) {
+  visitStackRoots(visitor);
   handles()->visitPointers(visitor);
   visitor->visitPointer(&pending_exception_);
+}
+
+void Thread::visitStackRoots(PointerVisitor* visitor) {
+  auto address = reinterpret_cast<uword>(stackPtr());
+  auto end = reinterpret_cast<uword>(end_);
+  for (; address < end; address += kPointerSize) {
+    visitor->visitPointer(reinterpret_cast<Object**>(address));
+  }
 }
 
 Thread* Thread::currentThread() {

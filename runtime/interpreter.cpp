@@ -429,7 +429,9 @@ Result POP_BLOCK(Context* ctx, word) {
 }
 Result GET_ITER(Context* ctx, word) {
   Thread* thread = ctx->thread;
-  *ctx->sp = thread->runtime()->getIter(*ctx->sp);
+  HandleScope scope(thread->handles());
+  Handle<Object> iterable(&scope, *ctx->sp);
+  *ctx->sp = thread->runtime()->getIter(iterable);
   // This is currently the only implemented iterator type.
   assert((*ctx->sp)->isRangeIterator());
   return Result::CONTINUE;

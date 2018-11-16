@@ -29,7 +29,9 @@ class Runtime {
   explicit Runtime(word size);
   ~Runtime();
 
-  Object* newBoundMethod(Object* function, Object* self);
+  Object* newBoundMethod(
+      const Handle<Object>& function,
+      const Handle<Object>& self);
 
   Object* newByteArray(word length, byte fill);
   Object* newByteArrayWithAll(View<byte> array);
@@ -66,7 +68,7 @@ class Runtime {
 
   Object* newRange(word start, word stop, word step);
 
-  Object* newRangeIterator(Object* range);
+  Object* newRangeIterator(const Handle<Object>& iterable);
 
   Object* newStringFromCString(const char* c_string);
   Object* newStringWithAll(View<byte> code_units);
@@ -147,7 +149,7 @@ class Runtime {
     return symbols_;
   }
 
-  Object* getIter(Object* o);
+  Object* getIter(const Handle<Object>& iterable);
 
   // Ensures that array has enough space for an atPut at index. If so, returns
   // array. If not, allocates and returns a new array with sufficient capacity

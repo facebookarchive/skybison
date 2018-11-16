@@ -1642,7 +1642,7 @@ def test(callable):
   ASSERT_TRUE(function->isFunction());
 
   Handle<Object> self(&scope, SmallInteger::fromWord(1111));
-  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(*function, *self));
+  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
 
   Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
@@ -1673,7 +1673,7 @@ def test(callable):
   ASSERT_TRUE(function->isFunction());
 
   Handle<Object> self(&scope, SmallInteger::fromWord(1111));
-  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(*function, *self));
+  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
 
   Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());

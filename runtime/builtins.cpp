@@ -294,7 +294,7 @@ Object* functionDescriptorGet(
   if (instance->isNone()) {
     return *self;
   }
-  return thread->runtime()->newBoundMethod(*self, *instance);
+  return thread->runtime()->newBoundMethod(self, instance);
 }
 
 Object* classmethodDescriptorGet(
@@ -302,8 +302,9 @@ Object* classmethodDescriptorGet(
     const Handle<Object>& self,
     const Handle<Object>& /* instance */,
     const Handle<Object>& type) {
-  return thread->runtime()->newBoundMethod(
-      ClassMethod::cast(*self)->function(), *type);
+  HandleScope scope(thread->handles());
+  Handle<Object> method(&scope, ClassMethod::cast(*self)->function());
+  return thread->runtime()->newBoundMethod(method, type);
 }
 
 // ClassMethod

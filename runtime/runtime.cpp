@@ -53,11 +53,13 @@ Runtime::~Runtime() {
   delete symbols_;
 }
 
-Object* Runtime::newBoundMethod(Object* function, Object* self) {
+Object* Runtime::newBoundMethod(
+    const Handle<Object>& function,
+    const Handle<Object>& self) {
   HandleScope scope;
   Handle<BoundMethod> bound_method(&scope, heap()->createBoundMethod());
-  bound_method->setFunction(function);
-  bound_method->setSelf(self);
+  bound_method->setFunction(*function);
+  bound_method->setSelf(*self);
   return *bound_method;
 }
 
@@ -480,9 +482,8 @@ Object* Runtime::newRange(word start, word stop, word step) {
   return range;
 }
 
-Object* Runtime::newRangeIterator(Object* o) {
+Object* Runtime::newRangeIterator(const Handle<Object>& range) {
   HandleScope scope;
-  Handle<Range> range(&scope, o);
   Handle<RangeIterator> range_iterator(&scope, heap()->createRangeIterator());
   range_iterator->setRange(*range);
   return *range_iterator;
@@ -945,9 +946,9 @@ Object* Runtime::createMainModule() {
   return *module;
 }
 
-Object* Runtime::getIter(Object* o) {
+Object* Runtime::getIter(const Handle<Object>& iterable) {
   // TODO: Support other forms of iteration.
-  return newRangeIterator(o);
+  return newRangeIterator(iterable);
 }
 
 // List

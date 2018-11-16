@@ -64,6 +64,8 @@ class Thread {
 
   void visitRoots(PointerVisitor* visitor);
 
+  void visitStackRoots(PointerVisitor* visitor);
+
   void setRuntime(Runtime* runtime) {
     runtime_ = runtime;
   }
