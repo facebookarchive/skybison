@@ -9,6 +9,28 @@
 
 namespace python {
 
+Object* builtinDictDelItem(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> key(&scope, args.get(1));
+  if (self->isDict()) {
+    Handle<Dict> dict(&scope, *self);
+    // Remove the key. If it doesn't exist, throw a KeyError.
+    if (!thread->runtime()->dictRemove(dict, key, nullptr)) {
+      return thread->throwKeyErrorFromCString("missing key can't be deleted");
+    }
+    return None::object();
+  }
+  // TODO(T32856777): handle user-defined subtypes of dict.
+  return thread->throwTypeErrorFromCString(
+      "__delitem__() must be called with a dict instance as the first "
+      "argument");
+}
+
 Object* builtinDictEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
@@ -43,7 +65,7 @@ Object* builtinDictEq(Thread* thread, Frame* frame, word nargs) {
     }
     return Bool::trueObj();
   }
-  // TODO(cshapiro): handle user-defined subtypes of dict.
+  // TODO(T32856777): handle user-defined subtypes of dict.
   return thread->runtime()->notImplemented();
 }
 
@@ -57,7 +79,7 @@ Object* builtinDictLen(Thread* thread, Frame* frame, word nargs) {
   if (self->isDict()) {
     return SmallInt::fromWord(Dict::cast(*self)->numItems());
   }
-  // TODO(cshapiro): handle user-defined subtypes of dict.
+  // TODO(T32856777): handle user-defined subtypes of dict.
   return thread->throwTypeErrorFromCString(
       "'__len__' requires a 'dict' object");
 }
@@ -84,7 +106,7 @@ Object* builtinDictGetItem(Thread* thread, Frame* frame, word nargs) {
     }
     return *value;
   }
-  // TODO(jeethu): handle user-defined subtypes of dict.
+  // TODO(T32856777): handle user-defined subtypes of dict.
   return thread->throwTypeErrorFromCString(
       "__getitem__() must be called with a dict instance as the first "
       "argument");

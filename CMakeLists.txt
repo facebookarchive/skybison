@@ -220,6 +220,7 @@ add_library(
   runtime/capi-handles-test.cpp
   runtime/complex-builtins-test.cpp
   runtime/descriptor-builtins-test.cpp
+  runtime/dict-builtins-test.cpp
   runtime/exception-builtins-test.cpp
   runtime/float-builtins-test.cpp
   runtime/handles-test.cpp

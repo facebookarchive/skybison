@@ -7,6 +7,7 @@
 
 namespace python {
 
+Object* builtinDictDelItem(Thread* thread, Frame* frame, word nargs);
 Object* builtinDictEq(Thread* thread, Frame* frame, word nargs);
 Object* builtinDictGetItem(Thread* thread, Frame* frame, word nargs);
 Object* builtinDictLen(Thread* thread, Frame* frame, word nargs);

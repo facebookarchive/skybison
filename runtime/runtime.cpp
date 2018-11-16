@@ -1104,6 +1104,9 @@ void Runtime::initializeDictClass() {
                          addEmptyBuiltinClass(SymbolId::kDict, LayoutId::kDict,
                                               LayoutId::kObject));
 
+  classAddBuiltinFunction(dict_type, SymbolId::kDunderDelItem,
+                          nativeTrampoline<builtinDictDelItem>);
+
   classAddBuiltinFunction(dict_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDictEq>);
 
