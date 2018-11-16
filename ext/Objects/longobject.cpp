@@ -80,34 +80,22 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
   }
 
   auto const result = Int::cast(*longobj)->asInt<T>();
-  switch (result.error) {
-    case CastError::None: {
-      if (overflow) *overflow = 0;
-      return result.value;
-    }
-    case CastError::Underflow: {
-      if (overflow) {
-        *overflow = -1;
-        return -1;
-      }
-      if (std::is_unsigned<T>::value) {
-        thread->raiseOverflowErrorWithCStr(
-            "can't convert negative value to unsigned");
-        return -1;
-      }
-      // Fall through to Overflow for signed types.
-    }
-    case CastError::Overflow: {
-      if (overflow) {
-        *overflow = 1;
-        return -1;
-      }
-      thread->raiseOverflowError(thread->runtime()->newStrFromFormat(
-          "Python int too big to convert to C %s", type_name));
-      return -1;
-    }
+  if (result.error == CastError::None) {
+    if (overflow) *overflow = 0;
+    return result.value;
   }
-  UNREACHABLE("bad CastError");
+
+  if (overflow) {
+    *overflow = (result.error == CastError::Underflow) ? -1 : 1;
+  } else if (result.error == CastError::Underflow &&
+             std::is_unsigned<T>::value) {
+    thread->raiseOverflowErrorWithCStr(
+        "can't convert negative value to unsigned");
+  } else {
+    thread->raiseOverflowError(thread->runtime()->newStrFromFormat(
+        "Python int too big to convert to C %s", type_name));
+  }
+  return -1;
 }
 
 // Converting to signed ints.
@@ -143,7 +131,7 @@ PY_EXPORT long PyLong_AsLongAndOverflow(PyObject* pylong, int* overflow) {
 }
 
 PY_EXPORT long long PyLong_AsLongLongAndOverflow(PyObject* pylong,
-                                                  int* overflow) {
+                                                 int* overflow) {
   return asInt<long long>(pylong, "", overflow);
 }
 
@@ -152,7 +140,7 @@ PY_EXPORT PyObject* PyLong_FromDouble(double /* l */) {
 }
 
 PY_EXPORT PyObject* PyLong_FromString(const char* /* r */, char** /* pend */,
-                                       int /* e */) {
+                                      int /* e */) {
   UNIMPLEMENTED("PyLong_FromString");
 }
 
