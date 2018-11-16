@@ -388,7 +388,7 @@ Object* Runtime::newInstance(ClassId class_id) {
 void Runtime::initializeListClass() {
   HandleScope scope;
   Handle<Class> list(&scope, newClassWithId(ClassId::kList));
-  list->setName(symbols()->ListClassname());
+  list->setName(symbols()->List());
   const ClassId list_mro[] = {ClassId::kList, ClassId::kObject};
   list->setMro(createMro(list_mro, ARRAYSIZE(list_mro)));
   Handle<Dictionary> dict(&scope, newDictionary());
@@ -1003,11 +1003,11 @@ void Runtime::createBuiltinsModule() {
   Handle<Object> object_value(&scope, classAt(ClassId::kObject));
   moduleAddGlobal(module, object_name, object_value);
 
-  Handle<Object> list_name(&scope, symbols()->ListClassname());
+  Handle<Object> list_name(&scope, symbols()->List());
   Handle<Object> list_value(&scope, classAt(ClassId::kList));
   moduleAddGlobal(module, list_name, list_value);
 
-  Handle<Object> classmethod_name(&scope, symbols()->ClassmethodClassname());
+  Handle<Object> classmethod_name(&scope, symbols()->Classmethod());
   Handle<Object> classmethod_value(&scope, classAt(ClassId::kClassMethod));
   moduleAddGlobal(module, classmethod_name, classmethod_value);
 
@@ -1829,7 +1829,7 @@ Object* Runtime::newClassMethod() {
 void Runtime::initializeClassMethodClass() {
   HandleScope scope;
   Handle<Class> classmethod(&scope, newClassWithId(ClassId::kClassMethod));
-  classmethod->setName(symbols()->ClassmethodClassname());
+  classmethod->setName(symbols()->Classmethod());
   const ClassId classmethod_mro[] = {ClassId::kClassMethod, ClassId::kObject};
   classmethod->setMro(createMro(classmethod_mro, ARRAYSIZE(classmethod_mro)));
   Handle<Dictionary> dict(&scope, newDictionary());
