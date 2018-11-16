@@ -248,6 +248,7 @@ add_library(
   STATIC
   ext/Objects/abstract-test.cpp
   ext/Objects/boolobject-test.cpp
+  ext/Objects/floatobject-test.cpp
   ext/Objects/dictobject-test.cpp
   ext/Objects/listobject-test.cpp
   ext/Objects/moduleobject-test.cpp

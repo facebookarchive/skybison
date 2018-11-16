@@ -73,8 +73,12 @@ extern "C" PyTypeObject* PyFloat_Type_Ptr() {
       runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kFloat)));
 }
 
-extern "C" PyObject* PyFloat_FromDouble(double) {
-  UNIMPLEMENTED("PyFloat_FromDouble");
+extern "C" PyObject* PyFloat_FromDouble(double fval) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Handle<Object> flt(&scope, runtime->newDouble(fval));
+  return runtime->asApiHandle(*flt)->asPyObject();
 }
 
 extern "C" double PyFloat_AsDouble(PyObject*) {
