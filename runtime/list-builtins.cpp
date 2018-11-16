@@ -147,6 +147,27 @@ Object* builtinListInsert(Thread* thread, Frame* frame, word nargs) {
   return None::object();
 }
 
+Object* builtinListMul(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  Object* other = args.get(1);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
+    return thread->throwTypeErrorFromCString(
+        "__mul__() must be called with list instance as first argument");
+  }
+  if (other->isSmallInteger()) {
+    word ntimes = SmallInteger::cast(other)->value();
+    Handle<List> list(&scope, *list_or_error);
+    return thread->runtime()->listReplicate(thread, list, ntimes);
+  }
+  return thread->throwTypeErrorFromCString("can't multiply list by non-int");
+}
+
 Object* builtinListPop(Thread* thread, Frame* frame, word nargs) {
   if (nargs > 2) {
     return thread->throwTypeErrorFromCString("pop() takes at most 1 argument");

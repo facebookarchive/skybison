@@ -324,32 +324,28 @@ d * 0 == 0
 )");
 }
 
-TEST(IntBuiltinsTest, BinaryOverflowCheck) {
+TEST(IntBuiltinsTest, BinaryMulOverflowCheck) {
+  Runtime runtime;
+
+  // Overflows in the multiplication itself.
+  EXPECT_DEBUG_ONLY_DEATH(runtime.runFromCString(R"(
+a = 268435456
+a = a * a * a
+)"),
+                          "small integer overflow");
+}
+
+TEST(IntBuiltinsTest, BinaryAddOverflowCheck) {
   Runtime runtime;
   HandleScope scope;
 
-  const char* mul_src = R"(
-a = 268435456
-a = a * a * a
-)";
-  (void)mul_src;
-
-  // Overflows in the multiplication itself.
-  EXPECT_DEBUG_ONLY_DEATH(runtime.runFromCString(mul_src),
-                          "small integer overflow");
-
-  const char* add_src = R"(
-a = 1048576
-a *= 2048
-a = a * a
-
-a += a
-)";
-  (void)add_src;
-
-  // No overflow per se, but result too large to store in a SmallInteger
-  EXPECT_DEBUG_ONLY_DEATH(runtime.runFromCString(add_src),
-                          "SmallInteger::isValid");
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, SmallInteger::fromWord(SmallInteger::kMaxValue));
+  frame->setLocal(1, SmallInteger::fromWord(SmallInteger::kMaxValue));
+  Handle<Object> result(&scope, builtinSmallIntegerAdd(thread, frame, 2));
+  ASSERT_TRUE(result->isLargeInteger());
+  EXPECT_EQ(LargeInteger::cast(*result)->asWord(), SmallInteger::kMaxValue * 2);
 }
 
 TEST(IntBuiltinsTest, InplaceAdd) {

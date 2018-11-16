@@ -869,6 +869,9 @@ void Runtime::initializeStrClass() {
   classAddBuiltinFunction(type, SymbolId::kDunderLt,
                           nativeTrampoline<builtinStringLt>);
 
+  classAddBuiltinFunction(type, SymbolId::kDunderMod,
+                          nativeTrampoline<builtinStringMod>);
+
   classAddBuiltinFunction(type, SymbolId::kDunderNe,
                           nativeTrampoline<builtinStringNe>);
 }
@@ -925,6 +928,9 @@ void Runtime::initializeListClass() {
 
   classAddBuiltinFunction(list, SymbolId::kInsert,
                           nativeTrampoline<builtinListInsert>);
+
+  classAddBuiltinFunction(list, SymbolId::kDunderMul,
+                          nativeTrampoline<builtinListMul>);
 
   classAddBuiltinFunction(list, SymbolId::kDunderNew,
                           nativeTrampoline<builtinListNew>);
@@ -1083,6 +1089,9 @@ void Runtime::initializeSmallIntClass() {
   classAddBuiltinFunction(small_integer, SymbolId::kDunderEq,
                           nativeTrampoline<builtinSmallIntegerEq>);
 
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderFloordiv,
+                          nativeTrampoline<builtinSmallIntegerFloorDiv>);
+
   classAddBuiltinFunction(small_integer, SymbolId::kDunderGe,
                           nativeTrampoline<builtinSmallIntegerGe>);
 
@@ -1098,6 +1107,12 @@ void Runtime::initializeSmallIntClass() {
   classAddBuiltinFunction(small_integer, SymbolId::kDunderLt,
                           nativeTrampoline<builtinSmallIntegerLt>);
 
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderMod,
+                          nativeTrampoline<builtinSmallIntegerMod>);
+
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderMul,
+                          nativeTrampoline<builtinSmallIntegerMul>);
+
   classAddBuiltinFunction(small_integer, SymbolId::kDunderNe,
                           nativeTrampoline<builtinSmallIntegerNe>);
 
@@ -1112,6 +1127,9 @@ void Runtime::initializeSmallIntClass() {
 
   classAddBuiltinFunction(small_integer, SymbolId::kDunderSub,
                           nativeTrampoline<builtinSmallIntegerSub>);
+
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderXor,
+                          nativeTrampoline<builtinSmallIntegerXor>);
 
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for

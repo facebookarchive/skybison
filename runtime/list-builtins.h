@@ -13,6 +13,7 @@ Object* builtinListExtend(Thread* thread, Frame* frame, word nargs);
 Object* builtinListGetItem(Thread* thread, Frame* frame, word nargs);
 Object* builtinListInsert(Thread* thread, Frame* frame, word nargs);
 Object* builtinListLen(Thread* thread, Frame* frame, word nargs);
+Object* builtinListMul(Thread* thread, Frame* frame, word nargs);
 Object* builtinListNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinListPop(Thread* thread, Frame* frame, word nargs);
 Object* builtinListRemove(Thread* thread, Frame* frame, word nargs);

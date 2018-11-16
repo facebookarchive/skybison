@@ -25,8 +25,8 @@ namespace python {
   V(UNUSED_BYTECODE_13, 13, doInvalidBytecode)                                 \
   V(UNUSED_BYTECODE_14, 14, doInvalidBytecode)                                 \
   V(UNARY_INVERT, 15, doUnaryInvert)                                           \
-  V(BINARY_MATRIX_MULTIPLY, 16, doNotImplemented)                              \
-  V(INPLACE_MATRIX_MULTIPLY, 17, doNotImplemented)                             \
+  V(BINARY_MATRIX_MULTIPLY, 16, doBinaryMatrixMultiply)                        \
+  V(INPLACE_MATRIX_MULTIPLY, 17, doInplaceMatrixMultiply)                      \
   V(UNUSED_BYTECODE_18, 18, doInvalidBytecode)                                 \
   V(BINARY_POWER, 19, doNotImplemented)                                        \
   V(BINARY_MULTIPLY, 20, doBinaryMultiply)                                     \
@@ -37,8 +37,8 @@ namespace python {
   V(BINARY_SUBSCR, 25, doBinarySubscr)                                         \
   V(BINARY_FLOOR_DIVIDE, 26, doBinaryFloorDivide)                              \
   V(BINARY_TRUE_DIVIDE, 27, doBinaryTrueDivide)                                \
-  V(INPLACE_FLOOR_DIVIDE, 28, doBinaryFloorDivide)                             \
-  V(INPLACE_TRUE_DIVIDE, 29, doNotImplemented)                                 \
+  V(INPLACE_FLOOR_DIVIDE, 28, doInplaceFloorDivide)                            \
+  V(INPLACE_TRUE_DIVIDE, 29, doInplaceTrueDivide)                              \
   V(UNUSED_BYTECODE_30, 30, doInvalidBytecode)                                 \
   V(UNUSED_BYTECODE_31, 31, doInvalidBytecode)                                 \
   V(UNUSED_BYTECODE_32, 32, doInvalidBytecode)                                 \
@@ -64,18 +64,18 @@ namespace python {
   V(BEFORE_ASYNC_WITH, 52, doNotImplemented)                                   \
   V(UNUSED_BYTECODE_53, 53, doInvalidBytecode)                                 \
   V(UNUSED_BYTECODE_54, 54, doInvalidBytecode)                                 \
-  V(INPLACE_ADD, 55, doBinaryAdd)                                              \
+  V(INPLACE_ADD, 55, doInplaceAdd)                                             \
   V(INPLACE_SUBTRACT, 56, doInplaceSubtract)                                   \
-  V(INPLACE_MULTIPLY, 57, doBinaryMultiply)                                    \
+  V(INPLACE_MULTIPLY, 57, doInplaceMultiply)                                   \
   V(UNUSED_BYTECODE_58, 58, doInvalidBytecode)                                 \
-  V(INPLACE_MODULO, 59, doBinaryModulo)                                        \
+  V(INPLACE_MODULO, 59, doInplaceModulo)                                       \
   V(STORE_SUBSCR, 60, doStoreSubscr)                                           \
   V(DELETE_SUBSCR, 61, doNotImplemented)                                       \
-  V(BINARY_LSHIFT, 62, doNotImplemented)                                       \
-  V(BINARY_RSHIFT, 63, doNotImplemented)                                       \
+  V(BINARY_LSHIFT, 62, doBinaryLshift)                                         \
+  V(BINARY_RSHIFT, 63, doBinaryRshift)                                         \
   V(BINARY_AND, 64, doBinaryAnd)                                               \
   V(BINARY_XOR, 65, doBinaryXor)                                               \
-  V(BINARY_OR, 66, doNotImplemented)                                           \
+  V(BINARY_OR, 66, doBinaryOr)                                                 \
   V(INPLACE_POWER, 67, doNotImplemented)                                       \
   V(GET_ITER, 68, doGetIter)                                                   \
   V(GET_YIELD_FROM_ITER, 69, doNotImplemented)                                 \
@@ -84,11 +84,11 @@ namespace python {
   V(YIELD_FROM, 72, doNotImplemented)                                          \
   V(GET_AWAITABLE, 73, doNotImplemented)                                       \
   V(UNUSED_BYTECODE_74, 74, doInvalidBytecode)                                 \
-  V(INPLACE_LSHIFT, 75, doNotImplemented)                                      \
-  V(INPLACE_RSHIFT, 76, doNotImplemented)                                      \
-  V(INPLACE_AND, 77, doBinaryAnd)                                              \
-  V(INPLACE_XOR, 78, doBinaryXor)                                              \
-  V(INPLACE_OR, 79, doNotImplemented)                                          \
+  V(INPLACE_LSHIFT, 75, doInplaceLshift)                                       \
+  V(INPLACE_RSHIFT, 76, doInplaceRshift)                                       \
+  V(INPLACE_AND, 77, doInplaceAnd)                                             \
+  V(INPLACE_XOR, 78, doInplaceXor)                                             \
+  V(INPLACE_OR, 79, doInplaceOr)                                               \
   V(BREAK_LOOP, 80, doBreakLoop)                                               \
   V(WITH_CLEANUP_START, 81, doWithCleanupStart)                                \
   V(WITH_CLEANUP_FINISH, 82, doWithCleanupFinish)                              \

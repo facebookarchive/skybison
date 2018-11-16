@@ -11,14 +11,18 @@ Object* builtinSmallIntegerBitLength(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerAdd(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerBool(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerEq(Thread* thread, Frame* frame, word nargs);
+Object* builtinSmallIntegerFloorDiv(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerGe(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerGt(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerInvert(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerLe(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerLt(Thread* thread, Frame* frame, word nargs);
+Object* builtinSmallIntegerMod(Thread* thread, Frame* frame, word nargs);
+Object* builtinSmallIntegerMul(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerNe(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerNeg(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerPos(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerSub(Thread* thread, Frame* frame, word nargs);
+Object* builtinSmallIntegerXor(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

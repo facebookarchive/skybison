@@ -506,54 +506,48 @@ void Interpreter::doUnaryInvert(Context* ctx, word) {
   ctx->frame->setTopValue(result);
 }
 
+// opcode 16
+void Interpreter::doBinaryMatrixMultiply(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::MATMUL, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 17
+void Interpreter::doInplaceMatrixMultiply(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::MATMUL, self, other);
+  ctx->frame->pushValue(result);
+}
+
 // opcode 20
 void Interpreter::doBinaryMultiply(Context* ctx, word) {
-  if (ctx->frame->peek(1)->isSmallInteger()) {
-    word right = SmallInteger::cast(ctx->frame->popValue())->value();
-    word left = SmallInteger::cast(ctx->frame->topValue())->value();
-    word result = left * right;
-    if (!(left == 0 || (result / left) == right)) {
-      UNIMPLEMENTED("small integer overflow");
-    }
-    ctx->frame->setTopValue(SmallInteger::fromWord(result));
-  } else {
-    word ntimes = SmallInteger::cast(ctx->frame->popValue())->value();
-    Thread* thread = ctx->thread;
-    HandleScope scope(thread);
-    Handle<List> list(&scope, ctx->frame->topValue());
-    ctx->frame->setTopValue(
-        thread->runtime()->listReplicate(thread, list, ntimes));
-  }
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::MUL, self, other);
+  ctx->frame->pushValue(result);
 }
 
 // opcode 22
 void Interpreter::doBinaryModulo(Context* ctx, word) {
-  HandleScope scope(ctx->thread);
-  Handle<Object> divisor(&scope, ctx->frame->popValue());
-  Handle<Object> dividend(&scope, ctx->frame->topValue());
-  if (divisor->isSmallInteger() && dividend->isSmallInteger()) {
-    word smi_divisor = SmallInteger::cast(*divisor)->value();
-    word smi_dividend = SmallInteger::cast(*dividend)->value();
-    // TODO: Throw:
-    //   ZeroDivisionError: integer division or modulo by zero
-    if (smi_divisor == 0) {
-      UNIMPLEMENTED("ZeroDivisionError");
-    }
-    ctx->frame->setTopValue(SmallInteger::fromWord(smi_dividend % smi_divisor));
-  } else if (dividend->isString()) {  // string formatting
-    Handle<String> src(&scope, *dividend);
-    if (divisor->isObjectArray()) {
-      Handle<ObjectArray> args(&scope, *divisor);
-      ctx->frame->setTopValue(
-          ctx->thread->runtime()->stringFormat(ctx->thread, src, args));
-    } else {
-      Handle<ObjectArray> args(&scope,
-                               ctx->thread->runtime()->newObjectArray(1));
-      args->atPut(0, *divisor);
-      ctx->frame->setTopValue(
-          ctx->thread->runtime()->stringFormat(ctx->thread, src, args));
-    }
-  }
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::MOD, self, other);
+  ctx->frame->pushValue(result);
 }
 
 // opcode 23
@@ -604,14 +598,13 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
 
 // opcode 26
 void Interpreter::doBinaryFloorDivide(Context* ctx, word) {
-  word divisor = SmallInteger::cast(ctx->frame->popValue())->value();
-  word dividend = SmallInteger::cast(ctx->frame->topValue())->value();
-  // TODO: Throw:
-  //   ZeroDivisionError: integer division or modulo by zero
-  if (divisor == 0) {
-    UNIMPLEMENTED("ZeroDivisionError");
-  }
-  ctx->frame->setTopValue(SmallInteger::fromWord(dividend / divisor));
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::FLOORDIV, self, other);
+  ctx->frame->pushValue(result);
 }
 
 // opcode 27
@@ -637,6 +630,39 @@ void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
   ctx->frame->pushValue(ctx->thread->runtime()->newDouble(divisor / dividend));
 }
 
+// opcode 28
+void Interpreter::doInplaceFloorDivide(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::FLOORDIV, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 29
+void Interpreter::doInplaceTrueDivide(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::TRUEDIV, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 55
+void Interpreter::doInplaceAdd(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::ADD, self, other);
+  ctx->frame->pushValue(result);
+}
+
 // opcode 56
 void Interpreter::doInplaceSubtract(Context* ctx, word) {
   Thread* thread = ctx->thread;
@@ -645,6 +671,28 @@ void Interpreter::doInplaceSubtract(Context* ctx, word) {
   Handle<Object> self(&scope, ctx->frame->popValue());
   Object* result =
       inplaceOperation(thread, ctx->frame, BinaryOp::SUB, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 57
+void Interpreter::doInplaceMultiply(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::MUL, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 59
+void Interpreter::doInplaceModulo(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::MOD, self, other);
   ctx->frame->pushValue(result);
 }
 
@@ -657,6 +705,28 @@ void Interpreter::doStoreSubscr(Context* ctx, word) {
   list->atPut(idx, ctx->frame->popValue());
 }
 
+// opcode 62
+void Interpreter::doBinaryLshift(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::LSHIFT, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 63
+void Interpreter::doBinaryRshift(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::RSHIFT, self, other);
+  ctx->frame->pushValue(result);
+}
+
 // opcode 64
 void Interpreter::doBinaryAnd(Context* ctx, word) {
   word right = SmallInteger::cast(ctx->frame->popValue())->value();
@@ -666,9 +736,24 @@ void Interpreter::doBinaryAnd(Context* ctx, word) {
 
 // opcode 65
 void Interpreter::doBinaryXor(Context* ctx, word) {
-  word right = SmallInteger::cast(ctx->frame->popValue())->value();
-  word left = SmallInteger::cast(ctx->frame->topValue())->value();
-  ctx->frame->setTopValue(SmallInteger::fromWord(left ^ right));
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::XOR, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 66
+void Interpreter::doBinaryOr(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::OR, self, other);
+  ctx->frame->pushValue(result);
 }
 
 // opcode 68
@@ -684,6 +769,61 @@ void Interpreter::doLoadBuildClass(Context* ctx, word) {
   Thread* thread = ctx->thread;
   ValueCell* value_cell = ValueCell::cast(thread->runtime()->buildClass());
   ctx->frame->pushValue(value_cell->value());
+}
+
+// opcode 75
+void Interpreter::doInplaceLshift(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::LSHIFT, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 76
+void Interpreter::doInplaceRshift(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::RSHIFT, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 77
+void Interpreter::doInplaceAnd(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::AND, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 78
+void Interpreter::doInplaceXor(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::XOR, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 79
+void Interpreter::doInplaceOr(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::OR, self, other);
+  ctx->frame->pushValue(result);
 }
 
 // opcode 80

@@ -74,6 +74,28 @@ Object* builtinSmallIntegerLe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinSmallIntegerFloorDiv(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (!self->isSmallInteger()) {
+    return thread->throwTypeErrorFromCString(
+        "__floordiv__() must be called with int instance as first argument");
+  }
+  word left = SmallInteger::cast(self)->value();
+  if (other->isInteger()) {
+    word right = Integer::cast(other)->asWord();
+    if (right == 0) {
+      UNIMPLEMENTED("ZeroDivisionError");
+    }
+    return thread->runtime()->newInteger(left / right);
+  }
+  return thread->runtime()->notImplemented();
+}
+
 Object* builtinSmallIntegerLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
@@ -115,6 +137,51 @@ Object* builtinSmallIntegerGt(Thread* thread, Frame* frame, word nargs) {
     SmallInteger* left = SmallInteger::cast(self);
     SmallInteger* right = SmallInteger::cast(other);
     return Boolean::fromBool(left->value() > right->value());
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinSmallIntegerMod(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (!self->isSmallInteger()) {
+    return thread->throwTypeErrorFromCString(
+        "__mod__() must be called with int instance as first argument");
+  }
+  word left = SmallInteger::cast(self)->value();
+  if (other->isInteger()) {
+    word right = Integer::cast(other)->asWord();
+    if (right == 0) {
+      UNIMPLEMENTED("ZeroDivisionError");
+    }
+    return thread->runtime()->newInteger(left % right);
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinSmallIntegerMul(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (!self->isSmallInteger()) {
+    return thread->throwTypeErrorFromCString(
+        "__mul__() must be called with int instance as first argument");
+  }
+  word left = SmallInteger::cast(self)->value();
+  if (other->isInteger()) {
+    word right = Integer::cast(other)->asWord();
+    word product = left * right;
+    if (!(left == 0 || (product / left) == right)) {
+      UNIMPLEMENTED("small integer overflow");
+    }
+    return thread->runtime()->newInteger(product);
   }
   return thread->runtime()->notImplemented();
 }
@@ -189,6 +256,25 @@ Object* builtinSmallIntegerSub(Thread* thread, Frame* frame, word nargs) {
   if (other->isInteger()) {
     word right = Integer::cast(other)->asWord();
     return thread->runtime()->newInteger(left - right);
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinSmallIntegerXor(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (!self->isSmallInteger()) {
+    return thread->throwTypeErrorFromCString(
+        "__xor__() must be called with int instance as first argument");
+  }
+  word left = SmallInteger::cast(self)->value();
+  if (other->isInteger()) {
+    word right = Integer::cast(other)->asWord();
+    return thread->runtime()->newInteger(left ^ right);
   }
   return thread->runtime()->notImplemented();
 }

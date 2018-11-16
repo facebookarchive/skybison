@@ -78,6 +78,31 @@ Object* builtinStringLt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinStringMod(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(caller, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> other(&scope, args.get(1));
+  if (self->isString()) {
+    Handle<String> format(&scope, *self);
+    Handle<ObjectArray> format_args(&scope, runtime->newObjectArray(0));
+    if (other->isObjectArray()) {
+      format_args = *other;
+    } else {
+      Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(1));
+      tuple->atPut(0, *other);
+      format_args = *tuple;
+    }
+    return runtime->stringFormat(thread, format, format_args);
+  }
+  // TODO(cshapiro): handle user-defined subtypes of string.
+  return runtime->notImplemented();
+}
+
 Object* builtinStringNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
