@@ -66,6 +66,14 @@ class Interpreter {
       const Handle<Object>& self,
       const Handle<Object>& other);
 
+  static Object* callMethod3(
+      Thread* thread,
+      Frame* caller,
+      const Handle<Object>& method,
+      const Handle<Object>& self,
+      const Handle<Object>& arg1,
+      const Handle<Object>& arg2);
+
   static Object* callMethod4(
       Thread* thread,
       Frame* caller,

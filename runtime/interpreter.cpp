@@ -152,15 +152,10 @@ Object* Interpreter::callDescriptorGet(
   Runtime* runtime = thread->runtime();
   Handle<Object> selector(&scope, runtime->symbols()->DunderGet());
   Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
-  Handle<Function> method(
+  Handle<Object> method(
       &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
-  caller->pushValue(*method);
-  caller->pushValue(*descriptor);
-  caller->pushValue(*receiver);
-  caller->pushValue(*receiver_type);
-  Object* result = method->entry()(thread, caller, 3);
-  caller->dropValues(4);
-  return result;
+  return callMethod3(
+      thread, caller, method, descriptor, receiver, receiver_type);
 }
 
 Object* Interpreter::lookupMethod(
@@ -219,6 +214,29 @@ Object* Interpreter::callMethod2(
     caller->pushValue(*method);
     caller->pushValue(*other);
     result = call(thread, caller, 1);
+  }
+  return result;
+}
+
+Object* Interpreter::callMethod3(
+    Thread* thread,
+    Frame* caller,
+    const Handle<Object>& method,
+    const Handle<Object>& self,
+    const Handle<Object>& arg1,
+    const Handle<Object>& arg2) {
+  Object* result;
+  if (method->isFunction()) {
+    caller->pushValue(*method);
+    caller->pushValue(*self);
+    caller->pushValue(*arg1);
+    caller->pushValue(*arg2);
+    result = call(thread, caller, 3);
+  } else {
+    caller->pushValue(*method);
+    caller->pushValue(*arg1);
+    caller->pushValue(*arg2);
+    result = call(thread, caller, 2);
   }
   return result;
 }
