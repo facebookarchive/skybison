@@ -1959,7 +1959,7 @@ Object* Runtime::stringConcat(
   return *result;
 }
 
-int stringFormatBufferLength(
+static int stringFormatBufferLength(
     HandleScope& scope,
     const Handle<String>& fmt,
     const Handle<ObjectArray>& args) {
@@ -2000,7 +2000,7 @@ int stringFormatBufferLength(
   return len;
 }
 
-void stringFormatToBuffer(
+static void stringFormatToBuffer(
     HandleScope& scope,
     const Handle<String>& fmt,
     const Handle<ObjectArray>& args,
