@@ -1163,6 +1163,8 @@ void Runtime::initializeBoolClass() {
 
   classAddBuiltinFunction(type, SymbolId::kDunderBool,
                           nativeTrampoline<builtinBooldunderBool>);
+  classAddBuiltinFunction(type, SymbolId::kDunderNew,
+                          nativeTrampoline<builtinBoolNew>);
 }
 
 void Runtime::initializeFloatClass() {
@@ -1631,6 +1633,7 @@ void Runtime::createBuiltinsModule() {
   // Add builtin types
   moduleAddBuiltinType(module, SymbolId::kBaseException,
                        LayoutId::kBaseException);
+  moduleAddBuiltinType(module, SymbolId::kBool, LayoutId::kBool);
   moduleAddBuiltinType(module, SymbolId::kClassmethod, LayoutId::kClassMethod);
   moduleAddBuiltinType(module, SymbolId::kComplex, LayoutId::kComplex);
   moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDict);

@@ -7,6 +7,7 @@
 
 namespace python {
 
-Object *builtinBooldunderBool(Thread *thread, Frame *frame, word nargs);
+Object* builtinBooldunderBool(Thread* thread, Frame* frame, word nargs);
+Object* builtinBoolNew(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

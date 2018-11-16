@@ -216,6 +216,7 @@ add_library(
   runtime-tests
   STATIC
   runtime/builtins-module-test.cpp
+  runtime/bool-builtins-test.cpp
   runtime/capi-handles-test.cpp
   runtime/complex-builtins-test.cpp
   runtime/descriptor-builtins-test.cpp

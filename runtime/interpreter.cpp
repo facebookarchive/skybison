@@ -393,6 +393,12 @@ Object* Interpreter::sequenceContains(Thread* thread, Frame* caller,
 Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
   HandleScope scope(thread);
   Handle<Object> self(&scope, caller->topValue());
+  if (self->isBool()) {
+    return *self;
+  }
+  if (self->isNone()) {
+    return Bool::falseObj();
+  }
   Handle<Object> method(
       &scope, lookupMethod(thread, caller, self, SymbolId::kDunderBool));
   if (!method->isError()) {
