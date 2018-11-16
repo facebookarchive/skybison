@@ -87,7 +87,7 @@ typedef struct {
 static PyObject*
 Custom_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
   CustomObject* self = reinterpret_cast<CustomObject*>(type->tp_alloc(type, 0));
-  return (PyObject*)self;
+  return reinterpret_cast<PyObject*>(self);
 }
 
 static int Custom_init(CustomObject* self, PyObject* args, PyObject* kwds) {
@@ -117,8 +117,8 @@ TEST(PyTypeObject, InitializeCustomTypeInstance) {
   custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
   custom_type.tp_alloc = PyType_GenericAlloc;
   custom_type.tp_new = Custom_new;
-  custom_type.tp_init = (initproc)Custom_init;
-  custom_type.tp_dealloc = (destructor)Custom_dealloc;
+  custom_type.tp_init = reinterpret_cast<initproc>(Custom_init);
+  custom_type.tp_dealloc = reinterpret_cast<destructor>(Custom_dealloc);
   custom_type.tp_free = PyObject_Del;
   PyType_Ready(&custom_type);
 
