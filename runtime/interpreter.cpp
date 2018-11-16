@@ -1,6 +1,7 @@
 #include "interpreter.h"
 
 #include <cassert>
+#include <cstdio>
 #include <cstdlib>
 
 #include "bytecode.h"
@@ -387,6 +388,9 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
       }
 
       default:
+        // TODO: Distinguish between intentionally unimplemented bytecode
+        // and unreachable code.
+        fprintf(stderr, "aborting due to unimplemented bytecode: %d\n", bc);
         abort();
     }
   }

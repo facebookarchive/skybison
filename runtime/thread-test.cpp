@@ -1469,4 +1469,11 @@ print(l[0], l[3], l[5])
   ASSERT_EQ(output, "1 4 6\n6 4 1\n");
 }
 
+TEST(ThreadTest, RaiseVarargs) {
+  Runtime runtime;
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, "raise 1"),
+      "aborting due to unimplemented bytecode: 130");
+}
+
 } // namespace python
