@@ -300,6 +300,8 @@ static Object* doBuiltinPrint(
         }
       }
       *ostream << "}";
+    } else if (arg->isNone()) {
+      *ostream << "None";
     } else {
       UNIMPLEMENTED("Custom print unsupported");
     }

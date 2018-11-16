@@ -229,4 +229,13 @@ print("hi", file=sys.stderr, end='ya')
   EXPECT_EQ(output, "hiya");
 }
 
+TEST(BuiltinsModuleTest, BuintInPrintNone) {
+  const char* src = R"(
+print(None)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "None\n");
+}
+
 } // namespace python
