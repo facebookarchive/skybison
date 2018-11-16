@@ -150,6 +150,8 @@ class Runtime {
     return &new_value_cell_callback_;
   }
 
+  static char* compile(const char* src);
+
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
   // dictobject.c this accommodates the majority of dictionaries without needing

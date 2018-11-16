@@ -44,4 +44,4 @@ class Utils {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Utils);
 };
 
-} // namespace
+} // namespace python

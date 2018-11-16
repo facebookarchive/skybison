@@ -1,6 +1,8 @@
 #include "runtime.h"
 
 #include <cstring>
+#include <fstream>
+#include <memory>
 
 #include "builtins.h"
 #include "callback.h"
@@ -552,6 +554,22 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   }
   list->setAllocated(index + 1);
   list->atPut(index, *value);
+}
+
+char* Runtime::compile(const char* src) {
+  std::string dir = OS::temporaryDirectory("python-tests");
+  std::string py = dir + "/foo.py";
+  std::string pyc = dir + "/foo.pyc";
+  std::string cleanup = "rm -rf " + dir;
+  std::ofstream output(py);
+  output << src;
+  output.close();
+  std::string command =
+      "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6 -m compileall -b " + py;
+  system(command.c_str());
+  char* result = OS::readFile(pyc.c_str());
+  system(cleanup.c_str());
+  return result;
 }
 
 // Dictionary
