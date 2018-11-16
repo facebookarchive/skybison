@@ -259,6 +259,9 @@ class Runtime {
   // Add a value to set and return the object in set.
   Object* setAdd(const Handle<Set>& set, const Handle<Object>& value);
 
+  Object* setAddWithHash(const Handle<Set>& set, const Handle<Object>& value,
+                         const Handle<Object>& key_hash);
+
   // Returns true if the set contains the specified value.
   bool setIncludes(const Handle<Set>& set, const Handle<Object>& value);
 

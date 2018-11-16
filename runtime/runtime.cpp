@@ -623,12 +623,12 @@ Object* Runtime::internStringFromCString(const char* c_string) {
 Object* Runtime::internString(const Handle<Object>& string) {
   HandleScope scope;
   Handle<Set> set(&scope, interned());
-  Handle<Object> key(&scope, *string);
   DCHECK(string->isString(), "not a string");
   if (string->isSmallString()) {
     return *string;
   }
-  return setAdd(set, key);
+  Handle<Object> key_hash(&scope, hash(*string));
+  return setAddWithHash(set, string, key_hash);
 }
 
 Object* Runtime::hash(Object* object) {
@@ -1264,7 +1264,7 @@ void Runtime::initializeSymbols() {
   symbols_ = new Symbols(this);
   for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
     SymbolId id = static_cast<SymbolId>(i);
-    Handle<Object> symbol(&scope, symbols_->at(id));
+    Handle<Object> symbol(&scope, symbols()->at(id));
     internString(symbol);
   }
 }
@@ -2041,11 +2041,12 @@ ObjectArray* Runtime::setGrow(const Handle<ObjectArray>& data) {
   return *new_data;
 }
 
-Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
+Object* Runtime::setAddWithHash(const Handle<Set>& set,
+                                const Handle<Object>& value,
+                                const Handle<Object>& key_hash) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, set->data());
   word index = -1;
-  Handle<Object> key_hash(&scope, hash(*value));
   bool found = setLookup(data, value, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
@@ -2063,6 +2064,12 @@ Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
   }
   set->setNumItems(set->numItems() + 1);
   return *value;
+}
+
+Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
+  HandleScope scope;
+  Handle<Object> key_hash(&scope, hash(*value));
+  return setAddWithHash(set, value, key_hash);
 }
 
 bool Runtime::setIncludes(const Handle<Set>& set, const Handle<Object>& value) {
