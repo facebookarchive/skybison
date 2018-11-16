@@ -81,3 +81,53 @@ class str(bootstrap=True):
                     return (self[:i], sep, self[i + j :])
             i += 1
         return (self, "", "")
+
+    def split(self, sep=None, maxsplit=-1):
+        if maxsplit == 0:
+            return self
+        # If the separator is not specified, split on all whitespace characters.
+        if sep is None:
+            raise NotImplementedError(
+                "Splitting on whitespace not yet implemented"
+            )
+        if not isinstance(sep, str):
+            raise TypeError("must be str or None")
+        sep_len = len(sep)
+        if sep_len == 0:
+            raise ValueError("empty separator")
+
+        def strcmp(cmp, other, start):
+            """Returns True if other is in cmp at the position start"""
+            i = 0
+            cmp_len = len(cmp)
+            other_len = len(other)
+            # If the other string is longer than the rest of the current string,
+            # then it is not a match.
+            if start + other_len > cmp_len:
+                return False
+            while i < other_len and start + i < cmp_len:
+                if cmp[start + i] != other[i]:
+                    return False
+                i += 1
+            return True
+
+        # TODO(dulinr): This path uses random-access indices on strings, which
+        # is not efficient for UTF-8 strings.
+        parts = []
+        i = 0
+        str_len = len(self)
+        # The index of the string starting after the last match.
+        last_match = 0
+        while i < str_len:
+            if strcmp(self, sep, i):
+                parts.append(self[last_match:i])
+                last_match = i + sep_len
+                # If we've hit the max number of splits, return early.
+                maxsplit -= 1
+                if maxsplit == 0:
+                    break
+                i += sep_len
+            else:
+                i += 1
+        parts.append(self[last_match:])
+        return parts

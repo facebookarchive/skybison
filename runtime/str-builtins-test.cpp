@@ -673,4 +673,114 @@ a = "".partition("a")
   EXPECT_PYSTRING_EQ(Str::cast(a->at(2)), "");
 }
 
+TEST(StrBuiltinsTest, SplitWithOneCharSeparator) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".split("e")
+b = "hello".split("l")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  ASSERT_EQ(a->allocated(), 2);
+  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "h");
+  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "llo");
+
+  Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_EQ(b->allocated(), 3);
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "he");
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "");
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "o");
+}
+
+TEST(StrBuiltinsTest, SplitWithEmptySelfReturnsSingleEmptyString) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "".split("a")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  ASSERT_EQ(a->allocated(), 1);
+  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "");
+}
+
+TEST(StrBuiltinsTest, SplitWithMultiCharSeparator) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".split("el")
+b = "hello".split("ll")
+c = "hello".split("hello")
+d = "hellllo".split("ll")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  ASSERT_EQ(a->allocated(), 2);
+  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "h");
+  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "lo");
+
+  Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_EQ(b->allocated(), 2);
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "he");
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "o");
+
+  Handle<List> c(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_EQ(c->allocated(), 2);
+  EXPECT_PYSTRING_EQ(Str::cast(c->at(0)), "");
+  EXPECT_PYSTRING_EQ(Str::cast(c->at(1)), "");
+
+  Handle<List> d(&scope, moduleAt(&runtime, main, "d"));
+  ASSERT_EQ(d->allocated(), 3);
+  EXPECT_PYSTRING_EQ(Str::cast(d->at(0)), "he");
+  EXPECT_PYSTRING_EQ(Str::cast(d->at(1)), "");
+  EXPECT_PYSTRING_EQ(Str::cast(d->at(2)), "o");
+}
+
+TEST(StrBuiltinsTest, SplitWithMaxSplitBelowPartsStopsEarly) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".split("l", 1)
+b = "1,2,3,4".split(",", 2)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  ASSERT_EQ(a->allocated(), 2);
+  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "he");
+  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "lo");
+
+  Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_EQ(b->allocated(), 3);
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "1");
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "2");
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "3,4");
+}
+
+TEST(StrBuiltinsTest, SplitWithMaxSplitGreaterThanNumParts) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".split("l", 2)
+b = "1,2,3,4".split(",", 5)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  ASSERT_EQ(a->allocated(), 3);
+  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "he");
+  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "");
+  EXPECT_PYSTRING_EQ(Str::cast(a->at(2)), "o");
+
+  Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_EQ(b->allocated(), 4);
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "1");
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "2");
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "3");
+  EXPECT_PYSTRING_EQ(Str::cast(b->at(3)), "4");
+}
+
 }  // namespace python
