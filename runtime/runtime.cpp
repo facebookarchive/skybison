@@ -1325,8 +1325,13 @@ void Runtime::processCallbacks() {
 RawObject Runtime::run(const char* buffer) {
   HandleScope scope;
 
-  Module main(&scope, createMainModule());
-  return executeModule(buffer, main);
+  Object name(&scope, symbols()->DunderMain());
+  Object main(&scope, findModule(name));
+  if (main->isNoneType()) {
+    main = createMainModule();
+  }
+  Module main_module(&scope, *main);
+  return executeModule(buffer, main_module);
 }
 
 RawObject Runtime::runFromCStr(const char* c_str) {

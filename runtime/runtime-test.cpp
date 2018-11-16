@@ -1248,6 +1248,21 @@ TEST(RuntimeTest, ClassIds) {
   }
 }
 
+TEST(RuntimeTest, CallRunTwice) {
+  Runtime runtime;
+  runtime.runFromCStr("x = 42");
+  runtime.runFromCStr("y = 1764");
+
+  HandleScope scope;
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object x(&scope, moduleAt(&runtime, main, "x"));
+  EXPECT_TRUE(x->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(x)->value(), 42);
+  Object y(&scope, moduleAt(&runtime, main, "y"));
+  EXPECT_TRUE(y->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(y)->value(), 1764);
+}
+
 TEST(RuntimeStrTest, StrConcat) {
   Runtime runtime;
   HandleScope scope;
