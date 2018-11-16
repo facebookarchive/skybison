@@ -5,14 +5,14 @@
 #include <cstring>
 namespace python {
 
-// SmallString
+// SmallStr
 
-Object* SmallString::fromCString(const char* value) {
+Object* SmallStr::fromCString(const char* value) {
   word len = strlen(value);
   return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));
 }
 
-Object* SmallString::fromBytes(View<byte> data) {
+Object* SmallStr::fromBytes(View<byte> data) {
   word length = data.length();
   DCHECK_BOUND(length, kMaxLength);
   word result = 0;
@@ -21,10 +21,10 @@ Object* SmallString::fromBytes(View<byte> data) {
     result = (result << kBitsPerByte) | data.get(i);
   }
   result = (result << kBitsPerByte) | (length << kTagSize) | kTag;
-  return reinterpret_cast<SmallString*>(result);
+  return reinterpret_cast<SmallStr*>(result);
 }
 
-char* SmallString::toCString() {
+char* SmallStr::toCString() {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   CHECK(result != nullptr, "out of memory");

@@ -8,7 +8,7 @@ namespace python {
 
 #define INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                     \
   V(SmallInt)                                                                  \
-  V(SmallString)                                                               \
+  V(SmallStr)                                                                  \
   V(Bool)                                                                      \
   V(NoneType)
 
@@ -73,7 +73,7 @@ enum class LayoutId : word {
   // there is no class associated with the Error object type, this is here as a
   // placeholder.
   kError = 23,
-  kSmallString = 31,
+  kSmallStr = 31,
 
   // Heap objects
   kObject = 32,
@@ -127,7 +127,7 @@ class Object {
   bool isHeader();
   bool isNone();
   bool isSmallInt();
-  bool isSmallString();
+  bool isSmallStr();
 
   // Heap objects
   bool isBaseException();
@@ -417,7 +417,7 @@ class String : public Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(String);
 };
 
-class SmallString : public Object {
+class SmallStr : public Object {
  public:
   // Conversion.
   static Object* fromCString(const char* value);
@@ -432,7 +432,7 @@ class SmallString : public Object {
 
  private:
   // Interface methods are private: strings should be manipulated via the
-  // String class, which delegates to LargeString/SmallString appropriately.
+  // String class, which delegates to LargeString/SmallStr appropriately.
 
   // Getters and setters.
   word length();
@@ -444,14 +444,14 @@ class SmallString : public Object {
   char* toCString();
 
   // Casting.
-  static SmallString* cast(Object* object);
+  static SmallStr* cast(Object* object);
 
   friend class Heap;
   friend class Object;
   friend class Runtime;
   friend class String;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallString);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallStr);
 };
 
 // Heap objects
@@ -704,7 +704,7 @@ class LargeString : public Array {
 
  private:
   // Interface methods are private: strings should be manipulated via the
-  // String class, which delegates to LargeString/SmallString appropriately.
+  // String class, which delegates to LargeString/SmallStr appropriately.
 
   // Getters and setters.
   byte charAt(word index);
@@ -1820,9 +1820,9 @@ inline bool Object::isSmallInt() {
   return tag == SmallInt::kTag;
 }
 
-inline bool Object::isSmallString() {
-  uword tag = reinterpret_cast<uword>(this) & SmallString::kTagMask;
-  return tag == SmallString::kTag;
+inline bool Object::isSmallStr() {
+  uword tag = reinterpret_cast<uword>(this) & SmallStr::kTagMask;
+  return tag == SmallStr::kTag;
 }
 
 inline bool Object::isHeader() {
@@ -2055,7 +2055,7 @@ inline bool Object::isStopIteration() {
          LayoutId::kStopIteration;
 }
 
-inline bool Object::isString() { return isSmallString() || isLargeString(); }
+inline bool Object::isString() { return isSmallStr() || isLargeString(); }
 
 inline bool Object::isSystemExit() {
   if (!isHeapObject()) {
@@ -2215,27 +2215,27 @@ inline T SmallInt::asFunctionPointer() {
   return reinterpret_cast<T>(reinterpret_cast<uword>(this));
 }
 
-// SmallString
+// SmallStr
 
-inline word SmallString::length() {
+inline word SmallStr::length() {
   return (reinterpret_cast<word>(this) >> kTagSize) & kMaxLength;
 }
 
-inline byte SmallString::charAt(word index) {
+inline byte SmallStr::charAt(word index) {
   DCHECK_INDEX(index, length());
   return reinterpret_cast<word>(this) >> (kBitsPerByte * (index + 1));
 }
 
-inline void SmallString::copyTo(byte* dst, word length) {
+inline void SmallStr::copyTo(byte* dst, word length) {
   DCHECK_BOUND(length, this->length());
   for (word i = 0; i < length; ++i) {
     *dst++ = charAt(i);
   }
 }
 
-inline SmallString* SmallString::cast(Object* object) {
-  DCHECK(object->isSmallString(), "invalid cast");
-  return reinterpret_cast<SmallString*>(object);
+inline SmallStr* SmallStr::cast(Object* object) {
+  DCHECK(object->isSmallStr(), "invalid cast");
+  return reinterpret_cast<SmallStr*>(object);
 }
 
 // Header
@@ -3363,22 +3363,22 @@ inline bool String::equalsCString(const char* c_string) {
 }
 
 inline String* String::cast(Object* object) {
-  DCHECK(object->isLargeString() || object->isSmallString(),
+  DCHECK(object->isLargeString() || object->isSmallStr(),
          "invalid cast, expected string");
   return reinterpret_cast<String*>(object);
 }
 
 inline byte String::charAt(word index) {
-  if (isSmallString()) {
-    return SmallString::cast(this)->charAt(index);
+  if (isSmallStr()) {
+    return SmallStr::cast(this)->charAt(index);
   }
   DCHECK(isLargeString(), "unexpected type");
   return LargeString::cast(this)->charAt(index);
 }
 
 inline word String::length() {
-  if (isSmallString()) {
-    return SmallString::cast(this)->length();
+  if (isSmallStr()) {
+    return SmallStr::cast(this)->length();
   }
   DCHECK(isLargeString(), "unexpected type");
   return LargeString::cast(this)->length();
@@ -3398,7 +3398,7 @@ inline word String::compare(Object* string) {
 }
 
 inline bool String::equals(Object* that) {
-  if (isSmallString()) {
+  if (isSmallStr()) {
     return this == that;
   }
   DCHECK(isLargeString(), "unexpected type");
@@ -3406,8 +3406,8 @@ inline bool String::equals(Object* that) {
 }
 
 inline void String::copyTo(byte* dst, word length) {
-  if (isSmallString()) {
-    SmallString::cast(this)->copyTo(dst, length);
+  if (isSmallStr()) {
+    SmallStr::cast(this)->copyTo(dst, length);
     return;
   }
   DCHECK(isLargeString(), "unexpected type");
@@ -3415,8 +3415,8 @@ inline void String::copyTo(byte* dst, word length) {
 }
 
 inline char* String::toCString() {
-  if (isSmallString()) {
-    return SmallString::cast(this)->toCString();
+  if (isSmallStr()) {
+    return SmallStr::cast(this)->toCString();
   }
   DCHECK(isLargeString(), "unexpected type");
   return LargeString::cast(this)->toCString();
@@ -3430,7 +3430,7 @@ inline LargeString* LargeString::cast(Object* object) {
 }
 
 inline word LargeString::allocationSize(word length) {
-  DCHECK(length > SmallString::kMaxLength, "length %ld overflows", length);
+  DCHECK(length > SmallStr::kMaxLength, "length %ld overflows", length);
   word size = headerSize(length) + length;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }

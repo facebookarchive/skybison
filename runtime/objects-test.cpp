@@ -306,9 +306,9 @@ TEST(LargeStringTest, CopyTo) {
   EXPECT_EQ(array[4], 'o');
 }
 
-TEST(SmallStringTest, Tests) {
-  Object* obj0 = SmallString::fromCString("AB");
-  ASSERT_TRUE(obj0->isSmallString());
+TEST(SmallStrTest, Tests) {
+  Object* obj0 = SmallStr::fromCString("AB");
+  ASSERT_TRUE(obj0->isSmallStr());
   auto* str0 = String::cast(obj0);
   EXPECT_EQ(str0->length(), 2);
   EXPECT_EQ(str0->charAt(0), 'A');
@@ -360,11 +360,11 @@ TEST(StringTest, CompareSmallStr) {
   HandleScope scope;
 
   Handle<String> small(&scope, runtime.newStringFromCString("foo"));
-  EXPECT_TRUE(small->isSmallString());
+  EXPECT_TRUE(small->isSmallStr());
 
   EXPECT_TRUE(small->equalsCString("foo"));
   // This apparently stupid test is in response to a bug where we assumed
-  // that the c-string passed to SmallString::equalsCString would always
+  // that the c-string passed to SmallStr::equalsCString would always
   // be small itself.
   EXPECT_FALSE(small->equalsCString("123456789"));
 }

@@ -96,8 +96,8 @@ Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
     new_len += String::cast(sp[i])->length();
   }
 
-  if (new_len <= SmallString::kMaxLength) {
-    byte buffer[SmallString::kMaxLength];
+  if (new_len <= SmallStr::kMaxLength) {
+    byte buffer[SmallStr::kMaxLength];
     byte* ptr = buffer;
     for (word i = num - 1; i >= 0; i--) {
       String* str = String::cast(sp[i]);
@@ -105,7 +105,7 @@ Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
       str->copyTo(ptr, len);
       ptr += len;
     }
-    return SmallString::fromBytes(View<byte>(buffer, new_len));
+    return SmallStr::fromBytes(View<byte>(buffer, new_len));
   }
 
   HandleScope scope(thread);

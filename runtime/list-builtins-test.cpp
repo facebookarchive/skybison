@@ -501,7 +501,7 @@ test6 = len(a)
   Handle<Object> test5(&scope, findInModule(&runtime, main, "test5"));
   Handle<Object> test6(&scope, findInModule(&runtime, main, "test6"));
   EXPECT_EQ(*test1, SmallInt::fromWord(1));
-  EXPECT_EQ(*test2, SmallString::fromCString("a"));
+  EXPECT_EQ(*test2, SmallStr::fromCString("a"));
   EXPECT_EQ(*test3, SmallInt::fromWord(2));
   EXPECT_EQ(*test4, SmallInt::fromWord(1));
   EXPECT_EQ(*test5, SmallInt::fromWord(2));
@@ -523,7 +523,7 @@ e = a[0]
   Handle<Object> len(&scope, findInModule(&runtime, main, "l"));
   Handle<Object> element(&scope, findInModule(&runtime, main, "e"));
   EXPECT_EQ(*len, SmallInt::fromWord(1));
-  EXPECT_EQ(*element, SmallString::fromCString("foo"));
+  EXPECT_EQ(*element, SmallStr::fromCString("foo"));
 }
 
 }  // namespace python

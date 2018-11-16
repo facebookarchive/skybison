@@ -953,8 +953,8 @@ TEST(ThreadTest, BuildList) {
   ASSERT_TRUE(list->at(0)->isSmallInt());
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 111);
 
-  ASSERT_TRUE(list->at(1)->isSmallString());
-  EXPECT_EQ(list->at(1), SmallString::fromCString("qqq"));
+  ASSERT_TRUE(list->at(1)->isSmallStr());
+  EXPECT_EQ(list->at(1), SmallStr::fromCString("qqq"));
   EXPECT_EQ(list->at(2), None::object());
 }
 
@@ -1259,8 +1259,8 @@ class C:
   ASSERT_TRUE(value->isValueCell());
 
   Handle<Type> cls(&scope, ValueCell::cast(*value)->value());
-  ASSERT_TRUE(cls->name()->isSmallString());
-  EXPECT_EQ(cls->name(), SmallString::fromCString("C"));
+  ASSERT_TRUE(cls->name()->isSmallStr());
+  EXPECT_EQ(cls->name(), SmallStr::fromCString("C"));
 
   Handle<ObjectArray> mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
@@ -1300,8 +1300,8 @@ class C:
   EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
 
   // Check class name
-  ASSERT_TRUE(cls->name()->isSmallString());
-  EXPECT_EQ(cls->name(), SmallString::fromCString("C"));
+  ASSERT_TRUE(cls->name()->isSmallStr());
+  EXPECT_EQ(cls->name(), SmallStr::fromCString("C"));
 
   Handle<Dict> cls_dict(&scope, cls->dict());
   ASSERT_TRUE(cls_dict->isDict());
@@ -1948,7 +1948,7 @@ TEST(BuildString, buildStringEmpty) {
 
   Object* obj = Thread::currentThread()->run(*code);
   EXPECT_TRUE(obj->isString());
-  EXPECT_TRUE(obj->isSmallString());
+  EXPECT_TRUE(obj->isSmallStr());
 
   Handle<String> result(&scope, obj);
   EXPECT_TRUE(result->equalsCString(""));
@@ -1961,7 +1961,7 @@ TEST(BuildString, buildStringSingle) {
 
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
   const char* expected = "foo";
-  Handle<Object> str(&scope, SmallString::fromCString(expected));
+  Handle<Object> str(&scope, SmallStr::fromCString(expected));
   consts->atPut(0, *str);
   code->setConsts(*consts);
 
@@ -1970,7 +1970,7 @@ TEST(BuildString, buildStringSingle) {
 
   Object* obj = Thread::currentThread()->run(*code);
   EXPECT_TRUE(obj->isString());
-  EXPECT_TRUE(obj->isSmallString());
+  EXPECT_TRUE(obj->isSmallStr());
 
   Handle<String> result(&scope, obj);
   EXPECT_TRUE(result->equalsCString(expected));
@@ -1982,8 +1982,8 @@ TEST(BuildString, buildStringMultiSmall) {
   Handle<Code> code(&scope, runtime.newCode());
 
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
-  Handle<Object> str(&scope, SmallString::fromCString("foo"));
-  Handle<Object> str1(&scope, SmallString::fromCString("bar"));
+  Handle<Object> str(&scope, SmallStr::fromCString("foo"));
+  Handle<Object> str1(&scope, SmallStr::fromCString("bar"));
   consts->atPut(0, *str);
   consts->atPut(1, *str1);
   code->setConsts(*consts);
@@ -1994,7 +1994,7 @@ TEST(BuildString, buildStringMultiSmall) {
 
   Object* obj = Thread::currentThread()->run(*code);
   EXPECT_TRUE(obj->isString());
-  EXPECT_TRUE(obj->isSmallString());
+  EXPECT_TRUE(obj->isSmallStr());
 
   Handle<String> result(&scope, obj);
   EXPECT_TRUE(result->equalsCString("foobar"));
@@ -2006,9 +2006,9 @@ TEST(BuildString, buildStringMultiLarge) {
   Handle<Code> code(&scope, runtime.newCode());
 
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
-  Handle<Object> str(&scope, SmallString::fromCString("hello"));
-  Handle<Object> str1(&scope, SmallString::fromCString("world"));
-  Handle<Object> str2(&scope, SmallString::fromCString("python"));
+  Handle<Object> str(&scope, SmallStr::fromCString("hello"));
+  Handle<Object> str1(&scope, SmallStr::fromCString("world"));
+  Handle<Object> str2(&scope, SmallStr::fromCString("python"));
   consts->atPut(0, *str);
   consts->atPut(1, *str1);
   consts->atPut(2, *str2);

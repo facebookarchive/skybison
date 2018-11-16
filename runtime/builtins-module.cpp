@@ -121,7 +121,7 @@ Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
   }
   word w = SmallInt::cast(arg)->value();
   const char s[2]{static_cast<char>(w), 0};
-  return SmallString::fromCString(s);
+  return SmallStr::fromCString(s);
 }
 
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is

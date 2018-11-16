@@ -820,8 +820,8 @@ Object* Runtime::newStringFromFormat(const char* fmt, ...) {
 
 Object* Runtime::newStringWithAll(View<byte> code_units) {
   word length = code_units.length();
-  if (length <= SmallString::kMaxLength) {
-    return SmallString::fromBytes(code_units);
+  if (length <= SmallStr::kMaxLength) {
+    return SmallStr::fromBytes(code_units);
   }
   Object* result = heap()->createLargeString(length);
   DCHECK(result != Error::object(), "failed to create large string");
@@ -842,7 +842,7 @@ Object* Runtime::internString(const Handle<Object>& string) {
   HandleScope scope;
   Handle<Set> set(&scope, interned());
   DCHECK(string->isString(), "not a string");
-  if (string->isSmallString()) {
+  if (string->isSmallStr()) {
     return *string;
   }
   Handle<Object> key_hash(&scope, hash(*string));
@@ -866,9 +866,9 @@ Object* Runtime::immediateHash(Object* object) {
   if (object->isBool()) {
     return SmallInt::fromWord(Bool::cast(object)->value() ? 1 : 0);
   }
-  if (object->isSmallString()) {
+  if (object->isSmallStr()) {
     return SmallInt::fromWord(reinterpret_cast<uword>(object) >>
-                              SmallString::kTagSize);
+                              SmallStr::kTagSize);
   }
   return SmallInt::fromWord(reinterpret_cast<uword>(object));
 }
@@ -1150,7 +1150,7 @@ void Runtime::initializeTypeClass() {
 void Runtime::initializeImmediateClasses() {
   initializeBoolClass();
   NoneBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallString,
+  addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallStr,
                        LayoutId::kString);
   SmallIntBuiltins::initialize(this);
 }
@@ -2472,11 +2472,11 @@ Object* Runtime::stringConcat(const Handle<String>& left,
   const word rlen = right->length();
   const word new_len = llen + rlen;
 
-  if (new_len <= SmallString::kMaxLength) {
-    byte buffer[SmallString::kMaxLength];
+  if (new_len <= SmallStr::kMaxLength) {
+    byte buffer[SmallStr::kMaxLength];
     left->copyTo(buffer, llen);
     right->copyTo(buffer + llen, rlen);
-    return SmallString::fromBytes(View<byte>(buffer, new_len));
+    return SmallStr::fromBytes(View<byte>(buffer, new_len));
   }
 
   Handle<String> result(&scope,

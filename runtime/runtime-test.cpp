@@ -686,19 +686,19 @@ TEST(RuntimeTest, NewString) {
   HandleScope scope;
   const byte bytes[400]{0};
   Handle<String> empty0(&scope, runtime.newStringWithAll(View<byte>(bytes, 0)));
-  ASSERT_TRUE(empty0->isSmallString());
+  ASSERT_TRUE(empty0->isSmallStr());
   EXPECT_EQ(empty0->length(), 0);
 
   Handle<String> empty1(&scope, runtime.newStringWithAll(View<byte>(bytes, 0)));
-  ASSERT_TRUE(empty1->isSmallString());
+  ASSERT_TRUE(empty1->isSmallStr());
   EXPECT_EQ(*empty0, *empty1);
 
   Handle<String> empty2(&scope, runtime.newStringFromCString("\0"));
-  ASSERT_TRUE(empty2->isSmallString());
+  ASSERT_TRUE(empty2->isSmallStr());
   EXPECT_EQ(*empty0, *empty2);
 
   Handle<String> s1(&scope, runtime.newStringWithAll(View<byte>(bytes, 1)));
-  ASSERT_TRUE(s1->isSmallString());
+  ASSERT_TRUE(s1->isSmallStr());
   EXPECT_EQ(s1->length(), 1);
 
   Handle<String> s254(&scope, runtime.newStringWithAll(View<byte>(bytes, 254)));
@@ -940,7 +940,7 @@ TEST(RuntimeTest, InternLargeString) {
   EXPECT_EQ(*sym3, *sym1);
 }
 
-TEST(RuntimeTest, InternSmallString) {
+TEST(RuntimeTest, InternSmallStr) {
   Runtime runtime;
   HandleScope scope;
 
@@ -949,13 +949,13 @@ TEST(RuntimeTest, InternSmallString) {
   // Creating a small string should not affect the intern table.
   word num_interned_strings = interned->numItems();
   Handle<Object> str(&scope, runtime.newStringFromCString("a"));
-  ASSERT_TRUE(str->isSmallString());
+  ASSERT_TRUE(str->isSmallStr());
   EXPECT_FALSE(runtime.setIncludes(interned, str));
   EXPECT_EQ(num_interned_strings, interned->numItems());
 
   // Interning a small string should have no affect on the intern table.
   Handle<Object> sym(&scope, runtime.internString(str));
-  EXPECT_TRUE(sym->isSmallString());
+  EXPECT_TRUE(sym->isSmallStr());
   EXPECT_FALSE(runtime.setIncludes(interned, str));
   EXPECT_EQ(num_interned_strings, interned->numItems());
   EXPECT_EQ(*sym, *str);
@@ -1203,7 +1203,7 @@ TEST(RuntimeStringTest, StringConcat) {
   EXPECT_PYSTRING_EQ(*concat13, "abc0123456789abcdef");
   EXPECT_PYSTRING_EQ(*concat31, "0123456789abcdefabc");
 
-  EXPECT_TRUE(concat12->isSmallString());
+  EXPECT_TRUE(concat12->isSmallStr());
   EXPECT_TRUE(concat34->isLargeString());
   EXPECT_TRUE(concat13->isLargeString());
   EXPECT_TRUE(concat31->isLargeString());

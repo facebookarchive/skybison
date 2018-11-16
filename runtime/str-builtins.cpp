@@ -189,7 +189,7 @@ Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs) {
         return thread->throwIndexErrorFromCString("string index out of range");
       }
       byte c = string->charAt(idx);
-      return SmallString::fromBytes(View<byte>(&c, 1));
+      return SmallStr::fromBytes(View<byte>(&c, 1));
     } else {
       // TODO(jeethu): Add support for slicing strings
       return thread->throwTypeErrorFromCString(

@@ -209,7 +209,7 @@ Object* Heap::createLargeInt(word num_digits) {
 }
 
 Object* Heap::createLargeString(word length) {
-  DCHECK(length > SmallString::kMaxLength,
+  DCHECK(length > SmallStr::kMaxLength,
          "string len %ld is too small to be a large string", length);
   word size = LargeString::allocationSize(length);
   Object* raw = allocate(size, LargeString::headerSize(length));
