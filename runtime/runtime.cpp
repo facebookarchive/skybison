@@ -1513,6 +1513,7 @@ struct {
     {SymbolId::kBuiltins, &Runtime::createBuiltinsModule},
     {SymbolId::kSys, &Runtime::createSysModule},
     {SymbolId::kTime, &Runtime::createTimeModule},
+    {SymbolId::kUnderImp, &Runtime::createImportModule},
     {SymbolId::kUnderWeakRef, &Runtime::createWeakRefModule},
 };
 
@@ -1875,6 +1876,13 @@ void Runtime::createSysModule() {
   Object builtins(&scope, *builtins_tuple);
   moduleAddGlobal(module, SymbolId::kBuiltinModuleNames, builtins);
 
+  addModule(module);
+}
+
+void Runtime::createImportModule() {
+  HandleScope scope;
+  Object name(&scope, symbols()->UnderImp());
+  Module module(&scope, newModule(name));
   addModule(module);
 }
 

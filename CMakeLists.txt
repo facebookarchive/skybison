@@ -329,6 +329,7 @@ add_library(
   runtime/generator-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
+  runtime/import-builtins-test.cpp
   runtime/int-builtins-test.cpp
   runtime/interpreter-test.cpp
   runtime/layout-test.cpp
