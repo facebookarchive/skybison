@@ -106,6 +106,8 @@ class Runtime {
 
   uword random();
 
+  void setArgv(int argc, const char** argv);
+
   Heap* heap() {
     return &heap_;
   }

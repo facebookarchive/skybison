@@ -19,6 +19,7 @@ class Runtime;
   V(DunderNew, "__new__")                \
   V(DunderSet, "__set__")                \
   V(Append, "append")                    \
+  V(Argv, "argv")                        \
   V(Builtins, "builtins")                \
   V(Chr, "chr")                          \
   V(Classmethod, "classmethod")          \
@@ -33,7 +34,8 @@ class Runtime;
   V(Pop, "pop")                          \
   V(Range, "range")                      \
   V(Super, "super")                      \
-  V(Remove, "remove")
+  V(Remove, "remove")                    \
+  V(Sys, "sys")
 // clang-format on
 
 // Provides convenient, fast access to commonly used names. Stolen from Dart.

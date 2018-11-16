@@ -563,6 +563,22 @@ uword Runtime::random() {
   return result;
 }
 
+void Runtime::setArgv(int argc, const char** argv) {
+  HandleScope scope;
+  Handle<List> list(&scope, newList());
+  CHECK(argc >= 1, "Unexpected argc");
+  for (int i = 1; i < argc; i++) { // skip program name (i.e. "python")
+    Handle<Object> arg_val(&scope, newStringFromCString(argv[i]));
+    listAdd(list, arg_val);
+  }
+
+  Handle<Object> module_name(&scope, symbols()->Sys());
+  Handle<Module> sys_module(&scope, findModule(module_name));
+  Handle<Object> argv_name(&scope, symbols()->Argv());
+  Handle<Object> argv_value(&scope, *list);
+  moduleAddGlobal(sys_module, argv_name, argv_value);
+}
+
 Object* Runtime::identityHash(Object* object) {
   HeapObject* src = HeapObject::cast(object);
   word code = src->header()->hashCode();
@@ -1071,7 +1087,7 @@ void Runtime::moduleAddBuiltinType(
 
 void Runtime::createSysModule() {
   HandleScope scope;
-  Handle<Object> name(&scope, newStringFromCString("sys"));
+  Handle<Object> name(&scope, symbols()->Sys());
   Handle<Module> module(&scope, newModule(name));
 
   Handle<Object> modules_id(&scope, newStringFromCString("modules"));
