@@ -22,8 +22,7 @@ TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidTypeReturnsNegative) {
 
 TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidKeyReturnsNegative) {
   PyModuleDef def = {
-      PyModuleDef_HEAD_INIT,
-      "test",
+      PyModuleDef_HEAD_INIT, "test",
   };
   PyObject* module = PyModule_Create(&def);
   PyObject* value = PyLong_FromLong(5);
@@ -33,8 +32,7 @@ TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidKeyReturnsNegative) {
 
 TEST_F(ObjectExtensionApiTest, SetAttrReturnsZero) {
   PyModuleDef def = {
-      PyModuleDef_HEAD_INIT,
-      "test",
+      PyModuleDef_HEAD_INIT, "test",
   };
   PyObject* module = PyModule_Create(&def);
   PyObject* key = PyUnicode_FromString("a_key");
@@ -45,8 +43,7 @@ TEST_F(ObjectExtensionApiTest, SetAttrReturnsZero) {
 
 TEST_F(ObjectExtensionApiTest, GetAttrWithNoneExistingKeyReturnsNull) {
   PyModuleDef def = {
-      PyModuleDef_HEAD_INIT,
-      "test",
+      PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
   PyObject* module = PyModule_Create(&def);
@@ -58,8 +55,7 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithNoneExistingKeyReturnsNull) {
 
 TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidTypeReturnsNull) {
   PyModuleDef def = {
-      PyModuleDef_HEAD_INIT,
-      "test",
+      PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
   PyObject* module = PyModule_Create(&def);
@@ -73,8 +69,7 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidTypeReturnsNull) {
 
 TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidKeyReturnsNull) {
   PyModuleDef def = {
-      PyModuleDef_HEAD_INIT,
-      "test",
+      PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
   PyObject* module = PyModule_Create(&def);
@@ -88,8 +83,7 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidKeyReturnsNull) {
 
 TEST_F(ObjectExtensionApiTest, GetAttrReturnsZero) {
   PyModuleDef def = {
-      PyModuleDef_HEAD_INIT,
-      "test",
+      PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
   PyObject* module = PyModule_Create(&def);
@@ -106,6 +100,15 @@ TEST_F(ObjectExtensionApiTest, RefCountDecreaseDeallocsHandle) {
   long value = 10;
   PyObject* o = PyLong_FromLong(value);
   Py_DECREF(o);
+}
+
+TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCount) {
+  PyObject* o = PyLong_FromLong(42);
+  EXPECT_EQ(Py_REFCNT(o), 1);
+  EXPECT_EQ(Py_INCREF(o), 2);
+  EXPECT_EQ(Py_REFCNT(o), 2);
+  Py_DECREF(o);
+  EXPECT_EQ(Py_REFCNT(o), 1);
 }
 
 }  // namespace python

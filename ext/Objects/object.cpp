@@ -15,10 +15,17 @@ PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
   ApiHandle::fromPyObject(obj)->dispose();
 }
 
-PY_EXPORT int Py_INCREF_Func(PyObject* obj) { return obj->ob_refcnt++; }
+PY_EXPORT Py_ssize_t Py_INCREF_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->incrementRefCnt();
+}
 
 PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
-  if (--obj->ob_refcnt == 0) _Py_Dealloc_Func(obj);
+  obj->ob_refcnt--;
+  if (ApiHandle::fromPyObject(obj)->refCnt() == 0) _Py_Dealloc_Func(obj);
+}
+
+PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->refCnt();
 }
 
 PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
@@ -98,7 +105,6 @@ PY_EXPORT int PyObject_GenericSetDict(PyObject* /* j */, PyObject* /* e */,
                                       void* /* t */) {
   UNIMPLEMENTED("PyObject_GenericSetDict");
 }
-
 
 PY_EXPORT PyObject* PyObject_GetAttr(PyObject* v, PyObject* name) {
   Thread* thread = Thread::currentThread();

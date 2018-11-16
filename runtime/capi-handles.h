@@ -42,6 +42,13 @@ class ApiHandle : public PyObject {
 
   void clearBorrowed() { ob_refcnt &= ~kBorrowedBit; }
 
+  word incrementRefCnt() {
+    DCHECK(refCnt() < kBorrowedBit - 1, "Ref count overflow");
+    return ++ob_refcnt;
+  }
+
+  word refCnt() { return ob_refcnt & ~kBorrowedBit; }
+
  private:
   ApiHandle() = delete;
 
