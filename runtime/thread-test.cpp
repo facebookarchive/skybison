@@ -105,20 +105,20 @@ TEST(ThreadTest, OverlappingFrames) {
   // for 3 local variables
   Handle<Code> code(&scope, runtime.newCode());
   code->setArgcount(3);
-  code->setNlocals(6);
+  code->setNlocals(3);
   auto frame = thread->pushFrame(*code, callerFrame);
 
   // Make sure we can read the args from the frame
-  Object** locals = frame->locals();
+  Frame::Locals locals = frame->locals();
 
-  ASSERT_TRUE(locals[0]->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(locals[3])->value(), arg3->value());
+  ASSERT_TRUE(locals.get(0)->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(locals.get(0))->value(), arg1->value());
 
-  ASSERT_TRUE(locals[1]->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(locals[4])->value(), arg2->value());
+  ASSERT_TRUE(locals.get(1)->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(locals.get(1))->value(), arg2->value());
 
-  ASSERT_TRUE(locals[2]->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(locals[5])->value(), arg1->value());
+  ASSERT_TRUE(locals.get(2)->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(locals.get(2))->value(), arg3->value());
 }
 
 TEST(ThreadTest, EncodeTryBlock) {
@@ -150,8 +150,7 @@ TEST(ThreadTest, PushPopFrame) {
   EXPECT_EQ(frame->code(), *code);
   EXPECT_EQ(frame->valueStackTop(), reinterpret_cast<Object**>(frame));
   EXPECT_EQ(frame->valueStackBase(), frame->valueStackTop());
-  EXPECT_EQ(
-      frame->locals() + code->nlocals(), reinterpret_cast<Object**>(prevSp));
+  EXPECT_EQ(frame->numLocals(), 2);
   EXPECT_EQ(frame->previousSp(), prevSp);
 
   // Make sure we restore the thread's stack pointer back to its previous
@@ -192,7 +191,7 @@ TEST(ThreadTest, ManipulateValueStack) {
   Runtime runtime;
   HandleScope scope;
   auto thread = Thread::currentThread();
-  auto frame = thread->openAndLinkFrame(0, 3, thread->initialFrame());
+  auto frame = thread->openAndLinkFrame(0, 0, 3, thread->initialFrame());
 
   // Push 3 items on the value stack
   Object** sp = frame->valueStackTop();
@@ -224,7 +223,7 @@ TEST(ThreadTest, ManipulateBlockStack) {
   Runtime runtime;
   HandleScope scope;
   auto thread = Thread::currentThread();
-  auto frame = thread->openAndLinkFrame(0, 0, thread->initialFrame());
+  auto frame = thread->openAndLinkFrame(0, 0, 0, thread->initialFrame());
   BlockStack* blockStack = frame->blockStack();
 
   TryBlock pushed1(Bytecode::SETUP_LOOP, 100, 10);
@@ -1201,5 +1200,95 @@ for i in range(42,100,-1):
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "0\n1\n2\n3\n4\n5\n6\n8\n10\n6\n5\n4\n");
 }
+
+struct LocalsTestData {
+  const char* name;
+  const char* expected_output;
+  const char* src;
+};
+
+LocalsTestData kManipulateLocalsTests[] = {
+    // Load an argument when no local variables are present
+    {"LoadSingleArg", "1\n", R"(
+def test(x):
+  print(x)
+test(1)
+)"},
+
+    // Load and store an argument when no local variables are present
+    {"LoadStoreSingleArg", "1\n2\n", R"(
+def test(x):
+  print(x)
+  x = 2
+  print(x)
+test(1)
+)"},
+
+    // Load multiple arguments when no local variables are present
+    {"LoadManyArgs", "1 2 3\n", R"(
+def test(x, y, z):
+  print(x, y, z)
+test(1, 2, 3)
+)"},
+
+    // Load/store multiple arguments when no local variables are present
+    {"LoadStoreManyArgs", "1 2 3\n3 2 1\n", R"(
+def test(x, y, z):
+  print(x, y, z)
+  x = 3
+  z = 1
+  print(x, y, z)
+test(1, 2, 3)
+)"},
+
+    // Load a single local variable when no arguments are present
+    {"LoadSingleLocalVar", "1\n", R"(
+def test():
+  x = 1
+  print(x)
+test()
+)"},
+
+    // Load multiple local variables when no arguments are present
+    {"LoadManyLocalVars", "1 2 3\n", R"(
+def test():
+  x = 1
+  y = 2
+  z = 3
+  print(x, y, z)
+test()
+)"},
+
+    // Mixed local var and arg usage
+    {"MixedLocals", "1 2 3\n3 2 1\n", R"(
+def test(x, y):
+  z = 3
+  print(x, y, z)
+  x = z
+  z = 1
+  print(x, y, z)
+test(1, 2)
+)"},
+};
+
+static std::string localsTestName(
+    ::testing::TestParamInfo<LocalsTestData> info) {
+  return info.param.name;
+}
+
+class LocalsTest : public ::testing::TestWithParam<LocalsTestData> {};
+
+TEST_P(LocalsTest, ManipulateLocals) {
+  Runtime runtime;
+  LocalsTestData data = GetParam();
+  std::string output = compileAndRunToString(&runtime, data.src);
+  EXPECT_EQ(output, data.expected_output);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    ManipulateLocals,
+    LocalsTest,
+    ::testing::ValuesIn(kManipulateLocalsTests),
+    localsTestName);
 
 } // namespace python

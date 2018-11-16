@@ -131,10 +131,35 @@ class BlockStack {
  */
 class Frame {
  public:
+  class Locals {
+   public:
+    // Bias locals by 1 word to avoid doing the computation during array
+    // indexing
+    Locals(Object** locals, word nlocals)
+        : locals_(locals - 1), nlocals_(nlocals) {}
+
+    Object* get(word idx) {
+      assert(idx >= 0);
+      assert(idx < nlocals_);
+      return *(locals_ - idx);
+    }
+
+    void set(word idx, Object* object) {
+      assert(idx >= 0);
+      assert(idx < nlocals_);
+      *(locals_ - idx) = object;
+    }
+
+   private:
+    Object** locals_;
+    word nlocals_;
+  };
+
   // Function arguments, local variables, cell variables, and free variables
-  // NB: This points at the last local, so you'll need to flip your array
-  // indices around.
-  inline Object** locals();
+  inline Locals locals();
+
+  inline void setNumLocals(word numLocals);
+  inline word numLocals();
 
   inline BlockStack* blockStack();
 
@@ -194,7 +219,8 @@ class Frame {
   static const int kBuiltinsOffset = kImplicitGlobalsOffset + kPointerSize;
   static const int kLastInstructionOffset = kBuiltinsOffset + kPointerSize;
   static const int kBlockStackOffset = kLastInstructionOffset + kPointerSize;
-  static const int kSize = kBlockStackOffset + BlockStack::kSize;
+  static const int kNumLocalsOffset = kBlockStackOffset + BlockStack::kSize;
+  static const int kSize = kNumLocalsOffset + kPointerSize;
 
  private:
   inline uword address();
@@ -260,8 +286,20 @@ void Frame::setCode(Object* code) {
   atPut(kCodeOffset, code);
 }
 
-Object** Frame::locals() {
-  return reinterpret_cast<Object**>(address() + kSize);
+Frame::Locals Frame::locals() {
+  word nlocals = numLocals();
+  return Locals(
+      reinterpret_cast<Object**>(
+          address() + Frame::kSize + nlocals * kPointerSize),
+      nlocals);
+}
+
+void Frame::setNumLocals(word numLocals) {
+  atPut(kNumLocalsOffset, SmallInteger::fromWord(numLocals));
+}
+
+word Frame::numLocals() {
+  return SmallInteger::cast(at(kNumLocalsOffset))->value();
 }
 
 Frame* Frame::previousFrame() {

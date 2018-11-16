@@ -46,10 +46,14 @@ void Thread::setCurrentThread(Thread* thread) {
 }
 
 Frame* Thread::openAndLinkFrame(
-    word localsSize,
-    word stackSize,
+    word numArgs,
+    word numVars,
+    word stackDepth,
     Frame* previousFrame) {
-  word size = Frame::kSize + (localsSize + stackSize) * kPointerSize;
+  assert(numArgs >= 0);
+  assert(numVars >= 0);
+  assert(stackDepth >= 0);
+  word size = Frame::kSize + (numVars + stackDepth) * kPointerSize;
 
   // allocate that much space on the stack
   // TODO: Grow stack
@@ -63,38 +67,26 @@ Frame* Thread::openAndLinkFrame(
   if (!previousFrame->isSentinelFrame()) {
     sp = reinterpret_cast<byte*>(previousFrame->valueStackTop()) - size;
   }
-  auto frame = reinterpret_cast<Frame*>(sp + stackSize * kPointerSize);
+  auto frame = reinterpret_cast<Frame*>(sp + stackDepth * kPointerSize);
 
   // Initialize the frame.
   std::memset(ptr_, 0, size);
   frame->setPreviousFrame(previousFrame);
   frame->setValueStackTop(reinterpret_cast<Object**>(frame));
   frame->setPreviousSp(prevSp);
+  frame->setNumLocals(numArgs + numVars);
 
   // return a pointer to the base of the frame
   return frame;
 }
 
 Frame* Thread::pushFrame(Object* object, Frame* previousFrame) {
-  Code* code = Code::cast(object);
-
-  word ncells = 0;
-  Object* cellvars = code->cellvars();
-  assert(cellvars->isNone() || cellvars->isObjectArray());
-  if (cellvars->isObjectArray()) {
-    ncells = ObjectArray::cast(cellvars)->length();
-  }
-
-  word nfrees = 0;
-  Object* freevars = code->freevars();
-  assert(freevars->isNone() || freevars->isObjectArray());
-  if (freevars->isObjectArray()) {
-    nfrees = ObjectArray::cast(freevars)->length();
-  }
-
-  word nlocals = code->nlocals() - code->argcount() + ncells + nfrees;
-  auto frame = openAndLinkFrame(nlocals, code->stacksize(), previousFrame);
-  frame->setCode(code);
+  HandleScope scope(handles());
+  Handle<Code> code(&scope, object);
+  word numVars = code->nlocals() + code->numCellvars() + code->numFreevars();
+  auto frame = openAndLinkFrame(
+      code->argcount(), numVars, code->stacksize(), previousFrame);
+  frame->setCode(*code);
   return frame;
 }
 

@@ -587,6 +587,7 @@ class Code : public HeapObject {
 
   inline Object* cellvars();
   inline void setCellvars(Object* value);
+  inline word numCellvars();
 
   inline Object* code();
   inline void setCode(Object* value);
@@ -605,6 +606,7 @@ class Code : public HeapObject {
 
   inline Object* freevars();
   inline void setFreevars(Object* value);
+  inline word numFreevars();
 
   inline word kwonlyargcount();
   inline void setKwonlyargcount(word value);
@@ -1522,6 +1524,15 @@ void Code::setCellvars(Object* value) {
   instanceVariableAtPut(kCellvarsOffset, value);
 }
 
+word Code::numCellvars() {
+  Object* object = cellvars();
+  assert(object->isNone() || object->isObjectArray());
+  if (object->isNone()) {
+    return 0;
+  }
+  return ObjectArray::cast(object)->length();
+}
+
 Object* Code::code() {
   return instanceVariableAt(kCodeOffset);
 }
@@ -1568,6 +1579,15 @@ Object* Code::freevars() {
 
 void Code::setFreevars(Object* value) {
   instanceVariableAtPut(kFreevarsOffset, value);
+}
+
+word Code::numFreevars() {
+  Object* object = freevars();
+  assert(object->isNone() || object->isObjectArray());
+  if (object->isNone()) {
+    return 0;
+  }
+  return ObjectArray::cast(object)->length();
 }
 
 word Code::kwonlyargcount() {

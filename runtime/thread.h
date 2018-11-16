@@ -30,8 +30,11 @@ class Thread {
     return ptr_;
   }
 
-  Frame*
-  openAndLinkFrame(word localsSize, word stackSize, Frame* previousFrame);
+  Frame* openAndLinkFrame(
+      word numArgs,
+      word numVars,
+      word stackDepth,
+      Frame* previousFrame);
   Frame* pushFrame(Object* code, Frame* previousFrame);
   Frame*
   pushModuleFunctionFrame(Module* module, Object* code, Frame* previousFrame);
