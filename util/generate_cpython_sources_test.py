@@ -16,7 +16,8 @@ typedef struct newtype {
 
 typedef foo_bar Baz;
 """
-        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)["typedef"]
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
+        res = symbols_dict["typedef"]
         self.assertListEqual(res, ["Foo", "Bar", "Baz"])
 
     def test_multiline_typedef_regex_returns_multiple_symbols(self):
@@ -36,9 +37,8 @@ struct FooBarBaz {
   Foobar* foobar;
 };
 """
-        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)[
-            "multiline_typedef"
-        ]
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
+        res = symbols_dict["multiline_typedef"]
         self.assertListEqual(res, ["Foo", "Bar"])
 
     def test_struct_regex_returns_multiple_symbols(self):
@@ -56,7 +56,8 @@ struct Bar {
   Baz baz;
 };
 """
-        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)["struct"]
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
+        res = symbols_dict["struct"]
         self.assertListEqual(res, ["Foo", "Bar"])
 
     def test_macro_regex_returns_multiple_symbols(self):
@@ -70,7 +71,8 @@ typedef int FooBar;
 #define FooBaz(o)       \\
     { Baz(type) },
 """
-        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)["macro"]
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
+        res = symbols_dict["macro"]
         self.assertListEqual(res, ["Foo", "Bar"])
 
     def test_multiline_macro_regex_returns_multiple_symbols(self):
@@ -91,9 +93,8 @@ typedef int FooBar;
           Baz(a)    \\
     } while (0)
 """
-        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)[
-            "multiline_macro"
-        ]
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
+        res = symbols_dict["multiline_macro"]
         self.assertListEqual(res, ["Foo", "Bar"])
 
     def test_pytypeobject_regex_returns_multiple_symbols(self):
@@ -110,7 +111,8 @@ extern "C" PyTypeObject *Bar_Type_Ptr() {
   Thread* thread = Thread::currentThread();
 }
 """
-        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)["pytypeobject"]
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.SOURCE_SYMBOL_REGEX)
+        res = symbols_dict["pytypeobject"]
         self.assertListEqual(res, ["Foo_Type", "Bar_Type"])
 
     def test_pytypeobject_macro_regex_returns_multiple_symbols(self):
@@ -126,9 +128,8 @@ typedef int FooBar;
 
 #define FooBaz(o) Foo,
 """
-        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)[
-            "pytypeobject_macro"
-        ]
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
+        res = symbols_dict["pytypeobject_macro"]
         self.assertEqual(res, ["Foo_Type", "Bar_Type"])
 
     def test_pyfunction_regex_returns_multiple_symbols(self):
@@ -145,7 +146,8 @@ extern "C" PyTypeObject *bar_function() {
   // Implmementation
 }
 """
-        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)["pyfunction"]
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.SOURCE_SYMBOL_REGEX)
+        res = symbols_dict["pyfunction"]
         self.assertEqual(res, ["foo_function", "bar_function"])
 
 
@@ -171,7 +173,9 @@ typedef struct newtype {
 
 """
         symbols_to_replace = {"typedef": ["Foo", "Bar", "Baz"]}
-        res = gcs.modify_file(original_lines, symbols_to_replace)
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
+        )
         self.assertEqual(res, expected_lines)
 
     def test_multiple_multiline_typedef_definitions_are_replaced(self):
@@ -201,7 +205,9 @@ struct FooBarBaz {
 };
 """
         symbols_to_replace = {"multiline_typedef": ["Foo", "Bar"]}
-        res = gcs.modify_file(original_lines, symbols_to_replace)
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
+        )
         self.assertEqual(res, expected_lines)
 
     def test_multiple_struct_definitions_are_replaced(self):
@@ -227,7 +233,9 @@ typedef int FooBar;
 
 """
         symbols_to_replace = {"struct": ["Foo", "Bar"]}
-        res = gcs.modify_file(original_lines, symbols_to_replace)
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
+        )
         self.assertEqual(res, expected_lines)
 
     def test_multiple_macro_definitions_are_replaced(self):
@@ -248,7 +256,9 @@ typedef int FooBar;
     { Baz(type) },
 """
         symbols_to_replace = {"macro": ["Foo", "Bar"]}
-        res = gcs.modify_file(original_lines, symbols_to_replace)
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
+        )
         self.assertEqual(res, expected_lines)
 
     def test_multiline_macro_definitions_are_replaced(self):
@@ -277,7 +287,9 @@ typedef int FooBar;
 
 """
         symbols_to_replace = {"multiline_macro": ["Foo", "Bar"]}
-        res = gcs.modify_file(original_lines, symbols_to_replace)
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
+        )
         self.assertEqual(res, expected_lines)
 
     def test_pytypeobject_definitions_are_replaced(self):
@@ -322,7 +334,9 @@ PyTypeObject Baz_Type = {
 };
 """
         symbols_to_replace = {"pytypeobject": ["Foo_Type", "Bar_Type"]}
-        res = gcs.modify_file(original_lines, symbols_to_replace)
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.SOURCE_DEFINITIONS_REGEX
+        )
         self.assertEqual(res, expected_lines)
 
     def test_pytypeobject_macro_definitions_are_replaced(self):
@@ -349,7 +363,9 @@ typedef int FooBar;
 #define FooBaz(o) Foo,
 """
         symbols_to_replace = {"pytypeobject_macro": ["Foo_Type", "Bar_Type"]}
-        res = gcs.modify_file(original_lines, symbols_to_replace)
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
+        )
         self.assertEqual(res, expected_lines)
 
     def test_pyfunction_definitions_are_replaced(self):
@@ -366,8 +382,6 @@ Type foobar_function(
   type *arg1) {
   // Implementation
 }
-
-FooBar(argument);
 
 /* Function comments*/
 static type bar_function(void) {
@@ -393,14 +407,15 @@ int counter = 1;
 static type *global_str = NULL;
 
 
+
 Type foobar_function(
   type *arg1) {
   // Implementation
 }
 
-FooBar(argument);
-
 /* Function comments*/
+
+
 
 
 static type foobaz_function(void)
@@ -413,7 +428,9 @@ int counter = 1;
         symbols_to_replace = {
             "pyfunction": ["foo_function", "bar_function", "baz_function"]
         }
-        res = gcs.modify_file(original_lines, symbols_to_replace)
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.SOURCE_DEFINITIONS_REGEX
+        )
         self.assertEqual(res, expected_lines)
 
 

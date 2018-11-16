@@ -21,7 +21,7 @@
 set(CPYTHON_DIR ${CMAKE_SOURCE_DIR}/third-party/cpython)
 
 # DIR to the generated CPython headers
-set(CPYTHON_OUTPUT_HEADERS_DIR ${CMAKE_BINARY_DIR}/gen/include)
+set(CPYTHON_OUTPUT_HEADERS_DIR ${CMAKE_BINARY_DIR}/cpython/Include)
 
 # Obtain the list of all CPython headers and replace Python.h
 file(GLOB CPYTHON_HEADERS ${CPYTHON_DIR}/Include/*.h)
@@ -29,7 +29,7 @@ list(REMOVE_ITEM CPYTHON_HEADERS "${CPYTHON_DIR}/Include/Python.h")
 list(APPEND CPYTHON_HEADERS "ext/Include/Python.h")
 
 # Replace the DIR to generate the output sources
-# i.e. third-parth/cpython/Include/object.h -> build/gen/include/object.h
+# i.e. third-parth/cpython/Include/object.h -> build/cpython/Include/object.h
 string(
   REGEX
   REPLACE "([^;]+\/)" "${CPYTHON_OUTPUT_HEADERS_DIR}/"
