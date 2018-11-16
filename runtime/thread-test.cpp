@@ -1590,4 +1590,29 @@ for i in range(9):
   EXPECT_EQ(output, "1\n2\n3\n1\n2\n3\n1\n2\n3\n");
 }
 
+TEST(ThreadTest, InheritFromObject) {
+  const char* src = R"(
+class Foo(object):
+  pass
+)";
+  Runtime runtime;
+  compileAndRunToString(&runtime, src);
+
+  // Look up the class Foo
+  HandleScope scope;
+  Object* object = runtime.findModule("__main__");
+  ASSERT_TRUE(object->isModule());
+  Handle<Module> main(&scope, object);
+  object = findInModule(&runtime, main, "Foo");
+  ASSERT_TRUE(object->isClass());
+  Handle<Class> klass(&scope, object);
+
+  // Check that its MRO is itself and object
+  ASSERT_TRUE(klass->mro()->isObjectArray());
+  Handle<ObjectArray> mro(&scope, klass->mro());
+  ASSERT_EQ(mro->length(), 2);
+  EXPECT_EQ(mro->at(0), *klass);
+  EXPECT_EQ(mro->at(1), runtime.classAt(ClassId::kObject));
+}
+
 } // namespace python

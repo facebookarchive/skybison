@@ -836,6 +836,11 @@ void Runtime::createBuiltinsModule() {
       nativeTrampoline<unimplementedTrampoline>);
   moduleAddBuiltinPrint(module);
 
+  // Add 'object'
+  Handle<Object> object(&scope, symbols()->ObjectClassname());
+  Handle<Object> value(&scope, classAt(ClassId::kObject));
+  moduleAddGlobal(module, object, value);
+
   addModule(module);
 }
 
@@ -875,6 +880,11 @@ Object* Runtime::createMainModule() {
       "isinstance",
       nativeTrampoline<builtinIsinstance>,
       nativeTrampoline<unimplementedTrampoline>);
+
+  // Add 'object'
+  Handle<Object> object(&scope, symbols()->ObjectClassname());
+  Handle<Object> value(&scope, classAt(ClassId::kObject));
+  moduleAddGlobal(module, object, value);
 
   addModule(module);
 

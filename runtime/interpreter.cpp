@@ -165,7 +165,10 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         Object* value = None::object();
         thread->runtime()->dictionaryAt(implicit_globals, key, &value);
         // TODO(cshapiro): check for unbound implicit global variables.
-        assert(value != None::object());
+        CHECK(
+            value != None::object(),
+            "unbound implicit global '%s'\n",
+            String::cast(*key)->toCString());
         *--sp = ValueCell::cast(value)->value();
         break;
       }
