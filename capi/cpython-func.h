@@ -47,6 +47,20 @@ PyAPI_FUNC(int) Py_FinalizeEx(void);
 PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *flags);
 
 /* Non C-API functions */
+PyAPI_FUNC(int) PyBool_Check_Func(PyObject *);
+PyAPI_FUNC(int) PyLong_Check_Func(PyObject *);
+PyAPI_FUNC(int) PyLong_CheckExact_Func(PyObject *);
+PyAPI_FUNC(int) PyFloat_Check_Func(PyObject *);
+PyAPI_FUNC(int) PyFloat_CheckExact_Func(PyObject *);
+PyAPI_FUNC(int) PyUnicode_Check_Func(PyObject *);
+PyAPI_FUNC(int) PyUnicode_CheckExact_Func(PyObject *);
+PyAPI_FUNC(int) PyTuple_Check_Func(PyObject *);
+PyAPI_FUNC(int) PyTuple_CheckExact_Func(PyObject *);
+PyAPI_FUNC(int) PyList_Check_Func(PyObject *);
+PyAPI_FUNC(int) PyList_CheckExact_Func(PyObject *);
+PyAPI_FUNC(int) PyDict_Check_Func(PyObject *);
+PyAPI_FUNC(int) PyDict_CheckExact_Func(PyObject *);
+PyAPI_FUNC(int) PyType_Check_Func(PyObject *);
 PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
 
 /* Macros */
@@ -54,7 +68,28 @@ PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
 /* clang-format off */
 #define _Py_Dealloc \
     (*_Py_Dealloc_Func)
-#define PyType_CheckExact(op) PyType_CheckExact_Func(op)
+
+#define PyBool_Check(op) (PyBool_Check_Func((PyObject*)op))
+#define PyLong_Check(op) \
+  PyLong_Check_Func((PyObject*)op)
+#define PyLong_CheckExact(op) (PyLong_CheckExact_Func((PyObject*)op))
+#define PyFloat_Check(op) PyFloat_Check_Func((PyObject*)op)
+#define PyFloat_CheckExact(op) (PyFloat_CheckExact_Func((PyObject*)op))
+#define PyUnicode_Check(op) \
+  PyUnicode_Check_Func((PyObject*)op)
+#define PyUnicode_CheckExact(op) (PyUnicode_CheckExact_Func((PyObject*)op))
+#define PyTuple_Check(op) \
+  PyTuple_Check_Func((PyObject*)op)
+#define PyTuple_CheckExact(op) (PyTuple_CheckExact_Func((PyObject*)op))
+#define PyList_Check(op) \
+  PyList_Check_Func((PyObject*)op)
+#define PyList_CheckExact(op) (PyList_CheckExact_Func((PyObject*)op))
+#define PyDict_Check(op) \
+  PyDict_Check_Func((PyObject*)op)
+#define PyDict_CheckExact(op) (PyDict_CheckExact_Func((PyObject*)op))
+#define PyType_Check(op) \
+  PyType_Check_Func((PyObject*)op)
+#define PyType_CheckExact(op) (PyType_CheckExact_Func((PyObject*)op))
 /* clang-format on */
 
 #ifdef __cplusplus

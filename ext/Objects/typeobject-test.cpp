@@ -25,6 +25,19 @@ extern "C" PyObject* PyType_GenericAlloc(PyTypeObject* type,
   return obj;
 }
 
+TEST_F(TypeExtensionApiTest, PyTypeCheckOnInt) {
+  PyObject* pylong = PyLong_FromLong(10);
+  EXPECT_FALSE(PyType_Check(pylong));
+  EXPECT_FALSE(PyType_CheckExact(pylong));
+}
+
+TEST_F(TypeExtensionApiTest, PyTypeCheckOnType) {
+  PyObject* pylong = PyLong_FromLong(10);
+  PyObject* type = ApiHandle::fromPyObject(pylong)->type()->asPyObject();
+  EXPECT_TRUE(PyType_Check(type));
+  EXPECT_TRUE(PyType_CheckExact(type));
+}
+
 TEST_F(TypeExtensionApiTest, ReadyInitializesType) {
   // Create a simple PyTypeObject
   PyTypeObject empty_type{PyObject_HEAD_INIT(NULL)};

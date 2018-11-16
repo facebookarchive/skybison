@@ -138,4 +138,12 @@ ApiHandle* ApiHandle::type() {
   return ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(ob_type));
 }
 
+bool ApiHandle::isSubClass(Thread* thread, LayoutId layout_id) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Handle<Type> superclass(&scope, runtime->typeAt(layout_id));
+  Handle<Type> subclass(&scope, type()->asObject());
+  return runtime->isSubClass(subclass, superclass) == Bool::trueObj();
+}
+
 }  // namespace python

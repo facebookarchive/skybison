@@ -1,9 +1,23 @@
 #include "capi-fixture.h"
+#include "capi-handles.h"
 #include "capi-testing.h"
 
 namespace python {
 
 using LongExtensionApiTest = ExtensionApi;
+
+TEST_F(LongExtensionApiTest, PyLongCheckOnInt) {
+  PyObject* pylong = PyLong_FromLong(10);
+  EXPECT_TRUE(PyLong_Check(pylong));
+  EXPECT_TRUE(PyLong_CheckExact(pylong));
+}
+
+TEST_F(LongExtensionApiTest, PyLongCheckOnType) {
+  PyObject* pylong = PyLong_FromLong(10);
+  PyObject* type = ApiHandle::fromPyObject(pylong)->type()->asPyObject();
+  EXPECT_FALSE(PyLong_Check(type));
+  EXPECT_FALSE(PyLong_CheckExact(type));
+}
 
 TEST_F(LongExtensionApiTest, AsLongWithNullReturnsNegative) {
   long res = PyLong_AsLong(nullptr);

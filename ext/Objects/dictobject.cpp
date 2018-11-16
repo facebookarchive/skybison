@@ -6,6 +6,18 @@
 
 namespace python {
 
+extern "C" int PyDict_CheckExact_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->asObject()->isDict();
+}
+
+extern "C" int PyDict_Check_Func(PyObject* obj) {
+  if (PyDict_CheckExact_Func(obj)) {
+    return true;
+  }
+  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+                                                  LayoutId::kDict);
+}
+
 extern "C" int PyDict_SetItem(PyObject* pydict, PyObject* key,
                               PyObject* value) {
   Thread* thread = Thread::currentThread();

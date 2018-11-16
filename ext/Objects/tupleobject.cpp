@@ -16,6 +16,18 @@ extern "C" PyObject* PyTuple_New(Py_ssize_t length) {
   return ApiHandle::fromObject(*tuple)->asPyObject();
 }
 
+extern "C" int PyTuple_CheckExact_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->asObject()->isObjectArray();
+}
+
+extern "C" int PyTuple_Check_Func(PyObject* obj) {
+  if (PyTuple_CheckExact_Func(obj)) {
+    return true;
+  }
+  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+                                                  LayoutId::kObjectArray);
+}
+
 extern "C" Py_ssize_t PyTuple_Size(PyObject* pytuple) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);

@@ -6,6 +6,18 @@
 
 namespace python {
 
+extern "C" int PyUnicode_CheckExact_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->asObject()->isStr();
+}
+
+extern "C" int PyUnicode_Check_Func(PyObject* obj) {
+  if (PyUnicode_CheckExact_Func(obj)) {
+    return true;
+  }
+  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+                                                  LayoutId::kStr);
+}
+
 extern "C" PyObject* PyUnicode_FromString(const char* c_string) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();

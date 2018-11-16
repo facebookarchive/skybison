@@ -6,6 +6,18 @@
 
 namespace python {
 
+extern "C" int PyLong_CheckExact_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->asObject()->isInt();
+}
+
+extern "C" int PyLong_Check_Func(PyObject* obj) {
+  if (PyLong_CheckExact_Func(obj)) {
+    return true;
+  }
+  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+                                                  LayoutId::kInt);
+}
+
 extern "C" PyObject* PyLong_FromLong(long ival) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();

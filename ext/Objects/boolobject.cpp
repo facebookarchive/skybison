@@ -14,6 +14,10 @@ extern "C" PyObject* PyFalse_Ptr() {
   return ApiHandle::fromObject(Bool::falseObj())->asPyObject();
 }
 
+extern "C" int PyBool_Check_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->asObject()->isBool();
+}
+
 // TODO(eelizondo): Remove once boolobject.c is complied in
 extern "C" PyObject* PyBool_FromLong(long ok) {
   PyObject* result;

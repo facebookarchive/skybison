@@ -23,4 +23,16 @@ extern "C" PyObject* PyList_New(Py_ssize_t size) {
   return ApiHandle::fromObject(*list)->asPyObject();
 }
 
+extern "C" int PyList_CheckExact_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->asObject()->isList();
+}
+
+extern "C" int PyList_Check_Func(PyObject* obj) {
+  if (PyList_CheckExact_Func(obj)) {
+    return true;
+  }
+  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+                                                  LayoutId::kList);
+}
+
 }  // namespace python

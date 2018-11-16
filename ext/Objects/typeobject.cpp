@@ -10,8 +10,15 @@
 namespace python {
 
 extern "C" int PyType_CheckExact_Func(PyObject* obj) {
-  PyObject* type = reinterpret_cast<PyObject*>(obj->ob_type);
-  return ApiHandle::fromPyObject(type)->asObject()->isType();
+  return ApiHandle::fromPyObject(obj)->asObject()->isType();
+}
+
+extern "C" int PyType_Check_Func(PyObject* obj) {
+  if (PyType_CheckExact_Func(obj)) {
+    return true;
+  }
+  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+                                                  LayoutId::kType);
 }
 
 extern "C" unsigned long PyType_GetFlags(PyTypeObject* type) {
