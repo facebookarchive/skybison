@@ -18,7 +18,7 @@
 
 #else
 
-#define EXPECT_DEBUG_ONLY_DEATH(stmt, pattern) \
+#define EXPECT_DEBUG_ONLY_DEATH(stmt, pattern)                                 \
   EXPECT_DEBUG_DEATH((stmt), (pattern))
 
 #endif
@@ -52,7 +52,7 @@ inline ::testing::AssertionResult AssertPyStringEqual(
       << "To be equal to: \"" << expected_string << "\"";
 }
 
-#define EXPECT_PYSTRING_EQ(s1, s2) \
+#define EXPECT_PYSTRING_EQ(s1, s2)                                             \
   EXPECT_PRED_FORMAT2(AssertPyStringEqual, s1, s2)
 
 // Get the value bound to name in the supplied module. Returns Error::object()

@@ -34,19 +34,19 @@ const int kNanosecondsPerSecond =
 
 #define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName&) = delete;      \
+#define DISALLOW_COPY_AND_ASSIGN(TypeName)                                     \
+  TypeName(const TypeName&) = delete;                                          \
   void operator=(const TypeName&) = delete
 
-#define DISALLOW_HEAP_ALLOCATION()          \
-  void* operator new(size_t size) = delete; \
+#define DISALLOW_HEAP_ALLOCATION()                                             \
+  void* operator new(size_t size) = delete;                                    \
   void operator delete(void* p) = delete
 
-#define DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
-  TypeName() = delete;                           \
+#define DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName)                               \
+  TypeName() = delete;                                                         \
   DISALLOW_COPY_AND_ASSIGN(TypeName)
 
-#define OFFSET_OF(type, field) \
+#define OFFSET_OF(type, field)                                                 \
   (reinterpret_cast<intptr_t>(&(reinterpret_cast<type*>(16)->field)) - 16)
 
 #if __GNUG__ && __GNUC__ < 5

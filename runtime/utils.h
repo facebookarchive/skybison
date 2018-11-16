@@ -17,36 +17,36 @@
     }                                                                          \
   } while (0)
 
-#define CHECK_INDEX(index, high)                            \
-  do {                                                      \
-    if (!((index >= 0) && (index < high))) {                \
-      fprintf(                                              \
-          stderr,                                           \
-          "%s:%d index out of range, %ld not in 0..%ld : ", \
-          __FILE__,                                         \
-          __LINE__,                                         \
-          static_cast<word>(index),                         \
-          static_cast<word>(high) - 1);                     \
-      fputc('\n', stderr);                                  \
-      python::Utils::printTraceback();                      \
-      std::abort();                                         \
-    }                                                       \
+#define CHECK_INDEX(index, high)                                               \
+  do {                                                                         \
+    if (!((index >= 0) && (index < high))) {                                   \
+      fprintf(                                                                 \
+          stderr,                                                              \
+          "%s:%d index out of range, %ld not in 0..%ld : ",                    \
+          __FILE__,                                                            \
+          __LINE__,                                                            \
+          static_cast<word>(index),                                            \
+          static_cast<word>(high) - 1);                                        \
+      fputc('\n', stderr);                                                     \
+      python::Utils::printTraceback();                                         \
+      std::abort();                                                            \
+    }                                                                          \
   } while (0)
 
-#define CHECK_BOUND(val, high)                            \
-  do {                                                    \
-    if (!((val >= 0) && (val <= high))) {                 \
-      fprintf(                                            \
-          stderr,                                         \
-          "%s:%d bounds violation, %ld not in 0..%ld : ", \
-          __FILE__,                                       \
-          __LINE__,                                       \
-          static_cast<word>(val),                         \
-          static_cast<word>(high));                       \
-      fputc('\n', stderr);                                \
-      python::Utils::printTraceback();                    \
-      std::abort();                                       \
-    }                                                     \
+#define CHECK_BOUND(val, high)                                                 \
+  do {                                                                         \
+    if (!((val >= 0) && (val <= high))) {                                      \
+      fprintf(                                                                 \
+          stderr,                                                              \
+          "%s:%d bounds violation, %ld not in 0..%ld : ",                      \
+          __FILE__,                                                            \
+          __LINE__,                                                            \
+          static_cast<word>(val),                                              \
+          static_cast<word>(high));                                            \
+      fputc('\n', stderr);                                                     \
+      python::Utils::printTraceback();                                         \
+      std::abort();                                                            \
+    }                                                                          \
   } while (0)
 
 #ifdef NDEBUG
@@ -59,22 +59,22 @@
 #define DCHECK_INDEX(index, high) CHECK_INDEX(index, high)
 #endif
 
-#define UNIMPLEMENTED(...)                                        \
-  do {                                                            \
-    fprintf(stderr, "%s:%d unimplemented: ", __FILE__, __LINE__); \
-    fprintf(stderr, __VA_ARGS__);                                 \
-    fputc('\n', stderr);                                          \
-    python::Utils::printTraceback();                              \
-    std::abort();                                                 \
+#define UNIMPLEMENTED(...)                                                     \
+  do {                                                                         \
+    fprintf(stderr, "%s:%d unimplemented: ", __FILE__, __LINE__);              \
+    fprintf(stderr, __VA_ARGS__);                                              \
+    fputc('\n', stderr);                                                       \
+    python::Utils::printTraceback();                                           \
+    std::abort();                                                              \
   } while (0)
 
-#define UNREACHABLE(...)                                        \
-  do {                                                          \
-    fprintf(stderr, "%s:%d unreachable: ", __FILE__, __LINE__); \
-    fprintf(stderr, __VA_ARGS__);                               \
-    fputc('\n', stderr);                                        \
-    python::Utils::printTraceback();                            \
-    std::abort();                                               \
+#define UNREACHABLE(...)                                                       \
+  do {                                                                         \
+    fprintf(stderr, "%s:%d unreachable: ", __FILE__, __LINE__);                \
+    fprintf(stderr, __VA_ARGS__);                                              \
+    fputc('\n', stderr);                                                       \
+    python::Utils::printTraceback();                                           \
+    std::abort();                                                              \
   } while (0)
 
 namespace python {
