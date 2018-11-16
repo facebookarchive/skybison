@@ -30,20 +30,6 @@ x = mymodule.myobj
   ASSERT_TRUE(PyList_CheckExact(x));
 }
 
-TEST_F(ModSupportExtensionApiTest, AddObjectWithNullNameFails) {
-  PyModuleDef def = {
-      PyModuleDef_HEAD_INIT,
-      "mymodule",
-  };
-
-  PyObject* module = PyModule_Create(&def);
-  ASSERT_NE(module, nullptr);
-
-  PyObject* obj = PyList_New(1);
-  int result = PyModule_AddObject(module, nullptr, obj);
-  ASSERT_EQ(result, -1);
-}
-
 TEST_F(ModSupportExtensionApiTest, RepeatedAddObjectOverwritesValue) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
