@@ -363,4 +363,23 @@ extern "C" PyObject* _PyObject_CallMethod_SizeT(PyObject* /* j */,
   UNIMPLEMENTED("_PyObject_CallMethod_SizeT");
 }
 
+extern "C" PyObject* _PyObject_FastCallDict(PyObject* /* e */,
+                                            PyObject* const* /* s */,
+                                            Py_ssize_t /* s */,
+                                            PyObject* /* s */) {
+  UNIMPLEMENTED("_PyObject_FastCallDict");
+}
+
+extern "C" PyObject* _PyObject_FastCallKeywords(PyObject* /* e */,
+                                                PyObject* const* /* k */,
+                                                Py_ssize_t /* s */,
+                                                PyObject* /* s */) {
+  UNIMPLEMENTED("_PyObject_FastCallKeywords");
+}
+
+extern "C" Py_ssize_t PyObject_LengthHint(PyObject* /* o */,
+                                          Py_ssize_t /* defaultvalue */) {
+  UNIMPLEMENTED("PyObject_LengthHint");
+}
+
 }  // namespace python

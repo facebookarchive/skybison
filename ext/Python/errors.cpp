@@ -175,4 +175,9 @@ extern "C" PyObject* PyErr_ProgramTextObject(PyObject* /* e */, int /* o */) {
   UNIMPLEMENTED("PyErr_ProgramTextObject");
 }
 
+extern "C" void PyErr_Restore(PyObject* /* type */, PyObject* /* value */,
+                              PyObject* /* traceback */) {
+  UNIMPLEMENTED("PyErr_Restore");
+}
+
 }  // namespace python

@@ -99,4 +99,8 @@ extern "C" PyThreadState* PyInterpreterState_ThreadHead(
   UNIMPLEMENTED("PyInterpreterState_ThreadHead");
 }
 
+extern "C" void _PyState_ClearModules(void) {
+  UNIMPLEMENTED("_PyState_ClearModules");
+}
+
 }  // namespace python

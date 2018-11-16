@@ -5,6 +5,8 @@
 
 namespace python {
 
+struct _Py_Identifier;
+
 extern "C" PyObject* PyNone_Ptr() {
   return ApiHandle::fromObject(None::object());
 }
@@ -195,6 +197,20 @@ extern "C" void _PyTrash_thread_destroy_chain(void) {
 
 extern "C" int PyObject_Print(PyObject* /* p */, FILE* /* p */, int /* s */) {
   UNIMPLEMENTED("PyObject_Print");
+}
+
+extern "C" PyObject* _PyObject_GetAttrId(PyObject* /* v */,
+                                         _Py_Identifier* /* e */) {
+  UNIMPLEMENTED("_PyObject_GetAttrId");
+}
+
+extern "C" int _PyObject_HasAttrId(PyObject* /* v */, _Py_Identifier* /* e */) {
+  UNIMPLEMENTED("_PyObject_HasAttrId");
+}
+
+extern "C" int _PyObject_SetAttrId(PyObject* /* v */, _Py_Identifier* /* e */,
+                                   PyObject* /* w */) {
+  UNIMPLEMENTED("_PyObject_SetAttrId");
 }
 
 }  // namespace python

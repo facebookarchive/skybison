@@ -122,4 +122,9 @@ extern "C" PyObject* PyEval_CallObjectWithKeywords(PyObject* /* e */,
   UNIMPLEMENTED("PyEval_CallObjectWithKeywords");
 }
 
+extern "C" PyObject* _PyEval_EvalFrameDefault(PyFrameObject* /* f */,
+                                              int /* g */) {
+  UNIMPLEMENTED("_PyEval_EvalFrameDefault");
+}
+
 }  // namespace python

@@ -494,6 +494,35 @@ int counter = 1;
         )
         self.assertEqual(res, expected_lines)
 
+    def test_pyfunction_extern_is_ignored(self):
+        original_lines = """
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+static type *global_str = NULL;
+
+type*
+foo_function(type *arg1, type arg2, ...)
+{
+  // Implementation
+}
+"""
+        expected_lines = """
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+static type *global_str = NULL;
+
+
+"""
+        symbols_to_replace = {"pyfunction": ["foo_function"]}
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.SOURCE_DEFINITIONS_REGEX
+        )
+        self.assertEqual(res, expected_lines)
+
 
 if __name__ == "__main__":
     unittest.main()

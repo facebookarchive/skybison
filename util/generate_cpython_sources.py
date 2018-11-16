@@ -79,7 +79,8 @@ SOURCE_DEFINITIONS_REGEX = {
         pos=1,
     ),
     "pyfunction": SymbolRegex(
-        regex=re.compile("^[a-zA-Z](.|.\n)*?{(.|\n)*?\n}", re.MULTILINE), pos=1
+        regex=re.compile("^[a-zA-Z](.|.\n)*?{\n\s(.|\n)*?\n}", re.MULTILINE),
+        pos=1,
     ),
 }
 

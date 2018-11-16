@@ -13,6 +13,7 @@
 namespace python {
 
 struct PyType_Spec;
+struct _Py_Identifier;
 
 extern "C" int PyType_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isType();
@@ -150,6 +151,11 @@ extern "C" int PyType_IsSubtype(PyTypeObject* /* a */, PyTypeObject* /* b */) {
 
 extern "C" void PyType_Modified(PyTypeObject* /* e */) {
   UNIMPLEMENTED("PyType_Modified");
+}
+
+extern "C" PyObject* _PyObject_LookupSpecial(PyObject* /* f */,
+                                             _Py_Identifier* /* d */) {
+  UNIMPLEMENTED("_PyObject_LookupSpecial");
 }
 
 }  // namespace python
