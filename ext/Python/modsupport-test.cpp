@@ -9,7 +9,7 @@ namespace python {
 using ModSupportExtensionApiTest = ExtensionApi;
 
 TEST_F(ModSupportExtensionApiTest, AddObjectAddsToModule) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
   };
@@ -29,7 +29,7 @@ TEST_F(ModSupportExtensionApiTest, AddObjectAddsToModule) {
 }
 
 TEST_F(ModSupportExtensionApiTest, RepeatedAddObjectOverwritesValue) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
   };

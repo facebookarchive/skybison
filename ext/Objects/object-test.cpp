@@ -22,7 +22,7 @@ TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidTypeReturnsNegative) {
 }
 
 TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidKeyReturnsNegative) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   PyObject* module = PyModule_Create(&def);
@@ -31,7 +31,7 @@ TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidKeyReturnsNegative) {
 }
 
 TEST_F(ObjectExtensionApiTest, SetAttrReturnsZero) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   PyObject* module = PyModule_Create(&def);
@@ -41,7 +41,7 @@ TEST_F(ObjectExtensionApiTest, SetAttrReturnsZero) {
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrWithNoneExistingKeyReturnsNull) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
@@ -52,7 +52,7 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithNoneExistingKeyReturnsNull) {
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidTypeReturnsNull) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
@@ -65,7 +65,7 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidTypeReturnsNull) {
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidKeyReturnsNull) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
@@ -78,7 +78,7 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidKeyReturnsNull) {
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrReturnsCorrectValue) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
@@ -93,7 +93,7 @@ TEST_F(ObjectExtensionApiTest, GetAttrReturnsCorrectValue) {
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrStringReturnsCorrectValue) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   const char* key = "a_key";

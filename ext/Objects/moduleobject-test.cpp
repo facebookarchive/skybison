@@ -9,7 +9,7 @@ namespace python {
 using ModuleExtensionApiTest = ExtensionApi;
 
 TEST_F(ModuleExtensionApiTest, SpamModule) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "spam",
   };
@@ -38,7 +38,7 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
 }
 
 TEST_F(ModuleExtensionApiTest, GetDefWithExtensionModuleRetunsNonNull) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
   };
@@ -64,7 +64,7 @@ TEST_F(ModuleExtensionApiTest, CheckTypeOnNonModuleReturnsZero) {
 }
 
 TEST_F(ModuleExtensionApiTest, CheckTypeOnModuleReturnsOne) {
-  PyModuleDef def = {
+  static PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
   };
