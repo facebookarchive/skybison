@@ -82,6 +82,101 @@ hello()
   EXPECT_EQ(output, "hello, world\n");
 }
 
+TEST(ThreadTest, DunderCallClass) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class C: pass
+c = C()
+)";
+
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  runtime.run(buffer.get());
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Class> type(&scope, moduleAt(&runtime, main, "C"));
+  ASSERT_FALSE(type->isError());
+  Handle<Object> instance(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_FALSE(instance->isError());
+  Handle<Object> instance_type(&scope, runtime.classOf(*instance));
+  ASSERT_FALSE(instance_type->isError());
+
+  EXPECT_EQ(*type, *instance_type);
+}
+
+TEST(ThreadTest, DunderCallClassWithInit) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class C:
+  def __init__(self):
+    global g
+    g = 2
+
+g = 1
+C()
+)";
+
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  runtime.run(buffer.get());
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
+  ASSERT_FALSE(global->isError());
+  ASSERT_TRUE(global->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*global)->value(), 2);
+}
+
+TEST(ThreadTest, DunderCallClassWithInitAndArgs) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class C:
+  def __init__(self, x):
+    global g
+    g = x
+
+g = 1
+C(9)
+)";
+
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  runtime.run(buffer.get());
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
+  ASSERT_FALSE(global->isError());
+  ASSERT_TRUE(global->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*global)->value(), 9);
+}
+
+TEST(ThreadTest, DunderCallInstance) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class C:
+  def __init__(self, x, y):
+    self.value = x + y
+  def __call__(self, y):
+    return self.value * y
+c = C(10, 2)
+g = c(3)
+)";
+
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  runtime.run(buffer.get());
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
+  ASSERT_FALSE(global->isError());
+  ASSERT_TRUE(global->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*global)->value(), 36);
+}
+
 TEST(ThreadTest, OverlappingFrames) {
   Runtime runtime;
   HandleScope scope;

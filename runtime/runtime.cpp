@@ -417,7 +417,9 @@ void Runtime::classAddBuiltinFunction(
     Function::Entry entryKw) {
   HandleScope scope;
   Handle<Object> key(&scope, name);
-  Handle<Object> value(&scope, newBuiltinFunction(entry, entryKw));
+  Handle<Function> function(&scope, newBuiltinFunction(entry, entryKw));
+  function->setName(*key);
+  Handle<Object> value(&scope, *function);
   Handle<Dictionary> dict(&scope, klass->dictionary());
   dictionaryAtPutInValueCell(dict, key, value);
 }
@@ -682,7 +684,7 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("range_iterator", IntrinsicLayoutId::kRangeIterator);
   initializeHeapClass("slice", IntrinsicLayoutId::kSlice);
   initializeSuperClass();
-  initializeHeapClass("type", IntrinsicLayoutId::kType);
+  initializeTypeClass();
   initializeHeapClass("valuecell", IntrinsicLayoutId::kValueCell);
   initializeHeapClass("weakref", IntrinsicLayoutId::kWeakRef);
 }
@@ -700,7 +702,7 @@ void Runtime::initializeObjectClass() {
   classAddBuiltinFunction(
       object,
       symbols()->DunderNew(),
-      nativeTrampoline<builtinGenericNew>,
+      nativeTrampoline<builtinObjectNew>,
       unimplementedTrampoline);
 }
 
@@ -757,6 +759,21 @@ void Runtime::initializeClassMethodClass() {
       classmethod,
       symbols()->DunderNew(),
       nativeTrampoline<builtinClassMethodNew>,
+      unimplementedTrampoline);
+}
+
+void Runtime::initializeTypeClass() {
+  HandleScope scope;
+  Handle<Class> type(
+      &scope, initializeHeapClass("type", IntrinsicLayoutId::kType));
+
+  classAddBuiltinFunction(
+      type, symbols()->DunderCall(), builtinTypeCall, unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinTypeNew>,
       unimplementedTrampoline);
 }
 

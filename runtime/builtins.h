@@ -32,7 +32,12 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs);
 
 Object* builtinRange(Thread* thread, Frame* frame, word nargs);
 
-Object* builtinGenericNew(Thread* thread, Frame* frame, word nargs);
+Object* builtinObjectInit(Thread* thread, Frame* caller, word nargs);
+Object* builtinObjectNew(Thread* thread, Frame* caller, word nargs);
+
+Object* builtinTypeCall(Thread* thread, Frame* caller, word nargs)
+    __attribute__((aligned(16)));
+Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs);
 
 // List
 Object* listOrDelegate(Thread* thread, const Handle<Object>& instance);
@@ -62,9 +67,6 @@ Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs);
 // Super
 Object* builtinSuperNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs);
-
-// Object
-Object* builtinObjectInit(Thread*, Frame*, word);
 
 // "sys" module
 Object* builtinSysExit(Thread* thread, Frame* frame, word nargs);

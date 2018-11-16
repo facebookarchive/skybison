@@ -76,5 +76,8 @@ bool objectArrayContains(
 
 Object* findModule(Runtime* runtime, const char* name);
 
+Object*
+moduleAt(Runtime* runtime, const Handle<Module>& module, const char* name);
+
 } // namespace testing
 } // namespace python

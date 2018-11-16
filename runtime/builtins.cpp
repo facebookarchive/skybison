@@ -59,8 +59,84 @@ Object* builtinIsinstance(Thread* thread, Frame* caller, word nargs) {
   return runtime->isInstance(obj, klass);
 }
 
-Object* builtinGenericNew(Thread* thread, Frame* frame, word nargs) {
+Object* builtinTypeCall(Thread* thread, Frame* caller, word nargs) {
+  HandleScope scope(thread->handles());
+
+  // Create a frame big enough to hold all of the outgoing arguments and the
+  // function object for the __new__ and __init__ calls.
+  Frame* frame = thread->openAndLinkFrame(nargs, 0, nargs + 1);
+
+  Arguments args(caller, nargs);
+
+  Runtime* runtime = thread->runtime();
+  Handle<Object> name(&scope, runtime->symbols()->DunderNew());
+
+  // First, call __new__ to allocate a new instance.
+
+  Handle<Class> type(&scope, args.get(0));
+  Handle<Function> dunder_new(
+      &scope, runtime->lookupNameInMro(thread, type, name));
+
+  Object** sp = frame->valueStackTop();
+  *--sp = *dunder_new;
+  for (word i = 0; i < nargs; i++) {
+    *--sp = args.get(i);
+  }
+  frame->setValueStackTop(sp);
+
+  Handle<Object> result(&scope, dunder_new->entry()(thread, caller, nargs));
+
+  // Pop all of the arguments we pushed for the __new__ call.  While we will
+  // push the same number of arguments again for the __init__ call below,
+  // starting over from scratch keeps the addressing arithmetic simple.
+  frame->setValueStackTop(sp + nargs + 1);
+
+  // Second, call __init__ to initialize the instance.
+
+  // top of the stack should be the new instance
+  Handle<Object> init(&scope, runtime->symbols()->DunderInit());
+  Handle<Function> dunder_init(
+      &scope, runtime->lookupNameInMro(thread, type, init));
+
+  sp = frame->valueStackTop();
+  *--sp = *dunder_init;
+  *--sp = *result;
+  for (word i = 1; i < nargs; i++) {
+    *--sp = args.get(i);
+  }
+  frame->setValueStackTop(sp);
+
+  dunder_init->entry()(thread, frame, nargs);
+
+  // TODO: throw a type error if the __init__ method does not return None.
+
+  thread->popFrame();
+
+  return *result;
+}
+
+Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
+  HandleScope scope(thread->handles());
+  Handle<Class> klass(&scope, args.get(0));
+  Handle<Layout> layout(&scope, klass->instanceLayout());
+  return thread->runtime()->newInstance(layout);
+}
+
+Object* builtinObjectInit(Thread* thread, Frame*, word nargs) {
+  if (nargs != 1) {
+    thread->throwTypeErrorFromCString("object.__init__() takes no arguments");
+    return Error::object();
+  }
+  return None::object();
+}
+
+Object* builtinObjectNew(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  if (nargs < 1) {
+    thread->throwTypeErrorFromCString("object.__new__() takes no arguments");
+    return Error::object();
+  }
   HandleScope scope(thread->handles());
   Handle<Class> klass(&scope, args.get(0));
   Handle<Layout> layout(&scope, klass->instanceLayout());
@@ -566,13 +642,6 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   }
   super->setObjectType(*obj_type);
   return *super;
-}
-
-Object* builtinObjectInit(Thread* thread, Frame*, word nargs) {
-  if (nargs > 1) {
-    thread->throwTypeErrorFromCString("object.__init__() takes no parameters");
-  }
-  return None::object();
 }
 
 // "sys" module

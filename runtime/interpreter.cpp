@@ -22,14 +22,41 @@ Interpreter::call(Thread* thread, Frame* frame, Object** sp, word nargs) {
     case IntrinsicLayoutId::kBoundMethod: {
       return callBoundMethod(thread, frame, sp, nargs);
     }
-    case IntrinsicLayoutId::kType: {
-      return callType(thread, frame, sp, nargs);
-    }
-    default: {
-      // TODO(T25382628): Handle __call__
-      UNIMPLEMENTED("Callable type");
-    }
+    default: { return callCallable(thread, frame, sp, nargs); }
   }
+}
+
+Object* Interpreter::callCallable(
+    Thread* thread,
+    Frame* frame,
+    Object** sp,
+    word nargs) {
+  HandleScope scope(thread->handles());
+  Handle<Object> receiver(&scope, sp[nargs]);
+  Runtime* runtime = thread->runtime();
+
+  Handle<Object> name(&scope, runtime->symbols()->DunderCall());
+  Handle<Class> type(&scope, runtime->classOf(*receiver));
+  Handle<Object> dunder_call(
+      &scope, runtime->lookupNameInMro(thread, type, name));
+  CHECK(!dunder_call->isError(), "object has no __call__ attribute");
+  CHECK(dunder_call->isFunction(), "__call__ attribute is not a function");
+
+  Handle<Function> function(&scope, *dunder_call);
+
+  // rewrite the stack into the method call form.  the function implementing
+  // the method goes at the bottom of the stack, followed by the receiver,
+  // followed by zero or more arguments.
+
+  sp -= 1;
+  for (word i = 0; i <= nargs; i++) {
+    sp[i] = sp[i + 1];
+  }
+  sp[nargs + 1] = *function;
+  frame->setValueStackTop(sp);
+
+  // now call the function
+  return function->entry()(thread, frame, nargs + 1);
 }
 
 Object*
@@ -73,48 +100,6 @@ Object* Interpreter::callBoundMethod(
   // Call the bound function
   Function* function = Function::cast(frame->peek(nargs + 1));
   return function->entry()(thread, frame, nargs + 1);
-}
-
-Object*
-Interpreter::callType(Thread* thread, Frame* frame, Object** sp, word nargs) {
-  HandleScope scope;
-  Runtime* runtime = thread->runtime();
-  Handle<Class> klass(&scope, sp[nargs]);
-
-  Handle<Object> name(&scope, runtime->symbols()->DunderNew());
-  Handle<Function> dunder_new(
-      &scope, runtime->lookupNameInMro(thread, klass, name));
-
-  sp -= 1;
-  for (word i = 0; i < nargs; i++) {
-    sp[i] = sp[i + 1];
-  }
-  sp[nargs] = *klass;
-  sp[nargs + 1] = *dunder_new;
-
-  // call the dunder new
-  frame->setValueStackTop(sp);
-  Handle<Object> result(&scope, dunder_new->entry()(thread, frame, nargs + 1));
-
-  // Check for an __init__ method.
-  //
-  // If no __init__ method exists for this class we can just return the newly
-  // allocated instance.
-  Handle<Object> dunder_init(&scope, runtime->symbols()->DunderInit());
-  Handle<Object> init(
-      &scope, runtime->lookupNameInMro(thread, klass, dunder_init));
-  CHECK(init->isFunction(), "instance is missing an init method");
-
-  // Move the method and receiver into the expected location.
-  sp[nargs] = *result;
-  sp[nargs + 1] = *init;
-
-  // Call the initializer method.
-  frame->setValueStackTop(sp);
-  Function::cast(*init)->entry()(thread, frame, nargs + 1);
-
-  // Return the initialized instance.
-  return *result;
 }
 
 Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {

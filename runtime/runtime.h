@@ -429,6 +429,7 @@ class Runtime {
   void initializeObjectClass();
   void initializeSmallIntClass();
   void initializeSuperClass();
+  void initializeTypeClass();
 
   void createBuiltinsModule();
   void createSysModule();

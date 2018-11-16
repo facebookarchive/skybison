@@ -78,5 +78,13 @@ Object* findModule(Runtime* runtime, const char* name) {
   return runtime->findModule(key);
 }
 
+Object*
+moduleAt(Runtime* runtime, const Handle<Module>& module, const char* name) {
+  HandleScope scope;
+  Handle<Object> key(&scope, runtime->newStringFromCString(name));
+  Handle<Object> value(&scope, runtime->moduleAt(module, key));
+  return *value;
+}
+
 } // namespace testing
 } // namespace python
