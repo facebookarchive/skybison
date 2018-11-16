@@ -1,4 +1,5 @@
 #include "capi-fixture.h"
+#include "capi-testing.h"
 
 namespace python {
 
@@ -21,7 +22,7 @@ import mymodule
 x = mymodule.myglobal
 )");
 
-  PyObject* x = _PyModuleGet("__main__", "x");
+  PyObject* x = testing::moduleGet("__main__", "x");
   int result = PyLong_AsLong(x);
   ASSERT_EQ(result, 123);
 }
@@ -59,7 +60,7 @@ import mymodule
 x = mymodule.myglobal
 )");
 
-  PyObject* x = _PyModuleGet("__main__", "x");
+  PyObject* x = testing::moduleGet("__main__", "x");
   int result = PyLong_AsLong(x);
   ASSERT_EQ(result, 456);
 }

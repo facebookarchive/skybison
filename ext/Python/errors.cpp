@@ -15,23 +15,6 @@ extern "C" PyObject* PyErr_Occurred(void) {
   return ApiHandle::fromObject(thread->pendingException())->asPyObject();
 }
 
-extern "C" int _PyErr_ExceptionMessageMatches(const char* message) {
-  Thread* thread = Thread::currentThread();
-  if (thread->pendingException()->isNone()) {
-    return 0;
-  }
-
-  HandleScope scope(thread);
-  Handle<Object> exception_obj(
-      &scope, ApiHandle::fromPyObject(PyErr_Occurred())->asObject());
-  if (!exception_obj->isString()) {
-    UNIMPLEMENTED("Handle non string exception objects");
-  }
-
-  Handle<String> exception(&scope, *exception_obj);
-  return exception->equalsCString(message);
-}
-
 extern "C" PyObject* PyErr_Format(PyObject*, const char*, ...) {
   UNIMPLEMENTED("PyErr_Format");
 }

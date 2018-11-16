@@ -1,4 +1,5 @@
 #include "capi-fixture.h"
+#include "capi-testing.h"
 
 namespace python {
 
@@ -63,7 +64,7 @@ import test
 x = test.Empty
 )");
 
-  EXPECT_TRUE(PyType_CheckExact(_PyModuleGet("__main__", "x")));
+  EXPECT_TRUE(PyType_CheckExact(testing::moduleGet("__main__", "x")));
 }
 
 typedef struct {
@@ -116,17 +117,13 @@ instance2 = custom.Custom()
 )");
 
   // Verify the initialized value
-  CustomObject* instance1 =
-      reinterpret_cast<CustomObject*>(_PyModuleGet("__main__", "instance1"));
+  CustomObject* instance1 = reinterpret_cast<CustomObject*>(
+      testing::moduleGet("__main__", "instance1"));
   EXPECT_EQ(instance1->value, 30);
 
-  CustomObject* instance2 =
-      reinterpret_cast<CustomObject*>(_PyModuleGet("__main__", "instance2"));
-  EXPECT_EQ(instance2->value, 30);
-
-  // Decref and dealloc custom instances
-  ASSERT_EQ(Py_REFCNT(instance1), 1);
-  ASSERT_EQ(Py_REFCNT(instance2), 1);
+  CustomObject* instance2 = reinterpret_cast<CustomObject*>(
+      testing::moduleGet("__main__", "instance2"));
+  EXPECT_EQ(Py_REFCNT(instance2), 1);
   Py_DECREF(instance2);
   Py_DECREF(instance1);
 }

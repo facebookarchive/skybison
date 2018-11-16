@@ -17,7 +17,7 @@ TEST_F(TupleExtensionApiTest, SetItemWithNonTupleReturnsNegative) {
   EXPECT_EQ(result, -1);
 
   const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(_PyErr_ExceptionMessageMatches(expected_message));
+  EXPECT_TRUE(testing::exceptionMessageMatches(expected_message));
 }
 
 TEST_F(TupleExtensionApiTest, SetItemWithInvalidIndexReturnsNegative) {
@@ -26,7 +26,7 @@ TEST_F(TupleExtensionApiTest, SetItemWithInvalidIndexReturnsNegative) {
   EXPECT_EQ(result, -1);
 
   const char* expected_message = "tuple assignment index out of range";
-  EXPECT_TRUE(_PyErr_ExceptionMessageMatches(expected_message));
+  EXPECT_TRUE(testing::exceptionMessageMatches(expected_message));
 }
 
 TEST_F(TupleExtensionApiTest, SetItemReturnsZero) {
@@ -76,7 +76,7 @@ TEST_F(TupleExtensionApiTest, GetItemReturnsBorrowedReference) {
 
   // Verify borrowed handle
   PyObject* pyresult = PyTuple_GetItem(pytuple, pos);
-  EXPECT_TRUE(_IsBorrowed(pyresult));
+  EXPECT_TRUE(testing::isBorrowed(pyresult));
 }
 
 TEST_F(TupleExtensionApiTest, PackZeroReturnsEmptyTuple) {

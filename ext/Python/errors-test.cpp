@@ -1,4 +1,5 @@
 #include "capi-fixture.h"
+#include "capi-testing.h"
 
 namespace python {
 
@@ -10,7 +11,7 @@ TEST_F(ErrorsExtensionApiTest, CompareErrorMessageOnThread) {
   PyErr_SetString(nullptr, error_message);
   ASSERT_NE(nullptr, PyErr_Occurred());
 
-  EXPECT_TRUE(_PyErr_ExceptionMessageMatches(error_message));
+  EXPECT_TRUE(testing::exceptionMessageMatches(error_message));
 }
 
 }  // namespace python

@@ -47,8 +47,6 @@ PyAPI_FUNC(int) Py_FinalizeEx(void);
 PyAPI_FUNC(int) PyRun_SimpleString(const char *, PyCompilerFlags *flags);
 
 /* Non C-API functions */
-PyAPI_FUNC(int) _PyErr_ExceptionMessageMatches(const char *);
-PyAPI_FUNC(PyObject *) _PyModuleGet(const char *, const char *);
 PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
 
 /* Macros */

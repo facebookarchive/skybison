@@ -1,4 +1,5 @@
 #include "capi-fixture.h"
+#include "capi-testing.h"
 
 namespace python {
 
@@ -9,7 +10,7 @@ TEST_F(LongExtensionApiTest, AsLongWithNullReturnsNegative) {
   EXPECT_EQ(res, -1);
 
   const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(_PyErr_ExceptionMessageMatches(expected_message));
+  EXPECT_TRUE(testing::exceptionMessageMatches(expected_message));
 }
 
 TEST_F(LongExtensionApiTest, AsLongWithNonIntegerReturnsNegative) {

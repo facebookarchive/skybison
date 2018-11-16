@@ -19,14 +19,4 @@ extern "C" PyObject* PyRun_SimpleStringFlags(const char* str,
   return ApiHandle::fromObject(runtime->runFromCString(str))->asPyObject();
 }
 
-extern "C" PyObject* _PyModuleGet(const char* module, const char* name) {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Handle<Module> mod(&scope, testing::findModule(runtime, module));
-  Handle<Object> var(&scope, testing::moduleAt(runtime, mod, name));
-  return ApiHandle::fromObject(*var)->asPyObject();
-}
-
 }  // namespace python
