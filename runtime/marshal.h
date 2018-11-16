@@ -38,7 +38,7 @@ class Marshal {
     Object* readTypeCode();
     Object* readTypeRef();
 
-    Object* doTupleElements(int length);
+    Object* doTupleElements(int32 length);
 
     word addRef(Object* value);
     void setRef(word index, Object* value);
@@ -48,6 +48,7 @@ class Marshal {
    private:
     Object* readString(word length);
     Object* readAndInternString(word length);
+    Object* readLongObject();
 
     Runtime* runtime_;
     Handle<List> refs_;
@@ -58,6 +59,8 @@ class Marshal {
     int depth_;
     int length_;
     int pos_;
+
+    static const int kBitsPerLongDigit = 15;
 
     DISALLOW_COPY_AND_ASSIGN(Reader);
     DISALLOW_HEAP_ALLOCATION();

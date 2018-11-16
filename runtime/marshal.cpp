@@ -6,6 +6,7 @@
 #include "heap.h"
 #include "runtime.h"
 #include "utils.h"
+#include "view.h"
 
 namespace python {
 
@@ -235,7 +236,7 @@ Object* Marshal::Reader::readObject() {
       break;
 
     case TYPE_LONG:
-      UNIMPLEMENTED("TYPE_LONG");
+      result = readLongObject();
       break;
 
     default:
@@ -375,6 +376,79 @@ Object* Marshal::Reader::readTypeCode() {
 Object* Marshal::Reader::readTypeRef() {
   int32 n = readLong();
   return getRef(n);
+}
+
+Object* Marshal::Reader::readLongObject() {
+  int32 n = readLong();
+  if (n == 0) {
+    Object* zero = SmallInteger::fromWord(0);
+    if (isRef_) {
+      addRef(zero);
+    }
+    return zero;
+  }
+  if (n < kMinInt32 || n > kMaxInt32) {
+    return Thread::currentThread()->throwValueErrorFromCString(
+        "bad marshal data (string size out of range)");
+  }
+  word bits_consumed = 0;
+  word n_bits = std::abs(n) * kBitsPerLongDigit;
+  word largeint_digits = ((n_bits + kBitsPerWord + 1) / kBitsPerWord) + 1;
+  uword* digits = new uword[largeint_digits];
+  uword digits_idx = 0;
+  uword buf = 0;
+  uword word_offset = 0;
+  while (bits_consumed < n_bits) {
+    int16 digit = readShort();
+    if (digit < 0) {
+      delete[] digits;
+      return Thread::currentThread()->throwValueErrorFromCString(
+          "bad marshal data (negative long digit)");
+    }
+    uword unsigned_digit = static_cast<uword>(digit);
+    if (word_offset + kBitsPerLongDigit <= kBitsPerWord) {
+      buf |= unsigned_digit << (word_offset);
+      word_offset += kBitsPerLongDigit;
+      if (word_offset == kBitsPerWord) {
+        digits[digits_idx++] = buf;
+        buf = 0;
+        word_offset = 0;
+      }
+    } else {
+      uword extra_bits = (word_offset + kBitsPerLongDigit) % kBitsPerWord;
+      uword bits_to_include = kBitsPerLongDigit - extra_bits;
+      buf |= (unsigned_digit & ((1 << bits_to_include) - 1)) << word_offset;
+      digits[digits_idx++] = buf;
+      buf = (unsigned_digit >> bits_to_include) & ((1 << extra_bits) - 1);
+      word_offset = extra_bits;
+    }
+    bits_consumed += kBitsPerLongDigit;
+  }
+  if (word_offset > 0 && buf != 0) {
+    digits[digits_idx++] = buf;
+  } else if (digits[digits_idx - 1] >> (kBitsPerWord - 1)) {
+    // Zero extend if the MSB is set in the top digit.
+    digits[digits_idx++] = 0;
+  }
+  if (n < 0) {
+    uword carry = 1;
+    for (uword i = 0; i < digits_idx; i++) {
+      uword i_digit = digits[i] ^ kMaxUword;
+      digits[i] = i_digit + carry;
+      if (digits[i] >= i_digit) {
+        carry = 0;
+      }
+    }
+    DCHECK(carry == 0, "Carry should be zero");
+  }
+
+  Object* result =
+      runtime_->newIntegerWithDigits(View<uword>(digits, digits_idx));
+  delete[] digits;
+  if (isRef_) {
+    addRef(result);
+  }
+  return result;
 }
 
 }  // namespace python

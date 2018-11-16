@@ -2854,7 +2854,7 @@ inline bool LargeInteger::isNegative() {
 
 inline bool LargeInteger::isPositive() {
   uword highest_digit = digitAt(numDigits() - 1);
-  return static_cast<word>(highest_digit) > 0;
+  return static_cast<word>(highest_digit) >= 0;
 }
 
 inline uword LargeInteger::digitAt(word index) {

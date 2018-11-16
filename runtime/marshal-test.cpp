@@ -280,24 +280,122 @@ TEST(MarshalReaderTest, ReadBinaryFloat) {
   ASSERT_TRUE(std::isnan(d));
 }
 
-TEST(MarshalReaderDeathTest, ReadNegativeTypeLong) {
+TEST(MarshalReaderTest, ReadNegativeTypeLong) {
   Runtime runtime;
   HandleScope scope;
 
-  // marshal.dumps(INT32_MIN - 1)
-  const char buf[] = "\xec\xfd\xff\xff\xff\x01\x00\x00\x00\x02\x00";
-  EXPECT_DEATH(Marshal::Reader(&scope, &runtime, buf).readObject(),
-               "unimplemented: TYPE_LONG");
+  // marshal.dumps(kMinInt64) + 1
+  const char buf[] =
+      "\xec\xfb\xff\xff\xff\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x07\x00";
+  Object* integer = Marshal::Reader(&scope, &runtime, buf).readObject();
+  ASSERT_TRUE(integer->isInteger());
+  EXPECT_EQ(Integer::cast(integer)->asWord(), kMinInt64 + 1);
+
+  // marshal.dumps(SmallInteger::kMinValue)
+  const char buf1[] =
+      "\xec\xfb\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00";
+  const word min_value = SmallInteger::kMinValue;
+  integer = Marshal::Reader(&scope, &runtime, buf1).readObject();
+  ASSERT_TRUE(integer->isInteger());
+  EXPECT_EQ(Integer::cast(integer)->asWord(), min_value);
 }
 
-TEST(MarshalReaderDeathTest, ReadPositiveTypeLong) {
+TEST(MarshalReaderTest, ReadPositiveTypeLong) {
   Runtime runtime;
   HandleScope scope;
 
-  // marshal.dumps(INT32_MAX + 1)
-  const char buf[] = "\xec\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00";
-  EXPECT_DEATH(Marshal::Reader(&scope, &runtime, buf).readObject(),
-               "unimplemented: TYPE_LONG");
+  // marshal.dumps(kMaxInt64)
+  const char buf[] =
+      "\xec\x05\x00\x00\x00\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x07\x00";
+  Object* integer = Marshal::Reader(&scope, &runtime, buf).readObject();
+  ASSERT_TRUE(integer->isInteger());
+  EXPECT_EQ(Integer::cast(integer)->asWord(), kMaxInt64);
+
+  // marshal.dumps(SmallInteger::kMaxValue)
+  const char buf1[] =
+      "\xec\x05\x00\x00\x00\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x03\x00";
+  const word max_value = SmallInteger::kMaxValue;
+  integer = Marshal::Reader(&scope, &runtime, buf1).readObject();
+  ASSERT_TRUE(integer->isInteger());
+  EXPECT_EQ(Integer::cast(integer)->asWord(), max_value);
+}
+
+TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // marshal.dumps(kMaxUint64)
+  const char buf[] =
+      "\xec\x05\x00\x00\x00\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x0f\x00";
+
+  Object* obj = Marshal::Reader(&scope, &runtime, buf).readObject();
+  ASSERT_TRUE(obj->isLargeInteger());
+  LargeInteger* integer = LargeInteger::cast(obj);
+  EXPECT_EQ(integer->numDigits(), 2);
+  EXPECT_TRUE(integer->isPositive());
+  EXPECT_EQ(integer->digitAt(0), kMaxUword);
+
+  // marshal.dumps(kMaxUint64 << 1)
+  const char buf1[] =
+      "\xec\x05\x00\x00\x00\xfe\x7f\xff\x7f\xff\x7f\xff\x7f\x1f\x00";
+
+  obj = Marshal::Reader(&scope, &runtime, buf1).readObject();
+  ASSERT_TRUE(obj->isLargeInteger());
+  integer = LargeInteger::cast(obj);
+  EXPECT_EQ(integer->numDigits(), 2);
+  EXPECT_TRUE(integer->isPositive());
+  EXPECT_EQ(integer->digitAt(0), kMaxUint64 - 1);
+  EXPECT_EQ(integer->digitAt(1), 1);
+
+  // marshal.dumps(kMaxUint64 << 4)
+  const char buf2[] =
+      "\xec\x05\x00\x00\x00\xf0\x7f\xff\x7f\xff\x7f\xff\x7f\xff\x00";
+
+  obj = Marshal::Reader(&scope, &runtime, buf2).readObject();
+  ASSERT_TRUE(obj->isLargeInteger());
+  integer = LargeInteger::cast(obj);
+  EXPECT_EQ(integer->numDigits(), 2);
+  EXPECT_TRUE(integer->isPositive());
+  EXPECT_EQ(integer->digitAt(0), kMaxUint64 - 0xF);
+  EXPECT_EQ(integer->digitAt(1), 0xF);
+}
+
+TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // marshal.dumps(-kMaxUint64)
+  const char buf[] =
+      "\xec\xfb\xff\xff\xff\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x0f\x00";
+  Object* obj = Marshal::Reader(&scope, &runtime, buf).readObject();
+  ASSERT_TRUE(obj->isLargeInteger());
+  LargeInteger* integer = LargeInteger::cast(obj);
+  EXPECT_EQ(integer->numDigits(), 2);
+  EXPECT_TRUE(integer->isNegative());
+  EXPECT_EQ(integer->digitAt(0), 1);
+  EXPECT_EQ(integer->digitAt(1), kMaxUint64);
+
+  // marshal.dumps(-(kMaxUint64 << 1))
+  const char buf1[] =
+      "\xec\xfb\xff\xff\xff\xfe\x7f\xff\x7f\xff\x7f\xff\x7f\x1f\x00";
+  Object* obj1 = Marshal::Reader(&scope, &runtime, buf1).readObject();
+  ASSERT_TRUE(obj1->isLargeInteger());
+  LargeInteger* integer1 = LargeInteger::cast(obj1);
+  EXPECT_EQ(integer1->numDigits(), 2);
+  EXPECT_TRUE(integer1->isNegative());
+  EXPECT_EQ(integer1->digitAt(0), 2);               // ~(kMaxUint64 << 1) + 1
+  EXPECT_EQ(integer1->digitAt(1), kMaxUint64 ^ 1);  // sign_extend(~1)
+
+  // marshal.dumps(-(kMaxUint64 << 4))
+  const char buf2[] =
+      "\xec\xfb\xff\xff\xff\xf0\x7f\xff\x7f\xff\x7f\xff\x7f\xff\x00";
+  Object* obj2 = Marshal::Reader(&scope, &runtime, buf2).readObject();
+  ASSERT_TRUE(obj2->isLargeInteger());
+  LargeInteger* integer2 = LargeInteger::cast(obj2);
+  EXPECT_EQ(integer2->numDigits(), 2);
+  EXPECT_TRUE(integer2->isNegative());
+  EXPECT_EQ(integer2->digitAt(0), 16);  // ~(kMaxUint64 << 4) + 1
+  EXPECT_EQ(integer2->digitAt(1), ~(16ULL) + 1);
 }
 
 TEST(MarshalReaderDeathTest, ReadUnknownTypeCode) {
@@ -319,7 +417,7 @@ TEST(MarshalReaderTest, ReadShort) {
   ASSERT_EQ(b, 0x0201);
 
   int16 c = Marshal::Reader(&scope, &runtime, "\x00\x80").readShort();
-  ASSERT_EQ(c, -32768);  // INT16_MIN
+  ASSERT_EQ(c, kMinInt16);
 }
 
 TEST(MarshalReaderTest, ReadObjectNull) {
