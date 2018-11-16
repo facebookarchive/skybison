@@ -27,7 +27,7 @@ extern "C" PyObject* PyUnicode_FromString(const char* c_string) {
   HandleScope scope(thread);
 
   Handle<Object> value(&scope, runtime->newStrFromCStr(c_string));
-  return ApiHandle::fromObject(*value)->asPyObject();
+  return ApiHandle::fromObject(*value);
 }
 
 extern "C" char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,

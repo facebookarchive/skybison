@@ -20,7 +20,7 @@ extern "C" PyObject* PyList_New(Py_ssize_t size) {
   list->setAllocated(size);
   list->setItems(*items);
 
-  return ApiHandle::fromObject(*list)->asPyObject();
+  return ApiHandle::fromObject(*list);
 }
 
 extern "C" int PyList_CheckExact_Func(PyObject* obj) {

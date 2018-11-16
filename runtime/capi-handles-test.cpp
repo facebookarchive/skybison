@@ -13,7 +13,7 @@ static Object* initializeExtensionType(PyTypeObject* extension_type) {
 
   // Initialize Type
   PyObject* pytype_type =
-      ApiHandle::fromObject(runtime->layoutAt(LayoutId::kType))->asPyObject();
+      ApiHandle::fromObject(runtime->layoutAt(LayoutId::kType));
   PyObject* pyobj = reinterpret_cast<PyObject*>(extension_type);
   pyobj->ob_type = reinterpret_cast<PyTypeObject*>(pytype_type);
   Handle<Type> type_class(&scope, runtime->newClass());
@@ -151,13 +151,13 @@ TEST(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
   Handle<Object> attr_name(&scope, runtime.symbols()->ExtensionPtr());
   Handle<HeapObject> instance(&scope, runtime.newInstance(layout));
 
-  PyObject* type_handle = ApiHandle::fromObject(*type_class)->asPyObject();
+  PyObject* type_handle = ApiHandle::fromObject(*type_class);
   PyObject pyobj = {nullptr, 1, reinterpret_cast<PyTypeObject*>(type_handle)};
   Handle<Object> object_ptr(&scope,
                             runtime.newIntFromCPtr(static_cast<void*>(&pyobj)));
   runtime.instanceAtPut(thread, instance, attr_name, object_ptr);
 
-  PyObject* result = ApiHandle::fromObject(*instance)->asPyObject();
+  PyObject* result = ApiHandle::fromObject(*instance);
   EXPECT_TRUE(result);
   EXPECT_EQ(result, &pyobj);
 }
@@ -178,7 +178,7 @@ TEST(CApiHandlesDeathTest, RuntimeInstanceObjectReturnsPyObject) {
 
   // Create instance
   Handle<HeapObject> instance(&scope, runtime.newInstance(layout));
-  EXPECT_DEATH(ApiHandle::fromObject(*instance)->asPyObject(),
+  EXPECT_DEATH(ApiHandle::fromObject(*instance),
                "unimplemented: Calling fromObject on a non-extension "
                "instance. Can't materialize PyObject");
 }

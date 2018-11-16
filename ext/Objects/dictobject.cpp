@@ -46,8 +46,7 @@ extern "C" int PyDict_SetItemString(PyObject* pydict, const char* key,
   HandleScope scope(thread);
 
   Handle<Object> keyobj(&scope, runtime->newStrFromCStr(key));
-  return PyDict_SetItem(pydict, ApiHandle::fromObject(*keyobj)->asPyObject(),
-                        value);
+  return PyDict_SetItem(pydict, ApiHandle::fromObject(*keyobj), value);
 }
 
 extern "C" PyObject* PyDict_New() {
@@ -56,7 +55,7 @@ extern "C" PyObject* PyDict_New() {
   HandleScope scope(thread);
 
   Handle<Object> value(&scope, runtime->newDict());
-  return ApiHandle::fromObject(*value)->asPyObject();
+  return ApiHandle::fromObject(*value);
 }
 
 extern "C" PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
@@ -74,7 +73,7 @@ extern "C" PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
   if (value->isError()) {
     return nullptr;
   }
-  return ApiHandle::fromBorrowedObject(value)->asPyObject();
+  return ApiHandle::fromBorrowedObject(value);
 }
 
 extern "C" void PyDict_Clear(PyObject* /* p */) {

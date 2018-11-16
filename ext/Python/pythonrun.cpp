@@ -18,7 +18,7 @@ extern "C" PyObject* PyRun_SimpleStringFlags(const char* str,
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  return ApiHandle::fromObject(runtime->runFromCStr(str))->asPyObject();
+  return ApiHandle::fromObject(runtime->runFromCStr(str));
 }
 
 extern "C" void PyErr_Display(PyObject* /* n */, PyObject* /* e */,

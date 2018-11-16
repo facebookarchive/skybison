@@ -10,7 +10,7 @@ extern "C" PyObject* PyFloat_FromDouble(double fval) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Handle<Object> flt(&scope, runtime->newFloat(fval));
-  return ApiHandle::fromObject(*flt)->asPyObject();
+  return ApiHandle::fromObject(*flt);
 }
 
 extern "C" double PyFloat_AsDouble(PyObject*) {

@@ -7,11 +7,11 @@
 namespace python {
 
 extern "C" PyObject* PyTrue_Ptr() {
-  return ApiHandle::fromObject(Bool::trueObj())->asPyObject();
+  return ApiHandle::fromObject(Bool::trueObj());
 }
 
 extern "C" PyObject* PyFalse_Ptr() {
-  return ApiHandle::fromObject(Bool::falseObj())->asPyObject();
+  return ApiHandle::fromObject(Bool::falseObj());
 }
 
 extern "C" int PyBool_Check_Func(PyObject* obj) {

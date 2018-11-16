@@ -12,7 +12,7 @@ extern "C" PyObject* PyErr_Occurred(void) {
   if (!thread->hasPendingException()) {
     return nullptr;
   }
-  return ApiHandle::fromObject(thread->exceptionType())->asPyObject();
+  return ApiHandle::fromObject(thread->exceptionType());
 }
 
 extern "C" PyObject* PyErr_Format(PyObject*, const char*, ...) {

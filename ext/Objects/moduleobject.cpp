@@ -23,7 +23,7 @@ extern "C" PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   // TODO: Add methods
   // TODO: Add m_doc
 
-  return ApiHandle::fromObject(*module)->asPyObject();
+  return ApiHandle::fromObject(*module);
 }
 
 extern "C" PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
@@ -48,7 +48,7 @@ extern "C" PyObject* PyModule_GetDict(PyObject* pymodule) {
   HandleScope scope(thread);
 
   Handle<Module> module(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  return ApiHandle::fromObject(module->dict())->asPyObject();
+  return ApiHandle::fromObject(module->dict());
 }
 
 extern "C" PyObject* PyModule_GetNameObject(PyObject* /* m */) {

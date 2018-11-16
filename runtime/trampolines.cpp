@@ -482,7 +482,7 @@ Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   Handle<Object> object(&scope, caller_frame->topValue());
   Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
   // TODO(eelizondo): Cache the None handle
-  PyObject* none = ApiHandle::fromObject(None::object())->asPyObject();
+  PyObject* none = ApiHandle::fromObject(None::object());
 
   if (object->isType()) {
     Handle<Type> type_class(&scope, *object);

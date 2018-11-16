@@ -16,8 +16,8 @@ ApiHandle* ApiHandle::create(Object* reference, long refcnt) {
   if (reference == reftype) {
     handle->ob_type = reinterpret_cast<PyTypeObject*>(handle);
   } else {
-    handle->ob_type = reinterpret_cast<PyTypeObject*>(
-        ApiHandle::fromObject(reftype)->asPyObject());
+    handle->ob_type =
+        reinterpret_cast<PyTypeObject*>(ApiHandle::fromObject(reftype));
   }
   return handle;
 }
@@ -134,7 +134,7 @@ Object* ApiHandle::asObject() {
 
 bool ApiHandle::isType() {
   // This works under the assumption only PyType_Type's metaType is itself
-  return this->type() == ApiHandle::fromPyObject(type()->asPyObject())->type();
+  return this->type() == ApiHandle::fromPyObject(type())->type();
 }
 
 ApiHandle* ApiHandle::type() {

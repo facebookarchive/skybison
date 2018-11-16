@@ -6,7 +6,7 @@
 namespace python {
 
 extern "C" PyObject* PyNone_Ptr() {
-  return ApiHandle::fromObject(None::object())->asPyObject();
+  return ApiHandle::fromObject(None::object());
 }
 
 extern "C" void _Py_Dealloc_Func(PyObject* obj) {
@@ -53,7 +53,7 @@ extern "C" PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
   if (thread->hasPendingException() || result->isError()) {
     return nullptr;
   }
-  return ApiHandle::fromBorrowedObject(*result)->asPyObject();
+  return ApiHandle::fromBorrowedObject(*result);
 }
 
 extern "C" int PyObject_CallFinalizerFromDealloc(PyObject* /* f */) {

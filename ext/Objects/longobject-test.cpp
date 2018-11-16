@@ -14,7 +14,7 @@ TEST_F(LongExtensionApiTest, PyLongCheckOnInt) {
 
 TEST_F(LongExtensionApiTest, PyLongCheckOnType) {
   PyObject* pylong = PyLong_FromLong(10);
-  PyObject* type = ApiHandle::fromPyObject(pylong)->type()->asPyObject();
+  PyObject* type = ApiHandle::fromPyObject(pylong)->type();
   EXPECT_FALSE(PyLong_Check(type));
   EXPECT_FALSE(PyLong_CheckExact(type));
 }

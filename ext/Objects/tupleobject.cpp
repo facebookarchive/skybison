@@ -13,7 +13,7 @@ extern "C" PyObject* PyTuple_New(Py_ssize_t length) {
   HandleScope scope(thread);
 
   Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(length));
-  return ApiHandle::fromObject(*tuple)->asPyObject();
+  return ApiHandle::fromObject(*tuple);
 }
 
 extern "C" int PyTuple_CheckExact_Func(PyObject* obj) {
@@ -77,7 +77,7 @@ extern "C" PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
     return nullptr;
   }
 
-  return ApiHandle::fromBorrowedObject(tuple->at(pos))->asPyObject();
+  return ApiHandle::fromBorrowedObject(tuple->at(pos));
 }
 
 extern "C" PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
@@ -94,7 +94,7 @@ extern "C" PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
     tuple->atPut(i, ApiHandle::fromPyObject(item)->asObject());
   }
   va_end(vargs);
-  return ApiHandle::fromObject(*tuple)->asPyObject();
+  return ApiHandle::fromObject(*tuple);
 }
 
 extern "C" int PyTuple_ClearFreeList(void) {

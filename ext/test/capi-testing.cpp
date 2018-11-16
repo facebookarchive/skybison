@@ -25,7 +25,7 @@ PyObject* moduleGet(const char* module, const char* name) {
   Runtime* runtime = thread->runtime();
   Handle<Module> mod(&scope, findModule(runtime, module));
   Handle<Object> var(&scope, moduleAt(runtime, mod, name));
-  return ApiHandle::fromObject(*var)->asPyObject();
+  return ApiHandle::fromObject(*var);
 }
 
 bool isBorrowed(PyObject* pyobj) {

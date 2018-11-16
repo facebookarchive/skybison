@@ -15,15 +15,13 @@ class ApiHandle : public PyObject {
   static ApiHandle* fromBorrowedObject(Object* obj);
 
   static ApiHandle* fromPyObject(PyObject* py_obj) {
-    return reinterpret_cast<ApiHandle*>(py_obj);
+    return static_cast<ApiHandle*>(py_obj);
   }
 
   // Get the object from the handle's reference pointer. If non-existent
   // Either search the object in the runtime's extension types dictionary
   // or build a new extension instance.
   Object* asObject();
-
-  PyObject* asPyObject() { return reinterpret_cast<PyObject*>(this); }
 
   ApiHandle* type();
 

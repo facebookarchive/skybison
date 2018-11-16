@@ -13,9 +13,8 @@ TEST(DictObject, GetItemFromNonDictReturnsNull) {
   Handle<Object> non_dict(&scope, runtime.newInt(10));
 
   // Pass a non dict
-  PyObject* result =
-      PyDict_GetItem(ApiHandle::fromObject(*non_dict)->asPyObject(),
-                     ApiHandle::fromObject(*non_dict)->asPyObject());
+  PyObject* result = PyDict_GetItem(ApiHandle::fromObject(*non_dict),
+                                    ApiHandle::fromObject(*non_dict));
   EXPECT_EQ(result, nullptr);
 }
 
@@ -27,9 +26,8 @@ TEST(DictObject, GetItemNonExistingKeyReturnsNull) {
   Handle<Object> nonkey(&scope, SmallInt::fromWord(30));
 
   // Pass a non existing key
-  PyObject* result =
-      PyDict_GetItem(ApiHandle::fromObject(*dict)->asPyObject(),
-                     ApiHandle::fromObject(*nonkey)->asPyObject());
+  PyObject* result = PyDict_GetItem(ApiHandle::fromObject(*dict),
+                                    ApiHandle::fromObject(*nonkey));
   EXPECT_EQ(result, nullptr);
 }
 
@@ -43,8 +41,8 @@ TEST(DictObject, GetItemReturnsValue) {
   runtime.dictAtPut(dict, key, value);
 
   // Pass existing key
-  PyObject* result = PyDict_GetItem(ApiHandle::fromObject(*dict)->asPyObject(),
-                                    ApiHandle::fromObject(*key)->asPyObject());
+  PyObject* result =
+      PyDict_GetItem(ApiHandle::fromObject(*dict), ApiHandle::fromObject(*key));
   ASSERT_NE(result, nullptr);
 
   // Check result value
@@ -64,8 +62,8 @@ TEST(DictObject, GetItemReturnsBorrowedReference) {
   runtime.dictAtPut(dict, key, value);
 
   // Pass existing key
-  PyObject* result = PyDict_GetItem(ApiHandle::fromObject(*dict)->asPyObject(),
-                                    ApiHandle::fromObject(*key)->asPyObject());
+  PyObject* result =
+      PyDict_GetItem(ApiHandle::fromObject(*dict), ApiHandle::fromObject(*key));
   ASSERT_NE(result, nullptr);
 
   // Check that key is a normal handle
