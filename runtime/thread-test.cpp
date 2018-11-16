@@ -1177,4 +1177,29 @@ class C(A, B): pass
   EXPECT_DEATH(runtime.run(buffer.get()), "consistent method resolution order");
 }
 
+// iteration
+
+TEST(ThreadTest, IteratePrint) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+for i in range(3):
+  print(i)
+for i in range(3,6):
+  print(i)
+for i in range(6,12,2):
+  print(i)
+for i in range(6,3,-1):
+  print(i)
+for i in range(42,0,1):
+  print(i)
+for i in range(42,100,-1):
+  print(i)
+)";
+
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "0\n1\n2\n3\n4\n5\n6\n8\n10\n6\n5\n4\n");
+}
+
 } // namespace python

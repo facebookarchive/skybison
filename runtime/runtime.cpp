@@ -127,6 +127,22 @@ Object* Runtime::newObjectArray(word length) {
   return heap()->createObjectArray(length, None::object());
 }
 
+Object* Runtime::newRange(word start, word stop, word step) {
+  auto range = Range::cast(heap()->createRange());
+  range->setStart(start);
+  range->setStop(stop);
+  range->setStep(step);
+  return range;
+}
+
+Object* Runtime::newRangeIterator(Object* o) {
+  HandleScope scope;
+  Handle<Range> range(&scope, o);
+  Handle<RangeIterator> range_iterator(&scope, heap()->createRangeIterator());
+  range_iterator->setRange(*range);
+  return *range_iterator;
+}
+
 Object* Runtime::newStringFromCString(const char* c_string) {
   word length = std::strlen(c_string);
   auto data = reinterpret_cast<const byte*>(c_string);
@@ -320,6 +336,18 @@ void Runtime::initializeHeapClasses() {
   ellipsis->setName(newStringFromCString("ellipsis"));
   const ClassId ellipsis_mro[] = {ClassId::kEllipsis, ClassId::kObject};
   ellipsis->setMro(createMro(ellipsis_mro, ARRAYSIZE(ellipsis_mro)));
+
+  Handle<Class> range(&scope, newClassWithId(ClassId::kRange));
+  range->setName(newStringFromCString("range"));
+  const ClassId range_mro[] = {ClassId::kRange, ClassId::kObject};
+  range->setMro(createMro(range_mro, ARRAYSIZE(range_mro)));
+
+  Handle<Class> range_iterator(&scope, newClassWithId(ClassId::kRangeIterator));
+  range_iterator->setName(newStringFromCString("range_iterator"));
+  const ClassId range_iterator_mro[] = {ClassId::kRangeIterator,
+                                        ClassId::kObject};
+  range_iterator->setMro(
+      createMro(range_iterator_mro, ARRAYSIZE(range_iterator_mro)));
 }
 
 void Runtime::initializeImmediateClasses() {
@@ -565,10 +593,20 @@ Object* Runtime::createMainModule() {
 
   // Fill in __main__...
   moduleAddBuiltinPrint(module);
+  moduleAddBuiltinFunction(
+      module,
+      "range",
+      nativeTrampoline<builtinRange>,
+      nativeTrampoline<unimplementedTrampoline>);
 
   addModule(module);
 
   return *module;
+}
+
+Object* Runtime::getIter(Object* o) {
+  // TODO: Support other forms of iteration.
+  return newRangeIterator(o);
 }
 
 // List

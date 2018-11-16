@@ -47,6 +47,10 @@ class Runtime {
 
   Object* newObjectArray(word length);
 
+  Object* newRange(word start, word stop, word step);
+
+  Object* newRangeIterator(Object* range);
+
   Object* newStringFromCString(const char* c_string);
   Object* newStringWithAll(View<byte> code_units);
 
@@ -106,6 +110,8 @@ class Runtime {
   Symbols* symbols() {
     return symbols_;
   }
+
+  Object* getIter(Object* o);
 
   // Ensures that array has enough space for an atPut at index. If so, returns
   // array. If not, allocates and returns a new array with sufficient capacity

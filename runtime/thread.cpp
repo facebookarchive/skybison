@@ -174,6 +174,17 @@ void Thread::throwTypeErrorFromCString(const char* message) {
   pending_exception_ = runtime()->newStringFromCString(message);
 }
 
+// Convenience method for throwing a ValueError exception with an error message.
+void Thread::throwValueError(String* message) {
+  // TODO: instantiate ValueError object.
+  pending_exception_ = message;
+}
+
+void Thread::throwValueErrorFromCString(const char* message) {
+  // TODO: instantiate ValueError object.
+  pending_exception_ = runtime()->newStringFromCString(message);
+}
+
 Object* Thread::pendingException() {
   return pending_exception_;
 }

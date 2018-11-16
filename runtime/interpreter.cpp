@@ -222,6 +222,26 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         sp = frame->valueStackBase() - block.level();
         break;
       }
+
+      case Bytecode::GET_ITER: {
+        *sp = thread->runtime()->getIter(*sp);
+        // This is currently the only implemented iterator type.
+        assert((*sp)->isRangeIterator());
+        break;
+      }
+      case Bytecode::FOR_ITER: {
+        auto iter = RangeIterator::cast(*sp);
+        Object* next = iter->next();
+        // TODO: Support StopIteration exceptions.
+        if (next->isError()) {
+          sp++;
+          pc += arg;
+        } else {
+          *--sp = next;
+        }
+        break;
+      }
+
       default:
         abort();
     }

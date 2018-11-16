@@ -42,6 +42,10 @@ class Heap {
 
   Object* createEllipsis();
 
+  Object* createRange();
+
+  Object* createRangeIterator();
+
  private:
   Space* from_;
   Space* to_;

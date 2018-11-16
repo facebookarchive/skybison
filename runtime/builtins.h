@@ -15,15 +15,14 @@ class Thread;
 // during tests.
 extern std::ostream* builtinPrintStream;
 
-Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs)
-    __attribute__((aligned(16)));
+Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs);
 
 // CALL_FUNCTION entry point for print()
-Object* builtinPrint(Thread* thread, Frame* frame, word nargs)
-    __attribute__((aligned(16)));
+Object* builtinPrint(Thread* thread, Frame* frame, word nargs);
 
 // CALL_FUNCTION_KW entry pointer for print()
-Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs)
-    __attribute__((aligned(16)));
+Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs);
+
+Object* builtinRange(Thread* thread, Frame* frame, word nargs);
 
 } // namespace python

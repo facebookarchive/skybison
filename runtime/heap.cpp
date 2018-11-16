@@ -271,4 +271,30 @@ Object* Heap::createEllipsis() {
   return Ellipsis::cast(result);
 }
 
+Object* Heap::createRange() {
+  word size = Range::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<Range*>(raw);
+  result->setHeader(Header::from(
+      Range::kSize / kPointerSize,
+      0,
+      ClassId::kRange,
+      ObjectFormat::kDataInstance));
+  return Range::cast(result);
+}
+
+Object* Heap::createRangeIterator() {
+  word size = RangeIterator::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<RangeIterator*>(raw);
+  result->setHeader(Header::from(
+      RangeIterator::kSize / kPointerSize,
+      0,
+      ClassId::kRangeIterator,
+      ObjectFormat::kObjectInstance));
+  return RangeIterator::cast(result);
+}
+
 } // namespace python

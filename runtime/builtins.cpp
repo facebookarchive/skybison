@@ -161,4 +161,45 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   return doBuiltinPrint(rest, nargs - 1, end);
 }
 
+Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1 || nargs > 3) {
+    thread->throwTypeErrorFromCString(
+        "Incorrect number of arguments to range()");
+    return Error::object();
+  }
+
+  Arguments args(frame, nargs);
+
+  for (word i = 0; i < nargs; i++) {
+    if (!args.get(i)->isSmallInteger()) {
+      thread->throwTypeErrorFromCString(
+          "Arguments to range() must be an integers.");
+      return Error::object();
+    }
+  }
+
+  word start = 0;
+  word stop = 0;
+  word step = 1;
+
+  if (nargs == 1) {
+    stop = SmallInteger::cast(args.get(0))->value();
+  } else if (nargs == 2) {
+    start = SmallInteger::cast(args.get(0))->value();
+    stop = SmallInteger::cast(args.get(1))->value();
+  } else if (nargs == 3) {
+    start = SmallInteger::cast(args.get(0))->value();
+    stop = SmallInteger::cast(args.get(1))->value();
+    step = SmallInteger::cast(args.get(2))->value();
+  }
+
+  if (step == 0) {
+    thread->throwValueErrorFromCString(
+        "range() step argument must not be zero");
+    return Error::object();
+  }
+
+  return thread->runtime()->newRange(start, stop, step);
+}
+
 } // namespace python

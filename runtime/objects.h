@@ -70,10 +70,12 @@ enum class ClassId {
   kEllipsis,
   kFunction,
   kInteger,
+  kLargeString,
   kList,
   kModule,
   kObjectArray,
-  kLargeString,
+  kRange,
+  kRangeIterator,
   kType,
   kValueCell,
 
@@ -107,6 +109,8 @@ class Object {
   inline bool isLargeString();
   inline bool isValueCell();
   inline bool isEllipsis();
+  inline bool isRange();
+  inline bool isRangeIterator();
 
   // superclass objects
   inline bool isString();
@@ -497,6 +501,62 @@ class LargeString : public Array {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeString);
+};
+
+class Range : public HeapObject {
+ public:
+  // Getters and setters.
+  inline word start();
+  inline void setStart(word value);
+
+  inline word stop();
+  inline void setStop(word value);
+
+  inline word step();
+  inline void setStep(word value);
+
+  // Casting.
+  static inline Range* cast(Object* object);
+
+  // Sizing.
+  static inline word allocationSize();
+
+  // Layout.
+  static const int kStartOffset = HeapObject::kSize;
+  static const int kStopOffset = kStartOffset + kPointerSize;
+  static const int kStepOffset = kStopOffset + kPointerSize;
+  static const int kSize = kStepOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Range);
+};
+
+class RangeIterator : public HeapObject {
+ public:
+  // Getters and setters.
+
+  // Bind the iterator to a specific range. The binding should not be changed
+  // after creation.
+  inline void setRange(Object* range);
+
+  // Iteration.
+  inline Object* next();
+
+  // Sizing.
+  static inline word allocationSize();
+
+  // Casting.
+  static inline RangeIterator* cast(Object* object);
+
+  // Layout.
+  static const int kRangeOffset = HeapObject::kSize;
+  static const int kCurValueOffset = kRangeOffset + kPointerSize;
+  static const int kSize = kCurValueOffset + kPointerSize;
+
+ private:
+  static inline bool isOutOfRange(word cur, word stop, word step);
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIterator);
 };
 
 class Code : public HeapObject {
@@ -957,6 +1017,20 @@ bool Object::isEllipsis() {
     return false;
   }
   return HeapObject::cast(this)->header()->classId() == ClassId::kEllipsis;
+}
+
+bool Object::isRange() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() == ClassId::kRange;
+}
+
+bool Object::isRangeIterator() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() == ClassId::kRangeIterator;
 }
 
 bool Object::isString() {
@@ -1511,6 +1585,93 @@ Object* Code::varnames() {
 
 void Code::setVarnames(Object* value) {
   instanceVariableAtPut(kVarnamesOffset, value);
+}
+
+// Range
+
+word Range::start() {
+  return SmallInteger::cast(instanceVariableAt(kStartOffset))->value();
+}
+
+void Range::setStart(word value) {
+  instanceVariableAtPut(kStartOffset, SmallInteger::fromWord(value));
+}
+
+word Range::stop() {
+  return SmallInteger::cast(instanceVariableAt(kStopOffset))->value();
+}
+
+void Range::setStop(word value) {
+  instanceVariableAtPut(kStopOffset, SmallInteger::fromWord(value));
+}
+
+word Range::step() {
+  return SmallInteger::cast(instanceVariableAt(kStepOffset))->value();
+}
+
+void Range::setStep(word value) {
+  instanceVariableAtPut(kStepOffset, SmallInteger::fromWord(value));
+}
+
+word Range::allocationSize() {
+  return Header::kSize + Range::kSize;
+}
+
+Range* Range::cast(Object* object) {
+  assert(object->isRange());
+  return reinterpret_cast<Range*>(object);
+}
+
+// RangeIterator
+
+void RangeIterator::setRange(Object* range) {
+  auto r = Range::cast(range);
+  instanceVariableAtPut(kRangeOffset, r);
+  instanceVariableAtPut(kCurValueOffset, SmallInteger::fromWord(r->start()));
+}
+
+bool RangeIterator::isOutOfRange(word cur, word stop, word step) {
+  assert(step != 0); // should have been checked in builtinRange().
+
+  if (step < 0) {
+    if (cur <= stop) {
+      return true;
+    }
+  } else if (step > 0) {
+    if (cur >= stop) {
+      return true;
+    }
+  }
+  return false;
+}
+
+Object* RangeIterator::next() {
+  auto ret = SmallInteger::cast(instanceVariableAt(kCurValueOffset));
+  auto cur = ret->value();
+
+  auto range = Range::cast(instanceVariableAt(kRangeOffset));
+  auto stop = range->stop();
+  auto step = range->step();
+
+  // TODO: range overflow is unchecked. Since a correct implementation
+  // has to support arbitrary precision anyway, there's no point in checking
+  // for overflow.
+  if (isOutOfRange(cur, stop, step)) {
+    // TODO: Use StopIteration for control flow.
+    return Error::object();
+  }
+
+  instanceVariableAtPut(kCurValueOffset, SmallInteger::fromWord(cur + step));
+  return ret;
+}
+
+word RangeIterator::allocationSize() {
+  return Header::kSize + RangeIterator::kSize;
+}
+
+RangeIterator* RangeIterator::cast(Object* object) {
+  assert(object->isRangeIterator());
+  return reinterpret_cast<RangeIterator*>(object);
 }
 
 // Dictionary

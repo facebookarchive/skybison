@@ -97,6 +97,11 @@ class Thread {
   void throwTypeError(String* message);
   void throwTypeErrorFromCString(const char* message);
 
+  // Convenience method for throwing a ValueError exception with an error
+  // message.
+  void throwValueError(String* message);
+  void throwValueErrorFromCString(const char* message);
+
   // Gets the pending exception object - if it is None, no exception has been
   // posted.
   Object* pendingException();
