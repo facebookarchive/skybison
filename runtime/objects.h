@@ -259,6 +259,15 @@ struct ObjectLayoutId;
 INTRINSIC_CLASS_NAMES(CASE)
 #undef CASE
 
+// Add functionality common to all Object subclasses. This only contains cast()
+// for now, but we have plans to add more in the future, hence the more generic
+// name.
+#define RAW_OBJECT_COMMON(ty)                                                  \
+  static ty* cast(Object* object) {                                            \
+    DCHECK(object->is##ty(), "invalid cast, expected " #ty);                   \
+    return reinterpret_cast<ty*>(object);                                      \
+  }
+
 class Object {
  public:
   // Getters and setters.
@@ -328,14 +337,13 @@ class Object {
 
   static bool equals(Object* lhs, Object* rhs);
 
-  // Casting.
-  static Object* cast(Object* object);
-
   // Constants
 
   // The bottom five bits of immediate objects are used as the class id when
   // indexing into the class table in the runtime.
   static const uword kImmediateClassTableIndexMask = (1 << 5) - 1;
+
+  RAW_OBJECT_COMMON(Object)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
@@ -358,8 +366,7 @@ class Int : public Object {
   bool isPositive();
   bool isZero();
 
-  // Casting.
-  static Int* cast(Object* object);
+  RAW_OBJECT_COMMON(Int)
 
  private:
   static word compareDigits(View<uword> lhs, View<uword> rhs);
@@ -386,9 +393,6 @@ class SmallInt : public Object {
   template <typename T>
   T asFunctionPointer();
 
-  // Casting.
-  static SmallInt* cast(Object* object);
-
   // Tags.
   static const int kTag = 0;
   static const int kTagSize = 1;
@@ -397,6 +401,8 @@ class SmallInt : public Object {
   // Constants
   static const word kMinValue = -(1L << (kBitsPerPointer - (kTagSize + 1)));
   static const word kMaxValue = (1L << (kBitsPerPointer - (kTagSize + 1))) - 1;
+
+  RAW_OBJECT_COMMON(SmallInt)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallInt);
@@ -453,9 +459,6 @@ class Header : public Object {
   static Header* from(word count, word hash, LayoutId layout_id,
                       ObjectFormat format);
 
-  // Casting.
-  static Header* cast(Object* object);
-
   // Tags.
   static const int kTag = 3;
   static const int kTagSize = 3;
@@ -485,6 +488,8 @@ class Header : public Object {
   // Constants
   static const word kMaxLayoutId = (1L << (kLayoutIdSize + 1)) - 1;
 
+  RAW_OBJECT_COMMON(Header)
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Header);
 };
@@ -502,13 +507,12 @@ class Bool : public Object {
   static Bool* fromBool(bool value);
   static Bool* negate(Object* value);
 
-  // Casting.
-  static Bool* cast(Object* object);
-
   // Tags.
   static const int kTag = 7;  // 0b00111
   static const int kTagSize = 5;
   static const uword kTagMask = (1 << kTagSize) - 1;
+
+  RAW_OBJECT_COMMON(Bool)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Bool);
@@ -519,13 +523,12 @@ class NoneType : public Object {
   // Singletons.
   static NoneType* object();
 
-  // Casting.
-  static NoneType* cast(Object* object);
-
   // Tags.
   static const int kTag = 15;  // 0b01111
   static const int kTagSize = 5;
   static const uword kTagMask = (1 << kTagSize) - 1;
+
+  RAW_OBJECT_COMMON(NoneType)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(NoneType);
@@ -539,13 +542,12 @@ class Error : public Object {
   // Singletons.
   static Error* object();
 
-  // Casting.
-  static Error* cast(Object* object);
-
   // Tagging.
   static const int kTag = 23;  // 0b10111
   static const int kTagSize = 5;
   static const uword kTagMask = (1 << kTagSize) - 1;
+
+  RAW_OBJECT_COMMON(Error)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Error);
@@ -568,10 +570,9 @@ class Str : public Object {
   // with malloc and must be freed by the caller.
   char* toCStr();
 
-  // Casting.
-  static Str* cast(Object* object);
+  RAW_OBJECT_COMMON(Str)
 
- public:
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Str);
 };
 
@@ -588,6 +589,8 @@ class SmallStr : public Object {
 
   static const word kMaxLength = kWordSize - 1;
 
+  RAW_OBJECT_COMMON(SmallStr)
+
  private:
   // Interface methods are private: strings should be manipulated via the
   // Str class, which delegates to LargeStr/SmallStr appropriately.
@@ -600,9 +603,6 @@ class SmallStr : public Object {
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
   char* toCStr();
-
-  // Casting.
-  static SmallStr* cast(Object* object);
 
   friend class Heap;
   friend class Object;
@@ -630,9 +630,6 @@ class HeapObject : public Object {
   // Conversion.
   static HeapObject* fromAddress(uword address);
 
-  // Casting.
-  static HeapObject* cast(Object* object);
-
   // Sizing
   static word headerSize(word count);
 
@@ -657,6 +654,8 @@ class HeapObject : public Object {
   static const int kSize = kHeaderOffset + kPointerSize;
 
   static const word kMinimumSize = kPointerSize * 2;
+
+  RAW_OBJECT_COMMON(HeapObject)
 
  protected:
   Object* instanceVariableAt(word offset);
@@ -683,14 +682,13 @@ class BaseException : public HeapObject {
   Object* context();
   void setContext(Object* context);
 
-  // Casting.
-  static BaseException* cast(Object* object);
-
   static const int kArgsOffset = HeapObject::kSize;
   static const int kTracebackOffset = kArgsOffset + kPointerSize;
   static const int kCauseOffset = kTracebackOffset + kPointerSize;
   static const int kContextOffset = kCauseOffset + kPointerSize;
   static const int kSize = kContextOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(BaseException)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BaseException);
@@ -698,8 +696,7 @@ class BaseException : public HeapObject {
 
 class Exception : public BaseException {
  public:
-  // Casting.
-  static Exception* cast(Object* object);
+  RAW_OBJECT_COMMON(Exception)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Exception);
@@ -711,11 +708,10 @@ class StopIteration : public BaseException {
   Object* value();
   void setValue(Object* value);
 
-  // Casting.
-  static StopIteration* cast(Object* object);
-
   static const int kValueOffset = BaseException::kSize;
   static const int kSize = kValueOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(StopIteration)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StopIteration);
@@ -726,11 +722,10 @@ class SystemExit : public BaseException {
   Object* code();
   void setCode(Object* code);
 
-  // Casting.
-  static SystemExit* cast(Object* object);
-
   static const int kCodeOffset = BaseException::kSize;
   static const int kSize = kCodeOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(SystemExit)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExit);
@@ -738,8 +733,7 @@ class SystemExit : public BaseException {
 
 class RuntimeError : public Exception {
  public:
-  // Casting.
-  static RuntimeError* cast(Object* object);
+  RAW_OBJECT_COMMON(RuntimeError)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(RuntimeError);
@@ -747,8 +741,7 @@ class RuntimeError : public Exception {
 
 class NotImplementedError : public RuntimeError {
  public:
-  // Casting.
-  static NotImplementedError* cast(Object* object);
+  RAW_OBJECT_COMMON(NotImplementedError)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(NotImplementedError);
@@ -766,13 +759,12 @@ class ImportError : public Exception {
   Object* path();
   void setPath(Object* path);
 
-  // Casting.
-  static ImportError* cast(Object* object);
-
   static const int kMsgOffset = BaseException::kSize;
   static const int kNameOffset = kMsgOffset + kPointerSize;
   static const int kPathOffset = kNameOffset + kPointerSize;
   static const int kSize = kPathOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(ImportError)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ImportError);
@@ -780,8 +772,7 @@ class ImportError : public Exception {
 
 class ModuleNotFoundError : public ImportError {
  public:
-  // Casting.
-  static ModuleNotFoundError* cast(Object* object);
+  RAW_OBJECT_COMMON(ModuleNotFoundError)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleNotFoundError);
@@ -789,8 +780,7 @@ class ModuleNotFoundError : public ImportError {
 
 class LookupError : public Exception {
  public:
-  // Casting.
-  static LookupError* cast(Object* object);
+  RAW_OBJECT_COMMON(LookupError)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(LookupError);
@@ -798,8 +788,7 @@ class LookupError : public Exception {
 
 class IndexError : public LookupError {
  public:
-  // Casting.
-  static IndexError* cast(Object* object);
+  RAW_OBJECT_COMMON(IndexError)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(IndexError);
@@ -807,8 +796,7 @@ class IndexError : public LookupError {
 
 class KeyError : public LookupError {
  public:
-  // Casting.
-  static KeyError* cast(Object* object);
+  RAW_OBJECT_COMMON(KeyError)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(KeyError);
@@ -895,11 +883,10 @@ class Bytes : public Array {
   byte byteAt(word index);
   void byteAtPut(word index, byte value);
 
-  // Casting.
-  static Bytes* cast(Object* object);
-
   // Sizing.
   static word allocationSize(word length);
+
+  RAW_OBJECT_COMMON(Bytes)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Bytes);
@@ -911,9 +898,6 @@ class ObjectArray : public Array {
   Object* at(word index);
   void atPut(word index, Object* value);
 
-  // Casting.
-  static ObjectArray* cast(Object* object);
-
   // Sizing.
   static word allocationSize(word length);
 
@@ -923,19 +907,20 @@ class ObjectArray : public Array {
 
   bool contains(Object* object);
 
+  RAW_OBJECT_COMMON(ObjectArray)
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectArray);
 };
 
 class LargeStr : public Array {
  public:
-  // Casting.
-  static LargeStr* cast(Object* object);
-
   // Sizing.
   static word allocationSize(word length);
 
   static const int kDataOffset = HeapObject::kSize;
+
+  RAW_OBJECT_COMMON(LargeStr)
 
  private:
   // Interface methods are private: strings should be manipulated via the
@@ -980,9 +965,6 @@ class LargeInt : public HeapObject {
   // Sizing.
   static word allocationSize(word num_digits);
 
-  // Casting.
-  static LargeInt* cast(Object* object);
-
   // Indexing into digits
   uword digitAt(word index);
   void digitAtPut(word index, uword digit);
@@ -999,6 +981,8 @@ class LargeInt : public HeapObject {
   static const int kValueOffset = HeapObject::kSize;
   static const int kSize = kValueOffset + kPointerSize;
 
+  RAW_OBJECT_COMMON(LargeInt)
+
  private:
   friend class Int;
   friend class Runtime;
@@ -1014,15 +998,14 @@ class Float : public HeapObject {
   // Getters and setters.
   double value();
 
-  // Casting.
-  static Float* cast(Object* object);
-
   // Allocation.
   void initialize(double value);
 
   // Layout.
   static const int kValueOffset = HeapObject::kSize;
   static const int kSize = kValueOffset + kDoubleSize;
+
+  RAW_OBJECT_COMMON(Float)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Float);
@@ -1034,9 +1017,6 @@ class Complex : public HeapObject {
   double real();
   double imag();
 
-  // Casting.
-  static Complex* cast(Object* object);
-
   // Allocation.
   void initialize(double real, double imag);
 
@@ -1044,6 +1024,8 @@ class Complex : public HeapObject {
   static const int kRealOffset = HeapObject::kSize;
   static const int kImagOffset = kRealOffset + kDoubleSize;
   static const int kSize = kImagOffset + kDoubleSize;
+
+  RAW_OBJECT_COMMON(Complex)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Complex);
@@ -1061,14 +1043,13 @@ class Property : public HeapObject {
   Object* deleter();
   void setDeleter(Object* function);
 
-  // Casting
-  static Property* cast(Object* object);
-
   // Layout
   static const int kGetterOffset = HeapObject::kSize;
   static const int kSetterOffset = kGetterOffset + kPointerSize;
   static const int kDeleterOffset = kSetterOffset + kPointerSize;
   static const int kSize = kDeleterOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Property)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Property);
@@ -1086,14 +1067,13 @@ class Range : public HeapObject {
   word step();
   void setStep(word value);
 
-  // Casting.
-  static Range* cast(Object* object);
-
   // Layout.
   static const int kStartOffset = HeapObject::kSize;
   static const int kStopOffset = kStartOffset + kPointerSize;
   static const int kStepOffset = kStopOffset + kPointerSize;
   static const int kSize = kStepOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Range)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Range);
@@ -1113,13 +1093,12 @@ class RangeIterator : public HeapObject {
   // Number of unconsumed values in the range iterator
   word pendingLength();
 
-  // Casting.
-  static RangeIterator* cast(Object* object);
-
   // Layout.
   static const int kRangeOffset = HeapObject::kSize;
   static const int kCurValueOffset = kRangeOffset + kPointerSize;
   static const int kSize = kCurValueOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(RangeIterator)
 
  private:
   static bool isOutOfRange(word cur, word stop, word step);
@@ -1146,14 +1125,13 @@ class Slice : public HeapObject {
   // Returns the length of the new list and the corrected start and stop values
   static word adjustIndices(word length, word* start, word* stop, word step);
 
-  // Casting.
-  static Slice* cast(Object* object);
-
   // Layout.
   static const int kStartOffset = HeapObject::kSize;
   static const int kStopOffset = kStartOffset + kPointerSize;
   static const int kStepOffset = kStopOffset + kPointerSize;
   static const int kSize = kStepOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Slice)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Slice);
@@ -1165,12 +1143,11 @@ class StaticMethod : public HeapObject {
   Object* function();
   void setFunction(Object* function);
 
-  // Casting
-  static StaticMethod* cast(Object* object);
-
   // Layout
   static const int kFunctionOffset = HeapObject::kSize;
   static const int kSize = kFunctionOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(StaticMethod)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StaticMethod);
@@ -1188,13 +1165,12 @@ class ListIterator : public HeapObject {
   // Iteration.
   Object* next();
 
-  // Casting.
-  static ListIterator* cast(Object* object);
-
   // Layout.
   static const int kListOffset = HeapObject::kSize;
   static const int kIndexOffset = kListOffset + kPointerSize;
   static const int kSize = kIndexOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(ListIterator)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListIterator);
@@ -1218,14 +1194,13 @@ class SetIterator : public HeapObject {
   // Number of unconsumed values in the set iterator
   word pendingLength();
 
-  // Cast
-  static SetIterator* cast(Object* object);
-
   // Layout
   static const int kSetOffset = HeapObject::kSize;
   static const int kIndexOffset = kSetOffset + kPointerSize;
   static const int kConsumedCountOffset = kIndexOffset + kPointerSize;
   static const int kSize = kConsumedCountOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(SetIterator)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SetIterator);
@@ -1242,9 +1217,6 @@ class TupleIterator : public HeapObject {
 
   void setTuple(Object* tuple);
 
-  // Casting.
-  static TupleIterator* cast(Object* object);
-
   // Iteration.
   Object* next();
 
@@ -1252,6 +1224,8 @@ class TupleIterator : public HeapObject {
   static const int kTupleOffset = HeapObject::kSize;
   static const int kIndexOffset = kTupleOffset + kPointerSize;
   static const int kSize = kIndexOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(TupleIterator)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleIterator);
@@ -1330,9 +1304,6 @@ class Code : public HeapObject {
   Object* varnames();
   void setVarnames(Object* value);
 
-  // Casting.
-  static Code* cast(Object* obj);
-
   // Layout.
   static const int kArgcountOffset = HeapObject::kSize;
   static const int kKwonlyargcountOffset = kArgcountOffset + kPointerSize;
@@ -1351,6 +1322,8 @@ class Code : public HeapObject {
   static const int kNameOffset = kFilenameOffset + kPointerSize;
   static const int kLnotabOffset = kNameOffset + kPointerSize;
   static const int kSize = kLnotabOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Code)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Code);
@@ -1445,9 +1418,6 @@ class Function : public HeapObject {
   Object* fastGlobals();
   void setFastGlobals(Object* fast_globals);
 
-  // Casting.
-  static Function* cast(Object* object);
-
   // Layout.
   static const int kDocOffset = HeapObject::kSize;
   static const int kNameOffset = kDocOffset + kPointerSize;
@@ -1465,17 +1435,18 @@ class Function : public HeapObject {
   static const int kFastGlobalsOffset = kEntryExOffset + kPointerSize;
   static const int kSize = kFastGlobalsOffset + kPointerSize;
 
+  RAW_OBJECT_COMMON(Function)
+
  private:
   DISALLOW_COPY_AND_ASSIGN(Function);
 };
 
 class Instance : public HeapObject {
  public:
-  // Casting.
-  static Instance* cast(Object* object);
-
   // Sizing.
   static word allocationSize(word num_attributes);
+
+  RAW_OBJECT_COMMON(Instance)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Instance);
@@ -1495,14 +1466,13 @@ class Module : public HeapObject {
   Object* def();
   void setDef(Object* def);
 
-  // Casting.
-  static Module* cast(Object* object);
-
   // Layout.
   static const int kNameOffset = HeapObject::kSize;
   static const int kDictOffset = kNameOffset + kPointerSize;
   static const int kDefOffset = kDictOffset + kPointerSize;
   static const int kSize = kDefOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Module)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Module);
@@ -1510,14 +1480,13 @@ class Module : public HeapObject {
 
 class NotImplemented : public HeapObject {
  public:
-  // Casting.
-  static NotImplemented* cast(Object* object);
-
   // Layout
   // kPaddingOffset is not used, but the GC expects the object to be
   // at least one word.
   static const int kPaddingOffset = HeapObject::kSize;
   static const int kSize = kPaddingOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(NotImplemented)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(NotImplemented);
@@ -1543,8 +1512,6 @@ class Dict : public HeapObject {
   class Bucket;
 
   // Getters and setters.
-  static Dict* cast(Object* object);
-
   // The ObjectArray backing the dict
   Object* data();
   void setData(Object* data);
@@ -1557,6 +1524,8 @@ class Dict : public HeapObject {
   static const int kNumItemsOffset = HeapObject::kSize;
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kDataOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Dict)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Dict);
@@ -1633,8 +1602,6 @@ class Set : public HeapObject {
   class Bucket;
 
   // Getters and setters.
-  static Set* cast(Object* object);
-
   // The ObjectArray backing the set
   Object* data();
   void setData(Object* data);
@@ -1647,6 +1614,8 @@ class Set : public HeapObject {
   static const int kNumItemsOffset = HeapObject::kSize;
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kDataOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Set)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Set);
@@ -1748,12 +1717,11 @@ class ValueCell : public HeapObject {
   bool isUnbound();
   void makeUnbound();
 
-  // Casting.
-  static ValueCell* cast(Object* object);
-
   // Layout.
   static const int kValueOffset = HeapObject::kSize;
   static const int kSize = kValueOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(ValueCell)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(ValueCell);
@@ -1761,14 +1729,13 @@ class ValueCell : public HeapObject {
 
 class Ellipsis : public HeapObject {
  public:
-  // Casting.
-  static Ellipsis* cast(Object* object);
-
   // Layout
   // kPaddingOffset is not used, but the GC expects the object to be
   // at least one word.
   static const int kPaddingOffset = HeapObject::kSize;
   static const int kSize = kPaddingOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Ellipsis)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Ellipsis);
@@ -1798,14 +1765,13 @@ class WeakRef : public HeapObject {
   static Object* dequeueReference(Object** list);
   static Object* spliceQueue(Object* tail1, Object* tail2);
 
-  // Casting.
-  static WeakRef* cast(Object* object);
-
   // Layout.
   static const int kReferentOffset = HeapObject::kSize;
   static const int kCallbackOffset = kReferentOffset + kPointerSize;
   static const int kLinkOffset = kCallbackOffset + kPointerSize;
   static const int kSize = kLinkOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(WeakRef)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(WeakRef);
@@ -1846,13 +1812,12 @@ class BoundMethod : public HeapObject {
   Object* self();
   void setSelf(Object* self);
 
-  // Casting
-  static BoundMethod* cast(Object* object);
-
   // Layout
   static const int kFunctionOffset = HeapObject::kSize;
   static const int kSelfOffset = kFunctionOffset + kPointerSize;
   static const int kSize = kSelfOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(BoundMethod)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BoundMethod);
@@ -1864,12 +1829,11 @@ class ClassMethod : public HeapObject {
   Object* function();
   void setFunction(Object* function);
 
-  // Casting
-  static ClassMethod* cast(Object* object);
-
   // Layout
   static const int kFunctionOffset = HeapObject::kSize;
   static const int kSize = kFunctionOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(ClassMethod)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ClassMethod);
@@ -1980,9 +1944,6 @@ class Layout : public HeapObject {
   // Return the offset, in bytes, of the overflow slot
   word overflowOffset();
 
-  // Casting
-  static Layout* cast(Object* object);
-
   // Layout
   static const int kDescribedClassOffset = HeapObject::kSize;
   static const int kInObjectAttributesOffset =
@@ -1996,6 +1957,8 @@ class Layout : public HeapObject {
   static const int kNumInObjectAttributesOffset =
       kOverflowOffsetOffset + kPointerSize;
   static const int kSize = kNumInObjectAttributesOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Layout)
 
  private:
   void setOverflowOffset(word offset);
@@ -2013,14 +1976,13 @@ class Super : public HeapObject {
   Object* objectType();
   void setObjectType(Object* tp);
 
-  // Casting
-  static Super* cast(Object* object);
-
   // Layout
   static const int kTypeOffset = HeapObject::kSize;
   static const int kObjectOffset = kTypeOffset + kPointerSize;
   static const int kObjectTypeOffset = kObjectOffset + kPointerSize;
   static const int kSize = kObjectTypeOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Super)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Super);
@@ -2036,14 +1998,13 @@ class GeneratorBase : public HeapObject {
   Object* heapFrame();
   void setHeapFrame(Object* obj);
 
-  // Casting.
-  static GeneratorBase* cast(Object* obj);
-
   // Layout.
   static const int kFrameOffset = HeapObject::kSize;
   static const int kIsRunningOffset = kFrameOffset + kPointerSize;
   static const int kCodeOffset = kIsRunningOffset + kPointerSize;
   static const int kSize = kCodeOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(GeneratorBase)
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(GeneratorBase);
@@ -2051,22 +2012,20 @@ class GeneratorBase : public HeapObject {
 
 class Generator : public GeneratorBase {
  public:
-  // Casting.
-  static Generator* cast(Object* object);
-
   static const int kYieldFromOffset = GeneratorBase::kSize;
   static const int kSize = kYieldFromOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Generator)
 };
 
 class Coroutine : public GeneratorBase {
  public:
-  // Casting.
-  static Coroutine* cast(Object* object);
-
   // Layout.
   static const int kAwaitOffset = GeneratorBase::kSize;
   static const int kOriginOffset = kAwaitOffset + kPointerSize;
   static const int kSize = kOriginOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Coroutine)
 };
 
 // Object
@@ -2307,14 +2266,7 @@ inline bool Object::equals(Object* lhs, Object* rhs) {
          (lhs->isLargeStr() && LargeStr::cast(lhs)->equals(rhs));
 }
 
-inline Object* Object::cast(Object* object) { return object; }
-
 // Int
-
-inline Int* Int::cast(Object* object) {
-  DCHECK(object->isInt(), "invalid cast");
-  return reinterpret_cast<Int*>(object);
-}
 
 inline word Int::asWord() {
   if (isSmallInt()) {
@@ -2417,11 +2369,6 @@ inline bool Int::isZero() {
 
 // SmallInt
 
-inline SmallInt* SmallInt::cast(Object* object) {
-  DCHECK(object->isSmallInt(), "invalid cast");
-  return reinterpret_cast<SmallInt*>(object);
-}
-
 inline word SmallInt::value() {
   return reinterpret_cast<word>(this) >> kTagSize;
 }
@@ -2464,17 +2411,7 @@ inline void SmallStr::copyTo(byte* dst, word length) {
   }
 }
 
-inline SmallStr* SmallStr::cast(Object* object) {
-  DCHECK(object->isSmallStr(), "invalid cast");
-  return reinterpret_cast<SmallStr*>(object);
-}
-
 // Header
-
-inline Header* Header::cast(Object* object) {
-  DCHECK(object->isHeader(), "invalid cast");
-  return reinterpret_cast<Header*>(object);
-}
 
 inline word Header::count() {
   auto header = reinterpret_cast<uword>(this);
@@ -2532,19 +2469,9 @@ inline NoneType* NoneType::object() {
   return reinterpret_cast<NoneType*>(kTag);
 }
 
-inline NoneType* NoneType::cast(Object* object) {
-  DCHECK(object->isNoneType(), "invalid cast, expected None");
-  return reinterpret_cast<NoneType*>(object);
-}
-
 // Error
 
 inline Error* Error::object() { return reinterpret_cast<Error*>(kTag); }
-
-inline Error* Error::cast(Object* object) {
-  DCHECK(object->isError(), "invalid cast, expected Error");
-  return reinterpret_cast<Error*>(object);
-}
 
 // Bool
 
@@ -2560,11 +2487,6 @@ inline Bool* Bool::negate(Object* value) {
 inline Bool* Bool::fromBool(bool value) {
   return reinterpret_cast<Bool*>((static_cast<uword>(value) << kTagSize) |
                                  kTag);
-}
-
-inline Bool* Bool::cast(Object* object) {
-  DCHECK(object->isBool(), "invalid cast, expected Bool");
-  return reinterpret_cast<Bool*>(object);
 }
 
 inline bool Bool::value() {
@@ -2647,11 +2569,6 @@ inline word HeapObject::size() {
   return Utils::maximum(Utils::roundUp(result, kPointerSize), kMinimumSize);
 }
 
-inline HeapObject* HeapObject::cast(Object* object) {
-  DCHECK(object->isHeapObject(), "invalid cast, expected heap object");
-  return reinterpret_cast<HeapObject*>(object);
-}
-
 inline word HeapObject::headerSize(word count) {
   word result = kPointerSize;
   if (count > Header::kCountMax) {
@@ -2699,11 +2616,6 @@ inline void HeapObject::instanceVariableAtPut(word offset, Object* value) {
 
 // BaseException
 
-inline BaseException* BaseException::cast(Object* object) {
-  DCHECK(object->isBaseException(), "invalid cast, expected BaseException");
-  return reinterpret_cast<BaseException*>(object);
-}
-
 inline Object* BaseException::args() { return instanceVariableAt(kArgsOffset); }
 
 inline void BaseException::setArgs(Object* args) {
@@ -2734,19 +2646,7 @@ inline void BaseException::setContext(Object* context) {
   return instanceVariableAtPut(kContextOffset, context);
 }
 
-// Exception
-
-inline Exception* Exception::cast(Object* object) {
-  DCHECK(object->isException(), "invalid cast, expected Exception");
-  return reinterpret_cast<Exception*>(object);
-}
-
 // StopIteration
-
-inline StopIteration* StopIteration::cast(Object* object) {
-  DCHECK(object->isStopIteration(), "invalid cast, expected StopIteration");
-  return reinterpret_cast<StopIteration*>(object);
-}
 
 inline Object* StopIteration::value() {
   return instanceVariableAt(kValueOffset);
@@ -2758,38 +2658,13 @@ inline void StopIteration::setValue(Object* value) {
 
 // SystemExit
 
-inline SystemExit* SystemExit::cast(Object* object) {
-  DCHECK(object->isSystemExit(), "invalid cast, expected SystemExit");
-  return reinterpret_cast<SystemExit*>(object);
-}
-
 inline Object* SystemExit::code() { return instanceVariableAt(kCodeOffset); }
 
 inline void SystemExit::setCode(Object* code) {
   instanceVariableAtPut(kCodeOffset, code);
 }
 
-// RuntimeError
-
-inline RuntimeError* RuntimeError::cast(Object* object) {
-  DCHECK(object->isRuntimeError(), "invalid cast, expected RuntimeError");
-  return reinterpret_cast<RuntimeError*>(object);
-}
-
-// NotImplementedError
-
-inline NotImplementedError* NotImplementedError::cast(Object* object) {
-  DCHECK(object->isNotImplementedError(),
-         "invalid cast, expected NotImplementedError");
-  return reinterpret_cast<NotImplementedError*>(object);
-}
-
 // ImportError
-
-inline ImportError* ImportError::cast(Object* object) {
-  DCHECK(object->isImportError(), "invalid cast, expected ImportError");
-  return reinterpret_cast<ImportError*>(object);
-}
 
 inline Object* ImportError::msg() { return instanceVariableAt(kMsgOffset); }
 
@@ -2807,35 +2682,6 @@ inline Object* ImportError::path() { return instanceVariableAt(kPathOffset); }
 
 inline void ImportError::setPath(Object* path) {
   instanceVariableAtPut(kPathOffset, path);
-}
-
-// ModuleNotFoundError
-
-inline ModuleNotFoundError* ModuleNotFoundError::cast(Object* object) {
-  DCHECK(object->isModuleNotFoundError(),
-         "invalid cast, expected ModuleNotFoundError");
-  return reinterpret_cast<ModuleNotFoundError*>(object);
-}
-
-// LookupError
-
-inline LookupError* LookupError::cast(Object* object) {
-  DCHECK(object->isLookupError(), "invalid cast, expected LookupError");
-  return reinterpret_cast<LookupError*>(object);
-}
-
-// IndexError
-
-inline IndexError* IndexError::cast(Object* object) {
-  DCHECK(object->isIndexError(), "invalid cast, expected IndexError");
-  return reinterpret_cast<IndexError*>(object);
-}
-
-// KeyError
-
-inline KeyError* KeyError::cast(Object* object) {
-  DCHECK(object->isKeyError(), "invalid cast, expected KeyError");
-  return reinterpret_cast<KeyError*>(object);
 }
 
 // Type
@@ -2928,22 +2774,12 @@ inline void Bytes::byteAtPut(word index, byte value) {
   *reinterpret_cast<byte*>(address() + index) = value;
 }
 
-inline Bytes* Bytes::cast(Object* object) {
-  DCHECK(object->isBytes(), "invalid cast, expected byte array");
-  return reinterpret_cast<Bytes*>(object);
-}
-
 // ObjectArray
 
 inline word ObjectArray::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length * kPointerSize;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
-}
-
-inline ObjectArray* ObjectArray::cast(Object* object) {
-  DCHECK(object->isObjectArray(), "invalid cast, expected object array");
-  return reinterpret_cast<ObjectArray*>(object);
 }
 
 inline Object* ObjectArray::at(word index) {
@@ -2986,11 +2822,6 @@ inline bool ObjectArray::contains(Object* object) {
 }
 
 // Code
-
-inline Code* Code::cast(Object* obj) {
-  DCHECK(obj->isCode(), "invalid cast, expecting code object");
-  return reinterpret_cast<Code*>(obj);
-}
 
 inline word Code::argcount() {
   return SmallInt::cast(instanceVariableAt(kArgcountOffset))->value();
@@ -3184,11 +3015,6 @@ inline word LargeInt::allocationSize(word num_digits) {
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-inline LargeInt* LargeInt::cast(Object* object) {
-  DCHECK(object->isLargeInt(), "not a large integer");
-  return reinterpret_cast<LargeInt*>(object);
-}
-
 inline View<uword> LargeInt::digits() {
   return View<uword>(reinterpret_cast<uword*>(address() + kValueOffset),
                      headerCountOrOverflow());
@@ -3198,11 +3024,6 @@ inline View<uword> LargeInt::digits() {
 
 inline double Float::value() {
   return *reinterpret_cast<double*>(address() + kValueOffset);
-}
-
-inline Float* Float::cast(Object* object) {
-  DCHECK(object->isFloat(), "not a float");
-  return reinterpret_cast<Float*>(object);
 }
 
 inline void Float::initialize(double value) {
@@ -3216,11 +3037,6 @@ inline double Complex::real() {
 
 inline double Complex::imag() {
   return *reinterpret_cast<double*>(address() + kImagOffset);
-}
-
-inline Complex* Complex::cast(Object* object) {
-  DCHECK(object->isComplex(), "not a complex");
-  return reinterpret_cast<Complex*>(object);
 }
 
 inline void Complex::initialize(double real, double imag) {
@@ -3254,11 +3070,6 @@ inline void Range::setStep(word value) {
   instanceVariableAtPut(kStepOffset, SmallInt::fromWord(value));
 }
 
-inline Range* Range::cast(Object* object) {
-  DCHECK(object->isRange(), "invalid cast, expected range");
-  return reinterpret_cast<Range*>(object);
-}
-
 // ListIterator
 
 inline word ListIterator::index() {
@@ -3287,11 +3098,6 @@ inline Object* ListIterator::next() {
   return item;
 }
 
-inline ListIterator* ListIterator::cast(Object* object) {
-  DCHECK(object->isListIterator(), "invalid cast, expected list iterator");
-  return reinterpret_cast<ListIterator*>(object);
-}
-
 // Property
 
 inline Object* Property::getter() { return instanceVariableAt(kGetterOffset); }
@@ -3312,11 +3118,6 @@ inline Object* Property::deleter() {
 
 inline void Property::setDeleter(Object* function) {
   instanceVariableAtPut(kDeleterOffset, function);
-}
-
-inline Property* Property::cast(Object* object) {
-  DCHECK(object->isProperty(), "invalid cast");
-  return reinterpret_cast<Property*>(object);
 }
 
 // RangeIterator
@@ -3374,11 +3175,6 @@ inline Object* RangeIterator::next() {
   return ret;
 }
 
-inline RangeIterator* RangeIterator::cast(Object* object) {
-  DCHECK(object->isRangeIterator(), "invalid cast, expected range interator");
-  return reinterpret_cast<RangeIterator*>(object);
-}
-
 // Slice
 
 inline Object* Slice::start() { return instanceVariableAt(kStartOffset); }
@@ -3399,11 +3195,6 @@ inline void Slice::setStep(Object* value) {
   instanceVariableAtPut(kStepOffset, value);
 }
 
-inline Slice* Slice::cast(Object* object) {
-  DCHECK(object->isSlice(), "invalid cast, expected slice");
-  return reinterpret_cast<Slice*>(object);
-}
-
 // StaticMethod
 
 inline Object* StaticMethod::function() {
@@ -3414,17 +3205,7 @@ inline void StaticMethod::setFunction(Object* function) {
   instanceVariableAtPut(kFunctionOffset, function);
 }
 
-inline StaticMethod* StaticMethod::cast(Object* object) {
-  DCHECK(object->isStaticMethod(), "invalid cast");
-  return reinterpret_cast<StaticMethod*>(object);
-}
-
 // Dict
-
-inline Dict* Dict::cast(Object* object) {
-  DCHECK(object->isDict(), "invalid cast, expected dict");
-  return reinterpret_cast<Dict*>(object);
-}
 
 inline word Dict::numItems() {
   return SmallInt::cast(instanceVariableAt(kNumItemsOffset))->value();
@@ -3554,22 +3335,12 @@ inline void Function::setFastGlobals(Object* fast_globals) {
   return instanceVariableAtPut(kFastGlobalsOffset, fast_globals);
 }
 
-inline Function* Function::cast(Object* object) {
-  DCHECK(object->isFunction(), "invalid cast, expected function");
-  return reinterpret_cast<Function*>(object);
-}
-
 // Instance
 
 inline word Instance::allocationSize(word num_attr) {
   DCHECK(num_attr >= 0, "invalid number of attributes %ld", num_attr);
   word size = headerSize(num_attr) + num_attr * kPointerSize;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
-}
-
-inline Instance* Instance::cast(Object* object) {
-  DCHECK(object->isInstance(), "invalid cast, expected instance");
-  return reinterpret_cast<Instance*>(object);
 }
 
 // List
@@ -3603,11 +3374,6 @@ inline Object* List::at(word index) {
 
 // Module
 
-inline Module* Module::cast(Object* object) {
-  DCHECK(object->isModule(), "invalid cast, expected module");
-  return reinterpret_cast<Module*>(object);
-}
-
 inline Object* Module::name() { return instanceVariableAt(kNameOffset); }
 
 inline void Module::setName(Object* name) {
@@ -3626,13 +3392,6 @@ inline void Module::setDef(Object* dict) {
   instanceVariableAtPut(kDefOffset, dict);
 }
 
-// NotImplemented
-
-inline NotImplemented* NotImplemented::cast(Object* object) {
-  DCHECK(object->isNotImplemented(), "invalid cast, expected NotImplemented");
-  return reinterpret_cast<NotImplemented*>(object);
-}
-
 // Str
 
 inline bool Str::equalsCStr(const char* c_str) {
@@ -3645,12 +3404,6 @@ inline bool Str::equalsCStr(const char* c_str) {
     }
   }
   return *cp == '\0';
-}
-
-inline Str* Str::cast(Object* object) {
-  DCHECK(object->isLargeStr() || object->isSmallStr(),
-         "invalid cast, expected string");
-  return reinterpret_cast<Str*>(object);
 }
 
 inline byte Str::charAt(word index) {
@@ -3709,11 +3462,6 @@ inline char* Str::toCStr() {
 
 // LargeStr
 
-inline LargeStr* LargeStr::cast(Object* object) {
-  DCHECK(object->isLargeStr(), "unexpected type");
-  return reinterpret_cast<LargeStr*>(object);
-}
-
 inline word LargeStr::allocationSize(word length) {
   DCHECK(length > SmallStr::kMaxLength, "length %ld overflows", length);
   word size = headerSize(length) + length;
@@ -3737,24 +3485,7 @@ inline bool ValueCell::isUnbound() { return this == value(); }
 
 inline void ValueCell::makeUnbound() { setValue(this); }
 
-inline ValueCell* ValueCell::cast(Object* object) {
-  DCHECK(object->isValueCell(), "invalid cast");
-  return reinterpret_cast<ValueCell*>(object);
-}
-
-// Ellipsis
-
-inline Ellipsis* Ellipsis::cast(Object* object) {
-  DCHECK(object->isEllipsis(), "invalid cast");
-  return reinterpret_cast<Ellipsis*>(object);
-}
-
 // Set
-
-inline Set* Set::cast(Object* object) {
-  DCHECK(object->isSet(), "invalid cast");
-  return reinterpret_cast<Set*>(object);
-}
 
 inline word Set::numItems() {
   return SmallInt::cast(instanceVariableAt(kNumItemsOffset))->value();
@@ -3786,11 +3517,6 @@ inline void BoundMethod::setSelf(Object* self) {
   instanceVariableAtPut(kSelfOffset, self);
 }
 
-inline BoundMethod* BoundMethod::cast(Object* object) {
-  DCHECK(object->isBoundMethod(), "invalid cast");
-  return reinterpret_cast<BoundMethod*>(object);
-}
-
 // ClassMethod
 
 inline Object* ClassMethod::function() {
@@ -3801,17 +3527,7 @@ inline void ClassMethod::setFunction(Object* function) {
   instanceVariableAtPut(kFunctionOffset, function);
 }
 
-inline ClassMethod* ClassMethod::cast(Object* object) {
-  DCHECK(object->isClassMethod(), "invalid cast");
-  return reinterpret_cast<ClassMethod*>(object);
-}
-
 // WeakRef
-
-inline WeakRef* WeakRef::cast(Object* object) {
-  DCHECK(object->isWeakRef(), "invalid cast");
-  return reinterpret_cast<WeakRef*>(object);
-}
 
 inline Object* WeakRef::referent() {
   return instanceVariableAt(kReferentOffset);
@@ -3893,11 +3609,6 @@ inline Object* Layout::deletions() {
   return instanceVariableAt(kDeletionsOffset);
 }
 
-inline Layout* Layout::cast(Object* object) {
-  DCHECK(object->isLayout(), "invalid cast");
-  return reinterpret_cast<Layout*>(object);
-}
-
 inline word Layout::overflowOffset() {
   return SmallInt::cast(instanceVariableAt(kOverflowOffsetOffset))->value();
 }
@@ -3919,11 +3630,6 @@ inline void Layout::setNumInObjectAttributes(word count) {
 }
 
 // SetIterator
-
-inline SetIterator* SetIterator::cast(Object* object) {
-  DCHECK(object->isSetIterator(), "invalid cast, expected set_iterator");
-  return reinterpret_cast<SetIterator*>(object);
-}
 
 inline Object* SetIterator::set() { return instanceVariableAt(kSetOffset); }
 
@@ -3997,17 +3703,7 @@ inline void Super::setObjectType(Object* tp) {
   instanceVariableAtPut(kObjectTypeOffset, tp);
 }
 
-inline Super* Super::cast(Object* object) {
-  DCHECK(object->isSuper(), "invalid cast, expected super");
-  return reinterpret_cast<Super*>(object);
-}
-
 // TupleIterator
-
-inline TupleIterator* TupleIterator::cast(Object* object) {
-  DCHECK(object->isTupleIterator(), "invalid cast, expected tuple_iterator");
-  return reinterpret_cast<TupleIterator*>(object);
-}
 
 inline Object* TupleIterator::tuple() {
   return instanceVariableAt(kTupleOffset);
@@ -4046,26 +3742,6 @@ inline Object* GeneratorBase::heapFrame() {
 
 inline void GeneratorBase::setHeapFrame(Object* obj) {
   instanceVariableAtPut(kFrameOffset, obj);
-}
-
-inline GeneratorBase* GeneratorBase::cast(Object* obj) {
-  DCHECK(obj->isGeneratorBase(),
-         "invalid cast, expected GeneratorBase subclass");
-  return reinterpret_cast<GeneratorBase*>(obj);
-}
-
-// Generator
-
-inline Generator* Generator::cast(Object* obj) {
-  DCHECK(obj->isGenerator(), "invalid cast, expected generator");
-  return reinterpret_cast<Generator*>(obj);
-}
-
-// Coroutine
-
-inline Coroutine* Coroutine::cast(Object* obj) {
-  DCHECK(obj->isCoroutine(), "invalid cast, expected coroutine");
-  return reinterpret_cast<Coroutine*>(obj);
 }
 
 }  // namespace python

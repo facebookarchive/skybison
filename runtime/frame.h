@@ -306,9 +306,6 @@ class HeapFrame : public HeapObject {
   // Copy a Frame from the stack back into this HeapFrame.
   void copyFromStackFrame(Frame* frame);
 
-  // Casting.
-  static HeapFrame* cast(Object* object);
-
   // Sizing.
   static word numAttributes(word extra_words);
 
@@ -318,6 +315,8 @@ class HeapFrame : public HeapObject {
 
   // Number of words that aren't the Frame.
   static const int kNumOverheadWords = kFrameOffset / kPointerSize;
+
+  RAW_OBJECT_COMMON(HeapFrame)
 };
 
 class FrameVisitor {
@@ -595,11 +594,6 @@ inline void HeapFrame::copyFromStackFrame(Frame* live_frame) {
   Object** src_base = live_frame->valueStackBase() - maxStackSize();
   std::memcpy(dest_base, src_base, numFrameWords() * kPointerSize);
   frame()->stashInternalPointers(live_frame);
-}
-
-inline HeapFrame* HeapFrame::cast(Object* object) {
-  DCHECK(object->isHeapFrame(), "invalid cast, expected HeapFrame");
-  return reinterpret_cast<HeapFrame*>(object);
 }
 
 inline word HeapFrame::numAttributes(word extra_words) {
