@@ -198,85 +198,108 @@ d = a.__add__(b)
 
 TEST(StrBuiltinsTest, StringFormat) {
   Runtime runtime;
-  runtime.runFromCString(R"(
-n = 123
-f = 3.14
-s = "pyros"
-a = "hello %d %g %s" % (n, f, s)
-)");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Thread* thread = Thread::currentThread();
 
-  EXPECT_PYSTRING_EQ(*a, "hello 123 3.14 pyros");
+  Handle<String> src(&scope, runtime.newStringFromCString("hello %d %g %s"));
+  Handle<Object> arg0(&scope, SmallInt::fromWord(123));
+  Handle<Object> arg1(&scope, runtime.newFloat(3.14));
+  Handle<Object> arg2(&scope, runtime.newStringFromCString("pyros"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(3));
+  objs->atPut(0, *arg0);
+  objs->atPut(1, *arg1);
+  objs->atPut(2, *arg2);
+  Object* result = stringFormat(thread, src, objs);
+  EXPECT_TRUE(String::cast(result)->equalsCString("hello 123 3.14 pyros"));
 }
 
-TEST(StrBuiltinsTest, StringFormatSingleString) {
+TEST(StrBuiltinsTest, StringFormat1) {
   Runtime runtime;
-  runtime.runFromCString(R"(
-s = "pyro"
-a = "%s" % s
-)");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Thread* thread = Thread::currentThread();
 
-  EXPECT_PYSTRING_EQ(*a, "pyro");
+  Handle<String> src(&scope, runtime.newStringFromCString("%s"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(1));
+  objs->atPut(0, *arg);
+  Object* result = stringFormat(thread, src, objs);
+  EXPECT_TRUE(String::cast(result)->equalsCString("pyro"));
 }
 
-TEST(StrBuiltinsTest, StringFormatTwoStrings) {
+TEST(StrBuiltinsTest, StringFormat2) {
   Runtime runtime;
-  runtime.runFromCString(R"(
-s = "pyro"
-a = "%s%s" % (s, s)
-)");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Thread* thread = Thread::currentThread();
 
-  EXPECT_PYSTRING_EQ(*a, "pyropyro");
+  Handle<String> src(&scope, runtime.newStringFromCString("%s%s"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(2));
+  for (word i = 0; i < objs->length(); i++) {
+    objs->atPut(i, *arg);
+  }
+  Object* result = stringFormat(thread, src, objs);
+  EXPECT_TRUE(String::cast(result)->equalsCString("pyropyro"));
 }
 
 TEST(StrBuiltinsTest, StringFormatMixed) {
   Runtime runtime;
-  runtime.runFromCString(R"(
-s = "pyro"
-a = "1%s,2%s,3%s,4%s,5%s" % (s, s, s, s, s)
-)");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Thread* thread = Thread::currentThread();
 
-  EXPECT_PYSTRING_EQ(*a, "1pyro,2pyro,3pyro,4pyro,5pyro");
+  Handle<String> src(&scope,
+                     runtime.newStringFromCString("1%s,2%s,3%s,4%s,5%s"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(5));
+  for (word i = 0; i < objs->length(); i++) {
+    objs->atPut(i, *arg);
+  }
+  Object* result = stringFormat(thread, src, objs);
+  Handle<String> str(&scope, result);
+  EXPECT_TRUE(str->equalsCString("1pyro,2pyro,3pyro,4pyro,5pyro"));
 }
 
 TEST(StrBuiltinsTest, StringFormatMixed2) {
   Runtime runtime;
-  runtime.runFromCString(R"(
-s = "pyro"
-a = "%d%s,%d%s,%d%s" % (1, s, 2, s, 3, s)
-)");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Thread* thread = Thread::currentThread();
 
-  EXPECT_PYSTRING_EQ(*a, "1pyro,2pyro,3pyro");
+  Handle<String> src(&scope, runtime.newStringFromCString("%d%s,%d%s,%d%s"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(6));
+  for (word i = 0; i < objs->length(); i++) {
+    if (i % 2 == 0) {
+      objs->atPut(i, SmallInt::fromWord(i / 2 + 1));
+    } else {
+      objs->atPut(i, *arg);
+    }
+  }
+  Object* result = stringFormat(thread, src, objs);
+  Handle<String> str(&scope, result);
+  EXPECT_TRUE(str->equalsCString("1pyro,2pyro,3pyro"));
 }
 
 TEST(StrBuiltinsDeathTest, StringFormatMalformed) {
   Runtime runtime;
-  const char* src = R"(
-a = "%" % ("pyro",)
-)";
-  EXPECT_DEATH(runtime.runFromCString(src), "index out of range");
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<String> src(&scope, runtime.newStringFromCString("%"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(1));
+  objs->atPut(0, *arg);
+  EXPECT_DEATH(stringFormat(thread, src, objs), "");
 }
 
 TEST(StrBuiltinsDeathTest, StringFormatMismatch) {
   Runtime runtime;
-  const char* src = R"(
-a = "%d%s" % ("pyro",)
-)";
-  EXPECT_DEATH(runtime.runFromCString(src), "Argument mismatch");
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<String> src(&scope, runtime.newStringFromCString("%d%s"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(1));
+  objs->atPut(0, *arg);
+  EXPECT_DEATH(stringFormat(thread, src, objs), "Argument mismatch");
 }
 
 }  // namespace python
