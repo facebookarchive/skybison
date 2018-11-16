@@ -59,6 +59,7 @@ add_library(
   runtime/thread.h
   runtime/trampolines.cpp
   runtime/trampolines.h
+  runtime/trampolines-inl.h
   runtime/utils.h
   runtime/vector.h
   runtime/visitor.h)
