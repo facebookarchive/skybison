@@ -137,10 +137,32 @@ target_compile_options(
 target_link_libraries(
   python-tests
   gtest
-  benchmark
   runtime)
 
 add_custom_target(
   check
   COMMAND python-tests
   DEPENDS python-tests python)
+
+add_executable(
+  python-benchmark
+  runtime/python-benchmark.cpp
+  runtime/handles-benchmark.cpp
+)
+set_target_properties(
+  python-benchmark
+  PROPERTIES
+  ${PYRO_PROPERTIES})
+target_compile_options(
+  python-benchmark
+  PRIVATE
+  ${PYRO_COMPILE_OPTIONS})
+target_link_libraries(
+  python-benchmark
+  benchmark
+  runtime)
+
+add_custom_target(
+  bench
+  COMMAND python-benchmark
+  DEPENDS python-benchmark python)
