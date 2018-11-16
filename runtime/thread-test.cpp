@@ -437,6 +437,34 @@ TEST(ThreadTest, ExecuteRotTwo) {
   EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
 }
 
+TEST(ThreadTest, ExecuteRotThree) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
+  consts->atPut(0, SmallInteger::fromWord(1111));
+  consts->atPut(1, SmallInteger::fromWord(2222));
+  consts->atPut(2, SmallInteger::fromWord(3333));
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setStacksize(3);
+  code->setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST,
+                           0,
+                           LOAD_CONST,
+                           1,
+                           LOAD_CONST,
+                           2,
+                           ROT_THREE,
+                           0,
+                           RETURN_VALUE,
+                           0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 2222);
+}
+
 TEST(ThreadTest, ExecuteJumpAbsolute) {
   Runtime runtime;
   HandleScope scope;

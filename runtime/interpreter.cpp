@@ -263,6 +263,13 @@ Result ROT_TWO(Context* ctx, word) {
   *(ctx->sp + 1) = top;
   return Result::CONTINUE;
 }
+Result ROT_THREE(Context* ctx, word) {
+  Object* top = *ctx->sp;
+  *ctx->sp = *(ctx->sp + 1);
+  *(ctx->sp + 1) = *(ctx->sp + 2);
+  *(ctx->sp + 2) = top;
+  return Result::CONTINUE;
+}
 Result CALL_FUNCTION(Context* ctx, word arg) {
   Object* result = Interpreter::call(ctx->thread, ctx->frame, ctx->sp, arg);
   ctx->sp += arg;

@@ -13,7 +13,7 @@ namespace python {
   V(UNUSED_BYTECODE_0, 0, interpreter::INVALID_BYTECODE)             \
   V(POP_TOP, 1, interpreter::POP_TOP)                                \
   V(ROT_TWO, 2, interpreter::ROT_TWO)                                \
-  V(ROT_THREE, 3, interpreter::NOT_IMPLEMENTED)                      \
+  V(ROT_THREE, 3, interpreter::ROT_THREE)                            \
   V(DUP_TOP, 4, interpreter::DUP_TOP)                                \
   V(DUP_TOP_TWO, 5, interpreter::DUP_TOP_TWO)                        \
   V(UNUSED_BYTECODE_6, 6, interpreter::INVALID_BYTECODE)             \
