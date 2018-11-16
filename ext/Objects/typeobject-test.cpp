@@ -1,11 +1,8 @@
-#include "gtest/gtest.h"
-
-#include "Python.h"
-#include "frame.h"
-#include "runtime.h"
-#include "test-utils.h"
+#include "capi-fixture.h"
 
 namespace python {
+
+using TypeExtensionApiTest = ExtensionApi;
 
 // TODO(eelizondo): Remove once typeobject.c is compiled in
 extern "C" PyObject* PyType_GenericAlloc(PyTypeObject* type,
@@ -27,11 +24,7 @@ extern "C" PyObject* PyType_GenericAlloc(PyTypeObject* type,
   return obj;
 }
 
-TEST(TypeObject, ReadyInitializesType) {
-  Runtime runtime;
-  HandleScope scope;
-  Handle<Dict> extensions_dict(&scope, runtime.extensionTypes());
-
+TEST_F(TypeExtensionApiTest, ReadyInitializesType) {
   // Create a simple PyTypeObject
   PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
   empty_type.tp_name = "Empty";
@@ -41,61 +34,36 @@ TEST(TypeObject, ReadyInitializesType) {
   EXPECT_FALSE(PyType_GetFlags(&empty_type) & Py_TPFLAGS_READY);
 
   // Run PyType_Ready
-  EXPECT_EQ(0, extensions_dict->numItems());
   EXPECT_EQ(0, PyType_Ready(&empty_type));
-  EXPECT_EQ(1, extensions_dict->numItems());
 
   // Expect PyTypeObject to contain the correct flags
   EXPECT_TRUE(PyType_GetFlags(&empty_type) & Py_TPFLAGS_DEFAULT);
   EXPECT_TRUE(PyType_GetFlags(&empty_type) & Py_TPFLAGS_READY);
 }
 
-TEST(TypeObject, ReadyCreatesRuntimeClass) {
-  Runtime runtime;
-  HandleScope scope;
-  Handle<Dict> extensions_dict(&scope, runtime.extensionTypes());
-
+TEST_F(TypeExtensionApiTest, ReadyCreatesRuntimeType) {
   // Create a simple PyTypeObject
-  PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
-  empty_type.tp_name = "Empty";
+  PyTypeObject empty_type{PyVarObject_HEAD_INIT(NULL, 0)};
+  empty_type.tp_name = "test.Empty";
   empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
-  PyType_Ready(&empty_type);
+  ASSERT_EQ(PyType_Ready(&empty_type), 0);
 
-  // Obtain EmptyType Type object from the runtime
-  Handle<Object> type_id(
-      &scope, runtime.newIntFromCPointer(static_cast<void*>(&empty_type)));
-  Handle<Object> type_class_obj(&scope,
-                                runtime.dictAt(extensions_dict, type_id));
-  EXPECT_TRUE(type_class_obj->isType());
+  // Add to a module
+  PyModuleDef def = {
+      PyModuleDef_HEAD_INIT,
+      "test",
+  };
+  PyObject *m, *d;
+  m = PyModule_Create(&def);
+  d = PyModule_GetDict(m);
+  PyDict_SetItemString(d, "Empty", reinterpret_cast<PyObject*>(&empty_type));
 
-  // Confirm the class name
-  Handle<Type> type_class(&scope, *type_class_obj);
-  Handle<String> type_class_name(&scope, type_class->name());
-  EXPECT_TRUE(type_class_name->equalsCString(empty_type.tp_name));
+  PyRun_SimpleString(R"(
+import test
+x = test.Empty
+)");
 
-  // Confirm the PyTypeObject pointer
-  Handle<Int> pytype_addr_obj(&scope, type_class->extensionType());
-  EXPECT_EQ(&empty_type, pytype_addr_obj->asCPointer());
-}
-
-TEST(TypeObject, ReadiedTypeCreatesRuntimeInstance) {
-  Runtime runtime;
-  HandleScope scope;
-  Handle<Dict> extensions_dict(&scope, runtime.extensionTypes());
-
-  // Create a simple PyTypeObject
-  PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
-  empty_type.tp_name = "Empty";
-  empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
-  PyType_Ready(&empty_type);
-  Handle<Object> type_id(
-      &scope, runtime.newIntFromCPointer(static_cast<void*>(&empty_type)));
-  Handle<Type> type_class(&scope, runtime.dictAt(extensions_dict, type_id));
-
-  // Instantiate a class object
-  Handle<Layout> layout(&scope, type_class->instanceLayout());
-  Handle<Object> type_instance(&scope, runtime.newInstance(layout));
-  EXPECT_TRUE(type_instance->isInstance());
+  EXPECT_TRUE(PyType_CheckExact(_PyModuleGet("__main__", "x")));
 }
 
 typedef struct {
@@ -118,19 +86,9 @@ static void Custom_dealloc(CustomObject* self) {
   Py_TYPE(self)->tp_free(static_cast<void*>(self));
 }
 
-TEST(TypeObject, InitializeCustomTypeInstance) {
-  Runtime runtime;
-  HandleScope scope;
-  Thread* thread = Thread::currentThread();
-
-  // Instantiate module
-  Handle<Object> module_name(&scope, runtime.newStringFromCString("custom"));
-  Handle<Module> module(&scope, runtime.newModule(module_name));
-  Handle<Dict> module_dict(&scope, module->dict());
-  runtime.addModule(module);
-
+TEST_F(TypeExtensionApiTest, InitializeCustomTypeInstance) {
   // Instantiate Type
-  PyTypeObject custom_type{PyObject_HEAD_INIT(nullptr)};
+  PyTypeObject custom_type{PyVarObject_HEAD_INIT(NULL, 0)};
   custom_type.tp_basicsize = sizeof(CustomObject);
   custom_type.tp_name = "custom.Custom";
   custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
@@ -141,81 +99,44 @@ TEST(TypeObject, InitializeCustomTypeInstance) {
   custom_type.tp_free = PyObject_Del;
   PyType_Ready(&custom_type);
 
-  // Add class to the runtime
-  Handle<Object> type_id(
-      &scope, runtime.newIntFromCPointer(static_cast<void*>(&custom_type)));
-  Handle<Dict> ext_dict(&scope, runtime.extensionTypes());
-  Handle<Object> type_class(&scope, runtime.dictAt(ext_dict, type_id));
-  Handle<Object> ob_name(&scope, runtime.newStringFromCString("Custom"));
-  runtime.dictAtPutInValueCell(module_dict, ob_name, type_class);
+  // Add to a module
+  PyModuleDef def = {
+      PyModuleDef_HEAD_INIT,
+      "custom",
+  };
+  PyObject* pymodule = PyModule_Create(&def);
+  PyObject* pymodule_dict = PyModule_GetDict(pymodule);
+  PyDict_SetItemString(pymodule_dict, "Custom",
+                       reinterpret_cast<PyObject*>(&custom_type));
 
-  runtime.runFromCString(R"(
+  PyRun_SimpleString(R"(
 import custom
 instance = custom.Custom()
 instance2 = custom.Custom()
 )");
 
   // Verify the initialized value
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> instance_obj(
-      &scope, testing::findInModule(&runtime, main, "instance"));
-  ASSERT_TRUE(instance_obj->isInstance());
-
-  // Get instance value
-  Handle<HeapObject> instance(&scope, *instance_obj);
-  Handle<Object> attr_name(&scope, runtime.symbols()->ExtensionPtr());
-  Handle<Int> extension_obj(&scope,
-                            runtime.instanceAt(thread, instance, attr_name));
-  CustomObject* custom_obj =
-      static_cast<CustomObject*>(extension_obj->asCPointer());
-  EXPECT_EQ(custom_obj->value, 30);
+  CustomObject* instance =
+      reinterpret_cast<CustomObject*>(_PyModuleGet("__main__", "instance"));
+  EXPECT_EQ(instance->value, 30);
 
   // Decref and dealloc custom instance
-  Handle<HeapObject> instance2(
-      &scope, testing::findInModule(&runtime, main, "instance2"));
-  Handle<Int> object_ptr2(&scope,
-                          runtime.instanceAt(thread, instance2, attr_name));
-  CustomObject* custom_obj2 =
-      static_cast<CustomObject*>(object_ptr2->asCPointer());
-  EXPECT_EQ(1, Py_REFCNT(custom_obj2));
-  Py_DECREF(custom_obj2);
+  CustomObject* instance2 =
+      reinterpret_cast<CustomObject*>(_PyModuleGet("__main__", "instance2"));
+  EXPECT_EQ(Py_REFCNT(instance2), 1);
+  Py_DECREF(instance2);
 }
 
-TEST(TypeObject, GenericAllocationReturnsMallocMemory) {
-  Runtime runtime;
-  HandleScope scope;
-  Thread* thread = Thread::currentThread();
-
+TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
   // Instantiate Type
-  PyTypeObject custom_type{PyObject_HEAD_INIT(nullptr)};
+  PyTypeObject custom_type{PyVarObject_HEAD_INIT(NULL, 0)};
   custom_type.tp_basicsize = sizeof(CustomObject);
   custom_type.tp_name = "custom.Custom";
   custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
-
   PyType_Ready(&custom_type);
 
   PyObject* result = PyType_GenericAlloc(&custom_type, 0);
-  Handle<Object> instance_obj(&scope,
-                              ApiHandle::fromPyObject(result)->asObject());
-  ASSERT_TRUE(instance_obj->isInstance());
   EXPECT_EQ(1, Py_REFCNT(result));
-}
-
-TEST(TypeObject, RuntimeInitializesStaticPyTypObjects) {
-  Runtime runtime;
-  Runtime runtime2;
-
-  PyTypeObject* pytype1 = static_cast<PyTypeObject*>(
-      runtime.builtinTypeHandles(ExtensionTypes::kType));
-  PyTypeObject* pytype2 = static_cast<PyTypeObject*>(
-      runtime2.builtinTypeHandles(ExtensionTypes::kType));
-  EXPECT_NE(pytype1, pytype2);
-  EXPECT_STREQ(pytype1->tp_name, pytype2->tp_name);
-
-  // Both PyTypeObject will have a different memory from the PyVarObject header.
-  // This offsets past the header, and compares the rest of memory
-  word length = sizeof(*pytype1) - OFFSET_OF(PyTypeObject, tp_name);
-  EXPECT_EQ(0, memcmp(&pytype1->tp_name, &pytype2->tp_name, length));
 }
 
 }  // namespace python
