@@ -152,6 +152,9 @@ Object* Runtime::classGetAttr(
     } else if (attr->isClassMethod()) {
       Handle<Object> none(&scope, None::object());
       return classmethodDescriptorGet(thread, attr, none, receiver);
+    } else if (attr->isStaticMethod()) {
+      Handle<Object> none(&scope, None::object());
+      return staticmethodDescriptorGet(thread, attr, none, receiver);
     } else if (isNonDataDescriptor(thread, attr)) {
       // TODO(T25692531): Call __get__ from meta_attr
       UNIMPLEMENTED("custom descriptors are unsupported");
@@ -168,6 +171,9 @@ Object* Runtime::classGetAttr(
     } else if (meta_attr->isClassMethod()) {
       Handle<Object> mk(&scope, *meta_klass);
       return classmethodDescriptorGet(thread, meta_attr, receiver, mk);
+    } else if (meta_attr->isStaticMethod()) {
+      Handle<Object> mk(&scope, *meta_klass);
+      return staticmethodDescriptorGet(thread, meta_attr, receiver, mk);
     } else {
       // TODO(T25692531): Call __get__ from meta_attr
       UNIMPLEMENTED("custom descriptors are unsupported");
@@ -261,6 +267,9 @@ Object* Runtime::instanceGetAttr(
     } else if (klass_attr->isClassMethod()) {
       Handle<Object> k(&scope, *klass);
       return classmethodDescriptorGet(thread, klass_attr, receiver, k);
+    } else if (klass_attr->isStaticMethod()) {
+      Handle<Object> k(&scope, *klass);
+      return staticmethodDescriptorGet(thread, klass_attr, receiver, k);
     }
     // TODO(T25692531): Call __get__ from klass_attr
     UNIMPLEMENTED("custom descriptors are unsupported");
@@ -344,7 +353,8 @@ Object* Runtime::moduleSetAttr(
 }
 
 bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
-  if (object->isFunction() || object->isClassMethod() || object->isError()) {
+  if (object->isFunction() || object->isClassMethod() ||
+      object->isStaticMethod() || object->isError()) {
     return false;
   }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
@@ -357,7 +367,8 @@ bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
 bool Runtime::isNonDataDescriptor(
     Thread* thread,
     const Handle<Object>& object) {
-  if (object->isFunction() || object->isClassMethod()) {
+  if (object->isFunction() || object->isClassMethod() ||
+      object->isStaticMethod()) {
     return true;
   } else if (object->isError()) {
     return false;
@@ -513,6 +524,10 @@ Object* Runtime::newSlice(
   slice->setStop(*stop);
   slice->setStep(*step);
   return *slice;
+}
+
+Object* Runtime::newStaticMethod() {
+  return heap()->createStaticMethod();
 }
 
 Object* Runtime::newStringFromCString(const char* c_string) {
@@ -712,6 +727,7 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("range_iterator", IntrinsicLayoutId::kRangeIterator);
   initializeHeapClass("set", IntrinsicLayoutId::kSet);
   initializeHeapClass("slice", IntrinsicLayoutId::kSlice);
+  initializeStaticMethodClass();
   initializeSuperClass();
   initializeTypeClass();
   initializeHeapClass("valuecell", IntrinsicLayoutId::kValueCell);
@@ -903,6 +919,27 @@ void Runtime::initializeSmallIntClass() {
         List::cast(layouts_)->at(i << 1) == None::object(), "list collision");
     List::cast(layouts_)->atPut(i << 1, *small_integer);
   }
+}
+
+void Runtime::initializeStaticMethodClass() {
+  HandleScope scope;
+  Handle<Class> staticmethod(
+      &scope,
+      initializeHeapClass("staticmethod", IntrinsicLayoutId::kStaticMethod));
+
+  classAddBuiltinFunction(
+      staticmethod,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinStaticMethodNew>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      staticmethod,
+      symbols()->DunderInit(),
+      nativeTrampoline<builtinStaticMethodInit>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
 }
 
 void Runtime::collectGarbage() {
@@ -1230,6 +1267,8 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, IntrinsicLayoutId::kList, symbols()->List());
   moduleAddBuiltinType(
       module, IntrinsicLayoutId::kClassMethod, symbols()->Classmethod());
+  moduleAddBuiltinType(
+      module, IntrinsicLayoutId::kStaticMethod, symbols()->StaticMethod());
   moduleAddBuiltinType(
       module, IntrinsicLayoutId::kDictionary, symbols()->Dict());
   moduleAddBuiltinType(module, IntrinsicLayoutId::kSuper, symbols()->Super());
@@ -2699,6 +2738,8 @@ Object* Runtime::superGetAttr(
         return functionDescriptorGet(thread, value, self, type);
       } else if (value->isClassMethod()) {
         return classmethodDescriptorGet(thread, value, self, type);
+      } else if (value->isStaticMethod()) {
+        return staticmethodDescriptorGet(thread, value, self, type);
       } else {
         UNIMPLEMENTED("__get__ support");
       }

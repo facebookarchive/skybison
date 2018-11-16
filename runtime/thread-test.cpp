@@ -3376,4 +3376,35 @@ minus_neg = -neg
   EXPECT_EQ(SmallInteger::cast(*minus_neg)->value(), 123);
 }
 
+TEST(ThreadTest, StaticmethodObjAccess) {
+  const char* src = R"(
+class E:
+    @staticmethod
+    def f(x):
+        return x + 1
+
+e = E()
+print(e.f(5))
+)";
+
+  Runtime runtime;
+  const std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "6\n");
+}
+
+TEST(ThreadTest, StaticmethodClsAccess) {
+  const char* src = R"(
+class E():
+    @staticmethod
+    def f(x, y):
+        return x + y
+
+print(E.f(1,2))
+)";
+
+  Runtime runtime;
+  const std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "3\n");
+}
+
 } // namespace python

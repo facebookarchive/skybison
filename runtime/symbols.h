@@ -48,6 +48,7 @@ class Runtime;
   V(Remove, "remove")                    \
   V(Sys, "sys")                          \
   V(Time, "time")                        \
+  V(StaticMethod, "staticmethod")        \
   V(Stderr, "stderr")                    \
   V(Stdout, "stdout")
 // clang-format on

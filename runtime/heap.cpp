@@ -381,6 +381,18 @@ Object* Heap::createSlice() {
   return Slice::cast(result);
 }
 
+Object* Heap::createStaticMethod() {
+  Object* raw = allocate(StaticMethod::allocationSize(), Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<StaticMethod*>(raw);
+  result->setHeader(Header::from(
+      StaticMethod::kSize / kPointerSize,
+      0,
+      IntrinsicLayoutId::kStaticMethod,
+      ObjectFormat::kObjectInstance));
+  return StaticMethod::cast(result);
+}
+
 Object* Heap::createSuper() {
   word size = Super::allocationSize();
   Object* raw = allocate(size, Header::kSize);

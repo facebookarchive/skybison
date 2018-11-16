@@ -70,9 +70,19 @@ Object* classmethodDescriptorGet(
     const Handle<Object>& instance,
     const Handle<Object>& /* owner */) __attribute__((aligned(16)));
 
+Object* staticmethodDescriptorGet(
+    Thread* thread,
+    const Handle<Object>& self,
+    const Handle<Object>& /* instance */,
+    const Handle<Object>& /* owner */) __attribute__((aligned(16)));
+
 // ClassMethod
 Object* builtinClassMethodNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs);
+
+// StaticMethod
+Object* builtinStaticMethodNew(Thread* thread, Frame* frame, word nargs);
+Object* builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs);
 
 // Super
 Object* builtinSuperNew(Thread* thread, Frame* frame, word nargs);

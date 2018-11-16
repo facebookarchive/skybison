@@ -144,6 +144,7 @@ enum IntrinsicLayoutId {
   kRangeIterator,
   kSet,
   kSlice,
+  kStaticMethod,
   kString,
   kSuper,
   kType,
@@ -193,6 +194,7 @@ class Object {
   bool isRangeIterator();
   bool isSet();
   bool isSlice();
+  bool isStaticMethod();
   bool isSuper();
   bool isValueCell();
   bool isWeakRef();
@@ -829,6 +831,26 @@ class Slice : public HeapObject {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Slice);
+};
+
+class StaticMethod : public HeapObject {
+ public:
+  // Getters and setters
+  Object* function();
+  void setFunction(Object* function);
+
+  // Casting
+  static StaticMethod* cast(Object* object);
+
+  // Sizing
+  static word allocationSize();
+
+  // Layout
+  static const int kFunctionOffset = HeapObject::kSize;
+  static const int kSize = kFunctionOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(StaticMethod);
 };
 
 class ListIterator : public HeapObject {
@@ -1807,6 +1829,14 @@ inline bool Object::isSlice() {
       IntrinsicLayoutId::kSlice;
 }
 
+inline bool Object::isStaticMethod() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kStaticMethod;
+}
+
 inline bool Object::isString() {
   return isSmallString() || isLargeString();
 }
@@ -2701,6 +2731,25 @@ inline word Slice::allocationSize() {
 inline Slice* Slice::cast(Object* object) {
   DCHECK(object->isSlice(), "invalid cast, expected slice");
   return reinterpret_cast<Slice*>(object);
+}
+
+// StaticMethod
+
+inline Object* StaticMethod::function() {
+  return instanceVariableAt(kFunctionOffset);
+}
+
+inline void StaticMethod::setFunction(Object* function) {
+  instanceVariableAtPut(kFunctionOffset, function);
+}
+
+inline StaticMethod* StaticMethod::cast(Object* object) {
+  DCHECK(object->isStaticMethod(), "invalid cast");
+  return reinterpret_cast<StaticMethod*>(object);
+}
+
+inline word StaticMethod::allocationSize() {
+  return Header::kSize + StaticMethod::kSize;
 }
 
 // Dictionary

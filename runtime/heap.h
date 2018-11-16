@@ -70,6 +70,8 @@ class Heap {
 
   Object* createSlice();
 
+  Object* createStaticMethod();
+
   Object* createSuper();
 
   Object* createValueCell();

@@ -133,6 +133,8 @@ class Runtime {
       const Handle<Object>& stop,
       const Handle<Object>& step);
 
+  Object* newStaticMethod();
+
   Object* newStringFromCString(const char* c_string);
   Object* newStringWithAll(View<byte> code_units);
 
@@ -514,6 +516,7 @@ class Runtime {
   void initializeListClass();
   void initializeObjectClass();
   void initializeSmallIntClass();
+  void initializeStaticMethodClass();
   void initializeSuperClass();
   void initializeTypeClass();
 

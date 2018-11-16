@@ -706,6 +706,14 @@ Object* classmethodDescriptorGet(
   return thread->runtime()->newBoundMethod(method, type);
 }
 
+Object* staticmethodDescriptorGet(
+    Thread*,
+    const Handle<Object>& self,
+    const Handle<Object>& /* instance */,
+    const Handle<Object>& /* owner */) {
+  return StaticMethod::cast(*self)->function();
+}
+
 // ClassMethod
 Object* builtinClassMethodNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newClassMethod();
@@ -722,6 +730,24 @@ Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> arg(&scope, args.get(1));
   classmethod->setFunction(*arg);
   return *classmethod;
+}
+
+// StaticMethod
+Object* builtinStaticMethodNew(Thread* thread, Frame*, word) {
+  return thread->runtime()->newStaticMethod();
+}
+
+Object* builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString(
+        "staticmethod expected 1 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<StaticMethod> staticmethod(&scope, args.get(0));
+  Handle<Object> arg(&scope, args.get(1));
+  staticmethod->setFunction(*arg);
+  return *staticmethod;
 }
 
 Object* builtinSuperNew(Thread* thread, Frame*, word) {
