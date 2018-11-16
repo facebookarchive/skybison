@@ -80,8 +80,11 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   }
   result->setDictionary(*dictionary);
 
+  // Compute builtin base class
+  LayoutId base_layout_id = runtime->computeBuiltinBaseClass(result);
   // Initialize instance layout
-  Handle<Layout> layout(&scope, runtime->computeInitialLayout(thread, result));
+  Handle<Layout> layout(
+      &scope, runtime->computeInitialLayout(thread, result, base_layout_id));
   layout->setDescribedClass(*result);
   result->setInstanceLayout(*layout);
 
@@ -93,12 +96,6 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
     flags |= SmallInteger::cast(cur->flags())->value();
   }
   result->setFlags(SmallInteger::fromWord(flags));
-
-  // Initialize builtin base class
-  result->setBuiltinBaseClass(runtime->computeBuiltinBaseClass(result));
-  if (result->hasFlag(Class::Flag::kListSubclass)) {
-    layout->addDelegateSlot();
-  }
 
   return *result;
 }

@@ -1644,8 +1644,6 @@ class ClassMethod : public HeapObject {
  *   +---------------------------+     |        +--------------------------+
  *   | Overflow Attributes       +-----+
  *   +---------------------------+
- *   | Delegate?                 |
- *   +---------------------------+
  *
  * Each instance is associated with a layout (whose id is stored in the header
  * word). The layout acts as a roadmap for the instance; it describes where to
@@ -1733,18 +1731,6 @@ class Layout : public HeapObject {
   // Return the offset, in bytes, of the overflow slot
   word overflowOffset();
 
-  // Return the offset, in bytes, of the delegate slot, if one
-  // exists. Otherwise, return None.
-  //
-  // Instances of classes that descend from variable-sized intrinsic types
-  // (e.g. tuple, string) have an extra slot at the end of the instance that
-  // points to a delegate object of the appropriate type. Methods that operate
-  // expect to operate on the variable sized data are forwarded to the
-  // delegate.
-  word delegateOffset();
-  bool hasDelegateSlot();
-  void addDelegateSlot();
-
   // Casting
   static Layout* cast(Object* object);
 
@@ -1761,15 +1747,12 @@ class Layout : public HeapObject {
   static const int kDeletionsOffset = kAdditionsOffset + kPointerSize;
   static const int kInstanceSizeOffset = kDeletionsOffset + kPointerSize;
   static const int kOverflowOffsetOffset = kInstanceSizeOffset + kPointerSize;
-  static const int kDelegateOffsetOffset = kOverflowOffsetOffset + kPointerSize;
   static const int kNumInObjectAttributesOffset =
-      kDelegateOffsetOffset + kPointerSize;
+      kOverflowOffsetOffset + kPointerSize;
   static const int kSize = kNumInObjectAttributesOffset + kPointerSize;
 
  private:
-  void setDelegateOffset(word offset);
   void setOverflowOffset(word offset);
-  void updateInstanceSize();
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Layout);
 };
@@ -3305,11 +3288,6 @@ inline Instance* Instance::cast(Object* object) {
 
 inline word List::allocationSize() { return Header::kSize + List::kSize; }
 
-inline List* List::cast(Object* object) {
-  DCHECK(object->isList(), "invalid cast, expected list");
-  return reinterpret_cast<List*>(object);
-}
-
 inline Object* List::items() { return instanceVariableAt(kItemsOffset); }
 
 inline void List::setItems(Object* new_items) {
@@ -3673,26 +3651,6 @@ inline void Layout::setOverflowOffset(word offset) {
   instanceVariableAtPut(kOverflowOffsetOffset, SmallInteger::fromWord(offset));
 }
 
-inline word Layout::delegateOffset() {
-  return SmallInteger::cast(instanceVariableAt(kDelegateOffsetOffset))->value();
-}
-
-inline void Layout::setDelegateOffset(word offset) {
-  instanceVariableAtPut(kDelegateOffsetOffset, SmallInteger::fromWord(offset));
-}
-
-inline bool Layout::hasDelegateSlot() {
-  return !instanceVariableAt(kDelegateOffsetOffset)->isNone();
-}
-
-inline void Layout::addDelegateSlot() {
-  if (hasDelegateSlot()) {
-    return;
-  }
-  setDelegateOffset(overflowOffset() + kPointerSize);
-  updateInstanceSize();
-}
-
 inline word Layout::numInObjectAttributes() {
   return SmallInteger::cast(instanceVariableAt(kNumInObjectAttributesOffset))
       ->value();
@@ -3702,18 +3660,7 @@ inline void Layout::setNumInObjectAttributes(word count) {
   instanceVariableAtPut(kNumInObjectAttributesOffset,
                         SmallInteger::fromWord(count));
   setOverflowOffset(count * kPointerSize);
-  if (hasDelegateSlot()) {
-    setDelegateOffset(overflowOffset() + kPointerSize);
-  }
-  updateInstanceSize();
-}
-
-inline void Layout::updateInstanceSize() {
-  word num_slots = numInObjectAttributes() + 1;
-  if (hasDelegateSlot()) {
-    num_slots += 1;
-  }
-  setInstanceSize(num_slots);
+  setInstanceSize(numInObjectAttributes() + 1);
 }
 
 // Super

@@ -2227,27 +2227,6 @@ l.insert(-1, 3)
   EXPECT_EQ(SmallInteger::cast(list_l->at(4))->value(), 4);
 }
 
-TEST(ThreadTest, SubclassList) {
-  const char* src = R"(
-class Foo():
-  def __init__(self):
-    self.a = "a"
-class Bar(Foo, list): pass
-a = Bar()
-a.append(1)
-print(a[0], a.a)
-a.insert(0, 2)
-print(a[0], a[1])
-a.pop()
-print(a[0])
-a.remove(2)
-print(len(a))
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "1 a\n2 1\n2\n0\n");
-}
-
 TEST(ThreadDeathTest, BaseClassConflict) {
   const char* src = R"(
 class Foo(list, dict): pass

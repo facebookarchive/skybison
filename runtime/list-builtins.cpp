@@ -54,31 +54,10 @@ Object* ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString("not a subtype of list");
   }
   Handle<Layout> layout(&scope, type->instanceLayout());
-  Handle<Layout> list_layout(&scope,
-                             thread->runtime()->layoutAt(LayoutId::kList));
-  Handle<Object> list(&scope, thread->runtime()->newInstance(list_layout));
-  List::cast(*list)->setAllocated(0);
-  List::cast(*list)->setItems(thread->runtime()->newObjectArray(0));
-  if (layout->id() == LayoutId::kList) {
-    return *list;
-  }
-  CHECK(layout->hasDelegateSlot(), "must have a delegate slot");
-  Handle<Object> result(&scope, thread->runtime()->newInstance(layout));
-  thread->runtime()->setInstanceDelegate(result, list);
+  Handle<List> result(&scope, thread->runtime()->newInstance(layout));
+  result->setAllocated(0);
+  result->setItems(thread->runtime()->newObjectArray(0));
   return *result;
-}
-
-static Object* listOrDelegate(Thread* thread, const Handle<Object>& instance) {
-  if (instance->isList()) {
-    return *instance;
-  } else {
-    HandleScope scope(thread);
-    Handle<Class> klass(&scope, thread->runtime()->classOf(*instance));
-    if (klass->hasFlag(Class::Flag::kListSubclass)) {
-      return thread->runtime()->instanceDelegate(instance);
-    }
-  }
-  return Error::object();
 }
 
 Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
@@ -90,8 +69,7 @@ Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Object* other = args.get(1);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "__add__() must be called with list instance as first argument");
   }
@@ -99,7 +77,7 @@ Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (other->isList()) {
     Handle<List> new_list(&scope, thread->runtime()->newList());
     Handle<Object> other_list(&scope, other);
-    thread->runtime()->listExtend(new_list, list_or_error);
+    thread->runtime()->listExtend(new_list, self);
     thread->runtime()->listExtend(new_list, other_list);
     return *new_list;
   }
@@ -114,12 +92,11 @@ Object* ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Handle<Object> self(&scope, args.get(0));
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "append() only support list or its subclasses");
   }
-  Handle<List> list(&scope, *list_or_error);
+  Handle<List> list(&scope, *self);
   Handle<Object> value(&scope, args.get(1));
   thread->runtime()->listAdd(list, value);
   return None::object();
@@ -133,12 +110,11 @@ Object* ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Handle<Object> self(&scope, args.get(0));
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "extend() only support list or its subclasses");
   }
-  Handle<List> list(&scope, *list_or_error);
+  Handle<List> list(&scope, *self);
   Handle<Object> value(&scope, args.get(1));
   // TODO(jeethu): Throw TypeError if value is not iterable.
   thread->runtime()->listExtend(list, value);
@@ -152,12 +128,11 @@ Object* ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Handle<Object> self(&scope, args.get(0));
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "__len__() only support list or its subclasses");
   }
-  Handle<List> list(&scope, *list_or_error);
+  Handle<List> list(&scope, *self);
   return SmallInteger::fromWord(list->allocated());
 }
 
@@ -174,12 +149,11 @@ Object* ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
 
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "descriptor 'insert' requires a 'list' object");
   }
-  Handle<List> list(&scope, *list_or_error);
+  Handle<List> list(&scope, *self);
   word index = SmallInteger::cast(args.get(1))->value();
   Handle<Object> value(&scope, args.get(2));
   thread->runtime()->listInsert(list, value, index);
@@ -194,14 +168,13 @@ Object* ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Object* other = args.get(1);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "__mul__() must be called with list instance as first argument");
   }
   if (other->isSmallInteger()) {
     word ntimes = SmallInteger::cast(other)->value();
-    Handle<List> list(&scope, *list_or_error);
+    Handle<List> list(&scope, *self);
     return thread->runtime()->listReplicate(thread, list, ntimes);
   }
   return thread->throwTypeErrorFromCString("can't multiply list by non-int");
@@ -219,12 +192,11 @@ Object* ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
 
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "descriptor 'pop' requires a 'list' object");
   }
-  Handle<List> list(&scope, *list_or_error);
+  Handle<List> list(&scope, *self);
   word index = list->allocated() - 1;
   if (nargs == 2) {
     word last_index = index;
@@ -254,12 +226,11 @@ Object* ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> value(&scope, args.get(1));
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "descriptor 'remove' requires a 'list' object");
   }
-  Handle<List> list(&scope, *list_or_error);
+  Handle<List> list(&scope, *self);
   for (word i = 0; i < list->allocated(); i++) {
     Handle<Object> item(&scope, list->at(i));
     if (Boolean::cast(Interpreter::compareOperation(thread, frame,
@@ -298,14 +269,13 @@ Object* ListBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
 
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "__getitem__() must be called with a list instance as the first "
         "argument");
   }
 
-  Handle<List> list(&scope, *list_or_error);
+  Handle<List> list(&scope, *self);
   Object* index = args.get(1);
   if (index->isSmallInteger()) {
     word idx = SmallInteger::cast(index)->value();
@@ -333,14 +303,13 @@ Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
 
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "__setitem__() must be called with a list instance as the first "
         "argument");
   }
 
-  Handle<List> list(&scope, *list_or_error);
+  Handle<List> list(&scope, *self);
   Object* index = args.get(1);
   if (index->isSmallInteger()) {
     word idx = SmallInteger::cast(index)->value();

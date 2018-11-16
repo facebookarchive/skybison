@@ -474,4 +474,38 @@ list.__new__(Foo)
   ASSERT_DEATH(runtime.runFromCString(src), "not a subtype of list");
 }
 
+TEST(ListBuiltinsTest, SubclassList) {
+  const char* src = R"(
+class Foo():
+  def __init__(self):
+    self.a = "a"
+class Bar(Foo, list): pass
+a = Bar()
+a.append(1)
+test1, test2 = a[0], a.a
+a.insert(0, 2)
+test3, test4 = a[0], a[1]
+a.pop()
+test5 = a[0]
+a.remove(2)
+test6 = len(a)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> test1(&scope, findInModule(&runtime, main, "test1"));
+  Handle<Object> test2(&scope, findInModule(&runtime, main, "test2"));
+  Handle<Object> test3(&scope, findInModule(&runtime, main, "test3"));
+  Handle<Object> test4(&scope, findInModule(&runtime, main, "test4"));
+  Handle<Object> test5(&scope, findInModule(&runtime, main, "test5"));
+  Handle<Object> test6(&scope, findInModule(&runtime, main, "test6"));
+  EXPECT_EQ(*test1, SmallInteger::fromWord(1));
+  EXPECT_EQ(*test2, SmallString::fromCString("a"));
+  EXPECT_EQ(*test3, SmallInteger::fromWord(2));
+  EXPECT_EQ(*test4, SmallInteger::fromWord(1));
+  EXPECT_EQ(*test5, SmallInteger::fromWord(2));
+  EXPECT_EQ(*test6, SmallInteger::fromWord(0));
+}
+
 }  // namespace python

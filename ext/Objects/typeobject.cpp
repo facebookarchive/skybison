@@ -95,8 +95,9 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   type_class->setMro(*mro);
 
   // Initialize instance Layout
-  Handle<Layout> layout_init(&scope,
-                             runtime->computeInitialLayout(thread, type_class));
+  Handle<Layout> layout_init(
+      &scope,
+      runtime->computeInitialLayout(thread, type_class, LayoutId::kObject));
   Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
   Handle<Layout> layout(
       &scope, runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));

@@ -268,7 +268,6 @@ TEST(LayoutTest, VerifyChildLayout) {
   Runtime runtime;
   HandleScope scope;
   Handle<Layout> parent(&scope, runtime.newLayout());
-  parent->addDelegateSlot();
   Handle<Object> attr(&scope, runtime.newStringFromCString("foo"));
   Handle<Layout> child(
       &scope, runtime.layoutAddAttribute(Thread::currentThread(), parent, attr,
@@ -285,8 +284,6 @@ TEST(LayoutTest, VerifyChildLayout) {
   EXPECT_EQ(List::cast(child->deletions())->allocated(), 0);
   EXPECT_EQ(child->describedClass(), parent->describedClass());
   EXPECT_EQ(child->instanceSize(), parent->instanceSize());
-  EXPECT_EQ(child->hasDelegateSlot(), parent->hasDelegateSlot());
-  EXPECT_EQ(child->delegateOffset(), parent->delegateOffset());
 }
 
 }  // namespace python

@@ -311,7 +311,8 @@ class Runtime {
   //
   // The layout contains the set of in-object attributes. This is computed by
   // scanning the constructors of every klass in klass's MRO.
-  Object* computeInitialLayout(Thread* thread, const Handle<Class>& klass);
+  Object* computeInitialLayout(Thread* thread, const Handle<Class>& klass,
+                               LayoutId base_layout_id);
 
   // Returns klass's __init__ method, or None
   Object* classConstructor(const Handle<Class>& klass);
@@ -401,7 +402,7 @@ class Runtime {
                              const Handle<Dictionary>& globals,
                              const Handle<Dictionary>& builtins);
 
-  Object* computeBuiltinBaseClass(const Handle<Class>& klass);
+  LayoutId computeBuiltinBaseClass(const Handle<Class>& klass);
 
   // Adds a builtin function with a positional entry point definition
   // using the default keyword and splatting entry points.
@@ -424,15 +425,6 @@ class Runtime {
   // Helper function to add extension functions to extension classes
   void classAddExtensionFunction(const Handle<Class>& klass, SymbolId name,
                                  void* c_function);
-
-  // determine whether the instance needs a slot for delegate base instance
-  bool hasDelegate(const Handle<Class>& klass);
-
-  // Manipulate instance's delegate, since offset is only known by the type,
-  // this method needs to stay in runtime.
-  Object* instanceDelegate(const Handle<Object>& instance);
-  void setInstanceDelegate(const Handle<Object>& instance,
-                           const Handle<Object>& delegate);
 
   // Converts the offset in code's bytecode into the corresponding line number
   // in the backing source file.
@@ -460,6 +452,13 @@ class Runtime {
     // a Class*.
     return reinterpret_cast<Class*>(classOf(instance))
         ->hasFlag(Class::Flag::kClassSubclass);
+  }
+
+  bool isInstanceOfList(Object* instance) {
+    if (instance->isList()) {
+      return true;
+    }
+    return Class::cast(classOf(instance))->hasFlag(Class::Flag::kListSubclass);
   }
 
   // Return true if obj is an instance of a subclass of klass

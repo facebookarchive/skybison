@@ -181,4 +181,11 @@ Class* Class::cast(Object* object) {
   return reinterpret_cast<Class*>(object);
 }
 
+List* List::cast(Object* object) {
+  DCHECK(object->isList() ||
+             Thread::currentThread()->runtime()->isInstanceOfList(object),
+         "invalid cast, expected list");
+  return reinterpret_cast<List*>(object);
+}
+
 }  // namespace python

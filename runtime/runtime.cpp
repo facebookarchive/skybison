@@ -2346,8 +2346,15 @@ Object* Runtime::classConstructor(const Handle<Class>& klass) {
 }
 
 Object* Runtime::computeInitialLayout(Thread* thread,
-                                      const Handle<Class>& klass) {
+                                      const Handle<Class>& klass,
+                                      LayoutId base_layout_id) {
   HandleScope scope(thread);
+  // Create the layout
+  LayoutId layout_id = reserveLayoutId();
+  Handle<Layout> layout(&scope, layoutCreateSubclassWithBuiltins(
+                                    layout_id, base_layout_id,
+                                    View<BuiltinAttribute>(nullptr, 0)));
+
   Handle<ObjectArray> mro(&scope, klass->mro());
   Handle<Dictionary> attrs(&scope, newDictionary());
 
@@ -2368,9 +2375,9 @@ Object* Runtime::computeInitialLayout(Thread* thread,
     collectAttributes(code, attrs);
   }
 
-  // Create the layout
-  Handle<Layout> layout(&scope, layoutCreateEmpty(thread));
-  layout->setNumInObjectAttributes(attrs->numItems());
+  layout->setNumInObjectAttributes(layout->numInObjectAttributes() +
+                                   attrs->numItems());
+  layoutAtPut(layout_id, *layout);
 
   return *layout;
 }
@@ -2642,14 +2649,18 @@ Object* Runtime::newClassMethod() { return heap()->createClassMethod(); }
 
 Object* Runtime::newSuper() { return heap()->createSuper(); }
 
-Object* Runtime::computeBuiltinBaseClass(const Handle<Class>& klass) {
-  // The delegate class can only be one of the builtin bases including object.
+LayoutId Runtime::computeBuiltinBaseClass(const Handle<Class>& klass) {
+  // The base class can only be one of the builtin bases including object.
   // We use the first non-object builtin base if any, throw if multiple.
   HandleScope scope;
   Handle<ObjectArray> mro(&scope, klass->mro());
   Handle<Class> object_klass(&scope, classAt(LayoutId::kObject));
   Handle<Class> candidate(&scope, *object_klass);
-  for (word i = 0; i < mro->length(); i++) {
+  // Skip itself since builtin class won't go through this.
+  DCHECK(Class::cast(mro->at(0))->instanceLayout()->isNone(),
+         "only user defined class should go through this via type_new, and at "
+         "this point layout is not ready");
+  for (word i = 1; i < mro->length(); i++) {
     Handle<Class> mro_klass(&scope, mro->at(i));
     if (!mro_klass->isIntrinsicOrExtension()) {
       continue;
@@ -2661,24 +2672,7 @@ Object* Runtime::computeBuiltinBaseClass(const Handle<Class>& klass) {
       CHECK(false, "multiple bases have instance lay-out conflict.");
     }
   }
-  return *candidate;
-}
-
-Object* Runtime::instanceDelegate(const Handle<Object>& instance) {
-  HandleScope scope;
-  Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
-  DCHECK(layout->hasDelegateSlot(), "instance layout missing delegate");
-  return Instance::cast(*instance)->instanceVariableAt(
-      layout->delegateOffset());
-}
-
-void Runtime::setInstanceDelegate(const Handle<Object>& instance,
-                                  const Handle<Object>& delegate) {
-  HandleScope scope;
-  Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
-  DCHECK(layout->hasDelegateSlot(), "instance layout missing delegate");
-  return Instance::cast(*instance)->instanceVariableAtPut(
-      layout->delegateOffset(), *delegate);
+  return Layout::cast(candidate->instanceLayout())->id();
 }
 
 Object* Runtime::instanceAt(Thread* thread, const Handle<HeapObject>& instance,
@@ -2842,9 +2836,6 @@ Object* Runtime::layoutCreateChild(Thread* thread,
   new_layout->setInObjectAttributes(layout->inObjectAttributes());
   new_layout->setOverflowAttributes(layout->overflowAttributes());
   new_layout->setInstanceSize(layout->instanceSize());
-  if (layout->hasDelegateSlot()) {
-    new_layout->addDelegateSlot();
-  }
   layoutAtPut(new_layout->id(), *new_layout);
   return *new_layout;
 }

@@ -593,9 +593,6 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
   Runtime* runtime = ctx->thread->runtime();
   Handle<Object> key(&scope, ctx->frame->popValue());
   Handle<Object> container(&scope, ctx->frame->popValue());
-  if (container->isInstance()) {
-    container = ctx->thread->runtime()->instanceDelegate(container);
-  }
   Handle<Object> selector(&scope, runtime->symbols()->DunderGetItem());
   Handle<Class> type(&scope, runtime->classOf(*container));
   Handle<Object> getitem(&scope,
