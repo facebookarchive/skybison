@@ -818,4 +818,44 @@ sys.displayhook = my_displayhook
   EXPECT_EQ(*my_global, *unique);
 }
 
+TEST(InterpreterTest, GetAIterCallsAIter) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+class AsyncIterable:
+  def __aiter__(self):
+    return 42
+
+a = AsyncIterable()
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, *a);
+  code->setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Object> result(&scope, Thread::currentThread()->run(*code));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(42, SmallInt::cast(*result)->value());
+}
+
+TEST(InterpreterDeathTest, GetAIterOnNonIterable) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInt::fromWord(123));
+  code->setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  ASSERT_DEATH(Thread::currentThread()->run(*code),
+               "'async for' requires an object with __aiter__ method");
+}
+
 }  // namespace python

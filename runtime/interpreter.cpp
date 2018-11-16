@@ -735,6 +735,23 @@ void Interpreter::doInplaceTrueDivide(Context* ctx, word) {
   ctx->frame->pushValue(result);
 }
 
+// opcode 50
+void Interpreter::doGetAIter(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> obj(&scope, ctx->frame->topValue());
+  Handle<Object> method(
+      &scope, lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAIter));
+  if (method->isError()) {
+    thread->throwTypeErrorFromCStr(
+        "'async for' requires an object with __aiter__ method");
+    thread->abortOnPendingException();
+  }
+  Handle<Object> aiter(&scope, callMethod1(thread, ctx->frame, method, obj));
+  thread->abortOnPendingException();
+  ctx->frame->setTopValue(*aiter);
+}
+
 // opcode 55
 void Interpreter::doInplaceAdd(Context* ctx, word) {
   Thread* thread = ctx->thread;
@@ -882,14 +899,14 @@ void Interpreter::doGetIter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Handle<Object> iterable(&scope, ctx->frame->topValue());
-  Handle<Object> method(&scope, lookupMethod(thread, thread->currentFrame(),
-                                             iterable, SymbolId::kDunderIter));
+  Handle<Object> method(&scope, lookupMethod(thread, ctx->frame, iterable,
+                                             SymbolId::kDunderIter));
   if (method->isError()) {
     thread->throwTypeErrorFromCStr("object is not iterable");
     thread->abortOnPendingException();
   }
-  Handle<Object> iterator(
-      &scope, callMethod1(thread, thread->currentFrame(), method, iterable));
+  Handle<Object> iterator(&scope,
+                          callMethod1(thread, ctx->frame, method, iterable));
   thread->abortOnPendingException();
   ctx->frame->setTopValue(*iterator);
 }
@@ -1068,15 +1085,14 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Handle<Object> iterable(&scope, ctx->frame->popValue());
-  Handle<Object> iter_method(
-      &scope, lookupMethod(thread, thread->currentFrame(), iterable,
-                           SymbolId::kDunderIter));
+  Handle<Object> iter_method(&scope, lookupMethod(thread, ctx->frame, iterable,
+                                                  SymbolId::kDunderIter));
   if (iter_method->isError()) {
     thread->throwTypeErrorFromCStr("object is not iterable");
     thread->abortOnPendingException();
   }
-  Handle<Object> iterator(&scope, callMethod1(thread, thread->currentFrame(),
-                                              iter_method, iterable));
+  Handle<Object> iterator(
+      &scope, callMethod1(thread, ctx->frame, iter_method, iterable));
   thread->abortOnPendingException();
   Handle<Object> next_method(&scope, lookupMethod(thread, ctx->frame, iterator,
                                                   SymbolId::kDunderNext));
