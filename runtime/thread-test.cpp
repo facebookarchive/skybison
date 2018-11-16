@@ -1910,4 +1910,27 @@ print(b[0])
   EXPECT_EQ(output, "1\n");
 }
 
+TEST(ThreadTest, PrintStackTrace) {
+  const char* src = R"(
+def a():
+  raise 'testing 123'
+
+def b():
+  a()
+
+def test():
+  b()
+
+test()
+)";
+  Runtime runtime;
+  const char* re =
+      "Traceback \\(most recent call last\\)\n"
+      "  File '.+', line 11, in <module>\n"
+      "  File '.+', line 9, in test\n"
+      "  File '.+', line 6, in b\n"
+      "  File '.+', line 3, in a\n";
+  EXPECT_DEATH(compileAndRunToString(&runtime, src), re);
+}
+
 } // namespace python

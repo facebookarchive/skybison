@@ -12,6 +12,7 @@
       fprintf(                                                                 \
           stderr, "%s:%d assertion '%s' failed: ", __FILE__, __LINE__, #expr); \
       fprintf(stderr, __VA_ARGS__);                                            \
+      python::Utils::printTraceback();                                         \
       std::abort();                                                            \
     }                                                                          \
   } while (0)
@@ -20,6 +21,7 @@
   do {                                                            \
     fprintf(stderr, "%s:%d unimplemented: ", __FILE__, __LINE__); \
     fprintf(stderr, __VA_ARGS__);                                 \
+    python::Utils::printTraceback();                              \
     std::abort();                                                 \
   } while (0)
 
@@ -27,6 +29,7 @@
   do {                                                          \
     fprintf(stderr, "%s:%d unreachable: ", __FILE__, __LINE__); \
     fprintf(stderr, __VA_ARGS__);                               \
+    python::Utils::printTraceback();                            \
     std::abort();                                               \
   } while (0)
 
@@ -65,6 +68,9 @@ class Utils {
   static inline T maximum(T x, T y) {
     return x > y ? x : y;
   }
+
+  // Prints a python level stack trace to stderr
+  static void printTraceback();
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Utils);

@@ -602,6 +602,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
   ctx.thread = thread;
   ctx.frame = frame;
   for (;;) {
+    frame->setVirtualPC(ctx.pc);
     Bytecode bc = static_cast<Bytecode>(byteArray->byteAt(ctx.pc++));
     int32 arg = byteArray->byteAt(ctx.pc++);
   dispatch:
@@ -623,8 +624,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
           assert(r == Result::NOT_IMPLEMENTED);
           // TODO: Distinguish between intentionally unimplemented bytecode
           // and unreachable code.
-          fprintf(stderr, "aborting due to unimplemented bytecode: %d\n", bc);
-          abort();
+          UNIMPLEMENTED("aborting due to unimplemented bytecode: %d\n", bc);
         }
       }
     }

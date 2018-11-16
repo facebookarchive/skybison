@@ -2,8 +2,6 @@
 
 #include <cstring>
 
-#include "objects.h"
-
 namespace python {
 
 void Frame::makeSentinel() {

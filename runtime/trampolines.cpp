@@ -34,7 +34,7 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
     // ("None", None::object())
     frame->setBuiltins(thread->runtime()->newDictionary());
   }
-  frame->setLastInstruction(SmallInteger::fromWord(0));
+  frame->setVirtualPC(0);
   frame->setFastGlobals(function->fastGlobals());
 
   // Off we go!

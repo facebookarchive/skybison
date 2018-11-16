@@ -64,6 +64,7 @@ add_library(
   runtime/trampolines.cpp
   runtime/trampolines.h
   runtime/trampolines-inl.h
+  runtime/utils.cpp
   runtime/utils.h
   runtime/vector.h
   runtime/view.h

@@ -25,13 +25,14 @@ class Interpreter {
       const Handle<Object>& right);
 
   static Object* call(Thread* thread, Frame* frame, Object** sp, word nargs);
+  static Object* callKw(Thread* thread, Frame* frame, Object** sp, word nargs);
+
+ private:
   static Object*
   callBoundMethod(Thread* thread, Frame* frame, Object** sp, word nargs);
 
   static Object*
   callType(Thread* thread, Frame* frame, Object** sp, word nargs);
-
-  static Object* callKw(Thread* thread, Frame* frame, Object** sp, word nargs);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);

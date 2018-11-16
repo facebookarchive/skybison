@@ -141,8 +141,8 @@ class Frame {
   inline BlockStack* blockStack();
 
   // Index in the bytecode array of the last instruction that was executed
-  inline Object* lastInstruction();
-  inline void setLastInstruction(Object* lastInstruction);
+  inline word virtualPC();
+  inline void setVirtualPC(word pc);
 
   // The builtins namespace (a Dictionary)
   inline Object* builtins();
@@ -199,8 +199,8 @@ class Frame {
   static const int kGlobalsOffset = kCodeOffset + kPointerSize;
   static const int kImplicitGlobalsOffset = kGlobalsOffset + kPointerSize;
   static const int kBuiltinsOffset = kImplicitGlobalsOffset + kPointerSize;
-  static const int kLastInstructionOffset = kBuiltinsOffset + kPointerSize;
-  static const int kBlockStackOffset = kLastInstructionOffset + kPointerSize;
+  static const int kVirtualPCOffset = kBuiltinsOffset + kPointerSize;
+  static const int kBlockStackOffset = kVirtualPCOffset + kPointerSize;
   static const int kNumLocalsOffset = kBlockStackOffset + BlockStack::kSize;
   static const int kLocalsOffset = kNumLocalsOffset + kPointerSize;
   static const int kFastGlobalsOffset = kLocalsOffset + kPointerSize;
@@ -213,6 +213,12 @@ class Frame {
   inline Object** locals();
 
   DISALLOW_COPY_AND_ASSIGN(Frame);
+};
+
+class FrameVisitor {
+ public:
+  virtual void visit(Frame* frame) = 0;
+  virtual ~FrameVisitor() = default;
 };
 
 uword Frame::address() {
@@ -231,12 +237,12 @@ BlockStack* Frame::blockStack() {
   return reinterpret_cast<BlockStack*>(address() + kBlockStackOffset);
 }
 
-Object* Frame::lastInstruction() {
-  return at(kLastInstructionOffset);
+word Frame::virtualPC() {
+  return SmallInteger::cast(at(kVirtualPCOffset))->value();
 }
 
-void Frame::setLastInstruction(Object* lastInstruction) {
-  atPut(kLastInstructionOffset, lastInstruction);
+void Frame::setVirtualPC(word pc) {
+  atPut(kVirtualPCOffset, SmallInteger::fromWord(pc));
 }
 
 Object* Frame::builtins() {

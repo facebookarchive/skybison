@@ -9,6 +9,7 @@
 #include "interpreter.h"
 #include "objects.h"
 #include "runtime.h"
+#include "utils.h"
 #include "visitor.h"
 
 namespace python {
@@ -227,8 +228,17 @@ void Thread::abortOnPendingException() {
     fprintf(stderr, ": %.*s", static_cast<int>(len), buffer);
   }
   fprintf(stderr, "\n");
+  Utils::printTraceback();
 
   std::abort();
+}
+
+void Thread::visitFrames(FrameVisitor* visitor) {
+  Frame* frame = currentFrame();
+  while (!frame->isSentinelFrame()) {
+    visitor->visit(frame);
+    frame = frame->previousFrame();
+  }
 }
 
 Object* Thread::pendingException() {

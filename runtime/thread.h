@@ -7,6 +7,7 @@ namespace python {
 class Class;
 class Dictionary;
 class Frame;
+class FrameVisitor;
 class Function;
 class Handles;
 class Module;
@@ -114,6 +115,9 @@ class Thread {
 
   // If there is a pending exception, prints it and aborts
   void abortOnPendingException();
+
+  // Walk all the frames on the stack starting with the top-most frame
+  void visitFrames(FrameVisitor* visitor);
 
  private:
   void pushInitialFrame();
