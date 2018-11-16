@@ -242,6 +242,17 @@ class Runtime {
   bool dictionaryRemove(const Handle<Dictionary>& dict,
                         const Handle<Object>& key, Object** value);
 
+  // Support explicit hash value of key to do dictionaryAtPut.
+  void dictionaryAtPutWithHash(const Handle<Dictionary>& dict,
+                               const Handle<Object>& key,
+                               const Handle<Object>& value,
+                               const Handle<Object>& key_hash);
+
+  // Support explicit hash value of key to do dictionaryAt.
+  Object* dictionaryAtWithHash(const Handle<Dictionary>& dict,
+                               const Handle<Object>& key,
+                               const Handle<Object>& key_hash);
+
   ObjectArray* dictionaryKeys(const Handle<Dictionary>& dict);
 
   // Set related function, based on dictionary.

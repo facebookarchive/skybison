@@ -1788,13 +1788,13 @@ Object* Runtime::newDictionary(word initial_size) {
   return *result;
 }
 
-void Runtime::dictionaryAtPut(const Handle<Dictionary>& dict,
-                              const Handle<Object>& key,
-                              const Handle<Object>& value) {
+void Runtime::dictionaryAtPutWithHash(const Handle<Dictionary>& dict,
+                                      const Handle<Object>& key,
+                                      const Handle<Object>& value,
+                                      const Handle<Object>& key_hash) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
-  Handle<Object> key_hash(&scope, hash(*key));
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
@@ -1809,6 +1809,14 @@ void Runtime::dictionaryAtPut(const Handle<Dictionary>& dict,
   if (!found) {
     dict->setNumItems(dict->numItems() + 1);
   }
+}
+
+void Runtime::dictionaryAtPut(const Handle<Dictionary>& dict,
+                              const Handle<Object>& key,
+                              const Handle<Object>& value) {
+  HandleScope scope;
+  Handle<Object> key_hash(&scope, hash(*key));
+  return dictionaryAtPutWithHash(dict, key, value, key_hash);
 }
 
 ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
@@ -1835,18 +1843,25 @@ ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
   return *new_data;
 }
 
-Object* Runtime::dictionaryAt(const Handle<Dictionary>& dict,
-                              const Handle<Object>& key) {
+Object* Runtime::dictionaryAtWithHash(const Handle<Dictionary>& dict,
+                                      const Handle<Object>& key,
+                                      const Handle<Object>& key_hash) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
-  Handle<Object> key_hash(&scope, hash(*key));
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
     return Dictionary::Bucket::value(*data, index);
   }
   return Error::object();
+}
+
+Object* Runtime::dictionaryAt(const Handle<Dictionary>& dict,
+                              const Handle<Object>& key) {
+  HandleScope scope;
+  Handle<Object> key_hash(&scope, hash(*key));
+  return dictionaryAtWithHash(dict, key, key_hash);
 }
 
 Object* Runtime::dictionaryAtIfAbsentPut(const Handle<Dictionary>& dict,
@@ -2883,11 +2898,11 @@ Object* Runtime::lookupSymbolInMro(Thread* thread, const Handle<Class>& klass,
                                    SymbolId symbol) {
   HandleScope scope(thread);
   Handle<ObjectArray> mro(&scope, klass->mro());
+  Handle<Object> key(&scope, symbols()->at(symbol));
   for (word i = 0; i < mro->length(); i++) {
     Handle<Class> mro_klass(&scope, mro->at(i));
     Handle<Dictionary> dict(&scope, mro_klass->dictionary());
-    Handle<Object> symbol_string(&scope, symbols()->at(symbol));
-    Handle<Object> value_cell(&scope, dictionaryAt(dict, symbol_string));
+    Handle<Object> value_cell(&scope, dictionaryAt(dict, key));
     if (!value_cell->isError()) {
       return ValueCell::cast(*value_cell)->value();
     }
