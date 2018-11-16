@@ -11,7 +11,7 @@ typedef ssize_t Py_ssize_t;
 
 typedef Py_ssize_t Py_hash_t;
 
-#define _PyObject_HEAD_EXTRA void *reference_;
+#define _PyObject_HEAD_EXTRA void* reference_;
 
 #define _PyObject_EXTRA_INIT 0,
 
@@ -36,7 +36,7 @@ typedef Py_ssize_t Py_hash_t;
 
 typedef struct _object {
   _PyObject_HEAD_EXTRA Py_ssize_t ob_refcnt;
-  struct _typeobject *ob_type;
+  struct _typeobject* ob_type;
 } PyObject;
 
 typedef struct {
@@ -45,60 +45,60 @@ typedef struct {
 } PyVarObject;
 
 typedef struct bufferinfo {
-  void *buf;
-  PyObject *obj; /* owned reference */
+  void* buf;
+  PyObject* obj; /* owned reference */
   Py_ssize_t len;
   Py_ssize_t itemsize; /* This is Py_ssize_t so it can be
                           pointed to by strides in simple case.*/
   int readonly;
   int ndim;
-  char *format;
-  Py_ssize_t *shape;
-  Py_ssize_t *strides;
-  Py_ssize_t *suboffsets;
-  void *internal;
+  char* format;
+  Py_ssize_t* shape;
+  Py_ssize_t* strides;
+  Py_ssize_t* suboffsets;
+  void* internal;
 } Py_buffer;
 
 struct _typeobject;
-typedef void (*freefunc)(void *);
-typedef void (*destructor)(PyObject *);
-typedef int (*printfunc)(PyObject *, FILE *, int);
-typedef PyObject *(*getattrfunc)(PyObject *, char *);
-typedef PyObject *(*getattrofunc)(PyObject *, PyObject *);
-typedef int (*setattrfunc)(PyObject *, char *, PyObject *);
-typedef int (*setattrofunc)(PyObject *, PyObject *, PyObject *);
-typedef PyObject *(*reprfunc)(PyObject *);
-typedef Py_hash_t (*hashfunc)(PyObject *);
-typedef PyObject *(*richcmpfunc)(PyObject *, PyObject *, int);
-typedef PyObject *(*getiterfunc)(PyObject *);
-typedef PyObject *(*iternextfunc)(PyObject *);
-typedef PyObject *(*descrgetfunc)(PyObject *, PyObject *, PyObject *);
-typedef int (*descrsetfunc)(PyObject *, PyObject *, PyObject *);
-typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
-typedef PyObject *(*newfunc)(struct _typeobject *, PyObject *, PyObject *);
-typedef PyObject *(*allocfunc)(struct _typeobject *, Py_ssize_t);
+typedef void (*freefunc)(void*);
+typedef void (*destructor)(PyObject*);
+typedef int (*printfunc)(PyObject*, FILE*, int);
+typedef PyObject* (*getattrfunc)(PyObject*, char*);
+typedef PyObject* (*getattrofunc)(PyObject*, PyObject*);
+typedef int (*setattrfunc)(PyObject*, char*, PyObject*);
+typedef int (*setattrofunc)(PyObject*, PyObject*, PyObject*);
+typedef PyObject* (*reprfunc)(PyObject*);
+typedef Py_hash_t (*hashfunc)(PyObject*);
+typedef PyObject* (*richcmpfunc)(PyObject*, PyObject*, int);
+typedef PyObject* (*getiterfunc)(PyObject*);
+typedef PyObject* (*iternextfunc)(PyObject*);
+typedef PyObject* (*descrgetfunc)(PyObject*, PyObject*, PyObject*);
+typedef int (*descrsetfunc)(PyObject*, PyObject*, PyObject*);
+typedef int (*initproc)(PyObject*, PyObject*, PyObject*);
+typedef PyObject* (*newfunc)(struct _typeobject*, PyObject*, PyObject*);
+typedef PyObject* (*allocfunc)(struct _typeobject*, Py_ssize_t);
 
-typedef PyObject *(*unaryfunc)(PyObject *);
-typedef PyObject *(*binaryfunc)(PyObject *, PyObject *);
-typedef PyObject *(*ternaryfunc)(PyObject *, PyObject *, PyObject *);
-typedef int (*inquiry)(PyObject *);
-typedef Py_ssize_t (*lenfunc)(PyObject *);
-typedef PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t);
-typedef PyObject *(*ssizessizeargfunc)(PyObject *, Py_ssize_t, Py_ssize_t);
-typedef int (*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *);
-typedef int (*objobjargproc)(PyObject *, PyObject *, PyObject *);
+typedef PyObject* (*unaryfunc)(PyObject*);
+typedef PyObject* (*binaryfunc)(PyObject*, PyObject*);
+typedef PyObject* (*ternaryfunc)(PyObject*, PyObject*, PyObject*);
+typedef int (*inquiry)(PyObject*);
+typedef Py_ssize_t (*lenfunc)(PyObject*);
+typedef PyObject* (*ssizeargfunc)(PyObject*, Py_ssize_t);
+typedef PyObject* (*ssizessizeargfunc)(PyObject*, Py_ssize_t, Py_ssize_t);
+typedef int (*ssizeobjargproc)(PyObject*, Py_ssize_t, PyObject*);
+typedef int (*objobjargproc)(PyObject*, PyObject*, PyObject*);
 
-typedef int (*objobjproc)(PyObject *, PyObject *);
-typedef int (*visitproc)(PyObject *, void *);
-typedef int (*traverseproc)(PyObject *, visitproc, void *);
+typedef int (*objobjproc)(PyObject*, PyObject*);
+typedef int (*visitproc)(PyObject*, void*);
+typedef int (*traverseproc)(PyObject*, visitproc, void*);
 
-typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
-typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
+typedef int (*getbufferproc)(PyObject*, Py_buffer*, int);
+typedef void (*releasebufferproc)(PyObject*, Py_buffer*);
 
-typedef PyObject *(*getter)(PyObject *, void *);
-typedef int (*setter)(PyObject *, PyObject *, void *);
+typedef PyObject* (*getter)(PyObject*, void*);
+typedef int (*setter)(PyObject*, PyObject*, void*);
 
-typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
+typedef PyObject* (*PyCFunction)(PyObject*, PyObject*);
 
 typedef struct {
   /* Number implementations must check *both*
@@ -122,7 +122,7 @@ typedef struct {
   binaryfunc nb_xor;
   binaryfunc nb_or;
   unaryfunc nb_int;
-  void *nb_reserved; /* the slot formerly known as nb_long */
+  void* nb_reserved; /* the slot formerly known as nb_long */
   unaryfunc nb_float;
 
   binaryfunc nb_inplace_add;
@@ -152,9 +152,9 @@ typedef struct {
   binaryfunc sq_concat;
   ssizeargfunc sq_repeat;
   ssizeargfunc sq_item;
-  void *was_sq_slice;
+  void* was_sq_slice;
   ssizeobjargproc sq_ass_item;
-  void *was_sq_ass_slice;
+  void* was_sq_ass_slice;
   objobjproc sq_contains;
 
   binaryfunc sq_inplace_concat;
@@ -173,46 +173,46 @@ typedef struct {
 } PyBufferProcs;
 
 struct PyMethodDef {
-  const char *ml_name; /* The name of the built-in function/method */
+  const char* ml_name; /* The name of the built-in function/method */
   PyCFunction ml_meth; /* The C function that implements it */
   int ml_flags;        /* Combination of METH_xxx flags, which mostly
                           describe the args expected by the C func */
-  const char *ml_doc;  /* The __doc__ attribute, or NULL */
+  const char* ml_doc;  /* The __doc__ attribute, or NULL */
 };
 typedef struct PyMethodDef PyMethodDef;
 
 typedef struct PyModuleDef_Base {
-  PyObject_HEAD PyObject *(*m_init)(void);
+  PyObject_HEAD PyObject* (*m_init)(void);
   Py_ssize_t m_index;
-  PyObject *m_copy;
+  PyObject* m_copy;
 } PyModuleDef_Base;
 
 typedef struct PyModuleDef {
   PyModuleDef_Base m_base;
-  const char *m_name;
-  const char *m_doc;
+  const char* m_name;
+  const char* m_doc;
   Py_ssize_t m_size;
-  PyMethodDef *m_methods;
-  struct PyModuleDef_Slot *m_slots;
+  PyMethodDef* m_methods;
+  struct PyModuleDef_Slot* m_slots;
   traverseproc m_traverse;
   inquiry m_clear;
   freefunc m_free;
 } PyModuleDef;
 
 typedef struct PyMemberDef {
-  char *name;
+  char* name;
   int type;
   Py_ssize_t offset;
   int flags;
-  char *doc;
+  char* doc;
 } PyMemberDef;
 
 typedef struct PyGetSetDef {
-  char *name;
+  char* name;
   getter get;
   setter set;
-  char *doc;
-  void *closure;
+  char* doc;
+  void* closure;
 } PyGetSetDef;
 
 typedef struct {
@@ -222,8 +222,8 @@ typedef struct {
 } PyAsyncMethods;
 
 typedef struct _typeobject {
-  PyObject_VAR_HEAD const char
-      *tp_name; /* For printing, in format "<module>.<name>" */
+  PyObject_VAR_HEAD const char*
+      tp_name; /* For printing, in format "<module>.<name>" */
   Py_ssize_t tp_basicsize, tp_itemsize; /* For allocation */
 
   /* Methods to implement standard operations */
@@ -232,15 +232,15 @@ typedef struct _typeobject {
   printfunc tp_print;
   getattrfunc tp_getattr;
   setattrfunc tp_setattr;
-  PyAsyncMethods *tp_as_async; /* formerly known as tp_compare (Python 2)
+  PyAsyncMethods* tp_as_async; /* formerly known as tp_compare (Python 2)
                                   or tp_reserved (Python 3) */
   reprfunc tp_repr;
 
   /* Method suites for standard classes */
 
-  PyNumberMethods *tp_as_number;
-  PySequenceMethods *tp_as_sequence;
-  PyMappingMethods *tp_as_mapping;
+  PyNumberMethods* tp_as_number;
+  PySequenceMethods* tp_as_sequence;
+  PyMappingMethods* tp_as_mapping;
 
   /* More standard operations (here for binary compatibility) */
 
@@ -251,12 +251,12 @@ typedef struct _typeobject {
   setattrofunc tp_setattro;
 
   /* Functions to access object as input/output buffer */
-  PyBufferProcs *tp_as_buffer;
+  PyBufferProcs* tp_as_buffer;
 
   /* Flags to define presence of optional/expanded features */
   unsigned long tp_flags;
 
-  const char *tp_doc; /* Documentation string */
+  const char* tp_doc; /* Documentation string */
 
   /* Assigned meaning in release 2.0 */
   /* call function for all accessible objects */
@@ -277,11 +277,11 @@ typedef struct _typeobject {
   iternextfunc tp_iternext;
 
   /* Attribute descriptor and subclassing stuff */
-  struct PyMethodDef *tp_methods;
-  struct PyMemberDef *tp_members;
-  struct PyGetSetDef *tp_getset;
-  struct _typeobject *tp_base;
-  PyObject *tp_dict;
+  struct PyMethodDef* tp_methods;
+  struct PyMemberDef* tp_members;
+  struct PyGetSetDef* tp_getset;
+  struct _typeobject* tp_base;
+  PyObject* tp_dict;
   descrgetfunc tp_descr_get;
   descrsetfunc tp_descr_set;
   Py_ssize_t tp_dictoffset;
@@ -290,11 +290,11 @@ typedef struct _typeobject {
   newfunc tp_new;
   freefunc tp_free; /* Low-level free-memory routine */
   inquiry tp_is_gc; /* For PyObject_IS_GC */
-  PyObject *tp_bases;
-  PyObject *tp_mro; /* method resolution order */
-  PyObject *tp_cache;
-  PyObject *tp_subclasses;
-  PyObject *tp_weaklist;
+  PyObject* tp_bases;
+  PyObject* tp_mro; /* method resolution order */
+  PyObject* tp_cache;
+  PyObject* tp_subclasses;
+  PyObject* tp_weaklist;
   destructor tp_del;
 
   /* Type attribute cache version tag. Added in version 2.6 */
@@ -308,8 +308,8 @@ typedef struct {
 } PyCompilerFlags;
 
 struct _inittab {
-  const char *name;
-  PyObject *(*initfunc)(void);
+  const char* name;
+  PyObject* (*initfunc)(void);
 };
 
 typedef struct {
