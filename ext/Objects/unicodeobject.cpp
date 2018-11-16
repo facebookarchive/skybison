@@ -241,9 +241,14 @@ PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
   return -1;
 }
 
-PY_EXPORT int PyUnicode_CompareWithASCIIString(PyObject* /* i */,
-                                               const char* /* r */) {
-  UNIMPLEMENTED("PyUnicode_CompareWithASCIIString");
+PY_EXPORT int PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Str str_obj(&scope, ApiHandle::fromPyObject(uni)->asObject());
+  // TODO(atalaba): Allow for proper comparison against Latin-1 strings. For
+  // example, in CPython: "\xC3\xA9" (UTF-8) == "\xE9" (Latin-1), and
+  // "\xE9 longer" > "\xC3\xA9".
+  return str_obj->compareCStr(str);
 }
 
 PY_EXPORT PyObject* PyUnicode_Concat(PyObject* /* t */, PyObject* /* t */) {

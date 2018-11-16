@@ -105,6 +105,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromString(const char*);
 PyAPI_FUNC(char*) PyUnicode_AsUTF8AndSize(PyObject*, Py_ssize_t*);
 PyAPI_FUNC(char*) PyUnicode_AsUTF8(PyObject*);
 PyAPI_FUNC(int) PyUnicode_Compare(PyObject*, PyObject*);
+PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(PyObject*, const char*);
 PyAPI_FUNC(int) _PyUnicode_EqualToASCIIString(PyObject*, const char*);
 PyAPI_FUNC(int) PyType_Ready(PyTypeObject*);
 PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject*);

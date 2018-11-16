@@ -156,4 +156,28 @@ TEST_F(UnicodeExtensionApiTest, EqualToASCIIString) {
   Py_DECREF(unicode);
 }
 
+TEST_F(UnicodeExtensionApiTest, CompareWithASCIIStringASCIINul) {
+  PyObjectPtr pyunicode(PyUnicode_FromStringAndSize("large\0st", 8));
+
+  // Less
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(pyunicode, "largz"), -1);
+
+  // Greater
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(pyunicode, "large"), 1);
+}
+
+TEST_F(UnicodeExtensionApiTest, CompareWithASCIIStringASCII) {
+  PyObjectPtr pyunicode(PyUnicode_FromString("large string"));
+
+  // Equal
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(pyunicode, "large string"), 0);
+
+  // Less
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(pyunicode, "large strings"), -1);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(pyunicode, "large tbigger"), -1);
+
+  // Greater
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(pyunicode, "large strin"), 1);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(pyunicode, "large smaller"), 1);
+}
 }  // namespace python
