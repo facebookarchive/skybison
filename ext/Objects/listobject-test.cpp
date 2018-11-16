@@ -1,43 +1,28 @@
 #include "gtest/gtest.h"
 
 #include "Python.h"
-#include "runtime.h"
-#include "test-utils.h"
+#include "capi-fixture.h"
+#include "capi-testing.h"
 
 namespace python {
 
-TEST(ListObject, NewWithNonListReturnsNull) {
+using ListExtensionApiTest = ExtensionApi;
+
+TEST_F(ListExtensionApiTest, NewWithBadLengthReturnsNull) {
   Py_ssize_t invalid_length = -1;
   PyObject* pyresult = PyList_New(invalid_length);
   EXPECT_EQ(pyresult, nullptr);
 }
 
-TEST(ListObject, New) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Py_ssize_t length = 5;
-  PyObject* pyresult = PyList_New(length);
-  Handle<Object> result_obj(&scope,
-                            ApiHandle::fromPyObject(pyresult)->asObject());
-  ASSERT_TRUE(result_obj->isList());
-
-  Handle<List> result(&scope, *result_obj);
-  EXPECT_EQ(length, result->capacity());
-}
-
-TEST(ListObject, NewWithZeroLengthReturnsEmptyList) {
-  Runtime runtime;
-  HandleScope scope;
-
+TEST_F(ListExtensionApiTest, NewReturnsList) {
   Py_ssize_t length = 0;
   PyObject* pyresult = PyList_New(length);
-  Handle<Object> result_obj(&scope,
-                            ApiHandle::fromPyObject(pyresult)->asObject());
-  ASSERT_TRUE(result_obj->isList());
+  EXPECT_TRUE(PyList_CheckExact(pyresult));
 
-  Handle<List> result(&scope, *result_obj);
-  EXPECT_EQ(length, result->capacity());
+  // TODO(eelizondo): Check list size once PyList_Size is implemented
+  Py_ssize_t length2 = 5;
+  PyObject* pyresult2 = PyList_New(length2);
+  EXPECT_TRUE(PyList_CheckExact(pyresult2));
 }
 
 }  // namespace python
