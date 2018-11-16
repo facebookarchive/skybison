@@ -1,5 +1,6 @@
 Checks: '-*,google-readability-casting,readability-braces-around-statements,readability-identifier-naming'
 FormatStyle: file
+HeaderFilterRegex: runtime/.*
 CheckOptions:
   - { key: readability-identifier-naming.ClassCase, value: CamelCase }
   - { key: readability-identifier-naming.ClassMemberCase, value: lower_case }
