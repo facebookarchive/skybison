@@ -978,6 +978,20 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   list->atPut(index, *value);
 }
 
+void Runtime::listInsert(
+    const Handle<List>& list,
+    const Handle<Object>& value,
+    word index) {
+  // TODO: Add insert(-x) where it inserts at pos: len(list) - x
+  listAdd(list, value);
+  word last_index = list->allocated() - 1;
+  index = std::max(static_cast<word>(0), std::min(last_index, index));
+  for (word i = last_index; i > index; i--) {
+    list->atPut(i, list->at(i - 1));
+  }
+  list->atPut(index, *value);
+}
+
 Object*
 Runtime::listReplicate(Thread* thread, const Handle<List>& list, word ntimes) {
   HandleScope scope(thread);

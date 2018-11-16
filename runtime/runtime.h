@@ -157,6 +157,11 @@ class Runtime {
   // Appends an element to the end of the list.
   void listAdd(const Handle<List>& list, const Handle<Object>& value);
 
+  // Inserts an element to the specified index of the list.
+  // When index >= len(list) it is equivalent to appending to the list.
+  void
+  listInsert(const Handle<List>& list, const Handle<Object>& value, word index);
+
   // Return a new list that is composed of list repeated ntimes
   Object* listReplicate(Thread* thread, const Handle<List>& list, word ntimes);
 

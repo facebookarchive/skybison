@@ -320,6 +320,59 @@ TEST(ListTest, AppendToList) {
   }
 }
 
+TEST(ListTest, InsertToList) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+
+  for (int i = 0; i < 16; i++) {
+    if (i == 2 || i == 12)
+      continue;
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.listAdd(list, value);
+  }
+  ASSERT_NE(SmallInteger::cast(list->at(2))->value(), 2);
+  ASSERT_NE(SmallInteger::cast(list->at(12))->value(), 12);
+
+  Handle<Object> value2(&scope, SmallInteger::fromWord(2));
+  runtime.listInsert(list, value2, 2);
+  Handle<Object> value12(&scope, SmallInteger::fromWord(12));
+  runtime.listInsert(list, value12, 12);
+
+  ASSERT_EQ(SmallInteger::cast(list->at(2))->value(), 2);
+  ASSERT_EQ(SmallInteger::cast(list->at(12))->value(), 12);
+  for (int i = 0; i < 16; i++) {
+    SmallInteger* elem = SmallInteger::cast(list->at(i));
+    ASSERT_EQ(elem->value(), i);
+  }
+}
+
+TEST(ListTest, InsertToListBounds) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  for (int i = 0; i < 10; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.listAdd(list, value);
+  }
+  ASSERT_EQ(list->allocated(), 10);
+
+  Handle<Object> value100(&scope, SmallInteger::fromWord(100));
+  runtime.listInsert(list, value100, 100);
+  ASSERT_EQ(list->allocated(), 11);
+  ASSERT_EQ(SmallInteger::cast(list->at(10))->value(), 100);
+
+  Handle<Object> value0(&scope, SmallInteger::fromWord(400));
+  runtime.listInsert(list, value0, 0);
+  ASSERT_EQ(list->allocated(), 12);
+  ASSERT_EQ(SmallInteger::cast(list->at(0))->value(), 400);
+
+  Handle<Object> valueN(&scope, SmallInteger::fromWord(-10));
+  runtime.listInsert(list, valueN, -10);
+  ASSERT_EQ(list->allocated(), 13);
+  ASSERT_EQ(SmallInteger::cast(list->at(0))->value(), -10);
+}
+
 TEST(ModulesTest, TestCreate) {
   Runtime runtime;
   HandleScope scope;
