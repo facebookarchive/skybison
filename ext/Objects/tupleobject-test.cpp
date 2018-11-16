@@ -1,4 +1,5 @@
 #include "capi-fixture.h"
+#include "capi-testing.h"
 
 namespace python {
 
@@ -74,8 +75,8 @@ TEST_F(TupleExtensionApiTest, GetItemReturnsBorrowedReference) {
   ASSERT_EQ(PyTuple_SetItem(pytuple, pos, pyitem), 0);
 
   // Verify borrowed handle
-  PyObject* pyresult = PyTuple_GetItem(pytuple, 0);
-  EXPECT_TRUE(_PyObject_IsBorrowed(pyresult));
+  PyObject* pyresult = PyTuple_GetItem(pytuple, pos);
+  EXPECT_TRUE(_IsBorrowed(pyresult));
 }
 
 TEST_F(TupleExtensionApiTest, PackZeroReturnsEmptyTuple) {

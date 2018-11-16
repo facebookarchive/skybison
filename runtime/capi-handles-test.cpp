@@ -52,12 +52,10 @@ TEST(CApiHandlesTest, BorrowedApiHandles) {
   ApiHandle* int_handle1 = ApiHandle::fromObject(*obj2);
   EXPECT_FALSE(int_handle1->isBorrowed());
 
-  // Check that a handle that has already been instantiated, just returns
-  // the instantiated handle, even if requested as borrowed
-  ApiHandle* int_handle2 = ApiHandle::fromBorrowedObject(*obj);
+  // A handle once set as borrowed will persist through all its pointers
+  ApiHandle* int_handle2 = ApiHandle::fromBorrowedObject(*obj2);
   EXPECT_TRUE(int_handle2->isBorrowed());
-  ApiHandle* int_handle3 = ApiHandle::fromBorrowedObject(*obj2);
-  EXPECT_FALSE(int_handle3->isBorrowed());
+  EXPECT_TRUE(int_handle1->isBorrowed());
 }
 
 TEST(CApiHandlesTest, BuiltinIntObjectReturnsApiHandle) {

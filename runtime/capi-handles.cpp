@@ -63,19 +63,25 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
 
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
-    return static_cast<ApiHandle*>(Int::cast(value)->asCPointer());
+    ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value)->asCPointer());
+    handle->setBorrowed();
+    return handle;
   }
 
   // TODO(T32685074): Handle PyTypeObject as any other ApiHandle
   // Get the PyTypeObject pointer from the Type layout
   if (obj->isType()) {
-    return ApiHandle::fromPyObject(
-        ApiTypeHandle::fromObject(obj)->asPyObject());
+    ApiHandle* handle =
+        ApiHandle::fromPyObject(ApiTypeHandle::fromObject(obj)->asPyObject());
+    handle->setBorrowed();
+    return handle;
   }
 
   // Get the PyObject pointer from the instance layout
   if (obj->isInstance()) {
-    return ApiHandle::fromInstance(obj);
+    ApiHandle* handle = ApiHandle::fromInstance(obj);
+    handle->setBorrowed();
+    return handle;
   }
 
   // Initialize a Borrowed ApiHandle for a builtin object

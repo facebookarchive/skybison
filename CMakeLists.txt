@@ -313,7 +313,8 @@ add_library(
   ext/Python/errors-test.cpp
   ext/Python/modsupport-test.cpp
   ext/test/capi-fixture.h
-  ext/test/capi-fixture.cpp)
+  ext/test/capi-testing.h
+  ext/test/capi-testing.cpp)
 target_include_directories(
   extension-tests
   PRIVATE
