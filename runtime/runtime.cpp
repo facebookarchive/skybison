@@ -121,7 +121,7 @@ Runtime::~Runtime() {
 Object* Runtime::newBoundMethod(const Handle<Object>& function,
                                 const Handle<Object>& self) {
   HandleScope scope;
-  Handle<BoundMethod> bound_method(&scope, heap()->createBoundMethod());
+  Handle<BoundMethod> bound_method(&scope, heap()->create<BoundMethod>());
   bound_method->setFunction(*function);
   bound_method->setSelf(*self);
   return *bound_method;
@@ -583,7 +583,7 @@ bool Runtime::isDeleteDescriptor(Thread* thread, const Handle<Object>& object) {
 
 Object* Runtime::newCode() {
   HandleScope scope;
-  Handle<Code> result(&scope, heap()->createCode());
+  Handle<Code> result(&scope, heap()->create<Code>());
   result->setArgcount(0);
   result->setKwonlyargcount(0);
   result->setCell2arg(0);
@@ -600,7 +600,7 @@ Object* Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
                                     Function::Entry entry_kw,
                                     Function::Entry entry_ex) {
   HandleScope scope;
-  Handle<Function> result(&scope, heap()->createFunction());
+  Handle<Function> result(&scope, heap()->create<Function>());
   result->setName(symbols()->at(name));
   result->setEntry(entry);
   result->setEntryKw(entry_kw);
@@ -610,16 +610,16 @@ Object* Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
 
 Object* Runtime::newFunction() {
   HandleScope scope;
-  Handle<Function> result(&scope, heap()->createFunction());
+  Handle<Function> result(&scope, heap()->create<Function>());
   result->setEntry(unimplementedTrampoline);
   result->setEntryKw(unimplementedTrampoline);
   result->setEntryEx(unimplementedTrampoline);
   return *result;
 }
 
-Object* Runtime::newCoroutine() { return heap()->createCoroutine(); }
+Object* Runtime::newCoroutine() { return heap()->create<Coroutine>(); }
 
-Object* Runtime::newGenerator() { return heap()->createGenerator(); }
+Object* Runtime::newGenerator() { return heap()->create<Generator>(); }
 
 Object* Runtime::newHeapFrame(const Handle<Code>& code) {
   DCHECK(code->flags() & (Code::GENERATOR | Code::COROUTINE),
@@ -629,7 +629,9 @@ Object* Runtime::newHeapFrame(const Handle<Code>& code) {
   word num_vars = code->totalVars();
   word extra_words = num_args + num_vars + code->stacksize();
   HandleScope scope;
-  Handle<HeapFrame> frame(&scope, heap()->createHeapFrame(extra_words));
+  Handle<HeapFrame> frame(
+      &scope, heap()->createInstance(LayoutId::kHeapFrame,
+                                     HeapFrame::numAttributes(extra_words)));
   frame->setMaxStackSize(code->stacksize());
   return *frame;
 }
@@ -689,7 +691,7 @@ void Runtime::classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
 
 Object* Runtime::newList() {
   HandleScope scope;
-  Handle<List> result(&scope, heap()->createList());
+  Handle<List> result(&scope, heap()->create<List>());
   result->setAllocated(0);
   result->setItems(empty_object_array_);
   return *result;
@@ -697,7 +699,7 @@ Object* Runtime::newList() {
 
 Object* Runtime::newListIterator(const Handle<Object>& list) {
   HandleScope scope;
-  Handle<ListIterator> list_iterator(&scope, heap()->createListIterator());
+  Handle<ListIterator> list_iterator(&scope, heap()->create<ListIterator>());
   list_iterator->setIndex(0);
   list_iterator->setList(*list);
   return *list_iterator;
@@ -705,7 +707,7 @@ Object* Runtime::newListIterator(const Handle<Object>& list) {
 
 Object* Runtime::newModule(const Handle<Object>& name) {
   HandleScope scope;
-  Handle<Module> result(&scope, heap()->createModule());
+  Handle<Module> result(&scope, heap()->create<Module>());
   Handle<Dict> dict(&scope, newDict());
   result->setDict(*dict);
   result->setName(*name);
@@ -765,7 +767,7 @@ Object* Runtime::newProperty(const Handle<Object>& getter,
                              const Handle<Object>& setter,
                              const Handle<Object>& deleter) {
   HandleScope scope;
-  Handle<Property> new_prop(&scope, heap()->createProperty());
+  Handle<Property> new_prop(&scope, heap()->create<Property>());
   new_prop->setGetter(*getter);
   new_prop->setSetter(*setter);
   new_prop->setDeleter(*deleter);
@@ -782,14 +784,14 @@ Object* Runtime::newRange(word start, word stop, word step) {
 
 Object* Runtime::newRangeIterator(const Handle<Object>& range) {
   HandleScope scope;
-  Handle<RangeIterator> range_iterator(&scope, heap()->createRangeIterator());
+  Handle<RangeIterator> range_iterator(&scope, heap()->create<RangeIterator>());
   range_iterator->setRange(*range);
   return *range_iterator;
 }
 
 Object* Runtime::newSetIterator(const Handle<Object>& set) {
   HandleScope scope;
-  Handle<SetIterator> set_iterator(&scope, heap()->createSetIterator());
+  Handle<SetIterator> set_iterator(&scope, heap()->create<SetIterator>());
   set_iterator->setSet(*set);
   return *set_iterator;
 }
@@ -798,14 +800,14 @@ Object* Runtime::newSlice(const Handle<Object>& start,
                           const Handle<Object>& stop,
                           const Handle<Object>& step) {
   HandleScope scope;
-  Handle<Slice> slice(&scope, heap()->createSlice());
+  Handle<Slice> slice(&scope, heap()->create<Slice>());
   slice->setStart(*start);
   slice->setStop(*stop);
   slice->setStep(*step);
   return *slice;
 }
 
-Object* Runtime::newStaticMethod() { return heap()->createStaticMethod(); }
+Object* Runtime::newStaticMethod() { return heap()->create<StaticMethod>(); }
 
 Object* Runtime::newStrFromCStr(const char* c_str) {
   word length = std::strlen(c_str);
@@ -1397,7 +1399,7 @@ void Runtime::initializePrimitiveInstances() {
   empty_object_array_ = heap()->createObjectArray(0, NoneType::object());
   empty_byte_array_ = heap()->createBytes(0);
   ellipsis_ = heap()->createEllipsis();
-  not_implemented_ = heap()->createNotImplemented();
+  not_implemented_ = heap()->create<NotImplemented>();
   callbacks_ = NoneType::object();
 }
 
@@ -2147,7 +2149,7 @@ char* Runtime::compile(const char* src) {
 
 Object* Runtime::newDict() {
   HandleScope scope;
-  Handle<Dict> result(&scope, heap()->createDict());
+  Handle<Dict> result(&scope, heap()->create<Dict>());
   result->setNumItems(0);
   result->setData(empty_object_array_);
   return *result;
@@ -2357,7 +2359,7 @@ ObjectArray* Runtime::dictKeys(const Handle<Dict>& dict) {
 
 Object* Runtime::newSet() {
   HandleScope scope;
-  Handle<Set> result(&scope, heap()->createSet());
+  Handle<Set> result(&scope, heap()->create<Set>());
   result->setNumItems(0);
   result->setData(empty_object_array_);
   return *result;
@@ -2747,9 +2749,9 @@ GeneratorBase* Runtime::genFromStackFrame(Frame* frame) {
   return GeneratorBase::cast(frame->previousFrame()->getLocal(0));
 }
 
-Object* Runtime::newValueCell() { return heap()->createValueCell(); }
+Object* Runtime::newValueCell() { return heap()->create<ValueCell>(); }
 
-Object* Runtime::newWeakRef() { return heap()->createWeakRef(); }
+Object* Runtime::newWeakRef() { return heap()->create<WeakRef>(); }
 
 void Runtime::collectAttributes(const Handle<Code>& code,
                                 const Handle<Dict>& attributes) {
@@ -3050,13 +3052,13 @@ Object* Runtime::isInstance(const Handle<Object>& obj,
   return isSubClass(obj_class, klass);
 }
 
-Object* Runtime::newClassMethod() { return heap()->createClassMethod(); }
+Object* Runtime::newClassMethod() { return heap()->create<ClassMethod>(); }
 
-Object* Runtime::newSuper() { return heap()->createSuper(); }
+Object* Runtime::newSuper() { return heap()->create<Super>(); }
 
 Object* Runtime::newTupleIterator(const Handle<Object>& tuple) {
   HandleScope scope;
-  Handle<TupleIterator> tuple_iterator(&scope, heap()->createTupleIterator());
+  Handle<TupleIterator> tuple_iterator(&scope, heap()->create<TupleIterator>());
   tuple_iterator->setTuple(*tuple);
   return *tuple_iterator;
 }

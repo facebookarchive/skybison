@@ -285,7 +285,7 @@ class Frame {
  *   | maxStackSize         |
  *   +----------------------+
  */
-struct HeapFrame : public HeapObject {
+class HeapFrame : public HeapObject {
  public:
   // The Frame contained in this HeapFrame.
   Frame* frame();

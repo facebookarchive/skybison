@@ -20,31 +20,18 @@ class Heap {
 
   void setSpace(Space* new_space) { space_ = new_space; }
 
-  Object* createBoundMethod();
+  template <typename T>
+  Object* create();
 
   Object* createBytes(word length);
 
   Object* createClass(LayoutId metaclass_id);
 
-  Object* createClassMethod();
-
-  Object* createCode();
-
   Object* createComplex(double real, double imag);
-
-  Object* createCoroutine();
-
-  Object* createDict();
 
   Object* createFloat(double value);
 
   Object* createEllipsis();
-
-  Object* createFunction();
-
-  Object* createGenerator();
-
-  Object* createHeapFrame(word extra_words);
 
   Object* createInstance(LayoutId layout_id, word num_attributes);
 
@@ -54,40 +41,17 @@ class Heap {
 
   Object* createLayout(LayoutId layout_id);
 
-  Object* createList();
-
-  Object* createListIterator();
-
-  Object* createModule();
-
-  Object* createNotImplemented();
-
   Object* createObjectArray(word length, Object* value);
 
-  Object* createProperty();
-
   Object* createRange();
-
-  Object* createRangeIterator();
-
-  Object* createSet();
-
-  Object* createSlice();
-
-  Object* createStaticMethod();
-
-  Object* createSetIterator();
-
-  Object* createSuper();
-
-  Object* createTupleIterator();
-
-  Object* createValueCell();
-
-  Object* createWeakRef();
 
  private:
   Space* space_;
 };
+
+template <typename T>
+Object* Heap::create() {
+  return createInstance(ObjectLayoutId<T>::value, T::kSize / kPointerSize);
+}
 
 }  // namespace python
