@@ -617,6 +617,15 @@ Object* Runtime::createMro(const ClassId* superclasses, word length) {
   return *result;
 }
 
+template <typename... Args>
+void Runtime::initializeHeapClass(const char* name, Args... args) {
+  HandleScope scope;
+  const ClassId mro[] = {args..., ClassId::kObject};
+  Handle<Class> handle(&scope, newClassWithId(mro[0]));
+  handle->setName(newStringFromCString(name));
+  handle->setMro(createMro(mro, ARRAYSIZE(mro)));
+}
+
 void Runtime::initializeHeapClasses() {
   initializeHeapClass("object");
   initializeHeapClass("type", ClassId::kType);
