@@ -1211,4 +1211,25 @@ l = [1, 2]
   ASSERT_DEATH(runtime.runFromCStr(src), "not enough values to unpack");
 }
 
+TEST(InterpreterTest, BuildTupleUnpackWithCall) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+def foo(*args):
+    return args
+
+t = foo(*(1,2), *(3, 4))
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> t(&scope, testing::moduleAt(&runtime, main, "t"));
+  ASSERT_TRUE(t->isObjectArray());
+
+  Handle<ObjectArray> tuple(&scope, *t);
+  EXPECT_EQ(SmallInt::cast(tuple->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(tuple->at(1))->value(), 2);
+  EXPECT_EQ(SmallInt::cast(tuple->at(2))->value(), 3);
+  EXPECT_EQ(SmallInt::cast(tuple->at(3))->value(), 4);
+}
+
 }  // namespace python
