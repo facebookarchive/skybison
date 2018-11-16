@@ -48,6 +48,7 @@ add_library(
   runtime/trampolines.cpp
   runtime/trampolines.h
   runtime/utils.h
+  runtime/vector.h
   runtime/visitor.h)
 set_target_properties(
   runtime
