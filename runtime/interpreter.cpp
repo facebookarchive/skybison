@@ -736,12 +736,12 @@ void Interpreter::doInplaceTrueDivide(Context* ctx, word) {
 }
 
 // opcode 50
-void Interpreter::doGetAIter(Context* ctx, word) {
+void Interpreter::doGetAiter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Handle<Object> obj(&scope, ctx->frame->topValue());
   Handle<Object> method(
-      &scope, lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAIter));
+      &scope, lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAiter));
   if (method->isError()) {
     thread->throwTypeErrorFromCStr(
         "'async for' requires an object with __aiter__ method");
@@ -749,6 +749,37 @@ void Interpreter::doGetAIter(Context* ctx, word) {
   }
   Handle<Object> aiter(&scope, callMethod1(thread, ctx->frame, method, obj));
   thread->abortOnPendingException();
+  ctx->frame->setTopValue(*aiter);
+}
+
+// opcode 51
+void Interpreter::doGetAnext(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> obj(&scope, ctx->frame->topValue());
+  Handle<Object> anext(
+      &scope, lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAnext));
+  if (anext->isError()) {
+    thread->throwTypeErrorFromCStr(
+        "'async for' requires an iterator with __anext__ method");
+    thread->abortOnPendingException();
+  }
+  Handle<Object> awaitable(&scope, callMethod1(thread, ctx->frame, anext, obj));
+  thread->abortOnPendingException();
+
+  // TODO(T33628943): Check if `awaitable` is a native or generator-based
+  // coroutine and if it is, no need to call __await__
+  Handle<Object> await(
+      &scope, lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAwait));
+  if (await->isError()) {
+    thread->throwTypeErrorFromCStr(
+        "'async for' received an invalid object from __anext__");
+    thread->abortOnPendingException();
+  }
+  Handle<Object> aiter(&scope,
+                       callMethod1(thread, ctx->frame, await, awaitable));
+  thread->abortOnPendingException();
+
   ctx->frame->setTopValue(*aiter);
 }
 

@@ -134,7 +134,8 @@ class Interpreter {
   static void doBinaryTrueDivide(Context* ctx, word arg);
   static void doInplaceFloorDivide(Context* ctx, word arg);
   static void doInplaceTrueDivide(Context* ctx, word arg);
-  static void doGetAIter(Context* ctx, word arg);
+  static void doGetAiter(Context* ctx, word arg);
+  static void doGetAnext(Context* ctx, word arg);
   static void doBeforeAsyncWith(Context* ctx, word arg);
   static void doInplaceAdd(Context* ctx, word arg);
   static void doInplaceSubtract(Context* ctx, word arg);

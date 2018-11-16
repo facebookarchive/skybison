@@ -14,7 +14,9 @@ class Runtime;
   V(DunderAexit, "__aexit__")                                                  \
   V(DunderAnd, "__and__")                                                      \
   V(DunderAnnotations, "__annotations__")                                      \
-  V(DunderAIter, "__aiter__")                                                  \
+  V(DunderAiter, "__aiter__")                                                  \
+  V(DunderAnext, "__anext__")                                                  \
+  V(DunderAwait, "__await__")                                                  \
   V(DunderBool, "__bool__")                                                    \
   V(DunderBuildClass, "__build_class__")                                       \
   V(DunderCall, "__call__")                                                    \

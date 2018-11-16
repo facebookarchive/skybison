@@ -817,7 +817,7 @@ sys.displayhook = my_displayhook
   EXPECT_EQ(*my_global, *unique);
 }
 
-TEST(InterpreterTest, GetAIterCallsAIter) {
+TEST(InterpreterTest, GetAiterCallsAiter) {
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(R"(
@@ -843,7 +843,7 @@ a = AsyncIterable()
   EXPECT_EQ(42, SmallInt::cast(*result)->value());
 }
 
-TEST(InterpreterDeathTest, GetAIterOnNonIterable) {
+TEST(InterpreterDeathTest, GetAiterOnNonIterable) {
   Runtime runtime;
   HandleScope scope;
   Handle<Code> code(&scope, runtime.newCode());
@@ -1414,6 +1414,84 @@ b = _private_symbol()
 
   ASSERT_DEATH(testing::compileAndRunToString(&runtime, main_src),
                "unimplemented: Unbound variable '_private_symbol'");
+}
+
+TEST(InterpreterTest, GetAnextCallsAnextAndAwait) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+anext_called = None
+await_called = None
+
+class AsyncIterator:
+  def __anext__(self):
+    global anext_called
+    anext_called = self
+    return self
+
+  def __await__(self):
+    global await_called
+    await_called = self
+    return self
+
+a = AsyncIterator()
+)");
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, *a);
+  code->setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Object> result(&scope, Thread::currentThread()->run(*code));
+  EXPECT_EQ(*a, *result);
+  Handle<Object> anext(&scope,
+                       testing::moduleAt(&runtime, main, "anext_called"));
+  EXPECT_EQ(*a, *anext);
+  Handle<Object> await(&scope,
+                       testing::moduleAt(&runtime, main, "await_called"));
+  EXPECT_EQ(*a, *await);
+}
+
+TEST(InterpreterDeathTest, GetAnextOnNonIterable) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInt::fromWord(123));
+  code->setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  ASSERT_DEATH(Thread::currentThread()->run(*code),
+               "'async for' requires an iterator with __anext__ method");
+}
+
+TEST(InterpreterDeathTest, GetAnextWithInvalidAnext) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+class AsyncIterator:
+  def __anext__(self):
+    return 42
+
+a = AsyncIterator()
+)");
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, *a);
+  code->setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  ASSERT_DEATH(Thread::currentThread()->run(*code),
+               "'async for' received an invalid object from __anext__");
 }
 
 }  // namespace python
