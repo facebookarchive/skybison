@@ -26,6 +26,7 @@ result = [i for i in fib(7)]
   Handle<Object> result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isList()) << typeName(&runtime, *result);
   Handle<List> list(result);
+  ASSERT_EQ(list->allocated(), 7);
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 0);
   EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 1);
   EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 1);
