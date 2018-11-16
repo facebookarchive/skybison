@@ -1,11 +1,21 @@
 cmake_minimum_required(VERSION 3.7)
 project(python)
 
-set(PYTHON_EXECUTABLE /usr/bin/python)
-
 add_subdirectory(third-party/benchmark-1.3.0)
 add_subdirectory(third-party/googletest-1.8.0)
 add_subdirectory(third-party/siphash-20170224)
+
+set(
+  PYRO_PROPERTIES
+  CXX_EXTENSIONS NO
+  CXX_STANDARD 11
+  CXX_STANDARD_REQUIRED YES)
+set(
+  PYRO_COMPILE_OPTIONS
+  -Wall
+  -Werror
+  -Wextra
+  -pedantic)
 
 add_library(
   runtime
@@ -42,13 +52,11 @@ add_library(
 set_target_properties(
   runtime
   PROPERTIES
-  CXX_EXTENSIONS NO
-  CXX_STANDARD 11
-  CXX_STANDARD_REQUIRED YES)
+  ${PYRO_PROPERTIES})
 target_compile_options(
   runtime
   PRIVATE
-  -Wall -Werror -Wextra -pedantic)
+  ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   runtime
   siphash)
@@ -59,13 +67,11 @@ add_executable(
 set_target_properties(
   python
   PROPERTIES
-  CXX_EXTENSIONS NO
-  CXX_STANDARD 11
-  CXX_STANDARD_REQUIRED YES)
+  ${PYRO_PROPERTIES})
 target_compile_options(
   runtime
   PRIVATE
-  -Wall -Werror -Wextra -pedantic)
+  ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   python
   runtime)
@@ -86,13 +92,11 @@ add_executable(
 set_target_properties(
   python-tests
   PROPERTIES
-  CXX_EXTENSIONS NO
-  CXX_STANDARD 11
-  CXX_STANDARD_REQUIRED YES)
+  ${PYRO_PROPERTIES})
 target_compile_options(
   python-tests
   PRIVATE
-  -Wall -Werror -Wextra -pedantic)
+  ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   python-tests
   gtest
