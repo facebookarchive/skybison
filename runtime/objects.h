@@ -563,7 +563,6 @@ class LargeString : public Array {
   // Getters and setters.
   inline byte charAt(word index);
   void copyTo(byte* bytes, word length);
-  inline void charAtPut(word index, byte value);
 
   // Equality checks.
   bool equals(Object* that);
