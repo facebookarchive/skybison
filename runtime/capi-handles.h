@@ -8,8 +8,10 @@ namespace python {
 
 class ApiHandle : public PyObject {
  public:
-  // Wrap an Object as an ApiHandle to cross the CPython boundary
-  // Create a new ApiHandle if there is not a pre-existing one
+  // Returns an ApiHandle wrapping an object to cross the CPython boundary.  If
+  // this object has not been wrapped before, a new handle is allocated with a
+  // reference count of 1.  Otherwise, increments the reference count of the
+  // object's existing handle.
   static ApiHandle* fromObject(RawObject obj);
 
   // Same as asApiHandle, but creates a borrowed ApiHandle if no handle exists
@@ -47,12 +49,17 @@ class ApiHandle : public PyObject {
 
   void clearBorrowed() { ob_refcnt &= ~kBorrowedBit; }
 
-  void incrementRefCnt() {
-    DCHECK(refCnt() < kBorrowedBit - 1, "Ref count overflow");
+  void incref() {
+    DCHECK(refcnt() < kBorrowedBit - 1, "Reference count overflowed");
     ++ob_refcnt;
   }
 
-  word refCnt() { return ob_refcnt & ~kBorrowedBit; }
+  void decref() {
+    DCHECK(refcnt() > 0, "Reference count underflowed");
+    --ob_refcnt;
+  }
+
+  word refcnt() { return ob_refcnt & ~kBorrowedBit; }
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(ApiHandle);
 

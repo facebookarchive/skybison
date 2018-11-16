@@ -8,7 +8,7 @@ namespace python {
 struct _Py_Identifier;
 
 PY_EXPORT PyObject* PyNone_Ptr() {
-  return ApiHandle::fromObject(NoneType::object());
+  return ApiHandle::fromBorrowedObject(NoneType::object());
 }
 
 PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
@@ -16,16 +16,26 @@ PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
 }
 
 PY_EXPORT void Py_INCREF_Func(PyObject* obj) {
-  ApiHandle::fromPyObject(obj)->incrementRefCnt();
+  ApiHandle::fromPyObject(obj)->incref();
 }
 
 PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
   obj->ob_refcnt--;
-  if (ApiHandle::fromPyObject(obj)->refCnt() == 0) _Py_Dealloc_Func(obj);
+  if (ApiHandle::fromPyObject(obj)->refcnt() == 0) _Py_Dealloc_Func(obj);
 }
 
 PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->refCnt();
+  return ApiHandle::fromPyObject(obj)->refcnt();
+}
+
+PY_EXPORT void Py_XDECREF_Func(PyObject* obj) {
+  if (obj == nullptr) return;
+  Py_DECREF_Func(obj);
+}
+
+PY_EXPORT void Py_XINCREF_Func(PyObject* obj) {
+  if (obj == nullptr) return;
+  Py_INCREF_Func(obj);
 }
 
 PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,

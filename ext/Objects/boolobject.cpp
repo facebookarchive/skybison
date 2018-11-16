@@ -7,11 +7,11 @@
 namespace python {
 
 PY_EXPORT PyObject* PyTrue_Ptr() {
-  return ApiHandle::fromObject(Bool::trueObj());
+  return ApiHandle::fromBorrowedObject(Bool::trueObj());
 }
 
 PY_EXPORT PyObject* PyFalse_Ptr() {
-  return ApiHandle::fromObject(Bool::falseObj());
+  return ApiHandle::fromBorrowedObject(Bool::falseObj());
 }
 
 PY_EXPORT int PyBool_Check_Func(PyObject* obj) {

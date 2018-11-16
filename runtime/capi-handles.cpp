@@ -32,13 +32,17 @@ ApiHandle* ApiHandle::fromObject(RawObject obj) {
 
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
-    return castFromObject(value, false);
+    ApiHandle* result = castFromObject(value, false);
+    result->incref();
+    return result;
   }
 
   // Get the PyObject pointer from extension instances
   RawObject extension_ptr = getExtensionPtrAttr(thread, key);
   if (!extension_ptr->isError()) {
-    return castFromObject(extension_ptr, false);
+    ApiHandle* result = castFromObject(extension_ptr, false);
+    result->incref();
+    return result;
   }
 
   // Initialize an ApiHandle for a builtin object or runtime instance

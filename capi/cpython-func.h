@@ -178,9 +178,11 @@ PyAPI_FUNC(int) PyType_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyUnicode_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyUnicode_Check_Func(PyObject*);
 
-PyAPI_FUNC(void) Py_INCREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_DECREF_Func(PyObject*);
+PyAPI_FUNC(void) Py_INCREF_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t) Py_REFCNT_Func(PyObject*);
+PyAPI_FUNC(void) Py_XDECREF_Func(PyObject*);
+PyAPI_FUNC(void) Py_XINCREF_Func(PyObject*);
 
 PyAPI_FUNC(char*) PyByteArray_AS_STRING_Func(PyObject*);
 
@@ -240,6 +242,11 @@ PyAPI_FUNC(char*) PyByteArray_AS_STRING_Func(PyObject*);
 #define Py_DECREF(op)                           \
     Py_DECREF_Func((PyObject*)op)
 #define Py_REFCNT(op) Py_REFCNT_Func((PyObject*)op)
+#define Py_XINCREF(op) (                         \
+    Py_XINCREF_Func((PyObject*)op))
+#define Py_XDECREF(op)                           \
+    Py_XDECREF_Func((PyObject*)op)
+
 #define PyObject_INIT(op, typeobj) \
     PyObject_Init((PyObject*)op, (PyTypeObject*)typeobj)
 #define PyObject_INIT_VAR(op, typeobj, size) \
