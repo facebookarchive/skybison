@@ -173,6 +173,48 @@ Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
   return runtime->isInstance(obj, type);
 }
 
+Object* builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("issubclass expected 2 arguments");
+  }
+
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (!args.get(0)->isType()) {
+    return thread->throwTypeErrorFromCString("issubclass arg 1 must be a type");
+  }
+  Handle<Type> type(&scope, args.get(0));
+  Handle<Object> classinfo(&scope, args.get(1));
+  if (runtime->isInstanceOfClass(*classinfo)) {
+    Handle<Type> possible_superclass(&scope, *classinfo);
+    return runtime->isSubClass(type, possible_superclass);
+  }
+  // If classinfo is not a tuple, then throw a TypeError.
+  if (!classinfo->isObjectArray()) {
+    return thread->throwTypeErrorFromCString(
+        "issubclass() arg 2 must be a class of tuple of classes");
+  }
+  // If classinfo is a tuple, try each of the values, and return
+  // True if the first argument is a subclass of any of them.
+  Handle<ObjectArray> tuple_of_types(&scope, *classinfo);
+  for (word i = 0; i < tuple_of_types->length(); i++) {
+    // If any argument is not a type, then throw TypeError.
+    if (!runtime->isInstanceOfClass(tuple_of_types->at(i))) {
+      return thread->throwTypeErrorFromCString(
+          "issubclass() arg 2 must be a class of tuple of classes");
+    }
+    Handle<Type> possible_superclass(&scope, tuple_of_types->at(i));
+    Handle<Bool> result(&scope, runtime->isSubClass(type, possible_superclass));
+    // If any of the types are a superclass, return true.
+    if (result->value()) {
+      return Bool::trueObj();
+    }
+  }
+  // None of the types in the tuple were a superclass, so return false.
+  return Bool::falseObj();
+}
+
 Object* builtinLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString(

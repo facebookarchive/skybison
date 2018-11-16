@@ -97,6 +97,89 @@ def test(a, b):
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 }
 
+TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithSubclassReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  pass
+
+class Bar(Foo):
+  pass
+
+class Baz(type):
+  pass
+
+a = issubclass(Foo, object)
+b = issubclass(Bar, Foo)
+c = issubclass(Baz, type)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(c->value());
+}
+
+TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithNonSubclassReturnsFalse) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  pass
+
+class Bar(Foo):
+  pass
+
+a = issubclass(Foo, Bar)
+b = issubclass(int, str)
+c = issubclass(dict, list)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  EXPECT_FALSE(a->value());
+  EXPECT_FALSE(b->value());
+  EXPECT_FALSE(c->value());
+}
+
+TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithOneSuperclassReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  pass
+
+class Bar(Foo):
+  pass
+
+a = issubclass(Foo, (Bar, object))
+b = issubclass(Bar, (Foo))
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+}
+
+TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithNoSuperclassReturnsFalse) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  pass
+
+a = issubclass(Foo, (str, int))
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_FALSE(a->value());
+}
+
 TEST(BuiltinsModuleDeathTest, BuiltinLen) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");

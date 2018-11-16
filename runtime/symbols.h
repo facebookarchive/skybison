@@ -120,6 +120,7 @@ class Runtime;
   V(Insert, "insert")                                                          \
   V(Int, "int")                                                                \
   V(IsInstance, "isinstance")                                                  \
+  V(IsSubclass, "issubclass")                                                  \
   V(Items, "items")                                                            \
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
