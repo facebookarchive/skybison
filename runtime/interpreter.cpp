@@ -194,12 +194,12 @@ Bytecode currentBytecode(const Context* ctx) {
 
 void INVALID_BYTECODE(Context* ctx, word) {
   Bytecode bc = currentBytecode(ctx);
-  UNREACHABLE("bytecode '%s'", bytecode::name(bc));
+  UNREACHABLE("bytecode '%s'", kBytecodeNames[bc]);
 }
 
 void NOT_IMPLEMENTED(Context* ctx, word) {
   Bytecode bc = currentBytecode(ctx);
-  UNIMPLEMENTED("bytecode '%s'", bytecode::name(bc));
+  UNIMPLEMENTED("bytecode '%s'", kBytecodeNames[bc]);
 }
 
 void LOAD_CONST(Context* ctx, word arg) {

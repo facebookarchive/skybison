@@ -307,8 +307,6 @@ enum MakeFunctionFlag {
   CLOSURE = 0x08,
 };
 
-namespace bytecode {
-const char* name(Bytecode);
-}
+extern const char* const kBytecodeNames[];
 
 } // namespace python

@@ -116,7 +116,6 @@ add_executable(
   python-tests
   runtime/python-test.cpp
   runtime/attributes-test.cpp
-  runtime/bytecode-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
   runtime/layout-test.cpp
