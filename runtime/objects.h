@@ -352,10 +352,10 @@ class Boolean : public Object {
   bool value();
 
   // Conversion.
-  inline static Boolean* fromBool(bool value);
+  static Boolean* fromBool(bool value);
 
   // Casting.
-  inline static Boolean* cast(Object* object);
+  static Boolean* cast(Object* object);
 
   // Tags.
   static const int kTag = 7; // 0b00111
@@ -369,10 +369,10 @@ class Boolean : public Object {
 class None : public Object {
  public:
   // Singletons.
-  inline static None* object();
+  static None* object();
 
   // Casting.
-  inline static None* cast(Object* object);
+  static None* cast(Object* object);
 
   // Tags.
   static const int kTag = 15; // 0b01111
@@ -389,10 +389,10 @@ class None : public Object {
 class Error : public Object {
  public:
   // Singletons.
-  inline static Error* object();
+  static Error* object();
 
   // Casting.
-  inline static Error* cast(Object* object);
+  static Error* cast(Object* object);
 
   // Tagging.
   static const int kTag = 23; // 0b10111
@@ -421,7 +421,7 @@ class String : public Object {
   char* toCString();
 
   // Casting.
-  inline static String* cast(Object* object);
+  static String* cast(Object* object);
 
  public:
   DISALLOW_IMPLICIT_CONSTRUCTORS(String);
@@ -560,7 +560,7 @@ class Class : public HeapObject {
   static Class* cast(Object* object);
 
   // Sizing.
-  inline static word allocationSize();
+  static word allocationSize();
 
   // Layout.
   static const int kMroOffset = HeapObject::kSize;
@@ -952,69 +952,69 @@ class Function : public HeapObject {
   // Getters and setters.
 
   // A dictionary containing parameter annotations
-  inline Object* annotations();
-  inline void setAnnotations(Object* annotations);
+  Object* annotations();
+  void setAnnotations(Object* annotations);
 
   // The code object backing this function or None
-  inline Object* code();
-  inline void setCode(Object* code);
+  Object* code();
+  void setCode(Object* code);
 
   // A tuple of cell objects that contain bindings for the function's free
   // variables. Read-only to user code.
-  inline Object* closure();
-  inline void setClosure(Object* closure);
+  Object* closure();
+  void setClosure(Object* closure);
 
   // A tuple containing default values for arguments with defaults. Read-only
   // to user code.
-  inline Object* defaults();
-  inline void setDefaults(Object* defaults);
-  inline bool hasDefaults();
+  Object* defaults();
+  void setDefaults(Object* defaults);
+  bool hasDefaults();
 
   // The function's docstring
-  inline Object* doc();
-  inline void setDoc(Object* doc);
+  Object* doc();
+  void setDoc(Object* doc);
 
   // Returns the entry to be used when the function is invoked via
   // CALL_FUNCTION
-  inline Entry entry();
-  inline void setEntry(Entry entry);
+  Entry entry();
+  void setEntry(Entry entry);
 
   // Returns the entry to be used when the fucntion is invoked via
   // CALL_FUNCTION_KW
-  inline Entry entryKw();
-  inline void setEntryKw(Entry entryKw);
+  Entry entryKw();
+  void setEntryKw(Entry entryKw);
 
   // The dictionary that holds this function's global namespace. User-code
   // cannot change this
-  inline Object* globals();
-  inline void setGlobals(Object* globals);
+  Object* globals();
+  void setGlobals(Object* globals);
 
   // A dictionary containing defaults for keyword-only parameters
-  inline Object* kwDefaults();
-  inline void setKwDefaults(Object* kwDefaults);
+  Object* kwDefaults();
+  void setKwDefaults(Object* kwDefaults);
 
   // The name of the module the function was defined in
-  inline Object* module();
-  inline void setModule(Object* module);
+  Object* module();
+  void setModule(Object* module);
 
   // The function's name
-  inline Object* name();
-  inline void setName(Object* name);
+  Object* name();
+  void setName(Object* name);
 
   // The function's qualname
-  inline Object* qualname();
-  inline void setQualname(Object* qualname);
+  Object* qualname();
+  void setQualname(Object* qualname);
 
   // The pre-computed object array provided fast globals access.
   // fastGlobals[arg] == globals[names[arg]]
-  inline Object* fastGlobals();
-  inline void setFastGlobals(Object* fast_globals);
+  Object* fastGlobals();
+  void setFastGlobals(Object* fast_globals);
 
   // Casting.
-  inline static Function* cast(Object* object);
+  static Function* cast(Object* object);
 
   // Sizing.
-  inline static word allocationSize();
+  static word allocationSize();
 
   // Layout.
   static const int kDocOffset = HeapObject::kSize;
@@ -1039,10 +1039,10 @@ class Function : public HeapObject {
 class Instance : public HeapObject {
  public:
   // Casting.
-  inline static Instance* cast(Object* object);
+  static Instance* cast(Object* object);
 
   // Sizing.
-  inline static word allocationSize(word num_attributes);
+  static word allocationSize(word num_attributes);
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Instance);
@@ -1051,17 +1051,17 @@ class Instance : public HeapObject {
 class Module : public HeapObject {
  public:
   // Setters and getters.
-  inline Object* name();
-  inline void setName(Object* name);
+  Object* name();
+  void setName(Object* name);
 
-  inline Object* dictionary();
-  inline void setDictionary(Object* dictionary);
+  Object* dictionary();
+  void setDictionary(Object* dictionary);
 
   // Casting.
-  inline static Module* cast(Object* object);
+  static Module* cast(Object* object);
 
   // Allocation.
-  inline static word allocationSize();
+  static word allocationSize();
 
   // Layout.
   static const int kNameOffset = HeapObject::kSize;
@@ -1075,10 +1075,10 @@ class Module : public HeapObject {
 class NotImplemented : public HeapObject {
  public:
   // Casting.
-  inline static NotImplemented* cast(Object* object);
+  static NotImplemented* cast(Object* object);
 
   // Sizing.
-  inline static word allocationSize();
+  static word allocationSize();
 
   // Layout
   // kPaddingOffset is not used, but the GC expects the object to be
@@ -1932,34 +1932,34 @@ Header::from(word count, word hash, word id, ObjectFormat format) {
 
 // None
 
-None* None::object() {
+inline None* None::object() {
   return reinterpret_cast<None*>(kTag);
 }
 
-None* None::cast(Object* object) {
+inline None* None::cast(Object* object) {
   DCHECK(object->isNone(), "invalid cast, expected None");
   return reinterpret_cast<None*>(object);
 }
 
 // Error
 
-Error* Error::object() {
+inline Error* Error::object() {
   return reinterpret_cast<Error*>(kTag);
 }
 
-Error* Error::cast(Object* object) {
+inline Error* Error::cast(Object* object) {
   DCHECK(object->isError(), "invalid cast, expected Error");
   return reinterpret_cast<Error*>(object);
 }
 
 // Boolean
 
-Boolean* Boolean::fromBool(bool value) {
+inline Boolean* Boolean::fromBool(bool value) {
   return reinterpret_cast<Boolean*>(
       (static_cast<uword>(value) << kTagSize) | kTag);
 }
 
-Boolean* Boolean::cast(Object* object) {
+inline Boolean* Boolean::cast(Object* object) {
   DCHECK(object->isBoolean(), "invalid cast, expected Boolean");
   return reinterpret_cast<Boolean*>(object);
 }
@@ -2649,136 +2649,136 @@ inline void Dictionary::setData(Object* data) {
 
 // Function
 
-Object* Function::annotations() {
+inline Object* Function::annotations() {
   return instanceVariableAt(kAnnotationsOffset);
 }
 
-void Function::setAnnotations(Object* annotations) {
+inline void Function::setAnnotations(Object* annotations) {
   return instanceVariableAtPut(kAnnotationsOffset, annotations);
 }
 
-Object* Function::closure() {
+inline Object* Function::closure() {
   return instanceVariableAt(kClosureOffset);
 }
 
-void Function::setClosure(Object* closure) {
+inline void Function::setClosure(Object* closure) {
   return instanceVariableAtPut(kClosureOffset, closure);
 }
 
-Object* Function::code() {
+inline Object* Function::code() {
   return instanceVariableAt(kCodeOffset);
 }
 
-void Function::setCode(Object* code) {
+inline void Function::setCode(Object* code) {
   return instanceVariableAtPut(kCodeOffset, code);
 }
 
-Object* Function::defaults() {
+inline Object* Function::defaults() {
   return instanceVariableAt(kDefaultsOffset);
 }
 
-void Function::setDefaults(Object* defaults) {
+inline void Function::setDefaults(Object* defaults) {
   return instanceVariableAtPut(kDefaultsOffset, defaults);
 }
 
-bool Function::hasDefaults() {
+inline bool Function::hasDefaults() {
   return !defaults()->isNone();
 }
 
-Object* Function::doc() {
+inline Object* Function::doc() {
   return instanceVariableAt(kDocOffset);
 }
 
-void Function::setDoc(Object* doc) {
+inline void Function::setDoc(Object* doc) {
   instanceVariableAtPut(kDocOffset, doc);
 }
 
-Function::Entry Function::entry() {
+inline Function::Entry Function::entry() {
   Object* object = instanceVariableAt(kEntryOffset);
   return SmallInteger::cast(object)->asFunctionPointer<Function::Entry>();
 }
 
-void Function::setEntry(Function::Entry entry) {
+inline void Function::setEntry(Function::Entry entry) {
   auto object = SmallInteger::fromFunctionPointer(entry);
   instanceVariableAtPut(kEntryOffset, object);
 }
 
-Function::Entry Function::entryKw() {
+inline Function::Entry Function::entryKw() {
   Object* object = instanceVariableAt(kEntryKwOffset);
   return SmallInteger::cast(object)->asFunctionPointer<Function::Entry>();
 }
 
-void Function::setEntryKw(Function::Entry entryKw) {
+inline void Function::setEntryKw(Function::Entry entryKw) {
   auto object = SmallInteger::fromFunctionPointer(entryKw);
   instanceVariableAtPut(kEntryKwOffset, object);
 }
 
-Object* Function::globals() {
+inline Object* Function::globals() {
   return instanceVariableAt(kGlobalsOffset);
 }
 
-void Function::setGlobals(Object* globals) {
+inline void Function::setGlobals(Object* globals) {
   return instanceVariableAtPut(kGlobalsOffset, globals);
 }
 
-Object* Function::kwDefaults() {
+inline Object* Function::kwDefaults() {
   return instanceVariableAt(kKwDefaultsOffset);
 }
 
-void Function::setKwDefaults(Object* kwDefaults) {
+inline void Function::setKwDefaults(Object* kwDefaults) {
   return instanceVariableAtPut(kKwDefaultsOffset, kwDefaults);
 }
 
-Object* Function::module() {
+inline Object* Function::module() {
   return instanceVariableAt(kModuleOffset);
 }
 
-void Function::setModule(Object* module) {
+inline void Function::setModule(Object* module) {
   return instanceVariableAtPut(kModuleOffset, module);
 }
 
-Object* Function::name() {
+inline Object* Function::name() {
   return instanceVariableAt(kNameOffset);
 }
 
-void Function::setName(Object* name) {
+inline void Function::setName(Object* name) {
   instanceVariableAtPut(kNameOffset, name);
 }
 
-Object* Function::qualname() {
+inline Object* Function::qualname() {
   return instanceVariableAt(kQualnameOffset);
 }
 
-void Function::setQualname(Object* qualname) {
+inline void Function::setQualname(Object* qualname) {
   instanceVariableAtPut(kQualnameOffset, qualname);
 }
 
-Object* Function::fastGlobals() {
+inline Object* Function::fastGlobals() {
   return instanceVariableAt(kFastGlobalsOffset);
 }
 
-void Function::setFastGlobals(Object* fast_globals) {
+inline void Function::setFastGlobals(Object* fast_globals) {
   return instanceVariableAtPut(kFastGlobalsOffset, fast_globals);
 }
 
-Function* Function::cast(Object* object) {
+inline Function* Function::cast(Object* object) {
   DCHECK(object->isFunction(), "invalid cast, expected function");
   return reinterpret_cast<Function*>(object);
 }
 
-word Function::allocationSize() {
+inline word Function::allocationSize() {
   return Header::kSize + Function::kSize;
 }
 
 // Instance
 
-word Instance::allocationSize(word num_attr) {
+inline word Instance::allocationSize(word num_attr) {
   DCHECK(num_attr >= 0, "invalid number of attributes %ld", num_attr);
   word size = headerSize(num_attr) + num_attr * kPointerSize;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-Instance* Instance::cast(Object* object) {
+inline Instance* Instance::cast(Object* object) {
   DCHECK(object->isInstance(), "invalid cast, expected instance");
   return reinterpret_cast<Instance*>(object);
 }
@@ -2828,38 +2828,38 @@ inline Object* List::at(word index) {
 
 // Module
 
-word Module::allocationSize() {
+inline word Module::allocationSize() {
   return Header::kSize + Module::kSize;
 }
 
-Module* Module::cast(Object* object) {
+inline Module* Module::cast(Object* object) {
   DCHECK(object->isModule(), "invalid cast, expected module");
   return reinterpret_cast<Module*>(object);
 }
 
-Object* Module::name() {
+inline Object* Module::name() {
   return instanceVariableAt(kNameOffset);
 }
 
-void Module::setName(Object* name) {
+inline void Module::setName(Object* name) {
   instanceVariableAtPut(kNameOffset, name);
 }
 
-Object* Module::dictionary() {
+inline Object* Module::dictionary() {
   return instanceVariableAt(kDictionaryOffset);
 }
 
-void Module::setDictionary(Object* dictionary) {
+inline void Module::setDictionary(Object* dictionary) {
   instanceVariableAtPut(kDictionaryOffset, dictionary);
 }
 
 // NotImplemented
 
-word NotImplemented::allocationSize() {
+inline word NotImplemented::allocationSize() {
   return Header::kSize + NotImplemented::kSize;
 }
 
-NotImplemented* NotImplemented::cast(Object* object) {
+inline NotImplemented* NotImplemented::cast(Object* object) {
   DCHECK(object->isNotImplemented(), "invalid cast, expected NotImplemented");
   return reinterpret_cast<NotImplemented*>(object);
 }
@@ -2878,7 +2878,7 @@ inline bool String::equalsCString(const char* c_string) {
   return *cp == '\0';
 }
 
-String* String::cast(Object* object) {
+inline String* String::cast(Object* object) {
   DCHECK(
       object->isLargeString() || object->isSmallString(),
       "invalid cast, expected string");

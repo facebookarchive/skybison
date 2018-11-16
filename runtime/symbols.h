@@ -64,7 +64,7 @@ class Symbols {
 
   // clang-format off
 #define DEFINE_SYMBOL_ACCESSOR(symbol, value) \
-  inline Object* symbol() {                   \
+  Object* symbol() {                   \
     return symbols_[k##symbol##Id];           \
   }
   FOREACH_SYMBOL(DEFINE_SYMBOL_ACCESSOR)

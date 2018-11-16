@@ -34,20 +34,20 @@ class TryBlock {
     setLevel(level);
   }
 
-  inline Object* asSmallInteger() const;
+  Object* asSmallInteger() const;
 
-  inline word kind() const;
-  inline void setKind(word kind);
+  word kind() const;
+  void setKind(word kind);
 
-  inline word handler() const;
-  inline void setHandler(word handler);
+  word handler() const;
+  void setHandler(word handler);
 
-  inline word level() const;
-  inline void setLevel(word level);
+  word level() const;
+  void setLevel(word level);
 
  private:
-  inline word valueBits(uword offset, uword mask) const;
-  inline void setValueBits(uword offset, uword mask, word value);
+  word valueBits(uword offset, uword mask) const;
+  void setValueBits(uword offset, uword mask, word value);
 
   uword value_;
 
@@ -76,9 +76,9 @@ const int kMaxBlockStackDepth = 20;
 
 class BlockStack {
  public:
-  inline void push(const TryBlock& block);
+  void push(const TryBlock& block);
 
-  inline TryBlock pop();
+  TryBlock pop();
 
   static const int kStackOffset = 0;
   static const int kTopOffset =
@@ -86,12 +86,12 @@ class BlockStack {
   static const int kSize = kTopOffset + kPointerSize;
 
  private:
-  inline uword address();
-  inline Object* at(int offset);
-  inline void atPut(int offset, Object* value);
+  uword address();
+  Object* at(int offset);
+  void atPut(int offset, Object* value);
 
-  inline word top();
-  inline void setTop(word newTop);
+  word top();
+  void setTop(word newTop);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(BlockStack);
 };
@@ -146,62 +146,62 @@ class BlockStack {
 class Frame {
  public:
   // Function arguments, local variables, cell variables, and free variables
-  inline Object* getLocal(word idx);
-  inline void setLocal(word idx, Object* local);
+  Object* getLocal(word idx);
+  void setLocal(word idx, Object* local);
 
-  inline void setNumLocals(word numLocals);
-  inline word numLocals();
+  void setNumLocals(word numLocals);
+  word numLocals();
 
-  inline BlockStack* blockStack();
+  BlockStack* blockStack();
 
   // Index in the bytecode array of the last instruction that was executed
-  inline word virtualPC();
-  inline void setVirtualPC(word pc);
+  word virtualPC();
+  void setVirtualPC(word pc);
 
   // The builtins namespace (a Dictionary)
-  inline Object* builtins();
-  inline void setBuiltins(Object* builtins);
+  Object* builtins();
+  void setBuiltins(Object* builtins);
 
   // The (explicit) globals namespace (a Dictionary)
-  inline Object* globals();
-  inline void setGlobals(Object* globals);
+  Object* globals();
+  void setGlobals(Object* globals);
 
   // The implicit globals namespace (a Dictionary)
-  inline Object* implicitGlobals();
-  inline void setImplicitGlobals(Object* implicit_globals);
+  Object* implicitGlobals();
+  void setImplicitGlobals(Object* implicit_globals);
 
   // The pre-computed object array provided fast globals access.
   // fastGlobals[arg] == globals[names[arg]]
-  inline Object* fastGlobals();
-  inline void setFastGlobals(Object* fast_globals);
+  Object* fastGlobals();
+  void setFastGlobals(Object* fast_globals);
 
   // The code object
-  inline Object* code();
-  inline void setCode(Object* code);
+  Object* code();
+  void setCode(Object* code);
 
   // A pointer to the previous frame or nullptr if this is the first frame
-  inline Frame* previousFrame();
-  inline void setPreviousFrame(Frame* frame);
+  Frame* previousFrame();
+  void setPreviousFrame(Frame* frame);
 
   // A pointer to the top of the value stack
-  inline Object** valueStackTop();
-  inline void setValueStackTop(Object** top);
+  Object** valueStackTop();
+  void setValueStackTop(Object** top);
 
-  inline Object** valueStackBase();
+  Object** valueStackBase();
 
   // Return the object at offset from the top of the value stack (e.g. peek(0)
   // returns the top of the stack)
-  inline Object* peek(word offset);
+  Object* peek(word offset);
 
   // A function lives immediately below the arguments on the value stack
-  inline Function* function(word argc);
+  Function* function(word argc);
 
-  inline bool isSentinelFrame();
+  bool isSentinelFrame();
   void makeSentinel();
 
-  inline bool isNativeFrame();
-  inline void* nativeFunctionPointer();
-  inline void makeNativeFrame(Object* fnPointerAsInt);
+  bool isNativeFrame();
+  void* nativeFunctionPointer();
+  void makeNativeFrame(Object* fnPointerAsInt);
 
   // Compute the total space required for a frame object
   static word allocationSize(Object* code);
@@ -220,10 +220,10 @@ class Frame {
   static const int kSize = kFastGlobalsOffset + kPointerSize;
 
  private:
-  inline uword address();
-  inline Object* at(int offset);
-  inline void atPut(int offset, Object* value);
-  inline Object** locals();
+  uword address();
+  Object* at(int offset);
+  void atPut(int offset, Object* value);
+  Object** locals();
 
   DISALLOW_COPY_AND_ASSIGN(Frame);
 };
@@ -234,85 +234,85 @@ class FrameVisitor {
   virtual ~FrameVisitor() = default;
 };
 
-uword Frame::address() {
+inline uword Frame::address() {
   return reinterpret_cast<uword>(this);
 }
 
-Object* Frame::at(int offset) {
+inline Object* Frame::at(int offset) {
   return *reinterpret_cast<Object**>(address() + offset);
 }
 
-void Frame::atPut(int offset, Object* value) {
+inline void Frame::atPut(int offset, Object* value) {
   *reinterpret_cast<Object**>(address() + offset) = value;
 }
 
-BlockStack* Frame::blockStack() {
+inline BlockStack* Frame::blockStack() {
   return reinterpret_cast<BlockStack*>(address() + kBlockStackOffset);
 }
 
-word Frame::virtualPC() {
+inline word Frame::virtualPC() {
   return SmallInteger::cast(at(kVirtualPCOffset))->value();
 }
 
-void Frame::setVirtualPC(word pc) {
+inline void Frame::setVirtualPC(word pc) {
   atPut(kVirtualPCOffset, SmallInteger::fromWord(pc));
 }
 
-Object* Frame::builtins() {
+inline Object* Frame::builtins() {
   return at(kBuiltinsOffset);
 }
 
-void Frame::setBuiltins(Object* builtins) {
+inline void Frame::setBuiltins(Object* builtins) {
   atPut(kBuiltinsOffset, builtins);
 }
 
-Object* Frame::globals() {
+inline Object* Frame::globals() {
   return at(kGlobalsOffset);
 }
 
-void Frame::setGlobals(Object* globals) {
+inline void Frame::setGlobals(Object* globals) {
   atPut(kGlobalsOffset, globals);
 }
 
-Object* Frame::implicitGlobals() {
+inline Object* Frame::implicitGlobals() {
   return at(kImplicitGlobalsOffset);
 }
 
-void Frame::setImplicitGlobals(Object* implicit_globals) {
+inline void Frame::setImplicitGlobals(Object* implicit_globals) {
   atPut(kImplicitGlobalsOffset, implicit_globals);
 }
 
-Object* Frame::fastGlobals() {
+inline Object* Frame::fastGlobals() {
   return at(kFastGlobalsOffset);
 }
 
-void Frame::setFastGlobals(Object* fast_globals) {
+inline void Frame::setFastGlobals(Object* fast_globals) {
   atPut(kFastGlobalsOffset, fast_globals);
 }
 
-Object* Frame::code() {
+inline Object* Frame::code() {
   return at(kCodeOffset);
 }
 
-void Frame::setCode(Object* code) {
+inline void Frame::setCode(Object* code) {
   atPut(kCodeOffset, code);
 }
 
-Object** Frame::locals() {
+inline Object** Frame::locals() {
   return reinterpret_cast<Object**>(at(kLocalsOffset));
 }
 
-Object* Frame::getLocal(word idx) {
+inline Object* Frame::getLocal(word idx) {
   DCHECK_INDEX(idx, numLocals());
   return *(locals() - idx);
 }
 
-void Frame::setLocal(word idx, Object* object) {
+inline void Frame::setLocal(word idx, Object* object) {
   DCHECK_INDEX(idx, numLocals());
   *(locals() - idx) = object;
 }
 
-void Frame::setNumLocals(word numLocals) {
+inline void Frame::setNumLocals(word numLocals) {
   atPut(kNumLocalsOffset, SmallInteger::fromWord(numLocals));
   // Bias locals by 1 word to avoid doing so during {get,set}Local
   Object* locals = reinterpret_cast<Object*>(
@@ -321,37 +321,37 @@ void Frame::setNumLocals(word numLocals) {
   atPut(kLocalsOffset, locals);
 }
 
-word Frame::numLocals() {
+inline word Frame::numLocals() {
   return SmallInteger::cast(at(kNumLocalsOffset))->value();
 }
 
-Frame* Frame::previousFrame() {
+inline Frame* Frame::previousFrame() {
   Object* frame = at(kPreviousFrameOffset);
   return reinterpret_cast<Frame*>(SmallInteger::cast(frame)->value());
 }
 
-void Frame::setPreviousFrame(Frame* frame) {
+inline void Frame::setPreviousFrame(Frame* frame) {
   atPut(
       kPreviousFrameOffset,
       SmallInteger::fromWord(reinterpret_cast<uword>(frame)));
 }
 
-Object** Frame::valueStackBase() {
+inline Object** Frame::valueStackBase() {
   return reinterpret_cast<Object**>(this);
 }
 
-Object** Frame::valueStackTop() {
+inline Object** Frame::valueStackTop() {
   Object* top = at(kValueStackTopOffset);
   return reinterpret_cast<Object**>(SmallInteger::cast(top)->value());
 }
 
-void Frame::setValueStackTop(Object** top) {
+inline void Frame::setValueStackTop(Object** top) {
   atPut(
       kValueStackTopOffset,
       SmallInteger::fromWord(reinterpret_cast<uword>(top)));
 }
 
-Object* Frame::peek(word offset) {
+inline Object* Frame::peek(word offset) {
   DCHECK(
       valueStackTop() + offset < valueStackBase(),
       "offset %ld overflows",
@@ -359,94 +359,94 @@ Object* Frame::peek(word offset) {
   return *(valueStackTop() + offset);
 }
 
-Function* Frame::function(word argc) {
+inline Function* Frame::function(word argc) {
   return Function::cast(peek(argc));
 }
 
-bool Frame::isSentinelFrame() {
+inline bool Frame::isSentinelFrame() {
   return previousFrame() == nullptr;
 }
 
-void* Frame::nativeFunctionPointer() {
+inline void* Frame::nativeFunctionPointer() {
   DCHECK(isNativeFrame(), "not native frame");
   return Integer::cast(code())->asCPointer();
 }
 
-bool Frame::isNativeFrame() {
+inline bool Frame::isNativeFrame() {
   return code()->isInteger();
 }
 
-void Frame::makeNativeFrame(Object* fnPointerAsInt) {
+inline void Frame::makeNativeFrame(Object* fnPointerAsInt) {
   DCHECK(fnPointerAsInt->isInteger(), "expected integer");
   setCode(fnPointerAsInt);
 }
 
-Object* TryBlock::asSmallInteger() const {
+inline Object* TryBlock::asSmallInteger() const {
   auto obj = reinterpret_cast<Object*>(value_);
   DCHECK(obj->isSmallInteger(), "expected small integer");
   return obj;
 }
 
-word TryBlock::kind() const {
+inline word TryBlock::kind() const {
   return valueBits(kKindOffset, kKindMask);
 }
 
-void TryBlock::setKind(word kind) {
+inline void TryBlock::setKind(word kind) {
   setValueBits(kKindOffset, kKindMask, kind);
 }
 
-word TryBlock::handler() const {
+inline word TryBlock::handler() const {
   return valueBits(kHandlerOffset, kHandlerMask);
 }
 
-void TryBlock::setHandler(word handler) {
+inline void TryBlock::setHandler(word handler) {
   setValueBits(kHandlerOffset, kHandlerMask, handler);
 }
 
-word TryBlock::level() const {
+inline word TryBlock::level() const {
   return valueBits(kLevelOffset, kLevelMask);
 }
 
-void TryBlock::setLevel(word level) {
+inline void TryBlock::setLevel(word level) {
   setValueBits(kLevelOffset, kLevelMask, level);
 }
 
-word TryBlock::valueBits(uword offset, uword mask) const {
+inline word TryBlock::valueBits(uword offset, uword mask) const {
   return (value_ >> offset) & mask;
 }
 
-void TryBlock::setValueBits(uword offset, uword mask, word value) {
+inline void TryBlock::setValueBits(uword offset, uword mask, word value) {
   value_ |= (value & mask) << offset;
 }
 
-uword BlockStack::address() {
+inline uword BlockStack::address() {
   return reinterpret_cast<uword>(this);
 }
 
-Object* BlockStack::at(int offset) {
+inline Object* BlockStack::at(int offset) {
   return *reinterpret_cast<Object**>(address() + offset);
 }
 
-void BlockStack::atPut(int offset, Object* value) {
+inline void BlockStack::atPut(int offset, Object* value) {
   *reinterpret_cast<Object**>(address() + offset) = value;
 }
 
-word BlockStack::top() {
+inline word BlockStack::top() {
   return SmallInteger::cast(at(kTopOffset))->value();
 }
 
-void BlockStack::setTop(word newTop) {
+inline void BlockStack::setTop(word newTop) {
   DCHECK_INDEX(newTop, kMaxBlockStackDepth);
   atPut(kTopOffset, SmallInteger::fromWord(newTop));
 }
 
-void BlockStack::push(const TryBlock& block) {
+inline void BlockStack::push(const TryBlock& block) {
   word stackTop = top();
   atPut(kStackOffset + stackTop * kPointerSize, block.asSmallInteger());
   setTop(stackTop + 1);
 }
 
-TryBlock BlockStack::pop() {
+inline TryBlock BlockStack::pop() {
   word stackTop = top() - 1;
   DCHECK(stackTop > -1, "block stack underflow %ld", stackTop);
   Object* block = at(kStackOffset + stackTop * kPointerSize);

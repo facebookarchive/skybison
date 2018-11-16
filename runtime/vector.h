@@ -214,19 +214,19 @@ class Vector {
     }
   }
 
-  inline T* const& _end_storage() const noexcept {
+  T* const& _end_storage() const noexcept {
     return std::get<0>(end_storage_);
   }
 
-  inline T*& _end_storage() noexcept {
+  T*& _end_storage() noexcept {
     return std::get<0>(end_storage_);
   }
 
-  inline allocator_type& _alloc() noexcept {
+  allocator_type& _alloc() noexcept {
     return std::get<1>(end_storage_);
   }
 
-  inline allocator_type const& _alloc() const noexcept {
+  allocator_type const& _alloc() const noexcept {
     return std::get<1>(end_storage_);
   }
 

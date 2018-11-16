@@ -35,8 +35,8 @@ class AttributeInfo {
   // NB: For in-object attributes, this is the offset, in bytes, from the start
   // of the instance. For overflow attributes, this is the index into the
   // overflow array.
-  inline word offset();
-  static inline bool isValidOffset(word offset) {
+  word offset();
+  static bool isValidOffset(word offset) {
     return offset <= kMaxOffset;
   }
 
@@ -51,8 +51,8 @@ class AttributeInfo {
     kDeleted = 2,
   };
 
-  inline word flags();
-  inline bool testFlag(Flag flag);
+  word flags();
+  bool testFlag(Flag flag);
 
   bool isInObject() {
     return testFlag(Flag::kInObject);
@@ -67,7 +67,7 @@ class AttributeInfo {
   }
 
   // Casting.
-  inline SmallInteger* asSmallInteger();
+  SmallInteger* asSmallInteger();
 
   // Tags.
   static const int kOffsetSize = 30;
@@ -89,19 +89,19 @@ class AttributeInfo {
   uword value_;
 };
 
-word AttributeInfo::offset() {
+inline word AttributeInfo::offset() {
   return (value_ >> kOffsetOffset) & kOffsetMask;
 }
 
-word AttributeInfo::flags() {
+inline word AttributeInfo::flags() {
   return (value_ >> kFlagsOffset) & kFlagsMask;
 }
 
-bool AttributeInfo::testFlag(Flag flag) {
+inline bool AttributeInfo::testFlag(Flag flag) {
   return value_ & (static_cast<uword>(flag) << kFlagsOffset);
 }
 
-SmallInteger* AttributeInfo::asSmallInteger() {
+inline SmallInteger* AttributeInfo::asSmallInteger() {
   auto smi = reinterpret_cast<SmallInteger*>(value_);
   DCHECK(smi->isSmallInteger(), "expected small integer");
   return smi;
