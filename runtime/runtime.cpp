@@ -164,9 +164,11 @@ Object* Runtime::classGetAttr(
 
   // Look for the attribute in the meta class
   Handle<Object> meta_attr(&scope, lookupNameInMro(thread, meta_klass, name));
-  if (isDataDescriptor(thread, meta_attr)) {
-    // TODO(T25692531): Call __get__ from meta_attr
-    UNIMPLEMENTED("custom descriptors are unsupported");
+  if (!meta_attr->isError()) {
+    if (isDataDescriptor(thread, meta_attr)) {
+      // TODO(T25692531): Call __get__ from meta_attr
+      UNIMPLEMENTED("custom descriptors are unsupported");
+    }
   }
 
   // No data descriptor found on the meta class, look in the mro of the klass
@@ -182,15 +184,17 @@ Object* Runtime::classGetAttr(
 
   // No attr found in klass or its mro, use the non-data descriptor found in
   // the metaclass (if any).
-  if (isNonDataDescriptor(thread, meta_attr)) {
-    Handle<Object> owner(&scope, *meta_klass);
-    return Interpreter::callDescriptorGet(
-        thread, thread->currentFrame(), meta_attr, receiver, owner);
-  }
-
-  // If a regular attribute was found in the metaclass, return it
   if (!meta_attr->isError()) {
-    return *meta_attr;
+    if (isNonDataDescriptor(thread, meta_attr)) {
+      Handle<Object> owner(&scope, *meta_klass);
+      return Interpreter::callDescriptorGet(
+          thread, thread->currentFrame(), meta_attr, receiver, owner);
+    }
+
+    // If a regular attribute was found in the metaclass, return it
+    if (!meta_attr->isError()) {
+      return *meta_attr;
+    }
   }
 
   // TODO(T25140871): Refactor this into something like:
@@ -222,9 +226,11 @@ Object* Runtime::classSetAttr(
   // Check for a data descriptor
   Handle<Class> metaklass(&scope, classOf(*receiver));
   Handle<Object> meta_attr(&scope, lookupNameInMro(thread, metaklass, name));
-  if (isDataDescriptor(thread, meta_attr)) {
-    // TODO(T25692531): Call __set__ from meta_attr
-    UNIMPLEMENTED("custom descriptors are unsupported");
+  if (!meta_attr->isError()) {
+    if (isDataDescriptor(thread, meta_attr)) {
+      // TODO(T25692531): Call __set__ from meta_attr
+      UNIMPLEMENTED("custom descriptors are unsupported");
+    }
   }
 
   // No data descriptor found, store the attribute in the klass dictionary
@@ -254,10 +260,12 @@ Object* Runtime::instanceGetAttr(
   HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*receiver));
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
-  if (isDataDescriptor(thread, klass_attr)) {
-    Handle<Object> owner(&scope, *klass);
-    return Interpreter::callDescriptorGet(
-        thread, thread->currentFrame(), klass_attr, receiver, owner);
+  if (!klass_attr->isError()) {
+    if (isDataDescriptor(thread, klass_attr)) {
+      Handle<Object> owner(&scope, *klass);
+      return Interpreter::callDescriptorGet(
+          thread, thread->currentFrame(), klass_attr, receiver, owner);
+    }
   }
 
   // No data descriptor found on the class, look at the instance.
@@ -269,14 +277,14 @@ Object* Runtime::instanceGetAttr(
 
   // Nothing found in the instance, if we found a non-data descriptor via the
   // class search, use it.
-  if (isNonDataDescriptor(thread, klass_attr)) {
-    Handle<Object> owner(&scope, *klass);
-    return Interpreter::callDescriptorGet(
-        thread, thread->currentFrame(), klass_attr, receiver, owner);
-  }
-
-  // If a regular attribute was found in the class, return it
   if (!klass_attr->isError()) {
+    if (isNonDataDescriptor(thread, klass_attr)) {
+      Handle<Object> owner(&scope, *klass);
+      return Interpreter::callDescriptorGet(
+          thread, thread->currentFrame(), klass_attr, receiver, owner);
+    }
+
+    // If a regular attribute was found in the class, return it
     return *klass_attr;
   }
 
@@ -300,9 +308,11 @@ Object* Runtime::instanceSetAttr(
   HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*receiver));
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
-  if (isDataDescriptor(thread, klass_attr)) {
-    // TODO(T25692531): Call __set__ from klass_attr
-    UNIMPLEMENTED("custom descriptors are unsupported");
+  if (!klass_attr->isError()) {
+    if (isDataDescriptor(thread, klass_attr)) {
+      // TODO(T25692531): Call __set__ from klass_attr
+      UNIMPLEMENTED("custom descriptors are unsupported");
+    }
   }
 
   // No data descriptor found, store on the instance
@@ -353,13 +363,6 @@ Object* Runtime::moduleSetAttr(
 }
 
 bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
-  if (object->isProperty()) {
-    return true;
-  }
-  if (object->isFunction() || object->isClassMethod() ||
-      object->isStaticMethod() || object->isError()) {
-    return false;
-  }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*object));
@@ -370,12 +373,6 @@ bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
 bool Runtime::isNonDataDescriptor(
     Thread* thread,
     const Handle<Object>& object) {
-  if (object->isFunction() || object->isClassMethod() ||
-      object->isStaticMethod() || object->isProperty()) {
-    return true;
-  } else if (object->isError()) {
-    return false;
-  }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*object));

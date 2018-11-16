@@ -185,9 +185,11 @@ Object* Interpreter::lookupMethod(
     // Do not create a short-lived bound method object.
     return *method;
   }
-  if (runtime->isNonDataDescriptor(thread, method)) {
-    Handle<Object> owner(&scope, *type);
-    return callDescriptorGet(thread, caller, method, receiver, owner);
+  if (!method->isError()) {
+    if (runtime->isNonDataDescriptor(thread, method)) {
+      Handle<Object> owner(&scope, *type);
+      return callDescriptorGet(thread, caller, method, receiver, owner);
+    }
   }
   return *method;
 }
