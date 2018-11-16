@@ -58,7 +58,7 @@ class Git(VCS):
 
     def has_changes(self) -> bool:
         return subprocess.run(
-            [str(self.exe), "diff", "--exit-code", "--quiet"]
+            [str(self.exe), "diff", "--exit-code", "--quiet", "HEAD"]
         ).returncode
 
     def get_commit_title(self) -> str:
