@@ -16,7 +16,7 @@ TEST(FloatObject, FromDoubleReturnsFloat) {
   PyObject* flt = PyFloat_FromDouble(val);
   Handle<Object> flt_obj(&scope, ApiHandle::fromPyObject(flt)->asObject());
   ASSERT_TRUE(flt_obj->isDouble());
-  EXPECT_DOUBLE_EQ(Double::cast(*flt_obj)->value(), val);
+  EXPECT_EQ(Double::cast(*flt_obj)->value(), val);
 }
 
 TEST(FloatObject, NegativeFromDoubleReturnsFloat) {
@@ -26,7 +26,7 @@ TEST(FloatObject, NegativeFromDoubleReturnsFloat) {
   PyObject* flt = PyFloat_FromDouble(val);
   Handle<Object> flt_obj(&scope, ApiHandle::fromPyObject(flt)->asObject());
   ASSERT_TRUE(flt_obj->isDouble());
-  EXPECT_DOUBLE_EQ(Double::cast(*flt_obj)->value(), val);
+  EXPECT_EQ(Double::cast(*flt_obj)->value(), val);
 }
 
 }  // namespace python

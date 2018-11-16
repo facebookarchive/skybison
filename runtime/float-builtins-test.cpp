@@ -153,14 +153,14 @@ TEST(FloatBuiltinsTest, BinaryAddDouble) {
 
   runtime.runFromCString(R"(
 a = 2.0
-b = 1.1
+b = 1.5
 c = a + b
 )");
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isDouble());
-  EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 3.1);
+  EXPECT_EQ(Double::cast(*c)->value(), 3.5);
 }
 
 TEST(FloatBuiltinsTest, BinaryAddSmallInteger) {
@@ -168,7 +168,7 @@ TEST(FloatBuiltinsTest, BinaryAddSmallInteger) {
   HandleScope scope;
 
   runtime.runFromCString(R"(
-a = 2.1
+a = 2.5
 b = 1
 c = a + b
 )");
@@ -176,7 +176,7 @@ c = a + b
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isDouble());
-  EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 3.1);
+  EXPECT_EQ(Double::cast(*c)->value(), 3.5);
 }
 
 TEST(FloatBuiltinsDeathTest, AddWithNonFloatSelfThrows) {
@@ -202,14 +202,14 @@ TEST(FloatBuiltinsTest, BinarySubtractDouble) {
 
   runtime.runFromCString(R"(
 a = 2.0
-b = 1.1
+b = 1.5
 c = a - b
 )");
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isDouble());
-  EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 0.9);
+  EXPECT_EQ(Double::cast(*c)->value(), 0.5);
 }
 
 TEST(FloatBuiltinsTest, BinarySubtractSmallInteger) {
@@ -217,7 +217,7 @@ TEST(FloatBuiltinsTest, BinarySubtractSmallInteger) {
   HandleScope scope;
 
   runtime.runFromCString(R"(
-a = 2.1
+a = 2.5
 b = 1
 c = a - b
 )");
@@ -225,7 +225,7 @@ c = a - b
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isDouble());
-  EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 1.1);
+  EXPECT_EQ(Double::cast(*c)->value(), 1.5);
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithNoArgsReturnsZero) {
