@@ -147,12 +147,12 @@ def create_header_symbols_dict(modified_source_paths):
 
 
 # The set of heuristics to determine if a substitution should be performed
-def replace_definition_if(match, symbol, pos):
+def replace_definition(match, pos, symbols):
     original_match = match.group(0)
     # Split and locate symbol based on its position
-    modified_match = remove_extra_chars(original_match).split()
-    # Verify that this is indeed the definition for symbol
-    if symbol == modified_match[pos]:
+    symbol = remove_extra_chars(original_match).split()[pos]
+    # Check if symbol is redefined or not
+    if symbol in symbols:
         return ""
     return original_match
 
@@ -163,12 +163,10 @@ def modify_file(lines, symbols_dict, regex_dict):
     for symbol_type, symbols in symbols_dict.items():
         sr = regex_dict[symbol_type]
         # Iterate the symbols that will be replaced
-        for symbol in symbols:
-            lines = re.sub(
-                sr.regex,
-                lambda m: replace_definition_if(m, symbol, sr.pos),
-                lines,
-            )
+        lines = re.sub(
+            sr.regex, lambda m: replace_definition(m, sr.pos, symbols), lines
+        )
+
     return lines
 
 
