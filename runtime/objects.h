@@ -6,46 +6,44 @@
 
 namespace python {
 
-// clang-format off
-#define INTRINSIC_IMMEDIATE_CLASS_NAMES(V) \
-  V(SmallInteger)                        \
-  V(SmallString)                         \
-  V(Boolean)                             \
+#define INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                     \
+  V(SmallInteger)                                                              \
+  V(SmallString)                                                               \
+  V(Boolean)                                                                   \
   V(None)
 
-#define INTRINSIC_HEAP_CLASS_NAMES(V) \
-  V(Object)                         \
-  V(BoundMethod)                    \
-  V(ByteArray)                      \
-  V(ClassMethod)                    \
-  V(Code)                           \
-  V(Dictionary)                     \
-  V(Double)                         \
-  V(Ellipsis)                       \
-  V(Function)                       \
-  V(Integer)                        \
-  V(LargeInteger)                   \
-  V(LargeString)                    \
-  V(Layout)                         \
-  V(List)                           \
-  V(ListIterator)                   \
-  V(Module)                         \
-  V(ObjectArray)                    \
-  V(Property)                       \
-  V(Range)                          \
-  V(RangeIterator)                  \
-  V(Set)                            \
-  V(Slice)                          \
-  V(StaticMethod)                   \
-  V(String)                         \
-  V(Type)                           \
-  V(ValueCell)                      \
+#define INTRINSIC_HEAP_CLASS_NAMES(V)                                          \
+  V(Object)                                                                    \
+  V(BoundMethod)                                                               \
+  V(ByteArray)                                                                 \
+  V(ClassMethod)                                                               \
+  V(Code)                                                                      \
+  V(Dictionary)                                                                \
+  V(Double)                                                                    \
+  V(Ellipsis)                                                                  \
+  V(Function)                                                                  \
+  V(Integer)                                                                   \
+  V(LargeInteger)                                                              \
+  V(LargeString)                                                               \
+  V(Layout)                                                                    \
+  V(List)                                                                      \
+  V(ListIterator)                                                              \
+  V(Module)                                                                    \
+  V(ObjectArray)                                                               \
+  V(Property)                                                                  \
+  V(Range)                                                                     \
+  V(RangeIterator)                                                             \
+  V(Set)                                                                       \
+  V(Slice)                                                                     \
+  V(StaticMethod)                                                              \
+  V(String)                                                                    \
+  V(Type)                                                                      \
+  V(ValueCell)                                                                 \
   V(WeakRef)
 
-#define INTRINSIC_CLASS_NAMES(V)     \
-  INTRINSIC_IMMEDIATE_CLASS_NAMES(V) \
+#define INTRINSIC_CLASS_NAMES(V)                                               \
+  INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                           \
   INTRINSIC_HEAP_CLASS_NAMES(V)
-// clang-format on
 
 // This enumerates layout ids of intrinsic classes. Notably, the layout of an
 // instance of an intrinsic class does not change.

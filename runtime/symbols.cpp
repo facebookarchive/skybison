@@ -5,22 +5,20 @@
 
 namespace python {
 
-static const char* kPredefinedSymbolLiterals[] = {
 // clang-format off
+static const char* kPredefinedSymbolLiterals[] = {
 #define DEFINE_SYMBOL_LITERAL(symbol, value) value,
   FOREACH_SYMBOL(DEFINE_SYMBOL_LITERAL)
 #undef DEFINE_SYMBOL_VALUE
-    // clang-format on
 };
+// clang-format on
 
 Symbols::Symbols(Runtime* runtime) {
   symbols_ = new Object*[kMaxSymbolId];
-  // clang-format off
-#define ADD_SYMBOL(symbol, value) \
+#define ADD_SYMBOL(symbol, value)                                              \
   symbols_[k##symbol##Id] = runtime->newStringFromCString(value);
   FOREACH_SYMBOL(ADD_SYMBOL)
 #undef ADD_SYMBOL
-  // clang-format on
 }
 
 Symbols::~Symbols() {
