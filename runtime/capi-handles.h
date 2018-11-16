@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cpython-types.h"
+#include "handles.h"
 #include "objects.h"
 
 namespace python {
@@ -46,11 +47,15 @@ class ApiHandle : public PyObject {
 
   static ApiHandle* create(Object* reference, long refcnt);
 
+  // Cast Object* to ApiHandle* and set borrowed bit if needed
+  static ApiHandle* castFromObject(Object* value, bool borrowed);
+
   // Create a new runtime instance based on this ApiHandle
   Object* asInstance(Object* type);
 
-  // Pull the ApiHandle from the instance's layout
-  static ApiHandle* fromInstance(Object* obj);
+  // Get ExtensionPtr attribute from obj; returns Error if not an extension
+  // instance
+  static Object* getExtensionPtrAttr(Thread* thread, const Handle<Object>& obj);
 
   static const long kBorrowedBit = 1L << 31;
 

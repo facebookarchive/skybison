@@ -33,15 +33,16 @@ ApiHandle* ApiHandle::fromObject(Object* obj) {
 
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
-    return static_cast<ApiHandle*>(Int::cast(value)->asCPtr());
+    return castFromObject(value, false);
   }
 
-  // Get the PyObject pointer from the instance layout
-  if (obj->isInstance()) {
-    return ApiHandle::fromInstance(obj);
+  // Get the PyObject pointer from extension instances
+  Object* extension_ptr = getExtensionPtrAttr(thread, key);
+  if (!extension_ptr->isError()) {
+    return castFromObject(extension_ptr, false);
   }
 
-  // Initialize an ApiHandle for a builtin object
+  // Initialize an ApiHandle for a builtin object or runtime instance
   ApiHandle* handle = ApiHandle::create(obj, 1);
   Handle<Object> object(&scope,
                         runtime->newIntFromCPtr(static_cast<void*>(handle)));
@@ -60,19 +61,16 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
 
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
-    ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value)->asCPtr());
-    handle->setBorrowed();
-    return handle;
+    return castFromObject(value, true);
   }
 
-  // Get the PyObject pointer from the instance layout
-  if (obj->isInstance()) {
-    ApiHandle* handle = ApiHandle::fromInstance(obj);
-    handle->setBorrowed();
-    return handle;
+  // Get the PyObject pointer from extension instances
+  Object* extension_ptr = getExtensionPtrAttr(thread, key);
+  if (!extension_ptr->isError()) {
+    return castFromObject(extension_ptr, true);
   }
 
-  // Initialize a Borrowed ApiHandle for a builtin object
+  // Initialize a Borrowed ApiHandle for a builtin object or runtime instance
   ApiHandle* handle = ApiHandle::create(obj, kBorrowedBit);
   Handle<Object> object(&scope,
                         runtime->newIntFromCPtr(static_cast<void*>(handle)));
@@ -80,25 +78,21 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
   return handle;
 }
 
-ApiHandle* ApiHandle::fromInstance(Object* obj) {
-  Thread* thread = Thread::currentThread();
+ApiHandle* ApiHandle::castFromObject(Object* value, bool borrowed) {
+  ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value)->asCPtr());
+  if (borrowed) handle->setBorrowed();
+  return handle;
+}
+
+Object* ApiHandle::getExtensionPtrAttr(Thread* thread,
+                                       const Handle<Object>& obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
+  if (!obj->isInstance()) return Error::object();
 
-  DCHECK(obj->isInstance(), "not an instance");
-  Handle<HeapObject> instance(&scope, obj);
+  Handle<HeapObject> instance(&scope, *obj);
   Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  Handle<Object> object_ptr(&scope,
-                            runtime->instanceAt(thread, instance, attr_name));
-
-  // TODO(T32474341): Handle creation of ApiHandle from runtime instance
-  if (object_ptr->isError()) {
-    UNIMPLEMENTED(
-        "Calling fromObject on a non-extension instance. Can't "
-        "materialize PyObject");
-  }
-
-  return static_cast<ApiHandle*>(Int::cast(*object_ptr)->asCPtr());
+  return runtime->instanceAt(thread, instance, attr_name);
 }
 
 Object* ApiHandle::asInstance(Object* obj) {

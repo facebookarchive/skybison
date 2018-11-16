@@ -162,7 +162,7 @@ TEST(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
   EXPECT_EQ(result, &pyobj);
 }
 
-TEST(CApiHandlesDeathTest, RuntimeInstanceObjectReturnsPyObject) {
+TEST(CApiHandlesTest, RuntimeInstanceObjectReturnsPyObject) {
   Runtime runtime;
   HandleScope scope;
 
@@ -178,9 +178,11 @@ TEST(CApiHandlesDeathTest, RuntimeInstanceObjectReturnsPyObject) {
 
   // Create instance
   Handle<HeapObject> instance(&scope, runtime.newInstance(layout));
-  EXPECT_DEATH(ApiHandle::fromObject(*instance),
-               "unimplemented: Calling fromObject on a non-extension "
-               "instance. Can't materialize PyObject");
+  PyObject* result = ApiHandle::fromObject(*instance);
+  ASSERT_NE(result, nullptr);
+
+  Handle<Object> obj(&scope, ApiHandle::fromPyObject(result)->asObject());
+  EXPECT_EQ(*obj, *instance);
 }
 
 TEST(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
