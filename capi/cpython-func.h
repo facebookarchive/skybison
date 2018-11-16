@@ -155,6 +155,7 @@ PyAPI_FUNC(int) PyDict_Check_Func(PyObject *);
 PyAPI_FUNC(int) PyDict_CheckExact_Func(PyObject *);
 PyAPI_FUNC(int) PyType_Check_Func(PyObject *);
 PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
+PyAPI_FUNC(int) Py_INCREF_Func(PyObject *);
 
 PyAPI_FUNC(char *) PyByteArray_AS_STRING_Func(PyObject *);
 
@@ -199,7 +200,9 @@ PyAPI_FUNC(void) Py_DECREF_Func(PyObject *);
 #define PyUnicode_READY(op) \
   0
 
-#define Py_DECREF(op)                                   \
+#define Py_INCREF(op) (                         \
+    Py_INCREF_Func((PyObject*)op))
+#define Py_DECREF(op)                           \
     Py_DECREF_Func((PyObject*)op)
 
 /* clang-format on */

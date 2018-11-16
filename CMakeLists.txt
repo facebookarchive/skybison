@@ -338,6 +338,7 @@ target_link_libraries(
 add_library(
   extension-tests
   STATIC
+  ext/Objects/abstract-test.cpp
   ext/Objects/boolobject-test.cpp
   ext/Objects/dictobject-test.cpp
   ext/Objects/floatobject-test.cpp

@@ -1,3 +1,4 @@
+#include "cpython-func.h"
 #include "runtime.h"
 
 namespace python {
@@ -49,8 +50,37 @@ PY_EXPORT PyObject* PyNumber_InPlaceMultiply(PyObject* /* v */,
   UNIMPLEMENTED("PyNumber_InPlaceMultiply");
 }
 
-PY_EXPORT PyObject* PyNumber_Index(PyObject* /* m */) {
-  UNIMPLEMENTED("PyNumber_Index");
+PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  if (item == nullptr) {
+    thread->raiseSystemErrorWithCStr("null argument to internal routine");
+    return nullptr;
+  }
+
+  Handle<Object> longobj(&scope, ApiHandle::fromPyObject(item)->asObject());
+  if (longobj->isInt()) {
+    Py_INCREF(item);
+    return item;
+  }
+
+  Frame* frame = thread->currentFrame();
+  Handle<Object> index_meth(&scope,
+                            Interpreter::lookupMethod(thread, frame, longobj,
+                                                      SymbolId::kDunderIndex));
+  if (index_meth->isError()) {
+    thread->raiseTypeErrorWithCStr(
+        "object cannot be interpreted as an integer");
+    return nullptr;
+  }
+  Handle<Object> int_obj(
+      &scope, Interpreter::callMethod1(thread, frame, index_meth, longobj));
+  if (!int_obj->isInt()) {
+    thread->raiseTypeErrorWithCStr("__index__ returned non-int");
+    return nullptr;
+  }
+  return ApiHandle::fromObject(*int_obj);
 }
 
 PY_EXPORT PyObject* PyNumber_Invert(PyObject* /* o */) {
