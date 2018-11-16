@@ -1,10 +1,8 @@
 #include "gtest/gtest.h"
 
+#include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
-#include "cpython-data.h"
-#include "cpython-func.h"
-#include "runtime.h"
 
 namespace python {
 
@@ -34,7 +32,7 @@ TEST_F(LongExtensionApiTest, PyLongCheckOnInt) {
 
 TEST_F(LongExtensionApiTest, PyLongCheckOnType) {
   PyObject* pylong = PyLong_FromLong(10);
-  PyObject* type = ApiHandle::fromPyObject(pylong)->type();
+  PyObject* type = reinterpret_cast<PyObject*>(Py_TYPE(pylong));
   EXPECT_FALSE(PyLong_Check(type));
   EXPECT_FALSE(PyLong_CheckExact(type));
 }
@@ -92,36 +90,39 @@ TEST_F(LongExtensionApiTest, FromUnsignedReturnsLong) {
   EXPECT_EQ(PyLong_AsUnsignedLong(pylong3), uval);
 }
 
-TEST_F(LongExtensionApiTest, Overflow) {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
+static PyObject* lshift(long num, long shift) {
+  PyObject* num_obj = PyLong_FromLong(num);
+  PyObject* shift_obj = PyLong_FromLong(shift);
+  PyObject* result = PyNumber_Lshift(num_obj, shift_obj);
+  Py_DECREF(num_obj);
+  Py_DECREF(shift_obj);
+  return result;
+}
 
-  word digits[] = {-1, kMaxWord};
-  // TODO(bsimmers): Rewrite this to use PyLong_FromString() once we've
-  // implemented it.
-  LargeInt large(&scope, runtime->newIntWithDigits(digits));
-  PyObject* pylong = ApiHandle::fromObject(*large);
+TEST_F(LongExtensionApiTest, Overflow) {
+  PyObject* pylong = lshift(1, 100);
+
   EXPECT_EQ(PyLong_AsUnsignedLong(pylong), -1UL);
   EXPECT_TRUE(testing::exceptionValueMatches(
       "Python int too big to convert to C unsigned long"));
-  thread->clearPendingException();
+  PyErr_Clear();
 
   EXPECT_EQ(PyLong_AsLong(pylong), -1);
   EXPECT_TRUE(testing::exceptionValueMatches(
       "Python int too big to convert to C long"));
-  thread->clearPendingException();
+  PyErr_Clear();
 
   EXPECT_EQ(PyLong_AsSsize_t(pylong), -1);
   EXPECT_TRUE(testing::exceptionValueMatches(
       "Python int too big to convert to C ssize_t"));
-  thread->clearPendingException();
+  PyErr_Clear();
 
-  large = runtime->newInt(kMinWord);
-  pylong = ApiHandle::fromObject(*large);
+  Py_DECREF(pylong);
+  pylong = PyLong_FromLong(-123);
   EXPECT_EQ(PyLong_AsUnsignedLongLong(pylong), -1);
   EXPECT_TRUE(testing::exceptionValueMatches(
       "can't convert negative value to unsigned"));
+  Py_DECREF(pylong);
 }
 
 TEST_F(LongExtensionApiTest, AsLongAndOverflow) {
@@ -136,6 +137,7 @@ TEST_F(LongExtensionApiTest, AsLongAndOverflow) {
   overflow = 0;
   EXPECT_EQ(PyLong_AsLongLongAndOverflow(pylong, &overflow), -1);
   EXPECT_EQ(overflow, 1);
+  Py_DECREF(pylong);
 
   pylong = PyLong_FromLong(lmax);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
@@ -145,20 +147,16 @@ TEST_F(LongExtensionApiTest, AsLongAndOverflow) {
   overflow = 1;
   EXPECT_EQ(PyLong_AsLongLongAndOverflow(pylong, &overflow), lmax);
   EXPECT_EQ(overflow, 0);
+  Py_DECREF(pylong);
 
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-  word digits[] = {-1, -2};
-  // TODO(bsimmers): Rewrite this to use PyLong_FromString() once we've
-  // implemented it.
-  LargeInt large_int(&scope, thread->runtime()->newIntWithDigits(digits));
-  pylong = ApiHandle::fromObject(*large_int);
+  pylong = lshift(-1, 100);
   overflow = 0;
   EXPECT_EQ(PyLong_AsLongAndOverflow(pylong, &overflow), -1);
   EXPECT_EQ(overflow, -1);
   overflow = 0;
   EXPECT_EQ(PyLong_AsLongLongAndOverflow(pylong, &overflow), -1);
   EXPECT_EQ(overflow, -1);
+  Py_DECREF(pylong);
 }
 
 TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithMax) {
@@ -176,19 +174,18 @@ TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithMax) {
 }
 
 TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithLargeInt) {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
+  const int num = 123;
+  PyObject* largeint = lshift(1, 100);
+  PyObject* num_obj = PyLong_FromLong(num);
+  PyObject* pylong = PyNumber_Or(largeint, num_obj);
+  Py_DECREF(largeint);
+  Py_DECREF(num_obj);
 
-  word digits[] = {-1, kMaxWord};
-  // TODO(bsimmers): Rewrite this to use PyLong_FromString() once we've
-  // implemented it.
-  LargeInt large(&scope, runtime->newIntWithDigits(digits));
-  PyObject* pylong = ApiHandle::fromObject(*large);
-  EXPECT_EQ(PyLong_AsUnsignedLongMask(pylong), -1UL);
+  EXPECT_EQ(PyLong_AsUnsignedLongMask(pylong), num);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(PyLong_AsUnsignedLongLongMask(pylong), -1UL);
+  EXPECT_EQ(PyLong_AsUnsignedLongLongMask(pylong), num);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+  Py_DECREF(pylong);
 }
 
 TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithNegative) {
