@@ -480,12 +480,39 @@ Object* builtinLen(Thread* thread, Frame* callerFrame, word nargs) {
   }
 }
 
+Object* builtinBooleanBool(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  Object* tos = *caller->valueStackTop();
+  if (!tos->isBoolean()) {
+    return thread->throwTypeErrorFromCString("unsupported type for __bool__");
+  }
+  return tos;
+}
+
+Object* builtinSmallIntegerBool(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  SmallInteger* tos = SmallInteger::cast(*caller->valueStackTop());
+  return Boolean::fromBool(tos->value() > 0);
+}
+
+Object* builtinSmallIntegerInvert(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  SmallInteger* tos = SmallInteger::cast(*caller->valueStackTop());
+  return SmallInteger::fromWord(-(tos->value() + 1));
+}
+
 Object* builtinSmallIntegerNeg(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
-  SmallInteger* x = SmallInteger::cast(*caller->valueStackTop());
-  return SmallInteger::fromWord(-x->value());
+  SmallInteger* tos = SmallInteger::cast(*caller->valueStackTop());
+  return SmallInteger::fromWord(-tos->value());
 }
 
 Object* builtinSmallIntegerPos(Thread* thread, Frame* caller, word nargs) {
@@ -493,14 +520,6 @@ Object* builtinSmallIntegerPos(Thread* thread, Frame* caller, word nargs) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
   return SmallInteger::cast(*caller->valueStackTop());
-}
-
-Object* builtinSmallIntegerInvert(Thread* thread, Frame* caller, word nargs) {
-  if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("not enough arguments");
-  }
-  SmallInteger* x = SmallInteger::cast(*caller->valueStackTop());
-  return SmallInteger::fromWord(-(x->value() + 1));
 }
 
 // List
@@ -542,6 +561,22 @@ Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> value(&scope, args.get(1));
   thread->runtime()->listAdd(list, value);
   return None::object();
+}
+
+Object* builtinListLen(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("__len__() takes no arguments");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
+    return thread->throwTypeErrorFromCString(
+        "__len__() only support list or its subclasses");
+  }
+  Handle<List> list(&scope, *list_or_error);
+  return SmallInteger::fromWord(list->allocated());
 }
 
 Object* builtinListInsert(Thread* thread, Frame* frame, word nargs) {

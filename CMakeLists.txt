@@ -174,6 +174,7 @@ add_library(
   runtime/attributes-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
+  runtime/interpreter-test.cpp
   runtime/layout-test.cpp
   runtime/marshal-test.cpp
   runtime/objects-test.cpp

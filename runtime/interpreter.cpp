@@ -136,6 +136,127 @@ Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
   return *result;
 }
 
+Object* Interpreter::callDescriptorGet(
+    Thread* thread,
+    Frame* caller,
+    const Handle<Object>& descriptor,
+    const Handle<Object>& receiver,
+    const Handle<Class>& receiver_type) {
+  HandleScope scope(thread->handles());
+  Runtime* runtime = thread->runtime();
+  Handle<Object> selector(&scope, runtime->symbols()->DunderGet());
+  Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
+  Handle<Function> method(
+      &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
+  Object** sp = caller->valueStackTop();
+  *--sp = *receiver;
+  *--sp = *receiver_type;
+  caller->setValueStackTop(sp);
+  Object* result = method->entry()(thread, caller, 2);
+  sp += 2;
+  caller->setValueStackTop(sp);
+  return result;
+}
+
+Object* Interpreter::lookupMethod(
+    Thread* thread,
+    Frame* caller,
+    const Handle<Object>& receiver,
+    const Handle<Object>& selector,
+    bool* is_unbound) {
+  HandleScope scope(thread->handles());
+  Runtime* runtime = thread->runtime();
+  Handle<Class> type(&scope, runtime->classOf(*receiver));
+  Handle<Object> method(
+      &scope, runtime->lookupNameInMro(thread, type, selector));
+  if (method->isFunction()) {
+    *is_unbound = true;
+    return *method;
+  }
+  *is_unbound = false;
+  if (runtime->isNonDataDescriptor(thread, method)) {
+    return callDescriptorGet(thread, caller, method, receiver, type);
+  }
+  return *method;
+}
+
+Object* Interpreter::unaryOperation(
+    Thread* thread,
+    Frame* caller,
+    Object** sp,
+    const Handle<Object>& receiver,
+    const Handle<Object>& selector) {
+  HandleScope scope(thread->handles());
+  bool is_unbound;
+  Handle<Object> method(
+      &scope, lookupMethod(thread, caller, receiver, selector, &is_unbound));
+  CHECK(!method->isError(), "unknown unary operation");
+  if (is_unbound) {
+    sp -= 2;
+    sp[0] = sp[2];
+    sp[1] = *receiver;
+    sp[2] = *method;
+  } else {
+    sp--;
+    sp[0] = sp[1];
+    sp[1] = *method;
+  }
+  return Interpreter::call(thread, caller, sp, is_unbound ? 2 : 1);
+}
+
+Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
+  HandleScope scope(thread->handles());
+  Handle<Object> receiver(&scope, *sp);
+  Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderBool());
+  bool is_unbound;
+  Handle<Object> method(
+      &scope, lookupMethod(thread, caller, receiver, selector, &is_unbound));
+  if (!method->isError()) {
+    if (is_unbound) {
+      sp -= 2;
+      sp[0] = *receiver;
+      sp[1] = *method;
+    } else {
+      sp--;
+      sp[0] = *method;
+    }
+    Handle<Object> result(&scope, Interpreter::call(thread, caller, sp, 1));
+    if (result->isBoolean()) {
+      return *result;
+    }
+    if (result->isInteger()) {
+      Handle<Integer> integer(&scope, *result);
+      return Boolean::fromBool(integer->asWord() > 0);
+    }
+    UNIMPLEMENTED("throw");
+  }
+  selector = thread->runtime()->symbols()->DunderLen();
+  method = lookupMethod(thread, caller, receiver, selector, &is_unbound);
+  if (!method->isError()) {
+    if (is_unbound) {
+      sp -= 2;
+      sp[0] = *receiver;
+      sp[1] = *method;
+    } else {
+      sp--;
+      sp[0] = *method;
+    }
+    Handle<Object> result(&scope, Interpreter::call(thread, caller, sp, 1));
+
+    if (result->isInteger()) {
+      Handle<Integer> integer(&scope, *result);
+      if (integer->isPositive()) {
+        return Boolean::fromBool(true);
+      }
+      if (integer->isZero()) {
+        return Boolean::fromBool(false);
+      }
+      UNIMPLEMENTED("throw");
+    }
+  }
+  return Boolean::fromBool(true);
+}
+
 namespace interpreter {
 struct Context {
   Thread* thread;
@@ -237,81 +358,13 @@ void ROT_THREE(Context* ctx, word) {
   *(ctx->sp + 2) = top;
 }
 
-static Object* callDescriptorGet(
-    Thread* thread,
-    Frame* caller,
-    const Handle<Object>& descriptor,
-    const Handle<Object>& receiver,
-    const Handle<Class>& receiver_type) {
-  HandleScope scope(thread->handles());
-  Runtime* runtime = thread->runtime();
-  Handle<Object> selector(&scope, runtime->symbols()->DunderGet());
-  Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
-  Handle<Function> method(
-      &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
-  Object** sp = caller->valueStackTop();
-  *--sp = *receiver;
-  *--sp = *receiver_type;
-  caller->setValueStackTop(sp);
-  Object* result = method->entry()(thread, caller, 2);
-  sp += 2;
-  caller->setValueStackTop(sp);
-  return result;
-}
-
-static Object* lookupMethod(
-    Thread* thread,
-    Frame* caller,
-    const Handle<Object>& receiver,
-    const Handle<Object>& selector,
-    bool* is_unbound) {
-  HandleScope scope(thread->handles());
-  Runtime* runtime = thread->runtime();
-  Handle<Class> type(&scope, runtime->classOf(*receiver));
-  Handle<Object> method(
-      &scope, runtime->lookupNameInMro(thread, type, selector));
-  if (method->isFunction()) {
-    *is_unbound = true;
-    return *method;
-  }
-  *is_unbound = false;
-  if (runtime->isNonDataDescriptor(thread, method)) {
-    return callDescriptorGet(thread, caller, method, receiver, type);
-  }
-  return *method;
-}
-
-static Object* unaryOperation(
-    Thread* thread,
-    Frame* caller,
-    Object** sp,
-    const Handle<Object>& receiver,
-    const Handle<Object>& selector) {
-  HandleScope scope(thread->handles());
-  bool is_unbound;
-  Handle<Object> method(
-      &scope, lookupMethod(thread, caller, receiver, selector, &is_unbound));
-  CHECK(!method->isError(), "unknown unary operation");
-  if (is_unbound) {
-    sp -= 2;
-    sp[0] = sp[2];
-    sp[1] = *receiver;
-    sp[2] = *method;
-  } else {
-    sp--;
-    sp[0] = sp[1];
-    sp[1] = *method;
-  }
-  return Interpreter::call(thread, caller, sp, is_unbound ? 2 : 1);
-}
-
 void UNARY_NEGATIVE(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
   Handle<Object> receiver(&scope, *ctx->sp);
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderNeg());
-  Object* result =
-      unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
+  Object* result = Interpreter::unaryOperation(
+      thread, ctx->frame, ctx->sp, receiver, selector);
   ctx->sp--;
   *ctx->sp = result;
 }
@@ -321,8 +374,8 @@ void UNARY_POSITIVE(Context* ctx, word) {
   HandleScope scope(thread->handles());
   Handle<Object> receiver(&scope, *ctx->sp);
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderPos());
-  Object* result =
-      unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
+  Object* result = Interpreter::unaryOperation(
+      thread, ctx->frame, ctx->sp, receiver, selector);
   ctx->sp--;
   *ctx->sp = result;
 }
@@ -332,10 +385,19 @@ void UNARY_INVERT(Context* ctx, word) {
   HandleScope scope(thread->handles());
   Handle<Object> receiver(&scope, *ctx->sp);
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderInvert());
-  Object* result =
-      unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
+  Object* result = Interpreter::unaryOperation(
+      thread, ctx->frame, ctx->sp, receiver, selector);
   ctx->sp--;
   *ctx->sp = result;
+}
+
+void UNARY_NOT(Context* ctx, word) {
+  if (Interpreter::isTrue(ctx->thread, ctx->frame, ctx->sp) ==
+      Boolean::trueObj()) {
+    *ctx->sp = Boolean::falseObj();
+  } else {
+    *ctx->sp = Boolean::trueObj();
+  }
 }
 
 void CALL_FUNCTION(Context* ctx, word arg) {
@@ -533,25 +595,24 @@ void BUILD_MAP(Context* ctx, word arg) {
 }
 
 void POP_JUMP_IF_FALSE(Context* ctx, word arg) {
-  Thread* thread = ctx->thread;
-  Object* cond = *ctx->sp++;
-  if (!thread->runtime()->isTruthy(cond)) {
+  Object* result = Interpreter::isTrue(ctx->thread, ctx->frame, ctx->sp);
+  ctx->sp++;
+  if (result == Boolean::falseObj()) {
     ctx->pc = arg;
   }
 }
 
 void POP_JUMP_IF_TRUE(Context* ctx, word arg) {
-  Thread* thread = ctx->thread;
-  Object* cond = *ctx->sp++;
-  if (thread->runtime()->isTruthy(cond)) {
+  Object* result = Interpreter::isTrue(ctx->thread, ctx->frame, ctx->sp);
+  ctx->sp++;
+  if (result == Boolean::trueObj()) {
     ctx->pc = arg;
   }
 }
 
 void JUMP_IF_FALSE_OR_POP(Context* ctx, word arg) {
-  Thread* thread = ctx->thread;
-  Object* cond = *ctx->sp;
-  if (!thread->runtime()->isTruthy(cond)) {
+  Object* result = Interpreter::isTrue(ctx->thread, ctx->frame, ctx->sp);
+  if (result == Boolean::falseObj()) {
     ctx->pc = arg;
   } else {
     ctx->sp++;
@@ -559,19 +620,12 @@ void JUMP_IF_FALSE_OR_POP(Context* ctx, word arg) {
 }
 
 void JUMP_IF_TRUE_OR_POP(Context* ctx, word arg) {
-  Object* cond = *ctx->sp;
-  Thread* thread = ctx->thread;
-  if (thread->runtime()->isTruthy(cond)) {
+  Object* result = Interpreter::isTrue(ctx->thread, ctx->frame, ctx->sp);
+  if (result == Boolean::trueObj()) {
     ctx->pc = arg;
   } else {
     ctx->sp++;
   }
-}
-
-void UNARY_NOT(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  bool negated = !thread->runtime()->isTruthy(*ctx->sp);
-  *ctx->sp = Boolean::fromBool(negated);
 }
 
 void LOAD_BUILD_CLASS(Context* ctx, word) {

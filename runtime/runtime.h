@@ -120,10 +120,6 @@ class Runtime {
   Object* hash(Object* object);
   word siphash24(View<byte> array);
 
-  // Determines whether or not object is a truthy value. Exceptions are
-  // propagated using the normal exception handling mechanisms.
-  bool isTruthy(Object* object);
-
   uword random();
 
   void setArgv(int argc, const char** argv);
@@ -466,6 +462,7 @@ class Runtime {
 
   template <typename... Args>
   Object* initializeHeapClass(const char* name, Args... args);
+  void initializeBooleanClass();
   void initializeClassMethodClass();
   void initializeListClass();
   void initializeObjectClass();

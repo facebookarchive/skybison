@@ -40,14 +40,19 @@ Object* builtinTypeCall(Thread* thread, Frame* caller, word nargs)
 Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinTypeInit(Thread* thread, Frame* frame, word nargs);
 
+// Boolean
+Object* builtinBooleanBool(Thread* thread, Frame* frame, word nargs);
+
 // List
 Object* builtinListNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinListAppend(Thread* thread, Frame* frame, word nargs);
 Object* builtinListInsert(Thread* thread, Frame* frame, word nargs);
+Object* builtinListLen(Thread* thread, Frame* frame, word nargs);
 Object* builtinListPop(Thread* thread, Frame* frame, word nargs);
 Object* builtinListRemove(Thread* thread, Frame* frame, word nargs);
 
 // SmallInteger
+Object* builtinSmallIntegerBool(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerInvert(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerNeg(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerPos(Thread* thread, Frame* frame, word nargs);

@@ -742,6 +742,12 @@ void Runtime::initializeListClass() {
 
   classAddBuiltinFunction(
       list,
+      symbols()->DunderLen(),
+      nativeTrampoline<builtinListLen>,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      list,
       symbols()->Pop(),
       nativeTrampoline<builtinListPop>,
       unimplementedTrampoline);
@@ -801,12 +807,25 @@ void Runtime::initializeTypeClass() {
 }
 
 void Runtime::initializeImmediateClasses() {
-  initializeHeapClass(
-      "bool", IntrinsicLayoutId::kBoolean, IntrinsicLayoutId::kInteger);
+  initializeBooleanClass();
   initializeHeapClass("NoneType", IntrinsicLayoutId::kNone);
   initializeHeapClass(
       "smallstr", IntrinsicLayoutId::kSmallString, IntrinsicLayoutId::kString);
   initializeSmallIntClass();
+}
+
+void Runtime::initializeBooleanClass() {
+  HandleScope scope;
+  Handle<Class> type(
+      &scope,
+      initializeHeapClass(
+          "bool", IntrinsicLayoutId::kBoolean, IntrinsicLayoutId::kInteger));
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderBool(),
+      nativeTrampoline<builtinBooleanBool>,
+      unimplementedTrampoline);
 }
 
 void Runtime::initializeSmallIntClass() {
@@ -818,6 +837,12 @@ void Runtime::initializeSmallIntClass() {
           IntrinsicLayoutId::kSmallInteger,
           IntrinsicLayoutId::kInteger,
           IntrinsicLayoutId::kObject));
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderBool(),
+      nativeTrampoline<builtinSmallIntegerBool>,
+      unimplementedTrampoline);
 
   classAddBuiltinFunction(
       small_integer,
@@ -2030,15 +2055,6 @@ Object* Runtime::attributeAtPut(
     result = instanceSetAttr(thread, receiver, interned_name, value);
   }
   return result;
-}
-
-bool Runtime::isTruthy(Object* object) {
-  if (object->isBoolean()) {
-    return Boolean::cast(object)->value();
-  } else if (object->isInteger()) {
-    return Integer::cast(object)->asWord() > 0;
-  }
-  UNIMPLEMENTED("Unsupported type");
 }
 
 Object* Runtime::stringConcat(

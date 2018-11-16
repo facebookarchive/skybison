@@ -10,12 +10,14 @@ class Runtime;
 // List of predefined symbols, one per line
 // clang-format off
 #define FOREACH_SYMBOL(V)                \
+  V(DunderBool, "__bool__")              \
   V(DunderBuildClass, "__build_class__") \
   V(DunderCall, "__call__")              \
   V(DunderClass, "__class__")            \
   V(DunderGet, "__get__")                \
   V(DunderInit, "__init__")              \
   V(DunderInvert, "__invert__")          \
+  V(DunderLen, "__len__")                \
   V(DunderMain, "__main__")              \
   V(DunderName, "__name__")              \
   V(DunderNeg, "__neg__")                \
