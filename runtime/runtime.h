@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bytecode.h"
 #include "callback.h"
 #include "handles.h"
 #include "heap.h"
@@ -215,6 +216,9 @@ class Runtime {
 
   word newLayoutId();
 
+  Object* comparisonAttribute(CompareOp op);
+  Object* comparisonAttributeSwapped(CompareOp op);
+
   Object* buildClass() {
     return build_class_;
   }
@@ -225,6 +229,10 @@ class Runtime {
 
   Object* modules() {
     return modules_;
+  }
+
+  Object* notImplemented() {
+    return not_implemented_;
   }
 
   Object* apiHandles() {
@@ -518,11 +526,15 @@ class Runtime {
   template <typename... Args>
   Object* initializeHeapClass(const char* name, Args... args);
   void initializeBooleanClass();
+  void initializeDictionaryClass();
   void initializeClassMethodClass();
+  void initializeFloatClass();
   void initializeListClass();
   void initializeObjectClass();
+  void initializeObjectArrayClass();
   void initializeSmallIntClass();
   void initializeStaticMethodClass();
+  void initializeStrClass();
   void initializeSuperClass();
   void initializeTypeClass();
 

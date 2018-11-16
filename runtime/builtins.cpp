@@ -618,49 +618,165 @@ Object* builtinLen(Thread* thread, Frame* callerFrame, word nargs) {
   }
 }
 
+// Boolean
+
 Object* builtinBooleanBool(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
-  Object* tos = *caller->valueStackTop();
-  if (!tos->isBoolean()) {
-    return thread->throwTypeErrorFromCString("unsupported type for __bool__");
+  Arguments args(caller, nargs);
+  if (args.get(0)->isBoolean()) {
+    return args.get(0);
   }
-  return tos;
+  return thread->throwTypeErrorFromCString("unsupported type for __bool__");
 }
 
-Object* builtinSmallIntegerBool(Thread* thread, Frame* caller, word nargs) {
-  if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("not enough arguments");
-  }
-  SmallInteger* tos = SmallInteger::cast(*caller->valueStackTop());
-  return Boolean::fromBool(tos->value() > 0);
-}
+// Dictionary
 
-Object* builtinSmallIntegerInvert(Thread* thread, Frame* caller, word nargs) {
+Object* builtinDictionaryEq(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("not enough arguments");
+    return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  SmallInteger* tos = SmallInteger::cast(*caller->valueStackTop());
-  return SmallInteger::fromWord(-(tos->value() + 1));
+  Arguments args(caller, nargs);
+  if (args.get(0)->isDictionary() && args.get(1)->isDictionary()) {
+    HandleScope scope(thread->handles());
+    Runtime* runtime = thread->runtime();
+
+    Handle<Dictionary> self(&scope, args.get(0));
+    Handle<Dictionary> other(&scope, args.get(1));
+    if (self->numItems() != other->numItems()) {
+      return Boolean::falseObj();
+    }
+    Handle<ObjectArray> keys(&scope, runtime->dictionaryKeys(self));
+    Handle<Object> left_key(&scope, None::object());
+    Handle<Object> left(&scope, None::object());
+    Handle<Object> right(&scope, None::object());
+    word length = keys->length();
+    for (word i = 0; i < length; i++) {
+      left_key = keys->at(i);
+      left = runtime->dictionaryAt(self, left_key);
+      right = runtime->dictionaryAt(other, left_key);
+      if (right->isError()) {
+        return Boolean::falseObj();
+      }
+      Object* result = Interpreter::compareOperation(
+          thread, caller, caller->valueStackTop(), EQ, left, right);
+      if (result == Boolean::falseObj()) {
+        return result;
+      }
+    }
+    return Boolean::trueObj();
+  }
+  // TODO(cshapiro): handle user-defined subtypes of dictionary.
+  return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerNeg(Thread* thread, Frame* caller, word nargs) {
+// Double
+
+Object* builtinDoubleEq(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("not enough arguments");
+    return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  SmallInteger* tos = SmallInteger::cast(*caller->valueStackTop());
-  return SmallInteger::fromWord(-tos->value());
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isDouble() && other->isDouble()) {
+    Double* left = Double::cast(self);
+    Double* right = Double::cast(other);
+    return Boolean::fromBool(left->value() == right->value());
+  } else if (self->isInteger() || other->isInteger()) {
+    UNIMPLEMENTED("integer to float conversion");
+  }
+  return thread->runtime()->notImplemented();
 }
 
-Object* builtinSmallIntegerPos(Thread* thread, Frame* caller, word nargs) {
+Object* builtinDoubleGe(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("not enough arguments");
+    return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  return SmallInteger::cast(*caller->valueStackTop());
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isDouble() && other->isDouble()) {
+    Double* left = Double::cast(self);
+    Double* right = Double::cast(other);
+    return Boolean::fromBool(left->value() >= right->value());
+  } else if (self->isInteger() || other->isInteger()) {
+    UNIMPLEMENTED("integer to float conversion");
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinDoubleGt(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isDouble() && other->isDouble()) {
+    Double* left = Double::cast(self);
+    Double* right = Double::cast(other);
+    return Boolean::fromBool(left->value() > right->value());
+  } else if (self->isInteger() || other->isInteger()) {
+    UNIMPLEMENTED("integer to float conversion");
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinDoubleLe(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isDouble() && other->isDouble()) {
+    Double* left = Double::cast(self);
+    Double* right = Double::cast(other);
+    return Boolean::fromBool(left->value() <= right->value());
+  } else if (self->isInteger() || other->isInteger()) {
+    UNIMPLEMENTED("integer to float conversion");
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinDoubleLt(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isDouble() && other->isDouble()) {
+    Double* left = Double::cast(self);
+    Double* right = Double::cast(other);
+    return Boolean::fromBool(left->value() < right->value());
+  } else if (self->isInteger() || other->isInteger()) {
+    UNIMPLEMENTED("integer to float conversion");
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinDoubleNe(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isDouble() && other->isDouble()) {
+    Double* left = Double::cast(self);
+    Double* right = Double::cast(other);
+    return Boolean::fromBool(left->value() != right->value());
+  } else if (self->isInteger() || other->isInteger()) {
+    UNIMPLEMENTED("integer to float conversion");
+  }
+  return thread->runtime()->notImplemented();
 }
 
 // List
+
 Object* builtinListNew(Thread* thread, Frame* caller, word nargs) {
   if (nargs < 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
@@ -798,7 +914,8 @@ Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
   for (word i = 0; i < list->allocated(); i++) {
     Handle<Object> item(&scope, list->at(i));
     if (Boolean::cast(
-            Interpreter::richCompare(thread, CompareOp::EQ, item, value))
+            Interpreter::compareOperation(
+                thread, frame, frame->valueStackTop(), EQ, item, value))
             ->value()) {
       thread->runtime()->listPop(list, i);
       return None::object();
@@ -855,6 +972,133 @@ Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
   return *classmethod;
 }
 
+// SmallInteger
+
+Object* builtinSmallIntegerBool(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  Arguments args(caller, nargs);
+  if (args.get(0)->isSmallInteger()) {
+    return Boolean::fromBool(args.get(0) != SmallInteger::fromWord(0));
+  }
+  return thread->throwTypeErrorFromCString("unsupported type for __bool__");
+}
+
+Object* builtinSmallIntegerEq(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isSmallInteger() && other->isSmallInteger()) {
+    return Boolean::fromBool(self == other);
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinSmallIntegerInvert(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  Arguments args(caller, nargs);
+  if (args.get(0)->isSmallInteger()) {
+    SmallInteger* tos = SmallInteger::cast(args.get(0));
+    return SmallInteger::fromWord(-(tos->value() + 1));
+  }
+  return thread->throwTypeErrorFromCString("unsupported type for __invert__");
+}
+
+Object* builtinSmallIntegerLe(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isSmallInteger() && other->isSmallInteger()) {
+    SmallInteger* left = SmallInteger::cast(self);
+    SmallInteger* right = SmallInteger::cast(other);
+    return Boolean::fromBool(left->value() <= right->value());
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinSmallIntegerLt(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isSmallInteger() && other->isSmallInteger()) {
+    SmallInteger* left = SmallInteger::cast(self);
+    SmallInteger* right = SmallInteger::cast(other);
+    return Boolean::fromBool(left->value() < right->value());
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinSmallIntegerGe(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isSmallInteger() && other->isSmallInteger()) {
+    SmallInteger* left = SmallInteger::cast(self);
+    SmallInteger* right = SmallInteger::cast(other);
+    return Boolean::fromBool(left->value() >= right->value());
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinSmallIntegerGt(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isSmallInteger() && other->isSmallInteger()) {
+    SmallInteger* left = SmallInteger::cast(self);
+    SmallInteger* right = SmallInteger::cast(other);
+    return Boolean::fromBool(left->value() > right->value());
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinSmallIntegerNe(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isSmallInteger() && other->isSmallInteger()) {
+    return Boolean::fromBool(self != other);
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinSmallIntegerNeg(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  Arguments args(caller, nargs);
+  SmallInteger* tos = SmallInteger::cast(args.get(0));
+  return SmallInteger::fromWord(-tos->value());
+}
+
+Object* builtinSmallIntegerPos(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  return SmallInteger::cast(*caller->valueStackTop());
+}
+
 // StaticMethod
 Object* builtinStaticMethodNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newStaticMethod();
@@ -872,6 +1116,94 @@ Object* builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
   staticmethod->setFunction(*arg);
   return *staticmethod;
 }
+
+// String
+
+Object* builtinStringEq(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isString() && other->isString()) {
+    return Boolean::fromBool(String::cast(self)->compare(other) == 0);
+  }
+  // TODO(cshapiro): handle user-defined subtypes of string.
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinStringGe(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isString() && other->isString()) {
+    return Boolean::fromBool(String::cast(self)->compare(other) >= 0);
+  }
+  // TODO(cshapiro): handle user-defined subtypes of string.
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinStringGt(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isString() && other->isString()) {
+    return Boolean::fromBool(String::cast(self)->compare(other) > 0);
+  }
+  // TODO(cshapiro): handle user-defined subtypes of string.
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinStringLe(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isString() && other->isString()) {
+    return Boolean::fromBool(String::cast(self)->compare(other) <= 0);
+  }
+  // TODO(cshapiro): handle user-defined subtypes of string.
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinStringLt(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isString() && other->isString()) {
+    return Boolean::fromBool(String::cast(self)->compare(other) < 0);
+  }
+  // TODO(cshapiro): handle user-defined subtypes of string.
+  return thread->runtime()->notImplemented();
+}
+
+Object* builtinStringNe(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isString() && other->isString()) {
+    return Boolean::fromBool(String::cast(self)->compare(other) != 0);
+  }
+  // TODO(cshapiro): handle user-defined subtypes of string.
+  return thread->runtime()->notImplemented();
+}
+
+// Super
 
 Object* builtinSuperNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newSuper();
@@ -915,6 +1247,38 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   }
   super->setObjectType(*obj_type);
   return *super;
+}
+
+// Tuple
+
+Object* builtinTupleEq(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  if (args.get(0)->isObjectArray() && args.get(1)->isObjectArray()) {
+    HandleScope scope(thread->handles());
+    Handle<ObjectArray> self(&scope, args.get(0));
+    Handle<ObjectArray> other(&scope, args.get(1));
+    if (self->length() != other->length()) {
+      return Boolean::falseObj();
+    }
+    Handle<Object> left(&scope, None::object());
+    Handle<Object> right(&scope, None::object());
+    word length = self->length();
+    for (word i = 0; i < length; i++) {
+      left = self->at(i);
+      right = other->at(i);
+      Object* result = Interpreter::compareOperation(
+          thread, caller, caller->valueStackTop(), EQ, left, right);
+      if (result == Boolean::falseObj()) {
+        return result;
+      }
+    }
+    return Boolean::trueObj();
+  }
+  // TODO(cshapiro): handle user-defined subtypes of tuple.
+  return thread->runtime()->notImplemented();
 }
 
 // "sys" module

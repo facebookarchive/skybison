@@ -173,65 +173,140 @@ Object* Interpreter::lookupMethod(
     Thread* thread,
     Frame* caller,
     const Handle<Object>& receiver,
-    const Handle<Object>& selector,
-    bool* is_unbound) {
+    const Handle<Object>& selector) {
   HandleScope scope(thread->handles());
   Runtime* runtime = thread->runtime();
   Handle<Class> type(&scope, runtime->classOf(*receiver));
   Handle<Object> method(
       &scope, runtime->lookupNameInMro(thread, type, selector));
   if (method->isFunction()) {
-    *is_unbound = true;
+    // Do not create a short-lived bound method object.
     return *method;
   }
-  *is_unbound = false;
   if (runtime->isNonDataDescriptor(thread, method)) {
     return callDescriptorGet(thread, caller, method, receiver, type);
   }
   return *method;
 }
 
+Object* Interpreter::callMethod1(
+    Thread* thread,
+    Frame* caller,
+    Object** sp,
+    const Handle<Object>& method,
+    const Handle<Object>& self) {
+  Object* result;
+  if (method->isFunction()) {
+    sp -= 2;
+    sp[1] = *method;
+    sp[0] = *self;
+    result = call(thread, caller, sp, 1);
+  } else {
+    sp -= 1;
+    sp[0] = *method;
+    result = call(thread, caller, sp, 0);
+  }
+  return result;
+}
+
+Object* Interpreter::callMethod2(
+    Thread* thread,
+    Frame* caller,
+    Object** sp,
+    const Handle<Object>& method,
+    const Handle<Object>& self,
+    const Handle<Object>& other) {
+  Object* result;
+  if (method->isFunction()) {
+    sp -= 3;
+    sp[2] = *method;
+    sp[1] = *self;
+    sp[0] = *other;
+    result = call(thread, caller, sp, 2);
+  } else {
+    sp -= 2;
+    sp[1] = *method;
+    sp[0] = *other;
+    result = call(thread, caller, sp, 1);
+  }
+  return result;
+}
+
 Object* Interpreter::unaryOperation(
     Thread* thread,
     Frame* caller,
     Object** sp,
-    const Handle<Object>& receiver,
+    const Handle<Object>& self,
     const Handle<Object>& selector) {
   HandleScope scope(thread->handles());
-  bool is_unbound;
-  Handle<Object> method(
-      &scope, lookupMethod(thread, caller, receiver, selector, &is_unbound));
+  Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
   CHECK(!method->isError(), "unknown unary operation");
-  if (is_unbound) {
-    sp -= 2;
-    sp[0] = sp[2];
-    sp[1] = *receiver;
-    sp[2] = *method;
+  return callMethod1(thread, caller, sp, method, self);
+}
+
+Object* Interpreter::compareOperation(
+    Thread* thread,
+    Frame* caller,
+    Object** sp,
+    CompareOp op,
+    const Handle<Object>& left,
+    const Handle<Object>& right) {
+  HandleScope scope(thread->handles());
+  Runtime* runtime = thread->runtime();
+
+  Handle<Class> left_type(&scope, runtime->classOf(*left));
+  Handle<Class> right_type(&scope, runtime->classOf(*right));
+
+  bool try_swapped = true;
+  bool has_different_type = (*left_type != *right_type);
+  if (has_different_type && runtime->isSubClass(right_type, left_type)) {
+    try_swapped = false;
+    Handle<Object> selector(&scope, runtime->comparisonAttributeSwapped(op));
+    Handle<Object> method(
+        &scope, lookupMethod(thread, caller, right, selector));
+    if (!method->isError()) {
+      Object* result = callMethod2(thread, caller, sp, method, right, left);
+      if (result != runtime->notImplemented()) {
+        return result;
+      }
+    }
   } else {
-    sp--;
-    sp[0] = sp[1];
-    sp[1] = *method;
+    Handle<Object> selector(&scope, runtime->comparisonAttribute(op));
+    Handle<Object> method(&scope, lookupMethod(thread, caller, left, selector));
+    if (!method->isError()) {
+      Object* result = callMethod2(thread, caller, sp, method, left, right);
+      if (result != runtime->notImplemented()) {
+        return result;
+      }
+    }
   }
-  return call(thread, caller, sp, is_unbound ? 2 : 1);
+  if (has_different_type && try_swapped) {
+    Handle<Object> selector(&scope, runtime->comparisonAttributeSwapped(op));
+    Handle<Object> method(
+        &scope, lookupMethod(thread, caller, right, selector));
+    if (!method->isError()) {
+      Object* result = callMethod2(thread, caller, sp, method, right, left);
+      if (result != runtime->notImplemented()) {
+        return result;
+      }
+    }
+  }
+  if (op == CompareOp::EQ) {
+    return Boolean::fromBool(*left == *right);
+  } else if (op == CompareOp::NE) {
+    return Boolean::fromBool(*left != *right);
+  }
+  UNIMPLEMENTED("throw");
 }
 
 Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
   HandleScope scope(thread->handles());
-  Handle<Object> receiver(&scope, *sp);
+  Handle<Object> self(&scope, *sp);
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderBool());
-  bool is_unbound;
-  Handle<Object> method(
-      &scope, lookupMethod(thread, caller, receiver, selector, &is_unbound));
+  Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
   if (!method->isError()) {
-    if (is_unbound) {
-      sp -= 2;
-      sp[0] = *receiver;
-      sp[1] = *method;
-    } else {
-      sp--;
-      sp[0] = *method;
-    }
-    Handle<Object> result(&scope, call(thread, caller, sp, 1));
+    Handle<Object> result(
+        &scope, callMethod1(thread, caller, sp, method, self));
     if (result->isBoolean()) {
       return *result;
     }
@@ -242,18 +317,10 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
     UNIMPLEMENTED("throw");
   }
   selector = thread->runtime()->symbols()->DunderLen();
-  method = lookupMethod(thread, caller, receiver, selector, &is_unbound);
+  method = lookupMethod(thread, caller, self, selector);
   if (!method->isError()) {
-    if (is_unbound) {
-      sp -= 2;
-      sp[0] = *receiver;
-      sp[1] = *method;
-    } else {
-      sp--;
-      sp[0] = *method;
-    }
-    Handle<Object> result(&scope, call(thread, caller, sp, 1));
-
+    Handle<Object> result(
+        &scope, callMethod1(thread, caller, sp, method, self));
     if (result->isInteger()) {
       Handle<Integer> integer(&scope, *result);
       if (integer->isPositive()) {
@@ -266,118 +333,6 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
     }
   }
   return Boolean::trueObj();
-}
-
-Object* Interpreter::compare(
-    Thread* thread,
-    CompareOp op,
-    const Handle<Object>& left,
-    const Handle<Object>& right) {
-  bool res = false;
-  switch (op) {
-    case IS: {
-      res = (*left == *right);
-      break;
-    }
-    case IS_NOT: {
-      res = (*left != *right);
-      break;
-    }
-    case IN:
-      UNIMPLEMENTED("IN comparison op");
-    case NOT_IN:
-      UNIMPLEMENTED("NOT_IN comparison op");
-    case EXC_MATCH:
-      UNIMPLEMENTED("EXC_MATCH comparison op");
-    default:
-      return richCompare(thread, op, left, right);
-  }
-  return Boolean::fromBool(res);
-}
-
-template <typename T>
-static bool compareUsingDifference(CompareOp op, T cmp) {
-  switch (op) {
-    case EQ:
-      return (cmp == 0);
-    case NE:
-      return (cmp != 0);
-    case LT:
-      return (cmp < 0);
-    case LE:
-      return (cmp <= 0);
-    case GT:
-      return (cmp > 0);
-    case GE:
-      return (cmp >= 0);
-    default:
-      UNREACHABLE("rich comparison with op %x", op);
-  }
-}
-
-Object* Interpreter::richCompare(
-    Thread* thread,
-    CompareOp op,
-    const Handle<Object>& left,
-    const Handle<Object>& right) {
-  bool res = false;
-  // TODO: call rich comparison method
-  if (left->isSmallInteger() && right->isSmallInteger()) {
-    word cmp = SmallInteger::cast(*left)->value() -
-        SmallInteger::cast(*right)->value();
-    res = compareUsingDifference(op, cmp);
-  } else if (left->isDouble() && right->isDouble()) {
-    double cmp = Double::cast(*left)->value() - Double::cast(*right)->value();
-    res = compareUsingDifference(op, cmp);
-  } else if (left->isString() && right->isString()) {
-    res = compareUsingDifference(op, String::cast(*left)->compare(*right));
-  } else if (op == EQ && left->isClass() && right->isClass()) {
-    res = (*left == *right);
-  } else if (op == EQ && left->isInstance() && right->isInstance()) {
-    res = (*left == *right);
-  } else if (op == EQ && left->isObjectArray() && right->isObjectArray()) {
-    HandleScope scope;
-    Handle<ObjectArray> l(&scope, *left);
-    Handle<ObjectArray> r(&scope, *right);
-    if (l->length() == r->length()) {
-      res = true;
-      for (word i = 0; i < l->length(); i++) {
-        Handle<Object> next_left(&scope, l->at(i));
-        Handle<Object> next_right(&scope, r->at(i));
-        Object* cmp = richCompare(thread, op, next_left, next_right);
-        if (!Boolean::cast(cmp)->value()) {
-          res = false;
-          break;
-        }
-      }
-    }
-  } else if (op == EQ && left->isDictionary() && right->isDictionary()) {
-    HandleScope scope;
-    Runtime* runtime = thread->runtime();
-    Handle<Dictionary> l(&scope, *left);
-    Handle<Dictionary> r(&scope, *right);
-    if (l->numItems() == r->numItems()) {
-      Handle<ObjectArray> l_keys(&scope, runtime->dictionaryKeys(l));
-      res = true;
-      for (word i = 0; i < l_keys->length(); i++) {
-        Handle<Object> l_key(&scope, l_keys->at(i));
-        if (!runtime->dictionaryIncludes(r, l_key)) {
-          res = false;
-          break;
-        }
-        Handle<Object> next_left(&scope, runtime->dictionaryAt(l, l_key));
-        Handle<Object> next_right(&scope, runtime->dictionaryAt(r, l_key));
-        Object* cmp = richCompare(thread, op, next_left, next_right);
-        if (!Boolean::cast(cmp)->value()) {
-          res = false;
-          break;
-        }
-      }
-    }
-  } else {
-    UNIMPLEMENTED("Custom compare");
-  }
-  return Boolean::fromBool(res);
 }
 
 static Bytecode currentBytecode(const Interpreter::Context* ctx) {
@@ -446,7 +401,6 @@ void Interpreter::doUnaryPositive(Context* ctx, word) {
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderPos());
   Object* result =
       unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
-  ctx->sp--;
   *ctx->sp = result;
 }
 
@@ -458,7 +412,6 @@ void Interpreter::doUnaryNegative(Context* ctx, word) {
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderNeg());
   Object* result =
       unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
-  ctx->sp--;
   *ctx->sp = result;
 }
 
@@ -479,7 +432,6 @@ void Interpreter::doUnaryInvert(Context* ctx, word) {
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderInvert());
   Object* result =
       unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
-  ctx->sp--;
   *ctx->sp = result;
 }
 
@@ -885,9 +837,17 @@ void Interpreter::doCompareOp(Context* ctx, word arg) {
   HandleScope scope;
   Handle<Object> right(&scope, *sp++);
   Handle<Object> left(&scope, *sp++);
-  Object* res = compare(ctx->thread, static_cast<CompareOp>(arg), left, right);
-  DCHECK(res->isBoolean(), "unexpected comparison result");
-  *--sp = res;
+  CompareOp op = static_cast<CompareOp>(arg);
+  Object* result;
+  if (op == IS) {
+    result = Boolean::fromBool(*left == *right);
+  } else if (op == IS_NOT) {
+    result = Boolean::fromBool(*left != *right);
+  } else {
+    result =
+        compareOperation(ctx->thread, ctx->frame, ctx->sp, op, left, right);
+  }
+  *--sp = result;
 }
 
 // opcode 108

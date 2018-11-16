@@ -700,16 +700,16 @@ void Runtime::initializeHeapClasses() {
   initializeObjectClass();
 
   // Abstract classes.
-  initializeHeapClass("str", IntrinsicLayoutId::kString);
+  initializeStrClass();
   initializeHeapClass("int", IntrinsicLayoutId::kInteger);
 
   // Concrete classes.
   initializeHeapClass("bytearray", IntrinsicLayoutId::kByteArray);
   initializeClassMethodClass();
   initializeHeapClass("code", IntrinsicLayoutId::kCode);
-  initializeHeapClass("dictionary", IntrinsicLayoutId::kDictionary);
-  initializeHeapClass("double", IntrinsicLayoutId::kDouble);
+  initializeDictionaryClass();
   initializeHeapClass("ellipsis", IntrinsicLayoutId::kEllipsis);
+  initializeFloatClass();
   initializeHeapClass("function", IntrinsicLayoutId::kFunction);
   initializeHeapClass(
       "largeint",
@@ -723,7 +723,7 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("method", IntrinsicLayoutId::kBoundMethod);
   initializeHeapClass("module", IntrinsicLayoutId::kModule);
   initializeHeapClass("NotImplementedType", IntrinsicLayoutId::kNotImplemented);
-  initializeHeapClass("objectarray", IntrinsicLayoutId::kObjectArray);
+  initializeObjectArrayClass();
   initializeHeapClass("range", IntrinsicLayoutId::kRange);
   initializeHeapClass("range_iterator", IntrinsicLayoutId::kRangeIterator);
   initializeHeapClass("set", IntrinsicLayoutId::kSet);
@@ -750,6 +750,78 @@ void Runtime::initializeObjectClass() {
       object,
       symbols()->DunderNew(),
       nativeTrampoline<builtinObjectNew>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+}
+
+void Runtime::initializeStrClass() {
+  HandleScope scope;
+  Handle<Class> type(
+      &scope, initializeHeapClass("str", IntrinsicLayoutId::kString));
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderEq(),
+      nativeTrampoline<builtinStringEq>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderGe(),
+      nativeTrampoline<builtinStringGe>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderGt(),
+      nativeTrampoline<builtinStringGt>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderLe(),
+      nativeTrampoline<builtinStringLe>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderLt(),
+      nativeTrampoline<builtinStringLt>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderNe(),
+      nativeTrampoline<builtinStringNe>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+}
+
+void Runtime::initializeObjectArrayClass() {
+  HandleScope scope;
+  Handle<Class> type(
+      &scope, initializeHeapClass("tuple", IntrinsicLayoutId::kObjectArray));
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderEq(),
+      nativeTrampoline<builtinTupleEq>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+}
+
+void Runtime::initializeDictionaryClass() {
+  HandleScope scope;
+  Handle<Class> type(
+      &scope, initializeHeapClass("dict", IntrinsicLayoutId::kDictionary));
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderEq(),
+      nativeTrampoline<builtinDictionaryEq>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 }
@@ -874,6 +946,54 @@ void Runtime::initializeBooleanClass() {
       unimplementedTrampoline);
 }
 
+void Runtime::initializeFloatClass() {
+  HandleScope scope;
+  Handle<Class> type(
+      &scope, initializeHeapClass("float", IntrinsicLayoutId::kDouble));
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderEq(),
+      nativeTrampoline<builtinDoubleEq>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderGe(),
+      nativeTrampoline<builtinDoubleGe>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderGt(),
+      nativeTrampoline<builtinDoubleGt>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderLe(),
+      nativeTrampoline<builtinDoubleLe>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderLt(),
+      nativeTrampoline<builtinDoubleLt>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderNe(),
+      nativeTrampoline<builtinDoubleNe>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+}
+
 void Runtime::initializeSmallIntClass() {
   HandleScope scope;
   Handle<Class> small_integer(
@@ -881,8 +1001,7 @@ void Runtime::initializeSmallIntClass() {
       initializeHeapClass(
           "smallint",
           IntrinsicLayoutId::kSmallInteger,
-          IntrinsicLayoutId::kInteger,
-          IntrinsicLayoutId::kObject));
+          IntrinsicLayoutId::kInteger));
 
   classAddBuiltinFunction(
       small_integer,
@@ -909,6 +1028,48 @@ void Runtime::initializeSmallIntClass() {
       small_integer,
       symbols()->DunderPos(),
       nativeTrampoline<builtinSmallIntegerPos>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderEq(),
+      nativeTrampoline<builtinSmallIntegerEq>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderGe(),
+      nativeTrampoline<builtinSmallIntegerGe>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderGt(),
+      nativeTrampoline<builtinSmallIntegerGt>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderLe(),
+      nativeTrampoline<builtinSmallIntegerLe>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderLt(),
+      nativeTrampoline<builtinSmallIntegerLt>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderNe(),
+      nativeTrampoline<builtinSmallIntegerNe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
@@ -1201,6 +1362,34 @@ word Runtime::newLayoutId() {
   return result;
 }
 
+Object* Runtime::comparisonAttribute(CompareOp op) {
+  DCHECK(op >= CompareOp::LT, "invalid compare op");
+  DCHECK(op <= CompareOp::GE, "invalid compare op");
+  switch (op) {
+    case LT:
+      return symbols()->DunderLt();
+    case LE:
+      return symbols()->DunderLe();
+    case EQ:
+      return symbols()->DunderEq();
+    case NE:
+      return symbols()->DunderNe();
+    case GT:
+      return symbols()->DunderGt();
+    case GE:
+      return symbols()->DunderGe();
+    default:
+      UNREACHABLE("bad comparison op");
+  }
+}
+
+Object* Runtime::comparisonAttributeSwapped(python::CompareOp op) {
+  DCHECK(op >= CompareOp::LT, "invalid compare op");
+  DCHECK(op <= CompareOp::GE, "invalid compare op");
+  CompareOp swapped_op = kSwappedCompareOp[op];
+  return comparisonAttribute(swapped_op);
+}
+
 void Runtime::moduleAddGlobal(
     const Handle<Module>& module,
     const Handle<Object>& key,
@@ -1305,7 +1494,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, IntrinsicLayoutId::kType, symbols()->Type());
 
   Handle<Object> not_implemented_str(&scope, symbols()->NotImplemented());
-  Handle<Object> not_implemented(&scope, not_implemented_);
+  Handle<Object> not_implemented(&scope, notImplemented());
   moduleAddGlobal(module, not_implemented_str, not_implemented);
 
   addModule(module);

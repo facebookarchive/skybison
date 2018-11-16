@@ -1854,30 +1854,176 @@ def test(a, b):
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 }
 
+TEST(ThreadTest, CompareSmallIntegerEq) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1
+b = 2
+a_eq_b = a == b
+a_eq_a = a == a
+b_eq_b = b == b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_eq_b(&scope, moduleAt(&runtime, main, "a_eq_b"));
+  EXPECT_EQ(*a_eq_b, Boolean::falseObj());
+  Handle<Object> a_eq_a(&scope, moduleAt(&runtime, main, "a_eq_a"));
+  EXPECT_EQ(*a_eq_a, Boolean::trueObj());
+  Handle<Object> b_eq_b(&scope, moduleAt(&runtime, main, "b_eq_b"));
+  EXPECT_EQ(*b_eq_b, Boolean::trueObj());
+}
+
+TEST(ThreadTest, CompareSmallIntegerGe) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1
+b = 2
+a_ge_a = a >= a
+a_ge_b = a >= b
+b_ge_a = b >= a
+b_ge_b = b >= b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_ge_a(&scope, moduleAt(&runtime, main, "a_ge_a"));
+  EXPECT_EQ(*a_ge_a, Boolean::trueObj());
+  Handle<Object> a_ge_b(&scope, moduleAt(&runtime, main, "a_ge_b"));
+  EXPECT_EQ(*a_ge_b, Boolean::falseObj());
+  Handle<Object> b_ge_a(&scope, moduleAt(&runtime, main, "b_ge_a"));
+  EXPECT_EQ(*b_ge_a, Boolean::trueObj());
+  Handle<Object> b_ge_b(&scope, moduleAt(&runtime, main, "b_ge_b"));
+  EXPECT_EQ(*b_ge_b, Boolean::trueObj());
+}
+
+TEST(ThreadTest, CompareSmallIntegerGt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1
+b = 2
+a_gt_a = a > a
+a_gt_b = a > b
+b_gt_a = b > a
+b_gt_b = b > b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_gt_a(&scope, moduleAt(&runtime, main, "a_gt_a"));
+  EXPECT_EQ(*a_gt_a, Boolean::falseObj());
+  Handle<Object> a_gt_b(&scope, moduleAt(&runtime, main, "a_gt_b"));
+  EXPECT_EQ(*a_gt_b, Boolean::falseObj());
+  Handle<Object> b_gt_a(&scope, moduleAt(&runtime, main, "b_gt_a"));
+  EXPECT_EQ(*b_gt_a, Boolean::trueObj());
+  Handle<Object> b_gt_b(&scope, moduleAt(&runtime, main, "b_gt_b"));
+  EXPECT_EQ(*b_gt_b, Boolean::falseObj());
+}
+
+TEST(ThreadTest, CompareSmallIntegerLe) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1
+b = 2
+a_le_a = a <= a
+a_le_b = a <= b
+b_le_a = b <= a
+b_le_b = b <= b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
+  EXPECT_EQ(*a_le_a, Boolean::trueObj());
+  Handle<Object> a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
+  EXPECT_EQ(*a_le_b, Boolean::trueObj());
+  Handle<Object> b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
+  EXPECT_EQ(*b_le_a, Boolean::falseObj());
+  Handle<Object> b_le_b(&scope, moduleAt(&runtime, main, "b_le_b"));
+  EXPECT_EQ(*b_le_b, Boolean::trueObj());
+}
+
+TEST(ThreadTest, CompareSmallIntegerLt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1
+b = 2
+a_lt_a = a < a
+a_lt_b = a < b
+b_lt_a = b < a
+b_lt_b = b < b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_lt_a(&scope, moduleAt(&runtime, main, "a_lt_a"));
+  EXPECT_EQ(*a_lt_a, Boolean::falseObj());
+  Handle<Object> a_lt_b(&scope, moduleAt(&runtime, main, "a_lt_b"));
+  EXPECT_EQ(*a_lt_b, Boolean::trueObj());
+  Handle<Object> b_lt_a(&scope, moduleAt(&runtime, main, "b_lt_a"));
+  EXPECT_EQ(*b_lt_a, Boolean::falseObj());
+  Handle<Object> b_lt_b(&scope, moduleAt(&runtime, main, "b_lt_b"));
+  EXPECT_EQ(*b_lt_b, Boolean::falseObj());
+}
+
+TEST(ThreadTest, CompareSmallIntegerNe) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1
+b = 2
+a_ne_b = a != b
+a_ne_a = a != a
+b_ne_b = b != b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_ne_b(&scope, moduleAt(&runtime, main, "a_ne_b"));
+  EXPECT_EQ(*a_ne_b, Boolean::trueObj());
+  Handle<Object> a_ne_a(&scope, moduleAt(&runtime, main, "a_ne_a"));
+  EXPECT_EQ(*a_ne_a, Boolean::falseObj());
+  Handle<Object> b_ne_b(&scope, moduleAt(&runtime, main, "b_ne_b"));
+  EXPECT_EQ(*b_ne_b, Boolean::falseObj());
+}
+
 TEST(ThreadTest, CompareOpSmallInteger) {
   Runtime runtime;
-  const char* src = R"(
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
 a = 1
 b = 2
 c = 1
-print(a < b)
-print(a <= b)
-print(a == b)
-print(a >= b)
-print(a > b)
-print(a is c)
-print(a is not c)
-)";
-  const char* expected = R"(True
-True
-False
-False
-False
-True
-False
-)";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+a_lt_b = a < b
+a_le_b = a <= b
+a_eq_b = a == b
+a_ge_b = a >= b
+a_gt_b = a > b
+a_is_c = a is c
+a_is_not_c = a is not c
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_lt_b(&scope, moduleAt(&runtime, main, "a_lt_b"));
+  EXPECT_EQ(*a_lt_b, Boolean::trueObj());
+  Handle<Object> a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
+  EXPECT_EQ(*a_le_b, Boolean::trueObj());
+  Handle<Object> a_eq_b(&scope, moduleAt(&runtime, main, "a_eq_b"));
+  EXPECT_EQ(*a_eq_b, Boolean::falseObj());
+  Handle<Object> a_ge_b(&scope, moduleAt(&runtime, main, "a_ge_b"));
+  EXPECT_EQ(*a_ge_b, Boolean::falseObj());
+  Handle<Object> a_gt_b(&scope, moduleAt(&runtime, main, "a_gt_b"));
+  EXPECT_EQ(*a_gt_b, Boolean::falseObj());
+  Handle<Object> a_is_c(&scope, moduleAt(&runtime, main, "a_is_c"));
+  EXPECT_EQ(*a_is_c, Boolean::trueObj());
+  Handle<Object> a_is_not_c(&scope, moduleAt(&runtime, main, "a_is_not_c"));
+  EXPECT_EQ(*a_is_not_c, Boolean::falseObj());
 }
 
 TEST(ThreadTest, ReplicateList) {
@@ -2862,18 +3008,26 @@ else:
   EXPECT_EQ(output, "bar\n");
 }
 
-TEST(ThreadTest, RichCompareSingleCharLE) { // pystone dependency
-  const char* src = R"(
-a = ['h','e','l','l','o']
-for x in a:
-  if x <= 'i':
-    print("L")
-  else:
-    print("x")
-)";
+TEST(ThreadTest, RichCompareSingleCharLE) {
   Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "L\nL\nx\nx\nx\n");
+
+  runtime.runFromCString(R"(
+a_le_b = 'a' <= 'b'
+b_le_a = 'a' >= 'b'
+a_le_a = 'a' <= 'a'
+)");
+
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
+  EXPECT_EQ(*a_le_b, Boolean::trueObj());
+
+  Handle<Object> b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
+  EXPECT_EQ(*b_le_a, Boolean::falseObj());
+
+  Handle<Object> a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
+  EXPECT_EQ(*a_le_a, Boolean::trueObj());
 }
 
 TEST(ThreadTest, BinSubscrString) { // pystone dependency
@@ -3069,19 +3223,142 @@ print(t.__class__ is float)
   EXPECT_EQ(output, "True\n");
 }
 
-TEST(ThreadTest, TimeTimeComp) { // pystone dependency
-  const char* src = R"(
-import time
-t = time.time()
-for i in range(3):
-  print(i)
-t1 = time.time()
-print(t1 > t, t > t1, t == t1)
-)";
-
+TEST(ThreadTest, CompareDoubleEq) {
   Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "0\n1\n2\nTrue False False\n");
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1.0
+b = 2.0
+a_eq_b = a == b
+a_eq_a = a == a
+b_eq_b = b == b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_eq_b(&scope, moduleAt(&runtime, main, "a_eq_b"));
+  EXPECT_EQ(*a_eq_b, Boolean::falseObj());
+  Handle<Object> a_eq_a(&scope, moduleAt(&runtime, main, "a_eq_a"));
+  EXPECT_EQ(*a_eq_a, Boolean::trueObj());
+  Handle<Object> b_eq_b(&scope, moduleAt(&runtime, main, "b_eq_b"));
+  EXPECT_EQ(*b_eq_b, Boolean::trueObj());
+}
+
+TEST(ThreadTest, CompareDoubleGe) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1.0
+b = 2.0
+a_ge_a = a >= a
+a_ge_b = a >= b
+b_ge_a = b >= a
+b_ge_b = b >= b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_ge_a(&scope, moduleAt(&runtime, main, "a_ge_a"));
+  EXPECT_EQ(*a_ge_a, Boolean::trueObj());
+  Handle<Object> a_ge_b(&scope, moduleAt(&runtime, main, "a_ge_b"));
+  EXPECT_EQ(*a_ge_b, Boolean::falseObj());
+  Handle<Object> b_ge_a(&scope, moduleAt(&runtime, main, "b_ge_a"));
+  EXPECT_EQ(*b_ge_a, Boolean::trueObj());
+  Handle<Object> b_ge_b(&scope, moduleAt(&runtime, main, "b_ge_b"));
+  EXPECT_EQ(*b_ge_b, Boolean::trueObj());
+}
+
+TEST(ThreadTest, CompareDoubleGt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1.0
+b = 2.0
+a_gt_a = a > a
+a_gt_b = a > b
+b_gt_a = b > a
+b_gt_b = b > b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_gt_a(&scope, moduleAt(&runtime, main, "a_gt_a"));
+  EXPECT_EQ(*a_gt_a, Boolean::falseObj());
+  Handle<Object> a_gt_b(&scope, moduleAt(&runtime, main, "a_gt_b"));
+  EXPECT_EQ(*a_gt_b, Boolean::falseObj());
+  Handle<Object> b_gt_a(&scope, moduleAt(&runtime, main, "b_gt_a"));
+  EXPECT_EQ(*b_gt_a, Boolean::trueObj());
+  Handle<Object> b_gt_b(&scope, moduleAt(&runtime, main, "b_gt_b"));
+  EXPECT_EQ(*b_gt_b, Boolean::falseObj());
+}
+
+TEST(ThreadTest, CompareDoubleLe) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1.0
+b = 2.0
+a_le_a = a <= a
+a_le_b = a <= b
+b_le_a = b <= a
+b_le_b = b <= b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
+  EXPECT_EQ(*a_le_a, Boolean::trueObj());
+  Handle<Object> a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
+  EXPECT_EQ(*a_le_b, Boolean::trueObj());
+  Handle<Object> b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
+  EXPECT_EQ(*b_le_a, Boolean::falseObj());
+  Handle<Object> b_le_b(&scope, moduleAt(&runtime, main, "b_le_b"));
+  EXPECT_EQ(*b_le_b, Boolean::trueObj());
+}
+
+TEST(ThreadTest, CompareDoubleLt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1.0
+b = 2.0
+a_lt_a = a < a
+a_lt_b = a < b
+b_lt_a = b < a
+b_lt_b = b < b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_lt_a(&scope, moduleAt(&runtime, main, "a_lt_a"));
+  EXPECT_EQ(*a_lt_a, Boolean::falseObj());
+  Handle<Object> a_lt_b(&scope, moduleAt(&runtime, main, "a_lt_b"));
+  EXPECT_EQ(*a_lt_b, Boolean::trueObj());
+  Handle<Object> b_lt_a(&scope, moduleAt(&runtime, main, "b_lt_a"));
+  EXPECT_EQ(*b_lt_a, Boolean::falseObj());
+  Handle<Object> b_lt_b(&scope, moduleAt(&runtime, main, "b_lt_b"));
+  EXPECT_EQ(*b_lt_b, Boolean::falseObj());
+}
+
+TEST(ThreadTest, CompareDoubleNe) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 1.0
+b = 2.0
+a_ne_b = a != b
+a_ne_a = a != a
+b_ne_b = b != b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a_ne_b(&scope, moduleAt(&runtime, main, "a_ne_b"));
+  EXPECT_EQ(*a_ne_b, Boolean::trueObj());
+  Handle<Object> a_ne_a(&scope, moduleAt(&runtime, main, "a_ne_a"));
+  EXPECT_EQ(*a_ne_a, Boolean::falseObj());
+  Handle<Object> b_ne_b(&scope, moduleAt(&runtime, main, "b_ne_b"));
+  EXPECT_EQ(*b_ne_b, Boolean::falseObj());
 }
 
 TEST(ThreadTest, TimeTimeFromImport) { // pystone dependency

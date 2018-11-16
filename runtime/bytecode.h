@@ -312,4 +312,6 @@ enum CallFunctionExFlag {
 
 extern const char* const kBytecodeNames[];
 
+extern const CompareOp kSwappedCompareOp[];
+
 } // namespace python

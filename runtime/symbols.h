@@ -14,12 +14,18 @@ class Runtime;
   V(DunderBuildClass, "__build_class__") \
   V(DunderCall, "__call__")              \
   V(DunderClass, "__class__")            \
+  V(DunderEq, "__eq__")                  \
+  V(DunderGe, "__ge__")                  \
   V(DunderGet, "__get__")                \
+  V(DunderGt, "__gt__")                  \
   V(DunderInit, "__init__")              \
   V(DunderInvert, "__invert__")          \
+  V(DunderLe, "__le__")                  \
   V(DunderLen, "__len__")                \
+  V(DunderLt, "__lt__")                  \
   V(DunderMain, "__main__")              \
   V(DunderName, "__name__")              \
+  V(DunderNe, "__ne__")                  \
   V(DunderNeg, "__neg__")                \
   V(DunderNew, "__new__")                \
   V(DunderPos, "__pos__")                \

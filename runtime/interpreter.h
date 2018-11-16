@@ -14,17 +14,6 @@ class Interpreter {
  public:
   static Object* execute(Thread* thread, Frame* frame);
 
-  static Object* compare(
-      Thread* thread,
-      CompareOp op,
-      const Handle<Object>& left,
-      const Handle<Object>& right);
-  static Object* richCompare(
-      Thread* thread,
-      CompareOp op,
-      const Handle<Object>& left,
-      const Handle<Object>& right);
-
   static Object* call(Thread* thread, Frame* frame, Object** sp, word nargs);
   static Object* callKw(Thread* thread, Frame* frame, Object** sp, word nargs);
   static Object* callEx(Thread* thread, Frame* frame, Object** sp, word flags);
@@ -45,8 +34,22 @@ class Interpreter {
       Thread* thread,
       Frame* caller,
       const Handle<Object>& receiver,
-      const Handle<Object>& selector,
-      bool* is_unbound);
+      const Handle<Object>& selector);
+
+  static Object* callMethod1(
+      Thread* thread,
+      Frame* caller,
+      Object** sp,
+      const Handle<Object>& method,
+      const Handle<Object>& self);
+
+  static Object* callMethod2(
+      Thread* thread,
+      Frame* caller,
+      Object** sp,
+      const Handle<Object>& method,
+      const Handle<Object>& self,
+      const Handle<Object>& other);
 
   static Object* unaryOperation(
       Thread* thread,
@@ -54,6 +57,14 @@ class Interpreter {
       Object** sp,
       const Handle<Object>& receiver,
       const Handle<Object>& selector);
+
+  static Object* compareOperation(
+      Thread* thread,
+      Frame* caller,
+      Object** sp,
+      CompareOp op,
+      const Handle<Object>& left,
+      const Handle<Object>& right);
 
   struct Context {
     Thread* thread;
