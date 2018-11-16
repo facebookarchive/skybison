@@ -495,17 +495,15 @@ Object* extensionTrampoline(Thread* thread, Frame* previous_frame, word argc) {
 
   if (object->isClass()) {
     Handle<Class> type_class(&scope, *object);
-    Handle<Layout> layout(&scope, type_class->instanceLayout());
-    Handle<HeapObject> instance(&scope, runtime->newInstance(layout));
+    Handle<Integer> extension_type(&scope, type_class->extensionType());
+    PyObject* type = static_cast<PyObject*>(extension_type->asCPointer());
 
     // void* to CFunction idiom
     PyCFunction new_function;
     *reinterpret_cast<void**>(&new_function) = address->asCPointer();
-    void* result = (*new_function)(none, none, none);
 
-    Handle<Object> object_ptr(&scope, runtime->newIntegerFromCPointer(result));
-    runtime->instanceAtPut(thread, instance, attr_name, object_ptr);
-    return *instance;
+    PyObject* new_pyobject = (*new_function)(type, none, none);
+    return ApiHandle::FromPyObject(new_pyobject)->asObject();
   }
 
   Handle<HeapObject> instance(&scope, *object);

@@ -2962,6 +2962,27 @@ Object* Runtime::superGetAttr(
   return instanceGetAttr(thread, receiver, name);
 }
 
+Object* Runtime::newExtensionInstance(ApiHandle* handle) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread->handles());
+
+  // Get type class
+  Handle<Dictionary> extensions_dict(&scope, extensionTypes());
+  Handle<Object> type_id(
+      &scope, newIntegerFromCPointer(static_cast<void*>(handle->obType())));
+  Handle<Class> type_class(&scope, dictionaryAt(extensions_dict, type_id));
+
+  // Create instance
+  Handle<Layout> layout(&scope, type_class->instanceLayout());
+  Handle<HeapObject> instance(&scope, newInstance(layout));
+  Handle<Object> object_ptr(
+      &scope, newIntegerFromCPointer(static_cast<void*>(handle->asPyObject())));
+  Handle<Object> attr_name(&scope, symbols()->ExtensionPtr());
+  instanceAtPut(thread, instance, attr_name, object_ptr);
+
+  return *instance;
+}
+
 ApiHandle* Runtime::asApiHandle(Object* obj) {
   HandleScope scope;
   Handle<Object> key(&scope, obj);
@@ -3059,6 +3080,25 @@ void TrackedAllocation::remove(
       *head = alloc->next_;
     }
   }
+}
+
+bool Type_IsBuiltin(PyObject*);
+
+Object* ApiHandle::asObject() {
+  // Fast path
+  if (reference_ != nullptr) {
+    return static_cast<Object*>(reference_);
+  }
+
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+
+  // Create runtime instance from extension object
+  if (obType() && !Type_IsBuiltin(obType())) {
+    return runtime->newExtensionInstance(this);
+  }
+
+  UNIMPLEMENTED("Could not materialize a runtime object from the ApiHandle");
 }
 
 } // namespace python

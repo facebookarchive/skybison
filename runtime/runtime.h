@@ -22,6 +22,10 @@ class Thread;
 // An isomorphic structure to CPython's PyObject
 class ApiHandle {
  public:
+  static ApiHandle* FromPyObject(PyObject* py_obj) {
+    return reinterpret_cast<ApiHandle*>(py_obj);
+  }
+
   static ApiHandle* New(Object* reference) {
     return new ApiHandle(reference, 1);
   }
@@ -30,9 +34,7 @@ class ApiHandle {
     return new ApiHandle(reference, kBorrowedBit);
   }
 
-  Object* asObject() {
-    return static_cast<Object*>(reference_);
-  }
+  Object* asObject();
 
   PyObject* asPyObject() {
     return reinterpret_cast<PyObject*>(this);
@@ -50,8 +52,8 @@ class ApiHandle {
     ob_refcnt_ &= ~kBorrowedBit;
   }
 
-  void* obType() {
-    return ob_type_;
+  PyObject* obType() {
+    return static_cast<PyObject*>(ob_type_);
   }
 
  private:
@@ -140,6 +142,8 @@ class Runtime {
   Object* newFunction();
 
   Object* newInstance(const Handle<Layout>& layout);
+
+  Object* newExtensionInstance(ApiHandle* handle);
 
   Object* newInteger(word value);
 
@@ -540,6 +544,9 @@ class Runtime {
 
   // Accessor for Objects that have crossed the CPython boundary
   Object* asObject(PyObject* py_obj);
+
+  // Clear the allocated memory from all extension related objects
+  void deallocExtensions();
 
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's

@@ -34,6 +34,8 @@ set(CMAKE_C_STANDARD 99)
 find_program(CLANG_TIDY_PROGRAM clang-tidy)
 if(CLANG_TIDY_PROGRAM)
   set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_PROGRAM})
+else()
+  message("Could not find clang-tidy")
 endif()
 set(CMAKE_CXX_EXTENSIONS NO)
 set(CMAKE_CXX_STANDARD 11)
@@ -141,6 +143,8 @@ add_library(
   ext/Objects/exceptions.cpp
   ext/Objects/longobject.cpp
   ext/Objects/moduleobject.cpp
+  ext/Objects/object.cpp
+  ext/Objects/obmalloc.cpp
   ext/Objects/typeobject.cpp
   ext/Objects/unicodeobject.cpp
   ext/Python/errors.cpp)

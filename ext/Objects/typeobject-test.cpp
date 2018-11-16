@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "Python.h"
+#include "runtime/frame.h"
 #include "runtime/runtime.h"
 #include "runtime/test-utils.h"
 
@@ -41,10 +42,10 @@ TEST(PyTypeObject, EmptyTypeGetRuntimeClass) {
   PyType_Ready(&empty_type);
 
   // Obtain EmptyType Class object from the runtime
-  Handle<Object> tp_name(
-      &scope, runtime.newStringFromCString(empty_type.tp_name));
+  Handle<Object> type_id(
+      &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&empty_type)));
   Handle<Object> type_class_obj(
-      &scope, runtime.dictionaryAt(extensions_dict, tp_name));
+      &scope, runtime.dictionaryAt(extensions_dict, type_id));
   EXPECT_TRUE(type_class_obj->isClass());
 
   // Confirm the class name
@@ -67,10 +68,10 @@ TEST(PyTypeObject, EmptyTypeInstantiateObject) {
   empty_type.tp_name = "Empty";
   empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
   PyType_Ready(&empty_type);
-  Handle<Object> tp_name(
-      &scope, runtime.newStringFromCString(empty_type.tp_name));
+  Handle<Object> type_id(
+      &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&empty_type)));
   Handle<Class> type_class(
-      &scope, runtime.dictionaryAt(extensions_dict, tp_name));
+      &scope, runtime.dictionaryAt(extensions_dict, type_id));
 
   // Instantiate a class object
   Handle<Layout> layout(&scope, type_class->instanceLayout());
@@ -85,8 +86,7 @@ typedef struct {
 
 static PyObject*
 Custom_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-  // TODO(T29877036): malloc should be handled by tp_alloc
-  CustomObject* self = (CustomObject*)std::malloc(sizeof(CustomObject));
+  CustomObject* self = reinterpret_cast<CustomObject*>(type->tp_alloc(type, 0));
   return (PyObject*)self;
 }
 
@@ -95,7 +95,11 @@ static int Custom_init(CustomObject* self, PyObject* args, PyObject* kwds) {
   return 0;
 }
 
-TEST(PyTypeObject, InitializeCustomTypeypeInstance) {
+static void Custom_dealloc(CustomObject* self) {
+  Py_TYPE(self)->tp_free(static_cast<void*>(self));
+}
+
+TEST(PyTypeObject, InitializeCustomTypeInstance) {
   Runtime runtime;
   HandleScope scope;
   Thread* thread = Thread::currentThread();
@@ -108,23 +112,28 @@ TEST(PyTypeObject, InitializeCustomTypeypeInstance) {
 
   // Instantiate Class
   PyTypeObject custom_type{PyObject_HEAD_INIT(nullptr)};
+  custom_type.tp_basicsize = sizeof(CustomObject);
   custom_type.tp_name = "custom.Custom";
   custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
+  custom_type.tp_alloc = PyType_GenericAlloc;
   custom_type.tp_new = Custom_new;
   custom_type.tp_init = (initproc)Custom_init;
+  custom_type.tp_dealloc = (destructor)Custom_dealloc;
+  custom_type.tp_free = PyObject_Del;
   PyType_Ready(&custom_type);
 
   // Add class to the runtime
-  Handle<Object> tp_name(
-      &scope, runtime.newStringFromCString(custom_type.tp_name));
+  Handle<Object> type_id(
+      &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&custom_type)));
   Handle<Dictionary> ext_dict(&scope, runtime.extensionTypes());
-  Handle<Object> type_class(&scope, runtime.dictionaryAt(ext_dict, tp_name));
+  Handle<Object> type_class(&scope, runtime.dictionaryAt(ext_dict, type_id));
   Handle<Object> ob_name(&scope, runtime.newStringFromCString("Custom"));
   runtime.dictionaryAtPutInValueCell(module_dict, ob_name, type_class);
 
   runtime.runFromCString(R"(
 import custom
 instance = custom.Custom()
+instance2 = custom.Custom()
 )");
 
   // Verify the initialized value
@@ -142,8 +151,35 @@ instance = custom.Custom()
       static_cast<CustomObject*>(extension_obj->asCPointer());
   EXPECT_EQ(custom_obj->value, 30);
 
-  // TODO(T29877145): free should be handled by tp_dealloc
-  std::free(custom_obj);
+  // Decref and dealloc custom instance
+  Handle<HeapObject> instance2(
+      &scope, testing::findInModule(&runtime, main, "instance2"));
+  Handle<Integer> object_ptr2(
+      &scope, runtime.instanceAt(thread, instance2, attr_name));
+  CustomObject* custom_obj2 =
+      static_cast<CustomObject*>(object_ptr2->asCPointer());
+  EXPECT_EQ(1, Py_REFCNT(custom_obj2));
+  Py_DECREF(custom_obj2);
+}
+
+TEST(PyTypeObject, TestGenericAllocation) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  // Instantiate Class
+  PyTypeObject custom_type{PyObject_HEAD_INIT(nullptr)};
+  custom_type.tp_basicsize = sizeof(CustomObject);
+  custom_type.tp_name = "custom.Custom";
+  custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
+
+  PyType_Ready(&custom_type);
+
+  PyObject* result = PyType_GenericAlloc(&custom_type, 0);
+  Handle<Object> instance_obj(
+      &scope, ApiHandle::FromPyObject(result)->asObject());
+  ASSERT_TRUE(instance_obj->isInstance());
+  EXPECT_EQ(1, Py_REFCNT(result));
 }
 
 TEST(PyTypeObject, VerifyStaticObjectInitialization) {

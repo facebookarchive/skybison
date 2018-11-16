@@ -33,7 +33,8 @@ void PyType_Type_Init(void) {
       0, /* tp_getattro */
       0, /* tp_setattro */
       0, /* tp_as_buffer */
-      0, /* tp_flags */
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+          Py_TPFLAGS_BUILTIN, /* tp_flags */
       0, /* tp_doc */
       0, /* tp_traverse */
       0, /* tp_clear */
@@ -98,7 +99,8 @@ void PyBaseObject_Type_Init(void) {
       0, /* tp_getattro */
       0, /* tp_setattro */
       0, /* tp_as_buffer */
-      0, /* tp_flags */
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+          Py_TPFLAGS_TYPE_SUBCLASS | Py_TPFLAGS_BUILTIN, /* tp_flags */
       0, /* tp_doc */
       0, /* tp_traverse */
       0, /* tp_clear */
@@ -143,6 +145,32 @@ extern "C" PyTypeObject* PyBaseObject_Type_Ptr() {
 
 extern "C" unsigned long PyType_GetFlags(PyTypeObject* type) {
   return type->tp_flags;
+}
+
+// TODO(T30506778): Create an ApiType in the runtime
+bool Type_IsBuiltin(PyObject* pytype) {
+  long flags = PyType_GetFlags(reinterpret_cast<PyTypeObject*>(pytype));
+  return flags & Py_TPFLAGS_BUILTIN;
+}
+
+extern "C" PyObject* PyType_GenericAlloc(
+    PyTypeObject* type,
+    Py_ssize_t nitems) {
+  // note that we need to add one, for the sentinel
+  const size_t size = _PyObject_VAR_SIZE(type, nitems + 1);
+  PyObject* obj = (PyObject*)PyObject_MALLOC(size);
+
+  if (obj == NULL)
+    return PyErr_NoMemory();
+  memset(obj, 0, size);
+
+  if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+    Py_INCREF(type);
+
+  (void)PyObject_INIT(obj, type);
+  // TODO(T30111008): Add PyObject_INIT_VAR
+
+  return obj;
 }
 
 extern "C" int PyType_Ready(PyTypeObject* type) {
@@ -211,7 +239,9 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   // Add the runtime class object reference to PyTypeObject
   Handle<Dictionary> extensions_dict(&scope, runtime->extensionTypes());
   Handle<Object> type_class_obj(&scope, *type_class);
-  runtime->dictionaryAtPut(extensions_dict, name, type_class_obj);
+  Handle<Object> type_class_id(
+      &scope, runtime->newIntegerFromCPointer(static_cast<void*>(type)));
+  runtime->dictionaryAtPut(extensions_dict, type_class_id, type_class_obj);
 
   // All done -- set the ready flag
   type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;

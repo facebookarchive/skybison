@@ -23,3 +23,11 @@ void PyErr_Clear(void) {
 int PyErr_BadArgument(void) {
   UNIMPLEMENTED("PyErr_BadArgument");
 }
+
+PyObject* PyErr_NoMemory(void) {
+  UNIMPLEMENTED("PyErr_NoMemory");
+}
+
+void Py_FatalError(const char*) {
+  UNIMPLEMENTED("Py_FatalError");
+}
