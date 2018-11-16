@@ -141,6 +141,7 @@ add_library(
   ext/Objects/boolobject.cpp
   ext/Objects/dictobject.cpp
   ext/Objects/exceptions.cpp
+  ext/Objects/listobject.cpp
   ext/Objects/longobject.cpp
   ext/Objects/moduleobject.cpp
   ext/Objects/object.cpp
@@ -239,6 +240,7 @@ add_library(
   STATIC
   ext/Objects/boolobject-test.cpp
   ext/Objects/dictobject-test.cpp
+  ext/Objects/listobject-test.cpp
   ext/Objects/moduleobject-test.cpp
   ext/Objects/tupleobject-test.cpp
   ext/Objects/typeobject-test.cpp
