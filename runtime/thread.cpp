@@ -265,6 +265,16 @@ Object* Thread::throwKeyErrorFromCString(const char* message) {
   return throwKeyError(runtime()->newStringFromCString(message));
 }
 
+Object* Thread::throwOverflowError(Object* value) {
+  // TODO(dulinr): instantiate an OverflowError object.
+  pending_exception_ = value;
+  return Error::object();
+}
+
+Object* Thread::throwOverflowErrorFromCString(const char* message) {
+  return throwOverflowError(runtime()->newStringFromCString(message));
+}
+
 Object* Thread::throwIndexError(Object* value) {
   // TODO(jeethu): instantiate an IndexError object.
   pending_exception_ = value;

@@ -14,6 +14,7 @@ const BuiltinMethod TupleBuiltins::kMethods[] = {
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
+    {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>}};
 
 void TupleBuiltins::initialize(Runtime* runtime) {
@@ -120,6 +121,54 @@ Object* TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   }
   Handle<ObjectArray> self(&scope, *obj);
   return thread->runtime()->newInt(self->length());
+}
+
+Object* TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+  if (nargs == 0) {
+    return thread->throwTypeErrorFromCString(
+        "descriptor '__mul__' of 'tuple' object needs an argument");
+  }
+  if (nargs != 2) {
+    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+        "expected 1 argument, got %ld", nargs - 1));
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<ObjectArray> self(&scope, args.get(0));
+  Handle<Object> rhs(&scope, args.get(1));
+  if (!rhs->isInt()) {
+    return thread->throwTypeErrorFromCString(
+        "can't multiply sequence by non-int");
+  }
+  if (!rhs->isSmallInt()) {
+    return thread->throwOverflowErrorFromCString(
+        "cannot fit 'int' into an index-sized integer");
+  }
+  Handle<SmallInt> right(&scope, *rhs);
+  word length = self->length();
+  word times = right->value();
+  if (length == 0 || times <= 0) {
+    return thread->runtime()->newObjectArray(0);
+  }
+  if (length == 1 || times == 1) {
+    return *self;
+  }
+
+  word new_length = length * times;
+  // If the new length overflows, raise an OverflowError.
+  if ((new_length / length) != times) {
+    return thread->throwOverflowErrorFromCString(
+        "cannot fit 'int' into an index-sized integer");
+  }
+
+  Handle<ObjectArray> new_tuple(&scope,
+                                thread->runtime()->newObjectArray(new_length));
+  for (word i = 0; i < times; i++) {
+    for (word j = 0; j < length; j++) {
+      new_tuple->atPut(i * length + j, self->at(j));
+    }
+  }
+  return *new_tuple;
 }
 
 Object* TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

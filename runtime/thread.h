@@ -92,6 +92,10 @@ class Thread {
   Object* throwKeyError(Object* value);
   Object* throwKeyErrorFromCString(const char* message);
 
+  // Convenience methods for throwing a KeyError exception.
+  Object* throwOverflowError(Object* value);
+  Object* throwOverflowErrorFromCString(const char* message);
+
   // Convenience methods for throwing a RuntimeError exception.
   Object* throwRuntimeError(Object* value);
   Object* throwRuntimeErrorFromCString(const char* message);

@@ -317,4 +317,62 @@ a = ().__repr__()
   EXPECT_PYSTRING_EQ(*a, "()");
 }
 
+TEST(TupleBuiltinsTest, DunderMulWithOneElement) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = (1,) * 4
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+
+  ASSERT_EQ(a->length(), 4);
+  EXPECT_EQ(SmallInt::cast(a->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(a->at(1))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(a->at(2))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(a->at(3))->value(), 1);
+}
+
+TEST(TupleBuiltinsTest, DunderMulWithManyElements) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = (1,2,3) * 2
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+
+  ASSERT_EQ(a->length(), 6);
+  EXPECT_EQ(SmallInt::cast(a->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(a->at(1))->value(), 2);
+  EXPECT_EQ(SmallInt::cast(a->at(2))->value(), 3);
+  EXPECT_EQ(SmallInt::cast(a->at(3))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(a->at(4))->value(), 2);
+  EXPECT_EQ(SmallInt::cast(a->at(5))->value(), 3);
+}
+
+TEST(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = () * 5
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+
+  EXPECT_EQ(a->length(), 0);
+}
+
+TEST(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = (1,2,3) * -2
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+
+  EXPECT_EQ(a->length(), 0);
+}
+
 }  // namespace python
