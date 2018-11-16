@@ -51,4 +51,36 @@ print(spam.CONST)
   EXPECT_EQ(output, "5\n");
 }
 
+TEST(ModuleObject, GetDefwithExtensionModuleRetunsNonNull) {
+  Runtime runtime;
+  HandleScope scope;
+
+  PyModuleDef def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+      nullptr,
+      -1,
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
+  };
+
+  PyObject* module = PyModule_Create(&def);
+  ASSERT_NE(module, nullptr);
+
+  PyModuleDef* result = PyModule_GetDef(module);
+  EXPECT_EQ(result, &def);
+}
+
+TEST(ModuleObject, GetDefWithNonModuleRetunsNull) {
+  Runtime runtime;
+  HandleScope scope;
+
+  PyObject* integer = PyBool_FromLong(0);
+  PyModuleDef* result = PyModule_GetDef(integer);
+  EXPECT_EQ(result, nullptr);
+}
+
 }  // namespace python

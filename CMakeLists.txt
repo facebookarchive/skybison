@@ -165,7 +165,8 @@ add_library(
   ext/Objects/typeobject.cpp
   ext/Objects/unicodeobject.cpp
   ext/Python/_warnings.cpp
-  ext/Python/errors.cpp)
+  ext/Python/errors.cpp
+  ext/Python/modsupport.cpp)
 target_compile_options(
   extension
   PUBLIC
@@ -189,6 +190,7 @@ add_library(
   modules
   STATIC
   ext/Modules/config.cpp
+  third-party/cpython/Modules/_stat.c
   third-party/cpython/Modules/errnomodule.c)
 target_compile_options(
   modules
@@ -271,7 +273,8 @@ add_library(
   ext/Objects/object-test.cpp
   ext/Objects/tupleobject-test.cpp
   ext/Objects/typeobject-test.cpp
-  ext/Objects/unicodeobject-test.cpp)
+  ext/Objects/unicodeobject-test.cpp
+  ext/Python/modsupport-test.cpp)
 target_include_directories(
   extension-tests
   PRIVATE

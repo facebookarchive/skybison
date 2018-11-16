@@ -1208,6 +1208,11 @@ class Module : public HeapObject {
   Object* dictionary();
   void setDictionary(Object* dictionary);
 
+  // Contains the numeric address of mode definition object for C-API modules or
+  // zero if the module was not defined through the C-API.
+  Object* def();
+  void setDef(Object* def);
+
   // Casting.
   static Module* cast(Object* object);
 
@@ -1217,7 +1222,8 @@ class Module : public HeapObject {
   // Layout.
   static const int kNameOffset = HeapObject::kSize;
   static const int kDictionaryOffset = kNameOffset + kPointerSize;
-  static const int kSize = kDictionaryOffset + kPointerSize;
+  static const int kDefOffset = kDictionaryOffset + kPointerSize;
+  static const int kSize = kDefOffset + kPointerSize;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Module);
@@ -3350,6 +3356,12 @@ inline Object* Module::dictionary() {
 
 inline void Module::setDictionary(Object* dictionary) {
   instanceVariableAtPut(kDictionaryOffset, dictionary);
+}
+
+inline Object* Module::def() { return instanceVariableAt(kDefOffset); }
+
+inline void Module::setDef(Object* dictionary) {
+  instanceVariableAtPut(kDefOffset, dictionary);
 }
 
 // NotImplemented

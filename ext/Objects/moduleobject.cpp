@@ -74,14 +74,15 @@ extern "C" PyTypeObject* PyModule_Type_Ptr() {
       runtime->builtinExtensionTypes(ExtensionTypes::kModule));
 }
 
-extern "C" PyObject* PyModule_Create2(struct PyModuleDef* pymodule, int) {
+extern "C" PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  const char* c_name = pymodule->m_name;
+  const char* c_name = def->m_name;
   Handle<Object> name(&scope, runtime->newStringFromCString(c_name));
   Handle<Module> module(&scope, runtime->newModule(name));
+  module->setDef(runtime->newIntegerFromCPointer(def));
   runtime->addModule(module);
 
   // TODO: Check m_slots
@@ -91,6 +92,23 @@ extern "C" PyObject* PyModule_Create2(struct PyModuleDef* pymodule, int) {
   // TODO: Add m_doc
 
   return ApiHandle::fromObject(*module)->asPyObject();
+}
+
+extern "C" PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Object> module_obj(&scope,
+                            ApiHandle::fromPyObject(pymodule)->asObject());
+  if (!module_obj->isModule()) {
+    // TODO(cshapiro): throw a TypeError
+    return nullptr;
+  }
+  Handle<Module> module(&scope, *module_obj);
+  if (!module->def()->isInteger()) {
+    return nullptr;
+  }
+  Handle<Integer> def(&scope, module->def());
+  return static_cast<PyModuleDef*>(def->asCPointer());
 }
 
 extern "C" PyObject* PyModule_GetDict(PyObject* pymodule) {

@@ -711,6 +711,7 @@ Object* Runtime::newModule(const Handle<Object>& name) {
   Handle<Dictionary> dictionary(&scope, newDictionary());
   result->setDictionary(*dictionary);
   result->setName(*name);
+  result->setDef(newIntegerFromCPointer(nullptr));
   Handle<Object> key(&scope, symbols()->DunderName());
   dictionaryAtPutInValueCell(dictionary, key, name);
   return *result;
