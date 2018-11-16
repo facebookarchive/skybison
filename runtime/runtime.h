@@ -199,6 +199,9 @@ class Runtime {
   // Appends an element to the end of the list.
   void listAdd(const Handle<List>& list, const Handle<Object>& value);
 
+  // Extends a list from an iterator.
+  void listExtend(const Handle<List>& list, const Handle<Object>& iterator);
+
   // Inserts an element to the specified index of the list.
   // When index >= len(list) it is equivalent to appending to the list.
   void

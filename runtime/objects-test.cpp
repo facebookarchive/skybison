@@ -504,6 +504,80 @@ TEST(ListTest, PopList) {
   ASSERT_EQ(SmallInteger::cast(res0)->value(), 0);
 }
 
+TEST(ListTest, ListExtendList) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  Handle<List> list1(&scope, runtime.newList());
+  for (int i = 0; i < 16; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    Handle<Object> value1(&scope, SmallInteger::fromWord(i + 16));
+    runtime.listAdd(list, value);
+    runtime.listAdd(list1, value1);
+  }
+  EXPECT_EQ(list->allocated(), 16);
+  Handle<Object> list1_handle(&scope, *list1);
+  runtime.listExtend(list, list1_handle);
+  ASSERT_EQ(list->allocated(), 32);
+  for (int i = 0; i < 32; i++) {
+    SmallInteger* elem = SmallInteger::cast(list->at(i));
+    EXPECT_EQ(elem->value(), i);
+  }
+}
+
+TEST(ListTest, ListExtendListIterator) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  Handle<List> list1(&scope, runtime.newList());
+  for (int i = 0; i < 16; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    Handle<Object> value1(&scope, SmallInteger::fromWord(i + 16));
+    runtime.listAdd(list, value);
+    runtime.listAdd(list1, value1);
+  }
+  EXPECT_EQ(list->allocated(), 16);
+  Handle<Object> list1_handle(&scope, *list1);
+  Handle<Object> list1_iterator(&scope, runtime.newListIterator(list1_handle));
+  runtime.listExtend(list, list1_iterator);
+  ASSERT_EQ(list->allocated(), 32);
+  for (int i = 0; i < 32; i++) {
+    SmallInteger* elem = SmallInteger::cast(list->at(i));
+    EXPECT_EQ(elem->value(), i);
+  }
+}
+
+TEST(ListTest, ListExtendObjectArray) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  Handle<Object> object_array0(&scope, runtime.newObjectArray(0));
+  Handle<ObjectArray> object_array1(&scope, runtime.newObjectArray(1));
+  Handle<ObjectArray> object_array2(&scope, runtime.newObjectArray(16));
+
+  for (int i = 0; i < 16; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.listAdd(list, value);
+  }
+  runtime.listExtend(list, object_array0);
+  EXPECT_EQ(list->allocated(), 16);
+
+  Handle<Object> object_array1_handle(&scope, *object_array1);
+  object_array1->atPut(0, None::object());
+  runtime.listExtend(list, object_array1_handle);
+  ASSERT_GE(list->allocated(), 17);
+  ASSERT_TRUE(list->at(16)->isNone());
+
+  for (word i = 0; i < 16; i++)
+    object_array2->atPut(i, SmallInteger::fromWord(i));
+
+  Handle<Object> object_array2_handle(&scope, *object_array2);
+  runtime.listExtend(list, object_array2_handle);
+  ASSERT_GE(list->allocated(), 16 + 1 + 16);
+  for (word i = 0; i < 16; i++)
+    EXPECT_EQ(list->at(i + 17), SmallInteger::fromWord(i));
+}
+
 TEST(SliceTest, adjustIndices) {
   // Test: 0:10:1 on len: 10
   word length = 10;

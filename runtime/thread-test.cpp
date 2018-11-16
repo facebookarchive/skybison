@@ -2450,6 +2450,48 @@ Foo.bar()
   EXPECT_EQ(output, "1\n2\n");
 }
 
+TEST(TestThread, BuildTupleUnpack) {
+  const char* src = R"(
+t = (*[0], *[1, 2], *[], *[3, 4, 5])
+t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> t(&scope, findInModule(&runtime, main, "t"));
+  EXPECT_TRUE(t->isObjectArray());
+  Handle<ObjectArray> tuple_t(&scope, *t);
+  EXPECT_EQ(tuple_t->length(), 6);
+  for (word i = 0; i < tuple_t->length(); i++)
+    EXPECT_EQ(SmallInteger::cast(tuple_t->at(i))->value(), i);
+
+  Handle<Object> t1(&scope, findInModule(&runtime, main, "t1"));
+  EXPECT_TRUE(t1->isObjectArray());
+  Handle<ObjectArray> tuple_t1(&scope, *t1);
+  EXPECT_EQ(tuple_t1->length(), 6);
+  for (word i = 0; i < tuple_t1->length(); i++)
+    EXPECT_EQ(SmallInteger::cast(tuple_t1->at(i))->value(), i);
+}
+
+TEST(TestThread, BuildListUnpack) {
+  const char* src = R"(
+l = [*[0], *[1, 2], *[], *[3, 4, 5]]
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
+  EXPECT_TRUE(l->isList());
+  Handle<List> list_l(&scope, *l);
+  EXPECT_EQ(list_l->allocated(), 6);
+  for (word i = 0; i < list_l->allocated(); i++)
+    EXPECT_EQ(SmallInteger::cast(list_l->at(i))->value(), i);
+}
+
 TEST(BuildString, buildStringEmpty) {
   Runtime runtime;
   HandleScope scope;

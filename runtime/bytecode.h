@@ -159,10 +159,10 @@ namespace python {
   V(SET_ADD, 146, interpreter::SET_ADD)                              \
   V(MAP_ADD, 147, interpreter::MAP_ADD)                              \
   V(LOAD_CLASSDEREF, 148, interpreter::NOT_IMPLEMENTED)              \
-  V(BUILD_LIST_UNPACK, 149, interpreter::NOT_IMPLEMENTED)            \
+  V(BUILD_LIST_UNPACK, 149, interpreter::BUILD_LIST_UNPACK)          \
   V(BUILD_MAP_UNPACK, 150, interpreter::NOT_IMPLEMENTED)             \
   V(BUILD_MAP_UNPACK_WITH_CALL, 151, interpreter::NOT_IMPLEMENTED)   \
-  V(BUILD_TUPLE_UNPACK, 152, interpreter::NOT_IMPLEMENTED)           \
+  V(BUILD_TUPLE_UNPACK, 152, interpreter::BUILD_TUPLE_UNPACK)        \
   V(BUILD_SET_UNPACK, 153, interpreter::NOT_IMPLEMENTED)             \
   V(SETUP_ASYNC_WITH, 154, interpreter::NOT_IMPLEMENTED)             \
   V(FORMAT_VALUE, 155, interpreter::FORMAT_VALUE)                    \

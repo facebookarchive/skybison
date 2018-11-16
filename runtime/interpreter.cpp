@@ -441,6 +441,38 @@ void MAP_ADD(Context* ctx, word arg) {
   ctx->thread->runtime()->dictionaryAtPut(dict, key, value);
 }
 
+void BUILD_TUPLE_UNPACK(Context* ctx, word arg) {
+  Runtime* runtime = ctx->thread->runtime();
+  HandleScope scope;
+  Handle<List> list(&scope, runtime->newList());
+  Object**& sp = ctx->sp;
+  for (word i = arg - 1; i >= 0; i--) {
+    HandleScope scope1;
+    Handle<Object> obj(&scope1, *(sp + i));
+    runtime->listExtend(list, obj);
+  }
+  ObjectArray* tuple =
+      ObjectArray::cast(runtime->newObjectArray(list->allocated()));
+  for (word i = 0; i < list->allocated(); i++)
+    tuple->atPut(i, list->at(i));
+  sp += arg - 1;
+  *sp = tuple;
+}
+
+void BUILD_LIST_UNPACK(Context* ctx, word arg) {
+  HandleScope scope;
+  Runtime* runtime = ctx->thread->runtime();
+  Handle<List> list(&scope, runtime->newList());
+  Object**& sp = ctx->sp;
+  for (word i = arg - 1; i >= 0; i--) {
+    HandleScope scope1;
+    Handle<Object> obj(&scope1, *(sp + i));
+    runtime->listExtend(list, obj);
+  }
+  sp += arg - 1;
+  *sp = *list;
+}
+
 void BUILD_LIST(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;

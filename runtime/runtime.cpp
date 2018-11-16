@@ -1270,6 +1270,53 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   list->atPut(index, *value);
 }
 
+void Runtime::listExtend(
+    const Handle<List>& list,
+    const Handle<Object>& iterator) {
+  word index = list->allocated();
+  HandleScope scope;
+  if (iterator->isList()) {
+    Handle<List> ext_list(&scope, *iterator);
+    if (ext_list->allocated() > 0) {
+      word new_capacity = index + ext_list->allocated();
+      Handle<ObjectArray> items(&scope, list->items());
+      Handle<ObjectArray> newItems(&scope, ensureCapacity(items, new_capacity));
+      if (*items != *newItems) {
+        list->setItems(*newItems);
+      }
+      list->setAllocated(new_capacity);
+      for (word i = 0; i < ext_list->allocated(); i++)
+        list->atPut(index++, ext_list->at(i));
+    }
+  } else if (iterator->isListIterator()) {
+    Handle<ListIterator> list_iter(&scope, *iterator);
+    while (true) {
+      Handle<Object> value(&scope, list_iter->next());
+      if (value->isError())
+        break;
+      listAdd(list, value);
+    }
+  } else if (iterator->isObjectArray()) {
+    Handle<ObjectArray> tuple(&scope, *iterator);
+    if (tuple->length() > 0) {
+      word new_capacity = index + tuple->length();
+      Handle<ObjectArray> items(&scope, list->items());
+      Handle<ObjectArray> newItems(&scope, ensureCapacity(items, new_capacity));
+      if (*items != *newItems) {
+        list->setItems(*newItems);
+      }
+      list->setAllocated(new_capacity);
+      for (word i = 0; i < tuple->length(); i++) {
+        list->atPut(index++, tuple->at(i));
+      }
+    }
+  } else {
+    UNIMPLEMENTED(
+        "List.extend only supports extending from "
+        "List, ListIterator & Tuple");
+  }
+}
+
 void Runtime::listInsert(
     const Handle<List>& list,
     const Handle<Object>& value,
