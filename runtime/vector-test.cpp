@@ -231,9 +231,9 @@ TEST(VectorTest, EmptyBaseOptimization) {
   Vector<int> vector1;
   Vector<int, std::allocator<int>> vector2;
   Vector<int, TestStatefulAllocator<int>> vector3;
-  EXPECT_EQ(32, sizeof(vector1));
-  EXPECT_EQ(32, sizeof(vector2));
-  EXPECT_EQ(40, sizeof(vector3));
+  EXPECT_EQ(static_cast<size_t>(32), sizeof(vector1));
+  EXPECT_EQ(static_cast<size_t>(32), sizeof(vector2));
+  EXPECT_EQ(static_cast<size_t>(40), sizeof(vector3));
 }
 
 } // namespace python
