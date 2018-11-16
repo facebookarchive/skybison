@@ -96,14 +96,14 @@ right = C()
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *c_class);
-  ASSERT_TRUE(RawObjectArray::cast(result)->at(1)->isStr());
-  RawStr name = RawStr::cast(RawObjectArray::cast(result)->at(1));
+  ASSERT_TRUE(result->isTuple());
+  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
+  EXPECT_EQ(RawTuple::cast(result)->at(0), *c_class);
+  ASSERT_TRUE(RawTuple::cast(result)->at(1)->isStr());
+  RawStr name = RawStr::cast(RawTuple::cast(result)->at(1));
   EXPECT_TRUE(name->equalsCStr("__sub__"));
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *left);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *right);
+  EXPECT_EQ(RawTuple::cast(result)->at(2), *left);
+  EXPECT_EQ(RawTuple::cast(result)->at(3), *right);
 }
 
 TEST(InterpreterTest, BinaryOpInvokesSelfMethodIgnoresReflectedMethod) {
@@ -131,14 +131,14 @@ right = C()
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *c_class);
-  ASSERT_TRUE(RawObjectArray::cast(result)->at(1)->isStr());
-  RawStr name = RawStr::cast(RawObjectArray::cast(result)->at(1));
+  ASSERT_TRUE(result->isTuple());
+  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
+  EXPECT_EQ(RawTuple::cast(result)->at(0), *c_class);
+  ASSERT_TRUE(RawTuple::cast(result)->at(1)->isStr());
+  RawStr name = RawStr::cast(RawTuple::cast(result)->at(1));
   EXPECT_TRUE(name->equalsCStr("__sub__"));
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *left);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *right);
+  EXPECT_EQ(RawTuple::cast(result)->at(2), *left);
+  EXPECT_EQ(RawTuple::cast(result)->at(3), *right);
 }
 
 TEST(InterpreterTest, BinaryOperationInvokesSubclassReflectedMethod) {
@@ -168,13 +168,13 @@ right = D()
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *d_class);
-  EXPECT_TRUE(RawStr::cast(RawObjectArray::cast(result)->at(1))
-                  ->equalsCStr("__rsub__"));
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *right);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *left);
+  ASSERT_TRUE(result->isTuple());
+  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
+  EXPECT_EQ(RawTuple::cast(result)->at(0), *d_class);
+  EXPECT_TRUE(
+      RawStr::cast(RawTuple::cast(result)->at(1))->equalsCStr("__rsub__"));
+  EXPECT_EQ(RawTuple::cast(result)->at(2), *right);
+  EXPECT_EQ(RawTuple::cast(result)->at(3), *left);
 }
 
 TEST(InterpreterTest, BinaryOperationInvokesOtherReflectedMethod) {
@@ -203,13 +203,13 @@ right = D()
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *d_class);
-  EXPECT_TRUE(RawStr::cast(RawObjectArray::cast(result)->at(1))
-                  ->equalsCStr("__rsub__"));
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *right);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *left);
+  ASSERT_TRUE(result->isTuple());
+  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
+  EXPECT_EQ(RawTuple::cast(result)->at(0), *d_class);
+  EXPECT_TRUE(
+      RawStr::cast(RawTuple::cast(result)->at(1))->equalsCStr("__rsub__"));
+  EXPECT_EQ(RawTuple::cast(result)->at(2), *right);
+  EXPECT_EQ(RawTuple::cast(result)->at(3), *left);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsInplaceMethod) {
@@ -235,13 +235,13 @@ right = C()
 
   RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *c_class);
-  EXPECT_TRUE(RawStr::cast(RawObjectArray::cast(result)->at(1))
-                  ->equalsCStr("__isub__"));
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *left);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *right);
+  ASSERT_TRUE(result->isTuple());
+  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
+  EXPECT_EQ(RawTuple::cast(result)->at(0), *c_class);
+  EXPECT_TRUE(
+      RawStr::cast(RawTuple::cast(result)->at(1))->equalsCStr("__isub__"));
+  EXPECT_EQ(RawTuple::cast(result)->at(2), *left);
+  EXPECT_EQ(RawTuple::cast(result)->at(3), *right);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsBinaryMethod) {
@@ -267,13 +267,13 @@ right = C()
 
   RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *c_class);
+  ASSERT_TRUE(result->isTuple());
+  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
+  EXPECT_EQ(RawTuple::cast(result)->at(0), *c_class);
   EXPECT_TRUE(
-      RawStr::cast(RawObjectArray::cast(result)->at(1))->equalsCStr("__sub__"));
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *left);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *right);
+      RawStr::cast(RawTuple::cast(result)->at(1))->equalsCStr("__sub__"));
+  EXPECT_EQ(RawTuple::cast(result)->at(2), *left);
+  EXPECT_EQ(RawTuple::cast(result)->at(3), *right);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsBinaryMethodAfterNotImplemented) {
@@ -301,13 +301,13 @@ right = C()
 
   RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *c_class);
+  ASSERT_TRUE(result->isTuple());
+  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
+  EXPECT_EQ(RawTuple::cast(result)->at(0), *c_class);
   EXPECT_TRUE(
-      RawStr::cast(RawObjectArray::cast(result)->at(1))->equalsCStr("__sub__"));
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *left);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *right);
+      RawStr::cast(RawTuple::cast(result)->at(1))->equalsCStr("__sub__"));
+  EXPECT_EQ(RawTuple::cast(result)->at(2), *left);
+  EXPECT_EQ(RawTuple::cast(result)->at(3), *right);
 }
 
 // To a rich comparison on two instances of the same type.  In each case, the
@@ -532,11 +532,11 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -549,7 +549,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   Function callee(&scope, runtime.newFunction());
   callee->setCode(*code);
   callee->setEntry(interpreterTrampoline);
-  ObjectArray defaults(&scope, runtime.newObjectArray(2));
+  Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults->atPut(0, SmallInt::fromWord(1));
   defaults->atPut(1, SmallInt::fromWord(2));
@@ -586,11 +586,11 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -603,7 +603,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   Function callee(&scope, runtime.newFunction());
   callee->setCode(*code);
   callee->setEntryEx(interpreterTrampolineEx);
-  ObjectArray defaults(&scope, runtime.newObjectArray(2));
+  Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults->atPut(0, SmallInt::fromWord(1));
   defaults->atPut(1, SmallInt::fromWord(2));
@@ -616,7 +616,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   RawObject* value_stack_start = frame->valueStackTop();
 
   // Push function pointer and argument
-  ObjectArray ex(&scope, runtime.newObjectArray(1));
+  Tuple ex(&scope, runtime.newTuple(1));
   ex->atPut(0, SmallInt::fromWord(2));
   frame->pushValue(*callee);
   frame->pushValue(*ex);
@@ -642,17 +642,17 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
   code->setArgcount(2);
   code->setStacksize(1);
-  ObjectArray var_names(&scope, runtime.newObjectArray(2));
+  Tuple var_names(&scope, runtime.newTuple(2));
   var_names->atPut(0, runtime.newStrFromCStr("a"));
   var_names->atPut(1, runtime.newStrFromCStr("b"));
   code->setVarnames(*var_names);
@@ -663,7 +663,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   Function callee(&scope, runtime.newFunction());
   callee->setCode(*code);
   callee->setEntryKw(interpreterTrampolineKw);
-  ObjectArray defaults(&scope, runtime.newObjectArray(2));
+  Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults->atPut(0, SmallInt::fromWord(1));
   defaults->atPut(1, SmallInt::fromWord(2));
@@ -676,7 +676,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   RawObject* value_stack_start = frame->valueStackTop();
 
   // Push function pointer and argument
-  ObjectArray arg_names(&scope, runtime.newObjectArray(1));
+  Tuple arg_names(&scope, runtime.newTuple(1));
   arg_names->atPut(0, runtime.newStrFromCStr("b"));
   frame->pushValue(*callee);
   frame->pushValue(SmallInt::fromWord(4));
@@ -872,10 +872,10 @@ def my_displayhook(value):
 sys.displayhook = my_displayhook
   )");
 
-  Object unique(&scope, runtime.newObjectArray(1));  // unique object
+  Object unique(&scope, runtime.newTuple(1));  // unique object
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, *unique);
   consts->atPut(1, NoneType::object());
   code->setConsts(*consts);
@@ -913,7 +913,7 @@ a = AsyncIterable()
   Object a(&scope, testing::moduleAt(&runtime, main, "a"));
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
@@ -928,7 +928,7 @@ TEST(InterpreterDeathTest, GetAiterOnNonIterable) {
   Runtime runtime;
   HandleScope scope;
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(123));
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
@@ -962,11 +962,11 @@ manager = M()
   Code code(&scope, runtime.newCode());
   code->setNlocals(0);
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   names->atPut(0, runtime.newStrFromCStr("manager"));
   code->setNames(*names);
 
@@ -997,7 +997,7 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
   HandleScope scope;
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, SmallInt::fromWord(42));
   consts->atPut(1, NoneType::object());
   code->setConsts(*consts);
@@ -1390,9 +1390,9 @@ t = foo(*(1,2), *(3, 4))
 
   Module main(&scope, testing::findModule(&runtime, "__main__"));
   Object t(&scope, testing::moduleAt(&runtime, main, "t"));
-  ASSERT_TRUE(t->isObjectArray());
+  ASSERT_TRUE(t->isTuple());
 
-  ObjectArray tuple(&scope, *t);
+  Tuple tuple(&scope, *t);
   EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1);
   EXPECT_EQ(RawSmallInt::cast(tuple->at(1))->value(), 2);
   EXPECT_EQ(RawSmallInt::cast(tuple->at(2))->value(), 3);
@@ -1523,7 +1523,7 @@ a = AsyncIterator()
   Object a(&scope, testing::moduleAt(&runtime, main, "a"));
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
@@ -1541,7 +1541,7 @@ TEST(InterpreterDeathTest, GetAnextOnNonIterable) {
   Runtime runtime;
   HandleScope scope;
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(123));
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
@@ -1565,7 +1565,7 @@ a = AsyncIterator()
   Object a(&scope, testing::moduleAt(&runtime, main, "a"));
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
@@ -1590,7 +1590,7 @@ a = Awaitable()
   Object a(&scope, testing::moduleAt(&runtime, main, "a"));
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
@@ -1605,7 +1605,7 @@ TEST(InterpreterDeathTest, GetAwaitableOnNonAwaitable) {
   Runtime runtime;
   HandleScope scope;
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, runtime.newStrFromCStr("foo"));
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
@@ -2070,7 +2070,7 @@ foo = Foo()
 
   // Create a code object and set the foo instance as a const
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, *foo);
   code->setConsts(*consts);
 

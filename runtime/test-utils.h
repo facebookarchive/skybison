@@ -118,7 +118,7 @@ inline std::vector<Value> make_list(std::vector<Value> l) { return l; }
 // pushes all the arguments onto the stack, and invokes the interpreter.
 //
 // The caller is responsible for cleaning up any exception state.
-std::string callFunctionToString(const Function& func, const ObjectArray& args);
+std::string callFunctionToString(const Function& func, const Tuple& args);
 
 // Calls func using the supplied arguments.
 //
@@ -126,9 +126,9 @@ std::string callFunctionToString(const Function& func, const ObjectArray& args);
 // pushes all the arguments onto the stack, and invokes the interpreter.
 //
 // The caller is responsible for cleaning up any exception state.
-RawObject callFunction(const Function& func, const ObjectArray& args);
+RawObject callFunction(const Function& func, const Tuple& args);
 
-bool objectArrayContains(const ObjectArray& object_array, const Object& key);
+bool tupleContains(const Tuple& object_array, const Object& key);
 
 // Get the module bound to name in the given runtime. Returns Error::object() if
 // not found.
@@ -153,9 +153,8 @@ RawObject newIntWithDigits(Runtime* runtime, const std::vector<word>& digits);
 // Equivalent to evaluating "set(range(start, stop))" in Python.
 RawObject setFromRange(word start, word stop);
 
-RawObject runBuiltinImpl(
-    BuiltinMethodType method,
-    View<std::reference_wrapper<const Object>> args);
+RawObject runBuiltinImpl(BuiltinMethodType method,
+                         View<std::reference_wrapper<const Object>> args);
 
 template <typename... Args>
 RawObject runBuiltin(BuiltinMethodType method, const Args&... args) {

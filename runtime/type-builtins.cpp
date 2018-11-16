@@ -105,7 +105,7 @@ RawObject builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   result->setName(*name);
 
   // Compute MRO
-  ObjectArray parents(&scope, args.get(2));
+  Tuple parents(&scope, args.get(2));
   Object maybe_mro(&scope, computeMro(thread, result, parents));
   if (maybe_mro->isError()) {
     return *maybe_mro;
@@ -134,7 +134,7 @@ RawObject builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   result->setInstanceLayout(*layout);
 
   // Copy down class flags from bases
-  ObjectArray mro(&scope, *maybe_mro);
+  Tuple mro(&scope, *maybe_mro);
   word flags = 0;
   for (word i = 1; i < mro->length(); i++) {
     Type cur(&scope, mro->at(i));

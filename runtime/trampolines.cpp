@@ -84,13 +84,13 @@ static inline RawObject callCheckFreeCell(Thread* thread, RawFunction function,
   }
 
   // initialize free var
-  DCHECK(code->numFreevars() == 0 ||
-             code->numFreevars() ==
-                 RawObjectArray::cast(function->closure())->length(),
-         "Number of freevars is different than the closure.");
+  DCHECK(
+      code->numFreevars() == 0 ||
+          code->numFreevars() == RawTuple::cast(function->closure())->length(),
+      "Number of freevars is different than the closure.");
   for (word i = 0; i < code->numFreevars(); i++) {
     callee_frame->setLocal(num_locals + num_cellvars + i,
-                           RawObjectArray::cast(function->closure())->at(i));
+                           RawTuple::cast(function->closure())->at(i));
   }
 
   RawObject generator = checkCreateGenerator(code, thread);
@@ -131,7 +131,7 @@ RawObject interpreterTrampolineSlowPath(Thread* thread, RawFunction function,
   Object tmp_varargs(&scope, NoneType::object());
   if (argc < code->argcount() && function->hasDefaults()) {
     // Add default positional args
-    ObjectArray default_args(&scope, function->defaults());
+    Tuple default_args(&scope, function->defaults());
     if (default_args->length() < (code->argcount() - argc)) {
       return thread->raiseTypeErrorWithCStr(
           "TypeError: not enough positional arguments");
@@ -146,7 +146,7 @@ RawObject interpreterTrampolineSlowPath(Thread* thread, RawFunction function,
     // VARARGS - spill extra positional args into the varargs tuple.
     if (flags & Code::VARARGS) {
       word len = Utils::maximum(static_cast<word>(0), argc - code->argcount());
-      ObjectArray varargs(&scope, thread->runtime()->newObjectArray(len));
+      Tuple varargs(&scope, thread->runtime()->newTuple(len));
       for (word i = (len - 1); i >= 0; i--) {
         varargs->atPut(i, caller_frame->topValue());
         caller_frame->popValue();
@@ -164,7 +164,7 @@ RawObject interpreterTrampolineSlowPath(Thread* thread, RawFunction function,
   if (code->kwonlyargcount() != 0 && !function->kwDefaults()->isNoneType()) {
     Dict kw_defaults(&scope, function->kwDefaults());
     if (!kw_defaults->isNoneType()) {
-      ObjectArray formal_names(&scope, code->varnames());
+      Tuple formal_names(&scope, code->varnames());
       word first_kw = code->argcount();
       for (word i = 0; i < code->kwonlyargcount(); i++) {
         Object name(&scope, formal_names->at(first_kw + i));
@@ -205,7 +205,7 @@ RawObject interpreterTrampolineSlowPath(Thread* thread, RawFunction function,
   return callCheckFreeCell(thread, function, caller_frame, code);
 }
 
-word findName(RawObject name, RawObjectArray name_list) {
+word findName(RawObject name, RawTuple name_list) {
   word len = name_list->length();
   for (word i = 0; i < len; i++) {
     if (name == name_list->at(i)) {
@@ -222,8 +222,7 @@ word findName(RawObject name, RawObjectArray name_list) {
 // prior to calling to ensure this.
 // Return None::object() if successfull, error object if not.
 RawObject checkArgs(RawFunction function, RawObject* kw_arg_base,
-                    RawObjectArray actual_names, RawObjectArray formal_names,
-                    word start) {
+                    RawTuple actual_names, RawTuple formal_names, word start) {
   word num_actuals = actual_names->length();
   // Helper function to swap actual arguments and names
   auto swap = [kw_arg_base, actual_names](word arg_pos1,
@@ -280,14 +279,13 @@ RawObject checkArgs(RawFunction function, RawObject* kw_arg_base,
     Code code(&scope, function->code());
     word absolute_pos = arg_pos + start;
     if (absolute_pos < code->argcount()) {
-      word defaults_size =
-          function->hasDefaults()
-              ? RawObjectArray::cast(function->defaults())->length()
-              : 0;
+      word defaults_size = function->hasDefaults()
+                               ? RawTuple::cast(function->defaults())->length()
+                               : 0;
       word defaults_start = code->argcount() - defaults_size;
       if (absolute_pos >= (defaults_start)) {
         // Set the default value
-        ObjectArray default_args(&scope, function->defaults());
+        Tuple default_args(&scope, function->defaults());
         *(kw_arg_base - arg_pos) =
             default_args->at(absolute_pos - defaults_start);
         continue;  // Got it, move on to the next
@@ -316,7 +314,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
                                   word argc) {
   HandleScope scope(thread);
   // Destructively pop the tuple of kwarg names
-  ObjectArray keywords(&scope, caller_frame->topValue());
+  Tuple keywords(&scope, caller_frame->topValue());
   caller_frame->popValue();
   DCHECK(keywords->length() > 0, "Invalid keyword name tuple");
   Function function(&scope, caller_frame->peek(argc));
@@ -324,7 +322,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
   word expected_args = code->argcount() + code->kwonlyargcount();
   word num_keyword_args = keywords->length();
   word num_positional_args = argc - num_keyword_args;
-  ObjectArray formal_parm_names(&scope, code->varnames());
+  Tuple formal_parm_names(&scope, code->varnames());
   word flags = code->flags();
   Object tmp_varargs(&scope, NoneType::object());
   Object tmp_dict(&scope, NoneType::object());
@@ -339,7 +337,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
       // remove from the stack and close up the hole.
       word excess = Utils::maximum(static_cast<word>(0),
                                    num_positional_args - code->argcount());
-      ObjectArray varargs(&scope, thread->runtime()->newObjectArray(excess));
+      Tuple varargs(&scope, thread->runtime()->newTuple(excess));
       if (excess > 0) {
         // Point to the leftmost excess argument
         RawObject* p =
@@ -393,7 +391,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
           num_keyword_args);  // Pop all of the old keyword values
       num_keyword_args = saved_keyword_list->numItems();
       // Replace the old keywords list with a new one.
-      keywords = runtime->newObjectArray(num_keyword_args);
+      keywords = runtime->newTuple(num_keyword_args);
       for (word i = 0; i < num_keyword_args; i++) {
         caller_frame->pushValue(saved_values->at(i));
         keywords->atPut(i, saved_keyword_list->at(i));
@@ -410,8 +408,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
     // Too few args passed.  Can we supply default args to make it work?
     // First, normalize & pad keywords and stack arguments
     word name_tuple_size = expected_args - num_positional_args;
-    ObjectArray padded_keywords(
-        &scope, thread->runtime()->newObjectArray(name_tuple_size));
+    Tuple padded_keywords(&scope, thread->runtime()->newTuple(name_tuple_size));
     for (word i = 0; i < num_keyword_args; i++) {
       padded_keywords->atPut(i, keywords->at(i));
     }
@@ -446,7 +443,7 @@ RawObject interpreterTrampolineEx(Thread* thread, Frame* caller_frame,
     kw_dict = caller_frame->topValue();
     caller_frame->popValue();
   }
-  ObjectArray positional_args(&scope, caller_frame->topValue());
+  Tuple positional_args(&scope, caller_frame->topValue());
   caller_frame->popValue();
   for (word i = 0; i < positional_args->length(); i++) {
     caller_frame->pushValue(positional_args->at(i));
@@ -455,7 +452,7 @@ RawObject interpreterTrampolineEx(Thread* thread, Frame* caller_frame,
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
     Runtime* runtime = thread->runtime();
     Dict dict(&scope, *kw_dict);
-    ObjectArray keys(&scope, runtime->dictKeys(dict));
+    Tuple keys(&scope, runtime->dictKeys(dict));
     for (word i = 0; i < keys->length(); i++) {
       Object key(&scope, keys->at(i));
       caller_frame->pushValue(runtime->dictAt(dict, key));

@@ -313,7 +313,7 @@ class Symbols {
   const char* literalAt(SymbolId id);
 
  private:
-  // TODO(T25010996) - Benchmark whether this is faster than an ObjectArray
+  // TODO(T25010996) - Benchmark whether this is faster than an Tuple
   RawObject* symbols_;
 };
 

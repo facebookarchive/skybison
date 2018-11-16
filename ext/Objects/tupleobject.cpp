@@ -12,12 +12,12 @@ PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  ObjectArray tuple(&scope, runtime->newObjectArray(length));
+  Tuple tuple(&scope, runtime->newTuple(length));
   return ApiHandle::fromObject(*tuple);
 }
 
 PY_EXPORT int PyTuple_CheckExact_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject()->isObjectArray();
+  return ApiHandle::fromPyObject(obj)->asObject()->isTuple();
 }
 
 PY_EXPORT int PyTuple_Check_Func(PyObject* obj) {
@@ -25,7 +25,7 @@ PY_EXPORT int PyTuple_Check_Func(PyObject* obj) {
     return true;
   }
   return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
-                                                  LayoutId::kObjectArray);
+                                                  LayoutId::kTuple);
 }
 
 PY_EXPORT Py_ssize_t PyTuple_Size(PyObject* pytuple) {
@@ -33,11 +33,11 @@ PY_EXPORT Py_ssize_t PyTuple_Size(PyObject* pytuple) {
   HandleScope scope(thread);
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
-  if (!tupleobj->isObjectArray()) {
+  if (!tupleobj->isTuple()) {
     return -1;
   }
 
-  ObjectArray tuple(&scope, *tupleobj);
+  Tuple tuple(&scope, *tupleobj);
   return tuple->length();
 }
 
@@ -47,12 +47,12 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
   HandleScope scope(thread);
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
-  if (!tupleobj->isObjectArray()) {
+  if (!tupleobj->isTuple()) {
     thread->raiseSystemErrorWithCStr("bad argument to internal function");
     return -1;
   }
 
-  ObjectArray tuple(&scope, *tupleobj);
+  Tuple tuple(&scope, *tupleobj);
   if (pos < 0 || pos >= tuple->length()) {
     thread->raiseIndexErrorWithCStr("tuple assignment index out of range");
     return -1;
@@ -68,11 +68,11 @@ PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
   HandleScope scope(thread);
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
-  if (!tupleobj->isObjectArray()) {
+  if (!tupleobj->isTuple()) {
     return nullptr;
   }
 
-  ObjectArray tuple(&scope, *tupleobj);
+  Tuple tuple(&scope, *tupleobj);
   if (pos < 0 || pos >= tuple->length()) {
     return nullptr;
   }
@@ -88,7 +88,7 @@ PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   PyObject* item;
   va_list vargs;
   va_start(vargs, n);
-  ObjectArray tuple(&scope, runtime->newObjectArray(n));
+  Tuple tuple(&scope, runtime->newTuple(n));
   for (Py_ssize_t i = 0; i < n; i++) {
     item = va_arg(vargs, PyObject*);
     tuple->atPut(i, ApiHandle::fromPyObject(item)->asObject());

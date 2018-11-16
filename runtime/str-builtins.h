@@ -32,9 +32,8 @@ class StrBuiltins {
   static RawObject strip(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static word strFormatBufferLength(const Str& fmt, const ObjectArray& args);
-  static RawObject strFormat(Thread* thread, const Str& fmt,
-                             const ObjectArray& args);
+  static word strFormatBufferLength(const Str& fmt, const Tuple& args);
+  static RawObject strFormat(Thread* thread, const Str& fmt, const Tuple& args);
   static void byteToHex(byte** buf, byte convert);
   static const BuiltinMethod kMethods[];
 

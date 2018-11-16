@@ -43,7 +43,7 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     if (code->argcount() == 0) {
       return thread->raiseRuntimeErrorWithCStr("super(): no arguments");
     }
-    ObjectArray free_vars(&scope, code->freevars());
+    Tuple free_vars(&scope, code->freevars());
     RawObject cell = Error::object();
     for (word i = 0; i < free_vars->length(); i++) {
       if (RawStr::cast(free_vars->at(i))

@@ -123,20 +123,20 @@ RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   Str sep(&scope, args.get(0));
   Object iterable(&scope, args.get(1));
   // Tuples of strings
-  if (iterable->isObjectArray()) {
-    ObjectArray tuple(&scope, *iterable);
+  if (iterable->isTuple()) {
+    Tuple tuple(&scope, *iterable);
     return thread->runtime()->strJoin(thread, sep, tuple, tuple->length());
   }
   // Lists of strings
   if (iterable->isList()) {
     List list(&scope, *iterable);
-    ObjectArray tuple(&scope, list->items());
+    Tuple tuple(&scope, list->items());
     return thread->runtime()->strJoin(thread, sep, tuple, list->numItems());
   }
   // Iterators of strings
   List list(&scope, runtime->newList());
   runtime->listExtend(thread, list, iterable);
-  ObjectArray tuple(&scope, list->items());
+  Tuple tuple(&scope, list->items());
   return thread->runtime()->strJoin(thread, sep, tuple, list->numItems());
 }
 
@@ -212,8 +212,7 @@ RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-word StrBuiltins::strFormatBufferLength(const Str& fmt,
-                                        const ObjectArray& args) {
+word StrBuiltins::strFormatBufferLength(const Str& fmt, const Tuple& args) {
   word arg_idx = 0;
   word len = 0;
   for (word fmt_idx = 0; fmt_idx < fmt->length(); fmt_idx++, len++) {
@@ -252,8 +251,8 @@ word StrBuiltins::strFormatBufferLength(const Str& fmt,
   return len;
 }
 
-static void stringFormatToBuffer(const Str& fmt, const ObjectArray& args,
-                                 char* dst, word len) {
+static void stringFormatToBuffer(const Str& fmt, const Tuple& args, char* dst,
+                                 word len) {
   word arg_idx = 0;
   word dst_idx = 0;
   for (word fmt_idx = 0; fmt_idx < fmt->length(); fmt_idx++) {
@@ -288,7 +287,7 @@ static void stringFormatToBuffer(const Str& fmt, const ObjectArray& args,
 }
 
 RawObject StrBuiltins::strFormat(Thread* thread, const Str& fmt,
-                                 const ObjectArray& args) {
+                                 const Tuple& args) {
   if (fmt->length() == 0) {
     return *fmt;
   }
@@ -312,11 +311,11 @@ RawObject StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
   Object other(&scope, args.get(1));
   if (self->isStr()) {
     Str format(&scope, *self);
-    ObjectArray format_args(&scope, runtime->newObjectArray(0));
-    if (other->isObjectArray()) {
+    Tuple format_args(&scope, runtime->newTuple(0));
+    if (other->isTuple()) {
       format_args = *other;
     } else {
-      ObjectArray tuple(&scope, runtime->newObjectArray(1));
+      Tuple tuple(&scope, runtime->newTuple(1));
       tuple->atPut(0, *other);
       format_args = *tuple;
     }

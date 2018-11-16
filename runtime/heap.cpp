@@ -182,16 +182,16 @@ RawObject Heap::createLayout(LayoutId layout_id) {
   return RawLayout::cast(result);
 }
 
-RawObject Heap::createObjectArray(word length, RawObject value) {
+RawObject Heap::createTuple(word length, RawObject value) {
   DCHECK(!value->isHeapObject(), "value must be an immediate object");
-  word size = ObjectArray::allocationSize(length);
+  word size = Tuple::allocationSize(length);
   RawObject raw = allocate(size, HeapObject::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = bit_cast<RawObjectArray>(raw);
-  result->setHeaderAndOverflow(length, 0, LayoutId::kObjectArray,
+  auto result = bit_cast<RawTuple>(raw);
+  result->setHeaderAndOverflow(length, 0, LayoutId::kTuple,
                                ObjectFormat::kObjectArray);
   result->initialize(size, value);
-  return RawObjectArray::cast(result);
+  return RawTuple::cast(result);
 }
 
 RawObject Heap::createRange() {

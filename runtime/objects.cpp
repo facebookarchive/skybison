@@ -163,9 +163,9 @@ RawObject RawListIterator::next() {
   return item;
 }
 
-// RawObjectArray
+// RawTuple
 
-bool RawObjectArray::contains(RawObject object) {
+bool RawTuple::contains(RawObject object) {
   word len = length();
   for (word i = 0; i < len; i++) {
     if (at(i) == object) {
@@ -175,8 +175,8 @@ bool RawObjectArray::contains(RawObject object) {
   return false;
 }
 
-void RawObjectArray::copyTo(RawObject array) {
-  RawObjectArray dst = RawObjectArray::cast(array);
+void RawTuple::copyTo(RawObject array) {
+  RawTuple dst = RawTuple::cast(array);
   word len = length();
   DCHECK_BOUND(len, dst->length());
   for (word i = 0; i < len; i++) {
@@ -185,8 +185,8 @@ void RawObjectArray::copyTo(RawObject array) {
   }
 }
 
-void RawObjectArray::replaceFromWith(word start, RawObject array) {
-  RawObjectArray src = RawObjectArray::cast(array);
+void RawTuple::replaceFromWith(word start, RawObject array) {
+  RawTuple src = RawTuple::cast(array);
   word count = Utils::minimum(this->length() - start, src->length());
   word stop = start + count;
   for (word i = start, j = 0; i < stop; i++, j++) {
@@ -249,7 +249,7 @@ RawObject RawRangeIterator::next() {
 RawObject RawSetIterator::next() {
   word idx = index();
   RawSet underlying = RawSet::cast(set());
-  RawObjectArray data = RawObjectArray::cast(underlying->data());
+  RawTuple data = RawTuple::cast(underlying->data());
   word length = data->length();
   // Find the next non empty bucket
   while (idx < length && !RawSet::Bucket::isFilled(data, idx)) {
@@ -376,7 +376,7 @@ bool RawStr::equalsCStr(const char* c_str) {
 
 RawObject RawTupleIterator::next() {
   word idx = index();
-  RawObjectArray underlying = RawObjectArray::cast(tuple());
+  RawTuple underlying = RawTuple::cast(tuple());
   if (idx >= underlying->length()) {
     return RawError::object();
   }

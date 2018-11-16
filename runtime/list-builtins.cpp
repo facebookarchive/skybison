@@ -54,7 +54,7 @@ RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Layout layout(&scope, type->instanceLayout());
   List result(&scope, thread->runtime()->newInstance(layout));
   result->setNumItems(0);
-  result->setItems(thread->runtime()->newObjectArray(0));
+  result->setItems(thread->runtime()->newTuple(0));
   return *result;
 }
 
@@ -255,7 +255,7 @@ RawObject ListBuiltins::slice(Thread* thread, RawList list, RawSlice slice) {
 
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  ObjectArray items(&scope, runtime->newObjectArray(length));
+  Tuple items(&scope, runtime->newTuple(length));
   for (word i = 0, index = start; i < length; i++, index += step) {
     items->atPut(i, list->at(index));
   }

@@ -21,8 +21,8 @@ const BuiltinMethod TupleBuiltins::kMethods[] = {
 void TupleBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Type type(&scope, runtime->addBuiltinTypeWithMethods(
-                        SymbolId::kTuple, LayoutId::kObjectArray,
-                        LayoutId::kObject, kMethods));
+                        SymbolId::kTuple, LayoutId::kTuple, LayoutId::kObject,
+                        kMethods));
   type->setFlag(Type::Flag::kTupleSubclass);
 }
 
@@ -31,10 +31,10 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  if (args.get(0)->isObjectArray() && args.get(1)->isObjectArray()) {
+  if (args.get(0)->isTuple() && args.get(1)->isTuple()) {
     HandleScope scope(thread);
-    ObjectArray self(&scope, args.get(0));
-    ObjectArray other(&scope, args.get(1));
+    Tuple self(&scope, args.get(0));
+    Tuple other(&scope, args.get(1));
     if (self->length() != other->length()) {
       return Bool::falseObj();
     }
@@ -56,8 +56,7 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-RawObject TupleBuiltins::slice(Thread* thread, RawObjectArray tuple,
-                               RawSlice slice) {
+RawObject TupleBuiltins::slice(Thread* thread, RawTuple tuple, RawSlice slice) {
   word start, stop, step;
   slice->unpack(&start, &stop, &step);
   word length = Slice::adjustIndices(tuple->length(), &start, &stop, step);
@@ -66,7 +65,7 @@ RawObject TupleBuiltins::slice(Thread* thread, RawObjectArray tuple,
   }
 
   HandleScope scope(thread);
-  ObjectArray items(&scope, thread->runtime()->newObjectArray(length));
+  Tuple items(&scope, thread->runtime()->newTuple(length));
   for (word i = 0, index = start; i < length; i++, index += step) {
     items->atPut(i, tuple->at(index));
   }
@@ -81,8 +80,8 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (self->isObjectArray()) {
-    ObjectArray tuple(&scope, *self);
+  if (self->isTuple()) {
+    Tuple tuple(&scope, *self);
     RawObject index = args.get(1);
     if (index->isSmallInt()) {
       word idx = RawSmallInt::cast(index)->value();
@@ -114,11 +113,11 @@ RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
-  if (!obj->isObjectArray()) {
+  if (!obj->isTuple()) {
     return thread->raiseTypeErrorWithCStr(
         "tuple.__len__(self): self is not a tuple");
   }
-  ObjectArray self(&scope, *obj);
+  Tuple self(&scope, *obj);
   return thread->runtime()->newInt(self->length());
 }
 
@@ -133,7 +132,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  ObjectArray self(&scope, args.get(0));
+  Tuple self(&scope, args.get(0));
   Object rhs(&scope, args.get(1));
   if (!rhs->isInt()) {
     return thread->raiseTypeErrorWithCStr("can't multiply sequence by non-int");
@@ -146,7 +145,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   word length = self->length();
   word times = right->value();
   if (length == 0 || times <= 0) {
-    return thread->runtime()->newObjectArray(0);
+    return thread->runtime()->newTuple(0);
   }
   if (length == 1 || times == 1) {
     return *self;
@@ -159,7 +158,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
         "cannot fit 'int' into an index-sized integer");
   }
 
-  ObjectArray new_tuple(&scope, thread->runtime()->newObjectArray(new_length));
+  Tuple new_tuple(&scope, thread->runtime()->newTuple(new_length));
   for (word i = 0; i < times; i++) {
     for (word j = 0; j < length; j++) {
       new_tuple->atPut(i * length + j, self->at(j));
@@ -195,7 +194,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   // If no iterable is given as an argument, return an empty zero tuple.
   if (nargs == 1) {
-    return runtime->newObjectArray(0);
+    return runtime->newTuple(0);
   }
 
   // Construct a new tuple from the iterable.
@@ -221,7 +220,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   word curr = 0;
-  ObjectArray result(&scope, runtime->newObjectArray(max_len));
+  Tuple result(&scope, runtime->newTuple(max_len));
   // Iterate through the iterable, copying elements into the tuple.
   while (!runtime->isIteratorExhausted(thread, iterator)) {
     Object elem(&scope,
@@ -231,7 +230,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     // tuple and copy over the contents.
     if (curr == max_len) {
       max_len *= 2;
-      ObjectArray new_tuple(&scope, runtime->newObjectArray(max_len));
+      Tuple new_tuple(&scope, runtime->newTuple(max_len));
       for (word i = 0; i < curr; i++) {
         new_tuple->atPut(i, result->at(i));
       }
@@ -246,7 +245,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   // The result was over-allocated, shrink it.
-  ObjectArray new_tuple(&scope, runtime->newObjectArray(curr));
+  Tuple new_tuple(&scope, runtime->newTuple(curr));
   for (word i = 0; i < curr; i++) {
     new_tuple->atPut(i, result->at(i));
   }
@@ -261,7 +260,7 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
 
-  if (!self->isObjectArray()) {
+  if (!self->isTuple()) {
     return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a tuple instance as the first "
         "argument");
@@ -334,7 +333,7 @@ RawObject TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
         "first argument");
   }
   TupleIterator tuple_iterator(&scope, *self);
-  ObjectArray tuple(&scope, tuple_iterator->tuple());
+  Tuple tuple(&scope, tuple_iterator->tuple());
   return SmallInt::fromWord(tuple->length() - tuple_iterator->index());
 }
 

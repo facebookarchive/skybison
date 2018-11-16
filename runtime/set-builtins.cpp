@@ -81,7 +81,7 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Set self(&scope, args.get(0));
   if (self->isSet()) {
-    ObjectArray data(&scope, self->data());
+    Tuple data(&scope, self->data());
     word num_items = self->numItems();
     if (num_items == 0) {
       return thread->raiseKeyErrorWithCStr("pop from an empty set");
@@ -162,7 +162,7 @@ RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Layout layout(&scope, type->instanceLayout());
   Set result(&scope, thread->runtime()->newInstance(layout));
   result->setNumItems(0);
-  result->setData(thread->runtime()->newObjectArray(0));
+  result->setData(thread->runtime()->newTuple(0));
   return *result;
 }
 

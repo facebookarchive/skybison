@@ -146,7 +146,7 @@ def test(a, b):
   Function isinstance(&scope, object);
 
   // isinstance(1, D) should be false
-  ObjectArray args(&scope, runtime.newObjectArray(2));
+  Tuple args(&scope, runtime.newTuple(2));
   args->atPut(0, SmallInt::fromWord(100));
   args->atPut(1, *type_d);
   EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");

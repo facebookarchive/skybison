@@ -147,12 +147,12 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
   // located at fixed offsets from the start of an instance.  These attributes
   // are packed at the beginning of the layout starting at offset 0.
   Layout super_layout(&scope, layoutAt(superclass_id));
-  ObjectArray super_attributes(&scope, super_layout->inObjectAttributes());
+  Tuple super_attributes(&scope, super_layout->inObjectAttributes());
 
   // Sanity check that a subclass that has fixed attributes does inherit from a
   // superclass with attributes that are not fixed.
   for (word i = 0; i < super_attributes->length(); i++) {
-    ObjectArray elt(&scope, super_attributes->at(i));
+    Tuple elt(&scope, super_attributes->at(i));
     AttributeInfo info(elt->at(1));
     CHECK(info.isInObject() && info.isFixedOffset(),
           "all superclass attributes must be in-object and fixed");
@@ -163,8 +163,8 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
   result->setId(subclass_id);
 
   // Copy down all of the superclass attributes into the subclass layout
-  ObjectArray in_object(
-      &scope, newObjectArray(super_attributes->length() + attributes.length()));
+  Tuple in_object(&scope,
+                  newTuple(super_attributes->length() + attributes.length()));
   super_attributes->copyTo(*in_object);
   appendBuiltinAttributes(attributes, in_object, super_attributes->length());
 
@@ -176,18 +176,17 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
 }
 
 void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
-                                      const ObjectArray& dst,
-                                      word start_index) {
+                                      const Tuple& dst, word start_index) {
   if (attributes.length() == 0) {
     return;
   }
   HandleScope scope;
-  ObjectArray entry(&scope, empty_object_array_);
+  Tuple entry(&scope, empty_object_array_);
   for (word i = 0; i < attributes.length(); i++) {
     AttributeInfo info(
         attributes.get(i).offset,
         AttributeInfo::Flag::kInObject | AttributeInfo::Flag::kFixedOffset);
-    entry = newObjectArray(2);
+    entry = newTuple(2);
     entry->atPut(0, symbols()->at(attributes.get(i).name));
     entry->atPut(1, info.asSmallInt());
     dst->atPut(start_index + i, *entry);
@@ -233,7 +232,7 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
   layout->setDescribedType(*subclass);
 
   // Now we can create an MRO
-  ObjectArray mro(&scope, createMro(layout, superclass_id));
+  Tuple mro(&scope, createMro(layout, superclass_id));
 
   subclass->setMro(*mro);
   subclass->setInstanceLayout(*layout);
@@ -719,11 +718,11 @@ RawObject Runtime::newIntFromCPtr(void* ptr) {
   return newInt(reinterpret_cast<word>(ptr));
 }
 
-RawObject Runtime::newObjectArray(word length) {
+RawObject Runtime::newTuple(word length) {
   if (length == 0) {
     return empty_object_array_;
   }
-  return heap()->createObjectArray(length, NoneType::object());
+  return heap()->createTuple(length, NoneType::object());
 }
 
 RawObject Runtime::newInt(word value) {
@@ -962,7 +961,7 @@ void Runtime::initializeTypes() {
 
 void Runtime::initializeLayouts() {
   HandleScope scope;
-  ObjectArray array(&scope, newObjectArray(256));
+  Tuple array(&scope, newTuple(256));
   List list(&scope, newList());
   list->setItems(*array);
   const word allocated = static_cast<word>(LayoutId::kLastBuiltinId) + 1;
@@ -977,8 +976,8 @@ RawObject Runtime::createMro(const Layout& subclass_layout,
   CHECK(subclass_layout->describedType()->isType(),
         "subclass layout must have a described class");
   Type superclass(&scope, typeAt(superclass_id));
-  ObjectArray src(&scope, superclass->mro());
-  ObjectArray dst(&scope, newObjectArray(1 + src->length()));
+  Tuple src(&scope, superclass->mro());
+  Tuple dst(&scope, newTuple(1 + src->length()));
   dst->atPut(0, subclass_layout->describedType());
   for (word i = 0; i < src->length(); i++) {
     dst->atPut(1 + i, src->at(i));
@@ -1400,7 +1399,7 @@ void Runtime::initializeThreads() {
 }
 
 void Runtime::initializePrimitiveInstances() {
-  empty_object_array_ = heap()->createObjectArray(0, NoneType::object());
+  empty_object_array_ = heap()->createTuple(0, NoneType::object());
   empty_byte_array_ = heap()->createBytes(0);
   ellipsis_ = heap()->createEllipsis();
   not_implemented_ = heap()->create<RawNotImplemented>();
@@ -1602,7 +1601,7 @@ SymbolId Runtime::swappedComparisonSelector(CompareOp op) {
 bool Runtime::isMethodOverloaded(Thread* thread, const Type& type,
                                  SymbolId selector) {
   HandleScope scope(thread);
-  ObjectArray mro(&scope, type->mro());
+  Tuple mro(&scope, type->mro());
   Object key(&scope, symbols()->at(selector));
   DCHECK(mro->length() > 0, "empty MRO");
   for (word i = 0; i < mro->length() - 1; i++) {
@@ -1785,7 +1784,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kTabError, LayoutId::kTabError);
   moduleAddBuiltinType(module, SymbolId::kTimeoutError,
                        LayoutId::kTimeoutError);
-  moduleAddBuiltinType(module, SymbolId::kTuple, LayoutId::kObjectArray);
+  moduleAddBuiltinType(module, SymbolId::kTuple, LayoutId::kTuple);
   moduleAddBuiltinType(module, SymbolId::kType, LayoutId::kType);
   moduleAddBuiltinType(module, SymbolId::kTypeError, LayoutId::kTypeError);
   moduleAddBuiltinType(module, SymbolId::kUnboundLocalError,
@@ -1823,7 +1822,7 @@ void Runtime::moduleAddBuiltinType(const Module& module, SymbolId name,
 void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
   HandleScope scope;
   Dict module_dict(&scope, module->dict());
-  ObjectArray module_keys(&scope, dictKeys(module_dict));
+  Tuple module_keys(&scope, dictKeys(module_dict));
   for (word i = 0; i < module_keys->length(); i++) {
     Object symbol_name(&scope, module_keys->at(i));
     CHECK(symbol_name->isStr(), "Symbol is not a String");
@@ -1872,7 +1871,7 @@ void Runtime::createSysModule() {
     num_external_modules++;
   }
   word num_modules = ARRAYSIZE(kBuiltinModules) + num_external_modules;
-  ObjectArray builtins_tuple(&scope, newObjectArray(num_modules));
+  Tuple builtins_tuple(&scope, newTuple(num_modules));
 
   // Add all the available builtin modules
   for (uword i = 0; i < ARRAYSIZE(kBuiltinModules); i++) {
@@ -2016,8 +2015,8 @@ void Runtime::listEnsureCapacity(const List& list, word index) {
   if (new_capacity < index) {
     new_capacity = Utils::nextPowerOfTwo(index);
   }
-  ObjectArray old_array(&scope, list->items());
-  ObjectArray new_array(&scope, newObjectArray(new_capacity));
+  Tuple old_array(&scope, list->items());
+  Tuple new_array(&scope, newTuple(new_capacity));
   old_array->copyTo(*new_array);
   list->setItems(*new_array);
 }
@@ -2065,8 +2064,8 @@ RawObject Runtime::listExtend(Thread* thread, const List& dst,
     return *dst;
   }
   // Special case for tuples
-  if (iterable->isObjectArray()) {
-    ObjectArray tuple(&scope, *iterable);
+  if (iterable->isTuple()) {
+    Tuple tuple(&scope, *iterable);
     if (tuple->length() > 0) {
       word new_capacity = index + tuple->length();
       listEnsureCapacity(dst, new_capacity);
@@ -2081,7 +2080,7 @@ RawObject Runtime::listExtend(Thread* thread, const List& dst,
   if (iterable->isSet()) {
     Set set(&scope, *iterable);
     if (set->numItems() > 0) {
-      ObjectArray data(&scope, set->data());
+      Tuple data(&scope, set->data());
       word new_capacity = index + set->numItems();
       listEnsureCapacity(dst, new_capacity);
       dst->setNumItems(new_capacity);
@@ -2098,7 +2097,7 @@ RawObject Runtime::listExtend(Thread* thread, const List& dst,
   if (iterable->isDict()) {
     Dict dict(&scope, *iterable);
     if (dict->numItems() > 0) {
-      ObjectArray keys(&scope, dictKeys(dict));
+      Tuple keys(&scope, dictKeys(dict));
       word new_capacity = index + dict->numItems();
       listEnsureCapacity(dst, new_capacity);
       dst->setNumItems(new_capacity);
@@ -2169,7 +2168,7 @@ RawObject Runtime::listReplicate(Thread* thread, const List& list,
                                  word ntimes) {
   HandleScope scope(thread);
   word len = list->numItems();
-  ObjectArray items(&scope, newObjectArray(ntimes * len));
+  Tuple items(&scope, newTuple(ntimes * len));
   for (word i = 0; i < ntimes; i++) {
     for (word j = 0; j < len; j++) {
       items->atPut((i * len) + j, list->at(j));
@@ -2251,11 +2250,10 @@ RawObject Runtime::newDictWithSize(word initial_size) {
   HandleScope scope;
   // TODO: initialSize should be scaled up by a load factor.
   word initial_capacity = Utils::nextPowerOfTwo(initial_size);
-  ObjectArray array(
-      &scope,
-      newObjectArray(Utils::maximum(static_cast<word>(kInitialDictCapacity),
-                                    initial_capacity) *
-                     Dict::Bucket::kNumPointers));
+  Tuple array(&scope,
+              newTuple(Utils::maximum(static_cast<word>(kInitialDictCapacity),
+                                      initial_capacity) *
+                       Dict::Bucket::kNumPointers));
   Dict result(&scope, newDict());
   result->setData(*array);
   return *result;
@@ -2264,12 +2262,12 @@ RawObject Runtime::newDictWithSize(word initial_size) {
 void Runtime::dictAtPutWithHash(const Dict& dict, const Object& key,
                                 const Object& value, const Object& key_hash) {
   HandleScope scope;
-  ObjectArray data(&scope, dict->data());
+  Tuple data(&scope, dict->data());
   word index = -1;
   bool found = dictLookup(data, key, key_hash, &index);
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    ObjectArray new_data(&scope, dictGrow(data));
+    Tuple new_data(&scope, dictGrow(data));
     dictLookup(new_data, key, key_hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
     dict->setData(*new_data);
@@ -2289,13 +2287,13 @@ void Runtime::dictAtPut(const Dict& dict, const Object& key,
   return dictAtPutWithHash(dict, key, value, key_hash);
 }
 
-RawObjectArray Runtime::dictGrow(const ObjectArray& data) {
+RawTuple Runtime::dictGrow(const Tuple& data) {
   HandleScope scope;
   word new_length = data->length() * kDictGrowthFactor;
   if (new_length == 0) {
     new_length = kInitialDictCapacity * Dict::Bucket::kNumPointers;
   }
-  ObjectArray new_data(&scope, newObjectArray(new_length));
+  Tuple new_data(&scope, newTuple(new_length));
   // Re-insert items
   for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
     if (!Dict::Bucket::isFilled(*data, i)) {
@@ -2315,7 +2313,7 @@ RawObjectArray Runtime::dictGrow(const ObjectArray& data) {
 RawObject Runtime::dictAtWithHash(const Dict& dict, const Object& key,
                                   const Object& key_hash) {
   HandleScope scope;
-  ObjectArray data(&scope, dict->data());
+  Tuple data(&scope, dict->data());
   word index = -1;
   bool found = dictLookup(data, key, key_hash, &index);
   if (found) {
@@ -2334,7 +2332,7 @@ RawObject Runtime::dictAt(const Dict& dict, const Object& key) {
 RawObject Runtime::dictAtIfAbsentPut(const Dict& dict, const Object& key,
                                      Callback<RawObject>* thunk) {
   HandleScope scope;
-  ObjectArray data(&scope, dict->data());
+  Tuple data(&scope, dict->data());
   word index = -1;
   Object key_hash(&scope, hash(*key));
   bool found = dictLookup(data, key, key_hash, &index);
@@ -2345,7 +2343,7 @@ RawObject Runtime::dictAtIfAbsentPut(const Dict& dict, const Object& key,
   Object value(&scope, thunk->call());
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    ObjectArray new_data(&scope, dictGrow(data));
+    Tuple new_data(&scope, dictGrow(data));
     dictLookup(new_data, key, key_hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
     dict->setData(*new_data);
@@ -2366,7 +2364,7 @@ RawObject Runtime::dictAtPutInValueCell(const Dict& dict, const Object& key,
 
 bool Runtime::dictIncludes(const Dict& dict, const Object& key) {
   HandleScope scope;
-  ObjectArray data(&scope, dict->data());
+  Tuple data(&scope, dict->data());
   Object key_hash(&scope, hash(*key));
   word ignore;
   return dictLookup(data, key, key_hash, &ignore);
@@ -2374,7 +2372,7 @@ bool Runtime::dictIncludes(const Dict& dict, const Object& key) {
 
 RawObject Runtime::dictRemove(const Dict& dict, const Object& key) {
   HandleScope scope;
-  ObjectArray data(&scope, dict->data());
+  Tuple data(&scope, dict->data());
   word index = -1;
   Object key_hash(&scope, hash(*key));
   Object result(&scope, Error::object());
@@ -2388,7 +2386,7 @@ RawObject Runtime::dictRemove(const Dict& dict, const Object& key) {
   return *result;
 }
 
-bool Runtime::dictLookup(const ObjectArray& data, const Object& key,
+bool Runtime::dictLookup(const Tuple& data, const Object& key,
                          const Object& key_hash, word* index) {
   word start = Dict::Bucket::getIndex(*data, *key_hash);
   word current = start;
@@ -2422,10 +2420,10 @@ bool Runtime::dictLookup(const ObjectArray& data, const Object& key,
   return false;
 }
 
-RawObjectArray Runtime::dictKeys(const Dict& dict) {
+RawTuple Runtime::dictKeys(const Dict& dict) {
   HandleScope scope;
-  ObjectArray data(&scope, dict->data());
-  ObjectArray keys(&scope, newObjectArray(dict->numItems()));
+  Tuple data(&scope, dict->data());
+  Tuple keys(&scope, newTuple(dict->numItems()));
   word num_keys = 0;
   for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
     if (Dict::Bucket::isFilled(*data, i)) {
@@ -2483,18 +2481,17 @@ RawObject Runtime::newSetWithSize(word initial_size) {
   HandleScope scope;
   Set result(&scope, heap()->create<RawSet>());
   word initial_capacity = Utils::nextPowerOfTwo(initial_size);
-  ObjectArray array(
-      &scope,
-      newObjectArray(Utils::maximum(static_cast<word>(kInitialSetCapacity),
-                                    initial_capacity) *
-                     Set::Bucket::kNumPointers));
+  Tuple array(&scope,
+              newTuple(Utils::maximum(static_cast<word>(kInitialSetCapacity),
+                                      initial_capacity) *
+                       Set::Bucket::kNumPointers));
   result->setData(*array);
   result->setNumItems(0);
   return *result;
 }
 
 template <SetLookupType type>
-word Runtime::setLookup(const ObjectArray& data, const Object& key,
+word Runtime::setLookup(const Tuple& data, const Object& key,
                         const Object& key_hash) {
   word start = Set::Bucket::getIndex(*data, *key_hash);
   word current = start;
@@ -2530,13 +2527,13 @@ word Runtime::setLookup(const ObjectArray& data, const Object& key,
   return -1;
 }
 
-RawObjectArray Runtime::setGrow(const ObjectArray& data) {
+RawTuple Runtime::setGrow(const Tuple& data) {
   HandleScope scope;
   word new_length = data->length() * kSetGrowthFactor;
   if (new_length == 0) {
     new_length = kInitialSetCapacity * Set::Bucket::kNumPointers;
   }
-  ObjectArray new_data(&scope, newObjectArray(new_length));
+  Tuple new_data(&scope, newTuple(new_length));
   // Re-insert items
   for (word i = 0, length = data->length(); i < length;
        i += Set::Bucket::kNumPointers) {
@@ -2554,12 +2551,12 @@ RawObjectArray Runtime::setGrow(const ObjectArray& data) {
 RawObject Runtime::setAddWithHash(const Set& set, const Object& value,
                                   const Object& key_hash) {
   HandleScope scope;
-  ObjectArray data(&scope, set->data());
+  Tuple data(&scope, set->data());
   word index = setLookup<SetLookupType::Lookup>(data, value, key_hash);
   if (index != -1) {
     return Set::Bucket::key(*data, index);
   }
-  ObjectArray new_data(&scope, *data);
+  Tuple new_data(&scope, *data);
   if (data->length() == 0 || set->numItems() >= data->length() / 2) {
     new_data = setGrow(data);
   }
@@ -2585,8 +2582,8 @@ RawObject Runtime::setCopy(const Set& set) {
 
   HandleScope scope;
   Set new_set(&scope, newSetWithSize(num_items));
-  ObjectArray data(&scope, set->data());
-  ObjectArray new_data(&scope, new_set->data());
+  Tuple data(&scope, set->data());
+  Tuple new_data(&scope, new_set->data());
   Object key(&scope, NoneType::object());
   Object key_hash(&scope, NoneType::object());
   for (word i = 0, data_len = data->length(); i < data_len;
@@ -2604,8 +2601,8 @@ RawObject Runtime::setCopy(const Set& set) {
 
 bool Runtime::setIsSubset(Thread* thread, const Set& set, const Set& other) {
   HandleScope scope(thread);
-  ObjectArray data(&scope, set->data());
-  ObjectArray other_data(&scope, other->data());
+  Tuple data(&scope, set->data());
+  Tuple other_data(&scope, other->data());
   Object key(&scope, NoneType::object());
   Object key_hash(&scope, NoneType::object());
   for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
@@ -2640,7 +2637,7 @@ bool Runtime::setEquals(Thread* thread, const Set& set, const Set& other) {
 
 bool Runtime::setIncludes(const Set& set, const Object& value) {
   HandleScope scope;
-  ObjectArray data(&scope, set->data());
+  Tuple data(&scope, set->data());
   Object key_hash(&scope, hash(*value));
   return setLookup<SetLookupType::Lookup>(data, value, key_hash) != -1;
 }
@@ -2663,8 +2660,8 @@ RawObject Runtime::setIntersection(Thread* thread, const Set& set,
       self = *iterable;
       other = *set;
     }
-    ObjectArray data(&scope, self->data());
-    ObjectArray other_data(&scope, other->data());
+    Tuple data(&scope, self->data());
+    Tuple other_data(&scope, other->data());
     for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
       if (!Set::Bucket::isFilled(*data, i)) {
         continue;
@@ -2699,7 +2696,7 @@ RawObject Runtime::setIntersection(Thread* thread, const Set& set,
   if (set->numItems() == 0) {
     return *dst;
   }
-  ObjectArray data(&scope, set->data());
+  Tuple data(&scope, set->data());
   while (!isIteratorExhausted(thread, iterator)) {
     key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
                                    iterator);
@@ -2716,7 +2713,7 @@ RawObject Runtime::setIntersection(Thread* thread, const Set& set,
 
 bool Runtime::setRemove(const Set& set, const Object& value) {
   HandleScope scope;
-  ObjectArray data(&scope, set->data());
+  Tuple data(&scope, set->data());
   Object key_hash(&scope, hash(*value));
   word index = setLookup<SetLookupType::Lookup>(data, value, key_hash);
   if (index != -1) {
@@ -2750,8 +2747,8 @@ RawObject Runtime::setUpdate(Thread* thread, const Set& dst,
     }
   }
   // Special case for tuples
-  if (iterable->isObjectArray()) {
-    ObjectArray tuple(&scope, *iterable);
+  if (iterable->isTuple()) {
+    Tuple tuple(&scope, *iterable);
     if (tuple->length() > 0) {
       for (word i = 0; i < tuple->length(); i++) {
         elt = tuple->at(i);
@@ -2763,7 +2760,7 @@ RawObject Runtime::setUpdate(Thread* thread, const Set& dst,
   // Special case for sets
   if (iterable->isSet()) {
     Set src(&scope, *iterable);
-    ObjectArray data(&scope, src->data());
+    Tuple data(&scope, src->data());
     if (src->numItems() > 0) {
       Object hash(&scope, NoneType::object());
       for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
@@ -2781,7 +2778,7 @@ RawObject Runtime::setUpdate(Thread* thread, const Set& dst,
   if (iterable->isDict()) {
     Dict dict(&scope, *iterable);
     if (dict->numItems() > 0) {
-      ObjectArray keys(&scope, dictKeys(dict));
+      Tuple keys(&scope, dictKeys(dict));
       Object value(&scope, NoneType::object());
       for (word i = 0; i < keys->length(); i++) {
         value = keys->at(i);
@@ -2840,7 +2837,7 @@ inline RawObject Runtime::dictUpdate(Thread* thread, const Dict& dict,
   if (mapping->isDict()) {
     DCHECK(*mapping != *dict, "Cannot update dict with itself");
     Dict other(&scope, *mapping);
-    ObjectArray data(&scope, other->data());
+    Tuple data(&scope, other->data());
     for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
       if (Dict::Bucket::isFilled(*data, i)) {
         key = Dict::Bucket::key(*data, i);
@@ -2899,8 +2896,8 @@ inline RawObject Runtime::dictUpdate(Thread* thread, const Dict& dict,
     return *dict;
   }
 
-  if (keys->isObjectArray()) {
-    ObjectArray keys_tuple(&scope, *keys);
+  if (keys->isTuple()) {
+    Tuple keys_tuple(&scope, *keys);
     for (word i = 0; i < keys_tuple->length(); ++i) {
       key = keys_tuple->at(i);
       if (type == DictUpdateType::Merge) {
@@ -2972,7 +2969,7 @@ RawObject Runtime::dictItemIteratorNext(Thread* thread,
                                         DictItemIterator& iter) {
   HandleScope scope(thread);
   Dict dict(&scope, iter.dict());
-  ObjectArray buckets(&scope, dict.data());
+  Tuple buckets(&scope, dict.data());
   word jump = Dict::Bucket::kNumPointers;
 
   word i = iter.index();
@@ -2984,7 +2981,7 @@ RawObject Runtime::dictItemIteratorNext(Thread* thread,
     // At this point, we have found a valid index in the buckets.
     Object key(&scope, Dict::Bucket::key(*buckets, i));
     Object value(&scope, Dict::Bucket::value(*buckets, i));
-    ObjectArray kv_pair(&scope, newObjectArray(2));
+    Tuple kv_pair(&scope, newTuple(2));
     kv_pair->atPut(0, *key);
     kv_pair->atPut(1, *value);
     iter.setIndex(i + jump);
@@ -2999,7 +2996,7 @@ RawObject Runtime::dictItemIteratorNext(Thread* thread,
 RawObject Runtime::dictKeyIteratorNext(Thread* thread, DictKeyIterator& iter) {
   HandleScope scope(thread);
   Dict dict(&scope, iter.dict());
-  ObjectArray buckets(&scope, dict.data());
+  Tuple buckets(&scope, dict.data());
   word jump = Dict::Bucket::kNumPointers;
 
   word i = iter.index();
@@ -3022,7 +3019,7 @@ RawObject Runtime::dictValueIteratorNext(Thread* thread,
                                          DictValueIterator& iter) {
   HandleScope scope(thread);
   Dict dict(&scope, iter.dict());
-  ObjectArray buckets(&scope, dict.data());
+  Tuple buckets(&scope, dict.data());
   word jump = Dict::Bucket::kNumPointers;
 
   word i = iter.index();
@@ -3077,7 +3074,7 @@ RawObject Runtime::newWeakRef() { return heap()->create<RawWeakRef>(); }
 void Runtime::collectAttributes(const Code& code, const Dict& attributes) {
   HandleScope scope;
   Bytes bc(&scope, code->code());
-  ObjectArray names(&scope, code->names());
+  Tuple names(&scope, code->names());
 
   word len = bc->length();
   for (word i = 0; i < len - 3; i += 2) {
@@ -3121,7 +3118,7 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
                             layout_id, base_layout_id,
                             View<BuiltinAttribute>(nullptr, 0)));
 
-  ObjectArray mro(&scope, type->mro());
+  Tuple mro(&scope, type->mro());
   Dict attrs(&scope, newDict());
 
   // Collect set of in-object attributes by scanning the __init__ method of
@@ -3151,7 +3148,7 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
 RawObject Runtime::lookupNameInMro(Thread* thread, const Type& type,
                                    const Object& name) {
   HandleScope scope(thread);
-  ObjectArray mro(&scope, type->mro());
+  Tuple mro(&scope, type->mro());
   for (word i = 0; i < mro->length(); i++) {
     Type mro_type(&scope, mro->at(i));
     Dict dict(&scope, mro_type->dict());
@@ -3249,8 +3246,8 @@ RawObject Runtime::strConcat(const Str& left, const Str& right) {
   return *result;
 }
 
-RawObject Runtime::strJoin(Thread* thread, const Str& sep,
-                           const ObjectArray& items, word allocated) {
+RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
+                           word allocated) {
   HandleScope scope(thread);
   word result_len = 0;
   for (word i = 0; i < allocated; ++i) {
@@ -3301,8 +3298,8 @@ RawObject Runtime::computeFastGlobals(const Code& code, const Dict& globals,
                                       const Dict& builtins) {
   HandleScope scope;
   Bytes bytes(&scope, code->code());
-  ObjectArray names(&scope, code->names());
-  ObjectArray fast_globals(&scope, newObjectArray(names->length()));
+  Tuple names(&scope, code->names());
+  Tuple fast_globals(&scope, newTuple(names->length()));
   for (word i = 0; i < bytes->length(); i += 2) {
     Bytecode bc = static_cast<Bytecode>(bytes->byteAt(i));
     word arg = bytes->byteAt(i + 1);
@@ -3353,7 +3350,7 @@ word Runtime::codeOffsetToLineNum(Thread* thread, const Code& code,
 
 RawObject Runtime::isSubClass(const Type& subclass, const Type& superclass) {
   HandleScope scope;
-  ObjectArray mro(&scope, subclass->mro());
+  Tuple mro(&scope, subclass->mro());
   for (word i = 0; i < mro->length(); i++) {
     if (mro->at(i) == *superclass) {
       return Bool::trueObj();
@@ -3392,7 +3389,7 @@ LayoutId Runtime::computeBuiltinBaseType(const Type& type) {
   // The base class can only be one of the builtin bases including object.
   // We use the first non-object builtin base if any, throw if multiple.
   HandleScope scope;
-  ObjectArray mro(&scope, type->mro());
+  Tuple mro(&scope, type->mro());
   Type object_type(&scope, typeAt(LayoutId::kObject));
   Type candidate(&scope, *object_type);
   // Skip itself since builtin class won't go through this.
@@ -3407,7 +3404,7 @@ LayoutId Runtime::computeBuiltinBaseType(const Type& type) {
     if (*candidate == *object_type) {
       candidate = *mro_type;
     } else if (*mro_type != *object_type &&
-               !RawObjectArray::cast(candidate->mro())->contains(*mro_type)) {
+               !RawTuple::cast(candidate->mro())->contains(*mro_type)) {
       // Allow subclassing of built-in classes that are themselves subclasses
       // of built-in classes (e.g. Exception)
 
@@ -3436,8 +3433,8 @@ RawObject Runtime::instanceAt(Thread* thread, const HeapObject& instance,
   if (info.isInObject()) {
     result = instance->instanceVariableAt(info.offset());
   } else {
-    ObjectArray overflow(
-        &scope, instance->instanceVariableAt(layout->overflowOffset()));
+    Tuple overflow(&scope,
+                   instance->instanceVariableAt(layout->overflowOffset()));
     result = overflow->at(info.offset());
   }
 
@@ -3466,9 +3463,9 @@ RawObject Runtime::instanceAtPut(Thread* thread, const HeapObject& instance,
     instance->instanceVariableAtPut(info.offset(), *value);
   } else {
     // Build the new overflow array
-    ObjectArray overflow(
-        &scope, instance->instanceVariableAt(layout->overflowOffset()));
-    ObjectArray new_overflow(&scope, newObjectArray(overflow->length() + 1));
+    Tuple overflow(&scope,
+                   instance->instanceVariableAt(layout->overflowOffset()));
+    Tuple new_overflow(&scope, newTuple(overflow->length() + 1));
     overflow->copyTo(*new_overflow);
     new_overflow->atPut(info.offset(), *value);
     instance->instanceVariableAtPut(layout->overflowOffset(), *new_overflow);
@@ -3501,8 +3498,8 @@ RawObject Runtime::instanceDel(Thread* thread, const HeapObject& instance,
   if (info.isInObject()) {
     instance->instanceVariableAtPut(info.offset(), NoneType::object());
   } else {
-    ObjectArray overflow(
-        &scope, instance->instanceVariableAt(old_layout->overflowOffset()));
+    Tuple overflow(&scope,
+                   instance->instanceVariableAt(old_layout->overflowOffset()));
     overflow->atPut(info.offset(), NoneType::object());
   }
 
@@ -3534,9 +3531,9 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
   Object iname(&scope, internStr(name));
 
   // Check in-object attributes
-  ObjectArray in_object(&scope, layout->inObjectAttributes());
+  Tuple in_object(&scope, layout->inObjectAttributes());
   for (word i = 0; i < in_object->length(); i++) {
-    ObjectArray entry(&scope, in_object->at(i));
+    Tuple entry(&scope, in_object->at(i));
     if (entry->at(0) == *iname) {
       *info = AttributeInfo(entry->at(1));
       return true;
@@ -3544,9 +3541,9 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
   }
 
   // Check overflow attributes
-  ObjectArray overflow(&scope, layout->overflowAttributes());
+  Tuple overflow(&scope, layout->overflowAttributes());
   for (word i = 0; i < overflow->length(); i++) {
-    ObjectArray entry(&scope, overflow->at(i));
+    Tuple entry(&scope, overflow->at(i));
     if (entry->at(0) == *iname) {
       *info = AttributeInfo(entry->at(1));
       return true;
@@ -3577,15 +3574,14 @@ RawObject Runtime::layoutCreateChild(Thread* thread, const Layout& layout) {
   return *new_layout;
 }
 
-RawObject Runtime::layoutAddAttributeEntry(Thread* thread,
-                                           const ObjectArray& entries,
+RawObject Runtime::layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
                                            const Object& name,
                                            AttributeInfo info) {
   HandleScope scope(thread);
-  ObjectArray new_entries(&scope, newObjectArray(entries->length() + 1));
+  Tuple new_entries(&scope, newTuple(entries->length() + 1));
   entries->copyTo(*new_entries);
 
-  ObjectArray entry(&scope, newObjectArray(2));
+  Tuple entry(&scope, newTuple(2));
   entry->atPut(0, *name);
   entry->atPut(1, info.asSmallInt());
   new_entries->atPut(entries->length(), *entry);
@@ -3607,14 +3603,14 @@ RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
 
   // Create a new layout and figure out where to place the attribute
   Layout new_layout(&scope, layoutCreateChild(thread, layout));
-  ObjectArray inobject(&scope, layout->inObjectAttributes());
+  Tuple inobject(&scope, layout->inObjectAttributes());
   if (inobject->length() < layout->numInObjectAttributes()) {
     AttributeInfo info(inobject->length() * kPointerSize,
                        flags | AttributeInfo::Flag::kInObject);
     new_layout->setInObjectAttributes(
         layoutAddAttributeEntry(thread, inobject, name, info));
   } else {
-    ObjectArray overflow(&scope, layout->overflowAttributes());
+    Tuple overflow(&scope, layout->overflowAttributes());
     AttributeInfo info(overflow->length(), flags);
     new_layout->setOverflowAttributes(
         layoutAddAttributeEntry(thread, overflow, name, info));
@@ -3650,12 +3646,12 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   if (info.isInObject()) {
     // The attribute to be deleted was an in-object attribute, mark it as
     // deleted
-    ObjectArray old_inobject(&scope, layout->inObjectAttributes());
-    ObjectArray new_inobject(&scope, newObjectArray(old_inobject->length()));
+    Tuple old_inobject(&scope, layout->inObjectAttributes());
+    Tuple new_inobject(&scope, newTuple(old_inobject->length()));
     for (word i = 0; i < old_inobject->length(); i++) {
-      ObjectArray entry(&scope, old_inobject->at(i));
+      Tuple entry(&scope, old_inobject->at(i));
       if (entry->at(0) == *iname) {
-        entry = newObjectArray(2);
+        entry = newTuple(2);
         entry->atPut(0, NoneType::object());
         entry->atPut(
             1, AttributeInfo(0, AttributeInfo::Flag::kDeleted).asSmallInt());
@@ -3666,20 +3662,19 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   } else {
     // The attribute to be deleted was an overflow attribute, omit it from the
     // new overflow array
-    ObjectArray old_overflow(&scope, layout->overflowAttributes());
-    ObjectArray new_overflow(&scope,
-                             newObjectArray(old_overflow->length() - 1));
+    Tuple old_overflow(&scope, layout->overflowAttributes());
+    Tuple new_overflow(&scope, newTuple(old_overflow->length() - 1));
     bool is_deleted = false;
     for (word i = 0, j = 0; i < old_overflow->length(); i++) {
-      ObjectArray entry(&scope, old_overflow->at(i));
+      Tuple entry(&scope, old_overflow->at(i));
       if (entry->at(0) == *iname) {
         is_deleted = true;
         continue;
       }
       if (is_deleted) {
         // Need to shift everything down by 1 once we've deleted the attribute
-        entry = newObjectArray(2);
-        entry->atPut(0, RawObjectArray::cast(old_overflow->at(i))->at(0));
+        entry = newTuple(2);
+        entry->atPut(0, RawTuple::cast(old_overflow->at(i))->at(0));
         entry->atPut(1, AttributeInfo(j, info.flags()).asSmallInt());
       }
       new_overflow->atPut(j, *entry);
@@ -3712,7 +3707,7 @@ RawObject Runtime::superGetAttr(Thread* thread, const Object& receiver,
   HandleScope scope(thread);
   Super super(&scope, *receiver);
   Type start_type(&scope, super->objectType());
-  ObjectArray mro(&scope, start_type->mro());
+  Tuple mro(&scope, start_type->mro());
   word i;
   for (i = 0; i < mro->length(); i++) {
     if (super->type() == mro->at(i)) {
@@ -3749,7 +3744,7 @@ void Runtime::freeApiHandles() {
   // Clear the allocated ApiHandles
   HandleScope scope;
   Dict dict(&scope, apiHandles());
-  ObjectArray keys(&scope, dictKeys(dict));
+  Tuple keys(&scope, dictKeys(dict));
   for (word i = 0; i < keys->length(); i++) {
     Object key(&scope, keys->at(i));
     auto handle =
@@ -3762,7 +3757,7 @@ void Runtime::freeApiHandles() {
 RawObject Runtime::lookupSymbolInMro(Thread* thread, const Type& type,
                                      SymbolId symbol) {
   HandleScope scope(thread);
-  ObjectArray mro(&scope, type->mro());
+  Tuple mro(&scope, type->mro());
   Object key(&scope, symbols()->at(symbol));
   for (word i = 0; i < mro->length(); i++) {
     Type mro_type(&scope, mro->at(i));

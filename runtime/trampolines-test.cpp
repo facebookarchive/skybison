@@ -34,7 +34,7 @@ def test(callable):
   ASSERT_TRUE(test->isFunction());
   Function func(&scope, *test);
 
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *method);
 
   std::string output = callFunctionToString(func, args);
@@ -65,7 +65,7 @@ def test(callable):
   ASSERT_TRUE(test->isFunction());
   Function func(&scope, *test);
 
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *method);
 
   std::string output = callFunctionToString(func, args);
@@ -102,7 +102,7 @@ def test(callable):
   Object test(&scope, moduleAt(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
   Function func(&scope, *test);
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *method);
   callFunction(func, args);
 
@@ -150,7 +150,7 @@ def test(callable):
   Object test(&scope, moduleAt(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
   Function func(&scope, *test);
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *method);
   callFunction(func, args);
 
@@ -198,7 +198,7 @@ def test(callable):
   Object test(&scope, moduleAt(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
   Function func(&scope, *test);
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *method);
   callFunction(func, args);
 
@@ -247,7 +247,7 @@ def test(callable):
   Object test(&scope, moduleAt(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
   Function func(&scope, *test);
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *method);
   callFunction(func, args);
 
@@ -654,7 +654,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
 
   // Set up a code object that calls the builtin with a single argument.
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1111));
   code->setConsts(*consts);
@@ -679,7 +679,7 @@ static RawObject returnsPositionalAndKeywordArgument(Thread* thread,
   Object foo_val_opt(&scope, args.getKw(*foo_name));
   Object foo_val(&scope,
                  (foo_val_opt->isError() ? NoneType::object() : *foo_val_opt));
-  ObjectArray tuple(&scope, thread->runtime()->newObjectArray(2));
+  Tuple tuple(&scope, thread->runtime()->newTuple(2));
   tuple->atPut(0, args.get(0));
   tuple->atPut(1, *foo_val);
   return *tuple;
@@ -695,11 +695,11 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
 
   // Set up a code object that calls the builtin with (1234, foo='bar')
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(4));
+  Tuple consts(&scope, runtime.newTuple(4));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1234));
   consts->atPut(2, runtime.newStrFromCStr("bar"));
-  ObjectArray kw_tuple(&scope, runtime.newObjectArray(1));
+  Tuple kw_tuple(&scope, runtime.newTuple(1));
   kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
   consts->atPut(3, *kw_tuple);
   code->setConsts(*consts);
@@ -712,8 +712,8 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(*code);
-  ASSERT_TRUE(result->isObjectArray());
-  ObjectArray tuple(&scope, result);
+  ASSERT_TRUE(result->isTuple());
+  Tuple tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 2);
   EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1234);
   EXPECT_TRUE(RawStr::cast(tuple->at(1))->equalsCStr("bar"));
@@ -729,7 +729,7 @@ static RawObject returnsPositionalAndTwoKeywordArguments(Thread* thread,
   HandleScope scope;
   Object foo_name(&scope, runtime->newStrFromCStr("foo"));
   Object bar_name(&scope, runtime->newStrFromCStr("bar"));
-  ObjectArray tuple(&scope, runtime->newObjectArray(3));
+  Tuple tuple(&scope, runtime->newTuple(3));
   tuple->atPut(0, args.get(0));
   Object foo_val(&scope, args.getKw(*foo_name));
   tuple->atPut(1, (foo_val->isError() ? NoneType::object() : *foo_val));
@@ -750,12 +750,12 @@ TEST(TrampolineTest,
 
   // Code object that calls func with (1234, (foo='foo_val', bar='bar_val'))
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(5));
+  Tuple consts(&scope, runtime.newTuple(5));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1234));
   consts->atPut(2, runtime.newStrFromCStr("foo_val"));
   consts->atPut(3, runtime.newStrFromCStr("bar_val"));
-  ObjectArray kw_tuple(&scope, runtime.newObjectArray(2));
+  Tuple kw_tuple(&scope, runtime.newTuple(2));
   kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
   kw_tuple->atPut(1, runtime.newStrFromCStr("bar"));
   consts->atPut(4, *kw_tuple);
@@ -770,8 +770,8 @@ TEST(TrampolineTest,
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(*code);
-  ASSERT_TRUE(result->isObjectArray());
-  ObjectArray tuple(&scope, result);
+  ASSERT_TRUE(result->isTuple());
+  Tuple tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 3);
   ASSERT_TRUE(tuple->at(0)->isInt());
   EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1234);

@@ -349,7 +349,7 @@ class KwArguments : public Arguments {
  public:
   KwArguments(Frame* frame, word nargs)
       : Arguments(frame, nargs),
-        kwnames_(RawObjectArray::cast(frame->getLocal(nargs - 1))),
+        kwnames_(RawTuple::cast(frame->getLocal(nargs - 1))),
         num_keywords_(kwnames_->length()) {
     num_args_ = nargs - num_keywords_ - 1;
   }
@@ -366,7 +366,7 @@ class KwArguments : public Arguments {
   word numKeywords() const { return num_keywords_; }
 
  private:
-  RawObjectArray kwnames_;
+  RawTuple kwnames_;
   word num_keywords_;
 };
 

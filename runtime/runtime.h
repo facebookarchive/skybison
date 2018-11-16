@@ -15,7 +15,7 @@ namespace python {
 class AttributeInfo;
 class Heap;
 class RawObject;
-class RawObjectArray;
+class RawTuple;
 class PointerVisitor;
 class Thread;
 
@@ -112,7 +112,7 @@ class Runtime {
   // Returns an Int that stores the numerical address of the pointer.
   RawObject newIntFromCPtr(void* ptr);
 
-  RawObject newObjectArray(word length);
+  RawObject newTuple(word length);
 
   RawObject newProperty(const Object& getter, const Object& setter,
                         const Object& deleter);
@@ -143,7 +143,7 @@ class Runtime {
   void processCallbacks();
 
   RawObject strConcat(const Str& left, const Str& right);
-  RawObject strJoin(Thread* thread, const Str& sep, const ObjectArray& items,
+  RawObject strJoin(Thread* thread, const Str& sep, const Tuple& items,
                     word allocated);
   RawObject strStripSpace(const Str& src, const StrStripDirection direction);
   RawObject strStrip(const Str& src, const Str& str,
@@ -285,7 +285,7 @@ class Runtime {
 
   // Associate a value with the supplied key.
   //
-  // This handles growing the backing ObjectArray if needed.
+  // This handles growing the backing Tuple if needed.
   void dictAtPut(const Dict& dict, const Object& key, const Object& value);
 
   // Look up the value associated with key. Returns Error::object() if the
@@ -319,9 +319,9 @@ class Runtime {
   RawObject dictAtWithHash(const Dict& dict, const Object& key,
                            const Object& key_hash);
 
-  RawObjectArray dictKeys(const Dict& dict);
+  RawTuple dictKeys(const Dict& dict);
 
-  // Returns next item in the dict as (key, value) tuple (ObjectArray)
+  // Returns next item in the dict as (key, value) tuple (Tuple)
   // Returns Error::object() if there are no more objects
   RawObject dictItemIteratorNext(Thread* thread, DictItemIterator& iter);
 
@@ -659,7 +659,7 @@ class Runtime {
 
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 
-  RawObjectArray dictGrow(const ObjectArray& data);
+  RawTuple dictGrow(const Tuple& data);
 
   // Looks up the supplied key
   //
@@ -667,14 +667,13 @@ class Runtime {
   // index of the bucket that contains the value. If the key is not found, this
   // function returns false and sets index to the location where the key would
   // be inserted. If the dict is full, it sets index to -1.
-  bool dictLookup(const ObjectArray& data, const Object& key,
-                  const Object& key_hash, word* index);
+  bool dictLookup(const Tuple& data, const Object& key, const Object& key_hash,
+                  word* index);
 
   template <SetLookupType type>
-  word setLookup(const ObjectArray& data, const Object& key,
-                 const Object& key_hash);
+  word setLookup(const Tuple& data, const Object& key, const Object& key_hash);
 
-  RawObjectArray setGrow(const ObjectArray& data);
+  RawTuple setGrow(const Tuple& data);
 
   // Generic attribute lookup code used for class objects
   RawObject classGetAttr(Thread* thread, const Object& receiver,
@@ -730,7 +729,7 @@ class Runtime {
   // attribute entries starting at a specific index.  Useful for constructing
   // the in-object attributes array for built-in classes with fixed attributes.
   void appendBuiltinAttributes(View<BuiltinAttribute> attributes,
-                               const ObjectArray& dst, word index);
+                               const Tuple& dst, word index);
 
   // Appends the edge to the list of edges.
   //
@@ -741,7 +740,7 @@ class Runtime {
 
   // Create a new tuple for the name, info pair and return a new tuple
   // containing entries + entry.
-  RawObject layoutAddAttributeEntry(Thread* thread, const ObjectArray& entries,
+  RawObject layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
                                     const Object& name, AttributeInfo info);
 
   // Follow the edge with the supplied label, if one exists.
@@ -788,7 +787,7 @@ class Runtime {
 
   Heap heap_;
 
-  // An ObjectArray of Layout objects, indexed by layout id.
+  // An Tuple of Layout objects, indexed by layout id.
   RawObject layouts_;
 
   // Cached instances

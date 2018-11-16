@@ -214,8 +214,7 @@ std::string compileAndRunToStderrString(Runtime* runtime, const char* src) {
   return compileAndRunImpl(runtime, src, &builtinStderr);
 }
 
-std::string callFunctionToString(const Function& func,
-                                 const ObjectArray& args) {
+std::string callFunctionToString(const Function& func, const Tuple& args) {
   std::stringstream stream;
   std::ostream* old_stream = builtInStdout;
   builtInStdout = &stream;
@@ -228,7 +227,7 @@ std::string callFunctionToString(const Function& func,
   return stream.str();
 }
 
-RawObject callFunction(const Function& func, const ObjectArray& args) {
+RawObject callFunction(const Function& func, const Tuple& args) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Code code(&scope, func->code());
@@ -243,7 +242,7 @@ RawObject callFunction(const Function& func, const ObjectArray& args) {
   return *result;
 }
 
-bool objectArrayContains(const ObjectArray& object_array, const Object& key) {
+bool tupleContains(const Tuple& object_array, const Object& key) {
   for (word i = 0; i < object_array->length(); i++) {
     if (Object::equals(object_array->at(i), *key)) {
       return true;

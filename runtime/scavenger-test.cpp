@@ -13,7 +13,7 @@ TEST(ScavengerTest, PreserveWeakReferenceHeapReferent) {
   Runtime runtime;
   HandleScope scope;
   WeakRef ref(&scope, runtime.newWeakRef());
-  ObjectArray array(&scope, runtime.newObjectArray(10));
+  Tuple array(&scope, runtime.newTuple(10));
   ref->setReferent(*array);
   runtime.collectGarbage();
   EXPECT_EQ(ref->referent(), *array);
@@ -33,7 +33,7 @@ TEST(ScavengerTest, ClearWeakReference) {
   HandleScope scope;
   WeakRef ref(&scope, runtime.newWeakRef());
   {
-    ObjectArray array(&scope, runtime.newObjectArray(10));
+    Tuple array(&scope, runtime.newTuple(10));
     ref->setReferent(*array);
     runtime.collectGarbage();
     EXPECT_EQ(ref->referent(), *array);
@@ -47,7 +47,7 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   HandleScope scope;
 
   // Create strongly referenced heap allocated objects.
-  ObjectArray strongrefs(&scope, runtime.newObjectArray(4));
+  Tuple strongrefs(&scope, runtime.newTuple(4));
   for (word i = 0; i < strongrefs->length(); i++) {
     Float elt(&scope, runtime.newFloat(i));
     strongrefs->atPut(i, *elt);
@@ -55,7 +55,7 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
 
   // Create a parallel array of weak references with the strongly referenced
   // objects as referents.
-  ObjectArray weakrefs(&scope, runtime.newObjectArray(4));
+  Tuple weakrefs(&scope, runtime.newTuple(4));
   for (word i = 0; i < weakrefs->length(); i++) {
     WeakRef elt(&scope, runtime.newWeakRef());
     elt->setReferent(strongrefs->at(i));
@@ -125,12 +125,12 @@ def g(ref, c=4):
   WeakRef ref1(&scope, runtime.newWeakRef());
   WeakRef ref2(&scope, runtime.newWeakRef());
   {
-    ObjectArray array1(&scope, runtime.newObjectArray(10));
+    Tuple array1(&scope, runtime.newTuple(10));
     Function func_f(&scope, moduleAt(&runtime, main, "f"));
     ref1->setReferent(*array1);
     ref1->setCallback(*func_f);
 
-    ObjectArray array2(&scope, runtime.newObjectArray(10));
+    Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
     ref2->setReferent(*array2);
     ref2->setCallback(*func_g);
@@ -174,12 +174,12 @@ def g(ref, c=4):
 
   WeakRef ref1(&scope, runtime.newWeakRef());
   WeakRef ref2(&scope, runtime.newWeakRef());
-  ObjectArray array1(&scope, runtime.newObjectArray(10));
+  Tuple array1(&scope, runtime.newTuple(10));
   Function func_f(&scope, moduleAt(&runtime, main, "f"));
   ref1->setReferent(*array1);
   ref1->setCallback(*func_f);
   {
-    ObjectArray array2(&scope, runtime.newObjectArray(10));
+    Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
     ref2->setReferent(*array2);
     ref2->setCallback(*func_g);
@@ -224,14 +224,14 @@ def g(ref, b=2):
   WeakRef ref1(&scope, runtime.newWeakRef());
   WeakRef ref2(&scope, runtime.newWeakRef());
   {
-    ObjectArray array1(&scope, runtime.newObjectArray(10));
+    Tuple array1(&scope, runtime.newTuple(10));
     Function collect(&scope, runtime.newFunction());
     collect->setEntry(nativeTrampoline<doGarbageCollection>);
 
     ref1->setReferent(*array1);
     ref1->setCallback(*collect);
 
-    ObjectArray array2(&scope, runtime.newObjectArray(10));
+    Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
     ref2->setReferent(*array2);
     ref2->setCallback(*func_g);
@@ -271,12 +271,12 @@ def g(ref, c=4):
   WeakRef ref1(&scope, runtime.newWeakRef());
   WeakRef ref2(&scope, runtime.newWeakRef());
   {
-    ObjectArray array1(&scope, runtime.newObjectArray(10));
+    Tuple array1(&scope, runtime.newTuple(10));
     Function func_f(&scope, moduleAt(&runtime, main, "f"));
     ref1->setReferent(*array1);
     ref1->setCallback(*func_f);
 
-    ObjectArray array2(&scope, runtime.newObjectArray(10));
+    Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
     ref2->setReferent(*array2);
     ref2->setCallback(*func_g);

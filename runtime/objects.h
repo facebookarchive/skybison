@@ -78,7 +78,6 @@ namespace python {
   V(NotImplemented)                                                            \
   V(NotImplementedError)                                                       \
   V(OSError)                                                                   \
-  V(ObjectArray)                                                               \
   V(OverflowError)                                                             \
   V(PendingDeprecationWarning)                                                 \
   V(PermissionError)                                                           \
@@ -106,6 +105,7 @@ namespace python {
   V(SystemExit)                                                                \
   V(TabError)                                                                  \
   V(TimeoutError)                                                              \
+  V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(Type)                                                                      \
   V(TypeError)                                                                 \
@@ -217,7 +217,6 @@ enum class LayoutId : word {
   kNotImplemented,
   kNotImplementedError,
   kOSError,
-  kObjectArray,
   kOverflowError,
   kPendingDeprecationWarning,
   kPermissionError,
@@ -245,6 +244,7 @@ enum class LayoutId : word {
   kSystemExit,
   kTabError,
   kTimeoutError,
+  kTuple,
   kTupleIterator,
   kType,
   kTypeError,
@@ -351,7 +351,6 @@ class RawObject {
   bool isModuleNotFoundError();
   bool isNotImplemented();
   bool isNotImplementedError();
-  bool isObjectArray();
   bool isProperty();
   bool isRange();
   bool isRangeIterator();
@@ -365,6 +364,7 @@ class RawObject {
   bool isStrIterator();
   bool isSuper();
   bool isSystemExit();
+  bool isTuple();
   bool isTupleIterator();
   bool isValueCell();
   bool isWeakRef();
@@ -906,7 +906,7 @@ class RawBytes : public RawArray {
   RAW_OBJECT_COMMON(Bytes);
 };
 
-class RawObjectArray : public RawArray {
+class RawTuple : public RawArray {
  public:
   // Getters and setters.
   RawObject at(word index);
@@ -921,7 +921,7 @@ class RawObjectArray : public RawArray {
 
   bool contains(RawObject object);
 
-  RAW_OBJECT_COMMON(ObjectArray);
+  RAW_OBJECT_COMMON(Tuple);
 };
 
 class RawLargeStr : public RawArray {
@@ -1485,7 +1485,7 @@ class RawNotImplemented : public RawHeapObject {
  *
  *   [RawType pointer]
  *   [NumItems     ] - Number of items currently in the dict
- *   [Items        ] - Pointer to an RawObjectArray that stores the underlying
+ *   [Items        ] - Pointer to an RawTuple that stores the underlying
  * data.
  *
  * RawDict entries are stored in buckets as a triple of (hash, key, value).
@@ -1498,7 +1498,7 @@ class RawDict : public RawHeapObject {
   class Bucket;
 
   // Getters and setters.
-  // The RawObjectArray backing the dict
+  // The RawTuple backing the dict
   RawObject data();
   void setData(RawObject data);
 
@@ -1514,56 +1514,56 @@ class RawDict : public RawHeapObject {
   RAW_OBJECT_COMMON(Dict);
 };
 
-// Helper class for manipulating buckets in the RawObjectArray that backs the
+// Helper class for manipulating buckets in the RawTuple that backs the
 // dict
 class RawDict::Bucket {
  public:
   // none of these operations do bounds checking on the backing array
-  static word getIndex(RawObjectArray data, RawObject hash) {
+  static word getIndex(RawTuple data, RawObject hash) {
     word nbuckets = data->length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
     word value = RawSmallInt::cast(hash)->value();
     return (value & (nbuckets - 1)) * kNumPointers;
   }
 
-  static bool hasKey(RawObjectArray data, word index, RawObject that_key) {
+  static bool hasKey(RawTuple data, word index, RawObject that_key) {
     return !hash(data, index)->isNoneType() &&
            RawObject::equals(key(data, index), that_key);
   }
 
-  static RawObject hash(RawObjectArray data, word index) {
+  static RawObject hash(RawTuple data, word index) {
     return data->at(index + kHashOffset);
   }
 
-  static bool isEmpty(RawObjectArray data, word index) {
+  static bool isEmpty(RawTuple data, word index) {
     return hash(data, index)->isNoneType() && key(data, index)->isNoneType();
   }
 
-  static bool isTombstone(RawObjectArray data, word index) {
+  static bool isTombstone(RawTuple data, word index) {
     return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
   }
 
-  static bool isFilled(RawObjectArray data, word index) {
+  static bool isFilled(RawTuple data, word index) {
     return !hash(data, index)->isNoneType();
   }
 
-  static RawObject key(RawObjectArray data, word index) {
+  static RawObject key(RawTuple data, word index) {
     return data->at(index + kKeyOffset);
   }
 
-  static void set(RawObjectArray data, word index, RawObject hash,
-                  RawObject key, RawObject value) {
+  static void set(RawTuple data, word index, RawObject hash, RawObject key,
+                  RawObject value) {
     data->atPut(index + kHashOffset, hash);
     data->atPut(index + kKeyOffset, key);
     data->atPut(index + kValueOffset, value);
   }
 
-  static void setTombstone(RawObjectArray data, word index) {
+  static void setTombstone(RawTuple data, word index) {
     set(data, index, RawNoneType::object(), RawError::object(),
         RawNoneType::object());
   }
 
-  static RawObject value(RawObjectArray data, word index) {
+  static RawObject value(RawTuple data, word index) {
     return data->at(index + kValueOffset);
   }
 
@@ -1641,7 +1641,7 @@ class RawSet : public RawHeapObject {
   class Bucket;
 
   // Getters and setters.
-  // The RawObjectArray backing the set
+  // The RawTuple backing the set
   RawObject data();
   void setData(RawObject data);
 
@@ -1660,50 +1660,49 @@ class RawSet : public RawHeapObject {
   RAW_OBJECT_COMMON_NO_CAST(Set);
 };
 
-// Helper class for manipulating buckets in the RawObjectArray that backs the
+// Helper class for manipulating buckets in the RawTuple that backs the
 // set
 class RawSet::Bucket {
  public:
   // none of these operations do bounds checking on the backing array
-  static word getIndex(RawObjectArray data, RawObject hash) {
+  static word getIndex(RawTuple data, RawObject hash) {
     word nbuckets = data->length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
     word value = RawSmallInt::cast(hash)->value();
     return (value & (nbuckets - 1)) * kNumPointers;
   }
 
-  static RawObject hash(RawObjectArray data, word index) {
+  static RawObject hash(RawTuple data, word index) {
     return data->at(index + kHashOffset);
   }
 
-  static bool hasKey(RawObjectArray data, word index, RawObject that_key) {
+  static bool hasKey(RawTuple data, word index, RawObject that_key) {
     return !hash(data, index)->isNoneType() &&
            RawObject::equals(key(data, index), that_key);
   }
 
-  static bool isEmpty(RawObjectArray data, word index) {
+  static bool isEmpty(RawTuple data, word index) {
     return hash(data, index)->isNoneType() && key(data, index)->isNoneType();
   }
 
-  static bool isTombstone(RawObjectArray data, word index) {
+  static bool isTombstone(RawTuple data, word index) {
     return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
   }
 
-  static bool isFilled(RawObjectArray data, word index) {
+  static bool isFilled(RawTuple data, word index) {
     return !hash(data, index)->isNoneType();
   }
 
-  static RawObject key(RawObjectArray data, word index) {
+  static RawObject key(RawTuple data, word index) {
     return data->at(index + kKeyOffset);
   }
 
-  static void set(RawObjectArray data, word index, RawObject hash,
-                  RawObject key) {
+  static void set(RawTuple data, word index, RawObject hash, RawObject key) {
     data->atPut(index + kHashOffset, hash);
     data->atPut(index + kKeyOffset, key);
   }
 
-  static void setTombstone(RawObjectArray data, word index) {
+  static void setTombstone(RawTuple data, word index) {
     set(data, index, RawNoneType::object(), RawError::object());
   }
 
@@ -1723,7 +1722,7 @@ class RawSet::Bucket {
  *
  *   [RawType pointer]
  *   [Length       ] - Number of elements currently in the list
- *   [Elems        ] - Pointer to an RawObjectArray that contains list elements
+ *   [Elems        ] - Pointer to an RawTuple that contains list elements
  */
 class RawList : public RawHeapObject {
  public:
@@ -1874,7 +1873,7 @@ class RawClassMethod : public RawHeapObject {
  * stored in an object array pointed to by the last word of the instance.
  * Graphically, this looks like:
  *
- *   RawInstance                                   RawObjectArray
+ *   RawInstance                                   RawTuple
  *   +---------------------------+     +------->+--------------------------+
  *   | First in-object attribute |     |        | First overflow attribute |
  *   +---------------------------+     |        +--------------------------+
@@ -1919,11 +1918,11 @@ class RawLayout : public RawHeapObject {
   // described by this layout.
   //
   // N.B. - This will always be larger than or equal to the length of the
-  // RawObjectArray returned by inObjectAttributes().
+  // RawTuple returned by inObjectAttributes().
   void setNumInObjectAttributes(word count);
   word numInObjectAttributes();
 
-  // Returns an RawObjectArray describing the attributes stored directly in
+  // Returns an RawTuple describing the attributes stored directly in
   // in the instance.
   //
   // Each item in the object array is a two element tuple. Each tuple is
@@ -1934,7 +1933,7 @@ class RawLayout : public RawHeapObject {
   RawObject inObjectAttributes();
   void setInObjectAttributes(RawObject attributes);
 
-  // Returns an RawObjectArray describing the attributes stored in the overflow
+  // Returns an RawTuple describing the attributes stored in the overflow
   // array of the instance.
   //
   // Each item in the object array is a two element tuple. Each tuple is
@@ -2128,8 +2127,8 @@ inline bool RawObject::isBytes() {
   return isHeapObjectWithLayout(LayoutId::kBytes);
 }
 
-inline bool RawObject::isObjectArray() {
-  return isHeapObjectWithLayout(LayoutId::kObjectArray);
+inline bool RawObject::isTuple() {
+  return isHeapObjectWithLayout(LayoutId::kTuple);
 }
 
 inline bool RawObject::isCode() {
@@ -2837,7 +2836,7 @@ inline bool RawType::isIntrinsicOrExtension() {
 // RawArray
 
 inline word RawArray::length() {
-  DCHECK(isBytes() || isObjectArray() || isLargeStr(), "invalid array type");
+  DCHECK(isBytes() || isTuple() || isLargeStr(), "invalid array type");
   return headerCountOrOverflow();
 }
 
@@ -2859,20 +2858,20 @@ inline void RawBytes::byteAtPut(word index, byte value) {
   *reinterpret_cast<byte*>(address() + index) = value;
 }
 
-// RawObjectArray
+// RawTuple
 
-inline word RawObjectArray::allocationSize(word length) {
+inline word RawTuple::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length * kPointerSize;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-inline RawObject RawObjectArray::at(word index) {
+inline RawObject RawTuple::at(word index) {
   DCHECK_INDEX(index, length());
   return instanceVariableAt(index * kPointerSize);
 }
 
-inline void RawObjectArray::atPut(word index, RawObject value) {
+inline void RawTuple::atPut(word index, RawObject value) {
   DCHECK_INDEX(index, length());
   instanceVariableAtPut(index * kPointerSize, value);
 }
@@ -2917,12 +2916,11 @@ inline void RawCode::setCellvars(RawObject value) {
 
 inline word RawCode::numCellvars() {
   RawObject object = cellvars();
-  DCHECK(object->isNoneType() || object->isObjectArray(),
-         "not an object array");
+  DCHECK(object->isNoneType() || object->isTuple(), "not an object array");
   if (object->isNoneType()) {
     return 0;
   }
-  return RawObjectArray::cast(object)->length();
+  return RawTuple::cast(object)->length();
 }
 
 inline RawObject RawCode::code() { return instanceVariableAt(kCodeOffset); }
@@ -2977,12 +2975,11 @@ inline void RawCode::setFreevars(RawObject value) {
 
 inline word RawCode::numFreevars() {
   RawObject object = freevars();
-  DCHECK(object->isNoneType() || object->isObjectArray(),
-         "not an object array");
+  DCHECK(object->isNoneType() || object->isTuple(), "not an object array");
   if (object->isNoneType()) {
     return 0;
   }
-  return RawObjectArray::cast(object)->length();
+  return RawTuple::cast(object)->length();
 }
 
 inline word RawCode::kwonlyargcount() {
@@ -3420,9 +3417,7 @@ inline void RawList::setItems(RawObject new_items) {
   instanceVariableAtPut(kItemsOffset, new_items);
 }
 
-inline word RawList::capacity() {
-  return RawObjectArray::cast(items())->length();
-}
+inline word RawList::capacity() { return RawTuple::cast(items())->length(); }
 
 inline word RawList::numItems() {
   return RawSmallInt::cast(instanceVariableAt(kAllocatedOffset))->value();
@@ -3435,12 +3430,12 @@ inline void RawList::setNumItems(word num_items) {
 inline void RawList::atPut(word index, RawObject value) {
   DCHECK_INDEX(index, numItems());
   RawObject items = instanceVariableAt(kItemsOffset);
-  RawObjectArray::cast(items)->atPut(index, value);
+  RawTuple::cast(items)->atPut(index, value);
 }
 
 inline RawObject RawList::at(word index) {
   DCHECK_INDEX(index, numItems());
-  return RawObjectArray::cast(items())->at(index);
+  return RawTuple::cast(items())->at(index);
 }
 
 // RawModule

@@ -107,10 +107,10 @@ builtin_names = sys.builtin_module_names
 )");
   Module main(&scope, findModule(&runtime, "__main__"));
   Object builtins(&scope, moduleAt(&runtime, main, "builtin_names"));
-  ASSERT_TRUE(builtins->isObjectArray());
+  ASSERT_TRUE(builtins->isTuple());
 
   // Test that builtin list is greater than 0
-  ObjectArray builtins_tuple(&scope, *builtins);
+  Tuple builtins_tuple(&scope, *builtins);
   EXPECT_GT(builtins_tuple->length(), 0);
 
   // Test that sys and _stat are both in the builtin list

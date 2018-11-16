@@ -335,13 +335,13 @@ RawObject Marshal::Reader::readTypeTuple() {
 }
 
 RawObject Marshal::Reader::doTupleElements(int32 length) {
-  RawObject result = runtime_->newObjectArray(length);
+  RawObject result = runtime_->newTuple(length);
   if (isRef_) {
     addRef(result);
   }
   for (int32 i = 0; i < length; i++) {
     RawObject value = readObject();
-    RawObjectArray::cast(result)->atPut(i, value);
+    RawTuple::cast(result)->atPut(i, value);
   }
   return result;
 }

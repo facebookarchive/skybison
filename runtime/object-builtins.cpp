@@ -25,7 +25,7 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
   Type object_type(&scope, runtime->newType());
   layout->setDescribedType(*object_type);
   object_type->setName(runtime->symbols()->ObjectTypename());
-  ObjectArray mro(&scope, runtime->newObjectArray(1));
+  Tuple mro(&scope, runtime->newTuple(1));
   mro->atPut(0, *object_type);
   object_type->setMro(*mro);
   object_type->setInstanceLayout(*layout);

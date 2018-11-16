@@ -30,11 +30,11 @@ TEST(LayoutTest, FindAttribute) {
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout, attr, &info));
 
   // Update the layout to include the new attribute as an in-object attribute
-  ObjectArray entry(&scope, runtime.newObjectArray(2));
+  Tuple entry(&scope, runtime.newTuple(2));
   entry->atPut(0, *attr);
   entry->atPut(
       1, AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
-  ObjectArray array(&scope, runtime.newObjectArray(1));
+  Tuple array(&scope, runtime.newTuple(1));
   array->atPut(0, *entry);
   RawLayout::cast(*layout)->setInObjectAttributes(*array);
 
@@ -123,11 +123,11 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
 
   // Create a new layout with a single in-object attribute
   Object attr(&scope, runtime.newStrFromCStr("myattr"));
-  ObjectArray entry(&scope, runtime.newObjectArray(2));
+  Tuple entry(&scope, runtime.newTuple(2));
   entry->atPut(0, *attr);
   entry->atPut(
       1, AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
-  ObjectArray array(&scope, runtime.newObjectArray(1));
+  Tuple array(&scope, runtime.newTuple(1));
   array->atPut(0, *entry);
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
   layout->setInObjectAttributes(*array);
@@ -139,10 +139,10 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
   EXPECT_NE(layout->id(), layout2->id());
 
   // The new layout should have the entry for the attribute marked as deleted
-  ASSERT_TRUE(layout2->inObjectAttributes()->isObjectArray());
-  ObjectArray inobject(&scope, layout2->inObjectAttributes());
+  ASSERT_TRUE(layout2->inObjectAttributes()->isTuple());
+  Tuple inobject(&scope, layout2->inObjectAttributes());
   ASSERT_EQ(inobject->length(), 1);
-  ASSERT_TRUE(inobject->at(0)->isObjectArray());
+  ASSERT_TRUE(inobject->at(0)->isTuple());
   entry = inobject->at(0);
   EXPECT_EQ(entry->at(0), NoneType::object());
   ASSERT_TRUE(entry->at(1)->isSmallInt());
@@ -165,10 +165,10 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   Object attr(&scope, runtime.newStrFromCStr("myattr"));
   Object attr2(&scope, runtime.newStrFromCStr("myattr2"));
   Object attr3(&scope, runtime.newStrFromCStr("myattr3"));
-  ObjectArray attrs(&scope, runtime.newObjectArray(3));
+  Tuple attrs(&scope, runtime.newTuple(3));
   Object* names[] = {&attr, &attr2, &attr3};
   for (word i = 0; i < attrs->length(); i++) {
-    ObjectArray entry(&scope, runtime.newObjectArray(2));
+    Tuple entry(&scope, runtime.newTuple(2));
     entry->atPut(0, **names[i]);
     entry->atPut(1, AttributeInfo(i, 0).asSmallInt());
     attrs->atPut(i, *entry);
@@ -229,10 +229,10 @@ TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
 
   auto create_attrs = [&runtime](const Object& name, uword flags) {
     HandleScope scope;
-    ObjectArray entry(&scope, runtime.newObjectArray(2));
+    Tuple entry(&scope, runtime.newTuple(2));
     entry->atPut(0, *name);
     entry->atPut(1, AttributeInfo(0, flags).asSmallInt());
-    ObjectArray result(&scope, runtime.newObjectArray(1));
+    Tuple result(&scope, runtime.newTuple(1));
     result->atPut(0, *entry);
     return *result;
   };

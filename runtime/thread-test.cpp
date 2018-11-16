@@ -295,7 +295,7 @@ TEST(ThreadTest, PushFrameWithNoCellVars) {
 
   Code code(&scope, runtime.newCode());
   code->setCellvars(NoneType::object());
-  code->setFreevars(runtime.newObjectArray(0));
+  code->setFreevars(runtime.newTuple(0));
   auto thread = Thread::currentThread();
   byte* prev_sp = thread->stackPtr();
   thread->pushFrame(*code);
@@ -309,7 +309,7 @@ TEST(ThreadTest, PushFrameWithNoFreeVars) {
 
   Code code(&scope, runtime.newCode());
   code->setFreevars(NoneType::object());
-  code->setCellvars(runtime.newObjectArray(0));
+  code->setCellvars(runtime.newTuple(0));
   auto thread = Thread::currentThread();
   byte* prev_sp = thread->stackPtr();
   thread->pushFrame(*code);
@@ -402,8 +402,8 @@ TEST(ThreadTest, CallFunction) {
   Code callee_code(&scope, runtime.newCode());
   callee_code->setArgcount(2);
   callee_code->setStacksize(1);
-  callee_code->setConsts(runtime.newObjectArray(1));
-  RawObjectArray::cast(callee_code->consts())->atPut(0, expected_result);
+  callee_code->setConsts(runtime.newTuple(1));
+  RawTuple::cast(callee_code->consts())->atPut(0, expected_result);
   const byte callee_bc[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   callee_code->setCode(runtime.newBytesWithAll(callee_bc));
 
@@ -415,7 +415,7 @@ TEST(ThreadTest, CallFunction) {
   // Build a code object to call the function defined above
   Code caller_code(&scope, runtime.newCode());
   caller_code->setStacksize(3);
-  ObjectArray consts(&scope, runtime.newObjectArray(3));
+  Tuple consts(&scope, runtime.newTuple(3));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1111));
   consts->atPut(2, SmallInt::fromWord(2222));
@@ -436,7 +436,7 @@ TEST(ThreadTest, ExtendedArg) {
 
   Runtime runtime;
   HandleScope scope;
-  ObjectArray constants(&scope, runtime.newObjectArray(num_consts));
+  Tuple constants(&scope, runtime.newTuple(num_consts));
 
   auto zero = SmallInt::fromWord(0);
   auto non_zero = SmallInt::fromWord(0xDEADBEEF);
@@ -473,7 +473,7 @@ TEST(ThreadTest, ExecuteDupTop) {
   Runtime runtime;
   HandleScope scope;
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(1111));
   Code code(&scope, runtime.newCode());
   code->setStacksize(2);
@@ -490,7 +490,7 @@ TEST(ThreadTest, ExecuteDupTopTwo) {
   Runtime runtime;
   HandleScope scope;
 
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, SmallInt::fromWord(1111));
   consts->atPut(1, SmallInt::fromWord(2222));
   Code code(&scope, runtime.newCode());
@@ -509,7 +509,7 @@ TEST(ThreadTest, ExecuteRotTwo) {
   Runtime runtime;
   HandleScope scope;
 
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, SmallInt::fromWord(1111));
   consts->atPut(1, SmallInt::fromWord(2222));
   Code code(&scope, runtime.newCode());
@@ -528,7 +528,7 @@ TEST(ThreadTest, ExecuteRotThree) {
   Runtime runtime;
   HandleScope scope;
 
-  ObjectArray consts(&scope, runtime.newObjectArray(3));
+  Tuple consts(&scope, runtime.newTuple(3));
   consts->atPut(0, SmallInt::fromWord(1111));
   consts->atPut(1, SmallInt::fromWord(2222));
   consts->atPut(2, SmallInt::fromWord(3333));
@@ -548,7 +548,7 @@ TEST(ThreadTest, ExecuteJumpAbsolute) {
   Runtime runtime;
   HandleScope scope;
 
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, SmallInt::fromWord(1111));
   consts->atPut(1, SmallInt::fromWord(2222));
   Code code(&scope, runtime.newCode());
@@ -567,7 +567,7 @@ TEST(ThreadTest, ExecuteJumpForward) {
   Runtime runtime;
   HandleScope scope;
 
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, SmallInt::fromWord(1111));
   consts->atPut(1, SmallInt::fromWord(2222));
   Code code(&scope, runtime.newCode());
@@ -587,7 +587,7 @@ TEST(ThreadTest, ExecuteStoreLoadFast) {
   HandleScope scope;
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(1111));
   code->setConsts(*consts);
   code->setNlocals(2);
@@ -605,7 +605,7 @@ TEST(ThreadTest, LoadGlobal) {
   HandleScope scope;
 
   Code code(&scope, runtime.newCode());
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -745,11 +745,11 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -779,11 +779,11 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -819,11 +819,11 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -854,7 +854,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -888,11 +888,11 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -926,11 +926,11 @@ TEST(ThreadTest, LoadNameInTypeBodyFromGlobal) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -966,11 +966,11 @@ TEST(ThreadTest, LoadNameInTypeBodyFromImplicitGlobals) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -1004,7 +1004,7 @@ TEST(ThreadTest, MakeFunction) {
 
   Code module(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(3));
+  Tuple consts(&scope, runtime.newTuple(3));
   Code code(&scope, runtime.newCode());
   consts->atPut(0, *code);
   Object key(&scope, runtime.newStrFromCStr("hello"));
@@ -1012,7 +1012,7 @@ TEST(ThreadTest, MakeFunction) {
   consts->atPut(2, NoneType::object());
   module->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   names->atPut(0, runtime.newStrFromCStr("hello"));
   module->setNames(*names);
 
@@ -1050,7 +1050,7 @@ TEST(ThreadTest, BuildList) {
 
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(3));
+  Tuple consts(&scope, runtime.newTuple(3));
   consts->atPut(0, SmallInt::fromWord(111));
   consts->atPut(1, runtime.newStrFromCStr("qqq"));
   consts->atPut(2, NoneType::object());
@@ -1094,7 +1094,7 @@ TEST(ThreadTest, BuildSetWithOneItem) {
   HandleScope scope;
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   Object smi(&scope, SmallInt::fromWord(111));
   consts->atPut(0, *smi);
   consts->atPut(1, *smi);  // dup
@@ -1118,7 +1118,7 @@ TEST(ThreadTest, BuildSet) {
   HandleScope scope;
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(4));
+  Tuple consts(&scope, runtime.newTuple(4));
 
   Object smi(&scope, SmallInt::fromWord(111));
   consts->atPut(0, *smi);
@@ -1210,7 +1210,7 @@ TEST(ThreadTest, PopJumpIfFalse) {
   HandleScope scope;
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(3));
+  Tuple consts(&scope, runtime.newTuple(3));
   consts->atPut(0, Bool::trueObj());
   consts->atPut(1, SmallInt::fromWord(1111));
   consts->atPut(2, SmallInt::fromWord(2222));
@@ -1240,7 +1240,7 @@ TEST(ThreadTest, PopJumpIfTrue) {
   HandleScope scope;
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(3));
+  Tuple consts(&scope, runtime.newTuple(3));
   consts->atPut(0, Bool::falseObj());
   consts->atPut(1, SmallInt::fromWord(1111));
   consts->atPut(2, SmallInt::fromWord(2222));
@@ -1270,7 +1270,7 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
   HandleScope scope;
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, Bool::falseObj());
   consts->atPut(1, SmallInt::fromWord(1111));
   code->setConsts(*consts);
@@ -1298,7 +1298,7 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
   HandleScope scope;
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, Bool::trueObj());
   consts->atPut(1, SmallInt::fromWord(1111));
   code->setConsts(*consts);
@@ -1326,7 +1326,7 @@ TEST(ThreadTest, UnaryNot) {
   HandleScope scope;
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, Bool::trueObj());
   code->setConsts(*consts);
   // Bytecode for the snippet:
@@ -1378,7 +1378,7 @@ class C:
   ASSERT_TRUE(cls->name()->isSmallStr());
   EXPECT_EQ(cls->name(), SmallStr::fromCStr("C"));
 
-  ObjectArray mro(&scope, cls->mro());
+  Tuple mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *cls);
   EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
@@ -1410,7 +1410,7 @@ class C:
   Type cls(&scope, RawValueCell::cast(*value)->value());
 
   // Check class MRO
-  ObjectArray mro(&scope, cls->mro());
+  Tuple mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *cls);
   EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
@@ -1445,7 +1445,7 @@ TEST(ThreadDeathTest, NativeExceptions) {
   fn->setEntry(nativeTrampoline<nativeExceptionTest>);
 
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, *fn);
   code->setConsts(*consts);
 
@@ -1493,7 +1493,7 @@ class B: pass
 class C(A,B): pass
 )";
 
-  ObjectArray mro(&scope, getMro(&runtime, src, "C"));
+  Tuple mro(&scope, getMro(&runtime, src, "C"));
   EXPECT_EQ(mro->length(), 4);
   EXPECT_PYSTRING_EQ(className(mro->at(0)), "C");
   EXPECT_PYSTRING_EQ(className(mro->at(1)), "A");
@@ -1511,7 +1511,7 @@ class B(A): pass
 class C(B): pass
 )";
 
-  ObjectArray mro(&scope, getMro(&runtime, src, "C"));
+  Tuple mro(&scope, getMro(&runtime, src, "C"));
   EXPECT_EQ(mro->length(), 4);
   EXPECT_PYSTRING_EQ(className(mro->at(0)), "C");
   EXPECT_PYSTRING_EQ(className(mro->at(1)), "B");
@@ -1530,7 +1530,7 @@ class C: pass
 class D(B,C): pass
 )";
 
-  ObjectArray mro(&scope, getMro(&runtime, src, "D"));
+  Tuple mro(&scope, getMro(&runtime, src, "D"));
   EXPECT_EQ(mro->length(), 5);
   EXPECT_PYSTRING_EQ(className(mro->at(0)), "D");
   EXPECT_PYSTRING_EQ(className(mro->at(1)), "B");
@@ -1550,7 +1550,7 @@ class C(A): pass
 class D(B,C): pass
 )";
 
-  ObjectArray mro(&scope, getMro(&runtime, src, "D"));
+  Tuple mro(&scope, getMro(&runtime, src, "D"));
   EXPECT_EQ(mro->length(), 5);
   EXPECT_PYSTRING_EQ(className(mro->at(0)), "D");
   EXPECT_PYSTRING_EQ(className(mro->at(1)), "B");
@@ -1711,8 +1711,8 @@ class Foo(object):
   Type type(&scope, object);
 
   // Check that its MRO is itself and object
-  ASSERT_TRUE(type->mro()->isObjectArray());
-  ObjectArray mro(&scope, type->mro());
+  ASSERT_TRUE(type->mro()->isTuple());
+  Tuple mro(&scope, type->mro());
   ASSERT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *type);
   EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
@@ -1983,16 +1983,16 @@ t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object t(&scope, moduleAt(&runtime, main, "t"));
-  EXPECT_TRUE(t->isObjectArray());
-  ObjectArray tuple_t(&scope, *t);
+  EXPECT_TRUE(t->isTuple());
+  Tuple tuple_t(&scope, *t);
   EXPECT_EQ(tuple_t->length(), 6);
   for (word i = 0; i < tuple_t->length(); i++) {
     EXPECT_EQ(RawSmallInt::cast(tuple_t->at(i))->value(), i);
   }
 
   Object t1(&scope, moduleAt(&runtime, main, "t1"));
-  EXPECT_TRUE(t1->isObjectArray());
-  ObjectArray tuple_t1(&scope, *t1);
+  EXPECT_TRUE(t1->isTuple());
+  Tuple tuple_t1(&scope, *t1);
   EXPECT_EQ(tuple_t1->length(), 6);
   EXPECT_EQ(RawSmallInt::cast(tuple_t1->at(0))->value(), 0);
   EXPECT_EQ(RawSmallInt::cast(tuple_t1->at(1))->value(), 1);
@@ -2071,7 +2071,7 @@ TEST(BuildString, buildStringSingle) {
   HandleScope scope;
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   const char* expected = "foo";
   Object str(&scope, SmallStr::fromCStr(expected));
   consts->atPut(0, *str);
@@ -2093,7 +2093,7 @@ TEST(BuildString, buildStringMultiSmall) {
   HandleScope scope;
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(2));
+  Tuple consts(&scope, runtime.newTuple(2));
   Object str(&scope, SmallStr::fromCStr("foo"));
   Object str1(&scope, SmallStr::fromCStr("bar"));
   consts->atPut(0, *str);
@@ -2117,7 +2117,7 @@ TEST(BuildString, buildStringMultiLarge) {
   HandleScope scope;
   Code code(&scope, runtime.newCode());
 
-  ObjectArray consts(&scope, runtime.newObjectArray(3));
+  Tuple consts(&scope, runtime.newTuple(3));
   Object str(&scope, SmallStr::fromCStr("hello"));
   Object str1(&scope, SmallStr::fromCStr("world"));
   Object str2(&scope, SmallStr::fromCStr("python"));
@@ -2451,7 +2451,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   Runtime runtime;
   HandleScope scope;
 
-  ObjectArray consts(&scope, runtime.newObjectArray(4));
+  Tuple consts(&scope, runtime.newTuple(4));
   Code code(&scope, runtime.newCode());
   consts->atPut(0, SmallInt::fromWord(0));
   consts->atPut(1, SmallInt::fromWord(1));
@@ -2459,7 +2459,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   consts->atPut(3, NoneType::object());
   code->setConsts(*consts);
 
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("a"));
   names->atPut(0, *key);
   code->setNames(*names);
@@ -2540,7 +2540,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   Runtime runtime;
   HandleScope scope;
 
-  ObjectArray consts(&scope, runtime.newObjectArray(5));
+  Tuple consts(&scope, runtime.newTuple(5));
   Code code(&scope, runtime.newCode());
   consts->atPut(0, SmallInt::fromWord(0));
   consts->atPut(1, SmallInt::fromWord(4));
@@ -2551,7 +2551,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   code->setArgcount(0);
   code->setNlocals(2);
 
-  ObjectArray names(&scope, runtime.newObjectArray(2));
+  Tuple names(&scope, runtime.newTuple(2));
   Object key0(&scope, runtime.newStrFromCStr("cnt"));
   Object key1(&scope, runtime.newStrFromCStr("s"));
   names->atPut(0, *key0);
@@ -2991,11 +2991,11 @@ TEST(ThreadTest, LoadTypeDerefFromLocal) {
   Runtime runtime;
   HandleScope scope;
   Code code(&scope, runtime.newCode());
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(1111));
-  ObjectArray freevars(&scope, runtime.newObjectArray(1));
+  Tuple freevars(&scope, runtime.newTuple(1));
   freevars->atPut(0, SmallStr::fromCStr("lalala"));
-  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Tuple names(&scope, runtime.newTuple(1));
   names->atPut(0, SmallStr::fromCStr("lalala"));
   code->setConsts(*consts);
   code->setNames(*names);

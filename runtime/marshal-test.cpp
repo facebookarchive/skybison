@@ -480,18 +480,18 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   ASSERT_TRUE(code->code()->isBytes());
   EXPECT_NE(RawBytes::cast(code->code())->length(), 0);
 
-  ASSERT_TRUE(code->varnames()->isObjectArray());
-  EXPECT_EQ(RawObjectArray::cast(code->varnames())->length(), 0);
+  ASSERT_TRUE(code->varnames()->isTuple());
+  EXPECT_EQ(RawTuple::cast(code->varnames())->length(), 0);
 
-  ASSERT_TRUE(code->cellvars()->isObjectArray());
-  EXPECT_EQ(RawObjectArray::cast(code->cellvars())->length(), 0);
+  ASSERT_TRUE(code->cellvars()->isTuple());
+  EXPECT_EQ(RawTuple::cast(code->cellvars())->length(), 0);
 
-  ASSERT_TRUE(code->consts()->isObjectArray());
-  ASSERT_EQ(RawObjectArray::cast(code->consts())->length(), 1);
-  EXPECT_EQ(RawObjectArray::cast(code->consts())->at(0), NoneType::object());
+  ASSERT_TRUE(code->consts()->isTuple());
+  ASSERT_EQ(RawTuple::cast(code->consts())->length(), 1);
+  EXPECT_EQ(RawTuple::cast(code->consts())->at(0), NoneType::object());
 
-  ASSERT_TRUE(code->freevars()->isObjectArray());
-  EXPECT_EQ(RawObjectArray::cast(code->freevars())->length(), 0);
+  ASSERT_TRUE(code->freevars()->isTuple());
+  EXPECT_EQ(RawTuple::cast(code->freevars())->length(), 0);
 
   ASSERT_TRUE(code->filename()->isStr());
   EXPECT_TRUE(RawStr::cast(code->filename())->equalsCStr("pass.py"));
@@ -499,8 +499,8 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   ASSERT_TRUE(code->name()->isStr());
   EXPECT_TRUE(RawStr::cast(code->name())->equalsCStr("<module>"));
 
-  ASSERT_TRUE(code->names()->isObjectArray());
-  EXPECT_EQ(RawObjectArray::cast(code->names())->length(), 0);
+  ASSERT_TRUE(code->names()->isTuple());
+  EXPECT_EQ(RawTuple::cast(code->names())->length(), 0);
 
   EXPECT_EQ(code->firstlineno(), 1);
 

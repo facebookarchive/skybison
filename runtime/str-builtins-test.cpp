@@ -776,7 +776,7 @@ TEST(StrBuiltinsTest, PartitionOnSingleCharStr) {
 a = "hello".partition("l")
 )");
   HandleScope scope;
-  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   ASSERT_EQ(a->length(), 3);
   EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "he");
@@ -790,7 +790,7 @@ TEST(StrBuiltinsTest, PartitionOnMultiCharStr) {
 a = "hello".partition("ll")
 )");
   HandleScope scope;
-  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   ASSERT_EQ(a->length(), 3);
   EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "he");
@@ -805,8 +805,8 @@ a = "hello".partition("lo")
 b = "hello".partition("lop")
 )");
   HandleScope scope;
-  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ObjectArray b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Tuple b(&scope, moduleAt(&runtime, "__main__", "b"));
 
   ASSERT_EQ(a->length(), 3);
   EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "hel");
@@ -826,8 +826,8 @@ a = "hello".partition("he")
 b = "hello".partition("hex")
 )");
   HandleScope scope;
-  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ObjectArray b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Tuple b(&scope, moduleAt(&runtime, "__main__", "b"));
 
   ASSERT_EQ(a->length(), 3);
   EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "");
@@ -846,7 +846,7 @@ TEST(StrBuiltinsTest, PartitionLargerStr) {
 a = "hello".partition("abcdefghijk")
 )");
   HandleScope scope;
-  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   ASSERT_EQ(a->length(), 3);
   EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "hello");
@@ -860,7 +860,7 @@ TEST(StrBuiltinsTest, PartitionEmptyStr) {
 a = "".partition("a")
 )");
   HandleScope scope;
-  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   ASSERT_EQ(a->length(), 3);
   EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "");

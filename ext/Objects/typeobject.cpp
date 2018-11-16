@@ -74,7 +74,7 @@ PY_EXPORT int PyType_Ready(PyTypeObject* type) {
   runtime->dictAtPutInValueCell(dict, dict_key, name);
 
   // Compute Mro
-  ObjectArray parents(&scope, runtime->newObjectArray(0));
+  Tuple parents(&scope, runtime->newTuple(0));
   Object mro(&scope, computeMro(thread, type_class, parents));
   type_class->setMro(*mro);
 

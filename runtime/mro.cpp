@@ -3,15 +3,14 @@
 
 namespace python {
 
-static word populateMergeLists(const ObjectArray& merge_lists,
-                               const ObjectArray& parents,
+static word populateMergeLists(const Tuple& merge_lists, const Tuple& parents,
                                Vector<word>* merge_list_indices /* out */) {
   HandleScope scope;
   // MROs contain at least the class itself, and Object.
   word new_mro_length = 2;
   for (word i = 0; i < parents->length(); i++) {
     Type parent_class(&scope, parents->at(i));
-    ObjectArray parent_mro(&scope, parent_class->mro());
+    Tuple parent_mro(&scope, parent_class->mro());
 
     new_mro_length += parent_mro->length();
     merge_lists->atPut(i, *parent_mro);
@@ -24,8 +23,7 @@ static word populateMergeLists(const ObjectArray& merge_lists,
 }
 
 // Returns true if there is an i such that mro->at(i) == cls, i > head_idx.
-static bool tailContains(const ObjectArray& mro, const Object& cls,
-                         word head_idx) {
+static bool tailContains(const Tuple& mro, const Object& cls, word head_idx) {
   auto const len = mro->length();
   if (head_idx >= len) {
     return false;
@@ -41,12 +39,12 @@ static bool tailContains(const ObjectArray& mro, const Object& cls,
 // Looks for a head class in merge_lists (i.e. the class indicated by the
 // corresponding index in merge_list_indices) which does not appear in any of
 // the merge_lists at a position *after* the head class of that list.
-static RawObject findNext(const ObjectArray& merge_lists,
+static RawObject findNext(const Tuple& merge_lists,
                           const Vector<word>& merge_list_indices) {
   HandleScope scope;
   for (word i = 0; i < merge_list_indices.size(); i++) {
     auto cur_idx = merge_list_indices[i];
-    ObjectArray cur_mro(&scope, merge_lists->at(i));
+    Tuple cur_mro(&scope, merge_lists->at(i));
 
     if (cur_idx >= cur_mro->length()) {
       continue;
@@ -58,7 +56,7 @@ static RawObject findNext(const ObjectArray& merge_lists,
       if (j == i) {
         continue;
       }
-      ObjectArray other_mro(&scope, merge_lists->at(j));
+      Tuple other_mro(&scope, merge_lists->at(j));
       if (tailContains(other_mro, candidate_head, merge_list_indices[j])) {
         candidate_head = Error::object();
         break;
@@ -71,8 +69,7 @@ static RawObject findNext(const ObjectArray& merge_lists,
   return Error::object();
 }
 
-RawObject computeMro(Thread* thread, const Type& type,
-                     const ObjectArray& parents) {
+RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
   Runtime* runtime = thread->runtime();
   HandleScope scope;
 
@@ -82,21 +79,20 @@ RawObject computeMro(Thread* thread, const Type& type,
 
   // Special case for no explicit ancestors.
   if (parents->length() == 0) {
-    ObjectArray new_mro(&scope, runtime->newObjectArray(2));
+    Tuple new_mro(&scope, runtime->newTuple(2));
     new_mro->atPut(0, *type);
     new_mro->atPut(1, *object_class);
     return *new_mro;
   }
 
   Vector<word> merge_list_indices;
-  ObjectArray merge_lists(&scope,
-                          runtime->newObjectArray(parents->length() + 1));
+  Tuple merge_lists(&scope, runtime->newTuple(parents->length() + 1));
   word new_mro_length =
       populateMergeLists(merge_lists, parents, &merge_list_indices);
 
   // The length of new_mro will be longer than necessary when there is overlap
   // between the MROs of the parents.
-  ObjectArray new_mro(&scope, runtime->newObjectArray(new_mro_length));
+  Tuple new_mro(&scope, runtime->newTuple(new_mro_length));
 
   word next_idx = 0;
   new_mro->atPut(next_idx, *type);
@@ -112,7 +108,7 @@ RawObject computeMro(Thread* thread, const Type& type,
     Type next_head_cls(&scope, next_head);
     for (word i = 0; i < merge_list_indices.size(); i++) {
       auto& cur_idx = merge_list_indices[i];
-      ObjectArray cur_mro(&scope, merge_lists->at(i));
+      Tuple cur_mro(&scope, merge_lists->at(i));
       if (cur_idx < cur_mro->length() &&
           RawType::cast(cur_mro->at(cur_idx)) == *next_head_cls) {
         cur_idx++;
@@ -123,8 +119,7 @@ RawObject computeMro(Thread* thread, const Type& type,
   }
 
   for (word i = 0; i < merge_list_indices.size(); i++) {
-    if (merge_list_indices[i] !=
-        RawObjectArray::cast(merge_lists->at(i))->length()) {
+    if (merge_list_indices[i] != RawTuple::cast(merge_lists->at(i))->length()) {
       // TODO: list bases in error message.
       return thread->raiseTypeErrorWithCStr(
           "Cannot create a consistent method resolution order (MRO)");
@@ -132,7 +127,7 @@ RawObject computeMro(Thread* thread, const Type& type,
   }
 
   // Copy the mro to an array of exact size. (new_mro_length is an upper bound).
-  ObjectArray ret_mro(&scope, runtime->newObjectArray(next_idx));
+  Tuple ret_mro(&scope, runtime->newTuple(next_idx));
   for (word i = 0; i < next_idx; i++) {
     ret_mro->atPut(i, new_mro->at(i));
   }

@@ -92,8 +92,8 @@ TEST(RuntimeDictTest, EmptyDictInvariants) {
   Dict dict(&scope, runtime.newDict());
 
   EXPECT_EQ(dict->numItems(), 0);
-  ASSERT_TRUE(dict->data()->isObjectArray());
-  EXPECT_EQ(RawObjectArray::cast(dict->data())->length(), 0);
+  ASSERT_TRUE(dict->data()->isTuple());
+  EXPECT_EQ(RawTuple::cast(dict->data())->length(), 0);
 }
 
 TEST(RuntimeDictTest, GetSet) {
@@ -219,11 +219,11 @@ TEST(RuntimeDictTest, GrowWhenFull) {
   Dict dict(&scope, runtime.newDict());
 
   // Fill up the dict - we insert an initial key to force the allocation of the
-  // backing ObjectArray.
+  // backing Tuple.
   Object init_key(&scope, SmallInt::fromWord(0));
   runtime.dictAtPut(dict, init_key, init_key);
-  ASSERT_TRUE(dict->data()->isObjectArray());
-  word init_data_size = RawObjectArray::cast(dict->data())->length();
+  ASSERT_TRUE(dict->data()->isTuple());
+  word init_data_size = RawTuple::cast(dict->data())->length();
 
   auto make_key = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
@@ -244,8 +244,8 @@ TEST(RuntimeDictTest, GrowWhenFull) {
   Object straw(&scope, make_key(num_keys));
   Object straw_value(&scope, make_value(num_keys));
   runtime.dictAtPut(dict, straw, straw_value);
-  ASSERT_TRUE(dict->data()->isObjectArray());
-  word new_data_size = RawObjectArray::cast(dict->data())->length();
+  ASSERT_TRUE(dict->data()->isTuple());
+  word new_data_size = RawTuple::cast(dict->data())->length();
   EXPECT_EQ(new_data_size, Runtime::kDictGrowthFactor * init_data_size);
 
   // Make sure we can still read all the stored keys/values
@@ -308,7 +308,7 @@ TEST(RuntimeDictTest, GetKeys) {
   HandleScope scope;
 
   // Create keys
-  ObjectArray keys(&scope, runtime.newObjectArray(4));
+  Tuple keys(&scope, runtime.newTuple(4));
   keys->atPut(0, SmallInt::fromWord(100));
   keys->atPut(1, runtime.newStrFromCStr("testing 123"));
   keys->atPut(2, Bool::trueObj());
@@ -322,11 +322,11 @@ TEST(RuntimeDictTest, GetKeys) {
   }
 
   // Grab the keys and verify everything is there
-  ObjectArray retrieved(&scope, runtime.dictKeys(dict));
+  Tuple retrieved(&scope, runtime.dictKeys(dict));
   ASSERT_EQ(retrieved->length(), keys->length());
   for (word i = 0; i < keys->length(); i++) {
     Object key(&scope, keys->at(i));
-    EXPECT_TRUE(objectArrayContains(retrieved, key)) << " missing key " << i;
+    EXPECT_TRUE(tupleContains(retrieved, key)) << " missing key " << i;
   }
 }
 
@@ -348,9 +348,9 @@ TEST(RuntimeDictItemIteratorTest, NextOnOneElementDictReturnsElement) {
   DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
   Object next(&scope,
               runtime.dictItemIteratorNext(Thread::currentThread(), iter));
-  ASSERT_TRUE(next->isObjectArray());
-  EXPECT_EQ(ObjectArray::cast(next)->at(0), key);
-  EXPECT_EQ(ObjectArray::cast(next)->at(1), value);
+  ASSERT_TRUE(next->isTuple());
+  EXPECT_EQ(Tuple::cast(next)->at(0), key);
+  EXPECT_EQ(Tuple::cast(next)->at(1), value);
 
   next = runtime.dictItemIteratorNext(Thread::currentThread(), iter);
   ASSERT_TRUE(next->isError());
@@ -392,24 +392,24 @@ TEST(RuntimeListTest, ListGrowth) {
   Runtime runtime;
   HandleScope scope;
   List list(&scope, runtime.newList());
-  ObjectArray array1(&scope, runtime.newObjectArray(1));
+  Tuple array1(&scope, runtime.newTuple(1));
   list->setItems(*array1);
   EXPECT_EQ(array1->length(), 1);
   runtime.listEnsureCapacity(list, 2);
-  ObjectArray array2(&scope, list->items());
+  Tuple array2(&scope, list->items());
   EXPECT_NE(*array1, *array2);
   EXPECT_GT(array2->length(), 2);
 
-  ObjectArray array4(&scope, runtime.newObjectArray(4));
+  Tuple array4(&scope, runtime.newTuple(4));
   EXPECT_EQ(array4->length(), 4);
   list->setItems(*array4);
   runtime.listEnsureCapacity(list, 5);
-  ObjectArray array8(&scope, list->items());
+  Tuple array8(&scope, list->items());
   EXPECT_NE(*array4, *array8);
   EXPECT_EQ(array8->length(), 8);
   list->setItems(*array8);
   runtime.listEnsureCapacity(list, 9);
-  ObjectArray array16(&scope, list->items());
+  Tuple array16(&scope, list->items());
   EXPECT_NE(*array8, *array16);
   EXPECT_EQ(array16->length(), 16);
 }
@@ -565,13 +565,13 @@ TEST(RuntimeListTest, ListExtendListIterator) {
   EXPECT_PYLIST_EQ(list, {0, 1, 2, 3, 4, 5, 6, 7});
 }
 
-TEST(RuntimeListTest, ListExtendObjectArray) {
+TEST(RuntimeListTest, ListExtendTuple) {
   Runtime runtime;
   HandleScope scope;
   List list(&scope, runtime.newList());
-  Object object_array0(&scope, runtime.newObjectArray(0));
-  ObjectArray object_array1(&scope, runtime.newObjectArray(1));
-  ObjectArray object_array16(&scope, runtime.newObjectArray(16));
+  Object object_array0(&scope, runtime.newTuple(0));
+  Tuple object_array1(&scope, runtime.newTuple(1));
+  Tuple object_array16(&scope, runtime.newTuple(16));
 
   for (int i = 0; i < 4; i++) {
     Object value(&scope, SmallInt::fromWord(i));
@@ -773,15 +773,15 @@ TEST(RuntimeTest, NewCode) {
   Code code(&scope, runtime.newCode());
   EXPECT_EQ(code->argcount(), 0);
   EXPECT_EQ(code->cell2arg(), 0);
-  ASSERT_TRUE(code->cellvars()->isObjectArray());
-  EXPECT_EQ(RawObjectArray::cast(code->cellvars())->length(), 0);
+  ASSERT_TRUE(code->cellvars()->isTuple());
+  EXPECT_EQ(RawTuple::cast(code->cellvars())->length(), 0);
   EXPECT_TRUE(code->code()->isNoneType());
   EXPECT_TRUE(code->consts()->isNoneType());
   EXPECT_TRUE(code->filename()->isNoneType());
   EXPECT_EQ(code->firstlineno(), 0);
   EXPECT_EQ(code->flags(), 0);
-  ASSERT_TRUE(code->freevars()->isObjectArray());
-  EXPECT_EQ(RawObjectArray::cast(code->freevars())->length(), 0);
+  ASSERT_TRUE(code->freevars()->isTuple());
+  EXPECT_EQ(RawTuple::cast(code->freevars())->length(), 0);
   EXPECT_EQ(code->kwonlyargcount(), 0);
   EXPECT_TRUE(code->lnotab()->isNoneType());
   EXPECT_TRUE(code->name()->isNoneType());
@@ -790,20 +790,20 @@ TEST(RuntimeTest, NewCode) {
   EXPECT_TRUE(code->varnames()->isNoneType());
 }
 
-TEST(RuntimeTest, NewObjectArray) {
+TEST(RuntimeTest, NewTuple) {
   Runtime runtime;
   HandleScope scope;
 
-  ObjectArray a0(&scope, runtime.newObjectArray(0));
+  Tuple a0(&scope, runtime.newTuple(0));
   EXPECT_EQ(a0->length(), 0);
 
-  ObjectArray a1(&scope, runtime.newObjectArray(1));
+  Tuple a1(&scope, runtime.newTuple(1));
   ASSERT_EQ(a1->length(), 1);
   EXPECT_EQ(a1->at(0), NoneType::object());
   a1->atPut(0, SmallInt::fromWord(42));
   EXPECT_EQ(a1->at(0), SmallInt::fromWord(42));
 
-  ObjectArray a300(&scope, runtime.newObjectArray(300));
+  Tuple a300(&scope, runtime.newTuple(300));
   ASSERT_EQ(a300->length(), 300);
 }
 
@@ -1002,20 +1002,20 @@ TEST(RuntimeTest, EnsureCapacity) {
 
   // Check that empty arrays expand
   List list(&scope, runtime.newList());
-  ObjectArray empty(&scope, list->items());
+  Tuple empty(&scope, list->items());
   runtime.listEnsureCapacity(list, 0);
-  ObjectArray orig(&scope, list->items());
+  Tuple orig(&scope, list->items());
   ASSERT_NE(*empty, *orig);
   ASSERT_GT(orig->length(), 0);
 
   // We shouldn't grow the array if there is sufficient capacity
   runtime.listEnsureCapacity(list, orig->length() - 1);
-  ObjectArray ensured0(&scope, list->items());
+  Tuple ensured0(&scope, list->items());
   ASSERT_EQ(*orig, *ensured0);
 
   // We should double the array if there is insufficient capacity
   runtime.listEnsureCapacity(list, orig->length());
-  ObjectArray ensured1(&scope, list->items());
+  Tuple ensured1(&scope, list->items());
   ASSERT_EQ(ensured1->length(), orig->length() * 2);
 }
 
@@ -1109,12 +1109,12 @@ TEST(RuntimeTest, CollectAttributes) {
   Object bar(&scope, runtime.newStrFromCStr("bar"));
   Object baz(&scope, runtime.newStrFromCStr("baz"));
 
-  ObjectArray names(&scope, runtime.newObjectArray(3));
+  Tuple names(&scope, runtime.newTuple(3));
   names->atPut(0, *foo);
   names->atPut(1, *bar);
   names->atPut(2, *baz);
 
-  ObjectArray consts(&scope, runtime.newObjectArray(4));
+  Tuple consts(&scope, runtime.newTuple(4));
   consts->atPut(0, SmallInt::fromWord(100));
   consts->atPut(1, SmallInt::fromWord(200));
   consts->atPut(2, SmallInt::fromWord(300));
@@ -1178,11 +1178,11 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   Object foo(&scope, runtime.newStrFromCStr("foo"));
   Object bar(&scope, runtime.newStrFromCStr("bar"));
 
-  ObjectArray names(&scope, runtime.newObjectArray(2));
+  Tuple names(&scope, runtime.newTuple(2));
   names->atPut(0, *foo);
   names->atPut(1, *bar);
 
-  ObjectArray consts(&scope, runtime.newObjectArray(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, NoneType::object());
 
   Code code(&scope, runtime.newCode());
@@ -1602,7 +1602,7 @@ TEST_P(LookupNameInMroTest, Lookup) {
     return *type;
   };
 
-  ObjectArray mro(&scope, runtime.newObjectArray(3));
+  Tuple mro(&scope, runtime.newTuple(3));
   mro->atPut(0, create_class_with_attr("foo", 2));
   mro->atPut(1, create_class_with_attr("bar", 4));
   mro->atPut(2, create_class_with_attr("baz", 8));
@@ -1757,27 +1757,27 @@ def func():
   }
 }
 
-TEST(RuntimeObjectArrayTest, Create) {
+TEST(RuntimeTupleTest, Create) {
   Runtime runtime;
 
-  RawObject obj0 = runtime.newObjectArray(0);
-  ASSERT_TRUE(obj0->isObjectArray());
-  RawObjectArray array0 = RawObjectArray::cast(obj0);
+  RawObject obj0 = runtime.newTuple(0);
+  ASSERT_TRUE(obj0->isTuple());
+  RawTuple array0 = RawTuple::cast(obj0);
   EXPECT_EQ(array0->length(), 0);
 
-  RawObject obj1 = runtime.newObjectArray(1);
-  ASSERT_TRUE(obj1->isObjectArray());
-  RawObjectArray array1 = RawObjectArray::cast(obj1);
+  RawObject obj1 = runtime.newTuple(1);
+  ASSERT_TRUE(obj1->isTuple());
+  RawTuple array1 = RawTuple::cast(obj1);
   EXPECT_EQ(array1->length(), 1);
 
-  RawObject obj7 = runtime.newObjectArray(7);
-  ASSERT_TRUE(obj7->isObjectArray());
-  RawObjectArray array7 = RawObjectArray::cast(obj7);
+  RawObject obj7 = runtime.newTuple(7);
+  ASSERT_TRUE(obj7->isTuple());
+  RawTuple array7 = RawTuple::cast(obj7);
   EXPECT_EQ(array7->length(), 7);
 
-  RawObject obj8 = runtime.newObjectArray(8);
-  ASSERT_TRUE(obj8->isObjectArray());
-  RawObjectArray array8 = RawObjectArray::cast(obj8);
+  RawObject obj8 = runtime.newTuple(8);
+  ASSERT_TRUE(obj8->isTuple());
+  RawTuple array8 = RawTuple::cast(obj8);
   EXPECT_EQ(array8->length(), 8);
 }
 
@@ -1788,8 +1788,8 @@ TEST(RuntimeSetTest, EmptySetInvariants) {
 
   EXPECT_EQ(set->numItems(), 0);
   ASSERT_TRUE(set->isSet());
-  ASSERT_TRUE(set->data()->isObjectArray());
-  EXPECT_EQ(RawObjectArray::cast(set->data())->length(), 0);
+  ASSERT_TRUE(set->data()->isTuple());
+  EXPECT_EQ(RawTuple::cast(set->data())->length(), 0);
 }
 
 TEST(RuntimeSetTest, Add) {
@@ -1845,11 +1845,11 @@ TEST(RuntimeSetTest, Grow) {
   Set set(&scope, runtime.newSet());
 
   // Fill up the dict - we insert an initial key to force the allocation of the
-  // backing ObjectArray.
+  // backing Tuple.
   Object init_key(&scope, SmallInt::fromWord(0));
   runtime.setAdd(set, init_key);
-  ASSERT_TRUE(set->data()->isObjectArray());
-  word init_data_size = RawObjectArray::cast(set->data())->length();
+  ASSERT_TRUE(set->data()->isTuple());
+  word init_data_size = RawTuple::cast(set->data())->length();
 
   auto make_key = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
@@ -1867,8 +1867,8 @@ TEST(RuntimeSetTest, Grow) {
   // Add another key which should force us to double the capacity
   Object straw(&scope, make_key(num_keys));
   runtime.setAdd(set, straw);
-  ASSERT_TRUE(set->data()->isObjectArray());
-  word new_data_size = RawObjectArray::cast(set->data())->length();
+  ASSERT_TRUE(set->data()->isTuple());
+  word new_data_size = RawTuple::cast(set->data())->length();
   EXPECT_EQ(new_data_size, Runtime::kSetGrowthFactor * init_data_size);
 
   // Make sure we can still read all the stored keys
@@ -1942,10 +1942,10 @@ TEST(RuntimeSetTest, UpdateListIterator) {
   ASSERT_EQ(set->numItems(), 12);
 }
 
-TEST(RuntimeSetTest, UpdateObjectArray) {
+TEST(RuntimeSetTest, UpdateTuple) {
   Runtime runtime;
   HandleScope scope;
-  ObjectArray object_array(&scope, runtime.newObjectArray(8));
+  Tuple object_array(&scope, runtime.newTuple(8));
   Set set(&scope, runtime.newSet());
   for (word i = 0; i < 8; i++) {
     object_array->atPut(i, SmallInt::fromWord(i));
@@ -2262,7 +2262,7 @@ static RawObject createType(Runtime* runtime) {
   Layout layout(&scope, runtime->layoutCreateEmpty(thread));
   layout->setDescribedType(*type);
   type->setInstanceLayout(*layout);
-  ObjectArray mro(&scope, runtime->newObjectArray(1));
+  Tuple mro(&scope, runtime->newTuple(1));
   mro->atPut(0, *type);
   type->setMro(*mro);
   layout->setId(runtime->reserveLayoutId());
@@ -2518,10 +2518,10 @@ class DataDescriptor:
   setInMetaclass(&runtime, type, attr, descr);
 
   RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
-  ASSERT_EQ(RawObjectArray::cast(result)->length(), 3);
-  EXPECT_EQ(runtime.typeOf(RawObjectArray::cast(result)->at(0)), *descr_type);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(1), *type);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), runtime.typeOf(*type));
+  ASSERT_EQ(RawTuple::cast(result)->length(), 3);
+  EXPECT_EQ(runtime.typeOf(RawTuple::cast(result)->at(0)), *descr_type);
+  EXPECT_EQ(RawTuple::cast(result)->at(1), *type);
+  EXPECT_EQ(RawTuple::cast(result)->at(2), runtime.typeOf(*type));
 }
 
 TEST(TypeAttributeTest, GetNonDataDescriptorOnType) {
@@ -2548,10 +2548,10 @@ class DataDescriptor:
   setInTypeDict(&runtime, type, attr, descr);
 
   RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
-  ASSERT_EQ(RawObjectArray::cast(result)->length(), 3);
-  EXPECT_EQ(runtime.typeOf(RawObjectArray::cast(result)->at(0)), *descr_type);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(1), NoneType::object());
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *type);
+  ASSERT_EQ(RawTuple::cast(result)->length(), 3);
+  EXPECT_EQ(runtime.typeOf(RawTuple::cast(result)->at(0)), *descr_type);
+  EXPECT_EQ(RawTuple::cast(result)->at(1), NoneType::object());
+  EXPECT_EQ(RawTuple::cast(result)->at(2), *type);
 }
 
 TEST(GetTypeAttributeTest, GetMetaclassAttribute) {
@@ -2589,7 +2589,7 @@ def test(x):
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
@@ -2613,7 +2613,7 @@ def test(x):
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
@@ -2638,7 +2638,7 @@ def test(x):
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
@@ -2667,7 +2667,7 @@ def test(x):
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
@@ -2704,7 +2704,7 @@ def test(x):
   LayoutId original_layout_id = layout->id();
 
   // Add overflow attributes that should force layout transitions
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *foo1);
   Function test(&scope, moduleAt(&runtime, main, "test"));
   EXPECT_EQ(callFunctionToString(test, args), "100 200 hello\naaa bbb ccc\n");
@@ -2740,7 +2740,7 @@ def test(x):
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
@@ -2777,8 +2777,8 @@ class Foo:
   // Fetch it from the instance
   Layout instance_layout(&scope, RawType::cast(*type)->instanceLayout());
   Object instance(&scope, runtime.newInstance(instance_layout));
-  ObjectArray result(
-      &scope, runtime.attributeAt(Thread::currentThread(), instance, attr));
+  Tuple result(&scope,
+               runtime.attributeAt(Thread::currentThread(), instance, attr));
   ASSERT_EQ(result->length(), 3);
   EXPECT_EQ(runtime.typeOf(result->at(0)), *descr_type);
   EXPECT_EQ(result->at(1), *instance);
@@ -2813,10 +2813,10 @@ class Foo:
 
   RawObject result =
       runtime.attributeAt(Thread::currentThread(), instance, attr);
-  ASSERT_EQ(RawObjectArray::cast(result)->length(), 3);
-  EXPECT_EQ(runtime.typeOf(RawObjectArray::cast(result)->at(0)), *descr_type);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(1), *instance);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *type);
+  ASSERT_EQ(RawTuple::cast(result)->length(), 3);
+  EXPECT_EQ(runtime.typeOf(RawTuple::cast(result)->at(0)), *descr_type);
+  EXPECT_EQ(RawTuple::cast(result)->at(1), *instance);
+  EXPECT_EQ(RawTuple::cast(result)->at(2), *type);
 }
 
 TEST(InstanceAttributeTest, ManipulateMultipleAttributes) {
@@ -2842,7 +2842,7 @@ def test(x):
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
@@ -2926,7 +2926,7 @@ def test():
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
-  ObjectArray args(&scope, runtime.newObjectArray(0));
+  Tuple args(&scope, runtime.newTuple(0));
   Object result(&scope, callFunction(test, args));
   EXPECT_EQ(*result, NoneType::object());
 }
@@ -2952,9 +2952,9 @@ del foo.bar
   compileAndRunToString(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(data->isObjectArray());
+  ASSERT_TRUE(data->isTuple());
 
-  ObjectArray result(&scope, *data);
+  Tuple result(&scope, *data);
   ASSERT_EQ(result->length(), 2);
 
   Object descr(&scope, moduleAt(&runtime, main, "descr"));
@@ -2994,9 +2994,9 @@ del foo.bar
   compileAndRunToString(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(data->isObjectArray());
+  ASSERT_TRUE(data->isTuple());
 
-  ObjectArray result(&scope, *data);
+  Tuple result(&scope, *data);
   ASSERT_EQ(result->length(), 2);
 
   Object foo(&scope, moduleAt(&runtime, main, "foo"));
@@ -3026,9 +3026,9 @@ del bar.baz
   compileAndRunToString(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(data->isObjectArray());
+  ASSERT_TRUE(data->isTuple());
 
-  ObjectArray result(&scope, *data);
+  Tuple result(&scope, *data);
   ASSERT_EQ(result->length(), 2);
 
   Object bar(&scope, moduleAt(&runtime, main, "bar"));
@@ -3052,7 +3052,7 @@ def test():
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
-  ObjectArray args(&scope, runtime.newObjectArray(0));
+  Tuple args(&scope, runtime.newTuple(0));
   Object result(&scope, callFunction(test, args));
   EXPECT_EQ(*result, NoneType::object());
 }
@@ -3081,9 +3081,9 @@ del Foo.attr
   runtime.runFromCStr(src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "args"));
-  ASSERT_TRUE(data->isObjectArray());
+  ASSERT_TRUE(data->isTuple());
 
-  ObjectArray args(&scope, *data);
+  Tuple args(&scope, *data);
   ASSERT_EQ(args->length(), 2);
 
   Object descr(&scope, moduleAt(&runtime, main, "descr"));
@@ -3124,9 +3124,9 @@ del Foo.bar
   runtime.runFromCStr(src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "args"));
-  ASSERT_TRUE(data->isObjectArray());
+  ASSERT_TRUE(data->isTuple());
 
-  ObjectArray args(&scope, *data);
+  Tuple args(&scope, *data);
   ASSERT_EQ(args->length(), 2);
 
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
@@ -3146,7 +3146,7 @@ def test(module):
   compileAndRunToString(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *main);
   EXPECT_DEATH(callFunction(test, args), "missing attribute");
 }
@@ -3164,7 +3164,7 @@ def test(module):
   compileAndRunToString(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
-  ObjectArray args(&scope, runtime.newObjectArray(1));
+  Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *main);
   EXPECT_EQ(callFunction(test, args), SmallInt::fromWord(123));
 
@@ -3422,7 +3422,7 @@ def new_foo():
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Function new_foo(&scope, moduleAt(&runtime, main, "new_foo"));
-  ObjectArray args(&scope, runtime.newObjectArray(0));
+  Tuple args(&scope, runtime.newTuple(0));
   HeapObject instance(&scope, callFunction(new_foo, args));
 
   // Verify that 'bar' is an in-object property
@@ -3458,7 +3458,7 @@ def new_foo():
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Function new_foo(&scope, moduleAt(&runtime, main, "new_foo"));
-  ObjectArray args(&scope, runtime.newObjectArray(0));
+  Tuple args(&scope, runtime.newTuple(0));
   HeapObject instance(&scope, callFunction(new_foo, args));
 
   // Verify that 'bar' is an overflow property
@@ -3623,9 +3623,9 @@ class Test(Exception):
   ASSERT_TRUE(value->isType());
 
   Type type(&scope, *value);
-  ASSERT_TRUE(type->mro()->isObjectArray());
+  ASSERT_TRUE(type->mro()->isTuple());
 
-  ObjectArray mro(&scope, type->mro());
+  Tuple mro(&scope, type->mro());
   ASSERT_EQ(mro->length(), 4);
   EXPECT_EQ(mro->at(0), *type);
   EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kException));

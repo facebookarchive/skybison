@@ -40,7 +40,7 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
         "'__init__' requires a 'RawBaseException' object");
   }
   UncheckedHandle<RawBaseException> self(&scope, args.get(0));
-  ObjectArray tuple(&scope, thread->runtime()->newObjectArray(nargs - 1));
+  Tuple tuple(&scope, thread->runtime()->newTuple(nargs - 1));
   for (word i = 1; i < nargs; i++) {
     tuple->atPut(i - 1, args.get(i));
   }
@@ -82,7 +82,7 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
   if (result->isError()) {
     return result;
   }
-  ObjectArray tuple(&scope, self->args());
+  Tuple tuple(&scope, self->args());
   if (tuple->length() > 0) {
     self->setValue(tuple->at(0));
   }
@@ -123,7 +123,7 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   if (result->isError()) {
     return result;
   }
-  ObjectArray tuple(&scope, self->args());
+  Tuple tuple(&scope, self->args());
   if (tuple->length() > 0) {
     self->setCode(tuple->at(0));
   }

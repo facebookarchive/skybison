@@ -81,7 +81,7 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     if (self->numItems() != other->numItems()) {
       return Bool::falseObj();
     }
-    ObjectArray keys(&scope, runtime->dictKeys(self));
+    Tuple keys(&scope, runtime->dictKeys(self));
     Object left_key(&scope, NoneType::object());
     Object left(&scope, NoneType::object());
     Object right(&scope, NoneType::object());

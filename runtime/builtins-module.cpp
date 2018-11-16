@@ -35,7 +35,7 @@ RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
 
   Function body(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  ObjectArray bases(&scope, runtime->newObjectArray(nargs - 2));
+  Tuple bases(&scope, runtime->newTuple(nargs - 2));
   for (word i = 0, j = 2; j < nargs; i++, j++) {
     bases->atPut(i, args.get(j));
   }
@@ -87,8 +87,8 @@ RawObject builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
     metaclass = runtime->typeAt(LayoutId::kType);
   }
 
-  ObjectArray bases(
-      &scope, runtime->newObjectArray(args.numArgs() - args.numKeywords() - 1));
+  Tuple bases(&scope,
+              runtime->newTuple(args.numArgs() - args.numKeywords() - 1));
   for (word i = 0, j = 2; j < args.numArgs(); i++, j++) {
     bases->atPut(i, args.get(j));
   }
@@ -210,13 +210,13 @@ RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
     return runtime->isSubClass(type, possible_superclass);
   }
   // If classinfo is not a tuple, then throw a TypeError.
-  if (!classinfo->isObjectArray()) {
+  if (!classinfo->isTuple()) {
     return thread->raiseTypeErrorWithCStr(
         "issubclass() arg 2 must be a class of tuple of classes");
   }
   // If classinfo is a tuple, try each of the values, and return
   // True if the first argument is a subclass of any of them.
-  ObjectArray tuple_of_types(&scope, *classinfo);
+  Tuple tuple_of_types(&scope, *classinfo);
   for (word i = 0; i < tuple_of_types->length(); i++) {
     // If any argument is not a type, then throw TypeError.
     if (!runtime->isInstanceOfType(tuple_of_types->at(i))) {
@@ -334,10 +334,10 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
         }
       }
       *ostream << "]";
-    } else if (arg->isObjectArray()) {
+    } else if (arg->isTuple()) {
       *ostream << "(";
       HandleScope scope;
-      ObjectArray array(&scope, arg);
+      Tuple array(&scope, arg);
       for (word i = 0; i < array->length(); i++) {
         if (supportedScalarType(array->at(i))) {
           printScalarTypes(array->at(i), ostream);
@@ -353,7 +353,7 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
       *ostream << "{";
       HandleScope scope;
       Dict dict(&scope, arg);
-      ObjectArray data(&scope, dict->data());
+      Tuple data(&scope, dict->data());
       word items = dict->numItems();
       for (word i = 0; i < data->length(); i += 3) {
         if (!data->at(i)->isNoneType()) {

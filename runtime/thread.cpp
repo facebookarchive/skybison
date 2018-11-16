@@ -155,15 +155,15 @@ Frame* Thread::pushClassFunctionFrame(RawObject function, RawObject dict) {
   }
 
   // initialize free vars
-  DCHECK(code->numFreevars() == 0 ||
-             code->numFreevars() ==
-                 RawObjectArray::cast(RawFunction::cast(function)->closure())
-                     ->length(),
-         "Number of freevars is different than the closure.");
+  DCHECK(
+      code->numFreevars() == 0 ||
+          code->numFreevars() ==
+              RawTuple::cast(RawFunction::cast(function)->closure())->length(),
+      "Number of freevars is different than the closure.");
   for (word i = 0; i < code->numFreevars(); i++) {
     result->setLocal(
         num_locals + num_cellvars + i,
-        RawObjectArray::cast(RawFunction::cast(function)->closure())->at(i));
+        RawTuple::cast(RawFunction::cast(function)->closure())->at(i));
   }
   return result;
 }
