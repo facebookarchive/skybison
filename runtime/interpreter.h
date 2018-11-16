@@ -99,6 +99,13 @@ class Interpreter {
       const Handle<Object>& left,
       const Handle<Object>& right);
 
+  static Object* sequenceContains(
+      Thread* thread,
+      Frame* caller,
+      Object** sp,
+      const Handle<Object>& value,
+      const Handle<Object>& container);
+
   struct Context {
     Thread* thread;
     Frame* frame;

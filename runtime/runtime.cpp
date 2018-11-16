@@ -953,6 +953,10 @@ void Runtime::initializeSetClass() {
   HandleScope scope;
   Handle<Class> set_type(&scope, initializeHeapClass("set", LayoutId::kSet));
   classAddBuiltinFunction(
+      set_type,
+      symbols()->DunderContains(),
+      nativeTrampoline<builtinSetContains>);
+  classAddBuiltinFunction(
       set_type, symbols()->DunderLen(), nativeTrampoline<builtinSetLen>);
   classAddBuiltinFunction(
       set_type, symbols()->Pop(), nativeTrampoline<builtinSetPop>);

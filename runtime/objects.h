@@ -320,6 +320,7 @@ class Boolean : public Object {
 
   // Conversion.
   static Boolean* fromBool(bool value);
+  static Boolean* negate(Object* value);
 
   // Casting.
   static Boolean* cast(Object* object);
@@ -2107,6 +2108,11 @@ inline Boolean* Boolean::trueObj() {
 
 inline Boolean* Boolean::falseObj() {
   return fromBool(false);
+}
+
+inline Boolean* Boolean::negate(Object* value) {
+  DCHECK(value->isBoolean(), "not a boolean instance");
+  return (value == trueObj()) ? falseObj() : trueObj();
 }
 
 inline Boolean* Boolean::fromBool(bool value) {

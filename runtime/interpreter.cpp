@@ -378,6 +378,27 @@ Object* Interpreter::compareOperation(
   UNIMPLEMENTED("throw");
 }
 
+Object* Interpreter::sequenceContains(
+    Thread* thread,
+    Frame* caller,
+    Object** sp,
+    const Handle<Object>& value,
+    const Handle<Object>& container) {
+  HandleScope scope(thread);
+  Handle<Object> selector(
+      &scope, thread->runtime()->symbols()->DunderContains());
+  Handle<Object> method(
+      &scope, lookupMethod(thread, caller, container, selector));
+  if (!method->isError()) {
+    Handle<Object> result(
+        &scope, callMethod2(thread, caller, sp, method, container, value));
+    *--sp = *result;
+    return isTrue(thread, caller, sp);
+  } else {
+    UNIMPLEMENTED("fallback to iter search.");
+  }
+}
+
 Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
   HandleScope scope(thread->handles());
   Handle<Object> self(&scope, *sp);
@@ -968,6 +989,11 @@ void Interpreter::doCompareOp(Context* ctx, word arg) {
     result = Boolean::fromBool(*left == *right);
   } else if (op == IS_NOT) {
     result = Boolean::fromBool(*left != *right);
+  } else if (op == IN) {
+    result = sequenceContains(ctx->thread, ctx->frame, ctx->sp, left, right);
+  } else if (op == NOT_IN) {
+    result = Boolean::negate(
+        sequenceContains(ctx->thread, ctx->frame, ctx->sp, left, right));
   } else {
     result =
         compareOperation(ctx->thread, ctx->frame, ctx->sp, op, left, right);

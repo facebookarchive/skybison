@@ -422,4 +422,31 @@ c20 = C(20)
   EXPECT_EQ(right_ne_left, Boolean::trueObj());
 }
 
+TEST(InterpreterTest, SequenceContains) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = {1, 2}
+
+b = 1
+c = 3
+)");
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+
+  ASSERT_TRUE(frame->isSentinelFrame());
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> container(&scope, testing::moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  Object* contains_true = Interpreter::sequenceContains(
+      thread, frame, frame->valueStackTop(), b, container);
+  Object* contains_false = Interpreter::sequenceContains(
+      thread, frame, frame->valueStackTop(), c, container);
+  EXPECT_EQ(contains_true, Boolean::trueObj());
+  EXPECT_EQ(contains_false, Boolean::falseObj());
+}
+
 } // namespace python

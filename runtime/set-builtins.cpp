@@ -51,4 +51,20 @@ Object* builtinSetPop(Thread* thread, Frame* frame, word nargs) {
       "descriptor 'pop' requires a 'set' object");
 }
 
+Object* builtinSetContains(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("__contains__ takes 1 arguments.");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Set> self(&scope, args.get(0));
+  Handle<Object> value(&scope, args.get(1));
+  if (self->isSet()) {
+    return Boolean::fromBool(thread->runtime()->setIncludes(self, value));
+  }
+  // TODO(T30253711): handle user-defined subtypes of set.
+  return thread->throwTypeErrorFromCString(
+      "descriptor 'pop' requires a 'set' object");
+}
+
 } // namespace python
