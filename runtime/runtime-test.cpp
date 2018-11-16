@@ -48,9 +48,9 @@ TEST_P(BuiltinClassIdsTest, HasClassObject) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Object> elt(&scope, runtime.classAt(GetParam()));
-  ASSERT_TRUE(elt->isClass());
-  Handle<Class> cls(&scope, *elt);
+  Handle<Object> elt(&scope, runtime.typeAt(GetParam()));
+  ASSERT_TRUE(elt->isType());
+  Handle<Type> cls(&scope, *elt);
   Handle<Layout> layout(&scope, cls->instanceLayout());
   EXPECT_EQ(layout->id(), GetParam());
 }
@@ -1091,7 +1091,7 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
 TEST(RuntimeTest, GetClassConstructor) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Class> klass(&scope, runtime.newClass());
+  Handle<Type> klass(&scope, runtime.newClass());
   Handle<Dictionary> klass_dict(&scope, runtime.newDictionary());
   klass->setDictionary(*klass_dict);
 
@@ -1115,7 +1115,7 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
-  Handle<Class> cls(&scope, layout->describedClass());
+  Handle<Type> cls(&scope, layout->describedClass());
   EXPECT_TRUE(String::cast(cls->name())->equalsCString("MyEmptyClass"));
 
   Handle<Instance> instance(&scope, runtime.newInstance(layout));
@@ -1141,7 +1141,7 @@ class MyClassWithAttributes():
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   ASSERT_EQ(layout->instanceSize(), 4);
 
-  Handle<Class> cls(&scope, layout->describedClass());
+  Handle<Type> cls(&scope, layout->describedClass());
   ASSERT_TRUE(
       String::cast(cls->name())->equalsCString("MyClassWithAttributes"));
 
@@ -1164,7 +1164,7 @@ TEST(RuntimeTest, VerifySymbols) {
 }
 
 static String* className(Runtime* runtime, Object* o) {
-  auto cls = Class::cast(runtime->classOf(o));
+  auto cls = Type::cast(runtime->typeOf(o));
   auto name = String::cast(cls->name());
   return name;
 }
@@ -1338,7 +1338,7 @@ TEST_P(LookupNameInMroTest, Lookup) {
   HandleScope scope;
 
   auto create_class_with_attr = [&](const char* attr, word value) {
-    Handle<Class> klass(&scope, runtime.newClass());
+    Handle<Type> klass(&scope, runtime.newClass());
     Handle<Dictionary> dict(&scope, klass->dictionary());
     Handle<Object> key(&scope, runtime.newStringFromCString(attr));
     Handle<Object> val(&scope, SmallInteger::fromWord(value));
@@ -1351,7 +1351,7 @@ TEST_P(LookupNameInMroTest, Lookup) {
   mro->atPut(1, create_class_with_attr("bar", 4));
   mro->atPut(2, create_class_with_attr("baz", 8));
 
-  Handle<Class> klass(&scope, mro->at(0));
+  Handle<Type> klass(&scope, mro->at(0));
   klass->setMro(*mro);
 
   auto param = GetParam();
@@ -1387,7 +1387,7 @@ c = MyClassWithNoInitMethod()
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
-  Handle<Class> cls(&scope, layout->describedClass());
+  Handle<Type> cls(&scope, layout->describedClass());
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithNoInitMethod");
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
@@ -1417,7 +1417,7 @@ c = MyClassWithEmptyInitMethod()
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
-  Handle<Class> cls(&scope, layout->describedClass());
+  Handle<Type> cls(&scope, layout->describedClass());
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithEmptyInitMethod");
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
@@ -1447,7 +1447,7 @@ c = MyClassWithAttributes(1)
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   ASSERT_EQ(layout->instanceSize(), 2);
 
-  Handle<Class> cls(&scope, layout->describedClass());
+  Handle<Type> cls(&scope, layout->describedClass());
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithAttributes");
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
@@ -1715,7 +1715,7 @@ TEST(RuntimeSetTest, UpdateObjectArray) {
 
 static Object* createClass(Runtime* runtime) {
   HandleScope scope;
-  Handle<Class> klass(&scope, runtime->newClass());
+  Handle<Type> klass(&scope, runtime->newClass());
   Thread* thread = Thread::currentThread();
   Handle<Layout> layout(&scope, runtime->layoutCreateEmpty(thread));
   layout->setDescribedClass(*klass);
@@ -1732,7 +1732,7 @@ static void setInClassDict(Runtime* runtime, const Handle<Object>& klass,
                            const Handle<Object>& attr,
                            const Handle<Object>& value) {
   HandleScope scope;
-  Handle<Class> k(&scope, *klass);
+  Handle<Type> k(&scope, *klass);
   Handle<Dictionary> klass_dict(&scope, k->dictionary());
   runtime->dictionaryAtPutInValueCell(klass_dict, attr, value);
 }
@@ -1741,7 +1741,7 @@ static void setInMetaclass(Runtime* runtime, const Handle<Object>& klass,
                            const Handle<Object>& attr,
                            const Handle<Object>& value) {
   HandleScope scope;
-  Handle<Object> meta_klass(&scope, runtime->classOf(*klass));
+  Handle<Object> meta_klass(&scope, runtime->typeOf(*klass));
   setInClassDict(runtime, meta_klass, attr, value);
 }
 
@@ -1826,7 +1826,7 @@ class IntrinsicClassSetAttrTest
 TEST_P(IntrinsicClassSetAttrTest, SetAttr) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Object> klass(&scope, runtime.classAt(GetParam().layout_id));
+  Handle<Object> klass(&scope, runtime.typeAt(GetParam().layout_id));
   Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
   Handle<Object> value(&scope, SmallInteger::fromWord(100));
   Thread* thread = Thread::currentThread();
@@ -1856,7 +1856,7 @@ TEST(ClassAttributeTest, SetAttrOnClass) {
       runtime.attributeAtPut(Thread::currentThread(), klass, attr, value);
   ASSERT_FALSE(result->isError());
 
-  Handle<Dictionary> klass_dict(&scope, Class::cast(*klass)->dictionary());
+  Handle<Dictionary> klass_dict(&scope, Type::cast(*klass)->dictionary());
   Handle<Object> value_cell(&scope, runtime.dictionaryAt(klass_dict, attr));
   ASSERT_TRUE(value_cell->isValueCell());
   EXPECT_EQ(ValueCell::cast(*value_cell)->value(), SmallInteger::fromWord(100));
@@ -1939,8 +1939,8 @@ class DataDescriptor:
   runtime.runFromCString(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> descr_klass(&scope,
-                            findInModule(&runtime, main, "DataDescriptor"));
+  Handle<Type> descr_klass(&scope,
+                           findInModule(&runtime, main, "DataDescriptor"));
 
   // Create the class
   Handle<Object> klass(&scope, createClass(&runtime));
@@ -1967,8 +1967,8 @@ class DataDescriptor:
   runtime.runFromCString(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> descr_klass(&scope,
-                            findInModule(&runtime, main, "DataDescriptor"));
+  Handle<Type> descr_klass(&scope,
+                           findInModule(&runtime, main, "DataDescriptor"));
 
   // Create the class
   Handle<Object> klass(&scope, createClass(&runtime));
@@ -1981,9 +1981,9 @@ class DataDescriptor:
 
   Object* result = runtime.attributeAt(Thread::currentThread(), klass, attr);
   ASSERT_EQ(ObjectArray::cast(result)->length(), 3);
-  EXPECT_EQ(runtime.classOf(ObjectArray::cast(result)->at(0)), *descr_klass);
+  EXPECT_EQ(runtime.typeOf(ObjectArray::cast(result)->at(0)), *descr_klass);
   EXPECT_EQ(ObjectArray::cast(result)->at(1), *klass);
-  EXPECT_EQ(ObjectArray::cast(result)->at(2), runtime.classOf(*klass));
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), runtime.typeOf(*klass));
 }
 
 TEST(ClassAttributeTest, GetNonDataDescriptorOnClass) {
@@ -1998,8 +1998,8 @@ class DataDescriptor:
   runtime.runFromCString(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> descr_klass(&scope,
-                            findInModule(&runtime, main, "DataDescriptor"));
+  Handle<Type> descr_klass(&scope,
+                           findInModule(&runtime, main, "DataDescriptor"));
 
   // Create the class
   Handle<Object> klass(&scope, createClass(&runtime));
@@ -2012,7 +2012,7 @@ class DataDescriptor:
 
   Object* result = runtime.attributeAt(Thread::currentThread(), klass, attr);
   ASSERT_EQ(ObjectArray::cast(result)->length(), 3);
-  EXPECT_EQ(runtime.classOf(ObjectArray::cast(result)->at(0)), *descr_klass);
+  EXPECT_EQ(runtime.typeOf(ObjectArray::cast(result)->at(0)), *descr_klass);
   EXPECT_EQ(ObjectArray::cast(result)->at(1), None::object());
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *klass);
 }
@@ -2051,7 +2051,7 @@ def test(x):
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
-  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
@@ -2075,7 +2075,7 @@ def test(x):
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
-  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
@@ -2100,7 +2100,7 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
@@ -2129,7 +2129,7 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
@@ -2161,7 +2161,7 @@ def test(x):
   // Create an instance of Foo
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   Handle<Instance> foo1(&scope, runtime.newInstance(layout));
   LayoutId original_layout_id = layout->id();
@@ -2202,7 +2202,7 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
@@ -2230,7 +2230,7 @@ class Foo:
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> descr_klass(&scope, findInModule(&runtime, main, "DataDescr"));
+  Handle<Type> descr_klass(&scope, findInModule(&runtime, main, "DataDescr"));
   Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
   Handle<Layout> descr_layout(&scope, descr_klass->instanceLayout());
@@ -2238,12 +2238,12 @@ class Foo:
   setInClassDict(&runtime, klass, attr, descr);
 
   // Fetch it from the instance
-  Handle<Layout> instance_layout(&scope, Class::cast(*klass)->instanceLayout());
+  Handle<Layout> instance_layout(&scope, Type::cast(*klass)->instanceLayout());
   Handle<Object> instance(&scope, runtime.newInstance(instance_layout));
   Handle<ObjectArray> result(
       &scope, runtime.attributeAt(Thread::currentThread(), instance, attr));
   ASSERT_EQ(result->length(), 3);
-  EXPECT_EQ(runtime.classOf(result->at(0)), *descr_klass);
+  EXPECT_EQ(runtime.typeOf(result->at(0)), *descr_klass);
   EXPECT_EQ(result->at(1), *instance);
   EXPECT_EQ(result->at(2), *klass);
 }
@@ -2263,7 +2263,7 @@ class Foo:
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> descr_klass(&scope, findInModule(&runtime, main, "Descr"));
+  Handle<Type> descr_klass(&scope, findInModule(&runtime, main, "Descr"));
   Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
   Handle<Layout> descr_layout(&scope, descr_klass->instanceLayout());
@@ -2271,12 +2271,12 @@ class Foo:
   setInClassDict(&runtime, klass, attr, descr);
 
   // Fetch it from the instance
-  Handle<Layout> instance_layout(&scope, Class::cast(*klass)->instanceLayout());
+  Handle<Layout> instance_layout(&scope, Type::cast(*klass)->instanceLayout());
   Handle<Object> instance(&scope, runtime.newInstance(instance_layout));
 
   Object* result = runtime.attributeAt(Thread::currentThread(), instance, attr);
   ASSERT_EQ(ObjectArray::cast(result)->length(), 3);
-  EXPECT_EQ(runtime.classOf(ObjectArray::cast(result)->at(0)), *descr_klass);
+  EXPECT_EQ(runtime.typeOf(ObjectArray::cast(result)->at(0)), *descr_klass);
   EXPECT_EQ(ObjectArray::cast(result)->at(1), *instance);
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *klass);
 }
@@ -2303,7 +2303,7 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
@@ -2698,7 +2698,7 @@ class Foo:
 
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   Handle<HeapObject> instance(&scope, runtime.newInstance(layout));
   Handle<Object> attr(&scope, runtime.newStringFromCString("unknown"));
@@ -2797,10 +2797,10 @@ class Bar(Foo):
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_TRUE(foo->isClass());
+  EXPECT_TRUE(foo->isType());
 
   Handle<Object> bar(&scope, moduleAt(&runtime, main, "Bar"));
-  EXPECT_TRUE(bar->isClass());
+  EXPECT_TRUE(bar->isType());
 }
 
 TEST(MetaclassTest, ClassWithCustomMetaclassIsntConcreteClass) {
@@ -2817,7 +2817,7 @@ class Foo(type, metaclass=MyMeta):
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_FALSE(foo->isClass());
+  EXPECT_FALSE(foo->isType());
 }
 
 TEST(MetaclassTest, ClassWithTypeMetaclassIsInstanceOfClass) {
@@ -2871,16 +2871,16 @@ class ChildMeta(type, metaclass=ParentMeta):
   HandleScope scope;
   runtime.runFromCString(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> type(&scope, runtime.classAt(LayoutId::kType));
+  Handle<Object> type(&scope, runtime.typeAt(LayoutId::kType));
 
   Handle<Object> grand_meta(&scope, moduleAt(&runtime, main, "GrandMeta"));
-  EXPECT_EQ(runtime.classOf(*grand_meta), *type);
+  EXPECT_EQ(runtime.typeOf(*grand_meta), *type);
 
   Handle<Object> parent_meta(&scope, moduleAt(&runtime, main, "ParentMeta"));
-  EXPECT_EQ(runtime.classOf(*parent_meta), *grand_meta);
+  EXPECT_EQ(runtime.typeOf(*parent_meta), *grand_meta);
 
   Handle<Object> child_meta(&scope, moduleAt(&runtime, main, "ChildMeta"));
-  EXPECT_EQ(runtime.classOf(*child_meta), *parent_meta);
+  EXPECT_EQ(runtime.typeOf(*child_meta), *parent_meta);
 }
 
 TEST(MetaclassTest, CallMetaclass) {
@@ -2896,8 +2896,8 @@ Foo = MyMeta('Foo', (), {})
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> mymeta(&scope, moduleAt(&runtime, main, "MyMeta"));
   Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_EQ(runtime.classOf(*foo), *mymeta);
-  EXPECT_FALSE(foo->isClass());
+  EXPECT_EQ(runtime.typeOf(*foo), *mymeta);
+  EXPECT_FALSE(foo->isType());
   EXPECT_TRUE(runtime.isInstanceOfClass(*foo));
 }
 

@@ -30,10 +30,10 @@ const BuiltinMethod ListBuiltins::kMethods[] = {
 void ListBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
-  Handle<Class> list(&scope,
-                     runtime->addBuiltinClass(SymbolId::kList, LayoutId::kList,
-                                              LayoutId::kObject, kAttributes));
-  list->setFlag(Class::Flag::kListSubclass);
+  Handle<Type> list(&scope,
+                    runtime->addBuiltinClass(SymbolId::kList, LayoutId::kList,
+                                             LayoutId::kObject, kAttributes));
+  list->setFlag(Type::Flag::kListSubclass);
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
     runtime->classAddBuiltinFunction(list, kMethods[i].name,
                                      kMethods[i].address);
@@ -45,12 +45,12 @@ Object* ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
   Arguments args(frame, nargs);
-  if (!args.get(0)->isClass()) {
+  if (!args.get(0)->isType()) {
     return thread->throwTypeErrorFromCString("not a type object");
   }
   HandleScope scope(thread);
-  Handle<Class> type(&scope, args.get(0));
-  if (!type->hasFlag(Class::Flag::kListSubclass)) {
+  Handle<Type> type(&scope, args.get(0));
+  if (!type->hasFlag(Type::Flag::kListSubclass)) {
     return thread->throwTypeErrorFromCString("not a subtype of list");
   }
   Handle<Layout> layout(&scope, type->instanceLayout());

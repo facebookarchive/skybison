@@ -21,7 +21,7 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
 
   Handle<Layout> layout(&scope, runtime->newLayout());
   layout->setId(LayoutId::kObject);
-  Handle<Class> object_type(&scope, runtime->newClass());
+  Handle<Type> object_type(&scope, runtime->newClass());
   layout->setDescribedClass(*object_type);
   object_type->setName(runtime->symbols()->ObjectClassname());
   Handle<ObjectArray> mro(&scope, runtime->newObjectArray(1));
@@ -61,7 +61,7 @@ Object* ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Object> self(&scope, args.get(0));
-  Handle<Class> type(&scope, runtime->classOf(*self));
+  Handle<Type> type(&scope, runtime->typeOf(*self));
   if (!runtime->isMethodOverloaded(thread, type, SymbolId::kDunderNew) ||
       runtime->isMethodOverloaded(thread, type, SymbolId::kDunderInit)) {
     // Throw a TypeError if extra arguments were passed, and __new__ was not
@@ -80,8 +80,8 @@ Object* ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
         "object.__new__() takes no arguments");
   }
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, args.get(0));
-  Handle<Layout> layout(&scope, klass->instanceLayout());
+  Handle<Type> type(&scope, args.get(0));
+  Handle<Layout> layout(&scope, type->instanceLayout());
   return thread->runtime()->newInstance(layout);
 }
 
@@ -97,7 +97,7 @@ Object* ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
 
   // TODO(T31727304): Get the module and qualified subname. For now settle for
   // the class name.
-  Handle<Class> type(&scope, runtime->classOf(*self));
+  Handle<Type> type(&scope, runtime->typeOf(*self));
   Handle<String> type_name(&scope, type->name());
   char* c_string = type_name->toCString();
   Object* str = thread->runtime()->newStringFromFormat(
@@ -128,7 +128,7 @@ const BuiltinMethod NoneBuiltins::kMethods[] = {
 
 void NoneBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Class> type(
+  Handle<Type> type(
       &scope, runtime->addEmptyBuiltinClass(
                   SymbolId::kNoneType, LayoutId::kNoneType, LayoutId::kObject));
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {

@@ -209,7 +209,7 @@ Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
   HandleScope scope;
 
   // Create a class object for the subclass
-  Handle<Class> subclass(&scope, newClass());
+  Handle<Type> subclass(&scope, newClass());
   subclass->setName(symbols()->at(name));
 
   Handle<Layout> layout(&scope, layoutCreateSubclassWithBuiltins(
@@ -223,7 +223,7 @@ Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
 
   subclass->setMro(*mro);
   subclass->setInstanceLayout(*layout);
-  Handle<Class> superclass(&scope, classAt(superclass_id));
+  Handle<Type> superclass(&scope, typeAt(superclass_id));
   subclass->setFlags(superclass->flags());
 
   // Install the layout and class
@@ -258,7 +258,7 @@ Object* Runtime::newClass() { return newClassWithMetaclass(LayoutId::kType); }
 
 Object* Runtime::newClassWithMetaclass(LayoutId metaclass_id) {
   HandleScope scope;
-  Handle<Class> result(&scope, heap()->createClass(metaclass_id));
+  Handle<Type> result(&scope, heap()->createClass(metaclass_id));
   Handle<Dictionary> dict(&scope, newDictionary());
   result->setFlags(SmallInteger::fromWord(0));
   result->setDictionary(*dict);
@@ -274,8 +274,8 @@ Object* Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
   }
 
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, *receiver);
-  Handle<Class> meta_klass(&scope, classOf(*receiver));
+  Handle<Type> klass(&scope, *receiver);
+  Handle<Type> meta_klass(&scope, typeOf(*receiver));
 
   // Look for the attribute in the meta class
   Handle<Object> meta_attr(&scope, lookupNameInMro(thread, meta_klass, name));
@@ -327,7 +327,7 @@ Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
   }
 
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, *receiver);
+  Handle<Type> klass(&scope, *receiver);
   if (klass->isIntrinsicOrExtension()) {
     // TODO(T25140871): Refactor this into something that includes the type name
     // like:
@@ -337,7 +337,7 @@ Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
   }
 
   // Check for a data descriptor
-  Handle<Class> metaklass(&scope, classOf(*receiver));
+  Handle<Type> metaklass(&scope, typeOf(*receiver));
   Handle<Object> meta_attr(&scope, lookupNameInMro(thread, metaklass, name));
   if (!meta_attr->isError()) {
     if (isDataDescriptor(thread, meta_attr)) {
@@ -362,7 +362,7 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
   }
 
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, *receiver);
+  Handle<Type> klass(&scope, *receiver);
   // TODO(mpage): This needs to handle built-in extension types.
   if (klass->isIntrinsicOrExtension()) {
     // TODO(T25140871): Refactor this into something that includes the type name
@@ -373,7 +373,7 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
   }
 
   // Check for a delete descriptor
-  Handle<Class> metaklass(&scope, classOf(*receiver));
+  Handle<Type> metaklass(&scope, typeOf(*receiver));
   Handle<Object> meta_attr(&scope, lookupNameInMro(thread, metaklass, name));
   if (!meta_attr->isError()) {
     if (isDeleteDescriptor(thread, meta_attr)) {
@@ -404,12 +404,12 @@ Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
 
   if (String::cast(*name)->equals(symbols()->DunderClass())) {
     // TODO(T27735822): Make __class__ a descriptor
-    return classOf(*receiver);
+    return typeOf(*receiver);
   }
 
   // Look for the attribute in the class
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, classOf(*receiver));
+  Handle<Type> klass(&scope, typeOf(*receiver));
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
   if (!klass_attr->isError()) {
     if (isDataDescriptor(thread, klass_attr)) {
@@ -457,7 +457,7 @@ Object* Runtime::instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
 
   // Check for a data descriptor
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, classOf(*receiver));
+  Handle<Type> klass(&scope, typeOf(*receiver));
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
   if (!klass_attr->isError()) {
     if (isDataDescriptor(thread, klass_attr)) {
@@ -481,7 +481,7 @@ Object* Runtime::instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
 
   // Check for a descriptor with __delete__
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, classOf(*receiver));
+  Handle<Type> klass(&scope, typeOf(*receiver));
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
   if (!klass_attr->isError()) {
     if (isDeleteDescriptor(thread, klass_attr)) {
@@ -550,7 +550,7 @@ Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
 
   // Check for a descriptor with __delete__
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, classOf(*receiver));
+  Handle<Type> klass(&scope, typeOf(*receiver));
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
   if (!klass_attr->isError()) {
     if (isDeleteDescriptor(thread, klass_attr)) {
@@ -574,26 +574,26 @@ Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
 bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, classOf(*object));
+  Handle<Type> type(&scope, typeOf(*object));
   Handle<Object> dunder_set(&scope, symbols()->DunderSet());
-  return !lookupNameInMro(thread, klass, dunder_set)->isError();
+  return !lookupNameInMro(thread, type, dunder_set)->isError();
 }
 
 bool Runtime::isNonDataDescriptor(Thread* thread,
                                   const Handle<Object>& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, classOf(*object));
+  Handle<Type> type(&scope, typeOf(*object));
   Handle<Object> dunder_get(&scope, symbols()->DunderGet());
-  return !lookupNameInMro(thread, klass, dunder_get)->isError();
+  return !lookupNameInMro(thread, type, dunder_get)->isError();
 }
 
 bool Runtime::isDeleteDescriptor(Thread* thread, const Handle<Object>& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
-  Handle<Class> klass(&scope, classOf(*object));
+  Handle<Type> type(&scope, typeOf(*object));
   Handle<Object> dunder_get(&scope, symbols()->DunderDelete());
-  return !lookupNameInMro(thread, klass, dunder_get)->isError();
+  return !lookupNameInMro(thread, type, dunder_get)->isError();
 }
 
 Object* Runtime::newCode() {
@@ -644,20 +644,20 @@ Object* Runtime::newInstance(const Handle<Layout>& layout) {
   return instance;
 }
 
-void Runtime::classAddBuiltinFunction(const Handle<Class>& klass, SymbolId name,
+void Runtime::classAddBuiltinFunction(const Handle<Type>& type, SymbolId name,
                                       Function::Entry entry) {
-  classAddBuiltinFunctionKwEx(klass, name, entry, unimplementedTrampoline,
+  classAddBuiltinFunctionKwEx(type, name, entry, unimplementedTrampoline,
                               unimplementedTrampoline);
 }
 
-void Runtime::classAddBuiltinFunctionKw(const Handle<Class>& klass,
-                                        SymbolId name, Function::Entry entry,
+void Runtime::classAddBuiltinFunctionKw(const Handle<Type>& type, SymbolId name,
+                                        Function::Entry entry,
                                         Function::Entry entry_kw) {
-  classAddBuiltinFunctionKwEx(klass, name, entry, entry_kw,
+  classAddBuiltinFunctionKwEx(type, name, entry, entry_kw,
                               unimplementedTrampoline);
 }
 
-void Runtime::classAddBuiltinFunctionKwEx(const Handle<Class>& klass,
+void Runtime::classAddBuiltinFunctionKwEx(const Handle<Type>& type,
                                           SymbolId name, Function::Entry entry,
                                           Function::Entry entry_kw,
                                           Function::Entry entry_ex) {
@@ -666,14 +666,13 @@ void Runtime::classAddBuiltinFunctionKwEx(const Handle<Class>& klass,
       &scope, newBuiltinFunction(name, entry, entry_kw, entry_ex));
   Handle<Object> key(&scope, symbols()->at(name));
   Handle<Object> value(&scope, *function);
-  Handle<Dictionary> dict(&scope, klass->dictionary());
+  Handle<Dictionary> dict(&scope, type->dictionary());
   dictionaryAtPutInValueCell(dict, key, value);
 }
 
-void Runtime::classAddExtensionFunction(const Handle<Class>& klass,
-                                        SymbolId name, void* c_function) {
-  DCHECK(!klass->extensionType()->isNone(),
-         "Class must contain extension type");
+void Runtime::classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
+                                        void* c_function) {
+  DCHECK(!type->extensionType()->isNone(), "Type must contain extension type");
 
   HandleScope scope;
   Handle<Function> function(&scope, newFunction());
@@ -684,7 +683,7 @@ void Runtime::classAddExtensionFunction(const Handle<Class>& klass,
   function->setEntryKw(extensionTrampolineKw);
   function->setEntryEx(extensionTrampolineEx);
   Handle<Object> value(&scope, *function);
-  Handle<Dictionary> dict(&scope, klass->dictionary());
+  Handle<Dictionary> dict(&scope, type->dictionary());
   dictionaryAtPutInValueCell(dict, key, value);
 }
 
@@ -958,9 +957,9 @@ void Runtime::initializeLayouts() {
 Object* Runtime::createMro(const Handle<Layout>& subclass_layout,
                            LayoutId superclass_id) {
   HandleScope scope;
-  CHECK(subclass_layout->describedClass()->isClass(),
+  CHECK(subclass_layout->describedClass()->isType(),
         "subclass layout must have a described class");
-  Handle<Class> superclass(&scope, classAt(superclass_id));
+  Handle<Type> superclass(&scope, typeAt(superclass_id));
   Handle<ObjectArray> src(&scope, superclass->mro());
   Handle<ObjectArray> dst(&scope, newObjectArray(1 + src->length()));
   dst->atPut(0, subclass_layout->describedClass());
@@ -1029,9 +1028,9 @@ void Runtime::initializeExceptionClasses() {
 
 void Runtime::initializeRefClass() {
   HandleScope scope;
-  Handle<Class> ref(&scope,
-                    addEmptyBuiltinClass(SymbolId::kRef, LayoutId::kWeakRef,
-                                         LayoutId::kObject));
+  Handle<Type> ref(&scope,
+                   addEmptyBuiltinClass(SymbolId::kRef, LayoutId::kWeakRef,
+                                        LayoutId::kObject));
 
   classAddBuiltinFunction(ref, SymbolId::kDunderInit,
                           nativeTrampoline<builtinRefInit>);
@@ -1042,7 +1041,7 @@ void Runtime::initializeRefClass() {
 
 void Runtime::initializeFunctionClass() {
   HandleScope scope;
-  Handle<Class> function(
+  Handle<Type> function(
       &scope, addEmptyBuiltinClass(SymbolId::kFunction, LayoutId::kFunction,
                                    LayoutId::kObject));
 
@@ -1052,10 +1051,10 @@ void Runtime::initializeFunctionClass() {
 
 void Runtime::initializeStrClass() {
   HandleScope scope;
-  Handle<Class> type(&scope,
-                     addEmptyBuiltinClass(SymbolId::kStr, LayoutId::kString,
-                                          LayoutId::kObject));
-  type->setFlag(Class::Flag::kStrSubclass);
+  Handle<Type> type(&scope,
+                    addEmptyBuiltinClass(SymbolId::kStr, LayoutId::kString,
+                                         LayoutId::kObject));
+  type->setFlag(Type::Flag::kStrSubclass);
 
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinStringEq>);
@@ -1087,7 +1086,7 @@ void Runtime::initializeStrClass() {
 
 void Runtime::initializeObjectArrayClass() {
   HandleScope scope;
-  Handle<Class> type(
+  Handle<Type> type(
       &scope, addEmptyBuiltinClass(SymbolId::kTuple, LayoutId::kObjectArray,
                                    LayoutId::kObject));
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
@@ -1098,7 +1097,7 @@ void Runtime::initializeObjectArrayClass() {
 
 void Runtime::initializeDictClass() {
   HandleScope scope;
-  Handle<Class> dict_type(
+  Handle<Type> dict_type(
       &scope, addEmptyBuiltinClass(SymbolId::kDict, LayoutId::kDictionary,
                                    LayoutId::kObject));
 
@@ -1114,7 +1113,7 @@ void Runtime::initializeDictClass() {
 
 void Runtime::initializeClassMethodClass() {
   HandleScope scope;
-  Handle<Class> classmethod(
+  Handle<Type> classmethod(
       &scope, addEmptyBuiltinClass(SymbolId::kClassmethod,
                                    LayoutId::kClassMethod, LayoutId::kObject));
 
@@ -1130,10 +1129,10 @@ void Runtime::initializeClassMethodClass() {
 
 void Runtime::initializeTypeClass() {
   HandleScope scope;
-  Handle<Class> type(&scope,
-                     addEmptyBuiltinClass(SymbolId::kType, LayoutId::kType,
-                                          LayoutId::kObject));
-  type->setFlag(Class::Flag::kClassSubclass);
+  Handle<Type> type(&scope,
+                    addEmptyBuiltinClass(SymbolId::kType, LayoutId::kType,
+                                         LayoutId::kObject));
+  type->setFlag(Type::Flag::kClassSubclass);
 
   classAddBuiltinFunction(type, SymbolId::kDunderCall,
                           nativeTrampoline<builtinTypeCall>);
@@ -1155,9 +1154,9 @@ void Runtime::initializeImmediateClasses() {
 
 void Runtime::initializeBooleanClass() {
   HandleScope scope;
-  Handle<Class> type(&scope,
-                     addEmptyBuiltinClass(SymbolId::kBool, LayoutId::kBoolean,
-                                          LayoutId::kInteger));
+  Handle<Type> type(&scope,
+                    addEmptyBuiltinClass(SymbolId::kBool, LayoutId::kBoolean,
+                                         LayoutId::kInteger));
 
   classAddBuiltinFunction(type, SymbolId::kDunderBool,
                           nativeTrampoline<builtinBooleanBool>);
@@ -1165,10 +1164,10 @@ void Runtime::initializeBooleanClass() {
 
 void Runtime::initializeFloatClass() {
   HandleScope scope;
-  Handle<Class> float_type(
+  Handle<Type> float_type(
       &scope, addEmptyBuiltinClass(SymbolId::kFloat, LayoutId::kDouble,
                                    LayoutId::kObject));
-  float_type->setFlag(Class::Flag::kFloatSubclass);
+  float_type->setFlag(Type::Flag::kFloatSubclass);
 
   classAddBuiltinFunction(float_type, SymbolId::kDunderNew,
                           nativeTrampoline<builtinDoubleNew>);
@@ -1200,7 +1199,7 @@ void Runtime::initializeFloatClass() {
 
 void Runtime::initializeSetClass() {
   HandleScope scope;
-  Handle<Class> set_type(
+  Handle<Type> set_type(
       &scope,
       addEmptyBuiltinClass(SymbolId::kSet, LayoutId::kSet, LayoutId::kObject));
 
@@ -1225,7 +1224,7 @@ void Runtime::initializeSetClass() {
 
 void Runtime::initializePropertyClass() {
   HandleScope scope;
-  Handle<Class> property(
+  Handle<Type> property(
       &scope, addEmptyBuiltinClass(SymbolId::kProperty, LayoutId::kProperty,
                                    LayoutId::kObject));
 
@@ -1253,7 +1252,7 @@ void Runtime::initializePropertyClass() {
 
 void Runtime::initializeStaticMethodClass() {
   HandleScope scope;
-  Handle<Class> staticmethod(
+  Handle<Type> staticmethod(
       &scope, addEmptyBuiltinClass(SymbolId::kStaticMethod,
                                    LayoutId::kStaticMethod, LayoutId::kObject));
 
@@ -1503,7 +1502,7 @@ void Runtime::initializeApiHandles() {
   }
 }
 
-Object* Runtime::classOf(Object* object) {
+Object* Runtime::typeOf(Object* object) {
   HandleScope scope;
   Handle<Layout> layout(&scope, layoutAt(object->layoutId()));
   return layout->describedClass();
@@ -1517,7 +1516,7 @@ void Runtime::layoutAtPut(LayoutId layout_id, Object* object) {
   List::cast(layouts_)->atPut(static_cast<word>(layout_id), object);
 }
 
-Object* Runtime::classAt(LayoutId layout_id) {
+Object* Runtime::typeAt(LayoutId layout_id) {
   return Layout::cast(layoutAt(layout_id))->describedClass();
 }
 
@@ -1559,15 +1558,15 @@ SymbolId Runtime::swappedComparisonSelector(CompareOp op) {
   return comparisonSelector(swapped_op);
 }
 
-bool Runtime::isMethodOverloaded(Thread* thread, const Handle<Class>& klass,
+bool Runtime::isMethodOverloaded(Thread* thread, const Handle<Type>& type,
                                  SymbolId selector) {
   HandleScope scope(thread);
-  Handle<ObjectArray> mro(&scope, klass->mro());
+  Handle<ObjectArray> mro(&scope, type->mro());
   Handle<Object> key(&scope, symbols()->at(selector));
   DCHECK(mro->length() > 0, "empty MRO");
   for (word i = 0; i < mro->length() - 1; i++) {
-    Handle<Class> mro_klass(&scope, mro->at(i));
-    Handle<Dictionary> dict(&scope, mro_klass->dictionary());
+    Handle<Type> mro_type(&scope, mro->at(i));
+    Handle<Dictionary> dict(&scope, mro_type->dictionary());
     Handle<Object> value_cell(&scope, dictionaryAt(dict, key));
     if (!value_cell->isError()) {
       return true;
@@ -1656,7 +1655,7 @@ void Runtime::createBuiltinsModule() {
 void Runtime::moduleAddBuiltinType(const Handle<Module>& module, SymbolId name,
                                    LayoutId layout_id) {
   HandleScope scope;
-  Handle<Object> value(&scope, classAt(layout_id));
+  Handle<Object> value(&scope, typeAt(layout_id));
   moduleAddGlobal(module, name, value);
 }
 
@@ -2334,19 +2333,18 @@ void Runtime::collectAttributes(const Handle<Code>& code,
   }
 }
 
-Object* Runtime::classConstructor(const Handle<Class>& klass) {
+Object* Runtime::classConstructor(const Handle<Type>& type) {
   HandleScope scope;
-  Handle<Dictionary> klass_dict(&scope, klass->dictionary());
+  Handle<Dictionary> type_dict(&scope, type->dictionary());
   Handle<Object> init(&scope, symbols()->DunderInit());
-  Object* value = dictionaryAt(klass_dict, init);
+  Object* value = dictionaryAt(type_dict, init);
   if (value->isError()) {
     return None::object();
   }
   return ValueCell::cast(value)->value();
 }
 
-Object* Runtime::computeInitialLayout(Thread* thread,
-                                      const Handle<Class>& klass,
+Object* Runtime::computeInitialLayout(Thread* thread, const Handle<Type>& klass,
                                       LayoutId base_layout_id) {
   HandleScope scope(thread);
   // Create the layout
@@ -2361,8 +2359,8 @@ Object* Runtime::computeInitialLayout(Thread* thread,
   // Collect set of in-object attributes by scanning the __init__ method of
   // each class in the MRO
   for (word i = 0; i < mro->length(); i++) {
-    Handle<Class> mro_klass(&scope, mro->at(i));
-    Handle<Object> maybe_init(&scope, classConstructor(mro_klass));
+    Handle<Type> mro_type(&scope, mro->at(i));
+    Handle<Object> maybe_init(&scope, classConstructor(mro_type));
     if (!maybe_init->isFunction()) {
       continue;
     }
@@ -2382,13 +2380,13 @@ Object* Runtime::computeInitialLayout(Thread* thread,
   return *layout;
 }
 
-Object* Runtime::lookupNameInMro(Thread* thread, const Handle<Class>& klass,
+Object* Runtime::lookupNameInMro(Thread* thread, const Handle<Type>& type,
                                  const Handle<Object>& name) {
   HandleScope scope(thread);
-  Handle<ObjectArray> mro(&scope, klass->mro());
+  Handle<ObjectArray> mro(&scope, type->mro());
   for (word i = 0; i < mro->length(); i++) {
-    Handle<Class> mro_klass(&scope, mro->at(i));
-    Handle<Dictionary> dict(&scope, mro_klass->dictionary());
+    Handle<Type> mro_type(&scope, mro->at(i));
+    Handle<Dictionary> dict(&scope, mro_type->dictionary());
     Handle<Object> value_cell(&scope, dictionaryAt(dict, name));
     if (!value_cell->isError()) {
       return ValueCell::cast(*value_cell)->value();
@@ -2438,9 +2436,9 @@ Object* Runtime::attributeDel(Thread* thread, const Handle<Object>& receiver,
                               const Handle<Object>& name) {
   HandleScope scope(thread);
   // If present, __delattr__ overrides all attribute deletion logic.
-  Handle<Class> klass(&scope, classOf(*receiver));
+  Handle<Type> type(&scope, typeOf(*receiver));
   Handle<Object> dunder_delattr(
-      &scope, lookupSymbolInMro(thread, klass, SymbolId::kDunderDelattr));
+      &scope, lookupSymbolInMro(thread, type, SymbolId::kDunderDelattr));
   Object* result;
   if (!dunder_delattr->isError()) {
     result = Interpreter::callMethod2(thread, thread->currentFrame(),
@@ -2626,8 +2624,8 @@ word Runtime::codeOffsetToLineNum(Thread* thread, const Handle<Code>& code,
   return line;
 }
 
-Object* Runtime::isSubClass(const Handle<Class>& subclass,
-                            const Handle<Class>& superclass) {
+Object* Runtime::isSubClass(const Handle<Type>& subclass,
+                            const Handle<Type>& superclass) {
   HandleScope scope;
   Handle<ObjectArray> mro(&scope, subclass->mro());
   for (word i = 0; i < mro->length(); i++) {
@@ -2639,9 +2637,9 @@ Object* Runtime::isSubClass(const Handle<Class>& subclass,
 }
 
 Object* Runtime::isInstance(const Handle<Object>& obj,
-                            const Handle<Class>& klass) {
+                            const Handle<Type>& klass) {
   HandleScope scope;
-  Handle<Class> obj_class(&scope, classOf(*obj));
+  Handle<Type> obj_class(&scope, typeOf(*obj));
   return isSubClass(obj_class, klass);
 }
 
@@ -2649,19 +2647,19 @@ Object* Runtime::newClassMethod() { return heap()->createClassMethod(); }
 
 Object* Runtime::newSuper() { return heap()->createSuper(); }
 
-LayoutId Runtime::computeBuiltinBaseClass(const Handle<Class>& klass) {
+LayoutId Runtime::computeBuiltinBaseClass(const Handle<Type>& klass) {
   // The base class can only be one of the builtin bases including object.
   // We use the first non-object builtin base if any, throw if multiple.
   HandleScope scope;
   Handle<ObjectArray> mro(&scope, klass->mro());
-  Handle<Class> object_klass(&scope, classAt(LayoutId::kObject));
-  Handle<Class> candidate(&scope, *object_klass);
+  Handle<Type> object_klass(&scope, typeAt(LayoutId::kObject));
+  Handle<Type> candidate(&scope, *object_klass);
   // Skip itself since builtin class won't go through this.
-  DCHECK(Class::cast(mro->at(0))->instanceLayout()->isNone(),
+  DCHECK(Type::cast(mro->at(0))->instanceLayout()->isNone(),
          "only user defined class should go through this via type_new, and at "
          "this point layout is not ready");
   for (word i = 1; i < mro->length(); i++) {
-    Handle<Class> mro_klass(&scope, mro->at(i));
+    Handle<Type> mro_klass(&scope, mro->at(i));
     if (!mro_klass->isIntrinsicOrExtension()) {
       continue;
     }
@@ -2965,9 +2963,9 @@ Object* Runtime::layoutDeleteAttribute(Thread* thread,
 
 void Runtime::initializeSuperClass() {
   HandleScope scope;
-  Handle<Class> super(&scope,
-                      addEmptyBuiltinClass(SymbolId::kSuper, LayoutId::kSuper,
-                                           LayoutId::kObject));
+  Handle<Type> super(&scope,
+                     addEmptyBuiltinClass(SymbolId::kSuper, LayoutId::kSuper,
+                                          LayoutId::kObject));
 
   classAddBuiltinFunction(super, SymbolId::kDunderInit,
                           nativeTrampoline<builtinSuperInit>);
@@ -2980,7 +2978,7 @@ Object* Runtime::superGetAttr(Thread* thread, const Handle<Object>& receiver,
                               const Handle<Object>& name) {
   HandleScope scope(thread);
   Handle<Super> super(&scope, *receiver);
-  Handle<Class> start_type(&scope, super->objectType());
+  Handle<Type> start_type(&scope, super->objectType());
   Handle<ObjectArray> mro(&scope, start_type->mro());
   word i;
   for (i = 0; i < mro->length(); i++) {
@@ -2991,8 +2989,8 @@ Object* Runtime::superGetAttr(Thread* thread, const Handle<Object>& receiver,
     }
   }
   for (; i < mro->length(); i++) {
-    Handle<Class> klass(&scope, mro->at(i));
-    Handle<Dictionary> dict(&scope, klass->dictionary());
+    Handle<Type> type(&scope, mro->at(i));
+    Handle<Dictionary> dict(&scope, type->dictionary());
     Handle<Object> value_cell(&scope, dictionaryAt(dict, name));
     if (value_cell->isError()) {
       continue;
@@ -3022,7 +3020,7 @@ Object* Runtime::newExtensionInstance(ApiHandle* handle) {
   Handle<Dictionary> extensions_dict(&scope, extensionTypes());
   Handle<Object> type_id(
       &scope, newIntegerFromCPointer(static_cast<void*>(handle->type())));
-  Handle<Class> type_class(&scope, dictionaryAt(extensions_dict, type_id));
+  Handle<Type> type_class(&scope, dictionaryAt(extensions_dict, type_id));
 
   // Create instance
   Handle<Layout> layout(&scope, type_class->instanceLayout());
@@ -3051,14 +3049,14 @@ void Runtime::freeTrackedAllocations() {
   }
 }
 
-Object* Runtime::lookupSymbolInMro(Thread* thread, const Handle<Class>& klass,
+Object* Runtime::lookupSymbolInMro(Thread* thread, const Handle<Type>& type,
                                    SymbolId symbol) {
   HandleScope scope(thread);
-  Handle<ObjectArray> mro(&scope, klass->mro());
+  Handle<ObjectArray> mro(&scope, type->mro());
   Handle<Object> key(&scope, symbols()->at(symbol));
   for (word i = 0; i < mro->length(); i++) {
-    Handle<Class> mro_klass(&scope, mro->at(i));
-    Handle<Dictionary> dict(&scope, mro_klass->dictionary());
+    Handle<Type> mro_type(&scope, mro->at(i));
+    Handle<Dictionary> dict(&scope, mro_type->dictionary());
     Handle<Object> value_cell(&scope, dictionaryAt(dict, key));
     if (!value_cell->isError()) {
       return ValueCell::cast(*value_cell)->value();

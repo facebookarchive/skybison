@@ -20,11 +20,11 @@ const BuiltinMethod BaseExceptionBuiltins::kMethods[] = {
 
 void BaseExceptionBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Class> type(&scope,
-                     runtime->addBuiltinClass(SymbolId::kBaseException,
-                                              LayoutId::kBaseException,
-                                              LayoutId::kObject, kAttributes));
-  type->setFlag(Class::Flag::kBaseExceptionSubclass);
+  Handle<Type> type(&scope,
+                    runtime->addBuiltinClass(SymbolId::kBaseException,
+                                             LayoutId::kBaseException,
+                                             LayoutId::kObject, kAttributes));
+  type->setFlag(Type::Flag::kBaseExceptionSubclass);
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
     runtime->classAddBuiltinFunction(type, kMethods[i].name,
                                      kMethods[i].address);
@@ -39,8 +39,8 @@ Object* BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
         "'__init__' of 'BaseException' needs an argument");
   }
   Arguments args(frame, nargs);
-  if (!thread->runtime()->hasSubClassFlag(
-          args.get(0), Class::Flag::kBaseExceptionSubclass)) {
+  if (!thread->runtime()->hasSubClassFlag(args.get(0),
+                                          Type::Flag::kBaseExceptionSubclass)) {
     return thread->throwTypeErrorFromCString(
         "'__init__' requires a 'BaseException' object");
   }
@@ -64,11 +64,11 @@ const BuiltinMethod StopIterationBuiltins::kMethods[] = {
 
 void StopIterationBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Class> type(
+  Handle<Type> type(
       &scope, runtime->addBuiltinClass(SymbolId::kStopIteration,
                                        LayoutId::kStopIteration,
                                        LayoutId::kException, kAttributes));
-  type->setFlag(Class::Flag::kStopIterationSubclass);
+  type->setFlag(Type::Flag::kStopIterationSubclass);
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
     runtime->classAddBuiltinFunction(type, kMethods[i].name,
                                      kMethods[i].address);
@@ -83,8 +83,8 @@ Object* StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
         "'__init__' of 'StopIteration' needs an argument");
   }
   Arguments args(frame, nargs);
-  if (!thread->runtime()->hasSubClassFlag(
-          args.get(0), Class::Flag::kStopIterationSubclass)) {
+  if (!thread->runtime()->hasSubClassFlag(args.get(0),
+                                          Type::Flag::kStopIterationSubclass)) {
     return thread->throwTypeErrorFromCString(
         "'__init__' requires a 'StopIteration' object");
   }
@@ -110,10 +110,10 @@ const BuiltinMethod SystemExitBuiltins::kMethods[] = {
 
 void SystemExitBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Class> type(&scope, runtime->addBuiltinClass(
-                                 SymbolId::kSystemExit, LayoutId::kSystemExit,
-                                 LayoutId::kBaseException, kAttributes));
-  type->setFlag(Class::Flag::kSystemExitSubclass);
+  Handle<Type> type(&scope, runtime->addBuiltinClass(
+                                SymbolId::kSystemExit, LayoutId::kSystemExit,
+                                LayoutId::kBaseException, kAttributes));
+  type->setFlag(Type::Flag::kSystemExitSubclass);
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
     runtime->classAddBuiltinFunction(type, kMethods[i].name,
                                      kMethods[i].address);
@@ -129,7 +129,7 @@ Object* SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   if (!thread->runtime()->hasSubClassFlag(args.get(0),
-                                          Class::Flag::kSystemExitSubclass)) {
+                                          Type::Flag::kSystemExitSubclass)) {
     return thread->throwTypeErrorFromCString(
         "'__init__' requires a 'SystemExit' object");
   }

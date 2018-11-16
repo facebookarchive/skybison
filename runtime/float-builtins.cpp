@@ -123,12 +123,12 @@ Object* builtinDoubleNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Handle<Object> obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*obj, Class::Flag::kClassSubclass)) {
+  if (!runtime->hasSubClassFlag(*obj, Type::Flag::kClassSubclass)) {
     return thread->throwTypeErrorFromCString(
         "float.__new__(X): X is not a type object");
   }
-  Handle<Class> type(&scope, *obj);
-  if (!type->hasFlag(Class::Flag::kFloatSubclass)) {
+  Handle<Type> type(&scope, *obj);
+  if (!type->hasFlag(Type::Flag::kFloatSubclass)) {
     return thread->throwTypeErrorFromCString(
         "float.__new__(X): X is not a subtype of float");
   }

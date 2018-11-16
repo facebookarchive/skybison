@@ -438,13 +438,13 @@ TEST(WeakRefTest, SpliceQueue) {
 TEST(ClassTest, SetFlagThenHasFlagReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Class> klass(&scope, runtime.newClass());
-  klass->setFlag(Class::Flag::kDictSubclass);
-  klass->setFlag(Class::Flag::kListSubclass);
-  EXPECT_TRUE(klass->hasFlag(Class::Flag::kDictSubclass));
-  EXPECT_TRUE(klass->hasFlag(Class::Flag::kListSubclass));
-  EXPECT_EQ(SmallInteger::cast(klass->flags())->value(),
-            Class::Flag::kDictSubclass | Class::Flag::kListSubclass);
+  Handle<Type> type(&scope, runtime.newClass());
+  type->setFlag(Type::Flag::kDictSubclass);
+  type->setFlag(Type::Flag::kListSubclass);
+  EXPECT_TRUE(type->hasFlag(Type::Flag::kDictSubclass));
+  EXPECT_TRUE(type->hasFlag(Type::Flag::kListSubclass));
+  EXPECT_EQ(SmallInteger::cast(type->flags())->value(),
+            Type::Flag::kDictSubclass | Type::Flag::kListSubclass);
 }
 
 }  // namespace python

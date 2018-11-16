@@ -17,10 +17,10 @@ const BuiltinMethod IntegerBuiltins::kMethods[] = {
 
 void IntegerBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Class> type(
+  Handle<Type> type(
       &scope, runtime->addEmptyBuiltinClass(SymbolId::kInt, LayoutId::kInteger,
                                             LayoutId::kObject));
-  type->setFlag(Class::Flag::kIntSubclass);
+  type->setFlag(Type::Flag::kIntSubclass);
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
     runtime->classAddBuiltinFunction(type, kMethods[i].name,
                                      kMethods[i].address);
@@ -42,13 +42,13 @@ Object* IntegerBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
 
   Handle<Object> type_obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type_obj, Class::Flag::kClassSubclass)) {
+  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kClassSubclass)) {
     return thread->throwTypeErrorFromCString(
         "int.__new__(X): X is not a type object");
   }
 
-  Handle<Class> type(&scope, *type_obj);
-  if (!type->hasFlag(Class::Flag::kIntSubclass)) {
+  Handle<Type> type(&scope, *type_obj);
+  if (!type->hasFlag(Type::Flag::kIntSubclass)) {
     return thread->throwTypeErrorFromCString(
         "int.__new__(X): X is not a subtype of int");
   }
@@ -135,9 +135,9 @@ const BuiltinMethod SmallIntegerBuiltins::kMethods[] = {
 
 void SmallIntegerBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Class> type(&scope, runtime->addEmptyBuiltinClass(
-                                 SymbolId::kSmallInt, LayoutId::kSmallInteger,
-                                 LayoutId::kInteger));
+  Handle<Type> type(&scope, runtime->addEmptyBuiltinClass(
+                                SymbolId::kSmallInt, LayoutId::kSmallInteger,
+                                LayoutId::kInteger));
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
     runtime->classAddBuiltinFunction(type, kMethods[i].name,
                                      kMethods[i].address);

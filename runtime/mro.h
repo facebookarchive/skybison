@@ -5,13 +5,13 @@
 namespace python {
 
 class Object;
-class Class;
+class Type;
 class ObjectArray;
 class Thread;
 
 // Given the list of immediate parents, compute the complete MRO
-// for the klass's ancestors via C3 linearization
-Object* computeMro(Thread* thread, const Handle<Class>& klass,
+// for the type's ancestors via C3 linearization
+Object* computeMro(Thread* thread, const Handle<Type>& type,
                    const Handle<ObjectArray>& parents);
 
 }  // namespace python

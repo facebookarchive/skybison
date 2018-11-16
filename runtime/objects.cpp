@@ -174,11 +174,11 @@ Object* WeakRef::spliceQueue(Object* tail1, Object* tail2) {
   return tail2;
 }
 
-Class* Class::cast(Object* object) {
-  DCHECK(object->isClass() ||
+Type* Type::cast(Object* object) {
+  DCHECK(object->isType() ||
              Thread::currentThread()->runtime()->isInstanceOfClass(object),
          "invalid cast, expected class");
-  return reinterpret_cast<Class*>(object);
+  return reinterpret_cast<Type*>(object);
 }
 
 List* List::cast(Object* object) {

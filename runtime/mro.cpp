@@ -10,7 +10,7 @@ static word populateMergeLists(const Handle<ObjectArray>& merge_lists,
   // MROs contain at least the class itself, and Object.
   word new_mro_length = 2;
   for (word i = 0; i < parents->length(); i++) {
-    Handle<Class> parent_class(&scope, parents->at(i));
+    Handle<Type> parent_class(&scope, parents->at(i));
     Handle<ObjectArray> parent_mro(&scope, parent_class->mro());
 
     new_mro_length += parent_mro->length();
@@ -31,7 +31,7 @@ static bool tailContains(const Handle<ObjectArray>& mro,
     return false;
   }
   for (word i = head_idx + 1; i < len; i++) {
-    if (Class::cast(mro->at(i)) == *cls) {
+    if (Type::cast(mro->at(i)) == *cls) {
       return true;
     }
   }
@@ -71,7 +71,7 @@ static Object* findNext(const Handle<ObjectArray>& merge_lists,
   return Error::object();
 }
 
-Object* computeMro(Thread* thread, const Handle<Class>& klass,
+Object* computeMro(Thread* thread, const Handle<Type>& type,
                    const Handle<ObjectArray>& parents) {
   Runtime* runtime = thread->runtime();
   HandleScope scope;
@@ -83,7 +83,7 @@ Object* computeMro(Thread* thread, const Handle<Class>& klass,
   // Special case for no explicit ancestors.
   if (parents->length() == 0) {
     Handle<ObjectArray> new_mro(&scope, runtime->newObjectArray(2));
-    new_mro->atPut(0, *klass);
+    new_mro->atPut(0, *type);
     new_mro->atPut(1, *object_class);
     return *new_mro;
   }
@@ -99,7 +99,7 @@ Object* computeMro(Thread* thread, const Handle<Class>& klass,
   Handle<ObjectArray> new_mro(&scope, runtime->newObjectArray(new_mro_length));
 
   word next_idx = 0;
-  new_mro->atPut(next_idx, *klass);
+  new_mro->atPut(next_idx, *type);
   next_idx++;
 
   // To compute the MRO, repeatedly look for a head of one or more
@@ -109,12 +109,12 @@ Object* computeMro(Thread* thread, const Handle<Class>& klass,
   // is going to cause a major problem here.
   Object* next_head = Error::object();
   while (!(next_head = findNext(merge_lists, merge_list_indices))->isError()) {
-    Handle<Class> next_head_cls(&scope, next_head);
+    Handle<Type> next_head_cls(&scope, next_head);
     for (word i = 0; i < merge_list_indices.size(); i++) {
       auto& cur_idx = merge_list_indices[i];
       Handle<ObjectArray> cur_mro(&scope, merge_lists->at(i));
       if (cur_idx < cur_mro->length() &&
-          Class::cast(cur_mro->at(cur_idx)) == *next_head_cls) {
+          Type::cast(cur_mro->at(cur_idx)) == *next_head_cls) {
         cur_idx++;
       }
     }

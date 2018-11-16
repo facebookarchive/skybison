@@ -132,7 +132,7 @@ class Object {
   bool isBaseException();
   bool isBoundMethod();
   bool isByteArray();
-  bool isClass();
+  bool isType();
   bool isClassMethod();
   bool isCode();
   bool isComplex();
@@ -580,7 +580,7 @@ class SystemExit : public BaseException {
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExit);
 };
 
-class Class : public HeapObject {
+class Type : public HeapObject {
  public:
   enum Flag : word {
     kBaseExceptionSubclass = 1 << 0,
@@ -627,7 +627,7 @@ class Class : public HeapObject {
   bool isIntrinsicOrExtension();
 
   // Casting.
-  static Class* cast(Object* object);
+  static Type* cast(Object* object);
 
   // Sizing.
   static word allocationSize();
@@ -644,7 +644,7 @@ class Class : public HeapObject {
   static const int kSize = kExtensionTypeOffset + kPointerSize;
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Class);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Type);
 };
 
 class Array : public HeapObject {
@@ -1255,7 +1255,7 @@ class NotImplemented : public HeapObject {
  *
  * Layout:
  *
- *   [Class pointer]
+ *   [Type pointer]
  *   [NumItems     ] - Number of items currently in the dictionary
  *   [Items        ] - Pointer to an ObjectArray that stores the underlying
  * data.
@@ -1442,7 +1442,7 @@ class Set::Bucket {
  *
  * Layout:
  *
- *   [Class pointer]
+ *   [Type pointer]
  *   [Length       ] - Number of elements currently in the list
  *   [Elems        ] - Pointer to an ObjectArray that contains list elements
  */
@@ -1673,7 +1673,7 @@ class Layout : public HeapObject {
 
   // Returns the class whose instances are described by this layout
   Object* describedClass();
-  void setDescribedClass(Object* klass);
+  void setDescribedClass(Object* type);
 
   // Set the number of in-object attributes that may be stored on an instance
   // described by this layout.
@@ -1798,7 +1798,7 @@ inline LayoutId Object::layoutId() {
                                kImmediateClassTableIndexMask);
 }
 
-inline bool Object::isClass() {
+inline bool Object::isType() {
   if (!isHeapObject()) {
     return false;
   }
@@ -2537,72 +2537,72 @@ inline void SystemExit::setCode(Object* code) {
   instanceVariableAtPut(kCodeOffset, code);
 }
 
-// Class
+// Type
 
-inline word Class::allocationSize() { return Header::kSize + Class::kSize; }
+inline word Type::allocationSize() { return Header::kSize + Type::kSize; }
 
-inline Object* Class::mro() { return instanceVariableAt(kMroOffset); }
+inline Object* Type::mro() { return instanceVariableAt(kMroOffset); }
 
-inline void Class::setMro(Object* object_array) {
+inline void Type::setMro(Object* object_array) {
   instanceVariableAtPut(kMroOffset, object_array);
 }
 
-inline Object* Class::instanceLayout() {
+inline Object* Type::instanceLayout() {
   return instanceVariableAt(kInstanceLayoutOffset);
 }
 
-inline void Class::setInstanceLayout(Object* layout) {
+inline void Type::setInstanceLayout(Object* layout) {
   instanceVariableAtPut(kInstanceLayoutOffset, layout);
 }
 
-inline Object* Class::name() { return instanceVariableAt(kNameOffset); }
+inline Object* Type::name() { return instanceVariableAt(kNameOffset); }
 
-inline void Class::setName(Object* name) {
+inline void Type::setName(Object* name) {
   instanceVariableAtPut(kNameOffset, name);
 }
 
-inline Object* Class::flags() { return instanceVariableAt(kFlagsOffset); }
+inline Object* Type::flags() { return instanceVariableAt(kFlagsOffset); }
 
-inline void Class::setFlags(Object* value) {
+inline void Type::setFlags(Object* value) {
   instanceVariableAtPut(kFlagsOffset, value);
 }
 
-inline void Class::setFlag(Class::Flag bit) {
+inline void Type::setFlag(Type::Flag bit) {
   word f = SmallInteger::cast(flags())->value();
   Object* new_flag = SmallInteger::fromWord(f | bit);
   instanceVariableAtPut(kFlagsOffset, new_flag);
 }
 
-inline bool Class::hasFlag(Class::Flag bit) {
+inline bool Type::hasFlag(Type::Flag bit) {
   word f = SmallInteger::cast(flags())->value();
   return (f & bit) != 0;
 }
 
-inline Object* Class::dictionary() {
+inline Object* Type::dictionary() {
   return instanceVariableAt(kDictionaryOffset);
 }
 
-inline void Class::setDictionary(Object* dictionary) {
+inline void Type::setDictionary(Object* dictionary) {
   instanceVariableAtPut(kDictionaryOffset, dictionary);
 }
 
-inline Object* Class::builtinBaseClass() {
+inline Object* Type::builtinBaseClass() {
   return instanceVariableAt(kBuiltinBaseClassOffset);
 }
 
-inline Object* Class::extensionType() {
+inline Object* Type::extensionType() {
   return instanceVariableAt(kExtensionTypeOffset);
 }
 
-inline void Class::setExtensionType(Object* pytype) {
+inline void Type::setExtensionType(Object* pytype) {
   instanceVariableAtPut(kExtensionTypeOffset, pytype);
 }
 
-inline void Class::setBuiltinBaseClass(Object* base) {
+inline void Type::setBuiltinBaseClass(Object* base) {
   instanceVariableAtPut(kBuiltinBaseClassOffset, base);
 }
 
-inline bool Class::isIntrinsicOrExtension() {
+inline bool Type::isIntrinsicOrExtension() {
   return Layout::cast(instanceLayout())->id() <= LayoutId::kLastBuiltinId;
 }
 
@@ -3588,8 +3588,8 @@ inline void Layout::setId(LayoutId id) {
   setHeader(header()->withHashCode(static_cast<word>(id)));
 }
 
-inline void Layout::setDescribedClass(Object* klass) {
-  instanceVariableAtPut(kDescribedClassOffset, klass);
+inline void Layout::setDescribedClass(Object* type) {
+  instanceVariableAtPut(kDescribedClassOffset, type);
 }
 
 inline Object* Layout::describedClass() {
@@ -3668,7 +3668,7 @@ inline void Layout::setNumInObjectAttributes(word count) {
 inline Object* Super::type() { return instanceVariableAt(kTypeOffset); }
 
 inline void Super::setType(Object* tp) {
-  DCHECK(tp->isClass(), "expected type");
+  DCHECK(tp->isType(), "expected type");
   instanceVariableAtPut(kTypeOffset, tp);
 }
 
@@ -3683,7 +3683,7 @@ inline Object* Super::objectType() {
 }
 
 inline void Super::setObjectType(Object* tp) {
-  DCHECK(tp->isClass(), "expected type");
+  DCHECK(tp->isType(), "expected type");
   instanceVariableAtPut(kObjectTypeOffset, tp);
 }
 

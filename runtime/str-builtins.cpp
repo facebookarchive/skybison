@@ -130,15 +130,15 @@ Object* builtinStringNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Object> type(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type, Class::Flag::kClassSubclass)) {
+  if (!runtime->hasSubClassFlag(*type, Type::Flag::kClassSubclass)) {
     return thread->throwTypeErrorFromCString(
         "str.__new__(X): X is not a type object");
   }
-  if (!Class::cast(*type)->hasFlag(Class::Flag::kStrSubclass)) {
+  if (!Type::cast(*type)->hasFlag(Type::Flag::kStrSubclass)) {
     return thread->throwTypeErrorFromCString(
         "str.__new__(X): X is not a subtype of str");
   }
-  Handle<Layout> layout(&scope, Class::cast(*type)->instanceLayout());
+  Handle<Layout> layout(&scope, Type::cast(*type)->instanceLayout());
   if (layout->id() != LayoutId::kString) {
     // TODO: Implement __new__ with subtypes of str.
     UNIMPLEMENTED("str.__new__(<subtype of str>, ...)");
@@ -163,7 +163,7 @@ Object* builtinStringNew(Thread* thread, Frame* frame, word nargs) {
          "No __str__ found on the object even though everything inherits one");
   Object* ret = Interpreter::callMethod1(thread, frame, method, arg);
   if (!ret->isError() &&
-      !runtime->hasSubClassFlag(ret, Class::Flag::kStrSubclass)) {
+      !runtime->hasSubClassFlag(ret, Type::Flag::kStrSubclass)) {
     return thread->throwTypeErrorFromCString("__str__ returned non-string");
   }
   return ret;

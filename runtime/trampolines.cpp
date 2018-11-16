@@ -454,8 +454,8 @@ Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   // TODO(eelizondo): Cache the None handle
   PyObject* none = ApiHandle::fromObject(None::object())->asPyObject();
 
-  if (object->isClass()) {
-    Handle<Class> type_class(&scope, *object);
+  if (object->isType()) {
+    Handle<Type> type_class(&scope, *object);
     Handle<Integer> extension_type(&scope, type_class->extensionType());
     PyObject* type = static_cast<PyObject*>(extension_type->asCPointer());
 

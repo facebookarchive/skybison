@@ -61,15 +61,15 @@ TEST(TypeObject, ReadyCreatesRuntimeClass) {
   empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
   PyType_Ready(&empty_type);
 
-  // Obtain EmptyType Class object from the runtime
+  // Obtain EmptyType Type object from the runtime
   Handle<Object> type_id(
       &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&empty_type)));
   Handle<Object> type_class_obj(&scope,
                                 runtime.dictionaryAt(extensions_dict, type_id));
-  EXPECT_TRUE(type_class_obj->isClass());
+  EXPECT_TRUE(type_class_obj->isType());
 
   // Confirm the class name
-  Handle<Class> type_class(&scope, *type_class_obj);
+  Handle<Type> type_class(&scope, *type_class_obj);
   Handle<String> type_class_name(&scope, type_class->name());
   EXPECT_TRUE(type_class_name->equalsCString(empty_type.tp_name));
 
@@ -90,8 +90,8 @@ TEST(TypeObject, ReadiedTypeCreatesRuntimeInstance) {
   PyType_Ready(&empty_type);
   Handle<Object> type_id(
       &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&empty_type)));
-  Handle<Class> type_class(&scope,
-                           runtime.dictionaryAt(extensions_dict, type_id));
+  Handle<Type> type_class(&scope,
+                          runtime.dictionaryAt(extensions_dict, type_id));
 
   // Instantiate a class object
   Handle<Layout> layout(&scope, type_class->instanceLayout());
@@ -130,7 +130,7 @@ TEST(TypeObject, InitializeCustomTypeInstance) {
   Handle<Dictionary> module_dict(&scope, module->dictionary());
   runtime.addModule(module);
 
-  // Instantiate Class
+  // Instantiate Type
   PyTypeObject custom_type{PyObject_HEAD_INIT(nullptr)};
   custom_type.tp_basicsize = sizeof(CustomObject);
   custom_type.tp_name = "custom.Custom";
@@ -187,7 +187,7 @@ TEST(TypeObject, GenericAllocationReturnsMallocMemory) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  // Instantiate Class
+  // Instantiate Type
   PyTypeObject custom_type{PyObject_HEAD_INIT(nullptr)};
   custom_type.tp_basicsize = sizeof(CustomObject);
   custom_type.tp_name = "custom.Custom";

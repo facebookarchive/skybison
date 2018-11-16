@@ -36,7 +36,7 @@ Object* Interpreter::callCallable(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Handle<Object> callable(&scope, frame->peek(nargs));
   Handle<Object> name(&scope, runtime->symbols()->DunderCall());
-  Handle<Class> type(&scope, runtime->classOf(*callable));
+  Handle<Type> type(&scope, runtime->typeOf(*callable));
   callable = runtime->lookupNameInMro(thread, type, name);
   CHECK(!callable->isError(), "object has no __call__ attribute");
   CHECK(callable->isFunction(), "__call__ attribute is not a function");
@@ -128,7 +128,7 @@ Object* Interpreter::callDescriptorGet(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Object> selector(&scope, runtime->symbols()->DunderGet());
-  Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
+  Handle<Type> descriptor_type(&scope, runtime->typeOf(*descriptor));
   Handle<Object> method(
       &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
   DCHECK(!method->isError(), "no __get__ method found");
@@ -143,7 +143,7 @@ Object* Interpreter::callDescriptorSet(python::Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Object> selector(&scope, runtime->symbols()->DunderSet());
-  Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
+  Handle<Type> descriptor_type(&scope, runtime->typeOf(*descriptor));
   Handle<Object> method(
       &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
   DCHECK(!method->isError(), "no __set__ method found");
@@ -156,7 +156,7 @@ Object* Interpreter::callDescriptorDelete(python::Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Object> selector(&scope, runtime->symbols()->DunderDelete());
-  Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
+  Handle<Type> descriptor_type(&scope, runtime->typeOf(*descriptor));
   Handle<Object> method(
       &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
   DCHECK(!method->isError(), "no __delete__ method found");
@@ -168,7 +168,7 @@ Object* Interpreter::lookupMethod(Thread* thread, Frame* caller,
                                   SymbolId selector) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Handle<Class> type(&scope, runtime->classOf(*receiver));
+  Handle<Type> type(&scope, runtime->typeOf(*receiver));
   Handle<Object> method(&scope,
                         runtime->lookupSymbolInMro(thread, type, selector));
   if (method->isFunction()) {
@@ -259,8 +259,8 @@ Object* Interpreter::binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
-  Handle<Class> self_type(&scope, runtime->classOf(*self));
-  Handle<Class> other_type(&scope, runtime->classOf(*other));
+  Handle<Type> self_type(&scope, runtime->typeOf(*self));
+  Handle<Type> other_type(&scope, runtime->typeOf(*other));
   bool is_derived_type =
       (*self_type != *other_type) &&
       (runtime->isSubClass(other_type, self_type) == Boolean::trueObj());
@@ -327,8 +327,8 @@ Object* Interpreter::compareOperation(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
-  Handle<Class> left_type(&scope, runtime->classOf(*left));
-  Handle<Class> right_type(&scope, runtime->classOf(*right));
+  Handle<Type> left_type(&scope, runtime->typeOf(*left));
+  Handle<Type> right_type(&scope, runtime->typeOf(*right));
 
   bool try_swapped = true;
   bool has_different_type = (*left_type != *right_type);
@@ -594,7 +594,7 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
   Handle<Object> key(&scope, ctx->frame->popValue());
   Handle<Object> container(&scope, ctx->frame->popValue());
   Handle<Object> selector(&scope, runtime->symbols()->DunderGetItem());
-  Handle<Class> type(&scope, runtime->classOf(*container));
+  Handle<Type> type(&scope, runtime->typeOf(*container));
   Handle<Object> getitem(&scope,
                          runtime->lookupNameInMro(ctx->thread, type, selector));
   if (getitem->isError()) {

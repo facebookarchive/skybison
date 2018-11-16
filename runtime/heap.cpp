@@ -100,13 +100,13 @@ Object* Heap::createByteArray(word length) {
 }
 
 Object* Heap::createClass(LayoutId metaclass_id) {
-  Object* raw = allocate(Class::allocationSize(), Header::kSize);
+  Object* raw = allocate(Type::allocationSize(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Class*>(raw);
-  result->setHeader(Header::from(Class::kSize / kPointerSize, 0, metaclass_id,
+  auto result = reinterpret_cast<Type*>(raw);
+  result->setHeader(Header::from(Type::kSize / kPointerSize, 0, metaclass_id,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(Class::kSize, None::object());
-  return Class::cast(result);
+  result->initialize(Type::kSize, None::object());
+  return Type::cast(result);
 }
 
 Object* Heap::createClassMethod() {

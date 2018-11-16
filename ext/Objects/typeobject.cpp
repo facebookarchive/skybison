@@ -78,7 +78,7 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
       runtime->builtinTypeHandles(ExtensionTypes::kType);
 
   // Create a new class for the PyTypeObject
-  Handle<Class> type_class(&scope, runtime->newClass());
+  Handle<Type> type_class(&scope, runtime->newClass());
   Handle<Dictionary> dictionary(&scope, runtime->newDictionary());
   type_class->setDictionary(*dictionary);
 

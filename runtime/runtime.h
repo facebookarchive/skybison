@@ -166,9 +166,9 @@ class Runtime {
   Object* importModuleFromBuffer(const char* buffer,
                                  const Handle<Object>& name);
 
-  Object* classOf(Object* object);
+  Object* typeOf(Object* object);
 
-  Object* classAt(LayoutId layout_id);
+  Object* typeAt(LayoutId layout_id);
   Object* layoutAt(LayoutId layout_id);
   void layoutAtPut(LayoutId layout_id, Object* object);
 
@@ -191,7 +191,7 @@ class Runtime {
   SymbolId swappedComparisonSelector(CompareOp op);
 
   // Return true if the selector does not appear in the MRO object below object.
-  bool isMethodOverloaded(Thread* thread, const Handle<Class>& type,
+  bool isMethodOverloaded(Thread* thread, const Handle<Type>& type,
                           SymbolId selector);
 
   Object* buildClass() { return build_class_; }
@@ -307,25 +307,25 @@ class Runtime {
   void collectAttributes(const Handle<Code>& code,
                          const Handle<Dictionary>& attributes);
 
-  // Constructs the initial layout for instances of klass.
+  // Constructs the initial layout for instances of type.
   //
   // The layout contains the set of in-object attributes. This is computed by
   // scanning the constructors of every klass in klass's MRO.
-  Object* computeInitialLayout(Thread* thread, const Handle<Class>& klass,
+  Object* computeInitialLayout(Thread* thread, const Handle<Type>& klass,
                                LayoutId base_layout_id);
 
-  // Returns klass's __init__ method, or None
-  Object* classConstructor(const Handle<Class>& klass);
+  // Returns type's __init__ method, or None
+  Object* classConstructor(const Handle<Type>& type);
 
-  // Looks up name in the dict of each entry in klass's MRO.
+  // Looks up name in the dict of each entry in type's MRO.
   //
   // This is equivalent to CPython's PyType_Lookup. Returns the Error object if
   // the name wasn't found.
-  Object* lookupNameInMro(Thread* thread, const Handle<Class>& klass,
+  Object* lookupNameInMro(Thread* thread, const Handle<Type>& type,
                           const Handle<Object>& name);
 
-  // Looks up symbol name in the dict of each entry in klass's MRO.
-  Object* lookupSymbolInMro(Thread* thread, const Handle<Class>& klass,
+  // Looks up symbol name in the dict of each entry in type's MRO.
+  Object* lookupSymbolInMro(Thread* thread, const Handle<Type>& type,
                             SymbolId symbol);
 
   // Implements `receiver.name`
@@ -394,28 +394,28 @@ class Runtime {
                              const Handle<Dictionary>& globals,
                              const Handle<Dictionary>& builtins);
 
-  LayoutId computeBuiltinBaseClass(const Handle<Class>& klass);
+  LayoutId computeBuiltinBaseClass(const Handle<Type>& klass);
 
   // Adds a builtin function with a positional entry point definition
   // using the default keyword and splatting entry points.
-  void classAddBuiltinFunction(const Handle<Class>& klass, SymbolId name,
+  void classAddBuiltinFunction(const Handle<Type>& type, SymbolId name,
                                Function::Entry entry);
 
   // Adds a builtin function with positional and keyword entry point
   // definitions, using the default splatting entry point.
-  void classAddBuiltinFunctionKw(const Handle<Class>& klass, SymbolId name,
+  void classAddBuiltinFunctionKw(const Handle<Type>& type, SymbolId name,
                                  Function::Entry entry,
                                  Function::Entry entry_kw);
 
   // Adds a builtin function with positional, keyword & splatting entry point
   // definitions
-  void classAddBuiltinFunctionKwEx(const Handle<Class>& klass, SymbolId name,
+  void classAddBuiltinFunctionKwEx(const Handle<Type>& type, SymbolId name,
                                    Function::Entry entry,
                                    Function::Entry entry_kw,
                                    Function::Entry entry_ex);
 
   // Helper function to add extension functions to extension classes
-  void classAddExtensionFunction(const Handle<Class>& klass, SymbolId name,
+  void classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
                                  void* c_function);
 
   // Converts the offset in code's bytecode into the corresponding line number
@@ -424,37 +424,37 @@ class Runtime {
                            word offset);
 
   // Return true if subclass is a subclass of superclass
-  Object* isSubClass(const Handle<Class>& subclass,
-                     const Handle<Class>& superclass);
+  Object* isSubClass(const Handle<Type>& subclass,
+                     const Handle<Type>& superclass);
 
-  bool hasSubClassFlag(Object* instance, Class::Flag flag) {
-    return Class::cast(classAt(instance->layoutId()))->hasFlag(flag);
+  bool hasSubClassFlag(Object* instance, Type::Flag flag) {
+    return Type::cast(typeAt(instance->layoutId()))->hasFlag(flag);
   }
 
-  // Returns whether or not instance is an instance of Class or a subclass of
-  // Class
+  // Returns whether or not instance is an instance of Type or a subclass of
+  // Type
   //
   // This is equivalent to PyType_Check.
   bool isInstanceOfClass(Object* instance) {
-    if (instance->isClass()) {
+    if (instance->isType()) {
       return true;
     }
     // The reinterpret_cast here is needed to avoid self-recursion when this is
-    // called by Class::cast(). It is safe, as classOf() is guaranteed to return
-    // a Class*.
-    return reinterpret_cast<Class*>(classOf(instance))
-        ->hasFlag(Class::Flag::kClassSubclass);
+    // called by Type::cast(). It is safe, as typeOf() is guaranteed to return
+    // a Type*.
+    return reinterpret_cast<Type*>(typeOf(instance))
+        ->hasFlag(Type::Flag::kClassSubclass);
   }
 
   bool isInstanceOfList(Object* instance) {
     if (instance->isList()) {
       return true;
     }
-    return Class::cast(classOf(instance))->hasFlag(Class::Flag::kListSubclass);
+    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kListSubclass);
   }
 
   // Return true if obj is an instance of a subclass of klass
-  Object* isInstance(const Handle<Object>& obj, const Handle<Class>& klass);
+  Object* isInstance(const Handle<Object>& obj, const Handle<Type>& klass);
 
   // Clear the allocated memory from all extension related objects
   void deallocExtensions();

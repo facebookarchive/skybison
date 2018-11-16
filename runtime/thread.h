@@ -4,7 +4,7 @@
 
 namespace python {
 
-class Class;
+class Type;
 class Dictionary;
 class Frame;
 class FrameVisitor;

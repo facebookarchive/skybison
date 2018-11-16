@@ -1258,14 +1258,14 @@ class C:
   Handle<Object> value(&scope, runtime.dictionaryAt(dict, key));
   ASSERT_TRUE(value->isValueCell());
 
-  Handle<Class> cls(&scope, ValueCell::cast(*value)->value());
+  Handle<Type> cls(&scope, ValueCell::cast(*value)->value());
   ASSERT_TRUE(cls->name()->isSmallString());
   EXPECT_EQ(cls->name(), SmallString::fromCString("C"));
 
   Handle<ObjectArray> mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *cls);
-  EXPECT_EQ(mro->at(1), runtime.classAt(LayoutId::kObject));
+  EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
 }
 
 TEST(ThreadTest, LoadBuildClassClassWithInit) {
@@ -1291,13 +1291,13 @@ class C:
   Handle<Object> cls_name(&scope, runtime.newStringFromCString("C"));
   Handle<Object> value(&scope, runtime.dictionaryAt(mod_dict, cls_name));
   ASSERT_TRUE(value->isValueCell());
-  Handle<Class> cls(&scope, ValueCell::cast(*value)->value());
+  Handle<Type> cls(&scope, ValueCell::cast(*value)->value());
 
   // Check class MRO
   Handle<ObjectArray> mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *cls);
-  EXPECT_EQ(mro->at(1), runtime.classAt(LayoutId::kObject));
+  EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
 
   // Check class name
   ASSERT_TRUE(cls->name()->isSmallString());
@@ -1348,7 +1348,7 @@ TEST(ThreadDeathTest, NativeExceptions) {
 
 static String* className(Object* obj) {
   HandleScope scope;
-  Handle<Class> cls(&scope, obj);
+  Handle<Type> cls(&scope, obj);
   Handle<String> name(&scope, cls->name());
   return *name;
 }
@@ -1364,7 +1364,7 @@ static Object* getMro(Runtime* runtime, const char* src,
                             runtime->newStringFromCString(desired_class));
 
   Handle<Object> value(&scope, runtime->dictionaryAt(mod_dict, class_name));
-  Handle<Class> cls(&scope, ValueCell::cast(*value)->value());
+  Handle<Type> cls(&scope, ValueCell::cast(*value)->value());
 
   return cls->mro();
 }
@@ -1594,15 +1594,15 @@ class Foo(object):
   ASSERT_TRUE(object->isModule());
   Handle<Module> main(&scope, object);
   object = findInModule(&runtime, main, "Foo");
-  ASSERT_TRUE(object->isClass());
-  Handle<Class> klass(&scope, object);
+  ASSERT_TRUE(object->isType());
+  Handle<Type> type(&scope, object);
 
   // Check that its MRO is itself and object
-  ASSERT_TRUE(klass->mro()->isObjectArray());
-  Handle<ObjectArray> mro(&scope, klass->mro());
+  ASSERT_TRUE(type->mro()->isObjectArray());
+  Handle<ObjectArray> mro(&scope, type->mro());
   ASSERT_EQ(mro->length(), 2);
-  EXPECT_EQ(mro->at(0), *klass);
-  EXPECT_EQ(mro->at(1), runtime.classAt(LayoutId::kObject));
+  EXPECT_EQ(mro->at(0), *type);
+  EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
 }
 
 // imports
@@ -2672,9 +2672,9 @@ a = Foo()
   runtime.runFromCString(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_TRUE(foo->isClass());
+  EXPECT_TRUE(foo->isType());
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  EXPECT_TRUE(runtime.classOf(*a) == *foo);
+  EXPECT_TRUE(runtime.typeOf(*a) == *foo);
 }
 
 TEST(ThreadTest, BuildClassWithMetaClass2) {
@@ -2698,7 +2698,7 @@ c = a.hahaha
   Handle<Object> bar(&scope, moduleAt(&runtime, main, "Bar"));
   EXPECT_TRUE(runtime.isInstanceOfClass(*bar));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  EXPECT_TRUE(runtime.classOf(*a) == *bar);
+  EXPECT_TRUE(runtime.typeOf(*a) == *bar);
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(SmallInteger::cast(*b)->value(), 123);
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));

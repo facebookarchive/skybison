@@ -22,11 +22,11 @@ c = C()
   runtime.runFromCString(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> type(&scope, moduleAt(&runtime, main, "C"));
+  Handle<Type> type(&scope, moduleAt(&runtime, main, "C"));
   ASSERT_FALSE(type->isError());
   Handle<Object> instance(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_FALSE(instance->isError());
-  Handle<Object> instance_type(&scope, runtime.classOf(*instance));
+  Handle<Object> instance_type(&scope, runtime.typeOf(*instance));
   ASSERT_FALSE(instance_type->isError());
 
   EXPECT_EQ(*type, *instance_type);

@@ -21,7 +21,7 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString(
         "'__new__' requires a 'class' object");
   }
-  Handle<Class> type(&scope, args.get(0));
+  Handle<Type> type(&scope, args.get(0));
   Handle<Object> dunder_new(&scope,
                             runtime->lookupNameInMro(thread, type, name));
 
@@ -55,10 +55,10 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Handle<Class> metatype(&scope, args.get(0));
+  Handle<Type> metatype(&scope, args.get(0));
   LayoutId class_layout_id = Layout::cast(metatype->instanceLayout())->id();
   Handle<Object> name(&scope, args.get(1));
-  Handle<Class> result(&scope, runtime->newClassWithMetaclass(class_layout_id));
+  Handle<Type> result(&scope, runtime->newClassWithMetaclass(class_layout_id));
   result->setName(*name);
 
   // Compute MRO
@@ -92,7 +92,7 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   Handle<ObjectArray> mro(&scope, *maybe_mro);
   word flags = 0;
   for (word i = 1; i < mro->length(); i++) {
-    Handle<Class> cur(&scope, mro->at(i));
+    Handle<Type> cur(&scope, mro->at(i));
     flags |= SmallInteger::cast(cur->flags())->value();
   }
   result->setFlags(SmallInteger::fromWord(flags));

@@ -49,12 +49,12 @@ Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   // the on-stack state for the class body function call.
   thread->runClassFunction(*body, *dictionary);
 
-  Handle<Class> klass(&scope, runtime->classAt(LayoutId::kType));
+  Handle<Type> type(&scope, runtime->typeAt(LayoutId::kType));
   Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
   Handle<Function> dunder_call(
-      &scope, runtime->lookupNameInMro(thread, klass, call_name));
+      &scope, runtime->lookupNameInMro(thread, type, call_name));
   frame->pushValue(*dunder_call);
-  frame->pushValue(*klass);
+  frame->pushValue(*type);
   frame->pushValue(*name);
   frame->pushValue(*bases);
   frame->pushValue(*dictionary);
@@ -82,7 +82,7 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   if (kw_val->isError()) {
     return thread->throwTypeErrorFromCString("metaclass not found.");
   }
-  Handle<Class> metaclass(&scope, *kw_val);
+  Handle<Type> metaclass(&scope, *kw_val);
   Handle<ObjectArray> bases(&scope,
                             runtime->newObjectArray(args.numArgs() - 2));
   for (word i = 0, j = 2; j < args.numArgs(); i++, j++) {
@@ -133,7 +133,7 @@ Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
   }
 
   Arguments args(frame, nargs);
-  if (!args.get(1)->isClass()) {
+  if (!args.get(1)->isType()) {
     // TODO(mpage): This error message is misleading. Ultimately, isinstance()
     // may accept a type or a tuple.
     return thread->throwTypeErrorFromCString("isinstance arg 2 must be a type");
@@ -142,8 +142,8 @@ Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Handle<Object> obj(&scope, args.get(0));
-  Handle<Class> klass(&scope, args.get(1));
-  return runtime->isInstance(obj, klass);
+  Handle<Type> type(&scope, args.get(1));
+  return runtime->isInstance(obj, type);
 }
 
 Object* builtinLen(Thread* thread, Frame* frame, word nargs) {

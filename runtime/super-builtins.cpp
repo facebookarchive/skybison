@@ -66,20 +66,20 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     klass_obj = args.get(1);
     obj = args.get(2);
   }
-  if (!klass_obj->isClass()) {
+  if (!klass_obj->isType()) {
     return thread->throwTypeErrorFromCString("super() argument 1 must be type");
   }
   super->setType(*klass_obj);
   super->setObject(*obj);
   Handle<Object> obj_type(&scope, None::object());
-  Handle<Class> klass(&scope, *klass_obj);
-  if (obj->isClass()) {
-    Handle<Class> obj_klass(&scope, *obj);
+  Handle<Type> klass(&scope, *klass_obj);
+  if (obj->isType()) {
+    Handle<Type> obj_klass(&scope, *obj);
     if (thread->runtime()->isSubClass(obj_klass, klass) == Boolean::trueObj()) {
       obj_type = *obj;
     }
   } else {
-    Handle<Class> obj_klass(&scope, thread->runtime()->classOf(*obj));
+    Handle<Type> obj_klass(&scope, thread->runtime()->typeOf(*obj));
     if (thread->runtime()->isSubClass(obj_klass, klass) == Boolean::trueObj()) {
       obj_type = *obj_klass;
     }

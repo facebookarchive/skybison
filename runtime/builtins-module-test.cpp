@@ -52,9 +52,9 @@ def test(a, b):
   Handle<Module> main(&scope, object);
 
   // Create an instance of D
-  Handle<Object> klass_d(&scope, findInModule(&runtime, main, "D"));
-  ASSERT_TRUE(klass_d->isClass());
-  Handle<Layout> layout(&scope, Class::cast(*klass_d)->instanceLayout());
+  Handle<Object> type_d(&scope, findInModule(&runtime, main, "D"));
+  ASSERT_TRUE(type_d->isType());
+  Handle<Layout> layout(&scope, Type::cast(*type_d)->instanceLayout());
   Handle<Object> instance(&scope, runtime.newInstance(layout));
 
   // Fetch the test function
@@ -65,35 +65,35 @@ def test(a, b):
   // isinstance(1, D) should be false
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(2));
   args->atPut(0, SmallInteger::fromWord(100));
-  args->atPut(1, *klass_d);
+  args->atPut(1, *type_d);
   EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");
 
   // isinstance(D, D) should be false
-  args->atPut(0, *klass_d);
-  args->atPut(1, *klass_d);
+  args->atPut(0, *type_d);
+  args->atPut(1, *type_d);
   EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");
 
   // isinstance(D(), D) should be true
   args->atPut(0, *instance);
-  args->atPut(1, *klass_d);
+  args->atPut(1, *type_d);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(D(), C) should be true
-  Handle<Object> klass_c(&scope, findInModule(&runtime, main, "C"));
-  ASSERT_TRUE(klass_c->isClass());
-  args->atPut(1, *klass_c);
+  Handle<Object> type_c(&scope, findInModule(&runtime, main, "C"));
+  ASSERT_TRUE(type_c->isType());
+  args->atPut(1, *type_c);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(D(), B) should be true
-  Handle<Object> klass_b(&scope, findInModule(&runtime, main, "B"));
-  ASSERT_TRUE(klass_b->isClass());
-  args->atPut(1, *klass_b);
+  Handle<Object> type_b(&scope, findInModule(&runtime, main, "B"));
+  ASSERT_TRUE(type_b->isType());
+  args->atPut(1, *type_b);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(C(), A) should be true
-  Handle<Object> klass_a(&scope, findInModule(&runtime, main, "A"));
-  ASSERT_TRUE(klass_a->isClass());
-  args->atPut(1, *klass_a);
+  Handle<Object> type_a(&scope, findInModule(&runtime, main, "A"));
+  ASSERT_TRUE(type_a->isType());
+  args->atPut(1, *type_a);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 }
 
