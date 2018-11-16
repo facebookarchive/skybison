@@ -270,7 +270,7 @@ class Runtime {
   void listAdd(const Handle<List>& list, const Handle<Object>& value);
 
   // Extends a list from an iterator.
-  void listExtend(const Handle<List>& list, const Handle<Object>& iterable);
+  void listExtend(const Handle<List>& dest, const Handle<Object>& iterable);
 
   // Inserts an element to the specified index of the list.
   // When index >= len(list) it is equivalent to appending to the list.

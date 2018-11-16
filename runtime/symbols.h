@@ -79,6 +79,7 @@ class Runtime;
   V(Dict, "dict")                        \
   V(End, "end")                          \
   V(Exit, "exit")                        \
+  V(Extend, "extend")                    \
   V(ExtensionPtr, "___extension___")     \
   V(File, "file")                        \
   V(Float, "float")                      \

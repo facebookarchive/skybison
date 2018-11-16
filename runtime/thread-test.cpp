@@ -2376,6 +2376,86 @@ print(len(b), len(b1), b11, b12)
   EXPECT_EQ(output, "3 2 1 2\n");
 }
 
+TEST(ListInsertTest, InsertToList) {
+  const char* src = R"(
+l = []
+for i in range(16):
+  if i == 2 or i == 12:
+    continue
+  l.append(i)
+
+a, b = l[2], l[12]
+
+l.insert(2, 2)
+l.insert(12, 12)
+
+s = 0
+for el in l:
+    s += el
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, findInModule(&runtime, main, "a"));
+  Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
+  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
+  Handle<Object> s(&scope, findInModule(&runtime, main, "s"));
+
+  ASSERT_NE(SmallInteger::cast(*a)->value(), 2);
+  ASSERT_NE(SmallInteger::cast(*b)->value(), 12);
+
+  Handle<List> list_l(&scope, *l);
+  ASSERT_EQ(list_l->allocated(), 16);
+  ASSERT_EQ(SmallInteger::cast(list_l->at(2))->value(), 2);
+  ASSERT_EQ(SmallInteger::cast(list_l->at(12))->value(), 12);
+
+  // sum(0..16) = 120
+  ASSERT_EQ(SmallInteger::cast(*s)->value(), 120);
+}
+
+TEST(ListInsertTest, InsertToListBounds) {
+  const char* src = R"(
+l = [x for x in range(1, 5)]
+l.insert(100, 5)
+l.insert(400, 6)
+l.insert(-100, 0)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
+  Handle<List> list_l(&scope, *l);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(0))->value(), 0);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(1))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(2))->value(), 2);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(3))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(4))->value(), 4);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(5))->value(), 5);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(6))->value(), 6);
+}
+
+TEST(ListInsertTest, InsertToNegativeIndex) {
+  const char* src = R"(
+l = [0, 2, 4]
+l.insert(-2, 1)
+l.insert(-1, 3)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
+  Handle<List> list_l(&scope, *l);
+  ASSERT_EQ(list_l->allocated(), 5);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(0))->value(), 0);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(1))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(2))->value(), 2);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(3))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(4))->value(), 4);
+}
+
 TEST(ThreadTest, SubclassList) {
   const char* src = R"(
 class Foo():

@@ -61,6 +61,26 @@ Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
   return None::object();
 }
 
+Object* builtinListExtend(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString(
+        "extend() takes exactly one argument");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
+    return thread->throwTypeErrorFromCString(
+        "extend() only support list or its subclasses");
+  }
+  Handle<List> list(&scope, *list_or_error);
+  Handle<Object> value(&scope, args.get(1));
+  // TODO(jeethu): Throw TypeError if value is not iterable.
+  thread->runtime()->listExtend(list, value);
+  return None::object();
+}
+
 Object* builtinListLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("__len__() takes no arguments");

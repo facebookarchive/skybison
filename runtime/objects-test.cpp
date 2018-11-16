@@ -418,26 +418,29 @@ TEST(ListTest, InsertToList) {
   HandleScope scope;
   Handle<List> list(&scope, runtime.newList());
 
-  for (int i = 0; i < 16; i++) {
-    if (i == 2 || i == 12)
+  for (int i = 0; i < 9; i++) {
+    if (i == 1 || i == 6)
       continue;
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
     runtime.listAdd(list, value);
   }
-  ASSERT_NE(SmallInteger::cast(list->at(2))->value(), 2);
-  ASSERT_NE(SmallInteger::cast(list->at(12))->value(), 12);
+  ASSERT_NE(SmallInteger::cast(list->at(1))->value(), 1);
+  ASSERT_NE(SmallInteger::cast(list->at(6))->value(), 6);
 
-  Handle<Object> value2(&scope, SmallInteger::fromWord(2));
-  runtime.listInsert(list, value2, 2);
-  Handle<Object> value12(&scope, SmallInteger::fromWord(12));
-  runtime.listInsert(list, value12, 12);
+  Handle<Object> value2(&scope, SmallInteger::fromWord(1));
+  runtime.listInsert(list, value2, 1);
+  Handle<Object> value12(&scope, SmallInteger::fromWord(6));
+  runtime.listInsert(list, value12, 6);
 
-  ASSERT_EQ(SmallInteger::cast(list->at(2))->value(), 2);
-  ASSERT_EQ(SmallInteger::cast(list->at(12))->value(), 12);
-  for (int i = 0; i < 16; i++) {
-    SmallInteger* elem = SmallInteger::cast(list->at(i));
-    ASSERT_EQ(elem->value(), i);
-  }
+  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 0);
+  EXPECT_EQ(SmallInteger::cast(list->at(1))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(list->at(2))->value(), 2);
+  EXPECT_EQ(SmallInteger::cast(list->at(3))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(list->at(4))->value(), 4);
+  EXPECT_EQ(SmallInteger::cast(list->at(5))->value(), 5);
+  EXPECT_EQ(SmallInteger::cast(list->at(6))->value(), 6);
+  EXPECT_EQ(SmallInteger::cast(list->at(7))->value(), 7);
+  EXPECT_EQ(SmallInteger::cast(list->at(8))->value(), 8);
 }
 
 TEST(ListTest, InsertToListBounds) {
@@ -463,7 +466,7 @@ TEST(ListTest, InsertToListBounds) {
   Handle<Object> value_n(&scope, SmallInteger::fromWord(-10));
   runtime.listInsert(list, value_n, -10);
   ASSERT_EQ(list->allocated(), 13);
-  ASSERT_EQ(SmallInteger::cast(list->at(0))->value(), -10);
+  ASSERT_EQ(SmallInteger::cast(list->at(2))->value(), -10);
 }
 
 TEST(ListTest, PopList) {
@@ -509,20 +512,24 @@ TEST(ListTest, ListExtendList) {
   HandleScope scope;
   Handle<List> list(&scope, runtime.newList());
   Handle<List> list1(&scope, runtime.newList());
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 4; i++) {
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
-    Handle<Object> value1(&scope, SmallInteger::fromWord(i + 16));
+    Handle<Object> value1(&scope, SmallInteger::fromWord(i + 4));
     runtime.listAdd(list, value);
     runtime.listAdd(list1, value1);
   }
-  EXPECT_EQ(list->allocated(), 16);
+  EXPECT_EQ(list->allocated(), 4);
   Handle<Object> list1_handle(&scope, *list1);
   runtime.listExtend(list, list1_handle);
-  ASSERT_EQ(list->allocated(), 32);
-  for (int i = 0; i < 32; i++) {
-    SmallInteger* elem = SmallInteger::cast(list->at(i));
-    EXPECT_EQ(elem->value(), i);
-  }
+  ASSERT_EQ(list->allocated(), 8);
+  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 0);
+  EXPECT_EQ(SmallInteger::cast(list->at(1))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(list->at(2))->value(), 2);
+  EXPECT_EQ(SmallInteger::cast(list->at(3))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(list->at(4))->value(), 4);
+  EXPECT_EQ(SmallInteger::cast(list->at(5))->value(), 5);
+  EXPECT_EQ(SmallInteger::cast(list->at(6))->value(), 6);
+  EXPECT_EQ(SmallInteger::cast(list->at(7))->value(), 7);
 }
 
 TEST(ListTest, ListExtendListIterator) {
@@ -530,21 +537,25 @@ TEST(ListTest, ListExtendListIterator) {
   HandleScope scope;
   Handle<List> list(&scope, runtime.newList());
   Handle<List> list1(&scope, runtime.newList());
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 4; i++) {
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
-    Handle<Object> value1(&scope, SmallInteger::fromWord(i + 16));
+    Handle<Object> value1(&scope, SmallInteger::fromWord(i + 4));
     runtime.listAdd(list, value);
     runtime.listAdd(list1, value1);
   }
-  EXPECT_EQ(list->allocated(), 16);
+  EXPECT_EQ(list->allocated(), 4);
   Handle<Object> list1_handle(&scope, *list1);
   Handle<Object> list1_iterator(&scope, runtime.newListIterator(list1_handle));
   runtime.listExtend(list, list1_iterator);
-  ASSERT_EQ(list->allocated(), 32);
-  for (int i = 0; i < 32; i++) {
-    SmallInteger* elem = SmallInteger::cast(list->at(i));
-    EXPECT_EQ(elem->value(), i);
-  }
+  ASSERT_EQ(list->allocated(), 8);
+  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 0);
+  EXPECT_EQ(SmallInteger::cast(list->at(1))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(list->at(2))->value(), 2);
+  EXPECT_EQ(SmallInteger::cast(list->at(3))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(list->at(4))->value(), 4);
+  EXPECT_EQ(SmallInteger::cast(list->at(5))->value(), 5);
+  EXPECT_EQ(SmallInteger::cast(list->at(6))->value(), 6);
+  EXPECT_EQ(SmallInteger::cast(list->at(7))->value(), 7);
 }
 
 TEST(ListTest, ListExtendObjectArray) {
@@ -553,29 +564,79 @@ TEST(ListTest, ListExtendObjectArray) {
   Handle<List> list(&scope, runtime.newList());
   Handle<Object> object_array0(&scope, runtime.newObjectArray(0));
   Handle<ObjectArray> object_array1(&scope, runtime.newObjectArray(1));
-  Handle<ObjectArray> object_array2(&scope, runtime.newObjectArray(16));
+  Handle<ObjectArray> object_array16(&scope, runtime.newObjectArray(16));
 
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 4; i++) {
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
     runtime.listAdd(list, value);
   }
   runtime.listExtend(list, object_array0);
-  EXPECT_EQ(list->allocated(), 16);
+  EXPECT_EQ(list->allocated(), 4);
 
   Handle<Object> object_array1_handle(&scope, *object_array1);
   object_array1->atPut(0, None::object());
   runtime.listExtend(list, object_array1_handle);
-  ASSERT_GE(list->allocated(), 17);
-  ASSERT_TRUE(list->at(16)->isNone());
+  ASSERT_GE(list->allocated(), 5);
+  ASSERT_TRUE(list->at(4)->isNone());
 
-  for (word i = 0; i < 16; i++)
-    object_array2->atPut(i, SmallInteger::fromWord(i));
+  for (word i = 0; i < 4; i++)
+    object_array16->atPut(i, SmallInteger::fromWord(i));
 
-  Handle<Object> object_array2_handle(&scope, *object_array2);
+  Handle<Object> object_array2_handle(&scope, *object_array16);
   runtime.listExtend(list, object_array2_handle);
-  ASSERT_GE(list->allocated(), 16 + 1 + 16);
-  for (word i = 0; i < 16; i++)
-    EXPECT_EQ(list->at(i + 17), SmallInteger::fromWord(i));
+  ASSERT_GE(list->allocated(), 4 + 1 + 4);
+  EXPECT_EQ(list->at(5), SmallInteger::fromWord(0));
+  EXPECT_EQ(list->at(6), SmallInteger::fromWord(1));
+  EXPECT_EQ(list->at(7), SmallInteger::fromWord(2));
+  EXPECT_EQ(list->at(8), SmallInteger::fromWord(3));
+}
+
+TEST(ListTest, ListExtendSet) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Object> value(&scope, None::object());
+  word sum = 0;
+
+  for (word i = 0; i < 16; i++) {
+    value = SmallInteger::fromWord(i);
+    runtime.setAdd(set, value);
+    sum += i;
+  }
+
+  Handle<Object> set_obj(&scope, *set);
+  runtime.listExtend(list, Handle<Object>(&scope, *set_obj));
+  EXPECT_EQ(list->allocated(), 16);
+
+  for (word i = 0; i < 16; i++) {
+    sum -= SmallInteger::cast(list->at(i))->value();
+  }
+  ASSERT_EQ(sum, 0);
+}
+
+TEST(ListTest, ListExtendDict) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Object> value(&scope, None::object());
+  word sum = 0;
+
+  for (word i = 0; i < 16; i++) {
+    value = SmallInteger::fromWord(i);
+    runtime.dictionaryAtPut(dict, value, value);
+    sum += i;
+  }
+
+  Handle<Object> dict_obj(&scope, *dict);
+  runtime.listExtend(list, Handle<Object>(&scope, *dict_obj));
+  EXPECT_EQ(list->allocated(), 16);
+
+  for (word i = 0; i < 16; i++) {
+    sum -= SmallInteger::cast(list->at(i))->value();
+  }
+  ASSERT_EQ(sum, 0);
 }
 
 TEST(SliceTest, adjustIndices) {

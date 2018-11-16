@@ -23,17 +23,16 @@ print(a[0], a[1], a[2][0])
   EXPECT_EQ(output, "1 2 3\n");
 }
 
-TEST(ListBuiltinsTest, ListInsert) {
+TEST(ThreadTest, ListExtend) {
   const char* src = R"(
-a = list()
-a.append(0)
-a.append(2)
-a.insert(1, 5)
-print(a[0], a[1], a[2])
+a = []
+b = [1, 2, 3]
+r = a.extend(b)
+print(r is None, len(b) == 3)
 )";
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "0 5 2\n");
+  EXPECT_EQ(output, "True True\n");
 }
 
 TEST(ListBuiltinsTest, ListInsertExcept) {

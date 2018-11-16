@@ -899,6 +899,20 @@ void Runtime::initializeListClass() {
 
   classAddBuiltinFunction(
       list,
+      symbols()->Extend(),
+      nativeTrampoline<builtinListExtend>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      list,
+      symbols()->Insert(),
+      nativeTrampoline<builtinListInsert>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      list,
       symbols()->Insert(),
       nativeTrampoline<builtinListInsert>,
       unimplementedTrampoline,
@@ -1800,6 +1814,62 @@ Object* Runtime::getIter(const Handle<Object>& iterable) {
   }
 }
 
+// Set
+
+// Helper class for manipulating buckets in the ObjectArray that backs the
+// Set, it has one less slot than Bucket.
+class SetBucket {
+ public:
+  SetBucket(const Handle<ObjectArray>& data, word index)
+      : data_(data), index_(index) {}
+
+  Object* hash() {
+    return data_->at(index_ + kHashOffset);
+  }
+
+  Object* key() {
+    return data_->at(index_ + kKeyOffset);
+  }
+
+  void set(Object* hash, Object* key) {
+    data_->atPut(index_ + kHashOffset, hash);
+    data_->atPut(index_ + kKeyOffset, key);
+  }
+
+  bool hasKey(Object* thatKey) {
+    return !hash()->isNone() && Object::equals(key(), thatKey);
+  }
+
+  bool isTombstone() {
+    return hash()->isNone() && !key()->isNone();
+  }
+
+  void setTombstone() {
+    set(None::object(), Error::object());
+  }
+
+  bool isEmpty() {
+    return hash()->isNone() && key()->isNone();
+  }
+
+  static word getIndex(Object* data, Object* hash) {
+    word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
+    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
+    word value = SmallInteger::cast(hash)->value();
+    return (value & (nbuckets - 1)) * kNumPointers;
+  }
+
+  static const word kHashOffset = 0;
+  static const word kKeyOffset = kHashOffset + 1;
+  static const word kNumPointers = kKeyOffset + 1;
+
+ private:
+  const Handle<ObjectArray>& data_;
+  word index_;
+
+  DISALLOW_HEAP_ALLOCATION();
+};
+
 // List
 
 void Runtime::listEnsureCapacity(const Handle<List>& list, word index) {
@@ -1807,13 +1877,15 @@ void Runtime::listEnsureCapacity(const Handle<List>& list, word index) {
     return;
   }
   HandleScope scope;
-  word new_capacity = (list->capacity() < kInitialEnsuredCapacity)
+  word newCapacity = (list->capacity() < kInitialEnsuredCapacity)
       ? kInitialEnsuredCapacity
       : list->capacity() << 1;
-  Handle<ObjectArray> old_array(&scope, list->items());
-  Handle<ObjectArray> new_array(&scope, newObjectArray(new_capacity));
-  old_array->copyTo(*new_array);
-  list->setItems(*new_array);
+  if (newCapacity < index)
+    newCapacity = Utils::nextPowerOfTwo(index);
+  Handle<ObjectArray> oldArray(&scope, list->items());
+  Handle<ObjectArray> newArray(&scope, newObjectArray(newCapacity));
+  oldArray->copyTo(*newArray);
+  list->setItems(*newArray);
 }
 
 void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
@@ -1825,35 +1897,61 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
 }
 
 void Runtime::listExtend(
-    const Handle<List>& list,
+    const Handle<List>& dest,
     const Handle<Object>& iterable) {
-  word index = list->allocated();
   HandleScope scope;
+  Handle<Object> elt(&scope, None::object());
+  word index = dest->allocated();
   if (iterable->isList()) {
-    Handle<List> ext_list(&scope, *iterable);
-    if (ext_list->allocated() > 0) {
-      word new_capacity = index + ext_list->allocated();
-      listEnsureCapacity(list, new_capacity);
-      list->setAllocated(new_capacity);
-      for (word i = 0; i < ext_list->allocated(); i++)
-        list->atPut(index++, ext_list->at(i));
+    Handle<List> src(&scope, *iterable);
+    if (src->allocated() > 0) {
+      word new_capacity = index + src->allocated();
+      listEnsureCapacity(dest, new_capacity);
+      dest->setAllocated(new_capacity);
+      for (word i = 0; i < src->allocated(); i++)
+        dest->atPut(index++, src->at(i));
     }
   } else if (iterable->isListIterator()) {
     Handle<ListIterator> list_iter(&scope, *iterable);
     while (true) {
-      Handle<Object> value(&scope, list_iter->next());
-      if (value->isError())
+      elt = list_iter->next();
+      if (elt->isError())
         break;
-      listAdd(list, value);
+      listAdd(dest, elt);
     }
   } else if (iterable->isObjectArray()) {
     Handle<ObjectArray> tuple(&scope, *iterable);
     if (tuple->length() > 0) {
       word new_capacity = index + tuple->length();
-      listEnsureCapacity(list, new_capacity);
-      list->setAllocated(new_capacity);
+      listEnsureCapacity(dest, new_capacity);
+      dest->setAllocated(new_capacity);
       for (word i = 0; i < tuple->length(); i++) {
-        list->atPut(index++, tuple->at(i));
+        dest->atPut(index++, tuple->at(i));
+      }
+    }
+  } else if (iterable->isSet()) {
+    Handle<Set> set(&scope, *iterable);
+    if (set->numItems() > 0) {
+      Handle<ObjectArray> data(&scope, set->data());
+      word new_capacity = index + set->numItems();
+      listEnsureCapacity(dest, new_capacity);
+      dest->setAllocated(new_capacity);
+      for (word i = 0; i < data->length(); i += SetBucket::kNumPointers) {
+        SetBucket bucket(data, i);
+        if (bucket.isEmpty() || bucket.isTombstone())
+          continue;
+        dest->atPut(index++, bucket.key());
+      }
+    }
+  } else if (iterable->isDictionary()) {
+    Handle<Dictionary> dict(&scope, *iterable);
+    if (dict->numItems() > 0) {
+      Handle<ObjectArray> keys(&scope, dictionaryKeys(dict));
+      word new_capacity = index + dict->numItems();
+      listEnsureCapacity(dest, new_capacity);
+      dest->setAllocated(new_capacity);
+      for (word i = 0; i < keys->length(); i++) {
+        dest->atPut(index++, keys->at(i));
       }
     }
   } else {
@@ -1868,9 +1966,10 @@ void Runtime::listInsert(
     const Handle<List>& list,
     const Handle<Object>& value,
     word index) {
-  // TODO: Add insert(-x) where it inserts at pos: len(list) - x
   listAdd(list, value);
   word last_index = list->allocated() - 1;
+  if (index < 0)
+    index = last_index + index;
   index =
       Utils::maximum(static_cast<word>(0), Utils::minimum(last_index, index));
   for (word i = last_index; i > index; i--) {
