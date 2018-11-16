@@ -458,13 +458,25 @@ class Runtime {
 
   Object* computeBuiltinBaseClass(const Handle<Class>& klass);
 
-  // Helper function to add builtin functions to classes
+  // Helper functions to add builtin functions to classes
+
+  void classAddBuiltinFunction(
+      const Handle<Class>& klass,
+      Object* name,
+      Function::Entry entry);
+
+  void classAddBuiltinFunctionKw(
+      const Handle<Class>& klass,
+      Object* name,
+      Function::Entry entry,
+      Function::Entry entry_kw);
+
   void classAddBuiltinFunctionKwEx(
       const Handle<Class>& klass,
       Object* name,
       Function::Entry entry,
-      Function::Entry entryKw,
-      Function::Entry entryEx);
+      Function::Entry entry_kw,
+      Function::Entry entry_ex);
 
   // Helper function to add extension functions to extension classes
   void classAddExtensionFunction(
