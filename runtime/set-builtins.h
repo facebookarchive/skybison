@@ -7,6 +7,7 @@
 
 namespace python {
 
+Object* builtinSetAdd(Thread* thread, Frame* frame, word nargs);
 Object* builtinSetContains(Thread* thread, Frame* frame, word nargs);
 Object* builtinSetInit(Thread* thread, Frame* frame, word nargs);
 Object* builtinSetLen(Thread* thread, Frame* frame, word nargs);

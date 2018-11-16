@@ -8,6 +8,24 @@
 
 namespace python {
 
+Object* builtinSetAdd(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString(
+        "add() takes exactly one argument");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> key(&scope, args.get(1));
+  if (self->isSet()) {
+    Handle<Set> set(&scope, *self);
+    thread->runtime()->setAdd(set, key);
+    return None::object();
+  }
+  // TODO(zekun): handle subclass of set
+  return thread->runtime()->notImplemented();
+}
+
 Object* builtinSetLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("__len__() takes no arguments");

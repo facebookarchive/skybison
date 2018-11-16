@@ -974,6 +974,9 @@ void Runtime::initializeSetClass() {
   Handle<Class> set_type(&scope, initializeHeapClass("set", LayoutId::kSet));
 
   classAddBuiltinFunction(
+      set_type, symbols()->Add(), nativeTrampoline<builtinSetAdd>);
+
+  classAddBuiltinFunction(
       set_type,
       symbols()->DunderContains(),
       nativeTrampoline<builtinSetContains>);

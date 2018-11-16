@@ -74,6 +74,7 @@ class Runtime;
   V(DunderSub, "__sub__")                \
   V(DunderTruediv, "__truediv__")        \
   V(DunderXor, "__xor__")                \
+  V(Add, "add")                          \
   V(Append, "append")                    \
   V(Argv, "argv")                        \
   V(Builtins, "builtins")                \
