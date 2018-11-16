@@ -102,6 +102,7 @@ class Runtime;
   V(Range, "range")                      \
   V(Ref, "ref")                          \
   V(Remove, "remove")                    \
+  V(Set, "set")                          \
   V(Setter, "setter")                    \
   V(StaticMethod, "staticmethod")        \
   V(Stderr, "stderr")                    \

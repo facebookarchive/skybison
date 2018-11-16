@@ -67,4 +67,19 @@ Object* builtinSetContains(Thread* thread, Frame* frame, word nargs) {
       "descriptor 'pop' requires a 'set' object");
 }
 
+Object* builtinSetInit(Thread* thread, Frame*, word nargs) {
+  if (nargs > 2) {
+    return thread->throwTypeErrorFromCString(
+        "set expected at most 1 arguments.");
+  }
+  if (nargs == 2) {
+    UNIMPLEMENTED("construct set with iterable");
+  }
+  return None::object();
+}
+
+Object* builtinSetNew(Thread* thread, Frame*, word) {
+  return thread->runtime()->newSet();
+}
+
 } // namespace python

@@ -37,4 +37,17 @@ b = len(s)
   EXPECT_EQ(SmallInteger::cast(*b)->value(), 0);
 }
 
+TEST(SetBuiltinsTest, InitializeByTypeCall) {
+  const char* src = R"(
+s = set()
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> s(&scope, findInModule(&runtime, main, "s"));
+  EXPECT_TRUE(s->isSet());
+  EXPECT_EQ(Set::cast(*s)->numItems(), 0);
+}
+
 } // namespace python

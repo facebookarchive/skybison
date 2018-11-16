@@ -979,6 +979,12 @@ void Runtime::initializeSetClass() {
       nativeTrampoline<builtinSetContains>);
 
   classAddBuiltinFunction(
+      set_type, symbols()->DunderInit(), nativeTrampoline<builtinSetInit>);
+
+  classAddBuiltinFunction(
+      set_type, symbols()->DunderNew(), nativeTrampoline<builtinSetNew>);
+
+  classAddBuiltinFunction(
       set_type, symbols()->DunderLen(), nativeTrampoline<builtinSetLen>);
 
   classAddBuiltinFunction(
@@ -1610,6 +1616,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, LayoutId::kProperty, symbols()->Property());
   moduleAddBuiltinType(
       module, LayoutId::kStaticMethod, symbols()->StaticMethod());
+  moduleAddBuiltinType(module, LayoutId::kSet, symbols()->Set());
   moduleAddBuiltinType(module, LayoutId::kSuper, symbols()->Super());
   moduleAddBuiltinType(module, LayoutId::kType, symbols()->Type());
 
