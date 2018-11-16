@@ -90,14 +90,14 @@ Object* Heap::createBoundMethod() {
   return BoundMethod::cast(result);
 }
 
-Object* Heap::createByteArray(word length) {
-  word size = ByteArray::allocationSize(length);
-  Object* raw = allocate(size, ByteArray::headerSize(length));
+Object* Heap::createBytes(word length) {
+  word size = Bytes::allocationSize(length);
+  Object* raw = allocate(size, Bytes::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<ByteArray*>(raw);
-  result->setHeaderAndOverflow(length, 0, LayoutId::kByteArray,
+  auto result = reinterpret_cast<Bytes*>(raw);
+  result->setHeaderAndOverflow(length, 0, LayoutId::kBytes,
                                ObjectFormat::kDataArray8);
-  return ByteArray::cast(result);
+  return Bytes::cast(result);
 }
 
 Object* Heap::createClass(LayoutId metaclass_id) {

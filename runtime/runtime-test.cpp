@@ -22,12 +22,12 @@ TEST(RuntimeTest, CollectGarbage) {
 TEST(RuntimeTest, AllocateAndCollectGarbage) {
   const word heap_size = 32 * kMiB;
   const word array_length = 1024;
-  const word allocation_size = ByteArray::allocationSize(array_length);
+  const word allocation_size = Bytes::allocationSize(array_length);
   const word total_allocation_size = heap_size * 10;
   Runtime runtime(heap_size);
   ASSERT_TRUE(runtime.heap()->verify());
   for (word i = 0; i < total_allocation_size; i += allocation_size) {
-    runtime.newByteArray(array_length, 0);
+    runtime.newBytes(array_length, 0);
   }
   ASSERT_TRUE(runtime.heap()->verify());
 }
@@ -691,45 +691,44 @@ iterator = Iterator()
   ASSERT_EQ(list->allocated(), 0);
 }
 
-TEST(RuntimeTest, NewByteArray) {
+TEST(RuntimeTest, NewBytes) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<ByteArray> len0(&scope, runtime.newByteArray(0, 0));
+  Handle<Bytes> len0(&scope, runtime.newBytes(0, 0));
   EXPECT_EQ(len0->length(), 0);
 
-  Handle<ByteArray> len3(&scope, runtime.newByteArray(3, 9));
+  Handle<Bytes> len3(&scope, runtime.newBytes(3, 9));
   EXPECT_EQ(len3->length(), 3);
   EXPECT_EQ(len3->byteAt(0), 9);
   EXPECT_EQ(len3->byteAt(1), 9);
   EXPECT_EQ(len3->byteAt(2), 9);
 
-  Handle<ByteArray> len254(&scope, runtime.newByteArray(254, 0));
+  Handle<Bytes> len254(&scope, runtime.newBytes(254, 0));
   EXPECT_EQ(len254->length(), 254);
   EXPECT_EQ(len254->size(), Utils::roundUp(kPointerSize + 254, kPointerSize));
 
-  Handle<ByteArray> len255(&scope, runtime.newByteArray(255, 0));
+  Handle<Bytes> len255(&scope, runtime.newBytes(255, 0));
   EXPECT_EQ(len255->length(), 255);
   EXPECT_EQ(len255->size(),
             Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 }
 
-TEST(RuntimeTest, NewByteArrayWithAll) {
+TEST(RuntimeTest, NewBytesWithAll) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<ByteArray> len0(&scope,
-                         runtime.newByteArrayWithAll(View<byte>(nullptr, 0)));
+  Handle<Bytes> len0(&scope, runtime.newBytesWithAll(View<byte>(nullptr, 0)));
   EXPECT_EQ(len0->length(), 0);
 
   const byte src1[] = {0x42};
-  Handle<ByteArray> len1(&scope, runtime.newByteArrayWithAll(src1));
+  Handle<Bytes> len1(&scope, runtime.newBytesWithAll(src1));
   EXPECT_EQ(len1->length(), 1);
   EXPECT_EQ(len1->size(), Utils::roundUp(kPointerSize + 1, kPointerSize));
   EXPECT_EQ(len1->byteAt(0), 0x42);
 
   const byte src3[] = {0xAA, 0xBB, 0xCC};
-  Handle<ByteArray> len3(&scope, runtime.newByteArrayWithAll(src3));
+  Handle<Bytes> len3(&scope, runtime.newBytesWithAll(src3));
   EXPECT_EQ(len3->length(), 3);
   EXPECT_EQ(len3->size(), Utils::roundUp(kPointerSize + 3, kPointerSize));
   EXPECT_EQ(len3->byteAt(0), 0xAA);
@@ -852,13 +851,13 @@ TEST(RuntimeTest, HashBools) {
   EXPECT_EQ(hash1->value(), 1);
 }
 
-TEST(RuntimeTest, HashByteArrays) {
+TEST(RuntimeTest, HashBytes) {
   Runtime runtime;
   HandleScope scope;
 
   // Strings have their hash codes computed lazily.
   const byte src1[] = {0x1, 0x2, 0x3};
-  Handle<ByteArray> arr1(&scope, runtime.newByteArrayWithAll(src1));
+  Handle<Bytes> arr1(&scope, runtime.newBytesWithAll(src1));
   EXPECT_EQ(arr1->header()->hashCode(), 0);
   word hash1 = SmallInt::cast(runtime.hash(*arr1))->value();
   EXPECT_NE(arr1->header()->hashCode(), 0);
@@ -869,7 +868,7 @@ TEST(RuntimeTest, HashByteArrays) {
 
   // Str with different values should (ideally) hash differently.
   const byte src2[] = {0x3, 0x2, 0x1};
-  Handle<ByteArray> arr2(&scope, runtime.newByteArrayWithAll(src2));
+  Handle<Bytes> arr2(&scope, runtime.newBytesWithAll(src2));
   word hash2 = SmallInt::cast(runtime.hash(*arr2))->value();
   EXPECT_NE(hash1, hash2);
 
@@ -878,7 +877,7 @@ TEST(RuntimeTest, HashByteArrays) {
 
   // Strings with the same value should hash the same.
   const byte src3[] = {0x1, 0x2, 0x3};
-  Handle<ByteArray> arr3(&scope, runtime.newByteArrayWithAll(src3));
+  Handle<Bytes> arr3(&scope, runtime.newBytesWithAll(src3));
   word hash3 = SmallInt::cast(runtime.hash(*arr3))->value();
   EXPECT_EQ(hash1, hash3);
 
@@ -1102,7 +1101,7 @@ TEST(RuntimeTest, CollectAttributes) {
   const byte bc[] = {LOAD_CONST,   0, LOAD_FAST, 0, STORE_ATTR, 0,
                      LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 0,
                      RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Handle<Dict> attributes(&scope, runtime.newDict());
   runtime.collectAttributes(code, attributes);
@@ -1123,7 +1122,7 @@ TEST(RuntimeTest, CollectAttributes) {
   const byte bc2[] = {LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 1,
                       LOAD_CONST,   2, LOAD_FAST, 0, STORE_ATTR, 2,
                       RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc2));
+  code->setCode(runtime.newBytesWithAll(bc2));
   runtime.collectAttributes(code, attributes);
 
   // We should have collected a two more attributes: 'bar' and 'baz'
@@ -1166,7 +1165,7 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   const byte bc[] = {LOAD_CONST, 0, EXTENDED_ARG, 10, LOAD_FAST, 0,
                      STORE_ATTR, 1, LOAD_CONST,   0,  LOAD_FAST, 0,
                      STORE_ATTR, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Handle<Dict> attributes(&scope, runtime.newDict());
   runtime.collectAttributes(code, attributes);
@@ -1480,7 +1479,7 @@ def func():
   EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, 6), 4);
 
   // print(a, b)
-  for (word i = 8; i < ByteArray::cast(code->code())->length(); i++) {
+  for (word i = 8; i < Bytes::cast(code->code())->length(); i++) {
     EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, i), 5);
   }
 }

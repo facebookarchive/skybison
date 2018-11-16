@@ -51,7 +51,7 @@ class TracebackPrinter : public FrameVisitor {
     }
 
     // Extract line number
-    if (code->lnotab()->isByteArray()) {
+    if (code->lnotab()->isBytes()) {
       Runtime* runtime = thread->runtime();
       word linenum =
           runtime->codeOffsetToLineNum(thread, code, frame->virtualPC());

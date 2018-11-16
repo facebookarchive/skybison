@@ -108,7 +108,7 @@ class Runtime;
   V(Bootstrap, "bootstrap")                                                    \
   V(BuiltinModuleNames, "builtin_module_names")                                \
   V(Builtins, "builtins")                                                      \
-  V(ByteArray, "bytearray")                                                    \
+  V(Bytes, "bytes")                                                            \
   V(Callable, "callable")                                                      \
   V(Cause, "cause")                                                            \
   V(Chr, "chr")                                                                \

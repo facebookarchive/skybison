@@ -251,23 +251,23 @@ Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
   return *subclass;
 }
 
-Object* Runtime::newByteArray(word length, byte fill) {
+Object* Runtime::newBytes(word length, byte fill) {
   DCHECK(length >= 0, "invalid length %ld", length);
   if (length == 0) {
     return empty_byte_array_;
   }
-  Object* result = heap()->createByteArray(length);
-  byte* dst = reinterpret_cast<byte*>(ByteArray::cast(result)->address());
+  Object* result = heap()->createBytes(length);
+  byte* dst = reinterpret_cast<byte*>(Bytes::cast(result)->address());
   std::memset(dst, fill, length);
   return result;
 }
 
-Object* Runtime::newByteArrayWithAll(View<byte> array) {
+Object* Runtime::newBytesWithAll(View<byte> array) {
   if (array.length() == 0) {
     return empty_byte_array_;
   }
-  Object* result = heap()->createByteArray(array.length());
-  byte* dst = reinterpret_cast<byte*>(ByteArray::cast(result)->address());
+  Object* result = heap()->createBytes(array.length());
+  byte* dst = reinterpret_cast<byte*>(Bytes::cast(result)->address());
   std::memcpy(dst, array.data(), array.length());
   return result;
 }
@@ -862,7 +862,7 @@ Object* Runtime::hash(Object* object) {
   if (!object->isHeapObject()) {
     return immediateHash(object);
   }
-  if (object->isByteArray() || object->isLargeStr()) {
+  if (object->isBytes() || object->isLargeStr()) {
     return valueHash(object);
   }
   return identityHash(object);
@@ -987,8 +987,7 @@ void Runtime::initializeHeapClasses() {
 
   // Concrete classes.
 
-  addEmptyBuiltinClass(SymbolId::kByteArray, LayoutId::kByteArray,
-                       LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kBytes, LayoutId::kBytes, LayoutId::kObject);
   initializeClassMethodClass();
   addEmptyBuiltinClass(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   ComplexBuiltins::initialize(this);
@@ -1278,7 +1277,7 @@ void Runtime::initializeThreads() {
 
 void Runtime::initializePrimitiveInstances() {
   empty_object_array_ = heap()->createObjectArray(0, None::object());
-  empty_byte_array_ = heap()->createByteArray(0);
+  empty_byte_array_ = heap()->createBytes(0);
   ellipsis_ = heap()->createEllipsis();
   not_implemented_ = heap()->createNotImplemented();
   callbacks_ = None::object();
@@ -2548,7 +2547,7 @@ Object* Runtime::newWeakRef() { return heap()->createWeakRef(); }
 void Runtime::collectAttributes(const Handle<Code>& code,
                                 const Handle<Dict>& attributes) {
   HandleScope scope;
-  Handle<ByteArray> bc(&scope, code->code());
+  Handle<Bytes> bc(&scope, code->code());
   Handle<ObjectArray> names(&scope, code->names());
 
   word len = bc->length();
@@ -2774,7 +2773,7 @@ Object* Runtime::computeFastGlobals(const Handle<Code>& code,
                                     const Handle<Dict>& globals,
                                     const Handle<Dict>& builtins) {
   HandleScope scope;
-  Handle<ByteArray> bytes(&scope, code->code());
+  Handle<Bytes> bytes(&scope, code->code());
   Handle<ObjectArray> names(&scope, code->names());
   Handle<ObjectArray> fast_globals(&scope, newObjectArray(names->length()));
   for (word i = 0; i < bytes->length(); i += 2) {
@@ -2812,7 +2811,7 @@ Object* Runtime::computeFastGlobals(const Handle<Code>& code,
 word Runtime::codeOffsetToLineNum(Thread* thread, const Handle<Code>& code,
                                   word offset) {
   HandleScope scope(thread);
-  Handle<ByteArray> table(&scope, code->lnotab());
+  Handle<Bytes> table(&scope, code->lnotab());
   word line = code->firstlineno();
   word cur_offset = 0;
   for (word i = 0; i < table->length(); i += 2) {

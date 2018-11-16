@@ -264,7 +264,7 @@ word Marshal::Reader::numRefs() { return refs_->allocated(); }
 Object* Marshal::Reader::readTypeString() {
   int32 length = readLong();
   const byte* data = readBytes(length);
-  Object* result = runtime_->newByteArrayWithAll(View<byte>(data, length));
+  Object* result = runtime_->newBytesWithAll(View<byte>(data, length));
   if (isRef_) {
     addRef(result);
   }

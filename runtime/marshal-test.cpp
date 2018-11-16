@@ -457,8 +457,8 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   EXPECT_EQ(code->cell2arg(), 0);
   EXPECT_EQ(code->flags(), Code::SIMPLE_CALL | Code::NOFREE);
 
-  ASSERT_TRUE(code->code()->isByteArray());
-  EXPECT_NE(ByteArray::cast(code->code())->length(), 0);
+  ASSERT_TRUE(code->code()->isBytes());
+  EXPECT_NE(Bytes::cast(code->code())->length(), 0);
 
   ASSERT_TRUE(code->varnames()->isObjectArray());
   EXPECT_EQ(ObjectArray::cast(code->varnames())->length(), 0);
@@ -484,8 +484,8 @@ TEST(MarshalReaderTest, ReadObjectCode) {
 
   EXPECT_EQ(code->firstlineno(), 1);
 
-  ASSERT_TRUE(code->lnotab()->isByteArray());
-  EXPECT_EQ(ByteArray::cast(code->lnotab())->length(), 0);
+  ASSERT_TRUE(code->lnotab()->isBytes());
+  EXPECT_EQ(Bytes::cast(code->lnotab())->length(), 0);
 }
 
 }  // namespace python

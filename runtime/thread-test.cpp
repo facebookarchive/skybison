@@ -405,7 +405,7 @@ TEST(ThreadTest, CallFunction) {
   callee_code->setConsts(runtime.newObjectArray(1));
   ObjectArray::cast(callee_code->consts())->atPut(0, expected_result);
   const byte callee_bc[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  callee_code->setCode(runtime.newByteArrayWithAll(callee_bc));
+  callee_code->setCode(runtime.newBytesWithAll(callee_bc));
 
   // Create the function object and bind it to the code object
   Handle<Function> callee(&scope, runtime.newFunction());
@@ -422,7 +422,7 @@ TEST(ThreadTest, CallFunction) {
   caller_code->setConsts(*consts);
   const byte caller_bc[] = {LOAD_CONST,    0, LOAD_CONST,   1, LOAD_CONST, 2,
                             CALL_FUNCTION, 2, RETURN_VALUE, 0};
-  caller_code->setCode(runtime.newByteArrayWithAll(caller_bc));
+  caller_code->setCode(runtime.newBytesWithAll(caller_bc));
 
   // Execute the caller and make sure we get back the expected result
   Object* result = Thread::currentThread()->run(*caller_code);
@@ -446,7 +446,7 @@ TEST(ThreadTest, ExtendedArg) {
   constants->atPut(num_consts - 1, non_zero);
   Handle<Code> code(&scope, runtime.newCode());
   code->setConsts(*constants);
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
   code->setStacksize(2);
 
   Object* result = Thread::currentThread()->run(*code);
@@ -479,7 +479,7 @@ TEST(ThreadTest, ExecuteDupTop) {
   code->setStacksize(2);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, DUP_TOP, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
@@ -498,7 +498,7 @@ TEST(ThreadTest, ExecuteDupTopTwo) {
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,  0, LOAD_CONST,   1,
                            DUP_TOP_TWO, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
@@ -517,7 +517,7 @@ TEST(ThreadTest, ExecuteRotTwo) {
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,   1,
                            ROT_TWO,    0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
@@ -537,7 +537,7 @@ TEST(ThreadTest, ExecuteRotThree) {
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,   1, LOAD_CONST, 2,
                            ROT_THREE,  0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
@@ -556,7 +556,7 @@ TEST(ThreadTest, ExecuteJumpAbsolute) {
   code->setConsts(*consts);
   const byte bytecode[] = {JUMP_ABSOLUTE, 4, LOAD_CONST,   0,
                            LOAD_CONST,    1, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
@@ -575,7 +575,7 @@ TEST(ThreadTest, ExecuteJumpForward) {
   code->setConsts(*consts);
   const byte bytecode[] = {JUMP_FORWARD, 2, LOAD_CONST,   0,
                            LOAD_CONST,   1, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
@@ -593,7 +593,7 @@ TEST(ThreadTest, ExecuteStoreLoadFast) {
   code->setNlocals(2);
   const byte bytecode[] = {LOAD_CONST, 0, STORE_FAST,   1,
                            LOAD_FAST,  1, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
@@ -611,7 +611,7 @@ TEST(ThreadTest, LoadGlobal) {
   code->setNames(*names);
 
   const byte bytecode[] = {LOAD_GLOBAL, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -756,7 +756,7 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
 
   const byte bytecode[] = {LOAD_CONST,  0, STORE_GLOBAL, 0,
                            LOAD_GLOBAL, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -790,7 +790,7 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
 
   const byte bytecode[] = {LOAD_CONST,  0, STORE_GLOBAL, 0,
                            LOAD_GLOBAL, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -830,7 +830,7 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_NAME,   0,
                            LOAD_NAME,  0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -860,7 +860,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   code->setNames(*names);
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Dict> globals(&scope, runtime.newDict());
   Handle<Dict> builtins(&scope, runtime.newDict());
@@ -899,7 +899,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
                            LOAD_NAME,  0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Dict> globals(&scope, runtime.newDict());
   Handle<Dict> builtins(&scope, runtime.newDict());
@@ -938,7 +938,7 @@ TEST(ThreadTest, LoadNameInClassBodyFromGlobal) {
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
                            LOAD_NAME,  0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Dict> globals(&scope, runtime.newDict());
   Handle<Dict> builtins(&scope, runtime.newDict());
@@ -979,7 +979,7 @@ TEST(ThreadTest, LoadNameInClassBodyFromImplicitGlobals) {
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_NAME,   0,
                            LOAD_NAME,  0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Dict> globals(&scope, runtime.newDict());
   Handle<Dict> builtins(&scope, runtime.newDict());
@@ -1020,8 +1020,8 @@ TEST(ThreadTest, MakeFunction) {
 
   const byte bc[] = {LOAD_CONST, 0, LOAD_CONST, 1, MAKE_FUNCTION, 0,
                      STORE_NAME, 0, LOAD_CONST, 2, RETURN_VALUE,  0};
-  module->setCode(runtime.newByteArrayWithAll(bc));
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  module->setCode(runtime.newBytesWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
   code->setNames(*names);
 
   Thread* thread = Thread::currentThread();
@@ -1060,7 +1060,7 @@ TEST(ThreadTest, BuildList) {
 
   const byte bc[] = {LOAD_CONST, 0, LOAD_CONST,   1, LOAD_CONST, 2,
                      BUILD_LIST, 3, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isList());
@@ -1082,7 +1082,7 @@ TEST(ThreadTest, BuildSetEmpty) {
 
   Handle<Code> code(&scope, runtime.newCode());
   const byte bc[] = {BUILD_SET, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSet());
@@ -1104,7 +1104,7 @@ TEST(ThreadTest, BuildSetWithOneItem) {
 
   const byte bc[] = {LOAD_CONST, 0, LOAD_CONST,   1,
                      BUILD_SET,  2, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSet());
@@ -1136,7 +1136,7 @@ TEST(ThreadTest, BuildSet) {
 
   const byte bc[] = {LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST,   2,
                      LOAD_CONST, 3, BUILD_SET,  4, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSet());
@@ -1155,7 +1155,7 @@ TEST(ThreadTest, SetupLoop) {
 
   const byte bc[] = {SETUP_LOOP, 100, RETURN_VALUE, 0};
   Handle<Code> code(&scope, runtime.newCode());
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
   code->setStacksize(3);
 
   // Create a frame with three items on the stack
@@ -1183,7 +1183,7 @@ TEST(ThreadTest, PopBlock) {
 
   const byte bc[] = {POP_BLOCK, 0, RETURN_VALUE, 0};
   Handle<Code> code(&scope, runtime.newCode());
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
   code->setStacksize(3);
 
   // Create a frame with three items on the stack
@@ -1223,7 +1223,7 @@ TEST(ThreadTest, PopJumpIfFalse) {
   //   return 2222
   const byte bc[] = {LOAD_CONST,   0, POP_JUMP_IF_FALSE, 8, LOAD_CONST,   1,
                      RETURN_VALUE, 0, LOAD_CONST,        2, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   // Test when the condition evaluates to a truthy value
   Object* result = Thread::currentThread()->run(*code);
@@ -1253,7 +1253,7 @@ TEST(ThreadTest, PopJumpIfTrue) {
   //   return 2222
   const byte bc[] = {LOAD_CONST,   0, POP_JUMP_IF_TRUE, 8, LOAD_CONST,   1,
                      RETURN_VALUE, 0, LOAD_CONST,       2, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   // Test when the condition evaluates to a falsey value
   Object* result = Thread::currentThread()->run(*code);
@@ -1278,7 +1278,7 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
   code->setConsts(*consts);
   const byte bc[] = {LOAD_CONST, 0, JUMP_IF_FALSE_OR_POP, 6,
                      LOAD_CONST, 1, RETURN_VALUE,         0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   // If the condition is false, we should return the top of the stack, which is
   // the condition itself
@@ -1306,7 +1306,7 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
   code->setConsts(*consts);
   const byte bc[] = {LOAD_CONST, 0, JUMP_IF_TRUE_OR_POP, 6,
                      LOAD_CONST, 1, RETURN_VALUE,        0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   // If the condition is true, we should return the top of the stack, which is
   // the condition itself
@@ -1334,7 +1334,7 @@ TEST(ThreadTest, UnaryNot) {
   // Bytecode for the snippet:
   //     return not x
   const byte bc[] = {LOAD_CONST, 0, UNARY_NOT, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   // If the condition is true, we should return false
   Object* result = Thread::currentThread()->run(*code);
@@ -1454,7 +1454,7 @@ TEST(ThreadDeathTest, NativeExceptions) {
   // Call the native function and assert that it causes program termination due
   // to throwing an exception.
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
   code->setStacksize(1);
 
   ASSERT_DEATH(Thread::currentThread()->run(*code),
@@ -2058,7 +2058,7 @@ TEST(BuildString, buildStringEmpty) {
   Handle<Code> code(&scope, runtime.newCode());
 
   const byte bc[] = {BUILD_STRING, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Object* obj = Thread::currentThread()->run(*code);
   EXPECT_TRUE(obj->isStr());
@@ -2080,7 +2080,7 @@ TEST(BuildString, buildStringSingle) {
   code->setConsts(*consts);
 
   const byte bc[] = {LOAD_CONST, 0, BUILD_STRING, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Object* obj = Thread::currentThread()->run(*code);
   EXPECT_TRUE(obj->isStr());
@@ -2104,7 +2104,7 @@ TEST(BuildString, buildStringMultiSmall) {
 
   const byte bc[] = {LOAD_CONST,   0, LOAD_CONST,   1,
                      BUILD_STRING, 2, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Object* obj = Thread::currentThread()->run(*code);
   EXPECT_TRUE(obj->isStr());
@@ -2130,7 +2130,7 @@ TEST(BuildString, buildStringMultiLarge) {
 
   const byte bc[] = {LOAD_CONST,   0, LOAD_CONST,   1, LOAD_CONST, 2,
                      BUILD_STRING, 3, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Object* obj = Thread::currentThread()->run(*code);
   EXPECT_TRUE(obj->isStr());
@@ -2478,7 +2478,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
                      POP_JUMP_IF_FALSE, 6,  BREAK_LOOP, 0, JUMP_ABSOLUTE, 6,
                      POP_BLOCK,         0,  LOAD_CONST, 3,  // None
                      RETURN_VALUE,      0};
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -2599,7 +2599,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
 
                      LOAD_FAST,         1,  RETURN_VALUE, 0};
 
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -3006,7 +3006,7 @@ TEST(ThreadTest, LoadClassDerefFromLocal) {
   code->setFreevars(*freevars);
   const byte bytecode[] = {LOAD_CONST,      0, STORE_NAME,   0,
                            LOAD_CLASSDEREF, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
   code->setStacksize(2);
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);

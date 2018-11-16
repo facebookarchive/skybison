@@ -531,7 +531,7 @@ Object* Interpreter::yieldFrom(Thread* thread, Frame* frame) {
 }
 
 static Bytecode currentBytecode(const Interpreter::Context* ctx) {
-  ByteArray* code = ByteArray::cast(Code::cast(ctx->frame->code())->code());
+  Bytes* code = Bytes::cast(Code::cast(ctx->frame->code())->code());
   word pc = ctx->pc;
   word result;
   do {
@@ -2145,7 +2145,7 @@ const Op kOpTable[] = {
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
   Handle<Code> code(&scope, Code::cast(frame->code()));
-  Handle<ByteArray> byte_array(&scope, code->code());
+  Handle<Bytes> byte_array(&scope, code->code());
   Context ctx;
   ctx.pc = frame->virtualPC();
   ctx.thread = thread;

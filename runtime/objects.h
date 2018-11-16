@@ -18,7 +18,7 @@ namespace python {
   V(AttributeError)                                                            \
   V(BaseException)                                                             \
   V(BoundMethod)                                                               \
-  V(ByteArray)                                                                 \
+  V(Bytes)                                                                     \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \
@@ -104,7 +104,7 @@ enum class LayoutId : word {
   kAttributeError,
   kBaseException,
   kBoundMethod,
-  kByteArray,
+  kBytes,
   kClassMethod,
   kCode,
   kComplex,
@@ -174,7 +174,7 @@ class Object {
   // Heap objects
   bool isBaseException();
   bool isBoundMethod();
-  bool isByteArray();
+  bool isBytes();
   bool isType();
   bool isClassMethod();
   bool isCode();
@@ -792,20 +792,20 @@ class Array : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Array);
 };
 
-class ByteArray : public Array {
+class Bytes : public Array {
  public:
   // Getters and setters.
   byte byteAt(word index);
   void byteAtPut(word index, byte value);
 
   // Casting.
-  static ByteArray* cast(Object* object);
+  static Bytes* cast(Object* object);
 
   // Sizing.
   static word allocationSize(word length);
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ByteArray);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Bytes);
 };
 
 class ObjectArray : public Array {
@@ -2130,11 +2130,11 @@ inline bool Object::isBoundMethod() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kBoundMethod;
 }
 
-inline bool Object::isByteArray() {
+inline bool Object::isBytes() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kByteArray;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kBytes;
 }
 
 inline bool Object::isObjectArray() {
@@ -3016,32 +3016,31 @@ inline bool Type::isIntrinsicOrExtension() {
 // Array
 
 inline word Array::length() {
-  DCHECK(isByteArray() || isObjectArray() || isLargeStr(),
-         "invalid array type");
+  DCHECK(isBytes() || isObjectArray() || isLargeStr(), "invalid array type");
   return headerCountOrOverflow();
 }
 
-// ByteArray
+// Bytes
 
-inline word ByteArray::allocationSize(word length) {
+inline word Bytes::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-inline byte ByteArray::byteAt(word index) {
+inline byte Bytes::byteAt(word index) {
   DCHECK_INDEX(index, length());
   return *reinterpret_cast<byte*>(address() + index);
 }
 
-inline void ByteArray::byteAtPut(word index, byte value) {
+inline void Bytes::byteAtPut(word index, byte value) {
   DCHECK_INDEX(index, length());
   *reinterpret_cast<byte*>(address() + index) = value;
 }
 
-inline ByteArray* ByteArray::cast(Object* object) {
-  DCHECK(object->isByteArray(), "invalid cast, expected byte array");
-  return reinterpret_cast<ByteArray*>(object);
+inline Bytes* Bytes::cast(Object* object) {
+  DCHECK(object->isBytes(), "invalid cast, expected byte array");
+  return reinterpret_cast<Bytes*>(object);
 }
 
 // ObjectArray

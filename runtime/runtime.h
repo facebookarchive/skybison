@@ -49,8 +49,8 @@ class Runtime {
   Object* newBoundMethod(const Handle<Object>& function,
                          const Handle<Object>& self);
 
-  Object* newByteArray(word length, byte fill);
-  Object* newByteArrayWithAll(View<byte> array);
+  Object* newBytes(word length, byte fill);
+  Object* newBytesWithAll(View<byte> array);
 
   Object* newClass();
   Object* newClassWithMetaclass(LayoutId metaclass_id);

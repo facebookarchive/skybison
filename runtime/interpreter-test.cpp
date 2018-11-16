@@ -544,7 +544,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   code->setStacksize(1);
 
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Function> callee(&scope, runtime.newFunction());
   callee->setCode(*code);
@@ -598,7 +598,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   code->setStacksize(1);
 
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Function> callee(&scope, runtime.newFunction());
   callee->setCode(*code);
@@ -658,7 +658,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   code->setVarnames(*var_names);
 
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Function> callee(&scope, runtime.newFunction());
   callee->setCode(*code);
@@ -882,7 +882,7 @@ sys.displayhook = my_displayhook
   code->setNlocals(0);
   const byte bytecode[] = {LOAD_CONST, 0, PRINT_EXPR,   0,
                            LOAD_CONST, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isNone());
@@ -919,7 +919,7 @@ a = AsyncIterable()
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Object> result(&scope, Thread::currentThread()->run(*code));
   ASSERT_TRUE(result->isSmallInt());
@@ -934,7 +934,7 @@ TEST(InterpreterDeathTest, GetAiterOnNonIterable) {
   consts->atPut(0, SmallInt::fromWord(123));
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   ASSERT_DEATH(Thread::currentThread()->run(*code),
                "'async for' requires an object with __aiter__ method");
@@ -974,7 +974,7 @@ manager = M()
 
   const byte bytecode[] = {LOAD_GLOBAL, 0, BEFORE_ASYNC_WITH, 0, POP_TOP, 0,
                            LOAD_CONST,  0, RETURN_VALUE,      0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Dict> globals(&scope, main->dict());
   Handle<Dict> builtins(&scope, runtime.newDict());
@@ -1008,7 +1008,7 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
       LOAD_CONST, 0, LOAD_CONST,   1, SETUP_ASYNC_WITH, 0,
       POP_BLOCK,  0, RETURN_VALUE, 0,
   };
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
   Object* result = Thread::currentThread()->run(*code);
   EXPECT_EQ(result, SmallInt::fromWord(42));
 }
@@ -1529,7 +1529,7 @@ a = AsyncIterator()
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Object> result(&scope, Thread::currentThread()->run(*code));
   EXPECT_EQ(*a, *result);
@@ -1549,7 +1549,7 @@ TEST(InterpreterDeathTest, GetAnextOnNonIterable) {
   consts->atPut(0, SmallInt::fromWord(123));
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   ASSERT_DEATH(Thread::currentThread()->run(*code),
                "'async for' requires an iterator with __anext__ method");
@@ -1573,7 +1573,7 @@ a = AsyncIterator()
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   ASSERT_DEATH(Thread::currentThread()->run(*code),
                "'async for' received an invalid object from __anext__");
@@ -1598,7 +1598,7 @@ a = Awaitable()
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   Handle<Object> result(&scope, Thread::currentThread()->run(*code));
   ASSERT_TRUE(result->isSmallInt());
@@ -1613,7 +1613,7 @@ TEST(InterpreterDeathTest, GetAwaitableOnNonAwaitable) {
   consts->atPut(0, runtime.newStrFromCStr("foo"));
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
 
   ASSERT_DEATH(Thread::currentThread()->run(*code),
                "can't be used in 'await' expression");
@@ -2087,7 +2087,7 @@ foo = Foo()
       GET_YIELD_FROM_ITER, 0,  // iter(foo)
       RETURN_VALUE,        0,
   };
-  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newBytesWithAll(bc));
 
   // Confirm that the returned value is the iterator of Foo
   Handle<Object> result(&scope, Thread::currentThread()->run(*code));

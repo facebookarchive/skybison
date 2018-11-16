@@ -22,7 +22,7 @@ class Heap {
 
   Object* createBoundMethod();
 
-  Object* createByteArray(word length);
+  Object* createBytes(word length);
 
   Object* createClass(LayoutId metaclass_id);
 

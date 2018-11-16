@@ -660,7 +660,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
   code->setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -707,7 +707,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
   code->setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
@@ -765,7 +765,7 @@ TEST(TrampolineTest,
   const byte bytecode[] = {LOAD_CONST,   0, LOAD_CONST, 1, LOAD_CONST,       2,
                            LOAD_CONST,   3, LOAD_CONST, 4, CALL_FUNCTION_KW, 3,
                            RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
+  code->setCode(runtime.newBytesWithAll(bytecode));
   code->setStacksize(5);
 
   // Execute the code and make sure we get back the result we expect
