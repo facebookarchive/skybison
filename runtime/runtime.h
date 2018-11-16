@@ -3,6 +3,7 @@
 #include "callback.h"
 #include "handles.h"
 #include "heap.h"
+#include "view.h"
 
 namespace python {
 
@@ -27,7 +28,7 @@ class Runtime {
   ~Runtime();
 
   Object* newByteArray(word length);
-  Object* newByteArrayWithAll(const byte* data, word length);
+  Object* newByteArrayWithAll(View<byte> array);
 
   Object* newClass();
   Object* newClassWithId(ClassId class_id);
@@ -57,7 +58,7 @@ class Runtime {
   Object* run(const char* buffer);
 
   Object* hash(Object* object);
-  word siphash24(const byte* src, word size);
+  word siphash24(View<byte> array);
 
   // Determines whether or not object is a truthy value. Exceptions are
   // propagated using the normal exception handling mechanisms.

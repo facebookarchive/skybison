@@ -50,13 +50,13 @@ Object* Runtime::newByteArray(word length) {
   return heap()->createByteArray(length);
 }
 
-Object* Runtime::newByteArrayWithAll(const byte* data, word length) {
-  if (length == 0) {
+Object* Runtime::newByteArrayWithAll(View<byte> array) {
+  if (array.length() == 0) {
     return empty_byte_array_;
   }
-  Object* result = newByteArray(length);
-  for (word i = 0; i < length; i++) {
-    ByteArray::cast(result)->byteAtPut(i, *(data + i));
+  Object* result = newByteArray(array.length());
+  for (word i = 0; i < array.length(); i++) {
+    ByteArray::cast(result)->byteAtPut(i, array.get(i));
   }
   return result;
 }
@@ -196,11 +196,11 @@ Object* Runtime::identityHash(Object* object) {
   return SmallInteger::fromWord(code);
 }
 
-word Runtime::siphash24(const byte* src, word size) {
+word Runtime::siphash24(View<byte> array) {
   word result = 0;
   ::halfsiphash(
-      src,
-      size,
+      array.data(),
+      array.length(),
       reinterpret_cast<const uint8_t*>(hash_secret_),
       reinterpret_cast<uint8_t*>(&result),
       sizeof(result));
@@ -213,7 +213,7 @@ Object* Runtime::valueHash(Object* object) {
   word code = header->hashCode();
   if (code == 0) {
     word size = src->headerCountOrOverflow();
-    code = siphash24(reinterpret_cast<const byte*>(src->address()), size);
+    code = siphash24(View<byte>(reinterpret_cast<byte*>(src->address()), size));
     code &= Header::kHashCodeMask;
     code = (code == 0) ? 1 : code;
     src->setHeader(header->withHashCode(code));

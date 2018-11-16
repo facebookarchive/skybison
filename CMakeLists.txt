@@ -62,6 +62,7 @@ add_library(
   runtime/trampolines-inl.h
   runtime/utils.h
   runtime/vector.h
+  runtime/view.h
   runtime/visitor.h)
 set_target_properties(
   runtime
