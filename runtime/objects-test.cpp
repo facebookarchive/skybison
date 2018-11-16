@@ -199,7 +199,7 @@ TEST(DictionaryTest, CollidingKeys) {
   Handle<Object> key1(&scope, SmallInteger::fromWord(1));
   runtime.dictionaryAtPut(dict, key1, key1);
 
-  Handle<Object> key2(&scope, Boolean::fromBool(true));
+  Handle<Object> key2(&scope, Boolean::trueObj());
   runtime.dictionaryAtPut(dict, key2, key2);
 
   // Make sure we get both back
@@ -246,7 +246,7 @@ TEST(DictionaryTest, GetKeys) {
   Handle<ObjectArray> keys(&scope, runtime.newObjectArray(4));
   keys->atPut(0, SmallInteger::fromWord(100));
   keys->atPut(1, runtime.newStringFromCString("testing 123"));
-  keys->atPut(2, Boolean::fromBool(true));
+  keys->atPut(2, Boolean::trueObj());
   keys->atPut(3, None::object());
 
   // Add keys to dictionary

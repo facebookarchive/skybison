@@ -136,11 +136,11 @@ Object* Marshal::Reader::readObject() {
       break;
 
     case TYPE_FALSE:
-      result = Boolean::fromBool(false);
+      result = Boolean::falseObj();
       break;
 
     case TYPE_TRUE:
-      result = Boolean::fromBool(true);
+      result = Boolean::trueObj();
       break;
 
     case TYPE_INT: {

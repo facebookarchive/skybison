@@ -2256,10 +2256,10 @@ Object* Runtime::isSubClass(
   Handle<ObjectArray> mro(&scope, subclass->mro());
   for (word i = 0; i < mro->length(); i++) {
     if (mro->at(i) == *superclass) {
-      return Boolean::fromBool(true);
+      return Boolean::trueObj();
     }
   }
-  return Boolean::fromBool(false);
+  return Boolean::falseObj();
 }
 
 Object* Runtime::isInstance(

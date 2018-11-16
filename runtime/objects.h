@@ -361,6 +361,10 @@ class Boolean : public Object {
   // Getters and setters.
   bool value();
 
+  // Singletons
+  static Boolean* trueObj();
+  static Boolean* falseObj();
+
   // Conversion.
   static Boolean* fromBool(bool value);
 
@@ -1984,6 +1988,14 @@ inline Error* Error::cast(Object* object) {
 }
 
 // Boolean
+
+inline Boolean* Boolean::trueObj() {
+  return fromBool(true);
+}
+
+inline Boolean* Boolean::falseObj() {
+  return fromBool(false);
+}
 
 inline Boolean* Boolean::fromBool(bool value) {
   return reinterpret_cast<Boolean*>(

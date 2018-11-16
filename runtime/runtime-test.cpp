@@ -216,11 +216,9 @@ TEST(RuntimeTest, HashBooleans) {
   Runtime runtime;
 
   // In CPython, False hashes to 0 and True hashes to 1.
-  SmallInteger* hash0 =
-      SmallInteger::cast(runtime.hash(Boolean::fromBool(false)));
+  SmallInteger* hash0 = SmallInteger::cast(runtime.hash(Boolean::falseObj()));
   EXPECT_EQ(hash0->value(), 0);
-  SmallInteger* hash1 =
-      SmallInteger::cast(runtime.hash(Boolean::fromBool(true)));
+  SmallInteger* hash1 = SmallInteger::cast(runtime.hash(Boolean::trueObj()));
   EXPECT_EQ(hash1->value(), 1);
 }
 
@@ -657,7 +655,7 @@ TEST(RuntimeTest, ClassIds) {
   Runtime runtime;
   HandleScope scope;
 
-  EXPECT_PYSTRING_EQ(className(&runtime, Boolean::fromBool(true)), "bool");
+  EXPECT_PYSTRING_EQ(className(&runtime, Boolean::trueObj()), "bool");
   EXPECT_PYSTRING_EQ(className(&runtime, None::object()), "NoneType");
   EXPECT_PYSTRING_EQ(
       className(&runtime, runtime.newStringFromCString("abc")), "smallstr");
