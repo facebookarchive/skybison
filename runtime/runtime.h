@@ -57,6 +57,8 @@ class Runtime {
 
   Object* newComplex(double real, double imag);
 
+  Object* newCoro();
+
   Object* newDict();
   Object* newDict(word initial_size);
 

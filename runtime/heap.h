@@ -32,6 +32,8 @@ class Heap {
 
   Object* createComplex(double real, double imag);
 
+  Object* createCoro();
+
   Object* createDict();
 
   Object* createFloat(double value);

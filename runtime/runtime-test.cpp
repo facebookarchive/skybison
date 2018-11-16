@@ -2980,4 +2980,12 @@ TEST(ModuleImportTest, ModuleImportsAllPublicSymbols) {
   EXPECT_PYSTRING_EQ(Str::cast(result->value()), "public_symbol");
 }
 
+TEST(CoroutineTest, New) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Object> coroutine(&scope, runtime.newCoro());
+  EXPECT_TRUE(coroutine->isCoro());
+}
+
 }  // namespace python

@@ -86,6 +86,7 @@ enum class LayoutId : word {
   kClassMethod,
   kCode,
   kComplex,
+  kCoro,
   kDict,
   kFloat,
   kEllipsis,
@@ -151,6 +152,7 @@ class Object {
   bool isClassMethod();
   bool isCode();
   bool isComplex();
+  bool isCoro();
   bool isDict();
   bool isFloat();
   bool isEllipsis();
@@ -1955,6 +1957,26 @@ class Super : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Super);
 };
 
+class Coro : public HeapObject {
+ public:
+  // Casting.
+  static Coro* cast(Object* object);
+
+  // Sizing.
+  static word allocationSize();
+
+  // Layout
+  static const int kAwaitOffset = HeapObject::kSize;
+  static const int kFrameOffset = kAwaitOffset + kPointerSize;
+  static const int kIsRunningOffset = kFrameOffset + kPointerSize;
+  static const int kCodeOffset = kIsRunningOffset + kPointerSize;
+  static const int kOriginOffset = kCodeOffset + kPointerSize;
+  static const int kSize = kOriginOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Coro);
+};
+
 // Object
 
 inline bool Object::isObject() { return true; }
@@ -2074,6 +2096,13 @@ inline bool Object::isComplex() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kComplex;
+}
+
+inline bool Object::isCoro() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kCoro;
 }
 
 inline bool Object::isLargeStr() {
@@ -4112,6 +4141,15 @@ inline Object* TupleIterator::next() {
   Object* item = underlying->at(idx);
   setIndex(idx + 1);
   return item;
+}
+
+// Coro
+
+inline word Coro::allocationSize() { return Header::kSize + Coro::kSize; }
+
+inline Coro* Coro::cast(Object* object) {
+  DCHECK(object->isCoro(), "invalid cast, expected Coro");
+  return reinterpret_cast<Coro*>(object);
 }
 
 }  // namespace python

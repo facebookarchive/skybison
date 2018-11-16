@@ -605,6 +605,8 @@ Object* Runtime::newCode() {
   return *result;
 }
 
+Object* Runtime::newCoro() { return heap()->createCoro(); }
+
 Object* Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
                                     Function::Entry entry_kw,
                                     Function::Entry entry_ex) {

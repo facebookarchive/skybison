@@ -141,6 +141,16 @@ Object* Heap::createComplex(double real, double imag) {
   return Complex::cast(result);
 }
 
+Object* Heap::createCoro() {
+  word size = Coro::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<Coro*>(raw);
+  result->setHeader(Header::from(Coro::kSize / kPointerSize, 0, LayoutId::kCoro,
+                                 ObjectFormat::kDataInstance));
+  return Coro::cast(result);
+}
+
 Object* Heap::createDict() {
   word size = Dict::allocationSize();
   Object* raw = allocate(size, Header::kSize);
