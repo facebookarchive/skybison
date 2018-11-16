@@ -412,8 +412,8 @@ TEST(ThreadTest, LoadGlobal) {
   names->atPut(0, *key);
   code->setNames(*names);
 
-  const char bytecode[] = {LOAD_GLOBAL, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+  const byte bytecode[] = {LOAD_GLOBAL, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code, thread->initialFrame());
@@ -444,9 +444,9 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   names->atPut(0, *key);
   code->setNames(*names);
 
-  const char bytecode[] = {
+  const byte bytecode[] = {
       LOAD_CONST, 0, STORE_GLOBAL, 0, LOAD_GLOBAL, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code, thread->initialFrame());
@@ -478,9 +478,9 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   names->atPut(0, *key);
   code->setNames(*names);
 
-  const char bytecode[] = {
+  const byte bytecode[] = {
       LOAD_CONST, 0, STORE_GLOBAL, 0, LOAD_GLOBAL, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code, thread->initialFrame());
