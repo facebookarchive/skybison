@@ -352,54 +352,118 @@ a += a
       runtime.runFromCString(add_src), "SmallInteger::isValid");
 }
 
-TEST(IntBuiltinsTest, InplaceOps) {
+TEST(IntBuiltinsTest, InplaceAdd) {
   Runtime runtime;
   HandleScope scope;
 
   runtime.runFromCString(R"(
-a = 2
-a0 = a
-a += 3
-a1 = a
-a *= 5
-a2 = a
-a //= 2
-a3 = a
-a %= 5
-a4 = a
-a -= -6
-a5 = a
-a ^= 9
+a = 1
+a += 0
+b = a
+a += 2
 )");
-
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a0(&scope, moduleAt(&runtime, main, "a0"));
-  ASSERT_TRUE(a0->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a0)->value(), 2);
-
-  Handle<Object> a1(&scope, moduleAt(&runtime, main, "a1"));
-  ASSERT_TRUE(a1->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a1)->value(), 5);
-
-  Handle<Object> a2(&scope, moduleAt(&runtime, main, "a2"));
-  ASSERT_TRUE(a2->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a2)->value(), 25);
-
-  Handle<Object> a3(&scope, moduleAt(&runtime, main, "a3"));
-  ASSERT_TRUE(a3->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a3)->value(), 12);
-
-  Handle<Object> a4(&scope, moduleAt(&runtime, main, "a4"));
-  ASSERT_TRUE(a4->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a4)->value(), 2);
-
-  Handle<Object> a5(&scope, moduleAt(&runtime, main, "a5"));
-  ASSERT_TRUE(a5->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a5)->value(), 8);
-
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_TRUE(a->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a)->value(), 3);
+  ASSERT_TRUE(b->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*b)->value(), 1);
+}
+
+TEST(IntBuiltinsTest, InplaceMultiply) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 5
+a *= 1
+b = a
+a *= 2
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_TRUE(a->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a)->value(), 10);
+  ASSERT_TRUE(b->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*b)->value(), 5);
+}
+
+TEST(IntBuiltinsTest, InplaceFloorDiv) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 5
+a //= 1
+b = a
+a //= 2
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_TRUE(a->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a)->value(), 2);
+  ASSERT_TRUE(b->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*b)->value(), 5);
+}
+
+TEST(IntBuiltinsTest, InplaceModulo) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 10
+a %= 7
+b = a
+a %= 2
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(a->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(*a)->value(), 1);
+  ASSERT_TRUE(b->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*b)->value(), 3);
+}
+
+TEST(IntBuiltinsTest, InplaceSub) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 10
+a -= 0
+b = a
+a -= 7
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_TRUE(a->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a)->value(), 3);
+  ASSERT_TRUE(b->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*b)->value(), 10);
+}
+
+TEST(IntBuiltinsTest, InplaceXor) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 0xFE
+a ^= 0
+b = a
+a ^= 0x03
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_TRUE(a->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a)->value(), 0xFD);
+  ASSERT_TRUE(b->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*b)->value(), 0xFE);
 }
 
 } // namespace python

@@ -120,20 +120,18 @@ Object* builtinDoubleAdd(Thread* thread, Frame* frame, word nargs) {
   Object* other = args.get(1);
   if (!self->isDouble()) {
     return thread->throwTypeErrorFromCString(
-        "descriptor '__add__' requires a 'float' object");
+        "__add__() must be called with float instance as first argument");
   }
 
-  Double* left = Double::cast(self);
+  double left = Double::cast(self)->value();
   if (other->isDouble()) {
-    Double* right = Double::cast(other);
-    return thread->runtime()->newDouble(left->value() + right->value());
+    double right = Double::cast(other)->value();
+    return thread->runtime()->newDouble(left + right);
   }
-  if (other->isSmallInteger()) {
-    SmallInteger* right = SmallInteger::cast(other);
-    return thread->runtime()->newDouble(
-        left->value() + static_cast<double>(right->value()));
+  if (other->isInteger()) {
+    double right = Integer::cast(other)->doubleValue();
+    return thread->runtime()->newDouble(left + right);
   }
-  // TODO(T30610701): Handle LargeIntegers
   return thread->runtime()->notImplemented();
 }
 
@@ -146,22 +144,19 @@ Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isDouble()) {
-    // TODO(T30659244): More informative TypeError message
     return thread->throwTypeErrorFromCString(
-        "descriptor '__sub__' requires a 'float' object");
+        "__sub__() must be called with float instance as first argument");
   }
 
-  Double* left = Double::cast(self);
+  double left = Double::cast(self)->value();
   if (other->isDouble()) {
-    Double* right = Double::cast(other);
-    return thread->runtime()->newDouble(left->value() - right->value());
+    double right = Double::cast(other)->value();
+    return thread->runtime()->newDouble(left - right);
   }
-  if (other->isSmallInteger()) {
-    SmallInteger* right = SmallInteger::cast(other);
-    return thread->runtime()->newDouble(
-        left->value() - static_cast<double>(right->value()));
+  if (other->isInteger()) {
+    double right = Integer::cast(other)->doubleValue();
+    return thread->runtime()->newDouble(left - right);
   }
-  // TODO(T30610701): Handle LargeIntegers
   return thread->runtime()->notImplemented();
 }
 

@@ -145,17 +145,14 @@ Object* builtinSmallIntegerAdd(Thread* thread, Frame* caller, word nargs) {
 
   if (!self->isSmallInteger()) {
     return thread->throwTypeErrorFromCString(
-        "descriptor '__add__' requires a 'int' object");
+        "__add__() must be called with int instance as first argument");
   }
 
-  if (other->isSmallInteger()) {
-    SmallInteger* left = SmallInteger::cast(self);
-    SmallInteger* right = SmallInteger::cast(other);
-    word a = left->value();
-    word b = right->value();
-    return thread->runtime()->newInteger(a + b);
+  word left = SmallInteger::cast(self)->value();
+  if (other->isInteger()) {
+    word right = Integer::cast(other)->asWord();
+    return thread->runtime()->newInteger(left + right);
   }
-  // TODO(T30610701): Handle LargeIntegers
   return thread->runtime()->notImplemented();
 }
 
@@ -170,17 +167,14 @@ Object* builtinSmallIntegerSub(Thread* thread, Frame* frame, word nargs) {
 
   if (!self->isSmallInteger()) {
     return thread->throwTypeErrorFromCString(
-        "descriptor '__sub__' requires a 'int' object");
+        "__sub__() must be called with int instance as first argument");
   }
 
-  if (self->isSmallInteger() && other->isSmallInteger()) {
-    SmallInteger* left = SmallInteger::cast(self);
-    SmallInteger* right = SmallInteger::cast(other);
-    word a = left->value();
-    word b = right->value();
-    return thread->runtime()->newInteger(a - b);
+  word left = SmallInteger::cast(self)->value();
+  if (other->isInteger()) {
+    word right = Integer::cast(other)->asWord();
+    return thread->runtime()->newInteger(left - right);
   }
-  // TODO(T30610701): Handle LargeIntegers
   return thread->runtime()->notImplemented();
 }
 

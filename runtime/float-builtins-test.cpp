@@ -179,17 +179,17 @@ c = a + b
   EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 3.1);
 }
 
-TEST(FloatBuiltinsDeathTest, BinaryAddWithNonFloatArg) {
+TEST(FloatBuiltinsDeathTest, AddWithNonFloatSelfThrows) {
   const char* src = R"(
 float.__add__(None, 1.0)
 )";
   Runtime runtime;
   ASSERT_DEATH(
       runtime.runFromCString(src),
-      "descriptor '__add__' requires a 'float' object");
+      "must be called with float instance as first argument");
 }
 
-TEST(FloatBuiltinsDeathTest, BinaryAddWithNonFloat2ndArg) {
+TEST(FloatBuiltinsDeathTest, AddWithNonFloatOtherThrows) {
   const char* src = R"(
 1.0 + None
 )";
@@ -229,17 +229,17 @@ c = a - b
   EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 1.1);
 }
 
-TEST(FloatBuiltinsDeathTest, BinarySubWithNonFloatArg) {
+TEST(FloatBuiltinsDeathTest, SubWithNonFloatSelfThrows) {
   const char* src = R"(
 float.__sub__(None, 1.0)
 )";
   Runtime runtime;
   ASSERT_DEATH(
       runtime.runFromCString(src),
-      "descriptor '__sub__' requires a 'float' object");
+      "must be called with float instance as first argument");
 }
 
-TEST(FloatBuiltinsDeathTest, BinarySubWithNonFloat2ndArg) {
+TEST(FloatBuiltinsDeathTest, SubWithNonFloatOtherThrows) {
   const char* src = R"(
 1.0 - None
 )";

@@ -9,7 +9,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(ListBuiltinsTest, ListAdd) {
+TEST(ListBuiltinsTest, AddToNonEmptyList) {
   Runtime runtime;
   HandleScope scope;
 
@@ -29,7 +29,7 @@ c = a + b
   EXPECT_EQ(SmallInteger::cast(list->at(4))->value(), 5);
 }
 
-TEST(ListBuiltinsTest, ListAddToEmptyList) {
+TEST(ListBuiltinsTest, AddToEmptyList) {
   Runtime runtime;
   HandleScope scope;
 
@@ -47,17 +47,17 @@ c = a + b
   EXPECT_EQ(SmallInteger::cast(list->at(2))->value(), 3);
 }
 
-TEST(ListBuiltinsDeathTest, ListAddWithNonListArg) {
+TEST(ListBuiltinsDeathTest, AddWithNonListSelfThrows) {
   const char* src = R"(
 list.__add__(None, [])
 )";
   Runtime runtime;
   ASSERT_DEATH(
       runtime.runFromCString(src),
-      "descriptor '__add__' requires a 'list' object");
+      "must be called with list instance as first argument");
 }
 
-TEST(ListBuiltinsDeathTest, ListAddExcept) {
+TEST(ListBuiltinsDeathTest, AddListToTupleThrowsTypeError) {
   const char* src = R"(
 a = [1, 2, 3]
 b = (4, 5, 6)

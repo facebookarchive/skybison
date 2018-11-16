@@ -179,6 +179,8 @@ class Integer : public Object {
   word asWord();
   void* asCPointer();
 
+  double doubleValue();
+
   bool isPositive();
   bool isNegative();
   bool isZero();
@@ -1977,6 +1979,18 @@ inline void* Integer::asCPointer() {
     return SmallInteger::cast(this)->asCPointer();
   }
   return LargeInteger::cast(this)->asCPointer();
+}
+
+inline double Integer::doubleValue() {
+  if (isSmallInteger()) {
+    return static_cast<double>(asWord());
+  }
+  LargeInteger* large_int = LargeInteger::cast(this);
+  if (large_int->headerCountOrOverflow() == 1) {
+    return static_cast<double>(asWord());
+  }
+  // TODO(T30610701): Handle arbitrary precision LargeIntegers
+  UNIMPLEMENTED("LargeIntegers with > 1 digit");
 }
 
 inline bool Integer::isPositive() {

@@ -54,7 +54,7 @@ Object* builtinListAdd(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
   if (list_or_error->isError()) {
     return thread->throwTypeErrorFromCString(
-        "descriptor '__add__' requires a 'list' object");
+        "__add__() must be called with list instance as first argument");
   }
 
   if (other->isList()) {
