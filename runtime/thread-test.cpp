@@ -2256,4 +2256,43 @@ TEST(BuildString, buildStringMultiLarge) {
   EXPECT_TRUE(result->equalsCString("helloworldpython"));
 }
 
+TEST(UnpackSeq, unpackRangePyStone) {
+  const char* src = R"(
+[Ident1, Ident2, Ident3, Ident4, Ident5] = range(1, 6)
+print(Ident1, Ident2, Ident3, Ident4, Ident5)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1 2 3 4 5\n");
+}
+
+TEST(UnpackSeq, unpackRange) {
+  const char* src = R"(
+[a ,b, c] = range(2, 5)
+print(a, b, c)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "2 3 4\n");
+}
+
+TEST(UnpackSeq, unpackRangeStep) {
+  const char* src = R"(
+[a ,b, c, d] = range(2, 10, 2)
+print(a, b, c, d)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "2 4 6 8\n");
+}
+
+TEST(UnpackSeq, unpackRangeNeg) {
+  const char* src = R"(
+[a ,b, c, d, e] = range(-10, 0, 2)
+print(a, b, c, d, e)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "-10 -8 -6 -4 -2\n");
+}
 } // namespace python

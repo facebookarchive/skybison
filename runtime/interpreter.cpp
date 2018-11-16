@@ -635,6 +635,15 @@ Result UNPACK_SEQUENCE(Context* ctx, word arg) {
     while (arg--) {
       *--ctx->sp = List::cast(seq)->at(arg);
     }
+  } else if (seq->isRange()) {
+    HandleScope scope(ctx->thread);
+    Handle<Range> range(&scope, seq);
+    word start = range->start();
+    word stop = range->stop();
+    word step = range->step();
+    for (word i = stop; i >= start; i -= step) {
+      *--ctx->sp = ctx->thread->runtime()->newInteger(i);
+    }
   } else {
     UNIMPLEMENTED("Iterable unpack not supported.");
   }
