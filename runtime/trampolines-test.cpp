@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <memory>
+
 #include "frame.h"
 #include "runtime.h"
 #include "test-utils.h"

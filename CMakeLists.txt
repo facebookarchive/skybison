@@ -51,7 +51,6 @@ set(
 add_library(
   runtime
   STATIC
-  runtime/allocator.h
   runtime/bool-builtins.cpp
   runtime/bool-builtins.h
   runtime/builtins-module.cpp
