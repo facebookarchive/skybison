@@ -9,6 +9,59 @@ namespace python {
 
 using namespace testing;
 
+TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  Handle<Dict> dict(&scope, runtime.newDict(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> val(&scope, runtime.newInt(0));
+  runtime.dictAtPut(dict, key, val);
+  frame->setLocal(0, *dict);
+  frame->setLocal(1, *key);
+  Object* result = DictBuiltins::dunderContains(thread, frame, 2);
+  ASSERT_TRUE(result->isBool());
+  EXPECT_TRUE(Bool::cast(result)->value());
+}
+
+TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.newDict(0));
+  frame->setLocal(1, runtime.newStringFromCString("foo"));
+  Object* result = DictBuiltins::dunderContains(thread, frame, 2);
+  ASSERT_TRUE(result->isBool());
+  EXPECT_FALSE(Bool::cast(result)->value());
+}
+
+TEST(DictBuiltinsTest, InWithExistingKeyReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+d = {"foo": 1}
+foo_in_d = "foo" in d
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> foo_in_d(&scope, moduleAt(&runtime, main, "foo_in_d"));
+
+  EXPECT_TRUE(foo_in_d->value());
+}
+
+TEST(DictBuiltinsTest, InWithNonexistentKeyReturnsFalse) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+d = {}
+foo_in_d = "foo" in d
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> foo_in_d(&scope, moduleAt(&runtime, main, "foo_in_d"));
+
+  EXPECT_FALSE(foo_in_d->value());
+}
+
 TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
   Runtime runtime;
   HandleScope scope;

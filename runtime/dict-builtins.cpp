@@ -11,6 +11,7 @@
 namespace python {
 
 const BuiltinMethod DictBuiltins::kMethods[] = {
+    {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
     {SymbolId::kDunderDelItem, nativeTrampoline<dunderDelItem>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
@@ -27,6 +28,22 @@ void DictBuiltins::initialize(Runtime* runtime) {
     runtime->classAddBuiltinFunction(dict_type, kMethods[i].name,
                                      kMethods[i].address);
   }
+}
+
+Object* DictBuiltins::dunderContains(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> key(&scope, args.get(1));
+  if (!self->isDict()) {
+    return thread->throwTypeErrorFromCString(
+        "dict.__contains__(self): self must be a dict");
+  }
+  Handle<Dict> dict(&scope, *self);
+  return Bool::fromBool(thread->runtime()->dictIncludes(dict, key));
 }
 
 Object* DictBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
