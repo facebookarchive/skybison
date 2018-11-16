@@ -242,4 +242,20 @@ exc = SystemExit(4, 5, 6)
   EXPECT_EQ(args->at(2), SmallInt::fromWord(6));
 }
 
+TEST(ExceptionBuiltinsTest, SystemExitGetValue) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+exc = SystemExit(1111)
+result = exc.value
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  // The value attribute should contain the first constructor argument.
+  Handle<Object> result(&scope, testing::moduleAt(&runtime, main, "result"));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 1111);
+}
+
 }  // namespace python

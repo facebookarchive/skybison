@@ -185,14 +185,14 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
   }
   HandleScope scope;
   Handle<ObjectArray> entry(&scope, empty_object_array_);
-  for (word i = start_index; i < attributes.length(); i++) {
+  for (word i = 0; i < attributes.length(); i++) {
     AttributeInfo info(
         attributes.get(i).offset,
         AttributeInfo::Flag::kInObject | AttributeInfo::Flag::kFixedOffset);
     entry = newObjectArray(2);
     entry->atPut(0, symbols()->at(attributes.get(i).name));
     entry->atPut(1, info.asSmallInt());
-    dst->atPut(i, *entry);
+    dst->atPut(start_index + i, *entry);
   }
 }
 
