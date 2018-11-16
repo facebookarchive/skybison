@@ -33,11 +33,13 @@ Object* builtinSetPop(Thread* thread, Frame* caller, word nargs) {
     Handle<ObjectArray> data(&scope, self->data());
     word num_items = self->numItems();
     if (num_items > 0) {
-      for (word i = 0; i < data->length(); i += Set::kBucketNumPointers) {
-        if (Set::bucketIsTombstone(*data, i) || Set::bucketIsEmpty(*data, i))
+      for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
+        if (Set::Bucket::isTombstone(*data, i) ||
+            Set::Bucket::isEmpty(*data, i)) {
           continue;
-        Handle<Object> value(&scope, Set::bucketKey(*data, i));
-        Set::bucketSetTombstone(*data, i);
+        }
+        Handle<Object> value(&scope, Set::Bucket::key(*data, i));
+        Set::Bucket::setTombstone(*data, i);
         self->setNumItems(num_items - 1);
         return *value;
       }

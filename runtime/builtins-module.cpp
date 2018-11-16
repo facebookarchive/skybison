@@ -273,12 +273,10 @@ static Object* doBuiltinPrint(
       Handle<Dictionary> dict(&scope, arg);
       Handle<ObjectArray> data(&scope, dict->data());
       word items = dict->numItems();
-      // TODO: When rewriting this, use Bucket support
-      // class in runtime.cpp
       for (word i = 0; i < data->length(); i += 3) {
         if (!data->at(i)->isNone()) {
-          Handle<Object> key(&scope, data->at(i + 1));
-          Handle<Object> value(&scope, data->at(i + 2));
+          Handle<Object> key(&scope, Dictionary::Bucket::key(*data, i));
+          Handle<Object> value(&scope, Dictionary::Bucket::value(*data, i));
           if (key->isString()) {
             printQuotedString(String::cast(*key));
           } else if (supportedScalarType(*key)) {

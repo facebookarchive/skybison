@@ -2088,70 +2088,6 @@ char* Runtime::compile(const char* src) {
 
 // Dictionary
 
-// Helper class for manipulating buckets in the ObjectArray that backs the
-// dictionary
-class Bucket {
- public:
-  Bucket(const Handle<ObjectArray>& data, word index)
-      : data_(data), index_(index) {}
-
-  Object* hash() {
-    return data_->at(index_ + kHashOffset);
-  }
-
-  Object* key() {
-    return data_->at(index_ + kKeyOffset);
-  }
-
-  Object* value() {
-    return data_->at(index_ + kValueOffset);
-  }
-
-  void set(Object* hash, Object* key, Object* value) {
-    data_->atPut(index_ + kHashOffset, hash);
-    data_->atPut(index_ + kKeyOffset, key);
-    data_->atPut(index_ + kValueOffset, value);
-  }
-
-  bool hasKey(Object* that_key) {
-    return !hash()->isNone() && Object::equals(key(), that_key);
-  }
-
-  bool isTombstone() {
-    return hash()->isNone() && !key()->isNone();
-  }
-
-  void setTombstone() {
-    set(None::object(), Error::object(), None::object());
-  }
-
-  bool isEmpty() {
-    return hash()->isNone() && key()->isNone();
-  }
-
-  bool isFilled() {
-    return !(isEmpty() || isTombstone());
-  }
-
-  static word getIndex(Object* data, Object* hash) {
-    word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
-    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
-    word value = SmallInteger::cast(hash)->value();
-    return (value & (nbuckets - 1)) * kNumPointers;
-  }
-
-  static const word kHashOffset = 0;
-  static const word kKeyOffset = kHashOffset + 1;
-  static const word kValueOffset = kKeyOffset + 1;
-  static const word kNumPointers = kValueOffset + 1;
-
- private:
-  const Handle<ObjectArray>& data_;
-  word index_;
-
-  DISALLOW_HEAP_ALLOCATION();
-};
-
 Object* Runtime::newDictionary() {
   HandleScope scope;
   Handle<Dictionary> result(&scope, heap()->createDictionary());
@@ -2169,7 +2105,7 @@ Object* Runtime::newDictionary(word initial_size) {
       newObjectArray(
           Utils::maximum(
               static_cast<word>(kInitialDictionaryCapacity), initial_capacity) *
-          Bucket::kNumPointers));
+          Dictionary::Bucket::kNumPointers));
   Handle<Dictionary> result(&scope, newDictionary());
   result->setData(*array);
   return *result;
@@ -2190,11 +2126,9 @@ void Runtime::dictionaryAtPut(
     dictionaryLookup(new_data, key, key_hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
     dict->setData(*new_data);
-    Bucket bucket(new_data, index);
-    bucket.set(*key_hash, *key, *value);
+    Dictionary::Bucket::set(*new_data, index, *key_hash, *key, *value);
   } else {
-    Bucket bucket(data, index);
-    bucket.set(*key_hash, *key, *value);
+    Dictionary::Bucket::set(*data, index, *key_hash, *key, *value);
   }
   if (!found) {
     dict->setNumItems(dict->numItems() + 1);
@@ -2205,22 +2139,21 @@ ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
   HandleScope scope;
   word new_length = data->length() * kDictionaryGrowthFactor;
   if (new_length == 0) {
-    new_length = kInitialDictionaryCapacity * Bucket::kNumPointers;
+    new_length = kInitialDictionaryCapacity * Dictionary::Bucket::kNumPointers;
   }
   Handle<ObjectArray> new_data(&scope, newObjectArray(new_length));
   // Re-insert items
-  for (word i = 0; i < data->length(); i += Bucket::kNumPointers) {
-    Bucket old_bucket(data, i);
-    if (old_bucket.isEmpty() || old_bucket.isTombstone()) {
+  for (word i = 0; i < data->length(); i += Dictionary::Bucket::kNumPointers) {
+    if (Dictionary::Bucket::isEmpty(*data, i) ||
+        Dictionary::Bucket::isTombstone(*data, i))
       continue;
-    }
-    Handle<Object> key(&scope, old_bucket.key());
-    Handle<Object> hash(&scope, old_bucket.hash());
+    Handle<Object> key(&scope, Dictionary::Bucket::key(*data, i));
+    Handle<Object> hash(&scope, Dictionary::Bucket::hash(*data, i));
     word index = -1;
     dictionaryLookup(new_data, key, hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
-    Bucket new_bucket(new_data, index);
-    new_bucket.set(*hash, *key, old_bucket.value());
+    Dictionary::Bucket::set(
+        *new_data, index, *hash, *key, Dictionary::Bucket::value(*data, i));
   }
   return *new_data;
 }
@@ -2235,7 +2168,7 @@ Object* Runtime::dictionaryAt(
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
-    return Bucket(data, index).value();
+    return Dictionary::Bucket::value(*data, index);
   }
   return Error::object();
 }
@@ -2251,7 +2184,7 @@ Object* Runtime::dictionaryAtIfAbsentPut(
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
-    return Bucket(data, index).value();
+    return Dictionary::Bucket::value(*data, index);
   }
   Handle<Object> value(&scope, thunk->call());
   if (index == -1) {
@@ -2260,11 +2193,9 @@ Object* Runtime::dictionaryAtIfAbsentPut(
     dictionaryLookup(new_data, key, key_hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
     dict->setData(*new_data);
-    Bucket bucket(new_data, index);
-    bucket.set(*key_hash, *key, *value);
+    Dictionary::Bucket::set(*new_data, index, *key_hash, *key, *value);
   } else {
-    Bucket bucket(data, index);
-    bucket.set(*key_hash, *key, *value);
+    Dictionary::Bucket::set(*data, index, *key_hash, *key, *value);
   }
   dict->setNumItems(dict->numItems() + 1);
   return *value;
@@ -2300,9 +2231,8 @@ bool Runtime::dictionaryRemove(
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
-    Bucket bucket(data, index);
-    *value = bucket.value();
-    bucket.setTombstone();
+    *value = Dictionary::Bucket::value(*data, index);
+    Dictionary::Bucket::setTombstone(*data, index);
     dict->setNumItems(dict->numItems() - 1);
   }
   return found;
@@ -2313,7 +2243,7 @@ bool Runtime::dictionaryLookup(
     const Handle<Object>& key,
     const Handle<Object>& key_hash,
     word* index) {
-  word start = Bucket::getIndex(*data, *key_hash);
+  word start = Dictionary::Bucket::getIndex(*data, *key_hash);
   word current = start;
   word next_free_index = -1;
 
@@ -2325,19 +2255,20 @@ bool Runtime::dictionaryLookup(
   }
 
   do {
-    Bucket bucket(data, current);
-    if (bucket.hasKey(*key)) {
+    if (Dictionary::Bucket::hasKey(*data, current, *key)) {
       *index = current;
       return true;
-    } else if (next_free_index == -1 && bucket.isTombstone()) {
+    } else if (
+        next_free_index == -1 &&
+        Dictionary::Bucket::isTombstone(*data, current)) {
       next_free_index = current;
-    } else if (bucket.isEmpty()) {
+    } else if (Dictionary::Bucket::isEmpty(*data, current)) {
       if (next_free_index == -1) {
         next_free_index = current;
       }
       break;
     }
-    current = (current + Bucket::kNumPointers) % length;
+    current = (current + Dictionary::Bucket::kNumPointers) % length;
   } while (current != start);
 
   *index = next_free_index;
@@ -2350,12 +2281,11 @@ ObjectArray* Runtime::dictionaryKeys(const Handle<Dictionary>& dict) {
   Handle<ObjectArray> data(&scope, dict->data());
   Handle<ObjectArray> keys(&scope, newObjectArray(dict->numItems()));
   word num_keys = 0;
-  for (word i = 0; i < data->length(); i += Bucket::kNumPointers) {
-    Bucket bucket(data, i);
-    if (bucket.isFilled()) {
+  for (word i = 0; i < data->length(); i += Dictionary::Bucket::kNumPointers) {
+    if (Dictionary::Bucket::isFilled(*data, i)) {
       DCHECK(
           num_keys < keys->length(), "%ld ! < %ld", num_keys, keys->length());
-      keys->atPut(num_keys, bucket.key());
+      keys->atPut(num_keys, Dictionary::Bucket::key(*data, i));
       num_keys++;
     }
   }
@@ -2376,7 +2306,7 @@ bool Runtime::setLookup(
     const Handle<Object>& key,
     const Handle<Object>& key_hash,
     word* index) {
-  word start = Set::bucketGetIndex(*data, *key_hash);
+  word start = Set::Bucket::getIndex(*data, *key_hash);
   word current = start;
   word next_free_index = -1;
 
@@ -2388,19 +2318,19 @@ bool Runtime::setLookup(
   }
 
   do {
-    if (Set::bucketHasKey(*data, current, *key)) {
+    if (Set::Bucket::hasKey(*data, current, *key)) {
       *index = current;
       return true;
     } else if (
-        next_free_index == -1 && Set::bucketIsTombstone(*data, current)) {
+        next_free_index == -1 && Set::Bucket::isTombstone(*data, current)) {
       next_free_index = current;
-    } else if (Set::bucketIsEmpty(*data, current)) {
+    } else if (Set::Bucket::isEmpty(*data, current)) {
       if (next_free_index == -1) {
         next_free_index = current;
       }
       break;
     }
-    current = (current + Set::kBucketNumPointers) % length;
+    current = (current + Set::Bucket::kNumPointers) % length;
   } while (current != start);
 
   *index = next_free_index;
@@ -2412,19 +2342,19 @@ ObjectArray* Runtime::setGrow(const Handle<ObjectArray>& data) {
   HandleScope scope;
   word new_length = data->length() * kSetGrowthFactor;
   if (new_length == 0) {
-    new_length = kInitialSetCapacity * Set::kBucketNumPointers;
+    new_length = kInitialSetCapacity * Set::Bucket::kNumPointers;
   }
   Handle<ObjectArray> new_data(&scope, newObjectArray(new_length));
   // Re-insert items
-  for (word i = 0; i < data->length(); i += Set::kBucketNumPointers) {
-    if (Set::bucketIsEmpty(*data, i) || Set::bucketIsTombstone(*data, i))
+  for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
+    if (Set::Bucket::isEmpty(*data, i) || Set::Bucket::isTombstone(*data, i))
       continue;
-    Handle<Object> key(&scope, Set::bucketKey(*data, i));
-    Handle<Object> hash(&scope, Set::bucketHash(*data, i));
+    Handle<Object> key(&scope, Set::Bucket::key(*data, i));
+    Handle<Object> hash(&scope, Set::Bucket::hash(*data, i));
     word index = -1;
     setLookup(new_data, key, hash, &index);
     DCHECK(index != -1, "unexpected index %ld", index);
-    Set::bucketSet(*new_data, index, *hash, *key);
+    Set::Bucket::set(*new_data, index, *hash, *key);
   }
   return *new_data;
 }
@@ -2437,7 +2367,7 @@ Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
   bool found = setLookup(data, value, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
-    return Set::bucketKey(*data, index);
+    return Set::Bucket::key(*data, index);
   }
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
@@ -2445,9 +2375,9 @@ Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
     setLookup(new_data, value, key_hash, &index);
     DCHECK(index != -1, "unexpected index %ld", index);
     set->setData(*new_data);
-    Set::bucketSet(*new_data, index, *key_hash, *value);
+    Set::Bucket::set(*new_data, index, *key_hash, *value);
   } else {
-    Set::bucketSet(*data, index, *key_hash, *value);
+    Set::Bucket::set(*data, index, *key_hash, *value);
   }
   set->setNumItems(set->numItems() + 1);
   return *value;
@@ -2469,7 +2399,7 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
   bool found = setLookup(data, value, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
-    Set::bucketSetTombstone(*data, index);
+    Set::Bucket::setTombstone(*data, index);
     set->setNumItems(set->numItems() - 1);
   }
   return found;
@@ -2484,10 +2414,11 @@ void Runtime::setUpdate(
     Handle<Set> src(&scope, *iterable);
     Handle<ObjectArray> data(&scope, src->data());
     if (src->numItems() > 0) {
-      for (word i = 0; i < data->length(); i += Set::kBucketNumPointers) {
-        if (Set::bucketIsTombstone(*data, i) || Set::bucketIsEmpty(*data, i))
+      for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
+        if (Set::Bucket::isTombstone(*data, i) ||
+            Set::Bucket::isEmpty(*data, i))
           continue;
-        elt = Set::bucketKey(*data, i);
+        elt = Set::Bucket::key(*data, i);
         setAdd(dst, elt);
       }
     }
