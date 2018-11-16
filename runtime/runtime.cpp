@@ -91,7 +91,7 @@ Runtime::Runtime(word heap_size)
   initializeSymbols();
   initializeClasses();
   initializeModules();
-  initializeApiHandles();
+  initializeApiData();
 }
 
 Runtime::Runtime() : Runtime(64 * kMiB) {}
@@ -1459,8 +1459,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit modules
   visitor->visitPointer(&modules_);
 
-  // Visit C-API handles
+  // Visit C-API data.
   visitor->visitPointer(&api_handles_);
+  visitor->visitPointer(&api_caches_);
 
   // Visit symbols
   symbols_->visit(visitor);
@@ -1531,7 +1532,10 @@ void Runtime::initializeModules() {
   }
 }
 
-void Runtime::initializeApiHandles() { api_handles_ = newDict(); }
+void Runtime::initializeApiData() {
+  api_handles_ = newDict();
+  api_caches_ = newDict();
+}
 
 RawObject Runtime::typeOf(RawObject object) {
   HandleScope scope;
@@ -3567,8 +3571,10 @@ void Runtime::freeApiHandles() {
   Handle<ObjectArray> keys(&scope, dictKeys(dict));
   for (word i = 0; i < keys->length(); i++) {
     Handle<Object> key(&scope, keys->at(i));
-    RawObject value = dictAt(dict, key);
-    std::free(Int::cast(value)->asCPtr());
+    auto handle =
+        static_cast<ApiHandle*>(Int::cast(dictAt(dict, key))->asCPtr());
+    std::free(handle->cache());
+    std::free(handle);
   }
 }
 

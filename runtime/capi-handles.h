@@ -26,6 +26,11 @@ class ApiHandle : public PyObject {
 
   ApiHandle* type();
 
+  // Each ApiHandle can have one pointer to cached data, which will be freed
+  // when the handle is destroyed.
+  void* cache();
+  void setCache(void* value);
+
   // Remove the ApiHandle from the dictionary and free its memory
   void dispose();
 
@@ -49,9 +54,9 @@ class ApiHandle : public PyObject {
 
   word refCnt() { return ob_refcnt & ~kBorrowedBit; }
 
- private:
-  ApiHandle() = delete;
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ApiHandle);
 
+ private:
   static ApiHandle* create(RawObject reference, long refcnt);
 
   // Cast RawObject to ApiHandle* and set borrowed bit if needed
@@ -66,8 +71,9 @@ class ApiHandle : public PyObject {
                                        const Handle<Object>& obj);
 
   static const long kBorrowedBit = 1L << 31;
-
-  DISALLOW_COPY_AND_ASSIGN(ApiHandle);
 };
+
+static_assert(sizeof(ApiHandle) == sizeof(PyObject),
+              "ApiHandle must not add members to PyObject");
 
 }  // namespace python

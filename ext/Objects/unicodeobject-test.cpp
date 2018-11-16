@@ -22,7 +22,6 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8WithNullSizeReturnsCString) {
   char* cstring = PyUnicode_AsUTF8AndSize(pyunicode, nullptr);
   ASSERT_NE(nullptr, cstring);
   EXPECT_STREQ(str, cstring);
-  std::free(cstring);
 }
 
 TEST_F(UnicodeExtensionApiTest, AsUTF8WithReferencedSizeReturnsCString) {
@@ -35,7 +34,26 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8WithReferencedSizeReturnsCString) {
   ASSERT_NE(nullptr, cstring);
   EXPECT_STREQ(str, cstring);
   EXPECT_EQ(size, strlen(str));
-  std::free(cstring);
+
+  // Repeated calls should return the same buffer and still set the size.
+  size = 0;
+  char* cstring2 = PyUnicode_AsUTF8AndSize(pyunicode, &size);
+  ASSERT_NE(cstring2, nullptr);
+  EXPECT_EQ(cstring2, cstring);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsUTF8ReturnsCString) {
+  const char* str = "Some other C String";
+  PyObject* pyobj = PyUnicode_FromString(str);
+
+  char* cstring = PyUnicode_AsUTF8(pyobj);
+  ASSERT_NE(cstring, nullptr);
+  EXPECT_STREQ(cstring, str);
+
+  // Make sure repeated calls on the same object return the same buffer.
+  char* cstring2 = PyUnicode_AsUTF8(pyobj);
+  ASSERT_NE(cstring, nullptr);
+  EXPECT_EQ(cstring2, cstring);
 }
 
 TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {

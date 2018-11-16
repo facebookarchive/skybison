@@ -243,6 +243,8 @@ class Runtime {
 
   RawObject apiHandles() { return api_handles_; }
 
+  RawObject apiCaches() { return api_caches_; }
+
   Symbols* symbols() { return symbols_; }
 
   // Ensures that array has enough space for an atPut at index. If so, returns
@@ -575,7 +577,7 @@ class Runtime {
   void initializePrimitiveInstances();
   void initializeInterned();
   void initializeModules();
-  void initializeApiHandles();
+  void initializeApiData();
   void initializeRandom();
   void initializeSymbols();
 
@@ -760,6 +762,11 @@ class Runtime {
 
   // ApiHandles
   RawObject api_handles_;
+
+  // Some API functions promise to cache their return value and return the same
+  // value for repeated invocations on a specific PyObject. Those value are
+  // cached here.
+  RawObject api_caches_;
 
   // Weak reference callback list
   RawObject callbacks_;

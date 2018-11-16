@@ -56,8 +56,6 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleString) {
   EXPECT_TRUE(PyArg_ParseTuple(pytuple, "sz", &out1, &out2));
   EXPECT_STREQ("hello", out1);
   EXPECT_STREQ("world", out2);
-  PyMem_Free(out1);
-  PyMem_Free(out2);
 }
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleStringFromNone) {
@@ -87,8 +85,6 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleStringWithSize) {
   EXPECT_EQ(5, size1);
   EXPECT_STREQ("cpython", out2);
   EXPECT_EQ(7, size2);
-  PyMem_Free(out1);
-  PyMem_Free(out2);
 }
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleNumbers) {

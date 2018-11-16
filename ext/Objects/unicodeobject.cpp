@@ -56,21 +56,29 @@ PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
     return nullptr;
   }
 
-  Handle<Object> str_obj(&scope,
-                         ApiHandle::fromPyObject(pyunicode)->asObject());
-  if (!str_obj->isStr()) {
+  auto handle = ApiHandle::fromPyObject(pyunicode);
+  Handle<Object> obj(&scope, handle->asObject());
+  if (!obj->isStr()) {
+    if (thread->runtime()->hasSubClassFlag(*obj, Type::Flag::kStrSubclass)) {
+      UNIMPLEMENTED("Str subclass");
+    }
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
     return nullptr;
   }
 
-  Handle<Str> str(&scope, *str_obj);
+  Handle<Str> str(obj);
   word length = str->length();
-  byte* result = static_cast<byte*>(std::malloc(length + 1));
+  if (size) *size = length;
+  if (void* cache = handle->cache()) return static_cast<char*>(cache);
+  auto result = static_cast<byte*>(std::malloc(length + 1));
   str->copyTo(result, length);
   result[length] = '\0';
-  if (size) {
-    *size = length;
-  }
+  handle->setCache(result);
   return reinterpret_cast<char*>(result);
+}
+
+PY_EXPORT const char* PyUnicode_AsUTF8(PyObject* unicode) {
+  return PyUnicode_AsUTF8AndSize(unicode, nullptr);
 }
 
 PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char*, Py_ssize_t) {
@@ -494,10 +502,6 @@ PY_EXPORT PyObject* PyUnicode_Translate(PyObject* /* r */, PyObject* /* g */,
 PY_EXPORT int PyUnicode_WriteChar(PyObject* /* e */, Py_ssize_t /* x */,
                                   Py_UCS4 /* h */) {
   UNIMPLEMENTED("PyUnicode_WriteChar");
-}
-
-PY_EXPORT const char* PyUnicode_AsUTF8(PyObject* /* e */) {
-  UNIMPLEMENTED("PyUnicode_AsUTF8");
 }
 
 PY_EXPORT Py_UNICODE* PyUnicode_AsUnicode(PyObject* /* e */) {

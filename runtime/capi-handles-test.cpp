@@ -200,4 +200,38 @@ TEST(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
   EXPECT_TRUE(handle_obj->isInstance());
 }
 
+TEST(CApiHandlesTest, Cache) {
+  Runtime runtime;
+  HandleScope scope;
+
+  auto handle1 = ApiHandle::fromObject(SmallInt::fromWord(5));
+  EXPECT_EQ(handle1->cache(), nullptr);
+
+  Handle<Str> str(&scope,
+                  runtime.newStrFromCStr("this is too long for a SmallStr"));
+  auto handle2 = ApiHandle::fromObject(*str);
+  EXPECT_EQ(handle2->cache(), nullptr);
+
+  void* buffer1 = std::malloc(16);
+  handle1->setCache(buffer1);
+  EXPECT_EQ(handle1->cache(), buffer1);
+  EXPECT_EQ(handle2->cache(), nullptr);
+
+  void* buffer2 = std::malloc(16);
+  handle2->setCache(buffer2);
+  EXPECT_EQ(handle2->cache(), buffer2);
+  EXPECT_EQ(handle1->cache(), buffer1);
+
+  handle1->setCache(buffer2);
+  handle2->setCache(buffer1);
+  EXPECT_EQ(handle1->cache(), buffer2);
+  EXPECT_EQ(handle2->cache(), buffer1);
+
+  Handle<Object> key(&scope, handle1->asObject());
+  handle1->dispose();
+  Handle<Dict> caches(&scope, runtime.apiCaches());
+  EXPECT_EQ(runtime.dictAt(caches, key), Error::object());
+  EXPECT_EQ(handle2->cache(), buffer1);
+}
+
 }  // namespace python

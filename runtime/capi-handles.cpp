@@ -134,6 +134,30 @@ ApiHandle* ApiHandle::type() {
   return ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(ob_type));
 }
 
+void* ApiHandle::cache() {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Handle<Object> key(&scope, asObject());
+  Handle<Dict> caches(&scope, runtime->apiCaches());
+  Handle<Object> cache(&scope, runtime->dictAt(caches, key));
+  DCHECK(cache->isInt() || cache->isError(), "unexpected cache type");
+  if (!cache->isError()) return Int::cast(*cache)->asCPtr();
+  return nullptr;
+}
+
+void ApiHandle::setCache(void* value) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Handle<Object> key(&scope, asObject());
+  Handle<Dict> caches(&scope, runtime->apiCaches());
+  Handle<Int> cache(&scope, runtime->newIntFromCPtr(value));
+  runtime->dictAtPut(caches, key, cache);
+}
+
 bool ApiHandle::isSubClass(Thread* thread, LayoutId layout_id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -150,6 +174,12 @@ void ApiHandle::dispose() {
   Handle<Object> key(&scope, asObject());
   Handle<Dict> dict(&scope, runtime->apiHandles());
   runtime->dictRemove(dict, key);
+
+  dict = runtime->apiCaches();
+  Handle<Object> cache(&scope, runtime->dictRemove(dict, key));
+  DCHECK(cache->isInt() || cache->isError(), "unexpected cache type");
+  if (!cache->isError()) std::free(Int::cast(*cache)->asCPtr());
+
   std::free(this);
 }
 
