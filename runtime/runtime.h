@@ -303,6 +303,13 @@ class Runtime {
   Object* dictUpdate(Thread* thread, const Handle<Dict>& dict,
                      const Handle<Object>& mapping);
 
+  // Merges a dictionary with another dictionary or a mapping.
+  // Returns either the merged dictionary or an Error object.
+  // throws a TypeError if the keys are not strings or
+  // if any of the mappings have the same key repeated in them.
+  Object* dictMerge(Thread* thread, const Handle<Dict>& dict,
+                    const Handle<Object>& mapping);
+
   NewValueCellCallback* newValueCellCallback() {
     return &new_value_cell_callback_;
   }

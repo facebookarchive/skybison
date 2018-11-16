@@ -1941,6 +1941,25 @@ void Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
   frame->setTopValue(*dict);
 }
 
+// opcode 151
+void Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  Thread* thread = ctx->thread;
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Handle<Dict> dict(&scope, runtime->newDict());
+  Handle<Object> obj(&scope, None::object());
+  for (word i = arg - 1; i >= 0; i--) {
+    obj = frame->peek(i);
+    if (runtime->dictMerge(thread, dict, obj)->isError()) {
+      frame->dropValues(arg);
+      thread->abortOnPendingException();
+    }
+  }
+  frame->dropValues(arg - 1);
+  frame->setTopValue(*dict);
+}
+
 // opcode 152 & opcode 158
 void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   Frame* frame = ctx->frame;

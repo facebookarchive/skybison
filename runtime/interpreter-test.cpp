@@ -1538,4 +1538,439 @@ TEST(InterpreterDeathTest, GetAwaitableOnNonAwaitable) {
                "can't be used in 'await' expression");
 }
 
+TEST(InterpreterTest, BuildMapUnpackWithCallDict) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+def foo(**kwargs):
+    return kwargs
+
+d = foo(**{'a': 1, 'b': 2}, **{'c': 3, 'd': 4})
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  ASSERT_TRUE(d->isDict());
+
+  Handle<Dict> dict(&scope, *d);
+  EXPECT_EQ(dict->numItems(), 4);
+
+  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
+  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el0->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+
+  key = SmallStr::fromCStr("b");
+  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el1->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+
+  key = SmallStr::fromCStr("c");
+  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el2->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+
+  key = SmallStr::fromCStr("d");
+  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el3->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+}
+
+TEST(InterpreterTest, BuildMapUnpackWithCallTupleKeys) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+class Foo:
+    def __init__(self, d):
+        self.d = d
+
+    def keys(self):
+        return ('c', 'd')
+
+    def __getitem__(self, key):
+        return self.d[key]
+
+def foo(**kwargs):
+    return kwargs
+
+d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  ASSERT_TRUE(d->isDict());
+
+  Handle<Dict> dict(&scope, *d);
+  EXPECT_EQ(dict->numItems(), 4);
+
+  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
+  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el0->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+
+  key = SmallStr::fromCStr("b");
+  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el1->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+
+  key = SmallStr::fromCStr("c");
+  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el2->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+
+  key = SmallStr::fromCStr("d");
+  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el3->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+}
+
+TEST(InterpreterTest, BuildMapUnpackWithCallListKeys) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+class Foo:
+    def __init__(self, d):
+        self.d = d
+
+    def keys(self):
+        return ['c', 'd']
+
+    def __getitem__(self, key):
+        return self.d[key]
+
+def foo(**kwargs):
+    return kwargs
+
+d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  ASSERT_TRUE(d->isDict());
+
+  Handle<Dict> dict(&scope, *d);
+  EXPECT_EQ(dict->numItems(), 4);
+
+  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
+  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el0->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+
+  key = SmallStr::fromCStr("b");
+  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el1->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+
+  key = SmallStr::fromCStr("c");
+  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el2->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+
+  key = SmallStr::fromCStr("d");
+  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el3->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+}
+
+TEST(InterpreterTest, BuildMapUnpackWithCallIteratorKeys) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+class Iter:
+    def __init__(self, keys):
+        self.idx = 0
+        self.keys = keys
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.idx >= len(self.keys):
+            raise StopIteration()
+        r = self.keys[self.idx]
+        self.idx += 1
+        return r
+
+    def __length_hint__(self):
+        return len(self.keys) - self.idx
+
+class Foo:
+    def __init__(self, d):
+        self.d = d
+
+    def keys(self):
+        return Iter(['c', 'd'])
+
+    def __getitem__(self, key):
+        return self.d[key]
+
+def foo(**kwargs):
+    return kwargs
+
+d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  ASSERT_TRUE(d->isDict());
+
+  Handle<Dict> dict(&scope, *d);
+  EXPECT_EQ(dict->numItems(), 4);
+
+  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
+  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el0->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+
+  key = SmallStr::fromCStr("b");
+  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el1->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+
+  key = SmallStr::fromCStr("c");
+  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el2->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+
+  key = SmallStr::fromCStr("d");
+  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(el3->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallDictNonStrKey) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **{'c': 3, 4: 4})
+  )"),
+               "keywords must be strings");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallDictRepeatedKeys) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **{'c': 3, 'a': 4})
+  )"),
+               "got multiple values for keyword argument");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallNonMapping) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Foo:
+    pass
+
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **Foo())
+  )"),
+               "object is not a mapping");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallNonSubscriptable) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Foo:
+    def keys(self):
+        pass
+
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **Foo())
+  )"),
+               "object is not subscriptable");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallListKeysNonStrKey) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Foo:
+    def keys(self):
+        return [1]
+
+    def __getitem__(self, key):
+        pass
+
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **Foo())
+  )"),
+               "keywords must be strings");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallListKeysRepeatedKeys) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Foo:
+    def keys(self):
+        return ['a']
+
+    def __getitem__(self, key):
+        pass
+
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **Foo())
+  )"),
+               "got multiple values for keyword argument");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallTupleKeysNonStrKeys) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Foo:
+    def keys(self):
+        return (1,)
+
+    def __getitem__(self, key):
+        pass
+
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **Foo())
+  )"),
+               "keywords must be strings");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallTupleKeysRepeatedKeys) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Foo:
+    def keys(self):
+        return ('a',)
+
+    def __getitem__(self, key):
+        pass
+
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **Foo())
+  )"),
+               "got multiple values for keyword argument");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallNonIterableKeys) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Foo:
+    def keys(self):
+        return None
+
+    def __getitem__(self, key):
+        pass
+
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **Foo())
+  )"),
+               R"(o.keys\(\) are not iterable)");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallIterableWithoutNext) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Iter:
+    def __iter__(self):
+        return self
+
+class Foo:
+    def keys(self):
+        return Iter()
+
+    def __getitem__(self, key):
+        pass
+
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **Foo())
+  )"),
+               R"(o.keys\(\) are not iterable)");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallIterableNonStrKey) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Iter:
+    def __init__(self, keys):
+        self.idx = 0
+        self.keys = keys
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.idx >= len(self.keys):
+            raise StopIteration()
+        r = self.keys[self.idx]
+        self.idx += 1
+        return r
+
+    def __length_hint__(self):
+        return len(self.keys) - self.idx
+
+class Foo:
+    def keys(self):
+        return Iter((1, 2, 3))
+
+    def __getitem__(self, key):
+        return 0
+
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **Foo())
+  )"),
+               "keywords must be strings");
+}
+
+TEST(InterpreterDeathTest, BuildMapUnpackWithCallIterableRepeatedKeys) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Iter:
+    def __init__(self, keys):
+        self.idx = 0
+        self.keys = keys
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.idx >= len(self.keys):
+            raise StopIteration()
+        r = self.keys[self.idx]
+        self.idx += 1
+        return r
+
+    def __length_hint__(self):
+        return len(self.keys) - self.idx
+
+class Foo:
+    def keys(self):
+        return Iter(('a', 'a'))
+
+    def __getitem__(self, key):
+        return 0
+
+def foo(**kwargs):
+    return kwargs
+
+foo(**{'a': 1, 'b': 2}, **Foo())
+  )"),
+               "got multiple values for keyword argument");
+}
+
 }  // namespace python

@@ -160,7 +160,7 @@ namespace python {
   V(LOAD_CLASSDEREF, 148, doLoadClassDeref)                                    \
   V(BUILD_LIST_UNPACK, 149, doBuildListUnpack)                                 \
   V(BUILD_MAP_UNPACK, 150, doBuildMapUnpack)                                   \
-  V(BUILD_MAP_UNPACK_WITH_CALL, 151, doNotImplemented)                         \
+  V(BUILD_MAP_UNPACK_WITH_CALL, 151, doBuildMapUnpackWithCall)                 \
   V(BUILD_TUPLE_UNPACK, 152, doBuildTupleUnpack)                               \
   V(BUILD_SET_UNPACK, 153, doBuildSetUnpack)                                   \
   V(SETUP_ASYNC_WITH, 154, doSetupAsyncWith)                                   \
