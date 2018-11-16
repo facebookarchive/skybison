@@ -196,4 +196,110 @@ d = a.__add__(b)
   EXPECT_PYSTRING_EQ(*d, "helloworld");
 }
 
+TEST(StrBuiltinsTest, StringFormat) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<String> src(&scope, runtime.newStringFromCString("hello %d %g %s"));
+  Handle<Object> arg0(&scope, SmallInt::fromWord(123));
+  Handle<Object> arg1(&scope, runtime.newFloat(3.14));
+  Handle<Object> arg2(&scope, runtime.newStringFromCString("pyros"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(3));
+  objs->atPut(0, *arg0);
+  objs->atPut(1, *arg1);
+  objs->atPut(2, *arg2);
+  Object* result = stringFormat(thread, src, objs);
+  EXPECT_TRUE(String::cast(result)->equalsCString("hello 123 3.14 pyros"));
+}
+
+TEST(StrBuiltinsTest, StringFormat1) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<String> src(&scope, runtime.newStringFromCString("%s"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(1));
+  objs->atPut(0, *arg);
+  Object* result = stringFormat(thread, src, objs);
+  EXPECT_TRUE(String::cast(result)->equalsCString("pyro"));
+}
+
+TEST(StrBuiltinsTest, StringFormat2) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<String> src(&scope, runtime.newStringFromCString("%s%s"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(2));
+  for (word i = 0; i < objs->length(); i++) {
+    objs->atPut(i, *arg);
+  }
+  Object* result = stringFormat(thread, src, objs);
+  EXPECT_TRUE(String::cast(result)->equalsCString("pyropyro"));
+}
+
+TEST(StrBuiltinsTest, StringFormatMixed) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<String> src(&scope,
+                     runtime.newStringFromCString("1%s,2%s,3%s,4%s,5%s"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(5));
+  for (word i = 0; i < objs->length(); i++) {
+    objs->atPut(i, *arg);
+  }
+  Object* result = stringFormat(thread, src, objs);
+  Handle<String> str(&scope, result);
+  EXPECT_TRUE(str->equalsCString("1pyro,2pyro,3pyro,4pyro,5pyro"));
+}
+
+TEST(StrBuiltinsTest, StringFormatMixed2) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<String> src(&scope, runtime.newStringFromCString("%d%s,%d%s,%d%s"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(6));
+  for (word i = 0; i < objs->length(); i++) {
+    if (i % 2 == 0) {
+      objs->atPut(i, SmallInt::fromWord(i / 2 + 1));
+    } else {
+      objs->atPut(i, *arg);
+    }
+  }
+  Object* result = stringFormat(thread, src, objs);
+  Handle<String> str(&scope, result);
+  EXPECT_TRUE(str->equalsCString("1pyro,2pyro,3pyro"));
+}
+
+TEST(StrBuiltinsDeathTest, StringFormatMalformed) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<String> src(&scope, runtime.newStringFromCString("%"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(1));
+  objs->atPut(0, *arg);
+  EXPECT_DEATH(stringFormat(thread, src, objs), "");
+}
+
+TEST(StrBuiltinsDeathTest, StringFormatMismatch) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<String> src(&scope, runtime.newStringFromCString("%d%s"));
+  Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
+  Handle<ObjectArray> objs(&scope, runtime.newObjectArray(1));
+  objs->atPut(0, *arg);
+  EXPECT_DEATH(stringFormat(thread, src, objs), "Argument mismatch");
+}
+
 }  // namespace python

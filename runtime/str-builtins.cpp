@@ -109,6 +109,95 @@ Object* builtinStringLt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+static word stringFormatBufferLength(const Handle<String>& fmt,
+                                     const Handle<ObjectArray>& args) {
+  word arg_idx = 0;
+  word len = 0;
+  for (word fmt_idx = 0; fmt_idx < fmt->length(); fmt_idx++, len++) {
+    byte ch = fmt->charAt(fmt_idx);
+    if (ch != '%') {
+      continue;
+    }
+    switch (fmt->charAt(++fmt_idx)) {
+      case 'd': {
+        len--;
+        CHECK(args->at(arg_idx)->isInt(), "Argument mismatch");
+        len +=
+            snprintf(nullptr, 0, "%ld", Int::cast(args->at(arg_idx))->asWord());
+        arg_idx++;
+      } break;
+      case 'g': {
+        len--;
+        CHECK(args->at(arg_idx)->isFloat(), "Argument mismatch");
+        len +=
+            snprintf(nullptr, 0, "%g", Float::cast(args->at(arg_idx))->value());
+        arg_idx++;
+      } break;
+      case 's': {
+        len--;
+        CHECK(args->at(arg_idx)->isString(), "Argument mismatch");
+        len += String::cast(args->at(arg_idx))->length();
+        arg_idx++;
+      } break;
+      case '%':
+        break;
+      default:
+        UNIMPLEMENTED("Unsupported format specifier");
+    }
+  }
+  return len;
+}
+
+static void stringFormatToBuffer(const Handle<String>& fmt,
+                                 const Handle<ObjectArray>& args, char* dst,
+                                 word len) {
+  word arg_idx = 0;
+  word dst_idx = 0;
+  for (word fmt_idx = 0; fmt_idx < fmt->length(); fmt_idx++) {
+    byte ch = fmt->charAt(fmt_idx);
+    if (ch != '%') {
+      dst[dst_idx++] = ch;
+      continue;
+    }
+    switch (fmt->charAt(++fmt_idx)) {
+      case 'd': {
+        word value = Int::cast(args->at(arg_idx++))->asWord();
+        dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%ld", value);
+      } break;
+      case 'g': {
+        double value = Float::cast(args->at(arg_idx++))->value();
+        dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%g", value);
+      } break;
+      case 's': {
+        String* value = String::cast(args->at(arg_idx));
+        value->copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), value->length());
+        dst_idx += value->length();
+        arg_idx++;
+      } break;
+      case '%':
+        dst[dst_idx++] = '%';
+        break;
+      default:
+        UNIMPLEMENTED("Unsupported format specifier");
+    }
+  }
+  dst[len] = '\0';
+}
+
+Object* stringFormat(Thread* thread, const Handle<String>& fmt,
+                     const Handle<ObjectArray>& args) {
+  if (fmt->length() == 0) {
+    return *fmt;
+  }
+  word len = stringFormatBufferLength(fmt, args);
+  char* dst = static_cast<char*>(std::malloc(len + 1));
+  CHECK(dst != nullptr, "Buffer allocation failure");
+  stringFormatToBuffer(fmt, args, dst, len);
+  Object* result = thread->runtime()->newStringFromCString(dst);
+  std::free(dst);
+  return result;
+}
+
 Object* builtinStringMod(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
@@ -128,7 +217,7 @@ Object* builtinStringMod(Thread* thread, Frame* caller, word nargs) {
       tuple->atPut(0, *other);
       format_args = *tuple;
     }
-    return runtime->stringFormat(thread, format, format_args);
+    return stringFormat(thread, format, format_args);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return runtime->notImplemented();
