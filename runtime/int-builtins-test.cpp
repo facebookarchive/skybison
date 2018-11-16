@@ -12,6 +12,23 @@ namespace python {
 
 using namespace testing;
 
+TEST(IntBuiltinsTest, BuiltinBases) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Type integer(&scope, runtime.typeAt(LayoutId::kInt));
+  EXPECT_EQ(integer->builtinBase(), LayoutId::kInt);
+
+  Type small_int(&scope, runtime.typeAt(LayoutId::kSmallInt));
+  EXPECT_EQ(small_int->builtinBase(), LayoutId::kInt);
+
+  Type large_int(&scope, runtime.typeAt(LayoutId::kLargeInt));
+  EXPECT_EQ(large_int->builtinBase(), LayoutId::kInt);
+
+  Type boolean(&scope, runtime.typeAt(LayoutId::kBool));
+  EXPECT_EQ(boolean->builtinBase(), LayoutId::kInt);
+}
+
 TEST(IntBuiltinsTest, NewWithStringReturnsInt) {
   Runtime runtime;
   runtime.runFromCStr(R"(

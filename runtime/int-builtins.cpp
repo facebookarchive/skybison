@@ -38,11 +38,10 @@ void IntBuiltins::initialize(Runtime* runtime) {
   Type type(&scope,
             runtime->addBuiltinTypeWithMethods(SymbolId::kInt, LayoutId::kInt,
                                                LayoutId::kObject, kMethods));
-  type->setFlag(Type::Flag::kIntSubclass);
   Type largeint_type(
       &scope, runtime->addEmptyBuiltinType(
                   SymbolId::kLargeInt, LayoutId::kLargeInt, LayoutId::kInt));
-  largeint_type->setFlag(Type::Flag::kIntSubclass);
+  largeint_type->setBuiltinBase(LayoutId::kInt);
 }
 
 RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
@@ -60,13 +59,13 @@ RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
 
   Object type_obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "int.__new__(X): X is not a type object");
   }
 
   Type type(&scope, *type_obj);
-  if (!type->hasFlag(Type::Flag::kIntSubclass)) {
+  if (type->builtinBase() != LayoutId::kInt) {
     return thread->raiseTypeErrorWithCStr(
         "int.__new__(X): X is not a subtype of int");
   }
@@ -150,7 +149,7 @@ RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   if (arg->isInt()) {
     return *arg;
   }
-  if (thread->runtime()->hasSubClassFlag(*arg, Type::Flag::kIntSubclass)) {
+  if (thread->runtime()->isInstanceOfInt(*arg)) {
     UNIMPLEMENTED("Strict subclass of int");
   }
   return thread->raiseTypeErrorWithCStr(
@@ -175,7 +174,7 @@ void SmallIntBuiltins::initialize(Runtime* runtime) {
   Type type(&scope, runtime->addBuiltinTypeWithMethods(
                         SymbolId::kSmallInt, LayoutId::kSmallInt,
                         LayoutId::kInt, kMethods));
-  type->setFlag(Type::Flag::kIntSubclass);
+  type->setBuiltinBase(LayoutId::kInt);
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
   // SmallInt to all locations that decode to a SmallInt tag.
@@ -794,7 +793,7 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "bool.__new__(X): X is not a type object");
   }
@@ -830,7 +829,7 @@ void BoolBuiltins::initialize(Runtime* runtime) {
   Type type(&scope,
             runtime->addBuiltinTypeWithMethods(SymbolId::kBool, LayoutId::kBool,
                                                LayoutId::kInt, kMethods));
-  type->setFlag(Type::Flag::kIntSubclass);
+  type->setBuiltinBase(LayoutId::kInt);
 }
 
 }  // namespace python

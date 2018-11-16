@@ -65,7 +65,7 @@ PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
   Object value(&scope, ApiHandle::fromPyObject(newitem)->asObject());
 
   Object list_obj(&scope, ApiHandle::fromPyObject(op)->asObject());
-  if (!runtime->hasSubClassFlag(*list_obj, Type::Flag::kListSubclass)) {
+  if (!runtime->isInstanceOfList(*list_obj)) {
     thread->raiseSystemErrorWithCStr("bad argument to internal function");
     return -1;
   }

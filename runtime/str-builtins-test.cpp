@@ -10,6 +10,20 @@ namespace python {
 
 using namespace testing;
 
+TEST(StrBuiltinsTest, BuiltinBase) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Type small_str(&scope, runtime.typeAt(LayoutId::kSmallStr));
+  EXPECT_EQ(small_str->builtinBase(), LayoutId::kStr);
+
+  Type large_str(&scope, runtime.typeAt(LayoutId::kLargeStr));
+  EXPECT_EQ(large_str->builtinBase(), LayoutId::kStr);
+
+  Type str(&scope, runtime.typeAt(LayoutId::kStr));
+  EXPECT_EQ(str->builtinBase(), LayoutId::kStr);
+}
+
 TEST(StrBuiltinsTest, RichCompareStringEQ) {  // pystone dependency
   const char* src = R"(
 a = "__main__"

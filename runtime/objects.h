@@ -8,34 +8,22 @@
 
 namespace python {
 
+// Python types that store their value directly in a RawObject.
 #define INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                     \
   V(SmallInt)                                                                  \
   V(SmallStr)                                                                  \
   V(Bool)                                                                      \
   V(NoneType)
 
+// Python types that hold a pointer to heap-allocated data in a RawObject.
 #define INTRINSIC_HEAP_CLASS_NAMES(V)                                          \
   V(Object)                                                                    \
-  V(ArithmeticError)                                                           \
-  V(AssertionError)                                                            \
-  V(AttributeError)                                                            \
-  V(BaseException)                                                             \
-  V(BlockingIOError)                                                           \
   V(BoundMethod)                                                               \
-  V(BrokenPipeError)                                                           \
-  V(BufferError)                                                               \
   V(Bytes)                                                                     \
-  V(BytesWarning)                                                              \
-  V(ChildProcessError)                                                         \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \
-  V(ConnectionAbortedError)                                                    \
-  V(ConnectionError)                                                           \
-  V(ConnectionRefusedError)                                                    \
-  V(ConnectionResetError)                                                      \
   V(Coroutine)                                                                 \
-  V(DeprecationWarning)                                                        \
   V(Dict)                                                                      \
   V(DictItemIterator)                                                          \
   V(DictItems)                                                                 \
@@ -43,71 +31,90 @@ namespace python {
   V(DictKeys)                                                                  \
   V(DictValueIterator)                                                         \
   V(DictValues)                                                                \
-  V(EOFError)                                                                  \
   V(Ellipsis)                                                                  \
-  V(Exception)                                                                 \
-  V(FileExistsError)                                                           \
-  V(FileNotFoundError)                                                         \
   V(Float)                                                                     \
-  V(FloatingPointError)                                                        \
   V(Function)                                                                  \
-  V(FutureWarning)                                                             \
   V(Generator)                                                                 \
-  V(GeneratorExit)                                                             \
   V(HeapFrame)                                                                 \
-  V(ImportError)                                                               \
-  V(ImportWarning)                                                             \
-  V(IndentationError)                                                          \
-  V(IndexError)                                                                \
   V(Int)                                                                       \
-  V(InterruptedError)                                                          \
-  V(IsADirectoryError)                                                         \
-  V(KeyError)                                                                  \
-  V(KeyboardInterrupt)                                                         \
   V(LargeInt)                                                                  \
   V(LargeStr)                                                                  \
   V(Layout)                                                                    \
   V(List)                                                                      \
   V(ListIterator)                                                              \
+  V(Module)                                                                    \
+  V(NotImplemented)                                                            \
+  V(Property)                                                                  \
+  V(Range)                                                                     \
+  V(RangeIterator)                                                             \
+  V(Set)                                                                       \
+  V(SetIterator)                                                               \
+  V(Slice)                                                                     \
+  V(StaticMethod)                                                              \
+  V(Str)                                                                       \
+  V(StrIterator)                                                               \
+  V(Super)                                                                     \
+  V(Tuple)                                                                     \
+  V(TupleIterator)                                                             \
+  V(Type)                                                                      \
+  V(ValueCell)                                                                 \
+  V(WeakRef)
+
+// Heap-allocated Python types in the BaseException hierarchy.
+#define INTRINSIC_EXCEPTION_CLASS_NAMES(V)                                     \
+  V(ArithmeticError)                                                           \
+  V(AssertionError)                                                            \
+  V(AttributeError)                                                            \
+  V(BaseException)                                                             \
+  V(BlockingIOError)                                                           \
+  V(BrokenPipeError)                                                           \
+  V(BufferError)                                                               \
+  V(BytesWarning)                                                              \
+  V(ChildProcessError)                                                         \
+  V(ConnectionAbortedError)                                                    \
+  V(ConnectionError)                                                           \
+  V(ConnectionRefusedError)                                                    \
+  V(ConnectionResetError)                                                      \
+  V(DeprecationWarning)                                                        \
+  V(EOFError)                                                                  \
+  V(Exception)                                                                 \
+  V(FileExistsError)                                                           \
+  V(FileNotFoundError)                                                         \
+  V(FloatingPointError)                                                        \
+  V(FutureWarning)                                                             \
+  V(GeneratorExit)                                                             \
+  V(ImportError)                                                               \
+  V(ImportWarning)                                                             \
+  V(IndentationError)                                                          \
+  V(IndexError)                                                                \
+  V(InterruptedError)                                                          \
+  V(IsADirectoryError)                                                         \
+  V(KeyboardInterrupt)                                                         \
+  V(KeyError)                                                                  \
   V(LookupError)                                                               \
   V(MemoryError)                                                               \
-  V(Module)                                                                    \
   V(ModuleNotFoundError)                                                       \
   V(NameError)                                                                 \
   V(NotADirectoryError)                                                        \
-  V(NotImplemented)                                                            \
   V(NotImplementedError)                                                       \
   V(OSError)                                                                   \
   V(OverflowError)                                                             \
   V(PendingDeprecationWarning)                                                 \
   V(PermissionError)                                                           \
   V(ProcessLookupError)                                                        \
-  V(Property)                                                                  \
-  V(Range)                                                                     \
-  V(RangeIterator)                                                             \
   V(RecursionError)                                                            \
   V(ReferenceError)                                                            \
   V(ResourceWarning)                                                           \
   V(RuntimeError)                                                              \
   V(RuntimeWarning)                                                            \
-  V(Set)                                                                       \
-  V(SetIterator)                                                               \
-  V(Slice)                                                                     \
-  V(StaticMethod)                                                              \
   V(StopAsyncIteration)                                                        \
   V(StopIteration)                                                             \
-  V(Str)                                                                       \
-  V(StrIterator)                                                               \
-  V(Super)                                                                     \
   V(SyntaxError)                                                               \
   V(SyntaxWarning)                                                             \
   V(SystemError)                                                               \
   V(SystemExit)                                                                \
   V(TabError)                                                                  \
   V(TimeoutError)                                                              \
-  V(Tuple)                                                                     \
-  V(TupleIterator)                                                             \
-  V(Type)                                                                      \
   V(TypeError)                                                                 \
   V(UnboundLocalError)                                                         \
   V(UnicodeDecodeError)                                                        \
@@ -116,15 +123,14 @@ namespace python {
   V(UnicodeTranslateError)                                                     \
   V(UnicodeWarning)                                                            \
   V(UserWarning)                                                               \
-  V(ValueCell)                                                                 \
   V(ValueError)                                                                \
   V(Warning)                                                                   \
-  V(WeakRef)                                                                   \
   V(ZeroDivisionError)
 
 #define INTRINSIC_CLASS_NAMES(V)                                               \
   INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                           \
-  INTRINSIC_HEAP_CLASS_NAMES(V)
+  INTRINSIC_HEAP_CLASS_NAMES(V)                                                \
+  INTRINSIC_EXCEPTION_CLASS_NAMES(V)
 
 // This enumerates layout ids of intrinsic classes. Notably, the layout of an
 // instance of an intrinsic class does not change.
@@ -140,128 +146,35 @@ namespace python {
 // NB: If you add something here make sure you add it to the appropriate macro
 // above
 enum class LayoutId : word {
-  // Immediate objects - note that the RawSmallInt class is also aliased to
-  // all even integers less than 32, so that classes of immediate objects can
-  // be looked up simply by using the low 5 bits of the immediate value. This
+  // Immediate objects - note that the SmallInt class is also aliased to all
+  // even integers less than 32, so that classes of immediate objects can be
+  // looked up simply by using the low 5 bits of the immediate value. This
   // implies that all other immediate class ids must be odd.
   kSmallInt = 0,
   kBool = 7,
   kNoneType = 15,
-  // there is no class associated with the RawError object type, this is here as
-  // a
-  // placeholder.
+  // There is no RawType associated with the RawError object type, this is here
+  // as a placeholder.
   kError = 23,
   kSmallStr = 31,
 
+// clang-format off
   // Heap objects
-  kObject = 32,
-  kArithmeticError,
-  kAssertionError,
-  kAttributeError,
-  kBaseException,
-  kBlockingIOError,
-  kBoundMethod,
-  kBrokenPipeError,
-  kBufferError,
-  kBytes,
-  kBytesWarning,
-  kChildProcessError,
-  kClassMethod,
-  kCode,
-  kComplex,
-  kConnectionAbortedError,
-  kConnectionError,
-  kConnectionRefusedError,
-  kConnectionResetError,
-  kCoroutine,
-  kDeprecationWarning,
-  kDict,
-  kDictItemIterator,
-  kDictItems,
-  kDictKeyIterator,
-  kDictKeys,
-  kDictValueIterator,
-  kDictValues,
-  kEOFError,
-  kEllipsis,
-  kException,
-  kFileExistsError,
-  kFileNotFoundError,
-  kFloat,
-  kFloatingPointError,
-  kFunction,
-  kFutureWarning,
-  kGenerator,
-  kGeneratorExit,
-  kHeapFrame,
-  kImportError,
-  kImportWarning,
-  kIndentationError,
-  kIndexError,
-  kInt,
-  kInterruptedError,
-  kIsADirectoryError,
-  kKeyError,
-  kKeyboardInterrupt,
-  kLargeInt,
-  kLargeStr,
-  kLayout,
-  kList,
-  kListIterator,
-  kLookupError,
-  kMemoryError,
-  kModule,
-  kModuleNotFoundError,
-  kNameError,
-  kNotADirectoryError,
-  kNotImplemented,
-  kNotImplementedError,
-  kOSError,
-  kOverflowError,
-  kPendingDeprecationWarning,
-  kPermissionError,
-  kProcessLookupError,
-  kProperty,
-  kRange,
-  kRangeIterator,
-  kRecursionError,
-  kReferenceError,
-  kResourceWarning,
-  kRuntimeError,
-  kRuntimeWarning,
-  kSet,
-  kSetIterator,
-  kSlice,
-  kStaticMethod,
-  kStopAsyncIteration,
-  kStopIteration,
-  kStr,
-  kStrIterator,
-  kSuper,
-  kSyntaxError,
-  kSyntaxWarning,
-  kSystemError,
-  kSystemExit,
-  kTabError,
-  kTimeoutError,
-  kTuple,
-  kTupleIterator,
-  kType,
-  kTypeError,
-  kUnboundLocalError,
-  kUnicodeDecodeError,
-  kUnicodeEncodeError,
-  kUnicodeError,
-  kUnicodeTranslateError,
-  kUnicodeWarning,
-  kUserWarning,
-  kValueCell,
-  kValueError,
-  kWarning,
-  kWeakRef,
-  kZeroDivisionError,
+#define LAYOUT_ID(name) k##name,
+  INTRINSIC_HEAP_CLASS_NAMES(LAYOUT_ID)
+  INTRINSIC_EXCEPTION_CLASS_NAMES(LAYOUT_ID)
+#undef LAYOUT_ID
 
-  kLastBuiltinId = kZeroDivisionError,
+  // Mark the first and last Exception LayoutIds, to allow range comparisons.
+#define GET_FIRST(name) k##name + 0 *
+  kFirstException = INTRINSIC_EXCEPTION_CLASS_NAMES(GET_FIRST) 0,
+#undef GET_FIRST
+#define GET_LAST(name) 0 + k##name *
+  kLastException = INTRINSIC_EXCEPTION_CLASS_NAMES(GET_LAST) 1,
+#undef GET_LAST
+  // clang-format on
+
+  kLastBuiltinId = kLastException,
 };
 
 // Map from type to its corresponding LayoutId:
@@ -827,22 +740,9 @@ class RawKeyError : public RawLookupError {
 class RawType : public RawHeapObject {
  public:
   enum Flag : word {
-    kBaseExceptionSubclass = 1 << 0,
-    kComplexSubclass = 1 << 1,
-    kDictSubclass = 1 << 2,
-    kFloatSubclass = 1 << 3,
-    kIntSubclass = 1 << 4,
-    kListSubclass = 1 << 5,
-    kSetSubclass = 1 << 6,
-    kStopIterationSubclass = 1 << 7,
-    kStrSubclass = 1 << 8,
-    kSystemExitSubclass = 1 << 9,
-    kTupleSubclass = 1 << 10,
-    kTypeSubclass = 1 << 11,
-    kLast = kTypeSubclass,
+    // If you add a flag, keep in mind that bits 0-7 are reserved to hold a
+    // LayoutId.
   };
-  static_assert(Flag::kLast < RawSmallInt::kMaxValue,
-                "Flags must be encodable in a RawSmallInt");
 
   // Getters and setters.
   RawObject instanceLayout();
@@ -854,10 +754,19 @@ class RawType : public RawHeapObject {
   RawObject name();
   void setName(RawObject name);
 
-  RawObject flags();
-  void setFlags(RawObject value);
-  void setFlag(Flag flag);
-  bool hasFlag(Flag flag);
+  // Flags.
+  //
+  // Bits 0-7 contain the LayoutId of the builtin base type. For builtin types,
+  // this is the type itself, except for subtypes of int and str, which have
+  // kInt and kStr, respectively. For user-defined types, it is the LayoutId of
+  // the first builtin base class (kObject for most types).
+  //
+  // Bits 8+ are a bitmask of flags describing certain properties of the type.
+  Flag flags();
+  bool hasFlag(Flag bit);
+  LayoutId builtinBase();
+  void setFlagsAndBuiltinBase(Flag value, LayoutId base);
+  void setBuiltinBase(LayoutId base);
 
   RawObject dict();
   void setDict(RawObject name);
@@ -866,10 +775,6 @@ class RawType : public RawHeapObject {
   // Only set on classes that were initialized through PyType_Ready
   RawObject extensionType();
   void setExtensionType(RawObject pytype);
-
-  // builtin base related
-  RawObject builtinBase();
-  void setBuiltinBase(RawObject base);
 
   bool isIntrinsicOrExtension();
 
@@ -882,11 +787,15 @@ class RawType : public RawHeapObject {
   static const int kNameOffset = kInstanceLayoutOffset + kPointerSize;
   static const int kFlagsOffset = kNameOffset + kPointerSize;
   static const int kDictOffset = kFlagsOffset + kPointerSize;
-  static const int kBuiltinBaseTypeOffset = kDictOffset + kPointerSize;
-  static const int kExtensionTypeOffset = kBuiltinBaseTypeOffset + kPointerSize;
+  static const int kExtensionTypeOffset = kDictOffset + kPointerSize;
   static const int kSize = kExtensionTypeOffset + kPointerSize;
 
+  static const int kBuiltinBaseMask = 0xff;
+
   RAW_OBJECT_COMMON_NO_CAST(Type);
+
+ private:
+  void setFlags(Flag value);
 };
 
 class RawArray : public RawHeapObject {
@@ -2823,21 +2732,32 @@ inline void RawType::setName(RawObject name) {
   instanceVariableAtPut(kNameOffset, name);
 }
 
-inline RawObject RawType::flags() { return instanceVariableAt(kFlagsOffset); }
-
-inline void RawType::setFlags(RawObject value) {
-  instanceVariableAtPut(kFlagsOffset, value);
+inline RawType::Flag RawType::flags() {
+  return static_cast<Flag>(
+      RawSmallInt::cast(instanceVariableAt(kFlagsOffset)).value());
 }
 
-inline void RawType::setFlag(RawType::Flag bit) {
-  word f = RawSmallInt::cast(flags())->value();
-  RawObject new_flag = RawSmallInt::fromWord(f | bit);
-  instanceVariableAtPut(kFlagsOffset, new_flag);
+inline void RawType::setFlagsAndBuiltinBase(Flag value, LayoutId base) {
+  auto raw_base = static_cast<int>(base);
+  DCHECK((raw_base & kBuiltinBaseMask) == raw_base,
+         "Builtin base LayoutId too high");
+  setFlags(static_cast<Flag>((value & ~kBuiltinBaseMask) | raw_base));
 }
 
-inline bool RawType::hasFlag(RawType::Flag bit) {
-  word f = RawSmallInt::cast(flags())->value();
-  return (f & bit) != 0;
+inline void RawType::setFlags(Flag value) {
+  instanceVariableAtPut(kFlagsOffset, RawSmallInt::fromWord(value));
+}
+
+inline void RawType::setBuiltinBase(LayoutId base) {
+  auto raw = static_cast<int>(base);
+  DCHECK((raw & kBuiltinBaseMask) == raw, "Builtin base LayoutId too high");
+  setFlags(static_cast<Flag>((flags() & ~kBuiltinBaseMask) | raw));
+}
+
+inline bool RawType::hasFlag(Flag bit) { return (flags() & bit) != 0; }
+
+inline LayoutId RawType::builtinBase() {
+  return static_cast<LayoutId>(flags() & kBuiltinBaseMask);
 }
 
 inline RawObject RawType::dict() { return instanceVariableAt(kDictOffset); }
@@ -2846,20 +2766,12 @@ inline void RawType::setDict(RawObject dict) {
   instanceVariableAtPut(kDictOffset, dict);
 }
 
-inline RawObject RawType::builtinBase() {
-  return instanceVariableAt(kBuiltinBaseTypeOffset);
-}
-
 inline RawObject RawType::extensionType() {
   return instanceVariableAt(kExtensionTypeOffset);
 }
 
 inline void RawType::setExtensionType(RawObject pytype) {
   instanceVariableAtPut(kExtensionTypeOffset, pytype);
-}
-
-inline void RawType::setBuiltinBase(RawObject base) {
-  instanceVariableAtPut(kBuiltinBaseTypeOffset, base);
 }
 
 inline bool RawType::isIntrinsicOrExtension() {

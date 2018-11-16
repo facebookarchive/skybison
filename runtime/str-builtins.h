@@ -8,6 +8,11 @@
 
 namespace python {
 
+class SmallStrBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+};
+
 class StrBuiltins {
  public:
   static void initialize(Runtime* runtime);

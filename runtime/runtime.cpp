@@ -242,7 +242,7 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
   subclass->setMro(*mro);
   subclass->setInstanceLayout(*layout);
   Type superclass(&scope, typeAt(superclass_id));
-  subclass->setFlags(superclass->flags());
+  subclass->setFlagsAndBuiltinBase(superclass->flags(), subclass_id);
 
   // Install the layout and class
   layoutAtPut(subclass_id, *layout);
@@ -283,7 +283,8 @@ RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   HandleScope scope;
   Type result(&scope, heap()->createType(metaclass_id));
   Dict dict(&scope, newDict());
-  result->setFlags(SmallInt::fromWord(0));
+  result->setFlagsAndBuiltinBase(static_cast<RawType::Flag>(0),
+                                 LayoutId::kObject);
   result->setDict(*dict);
   return *result;
 }
@@ -1018,7 +1019,6 @@ void Runtime::initializeHeapTypes() {
   addEmptyBuiltinType(SymbolId::kFrame, LayoutId::kHeapFrame,
                       LayoutId::kObject);
   FunctionBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kLargeStr, LayoutId::kLargeStr, LayoutId::kStr);
   addEmptyBuiltinType(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
   ListBuiltins::initialize(this);
   ListIteratorBuiltins::initialize(this);
@@ -1237,7 +1237,6 @@ void Runtime::initializeTypeType() {
   HandleScope scope;
   Type type(&scope, addEmptyBuiltinType(SymbolId::kType, LayoutId::kType,
                                         LayoutId::kObject));
-  type->setFlag(Type::Flag::kTypeSubclass);
 
   typeAddBuiltinFunctionKw(type, SymbolId::kDunderCall,
                            nativeTrampoline<builtinTypeCall>,
@@ -1253,7 +1252,7 @@ void Runtime::initializeTypeType() {
 void Runtime::initializeImmediateTypes() {
   BoolBuiltins::initialize(this);
   NoneBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kSmallStr, LayoutId::kSmallStr, LayoutId::kStr);
+  SmallStrBuiltins::initialize(this);
   SmallIntBuiltins::initialize(this);
 }
 
@@ -2875,7 +2874,7 @@ inline RawObject Runtime::dictUpdate(Thread* thread, const Dict& dict,
         key = Dict::Bucket::key(*data, i);
         value = Dict::Bucket::value(*data, i);
         if (type == DictUpdateType::Merge) {
-          if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
+          if (!isInstanceOfStr(*key)) {
             return thread->raiseTypeErrorWithCStr("keywords must be strings");
           }
           if (dictIncludes(dict, key)) {
@@ -2910,7 +2909,7 @@ inline RawObject Runtime::dictUpdate(Thread* thread, const Dict& dict,
     for (word i = 0; i < keys_list->numItems(); ++i) {
       key = keys_list->at(i);
       if (type == DictUpdateType::Merge) {
-        if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
+        if (!isInstanceOfStr(*key)) {
           return thread->raiseTypeErrorWithCStr("keywords must be strings");
         }
         if (dictIncludes(dict, key)) {
@@ -2933,7 +2932,7 @@ inline RawObject Runtime::dictUpdate(Thread* thread, const Dict& dict,
     for (word i = 0; i < keys_tuple->length(); ++i) {
       key = keys_tuple->at(i);
       if (type == DictUpdateType::Merge) {
-        if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
+        if (!isInstanceOfStr(*key)) {
           return thread->raiseTypeErrorWithCStr("keywords must be strings");
         }
         if (dictIncludes(dict, key)) {
@@ -2979,7 +2978,7 @@ inline RawObject Runtime::dictUpdate(Thread* thread, const Dict& dict,
       return *key;
     }
     if (type == DictUpdateType::Merge) {
-      if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
+      if (!isInstanceOfStr(*key)) {
         return thread->raiseTypeErrorWithCStr("keywords must be strings");
       }
       if (dictIncludes(dict, key)) {
@@ -3287,7 +3286,7 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
   word result_len = 0;
   for (word i = 0; i < allocated; ++i) {
     Object elt(&scope, items->at(i));
-    if (!elt->isStr() && !hasSubClassFlag(*elt, Type::Flag::kStrSubclass)) {
+    if (!elt->isStr() && !isInstanceOfStr(*elt)) {
       return thread->raiseTypeError(
           newStrFromFormat("sequence item %ld: expected str instance", i));
     }

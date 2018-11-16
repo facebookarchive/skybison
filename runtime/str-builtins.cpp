@@ -9,6 +9,15 @@
 
 namespace python {
 
+void SmallStrBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+
+  Type type(&scope,
+            runtime->addEmptyBuiltinType(SymbolId::kSmallStr,
+                                         LayoutId::kSmallStr, LayoutId::kStr));
+  type->setBuiltinBase(LayoutId::kStr);
+}
+
 const BuiltinMethod StrBuiltins::kMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
@@ -35,7 +44,11 @@ void StrBuiltins::initialize(Runtime* runtime) {
   Type type(&scope,
             runtime->addBuiltinTypeWithMethods(SymbolId::kStr, LayoutId::kStr,
                                                LayoutId::kObject, kMethods));
-  type->setFlag(Type::Flag::kStrSubclass);
+
+  Type largestr_type(
+      &scope, runtime->addEmptyBuiltinType(
+                  SymbolId::kLargeStr, LayoutId::kLargeStr, LayoutId::kStr));
+  largestr_type->setBuiltinBase(LayoutId::kStr);
 }
 
 RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
@@ -51,10 +64,10 @@ RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
-  if (!runtime->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
+  if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseTypeErrorWithCStr("str.__add__ requires a str object");
   }
-  if (!runtime->hasSubClassFlag(*other, Type::Flag::kStrSubclass)) {
+  if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr("can only concatenate str to str");
   }
   if (!self->isStr()) {
@@ -116,7 +129,7 @@ RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   }
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
-  if (!runtime->hasSubClassFlag(args.get(0), Type::Flag::kStrSubclass)) {
+  if (!runtime->isInstanceOfStr(args.get(0))) {
     return thread->raiseTypeErrorWithCStr("'join' requires a 'str' object");
   }
   HandleScope scope(thread);
@@ -352,11 +365,11 @@ RawObject StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object type(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type, Type::Flag::kTypeSubclass)) {
+  if (!runtime->isInstanceOfType(*type)) {
     return thread->raiseTypeErrorWithCStr(
         "str.__new__(X): X is not a type object");
   }
-  if (!RawType::cast(*type)->hasFlag(Type::Flag::kStrSubclass)) {
+  if (RawType::cast(*type)->builtinBase() != LayoutId::kStr) {
     return thread->raiseTypeErrorWithCStr(
         "str.__new__(X): X is not a subtype of str");
   }
@@ -384,8 +397,7 @@ RawObject StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   DCHECK(!method->isError(),
          "No __str__ found on the object even though everything inherits one");
   RawObject ret = Interpreter::callMethod1(thread, frame, method, arg);
-  if (!ret->isError() &&
-      !runtime->hasSubClassFlag(ret, Type::Flag::kStrSubclass)) {
+  if (!ret->isError() && !runtime->isInstanceOfStr(ret)) {
     return thread->raiseTypeErrorWithCStr("__str__ returned non-string");
   }
   return ret;
@@ -445,7 +457,7 @@ RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self->isStr()) {
-    if (thread->runtime()->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
+    if (thread->runtime()->isInstanceOfStr(*self)) {
       UNIMPLEMENTED("str.__iter__(<subtype of str>)");
     }
     return thread->raiseTypeErrorWithCStr(
@@ -473,7 +485,7 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*obj, Type::Flag::kStrSubclass)) {
+  if (!runtime->isInstanceOfStr(*obj)) {
     return thread->raiseTypeErrorWithCStr(
         "str.__repr__(self): self is not a str");
   }
@@ -596,7 +608,7 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
+  if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseTypeErrorWithCStr("str.lstrip() requires a str object");
   }
   if (!self->isStr()) {
@@ -611,7 +623,7 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   if (other->isNoneType()) {
     return runtime->strStripSpace(str, StrStripDirection::Left);
   }
-  if (!runtime->hasSubClassFlag(*other, Type::Flag::kStrSubclass)) {
+  if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr(
         "str.lstrip() arg must be None or str");
   }
@@ -634,7 +646,7 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
+  if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseTypeErrorWithCStr("str.rstrip() requires a str object");
   }
   if (!self->isStr()) {
@@ -649,7 +661,7 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   if (other->isNoneType()) {
     return runtime->strStripSpace(str, StrStripDirection::Right);
   }
-  if (!runtime->hasSubClassFlag(*other, Type::Flag::kStrSubclass)) {
+  if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr(
         "str.rstrip() arg must be None or str");
   }
@@ -672,7 +684,7 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
+  if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseTypeErrorWithCStr("str.strip() requires a str object");
   }
   if (!self->isStr()) {
@@ -687,7 +699,7 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   if (other->isNoneType()) {
     return runtime->strStripSpace(str, StrStripDirection::Both);
   }
-  if (!runtime->hasSubClassFlag(*other, Type::Flag::kStrSubclass)) {
+  if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr(
         "str.strip() arg must be None or str");
   }

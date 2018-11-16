@@ -35,7 +35,6 @@ void ListBuiltins::initialize(Runtime* runtime) {
   Type list(&scope,
             runtime->addBuiltinType(SymbolId::kList, LayoutId::kList,
                                     LayoutId::kObject, kAttributes, kMethods));
-  list->setFlag(Type::Flag::kListSubclass);
 }
 
 RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
@@ -48,7 +47,7 @@ RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
-  if (!type->hasFlag(Type::Flag::kListSubclass)) {
+  if (type->builtinBase() != LayoutId::kList) {
     return thread->raiseTypeErrorWithCStr("not a subtype of list");
   }
   Layout layout(&scope, type->instanceLayout());

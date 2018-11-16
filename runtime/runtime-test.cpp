@@ -1757,6 +1757,30 @@ def func():
   }
 }
 
+TEST(RuntimeTest, IsInstanceOf) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Object i(&scope, runtime.newInt(123));
+  EXPECT_TRUE(runtime.isInstanceOfInt(*i));
+  EXPECT_FALSE(runtime.isInstanceOfStr(*i));
+
+  Object str(&scope, runtime.newStrFromCStr("this is a long string"));
+  EXPECT_TRUE(runtime.isInstanceOfStr(*str));
+  EXPECT_FALSE(runtime.isInstanceOfInt(*str));
+
+  runtime.runFromCStr(R"(
+class StopIterationSub(StopIteration):
+  pass
+stop_iteration = StopIterationSub()
+  )");
+  Object stop_iteration(&scope,
+                        moduleAt(&runtime, "__main__", "stop_iteration"));
+  EXPECT_TRUE(runtime.isInstanceOfStopIteration(*stop_iteration));
+  EXPECT_TRUE(runtime.isInstanceOfBaseException(*stop_iteration));
+  EXPECT_FALSE(runtime.isInstanceOfSystemExit(*stop_iteration));
+}
+
 TEST(RuntimeTupleTest, Create) {
   Runtime runtime;
 

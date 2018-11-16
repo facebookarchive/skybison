@@ -521,59 +521,35 @@ class Runtime {
   // Return true if subclass is a subclass of superclass
   RawObject isSubClass(const Type& subclass, const Type& superclass);
 
-  bool hasSubClassFlag(RawObject instance, Type::Flag flag) {
-    return RawType::cast(typeAt(instance->layoutId()))->hasFlag(flag);
+  // For commonly-subclassed builtin types, define isInstanceOfFoo(RawObject)
+  // that does a check including subclasses (unlike RawObject::isFoo(), which
+  // only gets exact types).
+#define DEFINE_IS_INSTANCE(ty)                                                 \
+  bool isInstanceOf##ty(RawObject obj) {                                       \
+    if (obj.is##ty()) return true;                                             \
+    return bit_cast<RawType>(typeOf(obj)).builtinBase() == LayoutId::k##ty;    \
   }
+  DEFINE_IS_INSTANCE(Bytes)
+  DEFINE_IS_INSTANCE(Complex)
+  DEFINE_IS_INSTANCE(Dict)
+  DEFINE_IS_INSTANCE(Float)
+  DEFINE_IS_INSTANCE(Int)
+  DEFINE_IS_INSTANCE(List)
+  DEFINE_IS_INSTANCE(Set)
+  DEFINE_IS_INSTANCE(StopIteration)
+  DEFINE_IS_INSTANCE(Str)
+  DEFINE_IS_INSTANCE(SystemExit)
+  DEFINE_IS_INSTANCE(Tuple)
+  DEFINE_IS_INSTANCE(Type)
 
-  // Returns whether or not instance is an instance of Type or a subclass of
-  // Type.
-  //
-  // This is equivalent to PyType_Check.
-  bool isInstanceOfType(RawObject instance) {
-    if (instance->isType()) {
-      return true;
-    }
-    // The bit_cast here is needed to avoid self-recursion when this is called
-    // by Type::cast(). It is safe, as typeOf() is guaranteed to return a
-    // RawType.
-    return bit_cast<RawType>(typeOf(instance))
-        ->hasFlag(Type::Flag::kTypeSubclass);
+  // BaseException must be handled specially because it has builtin subclasses
+  // that are visible to managed code.
+  bool isInstanceOfBaseException(RawObject obj) {
+    LayoutId base = RawType::cast(typeOf(obj)).builtinBase();
+    return base >= LayoutId::kFirstException &&
+           base <= LayoutId::kLastException;
   }
-
-  bool isInstanceOfList(RawObject instance) {
-    if (instance->isList()) {
-      return true;
-    }
-    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kListSubclass);
-  }
-
-  bool isInstanceOfDict(RawObject instance) {
-    if (instance->isDict()) {
-      return true;
-    }
-    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kDictSubclass);
-  }
-
-  bool isInstanceOfFloat(RawObject instance) {
-    if (instance->isFloat()) {
-      return true;
-    }
-    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kFloatSubclass);
-  }
-
-  bool isInstanceOfSet(RawObject instance) {
-    if (instance->isSet()) {
-      return true;
-    }
-    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kSetSubclass);
-  }
-
-  bool isInstanceOfStr(RawObject instance) {
-    if (instance->isStr()) {
-      return true;
-    }
-    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kStrSubclass);
-  }
+#undef DEFINE_IS_INSTANCE
 
   // Return true if obj is an instance of a subclass of type
   RawObject isInstance(const Object& obj, const Type& type);

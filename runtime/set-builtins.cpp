@@ -39,7 +39,6 @@ void SetBuiltins::initialize(Runtime* runtime) {
   Type set(&scope,
            runtime->addBuiltinType(SymbolId::kSet, LayoutId::kSet,
                                    LayoutId::kObject, kAttributes, kMethods));
-  set->setFlag(Type::Flag::kSetSubclass);
 }
 
 RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
@@ -156,7 +155,7 @@ RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
-  if (!type->hasFlag(Type::Flag::kSetSubclass)) {
+  if (type->builtinBase() != LayoutId::kSet) {
     return thread->raiseTypeErrorWithCStr("not a subtype of set");
   }
   Layout layout(&scope, type->instanceLayout());

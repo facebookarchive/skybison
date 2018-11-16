@@ -16,7 +16,6 @@ void ComplexBuiltins::initialize(Runtime* runtime) {
   Type type(&scope, runtime->addBuiltinTypeWithMethods(
                         SymbolId::kComplex, LayoutId::kComplex,
                         LayoutId::kObject, kMethods));
-  type->setFlag(Type::Flag::kComplexSubclass);
 }
 
 RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
@@ -34,13 +33,13 @@ RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
 
   Object type_obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "complex.__new__(X): X is not a type object");
   }
 
   Type type(&scope, *type_obj);
-  if (!type->hasFlag(Type::Flag::kComplexSubclass)) {
+  if (type->builtinBase() != LayoutId::kComplex) {
     return thread->raiseTypeErrorWithCStr(
         "complex.__new__(X): X is not a subtype of complex");
   }

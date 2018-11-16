@@ -755,16 +755,4 @@ TEST(WeakRefTest, SpliceQueue) {
   EXPECT_EQ(list, NoneType::object());
 }
 
-TEST(TypeTest, SetFlagThenHasFlagReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Type type(&scope, runtime.newType());
-  type->setFlag(Type::Flag::kDictSubclass);
-  type->setFlag(Type::Flag::kListSubclass);
-  EXPECT_TRUE(type->hasFlag(Type::Flag::kDictSubclass));
-  EXPECT_TRUE(type->hasFlag(Type::Flag::kListSubclass));
-  EXPECT_EQ(RawSmallInt::cast(type->flags())->value(),
-            Type::Flag::kDictSubclass | Type::Flag::kListSubclass);
-}
-
 }  // namespace python

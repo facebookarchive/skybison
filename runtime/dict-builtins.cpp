@@ -28,7 +28,6 @@ void DictBuiltins::initialize(Runtime* runtime) {
   Type dict_type(&scope, runtime->addBuiltinTypeWithMethods(
                              SymbolId::kDict, LayoutId::kDict,
                              LayoutId::kObject, kMethods));
-  dict_type->setFlag(Type::Flag::kDictSubclass);
 }
 
 RawObject DictBuiltins::dunderContains(Thread* thread, Frame* frame,

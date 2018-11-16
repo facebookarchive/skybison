@@ -62,7 +62,7 @@ PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
   auto handle = ApiHandle::fromPyObject(pyunicode);
   Object obj(&scope, handle->asObject());
   if (!obj->isStr()) {
-    if (thread->runtime()->hasSubClassFlag(*obj, Type::Flag::kStrSubclass)) {
+    if (thread->runtime()->isInstanceOfStr(*obj)) {
       UNIMPLEMENTED("RawStr subclass");
     }
     thread->raiseSystemErrorWithCStr("bad argument to internal function");

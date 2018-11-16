@@ -34,7 +34,6 @@ void FloatBuiltins::initialize(Runtime* runtime) {
   Type type(&scope,
             runtime->addBuiltinType(SymbolId::kFloat, LayoutId::kFloat,
                                     LayoutId::kObject, kAttributes, kMethods));
-  type->setFlag(Type::Flag::kFloatSubclass);
 }
 
 RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
@@ -74,7 +73,7 @@ RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
   }
 
   // If __float__ returns a non-float, throw a type error.
-  if (!runtime->hasSubClassFlag(*converted, Type::Flag::kFloatSubclass)) {
+  if (!runtime->isInstanceOfFloat(*converted)) {
     return thread->raiseTypeErrorWithCStr("__float__ returned non-float");
   }
 
@@ -229,12 +228,12 @@ RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*obj, Type::Flag::kTypeSubclass)) {
+  if (!runtime->isInstanceOfType(*obj)) {
     return thread->raiseTypeErrorWithCStr(
         "float.__new__(X): X is not a type object");
   }
   Type type(&scope, *obj);
-  if (!type->hasFlag(Type::Flag::kFloatSubclass)) {
+  if (type->builtinBase() != LayoutId::kFloat) {
     return thread->raiseTypeErrorWithCStr(
         "float.__new__(X): X is not a subtype of float");
   }

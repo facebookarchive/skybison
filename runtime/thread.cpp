@@ -300,8 +300,8 @@ bool Thread::hasPendingException() { return !exception_type_->isNoneType(); }
 
 bool Thread::hasPendingStopIteration() {
   return exception_type_->isType() &&
-         RawType::cast(exception_type_)
-             ->hasFlag(Type::Flag::kStopIterationSubclass);
+         RawType::cast(exception_type_).builtinBase() ==
+             LayoutId::kStopIteration;
 }
 
 RawObject Thread::raiseZeroDivisionError(RawObject value) {

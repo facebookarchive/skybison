@@ -23,7 +23,6 @@ void TupleBuiltins::initialize(Runtime* runtime) {
   Type type(&scope, runtime->addBuiltinTypeWithMethods(
                         SymbolId::kTuple, LayoutId::kTuple, LayoutId::kObject,
                         kMethods));
-  type->setFlag(Type::Flag::kTupleSubclass);
 }
 
 RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
@@ -182,13 +181,13 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object type_obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "tuple.__new__(X): X is not a type object");
   }
 
   Type type(&scope, *type_obj);
-  if (!type->hasFlag(Type::Flag::kTupleSubclass)) {
+  if (type->builtinBase() != LayoutId::kTuple) {
     return thread->raiseTypeErrorWithCStr(
         "tuple.__new__(X): X is not a subclass of tuple");
   }

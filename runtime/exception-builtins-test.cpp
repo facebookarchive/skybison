@@ -120,17 +120,13 @@ rt_error = RuntimeError()
   UncheckedHandle<RawException> rt_error(
       &scope, moduleAt(&runtime, "__main__", "rt_error"));
 
-  EXPECT_TRUE(
-      runtime.hasSubClassFlag(*attr_error, Type::Flag::kBaseExceptionSubclass));
+  EXPECT_TRUE(runtime.isInstanceOfBaseException(*attr_error));
   EXPECT_EQ(attr_error->layoutId(), LayoutId::kAttributeError);
-  EXPECT_TRUE(
-      runtime.hasSubClassFlag(*name_error, Type::Flag::kBaseExceptionSubclass));
+  EXPECT_TRUE(runtime.isInstanceOfBaseException(*name_error));
   EXPECT_EQ(name_error->layoutId(), LayoutId::kNameError);
-  EXPECT_TRUE(runtime.hasSubClassFlag(*value_error,
-                                      Type::Flag::kBaseExceptionSubclass));
+  EXPECT_TRUE(runtime.isInstanceOfBaseException(*value_error));
   EXPECT_EQ(value_error->layoutId(), LayoutId::kValueError);
-  EXPECT_TRUE(
-      runtime.hasSubClassFlag(*rt_error, Type::Flag::kBaseExceptionSubclass));
+  EXPECT_TRUE(runtime.isInstanceOfBaseException(*rt_error));
   EXPECT_EQ(rt_error->layoutId(), LayoutId::kRuntimeError);
 }
 
@@ -168,9 +164,9 @@ k = KeyError()
   IndexError i(&scope, moduleAt(&runtime, "__main__", "i"));
   KeyError k(&scope, moduleAt(&runtime, "__main__", "k"));
 
-  EXPECT_TRUE(runtime.hasSubClassFlag(*l, Type::Flag::kBaseExceptionSubclass));
-  EXPECT_TRUE(runtime.hasSubClassFlag(*i, Type::Flag::kBaseExceptionSubclass));
-  EXPECT_TRUE(runtime.hasSubClassFlag(*k, Type::Flag::kBaseExceptionSubclass));
+  EXPECT_TRUE(runtime.isInstanceOfBaseException(*l));
+  EXPECT_TRUE(runtime.isInstanceOfBaseException(*i));
+  EXPECT_TRUE(runtime.isInstanceOfBaseException(*k));
 }
 
 TEST(ExceptionBuiltinsTest, KeyErrorStrPrintsMissingKey) {
@@ -297,8 +293,7 @@ exc_is_rt_error = issubclass(NotImplementedError, RuntimeError)
   Bool exc_is_rt_error(&scope,
                        moduleAt(&runtime, "__main__", "exc_is_rt_error"));
 
-  EXPECT_TRUE(
-      runtime.hasSubClassFlag(*exc, Type::Flag::kBaseExceptionSubclass));
+  EXPECT_TRUE(runtime.isInstanceOfBaseException(*exc));
 
   EXPECT_TRUE(exc_is_rt_error->value());
 }

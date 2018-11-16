@@ -147,9 +147,10 @@ RawObject builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   word flags = 0;
   for (word i = 1; i < mro->length(); i++) {
     Type cur(&scope, mro->at(i));
-    flags |= RawSmallInt::cast(cur->flags())->value();
+    flags |= cur->flags();
   }
-  result->setFlags(SmallInt::fromWord(flags));
+  result->setFlagsAndBuiltinBase(static_cast<RawType::Flag>(flags),
+                                 base_layout_id);
 
   return *result;
 }
@@ -168,7 +169,7 @@ RawObject builtinTypeRepr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!thread->runtime()->hasSubClassFlag(*self, Type::Flag::kTypeSubclass)) {
+  if (!thread->runtime()->isInstanceOfType(*self)) {
     return thread->raiseTypeErrorWithCStr(
         "type.__repr__() requires a 'type' object");
   }

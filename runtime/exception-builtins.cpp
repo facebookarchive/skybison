@@ -23,7 +23,6 @@ void BaseExceptionBuiltins::initialize(Runtime* runtime) {
   Type type(&scope, runtime->addBuiltinType(
                         SymbolId::kBaseException, LayoutId::kBaseException,
                         LayoutId::kObject, kAttributes, kMethods));
-  type->setFlag(Type::Flag::kBaseExceptionSubclass);
 }
 
 RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
@@ -34,8 +33,7 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
         "'__init__' of 'BaseException' needs an argument");
   }
   Arguments args(frame, nargs);
-  if (!thread->runtime()->hasSubClassFlag(args.get(0),
-                                          Type::Flag::kBaseExceptionSubclass)) {
+  if (!thread->runtime()->isInstanceOfBaseException(args.get(0))) {
     return thread->raiseTypeErrorWithCStr(
         "'__init__' requires a 'BaseException' object");
   }
@@ -61,7 +59,6 @@ void StopIterationBuiltins::initialize(Runtime* runtime) {
   Type type(&scope, runtime->addBuiltinType(
                         SymbolId::kStopIteration, LayoutId::kStopIteration,
                         LayoutId::kException, kAttributes, kMethods));
-  type->setFlag(Type::Flag::kStopIterationSubclass);
 }
 
 RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
@@ -72,8 +69,7 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
         "'__init__' of 'StopIteration' needs an argument");
   }
   Arguments args(frame, nargs);
-  if (!thread->runtime()->hasSubClassFlag(args.get(0),
-                                          Type::Flag::kStopIterationSubclass)) {
+  if (!thread->runtime()->isInstanceOfStopIteration(args.get(0))) {
     return thread->raiseTypeErrorWithCStr(
         "'__init__' requires a 'StopIteration' object");
   }
@@ -102,7 +98,6 @@ void SystemExitBuiltins::initialize(Runtime* runtime) {
   Type type(&scope, runtime->addBuiltinType(
                         SymbolId::kSystemExit, LayoutId::kSystemExit,
                         LayoutId::kBaseException, kAttributes, kMethods));
-  type->setFlag(Type::Flag::kSystemExitSubclass);
 }
 
 RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
@@ -113,8 +108,7 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
         "'__init__' of 'SystemExit' needs an argument");
   }
   Arguments args(frame, nargs);
-  if (!thread->runtime()->hasSubClassFlag(args.get(0),
-                                          Type::Flag::kSystemExitSubclass)) {
+  if (!thread->runtime()->isInstanceOfSystemExit(args.get(0))) {
     return thread->raiseTypeErrorWithCStr(
         "'__init__' requires a 'SystemExit' object");
   }
