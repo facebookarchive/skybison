@@ -71,6 +71,7 @@ class HandleScope {
   }
 
   ObjectHandle* push(ObjectHandle* handle) {
+    assert(this == handles_->top());
     ObjectHandle* result = list_;
     list_ = handle;
     return result;
