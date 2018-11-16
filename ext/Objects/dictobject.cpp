@@ -80,13 +80,13 @@ PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread->handles());
 
-  Handle<Object> dictobj(&scope, runtime->asObject(pydict));
+  Handle<Object> dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   if (!dictobj->isDictionary()) {
     return -1;
   }
 
-  Handle<Object> keyobj(&scope, runtime->asObject(key));
-  Handle<Object> valueobj(&scope, runtime->asObject(value));
+  Handle<Object> keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  Handle<Object> valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Handle<Dictionary> dict(&scope, *dictobj);
   runtime->dictionaryAtPutInValueCell(dict, keyobj, valueobj);
   Py_INCREF(key);
@@ -119,12 +119,12 @@ extern "C" PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread->handles());
 
-  Handle<Object> dictobj(&scope, runtime->asObject(pydict));
+  Handle<Object> dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   if (!dictobj->isDictionary()) {
     return nullptr;
   }
   Handle<Dictionary> dict(&scope, *dictobj);
-  Handle<Object> key_obj(&scope, runtime->asObject(key));
+  Handle<Object> key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object* value = runtime->dictionaryAt(dict, key_obj);
   if (value->isError()) {
     return nullptr;

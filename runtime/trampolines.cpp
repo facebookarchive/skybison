@@ -484,7 +484,7 @@ Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
     *reinterpret_cast<void**>(&new_function) = address->asCPointer();
 
     PyObject* new_pyobject = (*new_function)(type, none, none);
-    return ApiHandle::FromPyObject(new_pyobject)->asObject();
+    return ApiHandle::fromPyObject(new_pyobject)->asObject();
   }
 
   Handle<HeapObject> instance(&scope, *object);

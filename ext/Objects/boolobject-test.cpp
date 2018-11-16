@@ -6,23 +6,36 @@
 
 namespace python {
 
-TEST(Object, NoneValue) {
+TEST(PyBoolObject, PyBoolFromLong) {
   Runtime runtime;
   HandleScope scope;
 
-  // Test None
-  PyObject* none = Py_None;
-  Handle<Object> none_object(&scope, runtime.asObject(none));
-  EXPECT_TRUE(none_object->isNone());
+  // Test True
+  PyObject* pybool_true = PyBool_FromLong(1);
+  Handle<Object> bool_true(
+      &scope, ApiHandle::fromPyObject(pybool_true)->asObject());
+  EXPECT_TRUE(bool_true->isBoolean());
+  EXPECT_TRUE(Boolean::cast(*bool_true)->value());
+
+  // Test False
+  PyObject* pybool_false = PyBool_FromLong(0);
+  Handle<Object> bool_false(
+      &scope, ApiHandle::fromPyObject(pybool_false)->asObject());
+  EXPECT_TRUE(bool_false->isBoolean());
+  EXPECT_FALSE(Boolean::cast(*bool_false)->value());
 }
 
-TEST(Object, NoneIdentity) {
+TEST(PyBoolObject, PyBoolIdentity) {
   Runtime runtime;
 
   // Test Identitiy
-  PyObject* none1 = Py_None;
-  PyObject* none2 = Py_None;
-  EXPECT_EQ(none1, none2);
+  PyObject* pybool_true = PyBool_FromLong(1);
+  PyObject* pybool1 = PyBool_FromLong(2);
+  EXPECT_EQ(pybool_true, pybool1);
+
+  PyObject* pybool_false = PyBool_FromLong(0);
+  PyObject* pybool2 = PyBool_FromLong(0);
+  EXPECT_EQ(pybool_false, pybool2);
 }
 
 } // namespace python

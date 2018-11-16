@@ -18,7 +18,8 @@ TEST(ExtensionTest, ListObjectValidNew) {
 
   Py_ssize_t length = 5;
   PyObject* pyresult = PyList_New(length);
-  Handle<Object> result_obj(&scope, runtime.asObject(pyresult));
+  Handle<Object> result_obj(
+      &scope, ApiHandle::fromPyObject(pyresult)->asObject());
   ASSERT_TRUE(result_obj->isList());
   Handle<List> result(&scope, *result_obj);
   EXPECT_EQ(length, result->capacity());
@@ -30,7 +31,8 @@ TEST(ExtensionTest, ListObjectZeroNew) {
 
   Py_ssize_t length = 0;
   PyObject* pyresult = PyList_New(length);
-  Handle<Object> result_obj(&scope, runtime.asObject(pyresult));
+  Handle<Object> result_obj(
+      &scope, ApiHandle::fromPyObject(pyresult)->asObject());
   ASSERT_TRUE(result_obj->isList());
   Handle<List> result(&scope, *result_obj);
   EXPECT_EQ(length, result->capacity());

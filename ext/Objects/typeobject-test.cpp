@@ -177,7 +177,7 @@ TEST(PyTypeObject, TestGenericAllocation) {
 
   PyObject* result = PyType_GenericAlloc(&custom_type, 0);
   Handle<Object> instance_obj(
-      &scope, ApiHandle::FromPyObject(result)->asObject());
+      &scope, ApiHandle::fromPyObject(result)->asObject());
   ASSERT_TRUE(instance_obj->isInstance());
   EXPECT_EQ(1, Py_REFCNT(result));
 }

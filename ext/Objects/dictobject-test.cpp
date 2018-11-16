@@ -34,7 +34,7 @@ TEST(ExtensionTest, PyDict_GetItem) {
       runtime.asApiHandle(*dict)->asPyObject(),
       runtime.asApiHandle(*key)->asPyObject());
   EXPECT_NE(value, nullptr);
-  Handle<Object> result(&scope, runtime.asObject(value));
+  Handle<Object> result(&scope, ApiHandle::fromPyObject(value)->asObject());
   EXPECT_TRUE(result->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(*result)->value(), 20);
 

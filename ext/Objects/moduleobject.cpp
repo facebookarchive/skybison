@@ -98,7 +98,7 @@ extern "C" PyObject* PyModule_GetDict(PyObject* pymodule) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread->handles());
 
-  Handle<Module> module(&scope, runtime->asObject(pymodule));
+  Handle<Module> module(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
   return runtime->asApiHandle(module->dictionary())->asPyObject();
 }
 

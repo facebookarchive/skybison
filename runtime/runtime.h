@@ -22,7 +22,7 @@ class Thread;
 // An isomorphic structure to CPython's PyObject
 class ApiHandle {
  public:
-  static ApiHandle* FromPyObject(PyObject* py_obj) {
+  static ApiHandle* fromPyObject(PyObject* py_obj) {
     return reinterpret_cast<ApiHandle*>(py_obj);
   }
 
@@ -558,9 +558,6 @@ class Runtime {
 
   // Same as asApiHandle, but creates a borrowed ApiHandle if no handle exists
   ApiHandle* asBorrowedApiHandle(Object* obj);
-
-  // Accessor for Objects that have crossed the CPython boundary
-  Object* asObject(PyObject* py_obj);
 
   // Clear the allocated memory from all extension related objects
   void deallocExtensions();

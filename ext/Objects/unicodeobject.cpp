@@ -96,7 +96,6 @@ extern "C" char* PyUnicode_AsUTF8AndSize(
     PyObject* pyunicode,
     Py_ssize_t* size) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread->handles());
 
   if (pyunicode == nullptr) {
@@ -104,7 +103,8 @@ extern "C" char* PyUnicode_AsUTF8AndSize(
     return nullptr;
   }
 
-  Handle<Object> str_obj(&scope, runtime->asObject(pyunicode));
+  Handle<Object> str_obj(
+      &scope, ApiHandle::fromPyObject(pyunicode)->asObject());
   if (!str_obj->isString()) {
     return nullptr;
   }

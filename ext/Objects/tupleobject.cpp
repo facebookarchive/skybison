@@ -84,10 +84,9 @@ extern "C" PyObject* PyTuple_New(Py_ssize_t length) {
 
 extern "C" Py_ssize_t PyTuple_Size(PyObject* pytuple) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread->handles());
 
-  Handle<Object> tupleobj(&scope, runtime->asObject(pytuple));
+  Handle<Object> tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   if (!tupleobj->isObjectArray()) {
     return -1;
   }
@@ -101,7 +100,7 @@ extern "C" PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread->handles());
 
-  Handle<Object> tupleobj(&scope, runtime->asObject(pytuple));
+  Handle<Object> tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   if (!tupleobj->isObjectArray()) {
     return nullptr;
   }
@@ -125,7 +124,7 @@ extern "C" PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(n));
   for (Py_ssize_t i = 0; i < n; i++) {
     item = va_arg(vargs, PyObject*);
-    tuple->atPut(i, runtime->asObject(item));
+    tuple->atPut(i, ApiHandle::fromPyObject(item)->asObject());
   }
   va_end(vargs);
   return runtime->asApiHandle(*tuple)->asPyObject();

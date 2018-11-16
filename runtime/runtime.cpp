@@ -3068,10 +3068,6 @@ ApiHandle* Runtime::asBorrowedApiHandle(Object* obj) {
   return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
 }
 
-Object* Runtime::asObject(PyObject* py_obj) {
-  return reinterpret_cast<ApiHandle*>(py_obj)->asObject();
-}
-
 void Runtime::freeTrackedAllocations() {
   while (tracked_allocations_ != nullptr) {
     TrackedAllocation::free(this, tracked_allocations_);

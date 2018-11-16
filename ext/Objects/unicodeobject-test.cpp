@@ -13,7 +13,8 @@ TEST(ExtensionTest, _PyUnicode_FromId) {
   _Py_IDENTIFIER(__name__);
   const char* str = "__name__";
   PyObject* pyunicode = _PyUnicode_FromId(&PyId___name__);
-  Handle<Object> string_obj(&scope, runtime.asObject(pyunicode));
+  Handle<Object> string_obj(
+      &scope, ApiHandle::fromPyObject(pyunicode)->asObject());
   EXPECT_TRUE(string_obj->isString());
   EXPECT_TRUE(String::cast(*string_obj)->equalsCString(str));
 }
