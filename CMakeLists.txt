@@ -1,6 +1,18 @@
 cmake_minimum_required(VERSION 3.7)
 project(python)
 
+# Add -DPYRO_ASAN=1 to the cmake command line to enable asan.
+# Older compilers may have trouble building or running asan
+# properly. Try setting the environment variables:
+#
+#   CC==/usr/local/fbcode/gcc-5-glibc-2.23/bin/gcc
+#   CXX=/usr/local/fbcode/gcc-5-glibc-2.23/bin/g++
+#
+# for cmake if you have trouble with asan.
+if (${PYRO_ASAN})
+  set(CMAKE_CXX_FLAGS "-fsanitize=address -lpthread")
+endif()
+
 add_subdirectory(third-party/benchmark-1.3.0)
 add_subdirectory(third-party/googletest-1.8.0)
 add_subdirectory(third-party/siphash-20170224)
