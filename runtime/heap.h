@@ -6,7 +6,7 @@
 namespace python {
 
 class Heap {
-public:
+ public:
   static void initialize(intptr_t size);
 
   static Object* allocate(intptr_t size);
@@ -34,11 +34,11 @@ public:
   static Object* createFunction();
   static Object* createDictionary();
 
-private:
+ private:
   static char* start_;
   static char* end_;
   static char* ptr_;
   static intptr_t size_;
 };
 
-}  // namespace python
+} // namespace python

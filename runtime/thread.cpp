@@ -7,15 +7,15 @@
 
 namespace python {
 
-Frame* Thread::pushFrame(Object *object) {
+Frame* Thread::pushFrame(Object* object) {
   // compute the frame size
 
-  Code *code = Code::cast(object);
+  Code* code = Code::cast(object);
   int ncells = ObjectArray::cast(code->cellvars())->length();
   int nfrees = ObjectArray::cast(code->freevars())->length();
-  int extras0 =  code->nlocals() + ncells + nfrees;
+  int extras0 = code->nlocals() + ncells + nfrees;
   int extras = code->stacksize() + extras0;
-  int size = OFFSET_OF(Frame, f_localsplus) + extras*kPointerSize;
+  int size = OFFSET_OF(Frame, f_localsplus) + extras * kPointerSize;
 
   // allocate that much space on the stack
 
@@ -34,13 +34,11 @@ Frame* Thread::pushFrame(Object *object) {
   return frame;
 }
 
-void Thread::popFrame(Frame* frame) {
-
-}
+void Thread::popFrame(Frame* frame) {}
 
 Object* Thread::run(Object* object) {
   Frame* frame = pushFrame(object);
   return Interpreter::execute(this, frame);
 }
 
-}
+} // namespace python

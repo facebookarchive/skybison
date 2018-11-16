@@ -17,12 +17,12 @@ const int MiB = KiB * KiB;
 const int GiB = KiB * KiB * KiB;
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName&) = delete;               \
+  TypeName(const TypeName&) = delete;      \
   void operator=(const TypeName&) = delete
 
 #define DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
-  TypeName() = delete;                                    \
+  TypeName() = delete;                           \
   DISALLOW_COPY_AND_ASSIGN(TypeName)
 
 #define OFFSET_OF(type, field) \
-  (reinterpret_cast<intptr_t>(&(reinterpret_cast<type*>(16)->field)) -  16)
+  (reinterpret_cast<intptr_t>(&(reinterpret_cast<type*>(16)->field)) - 16)

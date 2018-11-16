@@ -18,7 +18,7 @@ class Thread {
     delete[] start_;
   }
 
-  Frame* pushFrame(Object *code);
+  Frame* pushFrame(Object* code);
   void popFrame(Frame* frame);
 
   Object* run(Object* object);
@@ -32,4 +32,4 @@ class Thread {
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
 
-}
+} // namespace python

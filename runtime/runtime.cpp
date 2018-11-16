@@ -6,8 +6,8 @@
 
 namespace python {
 
-Object* Runtime::byteArrayClass_= nullptr;
-Object* Runtime::objectArrayClass_= nullptr;
+Object* Runtime::byteArrayClass_ = nullptr;
+Object* Runtime::objectArrayClass_ = nullptr;
 Object* Runtime::codeClass_ = nullptr;
 Object* Runtime::classClass_ = nullptr;
 Object* Runtime::stringClass_ = nullptr;
@@ -38,4 +38,4 @@ void Runtime::initialize() {
   allocateClasses();
 }
 
-}  // namespace python
+} // namespace python

@@ -39,13 +39,12 @@ enum {
   TYPE_SHORT_ASCII_INTERNED = 'Z',
 };
 
-
-Marshal::Reader::Reader(const char* buffer) 
-    : start_(reinterpret_cast<const byte*>(buffer))
-    , length_(strlen(buffer))
-    , refs_(nullptr)
-    , pos_(0)
-    , depth_(0) {
+Marshal::Reader::Reader(const char* buffer)
+    : start_(reinterpret_cast<const byte*>(buffer)),
+      length_(strlen(buffer)),
+      refs_(nullptr),
+      pos_(0),
+      depth_(0) {
   end_ = start_ + length_;
 }
 
@@ -55,42 +54,38 @@ const byte* Marshal::Reader::readString(int length) {
   return result;
 }
 
-
 byte Marshal::Reader::readByte() {
   byte result = -1;
   const byte* buffer = readString(1);
   if (buffer != nullptr) {
     result = buffer[0];
   }
-  return result;  
+  return result;
 }
-
 
 int16 Marshal::Reader::readShort() {
   int16 result = -1;
   const byte* buffer = readString(sizeof(result));
   if (buffer != nullptr) {
     result = buffer[0];
-    result |= buffer[1] <<  8;
+    result |= buffer[1] << 8;
   }
-  return result;  
+  return result;
 }
-
 
 int32 Marshal::Reader::readLong() {
   int32 result = -1;
   const byte* buffer = readString(4);
   if (buffer != nullptr) {
     result = buffer[0];
-    result |= buffer[1] <<  8;
+    result |= buffer[1] << 8;
     result |= buffer[2] << 16;
     result |= buffer[3] << 24;
   }
-  return result;  
+  return result;
 }
 
-
-template<typename T>
+template <typename T>
 class ScopedCounter {
  public:
   ScopedCounter(T* counter) : counter_(counter) {
@@ -99,11 +94,11 @@ class ScopedCounter {
   ~ScopedCounter() {
     (*counter_)--;
   }
+
  public:
   T* counter_;
   DISALLOW_COPY_AND_ASSIGN(ScopedCounter);
 };
-
 
 Object* Marshal::Reader::readObject() {
   ScopedCounter<int> counter(&depth_);
@@ -156,7 +151,7 @@ Object* Marshal::Reader::readObject() {
       assert(0);
       break;
 
-    case TYPE_STRING:  // Misnomer, should be TYPE_BYTES
+    case TYPE_STRING: // Misnomer, should be TYPE_BYTES
       result = readTypeString();
       break;
 
@@ -239,8 +234,8 @@ int Marshal::Reader::addRef(Object* value) {
 }
 
 void Marshal::Reader::setRef(int index, Object* value) {
-   ObjectArray::cast(refs_)->set(index, value);
- }
+  ObjectArray::cast(refs_)->set(index, value);
+}
 
 Object* Marshal::Reader::getRef(int index) {
   return ObjectArray::cast(refs_)->get(index);
@@ -341,4 +336,4 @@ Object* Marshal::Reader::readTypeRef() {
   return getRef(n);
 }
 
-}  // namespace python
+} // namespace python

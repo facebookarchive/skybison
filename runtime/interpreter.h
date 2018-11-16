@@ -10,10 +10,10 @@ class Thread;
 
 class Interpreter {
  public:
-  static Object* execute(Thread *thread, Frame *frame);
+  static Object* execute(Thread* thread, Frame* frame);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };
 
-}
+} // namespace python

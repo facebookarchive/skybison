@@ -20,7 +20,8 @@ class Object;
 */
 // 0bXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx0 number {31,63}-bit signed numbers
 // 0bXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX01 object: mov dst, [src-1]
-// 0bXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX11 immediate small strings, true and false, header word mark
+// 0bXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX11 immediate small strings, true and false,
+// header word mark
 
 // 0b0011 header
 // 0b0111 boolean
@@ -47,13 +48,11 @@ class Object;
 // [   ...  ]
 // [ elem N ]
 
-   
 // [ header ]
 // [ attrs  ]
 // [ elem 0 ]
 // [   ...  ]
 // [ elem N ]
-
 
 enum Layout {
   CLASS = 0xf00f,
@@ -67,7 +66,7 @@ enum Layout {
 };
 
 class Object {
-public:
+ public:
   // Immediate
   inline bool isSmallInteger();
   inline bool isNone();
@@ -85,16 +84,16 @@ public:
   inline bool isModule();
   inline bool isDictionary();
 
-private:
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
 };
 
 class Boolean : public Object {
-public:
+ public:
   static inline Boolean* fromBool(bool value);
   static inline Boolean* cast(Object* object);
 
-  static const int kTag = 7;  // 0b0111
+  static const int kTag = 7; // 0b0111
   static const int kTagSize = 4;
   static const uword kTagMask = (1 << kTagSize) - 1;
 
@@ -133,7 +132,7 @@ class Ellipsis : public Object {
 };
 
 class SmallInteger : public Object {
-public:
+ public:
   static inline SmallInteger* fromWord(word value);
   static inline SmallInteger* cast(Object* object);
 
@@ -143,14 +142,14 @@ public:
 
   inline word value();
 
-private:
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallInteger);
 };
 
 class Class;
 
 class HeapObject : public Object {
-public:
+ public:
   // Setters and getters.
   inline uword address();
   inline static HeapObject* fromAddress(uword address);
@@ -169,32 +168,34 @@ public:
   static const int kClassOffset = 0;
   static const int kSize = kClassOffset + kPointerSize;
 
-protected:
+ protected:
   inline Object* at(int offset);
   inline void atPut(int offset, Object* value);
 
-private:
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(HeapObject);
 };
 
 class Class : public HeapObject {
-public:
+ public:
   inline Layout layout();
   inline void setLayout(Layout layout);
 
   inline static Class* cast(Object* object);
-  inline static int allocationSize() { return Class::kSize; }
+  inline static int allocationSize() {
+    return Class::kSize;
+  }
 
   static const int kLayoutOffset = HeapObject::kSize;
   static const int kSize = kLayoutOffset + kPointerSize;
 
-private:
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Class);
 };
 
 // Abstract
 class Array : public HeapObject {
-public:
+ public:
   // Setters and getters.
   inline word length();
   inline void setLength(word length);
@@ -203,7 +204,7 @@ public:
   static const int kLengthOffset = HeapObject::kSize;
   static const int kSize = kLengthOffset + kPointerSize;
 
-private:
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Array);
 };
 
@@ -221,7 +222,7 @@ class ByteArray : public Array {
 };
 
 class ObjectArray : public Array {
-public:
+ public:
   inline Object* get(int index);
   inline void set(int index, Object* value);
 
@@ -231,24 +232,24 @@ public:
 
   inline void initialize(int length, int size, Object* value);
 
-private:
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectArray);
 };
 
 class String : public Array {
-public:
+ public:
   static inline String* cast(Object* object);
   inline byte charAt(int index);
   inline void setCharAt(int index, byte value);
 
   inline static int allocationSize(int length);
 
-private:
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(String);
 };
 
 class Code : public HeapObject {
-public:
+ public:
   inline static Code* cast(Object* obj);
 
   static int allocationSize() {
@@ -257,21 +258,21 @@ public:
 
   // Does this really need to take so many arguments?
   inline void initialize(
-    int argcount,
-    int kwonlyargcount,
-    int nlocals,
-    int stacksize,
-    int flags,
-    Object *code,
-    Object *consts,
-    Object *names,
-    Object *varnames,
-    Object *freevars,
-    Object *cellvars,
-    Object *filename,
-    Object *name,
-    int firstlineno,
-    Object *lnotab);
+      int argcount,
+      int kwonlyargcount,
+      int nlocals,
+      int stacksize,
+      int flags,
+      Object* code,
+      Object* consts,
+      Object* names,
+      Object* varnames,
+      Object* freevars,
+      Object* cellvars,
+      Object* filename,
+      Object* name,
+      int firstlineno,
+      Object* lnotab);
 
   inline int argcount();
 
@@ -309,14 +310,12 @@ public:
   static const int kExtraOffset = kWeakreflistOffset + kPointerSize;
   static const int kSize = kExtraOffset + kPointerSize;
 
-private:
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Code);
 };
 
-
 class Function : public HeapObject {
  public:
-
   inline static Function* cast(Object* object);
   inline Object* address();
   inline Object* code();
@@ -331,10 +330,8 @@ class Function : public HeapObject {
   DISALLOW_COPY_AND_ASSIGN(Function);
 };
 
-
 class Module : public HeapObject {
  public:
-
   inline static Module* cast(Object* object);
   Object* name();
   inline static int allocationSize();
@@ -348,10 +345,8 @@ class Module : public HeapObject {
   DISALLOW_COPY_AND_ASSIGN(Module);
 };
 
-
 class Dictionary : public HeapObject {
  public:
-
   inline static Dictionary* cast(Object* object);
   Object* data();
   inline static int allocationSize();
@@ -363,7 +358,6 @@ class Dictionary : public HeapObject {
  private:
   DISALLOW_COPY_AND_ASSIGN(Dictionary);
 };
-
 
 // Object
 
@@ -420,14 +414,12 @@ bool Object::isCode() {
   return HeapObject::cast(this)->getClass()->layout() == Layout::CODE;
 }
 
-
 bool Object::isString() {
   if (!isHeapObject()) {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::STRING;
 }
-
 
 bool Object::isFunction() {
   if (!isHeapObject()) {
@@ -443,7 +435,7 @@ bool Object::isDictionary() {
   return HeapObject::cast(this)->getClass()->layout() == Layout::DICTIONARY;
 }
 
-bool Object::isModule(){
+bool Object::isModule() {
   if (!isHeapObject()) {
     return false;
   }
@@ -475,7 +467,8 @@ Ellipsis* Ellipsis::cast(Object* object) {
 // Boolean
 
 Boolean* Boolean::fromBool(bool value) {
-  return reinterpret_cast<Boolean*>((static_cast<uword>(value) << kTagSize) | kTag);
+  return reinterpret_cast<Boolean*>(
+      (static_cast<uword>(value) << kTagSize) | kTag);
 }
 
 Boolean* Boolean::cast(Object* object) {
@@ -585,7 +578,7 @@ void ByteArray::setByteAt(int index, byte value) {
 
 ByteArray* ByteArray::cast(Object* object) {
   assert(object->isByteArray());
-  return reinterpret_cast<ByteArray *>(object);
+  return reinterpret_cast<ByteArray*>(object);
 }
 
 // ObjectArray
@@ -631,16 +624,16 @@ void Code::initialize(
     int nlocals,
     int stacksize,
     int flags,
-    Object *code,
-    Object *consts,
-    Object *names,
-    Object *varnames,
-    Object *freevars,
-    Object *cellvars,
-    Object *filename,
-    Object *name,
+    Object* code,
+    Object* consts,
+    Object* names,
+    Object* varnames,
+    Object* freevars,
+    Object* cellvars,
+    Object* filename,
+    Object* name,
     int firstlineno,
-    Object *lnotab) {
+    Object* lnotab) {
   atPut(kArgcountOffset, SmallInteger::fromWord(argcount));
   atPut(kKwonlyargcountOffset, SmallInteger::fromWord(kwonlyargcount));
   atPut(kNlocalsOffset, SmallInteger::fromWord(nlocals));
@@ -709,7 +702,6 @@ void Function::initialize() {
   // ???
 }
 
-
 // Module
 
 int Module::allocationSize() {
@@ -763,4 +755,4 @@ void String::setCharAt(int index, byte value) {
   *reinterpret_cast<byte*>(address() + String::kSize + index) = value;
 }
 
-}  // namespace python
+} // namespace python

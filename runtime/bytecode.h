@@ -127,4 +127,4 @@ enum Bytecode {
   EXCEPT_HANDLER = 257,
 };
 
-}
+} // namespace python

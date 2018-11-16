@@ -18,7 +18,7 @@ void Heap::initialize(intptr_t size) {
 
 Object* Heap::allocate(intptr_t size) {
   char* result = Heap::ptr_;
-  Heap::ptr_+= size;
+  Heap::ptr_ += size;
   return HeapObject::fromAddress(reinterpret_cast<uword>(result));
 }
 
@@ -37,18 +37,18 @@ Object* Heap::createCode(
     int nlocals,
     int stacksize,
     int flags,
-    Object *code,
-    Object *consts,
-    Object *names,
-    Object *varnames,
-    Object *freevars,
-    Object *cellvars,
-    Object *filename,
-    Object *name,
+    Object* code,
+    Object* consts,
+    Object* names,
+    Object* varnames,
+    Object* freevars,
+    Object* cellvars,
+    Object* filename,
+    Object* name,
     int firstlineno,
-    Object *lnotab) {
+    Object* lnotab) {
   Object* raw = allocate(Code::allocationSize());
-  assert(raw != nullptr);  // TODO
+  assert(raw != nullptr); // TODO
   Code* result = reinterpret_cast<Code*>(raw);
   result->setClass(Runtime::codeClass());
   result->initialize(
@@ -72,9 +72,9 @@ Object* Heap::createCode(
 
 Object* Heap::createByteArray(int length) {
   int size = String::allocationSize(length);
-  Object *raw = allocate(size);
+  Object* raw = allocate(size);
   assert(raw != nullptr);
-  ByteArray *result = reinterpret_cast<ByteArray*>(raw);
+  ByteArray* result = reinterpret_cast<ByteArray*>(raw);
   result->setClass(Runtime::byteArrayClass());
   result->initialize(length);
   return ByteArray::cast(result);
@@ -83,7 +83,7 @@ Object* Heap::createByteArray(int length) {
 Object* Heap::createObjectArray(int length) {
   int size = ObjectArray::allocationSize(length);
   Object* raw = allocate(size);
-  assert(raw != nullptr);  // TODO
+  assert(raw != nullptr); // TODO
   ObjectArray* result = reinterpret_cast<ObjectArray*>(raw);
   result->setClass(Runtime::objectArrayClass());
   result->initialize(length, size, 0);
@@ -111,7 +111,7 @@ Object* Heap::createFunction() {
 }
 
 Object* Heap::createDictionary() {
-    return nullptr;
+  return nullptr;
 }
 
-}  // namespace python
+} // namespace python

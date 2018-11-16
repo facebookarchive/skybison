@@ -17,7 +17,8 @@ void Handles::initialize() {
 void Handles::grow() {
   intptr_t new_size = Handles::size_ * 2;
   Object** new_stack = new Object*[new_size];
-  memcpy(new_stack, Handles::stack_, Handles::size_ * sizeof(Handles::stack_[0]));
+  memcpy(
+      new_stack, Handles::stack_, Handles::size_ * sizeof(Handles::stack_[0]));
   delete[] Handles::stack_;
   Handles::size_ = new_size;
   Handles::stack_ = new_stack;
@@ -38,4 +39,4 @@ void Handles::visit(void callback(Object** object)) {
   }
 }
 
-}  // namespace python
+} // namespace python

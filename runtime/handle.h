@@ -24,24 +24,23 @@ class Handles {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Handles);
 };
 
-class HandleScope {
-};
+class HandleScope {};
 
 class Handle {
-public:
+ public:
   Handle(Object* object) {
     index_ = Handles::push(object);
   }
 
-  template<typename T>
+  template <typename T>
   T* operator->() const {
     return reinterpret_cast<T*>(Handles::stack_[index_]);
   }
 
-private:
+ private:
   intptr_t index_;
 
   DISALLOW_COPY_AND_ASSIGN(Handle);
 };
 
-}  // namespace python
+} // namespace python

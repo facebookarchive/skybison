@@ -7,7 +7,7 @@
 namespace python {
 
 class Marshal {
-public:
+ public:
   class Reader {
    public:
     Reader(const char* buffer);
@@ -36,7 +36,6 @@ public:
     Object* getRef(int index);
 
    private:
-
     bool isRef_;
     Object* refs_;
 
@@ -52,4 +51,4 @@ public:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Marshal);
 };
 
-}  // namespace python
+} // namespace python
