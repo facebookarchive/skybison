@@ -773,6 +773,10 @@ class Slice : public HeapObject {
 class ListIterator : public HeapObject {
  public:
   // Getters and setters.
+  inline word index();
+  inline void setIndex(word index);
+
+  inline Object* list();
   inline void setList(Object* list);
 
   // Iteration.
@@ -2243,20 +2247,31 @@ Range* Range::cast(Object* object) {
 
 // ListIterator
 
+word ListIterator::index() {
+  return SmallInteger::cast(instanceVariableAt(kIndexOffset))->value();
+}
+
+void ListIterator::setIndex(word index) {
+  instanceVariableAtPut(kIndexOffset, SmallInteger::fromWord(index));
+}
+
+Object* ListIterator::list() {
+  return instanceVariableAt(kListOffset);
+}
+
 void ListIterator::setList(Object* list) {
-  instanceVariableAtPut(kIndexOffset, SmallInteger::fromWord(0));
   instanceVariableAtPut(kListOffset, list);
 }
 
 Object* ListIterator::next() {
-  auto idx = SmallInteger::cast(instanceVariableAt(kIndexOffset))->value();
-  auto list = List::cast(instanceVariableAt(kListOffset));
-  if (idx >= list->allocated()) {
+  word idx = index();
+  auto underlying = List::cast(list());
+  if (idx >= underlying->allocated()) {
     return Error::object();
   }
 
-  Object* item = list->at(idx);
-  instanceVariableAtPut(kIndexOffset, SmallInteger::fromWord(idx + 1));
+  Object* item = underlying->at(idx);
+  setIndex(idx + 1);
   return item;
 }
 

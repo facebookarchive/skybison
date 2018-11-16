@@ -459,6 +459,7 @@ Object* Runtime::newList() {
 Object* Runtime::newListIterator(const Handle<Object>& list) {
   HandleScope scope;
   Handle<ListIterator> list_iterator(&scope, heap()->createListIterator());
+  list_iterator->setIndex(0);
   list_iterator->setList(*list);
   return *list_iterator;
 }
