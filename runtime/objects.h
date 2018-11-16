@@ -321,21 +321,9 @@ class String : public Object {
 
 class SmallString : public Object {
  public:
-  // Getters and setters.
-  inline word length();
-  inline byte charAt(word index);
-  inline void copyTo(byte* dst, word length);
-
   // Conversion.
   static Object* fromCString(const char* value);
   static Object* fromBytes(View<byte> data);
-
-  // Conversion to an unescaped C string.  The underlying memory is allocated
-  // with malloc and must be freed by the caller.
-  char* toCString();
-
-  // Casting.
-  static inline SmallString* cast(Object* object);
 
   // Tagging.
   static const int kTag = 31; // 0b11111
@@ -345,6 +333,26 @@ class SmallString : public Object {
   static const word kMaxLength = kWordSize - 1;
 
  private:
+  // Interface methods are private: strings should be manipulated via the
+  // String class, which delegates to LargeString/SmallString appropriately.
+
+  // Getters and setters.
+  inline word length();
+  inline byte charAt(word index);
+  inline void copyTo(byte* dst, word length);
+
+  // Conversion to an unescaped C string.  The underlying memory is allocated
+  // with malloc and must be freed by the caller.
+  char* toCString();
+
+  // Casting.
+  static inline SmallString* cast(Object* object);
+
+  friend class Heap;
+  friend class Object;
+  friend class Runtime;
+  friend class String;
+
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallString);
 };
 
@@ -481,6 +489,13 @@ class ObjectArray : public Array {
 
 class LargeString : public Array {
  public:
+  // Sizing.
+  inline static word allocationSize(word length);
+
+ private:
+  // Interface methods are private: strings should be manipulated via the
+  // String class, which delegates to LargeString/SmallString appropriately.
+
   // Getters and setters.
   inline byte charAt(word index);
   void copyTo(byte* bytes, word length);
@@ -497,10 +512,11 @@ class LargeString : public Array {
   // Casting.
   static inline LargeString* cast(Object* object);
 
-  // Sizing.
-  inline static word allocationSize(word length);
+  friend class Heap;
+  friend class Object;
+  friend class Runtime;
+  friend class String;
 
- private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeString);
 };
 

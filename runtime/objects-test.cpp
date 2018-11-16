@@ -319,7 +319,7 @@ TEST(LargeString, CopyTo) {
 
   Object* obj = runtime.newStringFromCString("hello world!");
   ASSERT_TRUE(obj->isLargeString());
-  LargeString* str = LargeString::cast(obj);
+  String* str = String::cast(obj);
 
   byte array[5];
   memset(array, 'a', ARRAYSIZE(array));
@@ -350,7 +350,7 @@ TEST(LargeString, CopyTo) {
 TEST(SmallStringTest, Tests) {
   Object* obj0 = SmallString::fromCString("AB");
   ASSERT_TRUE(obj0->isSmallString());
-  auto* str0 = SmallString::cast(obj0);
+  auto* str0 = String::cast(obj0);
   EXPECT_EQ(str0->length(), 2);
   EXPECT_EQ(str0->charAt(0), 'A');
   EXPECT_EQ(str0->charAt(1), 'B');
