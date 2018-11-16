@@ -110,4 +110,14 @@ TEST_F(UnicodeExtensionApiTest, CompareBadInput) {
   Py_DECREF(s);
 }
 
+TEST_F(UnicodeExtensionApiTest, EqualToASCIIString) {
+  PyObject* unicode = PyUnicode_FromString("here's another string");
+
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "here's another string"));
+  EXPECT_FALSE(
+      _PyUnicode_EqualToASCIIString(unicode, "here is another string"));
+
+  Py_DECREF(unicode);
+}
+
 }  // namespace python

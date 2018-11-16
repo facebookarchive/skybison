@@ -7,9 +7,14 @@
 
 namespace python {
 
-PY_EXPORT int _PyUnicode_EqualToASCIIString(PyObject* /* unicode */,
-                                            const char* /* str */) {
-  UNIMPLEMENTED("_PyUnicode_EqualToASCIIString");
+PY_EXPORT int _PyUnicode_EqualToASCIIString(PyObject* unicode,
+                                            const char* c_str) {
+  DCHECK(unicode, "nullptr argument");
+  DCHECK(c_str, "nullptr argument");
+
+  HandleScope scope;
+  Str str(&scope, ApiHandle::fromPyObject(unicode)->asObject());
+  return str->equalsCStr(c_str);
 }
 
 PY_EXPORT int _PyUnicode_EQ(PyObject* /* aa */, PyObject* /* bb */) {
