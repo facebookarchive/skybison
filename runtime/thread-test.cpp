@@ -2809,37 +2809,16 @@ print(len(Array1Glob), len(Array2Glob), len(Array2Glob[0]), Array1Glob, Array2Gl
   EXPECT_EQ(output, "5 5 5 [0, 0, 0, 0, 0] [0, 0, 0, 0, 0]\n");
 }
 
-TEST(ThreadTest, Array2D) { // pystone
+TEST(ThreadTest, PrintList) {
   const char* src = R"(
-a1 = [0]*3
-a2 = [x[:] for x in [a1]*3]
-a1[0] = 1
-a1[2] = 3
-a2[0][0] = 1
-a2[1][1] = 2
-a2[2][2] = 3
-print(a1, a2[0], a2[1], a2[2])
+a = [1, 0, True]
+print(a)
+a[0]=7
+print(a)
 )";
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "[1, 0, 3] [1, 0, 0] [0, 2, 0] [0, 0, 3]\n");
-}
-
-TEST(ThreadTest, Array2D1) { // pystone
-  const char* src = R"(
-a1 = [0]*3
-a2 = [x[:] for x in [a1]*3]
-a1[0] = 1
-a1[1] = a1[0]
-a1[2] = a1[0] + a1[1]
-a2[0][0] = a1[0]
-a2[1][1] = a2[0][0] + 10
-a2[2][2] = a2[1][1] + 100
-print(a1, a2[0], a2[1], a2[2])
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "[1, 1, 2] [1, 0, 0] [0, 11, 0] [0, 0, 111]\n");
+  EXPECT_EQ(output, "[1, 0, True]\n[7, 0, True]\n");
 }
 
 TEST(ThreadTest, BreakLoopWhileLoop) {
