@@ -9,7 +9,7 @@ class GeneratorBaseBuiltins {
   static void initialize(Runtime* runtime);
 
   template <LayoutId target>
-  static Object* send(Thread* thread, Frame* frame, word nargs);
+  static RawObject send(Thread* thread, Frame* frame, word nargs);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(GeneratorBaseBuiltins);
@@ -19,8 +19,8 @@ class GeneratorBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderNext(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderIter(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinMethod kMethods[];

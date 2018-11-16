@@ -7,20 +7,20 @@
 
 namespace python {
 
-Object* builtinClassMethodGet(Thread* thread, Frame* frame, word nargs);
-Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs);
-Object* builtinClassMethodNew(Thread* thread, Frame* frame, word nargs);
+RawObject builtinClassMethodGet(Thread* thread, Frame* frame, word nargs);
+RawObject builtinClassMethodInit(Thread* thread, Frame* frame, word nargs);
+RawObject builtinClassMethodNew(Thread* thread, Frame* frame, word nargs);
 
-Object* builtinStaticMethodGet(Thread* thread, Frame* frame, word nargs);
-Object* builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs);
-Object* builtinStaticMethodNew(Thread* thread, Frame* frame, word nargs);
+RawObject builtinStaticMethodGet(Thread* thread, Frame* frame, word nargs);
+RawObject builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs);
+RawObject builtinStaticMethodNew(Thread* thread, Frame* frame, word nargs);
 
-Object* builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs);
-Object* builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs);
-Object* builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs);
-Object* builtinPropertyGetter(Thread* thread, Frame* frame, word nargs);
-Object* builtinPropertyInit(Thread* thread, Frame* frame, word nargs);
-Object* builtinPropertyNew(Thread* thread, Frame* frame, word nargs);
-Object* builtinPropertySetter(Thread* thread, Frame* frame, word nargs);
+RawObject builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs);
+RawObject builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs);
+RawObject builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs);
+RawObject builtinPropertyGetter(Thread* thread, Frame* frame, word nargs);
+RawObject builtinPropertyInit(Thread* thread, Frame* frame, word nargs);
+RawObject builtinPropertyNew(Thread* thread, Frame* frame, word nargs);
+RawObject builtinPropertySetter(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

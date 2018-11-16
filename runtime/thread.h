@@ -1,21 +1,15 @@
 #pragma once
 
 #include "globals.h"
+#include "objects.h"
 
 namespace python {
 
-class Type;
-class Dict;
 class Frame;
 class FrameVisitor;
-class Function;
 class Handles;
-class Module;
-class Object;
-class ObjectArray;
 class PointerVisitor;
 class Runtime;
-class Str;
 
 class Thread {
  public:
@@ -29,17 +23,17 @@ class Thread {
 
   Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
   Frame* linkFrame(Frame* frame);
-  Frame* pushFrame(Object* code);
+  Frame* pushFrame(RawObject code);
   Frame* pushNativeFrame(void* fn, word nargs);
-  Frame* pushModuleFunctionFrame(Module* module, Object* code);
-  Frame* pushClassFunctionFrame(Object* function, Object* dict);
+  Frame* pushModuleFunctionFrame(RawModule module, RawObject code);
+  Frame* pushClassFunctionFrame(RawObject function, RawObject dict);
   void checkStackOverflow(word max_size);
 
   void popFrame();
 
-  Object* run(Object* object);
-  Object* runModuleFunction(Module* module, Object* object);
-  Object* runClassFunction(Object* function, Object* dict);
+  RawObject run(RawObject object);
+  RawObject runModuleFunction(RawModule module, RawObject object);
+  RawObject runClassFunction(RawObject function, RawObject dict);
 
   Thread* next() { return next_; }
 
@@ -63,52 +57,52 @@ class Thread {
 
   // Raises an AttributeError exception and returns an Error that must be
   // returned up the stack by the caller.
-  Object* raiseAttributeError(Object* value);
-  Object* raiseAttributeErrorWithCStr(const char* message);
+  RawObject raiseAttributeError(RawObject value);
+  RawObject raiseAttributeErrorWithCStr(const char* message);
 
   // Raises an Index exception and returns an Error object that must be returned
   // up the stack by the caller.
-  Object* raiseIndexError(Object* value);
-  Object* raiseIndexErrorWithCStr(const char* message);
+  RawObject raiseIndexError(RawObject value);
+  RawObject raiseIndexErrorWithCStr(const char* message);
 
   // Raises a KeyError exception and returns an Error that must be returned up
   // the stack by the caller.
-  Object* raiseKeyError(Object* value);
-  Object* raiseKeyErrorWithCStr(const char* message);
+  RawObject raiseKeyError(RawObject value);
+  RawObject raiseKeyErrorWithCStr(const char* message);
 
   // Raises an OverflowError exception and returns an Error object that must be
   // returned up the stack by the caller.
-  Object* raiseOverflowError(Object* value);
-  Object* raiseOverflowErrorWithCStr(const char* message);
+  RawObject raiseOverflowError(RawObject value);
+  RawObject raiseOverflowErrorWithCStr(const char* message);
 
   // Raises a RuntimeError exception and returns an Error object that must be
   // returned up the stack by the caller.
-  Object* raiseRuntimeError(Object* value);
-  Object* raiseRuntimeErrorWithCStr(const char* message);
+  RawObject raiseRuntimeError(RawObject value);
+  RawObject raiseRuntimeErrorWithCStr(const char* message);
 
   // Raises a SystemError exception and returns an Error object that must be
   // returned up the stack by the caller.
-  Object* raiseSystemError(Object* value);
-  Object* raiseSystemErrorWithCStr(const char* message);
+  RawObject raiseSystemError(RawObject value);
+  RawObject raiseSystemErrorWithCStr(const char* message);
 
   // Raises a TypeError exception and returns an Error object that must be
   // returned up the stack by the caller.
-  Object* raiseTypeError(Object* value);
-  Object* raiseTypeErrorWithCStr(const char* message);
+  RawObject raiseTypeError(RawObject value);
+  RawObject raiseTypeErrorWithCStr(const char* message);
 
   // Raises a ValueError exception and returns an Error object that must be
   // returned up the stack by the caller.
-  Object* raiseValueError(Object* value);
-  Object* raiseValueErrorWithCStr(const char* message);
+  RawObject raiseValueError(RawObject value);
+  RawObject raiseValueErrorWithCStr(const char* message);
 
   // Raises a StopIteration exception and returns an Error object that must be
   // returned up the stack by the caller.
-  Object* raiseStopIteration(Object* value);
+  RawObject raiseStopIteration(RawObject value);
 
   // Raises a ZeroDivision exception and returns an Error object that must be
   // returned up the stack by the caller.
-  Object* raiseZeroDivisionError(Object* value);
-  Object* raiseZeroDivisionErrorWithCStr(const char* message);
+  RawObject raiseZeroDivisionError(RawObject value);
+  RawObject raiseZeroDivisionErrorWithCStr(const char* message);
 
   // Returns true if there is an exception pending.
   bool hasPendingException();
@@ -128,10 +122,10 @@ class Thread {
 
   // Returns the type of the current exception or None if no exception is
   // pending.
-  Object* exceptionType() { return exception_type_; }
+  RawObject exceptionType() { return exception_type_; }
 
   // Returns the value of the current exception.
-  Object* exceptionValue() { return exception_value_; }
+  RawObject exceptionValue() { return exception_value_; }
 
   // Walk all the frames on the stack starting with the top-most frame
   void visitFrames(FrameVisitor* visitor);
@@ -139,11 +133,11 @@ class Thread {
  private:
   void pushInitialFrame();
 
-  void setExceptionType(Object* type) { exception_type_ = type; }
+  void setExceptionType(RawObject type) { exception_type_ = type; }
 
-  void setExceptionValue(Object* value) { exception_value_ = value; }
+  void setExceptionValue(RawObject value) { exception_value_ = value; }
 
-  void setExceptionTraceback(Object* traceback) {
+  void setExceptionTraceback(RawObject traceback) {
     exception_traceback_ = traceback;
   }
 
@@ -166,13 +160,13 @@ class Thread {
 
   // The type object corresponding to the pending exception.  If there is no
   // pending exception this will be set to None.
-  Object* exception_type_;
+  RawObject exception_type_;
 
   // The value of the pending exception.
-  Object* exception_value_;
+  RawObject exception_value_;
 
   // The traceback of the pending exception.
-  Object* exception_traceback_;
+  RawObject exception_traceback_;
 
   static thread_local Thread* current_thread_;
 

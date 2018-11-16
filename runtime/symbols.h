@@ -271,13 +271,13 @@ class Symbols {
   ~Symbols();
 
 #define DEFINE_SYMBOL_ACCESSOR(symbol, value)                                  \
-  Object* symbol() { return at(SymbolId::k##symbol); }
+  RawObject symbol() { return at(SymbolId::k##symbol); }
   FOREACH_SYMBOL(DEFINE_SYMBOL_ACCESSOR)
 #undef DEFINE_SYMBOL_ACCESSOR
 
   void visit(PointerVisitor* visitor);
 
-  Object* at(SymbolId id) {
+  RawObject at(SymbolId id) {
     int index = static_cast<int>(id);
     DCHECK_INDEX(index, static_cast<int>(SymbolId::kMaxId));
     return symbols_[index];
@@ -287,7 +287,7 @@ class Symbols {
 
  private:
   // TODO(T25010996) - Benchmark whether this is faster than an ObjectArray
-  Object** symbols_;
+  RawObject* symbols_;
 };
 
 }  // namespace python

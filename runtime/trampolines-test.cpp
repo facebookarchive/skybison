@@ -636,7 +636,7 @@ foo(3, 4);
   EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
 }
 
-static Object* firstArg(Thread*, Frame* frame, word argc) {
+static RawObject firstArg(Thread*, Frame* frame, word argc) {
   if (argc == 0) {
     return NoneType::object();
   }
@@ -664,15 +664,15 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
   code->setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  Object* result = Thread::currentThread()->run(*code);
+  RawObject result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
   ASSERT_EQ(SmallInt::cast(result)->value(), 1111);
 }
 
 // test "builtin-kw" func that returns a list of first position arg
 // and value of kw argument 'foo'
-static Object* returnsPositionalAndKeywordArgument(Thread* thread, Frame* frame,
-                                                   word argc) {
+static RawObject returnsPositionalAndKeywordArgument(Thread* thread,
+                                                     Frame* frame, word argc) {
   KwArguments args(frame, argc);
   HandleScope scope(thread);
   Handle<Object> foo_name(&scope, thread->runtime()->newStrFromCStr("foo"));
@@ -711,7 +711,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   code->setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  Object* result = Thread::currentThread()->run(*code);
+  RawObject result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isObjectArray());
   Handle<ObjectArray> tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 2);
@@ -721,9 +721,9 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
 
 // test "builtin-kw" func that returns a list of first position arg
 // and value of kw arguments 'foo' and 'bar'
-static Object* returnsPositionalAndTwoKeywordArguments(Thread* thread,
-                                                       Frame* frame,
-                                                       word argc) {
+static RawObject returnsPositionalAndTwoKeywordArguments(Thread* thread,
+                                                         Frame* frame,
+                                                         word argc) {
   Runtime* runtime = thread->runtime();
   KwArguments args(frame, argc);
   HandleScope scope;
@@ -769,7 +769,7 @@ TEST(TrampolineTest,
   code->setStacksize(5);
 
   // Execute the code and make sure we get back the result we expect
-  Object* result = Thread::currentThread()->run(*code);
+  RawObject result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isObjectArray());
   Handle<ObjectArray> tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 3);

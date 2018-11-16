@@ -7,6 +7,6 @@
 
 namespace python {
 
-Object* builtinFunctionGet(Thread* thread, Frame* frame, word nargs);
+RawObject builtinFunctionGet(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

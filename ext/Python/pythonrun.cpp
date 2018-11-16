@@ -5,8 +5,8 @@ namespace python {
 struct node;
 
 namespace testing {
-Object* findModule(Runtime*, const char*);
-Object* moduleAt(Runtime*, const Handle<Module>&, const char*);
+RawObject findModule(Runtime*, const char*);
+RawObject moduleAt(Runtime*, const Handle<Module>&, const char*);
 }  // namespace testing
 
 PY_EXPORT PyObject* PyRun_SimpleStringFlags(const char* str,

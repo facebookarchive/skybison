@@ -130,7 +130,7 @@ def test(a, b):
 
   // We can move these tests into the python code above once we can
   // call classes.
-  Object* object = testing::findModule(&runtime, "__main__");
+  RawObject object = testing::findModule(&runtime, "__main__");
   ASSERT_TRUE(object->isModule());
   Handle<Module> main(&scope, object);
 

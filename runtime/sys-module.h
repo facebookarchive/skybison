@@ -6,7 +6,7 @@
 
 namespace python {
 
-Object* builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs);
-Object* builtinSysExit(Thread* thread, Frame* frame, word nargs);
+RawObject builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs);
+RawObject builtinSysExit(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

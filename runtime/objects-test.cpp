@@ -12,17 +12,17 @@ using namespace testing;
 
 TEST(DoubleTest, DoubleTest) {
   Runtime runtime;
-  Object* o = runtime.newFloat(3.14);
+  RawObject o = runtime.newFloat(3.14);
   ASSERT_TRUE(o->isFloat());
-  Float* d = Float::cast(o);
+  RawFloat d = Float::cast(o);
   EXPECT_EQ(d->value(), 3.14);
 }
 
 TEST(ComplexTest, ComplexTest) {
   Runtime runtime;
-  Object* o = runtime.newComplex(1.0, 2.0);
+  RawObject o = runtime.newComplex(1.0, 2.0);
   ASSERT_TRUE(o->isComplex());
-  Complex* c = Complex::cast(o);
+  RawComplex c = Complex::cast(o);
   EXPECT_EQ(c->real(), 1.0);
   EXPECT_EQ(c->imag(), 2.0);
 }
@@ -354,9 +354,9 @@ TEST(SliceTest, adjustIndicesOutOfBounds) {
 TEST(LargeStrTest, CopyTo) {
   Runtime runtime;
 
-  Object* obj = runtime.newStrFromCStr("hello world!");
+  RawObject obj = runtime.newStrFromCStr("hello world!");
   ASSERT_TRUE(obj->isLargeStr());
-  Str* str = Str::cast(obj);
+  RawStr str = Str::cast(obj);
 
   byte array[5];
   memset(array, 'a', ARRAYSIZE(array));
@@ -385,7 +385,7 @@ TEST(LargeStrTest, CopyTo) {
 }
 
 TEST(SmallStrTest, Tests) {
-  Object* obj0 = SmallStr::fromCStr("AB");
+  RawObject obj0 = SmallStr::fromCStr("AB");
   ASSERT_TRUE(obj0->isSmallStr());
   auto* str0 = Str::cast(obj0);
   EXPECT_EQ(str0->length(), 2);
@@ -450,7 +450,7 @@ TEST(StringTest, CompareSmallStr) {
 TEST(WeakRefTest, EnqueueAndDequeue) {
   Runtime runtime;
   HandleScope scope;
-  Object* list = NoneType::object();
+  RawObject list = NoneType::object();
   for (int i = 0; i < 3; i++) {
     Handle<WeakRef> weak(&scope, runtime.newWeakRef());
     weak->setReferent(SmallInt::fromWord(i));
@@ -471,11 +471,11 @@ TEST(WeakRefTest, EnqueueAndDequeue) {
 TEST(WeakRefTest, SpliceQueue) {
   Runtime runtime;
   HandleScope scope;
-  Object* list1 = NoneType::object();
-  Object* list2 = NoneType::object();
+  RawObject list1 = NoneType::object();
+  RawObject list2 = NoneType::object();
   EXPECT_EQ(WeakRef::spliceQueue(list1, list2), NoneType::object());
 
-  Object* list3 = runtime.newWeakRef();
+  RawObject list3 = runtime.newWeakRef();
   WeakRef::cast(list3)->setLink(list3);
   EXPECT_EQ(WeakRef::spliceQueue(list1, list3), list3);
   EXPECT_EQ(WeakRef::spliceQueue(list3, list2), list3);
@@ -489,7 +489,7 @@ TEST(WeakRefTest, SpliceQueue) {
     weak2->setReferent(SmallInt::fromWord(i + 2));
     WeakRef::enqueueReference(*weak2, &list2);
   }
-  Object* list = WeakRef::spliceQueue(list1, list2);
+  RawObject list = WeakRef::spliceQueue(list1, list2);
   Handle<WeakRef> weak(&scope, WeakRef::dequeueReference(&list));
   EXPECT_EQ(SmallInt::cast(weak->referent())->value(), 0);
 

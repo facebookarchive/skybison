@@ -265,10 +265,71 @@ INTRINSIC_CLASS_NAMES(CASE)
 // for now, but we have plans to add more in the future, hence the more generic
 // name.
 #define RAW_OBJECT_COMMON(ty)                                                  \
-  static ty* cast(Object* object) {                                            \
+  static ty* cast(RawObject object) {                                          \
     DCHECK(object->is##ty(), "invalid cast, expected " #ty);                   \
     return reinterpret_cast<ty*>(object);                                      \
   }
+
+// TODO(T34683229): These typedefs are temporary as part of an in-progress
+// migration.
+#define RAW_ALIAS(ty) using Raw##ty = class ty*
+RAW_ALIAS(Object);
+RAW_ALIAS(Int);
+RAW_ALIAS(SmallInt);
+RAW_ALIAS(Header);
+RAW_ALIAS(Bool);
+RAW_ALIAS(NoneType);
+RAW_ALIAS(Error);
+RAW_ALIAS(Str);
+RAW_ALIAS(SmallStr);
+RAW_ALIAS(HeapObject);
+RAW_ALIAS(BaseException);
+RAW_ALIAS(Exception);
+RAW_ALIAS(StopIteration);
+RAW_ALIAS(SystemExit);
+RAW_ALIAS(RuntimeError);
+RAW_ALIAS(NotImplementedError);
+RAW_ALIAS(ImportError);
+RAW_ALIAS(ModuleNotFoundError);
+RAW_ALIAS(LookupError);
+RAW_ALIAS(IndexError);
+RAW_ALIAS(KeyError);
+RAW_ALIAS(Type);
+RAW_ALIAS(Array);
+RAW_ALIAS(Bytes);
+RAW_ALIAS(ObjectArray);
+RAW_ALIAS(LargeStr);
+RAW_ALIAS(LargeInt);
+RAW_ALIAS(Float);
+RAW_ALIAS(Complex);
+RAW_ALIAS(Property);
+RAW_ALIAS(Range);
+RAW_ALIAS(RangeIterator);
+RAW_ALIAS(Slice);
+RAW_ALIAS(StaticMethod);
+RAW_ALIAS(ListIterator);
+RAW_ALIAS(SetIterator);
+RAW_ALIAS(TupleIterator);
+RAW_ALIAS(Code);
+RAW_ALIAS(Function);
+RAW_ALIAS(Instance);
+RAW_ALIAS(Module);
+RAW_ALIAS(NotImplemented);
+RAW_ALIAS(Dict);
+RAW_ALIAS(Set);
+RAW_ALIAS(List);
+RAW_ALIAS(ValueCell);
+RAW_ALIAS(Ellipsis);
+RAW_ALIAS(WeakRef);
+RAW_ALIAS(BoundMethod);
+RAW_ALIAS(ClassMethod);
+RAW_ALIAS(Layout);
+RAW_ALIAS(Super);
+RAW_ALIAS(GeneratorBase);
+RAW_ALIAS(Generator);
+RAW_ALIAS(Coroutine);
+RAW_ALIAS(HeapFrame);
+#undef RAW_ALIAS
 
 class Object {
  public:
@@ -337,7 +398,7 @@ class Object {
   bool isInt();
   bool isStr();
 
-  static bool equals(Object* lhs, Object* rhs);
+  static bool equals(RawObject lhs, RawObject rhs);
 
   // Constants
 
@@ -382,7 +443,7 @@ class Int : public Object {
   template <typename T>
   OptInt<T> asInt();
 
-  word compare(Int* other);
+  word compare(RawInt other);
 
   double floatValue();
 
@@ -419,13 +480,13 @@ class SmallInt : public Object {
   if_unsigned_t<T, OptInt<T>> asInt();
 
   // Conversion.
-  static SmallInt* fromWord(word value);
+  static RawSmallInt fromWord(word value);
   static constexpr bool isValid(word value) {
     return (value >= kMinValue) && (value <= kMaxValue);
   }
 
   template <typename T>
-  static SmallInt* fromFunctionPointer(T pointer);
+  static RawSmallInt fromFunctionPointer(T pointer);
 
   // Tags.
   static const int kTag = 0;
@@ -479,19 +540,19 @@ enum class ObjectFormat {
 class Header : public Object {
  public:
   word hashCode();
-  Header* withHashCode(word value);
+  RawHeader withHashCode(word value);
 
   ObjectFormat format();
 
   LayoutId layoutId();
-  Header* withLayoutId(LayoutId layout_id);
+  RawHeader withLayoutId(LayoutId layout_id);
 
   word count();
 
   bool hasOverflow();
 
-  static Header* from(word count, word hash, LayoutId layout_id,
-                      ObjectFormat format);
+  static RawHeader from(word count, word hash, LayoutId layout_id,
+                        ObjectFormat format);
 
   // Tags.
   static const int kTag = 3;
@@ -534,12 +595,12 @@ class Bool : public Object {
   bool value();
 
   // Singletons
-  static Bool* trueObj();
-  static Bool* falseObj();
+  static RawBool trueObj();
+  static RawBool falseObj();
 
   // Conversion.
-  static Bool* fromBool(bool value);
-  static Bool* negate(Object* value);
+  static RawBool fromBool(bool value);
+  static RawBool negate(RawObject value);
 
   // Tags.
   static const int kTag = 7;  // 0b00111
@@ -555,7 +616,7 @@ class Bool : public Object {
 class NoneType : public Object {
  public:
   // Singletons.
-  static NoneType* object();
+  static RawNoneType object();
 
   // Tags.
   static const int kTag = 15;  // 0b01111
@@ -574,7 +635,7 @@ class NoneType : public Object {
 class Error : public Object {
  public:
   // Singletons.
-  static Error* object();
+  static RawError object();
 
   // Tagging.
   static const int kTag = 23;  // 0b10111
@@ -596,8 +657,8 @@ class Str : public Object {
   void copyTo(byte* dst, word length);
 
   // Equality checks.
-  word compare(Object* string);
-  bool equals(Object* that);
+  word compare(RawObject string);
+  bool equals(RawObject that);
   bool equalsCStr(const char* c_str);
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
@@ -613,8 +674,8 @@ class Str : public Object {
 class SmallStr : public Object {
  public:
   // Conversion.
-  static Object* fromCStr(const char* value);
-  static Object* fromBytes(View<byte> data);
+  static RawObject fromCStr(const char* value);
+  static RawObject fromBytes(View<byte> data);
 
   // Tagging.
   static const int kTag = 31;  // 0b11111
@@ -653,8 +714,8 @@ class HeapObject : public Object {
   // Getters and setters.
   uword address();
   uword baseAddress();
-  Header* header();
-  void setHeader(Header* header);
+  RawHeader header();
+  void setHeader(RawHeader header);
   word headerOverflow();
   void setHeaderAndOverflow(word count, word hash, LayoutId id,
                             ObjectFormat format);
@@ -662,18 +723,18 @@ class HeapObject : public Object {
   word size();
 
   // Conversion.
-  static HeapObject* fromAddress(uword address);
+  static RawHeapObject fromAddress(uword address);
 
   // Sizing
   static word headerSize(word count);
 
-  void initialize(word size, Object* value);
+  void initialize(word size, RawObject value);
 
   // Garbage collection.
   bool isRoot();
   bool isForwarding();
-  Object* forward();
-  void forwardTo(Object* object);
+  RawObject forward();
+  void forwardTo(RawObject object);
 
   // Tags.
   static const int kTag = 1;
@@ -692,8 +753,8 @@ class HeapObject : public Object {
   RAW_OBJECT_COMMON(HeapObject)
 
  protected:
-  Object* instanceVariableAt(word offset);
-  void instanceVariableAtPut(word offset, Object* value);
+  RawObject instanceVariableAt(word offset);
+  void instanceVariableAtPut(word offset, RawObject value);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(HeapObject);
@@ -704,17 +765,17 @@ class HeapObject : public Object {
 class BaseException : public HeapObject {
  public:
   // Getters and setters.
-  Object* args();
-  void setArgs(Object* args);
+  RawObject args();
+  void setArgs(RawObject args);
 
-  Object* traceback();
-  void setTraceback(Object* traceback);
+  RawObject traceback();
+  void setTraceback(RawObject traceback);
 
-  Object* cause();
-  void setCause(Object* cause);
+  RawObject cause();
+  void setCause(RawObject cause);
 
-  Object* context();
-  void setContext(Object* context);
+  RawObject context();
+  void setContext(RawObject context);
 
   static const int kArgsOffset = HeapObject::kSize;
   static const int kTracebackOffset = kArgsOffset + kPointerSize;
@@ -739,8 +800,8 @@ class Exception : public BaseException {
 class StopIteration : public BaseException {
  public:
   // Getters and setters.
-  Object* value();
-  void setValue(Object* value);
+  RawObject value();
+  void setValue(RawObject value);
 
   static const int kValueOffset = BaseException::kSize;
   static const int kSize = kValueOffset + kPointerSize;
@@ -753,8 +814,8 @@ class StopIteration : public BaseException {
 
 class SystemExit : public BaseException {
  public:
-  Object* code();
-  void setCode(Object* code);
+  RawObject code();
+  void setCode(RawObject code);
 
   static const int kCodeOffset = BaseException::kSize;
   static const int kSize = kCodeOffset + kPointerSize;
@@ -784,14 +845,14 @@ class NotImplementedError : public RuntimeError {
 class ImportError : public Exception {
  public:
   // Getters and setters
-  Object* msg();
-  void setMsg(Object* msg);
+  RawObject msg();
+  void setMsg(RawObject msg);
 
-  Object* name();
-  void setName(Object* name);
+  RawObject name();
+  void setName(RawObject name);
 
-  Object* path();
-  void setPath(Object* path);
+  RawObject path();
+  void setPath(RawObject path);
 
   static const int kMsgOffset = BaseException::kSize;
   static const int kNameOffset = kMsgOffset + kPointerSize;
@@ -857,36 +918,36 @@ class Type : public HeapObject {
                 "Flags must be encodable in a SmallInt");
 
   // Getters and setters.
-  Object* instanceLayout();
-  void setInstanceLayout(Object* layout);
+  RawObject instanceLayout();
+  void setInstanceLayout(RawObject layout);
 
-  Object* mro();
-  void setMro(Object* object_array);
+  RawObject mro();
+  void setMro(RawObject object_array);
 
-  Object* name();
-  void setName(Object* name);
+  RawObject name();
+  void setName(RawObject name);
 
-  Object* flags();
-  void setFlags(Object* value);
+  RawObject flags();
+  void setFlags(RawObject value);
   void setFlag(Flag flag);
   bool hasFlag(Flag flag);
 
-  Object* dict();
-  void setDict(Object* name);
+  RawObject dict();
+  void setDict(RawObject name);
 
   // Int holding a pointer to a PyTypeObject
   // Only set on classes that were initialized through PyType_Ready
-  Object* extensionType();
-  void setExtensionType(Object* pytype);
+  RawObject extensionType();
+  void setExtensionType(RawObject pytype);
 
   // builtin base related
-  Object* builtinBaseClass();
-  void setBuiltinBaseClass(Object* base);
+  RawObject builtinBaseClass();
+  void setBuiltinBaseClass(RawObject base);
 
   bool isIntrinsicOrExtension();
 
   // Casting.
-  static Type* cast(Object* object);
+  static RawType cast(RawObject object);
 
   // Layout.
   static const int kMroOffset = HeapObject::kSize;
@@ -929,17 +990,17 @@ class Bytes : public Array {
 class ObjectArray : public Array {
  public:
   // Getters and setters.
-  Object* at(word index);
-  void atPut(word index, Object* value);
+  RawObject at(word index);
+  void atPut(word index, RawObject value);
 
   // Sizing.
   static word allocationSize(word length);
 
-  void copyTo(Object* dst);
+  void copyTo(RawObject dst);
 
-  void replaceFromWith(word start, Object* array);
+  void replaceFromWith(word start, RawObject array);
 
-  bool contains(Object* object);
+  bool contains(RawObject object);
 
   RAW_OBJECT_COMMON(ObjectArray)
 
@@ -965,7 +1026,7 @@ class LargeStr : public Array {
   void copyTo(byte* bytes, word length);
 
   // Equality checks.
-  bool equals(Object* that);
+  bool equals(RawObject that);
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
@@ -1071,14 +1132,14 @@ class Complex : public HeapObject {
 class Property : public HeapObject {
  public:
   // Getters and setters
-  Object* getter();
-  void setGetter(Object* function);
+  RawObject getter();
+  void setGetter(RawObject function);
 
-  Object* setter();
-  void setSetter(Object* function);
+  RawObject setter();
+  void setSetter(RawObject function);
 
-  Object* deleter();
-  void setDeleter(Object* function);
+  RawObject deleter();
+  void setDeleter(RawObject function);
 
   // Layout
   static const int kGetterOffset = HeapObject::kSize;
@@ -1122,10 +1183,10 @@ class RangeIterator : public HeapObject {
 
   // Bind the iterator to a specific range. The binding should not be changed
   // after creation.
-  void setRange(Object* range);
+  void setRange(RawObject range);
 
   // Iteration.
-  Object* next();
+  RawObject next();
 
   // Number of unconsumed values in the range iterator
   word pendingLength();
@@ -1146,14 +1207,14 @@ class RangeIterator : public HeapObject {
 class Slice : public HeapObject {
  public:
   // Getters and setters.
-  Object* start();
-  void setStart(Object* value);
+  RawObject start();
+  void setStart(RawObject value);
 
-  Object* stop();
-  void setStop(Object* value);
+  RawObject stop();
+  void setStop(RawObject value);
 
-  Object* step();
-  void setStep(Object* value);
+  RawObject step();
+  void setStep(RawObject value);
 
   // Returns the correct start, stop, and step word values from this slice
   void unpack(word* start, word* stop, word* step);
@@ -1177,8 +1238,8 @@ class Slice : public HeapObject {
 class StaticMethod : public HeapObject {
  public:
   // Getters and setters
-  Object* function();
-  void setFunction(Object* function);
+  RawObject function();
+  void setFunction(RawObject function);
 
   // Layout
   static const int kFunctionOffset = HeapObject::kSize;
@@ -1196,11 +1257,11 @@ class ListIterator : public HeapObject {
   word index();
   void setIndex(word index);
 
-  Object* list();
-  void setList(Object* list);
+  RawObject list();
+  void setList(RawObject list);
 
   // Iteration.
-  Object* next();
+  RawObject next();
 
   // Layout.
   static const int kListOffset = HeapObject::kSize;
@@ -1222,11 +1283,11 @@ class SetIterator : public HeapObject {
   word index();
   void setIndex(word index);
 
-  Object* set();
-  void setSet(Object* set);
+  RawObject set();
+  void setSet(RawObject set);
 
   // Iteration.
-  Object* next();
+  RawObject next();
 
   // Number of unconsumed values in the set iterator
   word pendingLength();
@@ -1250,12 +1311,12 @@ class TupleIterator : public HeapObject {
 
   void setIndex(word index);
 
-  Object* tuple();
+  RawObject tuple();
 
-  void setTuple(Object* tuple);
+  void setTuple(RawObject tuple);
 
   // Iteration.
-  Object* next();
+  RawObject next();
 
   // Layout.
   static const int kTupleOffset = HeapObject::kSize;
@@ -1293,18 +1354,18 @@ class Code : public HeapObject {
   word cell2arg();
   void setCell2arg(word value);
 
-  Object* cellvars();
-  void setCellvars(Object* value);
+  RawObject cellvars();
+  void setCellvars(RawObject value);
   word numCellvars();
 
-  Object* code();
-  void setCode(Object* value);
+  RawObject code();
+  void setCode(RawObject value);
 
-  Object* consts();
-  void setConsts(Object* value);
+  RawObject consts();
+  void setConsts(RawObject value);
 
-  Object* filename();
-  void setFilename(Object* value);
+  RawObject filename();
+  void setFilename(RawObject value);
 
   word firstlineno();
   void setFirstlineno(word value);
@@ -1312,21 +1373,21 @@ class Code : public HeapObject {
   word flags();
   void setFlags(word value);
 
-  Object* freevars();
-  void setFreevars(Object* value);
+  RawObject freevars();
+  void setFreevars(RawObject value);
   word numFreevars();
 
   word kwonlyargcount();
   void setKwonlyargcount(word value);
 
-  Object* lnotab();
-  void setLnotab(Object* value);
+  RawObject lnotab();
+  void setLnotab(RawObject value);
 
-  Object* name();
-  void setName(Object* value);
+  RawObject name();
+  void setName(RawObject value);
 
-  Object* names();
-  void setNames(Object* value);
+  RawObject names();
+  void setNames(RawObject value);
 
   word nlocals();
   void setNlocals(word value);
@@ -1338,8 +1399,8 @@ class Code : public HeapObject {
   word stacksize();
   void setStacksize(word value);
 
-  Object* varnames();
-  void setVarnames(Object* value);
+  RawObject varnames();
+  void setVarnames(RawObject value);
 
   // Layout.
   static const int kArgcountOffset = HeapObject::kSize;
@@ -1387,32 +1448,32 @@ class Function : public HeapObject {
    * The entry point is called with the current thread, the caller's stack
    * frame, and the number of arguments that have been pushed onto the stack.
    */
-  using Entry = Object* (*)(Thread*, Frame*, word);
+  using Entry = RawObject (*)(Thread*, Frame*, word);
 
   // Getters and setters.
 
   // A dict containing parameter annotations
-  Object* annotations();
-  void setAnnotations(Object* annotations);
+  RawObject annotations();
+  void setAnnotations(RawObject annotations);
 
   // The code object backing this function or None
-  Object* code();
-  void setCode(Object* code);
+  RawObject code();
+  void setCode(RawObject code);
 
   // A tuple of cell objects that contain bindings for the function's free
   // variables. Read-only to user code.
-  Object* closure();
-  void setClosure(Object* closure);
+  RawObject closure();
+  void setClosure(RawObject closure);
 
   // A tuple containing default values for arguments with defaults. Read-only
   // to user code.
-  Object* defaults();
-  void setDefaults(Object* defaults);
+  RawObject defaults();
+  void setDefaults(RawObject defaults);
   bool hasDefaults();
 
   // The function's docstring
-  Object* doc();
-  void setDoc(Object* doc);
+  RawObject doc();
+  void setDoc(RawObject doc);
 
   // Returns the entry to be used when the function is invoked via
   // CALL_FUNCTION
@@ -1431,29 +1492,29 @@ class Function : public HeapObject {
 
   // The dict that holds this function's global namespace. User-code
   // cannot change this
-  Object* globals();
-  void setGlobals(Object* globals);
+  RawObject globals();
+  void setGlobals(RawObject globals);
 
   // A dict containing defaults for keyword-only parameters
-  Object* kwDefaults();
-  void setKwDefaults(Object* kw_defaults);
+  RawObject kwDefaults();
+  void setKwDefaults(RawObject kw_defaults);
 
   // The name of the module the function was defined in
-  Object* module();
-  void setModule(Object* module);
+  RawObject module();
+  void setModule(RawObject module);
 
   // The function's name
-  Object* name();
-  void setName(Object* name);
+  RawObject name();
+  void setName(RawObject name);
 
   // The function's qualname
-  Object* qualname();
-  void setQualname(Object* qualname);
+  RawObject qualname();
+  void setQualname(RawObject qualname);
 
   // The pre-computed object array provided fast globals access.
   // fastGlobals[arg] == globals[names[arg]]
-  Object* fastGlobals();
-  void setFastGlobals(Object* fast_globals);
+  RawObject fastGlobals();
+  void setFastGlobals(RawObject fast_globals);
 
   // Layout.
   static const int kDocOffset = HeapObject::kSize;
@@ -1492,16 +1553,16 @@ class Instance : public HeapObject {
 class Module : public HeapObject {
  public:
   // Setters and getters.
-  Object* name();
-  void setName(Object* name);
+  RawObject name();
+  void setName(RawObject name);
 
-  Object* dict();
-  void setDict(Object* dict);
+  RawObject dict();
+  void setDict(RawObject dict);
 
   // Contains the numeric address of mode definition object for C-API modules or
   // zero if the module was not defined through the C-API.
-  Object* def();
-  void setDef(Object* def);
+  RawObject def();
+  void setDef(RawObject def);
 
   // Layout.
   static const int kNameOffset = HeapObject::kSize;
@@ -1550,8 +1611,8 @@ class Dict : public HeapObject {
 
   // Getters and setters.
   // The ObjectArray backing the dict
-  Object* data();
-  void setData(Object* data);
+  RawObject data();
+  void setData(RawObject data);
 
   // Number of items currently in the dict
   word numItems();
@@ -1573,50 +1634,50 @@ class Dict : public HeapObject {
 class Dict::Bucket {
  public:
   // none of these operations do bounds checking on the backing array
-  static word getIndex(ObjectArray* data, Object* hash) {
+  static word getIndex(RawObjectArray data, RawObject hash) {
     word nbuckets = data->length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
     word value = SmallInt::cast(hash)->value();
     return (value & (nbuckets - 1)) * kNumPointers;
   }
 
-  static bool hasKey(ObjectArray* data, word index, Object* that_key) {
+  static bool hasKey(RawObjectArray data, word index, RawObject that_key) {
     return !hash(data, index)->isNoneType() &&
            Object::equals(key(data, index), that_key);
   }
 
-  static Object* hash(ObjectArray* data, word index) {
+  static RawObject hash(RawObjectArray data, word index) {
     return data->at(index + kHashOffset);
   }
 
-  static bool isEmpty(ObjectArray* data, word index) {
+  static bool isEmpty(RawObjectArray data, word index) {
     return hash(data, index)->isNoneType() && key(data, index)->isNoneType();
   }
 
-  static bool isFilled(ObjectArray* data, word index) {
+  static bool isFilled(RawObjectArray data, word index) {
     return !(isEmpty(data, index) || isTombstone(data, index));
   }
 
-  static bool isTombstone(ObjectArray* data, word index) {
+  static bool isTombstone(RawObjectArray data, word index) {
     return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
   }
 
-  static Object* key(ObjectArray* data, word index) {
+  static RawObject key(RawObjectArray data, word index) {
     return data->at(index + kKeyOffset);
   }
 
-  static void set(ObjectArray* data, word index, Object* hash, Object* key,
-                  Object* value) {
+  static void set(RawObjectArray data, word index, RawObject hash,
+                  RawObject key, RawObject value) {
     data->atPut(index + kHashOffset, hash);
     data->atPut(index + kKeyOffset, key);
     data->atPut(index + kValueOffset, value);
   }
 
-  static void setTombstone(ObjectArray* data, word index) {
+  static void setTombstone(RawObjectArray data, word index) {
     set(data, index, NoneType::object(), Error::object(), NoneType::object());
   }
 
-  static Object* value(ObjectArray* data, word index) {
+  static RawObject value(RawObjectArray data, word index) {
     return data->at(index + kValueOffset);
   }
 
@@ -1640,8 +1701,8 @@ class Set : public HeapObject {
 
   // Getters and setters.
   // The ObjectArray backing the set
-  Object* data();
-  void setData(Object* data);
+  RawObject data();
+  void setData(RawObject data);
 
   // Number of items currently in the set
   word numItems();
@@ -1663,40 +1724,41 @@ class Set : public HeapObject {
 class Set::Bucket {
  public:
   // none of these operations do bounds checking on the backing array
-  static word getIndex(ObjectArray* data, Object* hash) {
+  static word getIndex(RawObjectArray data, RawObject hash) {
     word nbuckets = data->length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
     word value = SmallInt::cast(hash)->value();
     return (value & (nbuckets - 1)) * kNumPointers;
   }
 
-  static Object* hash(ObjectArray* data, word index) {
+  static RawObject hash(RawObjectArray data, word index) {
     return data->at(index + kHashOffset);
   }
 
-  static bool hasKey(ObjectArray* data, word index, Object* that_key) {
+  static bool hasKey(RawObjectArray data, word index, RawObject that_key) {
     return !hash(data, index)->isNoneType() &&
            Object::equals(key(data, index), that_key);
   }
 
-  static bool isEmpty(ObjectArray* data, word index) {
+  static bool isEmpty(RawObjectArray data, word index) {
     return hash(data, index)->isNoneType() && key(data, index)->isNoneType();
   }
 
-  static bool isTombstone(ObjectArray* data, word index) {
+  static bool isTombstone(RawObjectArray data, word index) {
     return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
   }
 
-  static Object* key(ObjectArray* data, word index) {
+  static RawObject key(RawObjectArray data, word index) {
     return data->at(index + kKeyOffset);
   }
 
-  static void set(ObjectArray* data, word index, Object* hash, Object* key) {
+  static void set(RawObjectArray data, word index, RawObject hash,
+                  RawObject key) {
     data->atPut(index + kHashOffset, hash);
     data->atPut(index + kKeyOffset, key);
   }
 
-  static void setTombstone(ObjectArray* data, word index) {
+  static void setTombstone(RawObjectArray data, word index) {
     set(data, index, NoneType::object(), Error::object());
   }
 
@@ -1722,10 +1784,10 @@ class Set::Bucket {
 class List : public HeapObject {
  public:
   // Getters and setters.
-  Object* at(word index);
-  void atPut(word index, Object* value);
-  Object* items();
-  void setItems(Object* new_items);
+  RawObject at(word index);
+  void atPut(word index, RawObject value);
+  RawObject items();
+  void setItems(RawObject new_items);
   word allocated();
   void setAllocated(word new_allocated);
 
@@ -1734,7 +1796,7 @@ class List : public HeapObject {
   word capacity();
 
   // Casting.
-  static List* cast(Object* object);
+  static RawList cast(RawObject object);
 
   // Layout.
   static const int kItemsOffset = HeapObject::kSize;
@@ -1748,8 +1810,8 @@ class List : public HeapObject {
 class ValueCell : public HeapObject {
  public:
   // Getters and setters
-  Object* value();
-  void setValue(Object* object);
+  RawObject value();
+  void setValue(RawObject object);
 
   bool isUnbound();
   void makeUnbound();
@@ -1783,24 +1845,24 @@ class WeakRef : public HeapObject {
   // Getters and setters
 
   // The object weakly referred to by this instance.
-  Object* referent();
-  void setReferent(Object* referent);
+  RawObject referent();
+  void setReferent(RawObject referent);
 
   // A callable object invoked with the referent as an argument when the
   // referent is deemed to be "near death" and only reachable through this weak
   // reference.
-  Object* callback();
-  void setCallback(Object* callable);
+  RawObject callback();
+  void setCallback(RawObject callable);
 
   // Singly linked list of weak reference objects.  This field is used during
   // garbage collection to represent the set of weak references that had been
   // discovered by the initial trace with an otherwise unreachable referent.
-  Object* link();
-  void setLink(Object* reference);
+  RawObject link();
+  void setLink(RawObject reference);
 
-  static void enqueueReference(Object* reference, Object** list);
-  static Object* dequeueReference(Object** list);
-  static Object* spliceQueue(Object* tail1, Object* tail2);
+  static void enqueueReference(RawObject reference, RawObject* list);
+  static RawObject dequeueReference(RawObject* list);
+  static RawObject spliceQueue(RawObject tail1, RawObject tail2);
 
   // Layout.
   static const int kReferentOffset = HeapObject::kSize;
@@ -1842,12 +1904,12 @@ class BoundMethod : public HeapObject {
   // Getters and setters
 
   // The function to which "self" is bound
-  Object* function();
-  void setFunction(Object* function);
+  RawObject function();
+  void setFunction(RawObject function);
 
   // The instance of "self" being bound
-  Object* self();
-  void setSelf(Object* self);
+  RawObject self();
+  void setSelf(RawObject self);
 
   // Layout
   static const int kFunctionOffset = HeapObject::kSize;
@@ -1863,8 +1925,8 @@ class BoundMethod : public HeapObject {
 class ClassMethod : public HeapObject {
  public:
   // Getters and setters
-  Object* function();
-  void setFunction(Object* function);
+  RawObject function();
+  void setFunction(RawObject function);
 
   // Layout
   static const int kFunctionOffset = HeapObject::kSize;
@@ -1922,8 +1984,8 @@ class Layout : public HeapObject {
   void setId(LayoutId id);
 
   // Returns the class whose instances are described by this layout
-  Object* describedClass();
-  void setDescribedClass(Object* type);
+  RawObject describedClass();
+  void setDescribedClass(RawObject type);
 
   // Set the number of in-object attributes that may be stored on an instance
   // described by this layout.
@@ -1941,8 +2003,8 @@ class Layout : public HeapObject {
   //
   //   1. The attribute name (Str)
   //   2. The attribute info (AttributeInfo)
-  Object* inObjectAttributes();
-  void setInObjectAttributes(Object* attributes);
+  RawObject inObjectAttributes();
+  void setInObjectAttributes(RawObject attributes);
 
   // Returns an ObjectArray describing the attributes stored in the overflow
   // array of the instance.
@@ -1952,8 +2014,8 @@ class Layout : public HeapObject {
   //
   //   1. The attribute name (Str)
   //   2. The attribute info (AttributeInfo)
-  Object* overflowAttributes();
-  void setOverflowAttributes(Object* attributes);
+  RawObject overflowAttributes();
+  void setOverflowAttributes(RawObject attributes);
 
   // Returns a flattened list of tuples. Each tuple is composed of the
   // following elements, in order:
@@ -1961,8 +2023,8 @@ class Layout : public HeapObject {
   //   1. The attribute name (Str)
   //   2. The layout that would result if an attribute with that name
   //      was added.
-  Object* additions();
-  void setAdditions(Object* additions);
+  RawObject additions();
+  void setAdditions(RawObject additions);
 
   // Returns a flattened list of tuples. Each tuple is composed of the
   // following elements, in order:
@@ -1970,8 +2032,8 @@ class Layout : public HeapObject {
   //   1. The attribute name (Str)
   //   2. The layout that would result if an attribute with that name
   //      was deleted.
-  Object* deletions();
-  void setDeletions(Object* deletions);
+  RawObject deletions();
+  void setDeletions(RawObject deletions);
 
   // Returns the number of words in an instance described by this layout,
   // including the overflow array.
@@ -2006,12 +2068,12 @@ class Layout : public HeapObject {
 class Super : public HeapObject {
  public:
   // getters and setters
-  Object* type();
-  void setType(Object* tp);
-  Object* object();
-  void setObject(Object* obj);
-  Object* objectType();
-  void setObjectType(Object* tp);
+  RawObject type();
+  void setType(RawObject tp);
+  RawObject object();
+  void setObject(RawObject obj);
+  RawObject objectType();
+  void setObjectType(RawObject tp);
 
   // Layout
   static const int kTypeOffset = HeapObject::kSize;
@@ -2032,8 +2094,8 @@ class Super : public HeapObject {
 class GeneratorBase : public HeapObject {
  public:
   // Get or set the HeapFrame embedded in this GeneratorBase.
-  Object* heapFrame();
-  void setHeapFrame(Object* obj);
+  RawObject heapFrame();
+  void setHeapFrame(RawObject obj);
 
   // Layout.
   static const int kFrameOffset = HeapObject::kSize;
@@ -2298,7 +2360,7 @@ inline bool Object::isModuleNotFoundError() {
   return isHeapObjectWithLayout(LayoutId::kModuleNotFoundError);
 }
 
-inline bool Object::equals(Object* lhs, Object* rhs) {
+inline bool Object::equals(RawObject lhs, RawObject rhs) {
   return (lhs == rhs) ||
          (lhs->isLargeStr() && LargeStr::cast(lhs)->equals(rhs));
 }
@@ -2325,7 +2387,7 @@ OptInt<T> Int::asInt() {
   return LargeInt::cast(this)->asInt<T>();
 }
 
-inline word Int::compare(Int* that) {
+inline word Int::compare(RawInt that) {
   if (this->isSmallInt() && that->isSmallInt()) {
     return this->asWord() - that->asWord();
   }
@@ -2361,7 +2423,7 @@ inline double Int::floatValue() {
   if (isBool()) {
     return Bool::cast(this) == Bool::trueObj() ? 1.0 : 0.0;
   }
-  LargeInt* large_int = LargeInt::cast(this);
+  RawLargeInt large_int = LargeInt::cast(this);
   if (large_int->numDigits() == 1) {
     return static_cast<double>(asWord());
   }
@@ -2462,16 +2524,16 @@ if_unsigned_t<T, OptInt<T>> SmallInt::asInt() {
   return OptInt<T>::overflow();
 }
 
-inline SmallInt* SmallInt::fromWord(word value) {
+inline RawSmallInt SmallInt::fromWord(word value) {
   DCHECK(SmallInt::isValid(value), "invalid cast");
-  return reinterpret_cast<SmallInt*>(value << kTagSize);
+  return reinterpret_cast<RawSmallInt>(value << kTagSize);
 }
 
 template <typename T>
-inline SmallInt* SmallInt::fromFunctionPointer(T pointer) {
+inline RawSmallInt SmallInt::fromFunctionPointer(T pointer) {
   // The bit pattern for a function pointer object must be indistinguishable
   // from that of a small integer object.
-  auto object = reinterpret_cast<Object*>(reinterpret_cast<uword>(pointer));
+  auto object = reinterpret_cast<RawObject>(reinterpret_cast<uword>(pointer));
   return SmallInt::cast(object);
 }
 
@@ -2507,11 +2569,11 @@ inline word Header::hashCode() {
   return (header >> kHashCodeOffset) & kHashCodeMask;
 }
 
-inline Header* Header::withHashCode(word value) {
+inline RawHeader Header::withHashCode(word value) {
   auto header = reinterpret_cast<uword>(this);
   header &= ~(kHashCodeMask << kHashCodeOffset);
   header |= (value & kHashCodeMask) << kHashCodeOffset;
-  return reinterpret_cast<Header*>(header);
+  return reinterpret_cast<RawHeader>(header);
 }
 
 inline LayoutId Header::layoutId() {
@@ -2519,12 +2581,12 @@ inline LayoutId Header::layoutId() {
   return static_cast<LayoutId>((header >> kLayoutIdOffset) & kLayoutIdMask);
 }
 
-inline Header* Header::withLayoutId(LayoutId layout_id) {
+inline RawHeader Header::withLayoutId(LayoutId layout_id) {
   DCHECK_BOUND(static_cast<word>(layout_id), kMaxLayoutId);
   auto header = reinterpret_cast<uword>(this);
   header &= ~(kLayoutIdMask << kLayoutIdOffset);
   header |= (static_cast<word>(layout_id) & kLayoutIdMask) << kLayoutIdOffset;
-  return reinterpret_cast<Header*>(header);
+  return reinterpret_cast<RawHeader>(header);
 }
 
 inline ObjectFormat Header::format() {
@@ -2532,8 +2594,8 @@ inline ObjectFormat Header::format() {
   return static_cast<ObjectFormat>((header >> kFormatOffset) & kFormatMask);
 }
 
-inline Header* Header::from(word count, word hash, LayoutId id,
-                            ObjectFormat format) {
+inline RawHeader Header::from(word count, word hash, LayoutId id,
+                              ObjectFormat format) {
   DCHECK(
       (count >= 0) && ((count <= kCountMax) || (count == kCountOverflowFlag)),
       "bounds violation, %ld not in 0..%d", count, kCountMax);
@@ -2542,33 +2604,33 @@ inline Header* Header::from(word count, word hash, LayoutId id,
   result |= hash << kHashCodeOffset;
   result |= static_cast<uword>(id) << kLayoutIdOffset;
   result |= static_cast<uword>(format) << kFormatOffset;
-  return reinterpret_cast<Header*>(result);
+  return reinterpret_cast<RawHeader>(result);
 }
 
 // None
 
-inline NoneType* NoneType::object() {
-  return reinterpret_cast<NoneType*>(kTag);
+inline RawNoneType NoneType::object() {
+  return reinterpret_cast<RawNoneType>(kTag);
 }
 
 // Error
 
-inline Error* Error::object() { return reinterpret_cast<Error*>(kTag); }
+inline RawError Error::object() { return reinterpret_cast<RawError>(kTag); }
 
 // Bool
 
-inline Bool* Bool::trueObj() { return fromBool(true); }
+inline RawBool Bool::trueObj() { return fromBool(true); }
 
-inline Bool* Bool::falseObj() { return fromBool(false); }
+inline RawBool Bool::falseObj() { return fromBool(false); }
 
-inline Bool* Bool::negate(Object* value) {
+inline RawBool Bool::negate(RawObject value) {
   DCHECK(value->isBool(), "not a boolean instance");
   return (value == trueObj()) ? falseObj() : trueObj();
 }
 
-inline Bool* Bool::fromBool(bool value) {
-  return reinterpret_cast<Bool*>((static_cast<uword>(value) << kTagSize) |
-                                 kTag);
+inline RawBool Bool::fromBool(bool value) {
+  return reinterpret_cast<RawBool>((static_cast<uword>(value) << kTagSize) |
+                                   kTag);
 }
 
 inline bool Bool::value() {
@@ -2589,11 +2651,11 @@ inline uword HeapObject::baseAddress() {
   return result;
 }
 
-inline Header* HeapObject::header() {
+inline RawHeader HeapObject::header() {
   return Header::cast(instanceVariableAt(kHeaderOffset));
 }
 
-inline void HeapObject::setHeader(Header* header) {
+inline void HeapObject::setHeader(RawHeader header) {
   instanceVariableAtPut(kHeaderOffset, header);
 }
 
@@ -2611,9 +2673,9 @@ inline void HeapObject::setHeaderAndOverflow(word count, word hash, LayoutId id,
   setHeader(Header::from(count, hash, id, format));
 }
 
-inline HeapObject* HeapObject::fromAddress(uword address) {
+inline RawHeapObject HeapObject::fromAddress(uword address) {
   DCHECK((address & kTagMask) == 0, "invalid cast, expected heap address");
-  return reinterpret_cast<HeapObject*>(address + kTag);
+  return reinterpret_cast<RawHeapObject>(address + kTag);
 }
 
 inline word HeapObject::headerCountOrOverflow() {
@@ -2659,7 +2721,7 @@ inline word HeapObject::headerSize(word count) {
   return result;
 }
 
-inline void HeapObject::initialize(word size, Object* value) {
+inline void HeapObject::initialize(word size, RawObject value) {
   for (word offset = HeapObject::kSize; offset < size; offset += kPointerSize) {
     instanceVariableAtPut(offset, value);
   }
@@ -2674,129 +2736,132 @@ inline bool HeapObject::isForwarding() {
   return *reinterpret_cast<uword*>(address() + kHeaderOffset) == kIsForwarded;
 }
 
-inline Object* HeapObject::forward() {
+inline RawObject HeapObject::forward() {
   // When a heap object is forwarding, its second word is the forwarding
   // address.
-  return *reinterpret_cast<Object**>(address() + kHeaderOffset + kPointerSize);
+  return *reinterpret_cast<RawObject*>(address() + kHeaderOffset +
+                                       kPointerSize);
 }
 
-inline void HeapObject::forwardTo(Object* object) {
+inline void HeapObject::forwardTo(RawObject object) {
   // Overwrite the header with the forwarding marker.
   *reinterpret_cast<uword*>(address() + kHeaderOffset) = kIsForwarded;
   // Overwrite the second word with the forwarding addressing.
-  *reinterpret_cast<Object**>(address() + kHeaderOffset + kPointerSize) =
+  *reinterpret_cast<RawObject*>(address() + kHeaderOffset + kPointerSize) =
       object;
 }
 
-inline Object* HeapObject::instanceVariableAt(word offset) {
-  return *reinterpret_cast<Object**>(address() + offset);
+inline RawObject HeapObject::instanceVariableAt(word offset) {
+  return *reinterpret_cast<RawObject*>(address() + offset);
 }
 
-inline void HeapObject::instanceVariableAtPut(word offset, Object* value) {
-  *reinterpret_cast<Object**>(address() + offset) = value;
+inline void HeapObject::instanceVariableAtPut(word offset, RawObject value) {
+  *reinterpret_cast<RawObject*>(address() + offset) = value;
 }
 
 // BaseException
 
-inline Object* BaseException::args() { return instanceVariableAt(kArgsOffset); }
+inline RawObject BaseException::args() {
+  return instanceVariableAt(kArgsOffset);
+}
 
-inline void BaseException::setArgs(Object* args) {
+inline void BaseException::setArgs(RawObject args) {
   instanceVariableAtPut(kArgsOffset, args);
 }
 
-inline Object* BaseException::traceback() {
+inline RawObject BaseException::traceback() {
   return instanceVariableAt(kTracebackOffset);
 }
 
-inline void BaseException::setTraceback(Object* traceback) {
+inline void BaseException::setTraceback(RawObject traceback) {
   instanceVariableAtPut(kTracebackOffset, traceback);
 }
 
-inline Object* BaseException::cause() {
+inline RawObject BaseException::cause() {
   return instanceVariableAt(kCauseOffset);
 }
 
-inline void BaseException::setCause(Object* cause) {
+inline void BaseException::setCause(RawObject cause) {
   return instanceVariableAtPut(kCauseOffset, cause);
 }
 
-inline Object* BaseException::context() {
+inline RawObject BaseException::context() {
   return instanceVariableAt(kContextOffset);
 }
 
-inline void BaseException::setContext(Object* context) {
+inline void BaseException::setContext(RawObject context) {
   return instanceVariableAtPut(kContextOffset, context);
 }
 
 // StopIteration
 
-inline Object* StopIteration::value() {
+inline RawObject StopIteration::value() {
   return instanceVariableAt(kValueOffset);
 }
 
-inline void StopIteration::setValue(Object* value) {
+inline void StopIteration::setValue(RawObject value) {
   instanceVariableAtPut(kValueOffset, value);
 }
 
 // SystemExit
 
-inline Object* SystemExit::code() { return instanceVariableAt(kCodeOffset); }
+inline RawObject SystemExit::code() { return instanceVariableAt(kCodeOffset); }
 
-inline void SystemExit::setCode(Object* code) {
+inline void SystemExit::setCode(RawObject code) {
   instanceVariableAtPut(kCodeOffset, code);
 }
 
 // ImportError
 
-inline Object* ImportError::msg() { return instanceVariableAt(kMsgOffset); }
+inline RawObject ImportError::msg() { return instanceVariableAt(kMsgOffset); }
 
-inline void ImportError::setMsg(Object* msg) {
+inline void ImportError::setMsg(RawObject msg) {
   instanceVariableAtPut(kMsgOffset, msg);
 }
 
-inline Object* ImportError::name() { return instanceVariableAt(kNameOffset); }
+inline RawObject ImportError::name() { return instanceVariableAt(kNameOffset); }
 
-inline void ImportError::setName(Object* name) {
+inline void ImportError::setName(RawObject name) {
   instanceVariableAtPut(kNameOffset, name);
 }
 
-inline Object* ImportError::path() { return instanceVariableAt(kPathOffset); }
+inline RawObject ImportError::path() { return instanceVariableAt(kPathOffset); }
 
-inline void ImportError::setPath(Object* path) {
+inline void ImportError::setPath(RawObject path) {
   instanceVariableAtPut(kPathOffset, path);
 }
 
 // Type
 
-inline Object* Type::mro() { return instanceVariableAt(kMroOffset); }
+inline RawObject Type::mro() { return instanceVariableAt(kMroOffset); }
 
-inline void Type::setMro(Object* object_array) {
+inline void Type::setMro(RawObject object_array) {
   instanceVariableAtPut(kMroOffset, object_array);
 }
 
-inline Object* Type::instanceLayout() {
+inline RawObject Type::instanceLayout() {
   return instanceVariableAt(kInstanceLayoutOffset);
 }
 
-inline void Type::setInstanceLayout(Object* layout) {
+inline void Type::setInstanceLayout(RawObject layout) {
   instanceVariableAtPut(kInstanceLayoutOffset, layout);
 }
 
-inline Object* Type::name() { return instanceVariableAt(kNameOffset); }
+inline RawObject Type::name() { return instanceVariableAt(kNameOffset); }
 
-inline void Type::setName(Object* name) {
+inline void Type::setName(RawObject name) {
   instanceVariableAtPut(kNameOffset, name);
 }
 
-inline Object* Type::flags() { return instanceVariableAt(kFlagsOffset); }
+inline RawObject Type::flags() { return instanceVariableAt(kFlagsOffset); }
 
-inline void Type::setFlags(Object* value) {
+inline void Type::setFlags(RawObject value) {
   instanceVariableAtPut(kFlagsOffset, value);
 }
 
 inline void Type::setFlag(Type::Flag bit) {
   word f = SmallInt::cast(flags())->value();
-  Object* new_flag = SmallInt::fromWord(f | bit);
+  RawObject new_flag = SmallInt::fromWord(f | bit);
   instanceVariableAtPut(kFlagsOffset, new_flag);
 }
 
@@ -2805,25 +2870,25 @@ inline bool Type::hasFlag(Type::Flag bit) {
   return (f & bit) != 0;
 }
 
-inline Object* Type::dict() { return instanceVariableAt(kDictOffset); }
+inline RawObject Type::dict() { return instanceVariableAt(kDictOffset); }
 
-inline void Type::setDict(Object* dict) {
+inline void Type::setDict(RawObject dict) {
   instanceVariableAtPut(kDictOffset, dict);
 }
 
-inline Object* Type::builtinBaseClass() {
+inline RawObject Type::builtinBaseClass() {
   return instanceVariableAt(kBuiltinBaseClassOffset);
 }
 
-inline Object* Type::extensionType() {
+inline RawObject Type::extensionType() {
   return instanceVariableAt(kExtensionTypeOffset);
 }
 
-inline void Type::setExtensionType(Object* pytype) {
+inline void Type::setExtensionType(RawObject pytype) {
   instanceVariableAtPut(kExtensionTypeOffset, pytype);
 }
 
-inline void Type::setBuiltinBaseClass(Object* base) {
+inline void Type::setBuiltinBaseClass(RawObject base) {
   instanceVariableAtPut(kBuiltinBaseClassOffset, base);
 }
 
@@ -2864,28 +2929,28 @@ inline word ObjectArray::allocationSize(word length) {
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-inline Object* ObjectArray::at(word index) {
+inline RawObject ObjectArray::at(word index) {
   DCHECK_INDEX(index, length());
   return instanceVariableAt(index * kPointerSize);
 }
 
-inline void ObjectArray::atPut(word index, Object* value) {
+inline void ObjectArray::atPut(word index, RawObject value) {
   DCHECK_INDEX(index, length());
   instanceVariableAtPut(index * kPointerSize, value);
 }
 
-inline void ObjectArray::copyTo(Object* array) {
-  ObjectArray* dst = ObjectArray::cast(array);
+inline void ObjectArray::copyTo(RawObject array) {
+  RawObjectArray dst = ObjectArray::cast(array);
   word len = length();
   DCHECK_BOUND(len, dst->length());
   for (word i = 0; i < len; i++) {
-    Object* elem = at(i);
+    RawObject elem = at(i);
     dst->atPut(i, elem);
   }
 }
 
-inline void ObjectArray::replaceFromWith(word start, Object* array) {
-  ObjectArray* src = ObjectArray::cast(array);
+inline void ObjectArray::replaceFromWith(word start, RawObject array) {
+  RawObjectArray src = ObjectArray::cast(array);
   word count = Utils::minimum(this->length() - start, src->length());
   word stop = start + count;
   for (word i = start, j = 0; i < stop; i++, j++) {
@@ -2893,7 +2958,7 @@ inline void ObjectArray::replaceFromWith(word start, Object* array) {
   }
 }
 
-inline bool ObjectArray::contains(Object* object) {
+inline bool ObjectArray::contains(RawObject object) {
   word len = length();
   for (word i = 0; i < len; i++) {
     if (at(i) == object) {
@@ -2933,14 +2998,16 @@ inline void Code::setCell2arg(word value) {
   instanceVariableAtPut(kCell2argOffset, SmallInt::fromWord(value));
 }
 
-inline Object* Code::cellvars() { return instanceVariableAt(kCellvarsOffset); }
+inline RawObject Code::cellvars() {
+  return instanceVariableAt(kCellvarsOffset);
+}
 
-inline void Code::setCellvars(Object* value) {
+inline void Code::setCellvars(RawObject value) {
   instanceVariableAtPut(kCellvarsOffset, value);
 }
 
 inline word Code::numCellvars() {
-  Object* object = cellvars();
+  RawObject object = cellvars();
   DCHECK(object->isNoneType() || object->isObjectArray(),
          "not an object array");
   if (object->isNoneType()) {
@@ -2949,21 +3016,23 @@ inline word Code::numCellvars() {
   return ObjectArray::cast(object)->length();
 }
 
-inline Object* Code::code() { return instanceVariableAt(kCodeOffset); }
+inline RawObject Code::code() { return instanceVariableAt(kCodeOffset); }
 
-inline void Code::setCode(Object* value) {
+inline void Code::setCode(RawObject value) {
   instanceVariableAtPut(kCodeOffset, value);
 }
 
-inline Object* Code::consts() { return instanceVariableAt(kConstsOffset); }
+inline RawObject Code::consts() { return instanceVariableAt(kConstsOffset); }
 
-inline void Code::setConsts(Object* value) {
+inline void Code::setConsts(RawObject value) {
   instanceVariableAtPut(kConstsOffset, value);
 }
 
-inline Object* Code::filename() { return instanceVariableAt(kFilenameOffset); }
+inline RawObject Code::filename() {
+  return instanceVariableAt(kFilenameOffset);
+}
 
-inline void Code::setFilename(Object* value) {
+inline void Code::setFilename(RawObject value) {
   instanceVariableAtPut(kFilenameOffset, value);
 }
 
@@ -2989,14 +3058,16 @@ inline void Code::setFlags(word value) {
   instanceVariableAtPut(kFlagsOffset, SmallInt::fromWord(value));
 }
 
-inline Object* Code::freevars() { return instanceVariableAt(kFreevarsOffset); }
+inline RawObject Code::freevars() {
+  return instanceVariableAt(kFreevarsOffset);
+}
 
-inline void Code::setFreevars(Object* value) {
+inline void Code::setFreevars(RawObject value) {
   instanceVariableAtPut(kFreevarsOffset, value);
 }
 
 inline word Code::numFreevars() {
-  Object* object = freevars();
+  RawObject object = freevars();
   DCHECK(object->isNoneType() || object->isObjectArray(),
          "not an object array");
   if (object->isNoneType()) {
@@ -3013,21 +3084,21 @@ inline void Code::setKwonlyargcount(word value) {
   instanceVariableAtPut(kKwonlyargcountOffset, SmallInt::fromWord(value));
 }
 
-inline Object* Code::lnotab() { return instanceVariableAt(kLnotabOffset); }
+inline RawObject Code::lnotab() { return instanceVariableAt(kLnotabOffset); }
 
-inline void Code::setLnotab(Object* value) {
+inline void Code::setLnotab(RawObject value) {
   instanceVariableAtPut(kLnotabOffset, value);
 }
 
-inline Object* Code::name() { return instanceVariableAt(kNameOffset); }
+inline RawObject Code::name() { return instanceVariableAt(kNameOffset); }
 
-inline void Code::setName(Object* value) {
+inline void Code::setName(RawObject value) {
   instanceVariableAtPut(kNameOffset, value);
 }
 
-inline Object* Code::names() { return instanceVariableAt(kNamesOffset); }
+inline RawObject Code::names() { return instanceVariableAt(kNamesOffset); }
 
-inline void Code::setNames(Object* value) {
+inline void Code::setNames(RawObject value) {
   instanceVariableAtPut(kNamesOffset, value);
 }
 
@@ -3051,9 +3122,11 @@ inline void Code::setStacksize(word value) {
   instanceVariableAtPut(kStacksizeOffset, SmallInt::fromWord(value));
 }
 
-inline Object* Code::varnames() { return instanceVariableAt(kVarnamesOffset); }
+inline RawObject Code::varnames() {
+  return instanceVariableAt(kVarnamesOffset);
+}
 
-inline void Code::setVarnames(Object* value) {
+inline void Code::setVarnames(RawObject value) {
   instanceVariableAtPut(kVarnamesOffset, value);
 }
 
@@ -3187,49 +3260,55 @@ inline void ListIterator::setIndex(word index) {
   instanceVariableAtPut(kIndexOffset, SmallInt::fromWord(index));
 }
 
-inline Object* ListIterator::list() { return instanceVariableAt(kListOffset); }
+inline RawObject ListIterator::list() {
+  return instanceVariableAt(kListOffset);
+}
 
-inline void ListIterator::setList(Object* list) {
+inline void ListIterator::setList(RawObject list) {
   instanceVariableAtPut(kListOffset, list);
 }
 
-inline Object* ListIterator::next() {
+inline RawObject ListIterator::next() {
   word idx = index();
   auto underlying = List::cast(list());
   if (idx >= underlying->allocated()) {
     return Error::object();
   }
 
-  Object* item = underlying->at(idx);
+  RawObject item = underlying->at(idx);
   setIndex(idx + 1);
   return item;
 }
 
 // Property
 
-inline Object* Property::getter() { return instanceVariableAt(kGetterOffset); }
+inline RawObject Property::getter() {
+  return instanceVariableAt(kGetterOffset);
+}
 
-inline void Property::setGetter(Object* function) {
+inline void Property::setGetter(RawObject function) {
   instanceVariableAtPut(kGetterOffset, function);
 }
 
-inline Object* Property::setter() { return instanceVariableAt(kSetterOffset); }
+inline RawObject Property::setter() {
+  return instanceVariableAt(kSetterOffset);
+}
 
-inline void Property::setSetter(Object* function) {
+inline void Property::setSetter(RawObject function) {
   instanceVariableAtPut(kSetterOffset, function);
 }
 
-inline Object* Property::deleter() {
+inline RawObject Property::deleter() {
   return instanceVariableAt(kDeleterOffset);
 }
 
-inline void Property::setDeleter(Object* function) {
+inline void Property::setDeleter(RawObject function) {
   instanceVariableAtPut(kDeleterOffset, function);
 }
 
 // RangeIterator
 
-inline void RangeIterator::setRange(Object* range) {
+inline void RangeIterator::setRange(RawObject range) {
   auto r = Range::cast(range);
   instanceVariableAtPut(kRangeOffset, r);
   instanceVariableAtPut(kCurValueOffset, SmallInt::fromWord(r->start()));
@@ -3252,7 +3331,7 @@ inline bool RangeIterator::isOutOfRange(word cur, word stop, word step) {
 }
 
 inline word RangeIterator::pendingLength() {
-  Range* range = Range::cast(instanceVariableAt(kRangeOffset));
+  RawRange range = Range::cast(instanceVariableAt(kRangeOffset));
   word stop = range->stop();
   word step = range->step();
   word current = SmallInt::cast(instanceVariableAt(kCurValueOffset))->value();
@@ -3262,7 +3341,7 @@ inline word RangeIterator::pendingLength() {
   return std::abs((stop - current) / step);
 }
 
-inline Object* RangeIterator::next() {
+inline RawObject RangeIterator::next() {
   auto ret = SmallInt::cast(instanceVariableAt(kCurValueOffset));
   auto cur = ret->value();
 
@@ -3284,31 +3363,31 @@ inline Object* RangeIterator::next() {
 
 // Slice
 
-inline Object* Slice::start() { return instanceVariableAt(kStartOffset); }
+inline RawObject Slice::start() { return instanceVariableAt(kStartOffset); }
 
-inline void Slice::setStart(Object* value) {
+inline void Slice::setStart(RawObject value) {
   instanceVariableAtPut(kStartOffset, value);
 }
 
-inline Object* Slice::stop() { return instanceVariableAt(kStopOffset); }
+inline RawObject Slice::stop() { return instanceVariableAt(kStopOffset); }
 
-inline void Slice::setStop(Object* value) {
+inline void Slice::setStop(RawObject value) {
   instanceVariableAtPut(kStopOffset, value);
 }
 
-inline Object* Slice::step() { return instanceVariableAt(kStepOffset); }
+inline RawObject Slice::step() { return instanceVariableAt(kStepOffset); }
 
-inline void Slice::setStep(Object* value) {
+inline void Slice::setStep(RawObject value) {
   instanceVariableAtPut(kStepOffset, value);
 }
 
 // StaticMethod
 
-inline Object* StaticMethod::function() {
+inline RawObject StaticMethod::function() {
   return instanceVariableAt(kFunctionOffset);
 }
 
-inline void StaticMethod::setFunction(Object* function) {
+inline void StaticMethod::setFunction(RawObject function) {
   instanceVariableAtPut(kFunctionOffset, function);
 }
 
@@ -3322,54 +3401,54 @@ inline void Dict::setNumItems(word num_items) {
   instanceVariableAtPut(kNumItemsOffset, SmallInt::fromWord(num_items));
 }
 
-inline Object* Dict::data() { return instanceVariableAt(kDataOffset); }
+inline RawObject Dict::data() { return instanceVariableAt(kDataOffset); }
 
-inline void Dict::setData(Object* data) {
+inline void Dict::setData(RawObject data) {
   instanceVariableAtPut(kDataOffset, data);
 }
 
 // Function
 
-inline Object* Function::annotations() {
+inline RawObject Function::annotations() {
   return instanceVariableAt(kAnnotationsOffset);
 }
 
-inline void Function::setAnnotations(Object* annotations) {
+inline void Function::setAnnotations(RawObject annotations) {
   return instanceVariableAtPut(kAnnotationsOffset, annotations);
 }
 
-inline Object* Function::closure() {
+inline RawObject Function::closure() {
   return instanceVariableAt(kClosureOffset);
 }
 
-inline void Function::setClosure(Object* closure) {
+inline void Function::setClosure(RawObject closure) {
   return instanceVariableAtPut(kClosureOffset, closure);
 }
 
-inline Object* Function::code() { return instanceVariableAt(kCodeOffset); }
+inline RawObject Function::code() { return instanceVariableAt(kCodeOffset); }
 
-inline void Function::setCode(Object* code) {
+inline void Function::setCode(RawObject code) {
   return instanceVariableAtPut(kCodeOffset, code);
 }
 
-inline Object* Function::defaults() {
+inline RawObject Function::defaults() {
   return instanceVariableAt(kDefaultsOffset);
 }
 
-inline void Function::setDefaults(Object* defaults) {
+inline void Function::setDefaults(RawObject defaults) {
   return instanceVariableAtPut(kDefaultsOffset, defaults);
 }
 
 inline bool Function::hasDefaults() { return !defaults()->isNoneType(); }
 
-inline Object* Function::doc() { return instanceVariableAt(kDocOffset); }
+inline RawObject Function::doc() { return instanceVariableAt(kDocOffset); }
 
-inline void Function::setDoc(Object* doc) {
+inline void Function::setDoc(RawObject doc) {
   instanceVariableAtPut(kDocOffset, doc);
 }
 
 inline Function::Entry Function::entry() {
-  Object* object = instanceVariableAt(kEntryOffset);
+  RawObject object = instanceVariableAt(kEntryOffset);
   DCHECK(object->isSmallInt(), "entry address must look like a SmallInt");
   return bit_cast<Function::Entry>(object);
 }
@@ -3380,7 +3459,7 @@ inline void Function::setEntry(Function::Entry entry) {
 }
 
 inline Function::Entry Function::entryKw() {
-  Object* object = instanceVariableAt(kEntryKwOffset);
+  RawObject object = instanceVariableAt(kEntryKwOffset);
   DCHECK(object->isSmallInt(), "entryKw address must look like a SmallInt");
   return bit_cast<Function::Entry>(object);
 }
@@ -3391,7 +3470,7 @@ inline void Function::setEntryKw(Function::Entry entry_kw) {
 }
 
 Function::Entry Function::entryEx() {
-  Object* object = instanceVariableAt(kEntryExOffset);
+  RawObject object = instanceVariableAt(kEntryExOffset);
   DCHECK(object->isSmallInt(), "entryEx address must look like a SmallInt");
   return bit_cast<Function::Entry>(object);
 }
@@ -3401,47 +3480,49 @@ void Function::setEntryEx(Function::Entry entry_ex) {
   instanceVariableAtPut(kEntryExOffset, object);
 }
 
-inline Object* Function::globals() {
+inline RawObject Function::globals() {
   return instanceVariableAt(kGlobalsOffset);
 }
 
-inline void Function::setGlobals(Object* globals) {
+inline void Function::setGlobals(RawObject globals) {
   return instanceVariableAtPut(kGlobalsOffset, globals);
 }
 
-inline Object* Function::kwDefaults() {
+inline RawObject Function::kwDefaults() {
   return instanceVariableAt(kKwDefaultsOffset);
 }
 
-inline void Function::setKwDefaults(Object* kw_defaults) {
+inline void Function::setKwDefaults(RawObject kw_defaults) {
   return instanceVariableAtPut(kKwDefaultsOffset, kw_defaults);
 }
 
-inline Object* Function::module() { return instanceVariableAt(kModuleOffset); }
+inline RawObject Function::module() {
+  return instanceVariableAt(kModuleOffset);
+}
 
-inline void Function::setModule(Object* module) {
+inline void Function::setModule(RawObject module) {
   return instanceVariableAtPut(kModuleOffset, module);
 }
 
-inline Object* Function::name() { return instanceVariableAt(kNameOffset); }
+inline RawObject Function::name() { return instanceVariableAt(kNameOffset); }
 
-inline void Function::setName(Object* name) {
+inline void Function::setName(RawObject name) {
   instanceVariableAtPut(kNameOffset, name);
 }
 
-inline Object* Function::qualname() {
+inline RawObject Function::qualname() {
   return instanceVariableAt(kQualnameOffset);
 }
 
-inline void Function::setQualname(Object* qualname) {
+inline void Function::setQualname(RawObject qualname) {
   instanceVariableAtPut(kQualnameOffset, qualname);
 }
 
-inline Object* Function::fastGlobals() {
+inline RawObject Function::fastGlobals() {
   return instanceVariableAt(kFastGlobalsOffset);
 }
 
-inline void Function::setFastGlobals(Object* fast_globals) {
+inline void Function::setFastGlobals(RawObject fast_globals) {
   return instanceVariableAtPut(kFastGlobalsOffset, fast_globals);
 }
 
@@ -3455,9 +3536,9 @@ inline word Instance::allocationSize(word num_attr) {
 
 // List
 
-inline Object* List::items() { return instanceVariableAt(kItemsOffset); }
+inline RawObject List::items() { return instanceVariableAt(kItemsOffset); }
 
-inline void List::setItems(Object* new_items) {
+inline void List::setItems(RawObject new_items) {
   instanceVariableAtPut(kItemsOffset, new_items);
 }
 
@@ -3471,34 +3552,34 @@ inline void List::setAllocated(word new_allocated) {
   instanceVariableAtPut(kAllocatedOffset, SmallInt::fromWord(new_allocated));
 }
 
-inline void List::atPut(word index, Object* value) {
+inline void List::atPut(word index, RawObject value) {
   DCHECK_INDEX(index, allocated());
-  Object* items = instanceVariableAt(kItemsOffset);
+  RawObject items = instanceVariableAt(kItemsOffset);
   ObjectArray::cast(items)->atPut(index, value);
 }
 
-inline Object* List::at(word index) {
+inline RawObject List::at(word index) {
   DCHECK_INDEX(index, allocated());
   return ObjectArray::cast(items())->at(index);
 }
 
 // Module
 
-inline Object* Module::name() { return instanceVariableAt(kNameOffset); }
+inline RawObject Module::name() { return instanceVariableAt(kNameOffset); }
 
-inline void Module::setName(Object* name) {
+inline void Module::setName(RawObject name) {
   instanceVariableAtPut(kNameOffset, name);
 }
 
-inline Object* Module::dict() { return instanceVariableAt(kDictOffset); }
+inline RawObject Module::dict() { return instanceVariableAt(kDictOffset); }
 
-inline void Module::setDict(Object* dict) {
+inline void Module::setDict(RawObject dict) {
   instanceVariableAtPut(kDictOffset, dict);
 }
 
-inline Object* Module::def() { return instanceVariableAt(kDefOffset); }
+inline RawObject Module::def() { return instanceVariableAt(kDefOffset); }
 
-inline void Module::setDef(Object* dict) {
+inline void Module::setDef(RawObject dict) {
   instanceVariableAtPut(kDefOffset, dict);
 }
 
@@ -3532,8 +3613,8 @@ inline word Str::length() {
   return LargeStr::cast(this)->length();
 }
 
-inline word Str::compare(Object* string) {
-  Str* that = Str::cast(string);
+inline word Str::compare(RawObject string) {
+  RawStr that = Str::cast(string);
   word length = Utils::minimum(this->length(), that->length());
   for (word i = 0; i < length; i++) {
     word diff = this->charAt(i) - that->charAt(i);
@@ -3545,7 +3626,7 @@ inline word Str::compare(Object* string) {
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
-inline bool Str::equals(Object* that) {
+inline bool Str::equals(RawObject that) {
   if (isSmallStr()) {
     return this == that;
   }
@@ -3585,9 +3666,9 @@ inline byte LargeStr::charAt(word index) {
 
 // ValueCell
 
-inline Object* ValueCell::value() { return instanceVariableAt(kValueOffset); }
+inline RawObject ValueCell::value() { return instanceVariableAt(kValueOffset); }
 
-inline void ValueCell::setValue(Object* object) {
+inline void ValueCell::setValue(RawObject object) {
   instanceVariableAtPut(kValueOffset, object);
 }
 
@@ -3605,59 +3686,59 @@ inline void Set::setNumItems(word num_items) {
   instanceVariableAtPut(kNumItemsOffset, SmallInt::fromWord(num_items));
 }
 
-inline Object* Set::data() { return instanceVariableAt(kDataOffset); }
+inline RawObject Set::data() { return instanceVariableAt(kDataOffset); }
 
-inline void Set::setData(Object* data) {
+inline void Set::setData(RawObject data) {
   instanceVariableAtPut(kDataOffset, data);
 }
 
 // BoundMethod
 
-inline Object* BoundMethod::function() {
+inline RawObject BoundMethod::function() {
   return instanceVariableAt(kFunctionOffset);
 }
 
-inline void BoundMethod::setFunction(Object* function) {
+inline void BoundMethod::setFunction(RawObject function) {
   instanceVariableAtPut(kFunctionOffset, function);
 }
 
-inline Object* BoundMethod::self() { return instanceVariableAt(kSelfOffset); }
+inline RawObject BoundMethod::self() { return instanceVariableAt(kSelfOffset); }
 
-inline void BoundMethod::setSelf(Object* self) {
+inline void BoundMethod::setSelf(RawObject self) {
   instanceVariableAtPut(kSelfOffset, self);
 }
 
 // ClassMethod
 
-inline Object* ClassMethod::function() {
+inline RawObject ClassMethod::function() {
   return instanceVariableAt(kFunctionOffset);
 }
 
-inline void ClassMethod::setFunction(Object* function) {
+inline void ClassMethod::setFunction(RawObject function) {
   instanceVariableAtPut(kFunctionOffset, function);
 }
 
 // WeakRef
 
-inline Object* WeakRef::referent() {
+inline RawObject WeakRef::referent() {
   return instanceVariableAt(kReferentOffset);
 }
 
-inline void WeakRef::setReferent(Object* referent) {
+inline void WeakRef::setReferent(RawObject referent) {
   instanceVariableAtPut(kReferentOffset, referent);
 }
 
-inline Object* WeakRef::callback() {
+inline RawObject WeakRef::callback() {
   return instanceVariableAt(kCallbackOffset);
 }
 
-inline void WeakRef::setCallback(Object* callable) {
+inline void WeakRef::setCallback(RawObject callable) {
   instanceVariableAtPut(kCallbackOffset, callable);
 }
 
-inline Object* WeakRef::link() { return instanceVariableAt(kLinkOffset); }
+inline RawObject WeakRef::link() { return instanceVariableAt(kLinkOffset); }
 
-inline void WeakRef::setLink(Object* reference) {
+inline void WeakRef::setLink(RawObject reference) {
   instanceVariableAtPut(kLinkOffset, reference);
 }
 
@@ -3671,23 +3752,23 @@ inline void Layout::setId(LayoutId id) {
   setHeader(header()->withHashCode(static_cast<word>(id)));
 }
 
-inline void Layout::setDescribedClass(Object* type) {
+inline void Layout::setDescribedClass(RawObject type) {
   instanceVariableAtPut(kDescribedClassOffset, type);
 }
 
-inline Object* Layout::describedClass() {
+inline RawObject Layout::describedClass() {
   return instanceVariableAt(kDescribedClassOffset);
 }
 
-inline void Layout::setInObjectAttributes(Object* attributes) {
+inline void Layout::setInObjectAttributes(RawObject attributes) {
   instanceVariableAtPut(kInObjectAttributesOffset, attributes);
 }
 
-inline Object* Layout::inObjectAttributes() {
+inline RawObject Layout::inObjectAttributes() {
   return instanceVariableAt(kInObjectAttributesOffset);
 }
 
-inline void Layout::setOverflowAttributes(Object* attributes) {
+inline void Layout::setOverflowAttributes(RawObject attributes) {
   instanceVariableAtPut(kOverflowAttributesOffset, attributes);
 }
 
@@ -3699,23 +3780,23 @@ inline void Layout::setInstanceSize(word size) {
   instanceVariableAtPut(kInstanceSizeOffset, SmallInt::fromWord(size));
 }
 
-inline Object* Layout::overflowAttributes() {
+inline RawObject Layout::overflowAttributes() {
   return instanceVariableAt(kOverflowAttributesOffset);
 }
 
-inline void Layout::setAdditions(Object* additions) {
+inline void Layout::setAdditions(RawObject additions) {
   instanceVariableAtPut(kAdditionsOffset, additions);
 }
 
-inline Object* Layout::additions() {
+inline RawObject Layout::additions() {
   return instanceVariableAt(kAdditionsOffset);
 }
 
-inline void Layout::setDeletions(Object* deletions) {
+inline void Layout::setDeletions(RawObject deletions) {
   instanceVariableAtPut(kDeletionsOffset, deletions);
 }
 
-inline Object* Layout::deletions() {
+inline RawObject Layout::deletions() {
   return instanceVariableAt(kDeletionsOffset);
 }
 
@@ -3741,9 +3822,9 @@ inline void Layout::setNumInObjectAttributes(word count) {
 
 // SetIterator
 
-inline Object* SetIterator::set() { return instanceVariableAt(kSetOffset); }
+inline RawObject SetIterator::set() { return instanceVariableAt(kSetOffset); }
 
-inline void SetIterator::setSet(Object* set) {
+inline void SetIterator::setSet(RawObject set) {
   instanceVariableAtPut(kSetOffset, set);
   instanceVariableAtPut(kIndexOffset, SmallInt::fromWord(0));
   instanceVariableAtPut(kConsumedCountOffset, SmallInt::fromWord(0));
@@ -3765,10 +3846,10 @@ inline void SetIterator::setIndex(word index) {
   instanceVariableAtPut(kIndexOffset, SmallInt::fromWord(index));
 }
 
-inline Object* SetIterator::next() {
+inline RawObject SetIterator::next() {
   word idx = index();
-  Set* underlying = Set::cast(set());
-  ObjectArray* data = ObjectArray::cast(underlying->data());
+  RawSet underlying = Set::cast(set());
+  RawObjectArray data = ObjectArray::cast(underlying->data());
   word length = data->length();
   // Find the next non empty bucket
   while (idx < length && (Set::Bucket::isTombstone(data, idx) ||
@@ -3785,41 +3866,41 @@ inline Object* SetIterator::next() {
 }
 
 inline word SetIterator::pendingLength() {
-  Set* set = Set::cast(instanceVariableAt(kSetOffset));
+  RawSet set = Set::cast(instanceVariableAt(kSetOffset));
   return set->numItems() - consumedCount();
 }
 
 // Super
 
-inline Object* Super::type() { return instanceVariableAt(kTypeOffset); }
+inline RawObject Super::type() { return instanceVariableAt(kTypeOffset); }
 
-inline void Super::setType(Object* tp) {
+inline void Super::setType(RawObject tp) {
   DCHECK(tp->isType(), "expected type");
   instanceVariableAtPut(kTypeOffset, tp);
 }
 
-inline Object* Super::object() { return instanceVariableAt(kObjectOffset); }
+inline RawObject Super::object() { return instanceVariableAt(kObjectOffset); }
 
-inline void Super::setObject(Object* obj) {
+inline void Super::setObject(RawObject obj) {
   instanceVariableAtPut(kObjectOffset, obj);
 }
 
-inline Object* Super::objectType() {
+inline RawObject Super::objectType() {
   return instanceVariableAt(kObjectTypeOffset);
 }
 
-inline void Super::setObjectType(Object* tp) {
+inline void Super::setObjectType(RawObject tp) {
   DCHECK(tp->isType(), "expected type");
   instanceVariableAtPut(kObjectTypeOffset, tp);
 }
 
 // TupleIterator
 
-inline Object* TupleIterator::tuple() {
+inline RawObject TupleIterator::tuple() {
   return instanceVariableAt(kTupleOffset);
 }
 
-inline void TupleIterator::setTuple(Object* tuple) {
+inline void TupleIterator::setTuple(RawObject tuple) {
   instanceVariableAtPut(kTupleOffset, tuple);
   instanceVariableAtPut(kIndexOffset, SmallInt::fromWord(0));
 }
@@ -3832,25 +3913,25 @@ inline void TupleIterator::setIndex(word index) {
   instanceVariableAtPut(kIndexOffset, SmallInt::fromWord(index));
 }
 
-inline Object* TupleIterator::next() {
+inline RawObject TupleIterator::next() {
   word idx = index();
-  ObjectArray* underlying = ObjectArray::cast(tuple());
+  RawObjectArray underlying = ObjectArray::cast(tuple());
   if (idx >= underlying->length()) {
     return Error::object();
   }
 
-  Object* item = underlying->at(idx);
+  RawObject item = underlying->at(idx);
   setIndex(idx + 1);
   return item;
 }
 
 // GeneratorBase
 
-inline Object* GeneratorBase::heapFrame() {
+inline RawObject GeneratorBase::heapFrame() {
   return instanceVariableAt(kFrameOffset);
 }
 
-inline void GeneratorBase::setHeapFrame(Object* obj) {
+inline void GeneratorBase::setHeapFrame(RawObject obj) {
   instanceVariableAtPut(kFrameOffset, obj);
 }
 

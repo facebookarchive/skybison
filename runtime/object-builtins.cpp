@@ -38,7 +38,7 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
                                      nativeTrampolineKw<dunderNewKw>);
 }
 
-Object* ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+RawObject ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr(
         "object.__hash__() takes no arguments");
@@ -47,7 +47,7 @@ Object* ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->hash(args.get(0));
 }
 
-Object* ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
+RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   // object.__init__ doesn't do anything except throw a TypeError if the wrong
   // number of arguments are given. It only throws if __new__ is not overloaded
   // or __init__ was overloaded, else it allows the excess arguments.
@@ -75,7 +75,7 @@ Object* ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-Object* ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (nargs < 1) {
     return thread->raiseTypeErrorWithCStr(
@@ -87,7 +87,8 @@ Object* ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInstance(layout);
 }
 
-Object* ObjectBuiltins::dunderNewKw(Thread* thread, Frame* frame, word nargs) {
+RawObject ObjectBuiltins::dunderNewKw(Thread* thread, Frame* frame,
+                                      word nargs) {
   // This should really raise an error if __init__ is not overridden (see
   // https://hlrz.com/source/xref/cpython-3.6/Objects/typeobject.c#3428)
   // However, object.__new__ should also do that as well. For now, just forward
@@ -96,7 +97,7 @@ Object* ObjectBuiltins::dunderNewKw(Thread* thread, Frame* frame, word nargs) {
   return dunderNew(thread, frame, nargs - args.numKeywords() - 1);
 }
 
-Object* ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
+RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("expected 0 arguments");
   }
@@ -111,7 +112,7 @@ Object* ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   Handle<Type> type(&scope, runtime->typeOf(*self));
   Handle<Str> type_name(&scope, type->name());
   char* c_string = type_name->toCStr();
-  Object* str = thread->runtime()->newStrFromFormat(
+  RawObject str = thread->runtime()->newStrFromFormat(
       "<%s object at %p>", c_string, static_cast<void*>(*self));
   free(c_string);
   return str;
@@ -128,7 +129,7 @@ void NoneBuiltins::initialize(Runtime* runtime) {
                                        LayoutId::kObject, kMethods));
 }
 
-Object* NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {
+RawObject NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {
   if (nargs > 1) {
     return thread->raiseTypeErrorWithCStr("None.__new__ takes no arguments");
   }

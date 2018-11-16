@@ -109,9 +109,9 @@ class ScopedCounter {
   DISALLOW_COPY_AND_ASSIGN(ScopedCounter);
 };
 
-Object* Marshal::Reader::readObject() {
+RawObject Marshal::Reader::readObject() {
   ScopedCounter<int> counter(&depth_);
-  Object* result = nullptr;
+  RawObject result = nullptr;
   byte code = readByte();
   byte flag = code & FLAG_REF;
   byte type = code & ~FLAG_REF;
@@ -247,7 +247,7 @@ Object* Marshal::Reader::readObject() {
   return result;
 }
 
-word Marshal::Reader::addRef(Object* value) {
+word Marshal::Reader::addRef(RawObject value) {
   HandleScope scope;
   Handle<Object> value_handle(&scope, value);
   word result = refs_->allocated();
@@ -255,25 +255,25 @@ word Marshal::Reader::addRef(Object* value) {
   return result;
 }
 
-void Marshal::Reader::setRef(word index, Object* value) {
+void Marshal::Reader::setRef(word index, RawObject value) {
   refs_->atPut(index, value);
 }
 
-Object* Marshal::Reader::getRef(word index) { return refs_->at(index); }
+RawObject Marshal::Reader::getRef(word index) { return refs_->at(index); }
 
 word Marshal::Reader::numRefs() { return refs_->allocated(); }
 
-Object* Marshal::Reader::readTypeString() {
+RawObject Marshal::Reader::readTypeString() {
   int32 length = readLong();
   const byte* data = readBytes(length);
-  Object* result = runtime_->newBytesWithAll(View<byte>(data, length));
+  RawObject result = runtime_->newBytesWithAll(View<byte>(data, length));
   if (isRef_) {
     addRef(result);
   }
   return result;
 }
 
-Object* Marshal::Reader::readTypeAscii() {
+RawObject Marshal::Reader::readTypeAscii() {
   word length = readLong();
   if (length < 0) {
     return Thread::currentThread()->raiseValueErrorWithCStr(
@@ -282,7 +282,7 @@ Object* Marshal::Reader::readTypeAscii() {
   return readStr(length);
 }
 
-Object* Marshal::Reader::readTypeAsciiInterned() {
+RawObject Marshal::Reader::readTypeAsciiInterned() {
   word length = readLong();
   if (length < 0) {
     return Thread::currentThread()->raiseValueErrorWithCStr(
@@ -291,61 +291,61 @@ Object* Marshal::Reader::readTypeAsciiInterned() {
   return readAndInternStr(length);
 }
 
-Object* Marshal::Reader::readTypeShortAscii() {
+RawObject Marshal::Reader::readTypeShortAscii() {
   word length = readByte();
   return readStr(length);
 }
 
-Object* Marshal::Reader::readTypeShortAsciiInterned() {
+RawObject Marshal::Reader::readTypeShortAsciiInterned() {
   word length = readByte();
   return readAndInternStr(length);
 }
 
-Object* Marshal::Reader::readStr(word length) {
+RawObject Marshal::Reader::readStr(word length) {
   const byte* data = readBytes(length);
-  Object* result = runtime_->newStrWithAll(View<byte>(data, length));
+  RawObject result = runtime_->newStrWithAll(View<byte>(data, length));
   if (isRef_) {
     addRef(result);
   }
   return result;
 }
 
-Object* Marshal::Reader::readAndInternStr(word length) {
+RawObject Marshal::Reader::readAndInternStr(word length) {
   const byte* data = readBytes(length);
   HandleScope scope;
   // TODO(T25820368): Intern strings iff the string isn't already part of the
   // intern table.
   Handle<Object> str(&scope, runtime_->newStrWithAll(View<byte>(data, length)));
-  Object* result = runtime_->internStr(str);
+  RawObject result = runtime_->internStr(str);
   if (isRef_) {
     addRef(result);
   }
   return result;
 }
 
-Object* Marshal::Reader::readTypeSmallTuple() {
+RawObject Marshal::Reader::readTypeSmallTuple() {
   int32 n = readByte();
   return doTupleElements(n);
 }
 
-Object* Marshal::Reader::readTypeTuple() {
+RawObject Marshal::Reader::readTypeTuple() {
   int32 n = readLong();
   return doTupleElements(n);
 }
 
-Object* Marshal::Reader::doTupleElements(int32 length) {
-  Object* result = runtime_->newObjectArray(length);
+RawObject Marshal::Reader::doTupleElements(int32 length) {
+  RawObject result = runtime_->newObjectArray(length);
   if (isRef_) {
     addRef(result);
   }
   for (int32 i = 0; i < length; i++) {
-    Object* value = readObject();
+    RawObject value = readObject();
     ObjectArray::cast(result)->atPut(i, value);
   }
   return result;
 }
 
-Object* Marshal::Reader::readTypeCode() {
+RawObject Marshal::Reader::readTypeCode() {
   word index = -1;
   if (isRef_) {
     index = addRef(NoneType::object());
@@ -374,15 +374,15 @@ Object* Marshal::Reader::readTypeCode() {
   return *result;
 }
 
-Object* Marshal::Reader::readTypeRef() {
+RawObject Marshal::Reader::readTypeRef() {
   int32 n = readLong();
   return getRef(n);
 }
 
-Object* Marshal::Reader::readLongObject() {
+RawObject Marshal::Reader::readLongObject() {
   int32 n = readLong();
   if (n == 0) {
-    Object* zero = SmallInt::fromWord(0);
+    RawObject zero = SmallInt::fromWord(0);
     if (isRef_) {
       addRef(zero);
     }
@@ -446,7 +446,8 @@ Object* Marshal::Reader::readLongObject() {
     DCHECK(carry == 0, "Carry should be zero");
   }
 
-  Object* result = runtime_->newIntWithDigits(View<uword>(digits, digits_idx));
+  RawObject result =
+      runtime_->newIntWithDigits(View<uword>(digits, digits_idx));
   delete[] digits;
   if (isRef_) {
     addRef(result);

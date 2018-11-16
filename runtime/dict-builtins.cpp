@@ -27,7 +27,8 @@ void DictBuiltins::initialize(Runtime* runtime) {
   dict_type->setFlag(Type::Flag::kDictSubclass);
 }
 
-Object* DictBuiltins::dunderContains(Thread* thread, Frame* frame, word nargs) {
+RawObject DictBuiltins::dunderContains(Thread* thread, Frame* frame,
+                                       word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -43,7 +44,8 @@ Object* DictBuiltins::dunderContains(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(thread->runtime()->dictIncludes(dict, key));
 }
 
-Object* DictBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
+RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
+                                      word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -65,7 +67,7 @@ Object* DictBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
       "argument");
 }
 
-Object* DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -91,7 +93,7 @@ Object* DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
       if (right->isError()) {
         return Bool::falseObj();
       }
-      Object* result =
+      RawObject result =
           Interpreter::compareOperation(thread, frame, EQ, left, right);
       if (result == Bool::falseObj()) {
         return result;
@@ -103,7 +105,7 @@ Object* DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__len__() takes no arguments");
   }
@@ -117,7 +119,8 @@ Object* DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   return thread->raiseTypeErrorWithCStr("'__len__' requires a 'dict' object");
 }
 
-Object* DictBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
+RawObject DictBuiltins::dunderGetItem(Thread* thread, Frame* frame,
+                                      word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -145,7 +148,8 @@ Object* DictBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
       "argument");
 }
 
-Object* DictBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
+RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
+                                      word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr("expected 2 arguments");
   }

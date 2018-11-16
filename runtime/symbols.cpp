@@ -14,7 +14,7 @@ static const char* kPredefinedSymbolLiterals[] = {
 // clang-format on
 
 Symbols::Symbols(Runtime* runtime) {
-  symbols_ = new Object*[static_cast<int>(SymbolId::kMaxId)];
+  symbols_ = new RawObject[static_cast<int>(SymbolId::kMaxId)];
 #define ADD_SYMBOL(symbol, value)                                              \
   symbols_[static_cast<int>(SymbolId::k##symbol)] =                            \
       runtime->newStrFromCStr(value);

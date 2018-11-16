@@ -9,24 +9,24 @@ class IntBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* bitLength(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderBool(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderEq(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderGe(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderGt(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderNe(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderNew(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderNeg(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderInt(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderLe(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderLt(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderPos(Thread* thread, Frame* frame, word nargs);
-  static Object* intFromString(Thread* thread, Object* str, int base);
-  static Object* intFromBool(Object* bool_obj);
+  static RawObject bitLength(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderBool(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNeg(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderPos(Thread* thread, Frame* frame, word nargs);
+  static RawObject intFromString(Thread* thread, RawObject str, int base);
+  static RawObject intFromBool(RawObject bool_obj);
 
  private:
-  static Object* negateLargeInteger(Runtime* runtime,
-                                    const Handle<Object>& large_integer);
+  static RawObject negateLargeInteger(Runtime* runtime,
+                                      const Handle<Object>& large_integer);
   static const BuiltinMethod kMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntBuiltins);
@@ -36,16 +36,16 @@ class SmallIntBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderAdd(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderAnd(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderFloorDiv(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderInvert(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderMod(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderMul(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderSub(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderXor(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderRepr(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderFloorDiv(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInvert(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderMod(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderSub(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderXor(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinMethod kMethods[];
@@ -57,7 +57,7 @@ class BoolBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinMethod kMethods[];

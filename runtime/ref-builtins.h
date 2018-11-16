@@ -7,7 +7,7 @@
 
 namespace python {
 
-Object* builtinRefInit(Thread* thread, Frame* frame, word nargs);
-Object* builtinRefNew(Thread* thread, Frame* frame, word nargs);
+RawObject builtinRefInit(Thread* thread, Frame* frame, word nargs);
+RawObject builtinRefNew(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

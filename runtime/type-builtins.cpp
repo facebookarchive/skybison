@@ -9,7 +9,7 @@
 
 namespace python {
 
-Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
 
@@ -49,7 +49,7 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-Object* builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -81,7 +81,7 @@ Object* builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2) {
     return thread->raiseTypeErrorWithCStr("type() takes 1 or 3 arguments");
   }
@@ -144,9 +144,9 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-Object* builtinTypeInit(Thread*, Frame*, word) { return NoneType::object(); }
+RawObject builtinTypeInit(Thread*, Frame*, word) { return NoneType::object(); }
 
-Object* builtinTypeRepr(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinTypeRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
         "type.__repr__(): Need a self argument");

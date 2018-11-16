@@ -22,7 +22,7 @@ namespace python {
  */
 class TryBlock {
  public:
-  explicit TryBlock(Object* value) {
+  explicit TryBlock(RawObject value) {
     DCHECK(value->isSmallInt(), "expected small integer");
     value_ = reinterpret_cast<uword>(value);
   }
@@ -33,7 +33,7 @@ class TryBlock {
     setLevel(level);
   }
 
-  Object* asSmallInt() const;
+  RawObject asSmallInt() const;
 
   word kind() const;
   void setKind(word kind);
@@ -87,8 +87,8 @@ class BlockStack {
 
  private:
   uword address();
-  Object* at(int offset);
-  void atPut(int offset, Object* value);
+  RawObject at(int offset);
+  void atPut(int offset, RawObject value);
 
   word top();
   void setTop(word new_top);
@@ -146,8 +146,8 @@ class BlockStack {
 class Frame {
  public:
   // Function arguments, local variables, cell variables, and free variables
-  Object* getLocal(word idx);
-  void setLocal(word idx, Object* local);
+  RawObject getLocal(word idx);
+  void setLocal(word idx, RawObject local);
 
   void setNumLocals(word num_locals);
   word numLocals();
@@ -159,70 +159,70 @@ class Frame {
   void setVirtualPC(word pc);
 
   // The builtins namespace (a Dict)
-  Object* builtins();
-  void setBuiltins(Object* builtins);
+  RawObject builtins();
+  void setBuiltins(RawObject builtins);
 
   // The (explicit) globals namespace (a Dict)
-  Object* globals();
-  void setGlobals(Object* globals);
+  RawObject globals();
+  void setGlobals(RawObject globals);
 
   // The implicit globals namespace (a Dict)
-  Object* implicitGlobals();
-  void setImplicitGlobals(Object* implicit_globals);
+  RawObject implicitGlobals();
+  void setImplicitGlobals(RawObject implicit_globals);
 
   // The pre-computed object array provided fast globals access.
   // fastGlobals[arg] == globals[names[arg]]
-  Object* fastGlobals();
-  void setFastGlobals(Object* fast_globals);
+  RawObject fastGlobals();
+  void setFastGlobals(RawObject fast_globals);
 
   // The code object
-  Object* code();
-  void setCode(Object* code);
+  RawObject code();
+  void setCode(RawObject code);
 
   // A pointer to the previous frame or nullptr if this is the first frame
   Frame* previousFrame();
   void setPreviousFrame(Frame* frame);
 
   // A pointer to the top of the value stack
-  Object** valueStackTop();
-  void setValueStackTop(Object** top);
+  RawObject* valueStackTop();
+  void setValueStackTop(RawObject* top);
 
-  Object** valueStackBase();
+  RawObject* valueStackBase();
 
   // Returns the number of items on the value stack
   word valueStackSize();
 
   // Push value on the stack.
-  void pushValue(Object* value);
+  void pushValue(RawObject value);
   // Insert value at offset on the stack.
-  void insertValueAt(Object* value, word offset);
+  void insertValueAt(RawObject value, word offset);
   // Set value at offset on the stack.
-  void setValueAt(Object* value, word offset);
+  void setValueAt(RawObject value, word offset);
   // Pop the top value off the stack and return it.
-  Object* popValue();
+  RawObject popValue();
   // Pop n items off the stack.
   void dropValues(word count);
   // Return the top value of the stack.
-  Object* topValue();
+  RawObject topValue();
   // Set the top value of the stack.
-  void setTopValue(Object* value);
+  void setTopValue(RawObject value);
 
   // Return the object at offset from the top of the value stack (e.g. peek(0)
   // returns the top of the stack)
-  Object* peek(word offset);
+  RawObject peek(word offset);
 
   // Push locals at [offset, offset + count) onto the stack
   void pushLocals(word count, word offset);
 
   // A function lives immediately below the arguments on the value stack
-  Function* function(word argc);
+  RawFunction function(word argc);
 
   bool isSentinelFrame();
   void makeSentinel();
 
   bool isNativeFrame();
   void* nativeFunctionPointer();
-  void makeNativeFrame(Object* fn_pointer_as_int);
+  void makeNativeFrame(RawObject fn_pointer_as_int);
 
   // Adjust and/or save the values of internal pointers after copying this Frame
   // from the stack to the heap.
@@ -233,7 +233,7 @@ class Frame {
   void unstashInternalPointers();
 
   // Compute the total space required for a frame object
-  static word allocationSize(Object* code);
+  static word allocationSize(RawObject code);
 
   static const int kPreviousFrameOffset = 0;
   static const int kValueStackTopOffset = kPreviousFrameOffset + kPointerSize;
@@ -250,9 +250,9 @@ class Frame {
 
  private:
   uword address();
-  Object* at(int offset);
-  void atPut(int offset, Object* value);
-  Object** locals();
+  RawObject at(int offset);
+  void atPut(int offset, RawObject value);
+  RawObject* locals();
 
   // Re-compute the locals pointer based on this and num_locals.
   void resetLocals(word num_locals);
@@ -332,7 +332,7 @@ class Arguments {
     num_args_ = nargs;
   }
 
-  Object* get(word n) const {
+  RawObject get(word n) const {
     CHECK(n < num_args_, "index out of range");
     return frame_->getLocal(n);
   }
@@ -352,7 +352,7 @@ class KwArguments : public Arguments {
     num_args_ = nargs - num_keywords_ - 1;
   }
 
-  Object* getKw(Object* name) const {
+  RawObject getKw(RawObject name) const {
     for (word i = 0; i < num_keywords_; i++) {
       if (Str::cast(name)->equals(kwnames_->at(i))) {
         return frame_->getLocal(num_args_ + i);
@@ -365,17 +365,17 @@ class KwArguments : public Arguments {
 
  private:
   word num_keywords_;
-  ObjectArray* kwnames_;
+  RawObjectArray kwnames_;
 };
 
 inline uword Frame::address() { return reinterpret_cast<uword>(this); }
 
-inline Object* Frame::at(int offset) {
-  return *reinterpret_cast<Object**>(address() + offset);
+inline RawObject Frame::at(int offset) {
+  return *reinterpret_cast<RawObject*>(address() + offset);
 }
 
-inline void Frame::atPut(int offset, Object* value) {
-  *reinterpret_cast<Object**>(address() + offset) = value;
+inline void Frame::atPut(int offset, RawObject value) {
+  *reinterpret_cast<RawObject*>(address() + offset) = value;
 }
 
 inline BlockStack* Frame::blockStack() {
@@ -390,44 +390,44 @@ inline void Frame::setVirtualPC(word pc) {
   atPut(kVirtualPCOffset, SmallInt::fromWord(pc));
 }
 
-inline Object* Frame::builtins() { return at(kBuiltinsOffset); }
+inline RawObject Frame::builtins() { return at(kBuiltinsOffset); }
 
-inline void Frame::setBuiltins(Object* builtins) {
+inline void Frame::setBuiltins(RawObject builtins) {
   atPut(kBuiltinsOffset, builtins);
 }
 
-inline Object* Frame::globals() { return at(kGlobalsOffset); }
+inline RawObject Frame::globals() { return at(kGlobalsOffset); }
 
-inline void Frame::setGlobals(Object* globals) {
+inline void Frame::setGlobals(RawObject globals) {
   atPut(kGlobalsOffset, globals);
 }
 
-inline Object* Frame::implicitGlobals() { return at(kImplicitGlobalsOffset); }
+inline RawObject Frame::implicitGlobals() { return at(kImplicitGlobalsOffset); }
 
-inline void Frame::setImplicitGlobals(Object* implicit_globals) {
+inline void Frame::setImplicitGlobals(RawObject implicit_globals) {
   atPut(kImplicitGlobalsOffset, implicit_globals);
 }
 
-inline Object* Frame::fastGlobals() { return at(kFastGlobalsOffset); }
+inline RawObject Frame::fastGlobals() { return at(kFastGlobalsOffset); }
 
-inline void Frame::setFastGlobals(Object* fast_globals) {
+inline void Frame::setFastGlobals(RawObject fast_globals) {
   atPut(kFastGlobalsOffset, fast_globals);
 }
 
-inline Object* Frame::code() { return at(kCodeOffset); }
+inline RawObject Frame::code() { return at(kCodeOffset); }
 
-inline void Frame::setCode(Object* code) { atPut(kCodeOffset, code); }
+inline void Frame::setCode(RawObject code) { atPut(kCodeOffset, code); }
 
-inline Object** Frame::locals() {
-  return reinterpret_cast<Object**>(at(kLocalsOffset));
+inline RawObject* Frame::locals() {
+  return reinterpret_cast<RawObject*>(at(kLocalsOffset));
 }
 
-inline Object* Frame::getLocal(word idx) {
+inline RawObject Frame::getLocal(word idx) {
   DCHECK_INDEX(idx, numLocals());
   return *(locals() - idx);
 }
 
-inline void Frame::setLocal(word idx, Object* object) {
+inline void Frame::setLocal(word idx, RawObject object) {
   DCHECK_INDEX(idx, numLocals());
   *(locals() - idx) = object;
 }
@@ -439,8 +439,8 @@ inline void Frame::setNumLocals(word num_locals) {
 
 inline void Frame::resetLocals(word num_locals) {
   // Bias locals by 1 word to avoid doing so during {get,set}Local
-  Object* locals = reinterpret_cast<Object*>(address() + Frame::kSize +
-                                             ((num_locals - 1) * kPointerSize));
+  RawObject locals = reinterpret_cast<RawObject>(
+      address() + Frame::kSize + ((num_locals - 1) * kPointerSize));
   DCHECK(locals->isSmallInt(), "expected small integer");
   atPut(kLocalsOffset, locals);
 }
@@ -450,7 +450,7 @@ inline word Frame::numLocals() {
 }
 
 inline Frame* Frame::previousFrame() {
-  Object* frame = at(kPreviousFrameOffset);
+  RawObject frame = at(kPreviousFrameOffset);
   return static_cast<Frame*>(SmallInt::cast(frame)->asCPtr());
 }
 
@@ -459,16 +459,16 @@ inline void Frame::setPreviousFrame(Frame* frame) {
         SmallInt::fromWord(reinterpret_cast<uword>(frame)));
 }
 
-inline Object** Frame::valueStackBase() {
-  return reinterpret_cast<Object**>(this);
+inline RawObject* Frame::valueStackBase() {
+  return reinterpret_cast<RawObject*>(this);
 }
 
-inline Object** Frame::valueStackTop() {
-  Object* top = at(kValueStackTopOffset);
-  return static_cast<Object**>(SmallInt::cast(top)->asCPtr());
+inline RawObject* Frame::valueStackTop() {
+  RawObject top = at(kValueStackTopOffset);
+  return static_cast<RawObject*>(SmallInt::cast(top)->asCPtr());
 }
 
-inline void Frame::setValueStackTop(Object** top) {
+inline void Frame::setValueStackTop(RawObject* top) {
   atPut(kValueStackTopOffset, SmallInt::fromWord(reinterpret_cast<uword>(top)));
 }
 
@@ -476,16 +476,16 @@ inline word Frame::valueStackSize() {
   return valueStackBase() - valueStackTop();
 }
 
-inline void Frame::pushValue(Object* value) {
-  Object** top = valueStackTop();
+inline void Frame::pushValue(RawObject value) {
+  RawObject* top = valueStackTop();
   *--top = value;
   setValueStackTop(top);
 }
 
-inline void Frame::insertValueAt(Object* value, word offset) {
+inline void Frame::insertValueAt(RawObject value, word offset) {
   DCHECK(valueStackTop() + offset <= valueStackBase(), "offset %ld overflows",
          offset);
-  Object** sp = valueStackTop() - 1;
+  RawObject* sp = valueStackTop() - 1;
   for (word i = 0; i < offset; i++) {
     sp[i] = sp[i + 1];
   }
@@ -493,15 +493,15 @@ inline void Frame::insertValueAt(Object* value, word offset) {
   setValueStackTop(sp);
 }
 
-inline void Frame::setValueAt(Object* value, word offset) {
+inline void Frame::setValueAt(RawObject value, word offset) {
   DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",
          offset);
   *(valueStackTop() + offset) = value;
 }
 
-inline Object* Frame::popValue() {
+inline RawObject Frame::popValue() {
   DCHECK(valueStackTop() + 1 <= valueStackBase(), "offset %d overflows", 1);
-  Object* result = *valueStackTop();
+  RawObject result = *valueStackTop();
   setValueStackTop(valueStackTop() + 1);
   return result;
 }
@@ -512,9 +512,9 @@ inline void Frame::dropValues(word count) {
   setValueStackTop(valueStackTop() + count);
 }
 
-inline Object* Frame::topValue() { return peek(0); }
+inline RawObject Frame::topValue() { return peek(0); }
 
-inline void Frame::setTopValue(Object* value) { *valueStackTop() = value; }
+inline void Frame::setTopValue(RawObject value) { *valueStackTop() = value; }
 
 inline void Frame::pushLocals(word count, word offset) {
   DCHECK(offset + count <= numLocals(), "locals overflow");
@@ -523,13 +523,13 @@ inline void Frame::pushLocals(word count, word offset) {
   }
 }
 
-inline Object* Frame::peek(word offset) {
+inline RawObject Frame::peek(word offset) {
   DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",
          offset);
   return *(valueStackTop() + offset);
 }
 
-inline Function* Frame::function(word argc) {
+inline RawFunction Frame::function(word argc) {
   return Function::cast(peek(argc));
 }
 
@@ -542,7 +542,7 @@ inline void* Frame::nativeFunctionPointer() {
 
 inline bool Frame::isNativeFrame() { return code()->isInt(); }
 
-inline void Frame::makeNativeFrame(Object* fn_pointer_as_int) {
+inline void Frame::makeNativeFrame(RawObject fn_pointer_as_int) {
   DCHECK(fn_pointer_as_int->isInt(), "expected integer");
   setCode(fn_pointer_as_int);
 }
@@ -550,7 +550,7 @@ inline void Frame::makeNativeFrame(Object* fn_pointer_as_int) {
 inline void Frame::stashInternalPointers(Frame* old_frame) {
   // Replace ValueStackTop with the stack depth while this Frame is on the heap,
   // to survive being moved by the GC.
-  setValueStackTop(reinterpret_cast<Object**>(old_frame->valueStackSize()));
+  setValueStackTop(reinterpret_cast<RawObject*>(old_frame->valueStackSize()));
 }
 
 inline void Frame::unstashInternalPointers() {
@@ -579,9 +579,9 @@ inline void HeapFrame::setMaxStackSize(word offset) {
 }
 
 inline Frame* HeapFrame::copyToNewStackFrame(Frame* caller_frame) {
-  auto src_base = reinterpret_cast<Object**>(address() + kFrameOffset);
+  auto src_base = reinterpret_cast<RawObject*>(address() + kFrameOffset);
   word frame_words = numFrameWords();
-  Object** dest_base = caller_frame->valueStackTop() - frame_words;
+  RawObject* dest_base = caller_frame->valueStackTop() - frame_words;
   std::memcpy(dest_base, src_base, frame_words * kPointerSize);
 
   auto live_frame = reinterpret_cast<Frame*>(dest_base + maxStackSize());
@@ -590,8 +590,8 @@ inline Frame* HeapFrame::copyToNewStackFrame(Frame* caller_frame) {
 }
 
 inline void HeapFrame::copyFromStackFrame(Frame* live_frame) {
-  auto dest_base = reinterpret_cast<Object**>(address() + kFrameOffset);
-  Object** src_base = live_frame->valueStackBase() - maxStackSize();
+  auto dest_base = reinterpret_cast<RawObject*>(address() + kFrameOffset);
+  RawObject* src_base = live_frame->valueStackBase() - maxStackSize();
   std::memcpy(dest_base, src_base, numFrameWords() * kPointerSize);
   frame()->stashInternalPointers(live_frame);
 }
@@ -600,8 +600,8 @@ inline word HeapFrame::numAttributes(word extra_words) {
   return kNumOverheadWords + Frame::kSize / kPointerSize + extra_words;
 }
 
-inline Object* TryBlock::asSmallInt() const {
-  auto obj = reinterpret_cast<Object*>(value_);
+inline RawObject TryBlock::asSmallInt() const {
+  auto obj = reinterpret_cast<RawObject>(value_);
   DCHECK(obj->isSmallInt(), "expected small integer");
   return obj;
 }
@@ -638,12 +638,12 @@ inline void TryBlock::setValueBits(uword offset, uword mask, word value) {
 
 inline uword BlockStack::address() { return reinterpret_cast<uword>(this); }
 
-inline Object* BlockStack::at(int offset) {
-  return *reinterpret_cast<Object**>(address() + offset);
+inline RawObject BlockStack::at(int offset) {
+  return *reinterpret_cast<RawObject*>(address() + offset);
 }
 
-inline void BlockStack::atPut(int offset, Object* value) {
-  *reinterpret_cast<Object**>(address() + offset) = value;
+inline void BlockStack::atPut(int offset, RawObject value) {
+  *reinterpret_cast<RawObject*>(address() + offset) = value;
 }
 
 inline word BlockStack::top() {
@@ -658,7 +658,7 @@ inline void BlockStack::setTop(word new_top) {
 inline TryBlock BlockStack::peek() {
   word stack_top = top() - 1;
   DCHECK(stack_top > -1, "block stack underflow %ld", stack_top);
-  Object* block = at(kStackOffset + stack_top * kPointerSize);
+  RawObject block = at(kStackOffset + stack_top * kPointerSize);
   return TryBlock(block);
 }
 
@@ -671,7 +671,7 @@ inline void BlockStack::push(const TryBlock& block) {
 inline TryBlock BlockStack::pop() {
   word stack_top = top() - 1;
   DCHECK(stack_top > -1, "block stack underflow %ld", stack_top);
-  Object* block = at(kStackOffset + stack_top * kPointerSize);
+  RawObject block = at(kStackOffset + stack_top * kPointerSize);
   setTop(stack_top);
   return TryBlock(block);
 }

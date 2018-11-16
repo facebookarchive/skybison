@@ -12,20 +12,20 @@ class ListBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* append(Thread* thread, Frame* frame, word nargs);
-  static Object* extend(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderAdd(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderDelItem(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderGetItem(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderIter(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderLen(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderMul(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderNew(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderSetItem(Thread* thread, Frame* frame, word nargs);
-  static Object* insert(Thread* thread, Frame* frame, word nargs);
-  static Object* pop(Thread* thread, Frame* frame, word nargs);
-  static Object* remove(Thread* thread, Frame* frame, word nargs);
-  static Object* slice(Thread* thread, List* list, Slice* slice);
+  static RawObject append(Thread* thread, Frame* frame, word nargs);
+  static RawObject extend(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderDelItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderSetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject insert(Thread* thread, Frame* frame, word nargs);
+  static RawObject pop(Thread* thread, Frame* frame, word nargs);
+  static RawObject remove(Thread* thread, Frame* frame, word nargs);
+  static RawObject slice(Thread* thread, RawList list, RawSlice slice);
 
  private:
   static const BuiltinAttribute kAttributes[];
@@ -38,9 +38,9 @@ class ListIteratorBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderIter(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderLengthHint(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderNext(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinMethod kMethods[];

@@ -38,7 +38,7 @@ void ListBuiltins::initialize(Runtime* runtime) {
   list->setFlag(Type::Flag::kListSubclass);
 }
 
-Object* ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
     return thread->raiseTypeErrorWithCStr("not enough arguments");
   }
@@ -58,7 +58,7 @@ Object* ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -87,7 +87,7 @@ Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   return thread->raiseTypeErrorWithCStr("can only concatenate list to list");
 }
 
-Object* ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr(
         "append() takes exactly one argument");
@@ -105,7 +105,7 @@ Object* ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-Object* ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr(
         "extend() takes exactly one argument");
@@ -126,7 +126,7 @@ Object* ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-Object* ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__len__() takes no arguments");
   }
@@ -141,7 +141,7 @@ Object* ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(list->allocated());
 }
 
-Object* ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr(
         "insert() takes exactly two arguments");
@@ -165,12 +165,12 @@ Object* ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-Object* ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  Object* other = args.get(1);
+  RawObject other = args.get(1);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
@@ -185,7 +185,7 @@ Object* ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   return thread->raiseTypeErrorWithCStr("can't multiply list by non-int");
 }
 
-Object* ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   if (nargs > 2) {
     return thread->raiseTypeErrorWithCStr("pop() takes at most 1 argument");
   }
@@ -222,7 +222,7 @@ Object* ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->listPop(list, index);
 }
 
-Object* ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr(
         "remove() takes exactly one argument");
@@ -248,7 +248,7 @@ Object* ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   return thread->raiseValueErrorWithCStr("list.remove(x) x not in list");
 }
 
-Object* ListBuiltins::slice(Thread* thread, List* list, Slice* slice) {
+RawObject ListBuiltins::slice(Thread* thread, RawList list, RawSlice slice) {
   word start, stop, step;
   slice->unpack(&start, &stop, &step);
   word length = Slice::adjustIndices(list->allocated(), &start, &stop, step);
@@ -266,7 +266,8 @@ Object* ListBuiltins::slice(Thread* thread, List* list, Slice* slice) {
   return *result;
 }
 
-Object* ListBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
+                                      word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -281,7 +282,7 @@ Object* ListBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   }
 
   Handle<List> list(&scope, *self);
-  Object* index = args.get(1);
+  RawObject index = args.get(1);
   if (index->isSmallInt()) {
     word idx = SmallInt::cast(index)->value();
     if (idx < 0) {
@@ -300,7 +301,7 @@ Object* ListBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   }
 }
 
-Object* ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
@@ -327,8 +328,8 @@ void ListIteratorBuiltins::initialize(Runtime* runtime) {
                                LayoutId::kObject, kMethods));
 }
 
-Object* ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                           word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
@@ -343,8 +344,8 @@ Object* ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-Object* ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                           word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
   }
@@ -363,8 +364,8 @@ Object* ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-Object* ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
+                                                 word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr(
         "__length_hint__() takes no arguments");
@@ -382,7 +383,8 @@ Object* ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   return SmallInt::fromWord(list->allocated() - list_iterator->index());
 }
 
-Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
+                                      word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr("expected 3 arguments");
   }
@@ -397,7 +399,7 @@ Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
   }
 
   Handle<List> list(&scope, *self);
-  Object* index = args.get(1);
+  RawObject index = args.get(1);
   if (index->isSmallInt()) {
     word idx = SmallInt::cast(index)->value();
     if (idx < 0) {
@@ -416,7 +418,8 @@ Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
       "list indices must be integers or slices");
 }
 
-Object* ListBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
+RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
+                                      word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 2 arguments");
   }
@@ -431,7 +434,7 @@ Object* ListBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
   }
 
   Handle<List> list(&scope, *self);
-  Object* index = args.get(1);
+  RawObject index = args.get(1);
   if (index->isSmallInt()) {
     word idx = SmallInt::cast(index)->value();
     idx = idx < 0 ? list->allocated() + idx : idx;

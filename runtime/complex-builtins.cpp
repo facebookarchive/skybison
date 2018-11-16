@@ -19,7 +19,7 @@ void ComplexBuiltins::initialize(Runtime* runtime) {
   type->setFlag(Type::Flag::kComplexSubclass);
 }
 
-Object* ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
         "complex.__new__(): not enough arguments");

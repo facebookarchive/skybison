@@ -30,81 +30,81 @@ class Interpreter {
     OR
   };
 
-  static Object* execute(Thread* thread, Frame* frame);
+  static RawObject execute(Thread* thread, Frame* frame);
 
-  static Object* call(Thread* thread, Frame* frame, word nargs);
-  static Object* callKw(Thread* thread, Frame* frame, word nargs);
-  static Object* callEx(Thread* thread, Frame* frame, word flags);
+  static RawObject call(Thread* thread, Frame* frame, word nargs);
+  static RawObject callKw(Thread* thread, Frame* frame, word nargs);
+  static RawObject callEx(Thread* thread, Frame* frame, word flags);
 
   // batch concat/join <num> string objects on the stack (no conversion)
-  static Object* stringJoin(Thread* thread, Object** sp, word num);
+  static RawObject stringJoin(Thread* thread, RawObject* sp, word num);
 
-  static Object* isTrue(Thread* thread, Frame* caller);
+  static RawObject isTrue(Thread* thread, Frame* caller);
 
-  static Object* callDescriptorGet(Thread* thread, Frame* caller,
-                                   const Handle<Object>& descriptor,
-                                   const Handle<Object>& receiver,
-                                   const Handle<Object>& receiver_type);
+  static RawObject callDescriptorGet(Thread* thread, Frame* caller,
+                                     const Handle<Object>& descriptor,
+                                     const Handle<Object>& receiver,
+                                     const Handle<Object>& receiver_type);
 
-  static Object* callDescriptorSet(Thread* thread, Frame* caller,
-                                   const Handle<Object>& descriptor,
-                                   const Handle<Object>& receiver,
-                                   const Handle<Object>& value);
+  static RawObject callDescriptorSet(Thread* thread, Frame* caller,
+                                     const Handle<Object>& descriptor,
+                                     const Handle<Object>& receiver,
+                                     const Handle<Object>& value);
 
-  static Object* callDescriptorDelete(Thread* thread, Frame* caller,
-                                      const Handle<Object>& descriptor,
-                                      const Handle<Object>& receiver);
+  static RawObject callDescriptorDelete(Thread* thread, Frame* caller,
+                                        const Handle<Object>& descriptor,
+                                        const Handle<Object>& receiver);
 
-  static Object* lookupMethod(Thread* thread, Frame* caller,
-                              const Handle<Object>& receiver,
-                              SymbolId selector);
-
-  static Object* callMethod1(Thread* thread, Frame* caller,
-                             const Handle<Object>& method,
-                             const Handle<Object>& self);
-
-  static Object* callMethod2(Thread* thread, Frame* caller,
-                             const Handle<Object>& method,
-                             const Handle<Object>& self,
-                             const Handle<Object>& other);
-
-  static Object* callMethod3(Thread* thread, Frame* caller,
-                             const Handle<Object>& method,
-                             const Handle<Object>& self,
-                             const Handle<Object>& arg1,
-                             const Handle<Object>& arg2);
-
-  static Object* callMethod4(Thread* thread, Frame* caller,
-                             const Handle<Object>& method,
-                             const Handle<Object>& self,
-                             const Handle<Object>& arg1,
-                             const Handle<Object>& arg2,
-                             const Handle<Object>& arg3);
-
-  static Object* unaryOperation(Thread* thread, Frame* caller,
+  static RawObject lookupMethod(Thread* thread, Frame* caller,
                                 const Handle<Object>& receiver,
                                 SymbolId selector);
 
-  static Object* binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
-                                 const Handle<Object>& left,
-                                 const Handle<Object>& right);
+  static RawObject callMethod1(Thread* thread, Frame* caller,
+                               const Handle<Object>& method,
+                               const Handle<Object>& self);
 
-  static Object* inplaceOperation(Thread* thread, Frame* caller, BinaryOp op,
-                                  const Handle<Object>& left,
-                                  const Handle<Object>& right);
+  static RawObject callMethod2(Thread* thread, Frame* caller,
+                               const Handle<Object>& method,
+                               const Handle<Object>& self,
+                               const Handle<Object>& other);
 
-  static Object* compareOperation(Thread* thread, Frame* caller, CompareOp op,
-                                  const Handle<Object>& left,
-                                  const Handle<Object>& right);
+  static RawObject callMethod3(Thread* thread, Frame* caller,
+                               const Handle<Object>& method,
+                               const Handle<Object>& self,
+                               const Handle<Object>& arg1,
+                               const Handle<Object>& arg2);
 
-  static Object* sequenceContains(Thread* thread, Frame* caller,
-                                  const Handle<Object>& value,
-                                  const Handle<Object>& container);
+  static RawObject callMethod4(Thread* thread, Frame* caller,
+                               const Handle<Object>& method,
+                               const Handle<Object>& self,
+                               const Handle<Object>& arg1,
+                               const Handle<Object>& arg2,
+                               const Handle<Object>& arg3);
+
+  static RawObject unaryOperation(Thread* thread, Frame* caller,
+                                  const Handle<Object>& receiver,
+                                  SymbolId selector);
+
+  static RawObject binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
+                                   const Handle<Object>& left,
+                                   const Handle<Object>& right);
+
+  static RawObject inplaceOperation(Thread* thread, Frame* caller, BinaryOp op,
+                                    const Handle<Object>& left,
+                                    const Handle<Object>& right);
+
+  static RawObject compareOperation(Thread* thread, Frame* caller, CompareOp op,
+                                    const Handle<Object>& left,
+                                    const Handle<Object>& right);
+
+  static RawObject sequenceContains(Thread* thread, Frame* caller,
+                                    const Handle<Object>& value,
+                                    const Handle<Object>& container);
 
   // Perform the meat of YIELD_FROM. Returns Error if the subiterator is
   // finished and execution should continue. Otherwise, returns the value from
   // the subiterator to return to the caller.
-  static Object* yieldFrom(Thread* thread, Frame* frame);
+  static RawObject yieldFrom(Thread* thread, Frame* frame);
 
   struct Context {
     Thread* thread;
@@ -239,8 +239,8 @@ class Interpreter {
   //
   // Returns the concrete function that should be called. Updates nargs with the
   // number of items added to the stack.
-  static Object* prepareCallableCall(Thread* thread, Frame* frame,
-                                     word callable_idx, word* nargs);
+  static RawObject prepareCallableCall(Thread* thread, Frame* frame,
+                                       word callable_idx, word* nargs);
 
   // Generics used in opcode handlers for binary and inplace operations
   template <BinaryOp op>

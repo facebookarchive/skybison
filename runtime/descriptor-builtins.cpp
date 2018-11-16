@@ -10,11 +10,11 @@ namespace python {
 
 // classmethod
 
-Object* builtinClassMethodNew(Thread* thread, Frame*, word) {
+RawObject builtinClassMethodNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newClassMethod();
 }
 
-Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("classmethod expected 1 arguments");
   }
@@ -26,7 +26,7 @@ Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
   return *classmethod;
 }
 
-Object* builtinClassMethodGet(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinClassMethodGet(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr("__get__ needs 3 arguments");
   }
@@ -41,7 +41,7 @@ Object* builtinClassMethodGet(Thread* thread, Frame* frame, word nargs) {
 
 // staticmethod
 
-Object* builtinStaticMethodGet(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinStaticMethodGet(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr("__get__ needs 3 arguments");
   }
@@ -52,11 +52,11 @@ Object* builtinStaticMethodGet(Thread* thread, Frame* frame, word nargs) {
   return StaticMethod::cast(*self)->function();
 }
 
-Object* builtinStaticMethodNew(Thread* thread, Frame*, word) {
+RawObject builtinStaticMethodNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newStaticMethod();
 }
 
-Object* builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("staticmethod expected 1 arguments");
   }
@@ -70,7 +70,7 @@ Object* builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
 
 // property
 
-Object* builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr(
         "property.deleter expects 1 arguments");
@@ -89,7 +89,7 @@ Object* builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
-Object* builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 3 || nargs > 4) {
     return thread->raiseTypeErrorWithCStr(
         "property.__get__ expects 2-3 arguments");
@@ -116,7 +116,7 @@ Object* builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::callMethod1(thread, frame, getter, obj);
 }
 
-Object* builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr(
         "property.__set__ expects 2 arguments");
@@ -140,7 +140,7 @@ Object* builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::callMethod2(thread, frame, setter, obj, value);
 }
 
-Object* builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr(
         "property.getter expects 1 arguments");
@@ -158,7 +158,7 @@ Object* builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
-Object* builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1 || nargs > 4) {
     return thread->raiseTypeErrorWithCStr("property expects up to 3 arguments");
   }
@@ -181,13 +181,13 @@ Object* builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
   return *property;
 }
 
-Object* builtinPropertyNew(Thread* thread, Frame*, word) {
+RawObject builtinPropertyNew(Thread* thread, Frame*, word) {
   HandleScope scope(thread);
   Handle<Object> none(&scope, NoneType::object());
   return thread->runtime()->newProperty(none, none, none);
 }
 
-Object* builtinPropertySetter(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinPropertySetter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr(
         "property.setter expects 1 arguments");

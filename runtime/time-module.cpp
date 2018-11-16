@@ -9,7 +9,7 @@
 
 namespace python {
 
-Object* builtinTime(Thread* thread, Frame*, word) {
+RawObject builtinTime(Thread* thread, Frame*, word) {
   return thread->runtime()->newFloat(OS::currentTime());
 }
 

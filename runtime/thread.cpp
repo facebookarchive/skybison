@@ -49,7 +49,7 @@ void Thread::visitStackRoots(PointerVisitor* visitor) {
   auto address = reinterpret_cast<uword>(stackPtr());
   auto end = reinterpret_cast<uword>(end_);
   for (; address < end; address += kPointerSize) {
-    visitor->visitPointer(reinterpret_cast<Object**>(address));
+    visitor->visitPointer(reinterpret_cast<RawObject*>(address));
   }
 }
 
@@ -80,7 +80,7 @@ Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
   sp -= size;
   std::memset(sp, 0, size);
   auto frame = reinterpret_cast<Frame*>(sp);
-  frame->setValueStackTop(reinterpret_cast<Object**>(frame));
+  frame->setValueStackTop(reinterpret_cast<RawObject*>(frame));
   frame->setNumLocals(num_args + num_vars);
 
   // return a pointer to the base of the frame
@@ -110,7 +110,7 @@ Frame* Thread::pushNativeFrame(void* fn, word nargs) {
   return frame;
 }
 
-Frame* Thread::pushFrame(Object* object) {
+Frame* Thread::pushFrame(RawObject object) {
   HandleScope scope(this);
   Handle<Code> code(&scope, object);
   auto frame =
@@ -119,7 +119,7 @@ Frame* Thread::pushFrame(Object* object) {
   return frame;
 }
 
-Frame* Thread::pushModuleFunctionFrame(Module* module, Object* object) {
+Frame* Thread::pushModuleFunctionFrame(RawModule module, RawObject object) {
   HandleScope scope;
   Frame* result = pushFrame(object);
   Handle<Code> code(&scope, object);
@@ -135,7 +135,7 @@ Frame* Thread::pushModuleFunctionFrame(Module* module, Object* object) {
   return result;
 }
 
-Frame* Thread::pushClassFunctionFrame(Object* function, Object* dict) {
+Frame* Thread::pushClassFunctionFrame(RawObject function, RawObject dict) {
   HandleScope scope;
   Handle<Code> code(&scope, Function::cast(function)->code());
   Frame* result = pushFrame(*code);
@@ -177,7 +177,7 @@ void Thread::pushInitialFrame() {
   CHECK(sp > start_, "no space for initial frame");
   initialFrame_ = reinterpret_cast<Frame*>(sp);
   initialFrame_->makeSentinel();
-  initialFrame_->setValueStackTop(reinterpret_cast<Object**>(sp));
+  initialFrame_->setValueStackTop(reinterpret_cast<RawObject*>(sp));
 
   currentFrame_ = initialFrame_;
 }
@@ -188,111 +188,111 @@ void Thread::popFrame() {
   currentFrame_ = frame->previousFrame();
 }
 
-Object* Thread::run(Object* object) {
+RawObject Thread::run(RawObject object) {
   DCHECK(currentFrame_ == initialFrame_, "thread must be inactive");
   Frame* frame = pushFrame(object);
   return Interpreter::execute(this, frame);
 }
 
-Object* Thread::runModuleFunction(Module* module, Object* object) {
+RawObject Thread::runModuleFunction(RawModule module, RawObject object) {
   DCHECK(currentFrame_ == initialFrame_, "thread must be inactive");
   Frame* frame = pushModuleFunctionFrame(module, object);
   return Interpreter::execute(this, frame);
 }
 
-Object* Thread::runClassFunction(Object* function, Object* dict) {
+RawObject Thread::runClassFunction(RawObject function, RawObject dict) {
   Frame* frame = pushClassFunctionFrame(function, dict);
   return Interpreter::execute(this, frame);
 }
 
 // Convenience method for throwing a RuntimeError exception with an error
 // message.
-Object* Thread::raiseRuntimeError(Object* value) {
+RawObject Thread::raiseRuntimeError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kRuntimeError));
   setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::raiseRuntimeErrorWithCStr(const char* message) {
+RawObject Thread::raiseRuntimeErrorWithCStr(const char* message) {
   return raiseRuntimeError(runtime()->newStrFromCStr(message));
 }
 
 // Convenience method for throwing a SystemError exception with an error
 // message.
-Object* Thread::raiseSystemError(Object* value) {
+RawObject Thread::raiseSystemError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kSystemError));
   setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::raiseSystemErrorWithCStr(const char* message) {
+RawObject Thread::raiseSystemErrorWithCStr(const char* message) {
   // TODO: instantiate SystemError object.
   return raiseSystemError(runtime()->newStrFromCStr(message));
 }
 
 // Convenience method for throwing a TypeError exception with an error message.
-Object* Thread::raiseTypeError(Object* value) {
+RawObject Thread::raiseTypeError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kTypeError));
   setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::raiseTypeErrorWithCStr(const char* message) {
+RawObject Thread::raiseTypeErrorWithCStr(const char* message) {
   return raiseTypeError(runtime()->newStrFromCStr(message));
 }
 
 // Convenience method for throwing a ValueError exception with an error message.
-Object* Thread::raiseValueError(Object* value) {
+RawObject Thread::raiseValueError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kValueError));
   setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::raiseValueErrorWithCStr(const char* message) {
+RawObject Thread::raiseValueErrorWithCStr(const char* message) {
   return raiseValueError(runtime()->newStrFromCStr(message));
 }
 
-Object* Thread::raiseAttributeError(Object* value) {
+RawObject Thread::raiseAttributeError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kAttributeError));
   setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::raiseAttributeErrorWithCStr(const char* message) {
+RawObject Thread::raiseAttributeErrorWithCStr(const char* message) {
   return raiseAttributeError(runtime()->newStrFromCStr(message));
 }
 
-Object* Thread::raiseKeyError(Object* value) {
+RawObject Thread::raiseKeyError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kKeyError));
   setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::raiseKeyErrorWithCStr(const char* message) {
+RawObject Thread::raiseKeyErrorWithCStr(const char* message) {
   return raiseKeyError(runtime()->newStrFromCStr(message));
 }
 
-Object* Thread::raiseOverflowError(Object* value) {
+RawObject Thread::raiseOverflowError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kOverflowError));
   setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::raiseOverflowErrorWithCStr(const char* message) {
+RawObject Thread::raiseOverflowErrorWithCStr(const char* message) {
   return raiseOverflowError(runtime()->newStrFromCStr(message));
 }
 
-Object* Thread::raiseIndexError(Object* value) {
+RawObject Thread::raiseIndexError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kIndexError));
   setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::raiseIndexErrorWithCStr(const char* message) {
+RawObject Thread::raiseIndexErrorWithCStr(const char* message) {
   return raiseIndexError(runtime()->newStrFromCStr(message));
 }
 
-Object* Thread::raiseStopIteration(Object* value) {
+RawObject Thread::raiseStopIteration(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kStopIteration));
   setExceptionValue(value);
   return Error::object();
@@ -306,13 +306,13 @@ bool Thread::hasPendingStopIteration() {
              ->hasFlag(Type::Flag::kStopIterationSubclass);
 }
 
-Object* Thread::raiseZeroDivisionError(Object* value) {
+RawObject Thread::raiseZeroDivisionError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kZeroDivisionError));
   setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::raiseZeroDivisionErrorWithCStr(const char* message) {
+RawObject Thread::raiseZeroDivisionErrorWithCStr(const char* message) {
   return raiseZeroDivisionError(runtime()->newStrFromCStr(message));
 }
 
@@ -322,7 +322,7 @@ void Thread::ignorePendingException() {
   }
   *builtinStderr << "ignore pending exception";
   if (exceptionValue()->isStr()) {
-    Str* message = Str::cast(exceptionValue());
+    RawStr message = Str::cast(exceptionValue());
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);
@@ -347,7 +347,7 @@ void Thread::abortOnPendingException() {
   }
   std::cerr << "aborting due to pending exception";
   if (exceptionValue()->isStr()) {
-    Str* message = Str::cast(exceptionValue());
+    RawStr message = Str::cast(exceptionValue());
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);

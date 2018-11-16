@@ -34,7 +34,7 @@ std::ostream& operator<<(std::ostream& os, CastError err) {
 namespace testing {
 
 // Turn a Python string object into a standard string.
-static std::string pyStringToStdString(Str* pystr) {
+static std::string pyStringToStdString(RawStr pystr) {
   std::string std_str;
   std_str.reserve(pystr->length());
   for (word i = 0; i < pystr->length(); i++) {
@@ -44,7 +44,7 @@ static std::string pyStringToStdString(Str* pystr) {
 }
 
 ::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
-                                               const char*, Str* actual_str,
+                                               const char*, RawStr actual_str,
                                                std::string expected_string) {
   if (actual_str->equalsCStr(expected_string.c_str())) {
     return ::testing::AssertionSuccess();
@@ -58,8 +58,8 @@ static std::string pyStringToStdString(Str* pystr) {
 
 ::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
                                                const char* expected_string_expr,
-                                               Str* actual_str,
-                                               Str* expected_str) {
+                                               RawStr actual_str,
+                                               RawStr expected_str) {
   if (actual_str->equals(expected_str)) {
     return ::testing::AssertionSuccess();
   }
@@ -77,7 +77,7 @@ static std::string compileAndRunImpl(Runtime* runtime, const char* src,
   std::stringstream tmp_ostream;
   std::ostream* saved_ostream = *ostream;
   *ostream = &tmp_ostream;
-  Object* result = runtime->runFromCStr(src);
+  RawObject result = runtime->runFromCStr(src);
   (void)result;
   CHECK(result == NoneType::object(), "unexpected result");
   *ostream = saved_ostream;
@@ -106,8 +106,8 @@ std::string callFunctionToString(const Handle<Function>& func,
   return stream.str();
 }
 
-Object* callFunction(const Handle<Function>& func,
-                     const Handle<ObjectArray>& args) {
+RawObject callFunction(const Handle<Function>& func,
+                       const Handle<ObjectArray>& args) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Handle<Code> code(&scope, func->code());
@@ -132,20 +132,21 @@ bool objectArrayContains(const Handle<ObjectArray>& object_array,
   return false;
 }
 
-Object* findModule(Runtime* runtime, const char* name) {
+RawObject findModule(Runtime* runtime, const char* name) {
   HandleScope scope;
   Handle<Object> key(&scope, runtime->newStrFromCStr(name));
   return runtime->findModule(key);
 }
 
-Object* moduleAt(Runtime* runtime, const Handle<Module>& module,
-                 const char* name) {
+RawObject moduleAt(Runtime* runtime, const Handle<Module>& module,
+                   const char* name) {
   HandleScope scope;
   Handle<Object> key(&scope, runtime->newStrFromCStr(name));
   return runtime->moduleAt(module, key);
 }
 
-Object* moduleAt(Runtime* runtime, const char* module_name, const char* name) {
+RawObject moduleAt(Runtime* runtime, const char* module_name,
+                   const char* name) {
   HandleScope scope;
   Handle<Object> mod_obj(&scope, findModule(runtime, module_name));
   if (mod_obj->isNoneType()) {
@@ -155,8 +156,8 @@ Object* moduleAt(Runtime* runtime, const char* module_name, const char* name) {
   return moduleAt(runtime, module, name);
 }
 
-std::string typeName(Runtime* runtime, Object* obj) {
-  Str* name = Str::cast(Type::cast(runtime->typeOf(obj))->name());
+std::string typeName(Runtime* runtime, RawObject obj) {
+  RawStr name = Str::cast(Type::cast(runtime->typeOf(obj))->name());
   word length = name->length();
   std::string result(length, '\0');
   name->copyTo(reinterpret_cast<byte*>(&result[0]), length);

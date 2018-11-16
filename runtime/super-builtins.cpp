@@ -8,11 +8,11 @@
 
 namespace python {
 
-Object* builtinSuperNew(Thread* thread, Frame*, word) {
+RawObject builtinSuperNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newSuper();
 }
 
-Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   // only support idiomatic usage for now
   // super() -> same as super(__class__, <first argument>)
   // super(type, obj) -> bound super object; requires isinstance(obj, type)
@@ -44,7 +44,7 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
       return thread->raiseRuntimeErrorWithCStr("super(): no arguments");
     }
     Handle<ObjectArray> free_vars(&scope, code->freevars());
-    Object* cell = Error::object();
+    RawObject cell = Error::object();
     for (word i = 0; i < free_vars->length(); i++) {
       if (Str::cast(free_vars->at(i))
               ->equals(thread->runtime()->symbols()->DunderClass())) {

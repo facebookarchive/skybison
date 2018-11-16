@@ -19,8 +19,8 @@ weak = ref(a)
   HandleScope scope;
   compileAndRunToString(&runtime, src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Object* a = moduleAt(&runtime, main, "a");
-  Object* weak = moduleAt(&runtime, main, "weak");
+  RawObject a = moduleAt(&runtime, main, "a");
+  RawObject weak = moduleAt(&runtime, main, "weak");
   EXPECT_EQ(WeakRef::cast(weak)->referent(), a);
   EXPECT_EQ(WeakRef::cast(weak)->callback(), NoneType::object());
 
@@ -48,9 +48,9 @@ weak = ref(a, f)
   HandleScope scope;
   compileAndRunToString(&runtime, src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Object* a = moduleAt(&runtime, main, "a");
-  Object* b = moduleAt(&runtime, main, "b");
-  Object* weak = moduleAt(&runtime, main, "weak");
+  RawObject a = moduleAt(&runtime, main, "a");
+  RawObject b = moduleAt(&runtime, main, "b");
+  RawObject weak = moduleAt(&runtime, main, "weak");
   EXPECT_EQ(WeakRef::cast(weak)->referent(), a);
   EXPECT_EQ(SmallInt::cast(b)->value(), 1);
 

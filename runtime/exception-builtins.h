@@ -9,7 +9,7 @@ class BaseExceptionBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderInit(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinAttribute kAttributes[];
@@ -22,7 +22,7 @@ class StopIterationBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderInit(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinAttribute kAttributes[];
@@ -35,7 +35,7 @@ class SystemExitBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderInit(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinAttribute kAttributes[];

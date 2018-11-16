@@ -10,7 +10,7 @@
 
 namespace python {
 
-static inline void initFrame(Thread* thread, Function* function,
+static inline void initFrame(Thread* thread, RawFunction function,
                              Frame* new_frame, Frame* caller_frame) {
   new_frame->setGlobals(function->globals());
   if (new_frame->globals() == caller_frame->globals()) {
@@ -30,7 +30,7 @@ static inline void initFrame(Thread* thread, Function* function,
 
 // If the given Code object represents any kind of resumable function, create
 // and return the corresponding object. Otherwise, return None.
-static inline Object* checkCreateGenerator(Code* raw_code, Thread* thread) {
+static inline RawObject checkCreateGenerator(RawCode raw_code, Thread* thread) {
   word flags = raw_code->flags();
   if ((flags & (Code::GENERATOR | Code::COROUTINE)) == 0) {
     return NoneType::object();
@@ -49,15 +49,15 @@ static inline Object* checkCreateGenerator(Code* raw_code, Thread* thread) {
 }
 
 // Final stage of a call when arguments are all in place
-static inline Object* callNoChecks(Thread* thread, Function* function,
-                                   Frame* caller_frame, Code* code) {
+static inline RawObject callNoChecks(Thread* thread, RawFunction function,
+                                     Frame* caller_frame, RawCode code) {
   // Set up the new frame
   auto callee_frame = thread->pushFrame(code);
 
   // Initialize it
   initFrame(thread, function, callee_frame, caller_frame);
 
-  Object* generator = checkCreateGenerator(code, thread);
+  RawObject generator = checkCreateGenerator(code, thread);
   if (!generator->isNoneType()) {
     return generator;
   }
@@ -67,8 +67,8 @@ static inline Object* callNoChecks(Thread* thread, Function* function,
 }
 
 // Final stage of a call with possible Freevars/Cellvars
-static inline Object* callCheckFreeCell(Thread* thread, Function* function,
-                                        Frame* caller_frame, Code* code) {
+static inline RawObject callCheckFreeCell(Thread* thread, RawFunction function,
+                                          Frame* caller_frame, RawCode code) {
   // Set up the new frame
   auto callee_frame = thread->pushFrame(code);
 
@@ -93,7 +93,7 @@ static inline Object* callCheckFreeCell(Thread* thread, Function* function,
                            ObjectArray::cast(function->closure())->at(i));
   }
 
-  Object* generator = checkCreateGenerator(code, thread);
+  RawObject generator = checkCreateGenerator(code, thread);
   if (!generator->isNoneType()) {
     return generator;
   }
@@ -105,7 +105,8 @@ static inline Object* callCheckFreeCell(Thread* thread, Function* function,
 // The basic interpreterTrampoline biases for the common case for a
 // CALL_FUNCTION - correct number of arguments passed by position with no
 // cell or free vars. If not, we bail out to a more general routine.
-Object* interpreterTrampoline(Thread* thread, Frame* caller_frame, word argc) {
+RawObject interpreterTrampoline(Thread* thread, Frame* caller_frame,
+                                word argc) {
   HandleScope scope(thread);
   Handle<Function> function(&scope, caller_frame->function(argc));
   Handle<Code> code(&scope, function->code());
@@ -122,9 +123,9 @@ Object* interpreterTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   return callNoChecks(thread, *function, caller_frame, *code);
 }
 
-Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
-                                      Code* code, Frame* caller_frame,
-                                      word argc) {
+RawObject interpreterTrampolineSlowPath(Thread* thread, RawFunction function,
+                                        RawCode code, Frame* caller_frame,
+                                        word argc) {
   uword flags = code->flags();
   HandleScope scope(thread);
   Handle<Object> tmp_varargs(&scope, NoneType::object());
@@ -168,7 +169,7 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
       word first_kw = code->argcount();
       for (word i = 0; i < code->kwonlyargcount(); i++) {
         Handle<Object> name(&scope, formal_names->at(first_kw + i));
-        Object* val = thread->runtime()->dictAt(kw_defaults, name);
+        RawObject val = thread->runtime()->dictAt(kw_defaults, name);
         if (!val->isError()) {
           caller_frame->pushValue(val);
           argc++;
@@ -205,7 +206,7 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
   return callCheckFreeCell(thread, function, caller_frame, code);
 }
 
-word findName(Object* name, ObjectArray* name_list) {
+word findName(RawObject name, RawObjectArray name_list) {
   word len = name_list->length();
   for (word i = 0; i < len; i++) {
     if (name == name_list->at(i)) {
@@ -221,14 +222,14 @@ word findName(Object* name, ObjectArray* name_list) {
 // and number of names in the actual_names tuple to match.  Caller must pad
 // prior to calling to ensure this.
 // Return None::object() if successfull, error object if not.
-Object* checkArgs(Function* function, Object** kw_arg_base,
-                  ObjectArray* actual_names, ObjectArray* formal_names,
-                  word start) {
+RawObject checkArgs(RawFunction function, RawObject* kw_arg_base,
+                    RawObjectArray actual_names, RawObjectArray formal_names,
+                    word start) {
   word num_actuals = actual_names->length();
   // Helper function to swap actual arguments and names
   auto swap = [kw_arg_base, actual_names](word arg_pos1,
                                           word arg_pos2) -> void {
-    Object* tmp = *(kw_arg_base - arg_pos1);
+    RawObject tmp = *(kw_arg_base - arg_pos1);
     *(kw_arg_base - arg_pos1) = *(kw_arg_base - arg_pos2);
     *(kw_arg_base - arg_pos2) = tmp;
     tmp = actual_names->at(arg_pos1);
@@ -236,7 +237,7 @@ Object* checkArgs(Function* function, Object** kw_arg_base,
     actual_names->atPut(arg_pos2, tmp);
   };
   // Helper function to retrieve argument
-  auto arg_at = [kw_arg_base](word idx) -> Object*& {
+  auto arg_at = [kw_arg_base](word idx) -> RawObject& {
     return *(kw_arg_base - idx);
   };
   for (word arg_pos = 0; arg_pos < num_actuals; arg_pos++) {
@@ -297,7 +298,7 @@ Object* checkArgs(Function* function, Object** kw_arg_base,
       Handle<Dict> kw_defaults(&scope, function->kwDefaults());
       Thread* thread = Thread::currentThread();
       Handle<Object> name(&scope, formal_names->at(arg_pos + start));
-      Object* val = thread->runtime()->dictAt(kw_defaults, name);
+      RawObject val = thread->runtime()->dictAt(kw_defaults, name);
       if (!val->isError()) {
         *(kw_arg_base - arg_pos) = val;
         continue;  // Got it, move on to the next
@@ -312,8 +313,8 @@ Object* checkArgs(Function* function, Object** kw_arg_base,
 // Trampoline for calls in which the caller provided keyword arguments.  On
 // TOS will be a tuple of the provided keyword names.  Above them the associated
 // values in left-to-right order.
-Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
-                                word argc) {
+RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
+                                  word argc) {
   HandleScope scope(thread);
   // Destructively pop the tuple of kwarg names
   Handle<ObjectArray> keywords(&scope, caller_frame->topValue());
@@ -343,7 +344,7 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
                                   thread->runtime()->newObjectArray(excess));
       if (excess > 0) {
         // Point to the leftmost excess argument
-        Object** p =
+        RawObject* p =
             (caller_frame->valueStackTop() + num_keyword_args + excess) - 1;
         // Copy the excess to the * tuple
         for (word i = 0; i < excess; i++) {
@@ -374,7 +375,7 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
       Handle<List> saved_values(&scope, thread->runtime()->newList());
       word formal_parm_size = formal_parm_names->length();
       Runtime* runtime = thread->runtime();
-      Object** p = caller_frame->valueStackTop() + (num_keyword_args - 1);
+      RawObject* p = caller_frame->valueStackTop() + (num_keyword_args - 1);
       for (word i = 0; i < num_keyword_args; i++) {
         Handle<Object> key(&scope, keywords->at(i));
         Handle<Object> value(&scope, *(p - i));
@@ -403,8 +404,8 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
     }
   }
   // At this point, all vararg forms have been normalized
-  Object** kw_arg_base = (caller_frame->valueStackTop() + num_keyword_args) -
-                         1;  // pointer to first non-positional arg
+  RawObject* kw_arg_base = (caller_frame->valueStackTop() + num_keyword_args) -
+                           1;  // pointer to first non-positional arg
   if (UNLIKELY(argc > expected_args)) {
     return thread->raiseTypeErrorWithCStr("TypeError: Too many arguments");
   } else if (UNLIKELY(argc < expected_args)) {
@@ -424,8 +425,8 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
     keywords = *padded_keywords;
   }
   // Now we've got the right number.  Do they match up?
-  Object* res = checkArgs(*function, kw_arg_base, *keywords, *formal_parm_names,
-                          num_positional_args);
+  RawObject res = checkArgs(*function, kw_arg_base, *keywords,
+                            *formal_parm_names, num_positional_args);
   // If we're a vararg form, need to push the tuple/dict.
   if (res->isNoneType()) {
     if (flags & Code::VARARGS) {
@@ -439,7 +440,8 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
   return res;  // TypeError created by checkArgs.
 }
 
-Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word arg) {
+RawObject interpreterTrampolineEx(Thread* thread, Frame* caller_frame,
+                                  word arg) {
   HandleScope scope(thread);
   Handle<Object> kw_dict(&scope, NoneType::object());
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
@@ -470,7 +472,7 @@ Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word arg) {
 
 typedef PyObject* (*PyCFunction)(PyObject*, PyObject*, PyObject*);
 
-Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
+RawObject extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -505,15 +507,15 @@ Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   return *instance;
 }
 
-Object* extensionTrampolineKw(Thread*, Frame*, word) {
+RawObject extensionTrampolineKw(Thread*, Frame*, word) {
   UNIMPLEMENTED("ExtensionTrampolineKw");
 }
 
-Object* extensionTrampolineEx(Thread*, Frame*, word) {
+RawObject extensionTrampolineEx(Thread*, Frame*, word) {
   UNIMPLEMENTED("ExtensionTrampolineEx");
 }
 
-Object* unimplementedTrampoline(Thread*, Frame*, word) {
+RawObject unimplementedTrampoline(Thread*, Frame*, word) {
   UNIMPLEMENTED("Trampoline");
 }
 

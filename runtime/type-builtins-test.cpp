@@ -86,7 +86,7 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
   frame->pushValue(runtime.newStrFromCStr("not_a_cls"));
-  Object* result = builtinTypeCall(thread, frame, 1);
+  RawObject result = builtinTypeCall(thread, frame, 1);
   ASSERT_TRUE(result->isError());
   ASSERT_TRUE(thread->hasPendingException());
 }
@@ -107,7 +107,7 @@ c = C()
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
   Thread* thread = Thread::currentThread();
   Handle<Object> x(&scope, runtime.newStrFromCStr("x"));
-  Object* attr = runtime.attributeAt(thread, c, x);
+  RawObject attr = runtime.attributeAt(thread, c, x);
   ASSERT_FALSE(attr->isNoneType());
   ASSERT_TRUE(attr->isInt());
   ASSERT_EQ(SmallInt::cast(attr)->value(), 42);
@@ -118,7 +118,7 @@ TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kObject));
-  Object* result = builtinTypeRepr(thread, frame, 1);
+  RawObject result = builtinTypeRepr(thread, frame, 1);
   ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(Str::cast(result), "<class 'object'>");
 }
@@ -136,7 +136,7 @@ class Foo:
 
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
   frame->setLocal(0, *type);
-  Object* result = builtinTypeRepr(thread, frame, 1);
+  RawObject result = builtinTypeRepr(thread, frame, 1);
   ASSERT_TRUE(result->isStr());
   // TODO(T32810595): Once module names are supported, this should become
   // "<class '__main__.Foo'>".

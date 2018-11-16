@@ -21,34 +21,34 @@ class Marshal {
 
     int32 readLong();
 
-    Object* readObject();
+    RawObject readObject();
 
     int16 readShort();
 
     const byte* readBytes(int length);
 
-    Object* readTypeString();
-    Object* readTypeAscii();
-    Object* readTypeAsciiInterned();
-    Object* readTypeUnicode();
-    Object* readTypeShortAscii();
-    Object* readTypeShortAsciiInterned();
-    Object* readTypeSmallTuple();
-    Object* readTypeTuple();
-    Object* readTypeCode();
-    Object* readTypeRef();
+    RawObject readTypeString();
+    RawObject readTypeAscii();
+    RawObject readTypeAsciiInterned();
+    RawObject readTypeUnicode();
+    RawObject readTypeShortAscii();
+    RawObject readTypeShortAsciiInterned();
+    RawObject readTypeSmallTuple();
+    RawObject readTypeTuple();
+    RawObject readTypeCode();
+    RawObject readTypeRef();
 
-    Object* doTupleElements(int32 length);
+    RawObject doTupleElements(int32 length);
 
-    word addRef(Object* value);
-    void setRef(word index, Object* value);
-    Object* getRef(word index);
+    word addRef(RawObject value);
+    void setRef(word index, RawObject value);
+    RawObject getRef(word index);
     word numRefs();
 
    private:
-    Object* readStr(word length);
-    Object* readAndInternStr(word length);
-    Object* readLongObject();
+    RawObject readStr(word length);
+    RawObject readAndInternStr(word length);
+    RawObject readLongObject();
 
     Runtime* runtime_;
     Handle<List> refs_;

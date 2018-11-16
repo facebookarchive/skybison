@@ -12,26 +12,26 @@ class StrBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderAdd(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderEq(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderGe(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderGetItem(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderGt(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderLe(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderLen(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderLt(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderMod(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderNe(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderNew(Thread* thread, Frame* frame, word nargs);
-  static Object* dunderRepr(Thread* thread, Frame* frame, word nargs);
-  static Object* lower(Thread* thread, Frame* frame, word nargs);
-  static Object* join(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderMod(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
+  static RawObject lower(Thread* thread, Frame* frame, word nargs);
+  static RawObject join(Thread* thread, Frame* frame, word nargs);
 
  private:
   static word strFormatBufferLength(const Handle<Str>& fmt,
                                     const Handle<ObjectArray>& args);
-  static Object* strFormat(Thread* thread, const Handle<Str>& fmt,
-                           const Handle<ObjectArray>& args);
+  static RawObject strFormat(Thread* thread, const Handle<Str>& fmt,
+                             const Handle<ObjectArray>& args);
   static void byteToHex(byte** buf, byte convert);
   static const BuiltinMethod kMethods[];
 

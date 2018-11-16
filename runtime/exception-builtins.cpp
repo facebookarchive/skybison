@@ -27,8 +27,8 @@ void BaseExceptionBuiltins::initialize(Runtime* runtime) {
   type->setFlag(Type::Flag::kBaseExceptionSubclass);
 }
 
-Object* BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
+                                            word nargs) {
   HandleScope scope(thread);
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
@@ -67,8 +67,8 @@ void StopIterationBuiltins::initialize(Runtime* runtime) {
   type->setFlag(Type::Flag::kStopIterationSubclass);
 }
 
-Object* StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
+                                            word nargs) {
   HandleScope scope(thread);
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
@@ -81,7 +81,7 @@ Object* StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
         "'__init__' requires a 'StopIteration' object");
   }
   UncheckedHandle<StopIteration> self(&scope, args.get(0));
-  Object* result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
+  RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
   if (result->isError()) {
     return result;
   }
@@ -109,8 +109,8 @@ void SystemExitBuiltins::initialize(Runtime* runtime) {
   type->setFlag(Type::Flag::kSystemExitSubclass);
 }
 
-Object* SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
@@ -123,7 +123,7 @@ Object* SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
         "'__init__' requires a 'SystemExit' object");
   }
   UncheckedHandle<SystemExit> self(&scope, args.get(0));
-  Object* result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
+  RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
   if (result->isError()) {
     return result;
   }

@@ -6,6 +6,6 @@
 
 namespace python {
 
-Object* builtinTime(Thread* thread, Frame* frame, word nargs);
+RawObject builtinTime(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

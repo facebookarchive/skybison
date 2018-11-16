@@ -12,11 +12,13 @@ namespace python {
 
 class RememberingVisitor : public PointerVisitor {
  public:
-  virtual void visitPointer(Object** pointer) { pointers_.push_back(*pointer); }
+  virtual void visitPointer(RawObject* pointer) {
+    pointers_.push_back(*pointer);
+  }
 
   word count() { return pointers_.size(); }
 
-  bool hasVisited(Object* object) {
+  bool hasVisited(RawObject object) {
     for (auto elt : pointers_) {
       if (elt == object) {
         return true;
@@ -26,14 +28,14 @@ class RememberingVisitor : public PointerVisitor {
   }
 
  private:
-  std::vector<Object*> pointers_;
+  std::vector<RawObject> pointers_;
 };
 
 TEST(HandlesTest, UpCastTest) {
   Handles handles;
   HandleScope scope(&handles);
 
-  auto i1 = reinterpret_cast<SmallInt*>(0xFEEDFACE);
+  auto i1 = reinterpret_cast<RawSmallInt>(0xFEEDFACE);
   Handle<SmallInt> h1(&scope, i1);
 
   Handle<Object> h2(h1);
@@ -48,7 +50,7 @@ TEST(HandlesTest, DownCastTest) {
   Handles handles;
   HandleScope scope(&handles);
 
-  auto i1 = reinterpret_cast<SmallInt*>(0xFEEDFACE);
+  auto i1 = reinterpret_cast<RawSmallInt>(0xFEEDFACE);
   Handle<Object> h1(&scope, i1);
 
   Handle<SmallInt> h2(h1);
@@ -63,7 +65,7 @@ TEST(HandlesTest, IllegalCastRunTimeTest) {
   Handles handles;
   HandleScope scope(&handles);
 
-  auto i1 = reinterpret_cast<SmallInt*>(0xFEEDFACE);
+  auto i1 = reinterpret_cast<RawSmallInt>(0xFEEDFACE);
   Handle<Object> h1(&scope, i1);
 
   EXPECT_DEBUG_DEATH(Handle<Dict> h2(h1), "isDict");
@@ -87,7 +89,7 @@ TEST(HandlesTest, VisitEmptyScope) {
 TEST(HandlesTest, VisitOneHandle) {
   Handles handles;
   HandleScope scope(&handles);
-  auto object = reinterpret_cast<Object*>(0xFEEDFACE);
+  auto object = reinterpret_cast<RawObject>(0xFEEDFACE);
   Handle<Object> handle(&scope, object);
   RememberingVisitor visitor;
   handles.visitPointers(&visitor);
@@ -99,9 +101,9 @@ TEST(HandlesTest, VisitTwoHandles) {
   Handles handles;
   HandleScope scope(&handles);
   RememberingVisitor visitor;
-  auto o1 = reinterpret_cast<Object*>(0xFEEDFACE);
+  auto o1 = reinterpret_cast<RawObject>(0xFEEDFACE);
   Handle<Object> h1(&scope, o1);
-  auto o2 = reinterpret_cast<Object*>(0xFACEFEED);
+  auto o2 = reinterpret_cast<RawObject>(0xFACEFEED);
   Handle<Object> h2(&scope, o2);
   handles.visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 2);
@@ -111,7 +113,7 @@ TEST(HandlesTest, VisitTwoHandles) {
 
 TEST(HandlesTest, VisitObjectInNestedScope) {
   Handles handles;
-  auto object = reinterpret_cast<Object*>(0xFEEDFACE);
+  auto object = reinterpret_cast<RawObject>(0xFEEDFACE);
   {
     HandleScope s1(&handles);
     {
@@ -151,9 +153,9 @@ TEST(HandlesTest, VisitObjectInNestedScope) {
 
 TEST(HandlesTest, NestedScopes) {
   Handles handles;
-  auto o1 = reinterpret_cast<Object*>(0xDECAF1);
-  auto o2 = reinterpret_cast<Object*>(0xDECAF2);
-  auto o3 = reinterpret_cast<Object*>(0xDECAF3);
+  auto o1 = reinterpret_cast<RawObject>(0xDECAF1);
+  auto o2 = reinterpret_cast<RawObject>(0xDECAF2);
+  auto o3 = reinterpret_cast<RawObject>(0xDECAF3);
 
   {
     HandleScope s1(&handles);
@@ -236,7 +238,7 @@ BENCHMARK_F(HandleBenchmark, CreationDestruction)(benchmark::State& state) {
   Handles handles;
   HandleScope scope(Thread::currentThread());
 
-  auto o1 = reinterpret_cast<Object*>(0xFEEDFACE);
+  auto o1 = reinterpret_cast<RawObject>(0xFEEDFACE);
 
   for (auto _ : state) {
     Handle<Object> h1(&scope, o1);
@@ -245,7 +247,7 @@ BENCHMARK_F(HandleBenchmark, CreationDestruction)(benchmark::State& state) {
 
 class NothingVisitor : public PointerVisitor {
  public:
-  virtual void visitPointer(Object**) { visit_count++; }
+  virtual void visitPointer(RawObject*) { visit_count++; }
 
   int visit_count = 0;
 };
@@ -254,15 +256,15 @@ BENCHMARK_F(HandleBenchmark, Visit)(benchmark::State& state) {
   Handles handles;
   HandleScope scope(Thread::currentThread());
 
-  Handle<Object> h1(&scope, reinterpret_cast<Object*>(0xFEEDFACE));
-  Handle<Object> h2(&scope, reinterpret_cast<Object*>(0xFEEDFACF));
-  Handle<Object> h3(&scope, reinterpret_cast<Object*>(0xFEEDFAD0));
-  Handle<Object> h4(&scope, reinterpret_cast<Object*>(0xFEEDFAD1));
-  Handle<Object> h5(&scope, reinterpret_cast<Object*>(0xFEEDFAD2));
-  Handle<Object> h6(&scope, reinterpret_cast<Object*>(0xFEEDFAD3));
-  Handle<Object> h7(&scope, reinterpret_cast<Object*>(0xFEEDFAD4));
-  Handle<Object> h8(&scope, reinterpret_cast<Object*>(0xFEEDFAD5));
-  Handle<Object> h9(&scope, reinterpret_cast<Object*>(0xFEEDFAD6));
+  Handle<Object> h1(&scope, reinterpret_cast<RawObject>(0xFEEDFACE));
+  Handle<Object> h2(&scope, reinterpret_cast<RawObject>(0xFEEDFACF));
+  Handle<Object> h3(&scope, reinterpret_cast<RawObject>(0xFEEDFAD0));
+  Handle<Object> h4(&scope, reinterpret_cast<RawObject>(0xFEEDFAD1));
+  Handle<Object> h5(&scope, reinterpret_cast<RawObject>(0xFEEDFAD2));
+  Handle<Object> h6(&scope, reinterpret_cast<RawObject>(0xFEEDFAD3));
+  Handle<Object> h7(&scope, reinterpret_cast<RawObject>(0xFEEDFAD4));
+  Handle<Object> h8(&scope, reinterpret_cast<RawObject>(0xFEEDFAD5));
+  Handle<Object> h9(&scope, reinterpret_cast<RawObject>(0xFEEDFAD6));
 
   NothingVisitor visitor;
   for (auto _ : state) {

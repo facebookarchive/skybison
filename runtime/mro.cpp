@@ -41,8 +41,8 @@ static bool tailContains(const Handle<ObjectArray>& mro,
 // Looks for a head class in merge_lists (i.e. the class indicated by the
 // corresponding index in merge_list_indices) which does not appear in any of
 // the merge_lists at a position *after* the head class of that list.
-static Object* findNext(const Handle<ObjectArray>& merge_lists,
-                        const Vector<word>& merge_list_indices) {
+static RawObject findNext(const Handle<ObjectArray>& merge_lists,
+                          const Vector<word>& merge_list_indices) {
   HandleScope scope;
   for (word i = 0; i < merge_list_indices.size(); i++) {
     auto cur_idx = merge_list_indices[i];
@@ -71,8 +71,8 @@ static Object* findNext(const Handle<ObjectArray>& merge_lists,
   return Error::object();
 }
 
-Object* computeMro(Thread* thread, const Handle<Type>& type,
-                   const Handle<ObjectArray>& parents) {
+RawObject computeMro(Thread* thread, const Handle<Type>& type,
+                     const Handle<ObjectArray>& parents) {
   Runtime* runtime = thread->runtime();
   HandleScope scope;
 
@@ -107,7 +107,7 @@ Object* computeMro(Thread* thread, const Handle<Type>& type,
   // all matching heads. This is O(n^2) as implemented, but so is
   // CPython's implementation, so we can rest assured no real program
   // is going to cause a major problem here.
-  Object* next_head = Error::object();
+  RawObject next_head = Error::object();
   while (!(next_head = findNext(merge_lists, merge_list_indices))->isError()) {
     Handle<Type> next_head_cls(&scope, next_head);
     for (word i = 0; i < merge_list_indices.size(); i++) {

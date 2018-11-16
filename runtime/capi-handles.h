@@ -10,10 +10,10 @@ class ApiHandle : public PyObject {
  public:
   // Wrap an Object as an ApiHandle to cross the CPython boundary
   // Create a new ApiHandle if there is not a pre-existing one
-  static ApiHandle* fromObject(Object* obj);
+  static ApiHandle* fromObject(RawObject obj);
 
   // Same as asApiHandle, but creates a borrowed ApiHandle if no handle exists
-  static ApiHandle* fromBorrowedObject(Object* obj);
+  static ApiHandle* fromBorrowedObject(RawObject obj);
 
   static ApiHandle* fromPyObject(PyObject* py_obj) {
     return static_cast<ApiHandle*>(py_obj);
@@ -22,7 +22,7 @@ class ApiHandle : public PyObject {
   // Get the object from the handle's reference pointer. If non-existent
   // Either search the object in the runtime's extension types dictionary
   // or build a new extension instance.
-  Object* asObject();
+  RawObject asObject();
 
   ApiHandle* type();
 
@@ -45,17 +45,18 @@ class ApiHandle : public PyObject {
  private:
   ApiHandle() = delete;
 
-  static ApiHandle* create(Object* reference, long refcnt);
+  static ApiHandle* create(RawObject reference, long refcnt);
 
-  // Cast Object* to ApiHandle* and set borrowed bit if needed
-  static ApiHandle* castFromObject(Object* value, bool borrowed);
+  // Cast RawObject to ApiHandle* and set borrowed bit if needed
+  static ApiHandle* castFromObject(RawObject value, bool borrowed);
 
   // Create a new runtime instance based on this ApiHandle
-  Object* asInstance(Object* type);
+  RawObject asInstance(RawObject type);
 
   // Get ExtensionPtr attribute from obj; returns Error if not an extension
   // instance
-  static Object* getExtensionPtrAttr(Thread* thread, const Handle<Object>& obj);
+  static RawObject getExtensionPtrAttr(Thread* thread,
+                                       const Handle<Object>& obj);
 
   static const long kBorrowedBit = 1L << 31;
 

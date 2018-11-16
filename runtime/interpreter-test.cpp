@@ -94,13 +94,13 @@ right = C()
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
   Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
-  Object* result = Interpreter::binaryOperation(
+  RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
   ASSERT_TRUE(ObjectArray::cast(result)->at(1)->isStr());
-  Str* name = Str::cast(ObjectArray::cast(result)->at(1));
+  RawStr name = Str::cast(ObjectArray::cast(result)->at(1));
   EXPECT_TRUE(name->equalsCStr("__sub__"));
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
   EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
@@ -129,13 +129,13 @@ right = C()
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
   Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
-  Object* result = Interpreter::binaryOperation(
+  RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
   ASSERT_TRUE(ObjectArray::cast(result)->at(1)->isStr());
-  Str* name = Str::cast(ObjectArray::cast(result)->at(1));
+  RawStr name = Str::cast(ObjectArray::cast(result)->at(1));
   EXPECT_TRUE(name->equalsCStr("__sub__"));
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
   EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
@@ -166,7 +166,7 @@ right = D()
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
   Handle<Object> d_class(&scope, testing::moduleAt(&runtime, main, "D"));
 
-  Object* result = Interpreter::binaryOperation(
+  RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
@@ -201,7 +201,7 @@ right = D()
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
   Handle<Object> d_class(&scope, testing::moduleAt(&runtime, main, "D"));
 
-  Object* result = Interpreter::binaryOperation(
+  RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
@@ -233,7 +233,7 @@ right = C()
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
   Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
-  Object* result = Interpreter::inplaceOperation(
+  RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
@@ -265,7 +265,7 @@ right = C()
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
   Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
-  Object* result = Interpreter::inplaceOperation(
+  RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
@@ -299,7 +299,7 @@ right = C()
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
   Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
-  Object* result = Interpreter::inplaceOperation(
+  RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
@@ -337,11 +337,11 @@ c20 = C(20)
   Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "c10"));
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "c20"));
 
-  Object* left_lt_right =
+  RawObject left_lt_right =
       Interpreter::compareOperation(thread, frame, CompareOp::LT, left, right);
   EXPECT_EQ(left_lt_right, Bool::trueObj());
 
-  Object* right_lt_left =
+  RawObject right_lt_left =
       Interpreter::compareOperation(thread, frame, CompareOp::LT, right, left);
   EXPECT_EQ(right_lt_left, Bool::falseObj());
 }
@@ -368,17 +368,17 @@ c20 = C(20)
   Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "c10"));
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "c20"));
 
-  Object* left_eq_right =
+  RawObject left_eq_right =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, left, right);
   EXPECT_EQ(left_eq_right, Bool::falseObj());
-  Object* left_ne_right =
+  RawObject left_ne_right =
       Interpreter::compareOperation(thread, frame, CompareOp::NE, left, right);
   EXPECT_EQ(left_ne_right, Bool::trueObj());
 
-  Object* right_eq_left =
+  RawObject right_eq_left =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, left, right);
   EXPECT_EQ(right_eq_left, Bool::falseObj());
-  Object* right_ne_left =
+  RawObject right_ne_left =
       Interpreter::compareOperation(thread, frame, CompareOp::NE, left, right);
   EXPECT_EQ(right_ne_left, Bool::trueObj());
 }
@@ -433,7 +433,7 @@ c = C()
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
 
   // Comparisons where rhs is not a subtype of lhs try lhs.__eq__(rhs) first.
-  Object* a_eq_b =
+  RawObject a_eq_b =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, a, b);
   EXPECT_EQ(a_eq_b, Bool::falseObj());
   Handle<Str> called(&scope, moduleAt(&runtime, main, "called"));
@@ -442,14 +442,14 @@ c = C()
   Handle<Str> called_name(&scope, runtime.newStrFromCStr("called"));
   Handle<Object> none(&scope, NoneType::object());
   runtime.moduleAtPut(main, called_name, none);
-  Object* b_eq_a =
+  RawObject b_eq_a =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, b, a);
   EXPECT_EQ(b_eq_a, Bool::trueObj());
   called = moduleAt(&runtime, main, "called");
   EXPECT_PYSTRING_EQ(*called, "B");
 
   runtime.moduleAtPut(main, called_name, none);
-  Object* c_eq_a =
+  RawObject c_eq_a =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, c, a);
   EXPECT_EQ(c_eq_a, Bool::trueObj());
   called = moduleAt(&runtime, main, "called");
@@ -457,7 +457,7 @@ c = C()
 
   // When rhs is a subtype of lhs, only rhs.__eq__(rhs) is tried.
   runtime.moduleAtPut(main, called_name, none);
-  Object* a_eq_c =
+  RawObject a_eq_c =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, a, c);
   EXPECT_EQ(a_eq_c, Bool::trueObj());
   called = moduleAt(&runtime, main, "called");
@@ -483,9 +483,9 @@ c = 3
   Handle<Object> container(&scope, testing::moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
   Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
-  Object* contains_true =
+  RawObject contains_true =
       Interpreter::sequenceContains(thread, frame, b, container);
-  Object* contains_false =
+  RawObject contains_false =
       Interpreter::sequenceContains(thread, frame, c, container);
   EXPECT_EQ(contains_true, Bool::trueObj());
   EXPECT_EQ(contains_false, Bool::falseObj());
@@ -559,13 +559,13 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   Frame* frame = thread->pushFrame(*code);
 
   // Save starting value stack top
-  Object** value_stack_start = frame->valueStackTop();
+  RawObject* value_stack_start = frame->valueStackTop();
 
   // Push function pointer and argument
   frame->pushValue(*callee);
   frame->pushValue(SmallInt::fromWord(1));
 
-  Object* result = Interpreter::call(thread, frame, 1);
+  RawObject result = Interpreter::call(thread, frame, 1);
 
   // Make sure we got the right result and stack is back where it should be
   EXPECT_EQ(SmallInt::cast(result)->value(), 42);
@@ -613,7 +613,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   Frame* frame = thread->pushFrame(*code);
 
   // Save starting value stack top
-  Object** value_stack_start = frame->valueStackTop();
+  RawObject* value_stack_start = frame->valueStackTop();
 
   // Push function pointer and argument
   Handle<ObjectArray> ex(&scope, runtime.newObjectArray(1));
@@ -621,7 +621,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   frame->pushValue(*callee);
   frame->pushValue(*ex);
 
-  Object* result = Interpreter::callEx(thread, frame, 0);
+  RawObject result = Interpreter::callEx(thread, frame, 0);
 
   // Make sure we got the right result and stack is back where it should be
   EXPECT_EQ(SmallInt::cast(result)->value(), 42);
@@ -673,7 +673,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   Frame* frame = thread->pushFrame(*code);
 
   // Save starting value stack top
-  Object** value_stack_start = frame->valueStackTop();
+  RawObject* value_stack_start = frame->valueStackTop();
 
   // Push function pointer and argument
   Handle<ObjectArray> arg_names(&scope, runtime.newObjectArray(1));
@@ -682,7 +682,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   frame->pushValue(SmallInt::fromWord(4));
   frame->pushValue(*arg_names);
 
-  Object* result = Interpreter::callKw(thread, frame, 1);
+  RawObject result = Interpreter::callKw(thread, frame, 1);
 
   // Make sure we got the right result and stack is back where it should be
   EXPECT_EQ(SmallInt::cast(result)->value(), 42);
@@ -884,7 +884,7 @@ sys.displayhook = my_displayhook
                            LOAD_CONST, 1, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  Object* result = Thread::currentThread()->run(*code);
+  RawObject result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isNoneType());
 
   Handle<Module> sys(&scope, testing::findModule(&runtime, "sys"));
@@ -1009,7 +1009,7 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
       POP_BLOCK,  0, RETURN_VALUE, 0,
   };
   code->setCode(runtime.newBytesWithAll(bc));
-  Object* result = Thread::currentThread()->run(*code);
+  RawObject result = Thread::currentThread()->run(*code);
   EXPECT_EQ(result, SmallInt::fromWord(42));
 }
 

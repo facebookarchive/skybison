@@ -7,7 +7,7 @@
 
 namespace python {
 
-Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs);
-Object* builtinSuperNew(Thread* thread, Frame* frame, word nargs);
+RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs);
+RawObject builtinSuperNew(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

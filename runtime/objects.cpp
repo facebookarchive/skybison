@@ -8,12 +8,12 @@ namespace python {
 
 // SmallStr
 
-Object* SmallStr::fromCStr(const char* value) {
+RawObject SmallStr::fromCStr(const char* value) {
   word len = strlen(value);
   return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));
 }
 
-Object* SmallStr::fromBytes(View<byte> data) {
+RawObject SmallStr::fromBytes(View<byte> data) {
   word length = data.length();
   DCHECK_BOUND(length, kMaxLength);
   word result = 0;
@@ -22,7 +22,7 @@ Object* SmallStr::fromBytes(View<byte> data) {
     result = (result << kBitsPerByte) | data.get(i);
   }
   result = (result << kBitsPerByte) | (length << kTagSize) | kTag;
-  return reinterpret_cast<SmallStr*>(result);
+  return reinterpret_cast<RawSmallStr>(result);
 }
 
 char* SmallStr::toCStr() {
@@ -41,7 +41,7 @@ const word SmallInt::kMaxValue;
 
 // LargeStr
 
-bool LargeStr::equals(Object* that) {
+bool LargeStr::equals(RawObject that) {
   if (this == that) {
     return true;
   }
@@ -182,24 +182,24 @@ word Slice::adjustIndices(word length, word* start, word* stop, word step) {
   return 0;
 }
 
-void WeakRef::enqueueReference(Object* reference, Object** tail) {
+void WeakRef::enqueueReference(RawObject reference, RawObject* tail) {
   if (*tail == NoneType::object()) {
     WeakRef::cast(reference)->setLink(reference);
   } else {
-    Object* head = WeakRef::cast(*tail)->link();
+    RawObject head = WeakRef::cast(*tail)->link();
     WeakRef::cast(*tail)->setLink(reference);
     WeakRef::cast(reference)->setLink(head);
   }
   *tail = reference;
 }
 
-Object* WeakRef::dequeueReference(Object** tail) {
+RawObject WeakRef::dequeueReference(RawObject* tail) {
   DCHECK(*tail != NoneType::object(), "empty queue");
-  Object* head = WeakRef::cast(*tail)->link();
+  RawObject head = WeakRef::cast(*tail)->link();
   if (head == *tail) {
     *tail = NoneType::object();
   } else {
-    Object* next = WeakRef::cast(head)->link();
+    RawObject next = WeakRef::cast(head)->link();
     WeakRef::cast(*tail)->setLink(next);
   }
   WeakRef::cast(head)->setLink(NoneType::object());
@@ -207,7 +207,7 @@ Object* WeakRef::dequeueReference(Object** tail) {
 }
 
 // Append tail2 to tail1 and return the new tail.
-Object* WeakRef::spliceQueue(Object* tail1, Object* tail2) {
+RawObject WeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
   if (tail1 == NoneType::object() && tail2 == NoneType::object()) {
     return NoneType::object();
   }
@@ -218,25 +218,25 @@ Object* WeakRef::spliceQueue(Object* tail1, Object* tail2) {
     return tail1;
   }
   // merge two list, tail1 -> head2 -> ... -> tail2 -> head1
-  Object* head1 = WeakRef::cast(tail1)->link();
-  Object* head2 = WeakRef::cast(tail2)->link();
+  RawObject head1 = WeakRef::cast(tail1)->link();
+  RawObject head2 = WeakRef::cast(tail2)->link();
   WeakRef::cast(tail1)->setLink(head2);
   WeakRef::cast(tail2)->setLink(head1);
   return tail2;
 }
 
-Type* Type::cast(Object* object) {
+RawType Type::cast(RawObject object) {
   DCHECK(object->isType() ||
              Thread::currentThread()->runtime()->isInstanceOfClass(object),
          "invalid cast, expected class");
-  return bit_cast<Type*>(object);
+  return bit_cast<RawType>(object);
 }
 
-List* List::cast(Object* object) {
+RawList List::cast(RawObject object) {
   DCHECK(object->isList() ||
              Thread::currentThread()->runtime()->isInstanceOfList(object),
          "invalid cast, expected list");
-  return bit_cast<List*>(object);
+  return bit_cast<RawList>(object);
 }
 
 }  // namespace python

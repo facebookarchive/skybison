@@ -26,7 +26,7 @@ void TupleBuiltins::initialize(Runtime* runtime) {
   type->setFlag(Type::Flag::kTupleSubclass);
 }
 
-Object* TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -44,7 +44,7 @@ Object* TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     for (word i = 0; i < length; i++) {
       left = self->at(i);
       right = other->at(i);
-      Object* result =
+      RawObject result =
           Interpreter::compareOperation(thread, frame, EQ, left, right);
       if (result == Bool::falseObj()) {
         return result;
@@ -56,7 +56,8 @@ Object* TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* TupleBuiltins::slice(Thread* thread, ObjectArray* tuple, Slice* slice) {
+RawObject TupleBuiltins::slice(Thread* thread, RawObjectArray tuple,
+                               RawSlice slice) {
   word start, stop, step;
   slice->unpack(&start, &stop, &step);
   word length = Slice::adjustIndices(tuple->length(), &start, &stop, step);
@@ -72,7 +73,8 @@ Object* TupleBuiltins::slice(Thread* thread, ObjectArray* tuple, Slice* slice) {
   return *items;
 }
 
-Object* TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
+RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
+                                       word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -81,7 +83,7 @@ Object* TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> self(&scope, args.get(0));
   if (self->isObjectArray()) {
     Handle<ObjectArray> tuple(&scope, *self);
-    Object* index = args.get(1);
+    RawObject index = args.get(1);
     if (index->isSmallInt()) {
       word idx = SmallInt::cast(index)->value();
       if (idx < 0) {
@@ -104,7 +106,7 @@ Object* TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
       "argument");
 }
 
-Object* TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr(
         "tuple.__len__ takes exactly 1 argument");
@@ -120,7 +122,7 @@ Object* TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInt(self->length());
 }
 
-Object* TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
         "descriptor '__mul__' of 'tuple' object needs an argument");
@@ -167,7 +169,7 @@ Object* TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   return *new_tuple;
 }
 
-Object* TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
     return thread->raiseTypeErrorWithCStr(
         "tuple.__new__(): not enough arguments");
@@ -254,7 +256,7 @@ Object* TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return *new_tuple;
 }
 
-Object* TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
@@ -283,8 +285,8 @@ void TupleIteratorBuiltins::initialize(Runtime* runtime) {
                                        LayoutId::kObject, kMethods));
 }
 
-Object* TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                            word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
@@ -299,8 +301,8 @@ Object* TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-Object* TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                            word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
   }
@@ -319,8 +321,8 @@ Object* TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-Object* TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
+                                                  word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr(
         "__length_hint__() takes no arguments");

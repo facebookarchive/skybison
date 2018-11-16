@@ -9,11 +9,11 @@ class ObjectBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderHash(Thread*, Frame*, word);
-  static Object* dunderInit(Thread*, Frame*, word);
-  static Object* dunderNew(Thread*, Frame*, word);
-  static Object* dunderNewKw(Thread*, Frame*, word);
-  static Object* dunderRepr(Thread*, Frame*, word);
+  static RawObject dunderHash(Thread*, Frame*, word);
+  static RawObject dunderInit(Thread*, Frame*, word);
+  static RawObject dunderNew(Thread*, Frame*, word);
+  static RawObject dunderNewKw(Thread*, Frame*, word);
+  static RawObject dunderRepr(Thread*, Frame*, word);
 
  private:
   static const BuiltinMethod kMethods[];
@@ -25,7 +25,7 @@ class NoneBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderNew(Thread*, Frame*, word);
+  static RawObject dunderNew(Thread*, Frame*, word);
 
  private:
   static const BuiltinMethod kMethods[];

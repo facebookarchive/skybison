@@ -68,7 +68,7 @@ PY_EXPORT PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
   }
   Handle<Dict> dict(&scope, *dictobj);
   Handle<Object> key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
-  Object* value = runtime->dictAt(dict, key_obj);
+  RawObject value = runtime->dictAt(dict, key_obj);
   if (value->isError()) {
     return nullptr;
   }

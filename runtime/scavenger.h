@@ -13,7 +13,7 @@ class ScavengeVisitor : public PointerVisitor {
  public:
   explicit ScavengeVisitor(Scavenger* scavenger) : scavenger_(scavenger) {}
 
-  void visitPointer(Object** pointer) override;
+  void visitPointer(RawObject* pointer) override;
 
  private:
   Scavenger* scavenger_;
@@ -28,14 +28,14 @@ class Scavenger {
 
   ScavengeVisitor* visitor() { return &visitor_; }
 
-  Object* scavenge();
+  RawObject scavenge();
 
-  void scavengePointer(Object** pointer);
+  void scavengePointer(RawObject* pointer);
 
  private:
-  Object* transport(Object* old_object);
+  RawObject transport(RawObject old_object);
 
-  bool hasWhiteReferent(Object* reference);
+  bool hasWhiteReferent(RawObject reference);
 
   void processDelayedReferences();
 
@@ -47,8 +47,8 @@ class Scavenger {
   Runtime* runtime_;
   Space* from_;
   Space* to_;
-  Object* delayed_references_;
-  Object* delayed_callbacks_;
+  RawObject delayed_references_;
+  RawObject delayed_callbacks_;
 
   DISALLOW_COPY_AND_ASSIGN(Scavenger);
 };

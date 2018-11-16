@@ -68,7 +68,7 @@ b_len_implicit = b.__len__()
 }
 
 // Equivalent to evaluating "tuple(range(start, stop))" in Python
-static Object* tupleFromRange(word start, word stop) {
+static RawObject tupleFromRange(word start, word stop) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Handle<ObjectArray> result(&scope,

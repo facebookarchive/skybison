@@ -18,7 +18,7 @@ static word allocationSize() {
   return T::kSize + Header::kSize;
 }
 
-Object* Heap::allocate(word size, word offset) {
+RawObject Heap::allocate(word size, word offset) {
   DCHECK(size >= HeapObject::kMinimumSize, "allocation %ld too small", size);
   DCHECK(Utils::isAligned(size, kPointerSize), "request %ld not aligned", size);
   // Try allocating.  If the allocation fails, invoke the garbage collector and
@@ -44,11 +44,11 @@ bool Heap::contains(void* address) {
 bool Heap::verify() {
   uword scan = space_->start();
   while (scan < space_->fill()) {
-    if (!(*reinterpret_cast<Object**>(scan))->isHeader()) {
+    if (!(*reinterpret_cast<RawObject*>(scan))->isHeader()) {
       // Skip immediate values for alignment padding or header overflow.
       scan += kPointerSize;
     } else {
-      HeapObject* object = HeapObject::fromAddress(scan + Header::kSize);
+      RawHeapObject object = HeapObject::fromAddress(scan + Header::kSize);
       // Objects start before the start of the space they are allocated in.
       if (object->baseAddress() < space_->start()) {
         return false;
@@ -71,7 +71,7 @@ bool Heap::verify() {
         scan = end;
       } else {
         for (scan += Header::kSize; scan < end; scan += kPointerSize) {
-          auto pointer = reinterpret_cast<Object**>(scan);
+          auto pointer = reinterpret_cast<RawObject*>(scan);
           if ((*pointer)->isHeapObject()) {
             if (!space_->isAllocated(HeapObject::cast(*pointer)->address())) {
               return false;
@@ -84,30 +84,30 @@ bool Heap::verify() {
   return true;
 }
 
-Object* Heap::createBytes(word length) {
+RawObject Heap::createBytes(word length) {
   word size = Bytes::allocationSize(length);
-  Object* raw = allocate(size, Bytes::headerSize(length));
+  RawObject raw = allocate(size, Bytes::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Bytes*>(raw);
+  auto result = reinterpret_cast<RawBytes>(raw);
   result->setHeaderAndOverflow(length, 0, LayoutId::kBytes,
                                ObjectFormat::kDataArray8);
   return Bytes::cast(result);
 }
 
-Object* Heap::createClass(LayoutId metaclass_id) {
-  Object* raw = allocate(allocationSize<Type>(), Header::kSize);
+RawObject Heap::createClass(LayoutId metaclass_id) {
+  RawObject raw = allocate(allocationSize<Type>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Type*>(raw);
+  auto result = reinterpret_cast<RawType>(raw);
   result->setHeader(Header::from(Type::kSize / kPointerSize, 0, metaclass_id,
                                  ObjectFormat::kObjectInstance));
   result->initialize(Type::kSize, NoneType::object());
   return Type::cast(result);
 }
 
-Object* Heap::createComplex(double real, double imag) {
-  Object* raw = allocate(allocationSize<Complex>(), Header::kSize);
+RawObject Heap::createComplex(double real, double imag) {
+  RawObject raw = allocate(allocationSize<Complex>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Complex*>(raw);
+  auto result = reinterpret_cast<RawComplex>(raw);
   result->setHeader(Header::from(Complex::kSize / kPointerSize, 0,
                                  LayoutId::kComplex,
                                  ObjectFormat::kDataInstance));
@@ -115,10 +115,10 @@ Object* Heap::createComplex(double real, double imag) {
   return Complex::cast(result);
 }
 
-Object* Heap::createFloat(double value) {
-  Object* raw = allocate(allocationSize<Float>(), Header::kSize);
+RawObject Heap::createFloat(double value) {
+  RawObject raw = allocate(allocationSize<Float>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Float*>(raw);
+  auto result = reinterpret_cast<RawFloat>(raw);
   result->setHeader(Header::from(Float::kSize / kPointerSize, 0,
                                  LayoutId::kFloat,
                                  ObjectFormat::kDataInstance));
@@ -126,54 +126,54 @@ Object* Heap::createFloat(double value) {
   return Float::cast(result);
 }
 
-Object* Heap::createEllipsis() {
-  Object* raw = allocate(allocationSize<Ellipsis>(), Header::kSize);
+RawObject Heap::createEllipsis() {
+  RawObject raw = allocate(allocationSize<Ellipsis>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Ellipsis*>(raw);
+  auto result = reinterpret_cast<RawEllipsis>(raw);
   result->setHeader(Header::from(Ellipsis::kSize / kPointerSize, 0,
                                  LayoutId::kEllipsis,
                                  ObjectFormat::kDataInstance));
   return Ellipsis::cast(result);
 }
 
-Object* Heap::createInstance(LayoutId layout_id, word num_attributes) {
+RawObject Heap::createInstance(LayoutId layout_id, word num_attributes) {
   word size = Instance::allocationSize(num_attributes);
-  Object* raw = allocate(size, HeapObject::headerSize(num_attributes));
+  RawObject raw = allocate(size, HeapObject::headerSize(num_attributes));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Instance*>(raw);
+  auto result = reinterpret_cast<RawInstance>(raw);
   result->setHeader(Header::from(num_attributes, 0, layout_id,
                                  ObjectFormat::kObjectInstance));
   result->initialize(num_attributes * kPointerSize, NoneType::object());
   return result;
 }
 
-Object* Heap::createLargeInt(word num_digits) {
+RawObject Heap::createLargeInt(word num_digits) {
   DCHECK(num_digits > 0, "num_digits must be positive");
   word size = LargeInt::allocationSize(num_digits);
-  Object* raw = allocate(size, LargeInt::headerSize(num_digits));
+  RawObject raw = allocate(size, LargeInt::headerSize(num_digits));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<LargeInt*>(raw);
+  auto result = reinterpret_cast<RawLargeInt>(raw);
   result->setHeader(Header::from(num_digits, 0, LayoutId::kLargeInt,
                                  ObjectFormat::kDataArray64));
   return LargeInt::cast(result);
 }
 
-Object* Heap::createLargeStr(word length) {
+RawObject Heap::createLargeStr(word length) {
   DCHECK(length > SmallStr::kMaxLength,
          "string len %ld is too small to be a large string", length);
   word size = LargeStr::allocationSize(length);
-  Object* raw = allocate(size, LargeStr::headerSize(length));
+  RawObject raw = allocate(size, LargeStr::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<LargeStr*>(raw);
+  auto result = reinterpret_cast<RawLargeStr>(raw);
   result->setHeaderAndOverflow(length, 0, LayoutId::kLargeStr,
                                ObjectFormat::kDataArray8);
   return LargeStr::cast(result);
 }
 
-Object* Heap::createLayout(LayoutId layout_id) {
-  Object* raw = allocate(allocationSize<Layout>(), Header::kSize);
+RawObject Heap::createLayout(LayoutId layout_id) {
+  RawObject raw = allocate(allocationSize<Layout>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Layout*>(raw);
+  auto result = reinterpret_cast<RawLayout>(raw);
   result->setHeader(
       Header::from(Layout::kSize / kPointerSize, static_cast<word>(layout_id),
                    LayoutId::kLayout, ObjectFormat::kObjectInstance));
@@ -181,22 +181,22 @@ Object* Heap::createLayout(LayoutId layout_id) {
   return Layout::cast(result);
 }
 
-Object* Heap::createObjectArray(word length, Object* value) {
+RawObject Heap::createObjectArray(word length, RawObject value) {
   DCHECK(!value->isHeapObject(), "value must be an immediate object");
   word size = ObjectArray::allocationSize(length);
-  Object* raw = allocate(size, HeapObject::headerSize(length));
+  RawObject raw = allocate(size, HeapObject::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<ObjectArray*>(raw);
+  auto result = reinterpret_cast<RawObjectArray>(raw);
   result->setHeaderAndOverflow(length, 0, LayoutId::kObjectArray,
                                ObjectFormat::kObjectArray);
   result->initialize(size, value);
   return ObjectArray::cast(result);
 }
 
-Object* Heap::createRange() {
-  Object* raw = allocate(allocationSize<Range>(), Header::kSize);
+RawObject Heap::createRange() {
+  RawObject raw = allocate(allocationSize<Range>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Range*>(raw);
+  auto result = reinterpret_cast<RawRange>(raw);
   result->setHeader(Header::from(Range::kSize / kPointerSize, 0,
                                  LayoutId::kRange,
                                  ObjectFormat::kDataInstance));

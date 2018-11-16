@@ -18,7 +18,7 @@ namespace python {
 std::ostream* builtInStdout = &std::cout;
 std::ostream* builtinStderr = &std::cerr;
 
-Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -60,7 +60,7 @@ Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call(thread, frame, 4);
 }
 
-Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   KwArguments args(frame, nargs);
@@ -135,7 +135,7 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call(thread, frame, 4);
 }
 
-Object* builtinCallable(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinCallable(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("callable expects one argument");
   }
@@ -156,12 +156,12 @@ Object* builtinCallable(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(!callable->isError());
 }
 
-Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
+RawObject builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("Unexpected 1 argumment in 'chr'");
   }
   Arguments args(frame_frame, nargs);
-  Object* arg = args.get(0);
+  RawObject arg = args.get(0);
   if (!arg->isSmallInt()) {
     return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'chr'");
   }
@@ -173,7 +173,7 @@ Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is
 // actually far more complicated than one might expect. This is enough to get
 // richards working.
-Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("isinstance expected 2 arguments");
   }
@@ -192,7 +192,7 @@ Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
   return runtime->isInstance(obj, type);
 }
 
-Object* builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("issubclass expected 2 arguments");
   }
@@ -234,7 +234,7 @@ Object* builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
   return Bool::falseObj();
 }
 
-Object* builtinLen(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("len() takes exactly one argument");
   }
@@ -249,12 +249,12 @@ Object* builtinLen(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::callMethod1(thread, frame, method, self);
 }
 
-Object* builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
+RawObject builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("Unexpected 1 argumment in 'ord'");
   }
   Arguments args(frame_frame, nargs);
-  Object* arg = args.get(0);
+  RawObject arg = args.get(0);
   if (!arg->isStr()) {
     return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'ord'");
   }
@@ -266,13 +266,13 @@ Object* builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
   return SmallInt::fromWord(str->charAt(0));
 }
 
-static void printStr(Str* str, std::ostream* ostream) {
+static void printStr(RawStr str, std::ostream* ostream) {
   for (word i = 0; i < str->length(); i++) {
     *ostream << str->charAt(i);
   }
 }
 
-static void printQuotedStr(Str* str, std::ostream* ostream) {
+static void printQuotedStr(RawStr str, std::ostream* ostream) {
   *ostream << "'";
   for (word i = 0; i < str->length(); i++) {
     *ostream << str->charAt(i);
@@ -281,7 +281,7 @@ static void printQuotedStr(Str* str, std::ostream* ostream) {
 }
 
 // Print a scalar value to ostream.
-static void printScalarTypes(Object* arg, std::ostream* ostream) {
+static void printScalarTypes(RawObject arg, std::ostream* ostream) {
   if (arg->isBool()) {
     *ostream << (Bool::cast(arg)->value() ? "True" : "False");
   } else if (arg->isFloat()) {
@@ -296,7 +296,7 @@ static void printScalarTypes(Object* arg, std::ostream* ostream) {
 }
 
 // Print a scalar value to ostream, quoting it if it's a string.
-static void printQuotedScalarTypes(Object* arg, std::ostream* ostream) {
+static void printQuotedScalarTypes(RawObject arg, std::ostream* ostream) {
   if (arg->isStr()) {
     printQuotedStr(Str::cast(arg), ostream);
   } else {
@@ -304,20 +304,20 @@ static void printQuotedScalarTypes(Object* arg, std::ostream* ostream) {
   }
 }
 
-static bool supportedScalarType(Object* arg) {
+static bool supportedScalarType(RawObject arg) {
   return (arg->isBool() || arg->isFloat() || arg->isSmallInt() || arg->isStr());
 }
 
 // NB: The print functions do not represent the final state of builtin functions
 // and should not be emulated when creating new builtins. They are minimal
 // implementations intended to get the Richards & Pystone benchmark working.
-static Object* doBuiltinPrint(const Arguments& args, word nargs,
-                              const Handle<Object>& end,
-                              std::ostream* ostream) {
+static RawObject doBuiltinPrint(const Arguments& args, word nargs,
+                                const Handle<Object>& end,
+                                std::ostream* ostream) {
   const char separator = ' ';
 
   for (word i = 0; i < nargs; i++) {
-    Object* arg = args.get(i);
+    RawObject arg = args.get(i);
     if (supportedScalarType(arg)) {
       printScalarTypes(arg, ostream);
     } else if (arg->isList()) {
@@ -398,14 +398,14 @@ static Object* doBuiltinPrint(const Arguments& args, word nargs,
   return NoneType::object();
 }
 
-Object* builtinPrint(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinPrint(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Handle<Object> end(&scope, NoneType::object());
   Arguments args(frame, nargs);
   return doBuiltinPrint(args, nargs, end, builtInStdout);
 }
 
-Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   KwArguments kw_args(frame, nargs);
   HandleScope scope(thread);
   if (kw_args.numKeywords() > 2) {
@@ -414,7 +414,7 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   }
 
   Runtime* runtime = thread->runtime();
-  Object* end = NoneType::object();
+  RawObject end = NoneType::object();
   std::ostream* ostream = builtInStdout;
 
   Handle<Object> file_arg(&scope, kw_args.getKw(runtime->symbols()->File()));
@@ -454,7 +454,7 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
                         ostream);
 }
 
-Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinRange(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1 || nargs > 3) {
     return thread->raiseTypeErrorWithCStr(
         "Incorrect number of arguments to range()");
@@ -492,7 +492,7 @@ Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newRange(start, stop, step);
 }
 
-Object* builtinRepr(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("repr() takes exactly one argument");
   }
@@ -506,7 +506,7 @@ Object* builtinRepr(Thread* thread, Frame* frame, word nargs) {
   CHECK(!method->isError(),
         "__repr__ doesn't exist for this object, which is impossible since "
         "object has a __repr__, and everything descends from object");
-  Object* ret = Interpreter::callMethod1(thread, frame, method, obj);
+  RawObject ret = Interpreter::callMethod1(thread, frame, method, obj);
   if (!ret->isStr() && !ret->isError()) {
     // TODO(T31744782): Change this to allow subtypes of string.
     // If __repr__ doesn't return a string or error, throw a type error
@@ -515,7 +515,7 @@ Object* builtinRepr(Thread* thread, Frame* frame, word nargs) {
   return ret;
 }
 
-Object* builtinGetattr(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinGetattr(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2 || nargs > 3) {
     return thread->raiseTypeErrorWithCStr("getattr expected 2 or 3 arguments.");
   }
@@ -537,7 +537,7 @@ Object* builtinGetattr(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-Object* builtinHasattr(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinHasattr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("hasattr expected 2 arguments.");
   }
@@ -559,7 +559,7 @@ Object* builtinHasattr(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-Object* builtinSetattr(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinSetattr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr("setattr expected 3 arguments.");
   }

@@ -35,17 +35,17 @@ namespace testing {
 std::string compileAndRunToString(Runtime* runtime, const char* src);
 std::string compileAndRunToStderrString(Runtime* runtime, const char* src);
 
-// A predicate-formatter for checking if a python::Str* has the same contents
+// A predicate-formatter for checking if a python::RawStr has the same contents
 // as a std::string
 ::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
                                                const char* expected_string_expr,
-                                               Str* actual_str,
+                                               RawStr actual_str,
                                                std::string expected_string);
 
 ::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
                                                const char* expected_string_expr,
-                                               Str* actual_str,
-                                               Str* expected_str);
+                                               RawStr actual_str,
+                                               RawStr expected_str);
 
 #define EXPECT_PYSTRING_EQ(s1, s2)                                             \
   EXPECT_PRED_FORMAT2(testing::AssertPyStringEqual, s1, s2)
@@ -65,27 +65,27 @@ std::string callFunctionToString(const Handle<Function>& func,
 // pushes all the arguments onto the stack, and invokes the interpreter.
 //
 // The caller is responsible for cleaning up any exception state.
-Object* callFunction(const Handle<Function>& func,
-                     const Handle<ObjectArray>& args);
+RawObject callFunction(const Handle<Function>& func,
+                       const Handle<ObjectArray>& args);
 
 bool objectArrayContains(const Handle<ObjectArray>& object_array,
                          const Handle<Object>& key);
 
 // Get the module bound to name in the given runtime. Returns Error::object() if
 // not found.
-Object* findModule(Runtime* runtime, const char* name);
+RawObject findModule(Runtime* runtime, const char* name);
 
 // Get the value bound to name in the supplied module. Returns Error::object()
 // if not found.
-Object* moduleAt(Runtime* runtime, const Handle<Module>& module,
-                 const char* name);
+RawObject moduleAt(Runtime* runtime, const Handle<Module>& module,
+                   const char* name);
 
 // Variant of moduleAt() that looks up the module and name at the same time,
 // returning Error::object() if either can't be found.
-Object* moduleAt(Runtime* runtime, const char* module_name, const char* name);
+RawObject moduleAt(Runtime* runtime, const char* module_name, const char* name);
 
 // Get the name of the type of the given object.
-std::string typeName(Runtime* runtime, Object* obj);
+std::string typeName(Runtime* runtime, RawObject obj);
 
 }  // namespace testing
 }  // namespace python

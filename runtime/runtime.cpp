@@ -118,8 +118,8 @@ Runtime::~Runtime() {
   delete symbols_;
 }
 
-Object* Runtime::newBoundMethod(const Handle<Object>& function,
-                                const Handle<Object>& self) {
+RawObject Runtime::newBoundMethod(const Handle<Object>& function,
+                                  const Handle<Object>& self) {
   HandleScope scope;
   Handle<BoundMethod> bound_method(&scope, heap()->create<BoundMethod>());
   bound_method->setFunction(*function);
@@ -127,7 +127,7 @@ Object* Runtime::newBoundMethod(const Handle<Object>& function,
   return *bound_method;
 }
 
-Object* Runtime::newLayout() {
+RawObject Runtime::newLayout() {
   HandleScope scope;
   Handle<Layout> layout(&scope, heap()->createLayout(LayoutId::kError));
   layout->setInObjectAttributes(empty_object_array_);
@@ -138,7 +138,7 @@ Object* Runtime::newLayout() {
   return *layout;
 }
 
-Object* Runtime::layoutCreateSubclassWithBuiltins(
+RawObject Runtime::layoutCreateSubclassWithBuiltins(
     LayoutId subclass_id, LayoutId superclass_id,
     View<BuiltinAttribute> attributes) {
   HandleScope scope;
@@ -195,30 +195,30 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
   }
 }
 
-Object* Runtime::addEmptyBuiltinClass(SymbolId name, LayoutId subclass_id,
-                                      LayoutId superclass_id) {
+RawObject Runtime::addEmptyBuiltinClass(SymbolId name, LayoutId subclass_id,
+                                        LayoutId superclass_id) {
   return addBuiltinClass(name, subclass_id, superclass_id,
                          View<BuiltinAttribute>(nullptr, 0));
 }
 
-Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                                 LayoutId superclass_id,
-                                 View<BuiltinAttribute> attributes) {
+RawObject Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                                   LayoutId superclass_id,
+                                   View<BuiltinAttribute> attributes) {
   return addBuiltinClass(name, subclass_id, superclass_id, attributes,
                          View<BuiltinMethod>(nullptr, 0));
 }
 
-Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                                 LayoutId superclass_id,
-                                 View<BuiltinMethod> methods) {
+RawObject Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                                   LayoutId superclass_id,
+                                   View<BuiltinMethod> methods) {
   return addBuiltinClass(name, subclass_id, superclass_id,
                          View<BuiltinAttribute>(nullptr, 0), methods);
 }
 
-Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                                 LayoutId superclass_id,
-                                 View<BuiltinAttribute> attributes,
-                                 View<BuiltinMethod> methods) {
+RawObject Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                                   LayoutId superclass_id,
+                                   View<BuiltinAttribute> attributes,
+                                   View<BuiltinMethod> methods) {
   HandleScope scope;
 
   // Create a class object for the subclass
@@ -251,30 +251,30 @@ Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
   return *subclass;
 }
 
-Object* Runtime::newBytes(word length, byte fill) {
+RawObject Runtime::newBytes(word length, byte fill) {
   DCHECK(length >= 0, "invalid length %ld", length);
   if (length == 0) {
     return empty_byte_array_;
   }
-  Object* result = heap()->createBytes(length);
+  RawObject result = heap()->createBytes(length);
   byte* dst = reinterpret_cast<byte*>(Bytes::cast(result)->address());
   std::memset(dst, fill, length);
   return result;
 }
 
-Object* Runtime::newBytesWithAll(View<byte> array) {
+RawObject Runtime::newBytesWithAll(View<byte> array) {
   if (array.length() == 0) {
     return empty_byte_array_;
   }
-  Object* result = heap()->createBytes(array.length());
+  RawObject result = heap()->createBytes(array.length());
   byte* dst = reinterpret_cast<byte*>(Bytes::cast(result)->address());
   std::memcpy(dst, array.data(), array.length());
   return result;
 }
 
-Object* Runtime::newClass() { return newClassWithMetaclass(LayoutId::kType); }
+RawObject Runtime::newClass() { return newClassWithMetaclass(LayoutId::kType); }
 
-Object* Runtime::newClassWithMetaclass(LayoutId metaclass_id) {
+RawObject Runtime::newClassWithMetaclass(LayoutId metaclass_id) {
   HandleScope scope;
   Handle<Type> result(&scope, heap()->createClass(metaclass_id));
   Handle<Dict> dict(&scope, newDict());
@@ -283,8 +283,8 @@ Object* Runtime::newClassWithMetaclass(LayoutId metaclass_id) {
   return *result;
 }
 
-Object* Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
-                              const Handle<Object>& name) {
+RawObject Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
+                                const Handle<Object>& name) {
   DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
   Handle<Type> klass(&scope, *receiver);
@@ -330,9 +330,9 @@ Object* Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
   return thread->raiseAttributeErrorWithCStr("missing attribute");
 }
 
-Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
-                              const Handle<Object>& name,
-                              const Handle<Object>& value) {
+RawObject Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
+                                const Handle<Object>& name,
+                                const Handle<Object>& value) {
   DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
   Handle<Type> klass(&scope, *receiver);
@@ -361,8 +361,8 @@ Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
   return NoneType::object();
 }
 
-Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
-                              const Handle<Object>& name) {
+RawObject Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
+                                const Handle<Object>& name) {
   if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
@@ -402,8 +402,9 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
 }
 
 // Generic attribute lookup code used for instance objects
-Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
-                                 const Handle<Object>& name) {
+RawObject Runtime::instanceGetAttr(Thread* thread,
+                                   const Handle<Object>& receiver,
+                                   const Handle<Object>& name) {
   DCHECK(name->isStr(), "Name is not a string");
   if (Str::cast(*name)->equals(symbols()->DunderClass())) {
     // TODO(T27735822): Make __class__ a descriptor
@@ -425,7 +426,7 @@ Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
   // No data descriptor found on the class, look at the instance.
   if (receiver->isHeapObject()) {
     Handle<HeapObject> instance(&scope, *receiver);
-    Object* result = thread->runtime()->instanceAt(thread, instance, name);
+    RawObject result = thread->runtime()->instanceAt(thread, instance, name);
     if (!result->isError()) {
       return result;
     }
@@ -449,9 +450,10 @@ Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
   return thread->raiseAttributeErrorWithCStr("missing attribute");
 }
 
-Object* Runtime::instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
-                                 const Handle<Object>& name,
-                                 const Handle<Object>& value) {
+RawObject Runtime::instanceSetAttr(Thread* thread,
+                                   const Handle<Object>& receiver,
+                                   const Handle<Object>& name,
+                                   const Handle<Object>& value) {
   DCHECK(name->isStr(), "Name is not a string");
   // Check for a data descriptor
   HandleScope scope(thread);
@@ -469,8 +471,9 @@ Object* Runtime::instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
   return thread->runtime()->instanceAtPut(thread, instance, name, value);
 }
 
-Object* Runtime::instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
-                                 const Handle<Object>& name) {
+RawObject Runtime::instanceDelAttr(Thread* thread,
+                                   const Handle<Object>& receiver,
+                                   const Handle<Object>& name) {
   if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
@@ -502,8 +505,8 @@ Object* Runtime::instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
 
 // Note that PEP 562 adds support for data descriptors in module objects.
 // We are targeting python 3.6 for now, so we won't worry about that.
-Object* Runtime::moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
-                               const Handle<Object>& name) {
+RawObject Runtime::moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
+                                 const Handle<Object>& name) {
   DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
   Handle<Module> mod(&scope, *receiver);
@@ -518,9 +521,9 @@ Object* Runtime::moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
   }
 }
 
-Object* Runtime::moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
-                               const Handle<Object>& name,
-                               const Handle<Object>& value) {
+RawObject Runtime::moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
+                                 const Handle<Object>& name,
+                                 const Handle<Object>& value) {
   DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
   Handle<Module> mod(&scope, *receiver);
@@ -528,8 +531,8 @@ Object* Runtime::moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
   return NoneType::object();
 }
 
-Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
-                               const Handle<Object>& name) {
+RawObject Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
+                                 const Handle<Object>& name) {
   if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
@@ -581,7 +584,7 @@ bool Runtime::isDeleteDescriptor(Thread* thread, const Handle<Object>& object) {
   return !lookupSymbolInMro(thread, type, SymbolId::kDunderDelete)->isError();
 }
 
-Object* Runtime::newCode() {
+RawObject Runtime::newCode() {
   HandleScope scope;
   Handle<Code> result(&scope, heap()->create<Code>());
   result->setArgcount(0);
@@ -596,9 +599,9 @@ Object* Runtime::newCode() {
   return *result;
 }
 
-Object* Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
-                                    Function::Entry entry_kw,
-                                    Function::Entry entry_ex) {
+RawObject Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
+                                      Function::Entry entry_kw,
+                                      Function::Entry entry_ex) {
   HandleScope scope;
   Handle<Function> result(&scope, heap()->create<Function>());
   result->setName(symbols()->at(name));
@@ -608,7 +611,7 @@ Object* Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
   return *result;
 }
 
-Object* Runtime::newFunction() {
+RawObject Runtime::newFunction() {
   HandleScope scope;
   Handle<Function> result(&scope, heap()->create<Function>());
   result->setEntry(unimplementedTrampoline);
@@ -617,11 +620,11 @@ Object* Runtime::newFunction() {
   return *result;
 }
 
-Object* Runtime::newCoroutine() { return heap()->create<Coroutine>(); }
+RawObject Runtime::newCoroutine() { return heap()->create<Coroutine>(); }
 
-Object* Runtime::newGenerator() { return heap()->create<Generator>(); }
+RawObject Runtime::newGenerator() { return heap()->create<Generator>(); }
 
-Object* Runtime::newHeapFrame(const Handle<Code>& code) {
+RawObject Runtime::newHeapFrame(const Handle<Code>& code) {
   DCHECK(code->flags() & (Code::GENERATOR | Code::COROUTINE),
          "expected a Generator/Coroutine code object");
 
@@ -636,10 +639,10 @@ Object* Runtime::newHeapFrame(const Handle<Code>& code) {
   return *frame;
 }
 
-Object* Runtime::newInstance(const Handle<Layout>& layout) {
+RawObject Runtime::newInstance(const Handle<Layout>& layout) {
   word num_words = layout->instanceSize();
-  Object* object = heap()->createInstance(layout->id(), num_words);
-  HeapObject* instance = HeapObject::cast(object);
+  RawObject object = heap()->createInstance(layout->id(), num_words);
+  RawHeapObject instance = HeapObject::cast(object);
   // Set the overflow array
   instance->instanceVariableAtPut(layout->overflowOffset(),
                                   empty_object_array_);
@@ -690,7 +693,7 @@ void Runtime::classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
   dictAtPutInValueCell(dict, key, value);
 }
 
-Object* Runtime::newList() {
+RawObject Runtime::newList() {
   HandleScope scope;
   Handle<List> result(&scope, heap()->create<List>());
   result->setAllocated(0);
@@ -698,7 +701,7 @@ Object* Runtime::newList() {
   return *result;
 }
 
-Object* Runtime::newListIterator(const Handle<Object>& list) {
+RawObject Runtime::newListIterator(const Handle<Object>& list) {
   HandleScope scope;
   Handle<ListIterator> list_iterator(&scope, heap()->create<ListIterator>());
   list_iterator->setIndex(0);
@@ -706,7 +709,7 @@ Object* Runtime::newListIterator(const Handle<Object>& list) {
   return *list_iterator;
 }
 
-Object* Runtime::newModule(const Handle<Object>& name) {
+RawObject Runtime::newModule(const Handle<Object>& name) {
   HandleScope scope;
   Handle<Module> result(&scope, heap()->create<Module>());
   Handle<Dict> dict(&scope, newDict());
@@ -718,18 +721,18 @@ Object* Runtime::newModule(const Handle<Object>& name) {
   return *result;
 }
 
-Object* Runtime::newIntFromCPtr(void* ptr) {
+RawObject Runtime::newIntFromCPtr(void* ptr) {
   return newInt(reinterpret_cast<word>(ptr));
 }
 
-Object* Runtime::newObjectArray(word length) {
+RawObject Runtime::newObjectArray(word length) {
   if (length == 0) {
     return empty_object_array_;
   }
   return heap()->createObjectArray(length, NoneType::object());
 }
 
-Object* Runtime::newInt(word value) {
+RawObject Runtime::newInt(word value) {
   if (SmallInt::isValid(value)) {
     return SmallInt::fromWord(value);
   }
@@ -737,7 +740,7 @@ Object* Runtime::newInt(word value) {
   return newIntWithDigits(digit);
 }
 
-Object* Runtime::newIntFromUnsigned(uword value) {
+RawObject Runtime::newIntFromUnsigned(uword value) {
   if (static_cast<word>(value) >= 0 && SmallInt::isValid(value)) {
     return SmallInt::fromWord(value);
   }
@@ -746,15 +749,15 @@ Object* Runtime::newIntFromUnsigned(uword value) {
   return newIntWithDigits(view);
 }
 
-Object* Runtime::newFloat(double value) {
+RawObject Runtime::newFloat(double value) {
   return Float::cast(heap()->createFloat(value));
 }
 
-Object* Runtime::newComplex(double real, double imag) {
+RawObject Runtime::newComplex(double real, double imag) {
   return Complex::cast(heap()->createComplex(real, imag));
 }
 
-Object* Runtime::newIntWithDigits(View<uword> digits) {
+RawObject Runtime::newIntWithDigits(View<uword> digits) {
   if (digits.length() == 0) {
     return SmallInt::fromWord(0);
   }
@@ -773,9 +776,9 @@ Object* Runtime::newIntWithDigits(View<uword> digits) {
   return *result;
 }
 
-Object* Runtime::newProperty(const Handle<Object>& getter,
-                             const Handle<Object>& setter,
-                             const Handle<Object>& deleter) {
+RawObject Runtime::newProperty(const Handle<Object>& getter,
+                               const Handle<Object>& setter,
+                               const Handle<Object>& deleter) {
   HandleScope scope;
   Handle<Property> new_prop(&scope, heap()->create<Property>());
   new_prop->setGetter(*getter);
@@ -784,7 +787,7 @@ Object* Runtime::newProperty(const Handle<Object>& getter,
   return *new_prop;
 }
 
-Object* Runtime::newRange(word start, word stop, word step) {
+RawObject Runtime::newRange(word start, word stop, word step) {
   auto range = Range::cast(heap()->createRange());
   range->setStart(start);
   range->setStop(stop);
@@ -792,23 +795,23 @@ Object* Runtime::newRange(word start, word stop, word step) {
   return range;
 }
 
-Object* Runtime::newRangeIterator(const Handle<Object>& range) {
+RawObject Runtime::newRangeIterator(const Handle<Object>& range) {
   HandleScope scope;
   Handle<RangeIterator> range_iterator(&scope, heap()->create<RangeIterator>());
   range_iterator->setRange(*range);
   return *range_iterator;
 }
 
-Object* Runtime::newSetIterator(const Handle<Object>& set) {
+RawObject Runtime::newSetIterator(const Handle<Object>& set) {
   HandleScope scope;
   Handle<SetIterator> set_iterator(&scope, heap()->create<SetIterator>());
   set_iterator->setSet(*set);
   return *set_iterator;
 }
 
-Object* Runtime::newSlice(const Handle<Object>& start,
-                          const Handle<Object>& stop,
-                          const Handle<Object>& step) {
+RawObject Runtime::newSlice(const Handle<Object>& start,
+                            const Handle<Object>& stop,
+                            const Handle<Object>& step) {
   HandleScope scope;
   Handle<Slice> slice(&scope, heap()->create<Slice>());
   slice->setStart(*start);
@@ -817,15 +820,15 @@ Object* Runtime::newSlice(const Handle<Object>& start,
   return *slice;
 }
 
-Object* Runtime::newStaticMethod() { return heap()->create<StaticMethod>(); }
+RawObject Runtime::newStaticMethod() { return heap()->create<StaticMethod>(); }
 
-Object* Runtime::newStrFromCStr(const char* c_str) {
+RawObject Runtime::newStrFromCStr(const char* c_str) {
   word length = std::strlen(c_str);
   auto data = reinterpret_cast<const byte*>(c_str);
   return newStrWithAll(View<byte>(data, length));
 }
 
-Object* Runtime::newStrFromFormat(const char* fmt, ...) {
+RawObject Runtime::newStrFromFormat(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   int length = std::vsnprintf(nullptr, 0, fmt, args);
@@ -835,17 +838,17 @@ Object* Runtime::newStrFromFormat(const char* fmt, ...) {
   char* buf = new char[length + 1];
   std::vsprintf(buf, fmt, args);
   va_end(args);
-  Object* result = newStrFromCStr(buf);
+  RawObject result = newStrFromCStr(buf);
   delete[] buf;
   return result;
 }
 
-Object* Runtime::newStrWithAll(View<byte> code_units) {
+RawObject Runtime::newStrWithAll(View<byte> code_units) {
   word length = code_units.length();
   if (length <= SmallStr::kMaxLength) {
     return SmallStr::fromBytes(code_units);
   }
-  Object* result = heap()->createLargeStr(length);
+  RawObject result = heap()->createLargeStr(length);
   DCHECK(result != Error::object(), "failed to create large string");
   byte* dst = reinterpret_cast<byte*>(LargeStr::cast(result)->address());
   const byte* src = code_units.data();
@@ -853,14 +856,14 @@ Object* Runtime::newStrWithAll(View<byte> code_units) {
   return result;
 }
 
-Object* Runtime::internStrFromCStr(const char* c_str) {
+RawObject Runtime::internStrFromCStr(const char* c_str) {
   HandleScope scope;
   // TODO(T29648342): Optimize lookup to avoid creating an intermediary Str
   Handle<Object> str(&scope, newStrFromCStr(c_str));
   return internStr(str);
 }
 
-Object* Runtime::internStr(const Handle<Object>& str) {
+RawObject Runtime::internStr(const Handle<Object>& str) {
   HandleScope scope;
   Handle<Set> set(&scope, interned());
   DCHECK(str->isStr(), "not a string");
@@ -871,7 +874,7 @@ Object* Runtime::internStr(const Handle<Object>& str) {
   return setAddWithHash(set, str, key_hash);
 }
 
-Object* Runtime::hash(Object* object) {
+RawObject Runtime::hash(RawObject object) {
   if (!object->isHeapObject()) {
     return immediateHash(object);
   }
@@ -881,7 +884,7 @@ Object* Runtime::hash(Object* object) {
   return identityHash(object);
 }
 
-Object* Runtime::immediateHash(Object* object) {
+RawObject Runtime::immediateHash(RawObject object) {
   if (object->isSmallInt()) {
     return object;
   }
@@ -922,8 +925,8 @@ void Runtime::setArgv(int argc, const char** argv) {
   moduleAddGlobal(sys_module, SymbolId::kArgv, argv_value);
 }
 
-Object* Runtime::identityHash(Object* object) {
-  HeapObject* src = HeapObject::cast(object);
+RawObject Runtime::identityHash(RawObject object) {
+  RawHeapObject src = HeapObject::cast(object);
   word code = src->header()->hashCode();
   if (code == 0) {
     code = random() & Header::kHashCodeMask;
@@ -941,9 +944,9 @@ word Runtime::siphash24(View<byte> array) {
   return result;
 }
 
-Object* Runtime::valueHash(Object* object) {
-  HeapObject* src = HeapObject::cast(object);
-  Header* header = src->header();
+RawObject Runtime::valueHash(RawObject object) {
+  RawHeapObject src = HeapObject::cast(object);
+  RawHeader header = src->header();
   word code = header->hashCode();
   if (code == 0) {
     word size = src->headerCountOrOverflow();
@@ -973,8 +976,8 @@ void Runtime::initializeLayouts() {
   layouts_ = *list;
 }
 
-Object* Runtime::createMro(const Handle<Layout>& subclass_layout,
-                           LayoutId superclass_id) {
+RawObject Runtime::createMro(const Handle<Layout>& subclass_layout,
+                             LayoutId superclass_id) {
   HandleScope scope;
   CHECK(subclass_layout->describedClass()->isType(),
         "subclass layout must have a described class");
@@ -1311,7 +1314,7 @@ void Runtime::initializeStaticMethodClass() {
 
 void Runtime::collectGarbage() {
   bool run_callback = callbacks_ == NoneType::object();
-  Object* cb = Scavenger(this).scavenge();
+  RawObject cb = Scavenger(this).scavenge();
   callbacks_ = WeakRef::spliceQueue(callbacks_, cb);
   if (run_callback) {
     processCallbacks();
@@ -1331,22 +1334,22 @@ void Runtime::processCallbacks() {
   }
 }
 
-Object* Runtime::run(const char* buffer) {
+RawObject Runtime::run(const char* buffer) {
   HandleScope scope;
 
   Handle<Module> main(&scope, createMainModule());
   return executeModule(buffer, main);
 }
 
-Object* Runtime::runFromCStr(const char* c_str) {
+RawObject Runtime::runFromCStr(const char* c_str) {
   const char* buffer = compile(c_str);
-  Object* result = run(buffer);
+  RawObject result = run(buffer);
   delete[] buffer;
   return result;
 }
 
-Object* Runtime::executeModule(const char* buffer,
-                               const Handle<Module>& module) {
+RawObject Runtime::executeModule(const char* buffer,
+                                 const Handle<Module>& module) {
   HandleScope scope;
   Marshal::Reader reader(&scope, this, buffer);
 
@@ -1362,7 +1365,7 @@ Object* Runtime::executeModule(const char* buffer,
 
 extern "C" struct _inittab _PyImport_Inittab[];
 
-Object* Runtime::importModule(const Handle<Object>& name) {
+RawObject Runtime::importModule(const Handle<Object>& name) {
   HandleScope scope;
   Handle<Object> cached_module(&scope, findModule(name));
   if (!cached_module->isNoneType()) {
@@ -1384,8 +1387,8 @@ Object* Runtime::importModule(const Handle<Object>& name) {
 // TODO: support fromlist and level. Ideally, we'll never implement that
 // functionality in c++, instead using the pure-python importlib
 // implementation that ships with cpython.
-Object* Runtime::importModuleFromBuffer(const char* buffer,
-                                        const Handle<Object>& name) {
+RawObject Runtime::importModuleFromBuffer(const char* buffer,
+                                          const Handle<Object>& name) {
   HandleScope scope;
   Handle<Object> cached_module(&scope, findModule(name));
   if (!cached_module->isNoneType()) {
@@ -1481,20 +1484,20 @@ void Runtime::addModule(const Handle<Module>& module) {
   dictAtPut(dict, key, value);
 }
 
-Object* Runtime::findModule(const Handle<Object>& name) {
+RawObject Runtime::findModule(const Handle<Object>& name) {
   DCHECK(name->isStr(), "name not a string");
 
   HandleScope scope;
   Handle<Dict> dict(&scope, modules());
-  Object* value = dictAt(dict, name);
+  RawObject value = dictAt(dict, name);
   if (value->isError()) {
     return NoneType::object();
   }
   return value;
 }
 
-Object* Runtime::moduleAt(const Handle<Module>& module,
-                          const Handle<Object>& key) {
+RawObject Runtime::moduleAt(const Handle<Module>& module,
+                            const Handle<Object>& key) {
   HandleScope scope;
   Handle<Dict> dict(&scope, module->dict());
   Handle<Object> value_cell(&scope, dictAt(dict, key));
@@ -1531,21 +1534,21 @@ void Runtime::initializeModules() {
 
 void Runtime::initializeApiHandles() { api_handles_ = newDict(); }
 
-Object* Runtime::typeOf(Object* object) {
+RawObject Runtime::typeOf(RawObject object) {
   HandleScope scope;
   Handle<Layout> layout(&scope, layoutAt(object->layoutId()));
   return layout->describedClass();
 }
 
-Object* Runtime::layoutAt(LayoutId layout_id) {
+RawObject Runtime::layoutAt(LayoutId layout_id) {
   return List::cast(layouts_)->at(static_cast<word>(layout_id));
 }
 
-void Runtime::layoutAtPut(LayoutId layout_id, Object* object) {
+void Runtime::layoutAtPut(LayoutId layout_id, RawObject object) {
   List::cast(layouts_)->atPut(static_cast<word>(layout_id), object);
 }
 
-Object* Runtime::typeAt(LayoutId layout_id) {
+RawObject Runtime::typeAt(LayoutId layout_id) {
   return Layout::cast(layoutAt(layout_id))->describedClass();
 }
 
@@ -1604,19 +1607,19 @@ bool Runtime::isMethodOverloaded(Thread* thread, const Handle<Type>& type,
   return false;
 }
 
-Object* Runtime::moduleAddGlobal(const Handle<Module>& module, SymbolId name,
-                                 const Handle<Object>& value) {
+RawObject Runtime::moduleAddGlobal(const Handle<Module>& module, SymbolId name,
+                                   const Handle<Object>& value) {
   HandleScope scope;
   Handle<Dict> dict(&scope, module->dict());
   Handle<Object> key(&scope, symbols()->at(name));
   return dictAtPutInValueCell(dict, key, value);
 }
 
-Object* Runtime::moduleAddBuiltinFunction(const Handle<Module>& module,
-                                          SymbolId name,
-                                          const Function::Entry entry,
-                                          const Function::Entry entry_kw,
-                                          const Function::Entry entry_ex) {
+RawObject Runtime::moduleAddBuiltinFunction(const Handle<Module>& module,
+                                            SymbolId name,
+                                            const Function::Entry entry,
+                                            const Function::Entry entry_kw,
+                                            const Function::Entry entry_ex) {
   HandleScope scope;
   Handle<Object> key(&scope, symbols()->at(name));
   Handle<Dict> dict(&scope, module->dict());
@@ -1907,7 +1910,7 @@ void Runtime::createTimeModule() {
   addModule(module);
 }
 
-Object* Runtime::createMainModule() {
+RawObject Runtime::createMainModule() {
   HandleScope scope;
   Handle<Object> name(&scope, symbols()->DunderMain());
   Handle<Module> module(&scope, newModule(name));
@@ -1946,8 +1949,8 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   list->atPut(index, *value);
 }
 
-Object* Runtime::listExtend(Thread* thread, const Handle<List>& dst,
-                            const Handle<Object>& iterable) {
+RawObject Runtime::listExtend(Thread* thread, const Handle<List>& dst,
+                              const Handle<Object>& iterable) {
   HandleScope scope(thread);
   Handle<Object> elt(&scope, NoneType::object());
   word index = dst->allocated();
@@ -2071,7 +2074,7 @@ void Runtime::listInsert(const Handle<List>& list, const Handle<Object>& value,
   list->atPut(index, *value);
 }
 
-Object* Runtime::listPop(const Handle<List>& list, word index) {
+RawObject Runtime::listPop(const Handle<List>& list, word index) {
   HandleScope scope;
   Handle<Object> popped(&scope, list->at(index));
   list->atPut(index, NoneType::object());
@@ -2083,8 +2086,8 @@ Object* Runtime::listPop(const Handle<List>& list, word index) {
   return *popped;
 }
 
-Object* Runtime::listReplicate(Thread* thread, const Handle<List>& list,
-                               word ntimes) {
+RawObject Runtime::listReplicate(Thread* thread, const Handle<List>& list,
+                                 word ntimes) {
   HandleScope scope(thread);
   word len = list->allocated();
   Handle<ObjectArray> items(&scope, newObjectArray(ntimes * len));
@@ -2157,7 +2160,7 @@ char* Runtime::compile(const char* src) {
 
 // Dict
 
-Object* Runtime::newDict() {
+RawObject Runtime::newDict() {
   HandleScope scope;
   Handle<Dict> result(&scope, heap()->create<Dict>());
   result->setNumItems(0);
@@ -2165,7 +2168,7 @@ Object* Runtime::newDict() {
   return *result;
 }
 
-Object* Runtime::newDictWithSize(word initial_size) {
+RawObject Runtime::newDictWithSize(word initial_size) {
   HandleScope scope;
   // TODO: initialSize should be scaled up by a load factor.
   word initial_capacity = Utils::nextPowerOfTwo(initial_size);
@@ -2209,7 +2212,7 @@ void Runtime::dictAtPut(const Handle<Dict>& dict, const Handle<Object>& key,
   return dictAtPutWithHash(dict, key, value, key_hash);
 }
 
-ObjectArray* Runtime::dictGrow(const Handle<ObjectArray>& data) {
+RawObjectArray Runtime::dictGrow(const Handle<ObjectArray>& data) {
   HandleScope scope;
   word new_length = data->length() * kDictGrowthFactor;
   if (new_length == 0) {
@@ -2233,9 +2236,9 @@ ObjectArray* Runtime::dictGrow(const Handle<ObjectArray>& data) {
   return *new_data;
 }
 
-Object* Runtime::dictAtWithHash(const Handle<Dict>& dict,
-                                const Handle<Object>& key,
-                                const Handle<Object>& key_hash) {
+RawObject Runtime::dictAtWithHash(const Handle<Dict>& dict,
+                                  const Handle<Object>& key,
+                                  const Handle<Object>& key_hash) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
@@ -2247,15 +2250,15 @@ Object* Runtime::dictAtWithHash(const Handle<Dict>& dict,
   return Error::object();
 }
 
-Object* Runtime::dictAt(const Handle<Dict>& dict, const Handle<Object>& key) {
+RawObject Runtime::dictAt(const Handle<Dict>& dict, const Handle<Object>& key) {
   HandleScope scope;
   Handle<Object> key_hash(&scope, hash(*key));
   return dictAtWithHash(dict, key, key_hash);
 }
 
-Object* Runtime::dictAtIfAbsentPut(const Handle<Dict>& dict,
-                                   const Handle<Object>& key,
-                                   Callback<Object*>* thunk) {
+RawObject Runtime::dictAtIfAbsentPut(const Handle<Dict>& dict,
+                                     const Handle<Object>& key,
+                                     Callback<RawObject>* thunk) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
@@ -2280,10 +2283,10 @@ Object* Runtime::dictAtIfAbsentPut(const Handle<Dict>& dict,
   return *value;
 }
 
-Object* Runtime::dictAtPutInValueCell(const Handle<Dict>& dict,
-                                      const Handle<Object>& key,
-                                      const Handle<Object>& value) {
-  Object* result = dictAtIfAbsentPut(dict, key, newValueCellCallback());
+RawObject Runtime::dictAtPutInValueCell(const Handle<Dict>& dict,
+                                        const Handle<Object>& key,
+                                        const Handle<Object>& value) {
+  RawObject result = dictAtIfAbsentPut(dict, key, newValueCellCallback());
   ValueCell::cast(result)->setValue(*value);
   return result;
 }
@@ -2297,8 +2300,8 @@ bool Runtime::dictIncludes(const Handle<Dict>& dict,
   return dictLookup(data, key, key_hash, &ignore);
 }
 
-Object* Runtime::dictRemove(const Handle<Dict>& dict,
-                            const Handle<Object>& key) {
+RawObject Runtime::dictRemove(const Handle<Dict>& dict,
+                              const Handle<Object>& key) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
@@ -2349,7 +2352,7 @@ bool Runtime::dictLookup(const Handle<ObjectArray>& data,
   return false;
 }
 
-ObjectArray* Runtime::dictKeys(const Handle<Dict>& dict) {
+RawObjectArray Runtime::dictKeys(const Handle<Dict>& dict) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   Handle<ObjectArray> keys(&scope, newObjectArray(dict->numItems()));
@@ -2366,7 +2369,7 @@ ObjectArray* Runtime::dictKeys(const Handle<Dict>& dict) {
   return *keys;
 }
 
-Object* Runtime::newSet() {
+RawObject Runtime::newSet() {
   HandleScope scope;
   Handle<Set> result(&scope, heap()->create<Set>());
   result->setNumItems(0);
@@ -2374,7 +2377,7 @@ Object* Runtime::newSet() {
   return *result;
 }
 
-Object* Runtime::newSetWithSize(word initial_size) {
+RawObject Runtime::newSetWithSize(word initial_size) {
   HandleScope scope;
   Handle<Set> result(&scope, heap()->create<Set>());
   word initial_capacity = Utils::nextPowerOfTwo(initial_size);
@@ -2427,7 +2430,7 @@ bool Runtime::setLookup(const Handle<ObjectArray>& data,
   return false;
 }
 
-ObjectArray* Runtime::setGrow(const Handle<ObjectArray>& data) {
+RawObjectArray Runtime::setGrow(const Handle<ObjectArray>& data) {
   HandleScope scope;
   word new_length = data->length() * kSetGrowthFactor;
   if (new_length == 0) {
@@ -2449,9 +2452,9 @@ ObjectArray* Runtime::setGrow(const Handle<ObjectArray>& data) {
   return *new_data;
 }
 
-Object* Runtime::setAddWithHash(const Handle<Set>& set,
-                                const Handle<Object>& value,
-                                const Handle<Object>& key_hash) {
+RawObject Runtime::setAddWithHash(const Handle<Set>& set,
+                                  const Handle<Object>& value,
+                                  const Handle<Object>& key_hash) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, set->data());
   word index = -1;
@@ -2474,13 +2477,13 @@ Object* Runtime::setAddWithHash(const Handle<Set>& set,
   return *value;
 }
 
-Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
+RawObject Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
   HandleScope scope;
   Handle<Object> key_hash(&scope, hash(*value));
   return setAddWithHash(set, value, key_hash);
 }
 
-Object* Runtime::setCopy(const Handle<Set>& set) {
+RawObject Runtime::setCopy(const Handle<Set>& set) {
   word num_items = set->numItems();
   if (num_items == 0) {
     return newSet();
@@ -2513,8 +2516,8 @@ bool Runtime::setIncludes(const Handle<Set>& set, const Handle<Object>& value) {
   return setLookup<SetLookupType::Lookup>(data, value, key_hash, &ignore);
 }
 
-Object* Runtime::setIntersection(Thread* thread, const Handle<Set>& set,
-                                 const Handle<Object>& iterable) {
+RawObject Runtime::setIntersection(Thread* thread, const Handle<Set>& set,
+                                   const Handle<Object>& iterable) {
   HandleScope scope;
   Handle<Set> dst(&scope, Runtime::newSet());
   Handle<Object> key(&scope, NoneType::object());
@@ -2599,8 +2602,8 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
   return found;
 }
 
-Object* Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
-                           const Handle<Object>& iterable) {
+RawObject Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
+                             const Handle<Object>& iterable) {
   HandleScope scope;
   Handle<Object> elt(&scope, NoneType::object());
   // Special case for lists
@@ -2692,19 +2695,19 @@ Object* Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
   return *dst;
 }
 
-Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
-                            const Handle<Object>& mapping) {
+RawObject Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
+                              const Handle<Object>& mapping) {
   return dictUpdate<DictUpdateType::Update>(thread, dict, mapping);
 }
 
-Object* Runtime::dictMerge(Thread* thread, const Handle<Dict>& dict,
-                           const Handle<Object>& mapping) {
+RawObject Runtime::dictMerge(Thread* thread, const Handle<Dict>& dict,
+                             const Handle<Object>& mapping) {
   return dictUpdate<DictUpdateType::Merge>(thread, dict, mapping);
 }
 
 template <DictUpdateType type>
-inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
-                                   const Handle<Object>& mapping) {
+inline RawObject Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
+                                     const Handle<Object>& mapping) {
   HandleScope scope;
   Handle<Object> key(&scope, NoneType::object());
   Handle<Object> value(&scope, NoneType::object());
@@ -2840,8 +2843,8 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
   return *dict;
 }
 
-Object* Runtime::genSend(Thread* thread, const Handle<GeneratorBase>& gen,
-                         const Handle<Object>& value) {
+RawObject Runtime::genSend(Thread* thread, const Handle<GeneratorBase>& gen,
+                           const Handle<Object>& value) {
   HandleScope scope(thread);
   Handle<HeapFrame> heap_frame(&scope, gen->heapFrame());
   thread->checkStackOverflow(heap_frame->numFrameWords() * kPointerSize);
@@ -2863,15 +2866,15 @@ void Runtime::genSave(Thread* thread, const Handle<GeneratorBase>& gen) {
   thread->popFrame();
 }
 
-GeneratorBase* Runtime::genFromStackFrame(Frame* frame) {
+RawGeneratorBase Runtime::genFromStackFrame(Frame* frame) {
   // For now, we have the invariant that GeneratorBase bodies are only invoked
   // by __next__() or send(), which have the GeneratorBase as their first local.
   return GeneratorBase::cast(frame->previousFrame()->getLocal(0));
 }
 
-Object* Runtime::newValueCell() { return heap()->create<ValueCell>(); }
+RawObject Runtime::newValueCell() { return heap()->create<ValueCell>(); }
 
-Object* Runtime::newWeakRef() { return heap()->create<WeakRef>(); }
+RawObject Runtime::newWeakRef() { return heap()->create<WeakRef>(); }
 
 void Runtime::collectAttributes(const Handle<Code>& code,
                                 const Handle<Dict>& attributes) {
@@ -2901,19 +2904,20 @@ void Runtime::collectAttributes(const Handle<Code>& code,
   }
 }
 
-Object* Runtime::classConstructor(const Handle<Type>& type) {
+RawObject Runtime::classConstructor(const Handle<Type>& type) {
   HandleScope scope;
   Handle<Dict> type_dict(&scope, type->dict());
   Handle<Object> init(&scope, symbols()->DunderInit());
-  Object* value = dictAt(type_dict, init);
+  RawObject value = dictAt(type_dict, init);
   if (value->isError()) {
     return NoneType::object();
   }
   return ValueCell::cast(value)->value();
 }
 
-Object* Runtime::computeInitialLayout(Thread* thread, const Handle<Type>& klass,
-                                      LayoutId base_layout_id) {
+RawObject Runtime::computeInitialLayout(Thread* thread,
+                                        const Handle<Type>& klass,
+                                        LayoutId base_layout_id) {
   HandleScope scope(thread);
   // Create the layout
   LayoutId layout_id = reserveLayoutId();
@@ -2933,7 +2937,7 @@ Object* Runtime::computeInitialLayout(Thread* thread, const Handle<Type>& klass,
       continue;
     }
     Handle<Function> init(maybe_init);
-    Object* maybe_code = init->code();
+    RawObject maybe_code = init->code();
     if (!maybe_code->isCode()) {
       continue;
     }
@@ -2948,8 +2952,8 @@ Object* Runtime::computeInitialLayout(Thread* thread, const Handle<Type>& klass,
   return *layout;
 }
 
-Object* Runtime::lookupNameInMro(Thread* thread, const Handle<Type>& type,
-                                 const Handle<Object>& name) {
+RawObject Runtime::lookupNameInMro(Thread* thread, const Handle<Type>& type,
+                                   const Handle<Object>& name) {
   HandleScope scope(thread);
   Handle<ObjectArray> mro(&scope, type->mro());
   for (word i = 0; i < mro->length(); i++) {
@@ -2963,14 +2967,14 @@ Object* Runtime::lookupNameInMro(Thread* thread, const Handle<Type>& type,
   return Error::object();
 }
 
-Object* Runtime::attributeAt(Thread* thread, const Handle<Object>& receiver,
-                             const Handle<Object>& name) {
+RawObject Runtime::attributeAt(Thread* thread, const Handle<Object>& receiver,
+                               const Handle<Object>& name) {
   if (!name->isStr()) {
     return thread->raiseTypeErrorWithCStr("attribute name must be a string");
   }
 
   // A minimal implementation of getattr needed to get richards running.
-  Object* result;
+  RawObject result;
   HandleScope scope(thread);
   if (isInstanceOfClass(*receiver)) {
     result = classGetAttr(thread, receiver, name);
@@ -2986,9 +2990,10 @@ Object* Runtime::attributeAt(Thread* thread, const Handle<Object>& receiver,
   return result;
 }
 
-Object* Runtime::attributeAtPut(Thread* thread, const Handle<Object>& receiver,
-                                const Handle<Object>& name,
-                                const Handle<Object>& value) {
+RawObject Runtime::attributeAtPut(Thread* thread,
+                                  const Handle<Object>& receiver,
+                                  const Handle<Object>& name,
+                                  const Handle<Object>& value) {
   if (!name->isStr()) {
     return thread->raiseTypeErrorWithCStr("attribute name must be a string");
   }
@@ -2996,7 +3001,7 @@ Object* Runtime::attributeAtPut(Thread* thread, const Handle<Object>& receiver,
   HandleScope scope(thread);
   Handle<Object> interned_name(&scope, internStr(name));
   // A minimal implementation of setattr needed to get richards running.
-  Object* result;
+  RawObject result;
   if (isInstanceOfClass(*receiver)) {
     result = classSetAttr(thread, receiver, interned_name, value);
   } else if (receiver->isModule()) {
@@ -3008,14 +3013,14 @@ Object* Runtime::attributeAtPut(Thread* thread, const Handle<Object>& receiver,
   return result;
 }
 
-Object* Runtime::attributeDel(Thread* thread, const Handle<Object>& receiver,
-                              const Handle<Object>& name) {
+RawObject Runtime::attributeDel(Thread* thread, const Handle<Object>& receiver,
+                                const Handle<Object>& name) {
   HandleScope scope(thread);
   // If present, __delattr__ overrides all attribute deletion logic.
   Handle<Type> type(&scope, typeOf(*receiver));
   Handle<Object> dunder_delattr(
       &scope, lookupSymbolInMro(thread, type, SymbolId::kDunderDelattr));
-  Object* result;
+  RawObject result;
   if (!dunder_delattr->isError()) {
     result = Interpreter::callMethod2(thread, thread->currentFrame(),
                                       dunder_delattr, receiver, name);
@@ -3030,7 +3035,8 @@ Object* Runtime::attributeDel(Thread* thread, const Handle<Object>& receiver,
   return result;
 }
 
-Object* Runtime::strConcat(const Handle<Str>& left, const Handle<Str>& right) {
+RawObject Runtime::strConcat(const Handle<Str>& left,
+                             const Handle<Str>& right) {
   HandleScope scope;
   word left_len = left->length();
   word right_len = right->length();
@@ -3050,8 +3056,8 @@ Object* Runtime::strConcat(const Handle<Str>& left, const Handle<Str>& right) {
   return *result;
 }
 
-Object* Runtime::strJoin(Thread* thread, const Handle<Str>& sep,
-                         const Handle<ObjectArray>& items, word allocated) {
+RawObject Runtime::strJoin(Thread* thread, const Handle<Str>& sep,
+                           const Handle<ObjectArray>& items, word allocated) {
   HandleScope scope(thread);
   word result_len = 0;
   for (word i = 0; i < allocated; ++i) {
@@ -3098,9 +3104,9 @@ Object* Runtime::strJoin(Thread* thread, const Handle<Str>& sep,
   return *result;
 }
 
-Object* Runtime::computeFastGlobals(const Handle<Code>& code,
-                                    const Handle<Dict>& globals,
-                                    const Handle<Dict>& builtins) {
+RawObject Runtime::computeFastGlobals(const Handle<Code>& code,
+                                      const Handle<Dict>& globals,
+                                      const Handle<Dict>& builtins) {
   HandleScope scope;
   Handle<Bytes> bytes(&scope, code->code());
   Handle<ObjectArray> names(&scope, code->names());
@@ -3117,7 +3123,7 @@ Object* Runtime::computeFastGlobals(const Handle<Code>& code,
       continue;
     }
     Handle<Object> key(&scope, names->at(arg));
-    Object* value = dictAt(globals, key);
+    RawObject value = dictAt(globals, key);
     if (value->isError()) {
       value = dictAt(builtins, key);
       if (value->isError()) {
@@ -3153,8 +3159,8 @@ word Runtime::codeOffsetToLineNum(Thread* thread, const Handle<Code>& code,
   return line;
 }
 
-Object* Runtime::isSubClass(const Handle<Type>& subclass,
-                            const Handle<Type>& superclass) {
+RawObject Runtime::isSubClass(const Handle<Type>& subclass,
+                              const Handle<Type>& superclass) {
   HandleScope scope;
   Handle<ObjectArray> mro(&scope, subclass->mro());
   for (word i = 0; i < mro->length(); i++) {
@@ -3165,18 +3171,18 @@ Object* Runtime::isSubClass(const Handle<Type>& subclass,
   return Bool::falseObj();
 }
 
-Object* Runtime::isInstance(const Handle<Object>& obj,
-                            const Handle<Type>& klass) {
+RawObject Runtime::isInstance(const Handle<Object>& obj,
+                              const Handle<Type>& klass) {
   HandleScope scope;
   Handle<Type> obj_class(&scope, typeOf(*obj));
   return isSubClass(obj_class, klass);
 }
 
-Object* Runtime::newClassMethod() { return heap()->create<ClassMethod>(); }
+RawObject Runtime::newClassMethod() { return heap()->create<ClassMethod>(); }
 
-Object* Runtime::newSuper() { return heap()->create<Super>(); }
+RawObject Runtime::newSuper() { return heap()->create<Super>(); }
 
-Object* Runtime::newTupleIterator(const Handle<Object>& tuple) {
+RawObject Runtime::newTupleIterator(const Handle<Object>& tuple) {
   HandleScope scope;
   Handle<TupleIterator> tuple_iterator(&scope, heap()->create<TupleIterator>());
   tuple_iterator->setTuple(*tuple);
@@ -3215,8 +3221,9 @@ LayoutId Runtime::computeBuiltinBaseClass(const Handle<Type>& klass) {
   return Layout::cast(candidate->instanceLayout())->id();
 }
 
-Object* Runtime::instanceAt(Thread* thread, const Handle<HeapObject>& instance,
-                            const Handle<Object>& name) {
+RawObject Runtime::instanceAt(Thread* thread,
+                              const Handle<HeapObject>& instance,
+                              const Handle<Object>& name) {
   HandleScope scope(thread);
 
   // Figure out where the attribute lives in the instance
@@ -3227,7 +3234,7 @@ Object* Runtime::instanceAt(Thread* thread, const Handle<HeapObject>& instance,
   }
 
   // Retrieve the attribute
-  Object* result;
+  RawObject result;
   if (info.isInObject()) {
     result = instance->instanceVariableAt(info.offset());
   } else {
@@ -3239,10 +3246,10 @@ Object* Runtime::instanceAt(Thread* thread, const Handle<HeapObject>& instance,
   return result;
 }
 
-Object* Runtime::instanceAtPut(Thread* thread,
-                               const Handle<HeapObject>& instance,
-                               const Handle<Object>& name,
-                               const Handle<Object>& value) {
+RawObject Runtime::instanceAtPut(Thread* thread,
+                                 const Handle<HeapObject>& instance,
+                                 const Handle<Object>& name,
+                                 const Handle<Object>& value) {
   HandleScope scope(thread);
 
   // If the attribute doesn't exist we'll need to transition the layout
@@ -3279,8 +3286,9 @@ Object* Runtime::instanceAtPut(Thread* thread,
   return NoneType::object();
 }
 
-Object* Runtime::instanceDel(Thread* thread, const Handle<HeapObject>& instance,
-                             const Handle<Object>& name) {
+RawObject Runtime::instanceDel(Thread* thread,
+                               const Handle<HeapObject>& instance,
+                               const Handle<Object>& name) {
   HandleScope scope(thread);
 
   // Make the attribute invisible
@@ -3308,8 +3316,8 @@ Object* Runtime::instanceDel(Thread* thread, const Handle<HeapObject>& instance,
   return NoneType::object();
 }
 
-Object* Runtime::layoutFollowEdge(const Handle<List>& edges,
-                                  const Handle<Object>& label) {
+RawObject Runtime::layoutFollowEdge(const Handle<List>& edges,
+                                    const Handle<Object>& label) {
   DCHECK(edges->allocated() % 2 == 0,
          "edges must contain an even number of elements");
   for (word i = 0; i < edges->allocated(); i++) {
@@ -3358,7 +3366,7 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Handle<Layout>& layout,
   return false;
 }
 
-Object* Runtime::layoutCreateEmpty(Thread* thread) {
+RawObject Runtime::layoutCreateEmpty(Thread* thread) {
   HandleScope scope(thread);
   Handle<Layout> result(&scope, newLayout());
   result->setId(reserveLayoutId());
@@ -3366,8 +3374,8 @@ Object* Runtime::layoutCreateEmpty(Thread* thread) {
   return *result;
 }
 
-Object* Runtime::layoutCreateChild(Thread* thread,
-                                   const Handle<Layout>& layout) {
+RawObject Runtime::layoutCreateChild(Thread* thread,
+                                     const Handle<Layout>& layout) {
   HandleScope scope(thread);
   Handle<Layout> new_layout(&scope, newLayout());
   new_layout->setId(reserveLayoutId());
@@ -3380,10 +3388,10 @@ Object* Runtime::layoutCreateChild(Thread* thread,
   return *new_layout;
 }
 
-Object* Runtime::layoutAddAttributeEntry(Thread* thread,
-                                         const Handle<ObjectArray>& entries,
-                                         const Handle<Object>& name,
-                                         AttributeInfo info) {
+RawObject Runtime::layoutAddAttributeEntry(Thread* thread,
+                                           const Handle<ObjectArray>& entries,
+                                           const Handle<Object>& name,
+                                           AttributeInfo info) {
   HandleScope scope(thread);
   Handle<ObjectArray> new_entries(&scope,
                                   newObjectArray(entries->length() + 1));
@@ -3397,15 +3405,15 @@ Object* Runtime::layoutAddAttributeEntry(Thread* thread,
   return *new_entries;
 }
 
-Object* Runtime::layoutAddAttribute(Thread* thread,
-                                    const Handle<Layout>& layout,
-                                    const Handle<Object>& name, word flags) {
+RawObject Runtime::layoutAddAttribute(Thread* thread,
+                                      const Handle<Layout>& layout,
+                                      const Handle<Object>& name, word flags) {
   HandleScope scope(thread);
   Handle<Object> iname(&scope, internStr(name));
 
   // Check if a edge for the attribute addition already exists
   Handle<List> edges(&scope, layout->additions());
-  Object* result = layoutFollowEdge(edges, iname);
+  RawObject result = layoutFollowEdge(edges, iname);
   if (!result->isError()) {
     return result;
   }
@@ -3432,9 +3440,9 @@ Object* Runtime::layoutAddAttribute(Thread* thread,
   return *new_layout;
 }
 
-Object* Runtime::layoutDeleteAttribute(Thread* thread,
-                                       const Handle<Layout>& layout,
-                                       const Handle<Object>& name) {
+RawObject Runtime::layoutDeleteAttribute(Thread* thread,
+                                         const Handle<Layout>& layout,
+                                         const Handle<Object>& name) {
   HandleScope scope(thread);
 
   // See if the attribute exists
@@ -3446,7 +3454,7 @@ Object* Runtime::layoutDeleteAttribute(Thread* thread,
   // Check if an edge exists for removing the attribute
   Handle<Object> iname(&scope, internStr(name));
   Handle<List> edges(&scope, layout->deletions());
-  Object* next_layout = layoutFollowEdge(edges, iname);
+  RawObject next_layout = layoutFollowEdge(edges, iname);
   if (!next_layout->isError()) {
     return next_layout;
   }
@@ -3515,8 +3523,8 @@ void Runtime::initializeSuperClass() {
                           nativeTrampoline<builtinSuperNew>);
 }
 
-Object* Runtime::superGetAttr(Thread* thread, const Handle<Object>& receiver,
-                              const Handle<Object>& name) {
+RawObject Runtime::superGetAttr(Thread* thread, const Handle<Object>& receiver,
+                                const Handle<Object>& name) {
   HandleScope scope(thread);
   Handle<Super> super(&scope, *receiver);
   Handle<Type> start_type(&scope, super->objectType());
@@ -3560,13 +3568,13 @@ void Runtime::freeApiHandles() {
   Handle<ObjectArray> keys(&scope, dictKeys(dict));
   for (word i = 0; i < keys->length(); i++) {
     Handle<Object> key(&scope, keys->at(i));
-    Object* value = dictAt(dict, key);
+    RawObject value = dictAt(dict, key);
     std::free(Int::cast(value)->asCPtr());
   }
 }
 
-Object* Runtime::lookupSymbolInMro(Thread* thread, const Handle<Type>& type,
-                                   SymbolId symbol) {
+RawObject Runtime::lookupSymbolInMro(Thread* thread, const Handle<Type>& type,
+                                     SymbolId symbol) {
   HandleScope scope(thread);
   Handle<ObjectArray> mro(&scope, type->mro());
   Handle<Object> key(&scope, symbols()->at(symbol));

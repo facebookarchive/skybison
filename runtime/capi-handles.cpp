@@ -4,14 +4,14 @@
 
 namespace python {
 
-ApiHandle* ApiHandle::create(Object* reference, long refcnt) {
+ApiHandle* ApiHandle::create(RawObject reference, long refcnt) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
   ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
   handle->reference_ = reference;
   handle->ob_refcnt = refcnt;
-  Object* reftype = runtime->typeOf(reference);
+  RawObject reftype = runtime->typeOf(reference);
   if (reference == reftype) {
     handle->ob_type = reinterpret_cast<PyTypeObject*>(handle);
   } else {
@@ -21,14 +21,14 @@ ApiHandle* ApiHandle::create(Object* reference, long refcnt) {
   return handle;
 }
 
-ApiHandle* ApiHandle::fromObject(Object* obj) {
+ApiHandle* ApiHandle::fromObject(RawObject obj) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
   Handle<Object> key(&scope, obj);
   Handle<Dict> dict(&scope, runtime->apiHandles());
-  Object* value = runtime->dictAt(dict, key);
+  RawObject value = runtime->dictAt(dict, key);
 
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
@@ -36,7 +36,7 @@ ApiHandle* ApiHandle::fromObject(Object* obj) {
   }
 
   // Get the PyObject pointer from extension instances
-  Object* extension_ptr = getExtensionPtrAttr(thread, key);
+  RawObject extension_ptr = getExtensionPtrAttr(thread, key);
   if (!extension_ptr->isError()) {
     return castFromObject(extension_ptr, false);
   }
@@ -49,14 +49,14 @@ ApiHandle* ApiHandle::fromObject(Object* obj) {
   return handle;
 }
 
-ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
+ApiHandle* ApiHandle::fromBorrowedObject(RawObject obj) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
   Handle<Object> key(&scope, obj);
   Handle<Dict> dict(&scope, runtime->apiHandles());
-  Object* value = runtime->dictAt(dict, key);
+  RawObject value = runtime->dictAt(dict, key);
 
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
@@ -64,7 +64,7 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
   }
 
   // Get the PyObject pointer from extension instances
-  Object* extension_ptr = getExtensionPtrAttr(thread, key);
+  RawObject extension_ptr = getExtensionPtrAttr(thread, key);
   if (!extension_ptr->isError()) {
     return castFromObject(extension_ptr, true);
   }
@@ -77,14 +77,14 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
   return handle;
 }
 
-ApiHandle* ApiHandle::castFromObject(Object* value, bool borrowed) {
+ApiHandle* ApiHandle::castFromObject(RawObject value, bool borrowed) {
   ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value)->asCPtr());
   if (borrowed) handle->setBorrowed();
   return handle;
 }
 
-Object* ApiHandle::getExtensionPtrAttr(Thread* thread,
-                                       const Handle<Object>& obj) {
+RawObject ApiHandle::getExtensionPtrAttr(Thread* thread,
+                                         const Handle<Object>& obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   if (!obj->isInstance()) return Error::object();
@@ -94,7 +94,7 @@ Object* ApiHandle::getExtensionPtrAttr(Thread* thread,
   return runtime->instanceAt(thread, instance, attr_name);
 }
 
-Object* ApiHandle::asInstance(Object* obj) {
+RawObject ApiHandle::asInstance(RawObject obj) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -111,11 +111,11 @@ Object* ApiHandle::asInstance(Object* obj) {
   return *instance;
 }
 
-Object* ApiHandle::asObject() {
+RawObject ApiHandle::asObject() {
   // Fast path: All builtin objects except Types
   // TODO(T32474474): Handle the special case of Int values
   if (reference_ != nullptr) {
-    return static_cast<Object*>(reference_);
+    return static_cast<RawObject>(reference_);
   }
 
   DCHECK(type(), "ApiHandles must contain a type pointer");

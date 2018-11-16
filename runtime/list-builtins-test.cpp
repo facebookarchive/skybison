@@ -261,7 +261,7 @@ print(l[0], l[3], l[5])
 }
 
 // Equivalent to evaluating "list(range(start, stop))" in Python
-static Object* listFromRange(word start, word stop) {
+static RawObject listFromRange(word start, word stop) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Handle<List> result(&scope, thread->runtime()->newList());

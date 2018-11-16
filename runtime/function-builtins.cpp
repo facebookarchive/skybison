@@ -8,7 +8,7 @@
 
 namespace python {
 
-Object* builtinFunctionGet(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinFunctionGet(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr("__get__ needs 3 arguments");
   }

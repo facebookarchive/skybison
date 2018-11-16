@@ -31,7 +31,7 @@ void SetBuiltins::initialize(Runtime* runtime) {
   set->setFlag(Type::Flag::kSetSubclass);
 }
 
-Object* SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
+RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("add() takes exactly one argument");
   }
@@ -48,7 +48,7 @@ Object* SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   return thread->raiseTypeErrorWithCStr("'add' requires a 'set' object");
 }
 
-Object* SetBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject SetBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__len__() takes no arguments");
   }
@@ -62,7 +62,7 @@ Object* SetBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   return thread->raiseTypeErrorWithCStr("'__len__' requires a 'set' object");
 }
 
-Object* SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
+RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("pop() takes no arguments");
   }
@@ -91,7 +91,8 @@ Object* SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
       "descriptor 'pop' requires a 'set' object");
 }
 
-Object* SetBuiltins::dunderContains(Thread* thread, Frame* frame, word nargs) {
+RawObject SetBuiltins::dunderContains(Thread* thread, Frame* frame,
+                                      word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("__contains__ takes 1 arguments.");
   }
@@ -107,7 +108,7 @@ Object* SetBuiltins::dunderContains(Thread* thread, Frame* frame, word nargs) {
       "descriptor 'pop' requires a 'set' object");
 }
 
-Object* SetBuiltins::dunderInit(Thread* thread, Frame*, word nargs) {
+RawObject SetBuiltins::dunderInit(Thread* thread, Frame*, word nargs) {
   if (nargs > 2) {
     return thread->raiseTypeErrorWithCStr("set expected at most 1 arguments.");
   }
@@ -117,11 +118,11 @@ Object* SetBuiltins::dunderInit(Thread* thread, Frame*, word nargs) {
   return NoneType::object();
 }
 
-Object* SetBuiltins::dunderNew(Thread* thread, Frame*, word) {
+RawObject SetBuiltins::dunderNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newSet();
 }
 
-Object* SetBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject SetBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
@@ -136,7 +137,7 @@ Object* SetBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newSetIterator(self);
 }
 
-Object* SetBuiltins::isDisjoint(Thread* thread, Frame* frame, word nargs) {
+RawObject SetBuiltins::isDisjoint(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr(
         "isdisjoint() takes exactly one argument");
@@ -210,7 +211,7 @@ Object* SetBuiltins::isDisjoint(Thread* thread, Frame* frame, word nargs) {
       "descriptor 'is_disjoint' requires a 'set' object");
 }
 
-Object* SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
+RawObject SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("__and__ takes 1 arguments.");
   }
@@ -229,7 +230,7 @@ Object* SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
       "descriptor '__and__' requires a 'set' object");
 }
 
-Object* SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
+RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("__iand__ takes 1 arguments.");
   }
@@ -246,7 +247,7 @@ Object* SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
     if (intersection->isError()) {
       return *intersection;
     }
-    Set* intersection_set = Set::cast(*intersection);
+    RawSet intersection_set = Set::cast(*intersection);
     self->setData(intersection_set->data());
     self->setNumItems(intersection_set->numItems());
     return *self;
@@ -256,7 +257,7 @@ Object* SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
       "descriptor '__iand__' requires a 'set' object");
 }
 
-Object* SetBuiltins::intersection(Thread* thread, Frame* frame, word nargs) {
+RawObject SetBuiltins::intersection(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
         "descriptor 'intersection' of 'set' object needs an argument");
@@ -313,8 +314,8 @@ void SetIteratorBuiltins::initialize(Runtime* runtime) {
                                LayoutId::kObject, kMethods));
 }
 
-Object* SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                          word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
@@ -329,8 +330,8 @@ Object* SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-Object* SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                          word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
   }
@@ -349,8 +350,8 @@ Object* SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-Object* SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
+                                                word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr(
         "__length_hint__() takes no arguments");

@@ -8,7 +8,7 @@ class ComplexBuiltins final {
  public:
   static void initialize(Runtime* runtime);
 
-  static Object* dunderNew(Thread*, Frame*, word);
+  static RawObject dunderNew(Thread*, Frame*, word);
 
  private:
   static const BuiltinMethod kMethods[];

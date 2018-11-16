@@ -111,7 +111,7 @@ TEST(RuntimeDictTest, GetSet) {
   EXPECT_EQ(dict->numItems(), 1);
 
   // Retrieve the stored value
-  Object* retrieved = runtime.dictAt(dict, key);
+  RawObject retrieved = runtime.dictAt(dict, key);
   ASSERT_TRUE(retrieved->isSmallInt());
   EXPECT_EQ(SmallInt::cast(retrieved)->value(),
             SmallInt::cast(*stored)->value());
@@ -145,7 +145,7 @@ TEST(RuntimeDictTest, Remove) {
   runtime.dictAtPut(dict, key, stored);
   EXPECT_EQ(dict->numItems(), 1);
 
-  Object* retrieved = runtime.dictRemove(dict, key);
+  RawObject retrieved = runtime.dictRemove(dict, key);
   ASSERT_FALSE(retrieved->isError());
   ASSERT_EQ(SmallInt::cast(retrieved)->value(),
             SmallInt::cast(*stored)->value());
@@ -185,10 +185,10 @@ TEST(RuntimeDictTest, AtIfAbsentPutLength) {
   runtime.dictAtPut(dict, k1, v1);
   EXPECT_EQ(dict->numItems(), 1);
 
-  class SmallIntCallback : public Callback<Object*> {
+  class SmallIntCallback : public Callback<RawObject> {
    public:
     explicit SmallIntCallback(int i) : i_(i) {}
-    Object* call() override { return SmallInt::fromWord(i_); }
+    RawObject call() override { return SmallInt::fromWord(i_); }
 
    private:
     int i_;
@@ -199,7 +199,7 @@ TEST(RuntimeDictTest, AtIfAbsentPutLength) {
   SmallIntCallback cb(222);
   Handle<Object> entry2(&scope, runtime.dictAtIfAbsentPut(dict, k2, &cb));
   EXPECT_EQ(dict->numItems(), 2);
-  Object* retrieved = runtime.dictAt(dict, k2);
+  RawObject retrieved = runtime.dictAt(dict, k2);
   EXPECT_TRUE(retrieved->isSmallInt());
   EXPECT_EQ(retrieved, SmallInt::fromWord(222));
 
@@ -251,7 +251,7 @@ TEST(RuntimeDictTest, GrowWhenFull) {
   // Make sure we can still read all the stored keys/values
   for (int i = 1; i <= num_keys; i++) {
     Handle<Object> key(&scope, make_key(i));
-    Object* value = runtime.dictAt(dict, key);
+    RawObject value = runtime.dictAt(dict, key);
     ASSERT_FALSE(value->isError());
     EXPECT_TRUE(Object::equals(value, make_value(i)));
   }
@@ -270,7 +270,7 @@ TEST(RuntimeDictTest, CollidingKeys) {
   runtime.dictAtPut(dict, key2, key2);
 
   // Make sure we get both back
-  Object* retrieved = runtime.dictAt(dict, key1);
+  RawObject retrieved = runtime.dictAt(dict, key1);
   ASSERT_TRUE(retrieved->isSmallInt());
   EXPECT_EQ(SmallInt::cast(retrieved)->value(), SmallInt::cast(*key1)->value());
 
@@ -292,7 +292,7 @@ TEST(RuntimeDictTest, MixedKeys) {
   runtime.dictAtPut(dict, str_key, str_key);
 
   // Make sure we get the appropriate values back out
-  Object* retrieved = runtime.dictAt(dict, int_key);
+  RawObject retrieved = runtime.dictAt(dict, int_key);
   ASSERT_TRUE(retrieved->isSmallInt());
   EXPECT_EQ(SmallInt::cast(retrieved)->value(),
             SmallInt::cast(*int_key)->value());
@@ -357,7 +357,7 @@ TEST(RuntimeListTest, ListGrowth) {
 
 TEST(RuntimeListTest, EmptyListInvariants) {
   Runtime runtime;
-  List* list = List::cast(runtime.newList());
+  RawList list = List::cast(runtime.newList());
   ASSERT_EQ(list->capacity(), 0);
   ASSERT_EQ(list->allocated(), 0);
 }
@@ -379,7 +379,7 @@ TEST(RuntimeListTest, AppendToList) {
 
   // Sanity check list contents
   for (int i = 0; i < 16; i++) {
-    SmallInt* elem = SmallInt::cast(list->at(i));
+    RawSmallInt elem = SmallInt::cast(list->at(i));
     ASSERT_EQ(elem->value(), i);
   }
 }
@@ -452,28 +452,28 @@ TEST(RuntimeListTest, PopList) {
   ASSERT_EQ(list->allocated(), 16);
 
   // Pop from the end
-  Object* res1 = runtime.listPop(list, 15);
+  RawObject res1 = runtime.listPop(list, 15);
   ASSERT_EQ(list->allocated(), 15);
   ASSERT_EQ(SmallInt::cast(list->at(14))->value(), 14);
   ASSERT_EQ(SmallInt::cast(res1)->value(), 15);
 
   // Pop elements from 5 - 10
   for (int i = 0; i < 5; i++) {
-    Object* res5 = runtime.listPop(list, 5);
+    RawObject res5 = runtime.listPop(list, 5);
     ASSERT_EQ(SmallInt::cast(res5)->value(), i + 5);
   }
   ASSERT_EQ(list->allocated(), 10);
   for (int i = 0; i < 5; i++) {
-    SmallInt* elem = SmallInt::cast(list->at(i));
+    RawSmallInt elem = SmallInt::cast(list->at(i));
     ASSERT_EQ(elem->value(), i);
   }
   for (int i = 5; i < 10; i++) {
-    SmallInt* elem = SmallInt::cast(list->at(i));
+    RawSmallInt elem = SmallInt::cast(list->at(i));
     ASSERT_EQ(elem->value(), i + 5);
   }
 
   // Pop element 0
-  Object* res0 = runtime.listPop(list, 0);
+  RawObject res0 = runtime.listPop(list, 0);
   ASSERT_EQ(list->allocated(), 9);
   ASSERT_EQ(SmallInt::cast(list->at(0))->value(), 1);
   ASSERT_EQ(SmallInt::cast(res0)->value(), 0);
@@ -614,7 +614,7 @@ TEST(RuntimeListTest, ListExtendDict) {
   ASSERT_EQ(sum, 0);
 }
 
-static Object* iterableWithLengthHint(Runtime* runtime) {
+static RawObject iterableWithLengthHint(Runtime* runtime) {
   HandleScope scope;
   runtime->runFromCStr(R"(
 class Iterator:
@@ -642,7 +642,7 @@ iterator = Iterator()
   return *iterator;
 }
 
-static Object* iterableWithoutLengthHint(Runtime* runtime) {
+static RawObject iterableWithoutLengthHint(Runtime* runtime) {
   HandleScope scope;
   runtime->runFromCStr(R"(
 class Iterator:
@@ -851,9 +851,9 @@ TEST(RuntimeTest, HashBools) {
   Runtime runtime;
 
   // In CPython, False hashes to 0 and True hashes to 1.
-  SmallInt* hash0 = SmallInt::cast(runtime.hash(Bool::falseObj()));
+  RawSmallInt hash0 = SmallInt::cast(runtime.hash(Bool::falseObj()));
   EXPECT_EQ(hash0->value(), 0);
-  SmallInt* hash1 = SmallInt::cast(runtime.hash(Bool::trueObj()));
+  RawSmallInt hash1 = SmallInt::cast(runtime.hash(Bool::trueObj()));
   EXPECT_EQ(hash1->value(), 1);
 }
 
@@ -895,9 +895,9 @@ TEST(RuntimeTest, HashSmallInts) {
   Runtime runtime;
 
   // In CPython, Ints hash to themselves.
-  SmallInt* hash123 = SmallInt::cast(runtime.hash(SmallInt::fromWord(123)));
+  RawSmallInt hash123 = SmallInt::cast(runtime.hash(SmallInt::fromWord(123)));
   EXPECT_EQ(hash123->value(), 123);
-  SmallInt* hash456 = SmallInt::cast(runtime.hash(SmallInt::fromWord(456)));
+  RawSmallInt hash456 = SmallInt::cast(runtime.hash(SmallInt::fromWord(456)));
   EXPECT_EQ(hash456->value(), 456);
 }
 
@@ -906,11 +906,11 @@ TEST(RuntimeTest, HashSingletonImmediates) {
 
   // In CPython, these objects hash to arbitrary values.
   word none_value = reinterpret_cast<word>(NoneType::object());
-  SmallInt* hash_none = SmallInt::cast(runtime.hash(NoneType::object()));
+  RawSmallInt hash_none = SmallInt::cast(runtime.hash(NoneType::object()));
   EXPECT_EQ(hash_none->value(), none_value);
 
   word error_value = reinterpret_cast<word>(Error::object());
-  SmallInt* hash_error = SmallInt::cast(runtime.hash(Error::object()));
+  RawSmallInt hash_error = SmallInt::cast(runtime.hash(Error::object()));
   EXPECT_EQ(hash_error->value(), error_value);
 }
 
@@ -921,18 +921,18 @@ TEST(RuntimeTest, HashStr) {
   // LargeStr instances have their hash codes computed lazily.
   Handle<Object> str1(&scope, runtime.newStrFromCStr("testing 123"));
   EXPECT_EQ(HeapObject::cast(*str1)->header()->hashCode(), 0);
-  SmallInt* hash1 = SmallInt::cast(runtime.hash(*str1));
+  RawSmallInt hash1 = SmallInt::cast(runtime.hash(*str1));
   EXPECT_NE(HeapObject::cast(*str1)->header()->hashCode(), 0);
   EXPECT_EQ(HeapObject::cast(*str1)->header()->hashCode(), hash1->value());
 
   // Str with different values should (ideally) hash differently.
   Handle<Str> str2(&scope, runtime.newStrFromCStr("321 testing"));
-  SmallInt* hash2 = SmallInt::cast(runtime.hash(*str2));
+  RawSmallInt hash2 = SmallInt::cast(runtime.hash(*str2));
   EXPECT_NE(hash1, hash2);
 
   // Strings with the same value should hash the same.
   Handle<Str> str3(&scope, runtime.newStrFromCStr("testing 123"));
-  SmallInt* hash3 = SmallInt::cast(runtime.hash(*str3));
+  RawSmallInt hash3 = SmallInt::cast(runtime.hash(*str3));
   EXPECT_EQ(hash1, hash3);
 }
 
@@ -949,7 +949,7 @@ TEST(RuntimeTest, Random) {
 
 TEST(RuntimeTest, HashCodeSizeCheck) {
   Runtime runtime;
-  Object* code = runtime.newCode();
+  RawObject code = runtime.newCode();
   ASSERT_TRUE(code->isHeapObject());
   EXPECT_EQ(HeapObject::cast(code)->header()->hashCode(), 0);
   // Verify that large-magnitude random numbers are properly
@@ -1251,7 +1251,7 @@ TEST(RuntimeTest, VerifySymbols) {
   Symbols* symbols = runtime.symbols();
   for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
     SymbolId id = static_cast<SymbolId>(i);
-    Object* value = symbols->at(id);
+    RawObject value = symbols->at(id);
     ASSERT_TRUE(value->isStr());
     const char* expected = symbols->literalAt(id);
     EXPECT_TRUE(Str::cast(value)->equalsCStr(expected))
@@ -1259,7 +1259,7 @@ TEST(RuntimeTest, VerifySymbols) {
   }
 }
 
-static Str* className(Runtime* runtime, Object* o) {
+static RawStr className(Runtime* runtime, RawObject o) {
   auto cls = Type::cast(runtime->typeOf(o));
   auto name = Str::cast(cls->name());
   return name;
@@ -1312,7 +1312,7 @@ TEST(RuntimeStrTest, StrConcat) {
 struct LookupNameInMroData {
   const char* test_name;
   const char* name;
-  Object* expected;
+  RawObject expected;
 };
 
 static std::string lookupNameInMroTestName(
@@ -1346,7 +1346,8 @@ TEST_P(LookupNameInMroTest, Lookup) {
 
   auto param = GetParam();
   Handle<Object> key(&scope, runtime.newStrFromCStr(param.name));
-  Object* result = runtime.lookupNameInMro(Thread::currentThread(), klass, key);
+  RawObject result =
+      runtime.lookupNameInMro(Thread::currentThread(), klass, key);
   EXPECT_EQ(result, param.expected);
 }
 
@@ -1493,24 +1494,24 @@ def func():
 TEST(RuntimeObjectArrayTest, Create) {
   Runtime runtime;
 
-  Object* obj0 = runtime.newObjectArray(0);
+  RawObject obj0 = runtime.newObjectArray(0);
   ASSERT_TRUE(obj0->isObjectArray());
-  ObjectArray* array0 = ObjectArray::cast(obj0);
+  RawObjectArray array0 = ObjectArray::cast(obj0);
   EXPECT_EQ(array0->length(), 0);
 
-  Object* obj1 = runtime.newObjectArray(1);
+  RawObject obj1 = runtime.newObjectArray(1);
   ASSERT_TRUE(obj1->isObjectArray());
-  ObjectArray* array1 = ObjectArray::cast(obj1);
+  RawObjectArray array1 = ObjectArray::cast(obj1);
   EXPECT_EQ(array1->length(), 1);
 
-  Object* obj7 = runtime.newObjectArray(7);
+  RawObject obj7 = runtime.newObjectArray(7);
   ASSERT_TRUE(obj7->isObjectArray());
-  ObjectArray* array7 = ObjectArray::cast(obj7);
+  RawObjectArray array7 = ObjectArray::cast(obj7);
   EXPECT_EQ(array7->length(), 7);
 
-  Object* obj8 = runtime.newObjectArray(8);
+  RawObject obj8 = runtime.newObjectArray(8);
   ASSERT_TRUE(obj8->isObjectArray());
-  ObjectArray* array8 = ObjectArray::cast(obj8);
+  RawObjectArray array8 = ObjectArray::cast(obj8);
   EXPECT_EQ(array8->length(), 8);
 }
 
@@ -1548,7 +1549,7 @@ TEST(RuntimeSetTest, Add) {
 
   // Add a existing value
   Handle<Object> same_value(&scope, SmallInt::fromWord(12345));
-  Object* old_value = runtime.setAdd(set, same_value);
+  RawObject old_value = runtime.setAdd(set, same_value);
   EXPECT_EQ(set->numItems(), 2);
   EXPECT_EQ(old_value, *value);
 }
@@ -1882,7 +1883,7 @@ TEST(RuntimeSetTest, SetCopy) {
 
 // Attribute tests
 
-static Object* createClass(Runtime* runtime) {
+static RawObject createClass(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> klass(&scope, runtime->newClass());
   Thread* thread = Thread::currentThread();
@@ -1926,7 +1927,7 @@ TEST(ClassGetAttrTest, MetaClassFunction) {
   setInMetaclass(&runtime, klass, attr, value);
 
   // Fetch it from the class and ensure the bound method was created
-  Object* result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  RawObject result = runtime.attributeAt(Thread::currentThread(), klass, attr);
   ASSERT_TRUE(result->isBoundMethod());
   Handle<BoundMethod> bm(&scope, result);
   EXPECT_TRUE(Object::equals(bm->function(), *value));
@@ -1945,7 +1946,7 @@ TEST(ClassGetAttrTest, MetaClassAttr) {
   setInMetaclass(&runtime, klass, attr, value);
 
   // Fetch it from the class
-  Object* result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  RawObject result = runtime.attributeAt(Thread::currentThread(), klass, attr);
   EXPECT_TRUE(Object::equals(result, *value));
 }
 
@@ -1967,7 +1968,7 @@ TEST(ClassGetAttrTest, ShadowingAttr) {
   setInClassDict(&runtime, klass, attr, klass_value);
 
   // Fetch it from the class
-  Object* result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  RawObject result = runtime.attributeAt(Thread::currentThread(), klass, attr);
   EXPECT_TRUE(Object::equals(result, *klass_value));
 }
 
@@ -2000,7 +2001,7 @@ TEST_P(IntrinsicClassSetAttrTest, SetAttr) {
   Handle<Object> value(&scope, SmallInt::fromWord(100));
   Thread* thread = Thread::currentThread();
 
-  Object* result = runtime.attributeAtPut(thread, klass, attr, value);
+  RawObject result = runtime.attributeAtPut(thread, klass, attr, value);
 
   EXPECT_TRUE(result->isError());
   ASSERT_TRUE(thread->exceptionValue()->isStr());
@@ -2021,7 +2022,7 @@ TEST(ClassAttributeTest, SetAttrOnClass) {
   Handle<Object> attr(&scope, runtime.newStrFromCStr("test"));
   Handle<Object> value(&scope, SmallInt::fromWord(100));
 
-  Object* result =
+  RawObject result =
       runtime.attributeAtPut(Thread::currentThread(), klass, attr, value);
   ASSERT_FALSE(result->isError());
 
@@ -2146,7 +2147,7 @@ class DataDescriptor:
   Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, klass, attr, descr);
 
-  Object* result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  RawObject result = runtime.attributeAt(Thread::currentThread(), klass, attr);
   ASSERT_EQ(ObjectArray::cast(result)->length(), 3);
   EXPECT_EQ(runtime.typeOf(ObjectArray::cast(result)->at(0)), *descr_klass);
   EXPECT_EQ(ObjectArray::cast(result)->at(1), *klass);
@@ -2176,7 +2177,7 @@ class DataDescriptor:
   Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInClassDict(&runtime, klass, attr, descr);
 
-  Object* result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  RawObject result = runtime.attributeAt(Thread::currentThread(), klass, attr);
   ASSERT_EQ(ObjectArray::cast(result)->length(), 3);
   EXPECT_EQ(runtime.typeOf(ObjectArray::cast(result)->at(0)), *descr_klass);
   EXPECT_EQ(ObjectArray::cast(result)->at(1), NoneType::object());
@@ -2440,7 +2441,8 @@ class Foo:
   Handle<Layout> instance_layout(&scope, Type::cast(*klass)->instanceLayout());
   Handle<Object> instance(&scope, runtime.newInstance(instance_layout));
 
-  Object* result = runtime.attributeAt(Thread::currentThread(), instance, attr);
+  RawObject result =
+      runtime.attributeAt(Thread::currentThread(), instance, attr);
   ASSERT_EQ(ObjectArray::cast(result)->length(), 3);
   EXPECT_EQ(runtime.typeOf(ObjectArray::cast(result)->at(0)), *descr_klass);
   EXPECT_EQ(ObjectArray::cast(result)->at(1), *instance);
@@ -2532,7 +2534,8 @@ TEST(InstanceAttributeTest, NoInstanceDictReturnsClassAttribute) {
   HandleScope scope;
   Handle<Object> immediate(&scope, SmallInt::fromWord(-1));
   Handle<Object> name(&scope, runtime.symbols()->DunderNeg());
-  Object* attr = runtime.attributeAt(Thread::currentThread(), immediate, name);
+  RawObject attr =
+      runtime.attributeAt(Thread::currentThread(), immediate, name);
   ASSERT_TRUE(attr->isBoundMethod());
 }
 
@@ -2810,12 +2813,12 @@ TEST(RuntimeIntTest, NewSmallIntWithDigits) {
   EXPECT_EQ(zero->asWord(), 0);
 
   uword digit = 1;
-  Object* one = runtime.newIntWithDigits(View<uword>(&digit, 1));
+  RawObject one = runtime.newIntWithDigits(View<uword>(&digit, 1));
   ASSERT_TRUE(one->isSmallInt());
   EXPECT_EQ(SmallInt::cast(one)->value(), 1);
 
   digit = kMaxUword;
-  Object* negative_one = runtime.newIntWithDigits(View<uword>(&digit, 1));
+  RawObject negative_one = runtime.newIntWithDigits(View<uword>(&digit, 1));
   ASSERT_TRUE(negative_one->isSmallInt());
   EXPECT_EQ(SmallInt::cast(negative_one)->value(), -1);
 

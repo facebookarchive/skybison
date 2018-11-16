@@ -34,7 +34,7 @@ void StrBuiltins::initialize(Runtime* runtime) {
   type->setFlag(Type::Flag::kStrSubclass);
 }
 
-Object* StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr("str.__add__ needs an argument");
   }
@@ -64,13 +64,13 @@ Object* StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   return runtime->strConcat(self_str, other_str);
 }
 
-Object* StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  Object* self = args.get(0);
-  Object* other = args.get(1);
+  RawObject self = args.get(0);
+  RawObject other = args.get(1);
   if (self->isStr() && other->isStr()) {
     return Bool::fromBool(Str::cast(self)->compare(other) == 0);
   }
@@ -78,13 +78,13 @@ Object* StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  Object* self = args.get(0);
-  Object* other = args.get(1);
+  RawObject self = args.get(0);
+  RawObject other = args.get(1);
   if (self->isStr() && other->isStr()) {
     return Bool::fromBool(Str::cast(self)->compare(other) >= 0);
   }
@@ -92,13 +92,13 @@ Object* StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  Object* self = args.get(0);
-  Object* other = args.get(1);
+  RawObject self = args.get(0);
+  RawObject other = args.get(1);
   if (self->isStr() && other->isStr()) {
     return Bool::fromBool(Str::cast(self)->compare(other) > 0);
   }
@@ -106,7 +106,7 @@ Object* StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -136,13 +136,13 @@ Object* StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->strJoin(thread, sep, tuple, list->allocated());
 }
 
-Object* StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  Object* self = args.get(0);
-  Object* other = args.get(1);
+  RawObject self = args.get(0);
+  RawObject other = args.get(1);
   if (self->isStr() && other->isStr()) {
     return Bool::fromBool(Str::cast(self)->compare(other) <= 0);
   }
@@ -150,7 +150,7 @@ Object* StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("expected 0 arguments");
   }
@@ -166,7 +166,7 @@ Object* StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
       "descriptor '__len__' requires a 'str' object");
 }
 
-Object* StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("expected 0 arguments");
   }
@@ -194,13 +194,13 @@ Object* StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-Object* StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  Object* self = args.get(0);
-  Object* other = args.get(1);
+  RawObject self = args.get(0);
+  RawObject other = args.get(1);
   if (self->isStr() && other->isStr()) {
     return Bool::fromBool(Str::cast(self)->compare(other) < 0);
   }
@@ -269,7 +269,7 @@ static void stringFormatToBuffer(const Handle<Str>& fmt,
         dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%g", value);
       } break;
       case 's': {
-        Str* value = Str::cast(args->at(arg_idx));
+        RawStr value = Str::cast(args->at(arg_idx));
         value->copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), value->length());
         dst_idx += value->length();
         arg_idx++;
@@ -284,8 +284,8 @@ static void stringFormatToBuffer(const Handle<Str>& fmt,
   dst[len] = '\0';
 }
 
-Object* StrBuiltins::strFormat(Thread* thread, const Handle<Str>& fmt,
-                               const Handle<ObjectArray>& args) {
+RawObject StrBuiltins::strFormat(Thread* thread, const Handle<Str>& fmt,
+                                 const Handle<ObjectArray>& args) {
   if (fmt->length() == 0) {
     return *fmt;
   }
@@ -293,12 +293,12 @@ Object* StrBuiltins::strFormat(Thread* thread, const Handle<Str>& fmt,
   char* dst = static_cast<char*>(std::malloc(len + 1));
   CHECK(dst != nullptr, "Buffer allocation failure");
   stringFormatToBuffer(fmt, args, dst, len);
-  Object* result = thread->runtime()->newStrFromCStr(dst);
+  RawObject result = thread->runtime()->newStrFromCStr(dst);
   std::free(dst);
   return result;
 }
 
-Object* StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
+RawObject StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -323,13 +323,13 @@ Object* StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
   return runtime->notImplemented();
 }
 
-Object* StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  Object* self = args.get(0);
-  Object* other = args.get(1);
+  RawObject self = args.get(0);
+  RawObject other = args.get(1);
   if (self->isStr() && other->isStr()) {
     return Bool::fromBool(Str::cast(self)->compare(other) != 0);
   }
@@ -337,7 +337,7 @@ Object* StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
         "str.__new__(): not enough arguments");
@@ -381,7 +381,7 @@ Object* StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
                                     thread, frame, arg, SymbolId::kDunderStr));
   DCHECK(!method->isError(),
          "No __str__ found on the object even though everything inherits one");
-  Object* ret = Interpreter::callMethod1(thread, frame, method, arg);
+  RawObject ret = Interpreter::callMethod1(thread, frame, method, arg);
   if (!ret->isError() &&
       !runtime->hasSubClassFlag(ret, Type::Flag::kStrSubclass)) {
     return thread->raiseTypeErrorWithCStr("__str__ returned non-string");
@@ -389,7 +389,7 @@ Object* StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return ret;
 }
 
-Object* StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -399,7 +399,7 @@ Object* StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
 
   if (self->isStr()) {
     Handle<Str> string(&scope, *self);
-    Object* index = args.get(1);
+    RawObject index = args.get(1);
     if (index->isSmallInt()) {
       word idx = SmallInt::cast(index)->value();
       if (idx < 0) {
@@ -446,7 +446,7 @@ void StrBuiltins::byteToHex(byte** buf, byte convert) {
   *(*buf)++ = hexdigits[convert & 0x0f];
 }
 
-Object* StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
+RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("expected 0 arguments");
   }

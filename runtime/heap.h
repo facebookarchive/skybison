@@ -11,7 +11,7 @@ class Heap {
   explicit Heap(word size);
   ~Heap();
 
-  Object* allocate(word size, word offset);
+  RawObject allocate(word size, word offset);
 
   bool contains(void* address);
   bool verify();
@@ -21,36 +21,36 @@ class Heap {
   void setSpace(Space* new_space) { space_ = new_space; }
 
   template <typename T>
-  Object* create();
+  RawObject create();
 
-  Object* createBytes(word length);
+  RawObject createBytes(word length);
 
-  Object* createClass(LayoutId metaclass_id);
+  RawObject createClass(LayoutId metaclass_id);
 
-  Object* createComplex(double real, double imag);
+  RawObject createComplex(double real, double imag);
 
-  Object* createFloat(double value);
+  RawObject createFloat(double value);
 
-  Object* createEllipsis();
+  RawObject createEllipsis();
 
-  Object* createInstance(LayoutId layout_id, word num_attributes);
+  RawObject createInstance(LayoutId layout_id, word num_attributes);
 
-  Object* createLargeInt(word num_digits);
+  RawObject createLargeInt(word num_digits);
 
-  Object* createLargeStr(word length);
+  RawObject createLargeStr(word length);
 
-  Object* createLayout(LayoutId layout_id);
+  RawObject createLayout(LayoutId layout_id);
 
-  Object* createObjectArray(word length, Object* value);
+  RawObject createObjectArray(word length, RawObject value);
 
-  Object* createRange();
+  RawObject createRange();
 
  private:
   Space* space_;
 };
 
 template <typename T>
-Object* Heap::create() {
+RawObject Heap::create() {
   return createInstance(ObjectLayoutId<T>::value, T::kSize / kPointerSize);
 }
 

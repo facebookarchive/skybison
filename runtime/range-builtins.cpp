@@ -16,7 +16,7 @@ void RangeBuiltins::initialize(Runtime* runtime) {
                                    nativeTrampoline<dunderIter>);
 }
 
-Object* RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
@@ -44,8 +44,8 @@ void RangeIteratorBuiltins::initialize(Runtime* runtime) {
                                        LayoutId::kObject, kMethods));
 }
 
-Object* RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                            word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
@@ -60,8 +60,8 @@ Object* RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-Object* RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                            word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
   }
@@ -80,8 +80,8 @@ Object* RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-Object* RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
+                                                  word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr(
         "__length_hint__() takes no arguments");

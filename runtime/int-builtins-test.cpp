@@ -1089,11 +1089,11 @@ TEST(IntBuiltinsTest, DunderBoolOnBool) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
   frame->setLocal(0, Bool::trueObj());
-  Object* result = IntBuiltins::dunderBool(thread, frame, 1);
+  RawObject result = IntBuiltins::dunderBool(thread, frame, 1);
   EXPECT_EQ(result, Bool::trueObj());
 
   frame->setLocal(0, Bool::falseObj());
-  Object* result1 = IntBuiltins::dunderBool(thread, frame, 1);
+  RawObject result1 = IntBuiltins::dunderBool(thread, frame, 1);
   EXPECT_EQ(result1, Bool::falseObj());
 }
 
@@ -1103,11 +1103,11 @@ TEST(IntBuiltinsTest, BitLengthOnBool) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
   frame->setLocal(0, Bool::trueObj());
-  Object* result = IntBuiltins::dunderBool(thread, frame, 1);
+  RawObject result = IntBuiltins::dunderBool(thread, frame, 1);
   EXPECT_EQ(result, Bool::trueObj());
 
   frame->setLocal(0, Bool::falseObj());
-  Object* result1 = IntBuiltins::dunderBool(thread, frame, 1);
+  RawObject result1 = IntBuiltins::dunderBool(thread, frame, 1);
   EXPECT_EQ(result1, Bool::falseObj());
 }
 
@@ -1118,19 +1118,19 @@ TEST(IntBuiltinsTest, DunderEqOnBool) {
 
   frame->setLocal(0, Bool::trueObj());
   frame->setLocal(1, Bool::trueObj());
-  Object* result = IntBuiltins::dunderEq(thread, frame, 2);
+  RawObject result = IntBuiltins::dunderEq(thread, frame, 2);
   EXPECT_EQ(result, Bool::trueObj());
 
   frame->setLocal(1, Bool::falseObj());
-  Object* result1 = IntBuiltins::dunderEq(thread, frame, 2);
+  RawObject result1 = IntBuiltins::dunderEq(thread, frame, 2);
   EXPECT_EQ(result1, Bool::falseObj());
 
   frame->setLocal(1, SmallInt::fromWord(0));
-  Object* result2 = IntBuiltins::dunderEq(thread, frame, 2);
+  RawObject result2 = IntBuiltins::dunderEq(thread, frame, 2);
   EXPECT_EQ(result2, Bool::falseObj());
 
   frame->setLocal(1, SmallInt::fromWord(1));
-  Object* result3 = IntBuiltins::dunderEq(thread, frame, 2);
+  RawObject result3 = IntBuiltins::dunderEq(thread, frame, 2);
   EXPECT_EQ(result3, Bool::trueObj());
 }
 
@@ -1141,19 +1141,19 @@ TEST(IntBuiltinsTest, DunderNeOnBool) {
 
   frame->setLocal(0, Bool::trueObj());
   frame->setLocal(1, Bool::trueObj());
-  Object* result = IntBuiltins::dunderNe(thread, frame, 2);
+  RawObject result = IntBuiltins::dunderNe(thread, frame, 2);
   EXPECT_EQ(result, Bool::falseObj());
 
   frame->setLocal(1, Bool::falseObj());
-  Object* result1 = IntBuiltins::dunderNe(thread, frame, 2);
+  RawObject result1 = IntBuiltins::dunderNe(thread, frame, 2);
   EXPECT_EQ(result1, Bool::trueObj());
 
   frame->setLocal(1, SmallInt::fromWord(0));
-  Object* result2 = IntBuiltins::dunderNe(thread, frame, 2);
+  RawObject result2 = IntBuiltins::dunderNe(thread, frame, 2);
   EXPECT_EQ(result2, Bool::trueObj());
 
   frame->setLocal(1, SmallInt::fromWord(1));
-  Object* result3 = IntBuiltins::dunderNe(thread, frame, 2);
+  RawObject result3 = IntBuiltins::dunderNe(thread, frame, 2);
   EXPECT_EQ(result3, Bool::falseObj());
 }
 
@@ -1163,11 +1163,11 @@ TEST(IntBuiltinsTest, DunderNegOnBool) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
   frame->setLocal(0, Bool::trueObj());
-  Object* result = IntBuiltins::dunderNeg(thread, frame, 1);
+  RawObject result = IntBuiltins::dunderNeg(thread, frame, 1);
   EXPECT_EQ(result, SmallInt::fromWord(-1));
 
   frame->setLocal(0, Bool::falseObj());
-  Object* result1 = IntBuiltins::dunderNeg(thread, frame, 1);
+  RawObject result1 = IntBuiltins::dunderNeg(thread, frame, 1);
   EXPECT_EQ(result1, SmallInt::fromWord(0));
 }
 
@@ -1177,11 +1177,11 @@ TEST(IntBuiltinsTest, DunderPosOnBool) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
   frame->setLocal(0, Bool::trueObj());
-  Object* result = IntBuiltins::dunderPos(thread, frame, 1);
+  RawObject result = IntBuiltins::dunderPos(thread, frame, 1);
   EXPECT_EQ(result, SmallInt::fromWord(1));
 
   frame->setLocal(0, Bool::falseObj());
-  Object* result1 = IntBuiltins::dunderPos(thread, frame, 1);
+  RawObject result1 = IntBuiltins::dunderPos(thread, frame, 1);
   EXPECT_EQ(result1, SmallInt::fromWord(0));
 }
 
@@ -1192,22 +1192,22 @@ TEST(IntBuiltinsTest, DunderLtOnBool) {
 
   frame->setLocal(0, Bool::trueObj());
   frame->setLocal(1, Bool::falseObj());
-  Object* result = IntBuiltins::dunderLt(thread, frame, 2);
+  RawObject result = IntBuiltins::dunderLt(thread, frame, 2);
   EXPECT_EQ(result, Bool::falseObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, Bool::trueObj());
-  Object* result1 = IntBuiltins::dunderLt(thread, frame, 2);
+  RawObject result1 = IntBuiltins::dunderLt(thread, frame, 2);
   EXPECT_EQ(result1, Bool::trueObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, SmallInt::fromWord(1));
-  Object* result2 = IntBuiltins::dunderLt(thread, frame, 2);
+  RawObject result2 = IntBuiltins::dunderLt(thread, frame, 2);
   EXPECT_EQ(result2, Bool::trueObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, SmallInt::fromWord(-1));
-  Object* result3 = IntBuiltins::dunderLt(thread, frame, 2);
+  RawObject result3 = IntBuiltins::dunderLt(thread, frame, 2);
   EXPECT_EQ(result3, Bool::falseObj());
 }
 
@@ -1218,22 +1218,22 @@ TEST(IntBuiltinsTest, DunderGeOnBool) {
 
   frame->setLocal(0, Bool::trueObj());
   frame->setLocal(1, Bool::falseObj());
-  Object* result = IntBuiltins::dunderGe(thread, frame, 2);
+  RawObject result = IntBuiltins::dunderGe(thread, frame, 2);
   EXPECT_EQ(result, Bool::trueObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, Bool::trueObj());
-  Object* result1 = IntBuiltins::dunderGe(thread, frame, 2);
+  RawObject result1 = IntBuiltins::dunderGe(thread, frame, 2);
   EXPECT_EQ(result1, Bool::falseObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, SmallInt::fromWord(1));
-  Object* result2 = IntBuiltins::dunderGe(thread, frame, 2);
+  RawObject result2 = IntBuiltins::dunderGe(thread, frame, 2);
   EXPECT_EQ(result2, Bool::falseObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, SmallInt::fromWord(-1));
-  Object* result3 = IntBuiltins::dunderGe(thread, frame, 2);
+  RawObject result3 = IntBuiltins::dunderGe(thread, frame, 2);
   EXPECT_EQ(result3, Bool::trueObj());
 }
 
@@ -1244,22 +1244,22 @@ TEST(IntBuiltinsTest, DunderGtOnBool) {
 
   frame->setLocal(0, Bool::trueObj());
   frame->setLocal(1, Bool::falseObj());
-  Object* result = IntBuiltins::dunderGt(thread, frame, 2);
+  RawObject result = IntBuiltins::dunderGt(thread, frame, 2);
   EXPECT_EQ(result, Bool::trueObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, Bool::trueObj());
-  Object* result1 = IntBuiltins::dunderGt(thread, frame, 2);
+  RawObject result1 = IntBuiltins::dunderGt(thread, frame, 2);
   EXPECT_EQ(result1, Bool::falseObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, SmallInt::fromWord(1));
-  Object* result2 = IntBuiltins::dunderGt(thread, frame, 2);
+  RawObject result2 = IntBuiltins::dunderGt(thread, frame, 2);
   EXPECT_EQ(result2, Bool::falseObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, SmallInt::fromWord(-1));
-  Object* result3 = IntBuiltins::dunderGt(thread, frame, 2);
+  RawObject result3 = IntBuiltins::dunderGt(thread, frame, 2);
   EXPECT_EQ(result3, Bool::trueObj());
 }
 
@@ -1270,22 +1270,22 @@ TEST(IntBuiltinsTest, DunderLeOnBool) {
 
   frame->setLocal(0, Bool::trueObj());
   frame->setLocal(1, Bool::falseObj());
-  Object* result = IntBuiltins::dunderLe(thread, frame, 2);
+  RawObject result = IntBuiltins::dunderLe(thread, frame, 2);
   EXPECT_EQ(result, Bool::falseObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, Bool::trueObj());
-  Object* result1 = IntBuiltins::dunderLe(thread, frame, 2);
+  RawObject result1 = IntBuiltins::dunderLe(thread, frame, 2);
   EXPECT_EQ(result1, Bool::trueObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, SmallInt::fromWord(1));
-  Object* result2 = IntBuiltins::dunderLe(thread, frame, 2);
+  RawObject result2 = IntBuiltins::dunderLe(thread, frame, 2);
   EXPECT_EQ(result2, Bool::trueObj());
 
   frame->setLocal(0, Bool::falseObj());
   frame->setLocal(1, SmallInt::fromWord(-1));
-  Object* result3 = IntBuiltins::dunderLe(thread, frame, 2);
+  RawObject result3 = IntBuiltins::dunderLe(thread, frame, 2);
   EXPECT_EQ(result3, Bool::falseObj());
 }
 
@@ -1318,7 +1318,7 @@ TEST(BoolBuiltinsTest, NewFromNonZeroIntegerReturnsTrue) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
   frame->setLocal(1, SmallInt::fromWord(2));
-  Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+  RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
   EXPECT_TRUE(Bool::cast(result)->value());
 }
 
@@ -1328,7 +1328,7 @@ TEST(BoolBuiltinsTest, NewFromZerorReturnsFalse) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
   frame->setLocal(1, SmallInt::fromWord(0));
-  Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+  RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
   EXPECT_FALSE(Bool::cast(result)->value());
 }
 
@@ -1338,7 +1338,7 @@ TEST(BoolBuiltinsTest, NewFromTrueReturnsTrue) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
   frame->setLocal(1, Bool::trueObj());
-  Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+  RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
   EXPECT_TRUE(Bool::cast(result)->value());
   thread->popFrame();
 }
@@ -1349,7 +1349,7 @@ TEST(BoolBuiltinsTest, NewFromFalseReturnsTrue) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
   frame->setLocal(1, Bool::falseObj());
-  Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+  RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
   EXPECT_FALSE(Bool::cast(result)->value());
   thread->popFrame();
 }
@@ -1361,7 +1361,7 @@ TEST(BoolBuiltinsTest, NewFromNoneIsFalse) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
   frame->setLocal(1, NoneType::object());
-  Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+  RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
   EXPECT_FALSE(Bool::cast(result)->value());
   thread->popFrame();
 }
@@ -1390,7 +1390,7 @@ bar = Bar()
     Frame* frame = thread->openAndLinkFrame(0, 2, 0);
     frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
     frame->setLocal(1, *foo);
-    Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+    RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
     EXPECT_TRUE(Bool::cast(result)->value());
     thread->popFrame();
   }
@@ -1398,7 +1398,7 @@ bar = Bar()
     Frame* frame = thread->openAndLinkFrame(0, 2, 0);
     frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
     frame->setLocal(1, *bar);
-    Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+    RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
     EXPECT_FALSE(Bool::cast(result)->value());
     thread->popFrame();
   }

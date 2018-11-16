@@ -11,20 +11,20 @@ namespace python {
 extern std::ostream* builtInStdout;
 extern std::ostream* builtinStderr;
 
-Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs);
-Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs);
-Object* builtinCallable(Thread* thread, Frame* frame, word nargs);
-Object* builtinChr(Thread* thread, Frame* frame, word nargs);
-Object* builtinGetattr(Thread* thread, Frame* frame, word nargs);
-Object* builtinHasattr(Thread* thread, Frame* frame, word nargs);
-Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs);
-Object* builtinIssubclass(Thread* thread, Frame* frame, word nargs);
-Object* builtinLen(Thread* thread, Frame* frame, word nargs);
-Object* builtinOrd(Thread* thread, Frame* frame, word nargs);
-Object* builtinPrint(Thread* thread, Frame* frame, word nargs);
-Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs);
-Object* builtinRange(Thread* thread, Frame* frame, word nargs);
-Object* builtinRepr(Thread* thread, Frame* frame, word nargs);
-Object* builtinSetattr(Thread* thread, Frame* frame, word nargs);
+RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs);
+RawObject builtinBuildClassKw(Thread* thread, Frame* frame, word nargs);
+RawObject builtinCallable(Thread* thread, Frame* frame, word nargs);
+RawObject builtinChr(Thread* thread, Frame* frame, word nargs);
+RawObject builtinGetattr(Thread* thread, Frame* frame, word nargs);
+RawObject builtinHasattr(Thread* thread, Frame* frame, word nargs);
+RawObject builtinIsinstance(Thread* thread, Frame* frame, word nargs);
+RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs);
+RawObject builtinLen(Thread* thread, Frame* frame, word nargs);
+RawObject builtinOrd(Thread* thread, Frame* frame, word nargs);
+RawObject builtinPrint(Thread* thread, Frame* frame, word nargs);
+RawObject builtinPrintKw(Thread* thread, Frame* frame, word nargs);
+RawObject builtinRange(Thread* thread, Frame* frame, word nargs);
+RawObject builtinRepr(Thread* thread, Frame* frame, word nargs);
+RawObject builtinSetattr(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

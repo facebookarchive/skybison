@@ -198,7 +198,7 @@ TEST(SetBuiltinsTest, DunderIandWithNonSet) {
 }
 
 // Equivalent to evaluating "set(range(start, stop))" in Python
-static Object* setFromRange(word start, word stop) {
+static RawObject setFromRange(word start, word stop) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Handle<Set> result(&scope, thread->runtime()->newSet());

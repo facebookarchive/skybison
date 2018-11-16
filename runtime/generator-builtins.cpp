@@ -13,7 +13,8 @@ void GeneratorBaseBuiltins::initialize(Runtime* runtime) {
 }
 
 template <LayoutId target>
-Object* GeneratorBaseBuiltins::send(Thread* thread, Frame* frame, word nargs) {
+RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
+                                      word nargs) {
   static_assert(
       target == LayoutId::kGenerator || target == LayoutId::kCoroutine,
       "unsupported LayoutId");
@@ -55,8 +56,8 @@ void GeneratorBuiltins::initialize(Runtime* runtime) {
                                      LayoutId::kObject, kMethods));
 }
 
-Object* GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                        word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
@@ -71,8 +72,8 @@ Object* GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-Object* GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                        word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
   }

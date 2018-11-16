@@ -116,7 +116,7 @@ TEST(LayoutTest, DeleteNonExistentAttribute) {
   Thread* thread = Thread::currentThread();
   Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
   Handle<Object> attr(&scope, runtime.newStrFromCStr("myattr"));
-  Object* result = runtime.layoutDeleteAttribute(thread, layout, attr);
+  RawObject result = runtime.layoutDeleteAttribute(thread, layout, attr);
   EXPECT_EQ(result, Error::object());
 }
 
@@ -137,7 +137,7 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
   layout->setInObjectAttributes(*array);
 
   // Deleting the attribute should succeed and return a new layout
-  Object* result = runtime.layoutDeleteAttribute(thread, layout, attr);
+  RawObject result = runtime.layoutDeleteAttribute(thread, layout, attr);
   ASSERT_TRUE(result->isLayout());
   Handle<Layout> layout2(&scope, result);
   EXPECT_NE(layout->id(), layout2->id());
@@ -182,7 +182,7 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
 
   // Delete the middle attribute. Make sure a new layout is created and the
   // entry after the deleted attribute has its offset updated correctly.
-  Object* result = runtime.layoutDeleteAttribute(thread, layout, attr2);
+  RawObject result = runtime.layoutDeleteAttribute(thread, layout, attr2);
   ASSERT_TRUE(result->isLayout());
   Handle<Layout> layout2(&scope, result);
   EXPECT_NE(layout2->id(), layout->id());
@@ -252,7 +252,7 @@ TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
 
   // Delete the in-object attribute and add it back. It should be re-added as
   // an overflow attribute.
-  Object* result = runtime.layoutDeleteAttribute(thread, layout, inobject);
+  RawObject result = runtime.layoutDeleteAttribute(thread, layout, inobject);
   ASSERT_TRUE(result->isLayout());
   Handle<Layout> layout2(&scope, result);
   result = runtime.layoutAddAttribute(thread, layout2, inobject, 0);

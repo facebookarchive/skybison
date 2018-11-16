@@ -8,14 +8,14 @@
 
 namespace python {
 
-Object* builtinRefInit(Thread* thread, Frame*, word nargs) {
+RawObject builtinRefInit(Thread* thread, Frame*, word nargs) {
   if (nargs < 2 || nargs > 3) {
     return thread->raiseTypeErrorWithCStr("ref() expected 2 or 3 arguments");
   }
   return NoneType::object();
 }
 
-Object* builtinRefNew(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinRefNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   if (nargs < 2 || nargs > 3) {
     return thread->raiseTypeErrorWithCStr("ref() expected 2 or 3 arguments");

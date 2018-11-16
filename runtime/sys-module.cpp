@@ -9,7 +9,7 @@
 
 namespace python {
 
-Object* builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr(
         "displayhook() takes exactly one argument");
@@ -23,7 +23,7 @@ Object* builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
   UNIMPLEMENTED("sys.displayhook()");
 }
 
-Object* builtinSysExit(Thread* thread, Frame* frame, word nargs) {
+RawObject builtinSysExit(Thread* thread, Frame* frame, word nargs) {
   if (nargs > 1) {
     return thread->raiseTypeErrorWithCStr("exit() accepts at most 1 argument");
   }
@@ -33,7 +33,7 @@ Object* builtinSysExit(Thread* thread, Frame* frame, word nargs) {
   word code = 0;  // success
   if (nargs == 1) {
     Arguments args(frame, nargs);
-    Object* arg = args.get(0);
+    RawObject arg = args.get(0);
     if (!arg->isSmallInt()) {
       return thread->raiseTypeErrorWithCStr("exit() expects numeric argument");
     }

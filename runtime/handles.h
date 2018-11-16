@@ -94,7 +94,7 @@ class HandleScope {
 
 class ObjectHandle {
  public:
-  ObjectHandle(HandleScope* scope, Object* pointer)
+  ObjectHandle(HandleScope* scope, RawObject pointer)
       : pointer_(pointer), next_(scope->push(this)), scope_(scope) {}
 
   ~ObjectHandle() {
@@ -102,12 +102,12 @@ class ObjectHandle {
     scope_->list_ = next_;
   }
 
-  Object** pointer() { return &pointer_; }
+  RawObject* pointer() { return &pointer_; }
 
   ObjectHandle* next() const { return next_; }
 
  protected:
-  Object* pointer_;
+  RawObject pointer_;
 
   // The casting constructor below needs this, but it appears you can't
   // access your parent's protected fields when they are on a sibling class.
@@ -144,7 +144,7 @@ class Handle : public ObjectHandle {
                   "Only up- and down-casts are permitted.");
   }
 
-  Handle(HandleScope* scope, Object* pointer)
+  Handle(HandleScope* scope, RawObject pointer)
       : ObjectHandle(scope, T::cast(pointer)) {
     static_assert(std::is_base_of<Object, T>::value,
                   "You can only get a handle to a python::Object.");
@@ -174,7 +174,7 @@ class UncheckedHandle : public ObjectHandle {
 
   T* operator*() const { return reinterpret_cast<T*>(pointer_); }
 
-  UncheckedHandle(HandleScope* scope, Object* pointer)
+  UncheckedHandle(HandleScope* scope, RawObject pointer)
       : ObjectHandle(scope, pointer) {
     static_assert(std::is_base_of<Object, T>::value,
                   "You can only get a handle to a python::Object.");

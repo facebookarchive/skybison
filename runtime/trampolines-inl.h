@@ -12,8 +12,8 @@ namespace python {
 // CALL_FUNCTION
 // TODO(t24656189) - replace with JITed code once we have the facilities for
 // that.
-template <Object* (*Fn)(Thread*, Frame*, word)>
-Object* nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
+template <RawObject (*Fn)(Thread*, Frame*, word)>
+RawObject nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
   HandleScope scope(thread);
   Frame* frame = thread->pushNativeFrame(bit_cast<void*>(Fn), argc);
   Handle<Object> result(&scope, Fn(thread, frame, argc));
@@ -29,8 +29,9 @@ Object* nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
   return *result;
 }
 
-template <Object* (*Fn)(Thread*, Frame*, word)>
-Object* nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/, word argc) {
+template <RawObject (*Fn)(Thread*, Frame*, word)>
+RawObject nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/,
+                             word argc) {
   HandleScope scope(thread);
   Frame* frame = thread->pushNativeFrame(bit_cast<void*>(Fn), argc + 1);
   Handle<Object> result(&scope, Fn(thread, frame, argc + 1));

@@ -1,44 +1,42 @@
 #pragma once
 
 #include "globals.h"
+#include "objects.h"
 
 namespace python {
 
 class Frame;
-class Object;
 class Thread;
-class Function;
-class Code;
 
 // Entry points for interpreted functions
-Object* interpreterTrampoline(Thread* thread, Frame* caller_frame, word argc)
+RawObject interpreterTrampoline(Thread* thread, Frame* caller_frame, word argc)
     __attribute__((aligned(16)));
-Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
-                                      Code* code, Frame* caller_frame,
-                                      word argc) __attribute__((aligned(16)));
-Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame, word argc)
-    __attribute__((aligned(16)));
-Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word argc)
-    __attribute__((aligned(16)));
+RawObject interpreterTrampolineSlowPath(Thread* thread, RawFunction function,
+                                        RawCode code, Frame* caller_frame,
+                                        word argc) __attribute__((aligned(16)));
+RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
+                                  word argc) __attribute__((aligned(16)));
+RawObject interpreterTrampolineEx(Thread* thread, Frame* caller_frame,
+                                  word argc) __attribute__((aligned(16)));
 
 // Aborts immediately when called
-Object* unimplementedTrampoline(Thread* thread, Frame* caller_frame, word argc)
-    __attribute__((aligned(16)));
+RawObject unimplementedTrampoline(Thread* thread, Frame* caller_frame,
+                                  word argc) __attribute__((aligned(16)));
 
 // Force 16-byte alignment on trampoline addresses to disguise them as
 // SmallInts to avoid GC issues
-template <Object* (*Fn)(Thread*, Frame*, word)>
-Object* nativeTrampoline(Thread* thread, Frame* caller_frame, word argc)
+template <RawObject (*Fn)(Thread*, Frame*, word)>
+RawObject nativeTrampoline(Thread* thread, Frame* caller_frame, word argc)
     __attribute__((aligned(16)));
-template <Object* (*Fn)(Thread*, Frame*, word)>
-Object* nativeTrampolineKw(Thread* thread, Frame* caller_frame, word argc)
+template <RawObject (*Fn)(Thread*, Frame*, word)>
+RawObject nativeTrampolineKw(Thread* thread, Frame* caller_frame, word argc)
     __attribute__((aligned(16)));
 
-Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc)
+RawObject extensionTrampoline(Thread* thread, Frame* caller_frame, word argc)
     __attribute__((aligned(16)));
-Object* extensionTrampolineKw(Thread* thread, Frame* caller_frame, word argc)
+RawObject extensionTrampolineKw(Thread* thread, Frame* caller_frame, word argc)
     __attribute__((aligned(16)));
-Object* extensionTrampolineEx(Thread* thread, Frame* caller_frame, word argc)
+RawObject extensionTrampolineEx(Thread* thread, Frame* caller_frame, word argc)
     __attribute__((aligned(16)));
 
 }  // namespace python

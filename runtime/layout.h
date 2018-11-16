@@ -8,7 +8,7 @@ namespace python {
 // AttributeInfo packs attribute metadata into a SmallInt.
 class AttributeInfo {
  public:
-  explicit AttributeInfo(Object* value) {
+  explicit AttributeInfo(RawObject value) {
     DCHECK(value->isSmallInt(), "expected small integer");
     value_ = reinterpret_cast<word>(value);
   }
@@ -63,7 +63,7 @@ class AttributeInfo {
   bool isFixedOffset() { return testFlag(Flag::kFixedOffset); }
 
   // Casting.
-  SmallInt* asSmallInt();
+  RawSmallInt asSmallInt();
 
   // Tags.
   static const int kOffsetSize = 30;
@@ -97,8 +97,8 @@ inline bool AttributeInfo::testFlag(Flag flag) {
   return value_ & (static_cast<uword>(flag) << kFlagsOffset);
 }
 
-inline SmallInt* AttributeInfo::asSmallInt() {
-  auto smi = reinterpret_cast<SmallInt*>(value_);
+inline RawSmallInt AttributeInfo::asSmallInt() {
+  auto smi = reinterpret_cast<RawSmallInt>(value_);
   DCHECK(smi->isSmallInt(), "expected small integer");
   return smi;
 }

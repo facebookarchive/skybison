@@ -6,7 +6,7 @@
 
 namespace python {
 
-static Object* initializeExtensionType(PyTypeObject* extension_type) {
+static RawObject initializeExtensionType(PyTypeObject* extension_type) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
