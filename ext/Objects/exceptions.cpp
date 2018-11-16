@@ -2,6 +2,8 @@
 
 #include "Python.h"
 
+PyObject* PyExc_AttributeError;
 PyObject* PyExc_OverflowError;
-PyObject* PyExc_TypeError;
+PyObject* PyExc_RuntimeWarning;
 PyObject* PyExc_SystemError;
+PyObject* PyExc_TypeError;

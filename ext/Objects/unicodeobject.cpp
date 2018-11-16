@@ -120,4 +120,8 @@ extern "C" char* PyUnicode_AsUTF8AndSize(
   return reinterpret_cast<char*>(result);
 }
 
+extern "C" PyObject* PyUnicode_FromStringAndSize(const char*, Py_ssize_t) {
+  UNIMPLEMENTED("PyUnicode_FromStringAndSize");
+}
+
 } // namespace python

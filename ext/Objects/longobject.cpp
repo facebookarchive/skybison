@@ -84,4 +84,40 @@ extern "C" PyObject* PyLong_FromLong(long ival) {
   return runtime->asApiHandle(*value)->asPyObject();
 }
 
+extern "C" PyObject* PyLong_FromLongLong(long long) {
+  UNIMPLEMENTED("PyLong_FromLongLong");
+}
+
+extern "C" PyObject* PyLong_FromUnsignedLong(unsigned long) {
+  UNIMPLEMENTED("PyLong_FromUnsignedLong");
+}
+
+extern "C" PyObject* PyLong_FromUnsignedLongLong(unsigned long long) {
+  UNIMPLEMENTED("PyLong_FromUnsignedLongLong");
+}
+
+extern "C" PyObject* PyLong_FromSsize_t(Py_ssize_t) {
+  UNIMPLEMENTED("PyLong_FromSsize_t");
+}
+
+extern "C" long PyLong_AsLong(PyObject*) {
+  UNIMPLEMENTED("PyLong_AsLong");
+}
+
+extern "C" long long PyLong_AsLongLong(PyObject*) {
+  UNIMPLEMENTED("PYLong_AsLongLong");
+}
+
+extern "C" unsigned long PyLong_AsUnsignedLong(PyObject*) {
+  UNIMPLEMENTED("PyLong_AsUnsignedLong");
+}
+
+extern "C" unsigned long long PyLong_AsUnsignedLongLong(PyObject*) {
+  UNIMPLEMENTED("PyLong_AsUnsignedLongLong");
+}
+
+extern "C" Py_ssize_t PyLong_AsSsize_t(PyObject*) {
+  UNIMPLEMENTED("PyLong_AsSsize_t");
+}
+
 } // namespace python

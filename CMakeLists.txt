@@ -150,6 +150,7 @@ add_library(
   ext/Objects/tupleobject.cpp
   ext/Objects/typeobject.cpp
   ext/Objects/unicodeobject.cpp
+  ext/Python/_warnings.cpp
   ext/Python/errors.cpp)
 target_compile_options(
   extension

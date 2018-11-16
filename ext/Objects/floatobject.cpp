@@ -72,4 +72,12 @@ extern "C" PyTypeObject* PyFloat_Type_Ptr() {
       runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kFloat)));
 }
 
+extern "C" PyObject* PyFloat_FromDouble(double) {
+  UNIMPLEMENTED("PyFloat_FromDouble");
+}
+
+extern "C" double PyFloat_AsDouble(PyObject*) {
+  UNIMPLEMENTED("PyFloat_AsDouble");
+}
+
 } // namespace python
