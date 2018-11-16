@@ -1367,9 +1367,19 @@ void Runtime::initializeModules() {
   createTimeModule();
 }
 
+struct ExtensionTypeInitializer {
+  void (*initfunc)();
+};
+
+extern struct ExtensionTypeInitializer kExtensionTypeInitializers[];
+
 void Runtime::initializeApiHandles() {
   api_handles_ = newDictionary();
   extension_types_ = newDictionary();
+  // Initialize the extension types
+  for (int i = 0; kExtensionTypeInitializers[i].initfunc != nullptr; i++) {
+    (*kExtensionTypeInitializers[i].initfunc)();
+  }
 }
 
 Object* Runtime::classOf(Object* object) {
