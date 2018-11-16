@@ -27,6 +27,9 @@ class Interpreter {
   static Object* call(Thread* thread, Frame* frame, Object** sp, word nargs);
   static Object* callKw(Thread* thread, Frame* frame, Object** sp, word nargs);
 
+  // batch concat/join <num> string objects on the stack (no conversion)
+  static Object* stringJoin(Thread* thread, Object** sp, word num);
+
  private:
   static Object*
   callBoundMethod(Thread* thread, Frame* frame, Object** sp, word nargs);

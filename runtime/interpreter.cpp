@@ -122,6 +122,42 @@ Interpreter::callType(Thread* thread, Frame* frame, Object** sp, word nargs) {
   return *result;
 }
 
+Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
+  word new_len = 0;
+  for (word i = num - 1; i >= 0; i--) {
+    if (!sp[i]->isString()) {
+      UNIMPLEMENTED("Conversion of non-string values not supported.");
+    }
+    new_len += String::cast(sp[i])->length();
+  }
+
+  if (new_len <= SmallString::kMaxLength) {
+    byte buffer[SmallString::kMaxLength];
+    byte* ptr = buffer;
+    for (word i = num - 1; i >= 0; i--) {
+      String* str = String::cast(sp[i]);
+      word len = str->length();
+      str->copyTo(ptr, len);
+      ptr += len;
+    }
+    return SmallString::fromBytes(View<byte>(buffer, new_len));
+  }
+
+  HandleScope scope(thread->handles());
+  Handle<String> result(
+      &scope, thread->runtime()->heap()->createLargeString(new_len));
+  word offset = 0;
+  for (word i = num - 1; i >= 0; i--) {
+    String* str = String::cast(sp[i]);
+    word len = str->length();
+    str->copyTo(
+        reinterpret_cast<byte*>(HeapObject::cast(*result)->address() + offset),
+        len);
+    offset += len;
+  }
+  return *result;
+}
+
 namespace interpreter {
 enum MakeFunctionFlag {
   DEFAULT = 0x01,
@@ -631,8 +667,9 @@ Result BINARY_TRUE_DIVIDE(Context* ctx, word) {
 }
 
 Result BUILD_STRING(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread->handles());
-  Runtime* runtime = ctx->thread->runtime();
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread->handles());
+  Runtime* runtime = thread->runtime();
   switch (arg) {
     case 0: // empty
       *--ctx->sp = runtime->newStringWithAll(View<byte>(nullptr, 0));
@@ -640,12 +677,9 @@ Result BUILD_STRING(Context* ctx, word arg) {
     case 1: // no-op
       break;
     default: { // concat
-      Handle<String> res(&scope, *(ctx->sp + arg - 1));
-      for (word i = 2; i <= arg; i++) {
-        Handle<String> elem(&scope, *(ctx->sp + arg - i));
-        res = runtime->stringConcat(res, elem); // TODO: add stringJoin
-      }
-      *--ctx->sp = *res;
+      Object* res = Interpreter::stringJoin(thread, ctx->sp, arg);
+      ctx->sp += (arg - 1);
+      *ctx->sp = res;
       break;
     }
   }

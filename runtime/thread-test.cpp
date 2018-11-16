@@ -2145,4 +2145,100 @@ Foo.bar()
   EXPECT_EQ(output, "1\n2\n");
 }
 
+TEST(BuildString, buildStringEmpty) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+
+  const byte bc[] = {BUILD_STRING, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bc));
+
+  Object* obj = Thread::currentThread()->run(*code);
+  EXPECT_TRUE(obj->isString());
+  EXPECT_TRUE(obj->isSmallString());
+
+  Handle<String> result(&scope, obj);
+  EXPECT_TRUE(result->equalsCString(""));
+}
+
+TEST(BuildString, buildStringSingle) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  const char* expected = "foo";
+  Handle<Object> str(&scope, SmallString::fromCString(expected));
+  consts->atPut(0, *str);
+  code->setConsts(*consts);
+
+  const byte bc[] = {LOAD_CONST, 0, BUILD_STRING, 1, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bc));
+
+  Object* obj = Thread::currentThread()->run(*code);
+  EXPECT_TRUE(obj->isString());
+  EXPECT_TRUE(obj->isSmallString());
+
+  Handle<String> result(&scope, obj);
+  EXPECT_TRUE(result->equalsCString(expected));
+}
+
+TEST(BuildString, buildStringMultiSmall) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  Handle<Object> str(&scope, SmallString::fromCString("foo"));
+  Handle<Object> str1(&scope, SmallString::fromCString("bar"));
+  consts->atPut(0, *str);
+  consts->atPut(1, *str1);
+  code->setConsts(*consts);
+
+  const byte bc[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, BUILD_STRING, 2, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bc));
+
+  Object* obj = Thread::currentThread()->run(*code);
+  EXPECT_TRUE(obj->isString());
+  EXPECT_TRUE(obj->isSmallString());
+
+  Handle<String> result(&scope, obj);
+  EXPECT_TRUE(result->equalsCString("foobar"));
+}
+
+TEST(BuildString, buildStringMultiLarge) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
+  Handle<Object> str(&scope, SmallString::fromCString("hello"));
+  Handle<Object> str1(&scope, SmallString::fromCString("world"));
+  Handle<Object> str2(&scope, SmallString::fromCString("python"));
+  consts->atPut(0, *str);
+  consts->atPut(1, *str1);
+  consts->atPut(2, *str2);
+  code->setConsts(*consts);
+
+  const byte bc[] = {LOAD_CONST,
+                     0,
+                     LOAD_CONST,
+                     1,
+                     LOAD_CONST,
+                     2,
+                     BUILD_STRING,
+                     3,
+                     RETURN_VALUE,
+                     0};
+  code->setCode(runtime.newByteArrayWithAll(bc));
+
+  Object* obj = Thread::currentThread()->run(*code);
+  EXPECT_TRUE(obj->isString());
+  EXPECT_TRUE(obj->isLargeString());
+
+  Handle<String> result(&scope, obj);
+  EXPECT_TRUE(result->equalsCString("helloworldpython"));
+}
+
 } // namespace python
