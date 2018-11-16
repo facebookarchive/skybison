@@ -65,9 +65,8 @@ Object* Runtime::newFunction() {
   Object* object = heap()->createFunction();
   assert(object != nullptr);
   auto function = Function::cast(object);
-  auto tramp = trampolineToObject(unimplementedTrampoline);
-  function->setEntry(tramp);
-  function->setEntryKw(tramp);
+  function->setEntry(unimplementedTrampoline);
+  function->setEntryKw(unimplementedTrampoline);
   return function;
 }
 

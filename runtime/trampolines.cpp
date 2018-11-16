@@ -9,15 +9,6 @@
 
 namespace python {
 
-FunctionTrampoline trampolineFromObject(Object* object) {
-  return reinterpret_cast<FunctionTrampoline>(
-      SmallInteger::cast(object)->value());
-}
-
-Object* trampolineToObject(FunctionTrampoline trampoline) {
-  return SmallInteger::fromWord(reinterpret_cast<uword>(trampoline));
-}
-
 Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
   // TODO: We may get passed a BoundMethod.  We'll need to detect that, unwrap
   // it, handle shifting the arguments down (or potentially replacing the

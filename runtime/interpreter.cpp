@@ -41,8 +41,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
       case Bytecode::CALL_FUNCTION: {
         frame->setTop(sp);
         auto function = Function::cast(*(sp + arg));
-        auto trampoline = trampolineFromObject(function->entry());
-        Object* result = trampoline(thread, frame, arg);
+        Object* result = function->entry()(thread, frame, arg);
         // Pop arguments + called function and push return value
         sp += arg;
         *sp = result;

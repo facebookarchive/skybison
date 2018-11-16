@@ -17,12 +17,6 @@ class Thread;
  */
 using FunctionTrampoline = Object* (*)(Thread*, Frame*, word argc);
 
-// Decode a trampoline from a SmallInteger
-FunctionTrampoline trampolineFromObject(Object* object);
-
-// Encode a trampoline as a SmallInteger
-Object* trampolineToObject(FunctionTrampoline trampoline);
-
 // Entry point for an interpreted function with no defaults invoked via
 // CALL_FUNCTION
 Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc);

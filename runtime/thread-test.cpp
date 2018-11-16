@@ -141,7 +141,7 @@ TEST(ThreadTest, CallFunction) {
   // Create the function object and bind it to the code object
   Handle<Function> callee(&scope, runtime.newFunction());
   callee->setCode(*calleeCode);
-  callee->setEntry(trampolineToObject(interpreterTrampoline));
+  callee->setEntry(interpreterTrampoline);
 
   // Build the code object for the following bytecode snippet
   //

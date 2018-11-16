@@ -482,6 +482,8 @@ class Code : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Code);
 };
 
+using FunctionTrampoline = Object* (*)(Thread*, Frame*, word argc);
+
 /**
  * A function object.
  *
@@ -521,13 +523,13 @@ class Function : public HeapObject {
 
   // Returns a pointer to a trampoline that is responsible for executing the
   // function when it is invoked via CALL_FUNCTION
-  inline Object* entry();
-  inline void setEntry(Object* entry);
+  inline FunctionTrampoline entry();
+  inline void setEntry(FunctionTrampoline entry);
 
   // Returns a pointer to a trampoline that is responsible for executing the
   // function when it is invoked via CALL_FUNCTION_KW
-  inline Object* entryKw();
-  inline void setEntryKw(Object* entryKw);
+  inline FunctionTrampoline entryKw();
+  inline void setEntryKw(FunctionTrampoline entryKw);
 
   // The dictionary that holds this function's global namespace. User-code
   // cannot change this
@@ -576,6 +578,9 @@ class Function : public HeapObject {
   static const int kSize = kEntryKwOffset;
 
  private:
+  inline Object* trampolineToObject(FunctionTrampoline trampoline);
+  inline FunctionTrampoline trampolineFromObject(Object* trampoline);
+
   DISALLOW_COPY_AND_ASSIGN(Function);
 };
 
@@ -1374,20 +1379,20 @@ void Function::setDoc(Object* doc) {
   instanceVariableAtPut(kDocOffset, doc);
 }
 
-Object* Function::entry() {
-  return instanceVariableAt(kEntryOffset);
+FunctionTrampoline Function::entry() {
+  return trampolineFromObject(instanceVariableAt(kEntryOffset));
 }
 
-void Function::setEntry(Object* entry) {
-  return instanceVariableAtPut(kEntryOffset, entry);
+void Function::setEntry(FunctionTrampoline entry) {
+  instanceVariableAtPut(kEntryOffset, trampolineToObject(entry));
 }
 
-Object* Function::entryKw() {
-  return instanceVariableAt(kEntryKwOffset);
+FunctionTrampoline Function::entryKw() {
+  return trampolineFromObject(instanceVariableAt(kEntryKwOffset));
 }
 
-void Function::setEntryKw(Object* entryKw) {
-  return instanceVariableAtPut(kEntryKwOffset, entryKw);
+void Function::setEntryKw(FunctionTrampoline entryKw) {
+  instanceVariableAtPut(kEntryKwOffset, trampolineToObject(entryKw));
 }
 
 Object* Function::globals() {
@@ -1448,6 +1453,15 @@ void Function::initialize() {
 
 word Function::bodySize() {
   return Function::kSize - HeapObject::kSize;
+}
+
+FunctionTrampoline Function::trampolineFromObject(Object* object) {
+  return reinterpret_cast<FunctionTrampoline>(
+      SmallInteger::cast(object)->value());
+}
+
+Object* Function::trampolineToObject(FunctionTrampoline trampoline) {
+  return SmallInteger::fromWord(reinterpret_cast<uword>(trampoline));
 }
 
 // List
