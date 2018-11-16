@@ -2305,7 +2305,7 @@ TEST(TypeGetAttrTest, MetaClassFunction) {
 }
 
 // Get an attribute that resides on the metaclass
-TEST(TypeGetAttrTest, MetaTypeAttr) {
+TEST(TypeGetAttrTest, MetaclassAttr) {
   Runtime runtime;
   HandleScope scope;
   Object type(&scope, createType(&runtime));
@@ -2464,7 +2464,7 @@ Foo.bar('testing 123')
   EXPECT_EQ(output, "testing 123\n");
 }
 
-TEST(ClassAttributeDeathTest, GetDataDescriptorOnMetaType) {
+TEST(ClassAttributeDeathTest, GetDataDescriptorOnMetaclass) {
   Runtime runtime;
 
   // Create the data descriptor class
@@ -2494,7 +2494,7 @@ class DataDescriptor:
                "custom descriptors are unsupported");
 }
 
-TEST(TypeAttributeTest, GetNonDataDescriptorOnMetaType) {
+TEST(TypeAttributeTest, GetNonDataDescriptorOnMetaclass) {
   Runtime runtime;
 
   // Create the non-data descriptor class

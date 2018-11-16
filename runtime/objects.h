@@ -866,8 +866,8 @@ class RawType : public RawHeapObject {
   void setExtensionType(RawObject pytype);
 
   // builtin base related
-  RawObject builtinBaseType();
-  void setBuiltinBaseType(RawObject base);
+  RawObject builtinBase();
+  void setBuiltinBase(RawObject base);
 
   bool isIntrinsicOrExtension();
 
@@ -2813,7 +2813,7 @@ inline void RawType::setDict(RawObject dict) {
   instanceVariableAtPut(kDictOffset, dict);
 }
 
-inline RawObject RawType::builtinBaseType() {
+inline RawObject RawType::builtinBase() {
   return instanceVariableAt(kBuiltinBaseTypeOffset);
 }
 
@@ -2825,7 +2825,7 @@ inline void RawType::setExtensionType(RawObject pytype) {
   instanceVariableAtPut(kExtensionTypeOffset, pytype);
 }
 
-inline void RawType::setBuiltinBaseType(RawObject base) {
+inline void RawType::setBuiltinBase(RawObject base) {
   instanceVariableAtPut(kBuiltinBaseTypeOffset, base);
 }
 

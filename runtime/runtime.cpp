@@ -3385,7 +3385,7 @@ RawObject Runtime::newTupleIterator(const Object& tuple) {
   return *result;
 }
 
-LayoutId Runtime::computeBuiltinBaseType(const Type& type) {
+LayoutId Runtime::computeBuiltinBase(const Type& type) {
   // The base class can only be one of the builtin bases including object.
   // We use the first non-object builtin base if any, throw if multiple.
   HandleScope scope;

@@ -2773,7 +2773,7 @@ print("There are %d pystones %g %s what" % (a, d, c))
   EXPECT_EQ(output, "There are 123 pystones 67.89 now what\n");
 }
 
-TEST(ThreadTest, BuildTypeWithMetaType) {
+TEST(ThreadTest, BuildTypeWithMetaclass) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
@@ -2789,7 +2789,7 @@ a = Foo()
   EXPECT_TRUE(runtime.typeOf(*a) == *foo);
 }
 
-TEST(ThreadTest, BuildTypeWithMetaType2) {
+TEST(ThreadTest, BuildTypeWithMetaclass2) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
