@@ -26,7 +26,8 @@ TEST(LayoutTest, FindAttribute) {
 
   // Should fail to find an attribute that isn't present
   Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
-  EXPECT_EQ(runtime.layoutFindAttribute(thread, layout, attr), Error::object());
+  AttributeInfo info;
+  EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout, attr, &info));
 
   // Update the layout to include the new attribute as an in-object attribute
   Handle<ObjectArray> entry(&scope, runtime.newObjectArray(2));
@@ -38,10 +39,7 @@ TEST(LayoutTest, FindAttribute) {
   Layout::cast(*layout)->setInObjectAttributes(*array);
 
   // Should find the attribute
-  Object* result = runtime.layoutFindAttribute(thread, layout, attr);
-  ASSERT_TRUE(result->isSmallInteger());
-
-  AttributeInfo info(result);
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, attr, &info));
   EXPECT_EQ(info.offset(), 2222);
   EXPECT_TRUE(info.isInObject());
 }
@@ -54,7 +52,8 @@ TEST(LayoutTest, AddNewAttributes) {
 
   // Should fail to find an attribute that isn't present
   Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
-  ASSERT_EQ(runtime.layoutFindAttribute(thread, layout, attr), Error::object());
+  AttributeInfo info;
+  ASSERT_FALSE(runtime.layoutFindAttribute(thread, layout, attr, &info));
 
   // Adding a new attribute should result in a new layout being created
   Handle<Layout> layout2(
@@ -63,28 +62,24 @@ TEST(LayoutTest, AddNewAttributes) {
 
   // Should be able find the attribute as an overflow attribute in the new
   // layout
-  Object* info = runtime.layoutFindAttribute(thread, layout2, attr);
-  ASSERT_FALSE(info->isError());
-  EXPECT_TRUE(AttributeInfo(info).isOverflow());
-  EXPECT_EQ(AttributeInfo(info).offset(), 0);
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout2, attr, &info));
+  EXPECT_TRUE(info.isOverflow());
+  EXPECT_EQ(info.offset(), 0);
 
   // Adding another attribute should transition the layout again
   Handle<Object> attr2(&scope, runtime.newStringFromCString("another_attr"));
-  ASSERT_EQ(
-      runtime.layoutFindAttribute(thread, layout2, attr2), Error::object());
+  ASSERT_FALSE(runtime.layoutFindAttribute(thread, layout2, attr2, &info));
   Handle<Layout> layout3(
       &scope, runtime.layoutAddAttribute(thread, layout2, attr2, 0));
   ASSERT_NE(*layout2, *layout3);
 
   // We should be able to find both attributes in the new layout
-  info = runtime.layoutFindAttribute(thread, layout3, attr);
-  ASSERT_FALSE(info->isError());
-  EXPECT_TRUE(AttributeInfo(info).isOverflow());
-  EXPECT_EQ(AttributeInfo(info).offset(), 0);
-  info = runtime.layoutFindAttribute(thread, layout3, attr2);
-  ASSERT_FALSE(info->isError());
-  EXPECT_TRUE(AttributeInfo(info).isOverflow());
-  EXPECT_EQ(AttributeInfo(info).offset(), 1);
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout3, attr, &info));
+  EXPECT_TRUE(info.isOverflow());
+  EXPECT_EQ(info.offset(), 0);
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout3, attr2, &info));
+  EXPECT_TRUE(info.isOverflow());
+  EXPECT_EQ(info.offset(), 1);
 }
 
 TEST(LayoutTest, AddDuplicateAttributes) {
@@ -95,7 +90,8 @@ TEST(LayoutTest, AddDuplicateAttributes) {
 
   // Add an attribute
   Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
-  ASSERT_EQ(runtime.layoutFindAttribute(thread, layout, attr), Error::object());
+  AttributeInfo info;
+  ASSERT_FALSE(runtime.layoutFindAttribute(thread, layout, attr, &info));
 
   // Adding a new attribute should result in a new layout being created
   Handle<Layout> layout2(
@@ -109,10 +105,9 @@ TEST(LayoutTest, AddDuplicateAttributes) {
   EXPECT_EQ(*layout2, *layout3);
 
   // Should be able to find the attribute in the new layout
-  Object* info = runtime.layoutFindAttribute(thread, layout3, attr);
-  ASSERT_TRUE(info->isSmallInteger());
-  EXPECT_EQ(AttributeInfo(info).offset(), 0);
-  EXPECT_TRUE(AttributeInfo(info).isOverflow());
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout3, attr, &info));
+  EXPECT_EQ(info.offset(), 0);
+  EXPECT_TRUE(info.isOverflow());
 }
 
 TEST(LayoutTest, DeleteNonExistentAttribute) {
@@ -192,16 +187,14 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   Handle<Layout> layout2(&scope, result);
   EXPECT_NE(layout2->id(), layout->id());
   // The first attribute should have the same offset
-  result = runtime.layoutFindAttribute(thread, layout2, attr);
-  ASSERT_TRUE(result->isSmallInteger());
-  EXPECT_EQ(AttributeInfo(result).offset(), 0);
+  AttributeInfo info;
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout2, attr, &info));
+  EXPECT_EQ(info.offset(), 0);
   // The second attribute should not exist
-  result = runtime.layoutFindAttribute(thread, layout2, attr2);
-  EXPECT_TRUE(result->isError());
+  ASSERT_FALSE(runtime.layoutFindAttribute(thread, layout2, attr2, &info));
   // The third attribute should have been shifted down by 1
-  result = runtime.layoutFindAttribute(thread, layout2, attr3);
-  ASSERT_TRUE(result->isSmallInteger());
-  EXPECT_EQ(AttributeInfo(result).offset(), 1);
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout2, attr3, &info));
+  EXPECT_EQ(info.offset(), 1);
 
   // Delete the first attribute. A new layout should be created and the last
   // entry is shifted into the first position.
@@ -211,15 +204,13 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   EXPECT_NE(layout3->id(), layout->id());
   EXPECT_NE(layout3->id(), layout2->id());
   // The first attribute should not exist
-  result = runtime.layoutFindAttribute(thread, layout3, attr);
-  EXPECT_TRUE(result->isError());
+  EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout3, attr, &info));
   // The second attribute should not exist
-  result = runtime.layoutFindAttribute(thread, layout3, attr2);
-  EXPECT_TRUE(result->isError());
+  EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout3, attr2, &info));
+
   // The third attribute should now occupy the first position
-  result = runtime.layoutFindAttribute(thread, layout3, attr3);
-  ASSERT_TRUE(result->isSmallInteger());
-  EXPECT_EQ(AttributeInfo(result).offset(), 0);
+  EXPECT_TRUE(runtime.layoutFindAttribute(thread, layout3, attr3, &info));
+  EXPECT_EQ(info.offset(), 0);
 
   // Delete the remaining attribute. A new layout should be created and the
   // overflow array should be empty.
@@ -230,12 +221,9 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   EXPECT_NE(layout4->id(), layout2->id());
   EXPECT_NE(layout4->id(), layout3->id());
   // No attributes should exist
-  result = runtime.layoutFindAttribute(thread, layout4, attr);
-  EXPECT_TRUE(result->isError());
-  result = runtime.layoutFindAttribute(thread, layout4, attr2);
-  EXPECT_TRUE(result->isError());
-  result = runtime.layoutFindAttribute(thread, layout4, attr3);
-  EXPECT_TRUE(result->isError());
+  EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout4, attr, &info));
+  EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout4, attr2, &info));
+  EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout4, attr3, &info));
 }
 
 TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
@@ -270,9 +258,8 @@ TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
   result = runtime.layoutAddAttribute(thread, layout2, inobject, 0);
   ASSERT_TRUE(result->isLayout());
   Handle<Layout> layout3(&scope, result);
-  result = runtime.layoutFindAttribute(thread, layout3, inobject);
-  ASSERT_TRUE(result->isSmallInteger());
-  AttributeInfo info(result);
+  AttributeInfo info;
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout3, inobject, &info));
   EXPECT_EQ(info.offset(), 1);
   EXPECT_TRUE(info.isOverflow());
 }

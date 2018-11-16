@@ -1955,13 +1955,13 @@ Object* Runtime::instanceAt(
 
   // Figure out where the attribute lives in the instance
   Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
-  Object* result = layoutFindAttribute(thread, layout, name);
-  if (result->isError()) {
-    return result;
+  AttributeInfo info;
+  if (!layoutFindAttribute(thread, layout, name, &info)) {
+    return Error::object();
   }
 
   // Retrieve the attribute
-  AttributeInfo info(result);
+  Object* result;
   if (info.isInObject()) {
     result = instance->instanceVariableAt(info.offset());
   } else {
@@ -1983,18 +1983,17 @@ Object* Runtime::instanceAtPut(
   // If the attribute doesn't exist we'll need to transition the layout
   bool has_new_layout_id = false;
   Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
-  Object* result = layoutFindAttribute(thread, layout, name);
-  if (result->isError()) {
+  AttributeInfo info;
+  if (!layoutFindAttribute(thread, layout, name, &info)) {
     // Transition the layout
     layout = layoutAddAttribute(thread, layout, name, 0);
     has_new_layout_id = true;
 
-    result = layoutFindAttribute(thread, layout, name);
-    CHECK(!result->isError(), "couldn't find attribute on new layout");
+    bool found = layoutFindAttribute(thread, layout, name, &info);
+    CHECK(found, "couldn't find attribute on new layout");
   }
 
   // Store the attribute
-  AttributeInfo info(result);
   if (info.isInObject()) {
     instance->instanceVariableAtPut(info.offset(), *value);
   } else {
@@ -2040,10 +2039,11 @@ void Runtime::layoutAddEdge(
   listAdd(edges, layout);
 }
 
-Object* Runtime::layoutFindAttribute(
+bool Runtime::layoutFindAttribute(
     Thread* thread,
     const Handle<Layout>& layout,
-    const Handle<Object>& name) {
+    const Handle<Object>& name,
+    AttributeInfo* info) {
   HandleScope scope(thread->handles());
   Handle<Object> iname(&scope, internString(name));
 
@@ -2052,7 +2052,8 @@ Object* Runtime::layoutFindAttribute(
   for (word i = 0; i < in_object->length(); i++) {
     Handle<ObjectArray> entry(&scope, in_object->at(i));
     if (entry->at(0) == *iname) {
-      return entry->at(1);
+      *info = AttributeInfo(entry->at(1));
+      return true;
     }
   }
 
@@ -2061,11 +2062,12 @@ Object* Runtime::layoutFindAttribute(
   for (word i = 0; i < overflow->length(); i++) {
     Handle<ObjectArray> entry(&scope, overflow->at(i));
     if (entry->at(0) == *iname) {
-      return entry->at(1);
+      *info = AttributeInfo(entry->at(1));
+      return true;
     }
   }
 
-  return Error::object();
+  return false;
 }
 
 Object* Runtime::layoutCreateChild(
@@ -2143,9 +2145,9 @@ Object* Runtime::layoutDeleteAttribute(
   HandleScope scope(thread->handles());
 
   // See if the attribute exists
-  Object* result = layoutFindAttribute(thread, layout, name);
-  if (result->isError()) {
-    return result;
+  AttributeInfo info;
+  if (!layoutFindAttribute(thread, layout, name, &info)) {
+    return Error::object();
   }
 
   // Check if an edge exists for removing the attribute
@@ -2158,7 +2160,6 @@ Object* Runtime::layoutDeleteAttribute(
 
   // No edge was found, create a new layout and add an edge
   Handle<Layout> new_layout(&scope, layoutCreateChild(thread, layout));
-  AttributeInfo info(result);
   if (info.isInObject()) {
     // The attribute to be deleted was an in-object attribute, mark it as
     // deleted

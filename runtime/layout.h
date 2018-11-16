@@ -13,6 +13,8 @@ class AttributeInfo {
     value_ = reinterpret_cast<word>(value);
   }
 
+  AttributeInfo() : value_(SmallInteger::kTag) {}
+
   AttributeInfo(word offset, word flags) : value_(SmallInteger::kTag) {
     CHECK(
         isValidOffset(offset),

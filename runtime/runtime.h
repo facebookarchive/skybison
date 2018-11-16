@@ -315,11 +315,15 @@ class Runtime {
       const Handle<Layout>& layout,
       const Handle<ObjectArray>& names);
 
-  // Returns AttributeInfo if name is found in layout. Error otherwise.
-  Object* layoutFindAttribute(
+  // Looks up the named attribute in the layout.
+  //
+  // If the attribute is found this returns true and sets info.
+  // Returns false otherwise.
+  bool layoutFindAttribute(
       Thread* thread,
       const Handle<Layout>& layout,
-      const Handle<Object>& name);
+      const Handle<Object>& name,
+      AttributeInfo* info);
 
   // Add the attribute to the overflow array.
   //
