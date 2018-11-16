@@ -125,6 +125,9 @@ class SmallInteger : public Object {
 
   // Conversion.
   static inline SmallInteger* fromWord(word value);
+  static inline constexpr bool isValid(word value) {
+    return (value >= kMinValue) && (value <= kMaxValue);
+  }
 
   // Casting.
   static inline SmallInteger* cast(Object* object);
@@ -133,6 +136,10 @@ class SmallInteger : public Object {
   static const int kTag = 0;
   static const int kTagSize = 1;
   static const uword kTagMask = (1 << kTagSize) - 1;
+
+  // Constants
+  static const word kMinValue = -(1L << (kBitsPerPointer - (kTagSize + 1)));
+  static const word kMaxValue = (1L << (kBitsPerPointer - (kTagSize + 1))) - 1;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallInteger);
@@ -885,6 +892,7 @@ word SmallInteger::value() {
 }
 
 SmallInteger* SmallInteger::fromWord(word value) {
+  assert(SmallInteger::isValid(value));
   return reinterpret_cast<SmallInteger*>(value << kTagSize);
 }
 

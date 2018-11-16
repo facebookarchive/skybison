@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <cstdint>
+
 #include "runtime.h"
 
 namespace python {
@@ -244,6 +246,25 @@ TEST(ObjectArrayTest, Create) {
   ASSERT_TRUE(obj8->isObjectArray());
   ObjectArray* array8 = ObjectArray::cast(obj8);
   EXPECT_EQ(array8->length(), 8);
+}
+
+TEST(SmallInteger, IsValid) {
+  EXPECT_TRUE(SmallInteger::isValid(0));
+  EXPECT_TRUE(SmallInteger::isValid(1));
+  EXPECT_TRUE(SmallInteger::isValid(-1));
+
+  EXPECT_FALSE(SmallInteger::isValid(INTPTR_MAX));
+  EXPECT_DEBUG_DEATH(SmallInteger::fromWord(INTPTR_MAX), "fromWord");
+  EXPECT_FALSE(SmallInteger::isValid(INTPTR_MIN));
+  EXPECT_DEBUG_DEATH(SmallInteger::fromWord(INTPTR_MIN), "fromWord");
+
+  EXPECT_TRUE(SmallInteger::isValid(SmallInteger::kMaxValue));
+  EXPECT_TRUE(SmallInteger::isValid(SmallInteger::kMaxValue - 1));
+  EXPECT_FALSE(SmallInteger::isValid(SmallInteger::kMaxValue + 1));
+
+  EXPECT_TRUE(SmallInteger::isValid(SmallInteger::kMinValue));
+  EXPECT_FALSE(SmallInteger::isValid(SmallInteger::kMinValue - 1));
+  EXPECT_TRUE(SmallInteger::isValid(SmallInteger::kMinValue + 1));
 }
 
 } // namespace python

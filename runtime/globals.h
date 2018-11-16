@@ -9,10 +9,11 @@ typedef int int32;
 typedef intptr_t word;
 typedef uintptr_t uword;
 
-const int kBitsPerByte = 8;
-
 const int kWordSize = sizeof(word);
 const int kPointerSize = sizeof(void*);
+
+const int kBitsPerByte = 8;
+const int kBitsPerPointer = kBitsPerByte * kWordSize;
 
 const int KiB = 1024;
 const int MiB = KiB * KiB;
