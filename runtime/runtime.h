@@ -555,6 +555,13 @@ class Runtime {
     return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kSetSubclass);
   }
 
+  bool isInstanceOfStr(RawObject instance) {
+    if (instance->isStr()) {
+      return true;
+    }
+    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kStrSubclass);
+  }
+
   // Return true if obj is an instance of a subclass of klass
   RawObject isInstance(const Object& obj, const Type& klass);
 

@@ -158,4 +158,72 @@ TEST_F(ModuleExtensionApiTest, ModuleCreateDoesNotAddToModuleDict) {
   EXPECT_EQ(PyDict_GetItem(mods, name_obj), nullptr);
 }
 
+TEST_F(ModuleExtensionApiTest, GetNameObjectGetsName) {
+  const char* mod_name = "mymodule";
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      mod_name,
+  };
+
+  PyObject* module = PyModule_Create(&def);
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+
+  PyObject* result = PyModule_GetNameObject(module);
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyUnicode_Check(result));
+
+  EXPECT_STREQ(PyUnicode_AsUTF8(result), mod_name);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  Py_DECREF(result);
+
+  EXPECT_EQ(Py_REFCNT(module), 1);
+  Py_DECREF(module);
+}
+
+TEST_F(ModuleExtensionApiTest, GetNameObjectFailsIfNotModule) {
+  PyObject* not_a_module = PyTuple_New(10);
+  EXPECT_EQ(Py_REFCNT(not_a_module), 1);
+
+  PyObject* result = PyModule_GetNameObject(not_a_module);
+  EXPECT_EQ(result, nullptr);
+  Py_XDECREF(result);
+
+  EXPECT_EQ(Py_REFCNT(not_a_module), 1);
+
+  const char* expected_message = "PyModule_GetNameObject takes a Module object";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+
+  Py_DECREF(not_a_module);
+}
+
+TEST_F(ModuleExtensionApiTest, GetNameObjectFailsIfNotString) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+
+  PyObject* module = PyModule_Create(&def);
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  PyObject* not_a_module = PyTuple_New(10);
+  EXPECT_EQ(Py_REFCNT(not_a_module), 1);
+
+  PyObject_SetAttrString(module, "__name__", not_a_module);
+  PyObject* result = PyModule_GetNameObject(module);
+  EXPECT_EQ(result, nullptr);
+  Py_XDECREF(result);
+
+  EXPECT_EQ(Py_REFCNT(not_a_module), 1);
+
+  const char* expected_message = "nameless module";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+
+  EXPECT_EQ(Py_REFCNT(module), 1);
+  Py_DECREF(module);
+  Py_DECREF(not_a_module);
+}
 }  // namespace python

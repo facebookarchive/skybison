@@ -66,8 +66,25 @@ PY_EXPORT PyObject* PyModule_GetDict(PyObject* pymodule) {
   return ApiHandle::fromObject(module->dict());
 }
 
-PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* /* m */) {
-  UNIMPLEMENTED("PyModule_GetNameObject");
+PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Object module_obj(&scope, ApiHandle::fromPyObject(mod)->asObject());
+  if (!module_obj->isModule()) {
+    // TODO(atalaba): Allow for module subclassing
+    thread->raiseTypeErrorWithCStr("PyModule_GetNameObject takes a Module object");
+    return nullptr;
+  }
+  Module module(&scope, *module_obj);
+  Str key(&scope, runtime->symbols()->DunderName());
+  Object name(&scope, runtime->moduleAt(module, key));
+  if (!runtime->isInstanceOfStr(name)) {
+    thread->raiseSystemErrorWithCStr("nameless module");
+    return nullptr;
+  }
+  return ApiHandle::fromObject(name);
 }
 
 PY_EXPORT void* PyModule_GetState(PyObject* /* m */) {
