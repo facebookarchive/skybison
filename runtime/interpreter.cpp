@@ -154,6 +154,7 @@ Object* Interpreter::callDescriptorGet(
   Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
   Handle<Object> method(
       &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
+  DCHECK(!method->isError(), "no __get__ method found");
   return callMethod3(
       thread, caller, method, descriptor, receiver, receiver_type);
 }
