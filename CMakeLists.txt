@@ -209,6 +209,8 @@ add_library(
   runtime/handles.h
   runtime/heap.cpp
   runtime/heap.h
+  runtime/imp-module.cpp
+  runtime/imp-module.h
   runtime/int-builtins.cpp
   runtime/int-builtins.h
   runtime/interpreter.cpp

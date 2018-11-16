@@ -24,6 +24,7 @@
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
+#include "imp-module.h"
 #include "int-builtins.h"
 #include "interpreter.h"
 #include "layout.h"
@@ -1885,6 +1886,61 @@ void Runtime::createImportModule() {
   HandleScope scope;
   Object name(&scope, symbols()->UnderImp());
   Module module(&scope, newModule(name));
+
+  // _imp.acquire_lock
+  moduleAddBuiltinFunction(module, SymbolId::kAcquireLock,
+                           nativeTrampoline<builtinImpAcquireLock>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  // _imp.create_builtin
+  moduleAddBuiltinFunction(module, SymbolId::kCreateBuiltin,
+                           nativeTrampoline<builtinImpCreateBuiltin>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  // _imp.exec_builtin
+  moduleAddBuiltinFunction(module, SymbolId::kExecBuiltin,
+                           nativeTrampoline<builtinImpExecBuiltin>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  // _imp.exec_dynamic
+  moduleAddBuiltinFunction(module, SymbolId::kExecDynamic,
+                           nativeTrampoline<builtinImpExecDynamic>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  // _imp.extension_suffixes
+  moduleAddBuiltinFunction(module, SymbolId::kExtensionSuffixes,
+                           nativeTrampoline<builtinImpExtensionSuffixes>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  // _imp.fix_co_filename
+  moduleAddBuiltinFunction(module, SymbolId::kFixCoFilename,
+                           nativeTrampoline<builtinImpFixCoFilename>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  // _imp.get_frozen_object
+  moduleAddBuiltinFunction(module, SymbolId::kGetFrozenObject,
+                           nativeTrampoline<builtinImpGetFrozenObject>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  // _imp.is_builtin
+  moduleAddBuiltinFunction(module, SymbolId::kIsBuiltin,
+                           nativeTrampoline<builtinImpIsBuiltin>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  // _imp.is_frozen
+  moduleAddBuiltinFunction(module, SymbolId::kIsFrozen,
+                           nativeTrampoline<builtinImpIsFrozen>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  // _imp.is_frozen_package
+  moduleAddBuiltinFunction(module, SymbolId::kIsFrozenPackage,
+                           nativeTrampoline<builtinImpIsFrozenPackage>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  // _imp.release_lock
+  moduleAddBuiltinFunction(module, SymbolId::kReleaseLock,
+                           nativeTrampoline<builtinImpReleaseLock>,
+                           unimplementedTrampoline, unimplementedTrampoline);
   addModule(module);
 }
 

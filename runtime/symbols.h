@@ -95,6 +95,7 @@ class Runtime;
   V(DunderSub, "__sub__")                                                      \
   V(DunderTruediv, "__truediv__")                                              \
   V(DunderXor, "__xor__")                                                      \
+  V(AcquireLock, "acquire_lock")                                               \
   V(Add, "add")                                                                \
   V(Allocated, "allocated")                                                    \
   V(Append, "append")                                                          \
@@ -126,6 +127,7 @@ class Runtime;
   V(ConnectionRefusedError, "ConnectionRefusedError")                          \
   V(ConnectionResetError, "ConnectionResetError")                              \
   V(Coroutine, "coroutine")                                                    \
+  V(CreateBuiltin, "create_builtin")                                           \
   V(Deleter, "deleter")                                                        \
   V(DeprecationWarning, "DeprecationWarning")                                  \
   V(Dict, "dict")                                                              \
@@ -134,12 +136,16 @@ class Runtime;
   V(Ellipsis, "ellipsis")                                                      \
   V(End, "end")                                                                \
   V(Exception, "Exception")                                                    \
+  V(ExecBuiltin, "exec_builtin")                                               \
+  V(ExecDynamic, "exec_dynamic")                                               \
   V(Exit, "exit")                                                              \
   V(Extend, "extend")                                                          \
   V(ExtensionPtr, "___extension___")                                           \
+  V(ExtensionSuffixes, "extension_suffixes")                                   \
   V(File, "file")                                                              \
   V(FileExistsError, "FileExistsError")                                        \
   V(FileNotFoundError, "FileNotFoundError")                                    \
+  V(FixCoFilename, "_fix_co_filename")                                         \
   V(Float, "float")                                                            \
   V(FloatingPointError, "FloatingPointError")                                  \
   V(Frame, "frame")                                                            \
@@ -147,6 +153,7 @@ class Runtime;
   V(FutureWarning, "FutureWarning")                                            \
   V(Generator, "generator")                                                    \
   V(GeneratorExit, "GeneratorExit")                                            \
+  V(GetFrozenObject, "get_frozen_object")                                      \
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
   V(Hasattr, "hasattr")                                                        \
@@ -159,7 +166,10 @@ class Runtime;
   V(InterruptedError, "InterruptedError")                                      \
   V(Intersection, "intersection")                                              \
   V(IsADirectoryError, "IsADirectoryError")                                    \
+  V(IsBuiltin, "is_builtin")                                                   \
   V(IsDisjoint, "isdisjoint")                                                  \
+  V(IsFrozen, "is_frozen")                                                     \
+  V(IsFrozenPackage, "is_frozen_package")                                      \
   V(IsInstance, "isinstance")                                                  \
   V(IsSubclass, "issubclass")                                                  \
   V(Items, "items")                                                            \
@@ -167,6 +177,7 @@ class Runtime;
   V(KeyError, "KeyError")                                                      \
   V(KeyboardInterrupt, "KeyboardInterrupt")                                    \
   V(Keys, "keys")                                                              \
+  V(LStrip, "lstrip")                                                          \
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
   V(Layout, "layout")                                                          \
@@ -175,7 +186,6 @@ class Runtime;
   V(ListIterator, "list_iterator")                                             \
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
-  V(LStrip, "lstrip")                                                          \
   V(MemoryError, "MemoryError")                                                \
   V(MetaPath, "meta_path")                                                     \
   V(Metaclass, "metaclass")                                                    \
@@ -203,21 +213,22 @@ class Runtime;
   V(Print, "print")                                                            \
   V(ProcessLookupError, "ProcessLookupError")                                  \
   V(Property, "property")                                                      \
+  V(RStrip, "rstrip")                                                          \
   V(Range, "range")                                                            \
   V(RangeIterator, "range_iterator")                                           \
   V(RecursionError, "RecursionError")                                          \
   V(Ref, "ref")                                                                \
   V(ReferenceError, "ReferenceError")                                          \
+  V(ReleaseLock, "release_lock")                                               \
   V(Remove, "remove")                                                          \
   V(Repr, "repr")                                                              \
   V(ResourceWarning, "ResourceWarning")                                        \
-  V(RStrip, "rstrip")                                                          \
   V(RuntimeError, "RuntimeError")                                              \
   V(RuntimeWarning, "RuntimeWarning")                                          \
+  V(Send, "send")                                                              \
   V(Set, "set")                                                                \
   V(SetIterator, "set_iterator")                                               \
   V(Setattr, "setattr")                                                        \
-  V(Send, "send")                                                              \
   V(Setter, "setter")                                                          \
   V(Size, "size")                                                              \
   V(Slice, "slice")                                                            \
@@ -246,9 +257,9 @@ class Runtime;
   V(TypeError, "TypeError")                                                    \
   V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderImp, "_imp")                                                          \
+  V(UnderThread, "_thread")                                                    \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
-  V(UnderThread, "_thread")                                                    \
   V(UnicodeDecodeError, "UnicodeDecodeError")                                  \
   V(UnicodeEncodeError, "UnicodeEncodeError")                                  \
   V(UnicodeError, "UnicodeError")                                              \
