@@ -15,12 +15,11 @@ TEST(RuntimeTest, BuiltinsModuleExists) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<String> name(&scope, runtime.newStringFromCString("builtins"));
-  ASSERT_NE(*name, nullptr);
-  Object* modules = runtime.modules();
-  ASSERT_TRUE(modules->isDictionary());
+  Handle<Dictionary> modules(&scope, runtime.modules());
+  Handle<Object> name(&scope, runtime.newStringFromCString("builtins"));
+  Handle<Object> hash(&scope, runtime.hash(*name));
   Object* builtins;
-  bool found = Dictionary::at(modules, *name, runtime.hash(*name), &builtins);
+  bool found = runtime.dictionaryAt(modules, name, hash, &builtins);
   ASSERT_TRUE(found);
   ASSERT_TRUE(builtins->isModule());
 }

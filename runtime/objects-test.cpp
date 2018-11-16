@@ -6,90 +6,94 @@ namespace python {
 
 TEST(DictionaryTest, EmptyDictionaryInvariants) {
   Runtime runtime;
-  Object* obj = runtime.newDictionary();
-  ASSERT_NE(obj, nullptr);
-  Dictionary* dict = Dictionary::cast(obj);
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, runtime.newDictionary());
 
-  ASSERT_EQ(dict->numItems(), 0);
-  ASSERT_EQ(dict->capacity(), 8);
+  EXPECT_EQ(dict->numItems(), 0);
+  ASSERT_TRUE(dict->data()->isObjectArray());
+  EXPECT_EQ(ObjectArray::cast(dict->data())->length(), 0);
 }
 
 TEST(DictionaryTest, GetSet) {
   Runtime runtime;
-  Object* obj = runtime.newDictionary();
-  ASSERT_NE(obj, nullptr);
-  Dictionary* dict = Dictionary::cast(obj);
-  SmallInteger* key = SmallInteger::fromWord(12345);
-  SmallInteger* hash = SmallInteger::fromWord(12345);
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Object> key(&scope, SmallInteger::fromWord(12345));
+  Handle<Object> hash(&scope, SmallInteger::fromWord(12345));
   Object* retrieved;
 
   // Looking up a key that doesn't exist should fail
-  bool found = Dictionary::at(dict, key, hash, &retrieved);
+  bool found = runtime.dictionaryAt(dict, key, hash, &retrieved);
   EXPECT_FALSE(found);
 
   // Store a value
-  SmallInteger* stored = SmallInteger::fromWord(67890);
-  Dictionary::atPut(dict, key, hash, stored, &runtime);
+  Handle<Object> stored(&scope, SmallInteger::fromWord(67890));
+  runtime.dictionaryAtPut(dict, key, hash, stored);
 
   // Retrieve the stored value
-  found = Dictionary::at(dict, key, hash, &retrieved);
+  found = runtime.dictionaryAt(dict, key, hash, &retrieved);
   ASSERT_TRUE(found);
-  EXPECT_EQ(SmallInteger::cast(retrieved)->value(), stored->value());
+  EXPECT_EQ(
+      SmallInteger::cast(retrieved)->value(),
+      SmallInteger::cast(*stored)->value());
 
   // Overwrite the stored value
-  stored = SmallInteger::fromWord(5555);
-  Dictionary::atPut(dict, key, hash, stored, &runtime);
+  Handle<Object> newValue(&scope, SmallInteger::fromWord(5555));
+  runtime.dictionaryAtPut(dict, key, hash, newValue);
 
   // Get the new value
-  found = Dictionary::at(dict, key, hash, &retrieved);
+  found = runtime.dictionaryAt(dict, key, hash, &retrieved);
   ASSERT_TRUE(found);
-  EXPECT_EQ(SmallInteger::cast(retrieved)->value(), stored->value());
+  EXPECT_EQ(
+      SmallInteger::cast(retrieved)->value(),
+      SmallInteger::cast(*newValue)->value());
 }
 
 TEST(DictionaryTest, Remove) {
   Runtime runtime;
-  Object* obj = runtime.newDictionary();
-  ASSERT_NE(obj, nullptr);
-  Dictionary* dict = Dictionary::cast(obj);
-  SmallInteger* key = SmallInteger::fromWord(12345);
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+  Handle<Object> key(&scope, SmallInteger::fromWord(12345));
+  Handle<Object> hash(&scope, SmallInteger::fromWord(12345));
   Object* retrieved;
-  SmallInteger* hash = SmallInteger::fromWord(12345);
 
   // Removing a key that doesn't exist should fail
-  bool found = Dictionary::remove(dict, key, hash, &retrieved);
+  bool found = runtime.dictionaryRemove(dict, key, hash, &retrieved);
   EXPECT_FALSE(found);
 
   // Removing a key that exists should succeed and return the value that was
   // stored.
-  SmallInteger* stored = SmallInteger::fromWord(54321);
-  Dictionary::atPut(dict, key, hash, stored, &runtime);
-  found = Dictionary::remove(dict, key, hash, &retrieved);
+  Handle<Object> stored(&scope, SmallInteger::fromWord(54321));
+
+  runtime.dictionaryAtPut(dict, key, hash, stored);
+  found = runtime.dictionaryRemove(dict, key, hash, &retrieved);
   ASSERT_TRUE(found);
-  ASSERT_EQ(SmallInteger::cast(retrieved)->value(), stored->value());
+  ASSERT_EQ(
+      SmallInteger::cast(retrieved)->value(),
+      SmallInteger::cast(*stored)->value());
 
   // Looking up a key that was deleted should fail
-  found = Dictionary::at(dict, key, hash, &retrieved);
+  found = runtime.dictionaryAt(dict, key, hash, &retrieved);
   ASSERT_FALSE(found);
 }
 
 TEST(DictionaryTest, Length) {
   Runtime runtime;
-  Object* obj = runtime.newDictionary();
-  ASSERT_NE(obj, nullptr);
-  Dictionary* dict = Dictionary::cast(obj);
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, runtime.newDictionary());
 
   // Add 10 items and make sure length reflects it
   for (int i = 0; i < 10; i++) {
-    SmallInteger* key = SmallInteger::fromWord(i);
-    Dictionary::atPut(dict, key, key, key, &runtime);
+    Handle<Object> key(&scope, SmallInteger::fromWord(i));
+    runtime.dictionaryAtPut(dict, key, key, key);
   }
   EXPECT_EQ(dict->numItems(), 10);
 
   // Remove half the items
   for (int i = 0; i < 5; i++) {
-    SmallInteger* key = SmallInteger::fromWord(i);
+    Handle<Object> key(&scope, SmallInteger::fromWord(i));
     Object* retrieved;
-    bool found = Dictionary::remove(dict, key, key, &retrieved);
+    bool found = runtime.dictionaryRemove(dict, key, key, &retrieved);
     ASSERT_TRUE(found);
   }
   EXPECT_EQ(dict->numItems(), 5);
@@ -97,28 +101,36 @@ TEST(DictionaryTest, Length) {
 
 TEST(DictionaryTest, GrowWhenFull) {
   Runtime runtime;
-  Object* obj = runtime.newDictionary();
-  ASSERT_NE(obj, nullptr);
-  Dictionary* dict = Dictionary::cast(obj);
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, runtime.newDictionary());
 
-  // Fill up the dict
-  word initCap = dict->capacity();
-  for (int i = 0; i < initCap; i++) {
-    SmallInteger* key = SmallInteger::fromWord(i);
-    Dictionary::atPut(dict, key, key, key, &runtime);
+  // Fill up the dict - we insert an initial key to force the allocation of the
+  // backing ObjectArray.
+  Handle<Object> initKey(&scope, SmallInteger::fromWord(0));
+  runtime.dictionaryAtPut(dict, initKey, initKey, initKey);
+  ASSERT_TRUE(dict->data()->isObjectArray());
+  word initDataSize = ObjectArray::cast(dict->data())->length();
+
+  // Fill in one fewer keys than would require growing the underlying object
+  // array again
+  word numKeys = Runtime::kInitialDictionaryCapacity + 1;
+  for (int i = 1; i < numKeys; i++) {
+    Handle<Object> key(&scope, SmallInteger::fromWord(i));
+    runtime.dictionaryAtPut(dict, key, key, key);
   }
-  ASSERT_EQ(dict->capacity(), initCap);
 
-  // Add another key which should force us to grow the underlying object array
-  SmallInteger* straw = SmallInteger::fromWord(initCap);
-  Dictionary::atPut(dict, straw, straw, straw, &runtime);
-  ASSERT_GT(dict->capacity(), initCap);
+  // Add another key which should force us to double the capacity
+  Handle<Object> straw(&scope, SmallInteger::fromWord(numKeys));
+  runtime.dictionaryAtPut(dict, straw, straw, straw);
+  ASSERT_TRUE(dict->data()->isObjectArray());
+  word newDataSize = ObjectArray::cast(dict->data())->length();
+  EXPECT_EQ(newDataSize, Runtime::kDictionaryGrowthFactor * initDataSize);
 
   // Make sure we can still read all the stored keys/values
-  for (int i = 0; i < initCap + 1; i++) {
-    SmallInteger* key = SmallInteger::fromWord(i);
+  for (int i = 0; i < numKeys; i++) {
     Object* value;
-    bool found = Dictionary::at(dict, key, key, &value);
+    Handle<Object> key(&scope, SmallInteger::fromWord(i));
+    bool found = runtime.dictionaryAt(dict, key, key, &value);
     ASSERT_TRUE(found);
     EXPECT_EQ(SmallInteger::cast(value)->value(), i);
   }
@@ -126,53 +138,57 @@ TEST(DictionaryTest, GrowWhenFull) {
 
 TEST(DictionaryTest, CollidingKeys) {
   Runtime runtime;
-  Object* obj = runtime.newDictionary();
-  ASSERT_NE(obj, nullptr);
-  Dictionary* dict = Dictionary::cast(obj);
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, runtime.newDictionary());
 
   // Add two different keys with different values using the same hash
-  SmallInteger* key1 = SmallInteger::fromWord(100);
-  SmallInteger* hash = key1;
-  Dictionary::atPut(dict, key1, hash, key1, &runtime);
+  Handle<Object> key1(&scope, SmallInteger::fromWord(100));
+  Handle<Object> hash(&scope, SmallInteger::fromWord(22222));
+  runtime.dictionaryAtPut(dict, key1, hash, key1);
 
-  SmallInteger* key2 = SmallInteger::fromWord(200);
-  Dictionary::atPut(dict, key2, hash, key2, &runtime);
+  Handle<Object> key2(&scope, SmallInteger::fromWord(200));
+  runtime.dictionaryAtPut(dict, key2, hash, key2);
 
   // Make sure we get both back
   Object* retrieved;
-  bool found = Dictionary::at(dict, key1, hash, &retrieved);
+  bool found = runtime.dictionaryAt(dict, key1, hash, &retrieved);
   EXPECT_TRUE(found);
-  EXPECT_EQ(SmallInteger::cast(retrieved)->value(), key1->value());
+  EXPECT_EQ(
+      SmallInteger::cast(retrieved)->value(),
+      SmallInteger::cast(*key1)->value());
 
-  found = Dictionary::at(dict, key2, hash, &retrieved);
+  found = runtime.dictionaryAt(dict, key2, hash, &retrieved);
   EXPECT_TRUE(found);
-  EXPECT_EQ(SmallInteger::cast(retrieved)->value(), key2->value());
+  EXPECT_EQ(
+      SmallInteger::cast(retrieved)->value(),
+      SmallInteger::cast(*key2)->value());
 }
 
 TEST(DictionaryTest, MixedKeys) {
   Runtime runtime;
-  Object* obj = runtime.newDictionary();
-  ASSERT_NE(obj, nullptr);
-  Dictionary* dict = Dictionary::cast(obj);
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, runtime.newDictionary());
 
   // Add keys of different type
-  SmallInteger* intKey = SmallInteger::fromWord(100);
-  SmallInteger* intHash = intKey;
-  Dictionary::atPut(dict, intKey, intHash, intKey, &runtime);
+  Handle<Object> intKey(&scope, SmallInteger::fromWord(100));
+  Handle<Object> intHash(&scope, SmallInteger::fromWord(2222));
+  runtime.dictionaryAtPut(dict, intKey, intHash, intKey);
 
-  SmallInteger* strHash = SmallInteger::fromWord(200);
-  String* strKey = String::cast(runtime.newStringFromCString("testing 123"));
-  Dictionary::atPut(dict, strKey, strHash, strKey, &runtime);
+  Handle<Object> strHash(&scope, SmallInteger::fromWord(200));
+  Handle<Object> strKey(&scope, runtime.newStringFromCString("testing 123"));
+  runtime.dictionaryAtPut(dict, strKey, strHash, strKey);
 
   // Make sure we get the appropriate values back out
   Object* retrieved;
-  bool found = Dictionary::at(dict, intKey, intHash, &retrieved);
+  bool found = runtime.dictionaryAt(dict, intKey, intHash, &retrieved);
   EXPECT_TRUE(found);
-  EXPECT_EQ(SmallInteger::cast(retrieved)->value(), intKey->value());
+  EXPECT_EQ(
+      SmallInteger::cast(retrieved)->value(),
+      SmallInteger::cast(*intKey)->value());
 
-  found = Dictionary::at(dict, strKey, strHash, &retrieved);
+  found = runtime.dictionaryAt(dict, strKey, strHash, &retrieved);
   EXPECT_TRUE(found);
-  EXPECT_TRUE(Object::equals(strKey, retrieved));
+  EXPECT_TRUE(Object::equals(*strKey, retrieved));
 }
 
 TEST(ListTest, EmptyListInvariants) {

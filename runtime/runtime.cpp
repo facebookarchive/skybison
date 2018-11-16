@@ -55,12 +55,6 @@ Object* Runtime::newByteArrayFromCString(const char* c_string, word length) {
   return result;
 }
 
-Object* Runtime::newDictionary() {
-  Object* items = newObjectArray(Dictionary::kInitialItemsSize);
-  assert(items != nullptr);
-  return heap()->createDictionary(items);
-}
-
 Object* Runtime::newFunction() {
   Object* object = heap()->createFunction();
   assert(object != nullptr);
@@ -263,8 +257,12 @@ void Runtime::visitThreadRoots(PointerVisitor* visitor) {
 }
 
 void Runtime::addModule(Object* module) {
-  Object* name = Module::cast(module)->name();
-  Dictionary::atPut(modules(), name, hash(name), module, this);
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, modules());
+  Handle<Object> key(&scope, Module::cast(module)->name());
+  Handle<Object> keyHash(&scope, hash(*key));
+  Handle<Object> value(&scope, module);
+  dictionaryAtPut(dict, key, keyHash, value);
 }
 
 void Runtime::initializeModules() {
@@ -280,6 +278,8 @@ void Runtime::createBuiltinsModule() {
   // Fill in builtins...
   addModule(builtins);
 }
+
+// List
 
 ObjectArray* Runtime::ensureCapacity(
     const Handle<ObjectArray>& array,
@@ -307,6 +307,194 @@ void Runtime::appendToList(
   }
   list->setAllocated(index + 1);
   list->atPut(index, *value);
+}
+
+// Dictionary
+
+// Helper class for manipulating buckets in the ObjectArray that backs the
+// dictionary
+class Bucket {
+ public:
+  Bucket(const Handle<ObjectArray>& data, word index)
+      : data_(data), index_(index) {}
+
+  inline Object* hash() {
+    return data_->at(index_ + kHashOffset);
+  }
+
+  inline Object* key() {
+    return data_->at(index_ + kKeyOffset);
+  }
+
+  inline Object* value() {
+    return data_->at(index_ + kValueOffset);
+  }
+
+  inline void set(Object* hash, Object* key, Object* value) {
+    data_->atPut(index_ + kHashOffset, hash);
+    data_->atPut(index_ + kKeyOffset, key);
+    data_->atPut(index_ + kValueOffset, value);
+  }
+
+  inline bool hasKey(Object* thatKey) {
+    return !hash()->isNone() && Object::equals(key(), thatKey);
+  }
+
+  inline bool isTombstone() {
+    return hash()->isNone() && !key()->isNone();
+  }
+
+  inline void setTombstone() {
+    set(None::object(), Ellipsis::object(), None::object());
+  }
+
+  inline bool isEmpty() {
+    return hash()->isNone() && key()->isNone();
+  }
+
+  static inline word getIndex(Object* data, Object* hash) {
+    word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
+    assert(Utils::isPowerOfTwo(nbuckets));
+    word value = SmallInteger::cast(hash)->value();
+    return (value & (nbuckets - 1)) * kNumPointers;
+  }
+
+  static const word kHashOffset = 0;
+  static const word kKeyOffset = kHashOffset + 1;
+  static const word kValueOffset = kKeyOffset + 1;
+  static const word kNumPointers = kValueOffset + 1;
+
+ private:
+  const Handle<ObjectArray>& data_;
+  word index_;
+
+  DISALLOW_HEAP_ALLOCATION();
+};
+
+Object* Runtime::newDictionary() {
+  return heap()->createDictionary(empty_object_array_);
+}
+
+void Runtime::dictionaryAtPut(
+    const Handle<Dictionary>& dict,
+    const Handle<Object>& key,
+    const Handle<Object>& hash,
+    const Handle<Object>& value) {
+  HandleScope scope;
+  Handle<ObjectArray> data(&scope, dict->data());
+  word index = -1;
+  bool found = dictionaryLookup(data, key, hash, &index);
+  if (index == -1) {
+    // TODO(mpage): Grow at a predetermined load factor, rather than when full
+    Handle<ObjectArray> newData(&scope, dictionaryGrow(data));
+    dictionaryLookup(newData, key, hash, &index);
+    assert(index != -1);
+    dict->setData(*newData);
+    Bucket bucket(newData, index);
+    bucket.set(*hash, *key, *value);
+  } else {
+    Bucket bucket(data, index);
+    bucket.set(*hash, *key, *value);
+  }
+  if (!found) {
+    dict->setNumItems(dict->numItems() + 1);
+  }
+}
+
+ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
+  HandleScope scope;
+  word newLength = data->length() * kDictionaryGrowthFactor;
+  if (newLength == 0) {
+    newLength = kInitialDictionaryCapacity * Bucket::kNumPointers;
+  }
+  Handle<ObjectArray> newData(&scope, newObjectArray(newLength));
+  // Re-insert items
+  for (word i = 0; i < data->length(); i += Bucket::kNumPointers) {
+    Bucket oldBucket(data, i);
+    if (oldBucket.isEmpty() || oldBucket.isTombstone()) {
+      continue;
+    }
+    Handle<Object> key(&scope, oldBucket.key());
+    Handle<Object> hash(&scope, oldBucket.hash());
+    word index = -1;
+    dictionaryLookup(newData, key, hash, &index);
+    assert(index != -1);
+    Bucket newBucket(newData, index);
+    newBucket.set(*key, *hash, oldBucket.value());
+  }
+  return *newData;
+}
+
+bool Runtime::dictionaryAt(
+    const Handle<Dictionary>& dict,
+    const Handle<Object>& key,
+    const Handle<Object>& hash,
+    Object** value) {
+  HandleScope scope;
+  Handle<ObjectArray> data(&scope, dict->data());
+  word index = -1;
+  bool found = dictionaryLookup(data, key, hash, &index);
+  if (found) {
+    assert(index != -1);
+    *value = Bucket(data, index).value();
+  }
+  return found;
+}
+
+bool Runtime::dictionaryRemove(
+    const Handle<Dictionary>& dict,
+    const Handle<Object>& key,
+    const Handle<Object>& hash,
+    Object** value) {
+  HandleScope scope;
+  Handle<ObjectArray> data(&scope, dict->data());
+  word index = -1;
+  bool found = dictionaryLookup(data, key, hash, &index);
+  if (found) {
+    assert(index != -1);
+    Bucket bucket(data, index);
+    *value = bucket.value();
+    bucket.setTombstone();
+    dict->setNumItems(dict->numItems() - 1);
+  }
+  return found;
+}
+
+bool Runtime::dictionaryLookup(
+    const Handle<ObjectArray>& data,
+    const Handle<Object>& key,
+    const Handle<Object>& hash,
+    word* index) {
+  word start = Bucket::getIndex(*data, *hash);
+  word current = start;
+  word nextFreeIndex = -1;
+
+  // TODO(mpage) - Quadratic probing?
+  word length = data->length();
+  if (length == 0) {
+    *index = -1;
+    return false;
+  }
+
+  do {
+    Bucket bucket(data, current);
+    if (bucket.hasKey(*key)) {
+      *index = current;
+      return true;
+    } else if (nextFreeIndex == -1 && bucket.isTombstone()) {
+      nextFreeIndex = current;
+    } else if (bucket.isEmpty()) {
+      if (nextFreeIndex == -1) {
+        nextFreeIndex = current;
+      }
+      break;
+    }
+    current = (current + Bucket::kNumPointers) % length;
+  } while (current != start);
+
+  *index = nextFreeIndex;
+
+  return false;
 }
 
 } // namespace python

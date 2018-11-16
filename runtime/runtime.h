@@ -60,6 +60,42 @@ class Runtime {
 
   void appendToList(const Handle<List>& list, const Handle<Object>& value);
 
+  // Associate a value with the supplied key.
+  //
+  // This handles growing the backing ObjectArray if needed.
+  void dictionaryAtPut(
+      const Handle<Dictionary>& dict,
+      const Handle<Object>& key,
+      const Handle<Object>& hash,
+      const Handle<Object>& value);
+
+  // Look up the value associated with key.
+  //
+  // Returns true if the key was found and sets the associated value in value.
+  // Returns false otherwise.
+  bool dictionaryAt(
+      const Handle<Dictionary>& dict,
+      const Handle<Object>& key,
+      const Handle<Object>& hash,
+      Object** value);
+
+  // Delete a key from the dictionary.
+  //
+  // Returns true if the key existed and sets the previous value in value.
+  // Returns false otherwise.
+  bool dictionaryRemove(
+      const Handle<Dictionary>& dict,
+      const Handle<Object>& key,
+      const Handle<Object>& hash,
+      Object** value);
+
+  static const int kDictionaryGrowthFactor = 2;
+  // Initial size of the dictionary. According to comments in CPython's
+  // dictobject.c this accomodates the majority of dictionaries without needing
+  // a resize (obviously this depends on the load factor used to resize the
+  // dict).
+  static const int kInitialDictionaryCapacity = 8;
+
  private:
   void initializeThreads();
   void initializeClasses();
@@ -75,6 +111,20 @@ class Runtime {
   Object* identityHash(Object* object);
   Object* immediateHash(Object* object);
   Object* valueHash(Object* object);
+
+  ObjectArray* dictionaryGrow(const Handle<ObjectArray>& data);
+
+  // Looks up the supplied key
+  //
+  // If the key is found, this function returns true and sets index to the
+  // index of the bucket that contains the value. If the key is not found, this
+  // function returns false and sets index to the location where the key would
+  // be inserted. If the dictionary is full, it sets index to -1.
+  bool dictionaryLookup(
+      const Handle<ObjectArray>& data,
+      const Handle<Object>& key,
+      const Handle<Object>& hash,
+      word* index);
 
   // The size ensureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;

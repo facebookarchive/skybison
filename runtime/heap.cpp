@@ -181,7 +181,7 @@ Object* Heap::createByteArray(word length) {
   return ByteArray::cast(result);
 }
 
-Object* Heap::createDictionary(Object* items) {
+Object* Heap::createDictionary(Object* data) {
   word size = Dictionary::allocationSize();
   Object* raw = allocate(size, Header::kSize);
   assert(raw != nullptr);
@@ -191,7 +191,7 @@ Object* Heap::createDictionary(Object* items) {
       0,
       ClassId::kDictionary,
       ObjectFormat::kObjectInstance));
-  result->initialize(items);
+  result->initialize(data);
   return Dictionary::cast(result);
 }
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "globals.h"
-#include "handles.h"
 #include "utils.h"
 
 namespace python {
@@ -495,6 +494,8 @@ class Code : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Code);
 };
 
+class Frame;
+class Thread;
 using FunctionTrampoline = Object* (*)(Thread*, Frame*, word argc);
 
 /**
@@ -620,8 +621,6 @@ class Module : public HeapObject {
   DISALLOW_COPY_AND_ASSIGN(Module);
 };
 
-class Runtime;
-
 /**
  * A simple dictionary that uses open addressing and linear probing.
  *
@@ -632,7 +631,7 @@ class Runtime;
  *   [Items        ] - Pointer to an ObjectArray that stores the underlying
  * data.
  *
- * Dictionary entries are stored as a triple of (hash, key, value).
+ * Dictionary entries are stored in buckets as a triple of (hash, key, value).
  * Empty buckets are stored as (None, None, None).
  * Tombstone buckets are stored as (None, <not None>, <Any>).
  *
@@ -642,34 +641,13 @@ class Dictionary : public HeapObject {
   // Getters and setters.
   inline static Dictionary* cast(Object* object);
 
+  // The ObjectArray backing the dictionary
+  inline Object* data();
+  inline void setData(Object* data);
+
   // Number of items currently in the dictionary
   inline word numItems();
-
-  // Total number of items that could be stored in the ObjectArray backing the
-  // dictionary
-  inline word capacity();
-
-  // Look up the value associated with key.
-  //
-  // Returns true if the key was found and sets the associated value in value.
-  // Returns false otherwise.
-  static bool at(Object* dict, Object* key, Object* hash, Object** value);
-
-  // Associate a value with the supplied key.
-  //
-  // This handles growing the backing ObjectArray if needed.
-  static void atPut(
-      Object* dict,
-      Object* key,
-      Object* hash,
-      Object* value,
-      Runtime* runtime);
-
-  // Delete a key from the dictionary.
-  //
-  // Returns true if the key existed and sets the previous value in value.
-  // Returns false otherwise.
-  static bool remove(Object* dict, Object* key, Object* hash, Object** value);
+  inline void setNumItems(word numItems);
 
   inline Object* items();
 
@@ -679,40 +657,14 @@ class Dictionary : public HeapObject {
   // Allocation.
   inline void initialize(Object* items);
 
-  // Bucket layout.
-  static const int kBucketHashOffset = 0;
-  static const int kBucketKeyOffset = kBucketHashOffset + 1;
-  static const int kBucketValueOffset = kBucketKeyOffset + 1;
-  static const int kPointersPerBucket = kBucketValueOffset + 1;
-
-  // Initial size of the dictionary. According to comments in CPython's
-  // dictobject.c this accomodates the majority of dictionaries without needing
-  // a resize (obviously this depends on the load factor used to resize the
-  // dict).
-  static const int kInitialItemsSize = 8 * kPointersPerBucket;
-
   // Layout.
   static const int kNumItemsOffset = HeapObject::kSize;
-  static const int kItemsOffset = kNumItemsOffset + kPointerSize;
-  static const int kSize = kItemsOffset + kPointerSize;
+  static const int kDataOffset = kNumItemsOffset + kPointerSize;
+  static const int kSize = kDataOffset + kPointerSize;
 
  private:
-  inline void setItems(Object* items);
-  inline void setNumItems(word numItems);
-
-  // Looks up the supplied key in the dictionary.
-  //
-  // If the key is found, this function returns true and sets bucket to the
-  // index of the bucket that contains the value. If the key is not found, this
-  // function returns false and sets bucket to the location where the key would
-  // be inserted. If the dictionary is full, it sets bucket to -1.
-  static bool lookup(Dictionary* dict, Object* key, Object* hash, int* bucket);
-  static void grow(Dictionary* dict, Runtime* runtime);
-
   DISALLOW_COPY_AND_ASSIGN(Dictionary);
 };
-
-class Runtime;
 
 /**
  * A growable array
@@ -1345,9 +1297,9 @@ word Dictionary::allocationSize() {
   return Header::kSize + Module::kSize;
 }
 
-void Dictionary::initialize(Object* items) {
+void Dictionary::initialize(Object* data) {
   instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(0));
-  instanceVariableAtPut(kItemsOffset, items);
+  instanceVariableAtPut(kDataOffset, data);
 }
 
 Dictionary* Dictionary::cast(Object* object) {
@@ -1359,23 +1311,16 @@ word Dictionary::numItems() {
   return SmallInteger::cast(instanceVariableAt(kNumItemsOffset))->value();
 }
 
-word Dictionary::capacity() {
-  return ObjectArray::cast(items())->length() / kPointersPerBucket;
-}
-
 void Dictionary::setNumItems(word numItems) {
   instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(numItems));
 }
 
-Object* Dictionary::items() {
-  return instanceVariableAt(kItemsOffset);
+Object* Dictionary::data() {
+  return instanceVariableAt(kDataOffset);
 }
 
-void Dictionary::setItems(Object* items) {
-  assert((ObjectArray::cast(items)->length() % kPointersPerBucket) == 0);
-  assert(Utils::isPowerOfTwo(
-      ObjectArray::cast(items)->length() / kPointersPerBucket));
-  instanceVariableAtPut(kItemsOffset, items);
+void Dictionary::setData(Object* data) {
+  instanceVariableAtPut(kDataOffset, data);
 }
 
 // Function
