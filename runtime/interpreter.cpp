@@ -13,6 +13,71 @@
 
 namespace python {
 
+Object*
+Interpreter::call(Thread* thread, Frame* frame, Object** sp, word nargs) {
+  Object* callable = sp[nargs];
+  switch (callable->classId()) {
+    case ClassId::kFunction: {
+      frame->setValueStackTop(sp);
+      return Function::cast(callable)->entry()(thread, frame, nargs);
+    }
+    case ClassId::kBoundMethod: {
+      return callBoundMethod(thread, frame, sp, nargs);
+    }
+    case ClassId::kType: {
+      // TODO(T25382534): Handle classes
+      std::abort();
+    }
+    default: {
+      // TODO(T25382628): Handle __call__
+      std::abort();
+    }
+  }
+}
+
+Object*
+Interpreter::callKw(Thread* thread, Frame* frame, Object** sp, word nargs) {
+  // Top of stack is a tuple of keyword argument names in the order they
+  // appear on the stack.
+  frame->setValueStackTop(sp);
+  auto function = Function::cast(*(sp + nargs + 1));
+  return function->entryKw()(thread, frame, nargs);
+}
+
+Object* Interpreter::callBoundMethod(
+    Thread* thread,
+    Frame* frame,
+    Object** sp,
+    word nargs) {
+  // Shift all arguments on the stack down by 1 and unpack the BoundMethod.
+  //
+  // We don't need to worry too much about the performance overhead for method
+  // calls here.
+  //
+  // Python 3.7 introduces two new opcodes, LOAD_METHOD and CALL_METHOD, that
+  // eliminate the need to create a temporary BoundMethod object when performing
+  // a method call.
+  //
+  // The other pattern of bound method usage occurs when someone passes around a
+  // reference to a method e.g.:
+  //
+  //   m = foo.method
+  //   m()
+  //
+  // Our contention is that uses of this pattern are not performance sensitive.
+  sp -= 1;
+  for (word i = 0; i < nargs; i++) {
+    sp[i] = sp[i + 1];
+  }
+  sp[nargs] = BoundMethod::cast(sp[nargs + 1])->self();
+  sp[nargs + 1] = BoundMethod::cast(sp[nargs + 1])->function();
+  frame->setValueStackTop(sp);
+
+  // Call the bound function
+  Function* function = Function::cast(frame->peek(nargs + 1));
+  return function->entry()(thread, frame, nargs + 1);
+}
+
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
   Code* code = Code::cast(frame->code());
   BlockStack* blockStack = frame->blockStack();
@@ -90,21 +155,15 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
       case Bytecode::CALL_FUNCTION: {
-        frame->setValueStackTop(sp);
-        auto function = Function::cast(*(sp + arg));
-        Object* result = function->entry()(thread, frame, arg);
+        Object* result = call(thread, frame, sp, arg);
         // Pop arguments + called function and push return value
         sp += arg;
         *sp = result;
         break;
       }
       case Bytecode::CALL_FUNCTION_KW: {
-        frame->setValueStackTop(sp);
-        // Top of stack is a tuple of keyword argument names in the order they
-        // appear on the stack.
-        auto function = Function::cast(*(sp + arg + 1));
-        Object* result = function->entryKw()(thread, frame, arg);
-        // Pop arguments + called function and push return value
+        Object* result = callKw(thread, frame, sp, arg);
+        // Pop kw-arg tuple + arguments + called function and push return value
         sp += arg + 1;
         *sp = result;
         break;

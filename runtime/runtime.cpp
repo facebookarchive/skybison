@@ -45,6 +45,14 @@ Runtime::~Runtime() {
   delete symbols_;
 }
 
+Object* Runtime::newBoundMethod(Object* function, Object* self) {
+  HandleScope scope;
+  Handle<BoundMethod> bound_method(&scope, heap()->createBoundMethod());
+  bound_method->setFunction(function);
+  bound_method->setSelf(self);
+  return *bound_method;
+}
+
 Object* Runtime::newByteArray(word length, byte fill) {
   assert(length >= 0);
   if (length == 0) {
@@ -281,6 +289,12 @@ void Runtime::initializeHeapClasses() {
   type->setName(newStringFromCString("type"));
   const ClassId type_mro[] = {ClassId::kType, ClassId::kObject};
   type->setMro(createMro(type_mro, ARRAYSIZE(type_mro)));
+
+  Handle<Class> bound_method(&scope, newClassWithId(ClassId::kBoundMethod));
+  bound_method->setName(newStringFromCString("method"));
+  const ClassId bound_method_mro[] = {ClassId::kBoundMethod, ClassId::kObject};
+  bound_method->setMro(
+      createMro(bound_method_mro, ARRAYSIZE(bound_method_mro)));
 
   Handle<Class> byte_array(&scope, newClassWithId(ClassId::kByteArray));
   byte_array->setName(newStringFromCString("bytearray"));

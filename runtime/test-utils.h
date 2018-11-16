@@ -1,5 +1,6 @@
 #pragma once
 
+#include "handles.h"
 #include "objects.h"
 
 #include <string>
@@ -55,6 +56,19 @@ inline ::testing::AssertionResult AssertPyStringEqual(
 
 #define EXPECT_PYSTRING_EQ(s1, s2) \
   EXPECT_PRED_FORMAT2(AssertPyStringEqual, s1, s2)
+
+// Get the value bound to name in the supplied module. Returns Error::object()
+// if not found.
+Object*
+findInModule(Runtime* runtime, const Handle<Module>& module, const char* name);
+
+// Calls func using the supplied arguments and captures output.
+//
+// This opens a new frame linked to the initial frame of the current thread,
+// pushes all the arguments onto the stack, and invokes the interpreter.
+std::string callFunctionToString(
+    const Handle<Function>& func,
+    const Handle<ObjectArray>& args);
 
 } // namespace testing
 } // namespace python

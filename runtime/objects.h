@@ -70,6 +70,7 @@ enum ClassId {
 
   // Heap objects
   kObject = 32,
+  kBoundMethod,
   kByteArray,
   kCode,
   kDictionary,
@@ -106,6 +107,7 @@ class Object {
 
   // Heap objects
   inline bool isHeapObject();
+  inline bool isBoundMethod();
   inline bool isByteArray();
   inline bool isClass();
   inline bool isCode();
@@ -981,6 +983,56 @@ class Ellipsis : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Ellipsis);
 };
 
+/**
+ * A BoundMethod binds a Function and its first argument (called `self`).
+ *
+ * These are typically created as a temporary object during a method call,
+ * though they may be created and passed around freely.
+ *
+ * Consider the following snippet of python code:
+ *
+ *   class Foo:
+ *     def bar(self):
+ *       return self
+ *   f = Foo()
+ *   f.bar()
+ *
+ * The Python 3.6 bytecode produced for the line `f.bar()` is:
+ *
+ *   LOAD_FAST                0 (f)
+ *   LOAD_ATTR                1 (bar)
+ *   CALL_FUNCTION            0
+ *
+ * The LOAD_ATTR for `f.bar` creates a `BoundMethod`, which is then called
+ * directly by the subsequent CALL_FUNCTION opcode.
+ */
+class BoundMethod : public HeapObject {
+ public:
+  // Getters and setters
+
+  // The function to which "self" is bound
+  inline Object* function();
+  inline void setFunction(Object* function);
+
+  // The instance of "self" being bound
+  inline Object* self();
+  inline void setSelf(Object* self);
+
+  // Casting
+  static inline BoundMethod* cast(Object* object);
+
+  // Sizing
+  static inline word allocationSize();
+
+  // Layout
+  static const int kFunctionOffset = HeapObject::kSize;
+  static const int kSelfOffset = kFunctionOffset + kPointerSize;
+  static const int kSize = kSelfOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(BoundMethod);
+};
+
 // Object
 
 bool Object::isObject() {
@@ -1038,6 +1090,13 @@ bool Object::isError() {
 bool Object::isHeapObject() {
   uword tag = reinterpret_cast<uword>(this) & HeapObject::kTagMask;
   return tag == HeapObject::kTag;
+}
+
+bool Object::isBoundMethod() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() == ClassId::kBoundMethod;
 }
 
 bool Object::isByteArray() {
@@ -2192,6 +2251,33 @@ Object* Set::data() {
 
 void Set::setData(Object* data) {
   instanceVariableAtPut(kDataOffset, data);
+}
+
+// BoundMethod
+
+word BoundMethod::allocationSize() {
+  return Header::kSize + BoundMethod::kSize;
+}
+
+Object* BoundMethod::function() {
+  return instanceVariableAt(kFunctionOffset);
+}
+
+void BoundMethod::setFunction(Object* function) {
+  instanceVariableAtPut(kFunctionOffset, function);
+}
+
+Object* BoundMethod::self() {
+  return instanceVariableAt(kSelfOffset);
+}
+
+void BoundMethod::setSelf(Object* self) {
+  instanceVariableAtPut(kSelfOffset, self);
+}
+
+BoundMethod* BoundMethod::cast(Object* object) {
+  assert(object->isBoundMethod());
+  return reinterpret_cast<BoundMethod*>(object);
 }
 
 } // namespace python

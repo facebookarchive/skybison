@@ -28,6 +28,8 @@ class Runtime {
   Runtime();
   ~Runtime();
 
+  Object* newBoundMethod(Object* function, Object* self);
+
   Object* newByteArray(word length, byte fill);
   Object* newByteArrayWithAll(View<byte> array);
 

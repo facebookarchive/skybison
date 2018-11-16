@@ -322,4 +322,17 @@ Object* Heap::createRangeIterator() {
   return RangeIterator::cast(result);
 }
 
+Object* Heap::createBoundMethod() {
+  word size = BoundMethod::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<BoundMethod*>(raw);
+  result->setHeader(Header::from(
+      BoundMethod::kSize / kPointerSize,
+      0,
+      ClassId::kBoundMethod,
+      ObjectFormat::kObjectInstance));
+  return BoundMethod::cast(result);
+}
+
 } // namespace python

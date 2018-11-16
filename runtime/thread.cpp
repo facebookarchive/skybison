@@ -53,6 +53,10 @@ Frame* Thread::openAndLinkFrame(
   assert(numArgs >= 0);
   assert(numVars >= 0);
   assert(stackDepth >= 0);
+  // HACK: Reserve one extra stack slot for the case where we need to unwrap a
+  // bound method
+  stackDepth += 1;
+
   word size = Frame::kSize + (numVars + stackDepth) * kPointerSize;
 
   // allocate that much space on the stack

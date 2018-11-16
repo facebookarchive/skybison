@@ -5,6 +5,7 @@
 #include "builtins.h"
 #include "frame.h"
 #include "globals.h"
+#include "handles.h"
 #include "interpreter.h"
 #include "objects.h"
 #include "thread.h"
@@ -12,9 +13,6 @@
 namespace python {
 
 Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
-  // TODO: We may get passed a BoundMethod.  We'll need to detect that, unwrap
-  // it, handle shifting the arguments down (or potentially replacing the
-  // BoundMethod with the wrapped this object).
   auto function = previousFrame->function(argc);
   auto code = Code::cast(function->code());
 

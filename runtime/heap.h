@@ -20,6 +20,8 @@ class Heap {
   void scavengePointer(Object** pointer);
   Object* transport(Object* oldObject);
 
+  Object* createBoundMethod();
+
   Object* createByteArray(word length);
 
   Object* createClass(ClassId class_id);

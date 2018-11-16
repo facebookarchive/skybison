@@ -171,7 +171,7 @@ TEST(ThreadTest, PushFrameWithNoCellVars) {
   byte* prevSp = thread->ptr();
   thread->pushFrame(*code, thread->initialFrame());
 
-  EXPECT_EQ(thread->ptr(), prevSp - Frame::kSize);
+  EXPECT_EQ(thread->ptr(), prevSp - Frame::kSize - kPointerSize);
 }
 
 TEST(ThreadTest, PushFrameWithNoFreeVars) {
@@ -185,7 +185,7 @@ TEST(ThreadTest, PushFrameWithNoFreeVars) {
   byte* prevSp = thread->ptr();
   thread->pushFrame(*code, thread->initialFrame());
 
-  EXPECT_EQ(thread->ptr(), prevSp - Frame::kSize);
+  EXPECT_EQ(thread->ptr(), prevSp - Frame::kSize - kPointerSize);
 }
 
 TEST(ThreadTest, ManipulateValueStack) {
@@ -206,8 +206,8 @@ TEST(ThreadTest, ManipulateValueStack) {
   word values[] = {3333, 2222, 1111};
   for (int i = 0; i < 3; i++) {
     Object* object = frame->peek(i);
-    ASSERT_TRUE(object->isSmallInteger()) << "Value at stack depth " << i
-                                          << " is not an integer";
+    ASSERT_TRUE(object->isSmallInteger())
+        << "Value at stack depth " << i << " is not an integer";
     EXPECT_EQ(SmallInteger::cast(object)->value(), values[i])
         << "Incorrect value at stack depth " << i;
   }
@@ -1392,6 +1392,68 @@ TEST(ThreadTest, BuiltinOrd) {
   ASSERT_DEATH(
       compileAndRunToString(&runtime, "print(ord(1))"),
       "aborting due to pending exception: Unsupported type in builtin 'ord'");
+}
+
+TEST(ThreadTest, CallBoundMethod) {
+  Runtime runtime;
+
+  const char* src = R"(
+def func(self):
+  print(self)
+
+def test(callable):
+  return callable()
+)";
+  compileAndRunToString(&runtime, src);
+
+  HandleScope scope;
+  Handle<Module> module(&scope, runtime.findModule("__main__"));
+  Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
+  ASSERT_TRUE(function->isFunction());
+
+  Handle<Object> self(&scope, SmallInteger::fromWord(1111));
+  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(*function, *self));
+
+  Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
+  ASSERT_TRUE(test->isFunction());
+  Handle<Function> func(&scope, *test);
+
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, *method);
+
+  std::string output = callFunctionToString(func, args);
+  EXPECT_EQ(output, "1111\n");
+}
+
+TEST(ThreadTest, CallBoundMethodWithArgs) {
+  Runtime runtime;
+
+  const char* src = R"(
+def func(self, a, b):
+  print(self, a, b)
+
+def test(callable):
+  return callable(2222, 3333)
+)";
+  compileAndRunToString(&runtime, src);
+
+  HandleScope scope;
+  Handle<Module> module(&scope, runtime.findModule("__main__"));
+  Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
+  ASSERT_TRUE(function->isFunction());
+
+  Handle<Object> self(&scope, SmallInteger::fromWord(1111));
+  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(*function, *self));
+
+  Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
+  ASSERT_TRUE(test->isFunction());
+  Handle<Function> func(&scope, *test);
+
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, *method);
+
+  std::string output = callFunctionToString(func, args);
+  EXPECT_EQ(output, "1111 2222 3333\n");
 }
 
 } // namespace python
