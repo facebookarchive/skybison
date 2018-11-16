@@ -45,6 +45,7 @@ add_custom_command(
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   DEPENDS ${CPYTHON_HEADERS} ${CPYTHON_MODIFIED_HEADERS}
   COMMENT "Generating CPython source files")
+add_custom_target(cpython-sources DEPENDS ${CPYTHON_OUTPUT_HEADERS})
 
 add_library(cpython INTERFACE)
 target_sources(
