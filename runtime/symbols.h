@@ -48,6 +48,7 @@ class Runtime;
   V(DunderIpow, "__ipow__")                                                    \
   V(DunderIrshift, "__irshift__")                                              \
   V(DunderIsub, "__isub__")                                                    \
+  V(DunderIter, "__iter__")                                                    \
   V(DunderItruediv, "__itruediv__")                                            \
   V(DunderIxor, "__ixor__")                                                    \
   V(DunderLe, "__le__")                                                        \
@@ -62,6 +63,7 @@ class Runtime;
   V(DunderNe, "__ne__")                                                        \
   V(DunderNeg, "__neg__")                                                      \
   V(DunderNew, "__new__")                                                      \
+  V(DunderNext, "__next__")                                                    \
   V(DunderOr, "__or__")                                                        \
   V(DunderPos, "__pos__")                                                      \
   V(DunderPow, "__pow__")                                                      \

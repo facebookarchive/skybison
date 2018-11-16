@@ -31,6 +31,7 @@
 #include "marshal.h"
 #include "object-builtins.h"
 #include "os.h"
+#include "range-builtins.h"
 #include "ref-builtins.h"
 #include "scavenger.h"
 #include "set-builtins.h"
@@ -1001,9 +1002,8 @@ void Runtime::initializeHeapClasses() {
                        LayoutId::kObject);
   TupleBuiltins::initialize(this);
   initializePropertyClass();
-  addEmptyBuiltinClass(SymbolId::kRange, LayoutId::kRange, LayoutId::kObject);
-  addEmptyBuiltinClass(SymbolId::kRangeIterator, LayoutId::kRangeIterator,
-                       LayoutId::kObject);
+  RangeBuiltins::initialize(this);
+  RangeIteratorBuiltins::initialize(this);
   initializeRefClass();
   initializeSetClass();
   addEmptyBuiltinClass(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);

@@ -138,6 +138,8 @@ add_library(
   runtime/objects.h
   runtime/os.cpp
   runtime/os.h
+  runtime/range-builtins.cpp
+  runtime/range-builtins.h
   runtime/ref-builtins.cpp
   runtime/ref-builtins.h
   runtime/runtime.cpp
@@ -267,6 +269,7 @@ add_library(
   runtime/object-builtins-test.cpp
   runtime/objects-test.cpp
   runtime/os-test.cpp
+  runtime/range-builtins-test.cpp
   runtime/ref-builtins-test.cpp
   runtime/runtime-test.cpp
   runtime/scavenger-test.cpp
