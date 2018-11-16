@@ -775,4 +775,47 @@ a, b, c = l
   ASSERT_DEATH(runtime.runFromCString(src), "too many values to unpack");
 }
 
+TEST(InterpreterTest, PrintExprInvokesDisplayhook) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(R"(
+import sys
+
+MY_GLOBAL = 1234
+
+def my_displayhook(value):
+  global MY_GLOBAL
+  MY_GLOBAL = value
+
+sys.displayhook = my_displayhook
+  )");
+
+  Handle<Object> unique(&scope, runtime.newObjectArray(1));  // unique object
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  consts->atPut(0, *unique);
+  consts->atPut(1, None::object());
+  code->setConsts(*consts);
+  code->setNlocals(0);
+  const byte bytecode[] = {LOAD_CONST, 0, PRINT_EXPR,   0,
+                           LOAD_CONST, 1, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isNone());
+
+  Handle<Module> sys(&scope, testing::findModule(&runtime, "sys"));
+  Handle<Object> displayhook(&scope,
+                             testing::moduleAt(&runtime, sys, "displayhook"));
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> my_displayhook(
+      &scope, testing::moduleAt(&runtime, main, "my_displayhook"));
+  EXPECT_EQ(*displayhook, *my_displayhook);
+
+  Handle<Object> my_global(&scope,
+                           testing::moduleAt(&runtime, main, "MY_GLOBAL"));
+  EXPECT_EQ(*my_global, *unique);
+}
+
 }  // namespace python

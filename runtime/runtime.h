@@ -195,6 +195,8 @@ class Runtime {
 
   Object* buildClass() { return build_class_; }
 
+  Object* displayHook() { return display_hook_; }
+
   Object* interned() { return interned_; }
 
   Object* modules() { return modules_; }
@@ -651,6 +653,7 @@ class Runtime {
   Object* ellipsis_;
   Object* not_implemented_;
   Object* build_class_;
+  Object* display_hook_;
 
   // Interned strings
   Object* interned_;

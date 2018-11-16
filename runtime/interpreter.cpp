@@ -895,6 +895,21 @@ void Interpreter::doGetIter(Context* ctx, word) {
   ctx->frame->setTopValue(*iterator);
 }
 
+// opcode 70
+void Interpreter::doPrintExpr(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Frame* frame = ctx->frame;
+  Handle<Object> value(&scope, frame->popValue());
+  Handle<ValueCell> value_cell(&scope, thread->runtime()->displayHook());
+  if (value_cell->isUnbound()) {
+    UNIMPLEMENTED("RuntimeError: lost sys.displayhook");
+  }
+  frame->pushValue(value_cell->value());
+  frame->pushValue(*value);
+  call(thread, frame, 1);
+}
+
 // opcode 71
 void Interpreter::doLoadBuildClass(Context* ctx, word) {
   Thread* thread = ctx->thread;

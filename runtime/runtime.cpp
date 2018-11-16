@@ -1391,6 +1391,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&not_implemented_);
   visitor->visitPointer(&build_class_);
+  visitor->visitPointer(&display_hook_);
 
   // Visit interned strings.
   visitor->visitPointer(&interned_);
@@ -1665,6 +1666,10 @@ void Runtime::createSysModule() {
 
   Handle<Object> modules(&scope, modules_);
   moduleAddGlobal(module, SymbolId::kModules, modules);
+
+  display_hook_ = moduleAddBuiltinFunction(
+      module, SymbolId::kDisplayhook, nativeTrampoline<builtinSysDisplayhook>,
+      unimplementedTrampoline, unimplementedTrampoline);
 
   // Fill in sys...
   moduleAddBuiltinFunction(module, SymbolId::kExit,

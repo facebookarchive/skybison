@@ -79,7 +79,7 @@ namespace python {
   V(INPLACE_POWER, 67, doInplacePower)                                         \
   V(GET_ITER, 68, doGetIter)                                                   \
   V(GET_YIELD_FROM_ITER, 69, doNotImplemented)                                 \
-  V(PRINT_EXPR, 70, doNotImplemented)                                          \
+  V(PRINT_EXPR, 70, doPrintExpr)                                               \
   V(LOAD_BUILD_CLASS, 71, doLoadBuildClass)                                    \
   V(YIELD_FROM, 72, doNotImplemented)                                          \
   V(GET_AWAITABLE, 73, doNotImplemented)                                       \

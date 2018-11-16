@@ -110,6 +110,7 @@ class Runtime;
   V(Complex, "complex")                                                        \
   V(Deleter, "deleter")                                                        \
   V(Dict, "dict")                                                              \
+  V(Displayhook, "displayhook")                                                \
   V(Ellipsis, "ellipsis")                                                      \
   V(End, "end")                                                                \
   V(Exception, "Exception")                                                    \
