@@ -975,6 +975,9 @@ void Runtime::initializeObjectClass() {
   object_type->setInstanceLayout(*layout);
   layoutAtPut(LayoutId::kObject, *layout);
 
+  classAddBuiltinFunction(object_type, SymbolId::kDunderHash,
+                          nativeTrampoline<builtinObjectHash>);
+
   classAddBuiltinFunction(object_type, SymbolId::kDunderInit,
                           nativeTrampoline<builtinObjectInit>);
 

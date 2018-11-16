@@ -8,6 +8,15 @@
 
 namespace python {
 
+Object* builtinObjectHash(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString(
+        "object.__hash__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  return thread->runtime()->hash(args.get(0));
+}
+
 Object* builtinObjectInit(Thread* thread, Frame* frame, word nargs) {
   // object.__init__ doesn't do anything except throw a TypeError if the wrong
   // number of arguments are given. It only throws if __new__ is not overloaded

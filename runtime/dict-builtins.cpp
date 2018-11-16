@@ -72,7 +72,13 @@ Object* builtinDictionaryGetItem(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> key(&scope, args.get(1));
   if (self->isDictionary()) {
     Handle<Dictionary> dict(&scope, *self);
-    Handle<Object> value(&scope, thread->runtime()->dictionaryAt(dict, key));
+    Handle<Object> dunder_hash(
+        &scope,
+        Interpreter::lookupMethod(thread, frame, key, SymbolId::kDunderHash));
+    Handle<Object> key_hash(
+        &scope, Interpreter::callMethod1(thread, frame, dunder_hash, key));
+    Handle<Object> value(
+        &scope, thread->runtime()->dictionaryAtWithHash(dict, key, key_hash));
     if (value->isError()) {
       return thread->throwKeyErrorFromCString("KeyError");
     }
