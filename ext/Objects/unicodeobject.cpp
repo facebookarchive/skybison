@@ -569,4 +569,20 @@ PY_EXPORT PyObject* PyUnicode_FromUnicode(const Py_UNICODE* /* u */,
   UNIMPLEMENTED("PyUnicode_FromUnicode");
 }
 
+PY_EXPORT int PyUnicode_KIND_Func(PyObject*) {
+  UNIMPLEMENTED("PyUnicode_KIND_Func");
+}
+
+PY_EXPORT void* PyUnicode_DATA_Func(PyObject*) {
+  UNIMPLEMENTED("PyUnicode_DATA_Func");
+}
+
+PY_EXPORT Py_UCS4 PyUnicode_READ_Func(int, void*, Py_ssize_t) {
+  UNIMPLEMENTED("PyUnicode_READ_Func");
+}
+
+PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t) {
+  UNIMPLEMENTED("PyUnicode_READ_CHAR_Func");
+}
+
 }  // namespace python

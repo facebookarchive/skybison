@@ -2,10 +2,6 @@
 
 namespace python {
 
-PY_EXPORT char* PyByteArray_AS_STRING_Func(PyObject* /* self */) {
-  UNIMPLEMENTED("PyByteArray_AS_STRING_Func");
-}
-
 PY_EXPORT int PyByteArray_Check_Func(PyObject* /* obj */) {
   UNIMPLEMENTED("PyByteArray_Check_Func");
 }

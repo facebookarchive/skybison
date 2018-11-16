@@ -864,7 +864,10 @@ PyAPI_FUNC(void) Py_XINCREF_Func(PyObject*);
 PyAPI_FUNC(void*) PyMem_New_Func(size_t size, size_t n);
 PyAPI_FUNC(void*) PyMem_Resize_Func(void* p, size_t size, size_t n);
 
-PyAPI_FUNC(char*) PyByteArray_AS_STRING_Func(PyObject*);
+PyAPI_FUNC(int) PyUnicode_KIND_Func(PyObject*);
+PyAPI_FUNC(void*) PyUnicode_DATA_Func(PyObject*);
+PyAPI_FUNC(Py_UCS4) PyUnicode_READ_Func(int, void*, Py_ssize_t);
+PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
 
 /* Macros */
 #define _Py_Dealloc (*_Py_Dealloc_Func)
@@ -893,17 +896,30 @@ PyAPI_FUNC(char*) PyByteArray_AS_STRING_Func(PyObject*);
 #define PyUnicode_Check(op) (PyUnicode_Check_Func((PyObject*)(op)))
 #define PyUnicode_CheckExact(op) (PyUnicode_CheckExact_Func((PyObject*)(op)))
 
-#define PyByteArray_AS_STRING(self) PyByteArray_AS_STRING_Func((PyObject*)self)
-
 #define PYTHON_API_VERSION 1013
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_Create(module) PyModule_Create2(module, PYTHON_API_VERSION)
 
+#define PyBytes_AS_STRING(op) PyBytes_AsString((PyObject*)op)
+#define PyBytes_GET_SIZE(op) PyBytes_Size((PyObject*)op)
+#define PyByteArray_AS_STRING(op) PyByteArray_AsString((PyObject*)op)
+
+#define PyList_GET_ITEM(op, i) PyList_GetItem((PyObject*)op, i)
+#define PyList_GET_SIZE(op) PyList_Size((PyObject*)op)
+
 #define PySet_GET_SIZE(op) PySet_Size((PyObject*)op)
+
 #define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
 // TODO(T33954927): redefine PyTuple_GET_ITEM in a way that doesnt break pyro
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem((PyObject*)op, i, v)
 
+#define PyUnicode_GET_LENGTH(op) PyUnicode_GetLength((PyObject*)op)
+#define PyUnicode_KIND(op) PyUnicode_KIND_Func((PyObject*)op)
+#define PyUnicode_DATA(op) PyUnicode_DATA_Func((PyObject*)op)
+#define PyUnicode_READ(kind, data, index)                                      \
+  PyUnicode_READ_Func(kind, (void*)data, index)
+#define PyUnicode_READ_CHAR(op, index)                                         \
+  PyUnicode_READ_CHAR_Func((PyObject*)op, index)
 #define PyUnicode_READY(op) 0
 
 #define Py_INCREF(op) (Py_INCREF_Func((PyObject*)op))
