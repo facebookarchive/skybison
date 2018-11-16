@@ -67,19 +67,22 @@ Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   }
 
   Arguments args(frame, nargs);
-  Object* other = args.get(1);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfList(*self)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfList(*self)) {
     return thread->throwTypeErrorFromCString(
         "__add__() must be called with list instance as first argument");
   }
 
+  Handle<Object> other(&scope, args.get(1));
   if (other->isList()) {
-    Handle<List> new_list(&scope, thread->runtime()->newList());
-    Handle<Object> other_list(&scope, other);
-    thread->runtime()->listExtend(new_list, self);
-    thread->runtime()->listExtend(new_list, other_list);
+    word new_capacity =
+        List::cast(*self)->allocated() + List::cast(*other)->allocated();
+    Handle<List> new_list(&scope, runtime->newList());
+    runtime->listEnsureCapacity(new_list, new_capacity);
+    runtime->listExtend(new_list, self);
+    runtime->listExtend(new_list, other);
     return *new_list;
   }
   return thread->throwTypeErrorFromCString("can only concatenate list to list");
