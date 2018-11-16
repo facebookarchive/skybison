@@ -46,6 +46,8 @@ add_library(
   runtime
   STATIC
   runtime/allocator.h
+  runtime/bool-builtins.cpp
+  runtime/bool-builtins.h
   runtime/builtins.cpp
   runtime/builtins.h
   runtime/builtins-module.cpp
@@ -53,6 +55,8 @@ add_library(
   runtime/bytecode.cpp
   runtime/bytecode.h
   runtime/callback.h
+  runtime/dict-builtins.cpp
+  runtime/dict-builtins.h
   runtime/frame.cpp
   runtime/frame.h
   runtime/globals.h
@@ -60,9 +64,15 @@ add_library(
   runtime/handles.h
   runtime/heap.cpp
   runtime/heap.h
+  runtime/float-builtins.cpp
+  runtime/float-builtins.h
+  runtime/int-builtins.cpp
+  runtime/int-builtins.h
   runtime/interpreter.cpp
   runtime/interpreter.h
   runtime/layout.h
+  runtime/list-builtins.cpp
+  runtime/list-builtins.h
   runtime/marshal.cpp
   runtime/marshal.h
   runtime/mro.cpp
@@ -77,6 +87,12 @@ add_library(
   runtime/scavenger.h
   runtime/space.cpp
   runtime/space.h
+  runtime/set-builtins.cpp
+  runtime/set-builtins.h
+  runtime/str-builtins.cpp
+  runtime/str-builtins.h
+  runtime/super-builtins.cpp
+  runtime/super-builtins.h
   runtime/symbols.cpp
   runtime/symbols.h
   runtime/sys-module.cpp
@@ -88,6 +104,8 @@ add_library(
   runtime/trampolines.cpp
   runtime/trampolines.h
   runtime/trampolines-inl.h
+  runtime/tuple-builtins.cpp
+  runtime/tuple-builtins.h
   runtime/utils.cpp
   runtime/utils.h
   runtime/vector.h
@@ -167,17 +185,22 @@ add_library(
   runtime/attributes-test.cpp
   runtime/builtins-module-test.cpp
   runtime/trampolines-test.cpp
+  runtime/float-builtins-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
+  runtime/int-builtins-test.cpp
   runtime/interpreter-test.cpp
   runtime/layout-test.cpp
+  runtime/list-builtins-test.cpp
   runtime/marshal-test.cpp
   runtime/objects-test.cpp
   runtime/os-test.cpp
   runtime/runtime-test.cpp
   runtime/scavenger-test.cpp
   runtime/space-test.cpp
+  runtime/super-builtins-test.cpp
   runtime/sys-module-test.cpp
+  runtime/str-builtins-test.cpp
   runtime/test-utils.cpp
   runtime/test-utils.h
   runtime/thread-test.cpp
