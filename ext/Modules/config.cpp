@@ -18,6 +18,7 @@ ModuleInitializer kModuleInitializers[] = {
 
 void PyType_Type_Init();
 void PyBaseObject_Type_Init();
+void PyNone_Type_Init();
 void PyBool_Type_Init();
 void PyLong_Type_Init();
 void PyUnicode_Type_Init();
@@ -30,6 +31,7 @@ void PyModule_Type_Init();
 ExtensionTypeInitializer kExtensionTypeInitializers[] = {
     {PyType_Type_Init},
     {PyBaseObject_Type_Init},
+    {PyNone_Type_Init},
     {PyBool_Type_Init},
     {PyLong_Type_Init},
     {PyUnicode_Type_Init},

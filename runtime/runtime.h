@@ -71,6 +71,7 @@ class ApiHandle {
 enum class ExtensionTypes {
   kType = 0,
   kBaseObject,
+  kNone,
   kBool,
   kLong,
   kStr,

@@ -899,7 +899,8 @@ PyAPI_FUNC(void) Py_IncRef(PyObject *);
 PyAPI_FUNC(void) Py_DecRef(PyObject *);
 
 #ifndef Py_LIMITED_API
-PyAPI_DATA(PyTypeObject) _PyNone_Type;
+PyAPI_FUNC(PyTypeObject*) PyNone_Type_Ptr(void);
+#define _PyNone_Type (*PyNone_Type_Ptr())
 PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 #endif /* !Py_LIMITED_API */
 
@@ -909,8 +910,8 @@ where NULL (nil) is not suitable (since NULL often means 'error').
 
 Don't forget to apply Py_INCREF() when returning this value!!!
 */
-PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
-#define Py_None (&_Py_NoneStruct)
+PyAPI_FUNC(PyObject*) PyNone_Ptr(void);
+#define Py_None ((PyObject *) &(*PyNone_Ptr()))
 
 /* Macro for returning Py_None from a function */
 #define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None

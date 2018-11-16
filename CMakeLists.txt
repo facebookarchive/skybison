@@ -242,6 +242,7 @@ add_library(
   ext/Objects/dictobject-test.cpp
   ext/Objects/listobject-test.cpp
   ext/Objects/moduleobject-test.cpp
+  ext/Objects/object-test.cpp
   ext/Objects/tupleobject-test.cpp
   ext/Objects/typeobject-test.cpp
   ext/Objects/unicodeobject-test.cpp)
