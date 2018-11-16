@@ -25,7 +25,10 @@ class StrBuiltins {
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
   static RawObject lower(Thread* thread, Frame* frame, word nargs);
+  static RawObject lstrip(Thread* thread, Frame* frame, word nargs);
   static RawObject join(Thread* thread, Frame* frame, word nargs);
+  static RawObject rstrip(Thread* thread, Frame* frame, word nargs);
+  static RawObject strip(Thread* thread, Frame* frame, word nargs);
 
  private:
   static word strFormatBufferLength(const Handle<Str>& fmt,

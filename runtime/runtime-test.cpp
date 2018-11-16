@@ -1309,6 +1309,237 @@ TEST(RuntimeStrTest, StrConcat) {
   EXPECT_TRUE(concat31->isLargeStr());
 }
 
+TEST(RuntimeStrTest, StrStripSpaceWithEmptyStrIsIdentity) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> empty_str(&scope, runtime.newStrFromCStr(""));
+  Handle<Str> lstripped_empty_str(
+      &scope, runtime.strStripSpace(empty_str, StrStripDirection::Left));
+  EXPECT_EQ(*empty_str, *lstripped_empty_str);
+
+  Handle<Str> rstripped_empty_str(
+      &scope, runtime.strStripSpace(empty_str, StrStripDirection::Right));
+  EXPECT_EQ(*empty_str, *rstripped_empty_str);
+
+  Handle<Str> stripped_empty_str(
+      &scope, runtime.strStripSpace(empty_str, StrStripDirection::Both));
+  EXPECT_EQ(*empty_str, *stripped_empty_str);
+}
+
+TEST(RuntimeStrTest, StrStripSpaceWithUnstrippableStrIsIdentity) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr("Nothing to strip here"));
+  ASSERT_TRUE(str->isLargeStr());
+  Handle<Str> lstripped_str(
+      &scope, runtime.strStripSpace(str, StrStripDirection::Left));
+  EXPECT_EQ(*str, *lstripped_str);
+
+  Handle<Str> rstripped_str(
+      &scope, runtime.strStripSpace(str, StrStripDirection::Right));
+  EXPECT_EQ(*str, *rstripped_str);
+
+  Handle<Str> stripped_str(&scope,
+                           runtime.strStripSpace(str, StrStripDirection::Both));
+  EXPECT_EQ(*str, *stripped_str);
+}
+
+TEST(RuntimeStrTest, StrStripSpaceWithUnstrippableSmallStrIsIdentity) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr("nostrip"));
+  ASSERT_TRUE(str->isSmallStr());
+  Handle<Str> lstripped_str(
+      &scope, runtime.strStripSpace(str, StrStripDirection::Left));
+  EXPECT_EQ(*str, *lstripped_str);
+
+  Handle<Str> rstripped_str(
+      &scope, runtime.strStripSpace(str, StrStripDirection::Right));
+  EXPECT_EQ(*str, *rstripped_str);
+
+  Handle<Str> stripped_str(&scope,
+                           runtime.strStripSpace(str, StrStripDirection::Both));
+  EXPECT_EQ(*str, *stripped_str);
+}
+
+TEST(RuntimeStrTest, StrStripSpaceWithFullyStrippableStrReturnsEmptyStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr("\n\r\t\f         \n\t\r\f"));
+  Handle<Str> lstripped_str(
+      &scope, runtime.strStripSpace(str, StrStripDirection::Left));
+  EXPECT_EQ(lstripped_str->length(), 0);
+
+  Handle<Str> rstripped_str(
+      &scope, runtime.strStripSpace(str, StrStripDirection::Right));
+  EXPECT_EQ(rstripped_str->length(), 0);
+
+  Handle<Str> stripped_str(&scope,
+                           runtime.strStripSpace(str, StrStripDirection::Both));
+  EXPECT_EQ(stripped_str->length(), 0);
+}
+
+TEST(RuntimeStrTest, StrStripSpaceLeft) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr(" strp "));
+  ASSERT_TRUE(str->isSmallStr());
+  Handle<Str> lstripped_str(
+      &scope, runtime.strStripSpace(str, StrStripDirection::Left));
+  ASSERT_TRUE(lstripped_str->isSmallStr());
+  EXPECT_PYSTRING_EQ(*lstripped_str, "strp ");
+
+  Handle<Str> str1(&scope,
+                   runtime.newStrFromCStr("   \n \n\tLot of leading space  "));
+  ASSERT_TRUE(str1->isLargeStr());
+  Handle<Str> lstripped_str1(
+      &scope, runtime.strStripSpace(str1, StrStripDirection::Left));
+  EXPECT_PYSTRING_EQ(*lstripped_str1, "Lot of leading space  ");
+
+  Handle<Str> str2(&scope,
+                   runtime.newStrFromCStr("\n\n\n              \ntest"));
+  ASSERT_TRUE(str2->isLargeStr());
+  Handle<Str> lstripped_str2(
+      &scope, runtime.strStripSpace(str2, StrStripDirection::Left));
+  ASSERT_TRUE(lstripped_str2->isSmallStr());
+  EXPECT_PYSTRING_EQ(*lstripped_str2, "test");
+}
+
+TEST(RuntimeStrTest, StrStripSpaceRight) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr(" strp "));
+  ASSERT_TRUE(str->isSmallStr());
+  Handle<Str> rstripped_str(
+      &scope, runtime.strStripSpace(str, StrStripDirection::Right));
+  ASSERT_TRUE(rstripped_str->isSmallStr());
+  EXPECT_PYSTRING_EQ(*rstripped_str, " strp");
+
+  Handle<Str> str1(
+      &scope, runtime.newStrFromCStr("  Lot of trailing space\t\n \n    "));
+  ASSERT_TRUE(str1->isLargeStr());
+  Handle<Str> rstripped_str1(
+      &scope, runtime.strStripSpace(str1, StrStripDirection::Right));
+  EXPECT_PYSTRING_EQ(*rstripped_str1, "  Lot of trailing space");
+
+  Handle<Str> str2(&scope, runtime.newStrFromCStr("test\n      \n\n\n"));
+  ASSERT_TRUE(str2->isLargeStr());
+  Handle<Str> rstripped_str2(
+      &scope, runtime.strStripSpace(str2, StrStripDirection::Right));
+  ASSERT_TRUE(rstripped_str2->isSmallStr());
+  EXPECT_PYSTRING_EQ(*rstripped_str2, "test");
+}
+
+TEST(RuntimeStrTest, StrStripSpaceBoth) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr(" strp "));
+  ASSERT_TRUE(str->isSmallStr());
+  Handle<Str> stripped_str(&scope,
+                           runtime.strStripSpace(str, StrStripDirection::Both));
+  ASSERT_TRUE(stripped_str->isSmallStr());
+  EXPECT_PYSTRING_EQ(*stripped_str, "strp");
+
+  Handle<Str> str1(
+      &scope, runtime.newStrFromCStr(
+                  "\n \n    \n\tLot of leading and trailing space\n \n    "));
+  ASSERT_TRUE(str1->isLargeStr());
+  Handle<Str> stripped_str1(
+      &scope, runtime.strStripSpace(str1, StrStripDirection::Both));
+  EXPECT_PYSTRING_EQ(*stripped_str1, "Lot of leading and trailing space");
+
+  Handle<Str> str2(&scope, runtime.newStrFromCStr("\n\ttest\t      \n\n\n"));
+  ASSERT_TRUE(str2->isLargeStr());
+  Handle<Str> stripped_str2(
+      &scope, runtime.strStripSpace(str2, StrStripDirection::Both));
+  ASSERT_TRUE(stripped_str2->isSmallStr());
+  EXPECT_PYSTRING_EQ(*stripped_str2, "test");
+}
+
+TEST(RuntimeStrTest, StrStripWithEmptyStrIsIdentity) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> empty_str(&scope, runtime.newStrFromCStr(""));
+  Handle<Str> chars(&scope, runtime.newStrFromCStr("abc"));
+  Handle<Str> lstripped_empty_str(
+      &scope, runtime.strStrip(empty_str, chars, StrStripDirection::Left));
+  EXPECT_EQ(*empty_str, *lstripped_empty_str);
+
+  Handle<Str> rstripped_empty_str(
+      &scope, runtime.strStrip(empty_str, chars, StrStripDirection::Right));
+  EXPECT_EQ(*empty_str, *rstripped_empty_str);
+
+  Handle<Str> stripped_empty_str(
+      &scope, runtime.strStrip(empty_str, chars, StrStripDirection::Both));
+  EXPECT_EQ(*empty_str, *stripped_empty_str);
+}
+
+TEST(RuntimeStrTest, StrStripWithFullyStrippableStrReturnsEmptyStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr("bbbbaaaaccccdddd"));
+  Handle<Str> chars(&scope, runtime.newStrFromCStr("abcd"));
+  Handle<Str> lstripped_str(
+      &scope, runtime.strStrip(str, chars, StrStripDirection::Left));
+  EXPECT_EQ(lstripped_str->length(), 0);
+
+  Handle<Str> rstripped_str(
+      &scope, runtime.strStrip(str, chars, StrStripDirection::Right));
+  EXPECT_EQ(rstripped_str->length(), 0);
+
+  Handle<Str> stripped_str(
+      &scope, runtime.strStrip(str, chars, StrStripDirection::Both));
+  EXPECT_EQ(stripped_str->length(), 0);
+}
+
+TEST(RuntimeStrTest, StrStripWithEmptyCharsIsIdentity) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr(" Just another string "));
+  Handle<Str> chars(&scope, runtime.newStrFromCStr(""));
+  Handle<Str> lstripped_str(
+      &scope, runtime.strStrip(str, chars, StrStripDirection::Left));
+  EXPECT_EQ(*str, *lstripped_str);
+
+  Handle<Str> rstripped_str(
+      &scope, runtime.strStrip(str, chars, StrStripDirection::Right));
+  EXPECT_EQ(*str, *rstripped_str);
+
+  Handle<Str> stripped_str(
+      &scope, runtime.strStrip(str, chars, StrStripDirection::Both));
+  EXPECT_EQ(*str, *stripped_str);
+}
+
+TEST(RuntimeStrTest, StrStripBoth) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr("bcdHello Worldcab"));
+  Handle<Str> chars(&scope, runtime.newStrFromCStr("abcd"));
+  Handle<Str> stripped_str(
+      &scope, runtime.strStrip(str, chars, StrStripDirection::Both));
+  EXPECT_PYSTRING_EQ(*stripped_str, "Hello Worl");
+}
+
+TEST(RuntimeStrTest, StrStripLeft) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr("bcdHello Worldcab"));
+  Handle<Str> chars(&scope, runtime.newStrFromCStr("abcd"));
+  Handle<Str> lstripped_str(
+      &scope, runtime.strStrip(str, chars, StrStripDirection::Left));
+  EXPECT_PYSTRING_EQ(*lstripped_str, "Hello Worldcab");
+}
+
+TEST(RuntimeStrTest, StrStripRight) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Str> str(&scope, runtime.newStrFromCStr("bcdHello Worldcab"));
+  Handle<Str> chars(&scope, runtime.newStrFromCStr("abcd"));
+  Handle<Str> rstripped_str(
+      &scope, runtime.strStrip(str, chars, StrStripDirection::Right));
+  EXPECT_PYSTRING_EQ(*rstripped_str, "bcdHello Worl");
+}
+
 struct LookupNameInMroData {
   const char* test_name;
   const char* name;

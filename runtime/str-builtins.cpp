@@ -15,15 +15,18 @@ const BuiltinMethod StrBuiltins::kMethods[] = {
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
     {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
-    {SymbolId::kJoin, nativeTrampoline<join>},
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
-    {SymbolId::kLower, nativeTrampoline<lower>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
+    {SymbolId::kJoin, nativeTrampoline<join>},
+    {SymbolId::kLower, nativeTrampoline<lower>},
+    {SymbolId::kLStrip, nativeTrampoline<lstrip>},
+    {SymbolId::kRStrip, nativeTrampoline<rstrip>},
+    {SymbolId::kStrip, nativeTrampoline<strip>},
 };
 
 void StrBuiltins::initialize(Runtime* runtime) {
@@ -564,6 +567,120 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
                      runtime->newStrWithAll(View<byte>{buf, output_size}));
   delete[] buf;
   return *output;
+}
+
+RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr("str.lstrip() needs an argument");
+  }
+  if (nargs > 2) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "str.lstrip() takes at most 1 argument (%ld given)", nargs - 1));
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  if (!runtime->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
+    return thread->raiseTypeErrorWithCStr("str.lstrip() requires a str object");
+  }
+  if (!self->isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Handle<Str> str(&scope, *self);
+  if (nargs == 1) {
+    return runtime->strStripSpace(str, StrStripDirection::Left);
+  }
+  // nargs == 2
+  Handle<Object> other(&scope, args.get(1));
+  if (other->isNoneType()) {
+    return runtime->strStripSpace(str, StrStripDirection::Left);
+  }
+  if (!runtime->hasSubClassFlag(*other, Type::Flag::kStrSubclass)) {
+    return thread->raiseTypeErrorWithCStr(
+        "str.lstrip() arg must be None or str");
+  }
+  if (!other->isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Handle<Str> chars(&scope, *other);
+  return runtime->strStrip(str, chars, StrStripDirection::Left);
+}
+
+RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr("str.rstrip() needs an argument");
+  }
+  if (nargs > 2) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "str.rstrip() takes at most 1 argument (%ld given)", nargs - 1));
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  if (!runtime->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
+    return thread->raiseTypeErrorWithCStr("str.rstrip() requires a str object");
+  }
+  if (!self->isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Handle<Str> str(&scope, *self);
+  if (nargs == 1) {
+    return runtime->strStripSpace(str, StrStripDirection::Right);
+  }
+  // nargs == 2
+  Handle<Object> other(&scope, args.get(1));
+  if (other->isNoneType()) {
+    return runtime->strStripSpace(str, StrStripDirection::Right);
+  }
+  if (!runtime->hasSubClassFlag(*other, Type::Flag::kStrSubclass)) {
+    return thread->raiseTypeErrorWithCStr(
+        "str.rstrip() arg must be None or str");
+  }
+  if (!other->isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Handle<Str> chars(&scope, *other);
+  return runtime->strStrip(str, chars, StrStripDirection::Right);
+}
+
+RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr("str.strip() needs an argument");
+  }
+  if (nargs > 2) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "str.strip() takes at most 1 argument (%ld given)", nargs - 1));
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  if (!runtime->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
+    return thread->raiseTypeErrorWithCStr("str.strip() requires a str object");
+  }
+  if (!self->isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Handle<Str> str(&scope, *self);
+  if (nargs == 1) {
+    return runtime->strStripSpace(str, StrStripDirection::Both);
+  }
+  // nargs == 2
+  Handle<Object> other(&scope, args.get(1));
+  if (other->isNoneType()) {
+    return runtime->strStripSpace(str, StrStripDirection::Both);
+  }
+  if (!runtime->hasSubClassFlag(*other, Type::Flag::kStrSubclass)) {
+    return thread->raiseTypeErrorWithCStr(
+        "str.strip() arg must be None or str");
+  }
+  if (!other->isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Handle<Str> chars(&scope, *other);
+  return runtime->strStrip(str, chars, StrStripDirection::Both);
 }
 
 }  // namespace python

@@ -1049,4 +1049,214 @@ b = "1,2,3,4".split(",", 5)
   EXPECT_PYSTRING_EQ(Str::cast(b->at(3)), "4");
 }
 
+TEST(StrBuiltinsDeathTest, StrStripWithNoArgsThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+str.strip()
+)"),
+               R"(str.strip\(\) needs an argument)");
+}
+
+TEST(StrBuiltinsDeathTest, StrLStripWithNoArgsThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+str.lstrip()
+)"),
+               R"(str.lstrip\(\) needs an argument)");
+}
+
+TEST(StrBuiltinsDeathTest, StrRStripWithNoArgsThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+str.rstrip()
+)"),
+               R"(str.rstrip\(\) needs an argument)");
+}
+
+TEST(StrBuiltinsDeathTest, StrStripTooManyArgsThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+"test".strip(None, "test")
+)"),
+               R"(str.strip\(\) takes at most 1 argument \(2 given\))");
+}
+
+TEST(StrBuiltinsDeathTest, StrLStripTooManyArgsThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+"test".lstrip(None, "test")
+)"),
+               R"(str.lstrip\(\) takes at most 1 argument \(2 given\))");
+}
+
+TEST(StrBuiltinsDeathTest, StrRStripTooManyArgsThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+"test".rstrip(None, "test")
+)"),
+               R"(str.rstrip\(\) takes at most 1 argument \(2 given\))");
+}
+
+TEST(StrBuiltinsDeathTest, StrStripWithNonStrThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+str.strip(None)
+)"),
+               R"(str.strip\(\) requires a str object)");
+}
+
+TEST(StrBuiltinsDeathTest, StrLStripWithNonStrThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+str.lstrip(None)
+)"),
+               R"(str.lstrip\(\) requires a str object)");
+}
+
+TEST(StrBuiltinsDeathTest, StrRStripWithNonStrThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+str.rstrip(None)
+)"),
+               R"(str.rstrip\(\) requires a str object)");
+}
+
+TEST(StrBuiltinsDeathTest, StrStripWithInvalidCharsThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+"test".strip(1)
+)"),
+               R"(str.strip\(\) arg must be None or str)");
+}
+
+TEST(StrBuiltinsDeathTest, StrLStripWithInvalidCharsThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+"test".lstrip(1)
+)"),
+               R"(str.lstrip\(\) arg must be None or str)");
+}
+
+TEST(StrBuiltinsDeathTest, StrRStripWithInvalidCharsThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+"test".rstrip(1)
+)"),
+               R"(str.rstrip\(\) arg must be None or str)");
+}
+
+TEST(StrBuiltinsTest, StrStripWithNoneArgStripsBoth) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.newStrFromCStr(" Hello World "));
+  frame->setLocal(1, NoneType::object());
+  Handle<Object> str(&scope, StrBuiltins::strip(thread, frame, 2));
+  ASSERT_TRUE(str->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello World");
+  thread->popFrame();
+}
+
+TEST(StrBuiltinsTest, StrLStripWithNoneArgStripsLeft) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.newStrFromCStr(" Hello World "));
+  frame->setLocal(1, NoneType::object());
+  Handle<Object> str(&scope, StrBuiltins::lstrip(thread, frame, 2));
+  ASSERT_TRUE(str->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello World ");
+  thread->popFrame();
+}
+
+TEST(StrBuiltinsTest, StrRStripWithNoneArgStripsRight) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.newStrFromCStr(" Hello World "));
+  frame->setLocal(1, NoneType::object());
+  Handle<Object> str(&scope, StrBuiltins::rstrip(thread, frame, 2));
+  ASSERT_TRUE(str->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*str), " Hello World");
+  thread->popFrame();
+}
+
+TEST(StrBuiltinsTest, StrStripWithoutArgsStripsBoth) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+  frame->setLocal(0, runtime.newStrFromCStr(" \n\tHello World\n\t "));
+  Handle<Object> str(&scope, StrBuiltins::strip(thread, frame, 1));
+  ASSERT_TRUE(str->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello World");
+  thread->popFrame();
+}
+
+TEST(StrBuiltinsTest, StrLStripWithoutArgsStripsLeft) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+  frame->setLocal(0, runtime.newStrFromCStr(" \n\tHello World\n\t "));
+  Handle<Object> str(&scope, StrBuiltins::lstrip(thread, frame, 1));
+  ASSERT_TRUE(str->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello World\n\t ");
+  thread->popFrame();
+}
+
+TEST(StrBuiltinsTest, StrRStripWithoutArgsStripsRight) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+  frame->setLocal(0, runtime.newStrFromCStr(" \n\tHello World\n\t "));
+  Handle<Object> str(&scope, StrBuiltins::rstrip(thread, frame, 1));
+  ASSERT_TRUE(str->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*str), " \n\tHello World");
+  thread->popFrame();
+}
+
+TEST(StrBuiltinsTest, StrStripWithCharsStripsChars) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.newStrFromCStr("bcaHello Worldcab"));
+  frame->setLocal(1, runtime.newStrFromCStr("abc"));
+  Handle<Object> str(&scope, StrBuiltins::strip(thread, frame, 2));
+  ASSERT_TRUE(str->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello World");
+  thread->popFrame();
+}
+
+TEST(StrBuiltinsTest, StrLStripWithCharsStripsCharsToLeft) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.newStrFromCStr("bcaHello Worldcab"));
+  frame->setLocal(1, runtime.newStrFromCStr("abc"));
+  Handle<Object> str(&scope, StrBuiltins::lstrip(thread, frame, 2));
+  ASSERT_TRUE(str->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello Worldcab");
+  thread->popFrame();
+}
+
+TEST(StrBuiltinsTest, StrRStripWithCharsStripsCharsToRight) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.newStrFromCStr("bcaHello Worldcab"));
+  frame->setLocal(1, runtime.newStrFromCStr("abc"));
+  Handle<Object> str(&scope, StrBuiltins::rstrip(thread, frame, 2));
+  ASSERT_TRUE(str->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*str), "bcaHello World");
+  thread->popFrame();
+}
+
 }  // namespace python

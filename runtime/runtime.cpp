@@ -3609,4 +3609,127 @@ bool Runtime::isIteratorExhausted(Thread* thread,
   return (SmallInt::cast(*result)->value() == 0);
 }
 
+inline bool Runtime::isAsciiSpace(byte ch) {
+  return ((ch >= 0x09) && (ch <= 0x0D)) || ((ch >= 0x1C) && (ch <= 0x1F)) ||
+         ch == 0x20;
+}
+
+RawObject Runtime::strSubstr(const Handle<Str>& str, word start, word length) {
+  DCHECK(start >= 0, "from should be > 0");
+  if (length <= 0) {
+    return SmallStr::fromCStr("");
+  }
+  word str_len = str->length();
+  DCHECK(start + length <= str_len, "overflow");
+  if (start == 0 && length == str_len) {
+    return *str;
+  }
+  // SmallStr result
+  if (length <= SmallStr::kMaxLength) {
+    byte buffer[SmallStr::kMaxLength];
+    for (word i = 0; i < length; i++) {
+      buffer[i] = str->charAt(start + i);
+    }
+    return SmallStr::fromBytes(View<byte>(buffer, length));
+  }
+  // LargeStr result
+  HandleScope scope;
+  Handle<LargeStr> source(&scope, *str);
+  Handle<LargeStr> result(&scope, heap()->createLargeStr(length));
+  std::memcpy(reinterpret_cast<void*>(result->address()),
+              reinterpret_cast<void*>(source->address() + start), length);
+  return *result;
+}
+
+word Runtime::strSpan(const Handle<Str>& src, const Handle<Str>& str) {
+  word length = src->length();
+  word str_length = str->length();
+  word first = 0;
+  for (; first < length; first++) {
+    bool has_match = false;
+    byte ch = src->charAt(first);
+    for (word j = 0; j < str_length; j++) {
+      if (ch == str->charAt(j)) {
+        has_match = true;
+        break;
+      }
+    }
+    if (!has_match) {
+      break;
+    }
+  }
+  return first;
+}
+
+word Runtime::strRSpan(const Handle<Str>& src, const Handle<Str>& str,
+                       word rend) {
+  DCHECK(rend >= 0, "string index underflow");
+  word length = src->length();
+  word str_length = str->length();
+  word result = 0;
+  for (word i = length - 1; i >= rend; i--, result++) {
+    byte ch = src->charAt(i);
+    bool has_match = false;
+    for (word j = 0; j < str_length; j++) {
+      if (ch == str->charAt(j)) {
+        has_match = true;
+        break;
+      }
+    }
+    if (!has_match) {
+      break;
+    }
+  }
+  return result;
+}
+
+RawObject Runtime::strStripSpace(const Handle<Str>& src,
+                                 const StrStripDirection direction) {
+  word length = src->length();
+  if (length == 0) {
+    return *src;
+  }
+  if (length == 1 && isAsciiSpace(src->charAt(0))) {
+    return SmallStr::fromCStr("");
+  }
+
+  word first = 0;
+  if (direction == StrStripDirection::Left ||
+      direction == StrStripDirection::Both) {
+    while (first < length && isAsciiSpace(src->charAt(first))) {
+      ++first;
+    }
+  }
+
+  word last = 0;
+  if (direction == StrStripDirection::Right ||
+      direction == StrStripDirection::Both) {
+    for (word i = length - 1; i >= first && isAsciiSpace(src->charAt(i)); i--) {
+      last++;
+    }
+  }
+  return strSubstr(src, first, length - first - last);
+}
+
+RawObject Runtime::strStrip(const Handle<Str>& src, const Handle<Str>& str,
+                            StrStripDirection direction) {
+  word length = src->length();
+  if (length == 0 || str->length() == 0) {
+    return *src;
+  }
+  word first = 0;
+  word last = 0;
+  // TODO(jeethu): Use set lookup if chars is a LargeStr
+  if (direction == StrStripDirection::Left ||
+      direction == StrStripDirection::Both) {
+    first = strSpan(src, str);
+  }
+
+  if (direction == StrStripDirection::Right ||
+      direction == StrStripDirection::Both) {
+    last = strRSpan(src, str, first);
+  }
+  return strSubstr(src, first, length - first - last);
+}
+
 }  // namespace python

@@ -175,6 +175,7 @@ class Runtime;
   V(ListIterator, "list_iterator")                                             \
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
+  V(LStrip, "lstrip")                                                          \
   V(MemoryError, "MemoryError")                                                \
   V(MetaPath, "meta_path")                                                     \
   V(Metaclass, "metaclass")                                                    \
@@ -210,6 +211,7 @@ class Runtime;
   V(Remove, "remove")                                                          \
   V(Repr, "repr")                                                              \
   V(ResourceWarning, "ResourceWarning")                                        \
+  V(RStrip, "rstrip")                                                          \
   V(RuntimeError, "RuntimeError")                                              \
   V(RuntimeWarning, "RuntimeWarning")                                          \
   V(Set, "set")                                                                \
@@ -227,6 +229,7 @@ class Runtime;
   V(StopAsyncIteration, "StopAsyncIteration")                                  \
   V(StopIteration, "StopIteration")                                            \
   V(Str, "str")                                                                \
+  V(Strip, "strip")                                                            \
   V(Super, "super")                                                            \
   V(SyntaxError, "SyntaxError")                                                \
   V(SyntaxWarning, "SyntaxWarning")                                            \

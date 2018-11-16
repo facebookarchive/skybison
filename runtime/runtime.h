@@ -33,6 +33,8 @@ enum class DictUpdateType { Update, Merge };
 
 enum class SetLookupType { Lookup, Insertion };
 
+enum class StrStripDirection { Left, Right, Both };
+
 class Runtime {
  public:
   class NewValueCellCallback : public Callback<RawObject> {
@@ -136,6 +138,10 @@ class Runtime {
   RawObject strConcat(const Handle<Str>& left, const Handle<Str>& right);
   RawObject strJoin(Thread* thread, const Handle<Str>& sep,
                     const Handle<ObjectArray>& items, word allocated);
+  RawObject strStripSpace(const Handle<Str>& src,
+                          const StrStripDirection direction);
+  RawObject strStrip(const Handle<Str>& src, const Handle<Str>& str,
+                     StrStripDirection direction);
 
   RawObject newValueCell();
 
@@ -583,6 +589,8 @@ class Runtime {
   void initializeSuperClass();
   void initializeTypeClass();
 
+  static bool isAsciiSpace(byte ch);
+
   RawObject createMainModule();
 
   RawObject executeModule(const char* buffer, const Handle<Module>& module);
@@ -714,6 +722,19 @@ class Runtime {
   template <DictUpdateType type>
   RawObject dictUpdate(Thread* thread, const Handle<Dict>& dict,
                        const Handle<Object>& mapping);
+
+  RawObject strSubstr(const Handle<Str>& str, word start, word length);
+
+  // Returns the length of the maximum initial span of src composed
+  // of code points found in str. Analogous to the C string API function
+  // strspn().
+  word strSpan(const Handle<Str>& src, const Handle<Str>& str);
+
+  // Returns the length of the maximum final span of src composed
+  // of code points found in str. Right handed version of
+  // Runtime::strSpan(). The rend argument is the index at which to stop
+  // scanning left, and could be set to 0 to scan the whole string.
+  word strRSpan(const Handle<Str>& src, const Handle<Str>& str, word rend);
 
   // The size listEnsureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
