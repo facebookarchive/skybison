@@ -1640,4 +1640,36 @@ Object* Runtime::stringConcat(
   return *result;
 }
 
+Object* Runtime::computeFastGlobals(
+    const Handle<Code>& code,
+    const Handle<Dictionary>& globals,
+    const Handle<Dictionary>& builtins) {
+  HandleScope scope;
+  Handle<ByteArray> bytes(&scope, code->code());
+  Handle<ObjectArray> names(&scope, code->names());
+  Handle<ObjectArray> fast_globals(&scope, newObjectArray(names->length()));
+  for (word i = 0; i < bytes->length(); i += 2) {
+    Bytecode bc = static_cast<Bytecode>(bytes->byteAt(i));
+    word arg = bytes->byteAt(i + 1);
+    if (bc != LOAD_GLOBAL && bc != STORE_GLOBAL && bc != DELETE_GLOBAL) {
+      continue;
+    }
+    Handle<Object> key(&scope, names->at(arg));
+    Object* value = Error::object();
+    if (dictionaryAt(globals, key, &value)) {
+      ValueCell::cast(value)->setSource(*globals);
+    } else if (dictionaryAt(builtins, key, &value)) {
+      ValueCell::cast(value)->setSource(*builtins);
+    } else {
+      // insert a place holder to allow {STORE|DELETE}_GLOBAL
+      Handle<Object> handle(&scope, value);
+      value = dictionaryAtPutInValueCell(globals, key, handle);
+      ValueCell::cast(value)->setSource(*globals);
+    }
+    assert(value->isValueCell());
+    fast_globals->atPut(arg, value);
+  }
+  return *fast_globals;
+}
+
 } // namespace python

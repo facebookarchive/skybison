@@ -223,36 +223,71 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
       case Bytecode::LOAD_GLOBAL: {
-        HandleScope scope;
-        Handle<Dictionary> globals(&scope, frame->globals());
-        Handle<Object> key(
-            &scope,
-            ObjectArray::cast(Code::cast(frame->code())->names())->at(arg));
-        Object* value = None::object();
-        thread->runtime()->dictionaryAt(globals, key, &value);
         // TODO(cshapiro): check for unbound global variables.
-        assert(value != None::object());
-        *--sp = ValueCell::cast(value)->value();
+        *--sp =
+            ValueCell::cast(ObjectArray::cast(frame->fastGlobals())->at(arg))
+                ->value();
+        assert(*sp != Error::object());
         break;
       }
       case Bytecode::STORE_GLOBAL: {
+        ValueCell* value =
+            ValueCell::cast(ObjectArray::cast(frame->fastGlobals())->at(arg));
+        if (value->source() == frame->globals()) {
+          value->setValue(*sp++);
+        } else {
+          // it's builtin value, insert into globals and update fast globals
+          HandleScope scope;
+          Handle<Object> handle(&scope, *sp++);
+          Handle<Object> key(
+              &scope,
+              ObjectArray::cast(Code::cast(frame->code())->names())->at(arg));
+          Handle<Dictionary> globals(&scope, frame->globals());
+          Handle<ValueCell> new_value(
+              &scope,
+              thread->runtime()->dictionaryAtPutInValueCell(
+                  globals, key, handle));
+          new_value->setSource(*globals);
+          ObjectArray::cast(frame->fastGlobals())->atPut(arg, *new_value);
+        }
+        break;
+      }
+      case Bytecode::DELETE_GLOBAL: {
         HandleScope scope;
-        Handle<Dictionary> globals(&scope, frame->globals());
-        Object* names = Code::cast(frame->code())->names();
-        Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
-        Handle<Object> value(&scope, *sp++);
-        Runtime* runtime = thread->runtime();
-        runtime->dictionaryAtPutInValueCell(globals, key, value);
+        Handle<ValueCell> value(
+            &scope, ObjectArray::cast(frame->fastGlobals())->at(arg));
+        // TODO: throw NameError if assert fails
+        assert(value->source() == frame->globals());
+        assert(value->value() != Error::object());
+
+        value->setValue(Error::object());
+
+        Handle<Object> key(
+            &scope,
+            ObjectArray::cast(Code::cast(frame->code())->names())->at(arg));
+        Handle<Dictionary> builtins(&scope, frame->builtins());
+        Object* value_in_builtin;
+        if (thread->runtime()->dictionaryAt(builtins, key, &value_in_builtin)) {
+          // load value from builtins and update fast globals
+          ValueCell::cast(value_in_builtin)->setSource(*builtins);
+          ObjectArray::cast(frame->fastGlobals())->atPut(arg, value_in_builtin);
+        }
         break;
       }
       case Bytecode::MAKE_FUNCTION: {
         assert(arg == 0);
-        Function* function = Function::cast(thread->runtime()->newFunction());
+        HandleScope scope;
+        Handle<Function> function(&scope, thread->runtime()->newFunction());
         function->setName(*sp++);
         function->setCode(*sp++);
         function->setGlobals(frame->globals());
+        Handle<Dictionary> globals(&scope, frame->globals());
+        Handle<Dictionary> builtins(&scope, frame->builtins());
+        Handle<Code> code(&scope, function->code());
+        function->setFastGlobals(
+            thread->runtime()->computeFastGlobals(code, globals, builtins));
         function->setEntry(interpreterTrampoline);
-        *--sp = function;
+        *--sp = *function;
         break;
       }
       case Bytecode::BUILD_LIST: {

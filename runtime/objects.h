@@ -802,6 +802,11 @@ class Function : public HeapObject {
   inline Object* qualname();
   inline void setQualname(Object* qualname);
 
+  // The pre-computed object array provided fast globals access.
+  // fastGlobals[arg] == globals[names[arg]]
+  inline Object* fastGlobals();
+  inline void setFastGlobals(Object* fast_globals);
+
   // Casting.
   inline static Function* cast(Object* object);
 
@@ -824,7 +829,8 @@ class Function : public HeapObject {
   static const int kGlobalsOffset = kClosureOffset + kPointerSize;
   static const int kEntryOffset = kGlobalsOffset + kPointerSize;
   static const int kEntryKwOffset = kEntryOffset + kPointerSize;
-  static const int kSize = kEntryKwOffset + kPointerSize;
+  static const int kFastGlobalsOffset = kEntryKwOffset + kPointerSize;
+  static const int kSize = kFastGlobalsOffset + kPointerSize;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Function);
@@ -990,6 +996,9 @@ class ValueCell : public HeapObject {
   inline Object* value();
   inline void setValue(Object* object);
 
+  inline Object* source();
+  inline void setSource(Object* object);
+
   // Casting.
   static inline ValueCell* cast(Object* object);
 
@@ -1001,7 +1010,8 @@ class ValueCell : public HeapObject {
 
   // Layout.
   static const int kValueOffset = HeapObject::kSize;
-  static const int kSize = kValueOffset + kPointerSize;
+  static const int kSourceOffset = kValueOffset + kPointerSize;
+  static const int kSize = kSourceOffset + kPointerSize;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(ValueCell);
@@ -2056,6 +2066,14 @@ void Function::setQualname(Object* qualname) {
   instanceVariableAtPut(kQualnameOffset, qualname);
 }
 
+Object* Function::fastGlobals() {
+  return instanceVariableAt(kFastGlobalsOffset);
+}
+
+void Function::setFastGlobals(Object* fast_globals) {
+  return instanceVariableAtPut(kFastGlobalsOffset, fast_globals);
+}
+
 Function* Function::cast(Object* object) {
   assert(object->isFunction());
   return reinterpret_cast<Function*>(object);
@@ -2249,6 +2267,14 @@ Object* ValueCell::value() {
 
 void ValueCell::setValue(Object* object) {
   instanceVariableAtPut(kValueOffset, object);
+}
+
+Object* ValueCell::source() {
+  return instanceVariableAt(kSourceOffset);
+}
+
+void ValueCell::setSource(Object* source) {
+  instanceVariableAtPut(kSourceOffset, source);
 }
 
 ValueCell* ValueCell::cast(Object* object) {

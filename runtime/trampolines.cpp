@@ -8,6 +8,7 @@
 #include "handles.h"
 #include "interpreter.h"
 #include "objects.h"
+#include "runtime.h"
 #include "thread.h"
 
 namespace python {
@@ -31,9 +32,10 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
     // value is a module, use its dictionary.
     // Otherwise, create a new dictionary that contains the single assoc
     // ("None", None::object())
-    frame->setBuiltins(None::object());
+    frame->setBuiltins(thread->runtime()->newDictionary());
   }
   frame->setLastInstruction(SmallInteger::fromWord(0));
+  frame->setFastGlobals(function->fastGlobals());
 
   // Off we go!
   return Interpreter::execute(thread, frame);

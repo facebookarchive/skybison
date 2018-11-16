@@ -476,14 +476,56 @@ TEST(ThreadTest, LoadGlobal) {
   Frame* frame = thread->pushFrame(*code, thread->initialFrame());
 
   Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
   Handle<ValueCell> value_cell(&scope, runtime.newValueCell());
   value_cell->setValue(SmallInteger::fromWord(1234));
   Handle<Object> value(&scope, *value_cell);
   runtime.dictionaryAtPut(globals, key, value);
   frame->setGlobals(*globals);
+  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
   EXPECT_EQ(*result, value_cell->value());
+}
+
+TEST(ThreadTest, LoadGlobalIntegration) {
+  Runtime runtime;
+  const char* src = R"(
+a = 1
+def f():
+  global a
+  print(a)
+  a = 2
+  print(a)
+f()
+print(a)
+)";
+  const char* expected = R"(1
+2
+2
+)";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(ThreadTest, DeleteGlobal) {
+  Runtime runtime;
+  const char* src = R"(
+isinstance = 1
+class A(): pass
+def f():
+  global isinstance
+  print(isinstance)
+  del isinstance
+  a = A()
+  print(isinstance(a, A))
+f()
+)";
+  const char* expected = R"(1
+True
+)";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
 }
 
 TEST(ThreadTest, StoreGlobalCreateValueCell) {
@@ -509,7 +551,9 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   Frame* frame = thread->pushFrame(*code, thread->initialFrame());
 
   Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
   frame->setGlobals(*globals);
+  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
@@ -546,9 +590,11 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   value_cell1->setValue(SmallInteger::fromWord(99));
 
   Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
   Handle<Object> value(&scope, *value_cell1);
   runtime.dictionaryAtPut(globals, key, value);
   frame->setGlobals(*globals);
+  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
@@ -601,7 +647,8 @@ TEST(ThreadTest, MakeFunction) {
   Handle<Code> module(&scope, runtime.newCode());
 
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
-  consts->atPut(0, runtime.newCode());
+  Handle<Code> code(&scope, runtime.newCode());
+  consts->atPut(0, *code);
   Handle<Object> key(&scope, runtime.newStringFromCString("hello"));
   consts->atPut(1, *key);
   consts->atPut(2, None::object());
@@ -624,11 +671,17 @@ TEST(ThreadTest, MakeFunction) {
                      RETURN_VALUE,
                      0};
   module->setCode(runtime.newByteArrayWithAll(bc));
+  code->setCode(runtime.newByteArrayWithAll(bc));
+  code->setNames(*names);
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*module, thread->initialFrame());
 
   Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  frame->setGlobals(*globals);
+  frame->setBuiltins(*builtins);
   frame->setImplicitGlobals(*implicit_globals);
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));

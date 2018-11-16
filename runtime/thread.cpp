@@ -99,9 +99,18 @@ Frame* Thread::pushModuleFunctionFrame(
     Module* module,
     Object* object,
     Frame* previousFrame) {
+  HandleScope scope;
   Frame* result = pushFrame(object, previousFrame);
-  result->setGlobals(module->dictionary());
-  result->setImplicitGlobals(module->dictionary());
+  Handle<Code> code(&scope, object);
+  Handle<Dictionary> globals(&scope, module->dictionary());
+  Handle<Object> name(&scope, runtime()->newStringFromCString("builtins"));
+  Handle<Dictionary> builtins(
+      &scope, Module::cast(runtime()->findModule(name))->dictionary());
+  result->setGlobals(*globals);
+  result->setBuiltins(*builtins);
+  result->setFastGlobals(
+      runtime()->computeFastGlobals(code, globals, builtins));
+  result->setImplicitGlobals(*globals);
   return result;
 }
 
@@ -109,9 +118,17 @@ Frame* Thread::pushClassFunctionFrame(
     Object* function,
     Object* dictionary,
     Frame* caller) {
-  Object* code = Function::cast(function)->code();
-  Frame* result = pushFrame(code, caller);
-  result->setGlobals(Function::cast(function)->globals());
+  HandleScope scope;
+  Handle<Code> code(&scope, Function::cast(function)->code());
+  Frame* result = pushFrame(*code, caller);
+  Handle<Dictionary> globals(&scope, Function::cast(function)->globals());
+  Handle<Object> name(&scope, runtime()->newStringFromCString("builtins"));
+  Handle<Dictionary> builtins(
+      &scope, Module::cast(runtime()->findModule(name))->dictionary());
+  result->setGlobals(*globals);
+  result->setBuiltins(*builtins);
+  result->setFastGlobals(
+      runtime()->computeFastGlobals(code, globals, builtins));
   result->setImplicitGlobals(dictionary);
   return result;
 }

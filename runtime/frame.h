@@ -156,6 +156,11 @@ class Frame {
   inline Object* implicitGlobals();
   inline void setImplicitGlobals(Object* implicit_globals);
 
+  // The pre-computed object array provided fast globals access.
+  // fastGlobals[arg] == globals[names[arg]]
+  inline Object* fastGlobals();
+  inline void setFastGlobals(Object* fast_globals);
+
   // The code object
   inline Object* code();
   inline void setCode(Object* code);
@@ -198,7 +203,8 @@ class Frame {
   static const int kBlockStackOffset = kLastInstructionOffset + kPointerSize;
   static const int kNumLocalsOffset = kBlockStackOffset + BlockStack::kSize;
   static const int kLocalsOffset = kNumLocalsOffset + kPointerSize;
-  static const int kSize = kLocalsOffset + kPointerSize;
+  static const int kFastGlobalsOffset = kLocalsOffset + kPointerSize;
+  static const int kSize = kFastGlobalsOffset + kPointerSize;
 
  private:
   inline uword address();
@@ -255,6 +261,14 @@ Object* Frame::implicitGlobals() {
 
 void Frame::setImplicitGlobals(Object* implicit_globals) {
   atPut(kImplicitGlobalsOffset, implicit_globals);
+}
+
+Object* Frame::fastGlobals() {
+  return at(kFastGlobalsOffset);
+}
+
+void Frame::setFastGlobals(Object* fast_globals) {
+  atPut(kFastGlobalsOffset, fast_globals);
 }
 
 Object* Frame::code() {

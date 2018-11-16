@@ -251,6 +251,12 @@ class Runtime {
       const Handle<Object>& name,
       const Handle<Object>& value);
 
+  // Pre-computes fast_globals for functions.
+  Object* computeFastGlobals(
+      const Handle<Code>& code,
+      const Handle<Dictionary>& globals,
+      const Handle<Dictionary>& builtins);
+
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
   // dictobject.c this accommodates the majority of dictionaries without needing
