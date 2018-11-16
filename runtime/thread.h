@@ -93,12 +93,12 @@ class Thread {
   // Convenience method for throwing a RuntimeError exception with an error
   // message.
   void throwRuntimeError(String* message);
-  void throwRuntimeErrorFromCString(const char* message);
+  Object* throwRuntimeErrorFromCString(const char* message);
 
   // Convenience method for throwing a TypeError exception with an error
   // message.
   void throwTypeError(String* message);
-  void throwTypeErrorFromCString(const char* message);
+  Object* throwTypeErrorFromCString(const char* message);
 
   // Convenience method for throwing a ValueError exception with an error
   // message.

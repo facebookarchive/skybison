@@ -150,9 +150,9 @@ void Thread::throwRuntimeError(String* message) {
   pending_exception_ = message;
 }
 
-void Thread::throwRuntimeErrorFromCString(const char* message) {
-  // TODO: instantiate RuntimeError object.
-  pending_exception_ = runtime()->newStringFromCString(message);
+Object* Thread::throwRuntimeErrorFromCString(const char* message) {
+  throwRuntimeError(String::cast(runtime()->newStringFromCString(message)));
+  return Error::object();
 }
 
 // Convenience method for throwing a TypeError exception with an error message.
@@ -161,9 +161,9 @@ void Thread::throwTypeError(String* message) {
   pending_exception_ = message;
 }
 
-void Thread::throwTypeErrorFromCString(const char* message) {
-  // TODO: instantiate TypeError object.
-  pending_exception_ = runtime()->newStringFromCString(message);
+Object* Thread::throwTypeErrorFromCString(const char* message) {
+  throwRuntimeError(String::cast(runtime()->newStringFromCString(message)));
+  return Error::object();
 }
 
 // Convenience method for throwing a ValueError exception with an error message.

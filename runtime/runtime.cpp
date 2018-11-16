@@ -597,6 +597,16 @@ Object* Runtime::createMainModule() {
   moduleAddBuiltinPrint(module);
   moduleAddBuiltinFunction(
       module,
+      "ord",
+      nativeTrampoline<builtinOrd>,
+      nativeTrampoline<unimplementedTrampoline>);
+  moduleAddBuiltinFunction(
+      module,
+      "chr",
+      nativeTrampoline<builtinChr>,
+      nativeTrampoline<unimplementedTrampoline>);
+  moduleAddBuiltinFunction(
+      module,
       "range",
       nativeTrampoline<builtinRange>,
       nativeTrampoline<unimplementedTrampoline>);

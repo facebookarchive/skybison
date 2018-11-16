@@ -202,4 +202,35 @@ Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newRange(start, stop, step);
 }
 
+Object* builtinOrd(Thread* thread, Frame* callerFrame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("Unexpected 1 argumment in 'ord'");
+  }
+  Object* arg = callerFrame->valueStackTop()[0];
+  if (!arg->isString()) {
+    return thread->throwTypeErrorFromCString(
+        "Unsupported type in builtin 'ord'");
+  }
+  auto* str = String::cast(arg);
+  if (str->length() != 1) {
+    return thread->throwTypeErrorFromCString(
+        "Builtin 'ord' expects string of length 1");
+  }
+  return SmallInteger::fromWord(str->charAt(0));
+}
+
+Object* builtinChr(Thread* thread, Frame* callerFrame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("Unexpected 1 argumment in 'chr'");
+  }
+  Object* arg = callerFrame->valueStackTop()[0];
+  if (!arg->isSmallInteger()) {
+    return thread->throwTypeErrorFromCString(
+        "Unsupported type in builtin 'chr'");
+  }
+  word w = SmallInteger::cast(arg)->value();
+  const char s[2]{static_cast<char>(w), 0};
+  return SmallString::fromCString(s);
+}
+
 } // namespace python

@@ -19,6 +19,8 @@ Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs);
 
 // CALL_FUNCTION entry point for print()
 Object* builtinPrint(Thread* thread, Frame* frame, word nargs);
+Object* builtinOrd(Thread* thread, Frame* frame, word nargs);
+Object* builtinChr(Thread* thread, Frame* frame, word nargs);
 
 // CALL_FUNCTION_KW entry pointer for print()
 Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs);

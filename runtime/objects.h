@@ -1964,6 +1964,8 @@ void List::atPut(word index, Object* value) {
 }
 
 Object* List::at(word index) {
+  assert(index >= 0);
+  assert(index < allocated());
   return ObjectArray::cast(items())->at(index);
 }
 

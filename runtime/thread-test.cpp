@@ -1303,4 +1303,30 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::ValuesIn(kManipulateLocalsTests),
     localsTestName);
 
+TEST(ThreadTest, BuiltinChr) {
+  Runtime runtime;
+  std::string result = compileAndRunToString(&runtime, "print(chr(65))");
+  EXPECT_EQ(result, "A\n");
+  std::unique_ptr<char[]> buffer1(Runtime::compile("print(chr(1,2))"));
+  ASSERT_DEATH(
+      runtime.run(buffer1.get()),
+      "aborting due to pending exception: Unexpected 1 argumment in 'chr'");
+  std::unique_ptr<char[]> buffer2(Runtime::compile("print(chr('A'))"));
+  ASSERT_DEATH(
+      runtime.run(buffer2.get()),
+      "aborting due to pending exception: Unsupported type in builtin 'chr'");
+}
+
+TEST(ThreadTest, BuiltinOrd) {
+  Runtime runtime;
+  std::string result = compileAndRunToString(&runtime, "print(ord('A'))");
+  EXPECT_EQ(result, "65\n");
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, "print(ord(1,2))"),
+      "aborting due to pending exception: Unexpected 1 argumment in 'ord'");
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, "print(ord(1))"),
+      "aborting due to pending exception: Unsupported type in builtin 'ord'");
+}
+
 } // namespace python
