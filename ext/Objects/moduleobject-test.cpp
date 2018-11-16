@@ -55,4 +55,22 @@ TEST_F(ModuleExtensionApiTest, GetDefWithNonModuleRetunsNull) {
   EXPECT_EQ(result, nullptr);
 }
 
+TEST_F(ModuleExtensionApiTest, CheckTypeOnNonModuleReturnsZero) {
+  PyObject* pylong = PyLong_FromLong(10);
+  EXPECT_FALSE(PyModule_Check(pylong));
+  EXPECT_FALSE(PyModule_CheckExact(pylong));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, CheckTypeOnModuleReturnsOne) {
+  PyModuleDef def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+  PyObject* module = PyModule_Create(&def);
+  EXPECT_TRUE(PyModule_Check(module));
+  EXPECT_TRUE(PyModule_CheckExact(module));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python

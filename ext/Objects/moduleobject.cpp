@@ -6,6 +6,18 @@
 
 namespace python {
 
+PY_EXPORT int PyModule_CheckExact_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->asObject()->isModule();
+}
+
+PY_EXPORT int PyModule_Check_Func(PyObject* obj) {
+  if (PyModule_CheckExact_Func(obj)) {
+    return true;
+  }
+  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+                                                  LayoutId::kModule);
+}
+
 PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
