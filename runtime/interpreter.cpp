@@ -1130,6 +1130,21 @@ void Interpreter::doLoadGlobal(Context* ctx, word arg) {
   DCHECK(ctx->frame->topValue() != Error::object(), "unexpected error object");
 }
 
+// opcode 119
+void Interpreter::doContinueLoop(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  TryBlock block = frame->blockStack()->peek();
+  word kind = block.kind();
+  while (kind != Bytecode::SETUP_LOOP) {
+    frame->blockStack()->pop();
+    kind = frame->blockStack()->peek().kind();
+    if (kind != Bytecode::SETUP_LOOP && kind != Bytecode::SETUP_EXCEPT) {
+      UNIMPLEMENTED("Can only unwind loop and exception blocks");
+    }
+  }
+  ctx->pc = arg;
+}
+
 // opcode 120
 void Interpreter::doSetupLoop(Context* ctx, word arg) {
   Frame* frame = ctx->frame;

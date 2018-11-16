@@ -185,6 +185,7 @@ class Interpreter {
   static void doPopJumpIfFalse(Context* ctx, word arg);
   static void doPopJumpIfTrue(Context* ctx, word arg);
   static void doLoadGlobal(Context* ctx, word arg);
+  static void doContinueLoop(Context* ctx, word arg);
   static void doSetupLoop(Context* ctx, word arg);
   static void doSetupExcept(Context* ctx, word arg);
   static void doLoadFast(Context* ctx, word arg);

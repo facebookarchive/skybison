@@ -80,6 +80,8 @@ class BlockStack {
 
   TryBlock pop();
 
+  TryBlock peek();
+
   static const int kStackOffset = 0;
   static const int kTopOffset =
       kStackOffset + kMaxBlockStackDepth * kPointerSize;
@@ -550,6 +552,13 @@ inline word BlockStack::top() {
 inline void BlockStack::setTop(word newTop) {
   DCHECK_INDEX(newTop, kMaxBlockStackDepth);
   atPut(kTopOffset, SmallInteger::fromWord(newTop));
+}
+
+inline TryBlock BlockStack::peek() {
+  word stackTop = top() - 1;
+  DCHECK(stackTop > -1, "block stack underflow %ld", stackTop);
+  Object* block = at(kStackOffset + stackTop * kPointerSize);
+  return TryBlock(block);
 }
 
 inline void BlockStack::push(const TryBlock& block) {

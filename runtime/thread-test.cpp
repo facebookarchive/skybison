@@ -2525,6 +2525,112 @@ for x in range(1,6):
   EXPECT_EQ(output, "1\n2\n");
 }
 
+TEST(ThreadTest, ContinueLoopRangeLoop) {
+  const char* src = R"(
+l = []
+
+for x in range(4):
+    if x == 3:
+        try:
+            continue
+        except:
+            # This is to prevent the peephole optimizer
+            # from turning the CONTINUE_LOOP op
+            # into a JUMP_ABSOLUTE op
+            pass
+    l.append(x)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
+  EXPECT_TRUE(l->isList());
+  Handle<List> list_l(&scope, *l);
+  ASSERT_GE(list_l->allocated(), 3);
+  EXPECT_EQ(list_l->at(0), SmallInteger::fromWord(0));
+  EXPECT_EQ(list_l->at(1), SmallInteger::fromWord(1));
+  EXPECT_EQ(list_l->at(2), SmallInteger::fromWord(2));
+}
+
+TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(5));
+  Handle<Code> code(&scope, runtime.newCode());
+  consts->atPut(0, SmallInteger::fromWord(0));
+  consts->atPut(1, SmallInteger::fromWord(4));
+  consts->atPut(2, SmallInteger::fromWord(1));
+  consts->atPut(3, SmallInteger::fromWord(3));
+  consts->atPut(4, None::object());
+  code->setConsts(*consts);
+  code->setArgcount(0);
+  code->setNlocals(2);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(2));
+  Handle<Object> key0(&scope, runtime.newStringFromCString("cnt"));
+  Handle<Object> key1(&scope, runtime.newStringFromCString("s"));
+  names->atPut(0, *key0);
+  names->atPut(1, *key0);
+  code->setNames(*names);
+
+  //  # python code:
+  //  cnt = 0
+  //  s = 0
+  //  while cnt < 4:
+  //      cnt += 1
+  //      if cnt == 3:
+  //          continue
+  //      s += cnt
+  //  return s
+  const byte bc[] = {LOAD_CONST,        0, // 0
+                     STORE_FAST,        0, // (cnt)
+
+                     LOAD_CONST,        0, // 0
+                     STORE_FAST,        1, // s
+
+                     SETUP_LOOP,        38, // (to 48)
+                     LOAD_FAST,         0, // (cnt)
+                     LOAD_CONST,        1, // (4)
+                     COMPARE_OP,        0, // (<)
+                     POP_JUMP_IF_FALSE, 46,
+
+                     LOAD_FAST,         0, // (cnt)
+                     LOAD_CONST,        2, // (1)
+                     INPLACE_ADD,       0,  STORE_FAST,   0, // (cnt)
+
+                     LOAD_FAST,         0, // (cnt)
+                     LOAD_CONST,        3, // (3)
+                     COMPARE_OP,        2, // (==)
+                     POP_JUMP_IF_FALSE, 36,
+
+                     CONTINUE_LOOP,     10,
+
+                     LOAD_FAST,         1, // (s)
+                     LOAD_FAST,         0, // (cnt)
+                     INPLACE_ADD,       0,  STORE_FAST,   1, // (s)
+                     JUMP_ABSOLUTE,     10, POP_BLOCK,    0,
+
+                     LOAD_FAST,         1,  RETURN_VALUE, 0};
+
+  code->setCode(runtime.newByteArrayWithAll(bc));
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code);
+
+  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+
+  frame->setImplicitGlobals(*implicit_globals);
+  frame->setFastGlobals(
+      runtime.computeFastGlobals(code, implicit_globals, builtins));
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*result)->value(), 7);
+};
+
 TEST(ThreadTest, Func2TestPyStone) { // mimic pystone.py Func2
   const char* src = R"(
 def f1(x, y):

@@ -128,7 +128,7 @@ namespace python {
   V(LOAD_GLOBAL, 116, doLoadGlobal)                        \
   V(UNUSED_BYTECODE_117, 117, doInvalidBytecode)           \
   V(UNUSED_BYTECODE_118, 118, doInvalidBytecode)           \
-  V(CONTINUE_LOOP, 119, doNotImplemented)                  \
+  V(CONTINUE_LOOP, 119, doContinueLoop)                    \
   V(SETUP_LOOP, 120, doSetupLoop)                          \
   V(SETUP_EXCEPT, 121, doSetupExcept)                      \
   V(SETUP_FINALLY, 122, doNotImplemented)                  \
