@@ -1700,4 +1700,24 @@ Object* Runtime::computeFastGlobals(
   return *fast_globals;
 }
 
+// See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
+// for details about the line number table format
+word Runtime::codeOffsetToLineNum(
+    Thread* thread,
+    const Handle<Code>& code,
+    word offset) {
+  HandleScope scope(thread->handles());
+  Handle<ByteArray> table(&scope, code->lnotab());
+  word line = code->firstlineno();
+  word cur_offset = 0;
+  for (word i = 0; i < table->length(); i += 2) {
+    cur_offset += table->byteAt(i);
+    if (cur_offset > offset) {
+      break;
+    }
+    line += static_cast<sbyte>(table->byteAt(i + 1));
+  }
+  return line;
+}
+
 } // namespace python

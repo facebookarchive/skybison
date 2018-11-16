@@ -4,6 +4,7 @@
 #include <cstdint>
 
 typedef unsigned char byte;
+typedef signed char sbyte;
 typedef short int int16;
 typedef int int32;
 typedef intptr_t word;

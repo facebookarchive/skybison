@@ -265,6 +265,11 @@ class Runtime {
       const Handle<Dictionary>& globals,
       const Handle<Dictionary>& builtins);
 
+  // Converts the offset in code's bytecode into the corresponding line number
+  // in the backing source file.
+  word
+  codeOffsetToLineNum(Thread* thread, const Handle<Code>& code, word offset);
+
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
   // dictobject.c this accommodates the majority of dictionaries without needing

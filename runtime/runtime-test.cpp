@@ -907,4 +907,49 @@ c = MyClassWithAttributes(1)
   EXPECT_EQ(*value, SmallInteger::fromWord(1));
 }
 
+TEST(RuntimeTest, ComputeLineNumberForBytecodeOffset) {
+  Runtime runtime;
+  const char* src = R"(
+def func():
+  a = 1
+  b = 2
+  print(a, b)
+)";
+  compileAndRunToString(&runtime, src);
+  HandleScope scope;
+  Handle<Object> dunder_main(&scope, runtime.symbols()->DunderMain());
+  Handle<Module> main(&scope, runtime.findModule(dunder_main));
+
+  // The bytecode for func is roughly:
+  // LOAD_CONST     # a = 1
+  // STORE_FAST
+  //
+  // LOAD_CONST     # b = 2
+  // STORE_FAST
+  //
+  // LOAD_GLOBAL    # print(a, b)
+  // LOAD_FAST
+  // LOAD_FAST
+  // CALL_FUNCTION
+
+  Handle<Object> name(&scope, runtime.newStringFromCString("func"));
+  Handle<Function> func(&scope, runtime.moduleAt(main, name));
+  Handle<Code> code(&scope, func->code());
+  ASSERT_EQ(code->firstlineno(), 2);
+
+  // a = 1
+  Thread* thread = Thread::currentThread();
+  EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, 0), 3);
+  EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, 2), 3);
+
+  // b = 2
+  EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, 4), 4);
+  EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, 6), 4);
+
+  // print(a, b)
+  for (word i = 8; i < ByteArray::cast(code->code())->length(); i++) {
+    EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, i), 5);
+  }
+}
+
 } // namespace python
