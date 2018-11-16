@@ -621,4 +621,18 @@ print(Hello().__class__ is Hello)
   EXPECT_EQ(output, "True\nTrue\nTrue\nTrue\n");
 }
 
+TEST(InstanceAttributeTest, DunderNew) {
+  Runtime runtime;
+  const char* src = R"(
+class Foo:
+    def __new__(self):
+        print("New")
+    def __init__(self):
+        print("Init")
+a = Foo()
+)";
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "New\nInit\n");
+}
+
 } // namespace python

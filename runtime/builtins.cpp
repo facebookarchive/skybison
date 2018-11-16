@@ -84,7 +84,7 @@ Object* builtinTypeCall(Thread* thread, Frame* caller, word nargs) {
   }
   frame->setValueStackTop(sp);
 
-  Handle<Object> result(&scope, dunder_new->entry()(thread, caller, nargs));
+  Handle<Object> result(&scope, dunder_new->entry()(thread, frame, nargs));
 
   // Pop all of the arguments we pushed for the __new__ call.  While we will
   // push the same number of arguments again for the __init__ call below,
