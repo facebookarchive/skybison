@@ -15,56 +15,101 @@ namespace python {
 #define INTRINSIC_HEAP_CLASS_NAMES(V)                                          \
   V(Object)                                                                    \
   V(ArithmeticError)                                                           \
+  V(AssertionError)                                                            \
   V(AttributeError)                                                            \
   V(BaseException)                                                             \
+  V(BlockingIOError)                                                           \
   V(BoundMethod)                                                               \
+  V(BrokenPipeError)                                                           \
+  V(BufferError)                                                               \
   V(Bytes)                                                                     \
+  V(BytesWarning)                                                              \
+  V(ChildProcessError)                                                         \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \
+  V(ConnectionAbortedError)                                                    \
+  V(ConnectionError)                                                           \
+  V(ConnectionRefusedError)                                                    \
+  V(ConnectionResetError)                                                      \
   V(Coroutine)                                                                 \
+  V(DeprecationWarning)                                                        \
   V(Dict)                                                                      \
+  V(EOFError)                                                                  \
   V(Ellipsis)                                                                  \
   V(Exception)                                                                 \
+  V(FileExistsError)                                                           \
+  V(FileNotFoundError)                                                         \
   V(Float)                                                                     \
+  V(FloatingPointError)                                                        \
   V(Function)                                                                  \
+  V(FutureWarning)                                                             \
   V(Generator)                                                                 \
+  V(GeneratorExit)                                                             \
   V(HeapFrame)                                                                 \
   V(ImportError)                                                               \
+  V(ImportWarning)                                                             \
+  V(IndentationError)                                                          \
   V(IndexError)                                                                \
   V(Int)                                                                       \
+  V(InterruptedError)                                                          \
+  V(IsADirectoryError)                                                         \
   V(KeyError)                                                                  \
+  V(KeyboardInterrupt)                                                         \
   V(LargeInt)                                                                  \
   V(LargeStr)                                                                  \
   V(Layout)                                                                    \
   V(List)                                                                      \
   V(ListIterator)                                                              \
   V(LookupError)                                                               \
+  V(MemoryError)                                                               \
   V(Module)                                                                    \
   V(ModuleNotFoundError)                                                       \
   V(NameError)                                                                 \
+  V(NotADirectoryError)                                                        \
   V(NotImplemented)                                                            \
   V(NotImplementedError)                                                       \
+  V(OSError)                                                                   \
   V(ObjectArray)                                                               \
   V(OverflowError)                                                             \
+  V(PendingDeprecationWarning)                                                 \
+  V(PermissionError)                                                           \
+  V(ProcessLookupError)                                                        \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
+  V(RecursionError)                                                            \
+  V(ReferenceError)                                                            \
+  V(ResourceWarning)                                                           \
   V(RuntimeError)                                                              \
+  V(RuntimeWarning)                                                            \
   V(Set)                                                                       \
   V(SetIterator)                                                               \
   V(Slice)                                                                     \
   V(StaticMethod)                                                              \
+  V(StopAsyncIteration)                                                        \
   V(StopIteration)                                                             \
   V(Str)                                                                       \
   V(Super)                                                                     \
+  V(SyntaxError)                                                               \
+  V(SyntaxWarning)                                                             \
   V(SystemError)                                                               \
   V(SystemExit)                                                                \
+  V(TabError)                                                                  \
+  V(TimeoutError)                                                              \
   V(TupleIterator)                                                             \
   V(Type)                                                                      \
   V(TypeError)                                                                 \
+  V(UnboundLocalError)                                                         \
+  V(UnicodeDecodeError)                                                        \
+  V(UnicodeEncodeError)                                                        \
+  V(UnicodeError)                                                              \
+  V(UnicodeTranslateError)                                                     \
+  V(UnicodeWarning)                                                            \
+  V(UserWarning)                                                               \
   V(ValueCell)                                                                 \
   V(ValueError)                                                                \
+  V(Warning)                                                                   \
   V(WeakRef)                                                                   \
   V(ZeroDivisionError)
 
@@ -101,56 +146,101 @@ enum class LayoutId : word {
   // Heap objects
   kObject = 32,
   kArithmeticError,
+  kAssertionError,
   kAttributeError,
   kBaseException,
+  kBlockingIOError,
   kBoundMethod,
+  kBrokenPipeError,
+  kBufferError,
   kBytes,
+  kBytesWarning,
+  kChildProcessError,
   kClassMethod,
   kCode,
   kComplex,
+  kConnectionAbortedError,
+  kConnectionError,
+  kConnectionRefusedError,
+  kConnectionResetError,
   kCoroutine,
+  kDeprecationWarning,
   kDict,
+  kEOFError,
   kEllipsis,
   kException,
+  kFileExistsError,
+  kFileNotFoundError,
   kFloat,
+  kFloatingPointError,
   kFunction,
+  kFutureWarning,
   kGenerator,
+  kGeneratorExit,
   kHeapFrame,
   kImportError,
-  kInt,
+  kImportWarning,
+  kIndentationError,
   kIndexError,
+  kInt,
+  kInterruptedError,
+  kIsADirectoryError,
   kKeyError,
+  kKeyboardInterrupt,
   kLargeInt,
   kLargeStr,
   kLayout,
   kList,
   kListIterator,
   kLookupError,
+  kMemoryError,
   kModule,
   kModuleNotFoundError,
   kNameError,
+  kNotADirectoryError,
   kNotImplemented,
   kNotImplementedError,
+  kOSError,
   kObjectArray,
   kOverflowError,
+  kPendingDeprecationWarning,
+  kPermissionError,
+  kProcessLookupError,
   kProperty,
   kRange,
   kRangeIterator,
+  kRecursionError,
+  kReferenceError,
+  kResourceWarning,
   kRuntimeError,
+  kRuntimeWarning,
   kSet,
   kSetIterator,
   kSlice,
   kStaticMethod,
+  kStopAsyncIteration,
   kStopIteration,
   kStr,
+  kSuper,
+  kSyntaxError,
+  kSyntaxWarning,
   kSystemError,
   kSystemExit,
-  kSuper,
+  kTabError,
+  kTimeoutError,
   kTupleIterator,
   kType,
   kTypeError,
+  kUnboundLocalError,
+  kUnicodeDecodeError,
+  kUnicodeEncodeError,
+  kUnicodeError,
+  kUnicodeTranslateError,
+  kUnicodeWarning,
+  kUserWarning,
   kValueCell,
   kValueError,
+  kWarning,
   kWeakRef,
   kZeroDivisionError,
 

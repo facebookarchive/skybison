@@ -1,10 +1,11 @@
 #ifndef CPYTHON_FUNC_H
 #define CPYTHON_FUNC_H
+
+#include "cpython-types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "cpython-types.h"
 
 #define PyAPI_FUNC(RTYPE) RTYPE
 
@@ -12,6 +13,74 @@ extern "C" {
 PyAPI_FUNC(PyObject *) PyFalse_Ptr();
 PyAPI_FUNC(PyObject *) PyNone_Ptr();
 PyAPI_FUNC(PyObject *) PyTrue_Ptr();
+
+PyAPI_FUNC(PyObject *) PyExc_BaseException_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_Exception_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_StopAsyncIteration_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_StopIteration_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_GeneratorExit_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ArithmeticError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_LookupError_Ptr();
+
+PyAPI_FUNC(PyObject *) PyExc_AssertionError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_AttributeError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_BufferError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_EOFError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_FloatingPointError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_OSError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ImportError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ModuleNotFoundError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_IndexError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_KeyError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_KeyboardInterrupt_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_MemoryError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_NameError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_OverflowError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_RuntimeError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_RecursionError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_NotImplementedError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_SyntaxError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_IndentationError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_TabError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ReferenceError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_SystemError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_SystemExit_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_TypeError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_UnboundLocalError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_UnicodeError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_UnicodeEncodeError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_UnicodeDecodeError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_UnicodeTranslateError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ValueError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ZeroDivisionError_Ptr();
+
+PyAPI_FUNC(PyObject *) PyExc_BlockingIOError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_BrokenPipeError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ChildProcessError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ConnectionError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ConnectionAbortedError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ConnectionRefusedError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ConnectionResetError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_FileExistsError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_FileNotFoundError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_InterruptedError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_IsADirectoryError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_NotADirectoryError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_PermissionError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ProcessLookupError_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_TimeoutError_Ptr();
+
+PyAPI_FUNC(PyObject *) PyExc_Warning_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_UserWarning_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_DeprecationWarning_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_PendingDeprecationWarning_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_SyntaxWarning_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_RuntimeWarning_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_FutureWarning_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ImportWarning_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_UnicodeWarning_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_BytesWarning_Ptr();
+PyAPI_FUNC(PyObject *) PyExc_ResourceWarning_Ptr();
 
 /* Functions */
 PyAPI_FUNC(PyObject *) PyBool_FromLong(long);
@@ -63,6 +132,7 @@ PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
 
 /* Non C-API functions */
 PyAPI_FUNC(int) PyBool_Check_Func(PyObject *);
+PyAPI_FUNC(int) PyByteArray_Check_Func(PyObject *);
 PyAPI_FUNC(int) PyLong_Check_Func(PyObject *);
 PyAPI_FUNC(int) PyLong_CheckExact_Func(PyObject *);
 PyAPI_FUNC(int) PyFloat_Check_Func(PyObject *);
@@ -78,6 +148,8 @@ PyAPI_FUNC(int) PyDict_CheckExact_Func(PyObject *);
 PyAPI_FUNC(int) PyType_Check_Func(PyObject *);
 PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
 
+PyAPI_FUNC(char *) PyByteArray_AS_STRING_Func(PyObject *);
+
 /* Macros */
 /* Multiline macros should retain their structure to get properly substituted */
 /* clang-format off */
@@ -85,6 +157,7 @@ PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
     (*_Py_Dealloc_Func)
 
 #define PyBool_Check(op) (PyBool_Check_Func((PyObject*)op))
+#define PyByteArray_Check(op) (PyByteArray_Check_Func((PyObject*)op))
 #define PyLong_Check(op) \
   PyLong_Check_Func((PyObject*)op)
 #define PyLong_CheckExact(op) (PyLong_CheckExact_Func((PyObject*)op))
@@ -106,6 +179,9 @@ PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
   PyType_Check_Func((PyObject*)op)
 #define PyType_CheckExact(op) (PyType_CheckExact_Func((PyObject*)op))
 
+#define PyByteArray_AS_STRING(self) \
+    PyByteArray_AS_STRING_Func((PyObject*)self)
+
 #define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
 // TODO(T33954927): redefine PyTuple_GET_ITEM in a way that doesnt break pyro
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem((PyObject*)op, i, v)
@@ -114,6 +190,6 @@ PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
 
 #ifdef __cplusplus
 }
-
 #endif
+
 #endif /* !CPYTHON_FUNC_H */

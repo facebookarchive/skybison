@@ -1,10 +1,11 @@
 #ifndef CPYTHON_TYPES_H
 #define CPYTHON_TYPES_H
+
+#include <stdio.h> /* For FILE */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdio.h> /* For FILE */
 
 typedef ssize_t Py_ssize_t;
 
@@ -30,8 +31,8 @@ typedef Py_ssize_t Py_hash_t;
 /* clang-format on */
 
 #define Py_TPFLAGS_READY (1UL << 12)
-
 #define Py_TPFLAGS_READYING (1UL << 13)
+#define Py_TPFLAGS_HAVE_GC (1UL << 14)
 
 typedef struct _object {
   _PyObject_HEAD_EXTRA Py_ssize_t ob_refcnt;
@@ -314,4 +315,5 @@ struct _inittab {
 #ifdef __cplusplus
 }
 #endif
+
 #endif /* !CPYTHON_TYPES_H */

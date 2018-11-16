@@ -18,4 +18,8 @@ extern "C" int PyBool_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isBool();
 }
 
+extern "C" PyObject* PyBool_FromLong(long v) {
+  return ApiHandle::fromObject(Bool::fromBool(v));
+}
+
 }  // namespace python

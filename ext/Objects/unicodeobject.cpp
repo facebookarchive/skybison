@@ -9,6 +9,23 @@ namespace python {
 typedef int Py_UCS4;
 typedef wchar_t Py_UNICODE;
 
+extern "C" int _PyUnicode_EqualToASCIIString(PyObject* /* unicode */,
+                                             const char* /* str */) {
+  UNIMPLEMENTED("_PyUnicode_EqualToASCIIString");
+}
+
+extern "C" int _PyUnicode_EQ(PyObject* /* aa */, PyObject* /* bb */) {
+  UNIMPLEMENTED("_PyUnicode_EQ");
+}
+
+extern "C" size_t Py_UNICODE_strlen(const Py_UNICODE* /* u */) {
+  UNIMPLEMENTED("Py_UNICODE_strlen");
+}
+
+extern "C" int _PyUnicode_Ready(PyObject* /* unicode */) {
+  UNIMPLEMENTED("_PyUnicode_Ready");
+}
+
 extern "C" int PyUnicode_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isStr();
 }
@@ -489,6 +506,11 @@ extern "C" const char* PyUnicode_AsUTF8(PyObject* /* e */) {
 
 extern "C" Py_UNICODE* PyUnicode_AsUnicode(PyObject* /* e */) {
   UNIMPLEMENTED("PyUnicode_AsUnicode");
+}
+
+extern "C" Py_UNICODE* PyUnicode_AsUnicodeAndSize(PyObject* /* unicode */,
+                                                  Py_ssize_t* /* size */) {
+  UNIMPLEMENTED("PyUnicode_AsUnicodeAndSize");
 }
 
 extern "C" PyObject* PyUnicode_FromKindAndData(int /* d */, const void* /* r */,

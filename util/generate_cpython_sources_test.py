@@ -133,6 +133,21 @@ typedef int FooBar;
         res = symbols_dict["pytypeobject_macro"]
         self.assertEqual(res, ["Foo_Type", "Bar_Type"])
 
+    def test_pyexc_macro_regex_returns_multiple_symbols(self):
+        lines = """
+#define PyExc_FooError ((PyObject *)&(*PyExc_FooError_Ptr()))
+
+#define Foo_Type (*Foo_Type_Ptr())
+#define PyExc_BarError ((PyObject *)&(*PyExc_BarError_Ptr()))
+
+typedef int FooBar;
+
+#define FooBaz(o) Foo,
+"""
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
+        res = symbols_dict["pyexc_macro"]
+        self.assertEqual(res, ["PyExc_FooError", "PyExc_BarError"])
+
     def test_pyfunction_regex_returns_multiple_symbols(self):
         lines = """
 extern "C" type* foo_function() {
@@ -371,6 +386,40 @@ typedef int FooBar;
 #define FooBaz(o) Foo,
 """
         symbols_to_replace = {"pytypeobject_macro": ["Foo_Type", "Bar_Type"]}
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
+        )
+        self.assertEqual(res, expected_lines)
+
+    def test_pyexc_macro_definitions_are_replaced(self):
+        original_lines = """
+# foo
+
+PyAPI_DATA(PyObject *) PyExc_FooError;
+
+#define Foo       \\
+    { Baz(1) },
+
+typedef int FooBar;
+
+PyAPI_DATA(PyTypeObject) Bar_Type;
+
+#define FooBaz(o) Foo,
+"""
+        expected_lines = """
+# foo
+
+
+#define Foo       \\
+    { Baz(1) },
+
+typedef int FooBar;
+
+PyAPI_DATA(PyTypeObject) Bar_Type;
+
+#define FooBaz(o) Foo,
+"""
+        symbols_to_replace = {"pyexc_macro": ["PyExc_FooError"]}
         res = gcs.modify_file(
             original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
         )

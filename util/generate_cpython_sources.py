@@ -29,6 +29,9 @@ HEADER_SYMBOL_REGEX = {
     "pytypeobject_macro": SymbolRegex(
         regex=re.compile("^#define.*_Type ", re.MULTILINE), pos=1
     ),
+    "pyexc_macro": SymbolRegex(
+        regex=re.compile("^#define PyExc_\w+ ", re.MULTILINE), pos=1
+    ),
 }
 
 SOURCE_SYMBOL_REGEX = {
@@ -59,7 +62,14 @@ HEADER_DEFINITIONS_REGEX = {
         regex=re.compile("^#define.*\\\\(\n.*\\\\)*\n.*\n", re.MULTILINE), pos=1
     ),
     "pytypeobject_macro": SymbolRegex(
-        regex=re.compile("^PyAPI_DATA\(.*;.*\n", re.MULTILINE), pos=2
+        regex=re.compile("^PyAPI_DATA\(PyTypeObject.*;.*\n", re.MULTILINE),
+        pos=2,
+    ),
+    "pyexc_macro": SymbolRegex(
+        regex=re.compile(
+            "^PyAPI_DATA\(PyObject.*(PyExc_\w+).*\n", re.MULTILINE
+        ),
+        pos=2,
     ),
 }
 

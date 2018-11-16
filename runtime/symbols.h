@@ -101,24 +101,36 @@ class Runtime;
   V(Args, "args")                                                              \
   V(Argv, "argv")                                                              \
   V(ArithmeticError, "ArithmeticError")                                        \
+  V(AssertionError, "AssertionError")                                          \
   V(AttributeError, "AttributeError")                                          \
   V(BaseException, "BaseException")                                            \
   V(BitLength, "bit_length")                                                   \
+  V(BlockingIOError, "BlockingIOError")                                        \
   V(Bool, "bool")                                                              \
   V(Bootstrap, "bootstrap")                                                    \
+  V(BrokenPipeError, "BrokenPipeError")                                        \
+  V(BufferError, "BufferError")                                                \
   V(BuiltinModuleNames, "builtin_module_names")                                \
   V(Builtins, "builtins")                                                      \
   V(Bytes, "bytes")                                                            \
+  V(BytesWarning, "BytesWarning")                                              \
   V(Callable, "callable")                                                      \
   V(Cause, "cause")                                                            \
+  V(ChildProcessError, "ChildProcessError")                                    \
   V(Chr, "chr")                                                                \
   V(Classmethod, "classmethod")                                                \
   V(Code, "code")                                                              \
   V(Complex, "complex")                                                        \
+  V(ConnectionAbortedError, "ConnectionAbortedError")                          \
+  V(ConnectionError, "ConnectionError")                                        \
+  V(ConnectionRefusedError, "ConnectionRefusedError")                          \
+  V(ConnectionResetError, "ConnectionResetError")                              \
   V(Coroutine, "coroutine")                                                    \
   V(Deleter, "deleter")                                                        \
+  V(DeprecationWarning, "DeprecationWarning")                                  \
   V(Dict, "dict")                                                              \
   V(Displayhook, "displayhook")                                                \
+  V(EOFError, "EOFError")                                                      \
   V(Ellipsis, "ellipsis")                                                      \
   V(End, "end")                                                                \
   V(Exception, "Exception")                                                    \
@@ -126,22 +138,32 @@ class Runtime;
   V(Extend, "extend")                                                          \
   V(ExtensionPtr, "___extension___")                                           \
   V(File, "file")                                                              \
+  V(FileExistsError, "FileExistsError")                                        \
+  V(FileNotFoundError, "FileNotFoundError")                                    \
   V(Float, "float")                                                            \
+  V(FloatingPointError, "FloatingPointError")                                  \
   V(Frame, "frame")                                                            \
   V(Function, "function")                                                      \
+  V(FutureWarning, "FutureWarning")                                            \
   V(Generator, "generator")                                                    \
+  V(GeneratorExit, "GeneratorExit")                                            \
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
   V(Hasattr, "hasattr")                                                        \
   V(ImportError, "ImportError")                                                \
+  V(ImportWarning, "ImportWarning")                                            \
+  V(IndentationError, "IndentationError")                                      \
+  V(IndexError, "IndexError")                                                  \
   V(Insert, "insert")                                                          \
   V(Int, "int")                                                                \
+  V(InterruptedError, "InterruptedError")                                      \
+  V(IsADirectoryError, "IsADirectoryError")                                    \
   V(IsInstance, "isinstance")                                                  \
   V(IsSubclass, "issubclass")                                                  \
   V(Items, "items")                                                            \
   V(Join, "join")                                                              \
-  V(IndexError, "IndexError")                                                  \
   V(KeyError, "KeyError")                                                      \
+  V(KeyboardInterrupt, "KeyboardInterrupt")                                    \
   V(Keys, "keys")                                                              \
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
@@ -151,8 +173,9 @@ class Runtime;
   V(ListIterator, "list_iterator")                                             \
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
-  V(Metaclass, "metaclass")                                                    \
+  V(MemoryError, "MemoryError")                                                \
   V(MetaPath, "meta_path")                                                     \
+  V(Metaclass, "metaclass")                                                    \
   V(Method, "method")                                                          \
   V(Module, "module")                                                          \
   V(ModuleNotFoundError, "ModuleNotFoundError")                                \
@@ -161,23 +184,32 @@ class Runtime;
   V(Name, "name")                                                              \
   V(NameError, "NameError")                                                    \
   V(NoneType, "NoneType")                                                      \
+  V(NotADirectoryError, "NotADirectoryError")                                  \
   V(NotImplemented, "NotImplemented")                                          \
   V(NotImplementedError, "NotImplementedError")                                \
   V(NotImplementedType, "NotImplementedType")                                  \
+  V(OSError, "OSError")                                                        \
   V(ObjectClassname, "object")                                                 \
   V(Ord, "ord")                                                                \
   V(OverflowError, "OverflowError")                                            \
   V(Path, "path")                                                              \
+  V(PendingDeprecationWarning, "PendingDeprecationWarning")                    \
+  V(PermissionError, "PermissionError")                                        \
   V(Platform, "platform")                                                      \
   V(Pop, "pop")                                                                \
   V(Print, "print")                                                            \
+  V(ProcessLookupError, "ProcessLookupError")                                  \
   V(Property, "property")                                                      \
   V(Range, "range")                                                            \
   V(RangeIterator, "range_iterator")                                           \
+  V(RecursionError, "RecursionError")                                          \
   V(Ref, "ref")                                                                \
+  V(ReferenceError, "ReferenceError")                                          \
   V(Remove, "remove")                                                          \
   V(Repr, "repr")                                                              \
+  V(ResourceWarning, "ResourceWarning")                                        \
   V(RuntimeError, "RuntimeError")                                              \
+  V(RuntimeWarning, "RuntimeWarning")                                          \
   V(Set, "set")                                                                \
   V(SetIterator, "set_iterator")                                               \
   V(Setattr, "setattr")                                                        \
@@ -190,22 +222,35 @@ class Runtime;
   V(StaticMethod, "staticmethod")                                              \
   V(Stderr, "stderr")                                                          \
   V(Stdout, "stdout")                                                          \
-  V(Str, "str")                                                                \
+  V(StopAsyncIteration, "StopAsyncIteration")                                  \
   V(StopIteration, "StopIteration")                                            \
+  V(Str, "str")                                                                \
   V(Super, "super")                                                            \
+  V(SyntaxError, "SyntaxError")                                                \
+  V(SyntaxWarning, "SyntaxWarning")                                            \
   V(Sys, "sys")                                                                \
   V(SystemError, "SystemError")                                                \
   V(SystemExit, "SystemExit")                                                  \
+  V(TabError, "TabError")                                                      \
   V(Time, "time")                                                              \
+  V(TimeoutError, "TimeoutError")                                              \
   V(Traceback, "traceback")                                                    \
   V(Tuple, "tuple")                                                            \
   V(TupleIterator, "tuple_iterator")                                           \
   V(Type, "type")                                                              \
   V(TypeError, "TypeError")                                                    \
+  V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderWeakRef, "_weakref")                                                  \
+  V(UnicodeDecodeError, "UnicodeDecodeError")                                  \
+  V(UnicodeEncodeError, "UnicodeEncodeError")                                  \
+  V(UnicodeError, "UnicodeError")                                              \
+  V(UnicodeTranslateError, "UnicodeTranslateError")                            \
+  V(UnicodeWarning, "UnicodeWarning")                                          \
+  V(UserWarning, "UserWarning")                                                \
   V(Value, "value")                                                            \
-  V(ValueError, "ValueError")                                                  \
   V(ValueCell, "valuecell")                                                    \
+  V(ValueError, "ValueError")                                                  \
+  V(Warning, "Warning")                                                        \
   V(ZeroDivisionError, "ZeroDivisionError")
 
 // clang-format off

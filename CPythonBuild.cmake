@@ -27,10 +27,6 @@ set(CPYTHON_GEN_DIR ${CMAKE_BINARY_DIR}/cpython)
 file(
   GLOB_RECURSE
   CPYTHON_SOURCES
-	${CPYTHON_DIR}/Modules/_blake2/*
-	${CPYTHON_DIR}/Modules/_io/*
-	${CPYTHON_DIR}/Modules/cjkcodecs/*
-	${CPYTHON_DIR}/Modules/clinic/*
   ${CPYTHON_DIR}/Include/*
   ${CPYTHON_DIR}/Objects/*
   ${CPYTHON_DIR}/Parser/*
@@ -55,12 +51,67 @@ remove_cpython_source("Python/dynload_next.c")
 remove_cpython_source("Python/dynload_stub.c")
 remove_cpython_source("Python/dynload_win.c")
 
+# Remove empty files
+remove_cpython_source("Python/dynamic_annotations.c")
+remove_cpython_source("Python/pyarena.c")
+remove_cpython_source("Python/pymath.c")
+remove_cpython_source("Python/pystrcmp.c")
+remove_cpython_source("Python/getcompiler.c")
+remove_cpython_source("Python/getcopyright.c")
+remove_cpython_source("Python/getplatform.c")
+remove_cpython_source("Python/getversion.c")
+remove_cpython_source("Python/mysnprintf.c")
+
+# Duplicates types defined by our runtime
+remove_cpython_source("Python/ceval.c")
+remove_cpython_source("Python/marshal.c")
+remove_cpython_source("Python/pylifecycle.c")
+remove_cpython_source("Python/sysmodule.c")
+remove_cpython_source("Python/traceback.c")
+
+remove_cpython_source("Objects/boolobject.c")
+remove_cpython_source("Objects/bytesobject.c")
+remove_cpython_source("Objects/bytearrayobject.c")
+remove_cpython_source("Objects/codeobject.c")
+remove_cpython_source("Objects/complexobject.c")
+remove_cpython_source("Objects/exceptions.c")
+remove_cpython_source("Objects/funcobject.c")
+remove_cpython_source("Objects/genobject.c")
+remove_cpython_source("Objects/listobject.c")
+remove_cpython_source("Objects/longobject.c")
+remove_cpython_source("Objects/moduleobject.c")
+remove_cpython_source("Objects/object.c")
+remove_cpython_source("Objects/setobject.c")
+remove_cpython_source("Objects/tupleobject.c")
+remove_cpython_source("Objects/typeobject.c")
+remove_cpython_source("Objects/unicodeobject.c")
+
 # Add all the core Modules sources
 set(
 	CPYTHON_SOURCES
 	${CPYTHON_SOURCES}
   "${CPYTHON_DIR}/Modules/_asynciomodule.c"
   "${CPYTHON_DIR}/Modules/_bisectmodule.c"
+  "${CPYTHON_DIR}/Modules/_blake2/blake2b_impl.c"
+  "${CPYTHON_DIR}/Modules/_blake2/blake2module.c"
+  "${CPYTHON_DIR}/Modules/_blake2/blake2ns.h"
+  "${CPYTHON_DIR}/Modules/_blake2/blake2s_impl.c"
+  "${CPYTHON_DIR}/Modules/_blake2/clinic/blake2b_impl.c.h"
+  "${CPYTHON_DIR}/Modules/_blake2/clinic/blake2s_impl.c.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2-config.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2-impl.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2b-load-sse2.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2b-load-sse41.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2b-ref.c"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2b-round.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2b.c"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2s-load-sse2.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2s-load-sse41.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2s-load-xop.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2s-ref.c"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2s-round.h"
+  "${CPYTHON_DIR}/Modules/_blake2/impl/blake2s.c"
   "${CPYTHON_DIR}/Modules/_codecsmodule.c"
   "${CPYTHON_DIR}/Modules/_collectionsmodule.c"
   "${CPYTHON_DIR}/Modules/_cryptmodule.c"
@@ -68,6 +119,22 @@ set(
   "${CPYTHON_DIR}/Modules/_datetimemodule.c"
   "${CPYTHON_DIR}/Modules/_functoolsmodule.c"
   "${CPYTHON_DIR}/Modules/_heapqmodule.c"
+  "${CPYTHON_DIR}/Modules/_io/_iomodule.c"
+  "${CPYTHON_DIR}/Modules/_io/_iomodule.h"
+  "${CPYTHON_DIR}/Modules/_io/bufferedio.c"
+  "${CPYTHON_DIR}/Modules/_io/bytesio.c"
+  "${CPYTHON_DIR}/Modules/_io/clinic/_iomodule.c.h"
+  "${CPYTHON_DIR}/Modules/_io/clinic/bufferedio.c.h"
+  "${CPYTHON_DIR}/Modules/_io/clinic/bytesio.c.h"
+  "${CPYTHON_DIR}/Modules/_io/clinic/fileio.c.h"
+  "${CPYTHON_DIR}/Modules/_io/clinic/iobase.c.h"
+  "${CPYTHON_DIR}/Modules/_io/clinic/stringio.c.h"
+  "${CPYTHON_DIR}/Modules/_io/clinic/textio.c.h"
+  "${CPYTHON_DIR}/Modules/_io/clinic/winconsoleio.c.h"
+  "${CPYTHON_DIR}/Modules/_io/fileio.c"
+  "${CPYTHON_DIR}/Modules/_io/iobase.c"
+  "${CPYTHON_DIR}/Modules/_io/stringio.c"
+  "${CPYTHON_DIR}/Modules/_io/textio.c"
   "${CPYTHON_DIR}/Modules/_json.c"
   "${CPYTHON_DIR}/Modules/_localemodule.c"
   "${CPYTHON_DIR}/Modules/_lsprof.c"
@@ -91,6 +158,59 @@ set(
   "${CPYTHON_DIR}/Modules/atexitmodule.c"
   "${CPYTHON_DIR}/Modules/audioop.c"
   "${CPYTHON_DIR}/Modules/binascii.c"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_cn.c"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_hk.c"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_iso2022.c"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_jp.c"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_kr.c"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_tw.c"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/alg_jisx0201.h"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/cjkcodecs.h"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/clinic/multibytecodec.c.h"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/emu_jisx0213_2000.h"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/mappings_cn.h"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/mappings_hk.h"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/mappings_jisx0213_pair.h"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/mappings_jp.h"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/mappings_kr.h"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/mappings_tw.h"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/multibytecodec.c"
+  "${CPYTHON_DIR}/Modules/cjkcodecs/multibytecodec.h"
+  "${CPYTHON_DIR}/Modules/clinic/_asynciomodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_bz2module.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_codecsmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_cryptmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_cursesmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_datetimemodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_dbmmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_elementtree.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_gdbmmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_hashopenssl.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_lzmamodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_opcode.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_pickle.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_sre.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_ssl.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_tkinter.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_weakref.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/_winapi.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/arraymodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/audioop.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/binascii.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/cmathmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/fcntlmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/grpmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/md5module.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/posixmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/pwdmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/pyexpat.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/sha1module.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/sha256module.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/sha512module.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/signalmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/spwdmodule.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/unicodedata.c.h"
+  "${CPYTHON_DIR}/Modules/clinic/zlibmodule.c.h"
   "${CPYTHON_DIR}/Modules/cmathmodule.c"
   "${CPYTHON_DIR}/Modules/errnomodule.c"
   "${CPYTHON_DIR}/Modules/faulthandler.c"

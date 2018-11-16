@@ -2,6 +2,268 @@
 
 namespace python {
 
+static PyObject* typeObjectHandle(LayoutId id) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  return ApiHandle::fromBorrowedObject(runtime->typeAt(id));
+}
+
+extern "C" PyObject* PyExc_BaseException_Ptr() {
+  return typeObjectHandle(LayoutId::kBaseException);
+}
+
+extern "C" PyObject* PyExc_Exception_Ptr() {
+  return typeObjectHandle(LayoutId::kException);
+}
+
+extern "C" PyObject* PyExc_StopAsyncIteration_Ptr() {
+  return typeObjectHandle(LayoutId::kStopAsyncIteration);
+}
+
+extern "C" PyObject* PyExc_StopIteration_Ptr() {
+  return typeObjectHandle(LayoutId::kStopIteration);
+}
+
+extern "C" PyObject* PyExc_GeneratorExit_Ptr() {
+  return typeObjectHandle(LayoutId::kGeneratorExit);
+}
+
+extern "C" PyObject* PyExc_ArithmeticError_Ptr() {
+  return typeObjectHandle(LayoutId::kArithmeticError);
+}
+
+extern "C" PyObject* PyExc_LookupError_Ptr() {
+  return typeObjectHandle(LayoutId::kLookupError);
+}
+
+extern "C" PyObject* PyExc_AssertionError_Ptr() {
+  return typeObjectHandle(LayoutId::kAssertionError);
+}
+
+extern "C" PyObject* PyExc_AttributeError_Ptr() {
+  return typeObjectHandle(LayoutId::kAttributeError);
+}
+
+extern "C" PyObject* PyExc_BufferError_Ptr() {
+  return typeObjectHandle(LayoutId::kBufferError);
+}
+
+extern "C" PyObject* PyExc_EOFError_Ptr() {
+  return typeObjectHandle(LayoutId::kEOFError);
+}
+
+extern "C" PyObject* PyExc_FloatingPointError_Ptr() {
+  return typeObjectHandle(LayoutId::kFloatingPointError);
+}
+
+extern "C" PyObject* PyExc_OSError_Ptr() {
+  return typeObjectHandle(LayoutId::kOSError);
+}
+
+extern "C" PyObject* PyExc_ImportError_Ptr() {
+  return typeObjectHandle(LayoutId::kImportError);
+}
+
+extern "C" PyObject* PyExc_ModuleNotFoundError_Ptr() {
+  return typeObjectHandle(LayoutId::kModuleNotFoundError);
+}
+
+extern "C" PyObject* PyExc_IndexError_Ptr() {
+  return typeObjectHandle(LayoutId::kIndexError);
+}
+
+extern "C" PyObject* PyExc_KeyError_Ptr() {
+  return typeObjectHandle(LayoutId::kKeyError);
+}
+
+extern "C" PyObject* PyExc_KeyboardInterrupt_Ptr() {
+  return typeObjectHandle(LayoutId::kKeyboardInterrupt);
+}
+
+extern "C" PyObject* PyExc_MemoryError_Ptr() {
+  return typeObjectHandle(LayoutId::kMemoryError);
+}
+
+extern "C" PyObject* PyExc_NameError_Ptr() {
+  return typeObjectHandle(LayoutId::kNameError);
+}
+
+extern "C" PyObject* PyExc_OverflowError_Ptr() {
+  return typeObjectHandle(LayoutId::kOverflowError);
+}
+
+extern "C" PyObject* PyExc_RuntimeError_Ptr() {
+  return typeObjectHandle(LayoutId::kRuntimeError);
+}
+
+extern "C" PyObject* PyExc_RecursionError_Ptr() {
+  return typeObjectHandle(LayoutId::kRecursionError);
+}
+
+extern "C" PyObject* PyExc_NotImplementedError_Ptr() {
+  return typeObjectHandle(LayoutId::kNotImplementedError);
+}
+
+extern "C" PyObject* PyExc_SyntaxError_Ptr() {
+  return typeObjectHandle(LayoutId::kSyntaxError);
+}
+
+extern "C" PyObject* PyExc_IndentationError_Ptr() {
+  return typeObjectHandle(LayoutId::kIndentationError);
+}
+
+extern "C" PyObject* PyExc_TabError_Ptr() {
+  return typeObjectHandle(LayoutId::kTabError);
+}
+
+extern "C" PyObject* PyExc_ReferenceError_Ptr() {
+  return typeObjectHandle(LayoutId::kReferenceError);
+}
+
+extern "C" PyObject* PyExc_SystemError_Ptr() {
+  return typeObjectHandle(LayoutId::kSystemError);
+}
+
+extern "C" PyObject* PyExc_SystemExit_Ptr() {
+  return typeObjectHandle(LayoutId::kSystemExit);
+}
+
+extern "C" PyObject* PyExc_TypeError_Ptr() {
+  return typeObjectHandle(LayoutId::kTypeError);
+}
+
+extern "C" PyObject* PyExc_UnboundLocalError_Ptr() {
+  return typeObjectHandle(LayoutId::kUnboundLocalError);
+}
+
+extern "C" PyObject* PyExc_UnicodeError_Ptr() {
+  return typeObjectHandle(LayoutId::kUnicodeError);
+}
+
+extern "C" PyObject* PyExc_UnicodeEncodeError_Ptr() {
+  return typeObjectHandle(LayoutId::kUnicodeEncodeError);
+}
+
+extern "C" PyObject* PyExc_UnicodeDecodeError_Ptr() {
+  return typeObjectHandle(LayoutId::kUnicodeDecodeError);
+}
+
+extern "C" PyObject* PyExc_UnicodeTranslateError_Ptr() {
+  return typeObjectHandle(LayoutId::kUnicodeTranslateError);
+}
+
+extern "C" PyObject* PyExc_ValueError_Ptr() {
+  return typeObjectHandle(LayoutId::kValueError);
+}
+
+extern "C" PyObject* PyExc_ZeroDivisionError_Ptr() {
+  return typeObjectHandle(LayoutId::kZeroDivisionError);
+}
+
+extern "C" PyObject* PyExc_BlockingIOError_Ptr() {
+  return typeObjectHandle(LayoutId::kBlockingIOError);
+}
+
+extern "C" PyObject* PyExc_BrokenPipeError_Ptr() {
+  return typeObjectHandle(LayoutId::kBrokenPipeError);
+}
+
+extern "C" PyObject* PyExc_ChildProcessError_Ptr() {
+  return typeObjectHandle(LayoutId::kChildProcessError);
+}
+
+extern "C" PyObject* PyExc_ConnectionError_Ptr() {
+  return typeObjectHandle(LayoutId::kConnectionError);
+}
+
+extern "C" PyObject* PyExc_ConnectionAbortedError_Ptr() {
+  return typeObjectHandle(LayoutId::kConnectionAbortedError);
+}
+
+extern "C" PyObject* PyExc_ConnectionRefusedError_Ptr() {
+  return typeObjectHandle(LayoutId::kConnectionRefusedError);
+}
+
+extern "C" PyObject* PyExc_ConnectionResetError_Ptr() {
+  return typeObjectHandle(LayoutId::kConnectionResetError);
+}
+
+extern "C" PyObject* PyExc_FileExistsError_Ptr() {
+  return typeObjectHandle(LayoutId::kFileExistsError);
+}
+
+extern "C" PyObject* PyExc_FileNotFoundError_Ptr() {
+  return typeObjectHandle(LayoutId::kFileNotFoundError);
+}
+
+extern "C" PyObject* PyExc_InterruptedError_Ptr() {
+  return typeObjectHandle(LayoutId::kInterruptedError);
+}
+
+extern "C" PyObject* PyExc_IsADirectoryError_Ptr() {
+  return typeObjectHandle(LayoutId::kIsADirectoryError);
+}
+
+extern "C" PyObject* PyExc_NotADirectoryError_Ptr() {
+  return typeObjectHandle(LayoutId::kNotADirectoryError);
+}
+
+extern "C" PyObject* PyExc_PermissionError_Ptr() {
+  return typeObjectHandle(LayoutId::kPermissionError);
+}
+
+extern "C" PyObject* PyExc_ProcessLookupError_Ptr() {
+  return typeObjectHandle(LayoutId::kProcessLookupError);
+}
+
+extern "C" PyObject* PyExc_TimeoutError_Ptr() {
+  return typeObjectHandle(LayoutId::kTimeoutError);
+}
+
+extern "C" PyObject* PyExc_Warning_Ptr() {
+  return typeObjectHandle(LayoutId::kWarning);
+}
+
+extern "C" PyObject* PyExc_UserWarning_Ptr() {
+  return typeObjectHandle(LayoutId::kUserWarning);
+}
+
+extern "C" PyObject* PyExc_DeprecationWarning_Ptr() {
+  return typeObjectHandle(LayoutId::kDeprecationWarning);
+}
+
+extern "C" PyObject* PyExc_PendingDeprecationWarning_Ptr() {
+  return typeObjectHandle(LayoutId::kPendingDeprecationWarning);
+}
+
+extern "C" PyObject* PyExc_SyntaxWarning_Ptr() {
+  return typeObjectHandle(LayoutId::kSyntaxWarning);
+}
+
+extern "C" PyObject* PyExc_RuntimeWarning_Ptr() {
+  return typeObjectHandle(LayoutId::kRuntimeWarning);
+}
+
+extern "C" PyObject* PyExc_FutureWarning_Ptr() {
+  return typeObjectHandle(LayoutId::kFutureWarning);
+}
+
+extern "C" PyObject* PyExc_ImportWarning_Ptr() {
+  return typeObjectHandle(LayoutId::kImportWarning);
+}
+
+extern "C" PyObject* PyExc_UnicodeWarning_Ptr() {
+  return typeObjectHandle(LayoutId::kUnicodeWarning);
+}
+
+extern "C" PyObject* PyExc_BytesWarning_Ptr() {
+  return typeObjectHandle(LayoutId::kBytesWarning);
+}
+
+extern "C" PyObject* PyExc_ResourceWarning_Ptr() {
+  return typeObjectHandle(LayoutId::kResourceWarning);
+}
+
 extern "C" PyObject* PyException_GetTraceback(PyObject* /* f */) {
   UNIMPLEMENTED("PyException_GetTraceback");
 }

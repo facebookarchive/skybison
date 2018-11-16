@@ -1028,12 +1028,44 @@ void Runtime::initializeHeapClasses() {
 
 void Runtime::initializeExceptionClasses() {
   BaseExceptionBuiltins::initialize(this);
-  SystemExitBuiltins::initialize(this);
+
+  // BaseException subclasses
   addEmptyBuiltinClass(SymbolId::kException, LayoutId::kException,
                        LayoutId::kBaseException);
+  addEmptyBuiltinClass(SymbolId::kKeyboardInterrupt,
+                       LayoutId::kKeyboardInterrupt, LayoutId::kBaseException);
+  addEmptyBuiltinClass(SymbolId::kGeneratorExit, LayoutId::kGeneratorExit,
+                       LayoutId::kBaseException);
+  SystemExitBuiltins::initialize(this);
+
+  // Exception subclasses
+  addEmptyBuiltinClass(SymbolId::kArithmeticError, LayoutId::kArithmeticError,
+                       LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kAssertionError, LayoutId::kAssertionError,
+                       LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kAttributeError, LayoutId::kAttributeError,
                        LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kBufferError, LayoutId::kBufferError,
+                       LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kEOFError, LayoutId::kEOFError,
+                       LayoutId::kException);
+  ImportErrorBuiltins::initialize(this);
+  addEmptyBuiltinClass(SymbolId::kLookupError, LayoutId::kLookupError,
+                       LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kMemoryError, LayoutId::kMemoryError,
+                       LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kNameError, LayoutId::kNameError,
+                       LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kOSError, LayoutId::kOSError,
+                       LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kReferenceError, LayoutId::kReferenceError,
+                       LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kRuntimeError, LayoutId::kRuntimeError,
+                       LayoutId::kException);
+  StopIterationBuiltins::initialize(this);
+  addEmptyBuiltinClass(SymbolId::kStopAsyncIteration,
+                       LayoutId::kStopAsyncIteration, LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kSyntaxError, LayoutId::kSyntaxError,
                        LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kSystemError, LayoutId::kSystemError,
                        LayoutId::kException);
@@ -1041,34 +1073,119 @@ void Runtime::initializeExceptionClasses() {
                        LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kValueError, LayoutId::kValueError,
                        LayoutId::kException);
-
-  // ArithmeticError and its subclasses.
-  addEmptyBuiltinClass(SymbolId::kArithmeticError, LayoutId::kArithmeticError,
+  addEmptyBuiltinClass(SymbolId::kWarning, LayoutId::kWarning,
                        LayoutId::kException);
+
+  // ArithmeticError subclasses
+  addEmptyBuiltinClass(SymbolId::kFloatingPointError,
+                       LayoutId::kFloatingPointError,
+                       LayoutId::kArithmeticError);
   addEmptyBuiltinClass(SymbolId::kOverflowError, LayoutId::kOverflowError,
                        LayoutId::kArithmeticError);
   addEmptyBuiltinClass(SymbolId::kZeroDivisionError,
                        LayoutId::kZeroDivisionError,
                        LayoutId::kArithmeticError);
 
-  // LookupError and its subclasses.
-  addEmptyBuiltinClass(SymbolId::kLookupError, LayoutId::kLookupError,
-                       LayoutId::kException);
+  // ImportError subclasses
+  addEmptyBuiltinClass(SymbolId::kModuleNotFoundError,
+                       LayoutId::kModuleNotFoundError, LayoutId::kImportError);
+
+  // LookupError subclasses
   addEmptyBuiltinClass(SymbolId::kIndexError, LayoutId::kIndexError,
                        LayoutId::kLookupError);
   addEmptyBuiltinClass(SymbolId::kKeyError, LayoutId::kKeyError,
                        LayoutId::kLookupError);
 
-  // RuntimeError and its subclasses.
-  addEmptyBuiltinClass(SymbolId::kRuntimeError, LayoutId::kRuntimeError,
-                       LayoutId::kException);
+  // NameError subclasses
+  addEmptyBuiltinClass(SymbolId::kUnboundLocalError,
+                       LayoutId::kUnboundLocalError, LayoutId::kNameError);
+
+  // OSError subclasses
+  addEmptyBuiltinClass(SymbolId::kBlockingIOError, LayoutId::kBlockingIOError,
+                       LayoutId::kOSError);
+  addEmptyBuiltinClass(SymbolId::kChildProcessError,
+                       LayoutId::kChildProcessError, LayoutId::kOSError);
+  addEmptyBuiltinClass(SymbolId::kConnectionError, LayoutId::kConnectionError,
+                       LayoutId::kOSError);
+  addEmptyBuiltinClass(SymbolId::kFileExistsError, LayoutId::kFileExistsError,
+                       LayoutId::kOSError);
+  addEmptyBuiltinClass(SymbolId::kFileNotFoundError,
+                       LayoutId::kFileNotFoundError, LayoutId::kOSError);
+  addEmptyBuiltinClass(SymbolId::kInterruptedError, LayoutId::kInterruptedError,
+                       LayoutId::kOSError);
+  addEmptyBuiltinClass(SymbolId::kIsADirectoryError,
+                       LayoutId::kIsADirectoryError, LayoutId::kOSError);
+  addEmptyBuiltinClass(SymbolId::kNotADirectoryError,
+                       LayoutId::kNotADirectoryError, LayoutId::kOSError);
+  addEmptyBuiltinClass(SymbolId::kPermissionError, LayoutId::kPermissionError,
+                       LayoutId::kOSError);
+  addEmptyBuiltinClass(SymbolId::kProcessLookupError,
+                       LayoutId::kProcessLookupError, LayoutId::kOSError);
+  addEmptyBuiltinClass(SymbolId::kTimeoutError, LayoutId::kTimeoutError,
+                       LayoutId::kOSError);
+
+  // ConnectionError subclasses
+  addEmptyBuiltinClass(SymbolId::kBrokenPipeError, LayoutId::kBrokenPipeError,
+                       LayoutId::kConnectionError);
+  addEmptyBuiltinClass(SymbolId::kConnectionAbortedError,
+                       LayoutId::kConnectionAbortedError,
+                       LayoutId::kConnectionError);
+  addEmptyBuiltinClass(SymbolId::kConnectionRefusedError,
+                       LayoutId::kConnectionRefusedError,
+                       LayoutId::kConnectionError);
+  addEmptyBuiltinClass(SymbolId::kConnectionResetError,
+                       LayoutId::kConnectionResetError,
+                       LayoutId::kConnectionError);
+
+  // RuntimeError subclasses
   addEmptyBuiltinClass(SymbolId::kNotImplementedError,
                        LayoutId::kNotImplementedError, LayoutId::kRuntimeError);
+  addEmptyBuiltinClass(SymbolId::kRecursionError, LayoutId::kRecursionError,
+                       LayoutId::kRuntimeError);
 
-  StopIterationBuiltins::initialize(this);
-  ImportErrorBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kModuleNotFoundError,
-                       LayoutId::kModuleNotFoundError, LayoutId::kImportError);
+  // SyntaxError subclasses
+  addEmptyBuiltinClass(SymbolId::kIndentationError, LayoutId::kIndentationError,
+                       LayoutId::kSyntaxError);
+
+  // IndentationError subclasses
+  addEmptyBuiltinClass(SymbolId::kTabError, LayoutId::kTabError,
+                       LayoutId::kIndentationError);
+
+  // ValueError subclasses
+  addEmptyBuiltinClass(SymbolId::kUnicodeError, LayoutId::kUnicodeError,
+                       LayoutId::kValueError);
+
+  // UnicodeError subclasses
+  addEmptyBuiltinClass(SymbolId::kUnicodeEncodeError,
+                       LayoutId::kUnicodeEncodeError, LayoutId::kUnicodeError);
+  addEmptyBuiltinClass(SymbolId::kUnicodeDecodeError,
+                       LayoutId::kUnicodeDecodeError, LayoutId::kUnicodeError);
+  addEmptyBuiltinClass(SymbolId::kUnicodeTranslateError,
+                       LayoutId::kUnicodeTranslateError,
+                       LayoutId::kUnicodeError);
+
+  // Warning subclasses
+  addEmptyBuiltinClass(SymbolId::kUserWarning, LayoutId::kUserWarning,
+                       LayoutId::kWarning);
+  addEmptyBuiltinClass(SymbolId::kDeprecationWarning,
+                       LayoutId::kDeprecationWarning, LayoutId::kWarning);
+  addEmptyBuiltinClass(SymbolId::kPendingDeprecationWarning,
+                       LayoutId::kPendingDeprecationWarning,
+                       LayoutId::kWarning);
+  addEmptyBuiltinClass(SymbolId::kSyntaxWarning, LayoutId::kSyntaxWarning,
+                       LayoutId::kWarning);
+  addEmptyBuiltinClass(SymbolId::kRuntimeWarning, LayoutId::kRuntimeWarning,
+                       LayoutId::kWarning);
+  addEmptyBuiltinClass(SymbolId::kFutureWarning, LayoutId::kFutureWarning,
+                       LayoutId::kWarning);
+  addEmptyBuiltinClass(SymbolId::kImportWarning, LayoutId::kImportWarning,
+                       LayoutId::kWarning);
+  addEmptyBuiltinClass(SymbolId::kUnicodeWarning, LayoutId::kUnicodeWarning,
+                       LayoutId::kWarning);
+  addEmptyBuiltinClass(SymbolId::kBytesWarning, LayoutId::kBytesWarning,
+                       LayoutId::kWarning);
+  addEmptyBuiltinClass(SymbolId::kResourceWarning, LayoutId::kResourceWarning,
+                       LayoutId::kWarning);
 }
 
 void Runtime::initializeRefClass() {
@@ -1540,43 +1657,132 @@ void Runtime::createBuiltinsModule() {
                            nativeTrampoline<builtinSetattr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   // Add builtin types
+  moduleAddBuiltinType(module, SymbolId::kArithmeticError,
+                       LayoutId::kArithmeticError);
+  moduleAddBuiltinType(module, SymbolId::kAssertionError,
+                       LayoutId::kAssertionError);
   moduleAddBuiltinType(module, SymbolId::kAttributeError,
                        LayoutId::kAttributeError);
   moduleAddBuiltinType(module, SymbolId::kBaseException,
                        LayoutId::kBaseException);
+  moduleAddBuiltinType(module, SymbolId::kBlockingIOError,
+                       LayoutId::kBlockingIOError);
   moduleAddBuiltinType(module, SymbolId::kBool, LayoutId::kBool);
+  moduleAddBuiltinType(module, SymbolId::kBrokenPipeError,
+                       LayoutId::kBrokenPipeError);
+  moduleAddBuiltinType(module, SymbolId::kBufferError, LayoutId::kBufferError);
+  moduleAddBuiltinType(module, SymbolId::kBytesWarning,
+                       LayoutId::kBytesWarning);
+  moduleAddBuiltinType(module, SymbolId::kChildProcessError,
+                       LayoutId::kChildProcessError);
   moduleAddBuiltinType(module, SymbolId::kClassmethod, LayoutId::kClassMethod);
   moduleAddBuiltinType(module, SymbolId::kComplex, LayoutId::kComplex);
+  moduleAddBuiltinType(module, SymbolId::kConnectionAbortedError,
+                       LayoutId::kConnectionAbortedError);
+  moduleAddBuiltinType(module, SymbolId::kConnectionError,
+                       LayoutId::kConnectionError);
+  moduleAddBuiltinType(module, SymbolId::kConnectionRefusedError,
+                       LayoutId::kConnectionRefusedError);
+  moduleAddBuiltinType(module, SymbolId::kConnectionResetError,
+                       LayoutId::kConnectionResetError);
+  moduleAddBuiltinType(module, SymbolId::kDeprecationWarning,
+                       LayoutId::kDeprecationWarning);
   moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDict);
+  moduleAddBuiltinType(module, SymbolId::kEOFError, LayoutId::kEOFError);
   moduleAddBuiltinType(module, SymbolId::kException, LayoutId::kException);
+  moduleAddBuiltinType(module, SymbolId::kFileExistsError,
+                       LayoutId::kFileExistsError);
+  moduleAddBuiltinType(module, SymbolId::kFileNotFoundError,
+                       LayoutId::kFileNotFoundError);
   moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kFloat);
+  moduleAddBuiltinType(module, SymbolId::kFloatingPointError,
+                       LayoutId::kFloatingPointError);
+  moduleAddBuiltinType(module, SymbolId::kFutureWarning,
+                       LayoutId::kFutureWarning);
+  moduleAddBuiltinType(module, SymbolId::kGeneratorExit,
+                       LayoutId::kGeneratorExit);
   moduleAddBuiltinType(module, SymbolId::kImportError, LayoutId::kImportError);
-  moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInt);
+  moduleAddBuiltinType(module, SymbolId::kImportWarning,
+                       LayoutId::kImportWarning);
+  moduleAddBuiltinType(module, SymbolId::kIndentationError,
+                       LayoutId::kIndentationError);
   moduleAddBuiltinType(module, SymbolId::kIndexError, LayoutId::kIndexError);
+  moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInt);
+  moduleAddBuiltinType(module, SymbolId::kInterruptedError,
+                       LayoutId::kInterruptedError);
+  moduleAddBuiltinType(module, SymbolId::kIsADirectoryError,
+                       LayoutId::kIsADirectoryError);
   moduleAddBuiltinType(module, SymbolId::kKeyError, LayoutId::kKeyError);
+  moduleAddBuiltinType(module, SymbolId::kKeyboardInterrupt,
+                       LayoutId::kKeyboardInterrupt);
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
   moduleAddBuiltinType(module, SymbolId::kLookupError, LayoutId::kLookupError);
+  moduleAddBuiltinType(module, SymbolId::kMemoryError, LayoutId::kMemoryError);
   moduleAddBuiltinType(module, SymbolId::kModuleNotFoundError,
                        LayoutId::kModuleNotFoundError);
   moduleAddBuiltinType(module, SymbolId::kNameError, LayoutId::kNameError);
+  moduleAddBuiltinType(module, SymbolId::kNotADirectoryError,
+                       LayoutId::kNotADirectoryError);
   moduleAddBuiltinType(module, SymbolId::kNotImplementedError,
                        LayoutId::kNotImplementedError);
+  moduleAddBuiltinType(module, SymbolId::kOSError, LayoutId::kOSError);
   moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
+  moduleAddBuiltinType(module, SymbolId::kOverflowError,
+                       LayoutId::kOverflowError);
+  moduleAddBuiltinType(module, SymbolId::kPendingDeprecationWarning,
+                       LayoutId::kPendingDeprecationWarning);
+  moduleAddBuiltinType(module, SymbolId::kPermissionError,
+                       LayoutId::kPermissionError);
+  moduleAddBuiltinType(module, SymbolId::kProcessLookupError,
+                       LayoutId::kProcessLookupError);
   moduleAddBuiltinType(module, SymbolId::kProperty, LayoutId::kProperty);
+  moduleAddBuiltinType(module, SymbolId::kRecursionError,
+                       LayoutId::kRecursionError);
+  moduleAddBuiltinType(module, SymbolId::kReferenceError,
+                       LayoutId::kReferenceError);
+  moduleAddBuiltinType(module, SymbolId::kResourceWarning,
+                       LayoutId::kResourceWarning);
   moduleAddBuiltinType(module, SymbolId::kRuntimeError,
                        LayoutId::kRuntimeError);
+  moduleAddBuiltinType(module, SymbolId::kRuntimeWarning,
+                       LayoutId::kRuntimeWarning);
+  moduleAddBuiltinType(module, SymbolId::kSet, LayoutId::kSet);
   moduleAddBuiltinType(module, SymbolId::kStaticMethod,
                        LayoutId::kStaticMethod);
-  moduleAddBuiltinType(module, SymbolId::kSet, LayoutId::kSet);
+  moduleAddBuiltinType(module, SymbolId::kStopAsyncIteration,
+                       LayoutId::kStopAsyncIteration);
   moduleAddBuiltinType(module, SymbolId::kStopIteration,
                        LayoutId::kStopIteration);
   moduleAddBuiltinType(module, SymbolId::kStr, LayoutId::kStr);
-  moduleAddBuiltinType(module, SymbolId::kSystemExit, LayoutId::kSystemExit);
   moduleAddBuiltinType(module, SymbolId::kSuper, LayoutId::kSuper);
+  moduleAddBuiltinType(module, SymbolId::kSyntaxError, LayoutId::kSyntaxError);
+  moduleAddBuiltinType(module, SymbolId::kSyntaxWarning,
+                       LayoutId::kSyntaxWarning);
+  moduleAddBuiltinType(module, SymbolId::kSystemError, LayoutId::kSystemError);
+  moduleAddBuiltinType(module, SymbolId::kSystemExit, LayoutId::kSystemExit);
+  moduleAddBuiltinType(module, SymbolId::kTabError, LayoutId::kTabError);
+  moduleAddBuiltinType(module, SymbolId::kTimeoutError,
+                       LayoutId::kTimeoutError);
   moduleAddBuiltinType(module, SymbolId::kTuple, LayoutId::kObjectArray);
   moduleAddBuiltinType(module, SymbolId::kType, LayoutId::kType);
   moduleAddBuiltinType(module, SymbolId::kTypeError, LayoutId::kTypeError);
+  moduleAddBuiltinType(module, SymbolId::kUnboundLocalError,
+                       LayoutId::kUnboundLocalError);
+  moduleAddBuiltinType(module, SymbolId::kUnicodeDecodeError,
+                       LayoutId::kUnicodeDecodeError);
+  moduleAddBuiltinType(module, SymbolId::kUnicodeEncodeError,
+                       LayoutId::kUnicodeEncodeError);
+  moduleAddBuiltinType(module, SymbolId::kUnicodeError,
+                       LayoutId::kUnicodeError);
+  moduleAddBuiltinType(module, SymbolId::kUnicodeTranslateError,
+                       LayoutId::kUnicodeTranslateError);
+  moduleAddBuiltinType(module, SymbolId::kUnicodeWarning,
+                       LayoutId::kUnicodeWarning);
+  moduleAddBuiltinType(module, SymbolId::kUserWarning, LayoutId::kUserWarning);
   moduleAddBuiltinType(module, SymbolId::kValueError, LayoutId::kValueError);
+  moduleAddBuiltinType(module, SymbolId::kWarning, LayoutId::kWarning);
+  moduleAddBuiltinType(module, SymbolId::kZeroDivisionError,
+                       LayoutId::kZeroDivisionError);
 
   Handle<Object> not_implemented(&scope, notImplemented());
   moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);

@@ -1,6 +1,15 @@
+#include "cpython-data.h"
 #include "runtime.h"
 
 namespace python {
+
+extern "C" char* PyByteArray_AS_STRING_Func(PyObject* /* self */) {
+  UNIMPLEMENTED("PyByteArray_AS_STRING_Func");
+}
+
+extern "C" int PyByteArray_Check_Func(PyObject* /* obj */) {
+  UNIMPLEMENTED("PyByteArray_Check_Func");
+}
 
 extern "C" PyObject* PyByteArray_FromStringAndSize(const char* /* s */,
                                                    Py_ssize_t /* e */) {

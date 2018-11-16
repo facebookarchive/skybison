@@ -1,5 +1,8 @@
 // typeobject.c implementation
 
+#include "cpython-func.h"
+#include "cpython-types.h"
+
 #include "handles.h"
 #include "mro.h"
 #include "objects.h"
@@ -114,6 +117,22 @@ extern "C" PyObject* PyType_FromSpec(PyType_Spec* /* c */) {
 extern "C" PyObject* PyType_FromSpecWithBases(PyType_Spec* /* c */,
                                               PyObject* /* s */) {
   UNIMPLEMENTED("PyType_FromSpecWithBases");
+}
+
+extern "C" PyObject* PyType_GenericAlloc(PyTypeObject* type,
+                                         Py_ssize_t nitems) {
+  size_t size = Utils::roundUp(
+      type->tp_basicsize + ((nitems + 1) * type->tp_itemsize), kWordSize);
+  PyObject* obj = static_cast<PyObject*>(PyObject_Calloc(1, size));
+  if (obj == nullptr) {
+    return nullptr;
+  }
+  obj->ob_refcnt = 1;
+  obj->ob_type = type;
+  if (type->tp_itemsize == 0) {
+    reinterpret_cast<PyVarObject*>(obj)->ob_size = nitems;
+  }
+  return obj;
 }
 
 extern "C" PyObject* PyType_GenericNew(PyTypeObject* /* e */, PyObject* /* s */,
