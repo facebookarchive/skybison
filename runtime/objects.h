@@ -80,6 +80,7 @@ class Object {
 
   // Immediate
   inline bool isSmallInteger();
+  inline bool isHeaderWord();
   inline bool isNone();
   inline bool isEllipsis();
   inline bool isBoolean();
@@ -100,48 +101,9 @@ class Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
 };
 
-class Boolean : public Object {
- public:
-  static inline Boolean* fromBool(bool value);
-  static inline Boolean* cast(Object* object);
+class Class;
 
-  static const int kTag = 7; // 0b0111
-  static const int kTagSize = 4;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
-  inline bool value();
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Boolean);
-};
-
-class None : public Object {
- public:
-  static inline None* cast(Object* object);
-
-  static const int kTag = 3; // 0b0011
-  static const int kTagSize = 4;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
-  inline static None* object();
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(None);
-};
-
-class Ellipsis : public Object {
- public:
-  static inline Ellipsis* cast(Object* object);
-
-  static const int kTag = 11; // 0b1011
-  static const int kTagSize = 4;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
-  inline static Ellipsis* object();
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Ellipsis);
-};
+// Immediate objects
 
 class SmallInteger : public Object {
  public:
@@ -158,13 +120,72 @@ class SmallInteger : public Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallInteger);
 };
 
-class Class;
+class HeaderWord : public Object {
+ public:
+  static inline HeaderWord* fromClass(Class* a_class);
+  static inline HeaderWord* cast(Object* object);
+
+  static const int kTag = 3;
+  static const int kTagSize = 3;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+  inline Class* toClass();
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(HeaderWord);
+};
+
+class Boolean : public Object {
+ public:
+  static inline Boolean* fromBool(bool value);
+  static inline Boolean* cast(Object* object);
+
+  static const int kTag = 7; // 0b00111
+  static const int kTagSize = 5;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+  inline bool value();
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Boolean);
+};
+
+class None : public Object {
+ public:
+  static inline None* cast(Object* object);
+
+  static const int kTag = 15; // 0b01111
+  static const int kTagSize = 5;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+  inline static None* object();
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(None);
+};
+
+class Ellipsis : public Object {
+ public:
+  static inline Ellipsis* cast(Object* object);
+
+  static const int kTag = 23; // 0b10111
+  static const int kTagSize = 5;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+  inline static Ellipsis* object();
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Ellipsis);
+};
+
+// Heap objects
 
 class HeapObject : public Object {
  public:
   // Setters and getters.
   inline uword address();
   inline static HeapObject* fromAddress(uword address);
+  inline int size();
 
   inline Class* getClass();
   inline void setClass(Class* a_class);
@@ -172,9 +193,14 @@ class HeapObject : public Object {
 
   inline static HeapObject* cast(Object* object);
 
+  inline bool isForwarding();
+  inline Object* forward();
+  inline void forwardTo(Object* object);
+
   static const int kTag = 1;
   static const int kTagSize = 2;
   static const uword kTagMask = (1 << kTagSize) - 1;
+  static const uword kIsForwarded = -3;
 
   // Layout.
   static const int kClassOffset = 0;
@@ -191,15 +217,23 @@ class HeapObject : public Object {
 class Class : public HeapObject {
  public:
   inline Layout layout();
-  inline void setLayout(Layout layout);
 
   inline static Class* cast(Object* object);
+
   inline static int allocationSize() {
     return Class::kSize;
   }
 
+  inline void initialize(Layout layout, int size, bool isArray, bool isRoot);
+
+  inline word instanceSize();
+
+  inline bool isRoot();
+
   static const int kLayoutOffset = HeapObject::kSize;
-  static const int kSize = kLayoutOffset + kPointerSize;
+  static const int kInstanceSizeOffset = kLayoutOffset + kPointerSize;
+  static const int kIsRootOffset = kInstanceSizeOffset + kPointerSize;
+  static const int kSize = kIsRootOffset + kPointerSize;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Class);
@@ -229,6 +263,8 @@ class ByteArray : public Array {
   inline static int allocationSize(int length);
   inline void initialize(int length);
 
+  static const int kElementSize = 1;
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ByteArray);
 };
@@ -246,6 +282,8 @@ class ObjectArray : public Array {
 
   inline void copyTo(ObjectArray* dst);
 
+  static const int kElementSize = kPointerSize;
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectArray);
 };
@@ -257,6 +295,8 @@ class String : public Array {
   inline void setCharAt(int index, byte value);
 
   inline static int allocationSize(int length);
+
+  static const int kElementSize = 1;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(String);
@@ -331,13 +371,11 @@ class Code : public HeapObject {
 class Function : public HeapObject {
  public:
   inline static Function* cast(Object* object);
-  inline Object* address();
   inline Object* code();
   inline static int allocationSize();
   inline void initialize();
 
-  static const int kAddressOffset = HeapObject::kSize;
-  static const int kCodeOffset = kAddressOffset + kPointerSize;
+  static const int kCodeOffset = HeapObject::kSize + kPointerSize;
   static const int kSize = kCodeOffset + kPointerSize;
 
  private:
@@ -347,7 +385,7 @@ class Function : public HeapObject {
 class Module : public HeapObject {
  public:
   inline static Module* cast(Object* object);
-  Object* name();
+  inline Object* name();
   inline static int allocationSize();
   inline void initialize();
 
@@ -362,7 +400,7 @@ class Module : public HeapObject {
 class Dictionary : public HeapObject {
  public:
   inline static Dictionary* cast(Object* object);
-  Object* data();
+  inline Object* data();
   inline static int allocationSize();
   inline static void initialize();
 
@@ -388,7 +426,7 @@ class List : public Array {
  public:
   static List* cast(Object* object);
   static int allocationSize();
-  void initialize();
+  void initialize(Object* elements);
 
   // Return the total number of elements that may be held without growing the
   // list
@@ -418,6 +456,16 @@ bool Object::isClass() {
   return HeapObject::cast(this)->getClass()->layout() == Layout::CLASS;
 }
 
+bool Object::isSmallInteger() {
+  int tag = reinterpret_cast<uword>(this) & SmallInteger::kTagMask;
+  return tag == SmallInteger::kTag;
+}
+
+bool Object::isHeaderWord() {
+  int tag = reinterpret_cast<uword>(this) & HeaderWord::kTagMask;
+  return tag == HeaderWord::kTag;
+}
+
 bool Object::isBoolean() {
   int tag = reinterpret_cast<uword>(this) & Boolean::kTagMask;
   return tag == Boolean::kTag;
@@ -431,11 +479,6 @@ bool Object::isNone() {
 bool Object::isEllipsis() {
   int tag = reinterpret_cast<uword>(this) & None::kTagMask;
   return tag == None::kTag;
-}
-
-bool Object::isSmallInteger() {
-  int tag = reinterpret_cast<uword>(this) & SmallInteger::kTagMask;
-  return tag == SmallInteger::kTag;
 }
 
 bool Object::isHeapObject() {
@@ -499,6 +542,37 @@ bool Object::isList() {
   return HeapObject::cast(this)->getClass()->layout() == Layout::LIST;
 }
 
+// SmallInteger
+
+SmallInteger* SmallInteger::cast(Object* object) {
+  assert(object->isSmallInteger());
+  return reinterpret_cast<SmallInteger*>(object);
+}
+
+word SmallInteger::value() {
+  return reinterpret_cast<word>(this) >> kTagSize;
+}
+
+SmallInteger* SmallInteger::fromWord(word value) {
+  return reinterpret_cast<SmallInteger*>(value << kTagSize);
+}
+
+// Header
+
+HeaderWord* HeaderWord::cast(Object* object) {
+  assert(object->isHeaderWord());
+  return reinterpret_cast<HeaderWord*>(object);
+}
+
+HeaderWord* HeaderWord::fromClass(Class* a_class) {
+  return reinterpret_cast<HeaderWord*>(a_class->address() | HeaderWord::kTag);
+}
+
+Class* HeaderWord::toClass() {
+  uword address = reinterpret_cast<uword>(this) - HeaderWord::kTag;
+  return reinterpret_cast<Class*>(HeapObject::fromAddress(address));
+}
+
 // None
 
 None* None::object() {
@@ -533,19 +607,8 @@ Boolean* Boolean::cast(Object* object) {
   return reinterpret_cast<Boolean*>(object);
 }
 
-// SmallInteger
-
-SmallInteger* SmallInteger::cast(Object* object) {
-  assert(object->isSmallInteger());
-  return reinterpret_cast<SmallInteger*>(object);
-}
-
-word SmallInteger::value() {
-  return reinterpret_cast<word>(this) >> kTagSize;
-}
-
-SmallInteger* SmallInteger::fromWord(word value) {
-  return reinterpret_cast<SmallInteger*>(value << kTagSize);
+bool Boolean::value() {
+  return (reinterpret_cast<uword>(this) >> kTagSize) ? true : false;
 }
 
 // HeapObject
@@ -559,9 +622,35 @@ HeapObject* HeapObject::fromAddress(uword address) {
   return reinterpret_cast<HeapObject*>(address + kTag);
 }
 
+int HeapObject::size() {
+  word result = getClass()->instanceSize();
+  if (result < 0) {
+    result *= -SmallInteger::cast(at(Array::kLengthOffset))->value();
+    result += Array::kSize;
+  }
+  return result;
+}
+
 HeapObject* HeapObject::cast(Object* obj) {
   assert(obj->isHeapObject());
   return reinterpret_cast<HeapObject*>(obj);
+}
+
+bool HeapObject::isForwarding() {
+  return *reinterpret_cast<uword*>(address()) == kIsForwarded;
+}
+
+Object* HeapObject::forward() {
+  // When a heap object is forwarding, its second word is the forwarding
+  // address.
+  return *reinterpret_cast<Object**>(address() + kPointerSize);
+}
+
+void HeapObject::forwardTo(Object* object) {
+  // Overwrite the header with the forwarding marker.
+  *reinterpret_cast<uword*>(address()) = kIsForwarded;
+  // Overwrite the second word with the forwarding addressing.
+  atPut(kPointerSize, object);
 }
 
 void HeapObject::initialize(int size, Object* value) {
@@ -579,27 +668,40 @@ void HeapObject::atPut(int offset, Object* value) {
 }
 
 Class* HeapObject::getClass() {
-  return reinterpret_cast<Class*>(at(kClassOffset));
+  return HeaderWord::cast(at(kClassOffset))->toClass();
 }
 
 void HeapObject::setClass(Class* a_class) {
-  atPut(kClassOffset, a_class);
+  atPut(kClassOffset, HeaderWord::fromClass(a_class));
 }
 
 // Class
 
-Layout Class::layout() {
-  return static_cast<Layout>(SmallInteger::cast(at(kLayoutOffset))->value());
+void Class::initialize(Layout layout, int size, bool isArray, bool isRoot) {
+  atPut(kLayoutOffset, SmallInteger::fromWord(layout));
+  atPut(kInstanceSizeOffset, SmallInteger::fromWord(size * (isArray ? -1 : 1)));
+  atPut(kIsRootOffset, Boolean::fromBool(isRoot));
 }
 
-void Class::setLayout(Layout layout) {
-  atPut(kLayoutOffset, SmallInteger::fromWord(layout));
+Layout Class::layout() {
+  Object* hopefully_a_small_integer = at(kLayoutOffset);
+  return static_cast<Layout>(
+      SmallInteger::cast(hopefully_a_small_integer)->value());
 }
 
 Class* Class::cast(Object* object) {
   assert(object->isClass());
   return reinterpret_cast<Class*>(object);
 }
+
+word Class::instanceSize() {
+  return SmallInteger::cast(at(kInstanceSizeOffset))->value();
+}
+
+bool Class::isRoot() {
+  return Boolean::cast(at(kIsRootOffset))->value();
+}
+
 // Array
 
 word Array::length() {
@@ -756,10 +858,6 @@ Function* Function::cast(Object* object) {
   return reinterpret_cast<Function*>(object);
 }
 
-Object* Function::address() {
-  return at(Function::kAddressOffset);
-}
-
 Object* Function::code() {
   return at(Function::kCodeOffset);
 }
@@ -779,6 +877,10 @@ Module* Module::cast(Object* object) {
   return reinterpret_cast<Module*>(object);
 }
 
+Object* Module::name() {
+  return at(Module::kNameOffset);
+}
+
 void Module::initialize() {
   // ???
 }
@@ -796,6 +898,10 @@ Dictionary* Dictionary::cast(Object* object) {
 
 void Dictionary::initialize() {
   // ???
+}
+
+Object* Dictionary::data() {
+  return at(Dictionary::kDataOffset);
 }
 
 // String

@@ -1,9 +1,12 @@
 #pragma once
 
 #include "heap.h"
-#include "objects.h"
 
 namespace python {
+
+class Heap;
+class Object;
+class PointerVisitor;
 
 class Runtime {
  public:
@@ -35,31 +38,40 @@ class Runtime {
 
   Object* createList();
 
+  void collectGarbage();
+
   Heap* heap() {
     return &heap_;
   };
+
+  void visitRoots(PointerVisitor* visitor);
 
   Object* modules() {
     return modules_;
   };
 
  private:
-  void allocateClasses();
+  void initializeClasses();
+  void initializeInstances();
+  void initializeModules();
 
   Heap heap_;
 
+  Object* byte_array_class_;
+  Object* class_class_;
+  Object* code_class_;
+  Object* dictionary_class_;
+  Object* function_class_;
+  Object* list_class_;
+  Object* module_class_;
+  Object* object_array_class_;
+  Object* string_class_;
+
+  Object* empty_byte_array_;
+  Object* empty_object_array_;
+
   // the equivalent of sys.modules in python
   Object* modules_;
-
-  Object* byteArrayClass_;
-  Object* classClass_;
-  Object* codeClass_;
-  Object* dictionaryClass_;
-  Object* functionClass_;
-  Object* listClass_;
-  Object* moduleClass_;
-  Object* objectArrayClass_;
-  Object* stringClass_;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

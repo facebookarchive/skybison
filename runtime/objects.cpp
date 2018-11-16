@@ -14,11 +14,8 @@ List* List::cast(Object* obj) {
   return reinterpret_cast<List*>(obj);
 }
 
-void List::initialize() {
-  // Lists start out empty and grow on the first append. This is how CPython
-  // initializes lists; presumably they've done some analysis to show this is
-  // better than starting with a small initial list (e.g. 1 or 2 elements).
-  atPut(List::kElemsOffset, 0);
+void List::initialize(Object* elements) {
+  atPut(List::kElemsOffset, elements);
 }
 
 ObjectArray* List::elems() {

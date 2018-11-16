@@ -29,6 +29,8 @@ add_library(
   runtime/os.h
   runtime/runtime.cpp
   runtime/runtime.h
+  runtime/space.cpp
+  runtime/space.h
   runtime/thread.cpp
   runtime/thread.h
   runtime/utils.h
@@ -48,6 +50,8 @@ add_executable(
   runtime/list-test.cpp
   runtime/marshal-test.cpp
   runtime/os-test.cpp
+  runtime/runtime-test.cpp
+  runtime/space-test.cpp
   runtime/thread-test.cpp)
 target_link_libraries(
   python-tests

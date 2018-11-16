@@ -7,7 +7,7 @@
 namespace python {
 
 TEST(HeapTest, AllocateObjects) {
-  const int size = Os::PAGE_SIZE * 4;
+  const int size = Os::kPageSize * 4;
   Heap heap(size);
 
   // Allocate the first half of the heap.
@@ -22,7 +22,7 @@ TEST(HeapTest, AllocateObjects) {
 }
 
 TEST(HeapTest, AllocateFails) {
-  const int size = Os::PAGE_SIZE * 4;
+  const int size = Os::kPageSize * 4;
   Heap heap(size);
 
   // Allocate the first half of the heap.

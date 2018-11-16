@@ -2,6 +2,7 @@
 
 #include "globals.h"
 #include "objects.h"
+#include "space.h"
 
 namespace python {
 
@@ -13,10 +14,20 @@ class Heap {
   Object* allocate(intptr_t size);
 
   bool contains(void* address);
+  bool verify();
+  void flip();
+  void scavenge();
+  void scavengePointer(Object** pointer);
+  Object* transport(Object* oldObject);
 
   Object* createByteArray(Object* byte_array_class, intptr_t length);
 
-  Object* createClass(Object* class_class, Layout layout);
+  Object* createClass(
+      Object* class_class,
+      Layout layout,
+      int size,
+      bool isArray,
+      bool isRoot);
 
   Object* createClassClass();
 
@@ -42,17 +53,15 @@ class Heap {
 
   Object* createFunction(Object* function_class);
 
-  Object* createList(Object* list_class);
+  Object* createList(Object* list_class, Object* elements);
 
   Object* createObjectArray(Object* object_array_class, intptr_t length);
 
   Object* createString(Object* string_class, intptr_t length);
 
  private:
-  byte* start_;
-  byte* end_;
-  byte* ptr_;
-  intptr_t size_;
+  Space* from_;
+  Space* to_;
 };
 
 } // namespace python

@@ -18,22 +18,22 @@ static int count(const byte* array, byte ch, int length) {
 
 TEST(OsTest, allocateUseAndFreeOnePage) {
   // Allocate a page of memory.
-  byte* page = Os::allocateMemory(Os::PAGE_SIZE);
+  byte* page = Os::allocateMemory(Os::kPageSize);
   ASSERT_NE(page, nullptr);
 
   // Read from every allocated byte.
-  int num_zeroes = count(page, 0, Os::PAGE_SIZE);
+  int num_zeroes = count(page, 0, Os::kPageSize);
   // Every byte should have a value of zero.
-  ASSERT_EQ(num_zeroes, Os::PAGE_SIZE);
+  ASSERT_EQ(num_zeroes, Os::kPageSize);
 
   // Write to every allocated byte.
-  memset(page, 1, Os::PAGE_SIZE);
-  int num_ones = count(page, 1, Os::PAGE_SIZE);
+  memset(page, 1, Os::kPageSize);
+  int num_ones = count(page, 1, Os::kPageSize);
   // Every byte should have a value of one.
-  ASSERT_EQ(num_ones, Os::PAGE_SIZE);
+  ASSERT_EQ(num_ones, Os::kPageSize);
 
   // Release the page.
-  bool is_free = Os::freeMemory(page, Os::PAGE_SIZE);
+  bool is_free = Os::freeMemory(page, Os::kPageSize);
   EXPECT_TRUE(is_free);
 }
 

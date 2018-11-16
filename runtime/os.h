@@ -6,9 +6,15 @@ namespace python {
 
 class Os {
  public:
-  enum { PAGE_SIZE = 4096 };
-  static byte* allocateMemory(int size);
-  static bool freeMemory(byte* ptr, int size);
+  enum { kPageSize = 4 * KiB };
+
+  enum Protection { kNoAccess, kReadWrite };
+
+  static byte* allocateMemory(intptr_t size);
+
+  static bool freeMemory(byte* ptr, intptr_t size);
+
+  static bool protectMemory(byte* ptr, intptr_t size, Protection);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Os);
