@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <memory>
-#include <sstream>
 
 #include "builtins.h"
 #include "bytecode.h"
@@ -11,10 +10,12 @@
 #include "interpreter.h"
 #include "marshal.h"
 #include "runtime.h"
+#include "test-utils.h"
 #include "thread.h"
 #include "trampolines-inl.h"
 
 namespace python {
+using namespace testing;
 
 TEST(ThreadTest, CheckMainThreadRuntime) {
   Runtime runtime;
@@ -61,23 +62,13 @@ TEST(ThreadTest, RunHelloWorld) {
       "\x68\x65\x6C\x6C\x6F\x77\x6F\x72\x6C\x64\x2E\x70\x79\xDA\x08\x3C\x6D\x6F"
       "\x64\x75\x6C\x65\x3E\x01\x00\x00\x00\x73\x00\x00\x00\x00";
 
-  std::stringstream stream;
-  std::ostream* oldStream = builtinPrintStream;
-  builtinPrintStream = &stream;
-
   // Execute the code and make sure we get back the result we expect
-  Object* result = runtime.run(buffer);
-  ASSERT_EQ(result, None::object()); // returns None
-
-  builtinPrintStream = oldStream;
-
-  EXPECT_STREQ(stream.str().c_str(), "hello, world\n");
+  std::string result = runToString(&runtime, buffer);
+  EXPECT_EQ(result, "hello, world\n");
 }
 
 TEST(ThreadTest, ModuleBodyCallsHelloWorldFunction) {
   Runtime runtime;
-  HandleScope scope;
-
   const char* src = R"(
 def hello():
   print('hello, world')
@@ -86,17 +77,9 @@ hello()
 
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
 
-  std::stringstream stream;
-  std::ostream* oldStream = builtinPrintStream;
-  builtinPrintStream = &stream;
-
   // Execute the code and make sure we get back the result we expect
-  Object* result = runtime.run(buffer.get());
-  ASSERT_EQ(result, None::object()); // returns None
-
-  builtinPrintStream = oldStream;
-
-  EXPECT_STREQ(stream.str().c_str(), "hello, world\n");
+  std::string output = runToString(&runtime, buffer.get());
+  EXPECT_EQ(output, "hello, world\n");
 }
 
 TEST(ThreadTest, OverlappingFrames) {

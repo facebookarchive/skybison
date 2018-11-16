@@ -100,6 +100,8 @@ add_executable(
   runtime/os-test.cpp
   runtime/runtime-test.cpp
   runtime/space-test.cpp
+  runtime/test-utils.cpp
+  runtime/test-utils.h
   runtime/thread-test.cpp
   runtime/utils-test.cpp
   runtime/vector-test.cpp)
