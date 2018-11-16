@@ -28,9 +28,7 @@ file(
   GLOB_RECURSE
   CPYTHON_SOURCES
   ${CPYTHON_DIR}/Include/*
-  ${CPYTHON_DIR}/Objects/*
-  ${CPYTHON_DIR}/Parser/*
-  ${CPYTHON_DIR}/Python/*)
+  ${CPYTHON_DIR}/Parser/*)
 
 macro(remove_cpython_source value)
   list(REMOVE_ITEM CPYTHON_SOURCES "${CPYTHON_DIR}/${value}")
@@ -39,61 +37,12 @@ endmacro()
 # Remove the main function from the Parser
 remove_cpython_source("Parser/pgenmain.c")
 
-# Remove these sources to avoid function dupes
-remove_cpython_source("Python/sigcheck.c")
-remove_cpython_source("Python/strdup.c")
-
-# Remove the dynamic loaders for unused architectures
-remove_cpython_source("Python/dynload_aix.c")
-remove_cpython_source("Python/dynload_dl.c")
-remove_cpython_source("Python/dynload_hpux.c")
-remove_cpython_source("Python/dynload_next.c")
-remove_cpython_source("Python/dynload_stub.c")
-remove_cpython_source("Python/dynload_win.c")
-
-# Remove empty files
-remove_cpython_source("Python/dynamic_annotations.c")
-remove_cpython_source("Python/pyarena.c")
-remove_cpython_source("Python/pymath.c")
-remove_cpython_source("Python/pystrcmp.c")
-remove_cpython_source("Python/getcompiler.c")
-remove_cpython_source("Python/getcopyright.c")
-remove_cpython_source("Python/getplatform.c")
-remove_cpython_source("Python/getversion.c")
-remove_cpython_source("Python/mysnprintf.c")
-
-# Duplicates types defined by our runtime
-remove_cpython_source("Python/ceval.c")
-remove_cpython_source("Python/marshal.c")
-remove_cpython_source("Python/pylifecycle.c")
-remove_cpython_source("Python/sysmodule.c")
-remove_cpython_source("Python/traceback.c")
-
-remove_cpython_source("Objects/boolobject.c")
-remove_cpython_source("Objects/bytearrayobject.c")
-remove_cpython_source("Objects/bytesobject.c")
-remove_cpython_source("Objects/codeobject.c")
-remove_cpython_source("Objects/complexobject.c")
-remove_cpython_source("Objects/floatobject.c")
-remove_cpython_source("Objects/dictobject.c")
-remove_cpython_source("Objects/exceptions.c")
-remove_cpython_source("Objects/frameobject.c")
-remove_cpython_source("Objects/methodobject.c")
-remove_cpython_source("Objects/funcobject.c")
-remove_cpython_source("Objects/genobject.c")
-remove_cpython_source("Objects/listobject.c")
-remove_cpython_source("Objects/longobject.c")
-remove_cpython_source("Objects/moduleobject.c")
-remove_cpython_source("Objects/object.c")
-remove_cpython_source("Objects/setobject.c")
-remove_cpython_source("Objects/tupleobject.c")
-remove_cpython_source("Objects/typeobject.c")
-remove_cpython_source("Objects/unicodeobject.c")
-
-# Add all the core Modules sources
+# Add some Python files all the core Modules sources
 set(
 	CPYTHON_SOURCES
 	${CPYTHON_SOURCES}
+  "${CPYTHON_DIR}/Python/pyctype.c"
+  "${CPYTHON_DIR}/Python/getargs.c"
   "${CPYTHON_DIR}/Modules/_asynciomodule.c"
   "${CPYTHON_DIR}/Modules/_bisectmodule.c"
   "${CPYTHON_DIR}/Modules/_blake2/blake2b_impl.c"

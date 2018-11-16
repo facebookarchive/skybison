@@ -1,3 +1,4 @@
+#include "cpython-func.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
@@ -28,6 +29,15 @@ PY_EXPORT int PyModule_AddObject(PyObject* pymodule, const char* name,
   Object value(&scope, ApiHandle::fromPyObject(obj)->asObject());
   runtime->moduleAtPut(module, key, value);
   return 0;
+}
+
+PY_EXPORT int PyModule_AddIntConstant(PyObject* m, const char* name,
+                                      long value) {
+  PyObject* o = PyLong_FromLong(value);
+  if (!o) return -1;
+  if (PyModule_AddObject(m, name, o) == 0) return 0;
+  Py_DECREF(o);
+  return -1;
 }
 
 PY_EXPORT int PyModule_AddStringConstant(PyObject* /* m */, const char* /* e */,
