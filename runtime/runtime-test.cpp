@@ -115,15 +115,24 @@ TEST(RuntimeTest, NewString) {
 
   Handle<String> s1(&scope, runtime.newString(1));
   EXPECT_EQ(s1->length(), 1);
-  EXPECT_EQ(s1->size(), Utils::roundUp(kPointerSize + 1, kPointerSize));
+  ASSERT_TRUE(s1->isLargeString());
+  EXPECT_EQ(
+      LargeString::cast(*s1)->size(),
+      Utils::roundUp(kPointerSize + 1, kPointerSize));
 
-  Handle<String> s254(&scope, runtime.newString(254));
+  Handle<LargeString> s254(&scope, runtime.newString(254));
   EXPECT_EQ(s254->length(), 254);
-  EXPECT_EQ(s254->size(), Utils::roundUp(kPointerSize + 254, kPointerSize));
+  ASSERT_TRUE(s1->isLargeString());
+  EXPECT_EQ(
+      LargeString::cast(*s254)->size(),
+      Utils::roundUp(kPointerSize + 254, kPointerSize));
 
-  Handle<String> s255(&scope, runtime.newString(255));
+  Handle<LargeString> s255(&scope, runtime.newString(255));
   EXPECT_EQ(s255->length(), 255);
-  EXPECT_EQ(s255->size(), Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
+  ASSERT_TRUE(s1->isLargeString());
+  EXPECT_EQ(
+      LargeString::cast(*s255)->size(),
+      Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 
   Handle<String> s300(&scope, runtime.newString(300));
   ASSERT_EQ(s300->length(), 300);
@@ -211,7 +220,7 @@ TEST(RuntimeTest, HashStrings) {
   HandleScope scope;
 
   // Strings have their hash codes computed lazily.
-  Handle<String> str1(&scope, runtime.newStringFromCString("testing 123"));
+  Handle<LargeString> str1(&scope, runtime.newStringFromCString("testing 123"));
   EXPECT_EQ(str1->header()->hashCode(), 0);
   SmallInteger* hash1 = SmallInteger::cast(runtime.hash(*str1));
   EXPECT_NE(str1->header()->hashCode(), 0);

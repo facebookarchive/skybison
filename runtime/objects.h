@@ -72,7 +72,7 @@ enum class ClassId {
   kList,
   kModule,
   kObjectArray,
-  kString,
+  kLargeString,
   kType,
   kValueCell,
 
@@ -102,9 +102,12 @@ class Object {
   inline bool isList();
   inline bool isModule();
   inline bool isObjectArray();
-  inline bool isString();
+  inline bool isLargeString();
   inline bool isValueCell();
   inline bool isEllipsis();
+
+  // superclass objects
+  inline bool isString();
 
   static inline bool equals(Object* lhs, Object* rhs);
 
@@ -286,6 +289,25 @@ class Error : public Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Error);
 };
 
+// Super class of common string functionality
+class String : public Object {
+ public:
+  // Getters and setters.
+  inline byte charAt(word index);
+  inline void charAtPut(word index, byte value);
+  inline word length();
+
+  // Equality checks.
+  inline bool equals(Object* that);
+  inline bool equalsCString(const char* c_string);
+
+  // Casting.
+  static inline String* cast(Object* object);
+
+ public:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(String);
+};
+
 class SmallString : public Object {
  public:
   // Tagging.
@@ -428,7 +450,7 @@ class ObjectArray : public Array {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectArray);
 };
 
-class String : public Array {
+class LargeString : public Array {
  public:
   // Getters and setters.
   inline byte charAt(word index);
@@ -439,13 +461,13 @@ class String : public Array {
   bool equalsCString(const char* c_string);
 
   // Casting.
-  static inline String* cast(Object* object);
+  static inline LargeString* cast(Object* object);
 
   // Sizing.
   inline static word allocationSize(word length);
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(String);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(LargeString);
 };
 
 class Code : public HeapObject {
@@ -854,11 +876,11 @@ bool Object::isCode() {
   return HeapObject::cast(this)->header()->classId() == ClassId::kCode;
 }
 
-bool Object::isString() {
+bool Object::isLargeString() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kString;
+  return HeapObject::cast(this)->header()->classId() == ClassId::kLargeString;
 }
 
 bool Object::isFunction() {
@@ -903,8 +925,13 @@ bool Object::isEllipsis() {
   return HeapObject::cast(this)->header()->classId() == ClassId::kEllipsis;
 }
 
+bool Object::isString() {
+  return isLargeString();
+}
+
 bool Object::equals(Object* lhs, Object* rhs) {
-  return (lhs == rhs) || (lhs->isString() && String::cast(lhs)->equals(rhs));
+  return (lhs == rhs) ||
+      (lhs->isLargeString() && LargeString::cast(lhs)->equals(rhs));
 }
 
 Object* Object::cast(Object* object) {
@@ -1198,7 +1225,7 @@ Class* Class::cast(Object* object) {
 // Array
 
 word Array::length() {
-  assert(isByteArray() || isObjectArray() || isString());
+  assert(isByteArray() || isObjectArray() || isLargeString());
   return headerCountOrOverflow();
 }
 
@@ -1667,23 +1694,55 @@ Object* Module::dictionary() {
 // String
 
 String* String::cast(Object* object) {
-  assert(object->isString());
+  assert(object->isLargeString());
   return reinterpret_cast<String*>(object);
 }
 
-word String::allocationSize(word length) {
+byte String::charAt(word index) {
+  assert(isLargeString());
+  return LargeString::cast(this)->charAt(index);
+}
+
+void String::charAtPut(word index, byte value) {
+  assert(isLargeString());
+  LargeString::cast(this)->charAtPut(index, value);
+}
+
+word String::length() {
+  assert(isLargeString());
+  return LargeString::cast(this)->length();
+}
+
+bool String::equals(Object* that) {
+  assert(isLargeString());
+  return LargeString::cast(this)->equals(that);
+}
+
+bool String::equalsCString(const char* c_string) {
+  assert(isLargeString());
+  return LargeString::cast(this)->equalsCString(c_string);
+}
+
+// LargeString
+
+LargeString* LargeString::cast(Object* object) {
+  assert(object->isLargeString());
+  return reinterpret_cast<LargeString*>(object);
+}
+
+word LargeString::allocationSize(word length) {
   assert(length >= 0);
   word size = headerSize(length) + length;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-byte String::charAt(word index) {
+byte LargeString::charAt(word index) {
   assert(index >= 0);
   assert(index < length());
   return *reinterpret_cast<byte*>(address() + index);
 }
 
-void String::charAtPut(word index, byte value) {
+void LargeString::charAtPut(word index, byte value) {
   assert(index >= 0);
   assert(index < length());
   *reinterpret_cast<byte*>(address() + index) = value;

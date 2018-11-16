@@ -124,7 +124,7 @@ Object* Runtime::newString(word length) {
   if (length == 0) {
     return empty_string_;
   }
-  return heap()->createString(length);
+  return heap()->createLargeString(length);
 }
 
 Object* Runtime::newStringFromCString(const char* c_string) {
@@ -135,7 +135,7 @@ Object* Runtime::newStringFromCString(const char* c_string) {
   Object* result = newString(length);
   assert(result != nullptr);
   for (word i = 0; i < length; i++) {
-    String::cast(result)->charAtPut(
+    LargeString::cast(result)->charAtPut(
         i, *reinterpret_cast<const byte*>(c_string + i));
   }
   return result;
@@ -157,7 +157,7 @@ Object* Runtime::hash(Object* object) {
   if (!object->isHeapObject()) {
     return immediateHash(object);
   }
-  if (object->isByteArray() || object->isString()) {
+  if (object->isByteArray() || object->isLargeString()) {
     return valueHash(object);
   }
   return identityHash(object);
@@ -301,9 +301,9 @@ void Runtime::initializeHeapClasses() {
   object_array->setMro(
       createMro(object_array_mro, ARRAYSIZE(object_array_mro)));
 
-  Handle<Class> string(&scope, newClassWithId(ClassId::kString));
+  Handle<Class> string(&scope, newClassWithId(ClassId::kLargeString));
   string->setName(newStringFromCString("str"));
-  const ClassId string_mro[] = {ClassId::kString, ClassId::kObject};
+  const ClassId string_mro[] = {ClassId::kLargeString, ClassId::kObject};
   string->setMro(createMro(string_mro, ARRAYSIZE(string_mro)));
 
   Handle<Class> value_cell(&scope, newClassWithId(ClassId::kValueCell));
@@ -400,7 +400,7 @@ void Runtime::initializeThreads() {
 void Runtime::initializePrimitiveInstances() {
   empty_object_array_ = heap()->createObjectArray(0, None::object());
   empty_byte_array_ = heap()->createByteArray(0);
-  empty_string_ = heap()->createString(0);
+  empty_string_ = heap()->createLargeString(0); // TODO use SmallString
   ellipsis_ = heap()->createEllipsis();
 }
 

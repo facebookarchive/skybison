@@ -36,7 +36,7 @@ class Heap {
 
   Object* createObjectArray(word length, Object* value);
 
-  Object* createString(word length);
+  Object* createLargeString(word length);
 
   Object* createValueCell();
 

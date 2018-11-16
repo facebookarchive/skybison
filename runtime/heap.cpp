@@ -234,14 +234,14 @@ Object* Heap::createObjectArray(word length, Object* value) {
   return ObjectArray::cast(result);
 }
 
-Object* Heap::createString(word length) {
-  word size = String::allocationSize(length);
-  Object* raw = allocate(size, String::headerSize(length));
+Object* Heap::createLargeString(word length) {
+  word size = LargeString::allocationSize(length);
+  Object* raw = allocate(size, LargeString::headerSize(length));
   assert(raw != nullptr);
-  auto result = reinterpret_cast<String*>(raw);
+  auto result = reinterpret_cast<LargeString*>(raw);
   result->setHeaderAndOverflow(
-      length, 0, ClassId::kString, ObjectFormat::kDataArray8);
-  return String::cast(result);
+      length, 0, ClassId::kLargeString, ObjectFormat::kDataArray8);
+  return LargeString::cast(result);
 }
 
 Object* Heap::createValueCell() {

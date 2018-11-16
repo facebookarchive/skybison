@@ -195,8 +195,8 @@ TEST(ThreadTest, ManipulateValueStack) {
   word values[] = {3333, 2222, 1111};
   for (int i = 0; i < 3; i++) {
     Object* object = frame->peek(i);
-    ASSERT_TRUE(object->isSmallInteger()) << "Value at stack depth " << i
-                                          << " is not an integer";
+    ASSERT_TRUE(object->isSmallInteger())
+        << "Value at stack depth " << i << " is not an integer";
     EXPECT_EQ(SmallInteger::cast(object)->value(), values[i])
         << "Incorrect value at stack depth " << i;
   }

@@ -8,14 +8,14 @@ namespace python {
 
 // String
 
-bool String::equals(Object* that) {
+bool LargeString::equals(Object* that) {
   if (this == that) {
     return true;
   }
-  if (!that->isString()) {
+  if (!that->isLargeString()) {
     return false;
   }
-  String* thatStr = String::cast(that);
+  auto* thatStr = LargeString::cast(that);
   if (length() != thatStr->length()) {
     return false;
   }
@@ -24,7 +24,7 @@ bool String::equals(Object* that) {
   return std::memcmp(s1, s2, length()) == 0;
 }
 
-bool String::equalsCString(const char* c_string) {
+bool LargeString::equalsCString(const char* c_string) {
   const char* cp = c_string;
   for (word i = 0; i < length(); i++, cp++) {
     char ch = *cp;
