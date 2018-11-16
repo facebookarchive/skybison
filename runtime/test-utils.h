@@ -27,7 +27,7 @@
 namespace python {
 class Runtime;
 
-std::ostream& operator<<(std::ostream& os, const Handle<Str>& str);
+std::ostream& operator<<(std::ostream& os, const Str& str);
 std::ostream& operator<<(std::ostream& os, CastError err);
 
 namespace testing {
@@ -94,8 +94,8 @@ inline Value Value::none() { return Value{}; }
 
 // Check if the given Object is a list containing the expected elements.
 ::testing::AssertionResult AssertPyListEqual(
-    const char* actual_expr, const char* expected_expr,
-    const Handle<Object>& actual, const std::vector<Value>& expected);
+    const char* actual_expr, const char* expected_expr, const Object& actual,
+    const std::vector<Value>& expected);
 
 // The preprocessor doesn't understand grouping by {}, so EXPECT_PYLIST_EQ uses
 // this to support a nice-looking callsite.
@@ -116,8 +116,7 @@ inline std::vector<Value> make_list(std::vector<Value> l) { return l; }
 // pushes all the arguments onto the stack, and invokes the interpreter.
 //
 // The caller is responsible for cleaning up any exception state.
-std::string callFunctionToString(const Handle<Function>& func,
-                                 const Handle<ObjectArray>& args);
+std::string callFunctionToString(const Function& func, const ObjectArray& args);
 
 // Calls func using the supplied arguments.
 //
@@ -125,11 +124,9 @@ std::string callFunctionToString(const Handle<Function>& func,
 // pushes all the arguments onto the stack, and invokes the interpreter.
 //
 // The caller is responsible for cleaning up any exception state.
-RawObject callFunction(const Handle<Function>& func,
-                       const Handle<ObjectArray>& args);
+RawObject callFunction(const Function& func, const ObjectArray& args);
 
-bool objectArrayContains(const Handle<ObjectArray>& object_array,
-                         const Handle<Object>& key);
+bool objectArrayContains(const ObjectArray& object_array, const Object& key);
 
 // Get the module bound to name in the given runtime. Returns Error::object() if
 // not found.
@@ -137,8 +134,7 @@ RawObject findModule(Runtime* runtime, const char* name);
 
 // Get the value bound to name in the supplied module. Returns Error::object()
 // if not found.
-RawObject moduleAt(Runtime* runtime, const Handle<Module>& module,
-                   const char* name);
+RawObject moduleAt(Runtime* runtime, const Module& module, const char* name);
 
 // Variant of moduleAt() that looks up the module and name at the same time,
 // returning Error::object() if either can't be found.

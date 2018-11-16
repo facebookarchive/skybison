@@ -20,12 +20,12 @@ const BuiltinMethod ObjectBuiltins::kMethods[] = {
 void ObjectBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
-  Handle<Layout> layout(&scope, runtime->newLayout());
+  Layout layout(&scope, runtime->newLayout());
   layout->setId(LayoutId::kObject);
-  Handle<Type> object_type(&scope, runtime->newClass());
+  Type object_type(&scope, runtime->newClass());
   layout->setDescribedClass(*object_type);
   object_type->setName(runtime->symbols()->ObjectClassname());
-  Handle<ObjectArray> mro(&scope, runtime->newObjectArray(1));
+  ObjectArray mro(&scope, runtime->newObjectArray(1));
   mro->atPut(0, *object_type);
   object_type->setMro(*mro);
   object_type->setInstanceLayout(*layout);
@@ -64,8 +64,8 @@ RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Type> type(&scope, runtime->typeOf(*self));
+  Object self(&scope, args.get(0));
+  Type type(&scope, runtime->typeOf(*self));
   if (!runtime->isMethodOverloaded(thread, type, SymbolId::kDunderNew) ||
       runtime->isMethodOverloaded(thread, type, SymbolId::kDunderInit)) {
     // Throw a TypeError if extra arguments were passed, and __new__ was not
@@ -84,8 +84,8 @@ RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
         "object.__new__() takes no arguments");
   }
   HandleScope scope(thread);
-  Handle<Type> type(&scope, args.get(0));
-  Handle<Layout> layout(&scope, type->instanceLayout());
+  Type type(&scope, args.get(0));
+  Layout layout(&scope, type->instanceLayout());
   return thread->runtime()->newInstance(layout);
 }
 
@@ -107,12 +107,12 @@ RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
 
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
 
   // TODO(T31727304): Get the module and qualified subname. For now settle for
   // the class name.
-  Handle<Type> type(&scope, runtime->typeOf(*self));
-  Handle<Str> type_name(&scope, type->name());
+  Type type(&scope, runtime->typeOf(*self));
+  Str type_name(&scope, type->name());
   char* c_string = type_name->toCStr();
   // TODO(bsimmers): Move this into Python once we can get an object's address.
   RawObject str = thread->runtime()->newStrFromFormat(
@@ -127,9 +127,9 @@ const BuiltinMethod NoneBuiltins::kMethods[] = {
 
 void NoneBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(
-      &scope, runtime->addBuiltinClass(SymbolId::kNoneType, LayoutId::kNoneType,
-                                       LayoutId::kObject, kMethods));
+  Type type(&scope,
+            runtime->addBuiltinClass(SymbolId::kNoneType, LayoutId::kNoneType,
+                                     LayoutId::kObject, kMethods));
 }
 
 RawObject NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {

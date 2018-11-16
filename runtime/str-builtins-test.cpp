@@ -46,15 +46,15 @@ a_le_a = 'a' <= 'a'
 )");
 
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<Object> a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
+  Object a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
   EXPECT_EQ(*a_le_b, Bool::trueObj());
 
-  Handle<Object> b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
+  Object b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
   EXPECT_EQ(*b_le_a, Bool::falseObj());
 
-  Handle<Object> a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
+  Object a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
   EXPECT_EQ(*a_le_a, Bool::trueObj());
 }
 
@@ -66,10 +66,10 @@ b = "HeLLo".lower()
 c = "hellO".lower()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Str> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
+  Str b(&scope, moduleAt(&runtime, main, "b"));
+  Str c(&scope, moduleAt(&runtime, main, "c"));
   EXPECT_PYSTRING_EQ(*a, "hello");
   EXPECT_PYSTRING_EQ(*b, "hello");
   EXPECT_PYSTRING_EQ(*c, "hello");
@@ -81,8 +81,8 @@ TEST(StrBuiltinsTest, LowerOnLowercaseASCIILettersReturnsSameString) {
 a = "hello".lower()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "hello");
 }
 
@@ -92,8 +92,8 @@ TEST(StrBuiltinsTest, LowerOnNumbersReturnsSameString) {
 a = "foo 123".lower()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "foo 123");
 }
 
@@ -106,8 +106,8 @@ class Foo:
 a = str.__new__(str, Foo())
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "foo");
 }
 
@@ -121,9 +121,9 @@ a = str.__new__(str, f)
 b = repr(f)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
+  Str b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_PYSTRING_EQ(*a, *b);
 }
 
@@ -133,8 +133,8 @@ TEST(StrBuiltinsTest, DunderNewWithNoArgsExceptTypeReturnsEmptyString) {
 a = str.__new__(str)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "");
 }
 
@@ -144,8 +144,8 @@ TEST(StrBuiltinsTest, DunderNewWithStrReturnsSameStr) {
 a = str.__new__(str, "hello")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "hello");
 }
 
@@ -189,7 +189,7 @@ TEST(StrBuiltinsTest, DunderAddWithTwoStringsReturnsConcatenatedString) {
   frame->setLocal(1, runtime.newStrFromCStr("world"));
   RawObject str = StrBuiltins::dunderAdd(thread, frame, 2);
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(str), "helloworld");
+  EXPECT_PYSTRING_EQ(RawStr::cast(str), "helloworld");
 }
 
 TEST(StrBuiltinsTest, DunderAddWithLeftEmptyAndReturnsRight) {
@@ -200,7 +200,7 @@ TEST(StrBuiltinsTest, DunderAddWithLeftEmptyAndReturnsRight) {
   frame->setLocal(1, runtime.newStrFromCStr("world"));
   RawObject str = StrBuiltins::dunderAdd(thread, frame, 2);
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(str), "world");
+  EXPECT_PYSTRING_EQ(RawStr::cast(str), "world");
 }
 
 TEST(StrBuiltinsTest, DunderAddWithRightEmptyAndReturnsRight) {
@@ -211,7 +211,7 @@ TEST(StrBuiltinsTest, DunderAddWithRightEmptyAndReturnsRight) {
   frame->setLocal(1, runtime.newStrFromCStr(""));
   RawObject str = StrBuiltins::dunderAdd(thread, frame, 2);
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(str), "hello");
+  EXPECT_PYSTRING_EQ(RawStr::cast(str), "hello");
 }
 
 TEST(StrBuiltinsTest, PlusOperatorOnStringsEqualsDunderAdd) {
@@ -223,9 +223,9 @@ c = a + b
 d = a.__add__(b)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Str> d(&scope, moduleAt(&runtime, main, "d"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str c(&scope, moduleAt(&runtime, main, "c"));
+  Str d(&scope, moduleAt(&runtime, main, "d"));
 
   EXPECT_PYSTRING_EQ(*c, "helloworld");
   EXPECT_PYSTRING_EQ(*d, "helloworld");
@@ -239,12 +239,12 @@ l2 = str.__len__("aloha")
 l3 = "aloha".__len__()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<SmallInt> l1(&scope, moduleAt(&runtime, main, "l1"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  SmallInt l1(&scope, moduleAt(&runtime, main, "l1"));
   EXPECT_EQ(5, l1->value());
-  Handle<SmallInt> l2(&scope, moduleAt(&runtime, main, "l2"));
+  SmallInt l2(&scope, moduleAt(&runtime, main, "l2"));
   EXPECT_EQ(5, l2->value());
-  Handle<SmallInt> l3(&scope, moduleAt(&runtime, main, "l3"));
+  SmallInt l3(&scope, moduleAt(&runtime, main, "l3"));
   EXPECT_EQ(5, l3->value());
 }
 
@@ -254,8 +254,8 @@ TEST(StrBuiltinsTest, StringLenWithEmptyString) {
 l = len("")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<SmallInt> l(&scope, moduleAt(&runtime, main, "l"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  SmallInt l(&scope, moduleAt(&runtime, main, "l"));
   EXPECT_EQ(0, l->value());
 }
 
@@ -284,10 +284,10 @@ b = a[1:2]
 c = a[1:4]
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Str> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
+  Str b(&scope, moduleAt(&runtime, main, "b"));
+  Str c(&scope, moduleAt(&runtime, main, "c"));
 
   EXPECT_PYSTRING_EQ(*a, "hello");
   EXPECT_PYSTRING_EQ(*b, "e");
@@ -302,10 +302,10 @@ b = a[-1:]
 c = a[1:-2]
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Str> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
+  Str b(&scope, moduleAt(&runtime, main, "b"));
+  Str c(&scope, moduleAt(&runtime, main, "c"));
 
   EXPECT_PYSTRING_EQ(*a, "hello");
   EXPECT_PYSTRING_EQ(*b, "o");
@@ -320,10 +320,10 @@ b = a[0:5:2]
 c = a[1:5:3]
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Str> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
+  Str b(&scope, moduleAt(&runtime, main, "b"));
+  Str c(&scope, moduleAt(&runtime, main, "c"));
 
   EXPECT_PYSTRING_EQ(*a, "hello");
   EXPECT_PYSTRING_EQ(*b, "hlo");
@@ -337,9 +337,9 @@ a = "hello".startswith("")
 b = "".startswith("")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
 }
@@ -354,12 +354,12 @@ d = "hello".startswith("hell")
 e = "hello".startswith("hello")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
-  Handle<Bool> e(&scope, moduleAt(&runtime, main, "e"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
+  Bool c(&scope, moduleAt(&runtime, main, "c"));
+  Bool d(&scope, moduleAt(&runtime, main, "d"));
+  Bool e(&scope, moduleAt(&runtime, main, "e"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
   EXPECT_TRUE(c->value());
@@ -373,8 +373,8 @@ TEST(StrBuiltinsTest, StartsWithTooLongPrefixReturnsFalse) {
 a = "hello".startswith("hihello")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_FALSE(a->value());
 }
 
@@ -384,8 +384,8 @@ TEST(StrBuiltinsTest, StartsWithUnrelatedPrefixReturnsFalse) {
 a = "hello".startswith("bob")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_FALSE(a->value());
 }
 
@@ -398,11 +398,11 @@ c = "hello".startswith("ell", 1)
 d = "hello".startswith("llo", 3)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
+  Bool c(&scope, moduleAt(&runtime, main, "c"));
+  Bool d(&scope, moduleAt(&runtime, main, "d"));
   EXPECT_TRUE(a->value());
   EXPECT_FALSE(b->value());
   EXPECT_TRUE(c->value());
@@ -418,11 +418,11 @@ c = "hello".startswith("ll", 2, 5)
 d = "hello".startswith("ll", 1, 4)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
+  Bool c(&scope, moduleAt(&runtime, main, "c"));
+  Bool d(&scope, moduleAt(&runtime, main, "d"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
   EXPECT_TRUE(c->value());
@@ -436,9 +436,9 @@ a = "hello".startswith("h", 0, -1)
 b = "hello".startswith("ll", -3)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
 }
@@ -450,9 +450,9 @@ a = "hello".startswith(("h", "lo"))
 b = "hello".startswith(("asdf", "foo", "bar"))
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_TRUE(a->value());
   EXPECT_FALSE(b->value());
 }
@@ -464,9 +464,9 @@ a = "hello".endswith("")
 b = "".endswith("")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
 }
@@ -481,12 +481,12 @@ d = "hello".endswith("ello")
 e = "hello".endswith("hello")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
-  Handle<Bool> e(&scope, moduleAt(&runtime, main, "e"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
+  Bool c(&scope, moduleAt(&runtime, main, "c"));
+  Bool d(&scope, moduleAt(&runtime, main, "d"));
+  Bool e(&scope, moduleAt(&runtime, main, "e"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
   EXPECT_TRUE(c->value());
@@ -500,8 +500,8 @@ TEST(StrBuiltinsTest, EndsWithTooLongSuffixReturnsFalse) {
 a = "hello".endswith("hihello")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_FALSE(a->value());
 }
 
@@ -511,8 +511,8 @@ TEST(StrBuiltinsTest, EndsWithUnrelatedSuffixReturnsFalse) {
 a = "hello".endswith("bob")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_FALSE(a->value());
 }
 
@@ -525,11 +525,11 @@ c = "hello".endswith("llo", 1)
 d = "hello".endswith("llo", 3)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
+  Bool c(&scope, moduleAt(&runtime, main, "c"));
+  Bool d(&scope, moduleAt(&runtime, main, "d"));
   EXPECT_TRUE(a->value());
   EXPECT_FALSE(b->value());
   EXPECT_TRUE(c->value());
@@ -545,11 +545,11 @@ c = "hello".endswith("lo", 2, 5)
 d = "hello".endswith("llo", 1, 4)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
+  Bool c(&scope, moduleAt(&runtime, main, "c"));
+  Bool d(&scope, moduleAt(&runtime, main, "d"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
   EXPECT_TRUE(c->value());
@@ -563,9 +563,9 @@ a = "hello".endswith("l", 0, -1)
 b = "hello".endswith("o", -1)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
 }
@@ -577,9 +577,9 @@ a = "hello".endswith(("o", "llo"))
 b = "hello".endswith(("asdf", "foo", "bar"))
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_TRUE(a->value());
   EXPECT_FALSE(b->value());
 }
@@ -593,8 +593,8 @@ s = "pyros"
 a = "hello %d %g %s" % (n, f, s)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "hello 123 3.14 pyros");
 }
@@ -606,8 +606,8 @@ s = "pyro"
 a = "%s" % s
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "pyro");
 }
@@ -619,8 +619,8 @@ s = "pyro"
 a = "%s%s" % (s, s)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "pyropyro");
 }
@@ -632,8 +632,8 @@ s = "pyro"
 a = "1%s,2%s,3%s,4%s,5%s" % (s, s, s, s, s)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "1pyro,2pyro,3pyro,4pyro,5pyro");
 }
@@ -645,8 +645,8 @@ s = "pyro"
 a = "%d%s,%d%s,%d%s" % (1, s, 2, s, 3, s)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "1pyro,2pyro,3pyro");
 }
@@ -673,8 +673,8 @@ TEST(StrBuiltinsTest, DunderReprOnASCIIStr) {
 a = "hello".__repr__()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "'hello'");
 }
@@ -686,8 +686,8 @@ TEST(StrBuiltinsTest, DunderReprOnASCIINonPrintable) {
 a = "\x06".__repr__()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "'\\x06'");
 }
@@ -698,8 +698,8 @@ TEST(StrBuiltinsTest, DunderReprOnStrWithDoubleQuotes) {
 a = 'hello "world"'.__repr__()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "'hello \"world\"'");
 }
@@ -710,8 +710,8 @@ TEST(StrBuiltinsTest, DunderReprOnStrWithSingleQuotes) {
 a = "hello 'world'".__repr__()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "\"hello 'world'\"");
 }
@@ -722,8 +722,8 @@ TEST(StrBuiltinsTest, DunderReprOnStrWithBothQuotes) {
 a = "hello 'world', I am your \"father\"".__repr__()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, R"('hello \'world\', I am your "father"')");
 }
@@ -734,8 +734,8 @@ TEST(StrBuiltinsTest, DunderReprOnStrWithNestedQuotes) {
 a = "hello 'world, \"I am 'your \"father\"'\"'".__repr__()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, R"('hello \'world, "I am \'your "father"\'"\'')");
 }
@@ -746,8 +746,8 @@ TEST(StrBuiltinsTest, DunderReprOnCommonEscapeSequences) {
 a = "\n \t \r \\".__repr__()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "'\\n \\t \\r \\\\'");
 }
@@ -759,9 +759,9 @@ result = 'Hello, World!'.__str__()
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Handle<Object> result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*result), "Hello, World!");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "Hello, World!");
 }
 
 TEST(StrBuiltinsTest, JoinWithEmptyArray) {
@@ -770,8 +770,8 @@ TEST(StrBuiltinsTest, JoinWithEmptyArray) {
 a = ",".join([])
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "");
 }
 
@@ -781,8 +781,8 @@ TEST(StrBuiltinsTest, JoinWithOneElementArray) {
 a = ",".join(["1"])
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "1");
 }
 
@@ -792,8 +792,8 @@ TEST(StrBuiltinsTest, JoinWithManyElementArray) {
 a = ",".join(["1", "2", "3"])
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "1,2,3");
 }
 
@@ -803,8 +803,8 @@ TEST(StrBuiltinsTest, JoinWithManyElementArrayAndEmptySeparator) {
 a = "".join(["1", "2", "3"])
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "123");
 }
 
@@ -814,8 +814,8 @@ TEST(StrBuiltinsTest, JoinWithIterable) {
 a = ",".join(("1", "2", "3"))
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "1,2,3");
 }
 
@@ -841,13 +841,13 @@ TEST(StrBuiltinsTest, PartitionOnSingleCharStr) {
 a = "hello".partition("l")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
 
   ASSERT_EQ(a->length(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "he");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "l");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(2)), "lo");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(1)), "l");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(2)), "lo");
 }
 
 TEST(StrBuiltinsTest, PartitionOnMultiCharStr) {
@@ -856,13 +856,13 @@ TEST(StrBuiltinsTest, PartitionOnMultiCharStr) {
 a = "hello".partition("ll")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
 
   ASSERT_EQ(a->length(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "he");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "ll");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(2)), "o");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(1)), "ll");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(2)), "o");
 }
 
 TEST(StrBuiltinsTest, PartitionOnSuffix) {
@@ -872,19 +872,19 @@ a = "hello".partition("lo")
 b = "hello".partition("lop")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<ObjectArray> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
+  ObjectArray b(&scope, moduleAt(&runtime, main, "b"));
 
   ASSERT_EQ(a->length(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "hel");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "lo");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(2)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "hel");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(1)), "lo");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(2)), "");
 
   ASSERT_EQ(b->length(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "hello");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(0)), "hello");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(2)), "");
 }
 
 TEST(StrBuiltinsTest, PartitionOnPrefix) {
@@ -894,19 +894,19 @@ a = "hello".partition("he")
 b = "hello".partition("hex")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<ObjectArray> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
+  ObjectArray b(&scope, moduleAt(&runtime, main, "b"));
 
   ASSERT_EQ(a->length(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "he");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(2)), "llo");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(1)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(2)), "llo");
 
   ASSERT_EQ(b->length(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "hello");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(0)), "hello");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(2)), "");
 }
 
 TEST(StrBuiltinsTest, PartitionLargerStr) {
@@ -915,13 +915,13 @@ TEST(StrBuiltinsTest, PartitionLargerStr) {
 a = "hello".partition("abcdefghijk")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
 
   ASSERT_EQ(a->length(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "hello");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(2)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "hello");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(2)), "");
 }
 
 TEST(StrBuiltinsTest, PartitionEmptyStr) {
@@ -930,13 +930,13 @@ TEST(StrBuiltinsTest, PartitionEmptyStr) {
 a = "".partition("a")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
 
   ASSERT_EQ(a->length(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(2)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(2)), "");
 }
 
 TEST(StrBuiltinsTest, SplitWithOneCharSeparator) {
@@ -946,18 +946,18 @@ a = "hello".split("e")
 b = "hello".split("l")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  List a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_EQ(a->numItems(), 2);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "h");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "llo");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "h");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(1)), "llo");
 
-  Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
+  List b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_EQ(b->numItems(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "he");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "o");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(2)), "o");
 }
 
 TEST(StrBuiltinsTest, SplitWithEmptySelfReturnsSingleEmptyString) {
@@ -966,10 +966,10 @@ TEST(StrBuiltinsTest, SplitWithEmptySelfReturnsSingleEmptyString) {
 a = "".split("a")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  List a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_EQ(a->numItems(), 1);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "");
 }
 
 TEST(StrBuiltinsTest, SplitWithMultiCharSeparator) {
@@ -981,28 +981,28 @@ c = "hello".split("hello")
 d = "hellllo".split("ll")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  List a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_EQ(a->numItems(), 2);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "h");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "lo");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "h");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(1)), "lo");
 
-  Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
+  List b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_EQ(b->numItems(), 2);
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "he");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "o");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(1)), "o");
 
-  Handle<List> c(&scope, moduleAt(&runtime, main, "c"));
+  List c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_EQ(c->numItems(), 2);
-  EXPECT_PYSTRING_EQ(Str::cast(c->at(0)), "");
-  EXPECT_PYSTRING_EQ(Str::cast(c->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(c->at(0)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(c->at(1)), "");
 
-  Handle<List> d(&scope, moduleAt(&runtime, main, "d"));
+  List d(&scope, moduleAt(&runtime, main, "d"));
   ASSERT_EQ(d->numItems(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(d->at(0)), "he");
-  EXPECT_PYSTRING_EQ(Str::cast(d->at(1)), "");
-  EXPECT_PYSTRING_EQ(Str::cast(d->at(2)), "o");
+  EXPECT_PYSTRING_EQ(RawStr::cast(d->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(d->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(d->at(2)), "o");
 }
 
 TEST(StrBuiltinsTest, SplitWithMaxSplitBelowPartsStopsEarly) {
@@ -1012,18 +1012,18 @@ a = "hello".split("l", 1)
 b = "1,2,3,4".split(",", 2)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  List a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_EQ(a->numItems(), 2);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "he");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "lo");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(1)), "lo");
 
-  Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
+  List b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_EQ(b->numItems(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "1");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "2");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "3,4");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(0)), "1");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(1)), "2");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(2)), "3,4");
 }
 
 TEST(StrBuiltinsTest, SplitWithMaxSplitGreaterThanNumParts) {
@@ -1033,20 +1033,20 @@ a = "hello".split("l", 2)
 b = "1,2,3,4".split(",", 5)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  List a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_EQ(a->numItems(), 3);
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "he");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "");
-  EXPECT_PYSTRING_EQ(Str::cast(a->at(2)), "o");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(a->at(2)), "o");
 
-  Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
+  List b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_EQ(b->numItems(), 4);
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "1");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "2");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "3");
-  EXPECT_PYSTRING_EQ(Str::cast(b->at(3)), "4");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(0)), "1");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(1)), "2");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(2)), "3");
+  EXPECT_PYSTRING_EQ(RawStr::cast(b->at(3)), "4");
 }
 
 TEST(StrBuiltinsDeathTest, StrStripWithNoArgsThrowsTypeError) {
@@ -1152,9 +1152,9 @@ TEST(StrBuiltinsTest, StrStripWithNoneArgStripsBoth) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.newStrFromCStr(" Hello World "));
   frame->setLocal(1, NoneType::object());
-  Handle<Object> str(&scope, StrBuiltins::strip(thread, frame, 2));
+  Object str(&scope, StrBuiltins::strip(thread, frame, 2));
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello World");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*str), "Hello World");
   thread->popFrame();
 }
 
@@ -1165,9 +1165,9 @@ TEST(StrBuiltinsTest, StrLStripWithNoneArgStripsLeft) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.newStrFromCStr(" Hello World "));
   frame->setLocal(1, NoneType::object());
-  Handle<Object> str(&scope, StrBuiltins::lstrip(thread, frame, 2));
+  Object str(&scope, StrBuiltins::lstrip(thread, frame, 2));
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello World ");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*str), "Hello World ");
   thread->popFrame();
 }
 
@@ -1178,9 +1178,9 @@ TEST(StrBuiltinsTest, StrRStripWithNoneArgStripsRight) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.newStrFromCStr(" Hello World "));
   frame->setLocal(1, NoneType::object());
-  Handle<Object> str(&scope, StrBuiltins::rstrip(thread, frame, 2));
+  Object str(&scope, StrBuiltins::rstrip(thread, frame, 2));
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*str), " Hello World");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*str), " Hello World");
   thread->popFrame();
 }
 
@@ -1190,9 +1190,9 @@ TEST(StrBuiltinsTest, StrStripWithoutArgsStripsBoth) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
   frame->setLocal(0, runtime.newStrFromCStr(" \n\tHello World\n\t "));
-  Handle<Object> str(&scope, StrBuiltins::strip(thread, frame, 1));
+  Object str(&scope, StrBuiltins::strip(thread, frame, 1));
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello World");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*str), "Hello World");
   thread->popFrame();
 }
 
@@ -1202,9 +1202,9 @@ TEST(StrBuiltinsTest, StrLStripWithoutArgsStripsLeft) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
   frame->setLocal(0, runtime.newStrFromCStr(" \n\tHello World\n\t "));
-  Handle<Object> str(&scope, StrBuiltins::lstrip(thread, frame, 1));
+  Object str(&scope, StrBuiltins::lstrip(thread, frame, 1));
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello World\n\t ");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*str), "Hello World\n\t ");
   thread->popFrame();
 }
 
@@ -1214,9 +1214,9 @@ TEST(StrBuiltinsTest, StrRStripWithoutArgsStripsRight) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
   frame->setLocal(0, runtime.newStrFromCStr(" \n\tHello World\n\t "));
-  Handle<Object> str(&scope, StrBuiltins::rstrip(thread, frame, 1));
+  Object str(&scope, StrBuiltins::rstrip(thread, frame, 1));
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*str), " \n\tHello World");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*str), " \n\tHello World");
   thread->popFrame();
 }
 
@@ -1227,9 +1227,9 @@ TEST(StrBuiltinsTest, StrStripWithCharsStripsChars) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.newStrFromCStr("bcaHello Worldcab"));
   frame->setLocal(1, runtime.newStrFromCStr("abc"));
-  Handle<Object> str(&scope, StrBuiltins::strip(thread, frame, 2));
+  Object str(&scope, StrBuiltins::strip(thread, frame, 2));
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello World");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*str), "Hello World");
   thread->popFrame();
 }
 
@@ -1240,9 +1240,9 @@ TEST(StrBuiltinsTest, StrLStripWithCharsStripsCharsToLeft) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.newStrFromCStr("bcaHello Worldcab"));
   frame->setLocal(1, runtime.newStrFromCStr("abc"));
-  Handle<Object> str(&scope, StrBuiltins::lstrip(thread, frame, 2));
+  Object str(&scope, StrBuiltins::lstrip(thread, frame, 2));
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*str), "Hello Worldcab");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*str), "Hello Worldcab");
   thread->popFrame();
 }
 
@@ -1253,9 +1253,9 @@ TEST(StrBuiltinsTest, StrRStripWithCharsStripsCharsToRight) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.newStrFromCStr("bcaHello Worldcab"));
   frame->setLocal(1, runtime.newStrFromCStr("abc"));
-  Handle<Object> str(&scope, StrBuiltins::rstrip(thread, frame, 2));
+  Object str(&scope, StrBuiltins::rstrip(thread, frame, 2));
   ASSERT_TRUE(str->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*str), "bcaHello World");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*str), "bcaHello World");
   thread->popFrame();
 }
 

@@ -57,8 +57,8 @@ PY_EXPORT int PyType_Ready(PyTypeObject* type) {
   pyobj->ob_type = reinterpret_cast<PyTypeObject*>(pytype_type);
 
   // Create a new class for the PyTypeObject
-  Handle<Type> type_class(&scope, runtime->newClass());
-  Handle<Dict> dict(&scope, runtime->newDict());
+  Type type_class(&scope, runtime->newClass());
+  Dict dict(&scope, runtime->newDict());
   type_class->setDict(*dict);
 
   // Add the PyTypeObject pointer to the class
@@ -68,23 +68,22 @@ PY_EXPORT int PyType_Ready(PyTypeObject* type) {
   type->tp_dict = ApiHandle::fromObject(*dict);
 
   // Set the class name
-  Handle<Object> name(&scope, runtime->newStrFromCStr(type->tp_name));
+  Object name(&scope, runtime->newStrFromCStr(type->tp_name));
   type_class->setName(*name);
-  Handle<Object> dict_key(&scope, runtime->symbols()->DunderName());
+  Object dict_key(&scope, runtime->symbols()->DunderName());
   runtime->dictAtPutInValueCell(dict, dict_key, name);
 
   // Compute Mro
-  Handle<ObjectArray> parents(&scope, runtime->newObjectArray(0));
-  Handle<Object> mro(&scope, computeMro(thread, type_class, parents));
+  ObjectArray parents(&scope, runtime->newObjectArray(0));
+  Object mro(&scope, computeMro(thread, type_class, parents));
   type_class->setMro(*mro);
 
   // Initialize instance Layout
-  Handle<Layout> layout_init(
-      &scope,
-      runtime->computeInitialLayout(thread, type_class, LayoutId::kObject));
-  Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  Handle<Layout> layout(
-      &scope, runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));
+  Layout layout_init(&scope, runtime->computeInitialLayout(thread, type_class,
+                                                           LayoutId::kObject));
+  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
+  Layout layout(&scope,
+                runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));
   layout->setDescribedClass(*type_class);
   type_class->setInstanceLayout(*layout);
 

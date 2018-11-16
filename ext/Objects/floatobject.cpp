@@ -9,7 +9,7 @@ PY_EXPORT PyObject* PyFloat_FromDouble(double fval) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Handle<Object> flt(&scope, runtime->newFloat(fval));
+  Object flt(&scope, runtime->newFloat(fval));
   return ApiHandle::fromObject(*flt);
 }
 

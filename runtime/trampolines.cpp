@@ -38,11 +38,11 @@ static inline RawObject checkCreateGenerator(RawCode raw_code, Thread* thread) {
 
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Handle<Code> code(&scope, raw_code);
-  Handle<HeapFrame> heap_frame(&scope, runtime->newHeapFrame(code));
-  Handle<GeneratorBase> gen_base(&scope, (flags & Code::GENERATOR)
-                                             ? runtime->newGenerator()
-                                             : runtime->newCoroutine());
+  Code code(&scope, raw_code);
+  HeapFrame heap_frame(&scope, runtime->newHeapFrame(code));
+  GeneratorBase gen_base(&scope, (flags & Code::GENERATOR)
+                                     ? runtime->newGenerator()
+                                     : runtime->newCoroutine());
   gen_base->setHeapFrame(*heap_frame);
   runtime->genSave(thread, gen_base);
   return *gen_base;
@@ -86,11 +86,11 @@ static inline RawObject callCheckFreeCell(Thread* thread, RawFunction function,
   // initialize free var
   DCHECK(code->numFreevars() == 0 ||
              code->numFreevars() ==
-                 ObjectArray::cast(function->closure())->length(),
+                 RawObjectArray::cast(function->closure())->length(),
          "Number of freevars is different than the closure.");
   for (word i = 0; i < code->numFreevars(); i++) {
     callee_frame->setLocal(num_locals + num_cellvars + i,
-                           ObjectArray::cast(function->closure())->at(i));
+                           RawObjectArray::cast(function->closure())->at(i));
   }
 
   RawObject generator = checkCreateGenerator(code, thread);
@@ -108,8 +108,8 @@ static inline RawObject callCheckFreeCell(Thread* thread, RawFunction function,
 RawObject interpreterTrampoline(Thread* thread, Frame* caller_frame,
                                 word argc) {
   HandleScope scope(thread);
-  Handle<Function> function(&scope, caller_frame->function(argc));
-  Handle<Code> code(&scope, function->code());
+  Function function(&scope, caller_frame->function(argc));
+  Code code(&scope, function->code());
   // Are we one of the less common cases?
   if ((argc != code->argcount() || !(code->flags() & Code::SIMPLE_CALL))) {
     return interpreterTrampolineSlowPath(thread, *function, *code, caller_frame,
@@ -128,10 +128,10 @@ RawObject interpreterTrampolineSlowPath(Thread* thread, RawFunction function,
                                         word argc) {
   uword flags = code->flags();
   HandleScope scope(thread);
-  Handle<Object> tmp_varargs(&scope, NoneType::object());
+  Object tmp_varargs(&scope, NoneType::object());
   if (argc < code->argcount() && function->hasDefaults()) {
     // Add default positional args
-    Handle<ObjectArray> default_args(&scope, function->defaults());
+    ObjectArray default_args(&scope, function->defaults());
     if (default_args->length() < (code->argcount() - argc)) {
       return thread->raiseTypeErrorWithCStr(
           "TypeError: not enough positional arguments");
@@ -146,8 +146,7 @@ RawObject interpreterTrampolineSlowPath(Thread* thread, RawFunction function,
     // VARARGS - spill extra positional args into the varargs tuple.
     if (flags & Code::VARARGS) {
       word len = Utils::maximum(static_cast<word>(0), argc - code->argcount());
-      Handle<ObjectArray> varargs(&scope,
-                                  thread->runtime()->newObjectArray(len));
+      ObjectArray varargs(&scope, thread->runtime()->newObjectArray(len));
       for (word i = (len - 1); i >= 0; i--) {
         varargs->atPut(i, caller_frame->topValue());
         caller_frame->popValue();
@@ -163,12 +162,12 @@ RawObject interpreterTrampolineSlowPath(Thread* thread, RawFunction function,
   // because we arrived here via CALL_FUNCTION (and thus, no keywords were
   // supplied at the call site).
   if (code->kwonlyargcount() != 0 && !function->kwDefaults()->isNoneType()) {
-    Handle<Dict> kw_defaults(&scope, function->kwDefaults());
+    Dict kw_defaults(&scope, function->kwDefaults());
     if (!kw_defaults->isNoneType()) {
-      Handle<ObjectArray> formal_names(&scope, code->varnames());
+      ObjectArray formal_names(&scope, code->varnames());
       word first_kw = code->argcount();
       for (word i = 0; i < code->kwonlyargcount(); i++) {
-        Handle<Object> name(&scope, formal_names->at(first_kw + i));
+        Object name(&scope, formal_names->at(first_kw + i));
         RawObject val = thread->runtime()->dictAt(kw_defaults, name);
         if (!val->isError()) {
           caller_frame->pushValue(val);
@@ -192,7 +191,7 @@ RawObject interpreterTrampolineSlowPath(Thread* thread, RawFunction function,
   if (flags & Code::VARKEYARGS) {
     // VARKEYARGS - because we arrived via CALL_FUNCTION, no keyword arguments
     // provided.  Just add an empty dict.
-    Handle<Object> kwdict(&scope, thread->runtime()->newDict());
+    Object kwdict(&scope, thread->runtime()->newDict());
     caller_frame->pushValue(*kwdict);
     argc++;
   }
@@ -278,26 +277,26 @@ RawObject checkArgs(RawFunction function, RawObject* kw_arg_base,
     }
     // Now, can we fill that slot with a default argument?
     HandleScope scope;
-    Handle<Code> code(&scope, function->code());
+    Code code(&scope, function->code());
     word absolute_pos = arg_pos + start;
     if (absolute_pos < code->argcount()) {
       word defaults_size =
           function->hasDefaults()
-              ? ObjectArray::cast(function->defaults())->length()
+              ? RawObjectArray::cast(function->defaults())->length()
               : 0;
       word defaults_start = code->argcount() - defaults_size;
       if (absolute_pos >= (defaults_start)) {
         // Set the default value
-        Handle<ObjectArray> default_args(&scope, function->defaults());
+        ObjectArray default_args(&scope, function->defaults());
         *(kw_arg_base - arg_pos) =
             default_args->at(absolute_pos - defaults_start);
         continue;  // Got it, move on to the next
       }
     } else if (!function->kwDefaults()->isNoneType()) {
       // How about a kwonly default?
-      Handle<Dict> kw_defaults(&scope, function->kwDefaults());
+      Dict kw_defaults(&scope, function->kwDefaults());
       Thread* thread = Thread::currentThread();
-      Handle<Object> name(&scope, formal_names->at(arg_pos + start));
+      Object name(&scope, formal_names->at(arg_pos + start));
       RawObject val = thread->runtime()->dictAt(kw_defaults, name);
       if (!val->isError()) {
         *(kw_arg_base - arg_pos) = val;
@@ -317,18 +316,18 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
                                   word argc) {
   HandleScope scope(thread);
   // Destructively pop the tuple of kwarg names
-  Handle<ObjectArray> keywords(&scope, caller_frame->topValue());
+  ObjectArray keywords(&scope, caller_frame->topValue());
   caller_frame->popValue();
   DCHECK(keywords->length() > 0, "Invalid keyword name tuple");
-  Handle<Function> function(&scope, caller_frame->peek(argc));
-  Handle<Code> code(&scope, function->code());
+  Function function(&scope, caller_frame->peek(argc));
+  Code code(&scope, function->code());
   word expected_args = code->argcount() + code->kwonlyargcount();
   word num_keyword_args = keywords->length();
   word num_positional_args = argc - num_keyword_args;
-  Handle<ObjectArray> formal_parm_names(&scope, code->varnames());
+  ObjectArray formal_parm_names(&scope, code->varnames());
   word flags = code->flags();
-  Handle<Object> tmp_varargs(&scope, NoneType::object());
-  Handle<Object> tmp_dict(&scope, NoneType::object());
+  Object tmp_varargs(&scope, NoneType::object());
+  Object tmp_dict(&scope, NoneType::object());
 
   // We expect use of keyword argument calls to be uncommon, but when used
   // we anticipate mostly use of simple forms.  General scheme here is to
@@ -340,8 +339,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
       // remove from the stack and close up the hole.
       word excess = Utils::maximum(static_cast<word>(0),
                                    num_positional_args - code->argcount());
-      Handle<ObjectArray> varargs(&scope,
-                                  thread->runtime()->newObjectArray(excess));
+      ObjectArray varargs(&scope, thread->runtime()->newObjectArray(excess));
       if (excess > 0) {
         // Point to the leftmost excess argument
         RawObject* p =
@@ -370,15 +368,15 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
       }
       // If we have keyword arguments that don't appear in the formal parameter
       // list, add them to a keyword dict.
-      Handle<Dict> dict(&scope, thread->runtime()->newDict());
-      Handle<List> saved_keyword_list(&scope, thread->runtime()->newList());
-      Handle<List> saved_values(&scope, thread->runtime()->newList());
+      Dict dict(&scope, thread->runtime()->newDict());
+      List saved_keyword_list(&scope, thread->runtime()->newList());
+      List saved_values(&scope, thread->runtime()->newList());
       word formal_parm_size = formal_parm_names->length();
       Runtime* runtime = thread->runtime();
       RawObject* p = caller_frame->valueStackTop() + (num_keyword_args - 1);
       for (word i = 0; i < num_keyword_args; i++) {
-        Handle<Object> key(&scope, keywords->at(i));
-        Handle<Object> value(&scope, *(p - i));
+        Object key(&scope, keywords->at(i));
+        Object value(&scope, *(p - i));
         if (findName(*key, *formal_parm_names) < formal_parm_size) {
           // Got a match, stash pair for future restoration on the stack
           runtime->listAdd(saved_keyword_list, key);
@@ -412,7 +410,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
     // Too few args passed.  Can we supply default args to make it work?
     // First, normalize & pad keywords and stack arguments
     word name_tuple_size = expected_args - num_positional_args;
-    Handle<ObjectArray> padded_keywords(
+    ObjectArray padded_keywords(
         &scope, thread->runtime()->newObjectArray(name_tuple_size));
     for (word i = 0; i < num_keyword_args; i++) {
       padded_keywords->atPut(i, keywords->at(i));
@@ -443,12 +441,12 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
 RawObject interpreterTrampolineEx(Thread* thread, Frame* caller_frame,
                                   word arg) {
   HandleScope scope(thread);
-  Handle<Object> kw_dict(&scope, NoneType::object());
+  Object kw_dict(&scope, NoneType::object());
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
     kw_dict = caller_frame->topValue();
     caller_frame->popValue();
   }
-  Handle<ObjectArray> positional_args(&scope, caller_frame->topValue());
+  ObjectArray positional_args(&scope, caller_frame->topValue());
   caller_frame->popValue();
   for (word i = 0; i < positional_args->length(); i++) {
     caller_frame->pushValue(positional_args->at(i));
@@ -456,10 +454,10 @@ RawObject interpreterTrampolineEx(Thread* thread, Frame* caller_frame,
   word argc = positional_args->length();
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
     Runtime* runtime = thread->runtime();
-    Handle<Dict> dict(&scope, *kw_dict);
-    Handle<ObjectArray> keys(&scope, runtime->dictKeys(dict));
+    Dict dict(&scope, *kw_dict);
+    ObjectArray keys(&scope, runtime->dictKeys(dict));
     for (word i = 0; i < keys->length(); i++) {
-      Handle<Object> key(&scope, keys->at(i));
+      Object key(&scope, keys->at(i));
       caller_frame->pushValue(runtime->dictAt(dict, key));
     }
     argc += keys->length();
@@ -477,17 +475,17 @@ RawObject extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   HandleScope scope(thread);
 
   // Set the address pointer to the function pointer
-  Handle<Function> function(&scope, caller_frame->function(argc));
-  Handle<Int> address(&scope, function->code());
+  Function function(&scope, caller_frame->function(argc));
+  Int address(&scope, function->code());
 
-  Handle<Object> object(&scope, caller_frame->topValue());
-  Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
+  Object object(&scope, caller_frame->topValue());
+  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   // TODO(eelizondo): Cache the None handle
   PyObject* none = ApiHandle::fromObject(NoneType::object());
 
   if (object->isType()) {
-    Handle<Type> type_class(&scope, *object);
-    Handle<Int> extension_type(&scope, type_class->extensionType());
+    Type type_class(&scope, *object);
+    Int extension_type(&scope, type_class->extensionType());
     PyObject* type = static_cast<PyObject*>(extension_type->asCPtr());
 
     PyCFunction new_function = bit_cast<PyCFunction>(address->asCPtr());
@@ -496,9 +494,8 @@ RawObject extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
     return ApiHandle::fromPyObject(new_pyobject)->asObject();
   }
 
-  Handle<HeapObject> instance(&scope, *object);
-  Handle<Int> object_ptr(&scope,
-                         runtime->instanceAt(thread, instance, attr_name));
+  HeapObject instance(&scope, *object);
+  Int object_ptr(&scope, runtime->instanceAt(thread, instance, attr_name));
   PyObject* self = static_cast<PyObject*>(object_ptr->asCPtr());
 
   PyCFunction init_function = bit_cast<PyCFunction>(address->asCPtr());

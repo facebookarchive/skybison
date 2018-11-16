@@ -6,14 +6,14 @@
 
 namespace python {
 
-// SmallStr
+// RawSmallStr
 
-RawObject SmallStr::fromCStr(const char* value) {
+RawObject RawSmallStr::fromCStr(const char* value) {
   word len = strlen(value);
   return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));
 }
 
-RawObject SmallStr::fromBytes(View<byte> data) {
+RawObject RawSmallStr::fromBytes(View<byte> data) {
   word length = data.length();
   DCHECK_BOUND(length, kMaxLength);
   uword result = 0;
@@ -22,10 +22,10 @@ RawObject SmallStr::fromBytes(View<byte> data) {
     result = (result << kBitsPerByte) | data.get(i);
   }
   result = (result << kBitsPerByte) | (length << kTagSize) | kTag;
-  return cast(Object{result});
+  return cast(RawObject{result});
 }
 
-char* SmallStr::toCStr() {
+char* RawSmallStr::toCStr() {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   CHECK(result != nullptr, "out of memory");
@@ -34,21 +34,21 @@ char* SmallStr::toCStr() {
   return reinterpret_cast<char*>(result);
 }
 
-// SmallInt
+// RawSmallInt
 
-const word SmallInt::kMinValue;
-const word SmallInt::kMaxValue;
+const word RawSmallInt::kMinValue;
+const word RawSmallInt::kMaxValue;
 
-// LargeStr
+// RawLargeStr
 
-bool LargeStr::equals(RawObject that) {
+bool RawLargeStr::equals(RawObject that) {
   if (*this == that) {
     return true;
   }
   if (!that->isLargeStr()) {
     return false;
   }
-  auto that_str = LargeStr::cast(that);
+  auto that_str = RawLargeStr::cast(that);
   if (length() != that_str->length()) {
     return false;
   }
@@ -57,12 +57,12 @@ bool LargeStr::equals(RawObject that) {
   return std::memcmp(s1, s2, length()) == 0;
 }
 
-void LargeStr::copyTo(byte* dst, word length) {
+void RawLargeStr::copyTo(byte* dst, word length) {
   DCHECK_BOUND(length, this->length());
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
-char* LargeStr::toCStr() {
+char* RawLargeStr::toCStr() {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   CHECK(result != nullptr, "out of memory");
@@ -71,16 +71,16 @@ char* LargeStr::toCStr() {
   return reinterpret_cast<char*>(result);
 }
 
-// LargeInt
+// RawLargeInt
 
-bool LargeInt::isValid() {
+bool RawLargeInt::isValid() {
   word digits = numDigits();
   if (digits <= 0) {
     return false;
   }
   if (digits == 1) {
     // Enforce a canonical representation for all ints.
-    return !SmallInt::isValid(digitAt(0));
+    return !RawSmallInt::isValid(digitAt(0));
   }
 
   word high_digit = digitAt(digits - 1);
@@ -99,7 +99,7 @@ bool LargeInt::isValid() {
   return true;
 }
 
-word LargeInt::bitLength() {
+word RawLargeInt::bitLength() {
   word num_digits = numDigits();
   word high_digit = digitAt(num_digits - 1);
 
@@ -116,40 +116,40 @@ word LargeInt::bitLength() {
   return (num_digits - 1) * kBitsPerWord + Utils::highestBit(high_digit);
 }
 
-void Slice::unpack(word* start, word* stop, word* step) {
+void RawSlice::unpack(word* start, word* stop, word* step) {
   if (this->step()->isNoneType()) {
     *step = 1;
   } else {
     // TODO(T27897506): CPython uses _PyEval_SliceIndex to convert any
     //       integer to eval any object into a valid index. For now, it'll
     //       assume that all indices are SmallInts.
-    *step = SmallInt::cast(this->step())->value();
+    *step = RawSmallInt::cast(this->step())->value();
     if (*step == 0) {
       UNIMPLEMENTED("Throw ValueError. slice step cannot be zero");
     }
-    // Here *step might be -SmallInt::kMaxValue-1; in this case we replace
-    // it with -SmallInt::kMaxValue.  This doesn't affect the semantics,
+    // Here *step might be -RawSmallInt::kMaxValue-1; in this case we replace
+    // it with -RawSmallInt::kMaxValue.  This doesn't affect the semantics,
     // and it guards against later undefined behaviour resulting from code that
     // does "step = -step" as part of a slice reversal.
-    if (*step < -SmallInt::kMaxValue) {
-      *step = -SmallInt::kMaxValue;
+    if (*step < -RawSmallInt::kMaxValue) {
+      *step = -RawSmallInt::kMaxValue;
     }
   }
 
   if (this->start()->isNoneType()) {
-    *start = (*step < 0) ? SmallInt::kMaxValue : 0;
+    *start = (*step < 0) ? RawSmallInt::kMaxValue : 0;
   } else {
-    *start = SmallInt::cast(this->start())->value();
+    *start = RawSmallInt::cast(this->start())->value();
   }
 
   if (this->stop()->isNoneType()) {
-    *stop = (*step < 0) ? SmallInt::kMinValue : SmallInt::kMaxValue;
+    *stop = (*step < 0) ? RawSmallInt::kMinValue : RawSmallInt::kMaxValue;
   } else {
-    *stop = SmallInt::cast(this->stop())->value();
+    *stop = RawSmallInt::cast(this->stop())->value();
   }
 }
 
-word Slice::adjustIndices(word length, word* start, word* stop, word step) {
+word RawSlice::adjustIndices(word length, word* start, word* stop, word step) {
   DCHECK(step != 0, "Step should be non zero");
 
   if (*start < 0) {
@@ -182,57 +182,57 @@ word Slice::adjustIndices(word length, word* start, word* stop, word step) {
   return 0;
 }
 
-void WeakRef::enqueueReference(RawObject reference, RawObject* tail) {
-  if (*tail == NoneType::object()) {
-    WeakRef::cast(reference)->setLink(reference);
+void RawWeakRef::enqueueReference(RawObject reference, RawObject* tail) {
+  if (*tail == RawNoneType::object()) {
+    RawWeakRef::cast(reference)->setLink(reference);
   } else {
-    RawObject head = WeakRef::cast(*tail)->link();
-    WeakRef::cast(*tail)->setLink(reference);
-    WeakRef::cast(reference)->setLink(head);
+    RawObject head = RawWeakRef::cast(*tail)->link();
+    RawWeakRef::cast(*tail)->setLink(reference);
+    RawWeakRef::cast(reference)->setLink(head);
   }
   *tail = reference;
 }
 
-RawObject WeakRef::dequeueReference(RawObject* tail) {
-  DCHECK(*tail != NoneType::object(), "empty queue");
-  RawObject head = WeakRef::cast(*tail)->link();
+RawObject RawWeakRef::dequeueReference(RawObject* tail) {
+  DCHECK(*tail != RawNoneType::object(), "empty queue");
+  RawObject head = RawWeakRef::cast(*tail)->link();
   if (head == *tail) {
-    *tail = NoneType::object();
+    *tail = RawNoneType::object();
   } else {
-    RawObject next = WeakRef::cast(head)->link();
-    WeakRef::cast(*tail)->setLink(next);
+    RawObject next = RawWeakRef::cast(head)->link();
+    RawWeakRef::cast(*tail)->setLink(next);
   }
-  WeakRef::cast(head)->setLink(NoneType::object());
+  RawWeakRef::cast(head)->setLink(RawNoneType::object());
   return head;
 }
 
 // Append tail2 to tail1 and return the new tail.
-RawObject WeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
-  if (tail1 == NoneType::object() && tail2 == NoneType::object()) {
-    return NoneType::object();
+RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
+  if (tail1 == RawNoneType::object() && tail2 == RawNoneType::object()) {
+    return RawNoneType::object();
   }
-  if (tail1 == NoneType::object()) {
+  if (tail1 == RawNoneType::object()) {
     return tail2;
   }
-  if (tail2 == NoneType::object()) {
+  if (tail2 == RawNoneType::object()) {
     return tail1;
   }
   // merge two list, tail1 -> head2 -> ... -> tail2 -> head1
-  RawObject head1 = WeakRef::cast(tail1)->link();
-  RawObject head2 = WeakRef::cast(tail2)->link();
-  WeakRef::cast(tail1)->setLink(head2);
-  WeakRef::cast(tail2)->setLink(head1);
+  RawObject head1 = RawWeakRef::cast(tail1)->link();
+  RawObject head2 = RawWeakRef::cast(tail2)->link();
+  RawWeakRef::cast(tail1)->setLink(head2);
+  RawWeakRef::cast(tail2)->setLink(head1);
   return tail2;
 }
 
-RawType Type::cast(RawObject object) {
+RawType RawType::cast(RawObject object) {
   DCHECK(object->isType() ||
              Thread::currentThread()->runtime()->isInstanceOfClass(object),
          "invalid cast, expected class");
   return bit_cast<RawType>(object);
 }
 
-RawList List::cast(RawObject object) {
+RawList RawList::cast(RawObject object) {
   DCHECK(object->isList() ||
              Thread::currentThread()->runtime()->isInstanceOfList(object),
          "invalid cast, expected list");

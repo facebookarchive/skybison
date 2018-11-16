@@ -6,7 +6,7 @@ struct node;
 
 namespace testing {
 RawObject findModule(Runtime*, const char*);
-RawObject moduleAt(Runtime*, const Handle<Module>&, const char*);
+RawObject moduleAt(Runtime*, const Module&, const char*);
 }  // namespace testing
 
 PY_EXPORT PyObject* PyRun_SimpleStringFlags(const char* str,

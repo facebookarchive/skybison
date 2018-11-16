@@ -24,7 +24,7 @@ class FloatBuiltins {
 
  private:
   static RawObject floatFromObject(Thread* thread, Frame* frame,
-                                   const Handle<Object>& obj);
+                                   const Object& obj);
   static RawObject floatFromString(Thread* thread, RawStr str);
   static const BuiltinMethod kMethods[];
 

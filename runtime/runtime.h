@@ -14,8 +14,8 @@ namespace python {
 
 class AttributeInfo;
 class Heap;
-class Object;
-class ObjectArray;
+class RawObject;
+class RawObjectArray;
 class PointerVisitor;
 class Thread;
 
@@ -48,8 +48,7 @@ class Runtime {
   explicit Runtime(word size);
   ~Runtime();
 
-  RawObject newBoundMethod(const Handle<Object>& function,
-                           const Handle<Object>& self);
+  RawObject newBoundMethod(const Object& function, const Object& self);
 
   RawObject newBytes(word length, byte fill);
   RawObject newBytesWithAll(View<byte> array);
@@ -80,9 +79,9 @@ class Runtime {
 
   RawObject newGenerator();
 
-  RawObject newHeapFrame(const Handle<Code>& code);
+  RawObject newHeapFrame(const Code& code);
 
-  RawObject newInstance(const Handle<Layout>& layout);
+  RawObject newInstance(const Layout& layout);
 
   // Create a new Int from a signed value.
   RawObject newInt(word value);
@@ -99,27 +98,26 @@ class Runtime {
 
   RawObject newList();
 
-  RawObject newListIterator(const Handle<Object>& list);
+  RawObject newListIterator(const Object& list);
 
-  RawObject newModule(const Handle<Object>& name);
+  RawObject newModule(const Object& name);
 
   // Returns an Int that stores the numerical address of the pointer.
   RawObject newIntFromCPtr(void* ptr);
 
   RawObject newObjectArray(word length);
 
-  RawObject newProperty(const Handle<Object>& getter,
-                        const Handle<Object>& setter,
-                        const Handle<Object>& deleter);
+  RawObject newProperty(const Object& getter, const Object& setter,
+                        const Object& deleter);
 
   RawObject newRange(word start, word stop, word step);
 
-  RawObject newRangeIterator(const Handle<Object>& iterable);
+  RawObject newRangeIterator(const Object& iterable);
 
-  RawObject newSetIterator(const Handle<Object>& set);
+  RawObject newSetIterator(const Object& set);
 
-  RawObject newSlice(const Handle<Object>& start, const Handle<Object>& stop,
-                     const Handle<Object>& step);
+  RawObject newSlice(const Object& start, const Object& stop,
+                     const Object& step);
 
   RawObject newStaticMethod();
 
@@ -131,16 +129,15 @@ class Runtime {
 
   RawObject newSuper();
 
-  RawObject newTupleIterator(const Handle<Object>& iterable);
+  RawObject newTupleIterator(const Object& iterable);
 
   void processCallbacks();
 
-  RawObject strConcat(const Handle<Str>& left, const Handle<Str>& right);
-  RawObject strJoin(Thread* thread, const Handle<Str>& sep,
-                    const Handle<ObjectArray>& items, word allocated);
-  RawObject strStripSpace(const Handle<Str>& src,
-                          const StrStripDirection direction);
-  RawObject strStrip(const Handle<Str>& src, const Handle<Str>& str,
+  RawObject strConcat(const Str& left, const Str& right);
+  RawObject strJoin(Thread* thread, const Str& sep, const ObjectArray& items,
+                    word allocated);
+  RawObject strStripSpace(const Str& src, const StrStripDirection direction);
+  RawObject strStrip(const Str& src, const Str& str,
                      StrStripDirection direction);
 
   RawObject newValueCell();
@@ -152,7 +149,7 @@ class Runtime {
   void createTimeModule();
   void createWeakRefModule();
 
-  RawObject internStr(const Handle<Object>& str);
+  RawObject internStr(const Object& str);
   RawObject internStrFromCStr(const char* c_str);
 
   void collectGarbage();
@@ -172,27 +169,26 @@ class Runtime {
 
   void visitRoots(PointerVisitor* visitor);
 
-  void addModule(const Handle<Module>& module);
-  RawObject moduleAddGlobal(const Handle<Module>& module, SymbolId name,
-                            const Handle<Object>& value);
+  void addModule(const Module& module);
+  RawObject moduleAddGlobal(const Module& module, SymbolId name,
+                            const Object& value);
 
-  RawObject moduleAddBuiltinFunction(const Handle<Module>& module,
-                                     SymbolId name, const Function::Entry entry,
+  RawObject moduleAddBuiltinFunction(const Module& module, SymbolId name,
+                                     const Function::Entry entry,
                                      const Function::Entry entry_kw,
                                      const Function::Entry entry_ex);
 
-  RawObject findModule(const Handle<Object>& name);
+  RawObject findModule(const Object& name);
 
-  RawObject moduleAt(const Handle<Module>& module, const Handle<Object>& key);
-  void moduleAtPut(const Handle<Module>& module, const Handle<Object>& key,
-                   const Handle<Object>& value);
+  RawObject moduleAt(const Module& module, const Object& key);
+  void moduleAtPut(const Module& module, const Object& key,
+                   const Object& value);
 
-  RawObject importModule(const Handle<Object>& name);
+  RawObject importModule(const Object& name);
 
   // importModuleFromBuffer is exposed for use by the tests. We may be able to
   // remove this later.
-  RawObject importModuleFromBuffer(const char* buffer,
-                                   const Handle<Object>& name);
+  RawObject importModuleFromBuffer(const char* buffer, const Object& name);
 
   RawObject typeOf(RawObject object);
 
@@ -225,11 +221,10 @@ class Runtime {
   SymbolId comparisonSelector(CompareOp op);
   SymbolId swappedComparisonSelector(CompareOp op);
 
-  bool isIteratorExhausted(Thread* thread, const Handle<Object>& iterator);
+  bool isIteratorExhausted(Thread* thread, const Object& iterator);
 
   // Return true if the selector does not appear in the MRO object below object.
-  bool isMethodOverloaded(Thread* thread, const Handle<Type>& type,
-                          SymbolId selector);
+  bool isMethodOverloaded(Thread* thread, const Type& type, SymbolId selector);
 
   RawObject buildClass() { return build_class_; }
 
@@ -250,117 +245,107 @@ class Runtime {
   // Ensures that array has enough space for an atPut at index. If so, returns
   // array. If not, allocates and returns a new array with sufficient capacity
   // and identical contents.
-  void listEnsureCapacity(const Handle<List>& list, word index);
+  void listEnsureCapacity(const List& list, word index);
 
   // Appends an element to the end of the list.
-  void listAdd(const Handle<List>& list, const Handle<Object>& value);
+  void listAdd(const List& list, const Object& value);
 
   // Extends a list from an iterator.
   // Returns either the extended list or an Error object.
-  RawObject listExtend(Thread* thread, const Handle<List>& dst,
-                       const Handle<Object>& iterable);
+  RawObject listExtend(Thread* thread, const List& dst, const Object& iterable);
 
   // Inserts an element to the specified index of the list.
   // When index >= len(list) it is equivalent to appending to the list.
-  void listInsert(const Handle<List>& list, const Handle<Object>& value,
-                  word index);
+  void listInsert(const List& list, const Object& value, word index);
 
   // Removes and returns an element from the specified list index.
   // Expects index to be within [0, len(list)]
-  RawObject listPop(const Handle<List>& list, word index);
+  RawObject listPop(const List& list, word index);
 
   // Return a new list that is composed of list repeated ntimes
-  RawObject listReplicate(Thread* thread, const Handle<List>& list,
-                          word ntimes);
+  RawObject listReplicate(Thread* thread, const List& list, word ntimes);
 
   // Associate a value with the supplied key.
   //
   // This handles growing the backing ObjectArray if needed.
-  void dictAtPut(const Handle<Dict>& dict, const Handle<Object>& key,
-                 const Handle<Object>& value);
+  void dictAtPut(const Dict& dict, const Object& key, const Object& value);
 
   // Look up the value associated with key. Returns Error::object() if the
   // key was not found.
-  RawObject dictAt(const Handle<Dict>& dict, const Handle<Object>& key);
+  RawObject dictAt(const Dict& dict, const Object& key);
 
   // Looks up and returns the value associated with the key.  If the key is
   // absent, calls thunk and inserts its result as the value.
-  RawObject dictAtIfAbsentPut(const Handle<Dict>& dict,
-                              const Handle<Object>& key,
+  RawObject dictAtIfAbsentPut(const Dict& dict, const Object& key,
                               Callback<RawObject>* thunk);
 
   // Stores value in a ValueCell stored at key in dict. Careful to
   // reuse an existing value cell if one exists since it may be shared.
-  RawObject dictAtPutInValueCell(const Handle<Dict>& dict,
-                                 const Handle<Object>& key,
-                                 const Handle<Object>& value);
+  RawObject dictAtPutInValueCell(const Dict& dict, const Object& key,
+                                 const Object& value);
 
   // Returns true if the dict contains the specified key.
-  bool dictIncludes(const Handle<Dict>& dict, const Handle<Object>& key);
+  bool dictIncludes(const Dict& dict, const Object& key);
 
   // Delete a key from the dict.
   //
   // Returns true if the key existed and sets the previous value in value.
   // Returns false otherwise.
-  RawObject dictRemove(const Handle<Dict>& dict, const Handle<Object>& key);
+  RawObject dictRemove(const Dict& dict, const Object& key);
 
   // Support explicit hash value of key to do dictAtPut.
-  void dictAtPutWithHash(const Handle<Dict>& dict, const Handle<Object>& key,
-                         const Handle<Object>& value,
-                         const Handle<Object>& key_hash);
+  void dictAtPutWithHash(const Dict& dict, const Object& key,
+                         const Object& value, const Object& key_hash);
 
   // Support explicit hash value of key to do dictAt.
-  RawObject dictAtWithHash(const Handle<Dict>& dict, const Handle<Object>& key,
-                           const Handle<Object>& key_hash);
+  RawObject dictAtWithHash(const Dict& dict, const Object& key,
+                           const Object& key_hash);
 
-  RawObjectArray dictKeys(const Handle<Dict>& dict);
+  RawObjectArray dictKeys(const Dict& dict);
 
   // Set related function, based on dict.
   // Add a value to set and return the object in set.
-  RawObject setAdd(const Handle<Set>& set, const Handle<Object>& value);
+  RawObject setAdd(const Set& set, const Object& value);
 
-  RawObject setAddWithHash(const Handle<Set>& set, const Handle<Object>& value,
-                           const Handle<Object>& key_hash);
+  RawObject setAddWithHash(const Set& set, const Object& value,
+                           const Object& key_hash);
 
   // Return a shallow copy of a set
-  RawObject setCopy(const Handle<Set>& set);
+  RawObject setCopy(const Set& set);
 
   // Returns true if the set contains the specified value.
-  bool setIncludes(const Handle<Set>& set, const Handle<Object>& value);
+  bool setIncludes(const Set& set, const Object& value);
 
   // Compute the set intersection between a set and an iterator
   // Returns either a new set with the intersection or an Error object.
-  RawObject setIntersection(Thread* thread, const Handle<Set>& set,
-                            const Handle<Object>& iterable);
+  RawObject setIntersection(Thread* thread, const Set& set,
+                            const Object& iterable);
 
   // Delete a key from the set, returns true if the key existed.
-  bool setRemove(const Handle<Set>& set, const Handle<Object>& value);
+  bool setRemove(const Set& set, const Object& value);
 
   // Update a set from an iterator
   // Returns either the updated set or an Error object.
-  RawObject setUpdate(Thread* thread, const Handle<Set>& set,
-                      const Handle<Object>& iterable);
+  RawObject setUpdate(Thread* thread, const Set& set, const Object& iterable);
 
   // Update a dictionary from another dictionary or an iterator.
   // Returns either the updated dict or an Error object.
-  RawObject dictUpdate(Thread* thread, const Handle<Dict>& dict,
-                       const Handle<Object>& mapping);
+  RawObject dictUpdate(Thread* thread, const Dict& dict, const Object& mapping);
 
   // Merges a dictionary with another dictionary or a mapping.
   // Returns either the merged dictionary or an Error object.
   // throws a TypeError if the keys are not strings or
   // if any of the mappings have the same key repeated in them.
-  RawObject dictMerge(Thread* thread, const Handle<Dict>& dict,
-                      const Handle<Object>& mapping);
+  RawObject dictMerge(Thread* thread, const Dict& dict, const Object& mapping);
 
   // Resume a GeneratorBase, passing it the given value and returning either the
   // yielded value or Error on termination.
-  RawObject genSend(Thread* thread, const Handle<GeneratorBase>& gen,
-                    const Handle<Object>& value);
+  RawObject genSend(Thread* thread, const GeneratorBase& gen,
+                    const Object& value);
 
   // Save the current Frame to the given generator and pop the Frame off of the
   // stack.
-  void genSave(Thread* thread, const Handle<GeneratorBase>& gen);
+  void genSave(Thread* thread, const GeneratorBase& gen);
 
   // Get the RawGeneratorBase corresponding to the given Frame, assuming it is
   // executing in a resumed GeneratorBase.
@@ -374,81 +359,78 @@ class Runtime {
 
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.
-  void collectAttributes(const Handle<Code>& code,
-                         const Handle<Dict>& attributes);
+  void collectAttributes(const Code& code, const Dict& attributes);
 
   // Constructs the initial layout for instances of type.
   //
   // The layout contains the set of in-object attributes. This is computed by
   // scanning the constructors of every klass in klass's MRO.
-  RawObject computeInitialLayout(Thread* thread, const Handle<Type>& klass,
+  RawObject computeInitialLayout(Thread* thread, const Type& klass,
                                  LayoutId base_layout_id);
 
   // Returns type's __init__ method, or None
-  RawObject classConstructor(const Handle<Type>& type);
+  RawObject classConstructor(const Type& type);
 
   // Looks up name in the dict of each entry in type's MRO.
   //
   // This is equivalent to CPython's PyType_Lookup. Returns the Error object if
   // the name wasn't found.
-  RawObject lookupNameInMro(Thread* thread, const Handle<Type>& type,
-                            const Handle<Object>& name);
+  RawObject lookupNameInMro(Thread* thread, const Type& type,
+                            const Object& name);
 
   // Looks up symbol name in the dict of each entry in type's MRO.
-  RawObject lookupSymbolInMro(Thread* thread, const Handle<Type>& type,
+  RawObject lookupSymbolInMro(Thread* thread, const Type& type,
                               SymbolId symbol);
 
   // Implements `receiver.name`
-  RawObject attributeAt(Thread* thread, const Handle<Object>& receiver,
-                        const Handle<Object>& name);
+  RawObject attributeAt(Thread* thread, const Object& receiver,
+                        const Object& name);
 
   // Implements `receiver.name = value`
-  RawObject attributeAtPut(Thread* thread, const Handle<Object>& receiver,
-                           const Handle<Object>& name,
-                           const Handle<Object>& value);
+  RawObject attributeAtPut(Thread* thread, const Object& receiver,
+                           const Object& name, const Object& value);
 
   // Implements `del receiver.name`
-  RawObject attributeDel(Thread* thread, const Handle<Object>& receiver,
-                         const Handle<Object>& name);
+  RawObject attributeDel(Thread* thread, const Object& receiver,
+                         const Object& name);
 
   // Attribute lookup primitive for instances.
   //
   // This operates directly on the instance and does not respect Python
   // semantics for attribute lookup. Returns Error::object() if the attribute
   // isn't found.
-  RawObject instanceAt(Thread* thread, const Handle<HeapObject>& instance,
-                       const Handle<Object>& name);
+  RawObject instanceAt(Thread* thread, const HeapObject& instance,
+                       const Object& name);
 
   // Attribute setting primitive for instances.
   //
   // This operates directly on the instance and does not respect Python
   // semantics for attribute storage. This handles mutating the instance's
   // layout if the attribute does not already exist on the instance.
-  RawObject instanceAtPut(Thread* thread, const Handle<HeapObject>& instance,
-                          const Handle<Object>& name,
-                          const Handle<Object>& value);
+  RawObject instanceAtPut(Thread* thread, const HeapObject& instance,
+                          const Object& name, const Object& value);
 
   // Attribute deletion primitive for instances.
   //
   // This operates directly on the instance and does not respect Python
   // semantics for attribute deletion. This handles mutating the layout if the
   // attribute exists. Returns Error::object() if the attribute is not found.
-  RawObject instanceDel(Thread* thread, const Handle<HeapObject>& instance,
-                        const Handle<Object>& name);
+  RawObject instanceDel(Thread* thread, const HeapObject& instance,
+                        const Object& name);
 
   // Looks up the named attribute in the layout.
   //
   // If the attribute is found this returns true and sets info.
   // Returns false otherwise.
-  bool layoutFindAttribute(Thread* thread, const Handle<Layout>& layout,
-                           const Handle<Object>& name, AttributeInfo* info);
+  bool layoutFindAttribute(Thread* thread, const Layout& layout,
+                           const Object& name, AttributeInfo* info);
 
   // Add the attribute to the overflow array.
   //
   // This returns a new layout by either following a pre-existing edge or
   // adding one.
-  RawObject layoutAddAttribute(Thread* thread, const Handle<Layout>& layout,
-                               const Handle<Object>& name, word flags);
+  RawObject layoutAddAttribute(Thread* thread, const Layout& layout,
+                               const Object& name, word flags);
 
   // Delete the named attribute from the layout.
   //
@@ -456,49 +438,46 @@ class Runtime {
   // a pre-existing edge or adding one.
   //
   // If the attribute doesn't exist, Error::object() is returned.
-  RawObject layoutDeleteAttribute(Thread* thread, const Handle<Layout>& layout,
-                                  const Handle<Object>& name);
+  RawObject layoutDeleteAttribute(Thread* thread, const Layout& layout,
+                                  const Object& name);
 
   // Pre-computes fast_globals for functions.
-  RawObject computeFastGlobals(const Handle<Code>& code,
-                               const Handle<Dict>& globals,
-                               const Handle<Dict>& builtins);
+  RawObject computeFastGlobals(const Code& code, const Dict& globals,
+                               const Dict& builtins);
 
-  LayoutId computeBuiltinBaseClass(const Handle<Type>& klass);
+  LayoutId computeBuiltinBaseClass(const Type& klass);
 
   // Adds a builtin function with a positional entry point definition
   // using the default keyword and splatting entry points.
-  void classAddBuiltinFunction(const Handle<Type>& type, SymbolId name,
+  void classAddBuiltinFunction(const Type& type, SymbolId name,
                                Function::Entry entry);
 
   // Adds a builtin function with positional and keyword entry point
   // definitions, using the default splatting entry point.
-  void classAddBuiltinFunctionKw(const Handle<Type>& type, SymbolId name,
+  void classAddBuiltinFunctionKw(const Type& type, SymbolId name,
                                  Function::Entry entry,
                                  Function::Entry entry_kw);
 
   // Adds a builtin function with positional, keyword & splatting entry point
   // definitions
-  void classAddBuiltinFunctionKwEx(const Handle<Type>& type, SymbolId name,
+  void classAddBuiltinFunctionKwEx(const Type& type, SymbolId name,
                                    Function::Entry entry,
                                    Function::Entry entry_kw,
                                    Function::Entry entry_ex);
 
   // Helper function to add extension functions to extension classes
-  void classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
+  void classAddExtensionFunction(const Type& type, SymbolId name,
                                  void* c_function);
 
   // Converts the offset in code's bytecode into the corresponding line number
   // in the backing source file.
-  word codeOffsetToLineNum(Thread* thread, const Handle<Code>& code,
-                           word offset);
+  word codeOffsetToLineNum(Thread* thread, const Code& code, word offset);
 
   // Return true if subclass is a subclass of superclass
-  RawObject isSubClass(const Handle<Type>& subclass,
-                       const Handle<Type>& superclass);
+  RawObject isSubClass(const Type& subclass, const Type& superclass);
 
   bool hasSubClassFlag(RawObject instance, Type::Flag flag) {
-    return Type::cast(typeAt(instance->layoutId()))->hasFlag(flag);
+    return RawType::cast(typeAt(instance->layoutId()))->hasFlag(flag);
   }
 
   // Returns whether or not instance is an instance of Type or a subclass of
@@ -520,11 +499,11 @@ class Runtime {
     if (instance->isList()) {
       return true;
     }
-    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kListSubclass);
+    return RawType::cast(typeOf(instance))->hasFlag(Type::Flag::kListSubclass);
   }
 
   // Return true if obj is an instance of a subclass of klass
-  RawObject isInstance(const Handle<Object>& obj, const Handle<Type>& klass);
+  RawObject isInstance(const Object& obj, const Type& klass);
 
   // Clear the allocated memory from all extension related objects
   void deallocExtensions();
@@ -549,13 +528,13 @@ class Runtime {
   }
 
   // Returns whether object's class provides a __set__ method
-  bool isDataDescriptor(Thread* thread, const Handle<Object>& object);
+  bool isDataDescriptor(Thread* thread, const Object& object);
 
   // Returns whether object's class provides a __get__ method
-  bool isNonDataDescriptor(Thread* thread, const Handle<Object>& object);
+  bool isNonDataDescriptor(Thread* thread, const Object& object);
 
   // Returns whether object's class provides a __delete__ method
-  bool isDeleteDescriptor(Thread* thread, const Handle<Object>& object);
+  bool isDeleteDescriptor(Thread* thread, const Object& object);
 
   // Clear the allocated memory from all extension related objects
   void freeApiHandles();
@@ -564,8 +543,7 @@ class Runtime {
   RawObject layoutCreateEmpty(Thread* thread);
 
   // Import all the public module's symbols to the given dict
-  void moduleImportAllFrom(const Handle<Dict>& dict,
-                           const Handle<Module>& module);
+  void moduleImportAllFrom(const Dict& dict, const Module& module);
 
  private:
   void initializeThreads();
@@ -595,7 +573,7 @@ class Runtime {
 
   RawObject createMainModule();
 
-  RawObject executeModule(const char* buffer, const Handle<Module>& module);
+  RawObject executeModule(const char* buffer, const Module& module);
 
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
@@ -604,10 +582,9 @@ class Runtime {
   RawObject immediateHash(RawObject object);
   RawObject valueHash(RawObject object);
 
-  RawObject createMro(const Handle<Layout>& subclass_layout,
-                      LayoutId superclass_id);
+  RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 
-  RawObjectArray dictGrow(const Handle<ObjectArray>& data);
+  RawObjectArray dictGrow(const ObjectArray& data);
 
   // Looks up the supplied key
   //
@@ -615,60 +592,57 @@ class Runtime {
   // index of the bucket that contains the value. If the key is not found, this
   // function returns false and sets index to the location where the key would
   // be inserted. If the dict is full, it sets index to -1.
-  bool dictLookup(const Handle<ObjectArray>& data, const Handle<Object>& key,
-                  const Handle<Object>& key_hash, word* index);
+  bool dictLookup(const ObjectArray& data, const Object& key,
+                  const Object& key_hash, word* index);
 
   template <SetLookupType type>
-  word setLookup(const Handle<ObjectArray>& data, const Handle<Object>& key,
-                 const Handle<Object>& key_hash);
+  word setLookup(const ObjectArray& data, const Object& key,
+                 const Object& key_hash);
 
-  RawObjectArray setGrow(const Handle<ObjectArray>& data);
+  RawObjectArray setGrow(const ObjectArray& data);
 
   // Generic attribute lookup code used for class objects
-  RawObject classGetAttr(Thread* thread, const Handle<Object>& receiver,
-                         const Handle<Object>& name);
+  RawObject classGetAttr(Thread* thread, const Object& receiver,
+                         const Object& name);
 
   // Generic attribute setting code used for class objects
-  RawObject classSetAttr(Thread* thread, const Handle<Object>& receiver,
-                         const Handle<Object>& name,
-                         const Handle<Object>& value);
+  RawObject classSetAttr(Thread* thread, const Object& receiver,
+                         const Object& name, const Object& value);
 
   // Generic attribute deletion code used for class objects
-  RawObject classDelAttr(Thread* thread, const Handle<Object>& receiver,
-                         const Handle<Object>& name);
+  RawObject classDelAttr(Thread* thread, const Object& receiver,
+                         const Object& name);
 
   // Generic attribute lookup code used for instance objects
-  RawObject instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
-                            const Handle<Object>& name);
+  RawObject instanceGetAttr(Thread* thread, const Object& receiver,
+                            const Object& name);
 
   // Generic attribute setting code used for instance objects
-  RawObject instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
-                            const Handle<Object>& name,
-                            const Handle<Object>& value);
+  RawObject instanceSetAttr(Thread* thread, const Object& receiver,
+                            const Object& name, const Object& value);
 
   // Generic attribute deletion code used for instance objects
-  RawObject instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
-                            const Handle<Object>& name);
+  RawObject instanceDelAttr(Thread* thread, const Object& receiver,
+                            const Object& name);
 
   // Generic attribute lookup code used for module objects
-  RawObject moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
-                          const Handle<Object>& name);
+  RawObject moduleGetAttr(Thread* thread, const Object& receiver,
+                          const Object& name);
 
   // Generic attribute setting code used for module objects
-  RawObject moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
-                          const Handle<Object>& name,
-                          const Handle<Object>& value);
+  RawObject moduleSetAttr(Thread* thread, const Object& receiver,
+                          const Object& name, const Object& value);
 
   // Generic attribute deletion code used for module objects
-  RawObject moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
-                          const Handle<Object>& name);
+  RawObject moduleDelAttr(Thread* thread, const Object& receiver,
+                          const Object& name);
 
   // Specialized attribute lookup code used for super objects
-  RawObject superGetAttr(Thread* thread, const Handle<Object>& receiver,
-                         const Handle<Object>& name);
+  RawObject superGetAttr(Thread* thread, const Object& receiver,
+                         const Object& name);
 
   // helper function add builtin types
-  void moduleAddBuiltinType(const Handle<Module>& module, SymbolId name,
+  void moduleAddBuiltinType(const Module& module, SymbolId name,
                             LayoutId layout_id);
 
   // Creates a layout that is a subclass of a built-in class and zero or more
@@ -681,21 +655,19 @@ class Runtime {
   // attribute entries starting at a specific index.  Useful for constructing
   // the in-object attributes array for built-in classes with fixed attributes.
   void appendBuiltinAttributes(View<BuiltinAttribute> attributes,
-                               const Handle<ObjectArray>& dst, word index);
+                               const ObjectArray& dst, word index);
 
   // Appends the edge to the list of edges.
   //
   // edges is expected to be a list of edges (label, layout pairs) corresponding
   // to a class of shape altering mutations (e.g. attribute addition).
-  void layoutAddEdge(const Handle<List>& edges, const Handle<Object>& label,
-                     const Handle<Object>& layout);
+  void layoutAddEdge(const List& edges, const Object& label,
+                     const Object& layout);
 
   // Create a new tuple for the name, info pair and return a new tuple
   // containing entries + entry.
-  RawObject layoutAddAttributeEntry(Thread* thread,
-                                    const Handle<ObjectArray>& entries,
-                                    const Handle<Object>& name,
-                                    AttributeInfo info);
+  RawObject layoutAddAttributeEntry(Thread* thread, const ObjectArray& entries,
+                                    const Object& name, AttributeInfo info);
 
   // Follow the edge with the supplied label, if one exists.
   //
@@ -708,35 +680,33 @@ class Runtime {
   // If an edge with the supplied label exists the corresponding layout is
   // returned. If no edge with the supplied label exists Error::object() is
   // returned.
-  RawObject layoutFollowEdge(const Handle<List>& edges,
-                             const Handle<Object>& label);
+  RawObject layoutFollowEdge(const List& edges, const Object& label);
 
   // Creates a new layout that will be a child layout of the supplied parent.
   //
   // The new layout shares the in-object and overflow attributes with the
   // parent and contains no outgoing edges.
-  RawObject layoutCreateChild(Thread* thread, const Handle<Layout>& parent);
+  RawObject layoutCreateChild(Thread* thread, const Layout& parent);
 
   // Generic version of dictUpdate, used by both dictUpdate and dictMerge
   // if merge is true, checks that keys are strings and are not repeated.
   // in the merge case, if either of the checks fail, returns by throwing a
   // python TypeError exception.
   template <DictUpdateType type>
-  RawObject dictUpdate(Thread* thread, const Handle<Dict>& dict,
-                       const Handle<Object>& mapping);
+  RawObject dictUpdate(Thread* thread, const Dict& dict, const Object& mapping);
 
-  RawObject strSubstr(const Handle<Str>& str, word start, word length);
+  RawObject strSubstr(const Str& str, word start, word length);
 
   // Returns the length of the maximum initial span of src composed
   // of code points found in str. Analogous to the C string API function
   // strspn().
-  word strSpan(const Handle<Str>& src, const Handle<Str>& str);
+  word strSpan(const Str& src, const Str& str);
 
   // Returns the length of the maximum final span of src composed
   // of code points found in str. Right handed version of
   // Runtime::strSpan(). The rend argument is the index at which to stop
   // scanning left, and could be set to 0 to scan the whole string.
-  word strRSpan(const Handle<Str>& src, const Handle<Str>& str, word rend);
+  word strRSpan(const Str& src, const Str& str, word rend);
 
   // The size listEnsureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;

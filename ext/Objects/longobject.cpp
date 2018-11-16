@@ -73,13 +73,13 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
     return -1;
   }
 
-  Handle<Object> longobj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
+  Object longobj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
   if (!longobj->isInt()) {
     // TODO(T29753730): Handle calling __int__ on pylong when appropriate.
     return -1;
   }
 
-  auto const result = Int::cast(*longobj)->asInt<T>();
+  auto const result = RawInt::cast(*longobj)->asInt<T>();
   if (result.error == CastError::None) {
     if (overflow) *overflow = 0;
     return result.value;
@@ -108,13 +108,13 @@ static T asIntWithoutOverflowCheck(PyObject* pylong) {
     return -1;
   }
 
-  Handle<Object> longobj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
+  Object longobj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
   if (!longobj->isInt()) {
     // TODO(T29753730): Handle calling __int__ on pylong when appropriate.
     return -1;
   }
   static_assert(sizeof(T) <= sizeof(word), "T requires multiple digits");
-  Handle<Int> intobj(&scope, *longobj);
+  Int intobj(&scope, *longobj);
   return intobj->digitAt(0);
 }
 

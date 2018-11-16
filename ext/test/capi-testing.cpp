@@ -14,11 +14,11 @@ namespace testing {
     return ::testing::AssertionFailure() << "no pending exception";
   }
   HandleScope scope(thread);
-  Handle<Object> value(&scope, thread->exceptionValue());
+  Object value(&scope, thread->exceptionValue());
   if (!value->isStr()) {
     UNIMPLEMENTED("Handle non string exception objects");
   }
-  Handle<Str> exception(&scope, *value);
+  Str exception(&scope, *value);
   if (exception->equalsCStr(message)) return ::testing::AssertionSuccess();
 
   return ::testing::AssertionFailure() << '"' << exception << '"';

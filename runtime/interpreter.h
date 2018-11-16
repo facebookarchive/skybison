@@ -7,7 +7,7 @@
 
 namespace python {
 
-class Object;
+class RawObject;
 class Frame;
 class Thread;
 
@@ -42,64 +42,53 @@ class Interpreter {
   static RawObject isTrue(Thread* thread, Frame* caller);
 
   static RawObject callDescriptorGet(Thread* thread, Frame* caller,
-                                     const Handle<Object>& descriptor,
-                                     const Handle<Object>& receiver,
-                                     const Handle<Object>& receiver_type);
+                                     const Object& descriptor,
+                                     const Object& receiver,
+                                     const Object& receiver_type);
 
   static RawObject callDescriptorSet(Thread* thread, Frame* caller,
-                                     const Handle<Object>& descriptor,
-                                     const Handle<Object>& receiver,
-                                     const Handle<Object>& value);
+                                     const Object& descriptor,
+                                     const Object& receiver,
+                                     const Object& value);
 
   static RawObject callDescriptorDelete(Thread* thread, Frame* caller,
-                                        const Handle<Object>& descriptor,
-                                        const Handle<Object>& receiver);
+                                        const Object& descriptor,
+                                        const Object& receiver);
 
   static RawObject lookupMethod(Thread* thread, Frame* caller,
-                                const Handle<Object>& receiver,
-                                SymbolId selector);
+                                const Object& receiver, SymbolId selector);
 
   static RawObject callMethod1(Thread* thread, Frame* caller,
-                               const Handle<Object>& method,
-                               const Handle<Object>& self);
+                               const Object& method, const Object& self);
 
   static RawObject callMethod2(Thread* thread, Frame* caller,
-                               const Handle<Object>& method,
-                               const Handle<Object>& self,
-                               const Handle<Object>& other);
+                               const Object& method, const Object& self,
+                               const Object& other);
 
   static RawObject callMethod3(Thread* thread, Frame* caller,
-                               const Handle<Object>& method,
-                               const Handle<Object>& self,
-                               const Handle<Object>& arg1,
-                               const Handle<Object>& arg2);
+                               const Object& method, const Object& self,
+                               const Object& arg1, const Object& arg2);
 
   static RawObject callMethod4(Thread* thread, Frame* caller,
-                               const Handle<Object>& method,
-                               const Handle<Object>& self,
-                               const Handle<Object>& arg1,
-                               const Handle<Object>& arg2,
-                               const Handle<Object>& arg3);
+                               const Object& method, const Object& self,
+                               const Object& arg1, const Object& arg2,
+                               const Object& arg3);
 
   static RawObject unaryOperation(Thread* thread, Frame* caller,
-                                  const Handle<Object>& receiver,
-                                  SymbolId selector);
+                                  const Object& receiver, SymbolId selector);
 
   static RawObject binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
-                                   const Handle<Object>& left,
-                                   const Handle<Object>& right);
+                                   const Object& left, const Object& right);
 
   static RawObject inplaceOperation(Thread* thread, Frame* caller, BinaryOp op,
-                                    const Handle<Object>& left,
-                                    const Handle<Object>& right);
+                                    const Object& left, const Object& right);
 
   static RawObject compareOperation(Thread* thread, Frame* caller, CompareOp op,
-                                    const Handle<Object>& left,
-                                    const Handle<Object>& right);
+                                    const Object& left, const Object& right);
 
   static RawObject sequenceContains(Thread* thread, Frame* caller,
-                                    const Handle<Object>& value,
-                                    const Handle<Object>& container);
+                                    const Object& value,
+                                    const Object& container);
 
   // Perform the meat of YIELD_FROM. Returns Error if the subiterator is
   // finished and execution should continue. Otherwise, returns the value from

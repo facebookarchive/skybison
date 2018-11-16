@@ -147,7 +147,7 @@ RawObject Marshal::Reader::readObject() {
       // we need to support 32 bit machines.
       word n = readLong();
       if (!SmallInt::isValid(n)) {
-        UNIMPLEMENTED("value '%ld' outside range supported by SmallInt", n);
+        UNIMPLEMENTED("value '%ld' outside range supported by RawSmallInt", n);
       }
       result = SmallInt::fromWord(n);
       if (isRef_) {
@@ -250,7 +250,7 @@ RawObject Marshal::Reader::readObject() {
 
 word Marshal::Reader::addRef(RawObject value) {
   HandleScope scope;
-  Handle<Object> value_handle(&scope, value);
+  Object value_handle(&scope, value);
   word result = refs_->numItems();
   runtime_->listAdd(refs_, value_handle);
   return result;
@@ -316,7 +316,7 @@ RawObject Marshal::Reader::readAndInternStr(word length) {
   HandleScope scope;
   // TODO(T25820368): Intern strings iff the string isn't already part of the
   // intern table.
-  Handle<Object> str(&scope, runtime_->newStrWithAll(View<byte>(data, length)));
+  Object str(&scope, runtime_->newStrWithAll(View<byte>(data, length)));
   RawObject result = runtime_->internStr(str);
   if (isRef_) {
     addRef(result);
@@ -341,7 +341,7 @@ RawObject Marshal::Reader::doTupleElements(int32 length) {
   }
   for (int32 i = 0; i < length; i++) {
     RawObject value = readObject();
-    ObjectArray::cast(result)->atPut(i, value);
+    RawObjectArray::cast(result)->atPut(i, value);
   }
   return result;
 }
@@ -352,7 +352,7 @@ RawObject Marshal::Reader::readTypeCode() {
     index = addRef(NoneType::object());
   }
   HandleScope scope;
-  Handle<Code> result(&scope, runtime_->newCode());
+  Code result(&scope, runtime_->newCode());
   result->setArgcount(readLong());
   result->setKwonlyargcount(readLong());
   result->setNlocals(readLong());

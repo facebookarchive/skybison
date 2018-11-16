@@ -23,7 +23,7 @@ result = [i for i in fib(7)]
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Handle<Object> result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0, 1, 1, 2, 3, 5, 8});
 }
 
@@ -43,9 +43,9 @@ g.send(7)
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Handle<Object> result(&scope, moduleAt(&runtime, "__main__", "value"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "value"));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_TRUE(SmallInt::cast(*result)->value() == 10);
+  EXPECT_TRUE(RawSmallInt::cast(*result)->value() == 10);
 }
 
 TEST(GeneratorTest, BadInitialSend) {
@@ -96,7 +96,7 @@ for i in g:
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Handle<Object> result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(
       result,
       {"priming", "ready", "sending", "initial string", "initial string first",
@@ -104,8 +104,8 @@ for i in g:
 
   // Manually check element 3 for object identity
   ASSERT_TRUE(result->isList());
-  Handle<List> list(result);
-  Handle<Object> initial(&scope, moduleAt(&runtime, "__main__", "initial_str"));
+  List list(result);
+  Object initial(&scope, moduleAt(&runtime, "__main__", "initial_str"));
   EXPECT_GE(list->numItems(), 3);
   EXPECT_EQ(list->at(3), *initial);
 }
@@ -120,7 +120,7 @@ c = coro()
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Handle<Object> result(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_TRUE(result->isCoroutine());
 }
 

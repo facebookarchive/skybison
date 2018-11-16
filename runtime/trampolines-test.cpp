@@ -23,18 +23,18 @@ def test(callable):
   runtime.runFromCStr(src);
 
   HandleScope scope;
-  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> function(&scope, moduleAt(&runtime, module, "func"));
+  Module module(&scope, findModule(&runtime, "__main__"));
+  Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
 
-  Handle<Object> self(&scope, SmallInt::fromWord(1111));
-  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
+  Object self(&scope, SmallInt::fromWord(1111));
+  BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
-  Handle<Object> test(&scope, moduleAt(&runtime, module, "test"));
+  Object test(&scope, moduleAt(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
-  Handle<Function> func(&scope, *test);
+  Function func(&scope, *test);
 
-  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  ObjectArray args(&scope, runtime.newObjectArray(1));
   args->atPut(0, *method);
 
   std::string output = callFunctionToString(func, args);
@@ -54,18 +54,18 @@ def test(callable):
   runtime.runFromCStr(src);
 
   HandleScope scope;
-  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> function(&scope, moduleAt(&runtime, module, "func"));
+  Module module(&scope, findModule(&runtime, "__main__"));
+  Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
 
-  Handle<Object> self(&scope, SmallInt::fromWord(1111));
-  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
+  Object self(&scope, SmallInt::fromWord(1111));
+  BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
-  Handle<Object> test(&scope, moduleAt(&runtime, module, "test"));
+  Object test(&scope, moduleAt(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
-  Handle<Function> func(&scope, *test);
+  Function func(&scope, *test);
 
-  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  ObjectArray args(&scope, runtime.newObjectArray(1));
   args->atPut(0, *method);
 
   std::string output = callFunctionToString(func, args);
@@ -92,31 +92,31 @@ def test(callable):
   runtime.runFromCStr(src);
 
   HandleScope scope;
-  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> function(&scope, moduleAt(&runtime, module, "func"));
+  Module module(&scope, findModule(&runtime, "__main__"));
+  Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
 
-  Handle<Object> self(&scope, SmallInt::fromWord(1111));
-  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
+  Object self(&scope, SmallInt::fromWord(1111));
+  BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
-  Handle<Object> test(&scope, moduleAt(&runtime, module, "test"));
+  Object test(&scope, moduleAt(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
-  Handle<Function> func(&scope, *test);
-  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  Function func(&scope, *test);
+  ObjectArray args(&scope, runtime.newObjectArray(1));
   args->atPut(0, *method);
   callFunction(func, args);
 
-  Handle<Object> result_self(&scope, moduleAt(&runtime, module, "result_self"));
+  Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
   ASSERT_TRUE(result_self->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_self)->value(), 1111);
+  EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
 
-  Handle<Object> result_a(&scope, moduleAt(&runtime, module, "result_a"));
+  Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
   ASSERT_TRUE(result_a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_a)->value(), 2222);
+  EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
 
-  Handle<Object> result_b(&scope, moduleAt(&runtime, module, "result_b"));
+  Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
   ASSERT_TRUE(result_b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_b)->value(), 3333);
+  EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
 }
 
 TEST(CallTest, CallBoundMethodExArgs) {
@@ -140,31 +140,31 @@ def test(callable):
   runtime.runFromCStr(src);
 
   HandleScope scope;
-  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> function(&scope, moduleAt(&runtime, module, "func"));
+  Module module(&scope, findModule(&runtime, "__main__"));
+  Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
 
-  Handle<Object> self(&scope, SmallInt::fromWord(1111));
-  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
+  Object self(&scope, SmallInt::fromWord(1111));
+  BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
-  Handle<Object> test(&scope, moduleAt(&runtime, module, "test"));
+  Object test(&scope, moduleAt(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
-  Handle<Function> func(&scope, *test);
-  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  Function func(&scope, *test);
+  ObjectArray args(&scope, runtime.newObjectArray(1));
   args->atPut(0, *method);
   callFunction(func, args);
 
-  Handle<Object> result_self(&scope, moduleAt(&runtime, module, "result_self"));
+  Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
   ASSERT_TRUE(result_self->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_self)->value(), 1111);
+  EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
 
-  Handle<Object> result_a(&scope, moduleAt(&runtime, module, "result_a"));
+  Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
   ASSERT_TRUE(result_a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_a)->value(), 2222);
+  EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
 
-  Handle<Object> result_b(&scope, moduleAt(&runtime, module, "result_b"));
+  Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
   ASSERT_TRUE(result_b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_b)->value(), 3333);
+  EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
 }
 
 TEST(CallTest, CallBoundMethodExKwargs) {
@@ -188,31 +188,31 @@ def test(callable):
   runtime.runFromCStr(src);
 
   HandleScope scope;
-  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> function(&scope, moduleAt(&runtime, module, "func"));
+  Module module(&scope, findModule(&runtime, "__main__"));
+  Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
 
-  Handle<Object> self(&scope, SmallInt::fromWord(1111));
-  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
+  Object self(&scope, SmallInt::fromWord(1111));
+  BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
-  Handle<Object> test(&scope, moduleAt(&runtime, module, "test"));
+  Object test(&scope, moduleAt(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
-  Handle<Function> func(&scope, *test);
-  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  Function func(&scope, *test);
+  ObjectArray args(&scope, runtime.newObjectArray(1));
   args->atPut(0, *method);
   callFunction(func, args);
 
-  Handle<Object> result_self(&scope, moduleAt(&runtime, module, "result_self"));
+  Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
   ASSERT_TRUE(result_self->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_self)->value(), 1111);
+  EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
 
-  Handle<Object> result_a(&scope, moduleAt(&runtime, module, "result_a"));
+  Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
   ASSERT_TRUE(result_a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_a)->value(), 2222);
+  EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
 
-  Handle<Object> result_b(&scope, moduleAt(&runtime, module, "result_b"));
+  Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
   ASSERT_TRUE(result_b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_b)->value(), 3333);
+  EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
 }
 
 TEST(CallTest, CallBoundMethodExArgsAndKwargs) {
@@ -237,31 +237,31 @@ def test(callable):
   runtime.runFromCStr(src);
 
   HandleScope scope;
-  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> function(&scope, moduleAt(&runtime, module, "func"));
+  Module module(&scope, findModule(&runtime, "__main__"));
+  Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
 
-  Handle<Object> self(&scope, SmallInt::fromWord(1111));
-  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
+  Object self(&scope, SmallInt::fromWord(1111));
+  BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
-  Handle<Object> test(&scope, moduleAt(&runtime, module, "test"));
+  Object test(&scope, moduleAt(&runtime, module, "test"));
   ASSERT_TRUE(test->isFunction());
-  Handle<Function> func(&scope, *test);
-  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  Function func(&scope, *test);
+  ObjectArray args(&scope, runtime.newObjectArray(1));
   args->atPut(0, *method);
   callFunction(func, args);
 
-  Handle<Object> result_self(&scope, moduleAt(&runtime, module, "result_self"));
+  Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
   ASSERT_TRUE(result_self->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_self)->value(), 1111);
+  EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
 
-  Handle<Object> result_a(&scope, moduleAt(&runtime, module, "result_a"));
+  Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
   ASSERT_TRUE(result_a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_a)->value(), 2222);
+  EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
 
-  Handle<Object> result_b(&scope, moduleAt(&runtime, module, "result_b"));
+  Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
   ASSERT_TRUE(result_b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result_b)->value(), 3333);
+  EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
 }
 
 TEST(CallTest, CallDefaultArgs) {
@@ -649,12 +649,12 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
   HandleScope scope;
 
   // Create the builtin function
-  Handle<Function> callee(&scope, runtime.newFunction());
+  Function callee(&scope, runtime.newFunction());
   callee->setEntry(nativeTrampoline<firstArg>);
 
   // Set up a code object that calls the builtin with a single argument.
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(2));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1111));
   code->setConsts(*consts);
@@ -666,7 +666,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(result)->value(), 1111);
+  ASSERT_EQ(RawSmallInt::cast(result)->value(), 1111);
 }
 
 // test "builtin-kw" func that returns a list of first position arg
@@ -675,11 +675,11 @@ static RawObject returnsPositionalAndKeywordArgument(Thread* thread,
                                                      Frame* frame, word argc) {
   KwArguments args(frame, argc);
   HandleScope scope(thread);
-  Handle<Object> foo_name(&scope, thread->runtime()->newStrFromCStr("foo"));
-  Handle<Object> foo_val_opt(&scope, args.getKw(*foo_name));
-  Handle<Object> foo_val(
-      &scope, (foo_val_opt->isError() ? NoneType::object() : *foo_val_opt));
-  Handle<ObjectArray> tuple(&scope, thread->runtime()->newObjectArray(2));
+  Object foo_name(&scope, thread->runtime()->newStrFromCStr("foo"));
+  Object foo_val_opt(&scope, args.getKw(*foo_name));
+  Object foo_val(&scope,
+                 (foo_val_opt->isError() ? NoneType::object() : *foo_val_opt));
+  ObjectArray tuple(&scope, thread->runtime()->newObjectArray(2));
   tuple->atPut(0, args.get(0));
   tuple->atPut(1, *foo_val);
   return *tuple;
@@ -690,16 +690,16 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   HandleScope scope;
 
   // Create the builtin kw function
-  Handle<Function> callee(&scope, runtime.newFunction());
+  Function callee(&scope, runtime.newFunction());
   callee->setEntryKw(nativeTrampolineKw<returnsPositionalAndKeywordArgument>);
 
   // Set up a code object that calls the builtin with (1234, foo='bar')
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(4));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(4));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1234));
   consts->atPut(2, runtime.newStrFromCStr("bar"));
-  Handle<ObjectArray> kw_tuple(&scope, runtime.newObjectArray(1));
+  ObjectArray kw_tuple(&scope, runtime.newObjectArray(1));
   kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
   consts->atPut(3, *kw_tuple);
   code->setConsts(*consts);
@@ -713,10 +713,10 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isObjectArray());
-  Handle<ObjectArray> tuple(&scope, result);
+  ObjectArray tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 2);
-  EXPECT_EQ(SmallInt::cast(tuple->at(0))->value(), 1234);
-  EXPECT_TRUE(Str::cast(tuple->at(1))->equalsCStr("bar"));
+  EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1234);
+  EXPECT_TRUE(RawStr::cast(tuple->at(1))->equalsCStr("bar"));
 }
 
 // test "builtin-kw" func that returns a list of first position arg
@@ -727,13 +727,13 @@ static RawObject returnsPositionalAndTwoKeywordArguments(Thread* thread,
   Runtime* runtime = thread->runtime();
   KwArguments args(frame, argc);
   HandleScope scope;
-  Handle<Object> foo_name(&scope, runtime->newStrFromCStr("foo"));
-  Handle<Object> bar_name(&scope, runtime->newStrFromCStr("bar"));
-  Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(3));
+  Object foo_name(&scope, runtime->newStrFromCStr("foo"));
+  Object bar_name(&scope, runtime->newStrFromCStr("bar"));
+  ObjectArray tuple(&scope, runtime->newObjectArray(3));
   tuple->atPut(0, args.get(0));
-  Handle<Object> foo_val(&scope, args.getKw(*foo_name));
+  Object foo_val(&scope, args.getKw(*foo_name));
   tuple->atPut(1, (foo_val->isError() ? NoneType::object() : *foo_val));
-  Handle<Object> bar_val(&scope, args.getKw(*bar_name));
+  Object bar_val(&scope, args.getKw(*bar_name));
   tuple->atPut(2, (bar_val->isError() ? NoneType::object() : *bar_val));
   return *tuple;
 }
@@ -744,18 +744,18 @@ TEST(TrampolineTest,
   HandleScope scope;
 
   // Create the builtin 'multi-kw' function
-  Handle<Function> callee(&scope, runtime.newFunction());
+  Function callee(&scope, runtime.newFunction());
   callee->setEntryKw(
       nativeTrampolineKw<returnsPositionalAndTwoKeywordArguments>);
 
   // Code object that calls func with (1234, (foo='foo_val', bar='bar_val'))
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(5));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(5));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1234));
   consts->atPut(2, runtime.newStrFromCStr("foo_val"));
   consts->atPut(3, runtime.newStrFromCStr("bar_val"));
-  Handle<ObjectArray> kw_tuple(&scope, runtime.newObjectArray(2));
+  ObjectArray kw_tuple(&scope, runtime.newObjectArray(2));
   kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
   kw_tuple->atPut(1, runtime.newStrFromCStr("bar"));
   consts->atPut(4, *kw_tuple);
@@ -771,14 +771,14 @@ TEST(TrampolineTest,
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isObjectArray());
-  Handle<ObjectArray> tuple(&scope, result);
+  ObjectArray tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 3);
   ASSERT_TRUE(tuple->at(0)->isInt());
-  EXPECT_EQ(SmallInt::cast(tuple->at(0))->value(), 1234);
+  EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1234);
   ASSERT_TRUE(tuple->at(1)->isStr());
-  EXPECT_TRUE(Str::cast(tuple->at(1))->equalsCStr("foo_val"));
+  EXPECT_TRUE(RawStr::cast(tuple->at(1))->equalsCStr("foo_val"));
   ASSERT_TRUE(tuple->at(2)->isStr());
-  EXPECT_TRUE(Str::cast(tuple->at(2))->equalsCStr("bar_val"));
+  EXPECT_TRUE(RawStr::cast(tuple->at(2))->equalsCStr("bar_val"));
 }
 
 }  // namespace python

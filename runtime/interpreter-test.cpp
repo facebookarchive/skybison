@@ -23,11 +23,11 @@ TEST(InterpreterTest, IsTrueBool) {
 
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Handle<Object> true_value(&scope, Bool::trueObj());
+  Object true_value(&scope, Bool::trueObj());
   frame->pushValue(*true_value);
   EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::trueObj());
 
-  Handle<Object> false_object(&scope, Bool::falseObj());
+  Object false_object(&scope, Bool::falseObj());
   frame->pushValue(*false_object);
   EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::falseObj());
 }
@@ -41,11 +41,11 @@ TEST(InterpreterTest, IsTrueInt) {
 
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Handle<Object> true_value(&scope, runtime.newInt(1234));
+  Object true_value(&scope, runtime.newInt(1234));
   frame->pushValue(*true_value);
   EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::trueObj());
 
-  Handle<Object> false_value(&scope, runtime.newInt(0));
+  Object false_value(&scope, runtime.newInt(0));
   frame->pushValue(*false_value);
   EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::falseObj());
 }
@@ -59,16 +59,16 @@ TEST(InterpreterTest, IsTrueDunderLen) {
 
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Handle<List> nonempty_list(&scope, runtime.newList());
-  Handle<Object> elt(&scope, NoneType::object());
+  List nonempty_list(&scope, runtime.newList());
+  Object elt(&scope, NoneType::object());
   runtime.listAdd(nonempty_list, elt);
 
-  Handle<Object> true_value(&scope, *nonempty_list);
+  Object true_value(&scope, *nonempty_list);
   frame->pushValue(*true_value);
   EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::trueObj());
 
-  Handle<List> empty_list(&scope, runtime.newList());
-  Handle<Object> false_value(&scope, *empty_list);
+  List empty_list(&scope, runtime.newList());
+  Object false_value(&scope, *empty_list);
   frame->pushValue(*false_value);
   EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::falseObj());
 }
@@ -89,21 +89,21 @@ right = C()
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
-  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
-  Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Object right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Object c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
-  ASSERT_TRUE(ObjectArray::cast(result)->at(1)->isStr());
-  RawStr name = Str::cast(ObjectArray::cast(result)->at(1));
+  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *c_class);
+  ASSERT_TRUE(RawObjectArray::cast(result)->at(1)->isStr());
+  RawStr name = RawStr::cast(RawObjectArray::cast(result)->at(1));
   EXPECT_TRUE(name->equalsCStr("__sub__"));
-  EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
-  EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *left);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *right);
 }
 
 TEST(InterpreterTest, BinaryOpInvokesSelfMethodIgnoresReflectedMethod) {
@@ -124,21 +124,21 @@ right = C()
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
-  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
-  Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Object right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Object c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
-  ASSERT_TRUE(ObjectArray::cast(result)->at(1)->isStr());
-  RawStr name = Str::cast(ObjectArray::cast(result)->at(1));
+  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *c_class);
+  ASSERT_TRUE(RawObjectArray::cast(result)->at(1)->isStr());
+  RawStr name = RawStr::cast(RawObjectArray::cast(result)->at(1));
   EXPECT_TRUE(name->equalsCStr("__sub__"));
-  EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
-  EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *left);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *right);
 }
 
 TEST(InterpreterTest, BinaryOperationInvokesSubclassReflectedMethod) {
@@ -161,20 +161,20 @@ right = D()
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
-  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
-  Handle<Object> d_class(&scope, testing::moduleAt(&runtime, main, "D"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Object right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Object d_class(&scope, testing::moduleAt(&runtime, main, "D"));
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(ObjectArray::cast(result)->at(0), *d_class);
-  EXPECT_TRUE(
-      Str::cast(ObjectArray::cast(result)->at(1))->equalsCStr("__rsub__"));
-  EXPECT_EQ(ObjectArray::cast(result)->at(2), *right);
-  EXPECT_EQ(ObjectArray::cast(result)->at(3), *left);
+  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *d_class);
+  EXPECT_TRUE(RawStr::cast(RawObjectArray::cast(result)->at(1))
+                  ->equalsCStr("__rsub__"));
+  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *right);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *left);
 }
 
 TEST(InterpreterTest, BinaryOperationInvokesOtherReflectedMethod) {
@@ -196,20 +196,20 @@ right = D()
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
-  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
-  Handle<Object> d_class(&scope, testing::moduleAt(&runtime, main, "D"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Object right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Object d_class(&scope, testing::moduleAt(&runtime, main, "D"));
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(ObjectArray::cast(result)->at(0), *d_class);
-  EXPECT_TRUE(
-      Str::cast(ObjectArray::cast(result)->at(1))->equalsCStr("__rsub__"));
-  EXPECT_EQ(ObjectArray::cast(result)->at(2), *right);
-  EXPECT_EQ(ObjectArray::cast(result)->at(3), *left);
+  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *d_class);
+  EXPECT_TRUE(RawStr::cast(RawObjectArray::cast(result)->at(1))
+                  ->equalsCStr("__rsub__"));
+  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *right);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *left);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsInplaceMethod) {
@@ -228,20 +228,20 @@ right = C()
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
-  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
-  Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Object right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Object c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
   RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
-  EXPECT_TRUE(
-      Str::cast(ObjectArray::cast(result)->at(1))->equalsCStr("__isub__"));
-  EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
-  EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
+  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *c_class);
+  EXPECT_TRUE(RawStr::cast(RawObjectArray::cast(result)->at(1))
+                  ->equalsCStr("__isub__"));
+  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *left);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *right);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsBinaryMethod) {
@@ -260,20 +260,20 @@ right = C()
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
-  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
-  Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Object right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Object c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
   RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
+  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *c_class);
   EXPECT_TRUE(
-      Str::cast(ObjectArray::cast(result)->at(1))->equalsCStr("__sub__"));
-  EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
-  EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
+      RawStr::cast(RawObjectArray::cast(result)->at(1))->equalsCStr("__sub__"));
+  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *left);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *right);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsBinaryMethodAfterNotImplemented) {
@@ -294,20 +294,20 @@ right = C()
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
-  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
-  Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Object right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Object c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
   RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
-  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
-  EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
+  ASSERT_EQ(RawObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(0), *c_class);
   EXPECT_TRUE(
-      Str::cast(ObjectArray::cast(result)->at(1))->equalsCStr("__sub__"));
-  EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
-  EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
+      RawStr::cast(RawObjectArray::cast(result)->at(1))->equalsCStr("__sub__"));
+  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *left);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(3), *right);
 }
 
 // To a rich comparison on two instances of the same type.  In each case, the
@@ -333,9 +333,9 @@ c20 = C(20)
 
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "c10"));
-  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "c20"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object left(&scope, testing::moduleAt(&runtime, main, "c10"));
+  Object right(&scope, testing::moduleAt(&runtime, main, "c20"));
 
   RawObject left_lt_right =
       Interpreter::compareOperation(thread, frame, CompareOp::LT, left, right);
@@ -364,9 +364,9 @@ c20 = C(20)
 
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "c10"));
-  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "c20"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object left(&scope, testing::moduleAt(&runtime, main, "c10"));
+  Object right(&scope, testing::moduleAt(&runtime, main, "c20"));
 
   RawObject left_eq_right =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, left, right);
@@ -427,20 +427,20 @@ c = C()
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
+  Object c(&scope, moduleAt(&runtime, main, "c"));
 
   // Comparisons where rhs is not a subtype of lhs try lhs.__eq__(rhs) first.
   RawObject a_eq_b =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, a, b);
   EXPECT_EQ(a_eq_b, Bool::falseObj());
-  Handle<Str> called(&scope, moduleAt(&runtime, main, "called"));
+  Str called(&scope, moduleAt(&runtime, main, "called"));
   EXPECT_PYSTRING_EQ(*called, "A");
 
-  Handle<Str> called_name(&scope, runtime.newStrFromCStr("called"));
-  Handle<Object> none(&scope, NoneType::object());
+  Str called_name(&scope, runtime.newStrFromCStr("called"));
+  Object none(&scope, NoneType::object());
   runtime.moduleAtPut(main, called_name, none);
   RawObject b_eq_a =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, b, a);
@@ -479,10 +479,10 @@ c = 3
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> container(&scope, testing::moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
-  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object container(&scope, testing::moduleAt(&runtime, main, "a"));
+  Object b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Object c(&scope, testing::moduleAt(&runtime, main, "c"));
   RawObject contains_true =
       Interpreter::sequenceContains(thread, frame, b, container);
   RawObject contains_false =
@@ -511,11 +511,11 @@ with Foo():
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 3);
-  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 2);
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object a(&scope, testing::moduleAt(&runtime, main, "a"));
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 3);
+  Object b(&scope, testing::moduleAt(&runtime, main, "b"));
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
 }
 
 TEST(InterpreterTest, StackCleanupAfterCallFunction) {
@@ -530,14 +530,14 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Handle<Code> code(&scope, runtime.newCode());
+  Code code(&scope, runtime.newCode());
 
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
+  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
   code->setArgcount(2);
@@ -546,10 +546,10 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  Handle<Function> callee(&scope, runtime.newFunction());
+  Function callee(&scope, runtime.newFunction());
   callee->setCode(*code);
   callee->setEntry(interpreterTrampoline);
-  Handle<ObjectArray> defaults(&scope, runtime.newObjectArray(2));
+  ObjectArray defaults(&scope, runtime.newObjectArray(2));
 
   defaults->atPut(0, SmallInt::fromWord(1));
   defaults->atPut(1, SmallInt::fromWord(2));
@@ -568,7 +568,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   RawObject result = Interpreter::call(thread, frame, 1);
 
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_EQ(SmallInt::cast(result)->value(), 42);
+  EXPECT_EQ(RawSmallInt::cast(result)->value(), 42);
   EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
@@ -584,14 +584,14 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Handle<Code> code(&scope, runtime.newCode());
+  Code code(&scope, runtime.newCode());
 
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
+  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
   code->setArgcount(2);
@@ -600,10 +600,10 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  Handle<Function> callee(&scope, runtime.newFunction());
+  Function callee(&scope, runtime.newFunction());
   callee->setCode(*code);
   callee->setEntryEx(interpreterTrampolineEx);
-  Handle<ObjectArray> defaults(&scope, runtime.newObjectArray(2));
+  ObjectArray defaults(&scope, runtime.newObjectArray(2));
 
   defaults->atPut(0, SmallInt::fromWord(1));
   defaults->atPut(1, SmallInt::fromWord(2));
@@ -616,7 +616,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   RawObject* value_stack_start = frame->valueStackTop();
 
   // Push function pointer and argument
-  Handle<ObjectArray> ex(&scope, runtime.newObjectArray(1));
+  ObjectArray ex(&scope, runtime.newObjectArray(1));
   ex->atPut(0, SmallInt::fromWord(2));
   frame->pushValue(*callee);
   frame->pushValue(*ex);
@@ -624,7 +624,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   RawObject result = Interpreter::callEx(thread, frame, 0);
 
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_EQ(SmallInt::cast(result)->value(), 42);
+  EXPECT_EQ(RawSmallInt::cast(result)->value(), 42);
   EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
@@ -640,19 +640,19 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Handle<Code> code(&scope, runtime.newCode());
+  Code code(&scope, runtime.newCode());
 
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
+  ObjectArray names(&scope, runtime.newObjectArray(1));
+  Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
   code->setArgcount(2);
   code->setStacksize(1);
-  Handle<ObjectArray> var_names(&scope, runtime.newObjectArray(2));
+  ObjectArray var_names(&scope, runtime.newObjectArray(2));
   var_names->atPut(0, runtime.newStrFromCStr("a"));
   var_names->atPut(1, runtime.newStrFromCStr("b"));
   code->setVarnames(*var_names);
@@ -660,10 +660,10 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  Handle<Function> callee(&scope, runtime.newFunction());
+  Function callee(&scope, runtime.newFunction());
   callee->setCode(*code);
   callee->setEntryKw(interpreterTrampolineKw);
-  Handle<ObjectArray> defaults(&scope, runtime.newObjectArray(2));
+  ObjectArray defaults(&scope, runtime.newObjectArray(2));
 
   defaults->atPut(0, SmallInt::fromWord(1));
   defaults->atPut(1, SmallInt::fromWord(2));
@@ -676,7 +676,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   RawObject* value_stack_start = frame->valueStackTop();
 
   // Push function pointer and argument
-  Handle<ObjectArray> arg_names(&scope, runtime.newObjectArray(1));
+  ObjectArray arg_names(&scope, runtime.newObjectArray(1));
   arg_names->atPut(0, runtime.newStrFromCStr("b"));
   frame->pushValue(*callee);
   frame->pushValue(SmallInt::fromWord(4));
@@ -685,7 +685,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   RawObject result = Interpreter::callKw(thread, frame, 1);
 
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_EQ(SmallInt::cast(result)->value(), 42);
+  EXPECT_EQ(RawSmallInt::cast(result)->value(), 42);
   EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
@@ -707,11 +707,11 @@ c = C()
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
-  Handle<Object> f(&scope, testing::moduleAt(&runtime, main, "f"));
-  Handle<Object> method(&scope, Interpreter::lookupMethod(
-                                    thread, frame, c, SymbolId::kDunderCall));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object c(&scope, testing::moduleAt(&runtime, main, "c"));
+  Object f(&scope, testing::moduleAt(&runtime, main, "f"));
+  Object method(&scope, Interpreter::lookupMethod(thread, frame, c,
+                                                  SymbolId::kDunderCall));
   EXPECT_EQ(*f, *method);
 }
 
@@ -793,8 +793,8 @@ result = c(42)
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> result(&scope, testing::moduleAt(&runtime, main, "result"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object result(&scope, testing::moduleAt(&runtime, main, "result"));
   EXPECT_EQ(*result, SmallInt::fromWord(42));
 }
 
@@ -825,16 +825,16 @@ TEST(InterpreterTest, UnpackSequence) {
 l = [1, 2, 3]
 a, b, c = l
 )");
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
-  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Object b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Object c(&scope, testing::moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
   ASSERT_TRUE(c->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*c)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*c)->value(), 3);
 }
 
 TEST(InterpreterDeathTest, UnpackSequenceTooFewObjects) {
@@ -872,10 +872,10 @@ def my_displayhook(value):
 sys.displayhook = my_displayhook
   )");
 
-  Handle<Object> unique(&scope, runtime.newObjectArray(1));  // unique object
+  Object unique(&scope, runtime.newObjectArray(1));  // unique object
 
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(2));
   consts->atPut(0, *unique);
   consts->atPut(1, NoneType::object());
   code->setConsts(*consts);
@@ -887,16 +887,14 @@ sys.displayhook = my_displayhook
   RawObject result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isNoneType());
 
-  Handle<Module> sys(&scope, testing::findModule(&runtime, "sys"));
-  Handle<Object> displayhook(&scope,
-                             testing::moduleAt(&runtime, sys, "displayhook"));
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> my_displayhook(
-      &scope, testing::moduleAt(&runtime, main, "my_displayhook"));
+  Module sys(&scope, testing::findModule(&runtime, "sys"));
+  Object displayhook(&scope, testing::moduleAt(&runtime, sys, "displayhook"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object my_displayhook(&scope,
+                        testing::moduleAt(&runtime, main, "my_displayhook"));
   EXPECT_EQ(*displayhook, *my_displayhook);
 
-  Handle<Object> my_global(&scope,
-                           testing::moduleAt(&runtime, main, "MY_GLOBAL"));
+  Object my_global(&scope, testing::moduleAt(&runtime, main, "MY_GLOBAL"));
   EXPECT_EQ(*my_global, *unique);
 }
 
@@ -911,26 +909,26 @@ class AsyncIterable:
 a = AsyncIterable()
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object a(&scope, testing::moduleAt(&runtime, main, "a"));
 
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  Handle<Object> result(&scope, Thread::currentThread()->run(*code));
+  Object result(&scope, Thread::currentThread()->run(*code));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(42, SmallInt::cast(*result)->value());
+  EXPECT_EQ(42, RawSmallInt::cast(*result)->value());
 }
 
 TEST(InterpreterDeathTest, GetAiterOnNonIterable) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, SmallInt::fromWord(123));
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
@@ -959,16 +957,16 @@ class M:
 manager = M()
   )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
 
-  Handle<Code> code(&scope, runtime.newCode());
+  Code code(&scope, runtime.newCode());
   code->setNlocals(0);
 
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, SmallInt::fromWord(42));
   code->setConsts(*consts);
 
-  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  ObjectArray names(&scope, runtime.newObjectArray(1));
   names->atPut(0, runtime.newStrFromCStr("manager"));
   code->setNames(*names);
 
@@ -976,21 +974,21 @@ manager = M()
                            LOAD_CONST,  0, RETURN_VALUE,      0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  Handle<Dict> globals(&scope, main->dict());
-  Handle<Dict> builtins(&scope, runtime.newDict());
+  Dict globals(&scope, main->dict());
+  Dict builtins(&scope, runtime.newDict());
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
   frame->setGlobals(*globals);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
-  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+  Object result(&scope, Interpreter::execute(thread, frame));
   ASSERT_EQ(*result, SmallInt::fromWord(42));
 
-  Handle<Object> manager(&scope, testing::moduleAt(&runtime, main, "manager"));
-  Handle<Object> enter(&scope, testing::moduleAt(&runtime, main, "enter"));
+  Object manager(&scope, testing::moduleAt(&runtime, main, "manager"));
+  Object enter(&scope, testing::moduleAt(&runtime, main, "enter"));
   EXPECT_EQ(*enter, *manager);
 
-  Handle<Object> exit(&scope, testing::moduleAt(&runtime, main, "exit"));
+  Object exit(&scope, testing::moduleAt(&runtime, main, "exit"));
   EXPECT_EQ(*exit, NoneType::object());
 }
 
@@ -998,8 +996,8 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(2));
   consts->atPut(0, SmallInt::fromWord(42));
   consts->atPut(1, NoneType::object());
   code->setConsts(*consts);
@@ -1020,32 +1018,32 @@ TEST(InterpreterTest, UnpackSequenceEx) {
 l = [1, 2, 3, 4, 5, 6, 7]
 a, b, c, *d, e, f, g  = l
 )");
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
-  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Object b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Object c(&scope, testing::moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
   ASSERT_TRUE(c->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*c)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*c)->value(), 3);
 
-  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  Object d(&scope, testing::moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d->isList());
-  Handle<List> list(&scope, *d);
+  List list(&scope, *d);
   EXPECT_EQ(list->numItems(), 1);
-  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(list->at(0))->value(), 4);
 
-  Handle<Object> e(&scope, testing::moduleAt(&runtime, main, "e"));
-  Handle<Object> f(&scope, testing::moduleAt(&runtime, main, "f"));
-  Handle<Object> g(&scope, testing::moduleAt(&runtime, main, "g"));
+  Object e(&scope, testing::moduleAt(&runtime, main, "e"));
+  Object f(&scope, testing::moduleAt(&runtime, main, "f"));
+  Object g(&scope, testing::moduleAt(&runtime, main, "g"));
   ASSERT_TRUE(e->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*e)->value(), 5);
+  EXPECT_EQ(RawSmallInt::cast(*e)->value(), 5);
   ASSERT_TRUE(f->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*f)->value(), 6);
+  EXPECT_EQ(RawSmallInt::cast(*f)->value(), 6);
   ASSERT_TRUE(g->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*g)->value(), 7);
+  EXPECT_EQ(RawSmallInt::cast(*g)->value(), 7);
 }
 
 TEST(InterpreterTest, UnpackSequenceExWithNoElementsAfter) {
@@ -1055,20 +1053,20 @@ TEST(InterpreterTest, UnpackSequenceExWithNoElementsAfter) {
 l = [1, 2, 3, 4]
 a, b, *c = l
 )");
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
-  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Object b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Object c(&scope, testing::moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
 
   ASSERT_TRUE(c->isList());
-  Handle<List> list(&scope, *c);
+  List list(&scope, *c);
   ASSERT_EQ(list->numItems(), 2);
-  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 3);
-  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(list->at(0))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(list->at(1))->value(), 4);
 }
 
 TEST(InterpreterTest, UnpackSequenceExWithNoElementsBefore) {
@@ -1078,20 +1076,20 @@ TEST(InterpreterTest, UnpackSequenceExWithNoElementsBefore) {
 l = [1, 2, 3, 4]
 *a, b, c = l
 )");
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
-  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Object b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Object c(&scope, testing::moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(a->isList());
-  Handle<List> list(&scope, *a);
+  List list(&scope, *a);
   ASSERT_EQ(list->numItems(), 2);
-  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 1);
-  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(list->at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(list->at(1))->value(), 2);
 
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 3);
   ASSERT_TRUE(c->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*c)->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(*c)->value(), 4);
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithDict) {
@@ -1101,32 +1099,32 @@ TEST(InterpreterTest, BuildMapUnpackWithDict) {
 d = {**{'a': 1, 'b': 2}, 'c': 3, **{'d': 4}}
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object d(&scope, testing::moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d->isDict());
 
-  Handle<Dict> dict(&scope, *d);
+  Dict dict(&scope, *d);
   EXPECT_EQ(dict->numItems(), 4);
 
-  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
-  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  Object key(&scope, SmallStr::fromCStr("a"));
+  Object el0(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el0->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
-  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el1->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
-  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el2->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
-  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el3->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithListKeysMapping) {
@@ -1150,32 +1148,32 @@ class Foo:
 d = {**Foo(), 'd': 4}
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object d(&scope, testing::moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d->isDict());
 
-  Handle<Dict> dict(&scope, *d);
+  Dict dict(&scope, *d);
   EXPECT_EQ(dict->numItems(), 4);
 
-  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
-  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  Object key(&scope, SmallStr::fromCStr("a"));
+  Object el0(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el0->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
-  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el1->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
-  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el2->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
-  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el3->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithTupleKeysMapping) {
@@ -1199,32 +1197,32 @@ class Foo:
 d = {**Foo(), 'd': 4}
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object d(&scope, testing::moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d->isDict());
 
-  Handle<Dict> dict(&scope, *d);
+  Dict dict(&scope, *d);
   EXPECT_EQ(dict->numItems(), 4);
 
-  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
-  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  Object key(&scope, SmallStr::fromCStr("a"));
+  Object el0(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el0->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
-  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el1->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
-  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el2->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
-  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el3->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithIterableKeysMapping) {
@@ -1264,32 +1262,32 @@ class Foo:
 d = {**Foo(), 'd': 4}
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object d(&scope, testing::moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d->isDict());
 
-  Handle<Dict> dict(&scope, *d);
+  Dict dict(&scope, *d);
   EXPECT_EQ(dict->numItems(), 4);
 
-  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
-  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  Object key(&scope, SmallStr::fromCStr("a"));
+  Object el0(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el0->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
-  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el1->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
-  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el2->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
-  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el3->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
 TEST(InterpreterDeathTest, BuildMapUnpackWithNonMapping) {
@@ -1390,15 +1388,15 @@ def foo(*args):
 t = foo(*(1,2), *(3, 4))
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> t(&scope, testing::moduleAt(&runtime, main, "t"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object t(&scope, testing::moduleAt(&runtime, main, "t"));
   ASSERT_TRUE(t->isObjectArray());
 
-  Handle<ObjectArray> tuple(&scope, *t);
-  EXPECT_EQ(SmallInt::cast(tuple->at(0))->value(), 1);
-  EXPECT_EQ(SmallInt::cast(tuple->at(1))->value(), 2);
-  EXPECT_EQ(SmallInt::cast(tuple->at(2))->value(), 3);
-  EXPECT_EQ(SmallInt::cast(tuple->at(3))->value(), 4);
+  ObjectArray tuple(&scope, *t);
+  EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(tuple->at(1))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(tuple->at(2))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(tuple->at(3))->value(), 4);
 }
 
 TEST(InterpreterTest, FunctionDerefsVariable) {
@@ -1415,10 +1413,10 @@ def outer():
 v = outer()
 	)");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> v(&scope, testing::moduleAt(&runtime, main, "v"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object v(&scope, testing::moduleAt(&runtime, main, "v"));
   ASSERT_TRUE(v->isInt());
-  Handle<Int> result(&scope, *v);
+  Int result(&scope, *v);
   EXPECT_EQ(result->asWord(), 0);
 }
 
@@ -1453,7 +1451,7 @@ def public_symbol2():
 )";
 
   // Preload the module
-  Handle<Object> name(&scope, runtime.newStrFromCStr("test_module"));
+  Object name(&scope, runtime.newStrFromCStr("test_module"));
   std::unique_ptr<char[]> buffer(Runtime::compile(module_src));
   runtime.importModuleFromBuffer(buffer.get(), name);
 
@@ -1463,14 +1461,14 @@ a = public_symbol()
 b = public_symbol2()
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Object b(&scope, testing::moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(a->isInt());
   ASSERT_TRUE(b->isInt());
 
-  Handle<Int> result1(&scope, *a);
-  Handle<Int> result2(&scope, *b);
+  Int result1(&scope, *a);
+  Int result2(&scope, *b);
   EXPECT_EQ(result1->asWord(), 1);
   EXPECT_EQ(result2->asWord(), 2);
 }
@@ -1487,7 +1485,7 @@ def _private_symbol():
 )";
 
   // Preload the module
-  Handle<Object> name(&scope, runtime.newStrFromCStr("test_module"));
+  Object name(&scope, runtime.newStrFromCStr("test_module"));
   std::unique_ptr<char[]> buffer(Runtime::compile(module_src));
   runtime.importModuleFromBuffer(buffer.get(), name);
 
@@ -1521,31 +1519,29 @@ class AsyncIterator:
 
 a = AsyncIterator()
 )");
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object a(&scope, testing::moduleAt(&runtime, main, "a"));
 
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  Handle<Object> result(&scope, Thread::currentThread()->run(*code));
+  Object result(&scope, Thread::currentThread()->run(*code));
   EXPECT_EQ(*a, *result);
-  Handle<Object> anext(&scope,
-                       testing::moduleAt(&runtime, main, "anext_called"));
+  Object anext(&scope, testing::moduleAt(&runtime, main, "anext_called"));
   EXPECT_EQ(*a, *anext);
-  Handle<Object> await(&scope,
-                       testing::moduleAt(&runtime, main, "await_called"));
+  Object await(&scope, testing::moduleAt(&runtime, main, "await_called"));
   EXPECT_EQ(*a, *await);
 }
 
 TEST(InterpreterDeathTest, GetAnextOnNonIterable) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, SmallInt::fromWord(123));
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
@@ -1565,11 +1561,11 @@ class AsyncIterator:
 
 a = AsyncIterator()
 )");
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object a(&scope, testing::moduleAt(&runtime, main, "a"));
 
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
@@ -1590,26 +1586,26 @@ class Awaitable:
 a = Awaitable()
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object a(&scope, testing::moduleAt(&runtime, main, "a"));
 
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, *a);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  Handle<Object> result(&scope, Thread::currentThread()->run(*code));
+  Object result(&scope, Thread::currentThread()->run(*code));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(42, SmallInt::cast(*result)->value());
+  EXPECT_EQ(42, RawSmallInt::cast(*result)->value());
 }
 
 TEST(InterpreterDeathTest, GetAwaitableOnNonAwaitable) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, runtime.newStrFromCStr("foo"));
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
@@ -1629,32 +1625,32 @@ def foo(**kwargs):
 d = foo(**{'a': 1, 'b': 2}, **{'c': 3, 'd': 4})
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object d(&scope, testing::moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d->isDict());
 
-  Handle<Dict> dict(&scope, *d);
+  Dict dict(&scope, *d);
   EXPECT_EQ(dict->numItems(), 4);
 
-  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
-  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  Object key(&scope, SmallStr::fromCStr("a"));
+  Object el0(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el0->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
-  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el1->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
-  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el2->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
-  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el3->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithCallTupleKeys) {
@@ -1677,32 +1673,32 @@ def foo(**kwargs):
 d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object d(&scope, testing::moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d->isDict());
 
-  Handle<Dict> dict(&scope, *d);
+  Dict dict(&scope, *d);
   EXPECT_EQ(dict->numItems(), 4);
 
-  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
-  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  Object key(&scope, SmallStr::fromCStr("a"));
+  Object el0(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el0->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
-  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el1->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
-  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el2->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
-  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el3->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithCallListKeys) {
@@ -1725,32 +1721,32 @@ def foo(**kwargs):
 d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object d(&scope, testing::moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d->isDict());
 
-  Handle<Dict> dict(&scope, *d);
+  Dict dict(&scope, *d);
   EXPECT_EQ(dict->numItems(), 4);
 
-  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
-  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  Object key(&scope, SmallStr::fromCStr("a"));
+  Object el0(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el0->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
-  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el1->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
-  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el2->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
-  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el3->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithCallIteratorKeys) {
@@ -1791,32 +1787,32 @@ def foo(**kwargs):
 d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 )");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object d(&scope, testing::moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d->isDict());
 
-  Handle<Dict> dict(&scope, *d);
+  Dict dict(&scope, *d);
   EXPECT_EQ(dict->numItems(), 4);
 
-  Handle<Object> key(&scope, SmallStr::fromCStr("a"));
-  Handle<Object> el0(&scope, runtime.dictAt(dict, key));
+  Object key(&scope, SmallStr::fromCStr("a"));
+  Object el0(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el0->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el0)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
-  Handle<Object> el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el1->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el1)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
-  Handle<Object> el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el2->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el2)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
-  Handle<Object> el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(el3->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*el3)->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
 TEST(InterpreterDeathTest, BuildMapUnpackWithCallDictNonStrKey) {
@@ -2069,12 +2065,12 @@ class Foo:
 foo = Foo()
 	)");
 
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> foo(&scope, testing::moduleAt(&runtime, main, "foo"));
+  Module main(&scope, testing::findModule(&runtime, "__main__"));
+  Object foo(&scope, testing::moduleAt(&runtime, main, "foo"));
 
   // Create a code object and set the foo instance as a const
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  Code code(&scope, runtime.newCode());
+  ObjectArray consts(&scope, runtime.newObjectArray(1));
   consts->atPut(0, *foo);
   code->setConsts(*consts);
 
@@ -2090,9 +2086,9 @@ foo = Foo()
   code->setCode(runtime.newBytesWithAll(bc));
 
   // Confirm that the returned value is the iterator of Foo
-  Handle<Object> result(&scope, Thread::currentThread()->run(*code));
-  Handle<Type> result_type(&scope, runtime.typeOf(*result));
-  EXPECT_PYSTRING_EQ(Str::cast(result_type->name()), "FooIterator");
+  Object result(&scope, Thread::currentThread()->run(*code));
+  Type result_type(&scope, runtime.typeOf(*result));
+  EXPECT_PYSTRING_EQ(RawStr::cast(result_type->name()), "FooIterator");
 }
 
 TEST(InterpreterDeathTest, YieldFromIterThrowsException) {

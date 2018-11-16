@@ -112,7 +112,7 @@ Frame* Thread::pushNativeFrame(void* fn, word nargs) {
 
 Frame* Thread::pushFrame(RawObject object) {
   HandleScope scope(this);
-  Handle<Code> code(&scope, object);
+  Code code(&scope, object);
   auto frame =
       openAndLinkFrame(code->totalArgs(), code->totalVars(), code->stacksize());
   frame->setCode(*code);
@@ -122,11 +122,10 @@ Frame* Thread::pushFrame(RawObject object) {
 Frame* Thread::pushModuleFunctionFrame(RawModule module, RawObject object) {
   HandleScope scope;
   Frame* result = pushFrame(object);
-  Handle<Code> code(&scope, object);
-  Handle<Dict> globals(&scope, module->dict());
-  Handle<Object> name(&scope, runtime()->symbols()->Builtins());
-  Handle<Dict> builtins(&scope,
-                        Module::cast(runtime()->findModule(name))->dict());
+  Code code(&scope, object);
+  Dict globals(&scope, module->dict());
+  Object name(&scope, runtime()->symbols()->Builtins());
+  Dict builtins(&scope, RawModule::cast(runtime()->findModule(name))->dict());
   result->setGlobals(*globals);
   result->setBuiltins(*builtins);
   result->setFastGlobals(
@@ -137,12 +136,11 @@ Frame* Thread::pushModuleFunctionFrame(RawModule module, RawObject object) {
 
 Frame* Thread::pushClassFunctionFrame(RawObject function, RawObject dict) {
   HandleScope scope;
-  Handle<Code> code(&scope, Function::cast(function)->code());
+  Code code(&scope, RawFunction::cast(function)->code());
   Frame* result = pushFrame(*code);
-  Handle<Dict> globals(&scope, Function::cast(function)->globals());
-  Handle<Object> name(&scope, runtime()->symbols()->Builtins());
-  Handle<Dict> builtins(&scope,
-                        Module::cast(runtime()->findModule(name))->dict());
+  Dict globals(&scope, RawFunction::cast(function)->globals());
+  Object name(&scope, runtime()->symbols()->Builtins());
+  Dict builtins(&scope, RawModule::cast(runtime()->findModule(name))->dict());
   result->setGlobals(*globals);
   result->setBuiltins(*builtins);
   result->setFastGlobals(
@@ -157,15 +155,15 @@ Frame* Thread::pushClassFunctionFrame(RawObject function, RawObject dict) {
   }
 
   // initialize free vars
-  DCHECK(
-      code->numFreevars() == 0 ||
-          code->numFreevars() ==
-              ObjectArray::cast(Function::cast(function)->closure())->length(),
-      "Number of freevars is different than the closure.");
+  DCHECK(code->numFreevars() == 0 ||
+             code->numFreevars() ==
+                 RawObjectArray::cast(RawFunction::cast(function)->closure())
+                     ->length(),
+         "Number of freevars is different than the closure.");
   for (word i = 0; i < code->numFreevars(); i++) {
     result->setLocal(
         num_locals + num_cellvars + i,
-        ObjectArray::cast(Function::cast(function)->closure())->at(i));
+        RawObjectArray::cast(RawFunction::cast(function)->closure())->at(i));
   }
   return result;
 }
@@ -302,7 +300,7 @@ bool Thread::hasPendingException() { return !exception_type_->isNoneType(); }
 
 bool Thread::hasPendingStopIteration() {
   return exception_type_->isType() &&
-         Type::cast(exception_type_)
+         RawType::cast(exception_type_)
              ->hasFlag(Type::Flag::kStopIterationSubclass);
 }
 
@@ -322,7 +320,7 @@ void Thread::ignorePendingException() {
   }
   *builtinStderr << "ignore pending exception";
   if (exceptionValue()->isStr()) {
-    RawStr message = Str::cast(exceptionValue());
+    RawStr message = RawStr::cast(exceptionValue());
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);
@@ -347,7 +345,7 @@ void Thread::abortOnPendingException() {
   }
   std::cerr << "aborting due to pending exception";
   if (exceptionValue()->isStr()) {
-    RawStr message = Str::cast(exceptionValue());
+    RawStr message = RawStr::cast(exceptionValue());
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);

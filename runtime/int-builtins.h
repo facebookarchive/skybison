@@ -26,7 +26,7 @@ class IntBuiltins {
 
  private:
   static RawObject negateLargeInteger(Runtime* runtime,
-                                      const Handle<Object>& large_integer);
+                                      const Object& large_integer);
   static const BuiltinMethod kMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntBuiltins);

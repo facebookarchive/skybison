@@ -14,15 +14,15 @@ TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
-  Handle<Dict> dict(&scope, runtime.newDictWithSize(1));
-  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
-  Handle<Object> val(&scope, runtime.newInt(0));
+  Dict dict(&scope, runtime.newDictWithSize(1));
+  Object key(&scope, runtime.newStrFromCStr("foo"));
+  Object val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
   frame->setLocal(0, *dict);
   frame->setLocal(1, *key);
   RawObject result = DictBuiltins::dunderContains(thread, frame, 2);
   ASSERT_TRUE(result->isBool());
-  EXPECT_TRUE(Bool::cast(result)->value());
+  EXPECT_TRUE(RawBool::cast(result)->value());
 }
 
 TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
@@ -33,7 +33,7 @@ TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
   frame->setLocal(1, runtime.newStrFromCStr("foo"));
   RawObject result = DictBuiltins::dunderContains(thread, frame, 2);
   ASSERT_TRUE(result->isBool());
-  EXPECT_FALSE(Bool::cast(result)->value());
+  EXPECT_FALSE(RawBool::cast(result)->value());
 }
 
 TEST(DictBuiltinsTest, InWithExistingKeyReturnsTrue) {
@@ -43,8 +43,8 @@ d = {"foo": 1}
 foo_in_d = "foo" in d
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> foo_in_d(&scope, moduleAt(&runtime, main, "foo_in_d"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool foo_in_d(&scope, moduleAt(&runtime, main, "foo_in_d"));
 
   EXPECT_TRUE(foo_in_d->value());
 }
@@ -56,8 +56,8 @@ d = {}
 foo_in_d = "foo" in d
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> foo_in_d(&scope, moduleAt(&runtime, main, "foo_in_d"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool foo_in_d(&scope, moduleAt(&runtime, main, "foo_in_d"));
 
   EXPECT_FALSE(foo_in_d->value());
 }
@@ -67,9 +67,9 @@ TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
-  Handle<Dict> dict(&scope, runtime.newDictWithSize(1));
-  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
-  Handle<Object> val(&scope, runtime.newInt(0));
+  Dict dict(&scope, runtime.newDictWithSize(1));
+  Object key(&scope, runtime.newStrFromCStr("foo"));
+  Object val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
   frame->setLocal(0, *dict);
   frame->setLocal(1, *key);
@@ -82,9 +82,9 @@ TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyThrowsKeyError) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
-  Handle<Dict> dict(&scope, runtime.newDictWithSize(1));
-  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
-  Handle<Object> val(&scope, runtime.newInt(0));
+  Dict dict(&scope, runtime.newDictWithSize(1));
+  Object key(&scope, runtime.newStrFromCStr("foo"));
+  Object val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
   frame->setLocal(0, *dict);
   // "bar" doesn't exist in this dictionary, attempting to delete it should
@@ -101,9 +101,9 @@ d = {"foo": 1}
 del d["foo"]
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Dict> d(&scope, moduleAt(&runtime, main, "d"));
-  Handle<Object> foo(&scope, runtime.newStrFromCStr("foo"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Dict d(&scope, moduleAt(&runtime, main, "d"));
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
 
   EXPECT_FALSE(runtime.dictIncludes(d, foo));
 }
@@ -122,15 +122,15 @@ TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 3, 0);
-  Handle<Dict> dict(&scope, runtime.newDictWithSize(1));
-  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
-  Handle<Object> val(&scope, runtime.newInt(0));
-  Handle<Object> val2(&scope, runtime.newInt(1));
+  Dict dict(&scope, runtime.newDictWithSize(1));
+  Object key(&scope, runtime.newStrFromCStr("foo"));
+  Object val(&scope, runtime.newInt(0));
+  Object val2(&scope, runtime.newInt(1));
   runtime.dictAtPut(dict, key, val);
   frame->setLocal(0, *dict);
   frame->setLocal(1, *key);
   frame->setLocal(2, *val2);
-  Handle<Object> result(&scope, DictBuiltins::dunderSetItem(thread, frame, 3));
+  Object result(&scope, DictBuiltins::dunderSetItem(thread, frame, 3));
   ASSERT_TRUE(result->isNoneType());
   ASSERT_EQ(dict->numItems(), 1);
   ASSERT_EQ(runtime.dictAt(dict, key), *val2);
@@ -141,14 +141,14 @@ TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 3, 0);
-  Handle<Dict> dict(&scope, runtime.newDictWithSize(1));
-  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
-  Handle<Object> val(&scope, runtime.newInt(0));
+  Dict dict(&scope, runtime.newDictWithSize(1));
+  Object key(&scope, runtime.newStrFromCStr("foo"));
+  Object val(&scope, runtime.newInt(0));
   frame->setLocal(0, *dict);
   frame->setLocal(1, *key);
   frame->setLocal(2, *val);
   ASSERT_EQ(dict->numItems(), 0);
-  Handle<Object> result(&scope, DictBuiltins::dunderSetItem(thread, frame, 3));
+  Object result(&scope, DictBuiltins::dunderSetItem(thread, frame, 3));
   ASSERT_TRUE(result->isNoneType());
   ASSERT_EQ(dict->numItems(), 1);
   ASSERT_EQ(runtime.dictAt(dict, key), *val);

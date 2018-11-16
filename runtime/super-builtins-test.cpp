@@ -130,11 +130,11 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
   Runtime runtime;
   compileAndRunToString(&runtime, src);
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Int> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Int> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Bool> e(&scope, moduleAt(&runtime, main, "e"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Int a(&scope, moduleAt(&runtime, main, "a"));
+  Int b(&scope, moduleAt(&runtime, main, "b"));
+  Bool c(&scope, moduleAt(&runtime, main, "c"));
+  Bool e(&scope, moduleAt(&runtime, main, "e"));
   EXPECT_EQ(a->asWord(), 3);
   EXPECT_EQ(b->asWord(), 10);
   EXPECT_EQ(*c, Bool::trueObj());

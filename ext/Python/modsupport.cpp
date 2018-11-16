@@ -10,8 +10,7 @@ PY_EXPORT int PyModule_AddObject(PyObject* pymodule, const char* name,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
-  Handle<Object> module_obj(&scope,
-                            ApiHandle::fromPyObject(pymodule)->asObject());
+  Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
   if (!module_obj->isModule()) {
     // TODO(cshapiro): throw a TypeError
     return -1;
@@ -20,13 +19,13 @@ PY_EXPORT int PyModule_AddObject(PyObject* pymodule, const char* name,
     // TODO(cshapiro): throw a TypeError
     return -1;
   }
-  Handle<Object> key(&scope, runtime->newStrFromCStr(name));
+  Object key(&scope, runtime->newStrFromCStr(name));
   if (!key->isStr()) {
     // TODO(cshapiro): throw a MemoryError
     return -1;
   }
-  Handle<Module> module(&scope, *module_obj);
-  Handle<Object> value(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Module module(&scope, *module_obj);
+  Object value(&scope, ApiHandle::fromPyObject(obj)->asObject());
   runtime->moduleAtPut(module, key, value);
   return 0;
 }

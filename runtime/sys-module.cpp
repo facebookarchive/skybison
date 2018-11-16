@@ -16,7 +16,7 @@ RawObject builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> obj(&scope, args.get(0));
+  Object obj(&scope, args.get(0));
   if (obj->isNoneType()) {
     return NoneType::object();
   }
@@ -37,7 +37,7 @@ RawObject builtinSysExit(Thread* thread, Frame* frame, word nargs) {
     if (!arg->isSmallInt()) {
       return thread->raiseTypeErrorWithCStr("exit() expects numeric argument");
     }
-    code = SmallInt::cast(arg)->value();
+    code = RawSmallInt::cast(arg)->value();
   }
 
   std::exit(code);

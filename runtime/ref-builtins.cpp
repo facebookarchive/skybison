@@ -21,7 +21,7 @@ RawObject builtinRefNew(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("ref() expected 2 or 3 arguments");
   }
   Arguments args(frame, nargs);
-  Handle<WeakRef> ref(&scope, thread->runtime()->newWeakRef());
+  WeakRef ref(&scope, thread->runtime()->newWeakRef());
   ref->setReferent(args.get(1));
   if (nargs == 3) {
     ref->setCallback(args.get(2));

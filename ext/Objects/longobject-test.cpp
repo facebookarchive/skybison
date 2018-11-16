@@ -100,7 +100,7 @@ TEST_F(LongExtensionApiTest, Overflow) {
   word digits[] = {-1, kMaxWord};
   // TODO(bsimmers): Rewrite this to use PyLong_FromString() once we've
   // implemented it.
-  Handle<LargeInt> large(&scope, runtime->newIntWithDigits(digits));
+  LargeInt large(&scope, runtime->newIntWithDigits(digits));
   PyObject* pylong = ApiHandle::fromObject(*large);
   EXPECT_EQ(PyLong_AsUnsignedLong(pylong), -1UL);
   EXPECT_TRUE(testing::exceptionValueMatches(
@@ -151,8 +151,7 @@ TEST_F(LongExtensionApiTest, AsLongAndOverflow) {
   word digits[] = {-1, -2};
   // TODO(bsimmers): Rewrite this to use PyLong_FromString() once we've
   // implemented it.
-  Handle<LargeInt> large_int(&scope,
-                             thread->runtime()->newIntWithDigits(digits));
+  LargeInt large_int(&scope, thread->runtime()->newIntWithDigits(digits));
   pylong = ApiHandle::fromObject(*large_int);
   overflow = 0;
   EXPECT_EQ(PyLong_AsLongAndOverflow(pylong, &overflow), -1);
@@ -184,7 +183,7 @@ TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithLargeInt) {
   word digits[] = {-1, kMaxWord};
   // TODO(bsimmers): Rewrite this to use PyLong_FromString() once we've
   // implemented it.
-  Handle<LargeInt> large(&scope, runtime->newIntWithDigits(digits));
+  LargeInt large(&scope, runtime->newIntWithDigits(digits));
   PyObject* pylong = ApiHandle::fromObject(*large);
   EXPECT_EQ(PyLong_AsUnsignedLongMask(pylong), -1UL);
   EXPECT_EQ(PyErr_Occurred(), nullptr);

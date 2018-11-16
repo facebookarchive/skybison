@@ -20,9 +20,9 @@ a = int("123")
 b = int("-987")
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Int> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Int> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Int a(&scope, moduleAt(&runtime, main, "a"));
+  Int b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a->asWord(), 123);
   EXPECT_EQ(b->asWord(), -987);
 }
@@ -36,11 +36,11 @@ c = int("023", 0)
 d = int("0xabc", 0)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Int> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Int> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Int> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Int> d(&scope, moduleAt(&runtime, main, "d"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Int a(&scope, moduleAt(&runtime, main, "a"));
+  Int b(&scope, moduleAt(&runtime, main, "b"));
+  Int c(&scope, moduleAt(&runtime, main, "c"));
+  Int d(&scope, moduleAt(&runtime, main, "d"));
   EXPECT_EQ(a->asWord(), 19);
   EXPECT_EQ(b->asWord(), 2748);
   EXPECT_EQ(c->asWord(), 19);
@@ -59,12 +59,12 @@ a_eq_a = a == a
 b_eq_b = b == b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_eq_b(&scope, moduleAt(&runtime, main, "a_eq_b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_eq_b(&scope, moduleAt(&runtime, main, "a_eq_b"));
   EXPECT_EQ(*a_eq_b, Bool::falseObj());
-  Handle<Object> a_eq_a(&scope, moduleAt(&runtime, main, "a_eq_a"));
+  Object a_eq_a(&scope, moduleAt(&runtime, main, "a_eq_a"));
   EXPECT_EQ(*a_eq_a, Bool::trueObj());
-  Handle<Object> b_eq_b(&scope, moduleAt(&runtime, main, "b_eq_b"));
+  Object b_eq_b(&scope, moduleAt(&runtime, main, "b_eq_b"));
   EXPECT_EQ(*b_eq_b, Bool::trueObj());
 }
 
@@ -81,14 +81,14 @@ b_ge_a = b >= a
 b_ge_b = b >= b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_ge_a(&scope, moduleAt(&runtime, main, "a_ge_a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_ge_a(&scope, moduleAt(&runtime, main, "a_ge_a"));
   EXPECT_EQ(*a_ge_a, Bool::trueObj());
-  Handle<Object> a_ge_b(&scope, moduleAt(&runtime, main, "a_ge_b"));
+  Object a_ge_b(&scope, moduleAt(&runtime, main, "a_ge_b"));
   EXPECT_EQ(*a_ge_b, Bool::falseObj());
-  Handle<Object> b_ge_a(&scope, moduleAt(&runtime, main, "b_ge_a"));
+  Object b_ge_a(&scope, moduleAt(&runtime, main, "b_ge_a"));
   EXPECT_EQ(*b_ge_a, Bool::trueObj());
-  Handle<Object> b_ge_b(&scope, moduleAt(&runtime, main, "b_ge_b"));
+  Object b_ge_b(&scope, moduleAt(&runtime, main, "b_ge_b"));
   EXPECT_EQ(*b_ge_b, Bool::trueObj());
 }
 
@@ -105,14 +105,14 @@ b_gt_a = b > a
 b_gt_b = b > b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_gt_a(&scope, moduleAt(&runtime, main, "a_gt_a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_gt_a(&scope, moduleAt(&runtime, main, "a_gt_a"));
   EXPECT_EQ(*a_gt_a, Bool::falseObj());
-  Handle<Object> a_gt_b(&scope, moduleAt(&runtime, main, "a_gt_b"));
+  Object a_gt_b(&scope, moduleAt(&runtime, main, "a_gt_b"));
   EXPECT_EQ(*a_gt_b, Bool::falseObj());
-  Handle<Object> b_gt_a(&scope, moduleAt(&runtime, main, "b_gt_a"));
+  Object b_gt_a(&scope, moduleAt(&runtime, main, "b_gt_a"));
   EXPECT_EQ(*b_gt_a, Bool::trueObj());
-  Handle<Object> b_gt_b(&scope, moduleAt(&runtime, main, "b_gt_b"));
+  Object b_gt_b(&scope, moduleAt(&runtime, main, "b_gt_b"));
   EXPECT_EQ(*b_gt_b, Bool::falseObj());
 }
 
@@ -129,14 +129,14 @@ b_le_a = b <= a
 b_le_b = b <= b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
   EXPECT_EQ(*a_le_a, Bool::trueObj());
-  Handle<Object> a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
+  Object a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
   EXPECT_EQ(*a_le_b, Bool::trueObj());
-  Handle<Object> b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
+  Object b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
   EXPECT_EQ(*b_le_a, Bool::falseObj());
-  Handle<Object> b_le_b(&scope, moduleAt(&runtime, main, "b_le_b"));
+  Object b_le_b(&scope, moduleAt(&runtime, main, "b_le_b"));
   EXPECT_EQ(*b_le_b, Bool::trueObj());
 }
 
@@ -153,14 +153,14 @@ b_lt_a = b < a
 b_lt_b = b < b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_lt_a(&scope, moduleAt(&runtime, main, "a_lt_a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_lt_a(&scope, moduleAt(&runtime, main, "a_lt_a"));
   EXPECT_EQ(*a_lt_a, Bool::falseObj());
-  Handle<Object> a_lt_b(&scope, moduleAt(&runtime, main, "a_lt_b"));
+  Object a_lt_b(&scope, moduleAt(&runtime, main, "a_lt_b"));
   EXPECT_EQ(*a_lt_b, Bool::trueObj());
-  Handle<Object> b_lt_a(&scope, moduleAt(&runtime, main, "b_lt_a"));
+  Object b_lt_a(&scope, moduleAt(&runtime, main, "b_lt_a"));
   EXPECT_EQ(*b_lt_a, Bool::falseObj());
-  Handle<Object> b_lt_b(&scope, moduleAt(&runtime, main, "b_lt_b"));
+  Object b_lt_b(&scope, moduleAt(&runtime, main, "b_lt_b"));
   EXPECT_EQ(*b_lt_b, Bool::falseObj());
 }
 
@@ -176,12 +176,12 @@ a_ne_a = a != a
 b_ne_b = b != b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_ne_b(&scope, moduleAt(&runtime, main, "a_ne_b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_ne_b(&scope, moduleAt(&runtime, main, "a_ne_b"));
   EXPECT_EQ(*a_ne_b, Bool::trueObj());
-  Handle<Object> a_ne_a(&scope, moduleAt(&runtime, main, "a_ne_a"));
+  Object a_ne_a(&scope, moduleAt(&runtime, main, "a_ne_a"));
   EXPECT_EQ(*a_ne_a, Bool::falseObj());
-  Handle<Object> b_ne_b(&scope, moduleAt(&runtime, main, "b_ne_b"));
+  Object b_ne_b(&scope, moduleAt(&runtime, main, "b_ne_b"));
   EXPECT_EQ(*b_ne_b, Bool::falseObj());
 }
 
@@ -202,20 +202,20 @@ a_is_c = a is c
 a_is_not_c = a is not c
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_lt_b(&scope, moduleAt(&runtime, main, "a_lt_b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_lt_b(&scope, moduleAt(&runtime, main, "a_lt_b"));
   EXPECT_EQ(*a_lt_b, Bool::trueObj());
-  Handle<Object> a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
+  Object a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
   EXPECT_EQ(*a_le_b, Bool::trueObj());
-  Handle<Object> a_eq_b(&scope, moduleAt(&runtime, main, "a_eq_b"));
+  Object a_eq_b(&scope, moduleAt(&runtime, main, "a_eq_b"));
   EXPECT_EQ(*a_eq_b, Bool::falseObj());
-  Handle<Object> a_ge_b(&scope, moduleAt(&runtime, main, "a_ge_b"));
+  Object a_ge_b(&scope, moduleAt(&runtime, main, "a_ge_b"));
   EXPECT_EQ(*a_ge_b, Bool::falseObj());
-  Handle<Object> a_gt_b(&scope, moduleAt(&runtime, main, "a_gt_b"));
+  Object a_gt_b(&scope, moduleAt(&runtime, main, "a_gt_b"));
   EXPECT_EQ(*a_gt_b, Bool::falseObj());
-  Handle<Object> a_is_c(&scope, moduleAt(&runtime, main, "a_is_c"));
+  Object a_is_c(&scope, moduleAt(&runtime, main, "a_is_c"));
   EXPECT_EQ(*a_is_c, Bool::trueObj());
-  Handle<Object> a_is_not_c(&scope, moduleAt(&runtime, main, "a_is_not_c"));
+  Object a_is_not_c(&scope, moduleAt(&runtime, main, "a_is_not_c"));
   EXPECT_EQ(*a_is_not_c, Bool::falseObj());
 }
 
@@ -232,15 +232,15 @@ invert_neg = ~neg
 
   runtime.runFromCStr(src);
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<Object> invert_pos(&scope, moduleAt(&runtime, main, "invert_pos"));
+  Object invert_pos(&scope, moduleAt(&runtime, main, "invert_pos"));
   ASSERT_TRUE(invert_pos->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*invert_pos)->value(), -124);
+  EXPECT_EQ(RawSmallInt::cast(*invert_pos)->value(), -124);
 
-  Handle<Object> invert_neg(&scope, moduleAt(&runtime, main, "invert_neg"));
+  Object invert_neg(&scope, moduleAt(&runtime, main, "invert_neg"));
   ASSERT_TRUE(invert_neg->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*invert_neg)->value(), 455);
+  EXPECT_EQ(RawSmallInt::cast(*invert_neg)->value(), 455);
 }
 
 TEST(IntBuiltinsTest, UnaryPositiveSmallInt) {
@@ -256,15 +256,15 @@ plus_neg = +neg
 
   runtime.runFromCStr(src);
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<Object> plus_pos(&scope, moduleAt(&runtime, main, "plus_pos"));
+  Object plus_pos(&scope, moduleAt(&runtime, main, "plus_pos"));
   ASSERT_TRUE(plus_pos->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*plus_pos)->value(), 123);
+  EXPECT_EQ(RawSmallInt::cast(*plus_pos)->value(), 123);
 
-  Handle<Object> plus_neg(&scope, moduleAt(&runtime, main, "plus_neg"));
+  Object plus_neg(&scope, moduleAt(&runtime, main, "plus_neg"));
   ASSERT_TRUE(plus_neg->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*plus_neg)->value(), -123);
+  EXPECT_EQ(RawSmallInt::cast(*plus_neg)->value(), -123);
 }
 
 TEST(IntBuiltinsTest, UnaryNegateSmallInt) {
@@ -280,15 +280,15 @@ minus_neg = -neg
 
   runtime.runFromCStr(src);
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime, "__main__"));
 
-  Handle<Object> minus_pos(&scope, moduleAt(&runtime, main, "minus_pos"));
+  Object minus_pos(&scope, moduleAt(&runtime, main, "minus_pos"));
   ASSERT_TRUE(minus_pos->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*minus_pos)->value(), -123);
+  EXPECT_EQ(RawSmallInt::cast(*minus_pos)->value(), -123);
 
-  Handle<Object> minus_neg(&scope, moduleAt(&runtime, main, "minus_neg"));
+  Object minus_neg(&scope, moduleAt(&runtime, main, "minus_neg"));
   ASSERT_TRUE(minus_neg->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*minus_neg)->value(), 123);
+  EXPECT_EQ(RawSmallInt::cast(*minus_neg)->value(), 123);
 }
 
 TEST(IntBuiltinsTest, TruthyIntPos) {
@@ -378,11 +378,11 @@ TEST(IntBuiltinsTest, BinaryAddOverflowCheck) {
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
-  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMaxValue));
-  frame->setLocal(1, SmallInt::fromWord(SmallInt::kMaxValue));
-  Handle<Object> result(&scope, SmallIntBuiltins::dunderAdd(thread, frame, 2));
+  frame->setLocal(0, SmallInt::fromWord(RawSmallInt::kMaxValue));
+  frame->setLocal(1, SmallInt::fromWord(RawSmallInt::kMaxValue));
+  Object result(&scope, SmallIntBuiltins::dunderAdd(thread, frame, 2));
   ASSERT_TRUE(result->isLargeInt());
-  EXPECT_EQ(LargeInt::cast(*result)->asWord(), SmallInt::kMaxValue * 2);
+  EXPECT_EQ(RawLargeInt::cast(*result)->asWord(), RawSmallInt::kMaxValue * 2);
 }
 
 TEST(IntBuiltinsTest, InplaceAdd) {
@@ -395,13 +395,13 @@ a += 0
 b = a
 a += 2
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 3);
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 1);
 }
 
 TEST(IntBuiltinsTest, InplaceMultiply) {
@@ -414,13 +414,13 @@ a *= 1
 b = a
 a *= 2
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 10);
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 10);
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 5);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 5);
 }
 
 TEST(IntBuiltinsTest, InplaceFloorDiv) {
@@ -433,13 +433,13 @@ a //= 1
 b = a
 a //= 2
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 2);
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 5);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 5);
 }
 
 TEST(IntBuiltinsTest, InplaceModulo) {
@@ -452,13 +452,13 @@ a %= 7
 b = a
 a %= 2
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 3);
 }
 
 TEST(IntBuiltinsTest, InplaceSub) {
@@ -471,13 +471,13 @@ a -= 0
 b = a
 a -= 7
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 3);
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 10);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 10);
 }
 
 TEST(IntBuiltinsTest, InplaceXor) {
@@ -490,13 +490,13 @@ a ^= 0
 b = a
 a ^= 0x03
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 0xFD);
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 0xFD);
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 0xFE);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 0xFE);
 }
 
 TEST(IntBuiltinsTest, BinaryAddSmallInt) {
@@ -509,10 +509,10 @@ b = 1
 c = a + b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*c)->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(*c)->value(), 3);
 }
 
 TEST(IntBuiltinsTest, BinaryAddSmallIntOverflow) {
@@ -522,12 +522,12 @@ TEST(IntBuiltinsTest, BinaryAddSmallIntOverflow) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
 
-  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMaxValue - 1));
+  frame->setLocal(0, SmallInt::fromWord(RawSmallInt::kMaxValue - 1));
   frame->setLocal(1, SmallInt::fromWord(2));
-  Handle<Object> c(&scope, SmallIntBuiltins::dunderAdd(thread, frame, 2));
+  Object c(&scope, SmallIntBuiltins::dunderAdd(thread, frame, 2));
 
   ASSERT_TRUE(c->isLargeInt());
-  EXPECT_EQ(LargeInt::cast(*c)->asWord(), SmallInt::kMaxValue + 1);
+  EXPECT_EQ(RawLargeInt::cast(*c)->asWord(), RawSmallInt::kMaxValue + 1);
 }
 
 TEST(IntBuiltinsTest, BitLength) {
@@ -538,71 +538,71 @@ TEST(IntBuiltinsTest, BitLength) {
 
   // (0).bit_length() == 0
   frame->setLocal(0, SmallInt::fromWord(0));
-  Handle<Object> bit_length(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  Object bit_length(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*bit_length)->value(), 0);
+  EXPECT_EQ(RawSmallInt::cast(*bit_length)->value(), 0);
 
   // (1).bit_length() == 1
   frame->setLocal(0, SmallInt::fromWord(1));
-  Handle<Object> bit_length1(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  Object bit_length1(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length1->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*bit_length1)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*bit_length1)->value(), 1);
 
   // (-1).bit_length() == 1
   frame->setLocal(0, SmallInt::fromWord(1));
-  Handle<Object> bit_length2(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  Object bit_length2(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length2->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*bit_length2)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*bit_length2)->value(), 1);
 
   // (SmallInt::kMaxValue).bit_length() == 62
-  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMaxValue));
-  Handle<Object> bit_length3(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  frame->setLocal(0, SmallInt::fromWord(RawSmallInt::kMaxValue));
+  Object bit_length3(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length3->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*bit_length3)->value(), 62);
+  EXPECT_EQ(RawSmallInt::cast(*bit_length3)->value(), 62);
 
   // (SmallInt::kMinValue).bit_length() == 63
-  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMinValue));
-  Handle<Object> bit_length4(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  frame->setLocal(0, SmallInt::fromWord(RawSmallInt::kMinValue));
+  Object bit_length4(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length4->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*bit_length4)->value(), 63);
+  EXPECT_EQ(RawSmallInt::cast(*bit_length4)->value(), 63);
 
   // (kMaxInt64).bit_length() == 63
-  Handle<Object> large_int1(&scope, runtime.newInt(kMaxInt64));
+  Object large_int1(&scope, runtime.newInt(kMaxInt64));
   frame->setLocal(0, *large_int1);
-  Handle<Object> bit_length5(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  Object bit_length5(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length5->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*bit_length5)->value(), 63);
+  EXPECT_EQ(RawSmallInt::cast(*bit_length5)->value(), 63);
 
   // (kMinInt64).bit_length() == 64
-  Handle<Object> large_int2(&scope, runtime.newInt(kMinInt64));
+  Object large_int2(&scope, runtime.newInt(kMinInt64));
   frame->setLocal(0, *large_int2);
-  Handle<Object> bit_length6(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  Object bit_length6(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length6->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*bit_length6)->value(), 64);
+  EXPECT_EQ(RawSmallInt::cast(*bit_length6)->value(), 64);
 
   word digits[] = {0, kMaxInt32};
-  Handle<Object> large_int3(&scope, runtime.newIntWithDigits(digits));
+  Object large_int3(&scope, runtime.newIntWithDigits(digits));
   frame->setLocal(0, *large_int3);
-  Handle<Object> bit_length7(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  Object bit_length7(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length7->isSmallInt());
   // 31 bits for kMaxInt32 + 64 bits
-  EXPECT_EQ(SmallInt::cast(*bit_length7)->value(), 95);
+  EXPECT_EQ(RawSmallInt::cast(*bit_length7)->value(), 95);
 
   // (kMinInt64 * 4).bit_length() == 66
   word digits2[] = {0, -2};
-  Handle<Object> large_int4(&scope, runtime.newIntWithDigits(digits2));
+  Object large_int4(&scope, runtime.newIntWithDigits(digits2));
   frame->setLocal(0, *large_int4);
-  Handle<Object> bit_length8(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  Object bit_length8(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length8->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*bit_length8)->value(), 66);
+  EXPECT_EQ(RawSmallInt::cast(*bit_length8)->value(), 66);
 
   // (kMinInt64 * 4 + 3).bit_length() == 65
   word digits3[] = {3, -2};
-  Handle<Object> large_int5(&scope, runtime.newIntWithDigits(digits3));
+  Object large_int5(&scope, runtime.newIntWithDigits(digits3));
   frame->setLocal(0, *large_int5);
-  Handle<Object> bit_length9(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  Object bit_length9(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length9->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*bit_length9)->value(), 65);
+  EXPECT_EQ(RawSmallInt::cast(*bit_length9)->value(), 65);
 }
 
 TEST(IntBuiltinsTest, CompareLargeIntEq) {
@@ -612,44 +612,44 @@ TEST(IntBuiltinsTest, CompareLargeIntEq) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
 
-  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
-  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  Object a(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
+  Object b(&scope, runtime.newInt(RawSmallInt::kMinValue - 1));
   ASSERT_TRUE(a->isLargeInt());
   ASSERT_TRUE(b->isLargeInt());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_1(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  Object cmp_1(&scope, IntBuiltins::dunderEq(thread, frame, 2));
   ASSERT_TRUE(cmp_1->isBool());
   EXPECT_EQ(*cmp_1, Bool::falseObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_2(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  Object cmp_2(&scope, IntBuiltins::dunderEq(thread, frame, 2));
   ASSERT_TRUE(cmp_2->isBool());
   EXPECT_EQ(*cmp_2, Bool::falseObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_3(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  Object cmp_3(&scope, IntBuiltins::dunderEq(thread, frame, 2));
   ASSERT_TRUE(cmp_3->isBool());
   EXPECT_EQ(*cmp_3, Bool::trueObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_4(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  Object cmp_4(&scope, IntBuiltins::dunderEq(thread, frame, 2));
   ASSERT_TRUE(cmp_4->isBool());
   EXPECT_EQ(*cmp_4, Bool::falseObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_5(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  Object cmp_5(&scope, IntBuiltins::dunderEq(thread, frame, 2));
   ASSERT_TRUE(cmp_5->isBool());
   EXPECT_EQ(*cmp_5, Bool::falseObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_6(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  Object cmp_6(&scope, IntBuiltins::dunderEq(thread, frame, 2));
   ASSERT_TRUE(cmp_6->isBool());
   EXPECT_EQ(*cmp_6, Bool::trueObj());
 }
@@ -661,44 +661,44 @@ TEST(IntBuiltinsTest, CompareLargeIntNe) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
 
-  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
-  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  Object a(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
+  Object b(&scope, runtime.newInt(RawSmallInt::kMinValue - 1));
   ASSERT_TRUE(a->isLargeInt());
   ASSERT_TRUE(b->isLargeInt());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_1(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  Object cmp_1(&scope, IntBuiltins::dunderNe(thread, frame, 2));
   ASSERT_TRUE(cmp_1->isBool());
   EXPECT_EQ(*cmp_1, Bool::trueObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_2(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  Object cmp_2(&scope, IntBuiltins::dunderNe(thread, frame, 2));
   ASSERT_TRUE(cmp_2->isBool());
   EXPECT_EQ(*cmp_2, Bool::trueObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_3(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  Object cmp_3(&scope, IntBuiltins::dunderNe(thread, frame, 2));
   ASSERT_TRUE(cmp_3->isBool());
   EXPECT_EQ(*cmp_3, Bool::falseObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_4(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  Object cmp_4(&scope, IntBuiltins::dunderNe(thread, frame, 2));
   ASSERT_TRUE(cmp_4->isBool());
   EXPECT_EQ(*cmp_4, Bool::trueObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_5(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  Object cmp_5(&scope, IntBuiltins::dunderNe(thread, frame, 2));
   ASSERT_TRUE(cmp_5->isBool());
   EXPECT_EQ(*cmp_5, Bool::trueObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_6(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  Object cmp_6(&scope, IntBuiltins::dunderNe(thread, frame, 2));
   ASSERT_TRUE(cmp_6->isBool());
   EXPECT_EQ(*cmp_6, Bool::falseObj());
 }
@@ -709,31 +709,31 @@ TEST(LargeIntBuiltinsTest, UnaryPositive) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
-  Handle<Object> smallint_max(&scope, runtime.newInt(SmallInt::kMaxValue));
+  Object smallint_max(&scope, runtime.newInt(RawSmallInt::kMaxValue));
   frame->setLocal(0, *smallint_max);
-  Handle<Object> a(&scope, IntBuiltins::dunderPos(thread, frame, 1));
+  Object a(&scope, IntBuiltins::dunderPos(thread, frame, 1));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(),
-            static_cast<word>(SmallInt::kMaxValue));
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(),
+            static_cast<word>(RawSmallInt::kMaxValue));
 
-  Handle<Object> smallint_max1(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  Object smallint_max1(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
   frame->setLocal(0, *smallint_max1);
-  Handle<Object> b(&scope, IntBuiltins::dunderPos(thread, frame, 1));
+  Object b(&scope, IntBuiltins::dunderPos(thread, frame, 1));
   ASSERT_TRUE(b->isLargeInt());
-  EXPECT_EQ(LargeInt::cast(*b)->asWord(), SmallInt::kMaxValue + 1);
+  EXPECT_EQ(RawLargeInt::cast(*b)->asWord(), RawSmallInt::kMaxValue + 1);
 
-  Handle<Object> smallint_min(&scope, runtime.newInt(SmallInt::kMinValue));
+  Object smallint_min(&scope, runtime.newInt(RawSmallInt::kMinValue));
   frame->setLocal(0, *smallint_min);
-  Handle<Object> c(&scope, IntBuiltins::dunderPos(thread, frame, 1));
+  Object c(&scope, IntBuiltins::dunderPos(thread, frame, 1));
   ASSERT_TRUE(c->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*c)->value(),
-            static_cast<word>(SmallInt::kMinValue));
+  EXPECT_EQ(RawSmallInt::cast(*c)->value(),
+            static_cast<word>(RawSmallInt::kMinValue));
 
-  Handle<Object> smallint_min1(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  Object smallint_min1(&scope, runtime.newInt(RawSmallInt::kMinValue - 1));
   frame->setLocal(0, *smallint_min1);
-  Handle<Object> d(&scope, IntBuiltins::dunderPos(thread, frame, 1));
+  Object d(&scope, IntBuiltins::dunderPos(thread, frame, 1));
   ASSERT_TRUE(d->isLargeInt());
-  EXPECT_EQ(LargeInt::cast(*d)->asWord(), SmallInt::kMinValue - 1);
+  EXPECT_EQ(RawLargeInt::cast(*d)->asWord(), RawSmallInt::kMinValue - 1);
 }
 
 TEST(LargeIntBuiltinsTest, UnaryNegateTest) {
@@ -742,38 +742,38 @@ TEST(LargeIntBuiltinsTest, UnaryNegateTest) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
-  Handle<Object> smallint_max(&scope, runtime.newInt(SmallInt::kMaxValue));
+  Object smallint_max(&scope, runtime.newInt(RawSmallInt::kMaxValue));
   frame->setLocal(0, *smallint_max);
-  Handle<Object> a(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
+  Object a(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), -SmallInt::kMaxValue);
+  EXPECT_EQ(RawSmallInt::cast(*a)->value(), -RawSmallInt::kMaxValue);
 
-  Handle<Object> smallint_max1(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  Object smallint_max1(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
   frame->setLocal(0, *smallint_max1);
-  Handle<Object> b(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
+  Object b(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), SmallInt::kMinValue);
+  EXPECT_EQ(RawSmallInt::cast(*b)->value(), RawSmallInt::kMinValue);
 
-  Handle<Object> smallint_min(&scope, runtime.newInt(SmallInt::kMinValue));
+  Object smallint_min(&scope, runtime.newInt(RawSmallInt::kMinValue));
   frame->setLocal(0, *smallint_min);
-  Handle<Object> c(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
+  Object c(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
   ASSERT_TRUE(c->isLargeInt());
-  EXPECT_EQ(LargeInt::cast(*c)->asWord(), -SmallInt::kMinValue);
+  EXPECT_EQ(RawLargeInt::cast(*c)->asWord(), -RawSmallInt::kMinValue);
 
-  Handle<Object> smallint_min1(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  Object smallint_min1(&scope, runtime.newInt(RawSmallInt::kMinValue - 1));
   frame->setLocal(0, *smallint_min1);
-  Handle<Object> d(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
+  Object d(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
   ASSERT_TRUE(d->isLargeInt());
-  EXPECT_EQ(LargeInt::cast(*d)->asWord(), -(SmallInt::kMinValue - 1));
+  EXPECT_EQ(RawLargeInt::cast(*d)->asWord(), -(RawSmallInt::kMinValue - 1));
 
-  Handle<Int> min_word(&scope, runtime.newInt(kMinWord));
+  Int min_word(&scope, runtime.newInt(kMinWord));
   frame->setLocal(0, *min_word);
-  Handle<Object> e(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
+  Object e(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
   ASSERT_TRUE(e->isLargeInt());
-  Handle<LargeInt> large_e(e);
+  LargeInt large_e(e);
   EXPECT_TRUE(large_e->isPositive());
-  Handle<Int> max_word(&scope, runtime.newInt(kMaxWord));
-  EXPECT_EQ(Int::cast(*large_e)->compare(*max_word), 1);
+  Int max_word(&scope, runtime.newInt(kMaxWord));
+  EXPECT_EQ(RawInt::cast(*large_e)->compare(*max_word), 1);
   EXPECT_EQ(large_e->numDigits(), 2);
   EXPECT_EQ(large_e->digitAt(0), 1ULL << (kBitsPerWord - 1));
   EXPECT_EQ(large_e->digitAt(1), 0);
@@ -800,44 +800,44 @@ TEST(IntBuiltinsTest, CompareLargeIntGe) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
 
-  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
-  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  Object a(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
+  Object b(&scope, runtime.newInt(RawSmallInt::kMinValue - 1));
   ASSERT_TRUE(a->isLargeInt());
   ASSERT_TRUE(b->isLargeInt());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_1(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  Object cmp_1(&scope, IntBuiltins::dunderGe(thread, frame, 2));
   ASSERT_TRUE(cmp_1->isBool());
   EXPECT_EQ(*cmp_1, Bool::trueObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_2(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  Object cmp_2(&scope, IntBuiltins::dunderGe(thread, frame, 2));
   ASSERT_TRUE(cmp_2->isBool());
   EXPECT_EQ(*cmp_2, Bool::trueObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_3(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  Object cmp_3(&scope, IntBuiltins::dunderGe(thread, frame, 2));
   ASSERT_TRUE(cmp_3->isBool());
   EXPECT_EQ(*cmp_3, Bool::trueObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_4(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  Object cmp_4(&scope, IntBuiltins::dunderGe(thread, frame, 2));
   ASSERT_TRUE(cmp_4->isBool());
   EXPECT_EQ(*cmp_4, Bool::falseObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_5(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  Object cmp_5(&scope, IntBuiltins::dunderGe(thread, frame, 2));
   ASSERT_TRUE(cmp_5->isBool());
   EXPECT_EQ(*cmp_5, Bool::falseObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_6(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  Object cmp_6(&scope, IntBuiltins::dunderGe(thread, frame, 2));
   ASSERT_TRUE(cmp_6->isBool());
   EXPECT_EQ(*cmp_6, Bool::trueObj());
 }
@@ -849,44 +849,44 @@ TEST(IntBuiltinsTest, CompareLargeIntLe) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
 
-  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
-  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  Object a(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
+  Object b(&scope, runtime.newInt(RawSmallInt::kMinValue - 1));
   ASSERT_TRUE(a->isLargeInt());
   ASSERT_TRUE(b->isLargeInt());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_1(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  Object cmp_1(&scope, IntBuiltins::dunderLe(thread, frame, 2));
   ASSERT_TRUE(cmp_1->isBool());
   EXPECT_EQ(*cmp_1, Bool::falseObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_2(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  Object cmp_2(&scope, IntBuiltins::dunderLe(thread, frame, 2));
   ASSERT_TRUE(cmp_2->isBool());
   EXPECT_EQ(*cmp_2, Bool::falseObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_3(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  Object cmp_3(&scope, IntBuiltins::dunderLe(thread, frame, 2));
   ASSERT_TRUE(cmp_3->isBool());
   EXPECT_EQ(*cmp_3, Bool::trueObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_4(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  Object cmp_4(&scope, IntBuiltins::dunderLe(thread, frame, 2));
   ASSERT_TRUE(cmp_4->isBool());
   EXPECT_EQ(*cmp_4, Bool::trueObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_5(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  Object cmp_5(&scope, IntBuiltins::dunderLe(thread, frame, 2));
   ASSERT_TRUE(cmp_5->isBool());
   EXPECT_EQ(*cmp_5, Bool::trueObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_6(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  Object cmp_6(&scope, IntBuiltins::dunderLe(thread, frame, 2));
   ASSERT_TRUE(cmp_6->isBool());
   EXPECT_EQ(*cmp_6, Bool::trueObj());
 }
@@ -898,44 +898,44 @@ TEST(IntBuiltinsTest, CompareLargeIntGt) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
 
-  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
-  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  Object a(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
+  Object b(&scope, runtime.newInt(RawSmallInt::kMinValue - 1));
   ASSERT_TRUE(a->isLargeInt());
   ASSERT_TRUE(b->isLargeInt());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_1(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  Object cmp_1(&scope, IntBuiltins::dunderGt(thread, frame, 2));
   ASSERT_TRUE(cmp_1->isBool());
   EXPECT_EQ(*cmp_1, Bool::trueObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_2(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  Object cmp_2(&scope, IntBuiltins::dunderGt(thread, frame, 2));
   ASSERT_TRUE(cmp_2->isBool());
   EXPECT_EQ(*cmp_2, Bool::trueObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_3(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  Object cmp_3(&scope, IntBuiltins::dunderGt(thread, frame, 2));
   ASSERT_TRUE(cmp_3->isBool());
   EXPECT_EQ(*cmp_3, Bool::falseObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_4(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  Object cmp_4(&scope, IntBuiltins::dunderGt(thread, frame, 2));
   ASSERT_TRUE(cmp_4->isBool());
   EXPECT_EQ(*cmp_4, Bool::falseObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_5(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  Object cmp_5(&scope, IntBuiltins::dunderGt(thread, frame, 2));
   ASSERT_TRUE(cmp_5->isBool());
   EXPECT_EQ(*cmp_5, Bool::falseObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_6(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  Object cmp_6(&scope, IntBuiltins::dunderGt(thread, frame, 2));
   ASSERT_TRUE(cmp_6->isBool());
   EXPECT_EQ(*cmp_6, Bool::falseObj());
 }
@@ -947,44 +947,44 @@ TEST(IntBuiltinsTest, CompareLargeIntLt) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
 
-  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
-  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  Object a(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
+  Object b(&scope, runtime.newInt(RawSmallInt::kMinValue - 1));
   ASSERT_TRUE(a->isLargeInt());
   ASSERT_TRUE(b->isLargeInt());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_1(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  Object cmp_1(&scope, IntBuiltins::dunderLt(thread, frame, 2));
   ASSERT_TRUE(cmp_1->isBool());
   EXPECT_EQ(*cmp_1, Bool::falseObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_2(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  Object cmp_2(&scope, IntBuiltins::dunderLt(thread, frame, 2));
   ASSERT_TRUE(cmp_2->isBool());
   EXPECT_EQ(*cmp_2, Bool::falseObj());
 
   frame->setLocal(0, *a);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_3(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  Object cmp_3(&scope, IntBuiltins::dunderLt(thread, frame, 2));
   ASSERT_TRUE(cmp_3->isBool());
   EXPECT_EQ(*cmp_3, Bool::falseObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *a);
-  Handle<Object> cmp_4(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  Object cmp_4(&scope, IntBuiltins::dunderLt(thread, frame, 2));
   ASSERT_TRUE(cmp_4->isBool());
   EXPECT_EQ(*cmp_4, Bool::trueObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, SmallInt::fromWord(0));
-  Handle<Object> cmp_5(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  Object cmp_5(&scope, IntBuiltins::dunderLt(thread, frame, 2));
   ASSERT_TRUE(cmp_5->isBool());
   EXPECT_EQ(*cmp_5, Bool::trueObj());
 
   frame->setLocal(0, *b);
   frame->setLocal(1, *b);
-  Handle<Object> cmp_6(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  Object cmp_6(&scope, IntBuiltins::dunderLt(thread, frame, 2));
   ASSERT_TRUE(cmp_6->isBool());
   EXPECT_EQ(*cmp_6, Bool::falseObj());
 }
@@ -994,19 +994,17 @@ TEST(IntBuiltinsTest, StringToIntDPos) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Handle<Object> str_d0(&scope, runtime.newStrFromCStr("0"));
-  Handle<SmallInt> int_d0(&scope,
-                          IntBuiltins::intFromString(thread, *str_d0, 10));
+  Object str_d0(&scope, runtime.newStrFromCStr("0"));
+  SmallInt int_d0(&scope, IntBuiltins::intFromString(thread, *str_d0, 10));
   EXPECT_EQ(int_d0->value(), 0);
 
-  Handle<Object> str_d123(&scope, runtime.newStrFromCStr("123"));
-  Handle<SmallInt> int_d123(&scope,
-                            IntBuiltins::intFromString(thread, *str_d123, 10));
+  Object str_d123(&scope, runtime.newStrFromCStr("123"));
+  SmallInt int_d123(&scope, IntBuiltins::intFromString(thread, *str_d123, 10));
   EXPECT_EQ(int_d123->value(), 123);
 
-  Handle<Object> str_d987n(&scope, runtime.newStrFromCStr("-987"));
-  Handle<SmallInt> int_d987n(
-      &scope, IntBuiltins::intFromString(thread, *str_d987n, 10));
+  Object str_d987n(&scope, runtime.newStrFromCStr("-987"));
+  SmallInt int_d987n(&scope,
+                     IntBuiltins::intFromString(thread, *str_d987n, 10));
   EXPECT_EQ(int_d987n->value(), -987);
 }
 
@@ -1015,12 +1013,12 @@ TEST(IntBuiltinsTest, StringToIntDNeg) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Handle<Object> str1(&scope, runtime.newStrFromCStr(""));
-  Handle<Object> res1(&scope, IntBuiltins::intFromString(thread, *str1, 10));
+  Object str1(&scope, runtime.newStrFromCStr(""));
+  Object res1(&scope, IntBuiltins::intFromString(thread, *str1, 10));
   EXPECT_TRUE(res1->isError());
 
-  Handle<Object> str2(&scope, runtime.newStrFromCStr("12ab"));
-  Handle<Object> res2(&scope, IntBuiltins::intFromString(thread, *str2, 10));
+  Object str2(&scope, runtime.newStrFromCStr("12ab"));
+  Object res2(&scope, IntBuiltins::intFromString(thread, *str2, 10));
   EXPECT_TRUE(res2->isError());
 }
 
@@ -1034,13 +1032,13 @@ a = (7).__index__()
 b = int.__index__(7)
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(a->isSmallInt());
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(7, SmallInt::cast(*a)->value());
-  EXPECT_EQ(7, SmallInt::cast(*b)->value());
+  EXPECT_EQ(7, RawSmallInt::cast(*a)->value());
+  EXPECT_EQ(7, RawSmallInt::cast(*b)->value());
 }
 
 TEST(IntBuiltinsTest, DunderIntReturnsSameValue) {
@@ -1052,17 +1050,17 @@ TEST(IntBuiltinsTest, DunderIntReturnsSameValue) {
 a = (7).__int__()
 b = int.__int__(7)
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(a->isSmallInt());
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(7, SmallInt::cast(*a)->value());
-  EXPECT_EQ(7, SmallInt::cast(*b)->value());
+  EXPECT_EQ(7, RawSmallInt::cast(*a)->value());
+  EXPECT_EQ(7, RawSmallInt::cast(*b)->value());
 
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
   frame->setLocal(0, runtime.newStrFromCStr("python"));
-  Handle<Object> res(&scope, IntBuiltins::dunderInt(thread, frame, 1));
+  Object res(&scope, IntBuiltins::dunderInt(thread, frame, 1));
   EXPECT_TRUE(res->isError());
 }
 
@@ -1073,14 +1071,14 @@ TEST(IntBuiltinsTest, DunderIntOnBool) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
   frame->setLocal(0, Bool::trueObj());
-  Handle<Object> a(&scope, IntBuiltins::dunderInt(thread, frame, 1));
+  Object a(&scope, IntBuiltins::dunderInt(thread, frame, 1));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(1, SmallInt::cast(*a)->value());
+  EXPECT_EQ(1, RawSmallInt::cast(*a)->value());
 
   frame->setLocal(0, Bool::falseObj());
-  Handle<Object> b(&scope, IntBuiltins::dunderInt(thread, frame, 1));
+  Object b(&scope, IntBuiltins::dunderInt(thread, frame, 1));
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(0, SmallInt::cast(*b)->value());
+  EXPECT_EQ(0, RawSmallInt::cast(*b)->value());
 }
 
 TEST(IntBuiltinsTest, DunderBoolOnBool) {
@@ -1295,11 +1293,11 @@ TEST(IntBuiltinsTest, SmallIntDunderRepr) {
   HandleScope scope(thread);
   Frame* frame = thread->openAndLinkFrame(1, 0, 0);
 
-  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMinValue));
-  Handle<Str> str(&scope, SmallIntBuiltins::dunderRepr(thread, frame, 1));
+  frame->setLocal(0, SmallInt::fromWord(RawSmallInt::kMinValue));
+  Str str(&scope, SmallIntBuiltins::dunderRepr(thread, frame, 1));
   EXPECT_PYSTRING_EQ(*str, "-4611686018427387904");
 
-  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMaxValue));
+  frame->setLocal(0, SmallInt::fromWord(RawSmallInt::kMaxValue));
   str = SmallIntBuiltins::dunderRepr(thread, frame, 1);
   EXPECT_PYSTRING_EQ(*str, "4611686018427387903");
 
@@ -1319,7 +1317,7 @@ TEST(BoolBuiltinsTest, NewFromNonZeroIntegerReturnsTrue) {
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
   frame->setLocal(1, SmallInt::fromWord(2));
   RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
-  EXPECT_TRUE(Bool::cast(result)->value());
+  EXPECT_TRUE(RawBool::cast(result)->value());
 }
 
 TEST(BoolBuiltinsTest, NewFromZerorReturnsFalse) {
@@ -1329,7 +1327,7 @@ TEST(BoolBuiltinsTest, NewFromZerorReturnsFalse) {
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
   frame->setLocal(1, SmallInt::fromWord(0));
   RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
-  EXPECT_FALSE(Bool::cast(result)->value());
+  EXPECT_FALSE(RawBool::cast(result)->value());
 }
 
 TEST(BoolBuiltinsTest, NewFromTrueReturnsTrue) {
@@ -1339,7 +1337,7 @@ TEST(BoolBuiltinsTest, NewFromTrueReturnsTrue) {
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
   frame->setLocal(1, Bool::trueObj());
   RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
-  EXPECT_TRUE(Bool::cast(result)->value());
+  EXPECT_TRUE(RawBool::cast(result)->value());
   thread->popFrame();
 }
 
@@ -1350,7 +1348,7 @@ TEST(BoolBuiltinsTest, NewFromFalseReturnsTrue) {
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
   frame->setLocal(1, Bool::falseObj());
   RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
-  EXPECT_FALSE(Bool::cast(result)->value());
+  EXPECT_FALSE(RawBool::cast(result)->value());
   thread->popFrame();
 }
 
@@ -1362,7 +1360,7 @@ TEST(BoolBuiltinsTest, NewFromNoneIsFalse) {
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
   frame->setLocal(1, NoneType::object());
   RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
-  EXPECT_FALSE(Bool::cast(result)->value());
+  EXPECT_FALSE(RawBool::cast(result)->value());
   thread->popFrame();
 }
 
@@ -1382,16 +1380,16 @@ foo = Foo()
 bar = Bar()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> foo(&scope, moduleAt(&runtime, main, "foo"));
-  Handle<Object> bar(&scope, moduleAt(&runtime, main, "bar"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object foo(&scope, moduleAt(&runtime, main, "foo"));
+  Object bar(&scope, moduleAt(&runtime, main, "bar"));
 
   {
     Frame* frame = thread->openAndLinkFrame(0, 2, 0);
     frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
     frame->setLocal(1, *foo);
     RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
-    EXPECT_TRUE(Bool::cast(result)->value());
+    EXPECT_TRUE(RawBool::cast(result)->value());
     thread->popFrame();
   }
   {
@@ -1399,7 +1397,7 @@ bar = Bar()
     frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
     frame->setLocal(1, *bar);
     RawObject result = BoolBuiltins::dunderNew(thread, frame, 2);
-    EXPECT_FALSE(Bool::cast(result)->value());
+    EXPECT_FALSE(RawBool::cast(result)->value());
     thread->popFrame();
   }
 }
@@ -1483,51 +1481,51 @@ TEST(SmallIntBuiltinsTest, DunderModWithFloat) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
 
   // Test positive smallint mod positive float
-  Handle<Float> float1(&scope, runtime.newFloat(1.5));
+  Float float1(&scope, runtime.newFloat(1.5));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *float1);
-  Handle<Float> result(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  Float result(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
   EXPECT_NEAR(result->value(), 1.0, DBL_EPSILON);
 
   // Test positive smallint mod negative float
-  Handle<Float> float2(&scope, runtime.newFloat(-1.5));
+  Float float2(&scope, runtime.newFloat(-1.5));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *float2);
-  Handle<Float> result1(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  Float result1(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
   EXPECT_NEAR(result1->value(), -0.5, DBL_EPSILON);
 
   // Test positive smallint mod infinity
-  Handle<Float> float_inf(&scope, runtime.newFloat(INFINITY));
+  Float float_inf(&scope, runtime.newFloat(INFINITY));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *float_inf);
-  Handle<Float> result2(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  Float result2(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
   ASSERT_TRUE(result2->isFloat());
   EXPECT_NEAR(result2->value(), 100.0, DBL_EPSILON);
 
   // Test positive smallint mod negative infinity
-  Handle<Float> neg_float_inf(&scope, runtime.newFloat(-INFINITY));
+  Float neg_float_inf(&scope, runtime.newFloat(-INFINITY));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *neg_float_inf);
-  Handle<Float> result3(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  Float result3(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
   EXPECT_EQ(result3->value(), -INFINITY);
 
   // Test negative smallint mod infinity
   frame->setLocal(0, SmallInt::fromWord(-100));
   frame->setLocal(1, *float_inf);
-  Handle<Float> result4(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  Float result4(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
   EXPECT_EQ(result4->value(), INFINITY);
 
   // Test negative smallint mod negative infinity
   frame->setLocal(0, SmallInt::fromWord(-100));
   frame->setLocal(1, *neg_float_inf);
-  Handle<Float> result5(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  Float result5(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
   EXPECT_NEAR(result5->value(), -100.0, DBL_EPSILON);
 
   // Test negative smallint mod nan
-  Handle<Float> nan(&scope, runtime.newFloat(NAN));
+  Float nan(&scope, runtime.newFloat(NAN));
   frame->setLocal(0, SmallInt::fromWord(-100));
   frame->setLocal(1, *nan);
-  Handle<Float> result6(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  Float result6(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
   EXPECT_TRUE(std::isnan(result6->value()));
 
   thread->popFrame();
@@ -1540,57 +1538,50 @@ TEST(SmallIntBuiltinsTest, DunderFloorDivWithFloat) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
 
   // Test dividing a positive smallint by a positive float
-  Handle<Float> float1(&scope, runtime.newFloat(1.5));
+  Float float1(&scope, runtime.newFloat(1.5));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *float1);
-  Handle<Float> result(&scope,
-                       SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  Float result(&scope, SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
   EXPECT_NEAR(result->value(), 66.0, DBL_EPSILON);
 
   // Test dividing a positive smallint by a negative float
-  Handle<Float> float2(&scope, runtime.newFloat(-1.5));
+  Float float2(&scope, runtime.newFloat(-1.5));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *float2);
-  Handle<Float> result1(&scope,
-                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  Float result1(&scope, SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
   EXPECT_NEAR(result1->value(), -67.0, DBL_EPSILON);
 
   // Test dividing a positive smallint by infinity
-  Handle<Float> float_inf(&scope, runtime.newFloat(INFINITY));
+  Float float_inf(&scope, runtime.newFloat(INFINITY));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *float_inf);
-  Handle<Float> result2(&scope,
-                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  Float result2(&scope, SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
   EXPECT_NEAR(result2->value(), 0.0, DBL_EPSILON);
 
   // Test dividing a positive smallint by negative infinity
-  Handle<Float> neg_float_inf(&scope, runtime.newFloat(-INFINITY));
+  Float neg_float_inf(&scope, runtime.newFloat(-INFINITY));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *neg_float_inf);
-  Handle<Float> result3(&scope,
-                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  Float result3(&scope, SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
   EXPECT_NEAR(result3->value(), 0.0, DBL_EPSILON);
 
   // Test dividing a negative smallint by infinity
   frame->setLocal(0, SmallInt::fromWord(-100));
   frame->setLocal(1, *float_inf);
-  Handle<Float> result4(&scope,
-                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  Float result4(&scope, SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
   EXPECT_NEAR(result4->value(), 0.0, DBL_EPSILON);
 
   // Test dividing a negative smallint by negative infinity
   frame->setLocal(0, SmallInt::fromWord(-100));
   frame->setLocal(1, *neg_float_inf);
-  Handle<Float> result5(&scope,
-                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  Float result5(&scope, SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
   EXPECT_NEAR(result5->value(), 0.0, DBL_EPSILON);
 
   // Test dividing negative smallint by nan
-  Handle<Float> nan(&scope, runtime.newFloat(NAN));
+  Float nan(&scope, runtime.newFloat(NAN));
   frame->setLocal(0, SmallInt::fromWord(-100));
   frame->setLocal(1, *nan);
-  Handle<Float> result6(&scope,
-                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  Float result6(&scope, SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
   EXPECT_TRUE(std::isnan(result6->value()));
 
   thread->popFrame();
@@ -1603,57 +1594,50 @@ TEST(SmallIntBuiltinsTest, DunderTrueDivWithFloat) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
 
   // Test dividing a positive smallint by a positive float
-  Handle<Float> float1(&scope, runtime.newFloat(1.5));
+  Float float1(&scope, runtime.newFloat(1.5));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *float1);
-  Handle<Float> result(&scope,
-                       SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  Float result(&scope, SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
   EXPECT_NEAR(result->value(), 66.66666666666667, DBL_EPSILON);
 
   // Test dividing a positive smallint by a negative float
-  Handle<Float> float2(&scope, runtime.newFloat(-1.5));
+  Float float2(&scope, runtime.newFloat(-1.5));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *float2);
-  Handle<Float> result1(&scope,
-                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  Float result1(&scope, SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
   EXPECT_NEAR(result1->value(), -66.66666666666667, DBL_EPSILON);
 
   // Test dividing a positive smallint by infinity
-  Handle<Float> float_inf(&scope, runtime.newFloat(INFINITY));
+  Float float_inf(&scope, runtime.newFloat(INFINITY));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *float_inf);
-  Handle<Float> result2(&scope,
-                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  Float result2(&scope, SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
   EXPECT_NEAR(result2->value(), 0.0, DBL_EPSILON);
 
   // Test dividing a positive smallint by negative infinity
-  Handle<Float> neg_float_inf(&scope, runtime.newFloat(-INFINITY));
+  Float neg_float_inf(&scope, runtime.newFloat(-INFINITY));
   frame->setLocal(0, SmallInt::fromWord(100));
   frame->setLocal(1, *neg_float_inf);
-  Handle<Float> result3(&scope,
-                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  Float result3(&scope, SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
   EXPECT_NEAR(result3->value(), 0.0, DBL_EPSILON);
 
   // Test dividing a negative smallint by infinity
   frame->setLocal(0, SmallInt::fromWord(-100));
   frame->setLocal(1, *float_inf);
-  Handle<Float> result4(&scope,
-                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  Float result4(&scope, SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
   EXPECT_NEAR(result4->value(), 0.0, DBL_EPSILON);
 
   // Test dividing a negative smallint by negative infinity
   frame->setLocal(0, SmallInt::fromWord(-100));
   frame->setLocal(1, *neg_float_inf);
-  Handle<Float> result5(&scope,
-                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  Float result5(&scope, SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
   EXPECT_NEAR(result5->value(), 0.0, DBL_EPSILON);
 
   // Test dividing negative smallint by nan
-  Handle<Float> nan(&scope, runtime.newFloat(NAN));
+  Float nan(&scope, runtime.newFloat(NAN));
   frame->setLocal(0, SmallInt::fromWord(-100));
   frame->setLocal(1, *nan);
-  Handle<Float> result6(&scope,
-                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  Float result6(&scope, SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
   EXPECT_TRUE(std::isnan(result6->value()));
 
   thread->popFrame();
@@ -1667,14 +1651,12 @@ TEST(SmallIntBuiltinsTest, DunderTrueDivWithSmallInt) {
 
   frame->setLocal(0, SmallInt::fromWord(6));
   frame->setLocal(1, SmallInt::fromWord(3));
-  Handle<Float> result(&scope,
-                       SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  Float result(&scope, SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
   EXPECT_NEAR(result->value(), 2.0, DBL_EPSILON);
 
   frame->setLocal(0, SmallInt::fromWord(7));
   frame->setLocal(1, SmallInt::fromWord(3));
-  Handle<Float> result1(&scope,
-                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  Float result1(&scope, SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
   EXPECT_NEAR(result1->value(), 2.3333333333333335, DBL_EPSILON);
 
   thread->popFrame();

@@ -33,11 +33,10 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
 
 void IntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(&scope,
-                    runtime->addBuiltinClass(SymbolId::kInt, LayoutId::kInt,
+  Type type(&scope, runtime->addBuiltinClass(SymbolId::kInt, LayoutId::kInt,
                                              LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
-  Handle<Type> largeint_type(
+  Type largeint_type(
       &scope, runtime->addEmptyBuiltinClass(
                   SymbolId::kLargeInt, LayoutId::kLargeInt, LayoutId::kInt));
   largeint_type->setFlag(Type::Flag::kIntSubclass);
@@ -57,25 +56,25 @@ RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
 
-  Handle<Object> type_obj(&scope, args.get(0));
+  Object type_obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
     return thread->raiseTypeErrorWithCStr(
         "int.__new__(X): X is not a type object");
   }
 
-  Handle<Type> type(&scope, *type_obj);
+  Type type(&scope, *type_obj);
   if (!type->hasFlag(Type::Flag::kIntSubclass)) {
     return thread->raiseTypeErrorWithCStr(
         "int.__new__(X): X is not a subtype of int");
   }
 
-  Handle<Layout> layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type->instanceLayout());
   if (layout->id() != LayoutId::kInt) {
     // TODO(dulinr): Implement __new__ with subtypes of int.
     UNIMPLEMENTED("int.__new__(<subtype of int>, ...)");
   }
 
-  Handle<Object> arg(&scope, args.get(1));
+  Object arg(&scope, args.get(1));
   if (!arg->isStr()) {
     // TODO(dulinr): Handle non-string types.
     UNIMPLEMENTED("int(<non-string>)");
@@ -87,12 +86,12 @@ RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   // The third argument is the base of the integer represented in the string.
-  Handle<Object> base(&scope, args.get(2));
+  Object base(&scope, args.get(2));
   if (!base->isInt()) {
     // TODO(dulinr): Call __index__ on base to convert it.
     UNIMPLEMENTED("Can't handle non-integer base");
   }
-  return intFromString(thread, *arg, Int::cast(*base)->asWord());
+  return intFromString(thread, *arg, RawInt::cast(*base)->asWord());
 }
 
 RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
@@ -102,13 +101,13 @@ RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
         "Invalid base, must be between 2 and 36, or 0");
   }
   HandleScope scope(thread);
-  Handle<Object> arg(&scope, arg_raw);
+  Object arg(&scope, arg_raw);
   if (arg->isInt()) {
     return *arg;
   }
 
   CHECK(arg->isStr(), "not string type");
-  Handle<Str> s(&scope, *arg);
+  Str s(&scope, *arg);
   if (s->length() == 0) {
     return thread->raiseValueErrorWithCStr("invalid literal");
   }
@@ -139,7 +138,7 @@ RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Object> arg(&scope, args.get(0));
+  Object arg(&scope, args.get(0));
   if (arg->isBool()) {
     return intFromBool(*arg);
   }
@@ -168,9 +167,9 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
 
 void SmallIntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(
-      &scope, runtime->addBuiltinClass(SymbolId::kSmallInt, LayoutId::kSmallInt,
-                                       LayoutId::kInt, kMethods));
+  Type type(&scope,
+            runtime->addBuiltinClass(SymbolId::kSmallInt, LayoutId::kSmallInt,
+                                     LayoutId::kInt, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
@@ -184,7 +183,7 @@ void SmallIntBuiltins::initialize(Runtime* runtime) {
 }
 
 // Does this LargeInt use fewer digits now than it would after being negated?
-static bool negationOverflows(const Handle<LargeInt>& value) {
+static bool negationOverflows(const LargeInt& value) {
   word num_digits = value->numDigits();
   for (word i = 0; i < num_digits - 1; i++) {
     if (value->digitAt(i) != 0) {
@@ -196,29 +195,28 @@ static bool negationOverflows(const Handle<LargeInt>& value) {
 }
 
 RawObject IntBuiltins::negateLargeInteger(Runtime* runtime,
-                                          const Handle<Object>& large_int_obj) {
+                                          const Object& large_int_obj) {
   HandleScope scope;
-  Handle<LargeInt> src(&scope, *large_int_obj);
+  LargeInt src(&scope, *large_int_obj);
 
   word num_digits = src->numDigits();
   // -i needs more digits than i if negating it overflows.
   if (negationOverflows(src)) {
-    Handle<LargeInt> result(&scope,
-                            runtime->heap()->createLargeInt(num_digits + 1));
+    LargeInt result(&scope, runtime->heap()->createLargeInt(num_digits + 1));
     for (word i = 0; i < num_digits; i++) {
       result->digitAtPut(i, src->digitAt(i));
     }
     result->digitAtPut(num_digits, 0);
-    DCHECK(result->isValid(), "Invalid LargeInt");
+    DCHECK(result->isValid(), "Invalid RawLargeInt");
     return *result;
   }
 
   // -i fits in a SmallInt when i == SmallInt::kMaxValue + 1.
-  if (num_digits == 1 && src->digitAt(0) == SmallInt::kMaxValue + 1) {
-    return SmallInt::fromWord(SmallInt::kMinValue);
+  if (num_digits == 1 && src->digitAt(0) == RawSmallInt::kMaxValue + 1) {
+    return SmallInt::fromWord(RawSmallInt::kMinValue);
   }
 
-  Handle<LargeInt> result(&scope, runtime->heap()->createLargeInt(num_digits));
+  LargeInt result(&scope, runtime->heap()->createLargeInt(num_digits));
   word carry = 1;
   for (word i = 0; i < num_digits; i++) {
     word digit = src->digitAt(i);
@@ -226,7 +224,7 @@ RawObject IntBuiltins::negateLargeInteger(Runtime* runtime,
     result->digitAtPut(i, digit);
   }
   DCHECK(carry == 0, "Carry should be zero");
-  DCHECK(result->isValid(), "Invalid LargeInt");
+  DCHECK(result->isValid(), "Invalid RawLargeInt");
   return *result;
 }
 
@@ -243,7 +241,7 @@ RawObject IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr(
         "bit_length() must be called with int instance as the first argument");
   }
-  return SmallInt::fromWord(Int::cast(self)->bitLength());
+  return SmallInt::fromWord(RawInt::cast(self)->bitLength());
 }
 
 RawObject IntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
@@ -282,9 +280,9 @@ RawObject IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
         "__eq__() must be called with int instance as the first argument");
   }
 
-  RawInt left = Int::cast(self);
+  RawInt left = RawInt::cast(self);
   if (other->isInt()) {
-    return Bool::fromBool(left->compare(Int::cast(other)) == 0);
+    return Bool::fromBool(left->compare(RawInt::cast(other)) == 0);
   }
   return thread->runtime()->notImplemented();
 }
@@ -298,7 +296,7 @@ RawObject SmallIntBuiltins::dunderInvert(Thread* thread, Frame* frame,
   RawObject self = args.get(0);
 
   if (self->isSmallInt()) {
-    RawSmallInt tos = SmallInt::cast(self);
+    RawSmallInt tos = RawSmallInt::cast(self);
     return SmallInt::fromWord(-(tos->value() + 1));
   }
   return thread->raiseTypeErrorWithCStr("unsupported type for __invert__");
@@ -322,9 +320,9 @@ RawObject IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
         "__le__() must be called with int instance as the first argument");
   }
 
-  RawInt left = Int::cast(self);
+  RawInt left = RawInt::cast(self);
   if (other->isInt()) {
-    return Bool::fromBool(left->compare(Int::cast(other)) <= 0);
+    return Bool::fromBool(left->compare(RawInt::cast(other)) <= 0);
   }
   return thread->runtime()->notImplemented();
 }
@@ -342,9 +340,9 @@ RawObject SmallIntBuiltins::dunderFloorDiv(Thread* thread, Frame* frame,
     return thread->raiseTypeErrorWithCStr(
         "__floordiv__() must be called with int instance as first argument");
   }
-  word left = SmallInt::cast(self)->value();
+  word left = RawSmallInt::cast(self)->value();
   if (other->isFloat()) {
-    double right = Float::cast(other)->value();
+    double right = RawFloat::cast(other)->value();
     if (right == 0.0) {
       return thread->raiseZeroDivisionErrorWithCStr("float divmod()");
     }
@@ -354,7 +352,7 @@ RawObject SmallIntBuiltins::dunderFloorDiv(Thread* thread, Frame* frame,
     other = IntBuiltins::intFromBool(other);
   }
   if (other->isInt()) {
-    word right = Int::cast(other)->asWord();
+    word right = RawInt::cast(other)->asWord();
     if (right == 0) {
       return thread->raiseZeroDivisionErrorWithCStr(
           "integer division or modulo by zero");
@@ -377,9 +375,9 @@ RawObject SmallIntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
     return thread->raiseTypeErrorWithCStr(
         "__truediv__() must be called with int instance as first argument");
   }
-  word left = SmallInt::cast(self)->value();
+  word left = RawSmallInt::cast(self)->value();
   if (other->isFloat()) {
-    double right = Float::cast(other)->value();
+    double right = RawFloat::cast(other)->value();
     if (right == 0.0) {
       return thread->raiseZeroDivisionErrorWithCStr("float division by zero");
     }
@@ -389,7 +387,7 @@ RawObject SmallIntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
     other = IntBuiltins::intFromBool(other);
   }
   if (other->isInt()) {
-    word right = Int::cast(other)->asWord();
+    word right = RawInt::cast(other)->asWord();
     if (right == 0) {
       return thread->raiseZeroDivisionErrorWithCStr("division by zero");
     }
@@ -416,9 +414,9 @@ RawObject IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
         "__lt__() must be called with int instance as the first argument");
   }
 
-  RawInt left = Int::cast(self);
+  RawInt left = RawInt::cast(self);
   if (other->isInt()) {
-    return Bool::fromBool(left->compare(Int::cast(other)) < 0);
+    return Bool::fromBool(left->compare(RawInt::cast(other)) < 0);
   }
   return thread->runtime()->notImplemented();
 }
@@ -441,9 +439,9 @@ RawObject IntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
         "__ge__() must be called with int instance as the first argument");
   }
 
-  RawInt left = Int::cast(self);
+  RawInt left = RawInt::cast(self);
   if (other->isInt()) {
-    return Bool::fromBool(left->compare(Int::cast(other)) >= 0);
+    return Bool::fromBool(left->compare(RawInt::cast(other)) >= 0);
   }
   return thread->runtime()->notImplemented();
 }
@@ -466,9 +464,9 @@ RawObject IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
         "__gt__() must be called with int instance as the first argument");
   }
 
-  RawInt left = Int::cast(self);
+  RawInt left = RawInt::cast(self);
   if (other->isInt()) {
-    return Bool::fromBool(left->compare(Int::cast(other)) > 0);
+    return Bool::fromBool(left->compare(RawInt::cast(other)) > 0);
   }
   return thread->runtime()->notImplemented();
 }
@@ -486,9 +484,9 @@ RawObject SmallIntBuiltins::dunderMod(Thread* thread, Frame* caller,
     return thread->raiseTypeErrorWithCStr(
         "__mod__() must be called with int instance as first argument");
   }
-  word left = SmallInt::cast(self)->value();
+  word left = RawSmallInt::cast(self)->value();
   if (other->isFloat()) {
-    double right = Float::cast(other)->value();
+    double right = RawFloat::cast(other)->value();
     if (right == 0.0) {
       return thread->raiseZeroDivisionErrorWithCStr("float modulo");
     }
@@ -508,7 +506,7 @@ RawObject SmallIntBuiltins::dunderMod(Thread* thread, Frame* caller,
     other = IntBuiltins::intFromBool(other);
   }
   if (other->isInt()) {
-    word right = Int::cast(other)->asWord();
+    word right = RawInt::cast(other)->asWord();
     if (right == 0) {
       return thread->raiseZeroDivisionErrorWithCStr(
           "integer division or modulo by zero");
@@ -530,9 +528,9 @@ RawObject SmallIntBuiltins::dunderMul(Thread* thread, Frame* caller,
     return thread->raiseTypeErrorWithCStr(
         "__mul__() must be called with int instance as first argument");
   }
-  word left = SmallInt::cast(self)->value();
+  word left = RawSmallInt::cast(self)->value();
   if (other->isInt()) {
-    word right = Int::cast(other)->asWord();
+    word right = RawInt::cast(other)->asWord();
     word product;
     if (__builtin_mul_overflow(left, right, &product)) {
       UNIMPLEMENTED("small integer overflow");
@@ -560,9 +558,9 @@ RawObject IntBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
         "__ne__() must be called with int instance as the first argument");
   }
 
-  RawInt left = Int::cast(self);
+  RawInt left = RawInt::cast(self);
   if (other->isInt()) {
-    return Bool::fromBool(left->compare(Int::cast(other)) != 0);
+    return Bool::fromBool(left->compare(RawInt::cast(other)) != 0);
   }
   return thread->runtime()->notImplemented();
 }
@@ -574,9 +572,9 @@ RawObject IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("expected no arguments");
   }
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (self->isSmallInt()) {
-    RawSmallInt tos = SmallInt::cast(*self);
+    RawSmallInt tos = RawSmallInt::cast(*self);
     word neg = -tos->value();
     if (SmallInt::isValid(neg)) {
       return SmallInt::fromWord(neg);
@@ -601,7 +599,7 @@ RawObject IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   if (self->isSmallInt()) {
-    return SmallInt::cast(self);
+    return RawSmallInt::cast(self);
   }
   if (self->isLargeInt()) {
     return self;
@@ -632,9 +630,9 @@ RawObject SmallIntBuiltins::dunderAdd(Thread* thread, Frame* caller,
         "__add__() must be called with int instance as the first argument");
   }
 
-  word left = SmallInt::cast(self)->value();
+  word left = RawSmallInt::cast(self)->value();
   if (other->isInt()) {
-    word right = Int::cast(other)->asWord();
+    word right = RawInt::cast(other)->asWord();
     return thread->runtime()->newInt(left + right);
   }
   return thread->runtime()->notImplemented();
@@ -648,17 +646,17 @@ RawObject SmallIntBuiltins::dunderAnd(Thread* thread, Frame* caller,
 
   Arguments args(caller, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> other(&scope, args.get(1));
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
 
   if (!self->isSmallInt()) {
     return thread->raiseTypeErrorWithCStr(
         "__and__() must be called with int instance as the first argument");
   }
 
-  word left = SmallInt::cast(*self)->value();
+  word left = RawSmallInt::cast(*self)->value();
   if (other->isSmallInt()) {
-    word right = SmallInt::cast(*other)->value();
+    word right = RawSmallInt::cast(*other)->value();
     return SmallInt::fromWord(left & right);
   }
   return thread->runtime()->notImplemented();
@@ -679,9 +677,9 @@ RawObject SmallIntBuiltins::dunderSub(Thread* thread, Frame* frame,
         "__sub__() must be called with int instance as the first argument");
   }
 
-  word left = SmallInt::cast(self)->value();
+  word left = RawSmallInt::cast(self)->value();
   if (other->isInt()) {
-    word right = Int::cast(other)->asWord();
+    word right = RawInt::cast(other)->asWord();
     return thread->runtime()->newInt(left - right);
   }
 
@@ -701,9 +699,9 @@ RawObject SmallIntBuiltins::dunderXor(Thread* thread, Frame* frame,
     return thread->raiseTypeErrorWithCStr(
         "__xor__() must be called with int instance as first argument");
   }
-  word left = SmallInt::cast(self)->value();
+  word left = RawSmallInt::cast(self)->value();
   if (other->isInt()) {
-    word right = Int::cast(other)->asWord();
+    word right = RawInt::cast(other)->asWord();
     return thread->runtime()->newInt(left ^ right);
   }
   return thread->runtime()->notImplemented();
@@ -720,7 +718,7 @@ RawObject SmallIntBuiltins::dunderRepr(Thread* thread, Frame* frame,
     return thread->raiseTypeErrorWithCStr(
         "__repr__() must be called with int instance as first argument");
   }
-  word value = SmallInt::cast(self)->value();
+  word value = RawSmallInt::cast(self)->value();
   char buffer[kWordDigits10 + 1];
   int size = std::snprintf(buffer, sizeof(buffer), "%" PRIdPTR, value);
   (void)size;
@@ -740,16 +738,16 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> type_obj(&scope, args.get(0));
+  Object type_obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
     return thread->raiseTypeErrorWithCStr(
         "bool.__new__(X): X is not a type object");
   }
-  Handle<Type> type(&scope, *type_obj);
+  Type type(&scope, *type_obj);
 
   // Since bool can't be subclassed, only need to check if the type is exactly
   // bool.
-  Handle<Layout> layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type->instanceLayout());
   if (layout->id() != LayoutId::kBool) {
     return thread->raiseTypeErrorWithCStr("bool.__new__(X): X is not bool");
   }
@@ -759,7 +757,7 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return Bool::falseObj();
   }
 
-  Handle<Object> arg(&scope, args.get(1));
+  Object arg(&scope, args.get(1));
   // The interpreter reads the value from the frame, so add it on first.
   frame->pushValue(*arg);
   RawObject result = Interpreter::isTrue(thread, frame);
@@ -774,8 +772,7 @@ const BuiltinMethod BoolBuiltins::kMethods[] = {
 
 void BoolBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(&scope,
-                    runtime->addBuiltinClass(SymbolId::kBool, LayoutId::kBool,
+  Type type(&scope, runtime->addBuiltinClass(SymbolId::kBool, LayoutId::kBool,
                                              LayoutId::kInt, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
 }

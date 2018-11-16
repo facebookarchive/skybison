@@ -16,8 +16,8 @@ PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<List> list(&scope, runtime->newList());
-  Handle<ObjectArray> items(&scope, runtime->newObjectArray(size));
+  List list(&scope, runtime->newList());
+  ObjectArray items(&scope, runtime->newObjectArray(size));
   list->setNumItems(size);
   list->setItems(*items);
 
@@ -62,14 +62,14 @@ PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
     thread->raiseSystemErrorWithCStr("bad argument to internal function");
     return -1;
   }
-  Handle<Object> value(&scope, ApiHandle::fromPyObject(newitem)->asObject());
+  Object value(&scope, ApiHandle::fromPyObject(newitem)->asObject());
 
-  Handle<Object> list_obj(&scope, ApiHandle::fromPyObject(op)->asObject());
+  Object list_obj(&scope, ApiHandle::fromPyObject(op)->asObject());
   if (!runtime->hasSubClassFlag(*list_obj, Type::Flag::kListSubclass)) {
     thread->raiseSystemErrorWithCStr("bad argument to internal function");
     return -1;
   }
-  Handle<List> list(&scope, list_obj);
+  List list(&scope, list_obj);
 
   runtime->listAdd(list, value);
   Py_INCREF(newitem);

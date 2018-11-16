@@ -24,8 +24,8 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   HandleScope scope(thread);
 
   const char* c_name = def->m_name;
-  Handle<Object> name(&scope, runtime->newStrFromCStr(c_name));
-  Handle<Module> module(&scope, runtime->newModule(name));
+  Object name(&scope, runtime->newStrFromCStr(c_name));
+  Module module(&scope, runtime->newModule(name));
   module->setDef(runtime->newIntFromCPtr(def));
   runtime->addModule(module);
 
@@ -41,17 +41,16 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
 PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
-  Handle<Object> module_obj(&scope,
-                            ApiHandle::fromPyObject(pymodule)->asObject());
+  Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
   if (!module_obj->isModule()) {
     // TODO(cshapiro): throw a TypeError
     return nullptr;
   }
-  Handle<Module> module(&scope, *module_obj);
+  Module module(&scope, *module_obj);
   if (!module->def()->isInt()) {
     return nullptr;
   }
-  Handle<Int> def(&scope, module->def());
+  Int def(&scope, module->def());
   return static_cast<PyModuleDef*>(def->asCPtr());
 }
 
@@ -59,7 +58,7 @@ PY_EXPORT PyObject* PyModule_GetDict(PyObject* pymodule) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
 
-  Handle<Module> module(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
+  Module module(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
   return ApiHandle::fromObject(module->dict());
 }
 

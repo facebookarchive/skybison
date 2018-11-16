@@ -59,23 +59,22 @@ PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
     return nullptr;
   }
 
-  Handle<Object> longobj(&scope, ApiHandle::fromPyObject(item)->asObject());
+  Object longobj(&scope, ApiHandle::fromPyObject(item)->asObject());
   if (longobj->isInt()) {
     Py_INCREF(item);
     return item;
   }
 
   Frame* frame = thread->currentFrame();
-  Handle<Object> index_meth(&scope,
-                            Interpreter::lookupMethod(thread, frame, longobj,
+  Object index_meth(&scope, Interpreter::lookupMethod(thread, frame, longobj,
                                                       SymbolId::kDunderIndex));
   if (index_meth->isError()) {
     thread->raiseTypeErrorWithCStr(
         "object cannot be interpreted as an integer");
     return nullptr;
   }
-  Handle<Object> int_obj(
-      &scope, Interpreter::callMethod1(thread, frame, index_meth, longobj));
+  Object int_obj(&scope,
+                 Interpreter::callMethod1(thread, frame, index_meth, longobj));
   if (!int_obj->isInt()) {
     thread->raiseTypeErrorWithCStr("__index__ returned non-int");
     return nullptr;

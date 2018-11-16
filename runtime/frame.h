@@ -1,6 +1,7 @@
 #pragma once
 
 #include "globals.h"
+#include "handles.h"
 #include "objects.h"
 
 #include <cstring>
@@ -50,7 +51,7 @@ class TryBlock {
 
   uword value_;
 
-  static const int kKindOffset = SmallInt::kTagSize;
+  static const int kKindOffset = RawSmallInt::kTagSize;
   static const int kKindSize = 8;
   static const uword kKindMask = (1 << kKindSize) - 1;
 
@@ -285,7 +286,7 @@ class Frame {
  *   | maxStackSize         |
  *   +----------------------+
  */
-class HeapFrame : public HeapObject {
+class RawHeapFrame : public RawHeapObject {
  public:
   // The Frame contained in this HeapFrame.
   Frame* frame();
@@ -310,7 +311,7 @@ class HeapFrame : public HeapObject {
   static word numAttributes(word extra_words);
 
   // Layout.
-  static const int kMaxStackSizeOffset = HeapObject::kSize;
+  static const int kMaxStackSizeOffset = RawHeapObject::kSize;
   static const int kFrameOffset = kMaxStackSizeOffset + kPointerSize;
 
   // Number of words that aren't the Frame.
@@ -348,14 +349,14 @@ class KwArguments : public Arguments {
  public:
   KwArguments(Frame* frame, word nargs)
       : Arguments(frame, nargs),
-        kwnames_(ObjectArray::cast(frame->getLocal(nargs - 1))),
+        kwnames_(RawObjectArray::cast(frame->getLocal(nargs - 1))),
         num_keywords_(kwnames_->length()) {
     num_args_ = nargs - num_keywords_ - 1;
   }
 
   RawObject getKw(RawObject name) const {
     for (word i = 0; i < num_keywords_; i++) {
-      if (Str::cast(name)->equals(kwnames_->at(i))) {
+      if (RawStr::cast(name)->equals(kwnames_->at(i))) {
         return frame_->getLocal(num_args_ + i);
       }
     }
@@ -384,7 +385,7 @@ inline BlockStack* Frame::blockStack() {
 }
 
 inline word Frame::virtualPC() {
-  return SmallInt::cast(at(kVirtualPCOffset))->value();
+  return RawSmallInt::cast(at(kVirtualPCOffset))->value();
 }
 
 inline void Frame::setVirtualPC(word pc) {
@@ -447,12 +448,12 @@ inline void Frame::resetLocals(word num_locals) {
 }
 
 inline word Frame::numLocals() {
-  return SmallInt::cast(at(kNumLocalsOffset))->value();
+  return RawSmallInt::cast(at(kNumLocalsOffset))->value();
 }
 
 inline Frame* Frame::previousFrame() {
   RawObject frame = at(kPreviousFrameOffset);
-  return static_cast<Frame*>(SmallInt::cast(frame)->asCPtr());
+  return static_cast<Frame*>(RawSmallInt::cast(frame)->asCPtr());
 }
 
 inline void Frame::setPreviousFrame(Frame* frame) {
@@ -466,7 +467,7 @@ inline RawObject* Frame::valueStackBase() {
 
 inline RawObject* Frame::valueStackTop() {
   RawObject top = at(kValueStackTopOffset);
-  return static_cast<RawObject*>(SmallInt::cast(top)->asCPtr());
+  return static_cast<RawObject*>(RawSmallInt::cast(top)->asCPtr());
 }
 
 inline void Frame::setValueStackTop(RawObject* top) {
@@ -531,14 +532,14 @@ inline RawObject Frame::peek(word offset) {
 }
 
 inline RawFunction Frame::function(word argc) {
-  return Function::cast(peek(argc));
+  return RawFunction::cast(peek(argc));
 }
 
 inline bool Frame::isSentinelFrame() { return previousFrame() == nullptr; }
 
 inline void* Frame::nativeFunctionPointer() {
   DCHECK(isNativeFrame(), "not native frame");
-  return Int::cast(code())->asCPtr();
+  return RawInt::cast(code())->asCPtr();
 }
 
 inline bool Frame::isNativeFrame() { return code()->isInt(); }
@@ -562,24 +563,24 @@ inline void Frame::unstashInternalPointers() {
 
 // HeapFrame
 
-inline Frame* HeapFrame::frame() {
+inline Frame* RawHeapFrame::frame() {
   return reinterpret_cast<Frame*>(address() + kFrameOffset +
                                   maxStackSize() * kPointerSize);
 }
 
-inline word HeapFrame::numFrameWords() {
+inline word RawHeapFrame::numFrameWords() {
   return header()->count() - kNumOverheadWords;
 }
 
-inline word HeapFrame::maxStackSize() {
-  return SmallInt::cast(instanceVariableAt(kMaxStackSizeOffset))->value();
+inline word RawHeapFrame::maxStackSize() {
+  return RawSmallInt::cast(instanceVariableAt(kMaxStackSizeOffset))->value();
 }
 
-inline void HeapFrame::setMaxStackSize(word offset) {
+inline void RawHeapFrame::setMaxStackSize(word offset) {
   instanceVariableAtPut(kMaxStackSizeOffset, SmallInt::fromWord(offset));
 }
 
-inline Frame* HeapFrame::copyToNewStackFrame(Frame* caller_frame) {
+inline Frame* RawHeapFrame::copyToNewStackFrame(Frame* caller_frame) {
   auto src_base = reinterpret_cast<RawObject*>(address() + kFrameOffset);
   word frame_words = numFrameWords();
   RawObject* dest_base = caller_frame->valueStackTop() - frame_words;
@@ -590,19 +591,19 @@ inline Frame* HeapFrame::copyToNewStackFrame(Frame* caller_frame) {
   return live_frame;
 }
 
-inline void HeapFrame::copyFromStackFrame(Frame* live_frame) {
+inline void RawHeapFrame::copyFromStackFrame(Frame* live_frame) {
   auto dest_base = reinterpret_cast<RawObject*>(address() + kFrameOffset);
   RawObject* src_base = live_frame->valueStackBase() - maxStackSize();
   std::memcpy(dest_base, src_base, numFrameWords() * kPointerSize);
   frame()->stashInternalPointers(live_frame);
 }
 
-inline word HeapFrame::numAttributes(word extra_words) {
+inline word RawHeapFrame::numAttributes(word extra_words) {
   return kNumOverheadWords + Frame::kSize / kPointerSize + extra_words;
 }
 
 inline RawObject TryBlock::asSmallInt() const {
-  Object obj{value_};
+  RawObject obj{value_};
   DCHECK(obj->isSmallInt(), "expected small integer");
   return obj;
 }
@@ -648,7 +649,7 @@ inline void BlockStack::atPut(int offset, RawObject value) {
 }
 
 inline word BlockStack::top() {
-  return SmallInt::cast(at(kTopOffset))->value();
+  return RawSmallInt::cast(at(kTopOffset))->value();
 }
 
 inline void BlockStack::setTop(word new_top) {

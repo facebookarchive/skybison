@@ -27,14 +27,13 @@ const BuiltinMethod FloatBuiltins::kMethods[] = {
 
 void FloatBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(&scope,
-                    runtime->addBuiltinClass(SymbolId::kFloat, LayoutId::kFloat,
+  Type type(&scope, runtime->addBuiltinClass(SymbolId::kFloat, LayoutId::kFloat,
                                              LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kFloatSubclass);
 }
 
 RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
-                                         const Handle<Object>& obj) {
+                                         const Object& obj) {
   if (obj->isFloat()) {
     return *obj;
   }
@@ -45,16 +44,15 @@ RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
   // Not a float, call __float__ on it to convert.
   // Since float itself defines __float__, subclasses of float are automatically
   // handled here.
-  Handle<Object> method(
-      &scope,
-      Interpreter::lookupMethod(thread, frame, obj, SymbolId::kDunderFloat));
+  Object method(&scope, Interpreter::lookupMethod(thread, frame, obj,
+                                                  SymbolId::kDunderFloat));
   if (method->isError()) {
     return thread->raiseTypeErrorWithCStr(
         "TypeError: float() argument must have a __float__");
   }
 
-  Handle<Object> converted(
-      &scope, Interpreter::callMethod1(thread, frame, method, obj));
+  Object converted(&scope,
+                   Interpreter::callMethod1(thread, frame, method, obj));
   // If there was an exception thrown during call, propagate it up.
   if (converted->isError()) {
     return *converted;
@@ -103,8 +101,8 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   RawObject self = args.get(0);
   RawObject other = args.get(1);
   if (self->isFloat() && other->isFloat()) {
-    RawFloat left = Float::cast(self);
-    RawFloat right = Float::cast(other);
+    RawFloat left = RawFloat::cast(self);
+    RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() == right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -120,8 +118,8 @@ RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   RawObject self = args.get(0);
   RawObject other = args.get(1);
   if (self->isFloat() && other->isFloat()) {
-    RawFloat left = Float::cast(self);
-    RawFloat right = Float::cast(other);
+    RawFloat left = RawFloat::cast(self);
+    RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() >= right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -137,8 +135,8 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   RawObject self = args.get(0);
   RawObject other = args.get(1);
   if (self->isFloat() && other->isFloat()) {
-    RawFloat left = Float::cast(self);
-    RawFloat right = Float::cast(other);
+    RawFloat left = RawFloat::cast(self);
+    RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() > right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -154,8 +152,8 @@ RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   RawObject self = args.get(0);
   RawObject other = args.get(1);
   if (self->isFloat() && other->isFloat()) {
-    RawFloat left = Float::cast(self);
-    RawFloat right = Float::cast(other);
+    RawFloat left = RawFloat::cast(self);
+    RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() <= right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -171,8 +169,8 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   RawObject self = args.get(0);
   RawObject other = args.get(1);
   if (self->isFloat() && other->isFloat()) {
-    RawFloat left = Float::cast(self);
-    RawFloat right = Float::cast(other);
+    RawFloat left = RawFloat::cast(self);
+    RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() < right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -188,8 +186,8 @@ RawObject FloatBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   RawObject self = args.get(0);
   RawObject other = args.get(1);
   if (self->isFloat() && other->isFloat()) {
-    RawFloat left = Float::cast(self);
-    RawFloat right = Float::cast(other);
+    RawFloat left = RawFloat::cast(self);
+    RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() != right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
@@ -209,17 +207,17 @@ RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Object> obj(&scope, args.get(0));
+  Object obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*obj, Type::Flag::kTypeSubclass)) {
     return thread->raiseTypeErrorWithCStr(
         "float.__new__(X): X is not a type object");
   }
-  Handle<Type> type(&scope, *obj);
+  Type type(&scope, *obj);
   if (!type->hasFlag(Type::Flag::kFloatSubclass)) {
     return thread->raiseTypeErrorWithCStr(
         "float.__new__(X): X is not a subtype of float");
   }
-  Handle<Layout> layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type->instanceLayout());
   if (layout->id() != LayoutId::kFloat) {
     // TODO(dulinr): Implement __new__ with subtypes of float.
     UNIMPLEMENTED("float.__new__(<subtype of float>, ...)");
@@ -230,10 +228,10 @@ RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return runtime->newFloat(0.0);
   }
 
-  Handle<Object> arg(&scope, args.get(1));
+  Object arg(&scope, args.get(1));
   // Only convert exactly strings, not subtypes of string.
   if (arg->isStr()) {
-    return floatFromString(thread, Str::cast(*arg));
+    return floatFromString(thread, RawStr::cast(*arg));
   }
   return floatFromObject(thread, frame, arg);
 }
@@ -251,13 +249,13 @@ RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
         "__add__() must be called with float instance as first argument");
   }
 
-  double left = Float::cast(self)->value();
+  double left = RawFloat::cast(self)->value();
   if (other->isFloat()) {
-    double right = Float::cast(other)->value();
+    double right = RawFloat::cast(other)->value();
     return thread->runtime()->newFloat(left + right);
   }
   if (other->isInt()) {
-    double right = Int::cast(other)->floatValue();
+    double right = RawInt::cast(other)->floatValue();
     return thread->runtime()->newFloat(left + right);
   }
   return thread->runtime()->notImplemented();
@@ -276,13 +274,13 @@ RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
         "__sub__() must be called with float instance as first argument");
   }
 
-  double left = Float::cast(self)->value();
+  double left = RawFloat::cast(self)->value();
   if (other->isFloat()) {
-    double right = Float::cast(other)->value();
+    double right = RawFloat::cast(other)->value();
     return thread->runtime()->newFloat(left - right);
   }
   if (other->isInt()) {
-    double right = Int::cast(other)->floatValue();
+    double right = RawInt::cast(other)->floatValue();
     return thread->runtime()->newFloat(left - right);
   }
   return thread->runtime()->notImplemented();
@@ -303,13 +301,13 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr(
         "pow() 3rd argument not allowed unless all arguments are integers");
   }
-  double left = Float::cast(self)->value();
+  double left = RawFloat::cast(self)->value();
   if (other->isFloat()) {
-    double right = Float::cast(other)->value();
+    double right = RawFloat::cast(other)->value();
     return thread->runtime()->newFloat(std::pow(left, right));
   }
   if (other->isInt()) {
-    double right = Int::cast(other)->floatValue();
+    double right = RawInt::cast(other)->floatValue();
     return thread->runtime()->newFloat(std::pow(left, right));
   }
   return thread->runtime()->notImplemented();

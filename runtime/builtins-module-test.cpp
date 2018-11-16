@@ -17,8 +17,8 @@ class Foo:
 a = callable(Foo)
   )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_TRUE(a->value());
 }
 
@@ -33,9 +33,9 @@ a = callable(Foo.bar)
 b = callable(Foo().bar)
   )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
 }
@@ -47,9 +47,9 @@ a = callable(1)
 b = callable("hello")
   )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_FALSE(a->value());
   EXPECT_FALSE(b->value());
 }
@@ -66,8 +66,8 @@ f = Foo()
 a = callable(f)
   )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_TRUE(a->value());
 }
 
@@ -86,8 +86,8 @@ f.__call__ = fakecall
 a = callable(f)
   )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_FALSE(a->value());
 }
 
@@ -132,21 +132,21 @@ def test(a, b):
   // call classes.
   RawObject object = testing::findModule(&runtime, "__main__");
   ASSERT_TRUE(object->isModule());
-  Handle<Module> main(&scope, object);
+  Module main(&scope, object);
 
   // Create an instance of D
-  Handle<Object> type_d(&scope, moduleAt(&runtime, main, "D"));
+  Object type_d(&scope, moduleAt(&runtime, main, "D"));
   ASSERT_TRUE(type_d->isType());
-  Handle<Layout> layout(&scope, Type::cast(*type_d)->instanceLayout());
-  Handle<Object> instance(&scope, runtime.newInstance(layout));
+  Layout layout(&scope, RawType::cast(*type_d)->instanceLayout());
+  Object instance(&scope, runtime.newInstance(layout));
 
   // Fetch the test function
   object = moduleAt(&runtime, main, "test");
   ASSERT_TRUE(object->isFunction());
-  Handle<Function> isinstance(&scope, object);
+  Function isinstance(&scope, object);
 
   // isinstance(1, D) should be false
-  Handle<ObjectArray> args(&scope, runtime.newObjectArray(2));
+  ObjectArray args(&scope, runtime.newObjectArray(2));
   args->atPut(0, SmallInt::fromWord(100));
   args->atPut(1, *type_d);
   EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");
@@ -162,19 +162,19 @@ def test(a, b):
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(D(), C) should be true
-  Handle<Object> type_c(&scope, moduleAt(&runtime, main, "C"));
+  Object type_c(&scope, moduleAt(&runtime, main, "C"));
   ASSERT_TRUE(type_c->isType());
   args->atPut(1, *type_c);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(D(), B) should be true
-  Handle<Object> type_b(&scope, moduleAt(&runtime, main, "B"));
+  Object type_b(&scope, moduleAt(&runtime, main, "B"));
   ASSERT_TRUE(type_b->isType());
   args->atPut(1, *type_b);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(C(), A) should be true
-  Handle<Object> type_a(&scope, moduleAt(&runtime, main, "A"));
+  Object type_a(&scope, moduleAt(&runtime, main, "A"));
   ASSERT_TRUE(type_a->isType());
   args->atPut(1, *type_a);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
@@ -197,10 +197,10 @@ b = issubclass(Bar, Foo)
 c = issubclass(Baz, type)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
+  Bool c(&scope, moduleAt(&runtime, main, "c"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
   EXPECT_TRUE(c->value());
@@ -220,10 +220,10 @@ b = issubclass(int, str)
 c = issubclass(dict, list)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
+  Bool c(&scope, moduleAt(&runtime, main, "c"));
   EXPECT_FALSE(a->value());
   EXPECT_FALSE(b->value());
   EXPECT_FALSE(c->value());
@@ -242,9 +242,9 @@ a = issubclass(Foo, (Bar, object))
 b = issubclass(Bar, (Foo))
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  Bool b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_TRUE(a->value());
   EXPECT_TRUE(b->value());
 }
@@ -258,8 +258,8 @@ class Foo:
 a = issubclass(Foo, (str, int))
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Bool a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_FALSE(a->value());
 }
 
@@ -285,12 +285,12 @@ len5 = len({'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5})
 )");
 
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> len0(&scope, moduleAt(&runtime, main, "len0"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object len0(&scope, moduleAt(&runtime, main, "len0"));
   EXPECT_EQ(*len0, SmallInt::fromWord(0));
-  Handle<Object> len1(&scope, moduleAt(&runtime, main, "len1"));
+  Object len1(&scope, moduleAt(&runtime, main, "len1"));
   EXPECT_EQ(*len1, SmallInt::fromWord(1));
-  Handle<Object> len5(&scope, moduleAt(&runtime, main, "len5"));
+  Object len5(&scope, moduleAt(&runtime, main, "len5"));
   EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
@@ -304,12 +304,12 @@ len5 = len([1,2,3,4,5])
 )");
 
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> len0(&scope, moduleAt(&runtime, main, "len0"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object len0(&scope, moduleAt(&runtime, main, "len0"));
   EXPECT_EQ(*len0, SmallInt::fromWord(0));
-  Handle<Object> len1(&scope, moduleAt(&runtime, main, "len1"));
+  Object len1(&scope, moduleAt(&runtime, main, "len1"));
   EXPECT_EQ(*len1, SmallInt::fromWord(1));
-  Handle<Object> len5(&scope, moduleAt(&runtime, main, "len5"));
+  Object len5(&scope, moduleAt(&runtime, main, "len5"));
   EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
@@ -322,11 +322,11 @@ len5 = len({1,2,3,4,5})
 )");
 
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime, "__main__"));
   // TODO(cshapiro): test the empty set when we have builtins.set defined.
-  Handle<Object> len1(&scope, moduleAt(&runtime, main, "len1"));
+  Object len1(&scope, moduleAt(&runtime, main, "len1"));
   EXPECT_EQ(*len1, SmallInt::fromWord(1));
-  Handle<Object> len5(&scope, moduleAt(&runtime, main, "len5"));
+  Object len5(&scope, moduleAt(&runtime, main, "len5"));
   EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
@@ -411,10 +411,10 @@ class Foo:
 a = repr(Foo())
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
 
-  EXPECT_TRUE(Str::cast(*a)->equalsCStr("foo"));
+  EXPECT_TRUE(RawStr::cast(*a)->equalsCStr("foo"));
 }
 
 TEST(BuiltinsModuleTest, BuiltInGetAttr) {
@@ -428,10 +428,10 @@ c = getattr(Foo(), 'foo', 2)
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
+  Object c(&scope, moduleAt(&runtime, main, "c"));
   EXPECT_EQ(*a, SmallInt::fromWord(1));
   EXPECT_EQ(*b, SmallInt::fromWord(1));
   EXPECT_EQ(*c, SmallInt::fromWord(2));
@@ -457,9 +457,9 @@ b = hasattr(Foo, 'bar')
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(*a, Bool::falseObj());
   EXPECT_EQ(*b, Bool::trueObj());
 }
@@ -474,9 +474,9 @@ b = Foo.foo
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(*a, NoneType::object());
   EXPECT_EQ(*b, SmallInt::fromWord(2));
 }

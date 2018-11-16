@@ -8,10 +8,10 @@
 namespace python {
 
 const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {
-    {SymbolId::kArgs, BaseException::kArgsOffset},
-    {SymbolId::kTraceback, BaseException::kTracebackOffset},
-    {SymbolId::kDunderContext, BaseException::kContextOffset},
-    {SymbolId::kCause, BaseException::kCauseOffset},
+    {SymbolId::kArgs, RawBaseException::kArgsOffset},
+    {SymbolId::kTraceback, RawBaseException::kTracebackOffset},
+    {SymbolId::kDunderContext, RawBaseException::kContextOffset},
+    {SymbolId::kCause, RawBaseException::kCauseOffset},
 };
 
 const BuiltinMethod BaseExceptionBuiltins::kMethods[] = {
@@ -20,10 +20,9 @@ const BuiltinMethod BaseExceptionBuiltins::kMethods[] = {
 
 void BaseExceptionBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(&scope, runtime->addBuiltinClass(SymbolId::kBaseException,
-                                                     LayoutId::kBaseException,
-                                                     LayoutId::kObject,
-                                                     kAttributes, kMethods));
+  Type type(&scope, runtime->addBuiltinClass(
+                        SymbolId::kBaseException, LayoutId::kBaseException,
+                        LayoutId::kObject, kAttributes, kMethods));
   type->setFlag(Type::Flag::kBaseExceptionSubclass);
 }
 
@@ -32,17 +31,16 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' of 'BaseException' needs an argument");
+        "'__init__' of 'RawBaseException' needs an argument");
   }
   Arguments args(frame, nargs);
   if (!thread->runtime()->hasSubClassFlag(args.get(0),
                                           Type::Flag::kBaseExceptionSubclass)) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'BaseException' object");
+        "'__init__' requires a 'RawBaseException' object");
   }
-  UncheckedHandle<BaseException> self(&scope, args.get(0));
-  Handle<ObjectArray> tuple(&scope,
-                            thread->runtime()->newObjectArray(nargs - 1));
+  UncheckedHandle<RawBaseException> self(&scope, args.get(0));
+  ObjectArray tuple(&scope, thread->runtime()->newObjectArray(nargs - 1));
   for (word i = 1; i < nargs; i++) {
     tuple->atPut(i - 1, args.get(i));
   }
@@ -51,7 +49,7 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute StopIterationBuiltins::kAttributes[] = {
-    {SymbolId::kValue, StopIteration::kValueOffset},
+    {SymbolId::kValue, RawStopIteration::kValueOffset},
 };
 
 const BuiltinMethod StopIterationBuiltins::kMethods[] = {
@@ -60,10 +58,9 @@ const BuiltinMethod StopIterationBuiltins::kMethods[] = {
 
 void StopIterationBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(&scope, runtime->addBuiltinClass(SymbolId::kStopIteration,
-                                                     LayoutId::kStopIteration,
-                                                     LayoutId::kException,
-                                                     kAttributes, kMethods));
+  Type type(&scope, runtime->addBuiltinClass(
+                        SymbolId::kStopIteration, LayoutId::kStopIteration,
+                        LayoutId::kException, kAttributes, kMethods));
   type->setFlag(Type::Flag::kStopIterationSubclass);
 }
 
@@ -72,20 +69,20 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' of 'StopIteration' needs an argument");
+        "'__init__' of 'RawStopIteration' needs an argument");
   }
   Arguments args(frame, nargs);
   if (!thread->runtime()->hasSubClassFlag(args.get(0),
                                           Type::Flag::kStopIterationSubclass)) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'StopIteration' object");
+        "'__init__' requires a 'RawStopIteration' object");
   }
-  UncheckedHandle<StopIteration> self(&scope, args.get(0));
+  UncheckedHandle<RawStopIteration> self(&scope, args.get(0));
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
   if (result->isError()) {
     return result;
   }
-  Handle<ObjectArray> tuple(&scope, self->args());
+  ObjectArray tuple(&scope, self->args());
   if (tuple->length() > 0) {
     self->setValue(tuple->at(0));
   }
@@ -93,7 +90,7 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute SystemExitBuiltins::kAttributes[] = {
-    {SymbolId::kValue, SystemExit::kCodeOffset},
+    {SymbolId::kValue, RawSystemExit::kCodeOffset},
 };
 
 const BuiltinMethod SystemExitBuiltins::kMethods[] = {
@@ -102,10 +99,9 @@ const BuiltinMethod SystemExitBuiltins::kMethods[] = {
 
 void SystemExitBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(&scope, runtime->addBuiltinClass(SymbolId::kSystemExit,
-                                                     LayoutId::kSystemExit,
-                                                     LayoutId::kBaseException,
-                                                     kAttributes, kMethods));
+  Type type(&scope, runtime->addBuiltinClass(
+                        SymbolId::kSystemExit, LayoutId::kSystemExit,
+                        LayoutId::kBaseException, kAttributes, kMethods));
   type->setFlag(Type::Flag::kSystemExitSubclass);
 }
 
@@ -114,20 +110,20 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' of 'SystemExit' needs an argument");
+        "'__init__' of 'RawSystemExit' needs an argument");
   }
   Arguments args(frame, nargs);
   if (!thread->runtime()->hasSubClassFlag(args.get(0),
                                           Type::Flag::kSystemExitSubclass)) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'SystemExit' object");
+        "'__init__' requires a 'RawSystemExit' object");
   }
-  UncheckedHandle<SystemExit> self(&scope, args.get(0));
+  UncheckedHandle<RawSystemExit> self(&scope, args.get(0));
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
   if (result->isError()) {
     return result;
   }
-  Handle<ObjectArray> tuple(&scope, self->args());
+  ObjectArray tuple(&scope, self->args());
   if (tuple->length() > 0) {
     self->setCode(tuple->at(0));
   }
@@ -135,16 +131,16 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
-    {SymbolId::kMsg, ImportError::kMsgOffset},
-    {SymbolId::kName, ImportError::kNameOffset},
-    {SymbolId::kPath, ImportError::kPathOffset},
+    {SymbolId::kMsg, RawImportError::kMsgOffset},
+    {SymbolId::kName, RawImportError::kNameOffset},
+    {SymbolId::kPath, RawImportError::kPathOffset},
 };
 
 void ImportErrorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(&scope, runtime->addBuiltinClass(
-                                SymbolId::kImportError, LayoutId::kImportError,
-                                LayoutId::kException, kAttributes));
+  Type type(&scope, runtime->addBuiltinClass(
+                        SymbolId::kImportError, LayoutId::kImportError,
+                        LayoutId::kException, kAttributes));
 }
 
 }  // namespace python

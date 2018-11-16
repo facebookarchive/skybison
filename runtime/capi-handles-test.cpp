@@ -16,17 +16,17 @@ static RawObject initializeExtensionType(PyTypeObject* extension_type) {
       ApiHandle::fromObject(runtime->layoutAt(LayoutId::kType));
   PyObject* pyobj = reinterpret_cast<PyObject*>(extension_type);
   pyobj->ob_type = reinterpret_cast<PyTypeObject*>(pytype_type);
-  Handle<Type> type_class(&scope, runtime->newClass());
+  Type type_class(&scope, runtime->newClass());
 
   // Compute MRO
-  Handle<ObjectArray> mro(&scope, runtime->newObjectArray(0));
+  ObjectArray mro(&scope, runtime->newObjectArray(0));
   type_class->setMro(*mro);
 
   // Initialize instance Layout
-  Handle<Layout> layout_init(&scope, runtime->layoutCreateEmpty(thread));
-  Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  Handle<Layout> layout(
-      &scope, runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));
+  Layout layout_init(&scope, runtime->layoutCreateEmpty(thread));
+  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
+  Layout layout(&scope,
+                runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));
   layout->setDescribedClass(*type_class);
   type_class->setInstanceLayout(*layout);
 
@@ -39,7 +39,7 @@ TEST(CApiHandlesTest, BorrowedApiHandles) {
   HandleScope scope;
 
   // Create a borrowed handle
-  Handle<Object> obj(&scope, runtime.newInt(15));
+  Object obj(&scope, runtime.newInt(15));
   ApiHandle* borrowed_handle = ApiHandle::fromBorrowedObject(*obj);
   EXPECT_TRUE(borrowed_handle->isBorrowed());
 
@@ -50,7 +50,7 @@ TEST(CApiHandlesTest, BorrowedApiHandles) {
   EXPECT_TRUE(borrowed_handle->isBorrowed());
 
   // Create a normal handle
-  Handle<Object> obj2(&scope, runtime.newInt(20));
+  Object obj2(&scope, runtime.newInt(20));
   ApiHandle* int_handle1 = ApiHandle::fromObject(*obj2);
   EXPECT_FALSE(int_handle1->isBorrowed());
 
@@ -63,9 +63,9 @@ TEST(CApiHandlesTest, BorrowedApiHandles) {
 TEST(CApiHandlesTest, BuiltinIntObjectReturnsApiHandle) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dict> dict(&scope, runtime.apiHandles());
+  Dict dict(&scope, runtime.apiHandles());
 
-  Handle<Object> obj(&scope, runtime.newInt(1));
+  Object obj(&scope, runtime.newInt(1));
   ASSERT_FALSE(runtime.dictIncludes(dict, obj));
 
   ApiHandle* handle = ApiHandle::fromObject(*obj);
@@ -78,21 +78,21 @@ TEST(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Object> obj(&scope, runtime.newInt(1));
+  Object obj(&scope, runtime.newInt(1));
   ApiHandle* handle = ApiHandle::fromObject(*obj);
-  Handle<Object> handle_obj(&scope, handle->asObject());
+  Object handle_obj(&scope, handle->asObject());
   ASSERT_TRUE(handle_obj->isInt());
 
-  Handle<Int> integer(&scope, *handle_obj);
+  Int integer(&scope, *handle_obj);
   EXPECT_EQ(integer->asWord(), 1);
 }
 
 TEST(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dict> dict(&scope, runtime.apiHandles());
+  Dict dict(&scope, runtime.apiHandles());
 
-  Handle<Object> obj(&scope, runtime.newList());
+  Object obj(&scope, runtime.newList());
   ASSERT_FALSE(runtime.dictIncludes(dict, obj));
 
   ApiHandle* handle = ApiHandle::fromObject(*obj);
@@ -105,7 +105,7 @@ TEST(CApiHandlesTest, BuiltinObjectReturnsSameApiHandle) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Object> obj(&scope, runtime.newList());
+  Object obj(&scope, runtime.newList());
   ApiHandle* handle = ApiHandle::fromObject(*obj);
   ApiHandle* handle2 = ApiHandle::fromObject(*obj);
   EXPECT_EQ(handle, handle2);
@@ -115,9 +115,9 @@ TEST(CApiHandlesTest, ApiHandleReturnsBuiltinObject) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Object> obj(&scope, runtime.newList());
+  Object obj(&scope, runtime.newList());
   ApiHandle* handle = ApiHandle::fromObject(*obj);
-  Handle<Object> handle_obj(&scope, handle->asObject());
+  Object handle_obj(&scope, handle->asObject());
   EXPECT_TRUE(handle_obj->isList());
 }
 
@@ -127,12 +127,11 @@ TEST(CApiHandlesTest, PyTypeObjectReturnsExtensionType) {
 
   // Create type
   PyTypeObject extension_type{PyObject_HEAD_INIT(nullptr)};
-  Handle<Type> type_class(&scope, initializeExtensionType(&extension_type));
+  Type type_class(&scope, initializeExtensionType(&extension_type));
 
-  Handle<Object> handle_obj(
-      &scope,
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(&extension_type))
-          ->asObject());
+  Object handle_obj(&scope, ApiHandle::fromPyObject(
+                                reinterpret_cast<PyObject*>(&extension_type))
+                                ->asObject());
   EXPECT_TRUE(handle_obj->isType());
   EXPECT_EQ(*type_class, *handle_obj);
 }
@@ -143,18 +142,17 @@ TEST(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
 
   // Create type
   PyTypeObject extension_type{PyObject_HEAD_INIT(nullptr)};
-  Handle<Type> type_class(&scope, initializeExtensionType(&extension_type));
+  Type type_class(&scope, initializeExtensionType(&extension_type));
 
   // Create instance
-  Handle<Layout> layout(&scope, type_class->instanceLayout());
+  Layout layout(&scope, type_class->instanceLayout());
   Thread* thread = Thread::currentThread();
-  Handle<Object> attr_name(&scope, runtime.symbols()->ExtensionPtr());
-  Handle<HeapObject> instance(&scope, runtime.newInstance(layout));
+  Object attr_name(&scope, runtime.symbols()->ExtensionPtr());
+  HeapObject instance(&scope, runtime.newInstance(layout));
 
   PyObject* type_handle = ApiHandle::fromObject(*type_class);
   PyObject pyobj = {nullptr, 1, reinterpret_cast<PyTypeObject*>(type_handle)};
-  Handle<Object> object_ptr(&scope,
-                            runtime.newIntFromCPtr(static_cast<void*>(&pyobj)));
+  Object object_ptr(&scope, runtime.newIntFromCPtr(static_cast<void*>(&pyobj)));
   runtime.instanceAtPut(thread, instance, attr_name, object_ptr);
 
   PyObject* result = ApiHandle::fromObject(*instance);
@@ -168,20 +166,20 @@ TEST(CApiHandlesTest, RuntimeInstanceObjectReturnsPyObject) {
 
   // Create type
   PyTypeObject extension_type{PyObject_HEAD_INIT(nullptr)};
-  Handle<Type> type_class(&scope, initializeExtensionType(&extension_type));
+  Type type_class(&scope, initializeExtensionType(&extension_type));
 
   // Initialize instance Layout
   Thread* thread = Thread::currentThread();
-  Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
+  Layout layout(&scope, runtime.layoutCreateEmpty(thread));
   layout->setDescribedClass(*type_class);
   type_class->setInstanceLayout(*layout);
 
   // Create instance
-  Handle<HeapObject> instance(&scope, runtime.newInstance(layout));
+  HeapObject instance(&scope, runtime.newInstance(layout));
   PyObject* result = ApiHandle::fromObject(*instance);
   ASSERT_NE(result, nullptr);
 
-  Handle<Object> obj(&scope, ApiHandle::fromPyObject(result)->asObject());
+  Object obj(&scope, ApiHandle::fromPyObject(result)->asObject());
   EXPECT_EQ(*obj, *instance);
 }
 
@@ -191,12 +189,11 @@ TEST(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
 
   // Create type
   PyTypeObject extension_type{PyObject_HEAD_INIT(nullptr)};
-  Handle<Type> type_class(&scope, initializeExtensionType(&extension_type));
+  Type type_class(&scope, initializeExtensionType(&extension_type));
 
   PyObject pyobj = {nullptr, 1,
                     reinterpret_cast<PyTypeObject*>(&extension_type)};
-  Handle<Object> handle_obj(&scope,
-                            ApiHandle::fromPyObject(&pyobj)->asObject());
+  Object handle_obj(&scope, ApiHandle::fromPyObject(&pyobj)->asObject());
   EXPECT_TRUE(handle_obj->isInstance());
 }
 
@@ -207,8 +204,7 @@ TEST(CApiHandlesTest, Cache) {
   auto handle1 = ApiHandle::fromObject(SmallInt::fromWord(5));
   EXPECT_EQ(handle1->cache(), nullptr);
 
-  Handle<Str> str(&scope,
-                  runtime.newStrFromCStr("this is too long for a SmallStr"));
+  Str str(&scope, runtime.newStrFromCStr("this is too long for a RawSmallStr"));
   auto handle2 = ApiHandle::fromObject(*str);
   EXPECT_EQ(handle2->cache(), nullptr);
 
@@ -227,9 +223,9 @@ TEST(CApiHandlesTest, Cache) {
   EXPECT_EQ(handle1->cache(), buffer2);
   EXPECT_EQ(handle2->cache(), buffer1);
 
-  Handle<Object> key(&scope, handle1->asObject());
+  Object key(&scope, handle1->asObject());
   handle1->dispose();
-  Handle<Dict> caches(&scope, runtime.apiCaches());
+  Dict caches(&scope, runtime.apiCaches());
   EXPECT_EQ(runtime.dictAt(caches, key), Error::object());
   EXPECT_EQ(handle2->cache(), buffer1);
 }

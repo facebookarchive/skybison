@@ -25,8 +25,7 @@ const BuiltinMethod SetBuiltins::kMethods[] = {
 void SetBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
-  Handle<Type> set(&scope,
-                   runtime->addBuiltinClass(SymbolId::kSet, LayoutId::kSet,
+  Type set(&scope, runtime->addBuiltinClass(SymbolId::kSet, LayoutId::kSet,
                                             LayoutId::kObject, kMethods));
   set->setFlag(Type::Flag::kSetSubclass);
 }
@@ -37,10 +36,10 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> key(&scope, args.get(1));
+  Object self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
   if (self->isSet()) {
-    Handle<Set> set(&scope, *self);
+    Set set(&scope, *self);
     thread->runtime()->setAdd(set, key);
     return NoneType::object();
   }
@@ -54,9 +53,9 @@ RawObject SetBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (self->isSet()) {
-    return SmallInt::fromWord(Set::cast(*self)->numItems());
+    return SmallInt::fromWord(RawSet::cast(*self)->numItems());
   }
   // TODO(cshapiro): handle user-defined subtypes of set.
   return thread->raiseTypeErrorWithCStr("'__len__' requires a 'set' object");
@@ -68,9 +67,9 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Set> self(&scope, args.get(0));
+  Set self(&scope, args.get(0));
   if (self->isSet()) {
-    Handle<ObjectArray> data(&scope, self->data());
+    ObjectArray data(&scope, self->data());
     word num_items = self->numItems();
     if (num_items > 0) {
       for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
@@ -78,7 +77,7 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
             Set::Bucket::isEmpty(*data, i)) {
           continue;
         }
-        Handle<Object> value(&scope, Set::Bucket::key(*data, i));
+        Object value(&scope, Set::Bucket::key(*data, i));
         Set::Bucket::setTombstone(*data, i);
         self->setNumItems(num_items - 1);
         return *value;
@@ -98,8 +97,8 @@ RawObject SetBuiltins::dunderContains(Thread* thread, Frame* frame,
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Set> self(&scope, args.get(0));
-  Handle<Object> value(&scope, args.get(1));
+  Set self(&scope, args.get(0));
+  Object value(&scope, args.get(1));
   if (self->isSet()) {
     return Bool::fromBool(thread->runtime()->setIncludes(self, value));
   }
@@ -128,7 +127,7 @@ RawObject SetBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
 
   if (!self->isSet()) {
     return thread->raiseTypeErrorWithCStr(
@@ -145,16 +144,16 @@ RawObject SetBuiltins::isDisjoint(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> other(&scope, args.get(1));
-  Handle<Object> value(&scope, NoneType::object());
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  Object value(&scope, NoneType::object());
   if (self->isSet()) {
-    Handle<Set> a(&scope, *self);
+    Set a(&scope, *self);
     if (a->numItems() == 0) {
       return Bool::trueObj();
     }
     if (other->isSet()) {
-      Handle<Set> b(&scope, *other);
+      Set b(&scope, *other);
       if (b->numItems() == 0) {
         return Bool::trueObj();
       }
@@ -163,7 +162,7 @@ RawObject SetBuiltins::isDisjoint(Thread* thread, Frame* frame, word nargs) {
         a = *other;
         b = *self;
       }
-      Handle<SetIterator> set_iter(&scope, runtime->newSetIterator(a));
+      SetIterator set_iter(&scope, runtime->newSetIterator(a));
       for (;;) {
         value = set_iter->next();
         if (value->isError()) {
@@ -176,19 +175,19 @@ RawObject SetBuiltins::isDisjoint(Thread* thread, Frame* frame, word nargs) {
       return Bool::trueObj();
     }
     // Generic iterator case
-    Handle<Object> iter_method(
+    Object iter_method(
         &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), other,
                                           SymbolId::kDunderIter));
     if (iter_method->isError()) {
       return thread->raiseTypeErrorWithCStr("object is not iterable");
     }
-    Handle<Object> iterator(
-        &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
-                                         iter_method, other));
+    Object iterator(&scope,
+                    Interpreter::callMethod1(thread, thread->currentFrame(),
+                                             iter_method, other));
     if (iterator->isError()) {
       return thread->raiseTypeErrorWithCStr("object is not iterable");
     }
-    Handle<Object> next_method(
+    Object next_method(
         &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                           iterator, SymbolId::kDunderNext));
     if (next_method->isError()) {
@@ -217,8 +216,8 @@ RawObject SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Set> self(&scope, args.get(0));
-  Handle<Object> other(&scope, args.get(1));
+  Set self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
   if (self->isSet()) {
     if (!other->isSet()) {
       return thread->runtime()->notImplemented();
@@ -236,18 +235,18 @@ RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Set> self(&scope, args.get(0));
-  Handle<Object> other(&scope, args.get(1));
+  Set self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
   if (self->isSet()) {
     if (!other->isSet()) {
       return thread->runtime()->notImplemented();
     }
-    Handle<Object> intersection(
+    Object intersection(
         &scope, thread->runtime()->setIntersection(thread, self, other));
     if (intersection->isError()) {
       return *intersection;
     }
-    RawSet intersection_set = Set::cast(*intersection);
+    RawSet intersection_set = RawSet::cast(*intersection);
     self->setData(intersection_set->data());
     self->setNumItems(intersection_set->numItems());
     return *self;
@@ -264,22 +263,22 @@ RawObject SetBuiltins::intersection(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (self->isSet()) {
-    Handle<Set> set(&scope, *self);
+    Set set(&scope, *self);
     if (nargs == 1) {
       // Return a copy of the set
       return thread->runtime()->setCopy(set);
     }
     // nargs is at least 2
-    Handle<Object> other(&scope, args.get(1));
-    Handle<Object> result(
-        &scope, thread->runtime()->setIntersection(thread, set, other));
+    Object other(&scope, args.get(1));
+    Object result(&scope,
+                  thread->runtime()->setIntersection(thread, set, other));
     if (result->isError() || nargs == 2) {
       return *result;
     }
     if (nargs > 2) {
-      Handle<Set> base(&scope, *result);
+      Set base(&scope, *result);
       for (word i = 2; i < nargs; i++) {
         other = args.get(i);
         result = thread->runtime()->setIntersection(thread, base, other);
@@ -308,10 +307,9 @@ const BuiltinMethod SetIteratorBuiltins::kMethods[] = {
 
 void SetIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> set_iter(
-      &scope,
-      runtime->addBuiltinClass(SymbolId::kSetIterator, LayoutId::kSetIterator,
-                               LayoutId::kObject, kMethods));
+  Type set_iter(&scope, runtime->addBuiltinClass(SymbolId::kSetIterator,
+                                                 LayoutId::kSetIterator,
+                                                 LayoutId::kObject, kMethods));
 }
 
 RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
@@ -321,7 +319,7 @@ RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (!self->isSetIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a set iterator instance as the first "
@@ -337,13 +335,13 @@ RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (!self->isSetIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a set iterator instance as the first "
         "argument");
   }
-  Handle<Object> value(&scope, SetIterator::cast(*self)->next());
+  Object value(&scope, RawSetIterator::cast(*self)->next());
   if (value->isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
@@ -358,13 +356,13 @@ RawObject SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (!self->isSetIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__length_hint__() must be called with a set iterator instance as "
         "the first argument");
   }
-  Handle<SetIterator> set_iterator(&scope, *self);
+  SetIterator set_iterator(&scope, *self);
   return SmallInt::fromWord(set_iterator->pendingLength());
 }
 

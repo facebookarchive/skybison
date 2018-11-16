@@ -26,8 +26,8 @@ ApiHandle* ApiHandle::fromObject(RawObject obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> key(&scope, obj);
-  Handle<Dict> dict(&scope, runtime->apiHandles());
+  Object key(&scope, obj);
+  Dict dict(&scope, runtime->apiHandles());
   RawObject value = runtime->dictAt(dict, key);
 
   // Fast path: All initialized builtin objects
@@ -43,8 +43,7 @@ ApiHandle* ApiHandle::fromObject(RawObject obj) {
 
   // Initialize an ApiHandle for a builtin object or runtime instance
   ApiHandle* handle = ApiHandle::create(obj, 1);
-  Handle<Object> object(&scope,
-                        runtime->newIntFromCPtr(static_cast<void*>(handle)));
+  Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
   runtime->dictAtPut(dict, key, object);
   return handle;
 }
@@ -54,8 +53,8 @@ ApiHandle* ApiHandle::fromBorrowedObject(RawObject obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> key(&scope, obj);
-  Handle<Dict> dict(&scope, runtime->apiHandles());
+  Object key(&scope, obj);
+  Dict dict(&scope, runtime->apiHandles());
   RawObject value = runtime->dictAt(dict, key);
 
   // Fast path: All initialized builtin objects
@@ -71,26 +70,24 @@ ApiHandle* ApiHandle::fromBorrowedObject(RawObject obj) {
 
   // Initialize a Borrowed ApiHandle for a builtin object or runtime instance
   ApiHandle* handle = ApiHandle::create(obj, kBorrowedBit);
-  Handle<Object> object(&scope,
-                        runtime->newIntFromCPtr(static_cast<void*>(handle)));
+  Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
   runtime->dictAtPut(dict, key, object);
   return handle;
 }
 
 ApiHandle* ApiHandle::castFromObject(RawObject value, bool borrowed) {
-  ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value)->asCPtr());
+  ApiHandle* handle = static_cast<ApiHandle*>(RawInt::cast(value)->asCPtr());
   if (borrowed) handle->setBorrowed();
   return handle;
 }
 
-RawObject ApiHandle::getExtensionPtrAttr(Thread* thread,
-                                         const Handle<Object>& obj) {
+RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   if (!obj->isInstance()) return Error::object();
 
-  Handle<HeapObject> instance(&scope, *obj);
-  Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
+  HeapObject instance(&scope, *obj);
+  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   return runtime->instanceAt(thread, instance, attr_name);
 }
 
@@ -99,13 +96,12 @@ RawObject ApiHandle::asInstance(RawObject obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  DCHECK(obj->isType(), "not a Type object");
-  Handle<Type> klass(&scope, obj);
-  Handle<Layout> layout(&scope, klass->instanceLayout());
-  Handle<HeapObject> instance(&scope, runtime->newInstance(layout));
-  Handle<Object> object_ptr(&scope,
-                            runtime->newIntFromCPtr(static_cast<void*>(this)));
-  Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
+  DCHECK(obj->isType(), "not a RawType object");
+  Type klass(&scope, obj);
+  Layout layout(&scope, klass->instanceLayout());
+  HeapObject instance(&scope, runtime->newInstance(layout));
+  Object object_ptr(&scope, runtime->newIntFromCPtr(static_cast<void*>(this)));
+  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   runtime->instanceAtPut(thread, instance, attr_name, object_ptr);
 
   return *instance;
@@ -115,7 +111,7 @@ RawObject ApiHandle::asObject() {
   // Fast path: All builtin objects except Types
   // TODO(T32474474): Handle the special case of Int values
   if (reference_ != nullptr) {
-    return Object{reinterpret_cast<uword>(reference_)};
+    return RawObject{reinterpret_cast<uword>(reference_)};
   }
 
   DCHECK(type(), "ApiHandles must contain a type pointer");
@@ -139,11 +135,11 @@ void* ApiHandle::cache() {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> key(&scope, asObject());
-  Handle<Dict> caches(&scope, runtime->apiCaches());
-  Handle<Object> cache(&scope, runtime->dictAt(caches, key));
+  Object key(&scope, asObject());
+  Dict caches(&scope, runtime->apiCaches());
+  Object cache(&scope, runtime->dictAt(caches, key));
   DCHECK(cache->isInt() || cache->isError(), "unexpected cache type");
-  if (!cache->isError()) return Int::cast(*cache)->asCPtr();
+  if (!cache->isError()) return RawInt::cast(*cache)->asCPtr();
   return nullptr;
 }
 
@@ -152,17 +148,17 @@ void ApiHandle::setCache(void* value) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> key(&scope, asObject());
-  Handle<Dict> caches(&scope, runtime->apiCaches());
-  Handle<Int> cache(&scope, runtime->newIntFromCPtr(value));
+  Object key(&scope, asObject());
+  Dict caches(&scope, runtime->apiCaches());
+  Int cache(&scope, runtime->newIntFromCPtr(value));
   runtime->dictAtPut(caches, key, cache);
 }
 
 bool ApiHandle::isSubClass(Thread* thread, LayoutId layout_id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Handle<Type> superclass(&scope, runtime->typeAt(layout_id));
-  Handle<Type> subclass(&scope, type()->asObject());
+  Type superclass(&scope, runtime->typeAt(layout_id));
+  Type subclass(&scope, type()->asObject());
   return runtime->isSubClass(subclass, superclass) == Bool::trueObj();
 }
 
@@ -171,14 +167,14 @@ void ApiHandle::dispose() {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> key(&scope, asObject());
-  Handle<Dict> dict(&scope, runtime->apiHandles());
+  Object key(&scope, asObject());
+  Dict dict(&scope, runtime->apiHandles());
   runtime->dictRemove(dict, key);
 
   dict = runtime->apiCaches();
-  Handle<Object> cache(&scope, runtime->dictRemove(dict, key));
+  Object cache(&scope, runtime->dictRemove(dict, key));
   DCHECK(cache->isInt() || cache->isError(), "unexpected cache type");
-  if (!cache->isError()) std::free(Int::cast(*cache)->asCPtr());
+  if (!cache->isError()) std::free(RawInt::cast(*cache)->asCPtr());
 
   std::free(this);
 }

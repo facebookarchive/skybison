@@ -18,8 +18,8 @@ class Foo:
 a = object.__repr__(Foo())
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
   // Storage for the class name. It must be shorter than the length of the whole
   // string.
   char* c_str = a->toCStr();
@@ -46,9 +46,9 @@ a = object.__str__(f)
 b = object.__repr__(f)
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
+  Str b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_PYSTRING_EQ(*a, *b);
 }
 
@@ -63,9 +63,9 @@ a = object.__str__(f)
 b = f.__str__()
 )");
   HandleScope scope;
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str a(&scope, moduleAt(&runtime, main, "a"));
+  Str b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_PYSTRING_EQ(*a, *b);
 }
 

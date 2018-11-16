@@ -22,9 +22,9 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   if (!args.get(0)->isSuper()) {
     return thread->raiseTypeErrorWithCStr("requires a super object");
   }
-  Handle<Super> super(&scope, args.get(0));
-  Handle<Object> klass_obj(&scope, NoneType::object());
-  Handle<Object> obj(&scope, NoneType::object());
+  Super super(&scope, args.get(0));
+  Object klass_obj(&scope, NoneType::object());
+  Object obj(&scope, NoneType::object());
   if (nargs == 1) {
     // frame is for __init__, previous frame is __call__
     // this will break if it's not invoked through __call__
@@ -39,14 +39,14 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     if (!caller_frame->code()->isCode()) {
       return thread->raiseRuntimeErrorWithCStr("super(): no code object");
     }
-    Handle<Code> code(&scope, caller_frame->code());
+    Code code(&scope, caller_frame->code());
     if (code->argcount() == 0) {
       return thread->raiseRuntimeErrorWithCStr("super(): no arguments");
     }
-    Handle<ObjectArray> free_vars(&scope, code->freevars());
+    ObjectArray free_vars(&scope, code->freevars());
     RawObject cell = Error::object();
     for (word i = 0; i < free_vars->length(); i++) {
-      if (Str::cast(free_vars->at(i))
+      if (RawStr::cast(free_vars->at(i))
               ->equals(thread->runtime()->symbols()->DunderClass())) {
         cell = caller_frame->getLocal(code->nlocals() + i);
         break;
@@ -56,7 +56,7 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
       return thread->raiseRuntimeErrorWithCStr(
           "super(): __class__ cell not found");
     }
-    klass_obj = ValueCell::cast(cell)->value();
+    klass_obj = RawValueCell::cast(cell)->value();
     // TODO(zekun): handle cell2arg case
     obj = caller_frame->getLocal(0);
   } else {
@@ -71,15 +71,15 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   }
   super->setType(*klass_obj);
   super->setObject(*obj);
-  Handle<Object> obj_type(&scope, NoneType::object());
-  Handle<Type> klass(&scope, *klass_obj);
+  Object obj_type(&scope, NoneType::object());
+  Type klass(&scope, *klass_obj);
   if (obj->isType()) {
-    Handle<Type> obj_klass(&scope, *obj);
+    Type obj_klass(&scope, *obj);
     if (thread->runtime()->isSubClass(obj_klass, klass) == Bool::trueObj()) {
       obj_type = *obj;
     }
   } else {
-    Handle<Type> obj_klass(&scope, thread->runtime()->typeOf(*obj));
+    Type obj_klass(&scope, thread->runtime()->typeOf(*obj));
     if (thread->runtime()->isSubClass(obj_klass, klass) == Bool::trueObj()) {
       obj_type = *obj_klass;
     }

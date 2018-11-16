@@ -23,14 +23,14 @@ PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   if (!dictobj->isDict()) {
     return -1;
   }
 
-  Handle<Object> keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
-  Handle<Object> valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Handle<Dict> dict(&scope, *dictobj);
+  Object keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  Dict dict(&scope, *dictobj);
   runtime->dictAtPut(dict, keyobj, valueobj);
   // TODO(eelizondo): increment the reference count through ApiHandle
   key->ob_refcnt++;
@@ -44,7 +44,7 @@ PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> keyobj(&scope, runtime->newStrFromCStr(key));
+  Object keyobj(&scope, runtime->newStrFromCStr(key));
   return PyDict_SetItem(pydict, ApiHandle::fromObject(*keyobj), value);
 }
 
@@ -53,7 +53,7 @@ PY_EXPORT PyObject* PyDict_New() {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> value(&scope, runtime->newDict());
+  Object value(&scope, runtime->newDict());
   return ApiHandle::fromObject(*value);
 }
 
@@ -62,12 +62,12 @@ PY_EXPORT PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   if (!dictobj->isDict()) {
     return nullptr;
   }
-  Handle<Dict> dict(&scope, *dictobj);
-  Handle<Object> key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  Dict dict(&scope, *dictobj);
+  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   RawObject value = runtime->dictAt(dict, key_obj);
   if (value->isError()) {
     return nullptr;

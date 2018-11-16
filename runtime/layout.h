@@ -13,9 +13,9 @@ class AttributeInfo {
     value_ = value.raw();
   }
 
-  AttributeInfo() : value_(SmallInt::kTag) {}
+  AttributeInfo() : value_(RawSmallInt::kTag) {}
 
-  AttributeInfo(word offset, word flags) : value_(SmallInt::kTag) {
+  AttributeInfo(word offset, word flags) : value_(RawSmallInt::kTag) {
     DCHECK(isValidOffset(offset), "offset %ld too large (max is %ld)", offset,
            kMaxOffset);
     value_ |= (offset << kOffsetOffset);
@@ -67,16 +67,16 @@ class AttributeInfo {
 
   // Tags.
   static const int kOffsetSize = 30;
-  static const int kOffsetOffset = SmallInt::kTagSize;
+  static const int kOffsetOffset = RawSmallInt::kTagSize;
   static const uword kOffsetMask = (1 << kOffsetSize) - 1;
 
   static const int kFlagsSize = 33;
   static const int kFlagsOffset = kOffsetOffset + kOffsetSize;
   static const uword kFlagsMask = (1UL << kFlagsSize) - 1;
 
-  static_assert(SmallInt::kTagSize + kOffsetSize + kFlagsSize ==
-                    kBitsPerPointer,
-                "Number of bits used by AttributeInfo must fit in a SmallInt");
+  static_assert(
+      RawSmallInt::kTagSize + kOffsetSize + kFlagsSize == kBitsPerPointer,
+      "Number of bits used by AttributeInfo must fit in a RawSmallInt");
 
   // Constants
   static const word kMaxOffset = (1L << (kOffsetSize + 1)) - 1;
@@ -98,7 +98,7 @@ inline bool AttributeInfo::testFlag(Flag flag) {
 }
 
 inline RawSmallInt AttributeInfo::asSmallInt() {
-  return SmallInt::cast(Object{value_});
+  return RawSmallInt::cast(RawObject{value_});
 }
 
 }  // namespace python

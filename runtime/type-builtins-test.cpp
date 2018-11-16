@@ -21,12 +21,12 @@ c = C()
 
   runtime.runFromCStr(src);
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> type(&scope, moduleAt(&runtime, main, "C"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Type type(&scope, moduleAt(&runtime, main, "C"));
   ASSERT_FALSE(type->isError());
-  Handle<Object> instance(&scope, moduleAt(&runtime, main, "c"));
+  Object instance(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_FALSE(instance->isError());
-  Handle<Object> instance_type(&scope, runtime.typeOf(*instance));
+  Object instance_type(&scope, runtime.typeOf(*instance));
   ASSERT_FALSE(instance_type->isError());
 
   EXPECT_EQ(*type, *instance_type);
@@ -48,11 +48,11 @@ C()
 
   runtime.runFromCStr(src);
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object global(&scope, moduleAt(&runtime, main, "g"));
   ASSERT_FALSE(global->isError());
   ASSERT_TRUE(global->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*global)->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(*global)->value(), 2);
 }
 
 TEST(TypeBuiltinsTest, DunderCallClassWithInitAndArgs) {
@@ -71,17 +71,17 @@ C(9)
 
   runtime.runFromCStr(src);
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object global(&scope, moduleAt(&runtime, main, "g"));
   ASSERT_FALSE(global->isError());
   ASSERT_TRUE(global->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*global)->value(), 9);
+  EXPECT_EQ(RawSmallInt::cast(*global)->value(), 9);
 }
 
 TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Code> code(&scope, runtime.newCode());
+  Code code(&scope, runtime.newCode());
   code->setArgcount(1);
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
@@ -103,14 +103,14 @@ class C:
 c = C()
 )";
   runtime.runFromCStr(src);
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object c(&scope, moduleAt(&runtime, main, "c"));
   Thread* thread = Thread::currentThread();
-  Handle<Object> x(&scope, runtime.newStrFromCStr("x"));
+  Object x(&scope, runtime.newStrFromCStr("x"));
   RawObject attr = runtime.attributeAt(thread, c, x);
   ASSERT_FALSE(attr->isNoneType());
   ASSERT_TRUE(attr->isInt());
-  ASSERT_EQ(SmallInt::cast(attr)->value(), 42);
+  ASSERT_EQ(RawSmallInt::cast(attr)->value(), 42);
 }
 
 TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {
@@ -120,7 +120,7 @@ TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {
   frame->setLocal(0, runtime.typeAt(LayoutId::kObject));
   RawObject result = builtinTypeRepr(thread, frame, 1);
   ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(result), "<class 'object'>");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result), "<class 'object'>");
 }
 
 TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsStr) {
@@ -131,8 +131,8 @@ class Foo:
 )");
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> type(&scope, moduleAt(&runtime, main, "Foo"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object type(&scope, moduleAt(&runtime, main, "Foo"));
 
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
   frame->setLocal(0, *type);
@@ -140,7 +140,7 @@ class Foo:
   ASSERT_TRUE(result->isStr());
   // TODO(T32810595): Once module names are supported, this should become
   // "<class '__main__.Foo'>".
-  EXPECT_PYSTRING_EQ(Str::cast(result), "<class 'Foo'>");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result), "<class 'Foo'>");
 }
 
 TEST(TypeBuiltinTest, DunderNewWithOneArgReturnsTypeOfArg) {
@@ -150,12 +150,12 @@ TEST(TypeBuiltinTest, DunderNewWithOneArgReturnsTypeOfArg) {
 a = type.__new__(type, 1);
 b = type.__new__(type, "hello");
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Type> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Type a(&scope, moduleAt(&runtime, main, "a"));
+  Type b(&scope, moduleAt(&runtime, main, "b"));
 
-  EXPECT_EQ(Layout::cast(a->instanceLayout())->id(), LayoutId::kSmallInt);
-  EXPECT_EQ(Layout::cast(b->instanceLayout())->id(), LayoutId::kSmallStr);
+  EXPECT_EQ(RawLayout::cast(a->instanceLayout())->id(), LayoutId::kSmallInt);
+  EXPECT_EQ(RawLayout::cast(b->instanceLayout())->id(), LayoutId::kSmallStr);
 }
 
 TEST(TypeBuiltinTest, DunderNewWithOneMetaclassArgReturnsType) {
@@ -166,9 +166,9 @@ class Foo(type):
   pass
 a = type.__new__(type, Foo);
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Type> a(&scope, moduleAt(&runtime, main, "a"));
-  EXPECT_EQ(Layout::cast(a->instanceLayout())->id(), LayoutId::kType);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Type a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_EQ(RawLayout::cast(a->instanceLayout())->id(), LayoutId::kType);
 }
 
 }  // namespace python

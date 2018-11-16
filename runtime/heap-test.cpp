@@ -30,7 +30,7 @@ TEST(HeapTest, AllocateFails) {
 
   // Allocate the first half of the heap. Use a handle to prevent gc
   word first_half = Utils::roundUp(free_space / 2, kPointerSize * 2);
-  Handle<Object> object1(&scope, heap->createLargeStr(first_half));
+  Object object1(&scope, heap->createLargeStr(first_half));
   RawObject raw1 = *object1;
   ASSERT_NE(raw1, Error::object());
   EXPECT_TRUE(heap->contains(raw1));

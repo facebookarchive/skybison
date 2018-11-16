@@ -164,4 +164,67 @@ class Handle : public T {
 template <typename T>
 using UncheckedHandle = Handle<T, false>;
 
+// TODO(T34683229): These typedefs are temporary as part of an in-progress
+// migration.
+#define HANDLE_ALIAS(ty)                                                       \
+  class Raw##ty;                                                               \
+  using ty = Handle<Raw##ty>
+HANDLE_ALIAS(Object);
+HANDLE_ALIAS(Int);
+HANDLE_ALIAS(SmallInt);
+HANDLE_ALIAS(Header);
+HANDLE_ALIAS(Bool);
+HANDLE_ALIAS(NoneType);
+HANDLE_ALIAS(Error);
+HANDLE_ALIAS(Str);
+HANDLE_ALIAS(SmallStr);
+HANDLE_ALIAS(HeapObject);
+HANDLE_ALIAS(BaseException);
+HANDLE_ALIAS(Exception);
+HANDLE_ALIAS(StopIteration);
+HANDLE_ALIAS(SystemExit);
+HANDLE_ALIAS(RuntimeError);
+HANDLE_ALIAS(NotImplementedError);
+HANDLE_ALIAS(ImportError);
+HANDLE_ALIAS(ModuleNotFoundError);
+HANDLE_ALIAS(LookupError);
+HANDLE_ALIAS(IndexError);
+HANDLE_ALIAS(KeyError);
+HANDLE_ALIAS(Type);
+HANDLE_ALIAS(Array);
+HANDLE_ALIAS(Bytes);
+HANDLE_ALIAS(ObjectArray);
+HANDLE_ALIAS(LargeStr);
+HANDLE_ALIAS(LargeInt);
+HANDLE_ALIAS(Float);
+HANDLE_ALIAS(Complex);
+HANDLE_ALIAS(Property);
+HANDLE_ALIAS(Range);
+HANDLE_ALIAS(RangeIterator);
+HANDLE_ALIAS(Slice);
+HANDLE_ALIAS(StaticMethod);
+HANDLE_ALIAS(ListIterator);
+HANDLE_ALIAS(SetIterator);
+HANDLE_ALIAS(TupleIterator);
+HANDLE_ALIAS(Code);
+HANDLE_ALIAS(Function);
+HANDLE_ALIAS(Instance);
+HANDLE_ALIAS(Module);
+HANDLE_ALIAS(NotImplemented);
+HANDLE_ALIAS(Dict);
+HANDLE_ALIAS(Set);
+HANDLE_ALIAS(List);
+HANDLE_ALIAS(ValueCell);
+HANDLE_ALIAS(Ellipsis);
+HANDLE_ALIAS(WeakRef);
+HANDLE_ALIAS(BoundMethod);
+HANDLE_ALIAS(ClassMethod);
+HANDLE_ALIAS(Layout);
+HANDLE_ALIAS(Super);
+HANDLE_ALIAS(GeneratorBase);
+HANDLE_ALIAS(Generator);
+HANDLE_ALIAS(Coroutine);
+HANDLE_ALIAS(HeapFrame);
+#undef HANDLE_ALIAS
+
 }  // namespace python

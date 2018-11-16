@@ -21,9 +21,9 @@ const BuiltinMethod DictBuiltins::kMethods[] = {
 
 void DictBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> dict_type(
-      &scope, runtime->addBuiltinClass(SymbolId::kDict, LayoutId::kDict,
-                                       LayoutId::kObject, kMethods));
+  Type dict_type(&scope,
+                 runtime->addBuiltinClass(SymbolId::kDict, LayoutId::kDict,
+                                          LayoutId::kObject, kMethods));
   dict_type->setFlag(Type::Flag::kDictSubclass);
 }
 
@@ -34,13 +34,13 @@ RawObject DictBuiltins::dunderContains(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> key(&scope, args.get(1));
+  Object self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
   if (!self->isDict()) {
     return thread->raiseTypeErrorWithCStr(
         "dict.__contains__(self): self must be a dict");
   }
-  Handle<Dict> dict(&scope, *self);
+  Dict dict(&scope, *self);
   return Bool::fromBool(thread->runtime()->dictIncludes(dict, key));
 }
 
@@ -51,10 +51,10 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> key(&scope, args.get(1));
+  Object self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
   if (self->isDict()) {
-    Handle<Dict> dict(&scope, *self);
+    Dict dict(&scope, *self);
     // Remove the key. If it doesn't exist, throw a KeyError.
     if (thread->runtime()->dictRemove(dict, key)->isError()) {
       return thread->raiseKeyErrorWithCStr("missing key can't be deleted");
@@ -76,15 +76,15 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     HandleScope scope(thread);
     Runtime* runtime = thread->runtime();
 
-    Handle<Dict> self(&scope, args.get(0));
-    Handle<Dict> other(&scope, args.get(1));
+    Dict self(&scope, args.get(0));
+    Dict other(&scope, args.get(1));
     if (self->numItems() != other->numItems()) {
       return Bool::falseObj();
     }
-    Handle<ObjectArray> keys(&scope, runtime->dictKeys(self));
-    Handle<Object> left_key(&scope, NoneType::object());
-    Handle<Object> left(&scope, NoneType::object());
-    Handle<Object> right(&scope, NoneType::object());
+    ObjectArray keys(&scope, runtime->dictKeys(self));
+    Object left_key(&scope, NoneType::object());
+    Object left(&scope, NoneType::object());
+    Object right(&scope, NoneType::object());
     word length = keys->length();
     for (word i = 0; i < length; i++) {
       left_key = keys->at(i);
@@ -111,9 +111,9 @@ RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (self->isDict()) {
-    return SmallInt::fromWord(Dict::cast(*self)->numItems());
+    return SmallInt::fromWord(RawDict::cast(*self)->numItems());
   }
   // TODO(T32856777): handle user-defined subtypes of dict.
   return thread->raiseTypeErrorWithCStr("'__len__' requires a 'dict' object");
@@ -126,19 +126,18 @@ RawObject DictBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> key(&scope, args.get(1));
+  Object self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
   if (self->isDict()) {
-    Handle<Dict> dict(&scope, *self);
-    Handle<Object> dunder_hash(
-        &scope,
-        Interpreter::lookupMethod(thread, frame, key, SymbolId::kDunderHash));
-    Handle<Object> key_hash(
-        &scope, Interpreter::callMethod1(thread, frame, dunder_hash, key));
-    Handle<Object> value(
-        &scope, thread->runtime()->dictAtWithHash(dict, key, key_hash));
+    Dict dict(&scope, *self);
+    Object dunder_hash(&scope, Interpreter::lookupMethod(
+                                   thread, frame, key, SymbolId::kDunderHash));
+    Object key_hash(&scope,
+                    Interpreter::callMethod1(thread, frame, dunder_hash, key));
+    Object value(&scope,
+                 thread->runtime()->dictAtWithHash(dict, key, key_hash));
     if (value->isError()) {
-      return thread->raiseKeyErrorWithCStr("KeyError");
+      return thread->raiseKeyErrorWithCStr("RawKeyError");
     }
     return *value;
   }
@@ -155,16 +154,15 @@ RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> key(&scope, args.get(1));
-  Handle<Object> value(&scope, args.get(2));
+  Object self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
+  Object value(&scope, args.get(2));
   if (self->isDict()) {
-    Handle<Dict> dict(&scope, *self);
-    Handle<Object> dunder_hash(
-        &scope,
-        Interpreter::lookupMethod(thread, frame, key, SymbolId::kDunderHash));
-    Handle<Object> key_hash(
-        &scope, Interpreter::callMethod1(thread, frame, dunder_hash, key));
+    Dict dict(&scope, *self);
+    Object dunder_hash(&scope, Interpreter::lookupMethod(
+                                   thread, frame, key, SymbolId::kDunderHash));
+    Object key_hash(&scope,
+                    Interpreter::callMethod1(thread, frame, dunder_hash, key));
     if (key_hash->isError()) {
       return *key_hash;
     }

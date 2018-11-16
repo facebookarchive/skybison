@@ -82,8 +82,8 @@ TEST(SysModuleTest, Platform) {
 import sys
 sysname = sys.platform
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> sysname(&scope, moduleAt(&runtime, main, "sysname"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object sysname(&scope, moduleAt(&runtime, main, "sysname"));
   ASSERT_TRUE(sysname->isStr());
   struct utsname name;
   ASSERT_EQ(uname(&name), 0);
@@ -91,10 +91,10 @@ sysname = sys.platform
   bool is_linux = !strcmp(name.sysname, "Linux");
   ASSERT_TRUE(is_darwin || is_linux);
   if (is_darwin) {
-    EXPECT_TRUE(Str::cast(*sysname)->equalsCStr("darwin"));
+    EXPECT_TRUE(RawStr::cast(*sysname)->equalsCStr("darwin"));
   }
   if (is_linux) {
-    EXPECT_TRUE(Str::cast(*sysname)->equalsCStr("linux"));
+    EXPECT_TRUE(RawStr::cast(*sysname)->equalsCStr("linux"));
   }
 }
 
@@ -105,20 +105,20 @@ TEST(SysModuleTest, BuiltinModuleNames) {
 import sys
 builtin_names = sys.builtin_module_names
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> builtins(&scope, moduleAt(&runtime, main, "builtin_names"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object builtins(&scope, moduleAt(&runtime, main, "builtin_names"));
   ASSERT_TRUE(builtins->isObjectArray());
 
   // Test that builtin list is greater than 0
-  Handle<ObjectArray> builtins_tuple(&scope, *builtins);
+  ObjectArray builtins_tuple(&scope, *builtins);
   EXPECT_GT(builtins_tuple->length(), 0);
 
   // Test that sys and _stat are both in the builtin list
   bool builtin_sys = false;
   bool builtin__stat = false;
   for (int i = 0; i < builtins_tuple->length(); i++) {
-    builtin_sys |= Str::cast(builtins_tuple->at(i))->equalsCStr("sys");
-    builtin__stat |= Str::cast(builtins_tuple->at(i))->equalsCStr("_stat");
+    builtin_sys |= RawStr::cast(builtins_tuple->at(i))->equalsCStr("sys");
+    builtin__stat |= RawStr::cast(builtins_tuple->at(i))->equalsCStr("_stat");
   }
   EXPECT_TRUE(builtin_sys);
   EXPECT_TRUE(builtin__stat);

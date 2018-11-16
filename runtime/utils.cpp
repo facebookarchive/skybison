@@ -19,7 +19,7 @@ class TracebackPrinter : public FrameVisitor {
     std::stringstream line;
 
     if (frame->code()->isInt()) {
-      void* ptr = Int::cast(frame->code())->asCPtr();
+      void* ptr = RawInt::cast(frame->code())->asCPtr();
       line << "  <native function at " << ptr << " (";
 
       Dl_info info = Dl_info();
@@ -39,11 +39,11 @@ class TracebackPrinter : public FrameVisitor {
 
     Thread* thread = Thread::currentThread();
     HandleScope scope(thread);
-    Handle<Code> code(&scope, frame->code());
+    Code code(&scope, frame->code());
 
     // Extract filename
     if (code->filename()->isStr()) {
-      char* filename = Str::cast(code->filename())->toCStr();
+      char* filename = RawStr::cast(code->filename())->toCStr();
       line << "  File '" << filename << "', ";
       std::free(filename);
     } else {
@@ -60,7 +60,7 @@ class TracebackPrinter : public FrameVisitor {
 
     // Extract function
     if (code->name()->isStr()) {
-      char* name = Str::cast(code->name())->toCStr();
+      char* name = RawStr::cast(code->name())->toCStr();
       line << "in " << name;
       std::free(name);
     } else {

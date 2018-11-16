@@ -67,8 +67,7 @@ class ApiHandle : public PyObject {
 
   // Get ExtensionPtr attribute from obj; returns Error if not an extension
   // instance
-  static RawObject getExtensionPtrAttr(Thread* thread,
-                                       const Handle<Object>& obj);
+  static RawObject getExtensionPtrAttr(Thread* thread, const Object& obj);
 
   static const long kBorrowedBit = 1L << 31;
 };

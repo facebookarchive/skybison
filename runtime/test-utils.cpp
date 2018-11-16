@@ -15,7 +15,7 @@
 
 namespace python {
 
-std::ostream& operator<<(std::ostream& os, const Handle<Str>& str) {
+std::ostream& operator<<(std::ostream& os, const Str& str) {
   char* data = str->toCStr();
   os.write(data, str->length());
   std::free(data);
@@ -107,7 +107,7 @@ template <typename T1, typename T2>
 
 ::testing::AssertionResult AssertPyListEqual(
     const char* actual_expr, const char* /* expected_expr */,
-    const Handle<Object>& actual, const std::vector<Value>& expected) {
+    const Object& actual, const std::vector<Value>& expected) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
@@ -119,7 +119,7 @@ template <typename T1, typename T2>
   }
 
   HandleScope scope(thread);
-  Handle<List> list(&scope, *actual);
+  List list(&scope, *actual);
   if (list->numItems() != expected.size()) {
     return ::testing::AssertionFailure()
            << "Length of: " << actual_expr << "\n"
@@ -128,7 +128,7 @@ template <typename T1, typename T2>
   }
 
   for (word i = 0; i < expected.size(); i++) {
-    Handle<Object> actual_item(&scope, list->at(i));
+    Object actual_item(&scope, list->at(i));
     const Value& expected_item = expected[i];
 
     auto bad_type = [&](const char* expected_type) {
@@ -140,13 +140,13 @@ template <typename T1, typename T2>
 
     switch (expected_item.type()) {
       case Value::Type::None: {
-        if (!actual_item->isNoneType()) return bad_type("NoneType");
+        if (!actual_item->isNoneType()) return bad_type("RawNoneType");
         break;
       }
 
       case Value::Type::Bool: {
         if (!actual_item->isBool()) return bad_type("bool");
-        auto const actual_val = Bool::cast(*actual_item) == Bool::trueObj();
+        auto const actual_val = RawBool::cast(*actual_item) == Bool::trueObj();
         auto const expected_val = expected_item.boolVal();
         if (actual_val != expected_val) {
           return badListValue(actual_expr, i, actual_val ? "True" : "False",
@@ -157,9 +157,8 @@ template <typename T1, typename T2>
 
       case Value::Type::Int: {
         if (!actual_item->isInt()) return bad_type("int");
-        Handle<Int> actual_val(actual_item);
-        Handle<Int> expected_val(&scope,
-                                 runtime->newInt(expected_item.intVal()));
+        Int actual_val(actual_item);
+        Int expected_val(&scope, runtime->newInt(expected_item.intVal()));
         if (actual_val->compare(*expected_val) != 0) {
           // TODO(bsimmers): Support multi-digit values when we can print them.
           return badListValue(actual_expr, i, actual_val->digitAt(0),
@@ -170,7 +169,7 @@ template <typename T1, typename T2>
 
       case Value::Type::Float: {
         if (!actual_item->isFloat()) return bad_type("float");
-        auto const actual_val = Float::cast(*actual_item)->value();
+        auto const actual_val = RawFloat::cast(*actual_item)->value();
         auto const expected_val = expected_item.floatVal();
         if (std::abs(actual_val - expected_val) >= DBL_EPSILON) {
           return badListValue(actual_expr, i, actual_val, expected_val);
@@ -180,7 +179,7 @@ template <typename T1, typename T2>
 
       case Value::Type::Str: {
         if (!actual_item->isStr()) return bad_type("str");
-        Handle<Str> actual_val(actual_item);
+        Str actual_val(actual_item);
         const char* expected_val = expected_item.strVal();
         if (!actual_val->equalsCStr(expected_val)) {
           return badListValue(actual_expr, i, actual_val, expected_val);
@@ -214,8 +213,8 @@ std::string compileAndRunToStderrString(Runtime* runtime, const char* src) {
   return compileAndRunImpl(runtime, src, &builtinStderr);
 }
 
-std::string callFunctionToString(const Handle<Function>& func,
-                                 const Handle<ObjectArray>& args) {
+std::string callFunctionToString(const Function& func,
+                                 const ObjectArray& args) {
   std::stringstream stream;
   std::ostream* old_stream = builtInStdout;
   builtInStdout = &stream;
@@ -228,24 +227,22 @@ std::string callFunctionToString(const Handle<Function>& func,
   return stream.str();
 }
 
-RawObject callFunction(const Handle<Function>& func,
-                       const Handle<ObjectArray>& args) {
+RawObject callFunction(const Function& func, const ObjectArray& args) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
-  Handle<Code> code(&scope, func->code());
+  Code code(&scope, func->code());
   Frame* frame =
       thread->pushNativeFrame(bit_cast<void*>(&callFunction), args->length());
   frame->pushValue(*func);
   for (word i = 0; i < args->length(); i++) {
     frame->pushValue(args->at(i));
   }
-  Handle<Object> result(&scope, func->entry()(thread, frame, code->argcount()));
+  Object result(&scope, func->entry()(thread, frame, code->argcount()));
   thread->popFrame();
   return *result;
 }
 
-bool objectArrayContains(const Handle<ObjectArray>& object_array,
-                         const Handle<Object>& key) {
+bool objectArrayContains(const ObjectArray& object_array, const Object& key) {
   for (word i = 0; i < object_array->length(); i++) {
     if (Object::equals(object_array->at(i), *key)) {
       return true;
@@ -256,30 +253,29 @@ bool objectArrayContains(const Handle<ObjectArray>& object_array,
 
 RawObject findModule(Runtime* runtime, const char* name) {
   HandleScope scope;
-  Handle<Object> key(&scope, runtime->newStrFromCStr(name));
+  Object key(&scope, runtime->newStrFromCStr(name));
   return runtime->findModule(key);
 }
 
-RawObject moduleAt(Runtime* runtime, const Handle<Module>& module,
-                   const char* name) {
+RawObject moduleAt(Runtime* runtime, const Module& module, const char* name) {
   HandleScope scope;
-  Handle<Object> key(&scope, runtime->newStrFromCStr(name));
+  Object key(&scope, runtime->newStrFromCStr(name));
   return runtime->moduleAt(module, key);
 }
 
 RawObject moduleAt(Runtime* runtime, const char* module_name,
                    const char* name) {
   HandleScope scope;
-  Handle<Object> mod_obj(&scope, findModule(runtime, module_name));
+  Object mod_obj(&scope, findModule(runtime, module_name));
   if (mod_obj->isNoneType()) {
     return Error::object();
   }
-  Handle<Module> module(mod_obj);
+  Module module(mod_obj);
   return moduleAt(runtime, module, name);
 }
 
 std::string typeName(Runtime* runtime, RawObject obj) {
-  RawStr name = Str::cast(Type::cast(runtime->typeOf(obj))->name());
+  RawStr name = RawStr::cast(RawType::cast(runtime->typeOf(obj))->name());
   word length = name->length();
   std::string result(length, '\0');
   name->copyTo(reinterpret_cast<byte*>(&result[0]), length);

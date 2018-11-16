@@ -4,14 +4,14 @@
 
 namespace python {
 
-class Object;
-class Type;
-class ObjectArray;
+class RawObject;
+class RawType;
+class RawObjectArray;
 class Thread;
 
 // Given the list of immediate parents, compute the complete MRO
 // for the type's ancestors via C3 linearization
-RawObject computeMro(Thread* thread, const Handle<Type>& type,
-                     const Handle<ObjectArray>& parents);
+RawObject computeMro(Thread* thread, const Type& type,
+                     const ObjectArray& parents);
 
 }  // namespace python

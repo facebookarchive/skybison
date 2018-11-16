@@ -14,8 +14,8 @@ RawObject builtinFunctionGet(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> instance(&scope, args.get(1));
+  Object self(&scope, args.get(0));
+  Object instance(&scope, args.get(1));
   if (instance->isNoneType()) {
     return *self;
   }

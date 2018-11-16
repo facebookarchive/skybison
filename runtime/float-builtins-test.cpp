@@ -23,12 +23,12 @@ a_eq_a = a == a
 b_eq_b = b == b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_eq_b(&scope, moduleAt(&runtime, main, "a_eq_b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_eq_b(&scope, moduleAt(&runtime, main, "a_eq_b"));
   EXPECT_EQ(*a_eq_b, Bool::falseObj());
-  Handle<Object> a_eq_a(&scope, moduleAt(&runtime, main, "a_eq_a"));
+  Object a_eq_a(&scope, moduleAt(&runtime, main, "a_eq_a"));
   EXPECT_EQ(*a_eq_a, Bool::trueObj());
-  Handle<Object> b_eq_b(&scope, moduleAt(&runtime, main, "b_eq_b"));
+  Object b_eq_b(&scope, moduleAt(&runtime, main, "b_eq_b"));
   EXPECT_EQ(*b_eq_b, Bool::trueObj());
 }
 
@@ -45,14 +45,14 @@ b_ge_a = b >= a
 b_ge_b = b >= b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_ge_a(&scope, moduleAt(&runtime, main, "a_ge_a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_ge_a(&scope, moduleAt(&runtime, main, "a_ge_a"));
   EXPECT_EQ(*a_ge_a, Bool::trueObj());
-  Handle<Object> a_ge_b(&scope, moduleAt(&runtime, main, "a_ge_b"));
+  Object a_ge_b(&scope, moduleAt(&runtime, main, "a_ge_b"));
   EXPECT_EQ(*a_ge_b, Bool::falseObj());
-  Handle<Object> b_ge_a(&scope, moduleAt(&runtime, main, "b_ge_a"));
+  Object b_ge_a(&scope, moduleAt(&runtime, main, "b_ge_a"));
   EXPECT_EQ(*b_ge_a, Bool::trueObj());
-  Handle<Object> b_ge_b(&scope, moduleAt(&runtime, main, "b_ge_b"));
+  Object b_ge_b(&scope, moduleAt(&runtime, main, "b_ge_b"));
   EXPECT_EQ(*b_ge_b, Bool::trueObj());
 }
 
@@ -69,14 +69,14 @@ b_gt_a = b > a
 b_gt_b = b > b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_gt_a(&scope, moduleAt(&runtime, main, "a_gt_a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_gt_a(&scope, moduleAt(&runtime, main, "a_gt_a"));
   EXPECT_EQ(*a_gt_a, Bool::falseObj());
-  Handle<Object> a_gt_b(&scope, moduleAt(&runtime, main, "a_gt_b"));
+  Object a_gt_b(&scope, moduleAt(&runtime, main, "a_gt_b"));
   EXPECT_EQ(*a_gt_b, Bool::falseObj());
-  Handle<Object> b_gt_a(&scope, moduleAt(&runtime, main, "b_gt_a"));
+  Object b_gt_a(&scope, moduleAt(&runtime, main, "b_gt_a"));
   EXPECT_EQ(*b_gt_a, Bool::trueObj());
-  Handle<Object> b_gt_b(&scope, moduleAt(&runtime, main, "b_gt_b"));
+  Object b_gt_b(&scope, moduleAt(&runtime, main, "b_gt_b"));
   EXPECT_EQ(*b_gt_b, Bool::falseObj());
 }
 
@@ -93,14 +93,14 @@ b_le_a = b <= a
 b_le_b = b <= b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
   EXPECT_EQ(*a_le_a, Bool::trueObj());
-  Handle<Object> a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
+  Object a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
   EXPECT_EQ(*a_le_b, Bool::trueObj());
-  Handle<Object> b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
+  Object b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
   EXPECT_EQ(*b_le_a, Bool::falseObj());
-  Handle<Object> b_le_b(&scope, moduleAt(&runtime, main, "b_le_b"));
+  Object b_le_b(&scope, moduleAt(&runtime, main, "b_le_b"));
   EXPECT_EQ(*b_le_b, Bool::trueObj());
 }
 
@@ -117,14 +117,14 @@ b_lt_a = b < a
 b_lt_b = b < b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_lt_a(&scope, moduleAt(&runtime, main, "a_lt_a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_lt_a(&scope, moduleAt(&runtime, main, "a_lt_a"));
   EXPECT_EQ(*a_lt_a, Bool::falseObj());
-  Handle<Object> a_lt_b(&scope, moduleAt(&runtime, main, "a_lt_b"));
+  Object a_lt_b(&scope, moduleAt(&runtime, main, "a_lt_b"));
   EXPECT_EQ(*a_lt_b, Bool::trueObj());
-  Handle<Object> b_lt_a(&scope, moduleAt(&runtime, main, "b_lt_a"));
+  Object b_lt_a(&scope, moduleAt(&runtime, main, "b_lt_a"));
   EXPECT_EQ(*b_lt_a, Bool::falseObj());
-  Handle<Object> b_lt_b(&scope, moduleAt(&runtime, main, "b_lt_b"));
+  Object b_lt_b(&scope, moduleAt(&runtime, main, "b_lt_b"));
   EXPECT_EQ(*b_lt_b, Bool::falseObj());
 }
 
@@ -140,12 +140,12 @@ a_ne_a = a != a
 b_ne_b = b != b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a_ne_b(&scope, moduleAt(&runtime, main, "a_ne_b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a_ne_b(&scope, moduleAt(&runtime, main, "a_ne_b"));
   EXPECT_EQ(*a_ne_b, Bool::trueObj());
-  Handle<Object> a_ne_a(&scope, moduleAt(&runtime, main, "a_ne_a"));
+  Object a_ne_a(&scope, moduleAt(&runtime, main, "a_ne_a"));
   EXPECT_EQ(*a_ne_a, Bool::falseObj());
-  Handle<Object> b_ne_b(&scope, moduleAt(&runtime, main, "b_ne_b"));
+  Object b_ne_b(&scope, moduleAt(&runtime, main, "b_ne_b"));
   EXPECT_EQ(*b_ne_b, Bool::falseObj());
 }
 
@@ -159,10 +159,10 @@ b = 1.5
 c = a + b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isFloat());
-  EXPECT_EQ(Float::cast(*c)->value(), 3.5);
+  EXPECT_EQ(RawFloat::cast(*c)->value(), 3.5);
 }
 
 TEST(FloatBuiltinsTest, BinaryAddSmallInt) {
@@ -175,10 +175,10 @@ b = 1
 c = a + b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isFloat());
-  EXPECT_EQ(Float::cast(*c)->value(), 3.5);
+  EXPECT_EQ(RawFloat::cast(*c)->value(), 3.5);
 }
 
 TEST(FloatBuiltinsDeathTest, AddWithNonFloatSelfThrows) {
@@ -208,10 +208,10 @@ b = 1.5
 c = a - b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isFloat());
-  EXPECT_EQ(Float::cast(*c)->value(), 0.5);
+  EXPECT_EQ(RawFloat::cast(*c)->value(), 0.5);
 }
 
 TEST(FloatBuiltinsTest, BinarySubtractSmallInt) {
@@ -224,10 +224,10 @@ b = 1
 c = a - b
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isFloat());
-  EXPECT_EQ(Float::cast(*c)->value(), 1.5);
+  EXPECT_EQ(RawFloat::cast(*c)->value(), 1.5);
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithNoArgsReturnsZero) {
@@ -238,10 +238,10 @@ TEST(FloatBuiltinsTest, DunderNewWithNoArgsReturnsZero) {
 a = float.__new__(float)
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_TRUE(a->isFloat());
-  EXPECT_EQ(Float::cast(*a)->value(), 0.0);
+  EXPECT_EQ(RawFloat::cast(*a)->value(), 0.0);
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithFloatArgReturnsSameValue) {
@@ -252,10 +252,10 @@ TEST(FloatBuiltinsTest, DunderNewWithFloatArgReturnsSameValue) {
 a = float.__new__(float, 1.0)
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_TRUE(a->isFloat());
-  EXPECT_EQ(Float::cast(*a)->value(), 1.0);
+  EXPECT_EQ(RawFloat::cast(*a)->value(), 1.0);
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithUserDefinedTypeReturnsFloat) {
@@ -269,8 +269,8 @@ class Foo:
 a = float.__new__(float, Foo())
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Float> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Float a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_EQ(a->value(), 1.0);
 }
 
@@ -282,8 +282,8 @@ TEST(FloatBuiltinsTest, DunderNewWithStringReturnsFloat) {
 a = float.__new__(float, "1.5")
 )");
 
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Float> a(&scope, moduleAt(&runtime, main, "a"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Float a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_EQ(a->value(), 1.5);
 }
 
@@ -296,9 +296,9 @@ a = float.__new__(float, "1.18973e+4932")
 b = float.__new__(float, "-1.18973e+4932")
 
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Float> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Float> b(&scope, moduleAt(&runtime, main, "b"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Float a(&scope, moduleAt(&runtime, main, "a"));
+  Float b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a->value(), std::numeric_limits<double>::infinity());
   EXPECT_EQ(b->value(), -std::numeric_limits<double>::infinity());
 }
@@ -320,8 +320,8 @@ TEST(FloatBuiltinsTest, PowFloatAndFloat) {
 base = 2.0
 x = base ** 4.0
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Float> result(&scope, moduleAt(&runtime, main, "x"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Float result(&scope, moduleAt(&runtime, main, "x"));
   EXPECT_EQ(result->value(), 16.0);
 }
 
@@ -333,8 +333,8 @@ TEST(FloatBuiltinsTest, PowFloatAndInt) {
 base = 2.0
 x = base ** 4
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Float> result(&scope, moduleAt(&runtime, main, "x"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Float result(&scope, moduleAt(&runtime, main, "x"));
   EXPECT_EQ(result->value(), 16.0);
 }
 
@@ -346,8 +346,8 @@ TEST(FloatBuiltinsTest, InplacePowFloatAndFloat) {
 x = 2.0
 x **= 4.0
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Float> result(&scope, moduleAt(&runtime, main, "x"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Float result(&scope, moduleAt(&runtime, main, "x"));
   EXPECT_EQ(result->value(), 16.0);
 }
 
@@ -359,8 +359,8 @@ TEST(FloatBuiltinsTest, InplacePowFloatAndInt) {
 x = 2.0
 x **= 4
 )");
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Float> result(&scope, moduleAt(&runtime, main, "x"));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Float result(&scope, moduleAt(&runtime, main, "x"));
   EXPECT_EQ(result->value(), 16.0);
 }
 

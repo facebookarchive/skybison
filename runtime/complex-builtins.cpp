@@ -13,9 +13,9 @@ const BuiltinMethod ComplexBuiltins::kMethods[] = {
 
 void ComplexBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(
-      &scope, runtime->addBuiltinClass(SymbolId::kComplex, LayoutId::kComplex,
-                                       LayoutId::kObject, kMethods));
+  Type type(&scope,
+            runtime->addBuiltinClass(SymbolId::kComplex, LayoutId::kComplex,
+                                     LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kComplexSubclass);
 }
 
@@ -33,19 +33,19 @@ RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
-  Handle<Object> type_obj(&scope, args.get(0));
+  Object type_obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
     return thread->raiseTypeErrorWithCStr(
         "complex.__new__(X): X is not a type object");
   }
 
-  Handle<Type> type(&scope, *type_obj);
+  Type type(&scope, *type_obj);
   if (!type->hasFlag(Type::Flag::kComplexSubclass)) {
     return thread->raiseTypeErrorWithCStr(
         "complex.__new__(X): X is not a subtype of complex");
   }
 
-  Handle<Layout> layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type->instanceLayout());
   if (layout->id() != LayoutId::kComplex) {
     // TODO: Implement __new__ with subtypes of complex.
     UNIMPLEMENTED("complex.__new__(<subtype of complex>, ...)");
@@ -56,9 +56,8 @@ RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return runtime->newComplex(0, 0);
   }
 
-  Handle<Object> real_arg(&scope, args.get(1));
-  Handle<Object> imag_arg(&scope,
-                          nargs == 3 ? args.get(2) : runtime->newFloat(0));
+  Object real_arg(&scope, args.get(1));
+  Object imag_arg(&scope, nargs == 3 ? args.get(2) : runtime->newFloat(0));
   // If it's already exactly a complex, return it immediately.
   if (real_arg->isComplex()) {
     return *real_arg;
@@ -68,17 +67,17 @@ RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // For now, it will only work with small integers and floats.
   double real = 0.0;
   if (real_arg->isSmallInt()) {
-    real = SmallInt::cast(*real_arg)->value();
+    real = RawSmallInt::cast(*real_arg)->value();
   } else if (real_arg->isFloat()) {
-    real = Float::cast(*real_arg)->value();
+    real = RawFloat::cast(*real_arg)->value();
   } else {
     UNIMPLEMENTED("Convert non-numeric to numeric");
   }
   double imag = 0.0;
   if (imag_arg->isSmallInt()) {
-    imag = SmallInt::cast(*imag_arg)->value();
+    imag = RawSmallInt::cast(*imag_arg)->value();
   } else if (imag_arg->isFloat()) {
-    imag = Float::cast(*imag_arg)->value();
+    imag = RawFloat::cast(*imag_arg)->value();
   } else {
     UNIMPLEMENTED("Convert non-numeric to numeric");
   }

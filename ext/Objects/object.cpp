@@ -34,13 +34,13 @@ PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   if (!(object->isType() || object->isModule() || object->isInstance())) {
     return -1;
   }
 
-  Handle<Object> name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Handle<Object> value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
   runtime->attributeAtPut(thread, object, name_obj, value_obj);
 
   // An error was produced. No value was set.
@@ -56,13 +56,13 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   if (!(object->isType() || object->isModule() || object->isInstance())) {
     return nullptr;
   }
 
-  Handle<Object> name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Handle<Object> result(&scope, runtime->attributeAt(thread, object, name_obj));
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Object result(&scope, runtime->attributeAt(thread, object, name_obj));
 
   // An error was produced. No value was returned.
   if (thread->hasPendingException() || result->isError()) {
@@ -111,9 +111,9 @@ PY_EXPORT PyObject* PyObject_GetAttr(PyObject* v, PyObject* name) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> object(&scope, ApiHandle::fromPyObject(v)->asObject());
-  Handle<Object> name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Handle<Object> result(&scope, runtime->attributeAt(thread, object, name_obj));
+  Object object(&scope, ApiHandle::fromPyObject(v)->asObject());
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Object result(&scope, runtime->attributeAt(thread, object, name_obj));
 
   if (thread->hasPendingException() || result->isError()) {
     return nullptr;

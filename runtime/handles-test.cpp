@@ -35,9 +35,9 @@ TEST(HandlesTest, UpCastTest) {
   Handles handles;
   HandleScope scope(&handles);
 
-  Handle<SmallInt> h1(&scope, bit_cast<RawSmallInt>(0xFEEDFACEL));
+  SmallInt h1(&scope, bit_cast<RawSmallInt>(0xFEEDFACEL));
 
-  Handle<Object> h2(h1);
+  Object h2(h1);
 
   RememberingVisitor visitor;
   handles.visitPointers(&visitor);
@@ -50,9 +50,9 @@ TEST(HandlesTest, DownCastTest) {
   HandleScope scope(&handles);
 
   auto i1 = bit_cast<RawSmallInt>(0xFEEDFACEL);
-  Handle<Object> h1(&scope, i1);
+  Object h1(&scope, i1);
 
-  Handle<SmallInt> h2(h1);
+  SmallInt h2(h1);
 
   RememberingVisitor visitor;
   handles.visitPointers(&visitor);
@@ -65,9 +65,9 @@ TEST(HandlesTest, IllegalCastRunTimeTest) {
   HandleScope scope(&handles);
 
   auto i1 = bit_cast<RawSmallInt>(0xFEEDFACEL);
-  Handle<Object> h1(&scope, i1);
+  Object h1(&scope, i1);
 
-  EXPECT_DEBUG_DEATH(Handle<Dict> h2(h1), "isDict");
+  EXPECT_DEBUG_DEATH(Dict h2(h1), "isDict");
 }
 
 TEST(HandlesTest, VisitNoScopes) {
@@ -89,7 +89,7 @@ TEST(HandlesTest, VisitOneHandle) {
   Handles handles;
   HandleScope scope(&handles);
   auto object = bit_cast<RawObject>(0xFEEDFACEL);
-  Handle<Object> handle(&scope, object);
+  Object handle(&scope, object);
   RememberingVisitor visitor;
   handles.visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 1);
@@ -101,9 +101,9 @@ TEST(HandlesTest, VisitTwoHandles) {
   HandleScope scope(&handles);
   RememberingVisitor visitor;
   auto o1 = bit_cast<RawObject>(0xFEEDFACEL);
-  Handle<Object> h1(&scope, o1);
+  Object h1(&scope, o1);
   auto o2 = bit_cast<RawObject>(0xFACEFEEDL);
-  Handle<Object> h2(&scope, o2);
+  Object h2(&scope, o2);
   handles.visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 2);
   EXPECT_TRUE(visitor.hasVisited(o1));
@@ -124,7 +124,7 @@ TEST(HandlesTest, VisitObjectInNestedScope) {
     }
     {
       HandleScope s2(&handles);
-      Handle<Object> handle(&s2, object);
+      Object handle(&s2, object);
       {
         // Check that one handle has been allocated (in the inner scope).
         RememberingVisitor visitor;
@@ -158,7 +158,7 @@ TEST(HandlesTest, NestedScopes) {
 
   {
     HandleScope s1(&handles);
-    Handle<Object> h1(&s1, o1);
+    Object h1(&s1, o1);
     {
       // Check scope s1 for objects o1.
       RememberingVisitor visitor;
@@ -171,7 +171,7 @@ TEST(HandlesTest, NestedScopes) {
     {
       // Push scope 2.
       HandleScope s2(&handles);
-      Handle<Object> h2(&s2, o2);
+      Object h2(&s2, o2);
       {
         // Check s2 for o1 and o2.
         RememberingVisitor visitor;
@@ -182,13 +182,13 @@ TEST(HandlesTest, NestedScopes) {
         EXPECT_FALSE(visitor.hasVisited(o3));
       }
       // Verify abort if handle is created with s1.
-      EXPECT_DEBUG_DEATH(Handle<Object> h3(&s1, o3), "unexpected");
+      EXPECT_DEBUG_DEATH(Object h3(&s1, o3), "unexpected");
     }
     // (Scope 2 is now popped.)
     {
       // Push scope 3 (at the depth previously occupied by s2).
       HandleScope s3(&handles);
-      Handle<Object> h3(&s3, o3);
+      Object h3(&s3, o3);
       {
         // Check s2 for o1 and o3 (but not o2).
         RememberingVisitor visitor;
@@ -240,7 +240,7 @@ BENCHMARK_F(HandleBenchmark, CreationDestruction)(benchmark::State& state) {
   auto o1 = bit_cast<RawObject>(0xFEEDFACEL);
 
   for (auto _ : state) {
-    Handle<Object> h1(&scope, o1);
+    Object h1(&scope, o1);
   }
 }
 
@@ -255,15 +255,15 @@ BENCHMARK_F(HandleBenchmark, Visit)(benchmark::State& state) {
   Handles handles;
   HandleScope scope(Thread::currentThread());
 
-  Handle<Object> h1(&scope, bit_cast<RawObject>(0xFEEDFACEL));
-  Handle<Object> h2(&scope, bit_cast<RawObject>(0xFEEDFACFL));
-  Handle<Object> h3(&scope, bit_cast<RawObject>(0xFEEDFAD0L));
-  Handle<Object> h4(&scope, bit_cast<RawObject>(0xFEEDFAD1L));
-  Handle<Object> h5(&scope, bit_cast<RawObject>(0xFEEDFAD2L));
-  Handle<Object> h6(&scope, bit_cast<RawObject>(0xFEEDFAD3L));
-  Handle<Object> h7(&scope, bit_cast<RawObject>(0xFEEDFAD4L));
-  Handle<Object> h8(&scope, bit_cast<RawObject>(0xFEEDFAD5L));
-  Handle<Object> h9(&scope, bit_cast<RawObject>(0xFEEDFAD6L));
+  Object h1(&scope, bit_cast<RawObject>(0xFEEDFACEL));
+  Object h2(&scope, bit_cast<RawObject>(0xFEEDFACFL));
+  Object h3(&scope, bit_cast<RawObject>(0xFEEDFAD0L));
+  Object h4(&scope, bit_cast<RawObject>(0xFEEDFAD1L));
+  Object h5(&scope, bit_cast<RawObject>(0xFEEDFAD2L));
+  Object h6(&scope, bit_cast<RawObject>(0xFEEDFAD3L));
+  Object h7(&scope, bit_cast<RawObject>(0xFEEDFAD4L));
+  Object h8(&scope, bit_cast<RawObject>(0xFEEDFAD5L));
+  Object h9(&scope, bit_cast<RawObject>(0xFEEDFAD6L));
 
   NothingVisitor visitor;
   for (auto _ : state) {

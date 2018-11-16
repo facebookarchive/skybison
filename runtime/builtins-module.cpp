@@ -33,15 +33,15 @@ RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
     std::abort();  // TODO: throw a TypeError exception.
   }
 
-  Handle<Function> body(&scope, args.get(0));
-  Handle<Object> name(&scope, args.get(1));
-  Handle<ObjectArray> bases(&scope, runtime->newObjectArray(nargs - 2));
+  Function body(&scope, args.get(0));
+  Object name(&scope, args.get(1));
+  ObjectArray bases(&scope, runtime->newObjectArray(nargs - 2));
   for (word i = 0, j = 2; j < nargs; i++, j++) {
     bases->atPut(i, args.get(j));
   }
 
-  Handle<Dict> dict(&scope, runtime->newDict());
-  Handle<Object> key(&scope, runtime->symbols()->DunderName());
+  Dict dict(&scope, runtime->newDict());
+  Object key(&scope, runtime->symbols()->DunderName());
   runtime->dictAtPutInValueCell(dict, key, name);
   // TODO: might need to do some kind of callback here and we want backtraces to
   // work correctly.  The key to doing that would be to put some state on the
@@ -49,8 +49,8 @@ RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   // the on-stack state for the class body function call.
   thread->runClassFunction(*body, *dict);
 
-  Handle<Type> type(&scope, runtime->typeAt(LayoutId::kType));
-  Handle<Function> dunder_call(
+  Type type(&scope, runtime->typeAt(LayoutId::kType));
+  Function dunder_call(
       &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderCall));
   frame->pushValue(*dunder_call);
   frame->pushValue(*type);
@@ -74,37 +74,37 @@ RawObject builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("class name is not string.");
   }
 
-  Handle<Function> body(&scope, args.get(0));
-  Handle<Object> name(&scope, args.get(1));
+  Function body(&scope, args.get(0));
+  Object name(&scope, args.get(1));
 
-  Handle<Object> bootstrap(&scope, args.getKw(runtime->symbols()->Bootstrap()));
+  Object bootstrap(&scope, args.getKw(runtime->symbols()->Bootstrap()));
   if (bootstrap->isError()) {
     bootstrap = Bool::falseObj();
   }
 
-  Handle<Object> metaclass(&scope, args.getKw(runtime->symbols()->Metaclass()));
+  Object metaclass(&scope, args.getKw(runtime->symbols()->Metaclass()));
   if (metaclass->isError()) {
     metaclass = runtime->typeAt(LayoutId::kType);
   }
 
-  Handle<ObjectArray> bases(
+  ObjectArray bases(
       &scope, runtime->newObjectArray(args.numArgs() - args.numKeywords() - 1));
   for (word i = 0, j = 2; j < args.numArgs(); i++, j++) {
     bases->atPut(i, args.get(j));
   }
 
-  Handle<Object> dict_obj(&scope, NoneType::object());
-  Handle<Object> type_obj(&scope, NoneType::object());
+  Object dict_obj(&scope, NoneType::object());
+  Object type_obj(&scope, NoneType::object());
   if (*bootstrap == Bool::falseObj()) {
     // An ordinary class initialization creates a new class dictionary.
     dict_obj = runtime->newDict();
   } else {
     // A bootstrap class initialization uses the existing class dictionary.
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
-    Handle<Dict> globals(&scope, frame->previousFrame()->globals());
-    Handle<ValueCell> value_cell(&scope, runtime->dictAt(globals, name));
+    Dict globals(&scope, frame->previousFrame()->globals());
+    ValueCell value_cell(&scope, runtime->dictAt(globals, name));
     CHECK(value_cell->value()->isType(), "name is not bound to a type object");
-    Handle<Type> type(&scope, value_cell->value());
+    Type type(&scope, value_cell->value());
     type_obj = *type;
     dict_obj = type->dict();
   }
@@ -118,14 +118,14 @@ RawObject builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   // A bootstrap class initialization is complete at this point.  Add a type
   // name to the type dictionary and return the initialized type object.
   if (*bootstrap == Bool::trueObj()) {
-    Handle<Object> key(&scope, runtime->symbols()->DunderName());
-    Handle<Dict> dict(&scope, *dict_obj);
+    Object key(&scope, runtime->symbols()->DunderName());
+    Dict dict(&scope, *dict_obj);
     runtime->dictAtPutInValueCell(dict, key, name);
     return *type_obj;
   }
 
-  Handle<Type> type(&scope, *metaclass);
-  Handle<Function> dunder_call(
+  Type type(&scope, *metaclass);
+  Function dunder_call(
       &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderCall));
   frame->pushValue(*dunder_call);
   frame->pushValue(*type);
@@ -141,18 +141,18 @@ RawObject builtinCallable(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> arg(&scope, args.get(0));
+  Object arg(&scope, args.get(0));
   if (arg->isFunction() || arg->isBoundMethod() || arg->isType()) {
     return Bool::trueObj();
   }
   Runtime* runtime = thread->runtime();
-  Handle<Type> type(&scope, runtime->typeOf(*arg));
+  Type type(&scope, runtime->typeOf(*arg));
   // If its type defines a __call__, it is also callable (even if __call__ is
   // not actually callable).
   // Note that this does not include __call__ defined on the particular
   // instance, only __call__ defined on the type.
-  Handle<Object> callable(&scope, thread->runtime()->lookupSymbolInMro(
-                                      thread, type, SymbolId::kDunderCall));
+  Object callable(&scope, thread->runtime()->lookupSymbolInMro(
+                              thread, type, SymbolId::kDunderCall));
   return Bool::fromBool(!callable->isError());
 }
 
@@ -165,7 +165,7 @@ RawObject builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
   if (!arg->isSmallInt()) {
     return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'chr'");
   }
-  word w = SmallInt::cast(arg)->value();
+  word w = RawSmallInt::cast(arg)->value();
   const char s[2]{static_cast<char>(w), 0};
   return SmallStr::fromCStr(s);
 }
@@ -187,8 +187,8 @@ RawObject builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
 
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Handle<Object> obj(&scope, args.get(0));
-  Handle<Type> type(&scope, args.get(1));
+  Object obj(&scope, args.get(0));
+  Type type(&scope, args.get(1));
   return runtime->isInstance(obj, type);
 }
 
@@ -203,10 +203,10 @@ RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
   if (!args.get(0)->isType()) {
     return thread->raiseTypeErrorWithCStr("issubclass arg 1 must be a type");
   }
-  Handle<Type> type(&scope, args.get(0));
-  Handle<Object> classinfo(&scope, args.get(1));
+  Type type(&scope, args.get(0));
+  Object classinfo(&scope, args.get(1));
   if (runtime->isInstanceOfClass(*classinfo)) {
-    Handle<Type> possible_superclass(&scope, *classinfo);
+    Type possible_superclass(&scope, *classinfo);
     return runtime->isSubClass(type, possible_superclass);
   }
   // If classinfo is not a tuple, then throw a TypeError.
@@ -216,15 +216,15 @@ RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
   }
   // If classinfo is a tuple, try each of the values, and return
   // True if the first argument is a subclass of any of them.
-  Handle<ObjectArray> tuple_of_types(&scope, *classinfo);
+  ObjectArray tuple_of_types(&scope, *classinfo);
   for (word i = 0; i < tuple_of_types->length(); i++) {
     // If any argument is not a type, then throw TypeError.
     if (!runtime->isInstanceOfClass(tuple_of_types->at(i))) {
       return thread->raiseTypeErrorWithCStr(
           "issubclass() arg 2 must be a class of tuple of classes");
     }
-    Handle<Type> possible_superclass(&scope, tuple_of_types->at(i));
-    Handle<Bool> result(&scope, runtime->isSubClass(type, possible_superclass));
+    Type possible_superclass(&scope, tuple_of_types->at(i));
+    Bool result(&scope, runtime->isSubClass(type, possible_superclass));
     // If any of the types are a superclass, return true.
     if (result->value()) {
       return Bool::trueObj();
@@ -240,9 +240,9 @@ RawObject builtinLen(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> method(&scope, Interpreter::lookupMethod(
-                                    thread, frame, self, SymbolId::kDunderLen));
+  Object self(&scope, args.get(0));
+  Object method(&scope, Interpreter::lookupMethod(thread, frame, self,
+                                                  SymbolId::kDunderLen));
   if (method->isError()) {
     return thread->raiseTypeErrorWithCStr("object has no len()");
   }
@@ -258,7 +258,7 @@ RawObject builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
   if (!arg->isStr()) {
     return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'ord'");
   }
-  auto str = Str::cast(arg);
+  auto str = RawStr::cast(arg);
   if (str->length() != 1) {
     return thread->raiseTypeErrorWithCStr(
         "Builtin 'ord' expects string of length 1");
@@ -283,13 +283,13 @@ static void printQuotedStr(RawStr str, std::ostream* ostream) {
 // Print a scalar value to ostream.
 static void printScalarTypes(RawObject arg, std::ostream* ostream) {
   if (arg->isBool()) {
-    *ostream << (Bool::cast(arg)->value() ? "True" : "False");
+    *ostream << (RawBool::cast(arg)->value() ? "True" : "False");
   } else if (arg->isFloat()) {
-    *ostream << Float::cast(arg)->value();
+    *ostream << RawFloat::cast(arg)->value();
   } else if (arg->isSmallInt()) {
-    *ostream << SmallInt::cast(arg)->value();
+    *ostream << RawSmallInt::cast(arg)->value();
   } else if (arg->isStr()) {
-    printStr(Str::cast(arg), ostream);
+    printStr(RawStr::cast(arg), ostream);
   } else {
     UNIMPLEMENTED("Custom print unsupported");
   }
@@ -298,7 +298,7 @@ static void printScalarTypes(RawObject arg, std::ostream* ostream) {
 // Print a scalar value to ostream, quoting it if it's a string.
 static void printQuotedScalarTypes(RawObject arg, std::ostream* ostream) {
   if (arg->isStr()) {
-    printQuotedStr(Str::cast(arg), ostream);
+    printQuotedStr(RawStr::cast(arg), ostream);
   } else {
     printScalarTypes(arg, ostream);
   }
@@ -312,8 +312,7 @@ static bool supportedScalarType(RawObject arg) {
 // and should not be emulated when creating new builtins. They are minimal
 // implementations intended to get the Richards & Pystone benchmark working.
 static RawObject doBuiltinPrint(const Arguments& args, word nargs,
-                                const Handle<Object>& end,
-                                std::ostream* ostream) {
+                                const Object& end, std::ostream* ostream) {
   const char separator = ' ';
 
   for (word i = 0; i < nargs; i++) {
@@ -323,7 +322,7 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
     } else if (arg->isList()) {
       *ostream << "[";
       HandleScope scope;
-      Handle<List> list(&scope, arg);
+      List list(&scope, arg);
       for (word i = 0; i < list->numItems(); i++) {
         if (supportedScalarType(list->at(i))) {
           printQuotedScalarTypes(list->at(i), ostream);
@@ -338,7 +337,7 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
     } else if (arg->isObjectArray()) {
       *ostream << "(";
       HandleScope scope;
-      Handle<ObjectArray> array(&scope, arg);
+      ObjectArray array(&scope, arg);
       for (word i = 0; i < array->length(); i++) {
         if (supportedScalarType(array->at(i))) {
           printScalarTypes(array->at(i), ostream);
@@ -353,13 +352,13 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
     } else if (arg->isDict()) {
       *ostream << "{";
       HandleScope scope;
-      Handle<Dict> dict(&scope, arg);
-      Handle<ObjectArray> data(&scope, dict->data());
+      Dict dict(&scope, arg);
+      ObjectArray data(&scope, dict->data());
       word items = dict->numItems();
       for (word i = 0; i < data->length(); i += 3) {
         if (!data->at(i)->isNoneType()) {
-          Handle<Object> key(&scope, Dict::Bucket::key(*data, i));
-          Handle<Object> value(&scope, Dict::Bucket::value(*data, i));
+          Object key(&scope, Dict::Bucket::key(*data, i));
+          Object value(&scope, Dict::Bucket::value(*data, i));
           if (supportedScalarType(*key)) {
             printQuotedScalarTypes(*key, ostream);
           } else {
@@ -389,7 +388,7 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
   if (end->isNoneType()) {
     *ostream << "\n";
   } else if (end->isStr()) {
-    printStr(Str::cast(*end), ostream);
+    printStr(RawStr::cast(*end), ostream);
   } else {
     UNIMPLEMENTED("Unexpected type for end: %ld",
                   static_cast<word>(end->layoutId()));
@@ -400,7 +399,7 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
 
 RawObject builtinPrint(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
-  Handle<Object> end(&scope, NoneType::object());
+  Object end(&scope, NoneType::object());
   Arguments args(frame, nargs);
   return doBuiltinPrint(args, nargs, end, builtInStdout);
 }
@@ -417,10 +416,10 @@ RawObject builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   RawObject end = NoneType::object();
   std::ostream* ostream = builtInStdout;
 
-  Handle<Object> file_arg(&scope, kw_args.getKw(runtime->symbols()->File()));
+  Object file_arg(&scope, kw_args.getKw(runtime->symbols()->File()));
   if (!file_arg->isError()) {
     if (file_arg->isSmallInt()) {
-      word stream_val = SmallInt::cast(*file_arg)->value();
+      word stream_val = RawSmallInt::cast(*file_arg)->value();
       switch (stream_val) {
         case STDOUT_FILENO:
           ostream = builtInStdout;
@@ -438,7 +437,7 @@ RawObject builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
     }
   }
 
-  Handle<Object> end_arg(&scope, kw_args.getKw(runtime->symbols()->End()));
+  Object end_arg(&scope, kw_args.getKw(runtime->symbols()->End()));
   if (!end_arg->isError()) {
     if ((end_arg->isStr() || end_arg->isNoneType())) {
       end = *end_arg;
@@ -449,7 +448,7 @@ RawObject builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
 
   // Remove kw arg tuple and the value for the end keyword argument
   Arguments rest(frame, nargs - kw_args.numKeywords() - 1);
-  Handle<Object> end_val(&scope, end);
+  Object end_val(&scope, end);
   return doBuiltinPrint(rest, nargs - kw_args.numKeywords() - 1, end_val,
                         ostream);
 }
@@ -474,14 +473,14 @@ RawObject builtinRange(Thread* thread, Frame* frame, word nargs) {
   word step = 1;
 
   if (nargs == 1) {
-    stop = SmallInt::cast(args.get(0))->value();
+    stop = RawSmallInt::cast(args.get(0))->value();
   } else if (nargs == 2) {
-    start = SmallInt::cast(args.get(0))->value();
-    stop = SmallInt::cast(args.get(1))->value();
+    start = RawSmallInt::cast(args.get(0))->value();
+    stop = RawSmallInt::cast(args.get(1))->value();
   } else if (nargs == 3) {
-    start = SmallInt::cast(args.get(0))->value();
-    stop = SmallInt::cast(args.get(1))->value();
-    step = SmallInt::cast(args.get(2))->value();
+    start = RawSmallInt::cast(args.get(0))->value();
+    stop = RawSmallInt::cast(args.get(1))->value();
+    step = RawSmallInt::cast(args.get(2))->value();
   }
 
   if (step == 0) {
@@ -499,10 +498,10 @@ RawObject builtinRepr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
 
   HandleScope scope(thread);
-  Handle<Object> obj(&scope, args.get(0));
+  Object obj(&scope, args.get(0));
   // Only one argument, the value to be repr'ed.
-  Handle<Object> method(&scope, Interpreter::lookupMethod(
-                                    thread, frame, obj, SymbolId::kDunderRepr));
+  Object method(&scope, Interpreter::lookupMethod(thread, frame, obj,
+                                                  SymbolId::kDunderRepr));
   CHECK(!method->isError(),
         "__repr__ doesn't exist for this object, which is impossible since "
         "object has a __repr__, and everything descends from object");
@@ -521,14 +520,13 @@ RawObject builtinGetattr(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> name(&scope, args.get(1));
+  Object self(&scope, args.get(0));
+  Object name(&scope, args.get(1));
   if (!name->isStr()) {
     return thread->raiseTypeErrorWithCStr(
         "getattr(): attribute name must be string.");
   }
-  Handle<Object> result(&scope,
-                        thread->runtime()->attributeAt(thread, self, name));
+  Object result(&scope, thread->runtime()->attributeAt(thread, self, name));
   if (result->isError() && nargs == 3) {
     result = args.get(2);
     // TODO(T32775277) Implement PyErr_ExceptionMatches
@@ -543,14 +541,13 @@ RawObject builtinHasattr(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> name(&scope, args.get(1));
+  Object self(&scope, args.get(0));
+  Object name(&scope, args.get(1));
   if (!name->isStr()) {
     return thread->raiseTypeErrorWithCStr(
         "hasattr(): attribute name must be string.");
   }
-  Handle<Object> result(&scope,
-                        thread->runtime()->attributeAt(thread, self, name));
+  Object result(&scope, thread->runtime()->attributeAt(thread, self, name));
   if (result->isError()) {
     // TODO(T32775277) Implement PyErr_ExceptionMatches
     thread->clearPendingException();
@@ -565,15 +562,15 @@ RawObject builtinSetattr(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
-  Handle<Object> name(&scope, args.get(1));
-  Handle<Object> value(&scope, args.get(2));
+  Object self(&scope, args.get(0));
+  Object name(&scope, args.get(1));
+  Object value(&scope, args.get(2));
   if (!name->isStr()) {
     return thread->raiseTypeErrorWithCStr(
         "setattr(): attribute name must be string.");
   }
-  Handle<Object> result(
-      &scope, thread->runtime()->attributeAtPut(thread, self, name, value));
+  Object result(&scope,
+                thread->runtime()->attributeAtPut(thread, self, name, value));
   if (result->isError()) {
     // populate the exception
     return *result;

@@ -5,8 +5,8 @@
 
 namespace python {
 
-class List;
-class Object;
+class RawList;
+class RawObject;
 class Runtime;
 
 class Marshal {
@@ -51,7 +51,7 @@ class Marshal {
     RawObject readLongObject();
 
     Runtime* runtime_;
-    Handle<List> refs_;
+    List refs_;
     bool isRef_;
 
     const byte* start_;

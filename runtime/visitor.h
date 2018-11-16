@@ -2,7 +2,7 @@
 
 namespace python {
 
-class Object;
+class RawObject;
 
 class PointerVisitor {
  public:

@@ -33,27 +33,27 @@ TEST(MarshalReaderTest, ReadTypeAscii) {
 
   // Read a non ref
   Marshal::Reader reader(&scope, &runtime, "\x61\x0a\x00\x00\x00testing123");
-  Handle<Object> result(&scope, reader.readObject());
+  Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
   ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*result), "testing123");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "testing123");
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
-  Handle<Object> str(&scope, runtime.newStrFromCStr("testing123"));
+  Object str(&scope, runtime.newStrFromCStr("testing123"));
   EXPECT_EQ(runtime.internStr(str), *str);
 
   // Read a ref
   Marshal::Reader ref_reader(&scope, &runtime,
                              "\xe1\x0a\x00\x00\x00testing321");
-  Handle<Object> ref_result(&scope, ref_reader.readObject());
+  Object ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
   ASSERT_TRUE(ref_result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*ref_result), "testing321");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*ref_result), "testing321");
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
-  Handle<Object> str2(&scope, runtime.newStrFromCStr("testing321"));
+  Object str2(&scope, runtime.newStrFromCStr("testing321"));
   EXPECT_EQ(runtime.internStr(str2), *str2);
 
   // Read an ascii string with negative length
@@ -68,27 +68,27 @@ TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
 
   // Read a non ref
   Marshal::Reader reader(&scope, &runtime, "\x41\x0a\x00\x00\x00testing123");
-  Handle<Object> result(&scope, reader.readObject());
+  Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
   ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*result), "testing123");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "testing123");
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Handle<Object> str(&scope, runtime.newStrFromCStr("testing123"));
+  Object str(&scope, runtime.newStrFromCStr("testing123"));
   EXPECT_NE(runtime.internStr(str), *str);
 
   // Read a ref
   Marshal::Reader ref_reader(&scope, &runtime,
                              "\xc1\x0a\x00\x00\x00testing321");
-  Handle<Object> ref_result(&scope, ref_reader.readObject());
+  Object ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
   ASSERT_TRUE(ref_result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*ref_result), "testing321");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*ref_result), "testing321");
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Handle<Object> str2(&scope, runtime.newStrFromCStr("testing321"));
+  Object str2(&scope, runtime.newStrFromCStr("testing321"));
   EXPECT_NE(runtime.internStr(str2), *str2);
 
   // Read an ascii string with negative length
@@ -103,27 +103,27 @@ TEST(MarshalReaderTest, ReadTypeUnicode) {
 
   // Read a non ref
   Marshal::Reader reader(&scope, &runtime, "\x75\x0a\x00\x00\x00testing123");
-  Handle<Object> result(&scope, reader.readObject());
+  Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
   ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*result), "testing123");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "testing123");
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
-  Handle<Object> str(&scope, runtime.newStrFromCStr("testing123"));
+  Object str(&scope, runtime.newStrFromCStr("testing123"));
   EXPECT_EQ(runtime.internStr(str), *str);
 
   // Read a ref
   Marshal::Reader ref_reader(&scope, &runtime,
                              "\xf5\x0a\x00\x00\x00testing321");
-  Handle<Object> ref_result(&scope, ref_reader.readObject());
+  Object ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
   ASSERT_TRUE(ref_result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*ref_result), "testing321");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*ref_result), "testing321");
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
-  Handle<Object> str2(&scope, runtime.newStrFromCStr("testing321"));
+  Object str2(&scope, runtime.newStrFromCStr("testing321"));
   EXPECT_EQ(runtime.internStr(str2), *str2);
 
   // Read an unicode string with negative length
@@ -138,27 +138,27 @@ TEST(MarshalReaderTest, ReadTypeInterned) {
 
   // Read a non ref
   Marshal::Reader reader(&scope, &runtime, "\x74\x0a\x00\x00\x00testing123");
-  Handle<Object> result(&scope, reader.readObject());
+  Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
   ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*result), "testing123");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "testing123");
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Handle<Object> str(&scope, runtime.newStrFromCStr("testing123"));
+  Object str(&scope, runtime.newStrFromCStr("testing123"));
   EXPECT_NE(runtime.internStr(str), *str);
 
   // Read a ref
   Marshal::Reader ref_reader(&scope, &runtime,
                              "\xf4\x0a\x00\x00\x00testing321");
-  Handle<Object> ref_result(&scope, ref_reader.readObject());
+  Object ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
   ASSERT_TRUE(ref_result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*ref_result), "testing321");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*ref_result), "testing321");
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Handle<Object> str2(&scope, runtime.newStrFromCStr("testing321"));
+  Object str2(&scope, runtime.newStrFromCStr("testing321"));
   EXPECT_NE(runtime.internStr(str2), *str2);
 
   // Read an interned string with negative length
@@ -173,26 +173,26 @@ TEST(MarshalReaderTest, ReadTypeShortAsciiInterned) {
 
   // Read a non ref
   Marshal::Reader reader(&scope, &runtime, "\x5a\x0atesting123");
-  Handle<Object> result(&scope, reader.readObject());
+  Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
   ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*result), "testing123");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "testing123");
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Handle<Object> str(&scope, runtime.newStrFromCStr("testing123"));
+  Object str(&scope, runtime.newStrFromCStr("testing123"));
   EXPECT_NE(runtime.internStr(str), *str);
 
   // Read a ref
   Marshal::Reader ref_reader(&scope, &runtime, "\xda\x0atesting321");
-  Handle<Object> ref_result(&scope, ref_reader.readObject());
+  Object ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
   ASSERT_TRUE(ref_result->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*ref_result), "testing321");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*ref_result), "testing321");
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Handle<Object> str2(&scope, runtime.newStrFromCStr("testing321"));
+  Object str2(&scope, runtime.newStrFromCStr("testing321"));
   EXPECT_NE(runtime.internStr(str2), *str2);
 }
 
@@ -224,7 +224,7 @@ TEST(MarshalReaderTest, ReadTypeIntMin) {
   Marshal::Reader reader(&scope, &runtime, "\xe9\x00\x00\x00\x80");
   RawObject result = reader.readObject();
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), INT32_MIN);
+  EXPECT_EQ(RawSmallInt::cast(result)->value(), INT32_MIN);
   ASSERT_EQ(reader.numRefs(), 1);
   EXPECT_EQ(reader.getRef(0), result);
 
@@ -232,7 +232,7 @@ TEST(MarshalReaderTest, ReadTypeIntMin) {
   Marshal::Reader reader_norefs(&scope, &runtime, "\x69\x00\x00\x00\x80");
   result = reader_norefs.readObject();
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), INT32_MIN);
+  EXPECT_EQ(RawSmallInt::cast(result)->value(), INT32_MIN);
   EXPECT_EQ(reader_norefs.numRefs(), 0);
 }
 
@@ -244,7 +244,7 @@ TEST(MarshalReaderTest, ReadTypeIntMax) {
   Marshal::Reader reader(&scope, &runtime, "\xe9\xff\xff\xff\x7f");
   RawObject result = reader.readObject();
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), INT32_MAX);
+  EXPECT_EQ(RawSmallInt::cast(result)->value(), INT32_MAX);
   ASSERT_EQ(reader.numRefs(), 1);
   EXPECT_EQ(reader.getRef(0), result);
 
@@ -252,7 +252,7 @@ TEST(MarshalReaderTest, ReadTypeIntMax) {
   Marshal::Reader reader_norefs(&scope, &runtime, "\x69\xff\xff\xff\x7f");
   result = reader_norefs.readObject();
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), INT32_MAX);
+  EXPECT_EQ(RawSmallInt::cast(result)->value(), INT32_MAX);
   EXPECT_EQ(reader_norefs.numRefs(), 0);
 }
 
@@ -289,15 +289,15 @@ TEST(MarshalReaderTest, ReadNegativeTypeLong) {
       "\xec\xfb\xff\xff\xff\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x07\x00";
   RawObject integer = Marshal::Reader(&scope, &runtime, buf).readObject();
   ASSERT_TRUE(integer->isInt());
-  EXPECT_EQ(Int::cast(integer)->asWord(), kMinInt64 + 1);
+  EXPECT_EQ(RawInt::cast(integer)->asWord(), kMinInt64 + 1);
 
   // marshal.dumps(SmallInt::kMinValue)
   const char buf1[] =
       "\xec\xfb\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00";
-  const word min_value = SmallInt::kMinValue;
+  const word min_value = RawSmallInt::kMinValue;
   integer = Marshal::Reader(&scope, &runtime, buf1).readObject();
   ASSERT_TRUE(integer->isInt());
-  EXPECT_EQ(Int::cast(integer)->asWord(), min_value);
+  EXPECT_EQ(RawInt::cast(integer)->asWord(), min_value);
 }
 
 TEST(MarshalReaderTest, ReadPositiveTypeLong) {
@@ -309,15 +309,15 @@ TEST(MarshalReaderTest, ReadPositiveTypeLong) {
       "\xec\x05\x00\x00\x00\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x07\x00";
   RawObject integer = Marshal::Reader(&scope, &runtime, buf).readObject();
   ASSERT_TRUE(integer->isInt());
-  EXPECT_EQ(Int::cast(integer)->asWord(), kMaxInt64);
+  EXPECT_EQ(RawInt::cast(integer)->asWord(), kMaxInt64);
 
   // marshal.dumps(SmallInt::kMaxValue)
   const char buf1[] =
       "\xec\x05\x00\x00\x00\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x03\x00";
-  const word max_value = SmallInt::kMaxValue;
+  const word max_value = RawSmallInt::kMaxValue;
   integer = Marshal::Reader(&scope, &runtime, buf1).readObject();
   ASSERT_TRUE(integer->isInt());
-  EXPECT_EQ(Int::cast(integer)->asWord(), max_value);
+  EXPECT_EQ(RawInt::cast(integer)->asWord(), max_value);
 }
 
 TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
@@ -330,7 +330,7 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
 
   RawObject obj = Marshal::Reader(&scope, &runtime, buf).readObject();
   ASSERT_TRUE(obj->isLargeInt());
-  RawLargeInt integer = LargeInt::cast(obj);
+  RawLargeInt integer = RawLargeInt::cast(obj);
   EXPECT_EQ(integer->numDigits(), 2);
   EXPECT_TRUE(integer->isPositive());
   EXPECT_EQ(integer->digitAt(0), kMaxUword);
@@ -341,7 +341,7 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
 
   obj = Marshal::Reader(&scope, &runtime, buf1).readObject();
   ASSERT_TRUE(obj->isLargeInt());
-  integer = LargeInt::cast(obj);
+  integer = RawLargeInt::cast(obj);
   EXPECT_EQ(integer->numDigits(), 2);
   EXPECT_TRUE(integer->isPositive());
   EXPECT_EQ(integer->digitAt(0), kMaxUint64 - 1);
@@ -353,7 +353,7 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
 
   obj = Marshal::Reader(&scope, &runtime, buf2).readObject();
   ASSERT_TRUE(obj->isLargeInt());
-  integer = LargeInt::cast(obj);
+  integer = RawLargeInt::cast(obj);
   EXPECT_EQ(integer->numDigits(), 2);
   EXPECT_TRUE(integer->isPositive());
   EXPECT_EQ(integer->digitAt(0), kMaxUint64 - 0xF);
@@ -365,7 +365,7 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
 
   obj = Marshal::Reader(&scope, &runtime, buf3).readObject();
   ASSERT_TRUE(obj->isLargeInt());
-  integer = LargeInt::cast(obj);
+  integer = RawLargeInt::cast(obj);
   ASSERT_EQ(integer->numDigits(), 2);
   EXPECT_EQ(integer->digitAt(0), 1ULL << (kBitsPerWord - 1));
   EXPECT_EQ(integer->digitAt(1), 0);
@@ -380,7 +380,7 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
       "\xec\xfb\xff\xff\xff\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x0f\x00";
   RawObject obj = Marshal::Reader(&scope, &runtime, buf).readObject();
   ASSERT_TRUE(obj->isLargeInt());
-  RawLargeInt integer = LargeInt::cast(obj);
+  RawLargeInt integer = RawLargeInt::cast(obj);
   EXPECT_EQ(integer->numDigits(), 2);
   EXPECT_TRUE(integer->isNegative());
   EXPECT_EQ(integer->digitAt(0), 1);
@@ -391,7 +391,7 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
       "\xec\xfb\xff\xff\xff\xfe\x7f\xff\x7f\xff\x7f\xff\x7f\x1f\x00";
   RawObject obj1 = Marshal::Reader(&scope, &runtime, buf1).readObject();
   ASSERT_TRUE(obj1->isLargeInt());
-  RawLargeInt integer1 = LargeInt::cast(obj1);
+  RawLargeInt integer1 = RawLargeInt::cast(obj1);
   EXPECT_EQ(integer1->numDigits(), 2);
   EXPECT_TRUE(integer1->isNegative());
   EXPECT_EQ(integer1->digitAt(0), 2);               // ~(kMaxUint64 << 1) + 1
@@ -402,7 +402,7 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
       "\xec\xfb\xff\xff\xff\xf0\x7f\xff\x7f\xff\x7f\xff\x7f\xff\x00";
   RawObject obj2 = Marshal::Reader(&scope, &runtime, buf2).readObject();
   ASSERT_TRUE(obj2->isLargeInt());
-  RawLargeInt integer2 = LargeInt::cast(obj2);
+  RawLargeInt integer2 = RawLargeInt::cast(obj2);
   EXPECT_EQ(integer2->numDigits(), 2);
   EXPECT_TRUE(integer2->isNegative());
   EXPECT_EQ(integer2->digitAt(0), 16);  // ~(kMaxUint64 << 4) + 1
@@ -413,7 +413,7 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
       "\xec\xfb\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00";
   RawObject obj3 = Marshal::Reader(&scope, &runtime, buf3).readObject();
   ASSERT_TRUE(obj3->isLargeInt());
-  RawLargeInt integer3 = LargeInt::cast(obj3);
+  RawLargeInt integer3 = RawLargeInt::cast(obj3);
   ASSERT_EQ(integer3->numDigits(), 1);
   EXPECT_EQ(integer3->digitAt(0), kMinWord);
 }
@@ -444,7 +444,7 @@ TEST(MarshalReaderTest, ReadObjectNull) {
   Runtime runtime;
   HandleScope scope;
   RawObject a = Marshal::Reader(&scope, &runtime, "0").readObject();
-  ASSERT_EQ(a, Object{0});
+  ASSERT_EQ(a, RawObject{0});
 }
 
 TEST(MarshalReaderTest, ReadObjectCode) {
@@ -469,7 +469,7 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   RawObject raw_object = reader.readObject();
   ASSERT_TRUE(raw_object->isCode());
 
-  RawCode code = Code::cast(raw_object);
+  RawCode code = RawCode::cast(raw_object);
   EXPECT_EQ(code->argcount(), 0);
   EXPECT_EQ(code->kwonlyargcount(), 0);
   EXPECT_EQ(code->nlocals(), 0);
@@ -478,34 +478,34 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   EXPECT_EQ(code->flags(), Code::SIMPLE_CALL | Code::NOFREE);
 
   ASSERT_TRUE(code->code()->isBytes());
-  EXPECT_NE(Bytes::cast(code->code())->length(), 0);
+  EXPECT_NE(RawBytes::cast(code->code())->length(), 0);
 
   ASSERT_TRUE(code->varnames()->isObjectArray());
-  EXPECT_EQ(ObjectArray::cast(code->varnames())->length(), 0);
+  EXPECT_EQ(RawObjectArray::cast(code->varnames())->length(), 0);
 
   ASSERT_TRUE(code->cellvars()->isObjectArray());
-  EXPECT_EQ(ObjectArray::cast(code->cellvars())->length(), 0);
+  EXPECT_EQ(RawObjectArray::cast(code->cellvars())->length(), 0);
 
   ASSERT_TRUE(code->consts()->isObjectArray());
-  ASSERT_EQ(ObjectArray::cast(code->consts())->length(), 1);
-  EXPECT_EQ(ObjectArray::cast(code->consts())->at(0), NoneType::object());
+  ASSERT_EQ(RawObjectArray::cast(code->consts())->length(), 1);
+  EXPECT_EQ(RawObjectArray::cast(code->consts())->at(0), NoneType::object());
 
   ASSERT_TRUE(code->freevars()->isObjectArray());
-  EXPECT_EQ(ObjectArray::cast(code->freevars())->length(), 0);
+  EXPECT_EQ(RawObjectArray::cast(code->freevars())->length(), 0);
 
   ASSERT_TRUE(code->filename()->isStr());
-  EXPECT_TRUE(Str::cast(code->filename())->equalsCStr("pass.py"));
+  EXPECT_TRUE(RawStr::cast(code->filename())->equalsCStr("pass.py"));
 
   ASSERT_TRUE(code->name()->isStr());
-  EXPECT_TRUE(Str::cast(code->name())->equalsCStr("<module>"));
+  EXPECT_TRUE(RawStr::cast(code->name())->equalsCStr("<module>"));
 
   ASSERT_TRUE(code->names()->isObjectArray());
-  EXPECT_EQ(ObjectArray::cast(code->names())->length(), 0);
+  EXPECT_EQ(RawObjectArray::cast(code->names())->length(), 0);
 
   EXPECT_EQ(code->firstlineno(), 1);
 
   ASSERT_TRUE(code->lnotab()->isBytes());
-  EXPECT_EQ(Bytes::cast(code->lnotab())->length(), 0);
+  EXPECT_EQ(RawBytes::cast(code->lnotab())->length(), 0);
 }
 
 }  // namespace python

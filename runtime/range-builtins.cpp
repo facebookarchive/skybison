@@ -9,9 +9,9 @@ namespace python {
 
 void RangeBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> range(
-      &scope, runtime->addEmptyBuiltinClass(SymbolId::kRange, LayoutId::kRange,
-                                            LayoutId::kObject));
+  Type range(&scope,
+             runtime->addEmptyBuiltinClass(SymbolId::kRange, LayoutId::kRange,
+                                           LayoutId::kObject));
   runtime->classAddBuiltinFunction(range, SymbolId::kDunderIter,
                                    nativeTrampoline<dunderIter>);
 }
@@ -22,7 +22,7 @@ RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (!self->isRange()) {
     return thread->raiseTypeErrorWithCStr(
         "__getitem__() must be called with a range instance as the first "
@@ -38,10 +38,10 @@ const BuiltinMethod RangeIteratorBuiltins::kMethods[] = {
 
 void RangeIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> range_iter(
-      &scope, runtime->addBuiltinClass(SymbolId::kRangeIterator,
-                                       LayoutId::kRangeIterator,
-                                       LayoutId::kObject, kMethods));
+  Type range_iter(&scope,
+                  runtime->addBuiltinClass(SymbolId::kRangeIterator,
+                                           LayoutId::kRangeIterator,
+                                           LayoutId::kObject, kMethods));
 }
 
 RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
@@ -51,7 +51,7 @@ RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (!self->isRangeIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a range iterator instance as the first "
@@ -67,13 +67,13 @@ RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (!self->isRangeIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a range iterator instance as the first "
         "argument");
   }
-  Handle<Object> value(&scope, RangeIterator::cast(*self)->next());
+  Object value(&scope, RawRangeIterator::cast(*self)->next());
   if (value->isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
@@ -88,13 +88,13 @@ RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, args.get(0));
+  Object self(&scope, args.get(0));
   if (!self->isRangeIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__length_hint__() must be called with a range iterator instance as "
         "the first argument");
   }
-  Handle<RangeIterator> range_iterator(&scope, *self);
+  RangeIterator range_iterator(&scope, *self);
   return SmallInt::fromWord(range_iterator->pendingLength());
 }
 

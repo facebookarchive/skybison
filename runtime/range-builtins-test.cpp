@@ -16,10 +16,10 @@ TEST(RangeBuiltinsTest, DunderIterReturnsRangeIter) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
   HandleScope scope(thread);
-  Handle<Object> empty_range(&scope, runtime.newRange(0, 0, 1));
+  Object empty_range(&scope, runtime.newRange(0, 0, 1));
 
   frame->setLocal(0, *empty_range);
-  Handle<Object> iter(&scope, RangeBuiltins::dunderIter(thread, frame, 1));
+  Object iter(&scope, RangeBuiltins::dunderIter(thread, frame, 1));
   ASSERT_TRUE(iter->isRangeIterator());
 }
 
@@ -29,26 +29,26 @@ TEST(RangeBuiltinsTest, CallDunderNext) {
   Frame* frame = thread->openAndLinkFrame(1, 0, 0);
 
   HandleScope scope(thread);
-  Handle<Range> non_empty_range(&scope, runtime.newRange(0, 2, 1));
+  Range non_empty_range(&scope, runtime.newRange(0, 2, 1));
 
   frame->setLocal(0, *non_empty_range);
-  Handle<Object> iter(&scope, RangeBuiltins::dunderIter(thread, frame, 1));
+  Object iter(&scope, RangeBuiltins::dunderIter(thread, frame, 1));
   ASSERT_TRUE(iter->isRangeIterator());
 
-  Handle<Object> next_method(
+  Object next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
                                         SymbolId::kDunderNext));
   ASSERT_FALSE(next_method->isError());
 
-  Handle<Object> item1(
-      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  Object item1(&scope,
+               Interpreter::callMethod1(thread, frame, next_method, iter));
   ASSERT_TRUE(item1->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*item1)->value(), 0);
+  ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
 
-  Handle<Object> item2(
-      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  Object item2(&scope,
+               Interpreter::callMethod1(thread, frame, next_method, iter));
   ASSERT_TRUE(item2->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*item2)->value(), 1);
+  ASSERT_EQ(RawSmallInt::cast(*item2)->value(), 1);
 }
 
 TEST(RangeIteratorBuiltinsTest, DunderIterReturnsSelf) {
@@ -57,19 +57,18 @@ TEST(RangeIteratorBuiltinsTest, DunderIterReturnsSelf) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
   HandleScope scope(thread);
-  Handle<Object> empty_range(&scope, runtime.newRange(0, 0, 1));
+  Object empty_range(&scope, runtime.newRange(0, 0, 1));
 
   frame->setLocal(0, *empty_range);
-  Handle<Object> iter(&scope, RangeBuiltins::dunderIter(thread, frame, 1));
+  Object iter(&scope, RangeBuiltins::dunderIter(thread, frame, 1));
   ASSERT_TRUE(iter->isRangeIterator());
 
   // Now call __iter__ on the iterator object
-  Handle<Object> iter_iter(
-      &scope,
-      Interpreter::lookupMethod(thread, frame, iter, SymbolId::kDunderIter));
+  Object iter_iter(&scope, Interpreter::lookupMethod(thread, frame, iter,
+                                                     SymbolId::kDunderIter));
   ASSERT_FALSE(iter_iter->isError());
-  Handle<Object> result(
-      &scope, Interpreter::callMethod1(thread, frame, iter_iter, iter));
+  Object result(&scope,
+                Interpreter::callMethod1(thread, frame, iter_iter, iter));
   ASSERT_EQ(*result, *iter);
 }
 
@@ -79,45 +78,42 @@ TEST(RangeIteratorBuiltinsTest, DunderLengthHintReturnsPendingLength) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
   HandleScope scope(thread);
-  Handle<Object> empty_range(&scope, runtime.newRange(0, 0, 1));
+  Object empty_range(&scope, runtime.newRange(0, 0, 1));
 
   frame->setLocal(0, *empty_range);
-  Handle<Object> iter(&scope, RangeBuiltins::dunderIter(thread, frame, 1));
+  Object iter(&scope, RangeBuiltins::dunderIter(thread, frame, 1));
   ASSERT_TRUE(iter->isRangeIterator());
 
-  Handle<Object> length_hint_method(
+  Object length_hint_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
                                         SymbolId::kDunderLengthHint));
   ASSERT_FALSE(length_hint_method->isError());
 
-  Handle<Object> length_hint1(
-      &scope,
-      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  Object length_hint1(&scope, Interpreter::callMethod1(
+                                  thread, frame, length_hint_method, iter));
   ASSERT_TRUE(length_hint1->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*length_hint1)->value(), 0);
+  ASSERT_EQ(RawSmallInt::cast(*length_hint1)->value(), 0);
 
-  RangeIterator::cast(*iter)->setRange(runtime.newRange(0, 1, 1));
-  Handle<Object> length_hint2(
-      &scope,
-      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  RawRangeIterator::cast(*iter)->setRange(runtime.newRange(0, 1, 1));
+  Object length_hint2(&scope, Interpreter::callMethod1(
+                                  thread, frame, length_hint_method, iter));
   ASSERT_TRUE(length_hint2->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*length_hint2)->value(), 1);
+  ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 1);
 
   // Consume the iterator
-  Handle<Object> next_method(
+  Object next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
                                         SymbolId::kDunderNext));
   ASSERT_FALSE(next_method->isError());
-  Handle<Object> item1(
-      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  Object item1(&scope,
+               Interpreter::callMethod1(thread, frame, next_method, iter));
   ASSERT_TRUE(item1->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*item1)->value(), 0);
+  ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
 
-  Handle<Object> length_hint3(
-      &scope,
-      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  Object length_hint3(&scope, Interpreter::callMethod1(
+                                  thread, frame, length_hint_method, iter));
   ASSERT_TRUE(length_hint3->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*length_hint3)->value(), 0);
+  ASSERT_EQ(RawSmallInt::cast(*length_hint3)->value(), 0);
 }
 
 TEST(RangeIteratorBuiltinsTest, DunderLengthHintWithNegativeStepRange) {
@@ -126,38 +122,36 @@ TEST(RangeIteratorBuiltinsTest, DunderLengthHintWithNegativeStepRange) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
   HandleScope scope(thread);
-  Handle<Object> neg_range(&scope, runtime.newRange(0, -2, -1));
+  Object neg_range(&scope, runtime.newRange(0, -2, -1));
   frame->setLocal(0, *neg_range);
 
-  Handle<Object> iter(&scope, RangeBuiltins::dunderIter(thread, frame, 1));
+  Object iter(&scope, RangeBuiltins::dunderIter(thread, frame, 1));
   ASSERT_TRUE(iter->isRangeIterator());
 
-  Handle<Object> length_hint_method(
+  Object length_hint_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
                                         SymbolId::kDunderLengthHint));
   ASSERT_FALSE(length_hint_method->isError());
 
-  Handle<Object> length_hint1(
-      &scope,
-      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  Object length_hint1(&scope, Interpreter::callMethod1(
+                                  thread, frame, length_hint_method, iter));
   ASSERT_TRUE(length_hint1->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*length_hint1)->value(), 2);
+  ASSERT_EQ(RawSmallInt::cast(*length_hint1)->value(), 2);
 
   // Consume the iterator
-  Handle<Object> next_method(
+  Object next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
                                         SymbolId::kDunderNext));
   ASSERT_FALSE(next_method->isError());
-  Handle<Object> item1(
-      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  Object item1(&scope,
+               Interpreter::callMethod1(thread, frame, next_method, iter));
   ASSERT_TRUE(item1->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*item1)->value(), 0);
+  ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
 
-  Handle<Object> length_hint2(
-      &scope,
-      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  Object length_hint2(&scope, Interpreter::callMethod1(
+                                  thread, frame, length_hint_method, iter));
   ASSERT_TRUE(length_hint2->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*length_hint2)->value(), 1);
+  ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 1);
 }
 
 }  // namespace python

@@ -17,8 +17,8 @@ TEST(TestUtils, PyListEqual) {
 l = [None, False, 100, 200.5, 'hello']
 i = 123456
 )");
-  Handle<Object> list(&scope, moduleAt(&runtime, "__main__", "l"));
-  Handle<Object> not_list(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object list(&scope, moduleAt(&runtime, "__main__", "l"));
+  Object not_list(&scope, moduleAt(&runtime, "__main__", "i"));
 
   auto const ok = AssertPyListEqual(
       "", "", list, {Value::none(), false, 100, 200.5, "hello"});
