@@ -112,9 +112,9 @@ TEST(ThreadTest, OverlappingFrames) {
 TEST(ThreadTest, EncodeTryBlock) {
   TryBlock block(100, 200, 300);
   TryBlock decoded = TryBlock::fromSmallInteger(block.asSmallInteger());
-  EXPECT_EQ(decoded.kind, block.kind);
-  EXPECT_EQ(decoded.handler, block.handler);
-  EXPECT_EQ(decoded.level, block.level);
+  EXPECT_EQ(decoded.kind(), block.kind());
+  EXPECT_EQ(decoded.handler(), block.handler());
+  EXPECT_EQ(decoded.level(), block.level());
 }
 
 TEST(ThreadTest, PushPopFrame) {

@@ -24,13 +24,27 @@ class Object;
 class TryBlock {
  public:
   TryBlock(word kind, word handler, word level)
-      : kind(kind), handler(handler), level(level){};
+      : kind_(kind), handler_(handler), level_(level) {}
+
   inline static TryBlock fromSmallInteger(Object* object);
   inline Object* asSmallInteger();
 
-  word kind;
-  word handler;
-  word level;
+  word kind() {
+    return kind_;
+  }
+
+  word handler() {
+    return handler_;
+  }
+
+  word level() {
+    return level_;
+  }
+
+ private:
+  word kind_;
+  word handler_;
+  word level_;
 
   static const int kKindSize = 8;
   static const uword kKindMask = (1 << kKindSize) - 1;
@@ -285,9 +299,9 @@ TryBlock TryBlock::fromSmallInteger(Object* object) {
 }
 
 Object* TryBlock::asSmallInteger() {
-  word encoded = kind;
-  encoded |= (handler << kHandlerOffset);
-  encoded |= (level << kLevelOffset);
+  word encoded = kind();
+  encoded |= (handler() << kHandlerOffset);
+  encoded |= (level() << kLevelOffset);
   return SmallInteger::fromWord(encoded);
 }
 
