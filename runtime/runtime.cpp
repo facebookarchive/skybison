@@ -419,14 +419,13 @@ Object* Runtime::newFunction() {
 }
 
 Object* Runtime::newInstance(const Handle<Layout>& layout) {
-  HandleScope scope;
   word num_words = layout->instanceSize();
-  Handle<HeapObject> instance(
-      &scope, heap()->createInstance(layout->id(), num_words));
+  Object* object = heap()->createInstance(layout->id(), num_words);
+  auto instance = Instance::cast(object);
   // Set the overflow array
   instance->instanceVariableAtPut(
       layout->overflowOffset(), empty_object_array_);
-  return *instance;
+  return instance;
 }
 
 void Runtime::classAddBuiltinFunction(
