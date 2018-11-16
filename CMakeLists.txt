@@ -4,17 +4,8 @@ project(python)
 set(PYTHON_EXECUTABLE /usr/bin/python)
 
 add_subdirectory(third-party/benchmark-1.3.0)
-include_directories(
-  third-party/benchmark-1.3.0/include)
-
 add_subdirectory(third-party/googletest-1.8.0)
-include_directories(
-  third-party/googletest-1.8.0/googletest/include
-  third-party/googletest-1.8.0/googlemock/include)
-
 add_subdirectory(third-party/siphash-20170224)
-include_directories(
-  third-party/siphash-20170224/include)
 
 add_library(
   runtime
