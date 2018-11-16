@@ -312,6 +312,14 @@ struct _inittab {
   PyObject *(*initfunc)(void);
 };
 
+typedef struct {
+  double real;
+  double imag;
+} Py_complex;
+
+typedef int Py_UCS4;
+typedef wchar_t Py_UNICODE;
+
 #ifdef __cplusplus
 }
 #endif

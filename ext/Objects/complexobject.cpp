@@ -2,11 +2,6 @@
 
 namespace python {
 
-typedef struct {
-  double real;
-  double imag;
-} Py_complex;
-
 PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* /* p */) {
   UNIMPLEMENTED("PyComplex_AsCComplex");
 }

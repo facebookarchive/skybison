@@ -6,9 +6,6 @@
 
 namespace python {
 
-typedef int Py_UCS4;
-typedef wchar_t Py_UNICODE;
-
 PY_EXPORT int _PyUnicode_EqualToASCIIString(PyObject* /* unicode */,
                                             const char* /* str */) {
   UNIMPLEMENTED("_PyUnicode_EqualToASCIIString");
