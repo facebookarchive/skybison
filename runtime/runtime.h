@@ -29,6 +29,8 @@ struct BuiltinMethod {
   Object* (*address)(Thread* thread, Frame* frame, word nargs);
 };
 
+enum class SetLookupType { Lookup, Insertion };
+
 class Runtime {
  public:
   class NewValueCellCallback : public Callback<Object*> {
@@ -586,6 +588,7 @@ class Runtime {
   bool dictLookup(const Handle<ObjectArray>& data, const Handle<Object>& key,
                   const Handle<Object>& key_hash, word* index);
 
+  template <SetLookupType type>
   bool setLookup(const Handle<ObjectArray>& data, const Handle<Object>& key,
                  const Handle<Object>& key_hash, word* index);
 
