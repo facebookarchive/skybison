@@ -11,9 +11,9 @@ namespace python {
 
 void ListBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Class> list(&scope,
-                     runtime->addBuiltinClass(SymbolId::kList, LayoutId::kList,
-                                              LayoutId::kObject));
+  Handle<Class> list(
+      &scope, runtime->addEmptyBuiltinClass(SymbolId::kList, LayoutId::kList,
+                                            LayoutId::kObject));
 
   runtime->classAddBuiltinFunction(list, SymbolId::kDunderAdd,
                                    nativeTrampoline<dunderAdd>);

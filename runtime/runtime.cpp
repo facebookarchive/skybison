@@ -197,8 +197,8 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
   }
 }
 
-Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                                 LayoutId superclass_id) {
+Object* Runtime::addEmptyBuiltinClass(SymbolId name, LayoutId subclass_id,
+                                      LayoutId superclass_id) {
   return addBuiltinClass(name, subclass_id, superclass_id,
                          View<BuiltinAttribute>(nullptr, 0));
 }
@@ -886,60 +886,63 @@ void Runtime::initializeHeapClasses() {
 
   // Abstract classes.
   initializeStrClass();
-  addBuiltinClass(SymbolId::kInt, LayoutId::kInteger, LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kInt, LayoutId::kInteger, LayoutId::kObject);
 
   // Exception hierarchy
   initializeExceptionClasses();
 
   // Concrete classes.
 
-  addBuiltinClass(SymbolId::kByteArray, LayoutId::kByteArray,
-                  LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kByteArray, LayoutId::kByteArray,
+                       LayoutId::kObject);
   initializeClassMethodClass();
-  addBuiltinClass(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   initializeDictClass();
-  addBuiltinClass(SymbolId::kEllipsis, LayoutId::kEllipsis, LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kEllipsis, LayoutId::kEllipsis,
+                       LayoutId::kObject);
   initializeFloatClass();
   initializeFunctionClass();
-  addBuiltinClass(SymbolId::kLargeInt, LayoutId::kLargeInteger,
-                  LayoutId::kInteger);
-  addBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeString,
-                  LayoutId::kString);
-  addBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kLargeInt, LayoutId::kLargeInteger,
+                       LayoutId::kInteger);
+  addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeString,
+                       LayoutId::kString);
+  addEmptyBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
   ListBuiltins::initialize(this);
-  addBuiltinClass(SymbolId::kListIterator, LayoutId::kListIterator,
-                  LayoutId::kObject);
-  addBuiltinClass(SymbolId::kMethod, LayoutId::kBoundMethod, LayoutId::kObject);
-  addBuiltinClass(SymbolId::kModule, LayoutId::kModule, LayoutId::kObject);
-  addBuiltinClass(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
-                  LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kListIterator, LayoutId::kListIterator,
+                       LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kMethod, LayoutId::kBoundMethod,
+                       LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kModule, LayoutId::kModule, LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
+                       LayoutId::kObject);
   initializeObjectArrayClass();
   initializePropertyClass();
-  addBuiltinClass(SymbolId::kRange, LayoutId::kRange, LayoutId::kObject);
-  addBuiltinClass(SymbolId::kRangeIterator, LayoutId::kRangeIterator,
-                  LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kRange, LayoutId::kRange, LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kRangeIterator, LayoutId::kRangeIterator,
+                       LayoutId::kObject);
   initializeRefClass();
   initializeSetClass();
-  addBuiltinClass(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
   initializeStaticMethodClass();
   initializeSuperClass();
   initializeTypeClass();
-  addBuiltinClass(SymbolId::kValueCell, LayoutId::kValueCell,
-                  LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kValueCell, LayoutId::kValueCell,
+                       LayoutId::kObject);
 }
 
 void Runtime::initializeExceptionClasses() {
   BaseExceptionBuiltins::initialize(this);
   SystemExitBuiltins::initialize(this);
-  addBuiltinClass(SymbolId::kException, LayoutId::kException,
-                  LayoutId::kBaseException);
+  addEmptyBuiltinClass(SymbolId::kException, LayoutId::kException,
+                       LayoutId::kBaseException);
   StopIterationBuiltins::initialize(this);
 }
 
 void Runtime::initializeRefClass() {
   HandleScope scope;
-  Handle<Class> ref(&scope, addBuiltinClass(SymbolId::kRef, LayoutId::kWeakRef,
-                                            LayoutId::kObject));
+  Handle<Class> ref(&scope,
+                    addEmptyBuiltinClass(SymbolId::kRef, LayoutId::kWeakRef,
+                                         LayoutId::kObject));
 
   classAddBuiltinFunction(ref, SymbolId::kDunderInit,
                           nativeTrampoline<builtinRefInit>);
@@ -951,8 +954,8 @@ void Runtime::initializeRefClass() {
 void Runtime::initializeFunctionClass() {
   HandleScope scope;
   Handle<Class> function(
-      &scope, addBuiltinClass(SymbolId::kFunction, LayoutId::kFunction,
-                              LayoutId::kObject));
+      &scope, addEmptyBuiltinClass(SymbolId::kFunction, LayoutId::kFunction,
+                                   LayoutId::kObject));
 
   classAddBuiltinFunction(function, SymbolId::kDunderGet,
                           nativeTrampoline<builtinFunctionGet>);
@@ -984,8 +987,9 @@ void Runtime::initializeObjectClass() {
 
 void Runtime::initializeStrClass() {
   HandleScope scope;
-  Handle<Class> type(&scope, addBuiltinClass(SymbolId::kStr, LayoutId::kString,
-                                             LayoutId::kObject));
+  Handle<Class> type(&scope,
+                     addEmptyBuiltinClass(SymbolId::kStr, LayoutId::kString,
+                                          LayoutId::kObject));
 
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinStringEq>);
@@ -1014,9 +1018,9 @@ void Runtime::initializeStrClass() {
 
 void Runtime::initializeObjectArrayClass() {
   HandleScope scope;
-  Handle<Class> type(&scope,
-                     addBuiltinClass(SymbolId::kTuple, LayoutId::kObjectArray,
-                                     LayoutId::kObject));
+  Handle<Class> type(
+      &scope, addEmptyBuiltinClass(SymbolId::kTuple, LayoutId::kObjectArray,
+                                   LayoutId::kObject));
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinTupleEq>);
   classAddBuiltinFunction(type, SymbolId::kDunderGetItem,
@@ -1026,8 +1030,8 @@ void Runtime::initializeObjectArrayClass() {
 void Runtime::initializeDictClass() {
   HandleScope scope;
   Handle<Class> dict_type(
-      &scope, addBuiltinClass(SymbolId::kDict, LayoutId::kDictionary,
-                              LayoutId::kObject));
+      &scope, addEmptyBuiltinClass(SymbolId::kDict, LayoutId::kDictionary,
+                                   LayoutId::kObject));
 
   classAddBuiltinFunction(dict_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDictionaryEq>);
@@ -1042,8 +1046,8 @@ void Runtime::initializeDictClass() {
 void Runtime::initializeClassMethodClass() {
   HandleScope scope;
   Handle<Class> classmethod(
-      &scope, addBuiltinClass(SymbolId::kClassmethod, LayoutId::kClassMethod,
-                              LayoutId::kObject));
+      &scope, addEmptyBuiltinClass(SymbolId::kClassmethod,
+                                   LayoutId::kClassMethod, LayoutId::kObject));
 
   classAddBuiltinFunction(classmethod, SymbolId::kDunderGet,
                           nativeTrampoline<builtinClassMethodGet>);
@@ -1057,8 +1061,9 @@ void Runtime::initializeClassMethodClass() {
 
 void Runtime::initializeTypeClass() {
   HandleScope scope;
-  Handle<Class> type(&scope, addBuiltinClass(SymbolId::kType, LayoutId::kType,
-                                             LayoutId::kObject));
+  Handle<Class> type(&scope,
+                     addEmptyBuiltinClass(SymbolId::kType, LayoutId::kType,
+                                          LayoutId::kObject));
 
   classAddBuiltinFunction(type, SymbolId::kDunderCall,
                           nativeTrampoline<builtinTypeCall>);
@@ -1072,17 +1077,17 @@ void Runtime::initializeTypeClass() {
 
 void Runtime::initializeImmediateClasses() {
   initializeBooleanClass();
-  addBuiltinClass(SymbolId::kNoneType, LayoutId::kNone, LayoutId::kObject);
-  addBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallString,
-                  LayoutId::kString);
+  addEmptyBuiltinClass(SymbolId::kNoneType, LayoutId::kNone, LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallString,
+                       LayoutId::kString);
   initializeSmallIntClass();
 }
 
 void Runtime::initializeBooleanClass() {
   HandleScope scope;
-  Handle<Class> type(
-      &scope,
-      addBuiltinClass(SymbolId::kBool, LayoutId::kBoolean, LayoutId::kInteger));
+  Handle<Class> type(&scope,
+                     addEmptyBuiltinClass(SymbolId::kBool, LayoutId::kBoolean,
+                                          LayoutId::kInteger));
 
   classAddBuiltinFunction(type, SymbolId::kDunderBool,
                           nativeTrampoline<builtinBooleanBool>);
@@ -1091,8 +1096,8 @@ void Runtime::initializeBooleanClass() {
 void Runtime::initializeFloatClass() {
   HandleScope scope;
   Handle<Class> float_type(
-      &scope,
-      addBuiltinClass(SymbolId::kFloat, LayoutId::kDouble, LayoutId::kObject));
+      &scope, addEmptyBuiltinClass(SymbolId::kFloat, LayoutId::kDouble,
+                                   LayoutId::kObject));
 
   classAddBuiltinFunction(float_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDoubleEq>);
@@ -1121,8 +1126,9 @@ void Runtime::initializeFloatClass() {
 
 void Runtime::initializeSetClass() {
   HandleScope scope;
-  Handle<Class> set_type(&scope, addBuiltinClass(SymbolId::kSet, LayoutId::kSet,
-                                                 LayoutId::kObject));
+  Handle<Class> set_type(
+      &scope,
+      addEmptyBuiltinClass(SymbolId::kSet, LayoutId::kSet, LayoutId::kObject));
 
   classAddBuiltinFunction(set_type, SymbolId::kAdd,
                           nativeTrampoline<builtinSetAdd>);
@@ -1146,8 +1152,8 @@ void Runtime::initializeSetClass() {
 void Runtime::initializePropertyClass() {
   HandleScope scope;
   Handle<Class> property(
-      &scope, addBuiltinClass(SymbolId::kProperty, LayoutId::kProperty,
-                              LayoutId::kObject));
+      &scope, addEmptyBuiltinClass(SymbolId::kProperty, LayoutId::kProperty,
+                                   LayoutId::kObject));
 
   classAddBuiltinFunction(property, SymbolId::kDeleter,
                           nativeTrampoline<builtinPropertyDeleter>);
@@ -1174,8 +1180,8 @@ void Runtime::initializePropertyClass() {
 void Runtime::initializeSmallIntClass() {
   HandleScope scope;
   Handle<Class> small_integer(
-      &scope, addBuiltinClass(SymbolId::kSmallInt, LayoutId::kSmallInteger,
-                              LayoutId::kInteger));
+      &scope, addEmptyBuiltinClass(SymbolId::kSmallInt, LayoutId::kSmallInteger,
+                                   LayoutId::kInteger));
 
   classAddBuiltinFunction(small_integer, SymbolId::kBitLength,
                           nativeTrampoline<builtinSmallIntegerBitLength>);
@@ -1241,8 +1247,8 @@ void Runtime::initializeSmallIntClass() {
 void Runtime::initializeStaticMethodClass() {
   HandleScope scope;
   Handle<Class> staticmethod(
-      &scope, addBuiltinClass(SymbolId::kStaticMethod, LayoutId::kStaticMethod,
-                              LayoutId::kObject));
+      &scope, addEmptyBuiltinClass(SymbolId::kStaticMethod,
+                                   LayoutId::kStaticMethod, LayoutId::kObject));
 
   classAddBuiltinFunction(staticmethod, SymbolId::kDunderGet,
                           nativeTrampoline<builtinStaticMethodGet>);
@@ -2986,9 +2992,9 @@ Object* Runtime::layoutDeleteAttribute(Thread* thread,
 
 void Runtime::initializeSuperClass() {
   HandleScope scope;
-  Handle<Class> super(
-      &scope,
-      addBuiltinClass(SymbolId::kSuper, LayoutId::kSuper, LayoutId::kObject));
+  Handle<Class> super(&scope,
+                      addEmptyBuiltinClass(SymbolId::kSuper, LayoutId::kSuper,
+                                           LayoutId::kObject));
 
   classAddBuiltinFunction(super, SymbolId::kDunderInit,
                           nativeTrampoline<builtinSuperInit>);

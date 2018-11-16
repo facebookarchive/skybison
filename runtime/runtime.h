@@ -173,8 +173,8 @@ class Runtime {
 
   // Bootstrapping primitive for creating a built-in class that has built-in
   // attributes.
-  Object* addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                          LayoutId superclass_id);
+  Object* addEmptyBuiltinClass(SymbolId name, LayoutId subclass_id,
+                               LayoutId superclass_id);
   Object* addBuiltinClass(SymbolId name, LayoutId subclass_id,
                           LayoutId superclass_id,
                           View<BuiltinAttribute> attributes);
