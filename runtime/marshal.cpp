@@ -3,10 +3,10 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 
 #include "heap.h"
 #include "runtime.h"
+#include "utils.h"
 
 namespace python {
 
@@ -124,11 +124,11 @@ Object* Marshal::Reader::readObject() {
       break;
 
     case TYPE_STOPITER:
-      assert(0);
+      UNIMPLEMENTED("TYPE_STOPITER");
       break;
 
     case TYPE_ELLIPSIS:
-      assert(0);
+      UNIMPLEMENTED("TYPE_ELLIPSIS");
       break;
 
     case TYPE_FALSE:
@@ -145,7 +145,7 @@ Object* Marshal::Reader::readObject() {
       // we need to support 32 bit machines.
       word n = readLong();
       if (!SmallInteger::isValid(n)) {
-        std::abort();
+        UNIMPLEMENTED("value '%ld' outside range supported by SmallInteger", n);
       }
       result = SmallInteger::fromWord(n);
       if (isRef_) {
@@ -155,19 +155,19 @@ Object* Marshal::Reader::readObject() {
     }
 
     case TYPE_FLOAT:
-      assert(0);
+      UNIMPLEMENTED("TYPE_FLOAT");
       break;
 
     case TYPE_BINARY_FLOAT:
-      assert(0);
+      UNIMPLEMENTED("TYPE_BINARY_FLOAT");
       break;
 
     case TYPE_COMPLEX:
-      assert(0);
+      UNIMPLEMENTED("TYPE_COMPLEX");
       break;
 
     case TYPE_BINARY_COMPLEX:
-      assert(0);
+      UNIMPLEMENTED("TYPE_BINARY_COMPLEX");
       break;
 
     case TYPE_STRING: // Misnomer, should be TYPE_BYTES
@@ -175,7 +175,7 @@ Object* Marshal::Reader::readObject() {
       break;
 
     case TYPE_ASCII_INTERNED:
-      assert(0);
+      UNIMPLEMENTED("TYPE_ASCII_INTERNED");
       break;
 
     case TYPE_SHORT_ASCII_INTERNED:
@@ -187,11 +187,11 @@ Object* Marshal::Reader::readObject() {
       break;
 
     case TYPE_INTERNED:
-      assert(0);
+      UNIMPLEMENTED("TYPE_INTERNED");
       break;
 
     case TYPE_UNICODE:
-      assert(0);
+      UNIMPLEMENTED("TYPE_UNICODE");
       break;
 
     case TYPE_SMALL_TUPLE:
@@ -203,19 +203,19 @@ Object* Marshal::Reader::readObject() {
       break;
 
     case TYPE_LIST:
-      assert(0);
+      UNIMPLEMENTED("TYPE_LIST");
       break;
 
     case TYPE_DICT:
-      assert(0);
+      UNIMPLEMENTED("TYPE_DICT");
       break;
 
     case TYPE_SET:
-      assert(0);
+      UNIMPLEMENTED("TYPE_SET");
       break;
 
     case TYPE_FROZENSET:
-      assert(0);
+      UNIMPLEMENTED("TYPE_FROZENSET");
       break;
 
     case TYPE_CODE:
@@ -227,12 +227,11 @@ Object* Marshal::Reader::readObject() {
       break;
 
     case TYPE_LONG:
-      std::cerr << "Cannot handle TYPE_LONG" << std::endl;
-      std::abort();
+      UNIMPLEMENTED("TYPE_LONG");
       break;
 
     default:
-      assert(0);
+      UNREACHABLE("unknown type '%c' (flags=%x)\n", type, flag);
   }
   return result;
 }

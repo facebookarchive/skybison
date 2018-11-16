@@ -91,7 +91,7 @@ TEST(MarshalReaderDeathTest, ReadNegativeTypeLong) {
   const char buf[] = "\xec\xfd\xff\xff\xff\x01\x00\x00\x00\x02\x00";
   EXPECT_DEATH(
       Marshal::Reader(&scope, &runtime, buf).readObject(),
-      "Cannot handle TYPE_LONG");
+      "unimplemented: TYPE_LONG");
 }
 
 TEST(MarshalReaderDeathTest, ReadPositiveTypeLong) {
@@ -102,7 +102,16 @@ TEST(MarshalReaderDeathTest, ReadPositiveTypeLong) {
   const char buf[] = "\xec\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00";
   EXPECT_DEATH(
       Marshal::Reader(&scope, &runtime, buf).readObject(),
-      "Cannot handle TYPE_LONG");
+      "unimplemented: TYPE_LONG");
+}
+
+TEST(MarshalReaderDeathTest, ReadUnknownTypeCode) {
+  Runtime runtime;
+  HandleScope scope;
+  const char buf[] = "a";
+  EXPECT_DEATH(
+      Marshal::Reader(&scope, &runtime, buf).readObject(),
+      "unreachable: unknown type");
 }
 
 TEST(MarshalReaderTest, ReadShort) {
