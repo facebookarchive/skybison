@@ -1,34 +1,49 @@
 #!/usr/bin/env python3
 import argparse
+import collections
 import os
 import re
 import sys
 
 
+# Tuple that specifies a regex and the position where a symbol will be found
+SymbolRegex = collections.namedtuple("SymbolRegex", ["regex", "pos"])
+
+
 # For sources where only the symbol is required
-# symbol type: (symbol regex, symbol position)
 SYMBOL_REGEX = {
-    "typedef": (re.compile("^typedef.*;", re.MULTILINE), 2),
-    "multiline_typedef": (re.compile("^} .*;", re.MULTILINE), 0),
-    "struct": (re.compile("^struct.*{", re.MULTILINE), 1),
-    "macro": (re.compile("^#define.*[^\\\\]\n", re.MULTILINE), 1),
-    "multiline_macro": (re.compile("^#define.*\\\\", re.MULTILINE), 1),
+    "typedef": SymbolRegex(
+        regex=re.compile("^typedef.*;", re.MULTILINE), pos=2
+    ),
+    "multiline_typedef": SymbolRegex(
+        regex=re.compile("^} .*;", re.MULTILINE), pos=0
+    ),
+    "struct": SymbolRegex(regex=re.compile("^struct.*{", re.MULTILINE), pos=1),
+    "macro": SymbolRegex(
+        regex=re.compile("^#define.*[^\\\\]\n", re.MULTILINE), pos=1
+    ),
+    "multiline_macro": SymbolRegex(
+        regex=re.compile("^#define.*\\\\", re.MULTILINE), pos=1
+    ),
 }
 
 
 # For sources where the entire definition match is required
-# symbol type: (definition regex, symbol position)
 DEFINITIONS_REGEX = {
-    "typedef": (re.compile("^typedef.*;", re.MULTILINE), 2),
-    "multiline_typedef": (
-        re.compile("^typedef.*{(.|\\n)*?}.*;", re.MULTILINE),
-        -1,
+    "typedef": SymbolRegex(
+        regex=re.compile("^typedef.*;.*\n", re.MULTILINE), pos=2
     ),
-    "struct": (re.compile("^struct(.|\\n)*?};", re.MULTILINE), 1),
-    "macro": (re.compile("^#define.*[^\\\\]\n", re.MULTILINE), 1),
-    "multiline_macro": (
-        re.compile("^#define.*\\\\(\n.*\\\\)*\n.*", re.MULTILINE),
-        1,
+    "multiline_typedef": SymbolRegex(
+        regex=re.compile("^typedef.*{(.|\n)*?}.*;.*\n", re.MULTILINE), pos=-1
+    ),
+    "struct": SymbolRegex(
+        regex=re.compile("^struct(.|\n)*?};.*\n", re.MULTILINE), pos=1
+    ),
+    "macro": SymbolRegex(
+        regex=re.compile("^#define.*[^\\\\]\n", re.MULTILINE), pos=1
+    ),
+    "multiline_macro": SymbolRegex(
+        regex=re.compile("^#define.*\\\\(\n.*\\\\)*\n.*\n", re.MULTILINE), pos=1
     ),
 }
 
@@ -37,8 +52,8 @@ DEFINITIONS_REGEX = {
 def find_symbols_in_file(symbols_dict, lines):
     symbols_dict = {x: [] for x in SYMBOL_REGEX.keys()}
     special_chars_regex = re.compile("[\*|,|;|{|}|\(|\)|]")
-    for symbol_type, regex in SYMBOL_REGEX.items():
-        matches = re.findall(regex[0], lines)
+    for symbol_type, sr in SYMBOL_REGEX.items():
+        matches = re.findall(sr.regex, lines)
         for match in matches:
             # Modify typedefs with the following signature:
             # type (*name)(variables) -> type (*name variables)
@@ -47,7 +62,7 @@ def find_symbols_in_file(symbols_dict, lines):
             # type (*name variables...) -> type name variables
             modified_match = re.sub(special_chars_regex, " ", modified_match)
             # Split and locate symbol based on its position
-            modified_match = modified_match.split()[regex[1]]
+            modified_match = modified_match.split()[sr.pos]
             symbols_dict[symbol_type].append(modified_match)
     return symbols_dict
 
@@ -77,12 +92,12 @@ def replace_definition_if(match, symbol, pos):
 def modify_file(lines, symbols_dict):
     # Iterate dictionary of symbol types (i.e. macro, typedef, etc.)
     for symbol_type, symbols in symbols_dict.items():
-        regex = DEFINITIONS_REGEX[symbol_type]
+        sr = DEFINITIONS_REGEX[symbol_type]
         # Iterate the symbols that will be replaced
         for symbol in symbols:
             lines = re.sub(
-                regex[0],
-                lambda m: replace_definition_if(m, symbol, regex[1]),
+                sr.regex,
+                lambda m: replace_definition_if(m, symbol, sr.pos),
                 lines,
             )
     return lines
