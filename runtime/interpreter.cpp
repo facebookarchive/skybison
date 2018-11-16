@@ -201,7 +201,7 @@ Object* Interpreter::unaryOperation(
     sp[0] = sp[1];
     sp[1] = *method;
   }
-  return Interpreter::call(thread, caller, sp, is_unbound ? 2 : 1);
+  return call(thread, caller, sp, is_unbound ? 2 : 1);
 }
 
 Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
@@ -220,7 +220,7 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
       sp--;
       sp[0] = *method;
     }
-    Handle<Object> result(&scope, Interpreter::call(thread, caller, sp, 1));
+    Handle<Object> result(&scope, call(thread, caller, sp, 1));
     if (result->isBoolean()) {
       return *result;
     }
@@ -241,7 +241,7 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
       sp--;
       sp[0] = *method;
     }
-    Handle<Object> result(&scope, Interpreter::call(thread, caller, sp, 1));
+    Handle<Object> result(&scope, call(thread, caller, sp, 1));
 
     if (result->isInteger()) {
       Handle<Integer> integer(&scope, *result);
@@ -433,8 +433,8 @@ void Interpreter::doUnaryPositive(Context* ctx, word) {
   HandleScope scope(thread->handles());
   Handle<Object> receiver(&scope, *ctx->sp);
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderPos());
-  Object* result = Interpreter::unaryOperation(
-      thread, ctx->frame, ctx->sp, receiver, selector);
+  Object* result =
+      unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
   ctx->sp--;
   *ctx->sp = result;
 }
@@ -445,16 +445,15 @@ void Interpreter::doUnaryNegative(Context* ctx, word) {
   HandleScope scope(thread->handles());
   Handle<Object> receiver(&scope, *ctx->sp);
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderNeg());
-  Object* result = Interpreter::unaryOperation(
-      thread, ctx->frame, ctx->sp, receiver, selector);
+  Object* result =
+      unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
   ctx->sp--;
   *ctx->sp = result;
 }
 
 // opcode 12
 void Interpreter::doUnaryNot(Context* ctx, word) {
-  if (Interpreter::isTrue(ctx->thread, ctx->frame, ctx->sp) ==
-      Boolean::trueObj()) {
+  if (isTrue(ctx->thread, ctx->frame, ctx->sp) == Boolean::trueObj()) {
     *ctx->sp = Boolean::falseObj();
   } else {
     *ctx->sp = Boolean::trueObj();
@@ -467,8 +466,8 @@ void Interpreter::doUnaryInvert(Context* ctx, word) {
   HandleScope scope(thread->handles());
   Handle<Object> receiver(&scope, *ctx->sp);
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderInvert());
-  Object* result = Interpreter::unaryOperation(
-      thread, ctx->frame, ctx->sp, receiver, selector);
+  Object* result =
+      unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
   ctx->sp--;
   *ctx->sp = result;
 }
@@ -875,8 +874,7 @@ void Interpreter::doCompareOp(Context* ctx, word arg) {
   HandleScope scope;
   Handle<Object> right(&scope, *sp++);
   Handle<Object> left(&scope, *sp++);
-  Object* res = Interpreter::compare(
-      ctx->thread, static_cast<CompareOp>(arg), left, right);
+  Object* res = compare(ctx->thread, static_cast<CompareOp>(arg), left, right);
   DCHECK(res->isBoolean(), "unexpected comparison result");
   *--sp = res;
 }
@@ -916,7 +914,7 @@ void Interpreter::doJumpForward(Context* ctx, word arg) {
 
 // opcode 111
 void Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
-  Object* result = Interpreter::isTrue(ctx->thread, ctx->frame, ctx->sp);
+  Object* result = isTrue(ctx->thread, ctx->frame, ctx->sp);
   if (result == Boolean::falseObj()) {
     ctx->pc = arg;
   } else {
@@ -926,7 +924,7 @@ void Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
 
 // opcode 112
 void Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
-  Object* result = Interpreter::isTrue(ctx->thread, ctx->frame, ctx->sp);
+  Object* result = isTrue(ctx->thread, ctx->frame, ctx->sp);
   if (result == Boolean::trueObj()) {
     ctx->pc = arg;
   } else {
@@ -941,7 +939,7 @@ void Interpreter::doJumpAbsolute(Context* ctx, word arg) {
 
 // opcode 114
 void Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
-  Object* result = Interpreter::isTrue(ctx->thread, ctx->frame, ctx->sp);
+  Object* result = isTrue(ctx->thread, ctx->frame, ctx->sp);
   ctx->sp++;
   if (result == Boolean::falseObj()) {
     ctx->pc = arg;
@@ -950,7 +948,7 @@ void Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
 
 // opcode 115
 void Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
-  Object* result = Interpreter::isTrue(ctx->thread, ctx->frame, ctx->sp);
+  Object* result = isTrue(ctx->thread, ctx->frame, ctx->sp);
   ctx->sp++;
   if (result == Boolean::trueObj()) {
     ctx->pc = arg;
@@ -1000,7 +998,7 @@ void Interpreter::doStoreFast(Context* ctx, word arg) {
 
 // opcode 131
 void Interpreter::doCallFunction(Context* ctx, word arg) {
-  Object* result = Interpreter::call(ctx->thread, ctx->frame, ctx->sp, arg);
+  Object* result = call(ctx->thread, ctx->frame, ctx->sp, arg);
   ctx->sp += arg;
   *ctx->sp = result;
 }
@@ -1075,7 +1073,7 @@ void Interpreter::doStoreDeref(Context* ctx, word arg) {
 
 // opcode 141
 void Interpreter::doCallFunctionKw(Context* ctx, word arg) {
-  Object* result = Interpreter::callKw(ctx->thread, ctx->frame, ctx->sp, arg);
+  Object* result = callKw(ctx->thread, ctx->frame, ctx->sp, arg);
   ctx->sp += arg + 1;
   *ctx->sp = result;
 }
@@ -1190,7 +1188,7 @@ void Interpreter::doBuildString(Context* ctx, word arg) {
     case 1: // no-op
       break;
     default: { // concat
-      Object* res = Interpreter::stringJoin(thread, ctx->sp, arg);
+      Object* res = stringJoin(thread, ctx->sp, arg);
       ctx->sp += (arg - 1);
       *ctx->sp = res;
       break;
