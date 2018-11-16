@@ -84,7 +84,7 @@ Object* GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
         "__next__() must be called with a generator instance as the first "
         "argument");
   }
-  Handle<GeneratorBase> gen(self);
+  Handle<Generator> gen(self);
   Handle<Object> value(&scope, None::object());
   return thread->runtime()->genSend(thread, gen, value);
 }

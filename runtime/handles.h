@@ -122,9 +122,9 @@ class ObjectHandle {
 template <typename T>
 class Handle : public ObjectHandle {
  public:
-  T* operator->() const { return reinterpret_cast<T*>(pointer_); }
+  T* operator->() const { return static_cast<T*>(pointer_); }
 
-  T* operator*() const { return reinterpret_cast<T*>(pointer_); }
+  T* operator*() const { return static_cast<T*>(pointer_); }
 
   // Note that Handle<T>::operator= takes a raw pointer, not a handle, so
   // to assign handles, one writes: `lhandle = *rhandle;`. (This is to avoid
@@ -148,6 +148,14 @@ class Handle : public ObjectHandle {
       : ObjectHandle(scope, T::cast(pointer)) {
     static_assert(std::is_base_of<Object, T>::value,
                   "You can only get a handle to a python::Object.");
+  }
+
+  // Let Handle<T> pretend to be a subtype of Handle<S> when T is a subtype of
+  // S.
+  template <typename S>
+  operator const Handle<S>&() const {
+    static_assert(std::is_base_of<S, T>::value, "Only up-casts are permitted");
+    return *reinterpret_cast<const Handle<S>*>(this);
   }
 
  private:
