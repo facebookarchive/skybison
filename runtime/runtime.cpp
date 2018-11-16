@@ -10,6 +10,7 @@
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
+#include "interpreter.h"
 #include "marshal.h"
 #include "os.h"
 #include "siphash.h"
@@ -31,6 +32,7 @@ Runtime::Runtime(word heap_size)
   initializeInterned();
   initializeSymbols();
   initializeModules();
+  Interpreter::initOpTable();
 }
 
 Runtime::Runtime() : Runtime(64 * MiB) {}

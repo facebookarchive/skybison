@@ -12,6 +12,7 @@ class Thread;
 
 class Interpreter {
  public:
+  static void initOpTable();
   static Object* execute(Thread* thread, Frame* frame);
 
   static Object* compare(
@@ -23,7 +24,6 @@ class Interpreter {
       const Handle<Object>& left,
       const Handle<Object>& right);
 
- private:
   static Object* call(Thread* thread, Frame* frame, Object** sp, word nargs);
   static Object*
   callBoundMethod(Thread* thread, Frame* frame, Object** sp, word nargs);
@@ -33,6 +33,7 @@ class Interpreter {
 
   static Object* callKw(Thread* thread, Frame* frame, Object** sp, word nargs);
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };
 
