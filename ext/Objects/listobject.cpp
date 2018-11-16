@@ -2,9 +2,9 @@
 
 #include "Python.h"
 
-#include "runtime/handles.h"
-#include "runtime/objects.h"
-#include "runtime/runtime.h"
+#include "handles.h"
+#include "objects.h"
+#include "runtime.h"
 
 namespace python {
 

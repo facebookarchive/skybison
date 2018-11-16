@@ -1,6 +1,6 @@
 // _warnings.c implementation
 
-#include "runtime/utils.h"
+#include "utils.h"
 
 #include "Python.h"
 

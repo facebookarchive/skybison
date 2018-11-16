@@ -48,6 +48,12 @@ set(
   -Wextra
   -pedantic)
 
+# Define the `cpython` target
+set(
+  CPYTHON_MODIFIED_SOURCES
+  capi/cpython-types.h)
+include(CPythonBuild.cmake)
+
 add_library(
   runtime
   STATIC
@@ -136,13 +142,14 @@ target_link_libraries(
   PRIVATE
   dl
   siphash)
+target_include_directories(
+  runtime
+  PUBLIC
+  capi)
 
 add_library(
   extension
   STATIC
-  ext/Include/Python.h
-  ext/Include/modsupport.h
-  ext/Include/pyport.h
   ext/Objects/abstract.cpp
   ext/Objects/boolobject.cpp
   ext/Objects/descrobject.cpp
@@ -167,13 +174,15 @@ target_compile_options(
   ${PYRO_COMPILE_OPTIONS})
 target_include_directories(
   extension
+  PUBLIC
+  capi
+  runtime
   PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ext/config
-  ext/Include)
+  ext/config)
 target_link_libraries(
   extension
   PRIVATE
+  cpython
   runtime)
 
 add_library(
@@ -188,11 +197,12 @@ target_compile_options(
 target_include_directories(
   modules
   PRIVATE
-  ext/config
-  ext/Include)
+  capi
+  ext/config)
 target_link_libraries(
   modules
   PRIVATE
+  cpython
   extension)
 
 add_executable(
@@ -265,15 +275,15 @@ add_library(
 target_include_directories(
   extension-tests
   PRIVATE
-  ext/Include
-  ext/config
-  ${CMAKE_CURRENT_SOURCE_DIR})
+  runtime
+  ext/config)
 target_link_libraries(
   extension-tests
   PUBLIC
   benchmark
   gtest
   PRIVATE
+  cpython
   runtime
   modules)
 

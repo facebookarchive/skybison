@@ -1,12 +1,9 @@
 #pragma once
 
+#include "cpython-types.h"
 #include "objects.h"
 
-typedef struct _object PyObject;
-
 namespace python {
-
-class ApiTypeHandle;
 
 enum class ExtensionTypes {
   kType = 0,
@@ -25,8 +22,7 @@ enum class ExtensionTypes {
   kTuple,
 };
 
-// An isomorphic structure to CPython's PyObject
-class ApiHandle {
+class ApiHandle : public PyObject {
  public:
   // Wrap an Object as an ApiHandle to cross the CPython boundary
   // Create a new ApiHandle if there is not a pre-existing one
@@ -53,22 +49,21 @@ class ApiHandle {
 
   PyObject* asPyObject() { return reinterpret_cast<PyObject*>(this); }
 
-  bool isBorrowed() { return (ob_refcnt_ & kBorrowedBit) != 0; }
+  bool isBorrowed() { return (ob_refcnt & kBorrowedBit) != 0; }
 
-  void setBorrowed() { ob_refcnt_ |= kBorrowedBit; }
+  void setBorrowed() { ob_refcnt |= kBorrowedBit; }
 
-  void clearBorrowed() { ob_refcnt_ &= ~kBorrowedBit; }
+  void clearBorrowed() { ob_refcnt &= ~kBorrowedBit; }
 
-  PyObject* type() { return reinterpret_cast<PyObject*>(ob_type_); }
+  PyObject* type() { return reinterpret_cast<PyObject*>(ob_type); }
 
  private:
   ApiHandle() = delete;
-  ApiHandle(Object* reference, long refcnt)
-      : reference_(reference), ob_refcnt_(refcnt), ob_type_(nullptr) {}
-
-  void* reference_;
-  long ob_refcnt_;
-  void* ob_type_;
+  ApiHandle(Object* reference, long refcnt) {
+    reference_ = reference;
+    ob_refcnt = refcnt;
+    ob_type = nullptr;
+  }
 
   static const long kBorrowedBit = 1L << 31;
 };

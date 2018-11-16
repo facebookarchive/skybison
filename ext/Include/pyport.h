@@ -1,6 +1,9 @@
 #ifndef Py_PYPORT_H
 #define Py_PYPORT_H
 
+// TODO(T3273622): Refactor CPython types header out of pyport.h
+#include "cpython-types.h"
+
 #include "pyconfig.h" /* include for defines */
 
 #include <inttypes.h>

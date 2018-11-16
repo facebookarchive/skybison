@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
 #include "Python.h"
-#include "runtime/runtime.h"
-#include "runtime/test-utils.h"
+#include "runtime.h"
+#include "test-utils.h"
 
 namespace python {
 
@@ -56,7 +56,8 @@ TEST(TupleObject, GetItemOutOfBoundsReturnsMinusOne) {
   PyObject* pyresult =
       PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), -1);
   EXPECT_EQ(nullptr, pyresult);
-  pyresult = PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), length);
+  pyresult =
+      PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), length);
   EXPECT_EQ(nullptr, pyresult);
 }
 

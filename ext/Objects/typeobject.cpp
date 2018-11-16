@@ -2,12 +2,12 @@
 
 #include "Python.h"
 
-#include "runtime/handles.h"
-#include "runtime/mro.h"
-#include "runtime/objects.h"
-#include "runtime/runtime.h"
-#include "runtime/trampolines.h"
-#include "runtime/utils.h"
+#include "handles.h"
+#include "mro.h"
+#include "objects.h"
+#include "runtime.h"
+#include "trampolines.h"
+#include "utils.h"
 
 namespace python {
 

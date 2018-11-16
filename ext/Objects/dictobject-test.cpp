@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
 #include "Python.h"
-#include "runtime/runtime.h"
-#include "runtime/test-utils.h"
+#include "runtime.h"
+#include "test-utils.h"
 
 namespace python {
 
@@ -27,8 +27,9 @@ TEST(DictObject, GetItemNonExistingKeyReturnsNull) {
   Handle<Object> nonkey(&scope, SmallInteger::fromWord(30));
 
   // Pass a non existing key
-  PyObject* result = PyDict_GetItem(ApiHandle::fromObject(*dict)->asPyObject(),
-                                    ApiHandle::fromObject(*nonkey)->asPyObject());
+  PyObject* result =
+      PyDict_GetItem(ApiHandle::fromObject(*dict)->asPyObject(),
+                     ApiHandle::fromObject(*nonkey)->asPyObject());
   EXPECT_EQ(result, nullptr);
 }
 

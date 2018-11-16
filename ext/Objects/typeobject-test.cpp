@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 
 #include "Python.h"
-#include "runtime/frame.h"
-#include "runtime/runtime.h"
-#include "runtime/test-utils.h"
+#include "frame.h"
+#include "runtime.h"
+#include "test-utils.h"
 
 namespace python {
 

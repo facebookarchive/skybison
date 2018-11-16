@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
 #include "Python.h"
-#include "runtime/runtime.h"
-#include "runtime/test-utils.h"
+#include "runtime.h"
+#include "test-utils.h"
 
 #include <cmath>
 #include <limits>

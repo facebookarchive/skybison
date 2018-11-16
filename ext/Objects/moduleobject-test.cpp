@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
 #include "Python.h"
-#include "runtime/runtime.h"
-#include "runtime/test-utils.h"
+#include "runtime.h"
+#include "test-utils.h"
 
 static PyMethodDef SpamMethods[] = {{NULL, NULL, -1, NULL}};
 

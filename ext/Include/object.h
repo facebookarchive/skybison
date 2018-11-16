@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+#include "cpython-types.h"
 
 /* Object and type object interface */
 

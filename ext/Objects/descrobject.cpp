@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "structmember.h"
 
-#include "runtime/runtime.h"
+#include "runtime.h"
 
 namespace python {
 
