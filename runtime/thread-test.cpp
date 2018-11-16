@@ -196,7 +196,7 @@ TEST(ThreadTest, ZeroInitializeBlockStack) {
     *sp-- = SmallInteger::fromWord(1111);
   }
   Frame* frame2 = thread->openAndLinkFrame(0, 0, 10);
-  // The block stack is a continguous chunk of small integers.
+  // The block stack is a contiguous chunk of small integers.
   Object** bs = reinterpret_cast<Object**>(frame2->blockStack());
   for (word i = 0; i < BlockStack::kSize / kPointerSize; i++) {
     EXPECT_EQ(bs[i], SmallInteger::fromWord(0));
