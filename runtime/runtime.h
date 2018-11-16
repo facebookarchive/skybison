@@ -163,14 +163,11 @@ class Runtime {
       const Handle<Object>& key,
       const Handle<Object>& value);
 
-  // Look up the value associated with key.
-  //
-  // Returns true if the key was found and sets the associated value in value.
-  // Returns false otherwise.
-  bool dictionaryAt(
+  // Look up the value associated with key. Returns Error::object() if the
+  // key was not found.
+  Object* dictionaryAt(
       const Handle<Dictionary>& dict,
-      const Handle<Object>& key,
-      Object** value);
+      const Handle<Object>& key);
 
   // Looks up and returns the value associated with the key.  If the key is
   // absent, calls thunk and inserts its result as the value.

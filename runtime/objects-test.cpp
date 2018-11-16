@@ -27,8 +27,7 @@ TEST(DictionaryTest, GetSet) {
   Object* retrieved;
 
   // Looking up a key that doesn't exist should fail
-  bool found = runtime.dictionaryAt(dict, key, &retrieved);
-  EXPECT_FALSE(found);
+  EXPECT_TRUE(runtime.dictionaryAt(dict, key)->isError());
 
   // Store a value
   Handle<Object> stored(&scope, SmallInteger::fromWord(67890));
@@ -36,8 +35,8 @@ TEST(DictionaryTest, GetSet) {
   EXPECT_EQ(dict->numItems(), 1);
 
   // Retrieve the stored value
-  found = runtime.dictionaryAt(dict, key, &retrieved);
-  ASSERT_TRUE(found);
+  retrieved = runtime.dictionaryAt(dict, key);
+  ASSERT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(
       SmallInteger::cast(retrieved)->value(),
       SmallInteger::cast(*stored)->value());
@@ -48,8 +47,8 @@ TEST(DictionaryTest, GetSet) {
   EXPECT_EQ(dict->numItems(), 1);
 
   // Get the new value
-  found = runtime.dictionaryAt(dict, key, &retrieved);
-  ASSERT_TRUE(found);
+  retrieved = runtime.dictionaryAt(dict, key);
+  ASSERT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(
       SmallInteger::cast(retrieved)->value(),
       SmallInteger::cast(*newValue)->value());
@@ -80,8 +79,7 @@ TEST(DictionaryTest, Remove) {
       SmallInteger::cast(*stored)->value());
 
   // Looking up a key that was deleted should fail
-  found = runtime.dictionaryAt(dict, key, &retrieved);
-  ASSERT_FALSE(found);
+  EXPECT_TRUE(runtime.dictionaryAt(dict, key)->isError());
   EXPECT_EQ(dict->numItems(), 0);
 }
 
@@ -133,9 +131,8 @@ TEST(DictionaryTest, AtIfAbsentPutLength) {
   SmallIntegerCallback cb(222);
   Handle<Object> entry2(&scope, runtime.dictionaryAtIfAbsentPut(dict, k2, &cb));
   EXPECT_EQ(dict->numItems(), 2);
-  Object* retrieved;
-  bool found = runtime.dictionaryAt(dict, k2, &retrieved);
-  EXPECT_TRUE(found);
+  Object* retrieved = runtime.dictionaryAt(dict, k2);
+  EXPECT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(retrieved, SmallInteger::fromWord(222));
 
   // Don't overrwite existing item 1 -> v1
@@ -144,8 +141,8 @@ TEST(DictionaryTest, AtIfAbsentPutLength) {
   Handle<Object> entry3(
       &scope, runtime.dictionaryAtIfAbsentPut(dict, k3, &cb3));
   EXPECT_EQ(dict->numItems(), 2);
-  found = runtime.dictionaryAt(dict, k3, &retrieved);
-  EXPECT_TRUE(found);
+  retrieved = runtime.dictionaryAt(dict, k3);
+  EXPECT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(retrieved, *v1);
 }
 
@@ -186,10 +183,9 @@ TEST(DictionaryTest, GrowWhenFull) {
 
   // Make sure we can still read all the stored keys/values
   for (int i = 1; i <= numKeys; i++) {
-    Object* value = None::object();
     Handle<Object> key(&scope, makeKey(i));
-    bool found = runtime.dictionaryAt(dict, key, &value);
-    ASSERT_TRUE(found);
+    Object* value = runtime.dictionaryAt(dict, key);
+    ASSERT_FALSE(value->isError());
     EXPECT_TRUE(Object::equals(value, makeValue(i)));
   }
 }
@@ -207,15 +203,14 @@ TEST(DictionaryTest, CollidingKeys) {
   runtime.dictionaryAtPut(dict, key2, key2);
 
   // Make sure we get both back
-  Object* retrieved;
-  bool found = runtime.dictionaryAt(dict, key1, &retrieved);
-  EXPECT_TRUE(found);
+  Object* retrieved = runtime.dictionaryAt(dict, key1);
+  ASSERT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(
       SmallInteger::cast(retrieved)->value(),
       SmallInteger::cast(*key1)->value());
 
-  found = runtime.dictionaryAt(dict, key2, &retrieved);
-  EXPECT_TRUE(found);
+  retrieved = runtime.dictionaryAt(dict, key2);
+  ASSERT_TRUE(retrieved->isBoolean());
   EXPECT_EQ(Boolean::cast(retrieved)->value(), Boolean::cast(*key2)->value());
 }
 
@@ -232,15 +227,14 @@ TEST(DictionaryTest, MixedKeys) {
   runtime.dictionaryAtPut(dict, strKey, strKey);
 
   // Make sure we get the appropriate values back out
-  Object* retrieved;
-  bool found = runtime.dictionaryAt(dict, intKey, &retrieved);
-  EXPECT_TRUE(found);
+  Object* retrieved = runtime.dictionaryAt(dict, intKey);
+  ASSERT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(
       SmallInteger::cast(retrieved)->value(),
       SmallInteger::cast(*intKey)->value());
 
-  found = runtime.dictionaryAt(dict, strKey, &retrieved);
-  EXPECT_TRUE(found);
+  retrieved = runtime.dictionaryAt(dict, strKey);
+  ASSERT_TRUE(retrieved->isString());
   EXPECT_TRUE(Object::equals(*strKey, retrieved));
 }
 

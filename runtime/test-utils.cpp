@@ -32,14 +32,8 @@ std::string compileAndRunToString(Runtime* runtime, const char* src) {
 Object*
 findInModule(Runtime* runtime, const Handle<Module>& module, const char* name) {
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, module->dictionary());
   Handle<Object> key(&scope, runtime->newStringFromCString(name));
-  Handle<Object> value_cell(&scope, None::object());
-  // TODO(T25495827) - Make returning an Error the default.
-  if (!runtime->dictionaryAt(dict, key, value_cell.pointer())) {
-    return Error::object();
-  }
-  return ValueCell::cast(*value_cell)->value();
+  return runtime->moduleAt(module, key);
 }
 
 std::string callFunctionToString(

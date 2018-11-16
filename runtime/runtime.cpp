@@ -844,9 +844,11 @@ Object* Runtime::findModule(const Handle<Object>& name) {
 
   HandleScope scope;
   Handle<Dictionary> dict(&scope, modules());
-  Handle<Object> value(&scope, None::object());
-  dictionaryAt(dict, name, value.pointer());
-  return *value;
+  Object* value = dictionaryAt(dict, name);
+  if (value->isError()) {
+    return None::object();
+  }
+  return value;
 }
 
 Object* Runtime::moduleAt(
@@ -854,11 +856,11 @@ Object* Runtime::moduleAt(
     const Handle<Object>& key) {
   HandleScope scope;
   Handle<Dictionary> dict(&scope, module->dictionary());
-  Handle<Object> value(&scope, None::object());
-  if (dictionaryAt(dict, key, value.pointer())) {
-    return ValueCell::cast(*value)->value();
+  Handle<Object> value_cell(&scope, dictionaryAt(dict, key));
+  if (value_cell->isError()) {
+    return Error::object();
   }
-  return Error::object();
+  return ValueCell::cast(*value_cell)->value();
 }
 
 void Runtime::moduleAtPut(
@@ -1279,10 +1281,9 @@ ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
   return *newData;
 }
 
-bool Runtime::dictionaryAt(
+Object* Runtime::dictionaryAt(
     const Handle<Dictionary>& dict,
-    const Handle<Object>& key,
-    Object** value) {
+    const Handle<Object>& key) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
@@ -1290,9 +1291,9 @@ bool Runtime::dictionaryAt(
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
     assert(index != -1);
-    *value = Bucket(data, index).value();
+    return Bucket(data, index).value();
   }
-  return found;
+  return Error::object();
 }
 
 Object* Runtime::dictionaryAtIfAbsentPut(
@@ -1568,8 +1569,8 @@ Object* Runtime::classConstructor(const Handle<Class>& klass) {
   HandleScope scope;
   Handle<Dictionary> klass_dict(&scope, klass->dictionary());
   Handle<Object> init(&scope, symbols()->DunderInit());
-  Object* value;
-  if (!dictionaryAt(klass_dict, init, &value)) {
+  Object* value = dictionaryAt(klass_dict, init);
+  if (value->isError()) {
     return None::object();
   }
   return ValueCell::cast(value)->value();
@@ -1607,8 +1608,8 @@ Object* Runtime::lookupNameInMro(
   for (word i = 0; i < mro->length(); i++) {
     Handle<Class> mro_klass(&scope, mro->at(i));
     Handle<Dictionary> dict(&scope, mro_klass->dictionary());
-    Handle<Object> value_cell(&scope, None::object());
-    if (dictionaryAt(dict, name, value_cell.pointer())) {
+    Handle<Object> value_cell(&scope, dictionaryAt(dict, name));
+    if (!value_cell->isError()) {
       return ValueCell::cast(*value_cell)->value();
     }
   }
@@ -1711,9 +1712,10 @@ Object* Runtime::computeFastGlobals(
       continue;
     }
     Handle<Object> key(&scope, names->at(arg));
-    Object* value = Error::object();
-    if (!dictionaryAt(globals, key, &value)) {
-      if (!dictionaryAt(builtins, key, &value)) {
+    Object* value = dictionaryAt(globals, key);
+    if (value->isError()) {
+      value = dictionaryAt(builtins, key);
+      if (value->isError()) {
         // insert a place holder to allow {STORE|DELETE}_GLOBAL
         Handle<Object> handle(&scope, value);
         value = dictionaryAtPutInValueCell(builtins, key, handle);

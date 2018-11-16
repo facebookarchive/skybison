@@ -36,10 +36,7 @@ TEST(RuntimeTest, BuiltinsModuleExists) {
 
   Handle<Dictionary> modules(&scope, runtime.modules());
   Handle<Object> name(&scope, runtime.newStringFromCString("builtins"));
-  Object* builtins;
-  bool found = runtime.dictionaryAt(modules, name, &builtins);
-  ASSERT_TRUE(found);
-  ASSERT_TRUE(builtins->isModule());
+  ASSERT_TRUE(runtime.dictionaryAt(modules, name)->isModule());
 }
 
 TEST(RuntimeTest, NewByteArray) {
@@ -433,10 +430,9 @@ TEST(RuntimeTest, CollectAttributes) {
   EXPECT_EQ(attributes->numItems(), 1);
 
   // Check that we collected 'foo'
-  Object* result;
-  EXPECT_TRUE(runtime.dictionaryAt(attributes, foo, &result));
+  Handle<Object> result(&scope, runtime.dictionaryAt(attributes, foo));
   ASSERT_TRUE(result->isString());
-  EXPECT_TRUE(String::cast(result)->equals(*foo));
+  EXPECT_TRUE(String::cast(*result)->equals(*foo));
 
   // Bytecode for the snippet:
   //
@@ -464,14 +460,14 @@ TEST(RuntimeTest, CollectAttributes) {
   EXPECT_EQ(attributes->numItems(), 3);
 
   // Check that we collected 'bar'
-  EXPECT_TRUE(runtime.dictionaryAt(attributes, bar, &result));
+  result = runtime.dictionaryAt(attributes, bar);
   ASSERT_TRUE(result->isString());
-  EXPECT_TRUE(String::cast(result)->equals(*bar));
+  EXPECT_TRUE(String::cast(*result)->equals(*bar));
 
   // Check that we collected 'baz'
-  EXPECT_TRUE(runtime.dictionaryAt(attributes, baz, &result));
+  result = runtime.dictionaryAt(attributes, baz);
   ASSERT_TRUE(result->isString());
-  EXPECT_TRUE(String::cast(result)->equals(*baz));
+  EXPECT_TRUE(String::cast(*result)->equals(*baz));
 }
 
 TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
@@ -522,10 +518,9 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   EXPECT_EQ(attributes->numItems(), 1);
 
   // Check that we collected 'foo'
-  Object* result;
-  EXPECT_TRUE(runtime.dictionaryAt(attributes, foo, &result));
+  Handle<Object> result(&scope, runtime.dictionaryAt(attributes, foo));
   ASSERT_TRUE(result->isString());
-  EXPECT_TRUE(String::cast(result)->equals(*foo));
+  EXPECT_TRUE(String::cast(*result)->equals(*foo));
 }
 
 TEST(RuntimeTest, GetClassConstructor) {

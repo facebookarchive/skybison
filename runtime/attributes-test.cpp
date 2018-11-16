@@ -162,9 +162,8 @@ TEST(ClassAttributeTest, SetAttrOnClass) {
   ASSERT_FALSE(result->isError());
 
   Handle<Dictionary> klass_dict(&scope, Class::cast(*klass)->dictionary());
-  Handle<Object> value_cell(&scope, None::object());
-  bool found = runtime.dictionaryAt(klass_dict, attr, value_cell.pointer());
-  ASSERT_TRUE(found);
+  Handle<Object> value_cell(&scope, runtime.dictionaryAt(klass_dict, attr));
+  ASSERT_TRUE(value_cell->isValueCell());
   EXPECT_EQ(ValueCell::cast(*value_cell)->value(), SmallInteger::fromWord(100));
 }
 

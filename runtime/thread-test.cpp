@@ -654,11 +654,9 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> value(&scope, None::object());
-  bool is_present = runtime.dictionaryAt(globals, key, value.pointer());
-  ASSERT_TRUE(is_present);
-  Handle<ValueCell> value_cell(&scope, *value);
-  EXPECT_EQ(*result, value_cell->value());
+  Handle<Object> value(&scope, runtime.dictionaryAt(globals, key));
+  ASSERT_TRUE(value->isValueCell());
+  EXPECT_EQ(*result, ValueCell::cast(*value)->value());
 }
 
 TEST(ThreadTest, StoreGlobalReuseValueCell) {
@@ -695,9 +693,8 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> value_cell2(&scope, None::object());
-  bool is_present = runtime.dictionaryAt(globals, key, value_cell2.pointer());
-  ASSERT_TRUE(is_present);
+  Handle<Object> value_cell2(&scope, runtime.dictionaryAt(globals, key));
+  ASSERT_TRUE(value_cell2->isValueCell());
   EXPECT_EQ(*value_cell2, *value_cell1);
   EXPECT_EQ(SmallInteger::fromWord(42), value_cell1->value());
 }
@@ -732,12 +729,9 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> value(&scope, None::object());
-  bool is_present =
-      runtime.dictionaryAt(implicit_globals, key, value.pointer());
-  ASSERT_TRUE(is_present);
-  Handle<ValueCell> value_cell(&scope, *value);
-  EXPECT_EQ(*result, value_cell->value());
+  Handle<Object> value(&scope, runtime.dictionaryAt(implicit_globals, key));
+  ASSERT_TRUE(value->isValueCell());
+  EXPECT_EQ(*result, ValueCell::cast(*value)->value());
 }
 
 TEST(ThreadTest, MakeFunction) {
@@ -786,14 +780,11 @@ TEST(ThreadTest, MakeFunction) {
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
-  Handle<Object> value(&scope, None::object());
-  bool is_present =
-      runtime.dictionaryAt(implicit_globals, key, value.pointer());
-  ASSERT_TRUE(is_present);
-  Handle<ValueCell> value_cell(&scope, *value);
-  ASSERT_TRUE(value_cell->value()->isFunction());
+  Handle<Object> value(&scope, runtime.dictionaryAt(implicit_globals, key));
+  ASSERT_TRUE(value->isValueCell());
+  ASSERT_TRUE(ValueCell::cast(*value)->value()->isFunction());
 
-  Handle<Function> function(&scope, value_cell->value());
+  Handle<Function> function(&scope, ValueCell::cast(*value)->value());
   EXPECT_EQ(function->code(), consts->at(0));
   EXPECT_EQ(function->name(), consts->at(1));
   EXPECT_EQ(function->entry(), &interpreterTrampoline);
@@ -1082,9 +1073,7 @@ class C:
   Handle<Dictionary> dict(&scope, getMainModuleDict(&runtime));
 
   Handle<Object> key(&scope, runtime.newStringFromCString("C"));
-  Handle<Object> value(&scope, None::object());
-  bool found = runtime.dictionaryAt(dict, key, value.pointer());
-  ASSERT_TRUE(found);
+  Handle<Object> value(&scope, runtime.dictionaryAt(dict, key));
   ASSERT_TRUE(value->isValueCell());
 
   Handle<Class> cls(&scope, ValueCell::cast(*value)->value());
@@ -1118,13 +1107,10 @@ class C:
   Handle<Dictionary> mod_dict(&scope, mod->dictionary());
   ASSERT_TRUE(mod_dict->isDictionary());
 
-  Handle<Object> value(&scope, None::object());
-
   // Check for the class name in the module dictionary
   Handle<Object> cls_name(&scope, runtime.newStringFromCString("C"));
-  ASSERT_TRUE(runtime.dictionaryIncludes(mod_dict, cls_name));
-
-  runtime.dictionaryAt(mod_dict, cls_name, value.pointer());
+  Handle<Object> value(&scope, runtime.dictionaryAt(mod_dict, cls_name));
+  ASSERT_TRUE(value->isValueCell());
   Handle<Class> cls(&scope, ValueCell::cast(*value)->value());
 
   // Check class MRO
@@ -1143,7 +1129,7 @@ class C:
   // Check for the __init__ method name in the dictionary
   Handle<Object> meth_name(&scope, runtime.symbols()->DunderInit());
   ASSERT_TRUE(runtime.dictionaryIncludes(cls_dict, meth_name));
-  runtime.dictionaryAt(cls_dict, meth_name, value.pointer());
+  value = runtime.dictionaryAt(cls_dict, meth_name);
   ASSERT_TRUE(value->isValueCell());
   ASSERT_TRUE(ValueCell::cast(*value)->value()->isFunction());
 }
@@ -1203,8 +1189,7 @@ getMro(Runtime* runtime, const char* src, const char* desired_class) {
   Handle<Object> class_name(
       &scope, runtime->newStringFromCString(desired_class));
 
-  Handle<Object> value(&scope, None::object());
-  runtime->dictionaryAt(mod_dict, class_name, value.pointer());
+  Handle<Object> value(&scope, runtime->dictionaryAt(mod_dict, class_name));
   Handle<Class> cls(&scope, ValueCell::cast(*value)->value());
 
   return cls->mro();

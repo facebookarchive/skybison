@@ -236,17 +236,17 @@ Result DELETE_GLOBAL(Context* ctx, word arg) {
       &scope,
       ValueCell::cast(ObjectArray::cast(frame->fastGlobals())->at(arg)));
   CHECK(!value_cell->value()->isValueCell(), "Unbound Globals");
-  Object* value_in_builtin = Error::object();
   Handle<Object> key(
       &scope, ObjectArray::cast(Code::cast(frame->code())->names())->at(arg));
   Handle<Dictionary> builtins(&scope, frame->builtins());
-  if (!thread->runtime()->dictionaryAt(builtins, key, &value_in_builtin)) {
-    Handle<Object> handle(&scope, value_in_builtin);
+  Runtime* runtime = thread->runtime();
+  Handle<Object> value_in_builtin(&scope, runtime->dictionaryAt(builtins, key));
+  if (value_in_builtin->isError()) {
     value_in_builtin =
-        thread->runtime()->dictionaryAtPutInValueCell(builtins, key, handle);
-    ValueCell::cast(value_in_builtin)->makeUnbound();
+        runtime->dictionaryAtPutInValueCell(builtins, key, value_in_builtin);
+    ValueCell::cast(*value_in_builtin)->makeUnbound();
   }
-  value_cell->setValue(value_in_builtin);
+  value_cell->setValue(*value_in_builtin);
   return Result::CONTINUE;
 }
 Result MAKE_FUNCTION(Context* ctx, word arg) {
@@ -463,10 +463,9 @@ Result BINARY_SUBSCR(Context* ctx, word) {
     *--sp = List::cast(*container)->at(idx);
   } else if (container->isDictionary()) {
     Handle<Dictionary> dict(&scope, *container);
-    Handle<Object> value(&scope, None::object());
-    CHECK(
-        ctx->thread->runtime()->dictionaryAt(dict, key, value.pointer()),
-        "KeyError");
+    Handle<Object> value(
+        &scope, ctx->thread->runtime()->dictionaryAt(dict, key));
+    CHECK(!value->isError(), "KeyError");
     *--sp = *value;
   } else if (container->isObjectArray()) {
     word idx = SmallInteger::cast(*key)->value();
