@@ -180,6 +180,10 @@ Object* Runtime::internString(const Handle<Object>& string) {
   HandleScope scope;
   Handle<Set> set(&scope, interned());
   Handle<Object> key(&scope, *string);
+  assert(string->isString());
+  if (string->isSmallString()) {
+    return *string;
+  }
   return setAdd(set, key);
 }
 

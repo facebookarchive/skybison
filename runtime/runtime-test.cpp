@@ -299,33 +299,73 @@ TEST(RuntimeTest, EnsureCapacity) {
   ASSERT_EQ(ensured1->length(), orig->length() * 2);
 }
 
-TEST(RuntimeTest, InternString) {
+TEST(RuntimeTest, InternLargeString) {
   Runtime runtime;
   HandleScope scope;
 
   Handle<Set> interned(&scope, runtime.interned());
 
+  // Creating an ordinary large string should not affect on the intern table.
+  word num_interned_strings = interned->numItems();
   Handle<Object> str1(&scope, runtime.newStringFromCString("hello, world"));
+  ASSERT_TRUE(str1->isLargeString());
+  EXPECT_EQ(num_interned_strings, interned->numItems());
   EXPECT_FALSE(runtime.setIncludes(interned, str1));
 
+  // Interning the string should add it to the intern table and increase the
+  // size of the intern table by one.
+  num_interned_strings = interned->numItems();
   Handle<Object> sym1(&scope, runtime.internString(str1));
   EXPECT_TRUE(runtime.setIncludes(interned, str1));
   EXPECT_EQ(*sym1, *str1);
+  EXPECT_EQ(num_interned_strings + 1, interned->numItems());
 
   Handle<Object> str2(&scope, runtime.newStringFromCString("goodbye, world"));
+  ASSERT_TRUE(str2->isLargeString());
   EXPECT_NE(*str1, *str2);
 
+  // Intern another string and make sure we get it back (as opposed to the
+  // previously interned string).
+  num_interned_strings = interned->numItems();
   Handle<Object> sym2(&scope, runtime.internString(str2));
+  EXPECT_EQ(num_interned_strings + 1, interned->numItems());
   EXPECT_TRUE(runtime.setIncludes(interned, str2));
   EXPECT_EQ(*sym2, *str2);
   EXPECT_NE(*sym1, *sym2);
 
+  // Create a unique copy of a previously created string.
   Handle<Object> str3(&scope, runtime.newStringFromCString("hello, world"));
+  ASSERT_TRUE(str3->isLargeString());
+  EXPECT_NE(*str1, *str3);
   EXPECT_TRUE(runtime.setIncludes(interned, str3));
 
+  // Interning a duplicate string should not affecct the intern table.
+  num_interned_strings = interned->numItems();
   Handle<Object> sym3(&scope, runtime.internString(str3));
+  EXPECT_EQ(num_interned_strings, interned->numItems());
   EXPECT_NE(*sym3, *str3);
   EXPECT_EQ(*sym3, *sym1);
+}
+
+TEST(RuntimeTest, InternSmallString) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Set> interned(&scope, runtime.interned());
+
+  // Creating a small string should not affect the intern table.
+  word num_interned_strings = interned->numItems();
+  Handle<Object> str(&scope, runtime.newStringFromCString("a"));
+  ASSERT_TRUE(str->isSmallString());
+  EXPECT_FALSE(runtime.setIncludes(interned, str));
+  EXPECT_EQ(num_interned_strings, interned->numItems());
+
+  // Interning a small string should have no affect on the intern table.
+  Handle<Object> sym(&scope, runtime.internString(str));
+  EXPECT_TRUE(sym->isSmallString());
+  EXPECT_FALSE(runtime.setIncludes(interned, str));
+  EXPECT_EQ(num_interned_strings, interned->numItems());
+  EXPECT_EQ(*sym, *str);
 }
 
 TEST(RuntimeTest, CollectAttributes) {
