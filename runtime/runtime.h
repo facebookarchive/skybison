@@ -1,11 +1,13 @@
 #pragma once
 
+#include "handles.h"
 #include "heap.h"
 
 namespace python {
 
 class Heap;
 class Object;
+class ObjectArray;
 class PointerVisitor;
 class Thread;
 
@@ -46,6 +48,13 @@ class Runtime {
     return modules_;
   };
 
+  // Ensures that array has enough space for an atPut at index. If so, returns
+  // array. If not, allocates and returns a new array with sufficient capacity
+  // and identical contents.
+  ObjectArray* ensureCapacity(const Handle<ObjectArray>& array, word index);
+
+  void appendToList(const Handle<List>& list, const Handle<Object>& value);
+
  private:
   void initializeThreads();
   void initializeClasses();
@@ -56,6 +65,9 @@ class Runtime {
 
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
+
+  // The size ensureCapacity grows to if array is empty
+  static const int kInitialEnsuredCapacity = 4;
 
   Heap heap_;
 

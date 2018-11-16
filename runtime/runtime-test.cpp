@@ -61,4 +61,25 @@ TEST(RuntimeTest, NewString) {
   EXPECT_EQ(*empty0, *empty2);
 }
 
+TEST(RuntimeTest, EnsureCapacity) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Check that empty arrays expand
+  Handle<ObjectArray> empty(&scope, runtime.newObjectArray(0));
+  Handle<ObjectArray> orig(&scope, runtime.ensureCapacity(empty, 0));
+  ASSERT_NE(*empty, *orig);
+  ASSERT_GT(orig->length(), 0);
+
+  // We shouldn't grow the array if there is sufficient capacity
+  Handle<ObjectArray> ensured0(
+      &scope, runtime.ensureCapacity(orig, orig->length() - 1));
+  ASSERT_EQ(*orig, *ensured0);
+
+  // We should double the array if there is insufficient capacity
+  Handle<ObjectArray> ensured1(
+      &scope, runtime.ensureCapacity(orig, orig->length()));
+  ASSERT_EQ(ensured1->length(), orig->length() * 2);
+}
+
 } // namespace python

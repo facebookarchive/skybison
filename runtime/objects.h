@@ -743,11 +743,6 @@ class List : public HeapObject {
   // Allocation
   inline void initialize(Object* items);
 
-  static void appendAndGrow(
-      const Handle<List>& list,
-      const Handle<Object>& value,
-      Runtime* runtime);
-
   // Layout.
   static const int kItemsOffset = HeapObject::kSize;
   static const int kAllocatedOffset = kItemsOffset + kPointerSize;

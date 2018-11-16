@@ -223,7 +223,7 @@ word Marshal::Reader::addRef(Object* value) {
   HandleScope scope;
   Handle<Object> valueHandle(&scope, value);
   word result = refs_->allocated();
-  List::appendAndGrow(refs_, valueHandle, runtime_);
+  runtime_->appendToList(refs_, valueHandle);
   return result;
 }
 

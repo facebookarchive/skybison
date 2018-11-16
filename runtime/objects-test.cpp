@@ -226,7 +226,7 @@ TEST(ListTest, EmptyListInvariants) {
   ASSERT_EQ(list->allocated(), 0);
 }
 
-TEST(ListTest, AppendAndGrow) {
+TEST(ListTest, AppendToList) {
   Runtime runtime;
   HandleScope scope;
   Handle<List> list(&scope, runtime.newList());
@@ -236,7 +236,7 @@ TEST(ListTest, AppendAndGrow) {
       4, 4, 4, 4, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16};
   for (int i = 0; i < 16; i++) {
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
-    List::appendAndGrow(list, value, &runtime);
+    runtime.appendToList(list, value);
     ASSERT_EQ(list->capacity(), expectedCapacity[i]);
     ASSERT_EQ(list->allocated(), i + 1);
   }

@@ -174,32 +174,6 @@ void Dictionary::grow(Dictionary* dict, Runtime* runtime) {
   }
 }
 
-// List
-
-void List::appendAndGrow(
-    const Handle<List>& list,
-    const Handle<Object>& value,
-    Runtime* runtime) {
-  word len = list->allocated();
-  word cap = list->capacity();
-  if (len < cap) {
-    list->setAllocated(len + 1);
-    list->atPut(len, *value);
-    return;
-  }
-  word newCap = cap == 0 ? 4 : cap << 1;
-  Object* rawNewElems = runtime->newObjectArray(newCap);
-  ObjectArray* newElems = ObjectArray::cast(rawNewElems);
-  ObjectArray* curElems = ObjectArray::cast(list->items());
-  if (curElems != nullptr) {
-    ObjectArray::cast(curElems)->copyTo(newElems);
-  }
-
-  list->setItems(newElems);
-  list->setAllocated(len + 1);
-  list->atPut(len, *value);
-}
-
 // String
 
 bool String::equals(Object* that) {

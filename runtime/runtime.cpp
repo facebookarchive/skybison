@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
+#include "objects.h"
 #include "thread.h"
 #include "trampolines.h"
 #include "visitor.h"
@@ -199,6 +200,34 @@ void Runtime::createBuiltinsModule() {
   assert(builtins != nullptr);
   // Fill in builtins...
   addModule(builtins);
+}
+
+ObjectArray* Runtime::ensureCapacity(
+    const Handle<ObjectArray>& array,
+    word index) {
+  HandleScope scope;
+  word capacity = array->length();
+  if (index < capacity) {
+    return *array;
+  }
+  word newCapacity = (capacity == 0) ? kInitialEnsuredCapacity : capacity << 1;
+  Handle<ObjectArray> newArray(&scope, newObjectArray(newCapacity));
+  array->copyTo(*newArray);
+  return *newArray;
+}
+
+void Runtime::appendToList(
+    const Handle<List>& list,
+    const Handle<Object>& value) {
+  HandleScope scope;
+  word index = list->allocated();
+  Handle<ObjectArray> items(&scope, list->items());
+  Handle<ObjectArray> newItems(&scope, ensureCapacity(items, index));
+  if (*items != *newItems) {
+    list->setItems(*newItems);
+  }
+  list->setAllocated(index + 1);
+  list->atPut(index, *value);
 }
 
 } // namespace python
