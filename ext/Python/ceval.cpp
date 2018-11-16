@@ -2,10 +2,6 @@
 
 namespace python {
 
-struct PyFrameObject;
-struct PyThreadState;
-typedef int (*Py_tracefunc)(PyObject*, struct _frame*, int, PyObject*);
-
 PY_EXPORT PyObject* PyEval_GetBuiltins() {
   UNIMPLEMENTED("PyEval_GetBuiltins");
 }

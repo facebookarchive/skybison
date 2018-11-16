@@ -2,8 +2,6 @@
 
 namespace python {
 
-struct PyArena;
-
 PY_EXPORT int PyArena_AddPyObject(PyArena* /* a */, PyObject* /* j */) {
   UNIMPLEMENTED("PyArena_AddPyObject");
 }

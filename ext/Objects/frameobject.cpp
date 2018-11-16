@@ -2,10 +2,6 @@
 
 namespace python {
 
-struct PyFrameObject;
-struct PyThreadState;
-struct PyCodeObject;
-
 PY_EXPORT void PyFrame_FastToLocals(PyFrameObject* /* f */) {
   UNIMPLEMENTED("PyFrame_FastToLocals");
 }

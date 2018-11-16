@@ -2,8 +2,6 @@
 
 namespace python {
 
-typedef void (*PyCapsule_Destructor)(PyObject*);
-
 PY_EXPORT void* PyCapsule_GetContext(PyObject* /* o */) {
   UNIMPLEMENTED("PyCapsule_GetContext");
 }

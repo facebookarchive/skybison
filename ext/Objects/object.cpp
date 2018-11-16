@@ -5,8 +5,6 @@
 
 namespace python {
 
-struct _Py_Identifier;
-
 PY_EXPORT PyObject* PyNone_Ptr() {
   return ApiHandle::fromBorrowedObject(NoneType::object());
 }

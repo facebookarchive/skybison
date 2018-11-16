@@ -3,8 +3,6 @@
 
 namespace python {
 
-struct node;
-
 PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
   // TODO(eelizondo): Implement the usage of flags
   if (flags != nullptr) {
@@ -31,21 +29,21 @@ PY_EXPORT void PyErr_PrintEx(int /* s */) { UNIMPLEMENTED("PyErr_PrintEx"); }
 
 PY_EXPORT int PyOS_CheckStack() { UNIMPLEMENTED("PyOS_CheckStack"); }
 
-PY_EXPORT node* PyParser_SimpleParseFileFlags(FILE* /* p */,
-                                              const char* /* e */, int /* t */,
-                                              int /* s */) {
+PY_EXPORT struct _node* PyParser_SimpleParseFileFlags(FILE* /* p */,
+                                                      const char* /* e */,
+                                                      int /* t */,
+                                                      int /* s */) {
   UNIMPLEMENTED("PyParser_SimpleParseFileFlags");
 }
 
-PY_EXPORT node* PyParser_SimpleParseStringFlags(const char* /* r */,
-                                                int /* t */, int /* s */) {
+PY_EXPORT struct _node* PyParser_SimpleParseStringFlags(const char* /* r */,
+                                                        int /* t */,
+                                                        int /* s */) {
   UNIMPLEMENTED("PyParser_SimpleParseStringFlags");
 }
 
-PY_EXPORT node* PyParser_SimpleParseStringFlagsFilename(const char* /* r */,
-                                                        const char* /* e */,
-                                                        int /* t */,
-                                                        int /* s */) {
+PY_EXPORT struct _node* PyParser_SimpleParseStringFlagsFilename(
+    const char* /* r */, const char* /* e */, int /* t */, int /* s */) {
   UNIMPLEMENTED("PyParser_SimpleParseStringFlagsFilename");
 }
 

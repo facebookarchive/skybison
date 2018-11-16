@@ -19,9 +19,6 @@ int Py_VerboseFlag = 0;
 
 namespace python {
 
-struct PyThreadState;
-typedef void (*PyOS_sighandler_t)(int);
-
 PY_EXPORT void Py_Initialize() { new Runtime; }
 
 PY_EXPORT int Py_FinalizeEx() {

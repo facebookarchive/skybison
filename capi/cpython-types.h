@@ -320,6 +320,46 @@ typedef struct {
 typedef int Py_UCS4;
 typedef wchar_t Py_UNICODE;
 
+typedef struct {
+  int slot;    /* slot id, see below */
+  void* pfunc; /* function pointer */
+} PyType_Slot;
+
+typedef struct {
+  const char* name;
+  int basicsize;
+  int itemsize;
+  unsigned int flags;
+  PyType_Slot* slots; /* terminated by slot==0. */
+} PyType_Spec;
+
+typedef struct PyStructSequence_Field {
+  char* name;
+  char* doc;
+} PyStructSequence_Field;
+
+typedef struct PyStructSequence_Desc {
+  char* name;
+  char* doc;
+  struct PyStructSequence_Field* fields;
+  int n_in_sequence;
+} PyStructSequence_Desc;
+
+struct _Py_Identifier;
+struct _node;
+
+// The following types are intentionally incomplete to make it impossible to
+// dereference the objects
+typedef struct _arena PyArena;
+typedef struct _frame PyFrameObject;
+typedef struct _code PyCodeObject;
+typedef struct _is PyInterpreterState;
+typedef struct _ts PyThreadState;
+
+typedef void (*PyOS_sighandler_t)(int);
+typedef void (*PyCapsule_Destructor)(PyObject*);
+typedef int (*Py_tracefunc)(PyObject*, PyFrameObject*, int, PyObject*);
+
 #ifdef __cplusplus
 }
 #endif

@@ -2,8 +2,6 @@
 
 namespace python {
 
-struct PyInterpreterState;
-struct PyThreadState;
 typedef enum { PyGILState_LOCKED, PyGILState_UNLOCKED } PyGILState_STATE;
 
 PY_EXPORT PyGILState_STATE PyGILState_Ensure() {
@@ -63,8 +61,7 @@ PY_EXPORT PyThreadState* PyThreadState_New(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyThreadState_New");
 }
 
-PY_EXPORT int PyThreadState_SetAsyncExc(unsigned long /* d */,
-                                        PyObject* /* c */) {
+PY_EXPORT int PyThreadState_SetAsyncExc(long /* d */, PyObject* /* c */) {
   UNIMPLEMENTED("PyThreadState_SetAsyncExc");
 }
 

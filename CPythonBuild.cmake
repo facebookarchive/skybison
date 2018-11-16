@@ -88,9 +88,7 @@ set(
   "${CPYTHON_DIR}/Modules/_io/iobase.c"
   "${CPYTHON_DIR}/Modules/_io/stringio.c"
   "${CPYTHON_DIR}/Modules/_io/textio.c"
-  "${CPYTHON_DIR}/Modules/_json.c"
   "${CPYTHON_DIR}/Modules/_localemodule.c"
-  "${CPYTHON_DIR}/Modules/_lsprof.c"
   "${CPYTHON_DIR}/Modules/_math.c"
   "${CPYTHON_DIR}/Modules/_math.h"
   "${CPYTHON_DIR}/Modules/_opcode.c"
@@ -103,8 +101,6 @@ set(
   "${CPYTHON_DIR}/Modules/_testbuffer.c"
   "${CPYTHON_DIR}/Modules/_testimportmultiple.c"
   "${CPYTHON_DIR}/Modules/_testmultiphase.c"
-  "${CPYTHON_DIR}/Modules/_threadmodule.c"
-  "${CPYTHON_DIR}/Modules/_tracemalloc.c"
   "${CPYTHON_DIR}/Modules/_weakref.c"
   "${CPYTHON_DIR}/Modules/addrinfo.h"
   "${CPYTHON_DIR}/Modules/arraymodule.c"
@@ -114,7 +110,6 @@ set(
   "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_cn.c"
   "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_hk.c"
   "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_iso2022.c"
-  "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_jp.c"
   "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_kr.c"
   "${CPYTHON_DIR}/Modules/cjkcodecs/_codecs_tw.c"
   "${CPYTHON_DIR}/Modules/cjkcodecs/alg_jisx0201.h"
@@ -166,7 +161,6 @@ set(
   "${CPYTHON_DIR}/Modules/clinic/zlibmodule.c.h"
   "${CPYTHON_DIR}/Modules/cmathmodule.c"
   "${CPYTHON_DIR}/Modules/errnomodule.c"
-  "${CPYTHON_DIR}/Modules/faulthandler.c"
   "${CPYTHON_DIR}/Modules/fcntlmodule.c"
   "${CPYTHON_DIR}/Modules/fpectlmodule.c"
   "${CPYTHON_DIR}/Modules/fpetestmodule.c"
@@ -208,8 +202,7 @@ set(
   "${CPYTHON_DIR}/Modules/unicodename_db.h"
   "${CPYTHON_DIR}/Modules/xxlimited.c"
   "${CPYTHON_DIR}/Modules/xxmodule.c"
-  "${CPYTHON_DIR}/Modules/xxsubtype.c"
-  "${CPYTHON_DIR}/Modules/zipimport.c")
+  "${CPYTHON_DIR}/Modules/xxsubtype.c")
 
 set_property(
   SOURCE ${CPYTHON_GEN_DIR}/Python/dynload_shlib.c

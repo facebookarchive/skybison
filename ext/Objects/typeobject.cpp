@@ -12,9 +12,6 @@
 
 namespace python {
 
-struct PyType_Spec;
-struct _Py_Identifier;
-
 PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isType();
 }

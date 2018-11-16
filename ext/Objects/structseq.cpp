@@ -2,8 +2,6 @@
 
 namespace python {
 
-struct PyStructSequence_Desc;
-
 PY_EXPORT int PyStructSequence_InitType2(PyTypeObject* /* e */,
                                          PyStructSequence_Desc* /* c */) {
   UNIMPLEMENTED("PyStructSequence_InitType2");
