@@ -65,6 +65,12 @@ class ApiHandle {
   static const long kBorrowedBit = 1L << 31;
 };
 
+// Builtin Extension Types
+enum class ExtensionTypes {
+  kType = 0,
+  kBaseObject = 1,
+};
+
 class Runtime {
  public:
   class NewValueCellCallback : public Callback<Object*> {
@@ -525,6 +531,16 @@ class Runtime {
   // Returns whether object's class provides a __get__ method
   bool isNonDataDescriptor(Thread* thread, const Handle<Object>& object);
 
+  // Returns a pointer of an initialized PyTypeObject
+  void* builtinExtensionTypes(int type) {
+    return builtin_extension_types_[type];
+  }
+
+  // Saves an initialized PyTypeObject
+  void addBuiltinExtensionType(void* static_extension) {
+    builtin_extension_types_.push_back(static_extension);
+  }
+
  private:
   void initializeThreads();
   void initializeClasses();
@@ -723,7 +739,7 @@ class Runtime {
 
   Symbols* symbols_;
 
-  Vector<void*> apihandle_store_;
+  Vector<void*> builtin_extension_types_;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

@@ -1,4 +1,3 @@
-
 namespace python {
 
 struct ModuleInitializer {
@@ -17,12 +16,13 @@ ModuleInitializer kModuleInitializers[] = {
     {nullptr, nullptr},
 };
 
-void initialize_PyBaseObject_Type();
-void initialize_PyType_Type();
+void PyType_Type_Init();
+void PyBaseObject_Type_Init();
 
+// Order must match python::ExtensionTypes
 ExtensionTypeInitializer kExtensionTypeInitializers[] = {
-    {initialize_PyBaseObject_Type},
-    {initialize_PyType_Type},
+    {PyType_Type_Init},
+    {PyBaseObject_Type_Init},
     {nullptr},
 };
 

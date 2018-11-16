@@ -59,6 +59,12 @@ Runtime::Runtime(word heap_size)
 Runtime::Runtime() : Runtime(64 * MiB) {}
 
 Runtime::~Runtime() {
+  // TODO(T30392425): This is an ugly and fragile workaround for having multiple
+  // runtimes created and destroyed by a single thread.
+  if (Thread::currentThread() == nullptr) {
+    CHECK(threads_ != nullptr, "the runtime does not have any threads");
+    Thread::setCurrentThread(threads_);
+  }
   deallocApiHandles();
   for (Thread* thread = threads_; thread != nullptr;) {
     if (thread == Thread::currentThread()) {
@@ -70,7 +76,8 @@ Runtime::~Runtime() {
     thread = thread->next();
     delete prev;
   }
-  for (void* ptr : apihandle_store_) {
+  threads_ = nullptr;
+  for (void* ptr : builtin_extension_types_) {
     std::free(ptr);
   }
   delete symbols_;

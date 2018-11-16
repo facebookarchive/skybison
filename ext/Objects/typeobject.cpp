@@ -12,10 +12,11 @@
 
 namespace python {
 
-PyTypeObject PyType_Type;
-void initialize_PyType_Type() {
-  PyType_Type = {
-      PyVarObject_HEAD_INIT(&PyType_Type, 0) "type", /* tp_name */
+void PyType_Type_Init(void) {
+  PyTypeObject* pytype_type =
+      static_cast<PyTypeObject*>(std::malloc(sizeof(PyTypeObject)));
+  *pytype_type = {
+      PyVarObject_HEAD_INIT(pytype_type, 0) "type", /* tp_name */
       sizeof(PyHeapTypeObject), /* tp_basicsize */
       0, /* tp_itemsize */
       0, /* tp_dealloc */
@@ -63,11 +64,23 @@ void initialize_PyType_Type() {
       0, /* tp_version_tag */
       0, /* tp_finalize */
   };
+
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  runtime->addBuiltinExtensionType(pytype_type);
 }
 
-PyTypeObject PyBaseObject_Type;
-void initialize_PyBaseObject_Type() {
-  PyBaseObject_Type = {
+PyTypeObject* PyType_Type_Ptr() {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  return static_cast<PyTypeObject*>(
+      runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kType)));
+}
+
+void PyBaseObject_Type_Init(void) {
+  PyTypeObject* pybaseobject_type =
+      static_cast<PyTypeObject*>(std::malloc(sizeof(PyTypeObject)));
+  *pybaseobject_type = {
       PyVarObject_HEAD_INIT(&PyType_Type, 0) "object", /* tp_name */
       sizeof(PyObject), /* tp_basicsize */
       0, /* tp_itemsize */
@@ -116,6 +129,17 @@ void initialize_PyBaseObject_Type() {
       0, /* tp_version_tag */
       0, /* tp_finalize */
   };
+
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  runtime->addBuiltinExtensionType(pybaseobject_type);
+}
+
+PyTypeObject* PyBaseObject_Type_Ptr() {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  return static_cast<PyTypeObject*>(runtime->builtinExtensionTypes(
+      static_cast<int>(ExtensionTypes::kBaseObject)));
 }
 
 extern "C" unsigned long PyType_GetFlags(PyTypeObject* type) {

@@ -486,8 +486,12 @@ PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
 #define PyObject_TypeCheck(ob, tp) \
     (Py_TYPE(ob) == (tp) || PyType_IsSubtype(Py_TYPE(ob), (tp)))
 
-PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
-PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
+PyAPI_FUNC(PyTypeObject*) PyType_Type_Ptr(void);
+#define PyType_Type (*PyType_Type_Ptr()) /* built-in 'type' */
+
+PyAPI_FUNC(PyTypeObject*) PyBaseObject_Type_Ptr(void);
+#define PyBaseObject_Type (*PyBaseObject_Type_Ptr()) /* built-in 'object' */
+
 PyAPI_DATA(PyTypeObject) PySuper_Type; /* built-in 'super' */
 
 PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject*);
