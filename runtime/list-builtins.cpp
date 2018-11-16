@@ -212,4 +212,57 @@ Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
   return thread->throwValueErrorFromCString("list.remove(x) x not in list");
 }
 
+Object* listSlice(Thread* thread, List* list, Slice* slice) {
+  word start, stop, step;
+  slice->unpack(&start, &stop, &step);
+  word length = Slice::adjustIndices(list->allocated(), &start, &stop, step);
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Handle<ObjectArray> items(&scope, runtime->newObjectArray(length));
+  for (word i = 0, index = start; i < length; i++, index += step) {
+    items->atPut(i, list->at(index));
+  }
+
+  Handle<List> result(&scope, runtime->newList());
+  result->setItems(*items);
+  result->setAllocated(items->length());
+  return *result;
+}
+
+Object* builtinListGetItem(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
+    return thread->throwTypeErrorFromCString(
+        "__getitem__() must be called with a list instance as the first "
+        "argument");
+  }
+
+  Handle<List> list(&scope, *list_or_error);
+  Object* index = args.get(1);
+  if (index->isSmallInteger()) {
+    word idx = SmallInteger::cast(index)->value();
+    if (idx < 0) {
+      idx = list->allocated() - idx;
+    }
+    if (idx < 0 || idx >= list->allocated()) {
+      return thread->throwIndexErrorFromCString("list index out of range");
+    }
+    return list->at(idx);
+  } else if (index->isSlice()) {
+    Handle<Slice> slice(&scope, Slice::cast(index));
+    return listSlice(thread, *list, *slice);
+  } else {
+    return thread->throwTypeErrorFromCString(
+        "list indices must be integers or slices");
+  }
+}
+
 }  // namespace python

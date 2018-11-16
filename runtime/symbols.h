@@ -24,6 +24,7 @@ class Runtime;
   V(DunderFloordiv, "__floordiv__")                                            \
   V(DunderGe, "__ge__")                                                        \
   V(DunderGet, "__get__")                                                      \
+  V(DunderGetItem, "__getitem__")                                              \
   V(DunderGt, "__gt__")                                                        \
   V(DunderIadd, "__iadd__")                                                    \
   V(DunderIand, "__iand__")                                                    \

@@ -62,4 +62,26 @@ Object* builtinDictionaryLen(Thread* thread, Frame* frame, word nargs) {
       "'__len__' requires a 'dict' object");
 }
 
+Object* builtinDictionaryGetItem(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> key(&scope, args.get(1));
+  if (self->isDictionary()) {
+    Handle<Dictionary> dict(&scope, *self);
+    Handle<Object> value(&scope, thread->runtime()->dictionaryAt(dict, key));
+    if (value->isError()) {
+      return thread->throwKeyErrorFromCString("KeyError");
+    }
+    return *value;
+  }
+  // TODO(jeethu): handle user-defined subtypes of dictionary.
+  return thread->throwTypeErrorFromCString(
+      "__getitem__() must be called with a dict instance as the first "
+      "argument");
+}
+
 }  // namespace python

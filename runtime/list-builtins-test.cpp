@@ -232,4 +232,188 @@ print(l[0], l[3], l[5])
   ASSERT_EQ(output, "1 4 6\n6 4 1\n");
 }
 
+// Equivalent to evaluating "list(range(start, stop))" in Python
+static Object* listFromRange(word start, word stop) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> result(&scope, thread->runtime()->newList());
+  for (word i = start; i < stop; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    thread->runtime()->listAdd(result, value);
+  }
+  return *result;
+}
+
+TEST(ListBuiltinsTest, SlicePositiveStartIndex) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> list1(&scope, listFromRange(1, 6));
+
+  // Test [2:]
+  Handle<Object> start(&scope, SmallInteger::fromWord(2));
+  Handle<Object> stop(&scope, None::object());
+  Handle<Object> step(&scope, None::object());
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test(&scope, listSlice(thread, *list1, *slice));
+  ASSERT_EQ(test->allocated(), 3);
+  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 4);
+  EXPECT_EQ(SmallInteger::cast(test->at(2))->value(), 5);
+}
+
+TEST(ListBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> list1(&scope, listFromRange(1, 6));
+
+  // Test [-2:]
+  Handle<Object> start(&scope, SmallInteger::fromWord(-2));
+  Handle<Object> stop(&scope, None::object());
+  Handle<Object> step(&scope, None::object());
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test(&scope, listSlice(thread, *list1, *slice));
+  ASSERT_EQ(test->allocated(), 2);
+  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 4);
+  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 5);
+}
+
+TEST(ListBuiltinsTest, SlicePositiveStopIndex) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> list1(&scope, listFromRange(1, 6));
+
+  // Test [:2]
+  Handle<Object> start(&scope, None::object());
+  Handle<Object> stop(&scope, SmallInteger::fromWord(2));
+  Handle<Object> step(&scope, None::object());
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test(&scope, listSlice(thread, *list1, *slice));
+  ASSERT_EQ(test->allocated(), 2);
+  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 2);
+}
+
+TEST(ListBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> list1(&scope, listFromRange(1, 6));
+
+  // Test [:-2]
+  Handle<Object> start(&scope, None::object());
+  Handle<Object> stop(&scope, SmallInteger::fromWord(-2));
+  Handle<Object> step(&scope, None::object());
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test(&scope, listSlice(thread, *list1, *slice));
+  ASSERT_EQ(test->allocated(), 3);
+  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 2);
+  EXPECT_EQ(SmallInteger::cast(test->at(2))->value(), 3);
+}
+
+TEST(ListBuiltinsTest, SlicePositiveStep) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> list1(&scope, listFromRange(1, 6));
+
+  // Test [::2]
+  Handle<Object> start(&scope, None::object());
+  Handle<Object> stop(&scope, None::object());
+  Handle<Object> step(&scope, SmallInteger::fromWord(2));
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test(&scope, listSlice(thread, *list1, *slice));
+  ASSERT_EQ(test->allocated(), 3);
+  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(test->at(2))->value(), 5);
+}
+
+TEST(ListBuiltinsTest, SliceNegativeStepReversesOrder) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> list1(&scope, listFromRange(1, 6));
+
+  // Test [::-2]
+  Handle<Object> start(&scope, None::object());
+  Handle<Object> stop(&scope, None::object());
+  Handle<Object> step(&scope, SmallInteger::fromWord(-2));
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test(&scope, listSlice(thread, *list1, *slice));
+  ASSERT_EQ(test->allocated(), 3);
+  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 5);
+  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(test->at(2))->value(), 1);
+}
+
+TEST(ListBuiltinsTest, SliceStartOutOfBounds) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> list1(&scope, listFromRange(1, 6));
+
+  // Test [10::]
+  Handle<Object> start(&scope, SmallInteger::fromWord(10));
+  Handle<Object> stop(&scope, None::object());
+  Handle<Object> step(&scope, None::object());
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test(&scope, listSlice(thread, *list1, *slice));
+  ASSERT_EQ(test->allocated(), 0);
+}
+
+TEST(ListBuiltinsTest, SliceStopOutOfBounds) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> list1(&scope, listFromRange(1, 6));
+
+  // Test [:10]
+  Handle<Object> start(&scope, None::object());
+  Handle<Object> stop(&scope, SmallInteger::fromWord(10));
+  Handle<Object> step(&scope, None::object());
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test(&scope, listSlice(thread, *list1, *slice));
+  ASSERT_EQ(test->allocated(), 5);
+  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(test->at(4))->value(), 5);
+}
+
+TEST(ListBuiltinsTest, SliceStepOutOfBounds) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> list1(&scope, listFromRange(1, 6));
+
+  // Test [::10]
+  Handle<Object> start(&scope, None::object());
+  Handle<Object> stop(&scope, None::object());
+  Handle<Object> step(&scope, SmallInteger::fromWord(10));
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test(&scope, listSlice(thread, *list1, *slice));
+  ASSERT_EQ(test->allocated(), 1);
+  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
+}
+
+TEST(ListBuiltinsTest, IdenticalSliceIsCopy) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<List> list1(&scope, listFromRange(1, 6));
+
+  // Test: t[::] is t
+  Handle<Object> start(&scope, None::object());
+  Handle<Object> stop(&scope, None::object());
+  Handle<Object> step(&scope, None::object());
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test(&scope, listSlice(thread, *list1, *slice));
+  ASSERT_EQ(test->allocated(), 5);
+  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(test->at(4))->value(), 5);
+  ASSERT_NE(*test, *list1);
+}
+
 }  // namespace python

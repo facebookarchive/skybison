@@ -1730,17 +1730,6 @@ print(a[1])
   EXPECT_DEATH(runtime.runFromCString(src1), "KeyError");
 }
 
-TEST(ThreadTest, SubscriptTuple) {
-  const char* src = R"(
-a = 1
-b = (a, 2)
-print(b[0])
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "1\n");
-}
-
 TEST(ThreadTest, BuildDictNonLiteralKey) {
   const char* src = R"(
 b = "foo"

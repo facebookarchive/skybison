@@ -39,4 +39,52 @@ Object* builtinTupleEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* tupleSlice(Thread* thread, ObjectArray* tuple, Slice* slice) {
+  word start, stop, step;
+  slice->unpack(&start, &stop, &step);
+  word length = Slice::adjustIndices(tuple->length(), &start, &stop, step);
+  if (start == 0 && stop >= tuple->length() && step == 1) {
+    return tuple;
+  }
+
+  HandleScope scope(thread);
+  Handle<ObjectArray> items(&scope, thread->runtime()->newObjectArray(length));
+  for (word i = 0, index = start; i < length; i++, index += step) {
+    items->atPut(i, tuple->at(index));
+  }
+  return *items;
+}
+
+Object* builtinTupleGetItem(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (self->isObjectArray()) {
+    Handle<ObjectArray> tuple(&scope, *self);
+    Object* index = args.get(1);
+    if (index->isSmallInteger()) {
+      word idx = SmallInteger::cast(index)->value();
+      if (idx < 0) {
+        idx = tuple->length() - idx;
+      }
+      if (idx < 0 || idx >= tuple->length()) {
+        return thread->throwIndexErrorFromCString("tuple index out of range");
+      }
+      return tuple->at(idx);
+    } else if (index->isSlice()) {
+      Handle<Slice> slice(&scope, Slice::cast(index));
+      return tupleSlice(thread, *tuple, *slice);
+    }
+    return thread->throwTypeErrorFromCString(
+        "tuple indices must be integers or slices");
+  }
+  // TODO(jeethu): handle user-defined subtypes of tuple.
+  return thread->throwTypeErrorFromCString(
+      "__getitem__() must be called with a tuple instance as the first "
+      "argument");
+}
+
 }  // namespace python

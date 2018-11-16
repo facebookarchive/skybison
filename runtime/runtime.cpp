@@ -820,6 +820,9 @@ void Runtime::initializeStrClass() {
   classAddBuiltinFunction(type, symbols()->DunderGe(),
                           nativeTrampoline<builtinStringGe>);
 
+  classAddBuiltinFunction(type, symbols()->DunderGetItem(),
+                          nativeTrampoline<builtinStringGetItem>);
+
   classAddBuiltinFunction(type, symbols()->DunderGt(),
                           nativeTrampoline<builtinStringGt>);
 
@@ -839,6 +842,8 @@ void Runtime::initializeObjectArrayClass() {
                      initializeHeapClass("tuple", LayoutId::kObjectArray));
   classAddBuiltinFunction(type, symbols()->DunderEq(),
                           nativeTrampoline<builtinTupleEq>);
+  classAddBuiltinFunction(type, symbols()->DunderGetItem(),
+                          nativeTrampoline<builtinTupleGetItem>);
 }
 
 void Runtime::initializeDictClass() {
@@ -847,6 +852,10 @@ void Runtime::initializeDictClass() {
                           initializeHeapClass("dict", LayoutId::kDictionary));
   classAddBuiltinFunction(dict_type, symbols()->DunderEq(),
                           nativeTrampoline<builtinDictionaryEq>);
+
+  classAddBuiltinFunction(dict_type, symbols()->DunderGetItem(),
+                          nativeTrampoline<builtinDictionaryGetItem>);
+
   classAddBuiltinFunction(dict_type, symbols()->DunderLen(),
                           nativeTrampoline<builtinDictionaryLen>);
 }
@@ -860,6 +869,9 @@ void Runtime::initializeListClass() {
 
   classAddBuiltinFunction(list, symbols()->Append(),
                           nativeTrampoline<builtinListAppend>);
+
+  classAddBuiltinFunction(list, symbols()->DunderGetItem(),
+                          nativeTrampoline<builtinListGetItem>);
 
   classAddBuiltinFunction(list, symbols()->DunderLen(),
                           nativeTrampoline<builtinListLen>);
@@ -1665,26 +1677,6 @@ Object* Runtime::listReplicate(Thread* thread, const Handle<List>& list,
       items->atPut((i * len) + j, list->at(j));
     }
   }
-  Handle<List> result(&scope, newList());
-  result->setItems(*items);
-  result->setAllocated(items->length());
-  return *result;
-}
-
-Object* Runtime::listSlice(const Handle<List>& list,
-                           const Handle<Slice>& slice) {
-  word start, stop, step;
-  slice->unpack(&start, &stop, &step);
-  word length = Slice::adjustIndices(list->allocated(), &start, &stop, step);
-
-  HandleScope scope;
-  Handle<ObjectArray> items(&scope, newObjectArray(length));
-  word index = start;
-  for (word i = 0; i < length; i++) {
-    items->atPut(i, list->at(index));
-    index += step;
-  }
-
   Handle<List> result(&scope, newList());
   result->setItems(*items);
   result->setAllocated(items->length());

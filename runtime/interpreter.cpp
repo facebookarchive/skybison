@@ -582,44 +582,23 @@ void Interpreter::doBinarySubtract(Context* ctx, word) {
 void Interpreter::doBinarySubscr(Context* ctx, word) {
   // TODO: The implementation of the {BINARY,STORE}_SUBSCR opcodes are
   // enough to get richards working.
-  HandleScope scope;
+  HandleScope scope(ctx->thread);
+  Runtime* runtime = ctx->thread->runtime();
   Handle<Object> key(&scope, ctx->frame->popValue());
   Handle<Object> container(&scope, ctx->frame->popValue());
   if (container->isInstance()) {
     container = ctx->thread->runtime()->instanceDelegate(container);
   }
-  if (container->isList()) {
-    if (key->isSmallInteger()) {
-      word idx = SmallInteger::cast(*key)->value();
-      ctx->frame->pushValue(List::cast(*container)->at(idx));
-    } else if (key->isSlice()) {  // slice as key: custom behavior
-      Handle<Slice> slice(&scope, *key);
-      Handle<List> list(&scope, *container);
-      ctx->frame->pushValue(ctx->thread->runtime()->listSlice(list, slice));
-    }
-  } else if (container->isDictionary()) {
-    Handle<Dictionary> dict(&scope, *container);
-    Handle<Object> value(&scope,
-                         ctx->thread->runtime()->dictionaryAt(dict, key));
-    CHECK(!value->isError(), "KeyError");
-    ctx->frame->pushValue(*value);
-  } else if (container->isObjectArray()) {
-    word idx = SmallInteger::cast(*key)->value();
-    ctx->frame->pushValue(ObjectArray::cast(*container)->at(idx));
-  } else if (container->isString()) {
-    // TODO: throw TypeError & IndexError
-    if (!key->isInteger()) {
-      UNIMPLEMENTED("TypeError: string indices must be integers");
-    }
-    if (!key->isSmallInteger()) {
-      UNIMPLEMENTED("IndexError: cannot fit 'int' into an index-sized integer");
-    }
-    word idx = SmallInteger::cast(*key)->value();
-    byte c = String::cast(*container)->charAt(idx);  // TODO: u8charAt?
-    ctx->frame->pushValue(
-        SmallString::fromBytes(View<byte>(&c, 1)));  // safe for SmallString
+  Handle<Object> selector(&scope, runtime->symbols()->DunderGetItem());
+  Handle<Class> type(&scope, runtime->classOf(*container));
+  Handle<Object> getitem(&scope,
+                         runtime->lookupNameInMro(ctx->thread, type, selector));
+  if (getitem->isError()) {
+    ctx->frame->pushValue(ctx->thread->throwTypeErrorFromCString(
+        "object does not support indexing"));
   } else {
-    UNIMPLEMENTED("Custom Subscription");
+    ctx->frame->pushValue(
+        callMethod2(ctx->thread, ctx->frame, getitem, container, key));
   }
 }
 

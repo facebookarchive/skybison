@@ -92,4 +92,37 @@ Object* builtinStringNe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+
+  if (self->isString()) {
+    Handle<String> string(&scope, *self);
+    Object* index = args.get(1);
+    if (index->isSmallInteger()) {
+      word idx = SmallInteger::cast(index)->value();
+      if (idx < 0) {
+        idx = string->length() - idx;
+      }
+      if (idx < 0 || idx >= string->length()) {
+        return thread->throwIndexErrorFromCString("string index out of range");
+      }
+      byte c = string->charAt(idx);
+      return SmallString::fromBytes(View<byte>(&c, 1));
+    } else {
+      // TODO(jeethu): Add support for slicing strings
+      return thread->throwTypeErrorFromCString(
+          "string indices must be integers");
+    }
+  }
+  // TODO(jeethu): handle user-defined subtypes of string.
+  return thread->throwTypeErrorFromCString(
+      "__getitem__() must be called with a string instance as the first "
+      "argument");
+}
+
 }  // namespace python

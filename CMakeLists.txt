@@ -231,6 +231,7 @@ add_library(
   runtime/time-module-test.cpp
   runtime/tracked-allocation-test.cpp
   runtime/trampolines-test.cpp
+  runtime/tuple-builtins-test.cpp
   runtime/type-builtins-test.cpp
   runtime/utils-test.cpp
   runtime/vector-test.cpp)

@@ -215,7 +215,7 @@ Object* Thread::throwTypeError(Object* value) {
 }
 
 Object* Thread::throwTypeErrorFromCString(const char* message) {
-  return throwRuntimeError(runtime()->newStringFromCString(message));
+  return throwTypeError(runtime()->newStringFromCString(message));
 }
 
 // Convenience method for throwing a ValueError exception with an error message.
@@ -250,6 +250,16 @@ Object* Thread::throwKeyError(Object* value) {
 Object* Thread::throwKeyErrorFromCString(const char* message) {
   // TODO(jeethu): instantiate a KeyError object.
   return throwKeyError(runtime()->newStringFromCString(message));
+}
+
+Object* Thread::throwIndexError(Object* value) {
+  // TODO(jeethu): instantiate an IndexError object.
+  pending_exception_ = value;
+  return Error::object();
+}
+
+Object* Thread::throwIndexErrorFromCString(const char* message) {
+  return throwIndexError(runtime()->newStringFromCString(message));
 }
 
 void Thread::ignorePendingException() {
