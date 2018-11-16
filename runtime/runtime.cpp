@@ -19,6 +19,7 @@
 #include "exception-builtins.h"
 #include "float-builtins.h"
 #include "frame.h"
+#include "frozen-modules.h"
 #include "function-builtins.h"
 #include "globals.h"
 #include "handles.h"
@@ -1636,6 +1637,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
 
   addModule(module);
+  executeModule(kBuiltinsModuleData, module);
 }
 
 void Runtime::moduleAddBuiltinType(const Handle<Module>& module, SymbolId name,

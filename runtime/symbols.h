@@ -95,6 +95,7 @@ class Runtime;
   V(BaseException, "BaseException")                                            \
   V(BitLength, "bit_length")                                                   \
   V(Bool, "bool")                                                              \
+  V(Bootstrap, "bootstrap")                                                    \
   V(Builtins, "builtins")                                                      \
   V(ByteArray, "bytearray")                                                    \
   V(Cause, "cause")                                                            \

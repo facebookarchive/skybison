@@ -77,34 +77,62 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
 
   Handle<Function> body(&scope, args.get(0));
   Handle<Object> name(&scope, args.get(1));
-  Handle<Object> kw_val(&scope, args.getKw(runtime->symbols()->Metaclass()));
-  if (kw_val->isError()) {
-    return thread->throwTypeErrorFromCString("metaclass not found.");
+
+  Handle<Object> bootstrap(&scope, args.getKw(runtime->symbols()->Bootstrap()));
+  if (bootstrap->isError()) {
+    bootstrap = Bool::falseObj();
   }
-  Handle<Type> metaclass(&scope, *kw_val);
-  Handle<ObjectArray> bases(&scope,
-                            runtime->newObjectArray(args.numArgs() - 2));
+
+  Handle<Object> metaclass(&scope, args.getKw(runtime->symbols()->Metaclass()));
+  if (metaclass->isError()) {
+    metaclass = runtime->typeAt(LayoutId::kType);
+  }
+
+  Handle<ObjectArray> bases(
+      &scope, runtime->newObjectArray(args.numArgs() - args.numKeywords() - 1));
   for (word i = 0, j = 2; j < args.numArgs(); i++, j++) {
     bases->atPut(i, args.get(j));
   }
 
-  Handle<Dict> dict(&scope, runtime->newDict());
-  Handle<Object> key(&scope, runtime->symbols()->DunderName());
-  runtime->dictAtPutInValueCell(dict, key, name);
+  Handle<Object> dict_obj(&scope, None::object());
+  Handle<Object> type_obj(&scope, None::object());
+  if (*bootstrap == Bool::falseObj()) {
+    // An ordinary class initialization creates a new class dictionary.
+    dict_obj = runtime->newDict();
+  } else {
+    // A bootstrap class initialization uses the existing class dictionary.
+    CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
+    Handle<Dict> globals(&scope, frame->previousFrame()->globals());
+    Handle<ValueCell> value_cell(&scope, runtime->dictAt(globals, name));
+    CHECK(value_cell->value()->isType(), "name is not bound to a type object");
+    Handle<Type> type(&scope, value_cell->value());
+    type_obj = *type;
+    dict_obj = type->dict();
+  }
+
   // TODO(zekun): might need to do some kind of callback here and we want
   // backtraces to work correctly.  The key to doing that would be to put some
   // state on the stack in between the the incoming arguments from the builtin'
   // caller and the on-stack state for the class body function call.
-  thread->runClassFunction(*body, *dict);
+  thread->runClassFunction(*body, *dict_obj);
 
+  // A bootstrap class initialization is complete at this point.  Add a type
+  // name to the type dictionary and return the initialized type object.
+  if (*bootstrap == Bool::trueObj()) {
+    Handle<Object> key(&scope, runtime->symbols()->DunderName());
+    Handle<Dict> dict(&scope, *dict_obj);
+    runtime->dictAtPutInValueCell(dict, key, name);
+    return *type_obj;
+  }
+
+  Handle<Type> type(&scope, *metaclass);
   Handle<Function> dunder_call(
-      &scope,
-      runtime->lookupSymbolInMro(thread, metaclass, SymbolId::kDunderCall));
+      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderCall));
   frame->pushValue(*dunder_call);
-  frame->pushValue(*metaclass);
+  frame->pushValue(*type);
   frame->pushValue(*name);
   frame->pushValue(*bases);
-  frame->pushValue(*dict);
+  frame->pushValue(*dict_obj);
   return Interpreter::call(thread, frame, 4);
 }
 

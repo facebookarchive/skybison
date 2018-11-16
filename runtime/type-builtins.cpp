@@ -88,6 +88,9 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
     Object* tmp;
     runtime->dictRemove(dict, class_cell_key, &tmp);
   }
+  Handle<Object> name_key(&scope, runtime->symbols()->DunderName());
+  runtime->dictAtPutInValueCell(dict, name_key, name);
+
   result->setDict(*dict);
 
   // Compute builtin base class

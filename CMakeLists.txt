@@ -61,6 +61,37 @@ target_include_directories(
   INTERFACE
   capi)
 
+set(
+  FROZEN_MODULE_INPUT
+  library/builtins.py)
+set(
+  FROZEN_MODULE_OUTPUT_DIR
+  ${CMAKE_BINARY_DIR}/bootstrap)
+set(
+  FROZEN_MODULE_OUTPUT
+  ${FROZEN_MODULE_OUTPUT_DIR}/frozen-modules.cpp
+  ${FROZEN_MODULE_OUTPUT_DIR}/frozen-modules.h)
+add_custom_command(
+  OUTPUT
+  ${FROZEN_MODULE_OUTPUT}
+  COMMAND
+  util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR} ${FROZEN_MODULE_INPUT}
+  WORKING_DIRECTORY
+  ${CMAKE_SOURCE_DIR}
+  DEPENDS util/freeze_modules.py ${FROZEN_MODULE_INPUT})
+add_custom_target(
+  frozen-sources
+  DEPENDS
+  ${FROZEN_MODULE_OUTPUT})
+add_library(
+  frozen-modules
+  STATIC
+  ${FROZEN_MODULE_OUTPUT})
+target_include_directories(
+  frozen-modules
+  INTERFACE
+  ${FROZEN_MODULE_OUTPUT_DIR})
+
 add_library(
   runtime
   STATIC
@@ -151,6 +182,7 @@ target_link_libraries(
   PUBLIC
   capi-headers
   PRIVATE
+  frozen-modules
   dl
   siphash)
 
