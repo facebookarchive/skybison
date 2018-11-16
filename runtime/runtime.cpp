@@ -92,12 +92,19 @@ Object* Runtime::newObjectArray(word length) {
 }
 
 Object* Runtime::newString(word length) {
+  if (length == 0) {
+    return empty_string_;
+  }
   return heap()->createString(length);
 }
 
 Object* Runtime::newStringFromCString(const char* c_string) {
   word length = strlen(c_string);
+  if (length == 0) {
+    return empty_string_;
+  }
   Object* result = newString(length);
+  assert(result != nullptr);
   for (word i = 0; i < length; i++) {
     String::cast(result)->charAtPut(
         i, *reinterpret_cast<const byte*>(c_string + i));

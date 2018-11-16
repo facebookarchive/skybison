@@ -23,4 +23,18 @@ TEST(RuntimeTest, BuiltinsModuleExists) {
   ASSERT_TRUE(builtins->isModule());
 }
 
+TEST(RuntimeTest, NewString) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<String> empty0(&scope, runtime.newString(0));
+  EXPECT_EQ(empty0->length(), 0);
+
+  Handle<String> empty1(&scope, runtime.newString(0));
+  EXPECT_EQ(*empty0, *empty1);
+
+  Handle<String> empty2(&scope, runtime.newStringFromCString("\0"));
+  EXPECT_EQ(*empty0, *empty2);
+}
+
 } // namespace python
