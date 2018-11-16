@@ -17,8 +17,7 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> name(&scope, runtime->symbols()->DunderNew());
 
   // First, call __new__ to allocate a new instance.
-
-  if (!args.get(0)->isClass()) {
+  if (!runtime->isInstanceOfClass(args.get(0))) {
     return thread->throwTypeErrorFromCString(
         "'__new__' requires a 'class' object");
   }
@@ -57,17 +56,18 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Class> metatype(&scope, args.get(0));
+  LayoutId class_layout_id = Layout::cast(metatype->instanceLayout())->id();
   Handle<Object> name(&scope, args.get(1));
-  Handle<Class> result(&scope, runtime->newClass());
+  Handle<Class> result(&scope, runtime->newClassWithMetaclass(class_layout_id));
   result->setName(*name);
 
   // Compute MRO
   Handle<ObjectArray> parents(&scope, args.get(2));
-  Handle<Object> mro(&scope, computeMro(thread, result, parents));
-  if (mro->isError()) {
-    return *mro;
+  Handle<Object> maybe_mro(&scope, computeMro(thread, result, parents));
+  if (maybe_mro->isError()) {
+    return *maybe_mro;
   }
-  result->setMro(*mro);
+  result->setMro(*maybe_mro);
 
   Handle<Dictionary> dictionary(&scope, args.get(3));
   Handle<Object> class_cell_key(&scope, runtime->symbols()->DunderClassCell());
@@ -85,14 +85,21 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   layout->setDescribedClass(*result);
   result->setInstanceLayout(*layout);
 
+  // Copy down class flags from bases
+  Handle<ObjectArray> mro(&scope, *maybe_mro);
+  word flags = 0;
+  for (word i = 1; i < mro->length(); i++) {
+    Handle<Class> cur(&scope, mro->at(i));
+    flags |= SmallInteger::cast(cur->flags())->value();
+  }
+  result->setFlags(SmallInteger::fromWord(flags));
+
   // Initialize builtin base class
   result->setBuiltinBaseClass(runtime->computeBuiltinBaseClass(result));
-  Handle<Class> base(&scope, result->builtinBaseClass());
-  Handle<Class> list(&scope, thread->runtime()->classAt(LayoutId::kList));
-  if (Boolean::cast(thread->runtime()->isSubClass(base, list))->value()) {
-    result->setFlag(Class::Flag::kListSubclass);
+  if (result->hasFlag(Class::Flag::kListSubclass)) {
     layout->addDelegateSlot();
   }
+
   return *result;
 }
 

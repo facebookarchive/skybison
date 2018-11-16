@@ -2041,6 +2041,26 @@ class DataDescriptor:
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *klass);
 }
 
+TEST(GetClassAttributeTest, GetMetaclassAttribute) {
+  Runtime runtime;
+  const char* src = R"(
+class MyMeta(type):
+    attr = 'foo'
+
+class Foo(metaclass=MyMeta):
+    pass
+)";
+  runtime.runFromCString(src);
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> foo(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
+  Handle<Object> result(
+      &scope, runtime.attributeAt(Thread::currentThread(), foo, attr));
+  ASSERT_TRUE(result->isString());
+  EXPECT_PYSTRING_EQ(String::cast(*result), "foo");
+}
+
 // Fetch an unknown attribute
 TEST(InstanceAttributeDeathTest, GetMissing) {
   Runtime runtime;
@@ -2647,6 +2667,125 @@ def new_foo():
                             runtime.layoutAt(instance->header()->layoutId()));
   EXPECT_NE(*layout, *new_layout);
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, new_layout, attr, &info));
+}
+
+TEST(MetaclassTest, ClassWithTypeMetaclassIsConcreteClass) {
+  const char* src = R"(
+# This is equivalent to `class Foo(type)`
+class Foo(type, metaclass=type):
+    pass
+
+class Bar(Foo):
+    pass
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
+  EXPECT_TRUE(foo->isClass());
+
+  Handle<Object> bar(&scope, moduleAt(&runtime, main, "Bar"));
+  EXPECT_TRUE(bar->isClass());
+}
+
+TEST(MetaclassTest, ClassWithCustomMetaclassIsntConcreteClass) {
+  const char* src = R"(
+class MyMeta(type):
+    pass
+
+class Foo(type, metaclass=MyMeta):
+    pass
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
+  EXPECT_FALSE(foo->isClass());
+}
+
+TEST(MetaclassTest, ClassWithTypeMetaclassIsInstanceOfClass) {
+  const char* src = R"(
+class Foo(type):
+    pass
+
+class Bar(Foo):
+    pass
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
+  EXPECT_TRUE(runtime.isInstanceOfClass(*foo));
+
+  Handle<Object> bar(&scope, moduleAt(&runtime, main, "Bar"));
+  EXPECT_TRUE(runtime.isInstanceOfClass(*bar));
+}
+
+TEST(MetaclassTest, ClassWithCustomMetaclassIsInstanceOfClass) {
+  const char* src = R"(
+class MyMeta(type):
+    pass
+
+class Foo(type, metaclass=MyMeta):
+    pass
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
+  EXPECT_TRUE(runtime.isInstanceOfClass(*foo));
+}
+
+TEST(MetaclassTest, VerifyMetaclassHierarchy) {
+  const char* src = R"(
+class GrandMeta(type):
+    pass
+
+class ParentMeta(type, metaclass=GrandMeta):
+    pass
+
+class ChildMeta(type, metaclass=ParentMeta):
+    pass
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> type(&scope, runtime.classAt(LayoutId::kType));
+
+  Handle<Object> grand_meta(&scope, moduleAt(&runtime, main, "GrandMeta"));
+  EXPECT_EQ(runtime.classOf(*grand_meta), *type);
+
+  Handle<Object> parent_meta(&scope, moduleAt(&runtime, main, "ParentMeta"));
+  EXPECT_EQ(runtime.classOf(*parent_meta), *grand_meta);
+
+  Handle<Object> child_meta(&scope, moduleAt(&runtime, main, "ChildMeta"));
+  EXPECT_EQ(runtime.classOf(*child_meta), *parent_meta);
+}
+
+TEST(MetaclassTest, CallMetaclass) {
+  const char* src = R"(
+class MyMeta(type):
+    pass
+
+Foo = MyMeta('Foo', (), {})
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> mymeta(&scope, moduleAt(&runtime, main, "MyMeta"));
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
+  EXPECT_EQ(runtime.classOf(*foo), *mymeta);
+  EXPECT_FALSE(foo->isClass());
+  EXPECT_TRUE(runtime.isInstanceOfClass(*foo));
 }
 
 }  // namespace python

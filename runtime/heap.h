@@ -24,7 +24,7 @@ class Heap {
 
   Object* createByteArray(word length);
 
-  Object* createClass();
+  Object* createClass(LayoutId metaclass_id);
 
   Object* createClassMethod();
 

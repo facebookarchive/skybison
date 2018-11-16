@@ -588,7 +588,8 @@ class Class : public HeapObject {
     kListSubclass = 1 << 2,
     kStopIterationSubclass = 1 << 3,
     kSystemExitSubclass = 1 << 4,
-    kLast = kSystemExitSubclass,
+    kClassSubclass = 1 << 5,
+    kLast = kClassSubclass,
   };
   static_assert(Flag::kLast < SmallInteger::kMaxValue,
                 "Flags must be encodable in a SmallInteger");
@@ -2607,11 +2608,6 @@ inline void Class::setExtensionType(Object* pytype) {
 
 inline void Class::setBuiltinBaseClass(Object* base) {
   instanceVariableAtPut(kBuiltinBaseClassOffset, base);
-}
-
-inline Class* Class::cast(Object* object) {
-  DCHECK(object->isClass(), "invalid cast, expected class");
-  return reinterpret_cast<Class*>(object);
 }
 
 inline bool Class::isIntrinsicOrExtension() {

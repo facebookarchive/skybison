@@ -99,12 +99,11 @@ Object* Heap::createByteArray(word length) {
   return ByteArray::cast(result);
 }
 
-Object* Heap::createClass() {
+Object* Heap::createClass(LayoutId metaclass_id) {
   Object* raw = allocate(Class::allocationSize(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Class*>(raw);
-  result->setHeader(Header::from(Class::kSize / kPointerSize, 0,
-                                 LayoutId::kType,
+  result->setHeader(Header::from(Class::kSize / kPointerSize, 0, metaclass_id,
                                  ObjectFormat::kObjectInstance));
   result->initialize(Class::kSize, None::object());
   return Class::cast(result);

@@ -1348,8 +1348,8 @@ TEST(ThreadDeathTest, NativeExceptions) {
 
 static String* className(Object* obj) {
   HandleScope scope;
-  Handle<Class> cls(&scope, Class::cast(obj));
-  Handle<String> name(&scope, String::cast(cls->name()));
+  Handle<Class> cls(&scope, obj);
+  Handle<String> name(&scope, cls->name());
   return *name;
 }
 
@@ -2717,7 +2717,7 @@ c = a.hahaha
   runtime.runFromCString(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> bar(&scope, moduleAt(&runtime, main, "Bar"));
-  EXPECT_TRUE(bar->isClass());
+  EXPECT_TRUE(runtime.isInstanceOfClass(*bar));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_TRUE(runtime.classOf(*a) == *bar);
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));

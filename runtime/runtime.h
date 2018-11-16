@@ -50,6 +50,7 @@ class Runtime {
   Object* newByteArrayWithAll(View<byte> array);
 
   Object* newClass();
+  Object* newClassWithMetaclass(LayoutId metaclass_id);
 
   Object* newClassMethod();
 
@@ -444,6 +445,21 @@ class Runtime {
 
   bool hasSubClassFlag(Object* instance, Class::Flag flag) {
     return Class::cast(classAt(instance->layoutId()))->hasFlag(flag);
+  }
+
+  // Returns whether or not instance is an instance of Class or a subclass of
+  // Class
+  //
+  // This is equivalent to PyType_Check.
+  bool isInstanceOfClass(Object* instance) {
+    if (instance->isClass()) {
+      return true;
+    }
+    // The reinterpret_cast here is needed to avoid self-recursion when this is
+    // called by Class::cast(). It is safe, as classOf() is guaranteed to return
+    // a Class*.
+    return reinterpret_cast<Class*>(classOf(instance))
+        ->hasFlag(Class::Flag::kClassSubclass);
   }
 
   // Return true if obj is an instance of a subclass of klass

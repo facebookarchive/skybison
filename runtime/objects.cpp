@@ -1,5 +1,6 @@
 #include "objects.h"
 #include "runtime.h"
+#include "thread.h"
 
 #include <cstring>
 namespace python {
@@ -171,6 +172,13 @@ Object* WeakRef::spliceQueue(Object* tail1, Object* tail2) {
   WeakRef::cast(tail1)->setLink(head2);
   WeakRef::cast(tail2)->setLink(head1);
   return tail2;
+}
+
+Class* Class::cast(Object* object) {
+  DCHECK(object->isClass() ||
+             Thread::currentThread()->runtime()->isInstanceOfClass(object),
+         "invalid cast, expected class");
+  return reinterpret_cast<Class*>(object);
 }
 
 }  // namespace python

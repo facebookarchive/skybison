@@ -254,9 +254,11 @@ Object* Runtime::newByteArrayWithAll(View<byte> array) {
   return result;
 }
 
-Object* Runtime::newClass() {
+Object* Runtime::newClass() { return newClassWithMetaclass(LayoutId::kType); }
+
+Object* Runtime::newClassWithMetaclass(LayoutId metaclass_id) {
   HandleScope scope;
-  Handle<Class> result(&scope, heap()->createClass());
+  Handle<Class> result(&scope, heap()->createClass(metaclass_id));
   Handle<Dictionary> dict(&scope, newDictionary());
   result->setFlags(SmallInteger::fromWord(0));
   result->setDictionary(*dict);
@@ -1067,6 +1069,7 @@ void Runtime::initializeTypeClass() {
   Handle<Class> type(&scope,
                      addEmptyBuiltinClass(SymbolId::kType, LayoutId::kType,
                                           LayoutId::kObject));
+  type->setFlag(Class::Flag::kClassSubclass);
 
   classAddBuiltinFunction(type, SymbolId::kDunderCall,
                           nativeTrampoline<builtinTypeCall>);
@@ -2386,7 +2389,8 @@ Object* Runtime::attributeAt(Thread* thread, const Handle<Object>& receiver,
                              const Handle<Object>& name) {
   // A minimal implementation of getattr needed to get richards running.
   Object* result;
-  if (receiver->isClass()) {
+  HandleScope scope(thread);
+  if (isInstanceOfClass(*receiver)) {
     result = classGetAttr(thread, receiver, name);
   } else if (receiver->isModule()) {
     result = moduleGetAttr(thread, receiver, name);
@@ -2407,7 +2411,7 @@ Object* Runtime::attributeAtPut(Thread* thread, const Handle<Object>& receiver,
   Handle<Object> interned_name(&scope, internString(name));
   // A minimal implementation of setattr needed to get richards running.
   Object* result;
-  if (receiver->isClass()) {
+  if (isInstanceOfClass(*receiver)) {
     result = classSetAttr(thread, receiver, interned_name, value);
   } else if (receiver->isModule()) {
     result = moduleSetAttr(thread, receiver, interned_name, value);
