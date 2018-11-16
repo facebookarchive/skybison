@@ -31,3 +31,9 @@ class tuple(bootstrap=True):
             output += repr(self[i])
             i += 1
         return output + ")"
+
+
+class list(bootstrap=True):
+    def __init__(self, iterable=()):
+        self.extend(iterable)
+

@@ -9,6 +9,35 @@ namespace python {
 
 using namespace testing;
 
+TEST(ListBuiltinsTest, DunderInitFromList) {
+  Runtime runtime;
+
+  runtime.runFromCString(R"(
+a = list([1, 2])
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
+  ASSERT_EQ(a->allocated(), 2);
+  EXPECT_EQ(Int::cast(a->at(0))->asWord(), 1);
+  EXPECT_EQ(Int::cast(a->at(1))->asWord(), 2);
+}
+
+TEST(ListBuiltinsTest, NewListIsNotASingleton) {
+  Runtime runtime;
+
+  runtime.runFromCString(R"(
+a = list() is not list()
+b = list([1, 2]) is not list([1, 2])
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+}
+
 TEST(ListBuiltinsTest, AddToNonEmptyList) {
   Runtime runtime;
   HandleScope scope;
