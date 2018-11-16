@@ -127,8 +127,10 @@ doBuiltinPrint(const Arguments& args, word nargs, const Handle<Object>& end) {
       *builtinPrintStream << SmallInteger::cast(arg)->value();
     } else if (arg->isBoolean()) {
       *builtinPrintStream << (Boolean::cast(arg)->value() ? "True" : "False");
+    } else if (arg->isDouble()) {
+      *builtinPrintStream << Double::cast(arg)->value();
     } else {
-      std::abort();
+      UNIMPLEMENTED("Custom print unsupported.");
     }
     if ((i + 1) != nargs) {
       *builtinPrintStream << separator;

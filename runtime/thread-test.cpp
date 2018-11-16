@@ -1965,4 +1965,18 @@ print(a, b)
   EXPECT_EQ(output, "1 2\n3 4\n");
 }
 
+TEST(TheadTest, BinaryTrueDivide) {
+  const char* src = R"(
+a = 6
+b = 2
+print(a / b)
+a = 5
+b = 2
+print(a / b)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "3\n2.5\n");
+}
+
 } // namespace python

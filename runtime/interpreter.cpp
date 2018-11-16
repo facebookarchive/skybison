@@ -579,6 +579,28 @@ Result UNPACK_SEQUENCE(Context* ctx, word arg) {
   }
   return Result::CONTINUE;
 }
+Result BINARY_TRUE_DIVIDE(Context* ctx, word) {
+  HandleScope scope;
+  double dividend, divisor;
+  Handle<Object> right(&scope, *ctx->sp++);
+  Handle<Object> left(&scope, *ctx->sp++);
+  if (right->isSmallInteger()) {
+    dividend = SmallInteger::cast(*right)->value();
+  } else if (right->isDouble()) {
+    dividend = Double::cast(*right)->value();
+  } else {
+    UNIMPLEMENTED("Arbitrary object binary true divide not supported.");
+  }
+  if (left->isSmallInteger()) {
+    divisor = SmallInteger::cast(*left)->value();
+  } else if (left->isDouble()) {
+    divisor = Double::cast(*left)->value();
+  } else {
+    UNIMPLEMENTED("Arbitrary object binary true divide not supported.");
+  }
+  *--ctx->sp = ctx->thread->runtime()->newDouble(divisor / dividend);
+  return Result::CONTINUE;
+}
 
 using Op = Result (*)(Context*, word);
 Op opTable[256];
@@ -642,6 +664,7 @@ void Interpreter::initOpTable() {
   opTable[Bytecode::STORE_DEREF] = interpreter::STORE_DEREF;
   opTable[Bytecode::LOAD_DEREF] = interpreter::LOAD_DEREF;
   opTable[Bytecode::UNPACK_SEQUENCE] = interpreter::UNPACK_SEQUENCE;
+  opTable[Bytecode::BINARY_TRUE_DIVIDE] = interpreter::BINARY_TRUE_DIVIDE;
 }
 
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
