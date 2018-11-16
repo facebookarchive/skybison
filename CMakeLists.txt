@@ -73,6 +73,8 @@ add_library(
   runtime/callback.h
   runtime/capi-handles.cpp
   runtime/capi-handles.h
+  runtime/complex-builtins.cpp
+  runtime/complex-builtins.h
   runtime/descriptor-builtins.cpp
   runtime/descriptor-builtins.h
   runtime/dict-builtins.cpp
@@ -215,6 +217,7 @@ add_library(
   STATIC
   runtime/builtins-module-test.cpp
   runtime/capi-handles-test.cpp
+  runtime/complex-builtins-test.cpp
   runtime/descriptor-builtins-test.cpp
   runtime/exception-builtins-test.cpp
   runtime/float-builtins-test.cpp

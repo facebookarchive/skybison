@@ -98,6 +98,7 @@ class Runtime;
   V(Chr, "chr")                                                                \
   V(Classmethod, "classmethod")                                                \
   V(Code, "code")                                                              \
+  V(Complex, "complex")                                                        \
   V(Deleter, "deleter")                                                        \
   V(Dict, "dict")                                                              \
   V(Ellipsis, "ellipsis")                                                      \

@@ -13,6 +13,7 @@
 #include "builtins-module.h"
 #include "bytecode.h"
 #include "callback.h"
+#include "complex-builtins.h"
 #include "descriptor-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
@@ -982,6 +983,7 @@ void Runtime::initializeHeapClasses() {
                        LayoutId::kObject);
   initializeClassMethodClass();
   addEmptyBuiltinClass(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
+  ComplexBuiltins::initialize(this);
   initializeDictClass();
   addEmptyBuiltinClass(SymbolId::kEllipsis, LayoutId::kEllipsis,
                        LayoutId::kObject);
@@ -1629,6 +1631,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kBaseException,
                        LayoutId::kBaseException);
   moduleAddBuiltinType(module, SymbolId::kClassmethod, LayoutId::kClassMethod);
+  moduleAddBuiltinType(module, SymbolId::kComplex, LayoutId::kComplex);
   moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDict);
   moduleAddBuiltinType(module, SymbolId::kException, LayoutId::kException);
   moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kFloat);
