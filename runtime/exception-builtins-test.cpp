@@ -301,6 +301,27 @@ exc = StopIteration(4, 5, 6)
   EXPECT_EQ(args->at(2), SmallInt::fromWord(6));
 }
 
+TEST(ExceptionBuiltinsTest, NotImplementedErrorNoArguments) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+exc = NotImplementedError()
+exc_is_rt_error = issubclass(NotImplementedError, RuntimeError)
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<NotImplementedError> exc(&scope,
+                                  testing::moduleAt(&runtime, main, "exc"));
+  Handle<Bool> exc_is_rt_error(
+      &scope, testing::moduleAt(&runtime, main, "exc_is_rt_error"));
+
+  EXPECT_TRUE(
+      runtime.hasSubClassFlag(*exc, Type::Flag::kBaseExceptionSubclass));
+
+  EXPECT_TRUE(exc_is_rt_error->value());
+}
+
 TEST(ExceptionBuiltinsTest, SystemExitNoArguments) {
   Runtime runtime;
   HandleScope scope;

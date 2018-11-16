@@ -1033,6 +1033,8 @@ void Runtime::initializeExceptionClasses() {
   // RuntimeError and subclasses.
   addEmptyBuiltinClass(SymbolId::kRuntimeError, LayoutId::kRuntimeError,
                        LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kNotImplementedError,
+                       LayoutId::kNotImplementedError, LayoutId::kRuntimeError);
 
   StopIterationBuiltins::initialize(this);
   ImportErrorBuiltins::initialize(this);
@@ -1636,6 +1638,8 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kModuleNotFoundError,
                        LayoutId::kModuleNotFoundError);
   moduleAddBuiltinType(module, SymbolId::kNameError, LayoutId::kNameError);
+  moduleAddBuiltinType(module, SymbolId::kNotImplementedError,
+                       LayoutId::kNotImplementedError);
   moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
   moduleAddBuiltinType(module, SymbolId::kProperty, LayoutId::kProperty);
   moduleAddBuiltinType(module, SymbolId::kRuntimeError,

@@ -105,6 +105,7 @@ enum class LayoutId : word {
   kModuleNotFoundError,
   kNameError,
   kNotImplemented,
+  kNotImplementedError,
   kObjectArray,
   kProperty,
   kRange,
@@ -167,10 +168,12 @@ class Object {
   bool isModule();
   bool isModuleNotFoundError();
   bool isNotImplemented();
+  bool isNotImplementedError();
   bool isObjectArray();
   bool isProperty();
   bool isRange();
   bool isRangeIterator();
+  bool isRuntimeError();
   bool isSet();
   bool isSlice();
   bool isStaticMethod();
@@ -595,6 +598,24 @@ class SystemExit : public BaseException {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExit);
+};
+
+class RuntimeError : public Exception {
+ public:
+  // Casting.
+  static RuntimeError* cast(Object* object);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(RuntimeError);
+};
+
+class NotImplementedError : public RuntimeError {
+ public:
+  // Casting.
+  static NotImplementedError* cast(Object* object);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(NotImplementedError);
 };
 
 class ImportError : public Exception {
@@ -2107,6 +2128,14 @@ inline bool Object::isNotImplemented() {
          LayoutId::kNotImplemented;
 }
 
+inline bool Object::isNotImplementedError() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+         LayoutId::kNotImplementedError;
+}
+
 inline bool Object::isProperty() {
   if (!isHeapObject()) {
     return false;
@@ -2127,6 +2156,14 @@ inline bool Object::isRangeIterator() {
   }
   return HeapObject::cast(this)->header()->layoutId() ==
          LayoutId::kRangeIterator;
+}
+
+inline bool Object::isRuntimeError() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+         LayoutId::kRuntimeError;
 }
 
 inline bool Object::isSlice() {
@@ -2653,6 +2690,21 @@ inline Object* SystemExit::code() { return instanceVariableAt(kCodeOffset); }
 
 inline void SystemExit::setCode(Object* code) {
   instanceVariableAtPut(kCodeOffset, code);
+}
+
+// RuntimeError
+
+inline RuntimeError* RuntimeError::cast(Object* object) {
+  DCHECK(object->isRuntimeError(), "invalid cast, expected RuntimeError");
+  return reinterpret_cast<RuntimeError*>(object);
+}
+
+// NotImplementedError
+
+inline NotImplementedError* NotImplementedError::cast(Object* object) {
+  DCHECK(object->isNotImplementedError(),
+         "invalid cast, expected NotImplementedError");
+  return reinterpret_cast<NotImplementedError*>(object);
 }
 
 // ImportError

@@ -149,6 +149,7 @@ class Runtime;
   V(NameError, "NameError")                                                    \
   V(NoneType, "NoneType")                                                      \
   V(NotImplemented, "NotImplemented")                                          \
+  V(NotImplementedError, "NotImplementedError")                                \
   V(NotImplementedType, "NotImplementedType")                                  \
   V(ObjectClassname, "object")                                                 \
   V(Ord, "ord")                                                                \
