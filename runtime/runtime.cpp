@@ -792,6 +792,12 @@ void Runtime::initializeTypeClass() {
       symbols()->DunderNew(),
       nativeTrampoline<builtinTypeNew>,
       unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      type,
+      symbols()->DunderInit(),
+      nativeTrampoline<builtinTypeInit>,
+      unimplementedTrampoline);
 }
 
 void Runtime::initializeImmediateClasses() {

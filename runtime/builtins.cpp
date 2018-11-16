@@ -117,10 +117,43 @@ Object* builtinTypeCall(Thread* thread, Frame* caller, word nargs) {
 
 Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  HandleScope scope(thread->handles());
-  Handle<Class> klass(&scope, args.get(0));
-  Handle<Layout> layout(&scope, klass->instanceLayout());
-  return thread->runtime()->newInstance(layout);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Handle<Class> metatype(&scope, args.get(0));
+  Handle<Object> name(&scope, args.get(1));
+  Handle<Class> result(&scope, runtime->newClass());
+  result->setName(*name);
+
+  // Compute MRO
+  Handle<ObjectArray> parents(&scope, args.get(2));
+  Handle<Object> mro(&scope, computeMro(thread, result, parents));
+  if (mro->isError()) {
+    return *mro;
+  }
+  result->setMro(*mro);
+
+  Handle<Dictionary> dictionary(&scope, args.get(3));
+  result->setDictionary(*dictionary);
+
+  // Initialize instance layout
+  Handle<Layout> layout(&scope, runtime->computeInitialLayout(thread, result));
+  layout->setDescribedClass(*result);
+  result->setInstanceLayout(*layout);
+
+  // Initialize builtin base class
+  result->setBuiltinBaseClass(runtime->computeBuiltinBaseClass(result));
+  Handle<Class> base(&scope, result->builtinBaseClass());
+  Handle<Class> list(
+      &scope, thread->runtime()->classAt(IntrinsicLayoutId::kList));
+  if (Boolean::cast(thread->runtime()->isSubClass(base, list))->value()) {
+    result->setFlag(Class::Flag::kListSubclass);
+    layout->addDelegateSlot();
+  }
+  return *result;
+}
+
+Object* builtinTypeInit(Thread*, Frame*, word) {
+  return None::object();
 }
 
 Object* builtinObjectInit(Thread* thread, Frame*, word nargs) {
@@ -160,46 +193,28 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
 
   Handle<Function> body(&scope, args.get(0));
   Handle<Object> name(&scope, args.get(1));
+  Handle<ObjectArray> bases(&scope, runtime->newObjectArray(nargs - 2));
+  for (word i = 0, j = 2; j < nargs; i++, j++) {
+    bases->atPut(i, args.get(j));
+  }
 
   Handle<Dictionary> dictionary(&scope, runtime->newDictionary());
   Handle<Object> key(&scope, runtime->symbols()->DunderName());
   runtime->dictionaryAtPutInValueCell(dictionary, key, name);
-
   // TODO: might need to do some kind of callback here and we want backtraces to
   // work correctly.  The key to doing that would be to put some state on the
   // stack in between the the incoming arguments from the builtin' caller and
   // the on-stack state for the class body function call.
   thread->runClassFunction(*body, *dictionary);
 
-  Handle<Class> result(&scope, runtime->newClass());
-  result->setName(*name);
-  result->setDictionary(*dictionary);
-
-  // Compute MRO
-  Handle<ObjectArray> parents(&scope, runtime->newObjectArray(nargs - 2));
-  for (word i = 0, j = 2; j < nargs; i++, j++) {
-    parents->atPut(i, args.get(j));
-  }
-  Handle<Object> mro(&scope, computeMro(thread, result, parents));
-  if (mro->isError()) {
-    return *mro;
-  }
-  result->setMro(*mro);
-
-  // Initialize instance layout
-  Handle<Layout> layout(&scope, runtime->computeInitialLayout(thread, result));
-  layout->setDescribedClass(*result);
-  result->setInstanceLayout(*layout);
-
-  // Initialize builtin base class
-  result->setBuiltinBaseClass(runtime->computeBuiltinBaseClass(result));
-  Handle<Class> base(&scope, result->builtinBaseClass());
-  Handle<Class> list(
-      &scope, thread->runtime()->classAt(IntrinsicLayoutId::kList));
-  if (Boolean::cast(thread->runtime()->isSubClass(base, list))->value()) {
-    result->setFlag(Class::Flag::kListSubclass);
-    layout->addDelegateSlot();
-  }
+  Object** sp = caller->valueStackTop();
+  *--sp = runtime->classAt(IntrinsicLayoutId::kType);
+  *--sp = *name;
+  *--sp = *bases;
+  *--sp = *dictionary;
+  caller->setValueStackTop(sp);
+  Handle<Class> result(&scope, builtinTypeCall(thread, caller, 4));
+  caller->setValueStackTop(sp + 4);
 
   return *result;
 }

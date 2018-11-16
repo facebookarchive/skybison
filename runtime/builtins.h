@@ -38,6 +38,7 @@ Object* builtinObjectNew(Thread* thread, Frame* caller, word nargs);
 Object* builtinTypeCall(Thread* thread, Frame* caller, word nargs)
     __attribute__((aligned(16)));
 Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs);
+Object* builtinTypeInit(Thread* thread, Frame* frame, word nargs);
 
 // List
 Object* builtinListNew(Thread* thread, Frame* frame, word nargs);
