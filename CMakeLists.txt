@@ -75,7 +75,8 @@ add_executable(
   runtime/runtime-test.cpp
   runtime/space-test.cpp
   runtime/thread-test.cpp
-  runtime/utils-test.cpp)
+  runtime/utils-test.cpp
+  runtime/vector-test.cpp)
 target_compile_options(
   runtime
   PRIVATE

@@ -34,3 +34,10 @@ const int GiB = KiB * KiB * KiB;
 
 #define OFFSET_OF(type, field) \
   (reinterpret_cast<intptr_t>(&(reinterpret_cast<type*>(16)->field)) - 16)
+
+#if __GNUG__ && __GNUC__ < 5
+#define IS_TRIVIALLY_COPYABLE(T) __has_trivial_copy(T)
+#else
+#include <type_traits>
+#define IS_TRIVIALLY_COPYABLE(T) std::is_trivially_copyable<T>::value
+#endif
