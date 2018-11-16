@@ -925,32 +925,41 @@ Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
 }
 
 // Descriptor
-Object* functionDescriptorGet(
-    Thread* thread,
-    const Handle<Object>& self,
-    const Handle<Object>& instance,
-    const Handle<Object>& /* owner */) {
+Object* functionDescriptorGet(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 3) {
+    return thread->throwTypeErrorFromCString("__get__ needs 3 arguments");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> instance(&scope, args.get(1));
   if (instance->isNone()) {
     return *self;
   }
   return thread->runtime()->newBoundMethod(self, instance);
 }
 
-Object* classmethodDescriptorGet(
-    Thread* thread,
-    const Handle<Object>& self,
-    const Handle<Object>& /* instance */,
-    const Handle<Object>& type) {
-  HandleScope scope(thread->handles());
+Object* classmethodDescriptorGet(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 3) {
+    return thread->throwTypeErrorFromCString("__get__ needs 3 arguments");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> owner(&scope, args.get(2));
+
   Handle<Object> method(&scope, ClassMethod::cast(*self)->function());
-  return thread->runtime()->newBoundMethod(method, type);
+  return thread->runtime()->newBoundMethod(method, owner);
 }
 
-Object* staticmethodDescriptorGet(
-    Thread*,
-    const Handle<Object>& self,
-    const Handle<Object>& /* instance */,
-    const Handle<Object>& /* owner */) {
+Object* staticmethodDescriptorGet(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 3) {
+    return thread->throwTypeErrorFromCString("__get__ needs 3 arguments");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+
   return StaticMethod::cast(*self)->function();
 }
 

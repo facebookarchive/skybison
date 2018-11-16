@@ -147,18 +147,10 @@ Object* Runtime::classGetAttr(
   // No data descriptor found on the meta class, look in the mro of the klass
   Handle<Object> attr(&scope, lookupNameInMro(thread, klass, name));
   if (!attr->isError()) {
-    if (attr->isFunction()) {
-      Handle<Object> none(&scope, None::object());
-      return functionDescriptorGet(thread, attr, none, receiver);
-    } else if (attr->isClassMethod()) {
-      Handle<Object> none(&scope, None::object());
-      return classmethodDescriptorGet(thread, attr, none, receiver);
-    } else if (attr->isStaticMethod()) {
-      Handle<Object> none(&scope, None::object());
-      return staticmethodDescriptorGet(thread, attr, none, receiver);
-    } else if (isNonDataDescriptor(thread, attr)) {
-      // TODO(T25692531): Call __get__ from meta_attr
-      UNIMPLEMENTED("custom descriptors are unsupported");
+    Handle<Object> none(&scope, None::object());
+    if (isNonDataDescriptor(thread, attr)) {
+      return Interpreter::callDescriptorGet(
+          thread, thread->currentFrame(), attr, none, receiver);
     }
     return *attr;
   }
@@ -166,19 +158,9 @@ Object* Runtime::classGetAttr(
   // No attr found in klass or its mro, use the non-data descriptor found in
   // the metaclass (if any).
   if (isNonDataDescriptor(thread, meta_attr)) {
-    if (meta_attr->isFunction()) {
-      Handle<Object> mk(&scope, *meta_klass);
-      return functionDescriptorGet(thread, meta_attr, receiver, mk);
-    } else if (meta_attr->isClassMethod()) {
-      Handle<Object> mk(&scope, *meta_klass);
-      return classmethodDescriptorGet(thread, meta_attr, receiver, mk);
-    } else if (meta_attr->isStaticMethod()) {
-      Handle<Object> mk(&scope, *meta_klass);
-      return staticmethodDescriptorGet(thread, meta_attr, receiver, mk);
-    } else {
-      // TODO(T25692531): Call __get__ from meta_attr
-      UNIMPLEMENTED("custom descriptors are unsupported");
-    }
+    Handle<Object> mk(&scope, *meta_klass);
+    return Interpreter::callDescriptorGet(
+        thread, thread->currentFrame(), meta_attr, receiver, mk);
   }
 
   // If a regular attribute was found in the metaclass, return it
@@ -262,18 +244,9 @@ Object* Runtime::instanceGetAttr(
   // Nothing found in the instance, if we found a non-data descriptor via the
   // class search, use it.
   if (isNonDataDescriptor(thread, klass_attr)) {
-    if (klass_attr->isFunction()) {
-      Handle<Object> k(&scope, *klass);
-      return functionDescriptorGet(thread, klass_attr, receiver, k);
-    } else if (klass_attr->isClassMethod()) {
-      Handle<Object> k(&scope, *klass);
-      return classmethodDescriptorGet(thread, klass_attr, receiver, k);
-    } else if (klass_attr->isStaticMethod()) {
-      Handle<Object> k(&scope, *klass);
-      return staticmethodDescriptorGet(thread, klass_attr, receiver, k);
-    }
-    // TODO(T25692531): Call __get__ from klass_attr
-    UNIMPLEMENTED("custom descriptors are unsupported");
+    Handle<Object> k(&scope, *klass);
+    return Interpreter::callDescriptorGet(
+        thread, thread->currentFrame(), klass_attr, receiver, k);
   }
 
   // If a regular attribute was found in the class, return it
@@ -710,7 +683,7 @@ void Runtime::initializeHeapClasses() {
   initializeDictionaryClass();
   initializeHeapClass("ellipsis", IntrinsicLayoutId::kEllipsis);
   initializeFloatClass();
-  initializeHeapClass("function", IntrinsicLayoutId::kFunction);
+  initializeFunctionClass();
   initializeHeapClass(
       "largeint",
       IntrinsicLayoutId::kLargeInteger,
@@ -733,6 +706,19 @@ void Runtime::initializeHeapClasses() {
   initializeTypeClass();
   initializeHeapClass("valuecell", IntrinsicLayoutId::kValueCell);
   initializeHeapClass("weakref", IntrinsicLayoutId::kWeakRef);
+}
+
+void Runtime::initializeFunctionClass() {
+  HandleScope scope;
+  Handle<Class> function(
+      &scope, initializeHeapClass("function", IntrinsicLayoutId::kFunction));
+
+  classAddBuiltinFunction(
+      function,
+      symbols()->DunderGet(),
+      nativeTrampoline<functionDescriptorGet>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
 }
 
 void Runtime::initializeObjectClass() {
@@ -881,6 +867,7 @@ void Runtime::initializeClassMethodClass() {
   Handle<Class> classmethod(
       &scope,
       initializeHeapClass("classmethod", IntrinsicLayoutId::kClassMethod));
+
   classAddBuiltinFunction(
       classmethod,
       symbols()->DunderInit(),
@@ -892,6 +879,13 @@ void Runtime::initializeClassMethodClass() {
       classmethod,
       symbols()->DunderNew(),
       nativeTrampoline<builtinClassMethodNew>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      classmethod,
+      symbols()->DunderGet(),
+      nativeTrampoline<classmethodDescriptorGet>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 }
@@ -1100,6 +1094,13 @@ void Runtime::initializeStaticMethodClass() {
       staticmethod,
       symbols()->DunderInit(),
       nativeTrampoline<builtinStaticMethodInit>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      staticmethod,
+      symbols()->DunderGet(),
+      nativeTrampoline<staticmethodDescriptorGet>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 }
@@ -2941,16 +2942,8 @@ Object* Runtime::superGetAttr(
         self = super->object();
       }
       Handle<Object> type(&scope, *startType);
-      // TODO(T25692531): Call __get__
-      if (value->isFunction()) {
-        return functionDescriptorGet(thread, value, self, type);
-      } else if (value->isClassMethod()) {
-        return classmethodDescriptorGet(thread, value, self, type);
-      } else if (value->isStaticMethod()) {
-        return staticmethodDescriptorGet(thread, value, self, type);
-      } else {
-        UNIMPLEMENTED("__get__ support");
-      }
+      return Interpreter::callDescriptorGet(
+          thread, thread->currentFrame(), value, self, type);
     }
   }
   // fallback to normal instance getattr

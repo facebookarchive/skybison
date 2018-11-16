@@ -529,6 +529,7 @@ class Runtime {
   void initializeDictionaryClass();
   void initializeClassMethodClass();
   void initializeFloatClass();
+  void initializeFunctionClass();
   void initializeListClass();
   void initializeObjectClass();
   void initializeObjectArrayClass();

@@ -265,7 +265,7 @@ TEST(ClassAttributeTest, GetNonDataDescriptorOnMetaClass) {
   const char* src = R"(
 class DataDescriptor:
   def __get__(self, instance, owner):
-    pass
+    return (self, instance, owner)
 )";
   runtime.runFromCString(src);
   HandleScope scope;
@@ -282,9 +282,11 @@ class DataDescriptor:
   Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, klass, attr, descr);
 
-  ASSERT_DEATH(
-      runtime.attributeAt(Thread::currentThread(), klass, attr),
-      "custom descriptors are unsupported");
+  Object* result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  ASSERT_EQ(ObjectArray::cast(result)->length(), 3);
+  EXPECT_EQ(runtime.classOf(ObjectArray::cast(result)->at(0)), *descr_klass);
+  EXPECT_EQ(ObjectArray::cast(result)->at(1), *klass);
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), runtime.classOf(*klass));
 }
 
 TEST(ClassAttributeTest, GetNonDataDescriptorOnClass) {
@@ -294,7 +296,7 @@ TEST(ClassAttributeTest, GetNonDataDescriptorOnClass) {
   const char* src = R"(
 class DataDescriptor:
   def __get__(self, instance, owner):
-    pass
+    return (self, instance, owner)
 )";
   runtime.runFromCString(src);
   HandleScope scope;
@@ -311,9 +313,11 @@ class DataDescriptor:
   Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInClassDict(&runtime, klass, attr, descr);
 
-  ASSERT_DEATH(
-      runtime.attributeAt(Thread::currentThread(), klass, attr),
-      "custom descriptors are unsupported");
+  Object* result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  ASSERT_EQ(ObjectArray::cast(result)->length(), 3);
+  EXPECT_EQ(runtime.classOf(ObjectArray::cast(result)->at(0)), *descr_klass);
+  EXPECT_EQ(ObjectArray::cast(result)->at(1), None::object());
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), *klass);
 }
 
 // Fetch an unknown attribute
@@ -529,7 +533,7 @@ TEST(InstanceAttributeTest, GetNonDataDescriptor) {
   const char* src = R"(
 class Descr:
   def __get__(self, instance, owner):
-    pass
+    return (self, instance, owner)
 
 class Foo:
   pass
@@ -549,9 +553,12 @@ class Foo:
   // Fetch it from the instance
   Handle<Layout> instance_layout(&scope, Class::cast(*klass)->instanceLayout());
   Handle<Object> instance(&scope, runtime.newInstance(instance_layout));
-  ASSERT_DEATH(
-      runtime.attributeAt(Thread::currentThread(), instance, attr),
-      "custom descriptors are unsupported");
+
+  Object* result = runtime.attributeAt(Thread::currentThread(), instance, attr);
+  ASSERT_EQ(ObjectArray::cast(result)->length(), 3);
+  EXPECT_EQ(runtime.classOf(ObjectArray::cast(result)->at(0)), *descr_klass);
+  EXPECT_EQ(ObjectArray::cast(result)->at(1), *instance);
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), *klass);
 }
 
 TEST(InstanceAttributeTest, ManipulateMultipleAttributes) {

@@ -80,23 +80,9 @@ Object* builtinSmallIntegerNeg(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerPos(Thread* thread, Frame* frame, word nargs);
 
 // Descriptor
-Object* functionDescriptorGet(
-    Thread* thread,
-    const Handle<Object>& self,
-    const Handle<Object>& instance,
-    const Handle<Object>& /* owner */) __attribute__((aligned(16)));
-
-Object* classmethodDescriptorGet(
-    Thread* thread,
-    const Handle<Object>& self,
-    const Handle<Object>& instance,
-    const Handle<Object>& /* owner */) __attribute__((aligned(16)));
-
-Object* staticmethodDescriptorGet(
-    Thread* thread,
-    const Handle<Object>& self,
-    const Handle<Object>& /* instance */,
-    const Handle<Object>& /* owner */) __attribute__((aligned(16)));
+Object* functionDescriptorGet(Thread* thread, Frame* frame, word nargs);
+Object* classmethodDescriptorGet(Thread* thread, Frame* frame, word nargs);
+Object* staticmethodDescriptorGet(Thread* thread, Frame* frame, word nargs);
 
 // StaticMethod
 Object* builtinStaticMethodNew(Thread* thread, Frame* frame, word nargs);

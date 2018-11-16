@@ -152,7 +152,7 @@ Object* Interpreter::callDescriptorGet(
     Frame* caller,
     const Handle<Object>& descriptor,
     const Handle<Object>& receiver,
-    const Handle<Class>& receiver_type) {
+    const Handle<Object>& receiver_type) {
   HandleScope scope(thread->handles());
   Runtime* runtime = thread->runtime();
   Handle<Object> selector(&scope, runtime->symbols()->DunderGet());
@@ -160,11 +160,13 @@ Object* Interpreter::callDescriptorGet(
   Handle<Function> method(
       &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
   Object** sp = caller->valueStackTop();
+  *--sp = *method;
+  *--sp = *descriptor;
   *--sp = *receiver;
   *--sp = *receiver_type;
   caller->setValueStackTop(sp);
-  Object* result = method->entry()(thread, caller, 2);
-  sp += 2;
+  Object* result = method->entry()(thread, caller, 3);
+  sp += 4;
   caller->setValueStackTop(sp);
   return result;
 }
@@ -184,7 +186,8 @@ Object* Interpreter::lookupMethod(
     return *method;
   }
   if (runtime->isNonDataDescriptor(thread, method)) {
-    return callDescriptorGet(thread, caller, method, receiver, type);
+    Handle<Object> tp(&scope, *type);
+    return callDescriptorGet(thread, caller, method, receiver, tp);
   }
   return *method;
 }
@@ -827,6 +830,7 @@ void Interpreter::doLoadAttr(Context* ctx, word arg) {
   Handle<Object> receiver(&scope, *ctx->sp);
   auto* names = Code::cast(ctx->frame->code())->names();
   Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
+  ctx->frame->setValueStackTop(ctx->sp);
   *ctx->sp = thread->runtime()->attributeAt(ctx->thread, receiver, name);
   thread->abortOnPendingException();
 }

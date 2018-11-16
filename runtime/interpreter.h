@@ -28,7 +28,7 @@ class Interpreter {
       Frame* caller,
       const Handle<Object>& descriptor,
       const Handle<Object>& receiver,
-      const Handle<Class>& receiver_type);
+      const Handle<Object>& receiver_type);
 
   static Object* lookupMethod(
       Thread* thread,
