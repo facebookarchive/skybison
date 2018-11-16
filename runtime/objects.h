@@ -479,6 +479,8 @@ class HeapObject : public Object {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(HeapObject);
+
+  friend class Runtime;
 };
 
 template <typename T>
@@ -913,9 +915,6 @@ class Function : public HeapObject {
 
 class Instance : public HeapObject {
  public:
-  inline Object* attributeAt(word offset);
-  inline void attributeAtPut(word offset, Object* value);
-
   // Casting.
   inline static Instance* cast(Object* object);
 
@@ -2257,14 +2256,6 @@ void Function::initialize() {
 }
 
 // Instance
-
-Object* Instance::attributeAt(word offset) {
-  return instanceVariableAt(offset);
-}
-
-void Instance::attributeAtPut(word offset, Object* value) {
-  return instanceVariableAtPut(offset, value);
-}
 
 word Instance::allocationSize(word num_attr) {
   assert(num_attr >= 0);

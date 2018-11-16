@@ -211,15 +211,12 @@ Object* Runtime::instanceGetAttr(
   // No data descriptor found on the class, look at the in-instance
   // attributes.
   //
-  // TODO: Support overflow attributs
-  // TODO(T26871525): add an instance attribute map to builtin types
-  if (receiver->isInstance()) {
-    Handle<Instance> instance(&scope, *receiver);
-    Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
-    for (word i = 0; i < map->length(); i++) {
-      if (map->at(i) == *name) {
-        return instance->attributeAt(i * kPointerSize);
-      }
+  // TODO: Support overflow attributes
+  Handle<HeapObject> instance(&scope, *receiver);
+  Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
+  for (word i = 0; i < map->length(); i++) {
+    if (map->at(i) == *name) {
+      return instance->instanceVariableAt(i * kPointerSize);
     }
   }
 
@@ -265,11 +262,11 @@ Object* Runtime::instanceSetAttr(
   }
 
   // No data descriptor found, store in the in-instance properties
-  Handle<Instance> instance(&scope, *receiver);
+  Handle<HeapObject> instance(&scope, *receiver);
   Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
   for (word i = 0; i < map->length(); i++) {
     if (map->at(i) == *name) {
-      instance->attributeAtPut(i * kPointerSize, *value);
+      instance->instanceVariableAtPut(i * kPointerSize, *value);
       return None::object();
     }
   }
