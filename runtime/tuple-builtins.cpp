@@ -21,13 +21,9 @@ const BuiltinMethod TupleBuiltins::kMethods[] = {
 void TupleBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> type(
-      &scope, runtime->addEmptyBuiltinClass(
-                  SymbolId::kTuple, LayoutId::kObjectArray, LayoutId::kObject));
+      &scope, runtime->addBuiltinClass(SymbolId::kTuple, LayoutId::kObjectArray,
+                                       LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kTupleSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 Object* TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
@@ -229,14 +225,9 @@ const BuiltinMethod TupleIteratorBuiltins::kMethods[] = {
 void TupleIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> tuple_iter(
-      &scope, runtime->addEmptyBuiltinClass(SymbolId::kTupleIterator,
-                                            LayoutId::kTupleIterator,
-                                            LayoutId::kObject));
-
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(tuple_iter, kMethods[i].name,
-                                     kMethods[i].address);
-  }
+      &scope, runtime->addBuiltinClass(SymbolId::kTupleIterator,
+                                       LayoutId::kTupleIterator,
+                                       LayoutId::kObject, kMethods));
 }
 
 Object* TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

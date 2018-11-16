@@ -21,13 +21,9 @@ const BuiltinMethod DictBuiltins::kMethods[] = {
 void DictBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> dict_type(
-      &scope, runtime->addEmptyBuiltinClass(SymbolId::kDict, LayoutId::kDict,
-                                            LayoutId::kObject));
+      &scope, runtime->addBuiltinClass(SymbolId::kDict, LayoutId::kDict,
+                                       LayoutId::kObject, kMethods));
   dict_type->setFlag(Type::Flag::kDictSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(dict_type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 Object* DictBuiltins::dunderContains(Thread* thread, Frame* frame, word nargs) {

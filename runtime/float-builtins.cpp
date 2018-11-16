@@ -27,14 +27,10 @@ const BuiltinMethod FloatBuiltins::kMethods[] = {
 
 void FloatBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(
-      &scope, runtime->addEmptyBuiltinClass(SymbolId::kFloat, LayoutId::kFloat,
-                                            LayoutId::kObject));
+  Handle<Type> type(&scope,
+                    runtime->addBuiltinClass(SymbolId::kFloat, LayoutId::kFloat,
+                                             LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kFloatSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 Object* FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,

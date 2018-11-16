@@ -31,14 +31,10 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
 
 void IntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(
-      &scope, runtime->addEmptyBuiltinClass(SymbolId::kInt, LayoutId::kInt,
-                                            LayoutId::kObject));
+  Handle<Type> type(&scope,
+                    runtime->addBuiltinClass(SymbolId::kInt, LayoutId::kInt,
+                                             LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
   Handle<Type> largeint_type(
       &scope, runtime->addEmptyBuiltinClass(
                   SymbolId::kLargeInt, LayoutId::kLargeInt, LayoutId::kInt));
@@ -167,13 +163,9 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
 void SmallIntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> type(
-      &scope, runtime->addEmptyBuiltinClass(
-                  SymbolId::kSmallInt, LayoutId::kSmallInt, LayoutId::kInt));
+      &scope, runtime->addBuiltinClass(SymbolId::kSmallInt, LayoutId::kSmallInt,
+                                       LayoutId::kInt, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
   // SmallInt to all locations that decode to a SmallInt tag.
@@ -631,14 +623,10 @@ const BuiltinMethod BoolBuiltins::kMethods[] = {
 
 void BoolBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(
-      &scope, runtime->addEmptyBuiltinClass(SymbolId::kBool, LayoutId::kBool,
-                                            LayoutId::kInt));
+  Handle<Type> type(&scope,
+                    runtime->addBuiltinClass(SymbolId::kBool, LayoutId::kBool,
+                                             LayoutId::kInt, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 }  // namespace python

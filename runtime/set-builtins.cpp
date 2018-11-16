@@ -22,13 +22,9 @@ void SetBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
   Handle<Type> set(&scope,
-                   runtime->addEmptyBuiltinClass(SymbolId::kSet, LayoutId::kSet,
-                                                 LayoutId::kObject));
+                   runtime->addBuiltinClass(SymbolId::kSet, LayoutId::kSet,
+                                            LayoutId::kObject, kMethods));
   set->setFlag(Type::Flag::kSetSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(set, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 Object* SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
@@ -144,14 +140,10 @@ const BuiltinMethod SetIteratorBuiltins::kMethods[] = {
 
 void SetIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> set_iter(&scope, runtime->addEmptyBuiltinClass(
-                                    SymbolId::kSetIterator,
-                                    LayoutId::kSetIterator, LayoutId::kObject));
-
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(set_iter, kMethods[i].name,
-                                     kMethods[i].address);
-  }
+  Handle<Type> set_iter(
+      &scope,
+      runtime->addBuiltinClass(SymbolId::kSetIterator, LayoutId::kSetIterator,
+                               LayoutId::kObject, kMethods));
 }
 
 Object* SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

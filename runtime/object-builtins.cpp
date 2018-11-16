@@ -124,12 +124,8 @@ const BuiltinMethod NoneBuiltins::kMethods[] = {
 void NoneBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> type(
-      &scope, runtime->addEmptyBuiltinClass(
-                  SymbolId::kNoneType, LayoutId::kNoneType, LayoutId::kObject));
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
+      &scope, runtime->addBuiltinClass(SymbolId::kNoneType, LayoutId::kNoneType,
+                                       LayoutId::kObject, kMethods));
 }
 
 Object* NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {

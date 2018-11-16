@@ -20,15 +20,11 @@ const BuiltinMethod BaseExceptionBuiltins::kMethods[] = {
 
 void BaseExceptionBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(&scope,
-                    runtime->addBuiltinClass(SymbolId::kBaseException,
-                                             LayoutId::kBaseException,
-                                             LayoutId::kObject, kAttributes));
+  Handle<Type> type(&scope, runtime->addBuiltinClass(SymbolId::kBaseException,
+                                                     LayoutId::kBaseException,
+                                                     LayoutId::kObject,
+                                                     kAttributes, kMethods));
   type->setFlag(Type::Flag::kBaseExceptionSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 Object* BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
@@ -64,15 +60,11 @@ const BuiltinMethod StopIterationBuiltins::kMethods[] = {
 
 void StopIterationBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(
-      &scope, runtime->addBuiltinClass(SymbolId::kStopIteration,
-                                       LayoutId::kStopIteration,
-                                       LayoutId::kException, kAttributes));
+  Handle<Type> type(&scope, runtime->addBuiltinClass(SymbolId::kStopIteration,
+                                                     LayoutId::kStopIteration,
+                                                     LayoutId::kException,
+                                                     kAttributes, kMethods));
   type->setFlag(Type::Flag::kStopIterationSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 Object* StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
@@ -110,14 +102,11 @@ const BuiltinMethod SystemExitBuiltins::kMethods[] = {
 
 void SystemExitBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(&scope, runtime->addBuiltinClass(
-                                SymbolId::kSystemExit, LayoutId::kSystemExit,
-                                LayoutId::kBaseException, kAttributes));
+  Handle<Type> type(&scope, runtime->addBuiltinClass(SymbolId::kSystemExit,
+                                                     LayoutId::kSystemExit,
+                                                     LayoutId::kBaseException,
+                                                     kAttributes, kMethods));
   type->setFlag(Type::Flag::kSystemExitSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 Object* SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,

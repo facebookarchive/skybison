@@ -14,13 +14,9 @@ const BuiltinMethod ComplexBuiltins::kMethods[] = {
 void ComplexBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> type(
-      &scope, runtime->addEmptyBuiltinClass(
-                  SymbolId::kComplex, LayoutId::kComplex, LayoutId::kObject));
+      &scope, runtime->addBuiltinClass(SymbolId::kComplex, LayoutId::kComplex,
+                                       LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kComplexSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 Object* ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

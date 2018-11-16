@@ -28,14 +28,10 @@ const BuiltinMethod StrBuiltins::kMethods[] = {
 
 void StrBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(
-      &scope, runtime->addEmptyBuiltinClass(SymbolId::kStr, LayoutId::kStr,
-                                            LayoutId::kObject));
+  Handle<Type> type(&scope,
+                    runtime->addBuiltinClass(SymbolId::kStr, LayoutId::kStr,
+                                             LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kStrSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(type, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 Object* StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {

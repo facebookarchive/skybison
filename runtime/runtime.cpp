@@ -203,6 +203,21 @@ Object* Runtime::addEmptyBuiltinClass(SymbolId name, LayoutId subclass_id,
 Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
                                  LayoutId superclass_id,
                                  View<BuiltinAttribute> attributes) {
+  return addBuiltinClass(name, subclass_id, superclass_id, attributes,
+                         View<BuiltinMethod>(nullptr, 0));
+}
+
+Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                                 LayoutId superclass_id,
+                                 View<BuiltinMethod> methods) {
+  return addBuiltinClass(name, subclass_id, superclass_id,
+                         View<BuiltinAttribute>(nullptr, 0), methods);
+}
+
+Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                                 LayoutId superclass_id,
+                                 View<BuiltinAttribute> attributes,
+                                 View<BuiltinMethod> methods) {
   HandleScope scope;
 
   // Create a class object for the subclass
@@ -225,6 +240,11 @@ Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
 
   // Install the layout and class
   layoutAtPut(subclass_id, *layout);
+
+  // Add the provided methods.
+  for (const BuiltinMethod& meth : methods) {
+    classAddBuiltinFunction(subclass, meth.name, meth.address);
+  }
 
   // return the class
   return *subclass;

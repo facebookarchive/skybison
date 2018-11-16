@@ -181,12 +181,18 @@ class Runtime {
   void layoutAtPut(LayoutId layout_id, Object* object);
 
   // Bootstrapping primitive for creating a built-in class that has built-in
-  // attributes.
+  // attributes and/or methods.
   Object* addEmptyBuiltinClass(SymbolId name, LayoutId subclass_id,
                                LayoutId superclass_id);
   Object* addBuiltinClass(SymbolId name, LayoutId subclass_id,
                           LayoutId superclass_id,
                           View<BuiltinAttribute> attributes);
+  Object* addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                          LayoutId superclass_id, View<BuiltinMethod> methods);
+  Object* addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                          LayoutId superclass_id,
+                          View<BuiltinAttribute> attributes,
+                          View<BuiltinMethod> methods);
 
   LayoutId reserveLayoutId();
 

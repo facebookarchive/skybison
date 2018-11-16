@@ -22,6 +22,9 @@ class View {
 
   word length() { return length_; }
 
+  const T* begin() { return data_; }
+  const T* end() { return data_ + length_; }
+
  private:
   const T* data_;
   word length_;

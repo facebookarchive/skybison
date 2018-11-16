@@ -32,14 +32,10 @@ const BuiltinMethod ListBuiltins::kMethods[] = {
 void ListBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
-  Handle<Type> list(&scope,
-                    runtime->addBuiltinClass(SymbolId::kList, LayoutId::kList,
-                                             LayoutId::kObject, kAttributes));
+  Handle<Type> list(&scope, runtime->addBuiltinClass(
+                                SymbolId::kList, LayoutId::kList,
+                                LayoutId::kObject, kAttributes, kMethods));
   list->setFlag(Type::Flag::kListSubclass);
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(list, kMethods[i].name,
-                                     kMethods[i].address);
-  }
 }
 
 Object* ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
@@ -327,13 +323,8 @@ void ListIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> list_iter(
       &scope,
-      runtime->addEmptyBuiltinClass(
-          SymbolId::kListIterator, LayoutId::kListIterator, LayoutId::kObject));
-
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(list_iter, kMethods[i].name,
-                                     kMethods[i].address);
-  }
+      runtime->addBuiltinClass(SymbolId::kListIterator, LayoutId::kListIterator,
+                               LayoutId::kObject, kMethods));
 }
 
 Object* ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
