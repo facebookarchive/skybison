@@ -108,7 +108,7 @@ def _write_atomic(path, data, mode=0o666):
     Be prepared to handle a FileExistsError if concurrent writing of the
     temporary file is attempted."""
     # id() is used to generate a pseudo-random filename.
-    path_tmp = '{}.{}'.format(path, id(path))
+    path_tmp = f'{path}.{id(path)}'
     fd = _os.open(path_tmp,
                   _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY, mode & 0o666)
     try:
@@ -300,8 +300,8 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
     optimization = str(optimization)
     if optimization != '':
         if not optimization.isalnum():
-            raise ValueError('{!r} is not alphanumeric'.format(optimization))
-        almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
+            raise ValueError(f'{repr(optimization)} is not alphanumeric')
+        almost_filename = f'{almost_filename}.{_OPT}{optimization}'
     return _path_join(head, _PYCACHE, almost_filename + BYTECODE_SUFFIXES[0])
 
 
@@ -320,21 +320,17 @@ def source_from_cache(path):
     head, pycache_filename = _path_split(path)
     head, pycache = _path_split(head)
     if pycache != _PYCACHE:
-        raise ValueError('{} not bottom-level directory in '
-                         '{!r}'.format(_PYCACHE, path))
+        raise ValueError(f'{_PYCACHE} not bottom-level directory in {repr(path)}')
     dot_count = pycache_filename.count('.')
     if dot_count not in {2, 3}:
-        raise ValueError('expected only 2 or 3 dots in '
-                         '{!r}'.format(pycache_filename))
+        raise ValueError(f'expected only 2 or 3 dots in {repr(pycache_filename)}')
     elif dot_count == 3:
         optimization = pycache_filename.rsplit('.', 2)[-2]
         if not optimization.startswith(_OPT):
-            raise ValueError("optimization portion of filename does not start "
-                             "with {!r}".format(_OPT))
+            raise ValueError(f"optimization portion of filename does not start with {repr(_OPT)}")
         opt_level = optimization[len(_OPT):]
         if not opt_level.isalnum():
-            raise ValueError("optimization level {!r} is not an alphanumeric "
-                             "value".format(optimization))
+            raise ValueError(f"optimization level {repr(optimization)} is not an alphanumeric value")
     base_filename = pycache_filename.partition('.')[0]
     return _path_join(head, base_filename + SOURCE_SUFFIXES[0])
 
@@ -422,8 +418,7 @@ def _find_module_shim(self, fullname):
     # return None.
     loader, portions = self.find_loader(fullname)
     if loader is None and len(portions):
-        msg = 'Not importing directory {}: missing __init__'
-        _warnings.warn(msg.format(portions[0]), ImportWarning)
+        _warnings.warn(f'Not importing directory {portions[0]}: missing __init__', ImportWarning)
     return loader
 
 
@@ -450,16 +445,16 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
     raw_timestamp = data[4:8]
     raw_size = data[8:12]
     if magic != MAGIC_NUMBER:
-        message = 'bad magic number in {!r}: {!r}'.format(name, magic)
-        _bootstrap._verbose_message('{}', message)
+        message = f'bad magic number in {repr(name)}: {repr(magic)}'
+        _bootstrap._verbose_message(message)
         raise ImportError(message, **exc_details)
     elif len(raw_timestamp) != 4:
-        message = 'reached EOF while reading timestamp in {!r}'.format(name)
-        _bootstrap._verbose_message('{}', message)
+        message = f'reached EOF while reading timestamp in {repr(name)}'
+        _bootstrap._verbose_message(message)
         raise EOFError(message)
     elif len(raw_size) != 4:
-        message = 'reached EOF while reading size of source in {!r}'.format(name)
-        _bootstrap._verbose_message('{}', message)
+        message = f'reached EOF while reading size of source in {repr(name)}'
+        _bootstrap._verbose_message(message)
         raise EOFError(message)
     if source_stats is not None:
         try:
@@ -468,8 +463,8 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
             pass
         else:
             if _r_long(raw_timestamp) != source_mtime:
-                message = 'bytecode is stale for {!r}'.format(name)
-                _bootstrap._verbose_message('{}', message)
+                message = f'bytecode is stale for {repr(name)}'
+                _bootstrap._verbose_message(message)
                 raise ImportError(message, **exc_details)
         try:
             source_size = source_stats['size'] & 0xFFFFFFFF
@@ -477,7 +472,7 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
             pass
         else:
             if _r_long(raw_size) != source_size:
-                raise ImportError('bytecode is stale for {!r}'.format(name),
+                raise ImportError(f'bytecode is stale for {repr(name)}',
                                   **exc_details)
     return data[12:]
 
@@ -486,12 +481,12 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
     """Compile bytecode as returned by _validate_bytecode_header()."""
     code = marshal.loads(data)
     if isinstance(code, _code_type):
-        _bootstrap._verbose_message('code object from {!r}', bytecode_path)
+        _bootstrap._verbose_message(f'code object from {repr(bytecode_path)}')
         if source_path is not None:
             _imp._fix_co_filename(code, source_path)
         return code
     else:
-        raise ImportError('Non-code object in {!r}'.format(bytecode_path),
+        raise ImportError(f'Non-code object in {repr(bytecode_path)}',
                           name=name, path=bytecode_path)
 
 def _code_to_bytecode(code, mtime=0, source_size=0):
@@ -673,8 +668,7 @@ class _LoaderBasics:
         """Execute the module."""
         code = self.get_code(module.__name__)
         if code is None:
-            raise ImportError('cannot load module {!r} when get_code() '
-                              'returns None'.format(module.__name__))
+            raise ImportError(f'cannot load module {repr(module.__name__)} when get_code() returns None')
         _bootstrap._call_with_frames_removed(exec, code, module.__dict__)
 
     def load_module(self, fullname):
@@ -772,21 +766,20 @@ class SourceLoader(_LoaderBasics):
                     except (ImportError, EOFError):
                         pass
                     else:
-                        _bootstrap._verbose_message('{} matches {}', bytecode_path,
-                                                    source_path)
+                        _bootstrap._verbose_message(f'{bytecode_path} matches {source_path}')
                         return _compile_bytecode(bytes_data, name=fullname,
                                                  bytecode_path=bytecode_path,
                                                  source_path=source_path)
         source_bytes = self.get_data(source_path)
         code_object = self.source_to_code(source_bytes, source_path)
-        _bootstrap._verbose_message('code object from {}', source_path)
+        _bootstrap._verbose_message(f'code object from {source_path}')
         if (not sys.dont_write_bytecode and bytecode_path is not None and
                 source_mtime is not None):
             data = _code_to_bytecode(code_object, source_mtime,
                     len(source_bytes))
             try:
                 self._cache_bytecode(source_path, bytecode_path, data)
-                _bootstrap._verbose_message('wrote {!r}', bytecode_path)
+                _bootstrap._verbose_message(f'wrote {repr(bytecode_path)}')
             except NotImplementedError:
                 pass
         return code_object
@@ -866,16 +859,14 @@ class SourceFileLoader(FileLoader, SourceLoader):
             except OSError as exc:
                 # Could be a permission error, read-only filesystem: just forget
                 # about writing the data.
-                _bootstrap._verbose_message('could not create {!r}: {!r}',
-                                            parent, exc)
+                _bootstrap._verbose_message(f'could not create {repr(parent)}: {repr(exc)}')
                 return
         try:
             _write_atomic(path, data, _mode)
-            _bootstrap._verbose_message('created {!r}', path)
+            _bootstrap._verbose_message(f'created {repr(path)}')
         except OSError as exc:
             # Same as above: just don't write the bytecode.
-            _bootstrap._verbose_message('could not create {!r}: {!r}', path,
-                                        exc)
+            _bootstrap._verbose_message(f'could not create {repr(path)}: {repr(exc)}')
 
 
 class SourcelessFileLoader(FileLoader, _LoaderBasics):
@@ -920,15 +911,13 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
         """Create an unitialized extension module"""
         module = _bootstrap._call_with_frames_removed(
             _imp.create_dynamic, spec)
-        _bootstrap._verbose_message('extension module {!r} loaded from {!r}',
-                         spec.name, self.path)
+        _bootstrap._verbose_message(f'extension module {repr(spec.name)} loaded from {repr(self.path)}')
         return module
 
     def exec_module(self, module):
         """Initialize an extension module"""
         _bootstrap._call_with_frames_removed(_imp.exec_dynamic, module)
-        _bootstrap._verbose_message('extension module {!r} executed from {!r}',
-                         self.name, self.path)
+        _bootstrap._verbose_message(f'extension module {repr(self.name)} executed from {repr(self.path)}')
 
     def is_package(self, fullname):
         """Return True if the extension module is a package."""
@@ -1000,7 +989,7 @@ class _NamespacePath:
         return len(self._recalculate())
 
     def __repr__(self):
-        return '_NamespacePath({!r})'.format(self._path)
+        return f'_NamespacePath({repr(self._path)})'
 
     def __contains__(self, item):
         return item in self._recalculate()
@@ -1021,7 +1010,7 @@ class _NamespaceLoader:
         The method is deprecated.  The import machinery does the job itself.
 
         """
-        return '<module {!r} (namespace)>'.format(module.__name__)
+        return f'<module {module.__name__} (namespace)>'
 
     def is_package(self, fullname):
         return True
@@ -1045,8 +1034,7 @@ class _NamespaceLoader:
 
         """
         # The import system never calls this method.
-        _bootstrap._verbose_message('namespace module loaded with path {!r}',
-                                    self._path)
+        _bootstrap._verbose_message(f'namespace module loaded with path {repr(self._path)}')
         return _bootstrap._load_module_shim(self, fullname)
 
 
@@ -1266,13 +1254,13 @@ class FileFinder:
         # Check for a file w/ a proper suffix exists.
         for suffix, loader_class in self._loaders:
             full_path = _path_join(self.path, tail_module + suffix)
-            _bootstrap._verbose_message('trying {}', full_path, verbosity=2)
+            _bootstrap._verbose_message(f'trying {full_path}', verbosity=2)
             if cache_module + suffix in cache:
                 if _path_isfile(full_path):
                     return self._get_spec(loader_class, fullname, full_path,
                                           None, target)
         if is_namespace:
-            _bootstrap._verbose_message('possible namespace for {}', base_path)
+            _bootstrap._verbose_message(f'possible namespace for {base_path}')
             spec = _bootstrap.ModuleSpec(fullname, None)
             spec.submodule_search_locations = [base_path]
             return spec
@@ -1301,7 +1289,7 @@ class FileFinder:
             for item in contents:
                 name, dot, suffix = item.partition('.')
                 if dot:
-                    new_name = '{}.{}'.format(name, suffix.lower())
+                    new_name = f'{name}.{suffix.lower()}'
                 else:
                     new_name = name
                 lower_suffix_contents.add(new_name)
@@ -1328,7 +1316,7 @@ class FileFinder:
         return path_hook_for_FileFinder
 
     def __repr__(self):
-        return 'FileFinder({!r})'.format(self.path)
+        return f'FileFinder({repr(self.path)})'
 
 
 # Import setup ###############################################################
