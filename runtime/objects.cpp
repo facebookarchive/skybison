@@ -2,7 +2,6 @@
 #include "runtime.h"
 
 #include <cstring>
-
 namespace python {
 
 // SmallString

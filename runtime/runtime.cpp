@@ -640,8 +640,9 @@ Object* Runtime::initializeHeapClass(const char* name, Args... args) {
 }
 
 void Runtime::initializeHeapClasses() {
-  initializeHeapClass("object");
+  initializeObjectClass();
   initializeHeapClass("byteArray", IntrinsicLayoutId::kByteArray);
+  initializeClassMethodClass();
   initializeHeapClass("code", IntrinsicLayoutId::kCode);
   initializeHeapClass("dictionary", IntrinsicLayoutId::kDictionary);
   initializeHeapClass("double", IntrinsicLayoutId::kDouble);
@@ -649,6 +650,7 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("function", IntrinsicLayoutId::kFunction);
   initializeHeapClass("integer", IntrinsicLayoutId::kLargeInteger);
   initializeHeapClass("layout", IntrinsicLayoutId::kLayout);
+  initializeListClass();
   initializeHeapClass("list_iterator", IntrinsicLayoutId::kListIterator);
   initializeHeapClass("method", IntrinsicLayoutId::kBoundMethod);
   initializeHeapClass("module", IntrinsicLayoutId::kModule);
@@ -658,11 +660,27 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("range", IntrinsicLayoutId::kRange);
   initializeHeapClass("range_iterator", IntrinsicLayoutId::kRangeIterator);
   initializeHeapClass("slice", IntrinsicLayoutId::kSlice);
+  initializeSuperClass();
   initializeHeapClass("type", IntrinsicLayoutId::kType);
   initializeHeapClass("valuecell", IntrinsicLayoutId::kValueCell);
   initializeHeapClass("weakref", IntrinsicLayoutId::kWeakRef);
-  initializeListClass();
-  initializeClassMethodClass();
+}
+
+void Runtime::initializeObjectClass() {
+  HandleScope scope;
+  Handle<Class> object(&scope, initializeHeapClass("object"));
+
+  classAddBuiltinFunction(
+      object,
+      symbols()->DunderInit(),
+      nativeTrampoline<builtinObjectInit>,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      object,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinGenericNew>,
+      unimplementedTrampoline);
 }
 
 void Runtime::initializeListClass() {
@@ -1026,6 +1044,7 @@ void Runtime::createBuiltinsModule() {
       module, IntrinsicLayoutId::kClassMethod, symbols()->Classmethod());
   moduleAddBuiltinType(
       module, IntrinsicLayoutId::kDictionary, symbols()->Dict());
+  moduleAddBuiltinType(module, IntrinsicLayoutId::kSuper, symbols()->Super());
 
   Handle<Object> not_implemented_str(&scope, symbols()->NotImplemented());
   Handle<Object> not_implemented(&scope, not_implemented_);
@@ -1777,6 +1796,9 @@ Object* Runtime::attributeAt(
     result = classGetAttr(thread, receiver, name);
   } else if (receiver->isModule()) {
     result = moduleGetAttr(thread, receiver, name);
+  } else if (receiver->isSuper()) {
+    // TODO(T27518836): remove when we support __getattro__
+    result = superGetAttr(thread, receiver, name);
   } else {
     // everything else should fallback to instance
     result = instanceGetAttr(thread, receiver, name);
@@ -1921,6 +1943,10 @@ Object* Runtime::isInstance(
 
 Object* Runtime::newClassMethod() {
   return heap()->createClassMethod();
+}
+
+Object* Runtime::newSuper() {
+  return heap()->createSuper();
 }
 
 Object* Runtime::computeBuiltinBaseClass(const Handle<Class>& klass) {
@@ -2224,6 +2250,70 @@ Object* Runtime::layoutDeleteAttribute(
   layoutAddEdge(edges, iname, value);
 
   return *new_layout;
+}
+
+void Runtime::initializeSuperClass() {
+  HandleScope scope;
+  Handle<Class> super(
+      &scope, initializeHeapClass("super", IntrinsicLayoutId::kSuper));
+
+  classAddBuiltinFunction(
+      super,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinSuperNew>,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      super,
+      symbols()->DunderInit(),
+      nativeTrampoline<builtinSuperInit>,
+      unimplementedTrampoline);
+}
+
+Object* Runtime::superGetAttr(
+    Thread* thread,
+    const Handle<Object>& receiver,
+    const Handle<Object>& name) {
+  HandleScope scope(thread);
+  Handle<Super> super(&scope, *receiver);
+  Handle<Class> startType(&scope, super->objectType());
+  Handle<ObjectArray> mro(&scope, startType->mro());
+  word i;
+  for (i = 0; i < mro->length(); i++) {
+    if (super->type() == mro->at(i)) {
+      // skip super->type (if any)
+      i++;
+      break;
+    }
+  }
+  for (; i < mro->length(); i++) {
+    Handle<Class> klass(&scope, mro->at(i));
+    Handle<Dictionary> dict(&scope, klass->dictionary());
+    Handle<Object> value_cell(&scope, dictionaryAt(dict, name));
+    if (value_cell->isError()) {
+      continue;
+    }
+    Handle<Object> value(&scope, ValueCell::cast(*value_cell)->value());
+    if (!isNonDataDescriptor(thread, value)) {
+      return *value;
+    } else {
+      Handle<Object> self(&scope, None::object());
+      if (super->object() != *startType) {
+        self = super->object();
+      }
+      Handle<Object> type(&scope, *startType);
+      // TODO(T25692531): Call __get__
+      if (value->isFunction()) {
+        return functionDescriptorGet(thread, value, self, type);
+      } else if (value->isClassMethod()) {
+        return classmethodDescriptorGet(thread, value, self, type);
+      } else {
+        UNIMPLEMENTED("__get__ support");
+      }
+    }
+  }
+  // fallback to normal instance getattr
+  return instanceGetAttr(thread, receiver, name);
 }
 
 } // namespace python

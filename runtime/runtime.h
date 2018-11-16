@@ -83,6 +83,8 @@ class Runtime {
   Object* newStringFromCString(const char* c_string);
   Object* newStringWithAll(View<byte> code_units);
 
+  Object* newSuper();
+
   Object* stringConcat(const Handle<String>& a, const Handle<String>& b);
 
   Object* newValueCell();
@@ -420,7 +422,9 @@ class Runtime {
   Object* initializeHeapClass(const char* name, Args... args);
   void initializeClassMethodClass();
   void initializeListClass();
+  void initializeObjectClass();
   void initializeSmallIntClass();
+  void initializeSuperClass();
 
   void createBuiltinsModule();
   void createSysModule();
@@ -499,6 +503,12 @@ class Runtime {
       const Handle<Object>& receiver,
       const Handle<Object>& name,
       const Handle<Object>& value);
+
+  // Specialized attribute lookup code used for super objects
+  Object* superGetAttr(
+      Thread* thread,
+      const Handle<Object>& receiver,
+      const Handle<Object>& name);
 
   // Returns whether object's class provides a __set__ method
   bool isDataDescriptor(Thread* thread, const Handle<Object>& object);

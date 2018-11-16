@@ -138,6 +138,7 @@ enum IntrinsicLayoutId {
   kRangeIterator,
   kSet,
   kSlice,
+  kSuper,
   kType,
   kValueCell,
   kWeakRef,
@@ -171,19 +172,20 @@ class Object {
   inline bool isEllipsis();
   inline bool isFunction();
   inline bool isInstance();
+  inline bool isInteger();
+  inline bool isLargeInteger();
+  inline bool isLargeString();
   inline bool isLayout();
   inline bool isList();
   inline bool isListIterator();
   inline bool isModule();
   inline bool isNotImplemented();
   inline bool isObjectArray();
-  inline bool isLargeString();
-  inline bool isLargeInteger();
-  inline bool isInteger();
   inline bool isRange();
   inline bool isRangeIterator();
   inline bool isSet();
   inline bool isSlice();
+  inline bool isSuper();
   inline bool isValueCell();
   inline bool isWeakRef();
 
@@ -1457,6 +1459,32 @@ class Layout : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Layout);
 };
 
+class Super : public HeapObject {
+ public:
+  // getters and setters
+  inline Object* type();
+  inline void setType(Object* tp);
+  inline Object* object();
+  inline void setObject(Object* obj);
+  inline Object* objectType();
+  inline void setObjectType(Object* tp);
+
+  // Casting
+  static inline Super* cast(Object* object);
+
+  // Sizing
+  static inline word allocationSize();
+
+  // Layout
+  static const int kTypeOffset = HeapObject::kSize;
+  static const int kObjectOffset = kTypeOffset + kPointerSize;
+  static const int kObjectTypeOffset = kObjectOffset + kPointerSize;
+  static const int kSize = kObjectTypeOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Super);
+};
+
 // Object
 
 bool Object::isObject() {
@@ -1610,6 +1638,14 @@ bool Object::isSet() {
   }
   return HeapObject::cast(this)->header()->layoutId() ==
       IntrinsicLayoutId::kSet;
+}
+
+bool Object::isSuper() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kSuper;
 }
 
 bool Object::isModule() {
@@ -3116,6 +3152,43 @@ void Layout::updateInstanceSize() {
     num_slots += 1;
   }
   setInstanceSize(num_slots);
+}
+
+// Super
+
+Object* Super::type() {
+  return instanceVariableAt(kTypeOffset);
+}
+
+void Super::setType(Object* tp) {
+  DCHECK(tp->isClass(), "expected type");
+  instanceVariableAtPut(kTypeOffset, tp);
+}
+
+Object* Super::object() {
+  return instanceVariableAt(kObjectOffset);
+}
+
+void Super::setObject(Object* obj) {
+  instanceVariableAtPut(kObjectOffset, obj);
+}
+
+Object* Super::objectType() {
+  return instanceVariableAt(kObjectTypeOffset);
+}
+
+void Super::setObjectType(Object* tp) {
+  DCHECK(tp->isClass(), "expected type");
+  instanceVariableAtPut(kObjectTypeOffset, tp);
+}
+
+Super* Super::cast(Object* object) {
+  DCHECK(object->isSuper(), "invalid cast, expected super");
+  return reinterpret_cast<Super*>(object);
+}
+
+word Super::allocationSize() {
+  return Header::kSize + Super::kSize;
 }
 
 } // namespace python

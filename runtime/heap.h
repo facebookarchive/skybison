@@ -46,6 +46,8 @@ class Heap {
 
   Object* createLargeInteger(word value);
 
+  Object* createLargeString(word length);
+
   Object* createLayout(word id);
 
   Object* createList();
@@ -58,8 +60,6 @@ class Heap {
 
   Object* createObjectArray(word length, Object* value);
 
-  Object* createLargeString(word length);
-
   Object* createRange();
 
   Object* createRangeIterator();
@@ -67,6 +67,8 @@ class Heap {
   Object* createSet();
 
   Object* createSlice();
+
+  Object* createSuper();
 
   Object* createValueCell();
 

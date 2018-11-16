@@ -55,4 +55,10 @@ Object* classmethodDescriptorGet(
 Object* builtinClassMethodNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs);
 
+// Super
+Object* builtinSuperNew(Thread* thread, Frame* frame, word nargs);
+Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs);
+
+// Object
+Object* builtinObjectInit(Thread*, Frame*, word);
 } // namespace python

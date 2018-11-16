@@ -2796,4 +2796,84 @@ print(a[0],a[1],a[2],a[3],a[4])
   EXPECT_EQ(output, "H e l l o\n");
 }
 
+TEST(ThreadTest, SuperTest1) {
+  const char* src = R"(
+class A:
+    def f(self):
+        return 1
+
+class B(A):
+    def f(self):
+        return super(B, self).f() + 2
+
+class C(A):
+    def f(self):
+        return super(C, self).f() + 3
+
+class D(C, B):
+    def f(self):
+        return super(D, self).f() + 4
+
+class E(D):
+    pass
+
+class F(E):
+    f = E.f
+
+class G(A):
+    pass
+
+print(D().f())
+print(D.f(D()))
+print(E().f())
+print(E.f(E()))
+print(F().f())
+print(F.f(F()))
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "10\n10\n10\n10\n10\n10\n");
+}
+
+TEST(ThreadTest, SuperTest2) {
+  const char* src = R"(
+class A:
+    @classmethod
+    def cm(cls):
+        return (cls, 1)
+
+class B(A):
+    @classmethod
+    def cm(cls):
+        return (cls, super(B, cls).cm(), 2)
+
+class C(A):
+    @classmethod
+    def cm(cls):
+        return (cls, super(C, cls).cm(), 3)
+
+class D(C, B):
+    def cm(cls):
+        return (cls, super(D, cls).cm(), 4)
+
+class E(D):
+    pass
+
+class G(A):
+    pass
+
+print(A.cm() == (A, 1))
+print(A().cm() == (A, 1))
+print(G.cm() == (G, 1))
+print(G().cm() == (G, 1))
+d = D()
+print(d.cm() == (d, (D, (D, (D, 1), 2), 3), 4))
+e = E()
+print(e.cm() == (e, (E, (E, (E, 1), 2), 3), 4))
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "True\nTrue\nTrue\nTrue\nTrue\nTrue\n");
+}
+
 } // namespace python

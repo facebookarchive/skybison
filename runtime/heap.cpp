@@ -367,6 +367,19 @@ Object* Heap::createSlice() {
   return Slice::cast(result);
 }
 
+Object* Heap::createSuper() {
+  word size = Super::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<Super*>(raw);
+  result->setHeader(Header::from(
+      Super::kSize / kPointerSize,
+      0,
+      IntrinsicLayoutId::kSuper,
+      ObjectFormat::kObjectInstance));
+  return Super::cast(result);
+}
+
 Object* Heap::createValueCell() {
   word size = ValueCell::allocationSize();
   Object* raw = allocate(size, Header::kSize);

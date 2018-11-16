@@ -937,6 +937,26 @@ Object* Interpreter::richCompare(
         UNIMPLEMENTED("string comparison with op %x", op);
         break;
     }
+  } else if (op == EQ && left->isClass() && right->isClass()) {
+    res = (*left == *right);
+  } else if (op == EQ && left->isInstance() && right->isInstance()) {
+    res = (*left == *right);
+  } else if (op == EQ && left->isObjectArray() && right->isObjectArray()) {
+    HandleScope scope;
+    Handle<ObjectArray> l(&scope, *left);
+    Handle<ObjectArray> r(&scope, *right);
+    if (l->length() == r->length()) {
+      res = true;
+      for (word i = 0; i < l->length(); i++) {
+        Handle<Object> next_left(&scope, l->at(i));
+        Handle<Object> next_right(&scope, r->at(i));
+        Object* cmp = richCompare(op, next_left, next_right);
+        if (!Boolean::cast(cmp)->value()) {
+          res = false;
+          break;
+        }
+      }
+    }
   } else {
     UNIMPLEMENTED("Custom compare");
   }
