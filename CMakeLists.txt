@@ -34,12 +34,12 @@ set(CMAKE_CXX_EXTENSIONS NO)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
-# DebugOpt build type: debug assertions/checks with -O2. Runs tests much more
+# DebugOpt build type: debug assertions/checks with -Os. Runs tests much more
 # quickly than Debug, but isn't as debuggable as a Debug build in gdb or lldb.
-set(CMAKE_C_FLAGS_DEBUGOPT "-O2 -g3" CACHE STRING
+set(CMAKE_C_FLAGS_DEBUGOPT "-Os -g3" CACHE STRING
     "Flags used by the C compiler during DebugOpt builds."
     FORCE)
-set(CMAKE_CXX_FLAGS_DEBUGOPT "-O2 -g3" CACHE STRING
+set(CMAKE_CXX_FLAGS_DEBUGOPT "-Os -g3" CACHE STRING
     "Flags used by the C++ compiler during DebugOpt builds."
     FORCE)
 set(CMAKE_EXE_LINKER_FLAGS_DEBUGOPT
