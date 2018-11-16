@@ -3415,10 +3415,10 @@ RawObject Runtime::newTupleIterator(const Object& tuple) {
   return *result;
 }
 
-LayoutId Runtime::computeBuiltinBase(const Type& type) {
+RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
   // The base class can only be one of the builtin bases including object.
   // We use the first non-object builtin base if any, throw if multiple.
-  HandleScope scope;
+  HandleScope scope(thread);
   Tuple mro(&scope, type->mro());
   Type object_type(&scope, typeAt(LayoutId::kObject));
   Type candidate(&scope, *object_type);
@@ -3435,16 +3435,11 @@ LayoutId Runtime::computeBuiltinBase(const Type& type) {
       candidate = *mro_type;
     } else if (*mro_type != *object_type &&
                !RawTuple::cast(candidate->mro())->contains(*mro_type)) {
-      // Allow subclassing of built-in classes that are themselves subclasses
-      // of built-in classes (e.g. Exception)
-
-      // TODO(cshapiro): throw TypeError
-      CHECK(false, "multiple bases have instance lay-out conflict '%s' '%s'",
-            RawStr::cast(candidate->name())->toCStr(),
-            RawStr::cast(mro_type->name())->toCStr());
+      return thread->raiseTypeErrorWithCStr(
+          "multiple bases have instance lay-out conflict");
     }
   }
-  return RawLayout::cast(candidate->instanceLayout())->id();
+  return *candidate;
 }
 
 RawObject Runtime::instanceAt(Thread* thread, const HeapObject& instance,

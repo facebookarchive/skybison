@@ -128,7 +128,14 @@ RawObject builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   result->setDict(*dict);
 
   // Compute builtin base class
-  LayoutId base_layout_id = runtime->computeBuiltinBase(result);
+  Object builtin_base(&scope, runtime->computeBuiltinBase(thread, result));
+  if (builtin_base->isError()) {
+    return *builtin_base;
+  }
+  Type builtin_base_type(&scope, *builtin_base);
+  LayoutId base_layout_id =
+      RawLayout::cast(builtin_base_type->instanceLayout())->id();
+
   // Initialize instance layout
   Layout layout(&scope,
                 runtime->computeInitialLayout(thread, result, base_layout_id));

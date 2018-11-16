@@ -490,7 +490,7 @@ class Runtime {
   RawObject computeFastGlobals(const Code& code, const Dict& globals,
                                const Dict& builtins);
 
-  LayoutId computeBuiltinBase(const Type& type);
+  RawObject computeBuiltinBase(Thread* thread, const Type& type);
 
   // Adds a builtin function with a positional entry point definition
   // using the default keyword and splatting entry points.
