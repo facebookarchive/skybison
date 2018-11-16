@@ -277,25 +277,24 @@ TEST(DoubleTest, DoubleTest) {
   EXPECT_TRUE(o->isDouble());
   Double* d = Double::cast(o);
   EXPECT_EQ(d->value(), 3.14);
-
-  d->setValue(2.718);
-  EXPECT_EQ(d->value(), 2.718);
 }
 
 TEST(IntegerTest, IntegerTest) {
   Runtime runtime;
-  Object* o = runtime.newInteger(42);
-  EXPECT_TRUE(o->isInteger());
-  Integer* i = Integer::cast(o);
-  EXPECT_EQ(i->value(), 42);
+  Object* o1 = runtime.newInteger(42);
+  EXPECT_FALSE(o1->isLargeInteger());
+  Integer* i1 = Integer::cast(o1);
+  EXPECT_EQ(i1->asWord(), 42);
 
-  i->setValue(9223372036854775807L);
-  EXPECT_EQ(i->value(), 9223372036854775807L);
+  Object* o2 = runtime.newInteger(9223372036854775807L);
+  EXPECT_TRUE(o2->isLargeInteger());
+  Integer* i2 = Integer::cast(o2);
+  EXPECT_EQ(i2->asWord(), 9223372036854775807L);
 
   int stack_val = 123;
-
-  i->setAsVoidPtr(&stack_val);
-  EXPECT_EQ(*reinterpret_cast<int*>(i->asVoidPtr()), 123);
+  Object* o3 = runtime.newIntegerFromCPointer(&stack_val);
+  Integer* i3 = Integer::cast(o3);
+  EXPECT_EQ(*reinterpret_cast<int*>(i3->asCPointer()), 123);
 }
 
 TEST(ListTest, EmptyListInvariants) {

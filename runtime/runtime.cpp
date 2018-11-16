@@ -393,6 +393,10 @@ Object* Runtime::newModule(const Handle<Object>& name) {
   return heap()->createModule(*name, *dictionary);
 }
 
+Object* Runtime::newIntegerFromCPointer(void* ptr) {
+  return newInteger(reinterpret_cast<word>(ptr));
+}
+
 Object* Runtime::newObjectArray(word length) {
   if (length == 0) {
     return empty_object_array_;
@@ -401,15 +405,14 @@ Object* Runtime::newObjectArray(word length) {
 }
 
 Object* Runtime::newInteger(word value) {
-  auto i = Integer::cast(heap()->createInteger());
-  i->setValue(value);
-  return i;
+  if (SmallInteger::isValid(value)) {
+    return SmallInteger::fromWord(value);
+  }
+  return LargeInteger::cast(heap()->createLargeInteger(value));
 }
 
 Object* Runtime::newDouble(double value) {
-  auto d = Double::cast(heap()->createDouble());
-  d->setValue(value);
-  return d;
+  return Double::cast(heap()->createDouble(value));
 }
 
 Object* Runtime::newRange(word start, word stop, word step) {
@@ -600,9 +603,9 @@ void Runtime::initializeHeapClasses() {
   const ClassId function_mro[] = {ClassId::kFunction, ClassId::kObject};
   function->setMro(createMro(function_mro, ARRAYSIZE(function_mro)));
 
-  Handle<Class> integer(&scope, newClassWithId(ClassId::kInteger));
+  Handle<Class> integer(&scope, newClassWithId(ClassId::kLargeInteger));
   integer->setName(newStringFromCString("integer"));
-  const ClassId integer_mro[] = {ClassId::kInteger, ClassId::kObject};
+  const ClassId integer_mro[] = {ClassId::kLargeInteger, ClassId::kObject};
   integer->setMro(createMro(integer_mro, ARRAYSIZE(integer_mro)));
 
   Handle<Class> list(&scope, newClassWithId(ClassId::kList));
@@ -655,7 +658,7 @@ void Runtime::initializeImmediateClasses() {
   Handle<Class> small_integer(&scope, newClassWithId(ClassId::kSmallInteger));
   small_integer->setName(newStringFromCString("smallint"));
   const ClassId small_integer_mro[] = {
-      ClassId::kSmallInteger, ClassId::kInteger, ClassId::kObject};
+      ClassId::kSmallInteger, ClassId::kLargeInteger, ClassId::kObject};
   small_integer->setMro(
       createMro(small_integer_mro, ARRAYSIZE(small_integer_mro)));
 
@@ -670,14 +673,14 @@ void Runtime::initializeImmediateClasses() {
   Handle<Class> small_string(&scope, newClassWithId(ClassId::kSmallString));
   small_string->setName(newStringFromCString("smallstr"));
   const ClassId small_string_mro[] = {
-      ClassId::kSmallString, ClassId::kInteger, ClassId::kObject};
+      ClassId::kSmallString, ClassId::kLargeInteger, ClassId::kObject};
   small_string->setMro(
       createMro(small_string_mro, ARRAYSIZE(small_string_mro)));
 
   Handle<Class> boolean(&scope, newClassWithId(ClassId::kBoolean));
   boolean->setName(newStringFromCString("bool"));
   const ClassId boolean_mro[] = {
-      ClassId::kBoolean, ClassId::kInteger, ClassId::kObject};
+      ClassId::kBoolean, ClassId::kLargeInteger, ClassId::kObject};
   boolean->setMro(createMro(boolean_mro, ARRAYSIZE(boolean_mro)));
 
   Handle<Class> none(&scope, newClassWithId(ClassId::kNone));

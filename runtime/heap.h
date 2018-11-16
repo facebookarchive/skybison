@@ -30,11 +30,15 @@ class Heap {
 
   Object* createDictionary(Object* items);
 
+  Object* createDouble(double value);
+
   Object* createSet(Object* items);
 
   Object* createFunction();
 
   Object* createInstance(ClassId class_id, word num_attributes);
+
+  Object* createLargeInteger(word value);
 
   Object* createList(Object* elements);
 
@@ -47,10 +51,6 @@ class Heap {
   Object* createValueCell();
 
   Object* createEllipsis();
-
-  Object* createInteger();
-
-  Object* createDouble();
 
   Object* createRange();
 

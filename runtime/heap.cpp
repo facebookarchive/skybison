@@ -181,6 +181,20 @@ Object* Heap::createDictionary(Object* data) {
   return Dictionary::cast(result);
 }
 
+Object* Heap::createDouble(double value) {
+  word size = Double::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<Double*>(raw);
+  result->setHeader(Header::from(
+      Double::kSize / kPointerSize,
+      0,
+      ClassId::kDouble,
+      ObjectFormat::kDataInstance));
+  result->initialize(value);
+  return Double::cast(result);
+}
+
 Object* Heap::createSet(Object* data) {
   word size = Set::allocationSize();
   Object* raw = allocate(size, Header::kSize);
@@ -218,6 +232,20 @@ Object* Heap::createInstance(ClassId class_id, word num_attributes) {
       Header::from(num_attributes, 0, class_id, ObjectFormat::kObjectInstance));
   result->initialize();
   return Instance::cast(result);
+}
+
+Object* Heap::createLargeInteger(word value) {
+  word size = LargeInteger::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<LargeInteger*>(raw);
+  result->setHeader(Header::from(
+      LargeInteger::kSize / kPointerSize,
+      0,
+      ClassId::kLargeInteger,
+      ObjectFormat::kDataInstance));
+  result->initialize(value);
+  return LargeInteger::cast(result);
 }
 
 Object* Heap::createList(Object* elements) {
@@ -294,32 +322,6 @@ Object* Heap::createEllipsis() {
       ClassId::kEllipsis,
       ObjectFormat::kDataInstance));
   return Ellipsis::cast(result);
-}
-
-Object* Heap::createInteger() {
-  word size = Integer::allocationSize();
-  Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
-  auto result = reinterpret_cast<Integer*>(raw);
-  result->setHeader(Header::from(
-      Integer::kSize / kPointerSize,
-      0,
-      ClassId::kInteger,
-      ObjectFormat::kDataInstance));
-  return Integer::cast(result);
-}
-
-Object* Heap::createDouble() {
-  word size = Double::allocationSize();
-  Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
-  auto result = reinterpret_cast<Double*>(raw);
-  result->setHeader(Header::from(
-      Double::kSize / kPointerSize,
-      0,
-      ClassId::kDouble,
-      ObjectFormat::kDataInstance));
-  return Double::cast(result);
 }
 
 Object* Heap::createRange() {

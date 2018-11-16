@@ -70,7 +70,7 @@ class Object;
   V(Double)                         \
   V(Ellipsis)                       \
   V(Function)                       \
-  V(Integer)                        \
+  V(LargeInteger)                   \
   V(LargeString)                    \
   V(List)                           \
   V(Module)                         \
@@ -109,7 +109,7 @@ enum ClassId {
   kDouble,
   kEllipsis,
   kFunction,
-  kInteger,
+  kLargeInteger,
   kLargeString,
   kList,
   kModule,
@@ -152,6 +152,7 @@ class Object {
   inline bool isModule();
   inline bool isObjectArray();
   inline bool isLargeString();
+  inline bool isLargeInteger();
   inline bool isInteger();
   inline bool isRange();
   inline bool isRangeIterator();
@@ -178,12 +179,27 @@ class Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
 };
 
+// Generic wrapper around SmallInteger/LargeInteger.
+class Integer : public Object {
+ public:
+  // Getters and setters.
+  inline word asWord();
+  inline void* asCPointer();
+
+  // Casting.
+  static inline Integer* cast(Object* object);
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(Integer);
+};
+
 // Immediate objects
 
 class SmallInteger : public Object {
  public:
   // Getters and setters.
   inline word value();
+  inline void* asCPointer();
 
   // Conversion.
   static inline SmallInteger* fromWord(word value);
@@ -588,38 +604,38 @@ class LargeString : public Array {
 
 // Currently a 64 bit signed integer - will eventually be extended to
 // support arbitrary precision.
-class Integer : public HeapObject {
+// TODO: arbitrary precision support.
+class LargeInteger : public HeapObject {
  public:
   // Getters and setters.
   // TODO: when arbitrary precision is supported, how should these methods
   // behave?
-  inline word value();
-  inline void setValue(word value);
+  inline word asWord();
 
-  // Integer is also used for storing native pointers.
-  inline void* asVoidPtr();
-  inline void setAsVoidPtr(void* ptr);
+  // LargeInteger is also used for storing native pointers.
+  inline void* asCPointer();
 
   // Casting.
-  static inline Integer* cast(Object* object);
+  static inline LargeInteger* cast(Object* object);
 
   // Sizing.
   static inline word allocationSize();
 
+  // Allocation.
+  inline void initialize(word value);
+
   // Layout.
-  static const int kStartOffset = HeapObject::kSize;
-  static const int kValueOffset = kStartOffset + kPointerSize;
+  static const int kValueOffset = HeapObject::kSize;
   static const int kSize = kValueOffset + kPointerSize;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Integer);
+  DISALLOW_COPY_AND_ASSIGN(LargeInteger);
 };
 
 class Double : public HeapObject {
  public:
   // Getters and setters.
   inline double value();
-  inline void setValue(double value);
 
   // Casting.
   static inline Double* cast(Object* object);
@@ -627,9 +643,11 @@ class Double : public HeapObject {
   // Sizing.
   static inline word allocationSize();
 
+  // Allocation.
+  inline void initialize(double value);
+
   // Layout.
-  static const int kStartOffset = HeapObject::kSize;
-  static const int kValueOffset = kStartOffset + kPointerSize;
+  static const int kValueOffset = HeapObject::kSize;
   static const int kSize = kValueOffset + kDoubleSize;
 
  private:
@@ -1296,11 +1314,15 @@ bool Object::isEllipsis() {
   return HeapObject::cast(this)->header()->classId() == ClassId::kEllipsis;
 }
 
-bool Object::isInteger() {
+bool Object::isLargeInteger() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kInteger;
+  return HeapObject::cast(this)->header()->classId() == ClassId::kLargeInteger;
+}
+
+bool Object::isInteger() {
+  return isSmallInteger() || isLargeInteger();
 }
 
 bool Object::isRange() {
@@ -1335,6 +1357,27 @@ T* Object::cast() {
   return T::cast(this);
 }
 
+// Integer
+
+Integer* Integer::cast(Object* object) {
+  assert(object->isInteger());
+  return reinterpret_cast<Integer*>(object);
+}
+
+word Integer::asWord() {
+  if (isSmallInteger()) {
+    return SmallInteger::cast(this)->value();
+  }
+  return LargeInteger::cast(this)->asWord();
+}
+
+void* Integer::asCPointer() {
+  if (isSmallInteger()) {
+    return SmallInteger::cast(this)->asCPointer();
+  }
+  return LargeInteger::cast(this)->asCPointer();
+}
+
 // SmallInteger
 
 SmallInteger* SmallInteger::cast(Object* object) {
@@ -1344,6 +1387,10 @@ SmallInteger* SmallInteger::cast(Object* object) {
 
 word SmallInteger::value() {
   return reinterpret_cast<word>(this) >> kTagSize;
+}
+
+void* SmallInteger::asCPointer() {
+  return reinterpret_cast<void*>(value());
 }
 
 SmallInteger* SmallInteger::fromWord(word value) {
@@ -1909,41 +1956,33 @@ void Code::setVarnames(Object* value) {
   instanceVariableAtPut(kVarnamesOffset, value);
 }
 
-// Integer
+// LargeInteger
 
-word Integer::value() {
+word LargeInteger::asWord() {
   return *reinterpret_cast<word*>(address() + kValueOffset);
 }
 
-void Integer::setValue(word value) {
-  *reinterpret_cast<word*>(address() + kValueOffset) = value;
-}
-
-void* Integer::asVoidPtr() {
+void* LargeInteger::asCPointer() {
   return *reinterpret_cast<void**>(address() + kValueOffset);
 }
 
-void Integer::setAsVoidPtr(void* ptr) {
-  *reinterpret_cast<void**>(address() + kValueOffset) = ptr;
+void LargeInteger::initialize(word value) {
+  *reinterpret_cast<word*>(address() + kValueOffset) = value;
 }
 
-word Integer::allocationSize() {
-  return Header::kSize + Integer::kSize;
+word LargeInteger::allocationSize() {
+  return Header::kSize + LargeInteger::kSize;
 }
 
-Integer* Integer::cast(Object* object) {
-  assert(object->isInteger());
-  return reinterpret_cast<Integer*>(object);
+LargeInteger* LargeInteger::cast(Object* object) {
+  assert(object->isLargeInteger());
+  return reinterpret_cast<LargeInteger*>(object);
 }
 
 // Double
 
 double Double::value() {
   return *reinterpret_cast<double*>(address() + kValueOffset);
-}
-
-void Double::setValue(double value) {
-  *reinterpret_cast<double*>(address() + kValueOffset) = value;
 }
 
 word Double::allocationSize() {
@@ -1953,6 +1992,10 @@ word Double::allocationSize() {
 Double* Double::cast(Object* object) {
   assert(object->isDouble());
   return reinterpret_cast<Double*>(object);
+}
+
+void Double::initialize(double value) {
+  *reinterpret_cast<double*>(address() + kValueOffset) = value;
 }
 
 // Range

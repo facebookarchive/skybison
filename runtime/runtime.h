@@ -55,6 +55,9 @@ class Runtime {
 
   Object* newModule(const Handle<Object>& name);
 
+  // Returns a LargeInteger that stores the value in ptr.
+  Object* newIntegerFromCPointer(void* ptr);
+
   Object* newObjectArray(word length);
 
   Object* newRange(word start, word stop, word step);
