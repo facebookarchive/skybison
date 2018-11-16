@@ -606,4 +606,19 @@ print(foo.bar)
       "aborting due to pending exception: missing attribute");
 }
 
+TEST(InstanceAttributeTest, DunderClasss) {
+  Runtime runtime;
+  const char* src = R"(
+class Foo: pass
+class Bar(Foo): pass
+class Hello(Bar, list): pass
+print(list().__class__ is list)
+print(Foo().__class__ is Foo)
+print(Bar().__class__ is Bar)
+print(Hello().__class__ is Hello)
+)";
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "True\nTrue\nTrue\nTrue\n");
+}
+
 } // namespace python

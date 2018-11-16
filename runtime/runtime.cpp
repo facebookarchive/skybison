@@ -221,6 +221,11 @@ Object* Runtime::instanceGetAttr(
     return thread->throwTypeErrorFromCString("attribute name must be a string");
   }
 
+  if (String::cast(*name)->equals(symbols()->DunderClass())) {
+    // TODO(T27735822): Make __class__ a descriptor
+    return classOf(*receiver);
+  }
+
   // Look for the attribute in the class
   HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*receiver));

@@ -11,6 +11,7 @@ class Runtime;
 // clang-format off
 #define FOREACH_SYMBOL(V)                \
   V(DunderBuildClass, "__build_class__") \
+  V(DunderClass, "__class__")            \
   V(DunderGet, "__get__")                \
   V(DunderInit, "__init__")              \
   V(DunderMain, "__main__")              \
