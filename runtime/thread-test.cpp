@@ -1588,6 +1588,17 @@ d * 0 == 0
 )");
 }
 
+TEST(ThreadTest, BinarySubtractDouble) {
+  const char* src = R"(
+a = 2.0
+b = 1.1
+print(a-b)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "0.9\n");
+}
+
 TEST(ThreadTest, InplaceOps) {
   Runtime runtime;
   HandleScope scope;
@@ -3170,6 +3181,41 @@ print("hi", file=sys.stderr, end='ya')
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "hiya");
+}
+
+TEST(ThreadTest, TimeOpSub) { // pystone dependency
+  const char* src = R"(
+import time
+starttime = time.time()
+for i in range(10):
+  pass
+nulltime = time.time() - starttime
+print(nulltime.__class__ is float)
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "True\n");
+}
+
+TEST(ThreadTest, TimeOpDiv) { // pystone dependency
+  const char* src = R"(
+loops = 50
+from time import time
+starttime = time()
+for i in range(50):
+  pass
+benchtime = time() - starttime
+if benchtime == 0.0:
+  loopsPerBenchtime = 0.0
+else:
+  loopsPerBenchtime = (loops / benchtime)
+print(benchtime != 0.0)
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "True\n");
 }
 
 } // namespace python

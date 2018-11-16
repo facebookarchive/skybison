@@ -528,10 +528,19 @@ void BINARY_MODULO(Context* ctx, word) {
 }
 
 void BINARY_SUBTRACT(Context* ctx, word) {
-  word right = SmallInteger::cast(*ctx->sp++)->value();
-  word left = SmallInteger::cast(*ctx->sp)->value();
-  word result = left - right;
-  *ctx->sp = SmallInteger::fromWord(result);
+  HandleScope scope(ctx->thread);
+  Handle<Object> right(&scope, *ctx->sp++);
+  Handle<Object> left(&scope, *ctx->sp);
+  if (left->isSmallInteger() && right->isSmallInteger()) {
+    *ctx->sp = SmallInteger::fromWord(
+        SmallInteger::cast(*left)->value() -
+        SmallInteger::cast(*right)->value());
+  } else if (left->isDouble() && right->isDouble()) {
+    *ctx->sp = ctx->thread->runtime()->newDouble(
+        Double::cast(*left)->value() - Double::cast(*right)->value());
+  } else {
+    UNIMPLEMENTED("Unsupported types for binary ops");
+  }
 }
 
 void BINARY_MULTIPLY(Context* ctx, word) {
