@@ -43,6 +43,7 @@ set(
 add_library(
   runtime
   STATIC
+  runtime/allocator.h
   runtime/builtins.cpp
   runtime/builtins.h
   runtime/bytecode.cpp
