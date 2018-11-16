@@ -1373,12 +1373,21 @@ void Runtime::moduleAtPut(const Handle<Module>& module,
   dictAtPutInValueCell(dict, key, value);
 }
 
+struct {
+  SymbolId name;
+  void (Runtime::*create_module)();
+} kBuiltinModules[] = {
+    {SymbolId::kBuiltins, &Runtime::createBuiltinsModule},
+    {SymbolId::kSys, &Runtime::createSysModule},
+    {SymbolId::kTime, &Runtime::createTimeModule},
+    {SymbolId::kUnderWeakRef, &Runtime::createWeakRefModule},
+};
+
 void Runtime::initializeModules() {
   modules_ = newDict();
-  createBuiltinsModule();
-  createSysModule();
-  createTimeModule();
-  createWeakRefModule();
+  for (uword i = 0; i < ARRAYSIZE(kBuiltinModules); i++) {
+    (this->*kBuiltinModules[i].create_module)();
+  }
 }
 
 // Keep this in sync with ExtensionTypeInitializer in ext/Modules/config.cpp
@@ -1624,6 +1633,31 @@ void Runtime::createSysModule() {
 
   Handle<Object> platform(&scope, newStrFromCStr(OS::name()));
   moduleAddGlobal(module, SymbolId::kPlatform, platform);
+
+  // Count the number of modules and create a tuple
+  word num_external_modules = 0;
+  while (kModuleInitializers[num_external_modules].name != nullptr) {
+    num_external_modules++;
+  }
+  word num_modules = ARRAYSIZE(kBuiltinModules) + num_external_modules;
+  Handle<ObjectArray> builtins_tuple(&scope, newObjectArray(num_modules));
+
+  // Add all the available builtin modules
+  for (uword i = 0; i < ARRAYSIZE(kBuiltinModules); i++) {
+    Handle<Object> module_name(&scope, symbols()->at(kBuiltinModules[i].name));
+    builtins_tuple->atPut(i, *module_name);
+  }
+
+  // Add all the available extension builtin modules
+  for (int i = 0; kModuleInitializers[i].name != nullptr; i++) {
+    Handle<Object> module_name(&scope,
+                               newStrFromCStr(kModuleInitializers[i].name));
+    builtins_tuple->atPut(ARRAYSIZE(kBuiltinModules) + i, *module_name);
+  }
+
+  // Create builtin_module_names tuple
+  Handle<Object> builtins(&scope, *builtins_tuple);
+  moduleAddGlobal(module, SymbolId::kBuiltinModuleNames, builtins);
 
   addModule(module);
 }

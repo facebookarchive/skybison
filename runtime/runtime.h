@@ -127,6 +127,11 @@ class Runtime {
 
   Object* newWeakRef();
 
+  void createBuiltinsModule();
+  void createSysModule();
+  void createTimeModule();
+  void createWeakRefModule();
+
   Object* internStr(const Handle<Object>& str);
   Object* internStrFromCStr(const char* c_str);
 
@@ -535,10 +540,6 @@ class Runtime {
   void initializeSuperClass();
   void initializeTypeClass();
 
-  void createBuiltinsModule();
-  void createSysModule();
-  void createTimeModule();
-  void createWeakRefModule();
   Object* createMainModule();
 
   Object* executeModule(const char* buffer, const Handle<Module>& module);

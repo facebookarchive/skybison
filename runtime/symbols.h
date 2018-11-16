@@ -105,6 +105,7 @@ class Runtime;
   V(BitLength, "bit_length")                                                   \
   V(Bool, "bool")                                                              \
   V(Bootstrap, "bootstrap")                                                    \
+  V(BuiltinModuleNames, "builtin_module_names")                                \
   V(Builtins, "builtins")                                                      \
   V(ByteArray, "bytearray")                                                    \
   V(Callable, "callable")                                                      \

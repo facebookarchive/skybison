@@ -98,4 +98,30 @@ sysname = sys.platform
   }
 }
 
+TEST(SysModuleTest, BuiltinModuleNames) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+import sys
+builtin_names = sys.builtin_module_names
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> builtins(&scope, moduleAt(&runtime, main, "builtin_names"));
+  ASSERT_TRUE(builtins->isObjectArray());
+
+  // Test that builtin list is greater than 0
+  Handle<ObjectArray> builtins_tuple(&scope, *builtins);
+  EXPECT_GT(builtins_tuple->length(), 0);
+
+  // Test that sys and _stat are both in the builtin list
+  bool builtin_sys = false;
+  bool builtin__stat = false;
+  for (int i = 0; i < builtins_tuple->length(); i++) {
+    builtin_sys |= Str::cast(builtins_tuple->at(i))->equalsCStr("sys");
+    builtin__stat |= Str::cast(builtins_tuple->at(i))->equalsCStr("_stat");
+  }
+  EXPECT_TRUE(builtin_sys);
+  EXPECT_TRUE(builtin__stat);
+}
+
 }  // namespace python
