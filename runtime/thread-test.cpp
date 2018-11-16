@@ -623,4 +623,44 @@ TEST(ThreadTest, MakeFunction) {
   EXPECT_EQ(function->entry(), &interpreterTrampoline);
 }
 
+TEST(ThreadTest, BuildList) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
+  consts->atPut(0, SmallInteger::fromWord(111));
+  consts->atPut(1, runtime.newStringFromCString("qqq"));
+  consts->atPut(2, None::object());
+  code->setConsts(*consts);
+
+  const byte bc[] = {LOAD_CONST,
+                     0,
+                     LOAD_CONST,
+                     1,
+                     LOAD_CONST,
+                     2,
+                     BUILD_LIST,
+                     3,
+                     RETURN_VALUE,
+                     0};
+  code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isList());
+
+  List* list = List::cast(result);
+  EXPECT_EQ(list->capacity(), 3);
+
+  ASSERT_TRUE(list->at(0)->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 111);
+
+  ASSERT_TRUE(list->at(1)->isString());
+  EXPECT_TRUE(
+      String::cast(list->at(1))->equals(runtime.newStringFromCString("qqq")));
+
+  EXPECT_EQ(list->at(2), None::object());
+}
+
 } // namespace python

@@ -141,6 +141,19 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         *--sp = function;
         break;
       }
+      case Bytecode::BUILD_LIST: {
+        HandleScope scope;
+        Handle<ObjectArray> array(
+            &scope, thread->runtime()->newObjectArray(arg));
+        for (int i = arg - 1; i >= 0; i--) {
+          array->atPut(i, *sp++);
+        }
+        List* list = List::cast(thread->runtime()->newList());
+        list->setItems(*array);
+        list->setAllocated(array->length());
+        *--sp = list;
+        break;
+      }
       default:
         abort();
     }
