@@ -1165,7 +1165,7 @@ class C:
   Handle<ObjectArray> mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *cls);
-  EXPECT_EQ(mro->at(1), runtime.classAt(ClassId::kObject));
+  EXPECT_EQ(mro->at(1), runtime.classAt(IntrinsicLayoutId::kObject));
 }
 
 TEST(ThreadTest, LoadBuildClassClassWithInit) {
@@ -1199,7 +1199,7 @@ class C:
   Handle<ObjectArray> mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *cls);
-  EXPECT_EQ(mro->at(1), runtime.classAt(ClassId::kObject));
+  EXPECT_EQ(mro->at(1), runtime.classAt(IntrinsicLayoutId::kObject));
 
   // Check class name
   ASSERT_TRUE(cls->name()->isSmallString());
@@ -1743,8 +1743,8 @@ def test(a, b):
   // Create an instance of D
   Handle<Object> klass_d(&scope, findInModule(&runtime, main, "D"));
   ASSERT_TRUE(klass_d->isClass());
-  Handle<Object> instance(
-      &scope, runtime.newInstance(Class::cast(*klass_d)->id()));
+  Handle<Layout> layout(&scope, Class::cast(*klass_d)->instanceLayout());
+  Handle<Object> instance(&scope, runtime.newInstance(layout));
 
   // Fetch the test function
   object = findInModule(&runtime, main, "test");
@@ -1845,7 +1845,7 @@ class Foo(object):
   Handle<ObjectArray> mro(&scope, klass->mro());
   ASSERT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *klass);
-  EXPECT_EQ(mro->at(1), runtime.classAt(ClassId::kObject));
+  EXPECT_EQ(mro->at(1), runtime.classAt(IntrinsicLayoutId::kObject));
 }
 
 // imports

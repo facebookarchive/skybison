@@ -562,117 +562,6 @@ TEST(RuntimeTest, GetClassConstructor) {
   EXPECT_EQ(runtime.classConstructor(klass), *func);
 }
 
-TEST(RuntimeTest, ComputeInstanceAttributeMap) {
-  Runtime runtime;
-  // Template bytecode for:
-  //
-  //   def __init__(self):
-  //       self.<name0> = None
-  //       self.<name1> = None
-  const byte bc[] = {LOAD_CONST,
-                     0,
-                     LOAD_FAST,
-                     0,
-                     STORE_ATTR,
-                     0,
-                     LOAD_CONST,
-                     0,
-                     LOAD_FAST,
-                     0,
-                     STORE_ATTR,
-                     1,
-                     RETURN_VALUE,
-                     0};
-
-  // Creates a new class with a constructor that contains the bytecode
-  // defined above.
-  auto createClass = [&](const Handle<Object>& attr0,
-                         const Handle<Object>& attr1) {
-    HandleScope scope;
-
-    Handle<ObjectArray> names(&scope, runtime.newObjectArray(2));
-    names->atPut(0, *attr0);
-    names->atPut(1, *attr1);
-
-    Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
-    consts->atPut(0, None::object());
-
-    Handle<Code> code(&scope, runtime.newCode());
-    code->setNames(*names);
-    code->setConsts(*consts);
-    code->setCode(runtime.newByteArrayWithAll(bc));
-
-    Handle<Function> func(&scope, runtime.newFunction());
-    func->setCode(*code);
-
-    Handle<Dictionary> klass_dict(&scope, runtime.newDictionary());
-    Handle<Object> key(&scope, runtime.symbols()->DunderInit());
-    Handle<Object> value(&scope, *func);
-    runtime.dictionaryAtPutInValueCell(klass_dict, key, value);
-
-    Handle<Class> klass(&scope, runtime.newClass());
-    klass->setDictionary(*klass_dict);
-
-    Handle<ObjectArray> mro(&scope, runtime.newObjectArray(1));
-    mro->atPut(0, *klass);
-    klass->setMro(*mro);
-
-    return *klass;
-  };
-
-  // Create the following classes:
-  //
-  // class A:
-  //   def __init__(self):
-  //     self.attr0 = None
-  //     self.attr1 = None
-  //
-  // class B
-  //   def __init__(self):
-  //     self.attr0 = None
-  //     self.attr2 = None
-  //
-  // class C(A, B):
-  //   def __init__(self):
-  //     self.attr3 = None
-  //     self.attr4 = None
-  HandleScope scope;
-  Handle<Object> attr0(&scope, runtime.newStringFromCString("attr0"));
-  Handle<Object> attr1(&scope, runtime.newStringFromCString("attr1"));
-  Handle<Class> klass_a(&scope, createClass(attr0, attr1));
-  Handle<ObjectArray> map_a(
-      &scope, runtime.computeInstanceAttributeMap(klass_a));
-  EXPECT_EQ(map_a->length(), 2);
-  EXPECT_TRUE(objectArrayContains(map_a, attr0));
-  EXPECT_TRUE(objectArrayContains(map_a, attr1));
-
-  Handle<Object> attr2(&scope, runtime.newStringFromCString("attr2"));
-  Handle<Class> klass_b(&scope, createClass(attr0, attr2));
-  Handle<ObjectArray> map_b(
-      &scope, runtime.computeInstanceAttributeMap(klass_b));
-  EXPECT_EQ(map_b->length(), 2);
-  EXPECT_TRUE(objectArrayContains(map_b, attr0));
-  EXPECT_TRUE(objectArrayContains(map_b, attr2));
-
-  Handle<Object> attr3(&scope, runtime.newStringFromCString("attr3"));
-  Handle<Object> attr4(&scope, runtime.newStringFromCString("attr4"));
-  Handle<Class> klass_c(&scope, createClass(attr3, attr4));
-  Handle<ObjectArray> mro(&scope, runtime.newObjectArray(3));
-  mro->atPut(0, *klass_c);
-  mro->atPut(1, *klass_a);
-  mro->atPut(2, *klass_b);
-  klass_c->setMro(*mro);
-  // Both A and B have "attr0" which should only be counted once
-  Handle<ObjectArray> map_c(
-      &scope, runtime.computeInstanceAttributeMap(klass_c));
-  EXPECT_EQ(map_c->length(), 5);
-  EXPECT_TRUE(objectArrayContains(map_c, attr0));
-  EXPECT_TRUE(objectArrayContains(map_c, attr1));
-  EXPECT_TRUE(objectArrayContains(map_c, attr2));
-  EXPECT_TRUE(objectArrayContains(map_c, attr3));
-  EXPECT_TRUE(objectArrayContains(map_c, attr4));
-}
-
 TEST(RuntimeTest, NewInstanceEmptyClass) {
   Runtime runtime;
   HandleScope scope;
@@ -681,15 +570,16 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
   runtime.run(buffer.get());
 
-  ClassId class_id = static_cast<ClassId>(ClassId::kLastId + 1);
-  Handle<Class> cls(&scope, runtime.classAt(class_id));
+  word layout_id = IntrinsicLayoutId::kLastId + 1;
+  Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
+  EXPECT_EQ(layout->instanceSize(), 1);
 
+  Handle<Class> cls(&scope, layout->describedClass());
   EXPECT_TRUE(String::cast(cls->name())->equalsCString("MyEmptyClass"));
-  EXPECT_EQ(cls->instanceSize(), 0);
 
-  Handle<Instance> instance(&scope, runtime.newInstance(class_id));
+  Handle<Instance> instance(&scope, runtime.newInstance(layout));
   EXPECT_TRUE(instance->isInstance());
-  EXPECT_TRUE(instance->header()->classId() == class_id);
+  EXPECT_TRUE(instance->header()->layoutId() == layout_id);
 }
 
 TEST(RuntimeTest, NewInstanceManyAttributes) {
@@ -705,22 +595,18 @@ class MyClassWithAttributes():
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
   runtime.run(buffer.get());
-  ClassId class_id = static_cast<ClassId>(ClassId::kLastId + 1);
-  Handle<Class> cls(&scope, runtime.classAt(class_id));
 
+  word layout_id = IntrinsicLayoutId::kLastId + 1;
+  Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
+  ASSERT_EQ(layout->instanceSize(), 4);
+
+  Handle<Class> cls(&scope, layout->describedClass());
   ASSERT_TRUE(
       String::cast(cls->name())->equalsCString("MyClassWithAttributes"));
-  ASSERT_EQ(cls->instanceSize(), 3);
-  ASSERT_TRUE(cls->instanceAttributeMap()->isObjectArray());
-  Handle<ObjectArray> attr_map(&scope, cls->instanceAttributeMap());
-  for (const char* raw_attr : {"a", "b", "c"}) {
-    Handle<Object> attr(&scope, runtime.newStringFromCString(raw_attr));
-    EXPECT_TRUE(objectArrayContains(attr_map, attr)) << "Missing " << raw_attr;
-  }
 
-  Handle<Instance> instance(&scope, runtime.newInstance(class_id));
+  Handle<Instance> instance(&scope, runtime.newInstance(layout));
   EXPECT_TRUE(instance->isInstance());
-  EXPECT_EQ(instance->header()->classId(), class_id);
+  EXPECT_EQ(instance->header()->layoutId(), layout_id);
 }
 
 TEST(RuntimeTest, VerifySymbols) {
@@ -737,7 +623,7 @@ TEST(RuntimeTest, VerifySymbols) {
 }
 
 static String* className(Runtime* runtime, Object* o) {
-  auto cls = Class::cast(runtime->classAt(o->classId()));
+  auto cls = Class::cast(runtime->classOf(o));
   auto name = String::cast(cls->name());
   return name;
 }
@@ -850,17 +736,19 @@ c = MyClassWithNoInitMethod()
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
   runtime.run(buffer.get());
-  ClassId class_id = static_cast<ClassId>(ClassId::kLastId + 1);
-  Handle<Class> cls(&scope, runtime.classAt(class_id));
 
+  word layout_id = IntrinsicLayoutId::kLastId + 1;
+  Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
+  EXPECT_EQ(layout->instanceSize(), 1);
+
+  Handle<Class> cls(&scope, layout->describedClass());
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithNoInitMethod");
-  EXPECT_EQ(cls->instanceSize(), 0);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> key(&scope, runtime.newStringFromCString("c"));
   Handle<Object> instance(&scope, runtime.moduleAt(main, key));
   ASSERT_TRUE(instance->isInstance());
-  EXPECT_EQ(instance->classId(), class_id);
+  EXPECT_EQ(instance->layoutId(), layout_id);
 }
 
 TEST(RuntimeTest, TypeCallEmptyInitMethod) {
@@ -878,17 +766,19 @@ c = MyClassWithEmptyInitMethod()
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
   runtime.run(buffer.get());
-  ClassId class_id = static_cast<ClassId>(ClassId::kLastId + 1);
-  Handle<Class> cls(&scope, runtime.classAt(class_id));
 
+  word layout_id = IntrinsicLayoutId::kLastId + 1;
+  Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
+  EXPECT_EQ(layout->instanceSize(), 1);
+
+  Handle<Class> cls(&scope, layout->describedClass());
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithEmptyInitMethod");
-  EXPECT_EQ(cls->instanceSize(), 0);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> key(&scope, runtime.newStringFromCString("c"));
   Handle<Object> instance(&scope, runtime.moduleAt(main, key));
   ASSERT_TRUE(instance->isInstance());
-  EXPECT_EQ(instance->classId(), class_id);
+  EXPECT_EQ(instance->layoutId(), layout_id);
 }
 
 TEST(RuntimeTest, TypeCallWithArguments) {
@@ -906,17 +796,19 @@ c = MyClassWithAttributes(1)
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
   runtime.run(buffer.get());
-  ClassId class_id = static_cast<ClassId>(ClassId::kLastId + 1);
-  Handle<Class> cls(&scope, runtime.classAt(class_id));
 
+  word layout_id = IntrinsicLayoutId::kLastId + 1;
+  Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
+  ASSERT_EQ(layout->instanceSize(), 2);
+
+  Handle<Class> cls(&scope, layout->describedClass());
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithAttributes");
-  ASSERT_EQ(cls->instanceSize(), 1);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> key(&scope, runtime.newStringFromCString("c"));
   Handle<Object> instance(&scope, runtime.moduleAt(main, key));
   ASSERT_TRUE(instance->isInstance());
-  ASSERT_EQ(instance->classId(), class_id);
+  ASSERT_EQ(instance->layoutId(), layout_id);
 
   Handle<Object> name(&scope, runtime.newStringFromCString("x"));
   Handle<Object> value(

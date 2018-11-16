@@ -28,7 +28,7 @@ class Heap {
 
   Object* createByteArray(word length);
 
-  Object* createClass(ClassId class_id);
+  Object* createClass();
 
   Object* createClassMethod();
 
@@ -42,9 +42,11 @@ class Heap {
 
   Object* createFunction();
 
-  Object* createInstance(ClassId class_id, word num_attributes);
+  Object* createInstance(word layout_id, word num_attributes);
 
   Object* createLargeInteger(word value);
+
+  Object* createLayout(word id);
 
   Object* createList();
 

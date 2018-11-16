@@ -82,7 +82,10 @@ Object* computeMro(
   Runtime* runtime = thread->runtime();
   HandleScope scope;
 
-  Handle<Object> object_class(&scope, runtime->classAt(ClassId::kObject));
+  Handle<Object> object_class(
+      &scope,
+      Layout::cast(runtime->layoutAt(IntrinsicLayoutId::kObject))
+          ->describedClass());
 
   // Special case for no explicit ancestors.
   if (parents->length() == 0) {

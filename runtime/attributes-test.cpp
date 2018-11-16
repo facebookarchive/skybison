@@ -10,18 +10,14 @@
 namespace python {
 using namespace testing;
 
-static Object* createClass(
-    Runtime* runtime,
-    std::initializer_list<ClassId> mro_tail) {
+static Object* createClass(Runtime* runtime) {
   HandleScope scope;
   Handle<Class> klass(&scope, runtime->newClass());
-  Handle<ObjectArray> mro(&scope, runtime->newObjectArray(mro_tail.size() + 1));
+  Handle<Layout> layout(&scope, runtime->newLayout());
+  layout->setDescribedClass(*klass);
+  klass->setInstanceLayout(*layout);
+  Handle<ObjectArray> mro(&scope, runtime->newObjectArray(1));
   mro->atPut(0, *klass);
-  word idx = 1;
-  for (ClassId class_id : mro_tail) {
-    mro->atPut(idx, runtime->classAt(class_id));
-    idx++;
-  }
   klass->setMro(*mro);
   return *klass;
 }
@@ -51,7 +47,7 @@ static void setInMetaclass(
 TEST(ClassGetAttrTest, MetaClassFunction) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Object> klass(&scope, createClass(&runtime, {}));
+  Handle<Object> klass(&scope, createClass(&runtime));
 
   // Store the function on the metaclass
   Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
@@ -70,7 +66,7 @@ TEST(ClassGetAttrTest, MetaClassFunction) {
 TEST(ClassGetAttrTest, MetaClassAttr) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Object> klass(&scope, createClass(&runtime, {}));
+  Handle<Object> klass(&scope, createClass(&runtime));
 
   // Store the attribute on the metaclass
   Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
@@ -87,7 +83,7 @@ TEST(ClassGetAttrTest, MetaClassAttr) {
 TEST(ClassGetAttrTest, ShadowingAttr) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Object> klass(&scope, createClass(&runtime, {}));
+  Handle<Object> klass(&scope, createClass(&runtime));
 
   // Store the attribute on the metaclass
   Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
@@ -105,13 +101,13 @@ TEST(ClassGetAttrTest, ShadowingAttr) {
 }
 
 struct IntrinsicClassSetAttrTestData {
-  ClassId class_id;
+  word layout_id;
   const char* name;
 };
 
 IntrinsicClassSetAttrTestData kIntrinsicClassSetAttrTests[] = {
 // clang-format off
-#define DEFINE_TEST(class_name) {ClassId::k##class_name, #class_name},
+#define DEFINE_TEST(class_name) {IntrinsicLayoutId::k##class_name, #class_name},
   INTRINSIC_CLASS_NAMES(DEFINE_TEST)
 #undef DEFINE_TEST
     // clang-format on
@@ -128,7 +124,7 @@ class IntrinsicClassSetAttrTest
 TEST_P(IntrinsicClassSetAttrTest, SetAttr) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Object> klass(&scope, runtime.classAt(GetParam().class_id));
+  Handle<Object> klass(&scope, runtime.classAt(GetParam().layout_id));
   Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
   Handle<Object> value(&scope, SmallInteger::fromWord(100));
   Thread* thread = Thread::currentThread();
@@ -153,7 +149,7 @@ TEST(ClassAttributeTest, SetAttrOnClass) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Object> klass(&scope, runtime.newClass());
+  Handle<Object> klass(&scope, createClass(&runtime));
   Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
   Handle<Object> value(&scope, SmallInteger::fromWord(100));
 
@@ -249,11 +245,12 @@ class DataDescriptor:
       &scope, findInModule(&runtime, main, "DataDescriptor"));
 
   // Create the class
-  Handle<Object> klass(&scope, createClass(&runtime, {}));
+  Handle<Object> klass(&scope, createClass(&runtime));
 
   // Create an instance of the descriptor and store it on the metaclass
   Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
-  Handle<Object> descr(&scope, runtime.newInstance(descr_klass->id()));
+  Handle<Layout> layout(&scope, descr_klass->instanceLayout());
+  Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, klass, attr, descr);
 
   ASSERT_DEATH(
@@ -277,11 +274,12 @@ class DataDescriptor:
       &scope, findInModule(&runtime, main, "DataDescriptor"));
 
   // Create the class
-  Handle<Object> klass(&scope, createClass(&runtime, {}));
+  Handle<Object> klass(&scope, createClass(&runtime));
 
   // Create an instance of the descriptor and store it on the metaclass
   Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
-  Handle<Object> descr(&scope, runtime.newInstance(descr_klass->id()));
+  Handle<Layout> layout(&scope, descr_klass->instanceLayout());
+  Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, klass, attr, descr);
 
   ASSERT_DEATH(
@@ -305,11 +303,12 @@ class DataDescriptor:
       &scope, findInModule(&runtime, main, "DataDescriptor"));
 
   // Create the class
-  Handle<Object> klass(&scope, createClass(&runtime, {}));
+  Handle<Object> klass(&scope, createClass(&runtime));
 
   // Create an instance of the descriptor and store it on the metaclass
   Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
-  Handle<Object> descr(&scope, runtime.newInstance(descr_klass->id()));
+  Handle<Layout> layout(&scope, descr_klass->instanceLayout());
+  Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInClassDict(&runtime, klass, attr, descr);
 
   ASSERT_DEATH(
@@ -333,7 +332,8 @@ def test(x):
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
-  args->atPut(0, runtime.newInstance(klass->id()));
+  Handle<Layout> layout(&scope, klass->instanceLayout());
+  args->atPut(0, runtime.newInstance(layout));
 
   ASSERT_DEATH(callFunctionToString(test, args), "missing attribute");
 }
@@ -356,7 +356,8 @@ def test(x):
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
-  args->atPut(0, runtime.newInstance(klass->id()));
+  Handle<Layout> layout(&scope, klass->instanceLayout());
+  args->atPut(0, runtime.newInstance(layout));
 
   EXPECT_EQ(callFunctionToString(test, args), "testing 123\n");
 }
@@ -380,7 +381,8 @@ def test(x):
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
-  args->atPut(0, runtime.newInstance(klass->id()));
+  Handle<Layout> layout(&scope, klass->instanceLayout());
+  args->atPut(0, runtime.newInstance(layout));
 
   // Run __init__
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
@@ -408,11 +410,53 @@ def test(x):
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
-  args->atPut(0, runtime.newInstance(klass->id()));
+  Handle<Layout> layout(&scope, klass->instanceLayout());
+  args->atPut(0, runtime.newInstance(layout));
 
   // Run __init__ then RMW the attribute
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
   EXPECT_EQ(callFunctionToString(test, args), "testing 123\n321 testing\n");
+}
+
+TEST(InstanceAttributeTest, AddOverflowAttributes) {
+  Runtime runtime;
+  const char* src = R"(
+class Foo:
+  pass
+
+def test(x):
+  x.foo = 100
+  x.bar = 200
+  x.baz = 'hello'
+  print(x.foo, x.bar, x.baz)
+
+  x.foo = 'aaa'
+  x.bar = 'bbb'
+  x.baz = 'ccc'
+  print(x.foo, x.bar, x.baz)
+)";
+  compileAndRunToString(&runtime, src);
+
+  // Create an instance of Foo
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Layout> layout(&scope, klass->instanceLayout());
+  Handle<Instance> foo1(&scope, runtime.newInstance(layout));
+  word original_layout_id = layout->id();
+
+  // Add overflow attributes that should force layout transitions
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, *foo1);
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  EXPECT_EQ(callFunctionToString(test, args), "100 200 hello\naaa bbb ccc\n");
+  EXPECT_NE(foo1->layoutId(), original_layout_id);
+
+  // Add the same set of attributes to a new instance, should arrive at the
+  // same layout
+  Handle<Instance> foo2(&scope, runtime.newInstance(layout));
+  args->atPut(0, *foo2);
+  EXPECT_EQ(callFunctionToString(test, args), "100 200 hello\naaa bbb ccc\n");
 }
 
 // This is the real deal
@@ -439,7 +483,8 @@ def test(x):
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
-  args->atPut(0, runtime.newInstance(klass->id()));
+  Handle<Layout> layout(&scope, klass->instanceLayout());
+  args->atPut(0, runtime.newInstance(layout));
 
   // Run __init__ then call the method
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
@@ -467,12 +512,13 @@ class Foo:
   Handle<Class> descr_klass(&scope, findInModule(&runtime, main, "DataDescr"));
   Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
-  Handle<Object> descr(&scope, runtime.newInstance(descr_klass->id()));
+  Handle<Layout> descr_layout(&scope, descr_klass->instanceLayout());
+  Handle<Object> descr(&scope, runtime.newInstance(descr_layout));
   setInClassDict(&runtime, klass, attr, descr);
 
   // Fetch it from the instance
-  Handle<Object> instance(
-      &scope, runtime.newInstance(Class::cast(*klass)->id()));
+  Handle<Layout> instance_layout(&scope, Class::cast(*klass)->instanceLayout());
+  Handle<Object> instance(&scope, runtime.newInstance(instance_layout));
   ASSERT_DEATH(
       runtime.attributeAt(Thread::currentThread(), instance, attr),
       "custom descriptors are unsupported");
@@ -496,12 +542,13 @@ class Foo:
   Handle<Class> descr_klass(&scope, findInModule(&runtime, main, "Descr"));
   Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
-  Handle<Object> descr(&scope, runtime.newInstance(descr_klass->id()));
+  Handle<Layout> descr_layout(&scope, descr_klass->instanceLayout());
+  Handle<Object> descr(&scope, runtime.newInstance(descr_layout));
   setInClassDict(&runtime, klass, attr, descr);
 
   // Fetch it from the instance
-  Handle<Object> instance(
-      &scope, runtime.newInstance(Class::cast(*klass)->id()));
+  Handle<Layout> instance_layout(&scope, Class::cast(*klass)->instanceLayout());
+  Handle<Object> instance(&scope, runtime.newInstance(instance_layout));
   ASSERT_DEATH(
       runtime.attributeAt(Thread::currentThread(), instance, attr),
       "custom descriptors are unsupported");
@@ -531,7 +578,8 @@ def test(x):
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
-  args->atPut(0, runtime.newInstance(klass->id()));
+  Handle<Layout> layout(&scope, klass->instanceLayout());
+  args->atPut(0, runtime.newInstance(layout));
 
   // Run the test
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));

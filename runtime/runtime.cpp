@@ -11,6 +11,7 @@
 #include "handles.h"
 #include "heap.h"
 #include "interpreter.h"
+#include "layout.h"
 #include "marshal.h"
 #include "os.h"
 #include "scavenger.h"
@@ -61,6 +62,24 @@ Object* Runtime::newBoundMethod(
   return *bound_method;
 }
 
+Object* Runtime::newLayout() {
+  return newLayoutWithId(newLayoutId());
+}
+
+Object* Runtime::newLayoutWithId(word layout_id) {
+  CHECK(
+      layout_id >= static_cast<word>(IntrinsicLayoutId::kObject) ||
+          layout_id == IntrinsicLayoutId::kSmallInteger || (layout_id & 1) == 1,
+      "kSmallInteger must be the only even immediate layout id");
+  HandleScope scope;
+  Handle<Layout> layout(&scope, heap()->createLayout(layout_id));
+  layout->setInObjectAttributes(empty_object_array_);
+  layout->setOverflowAttributes(empty_object_array_);
+  layout->setAdditions(newList());
+  List::cast(layouts_)->atPut(layout_id, *layout);
+  return *layout;
+}
+
 Object* Runtime::newByteArray(word length, byte fill) {
   assert(length >= 0);
   if (length == 0) {
@@ -83,7 +102,12 @@ Object* Runtime::newByteArrayWithAll(View<byte> array) {
 }
 
 Object* Runtime::newClass() {
-  return newClassWithId(newClassId());
+  HandleScope scope;
+  Handle<Class> result(&scope, heap()->createClass());
+  Handle<Dictionary> dict(&scope, newDictionary());
+  result->setFlags(SmallInteger::fromWord(0));
+  result->setDictionary(*dict);
+  return *result;
 }
 
 Object* Runtime::classGetAttr(
@@ -204,16 +228,11 @@ Object* Runtime::instanceGetAttr(
     UNIMPLEMENTED("custom descriptors are unsupported");
   }
 
-  // No data descriptor found on the class, look at the in-instance
-  // attributes.
-  //
-  // TODO: Support overflow attributes
+  // No data descriptor found on the class, look at the instance.
   Handle<HeapObject> instance(&scope, *receiver);
-  Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
-  for (word i = 0; i < map->length(); i++) {
-    if (map->at(i) == *name) {
-      return instance->instanceVariableAt(i * kPointerSize);
-    }
+  Object* result = thread->runtime()->instanceAt(thread, instance, name);
+  if (!result->isError()) {
+    return result;
   }
 
   // Nothing found in the instance, if we found a non-data descriptor via the
@@ -260,18 +279,9 @@ Object* Runtime::instanceSetAttr(
     UNIMPLEMENTED("custom descriptors are unsupported");
   }
 
-  // No data descriptor found, store in the in-instance properties
+  // No data descriptor found, store on the instance
   Handle<HeapObject> instance(&scope, *receiver);
-  Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
-  for (word i = 0; i < map->length(); i++) {
-    if (map->at(i) == *name) {
-      instance->instanceVariableAtPut(i * kPointerSize, *value);
-      return None::object();
-    }
-  }
-
-  // TODO: Support overflow attributes.
-  UNIMPLEMENTED("unknown attribute '%s'", String::cast(*name)->toCString());
+  return thread->runtime()->instanceAtPut(thread, instance, name, value);
 }
 
 // Note that PEP 562 adds support for data descriptors in module objects.
@@ -342,24 +352,6 @@ bool Runtime::isNonDataDescriptor(
   return !lookupNameInMro(thread, klass, dunder_get)->isError();
 }
 
-Object* Runtime::newClassWithId(ClassId class_id) {
-  auto index = static_cast<word>(class_id);
-  // kSmallInteger must be the only even immediate class id.
-  assert(
-      index >= static_cast<word>(ClassId::kObject) ||
-      class_id == ClassId::kSmallInteger || (index & 1) == 1);
-  assert(index < List::cast(class_table_)->allocated());
-  HandleScope scope;
-  Handle<Class> result(&scope, heap()->createClass(class_id));
-  Handle<Dictionary> dict(&scope, newDictionary());
-  result->setFlags(SmallInteger::fromWord(0));
-  result->setDictionary(*dict);
-  result->setInstanceAttributeMap(empty_object_array_);
-  result->setInstanceSize(0);
-  List::cast(class_table_)->atPut(index, *result);
-  return *result;
-}
-
 Object* Runtime::newCode() {
   HandleScope scope;
   Handle<Code> result(&scope, heap()->createCode());
@@ -395,64 +387,16 @@ Object* Runtime::newFunction() {
   return function;
 }
 
-Object* Runtime::newInstance(ClassId class_id) {
+Object* Runtime::newInstance(const Handle<Layout>& layout) {
   HandleScope scope;
-  Handle<Class> cls(&scope, classAt(class_id));
-  assert(!cls->isNone());
-  word slots = cls->instanceSize();
-  return heap()->createInstance(class_id, slots);
-}
-
-bool Runtime::hasDelegate(const Handle<Class>& klass) {
-  return !klass->instanceVariableAt(Class::kDelegateOffset)->isNone();
-}
-
-void Runtime::initializeListClass() {
-  HandleScope scope;
-  Handle<Class> list(&scope, newClassWithId(ClassId::kList));
-  list->setName(symbols()->List());
-  const ClassId list_mro[] = {ClassId::kList, ClassId::kObject};
-  list->setMro(createMro(list_mro, ARRAYSIZE(list_mro)));
-  Handle<Dictionary> dict(&scope, newDictionary());
-  list->setDictionary(*dict);
-
-  classAddBuiltinFunction(
-      list,
-      symbols()->Append(),
-      nativeTrampoline<builtinListAppend>,
-      unimplementedTrampoline);
-
-  classAddBuiltinFunction(
-      list,
-      symbols()->Insert(),
-      nativeTrampoline<builtinListInsert>,
-      unimplementedTrampoline);
-
-  classAddBuiltinFunction(
-      list,
-      symbols()->DunderNew(),
-      nativeTrampoline<builtinListNew>,
-      unimplementedTrampoline);
-
-  list->setFlag(Class::Flag::kListSubclass);
-}
-
-void Runtime::initializeSmallIntClass() {
-  HandleScope scope;
-  Handle<Class> small_integer(&scope, newClassWithId(ClassId::kSmallInteger));
-  small_integer->setName(newStringFromCString("smallint"));
-  const ClassId small_integer_mro[] = {
-      ClassId::kSmallInteger, ClassId::kLargeInteger, ClassId::kObject};
-  small_integer->setMro(
-      createMro(small_integer_mro, ARRAYSIZE(small_integer_mro)));
-
-  // We want to lookup the class of an immediate type by using the 5-bit tag
-  // value as an index into the class table.  Replicate the class object for
-  // SmallInteger to all locations that decode to a SmallInteger tag.
-  for (word i = 1; i < 16; i++) {
-    assert(List::cast(class_table_)->at(i << 1) == None::object());
-    List::cast(class_table_)->atPut(i << 1, *small_integer);
-  }
+  word layout_id = layout->id();
+  word num_words = layout->instanceSize();
+  Handle<HeapObject> instance(
+      &scope, heap()->createInstance(layout_id, num_words));
+  // Set the overflow array
+  instance->instanceVariableAtPut(
+      (num_words - 1) * kPointerSize, empty_object_array_);
+  return *instance;
 }
 
 void Runtime::classAddBuiltinFunction(
@@ -650,69 +594,140 @@ Object* Runtime::valueHash(Object* object) {
 }
 
 void Runtime::initializeClasses() {
-  HandleScope scope;
-
-  Handle<ObjectArray> array(&scope, newObjectArray(256));
-  Handle<List> list(&scope, newList());
-  list->setItems(*array);
-  const word allocated = static_cast<word>(ClassId::kLastId + 1);
-  assert(allocated < array->length());
-  list->setAllocated(allocated);
-  class_table_ = *list;
+  initializeLayouts();
   initializeHeapClasses();
   initializeImmediateClasses();
 }
 
-Object* Runtime::createMro(const ClassId* superclasses, word length) {
+void Runtime::initializeLayouts() {
   HandleScope scope;
-  Handle<ObjectArray> result(&scope, newObjectArray(length));
-  for (word i = 0; i < length; i++) {
-    auto index = static_cast<word>(superclasses[i]);
-    assert(List::cast(class_table_)->at(index) != None::object());
-    result->atPut(i, List::cast(class_table_)->at(index));
+  Handle<ObjectArray> array(&scope, newObjectArray(256));
+  Handle<List> list(&scope, newList());
+  list->setItems(*array);
+  const word allocated = static_cast<word>(IntrinsicLayoutId::kLastId + 1);
+  assert(allocated < array->length());
+  list->setAllocated(allocated);
+  layouts_ = *list;
+}
+
+Object* Runtime::createMro(View<IntrinsicLayoutId> layout_ids) {
+  HandleScope scope;
+  Handle<ObjectArray> result(&scope, newObjectArray(layout_ids.length()));
+  for (word i = 0; i < layout_ids.length(); i++) {
+    result->atPut(i, classAt(layout_ids.get(i)));
   }
   return *result;
 }
 
 template <typename... Args>
-void Runtime::initializeHeapClass(const char* name, Args... args) {
+Object* Runtime::initializeHeapClass(const char* name, Args... args) {
   HandleScope scope;
-  const ClassId mro[] = {args..., ClassId::kObject};
-  Handle<Class> handle(&scope, newClassWithId(mro[0]));
-  handle->setName(newStringFromCString(name));
-  handle->setMro(createMro(mro, ARRAYSIZE(mro)));
+  const IntrinsicLayoutId layout_ids[] = {args..., IntrinsicLayoutId::kObject};
+  Handle<Layout> layout(&scope, newLayoutWithId(layout_ids[0]));
+  Handle<Class> klass(&scope, newClass());
+  layout->setDescribedClass(*klass);
+  klass->setName(newStringFromCString(name));
+  klass->setMro(createMro(layout_ids));
+  klass->setInstanceLayout(layoutAt(layout_ids[0]));
+  return *klass;
 }
 
 void Runtime::initializeHeapClasses() {
   initializeHeapClass("object");
-  initializeHeapClass("type", ClassId::kType);
-  initializeHeapClass("method", ClassId::kBoundMethod);
-  initializeHeapClass("byteArray", ClassId::kByteArray);
-  initializeHeapClass("code", ClassId::kCode);
-  initializeHeapClass("dictionary", ClassId::kDictionary);
-  initializeHeapClass("double", ClassId::kDouble);
-  initializeHeapClass("function", ClassId::kFunction);
-  initializeHeapClass("integer", ClassId::kLargeInteger);
-  initializeHeapClass("list_iterator", ClassId::kListIterator);
-  initializeHeapClass("module", ClassId::kModule);
-  initializeHeapClass("objectarray", ClassId::kObjectArray);
-  initializeHeapClass("str", ClassId::kLargeString);
-  initializeHeapClass("valuecell", ClassId::kValueCell);
-  initializeHeapClass("ellipsis", ClassId::kEllipsis);
-  initializeHeapClass("range", ClassId::kRange);
-  initializeHeapClass("range_iterator", ClassId::kRangeIterator);
-  initializeHeapClass("slice", ClassId::kSlice);
-  initializeHeapClass("weakref", ClassId::kWeakRef);
+  initializeHeapClass("byteArray", IntrinsicLayoutId::kByteArray);
+  initializeHeapClass("code", IntrinsicLayoutId::kCode);
+  initializeHeapClass("dictionary", IntrinsicLayoutId::kDictionary);
+  initializeHeapClass("double", IntrinsicLayoutId::kDouble);
+  initializeHeapClass("ellipsis", IntrinsicLayoutId::kEllipsis);
+  initializeHeapClass("function", IntrinsicLayoutId::kFunction);
+  initializeHeapClass("integer", IntrinsicLayoutId::kLargeInteger);
+  initializeHeapClass("layout", IntrinsicLayoutId::kLayout);
+  initializeHeapClass("list_iterator", IntrinsicLayoutId::kListIterator);
+  initializeHeapClass("method", IntrinsicLayoutId::kBoundMethod);
+  initializeHeapClass("module", IntrinsicLayoutId::kModule);
+  initializeHeapClass("objectarray", IntrinsicLayoutId::kObjectArray);
+  initializeHeapClass("str", IntrinsicLayoutId::kLargeString);
+  initializeHeapClass("range", IntrinsicLayoutId::kRange);
+  initializeHeapClass("range_iterator", IntrinsicLayoutId::kRangeIterator);
+  initializeHeapClass("slice", IntrinsicLayoutId::kSlice);
+  initializeHeapClass("type", IntrinsicLayoutId::kType);
+  initializeHeapClass("valuecell", IntrinsicLayoutId::kValueCell);
+  initializeHeapClass("weakref", IntrinsicLayoutId::kWeakRef);
   initializeListClass();
   initializeClassMethodClass();
 }
 
+void Runtime::initializeListClass() {
+  HandleScope scope;
+  Handle<Class> list(
+      &scope, initializeHeapClass("list", IntrinsicLayoutId::kList));
+
+  classAddBuiltinFunction(
+      list,
+      symbols()->Append(),
+      nativeTrampoline<builtinListAppend>,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      list,
+      symbols()->Insert(),
+      nativeTrampoline<builtinListInsert>,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      list,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinListNew>,
+      unimplementedTrampoline);
+
+  list->setFlag(Class::Flag::kListSubclass);
+}
+
+void Runtime::initializeClassMethodClass() {
+  HandleScope scope;
+  Handle<Class> classmethod(
+      &scope,
+      initializeHeapClass("classmethod", IntrinsicLayoutId::kClassMethod));
+  classAddBuiltinFunction(
+      classmethod,
+      symbols()->DunderInit(),
+      nativeTrampoline<builtinClassMethodInit>,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      classmethod,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinClassMethodNew>,
+      unimplementedTrampoline);
+}
+
 void Runtime::initializeImmediateClasses() {
-  initializeHeapClass("bool", ClassId::kBoolean, ClassId::kLargeInteger);
-  initializeHeapClass("NoneType", ClassId::kNone);
   initializeHeapClass(
-      "smallstr", ClassId::kSmallString, ClassId::kLargeInteger);
+      "bool", IntrinsicLayoutId::kBoolean, IntrinsicLayoutId::kLargeInteger);
+  initializeHeapClass("NoneType", IntrinsicLayoutId::kNone);
+  initializeHeapClass(
+      "smallstr",
+      IntrinsicLayoutId::kSmallString,
+      IntrinsicLayoutId::kLargeInteger);
   initializeSmallIntClass();
+}
+
+void Runtime::initializeSmallIntClass() {
+  HandleScope scope;
+  Handle<Class> small_integer(
+      &scope,
+      initializeHeapClass(
+          "smallint",
+          IntrinsicLayoutId::kSmallInteger,
+          IntrinsicLayoutId::kLargeInteger,
+          IntrinsicLayoutId::kObject));
+  // We want to lookup the class of an immediate type by using the 5-bit tag
+  // value as an index into the class table.  Replicate the class object for
+  // SmallInteger to all locations that decode to a SmallInteger tag.
+  for (word i = 1; i < 16; i++) {
+    assert(List::cast(layouts_)->at(i << 1) == None::object());
+    List::cast(layouts_)->atPut(i << 1, *small_integer);
+  }
 }
 
 void Runtime::collectGarbage() {
@@ -813,8 +828,8 @@ void Runtime::visitRoots(PointerVisitor* visitor) {
 }
 
 void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
-  // Visit classes
-  visitor->visitPointer(&class_table_);
+  // Visit layouts
+  visitor->visitPointer(&layouts_);
 
   // Visit instances
   visitor->visitPointer(&empty_byte_array_);
@@ -886,19 +901,28 @@ void Runtime::initializeModules() {
   createSysModule();
 }
 
-Object* Runtime::classAt(ClassId class_id) {
-  return List::cast(class_table_)->at(static_cast<word>(class_id));
-}
-
 Object* Runtime::classOf(Object* object) {
-  return classAt(object->classId());
+  HandleScope scope;
+  Handle<Layout> layout(&scope, List::cast(layouts_)->at(object->layoutId()));
+  return layout->describedClass();
 }
 
-ClassId Runtime::newClassId() {
+Object* Runtime::layoutAt(word layout_id) {
+  return List::cast(layouts_)->at(layout_id);
+}
+
+Object* Runtime::classAt(word layout_id) {
+  return Layout::cast(layoutAt(layout_id))->describedClass();
+}
+
+word Runtime::newLayoutId() {
   HandleScope scope;
-  Handle<List> list(&scope, class_table_);
+  Handle<List> list(&scope, layouts_);
   Handle<Object> value(&scope, None::object());
-  auto result = static_cast<ClassId>(list->allocated());
+  word result = list->allocated();
+  CHECK(
+      result <= Header::kMaxLayoutId,
+      "exceeded layout id space in header word");
   listAdd(list, value);
   return result;
 }
@@ -978,21 +1002,24 @@ void Runtime::createBuiltinsModule() {
       nativeTrampoline<unimplementedTrampoline>);
 
   // Add builtin types
-  moduleAddBuiltinType(module, ClassId::kObject, symbols()->ObjectClassname());
-  moduleAddBuiltinType(module, ClassId::kList, symbols()->List());
-  moduleAddBuiltinType(module, ClassId::kClassMethod, symbols()->Classmethod());
-  moduleAddBuiltinType(module, ClassId::kDictionary, symbols()->Dict());
+  moduleAddBuiltinType(
+      module, IntrinsicLayoutId::kObject, symbols()->ObjectClassname());
+  moduleAddBuiltinType(module, IntrinsicLayoutId::kList, symbols()->List());
+  moduleAddBuiltinType(
+      module, IntrinsicLayoutId::kClassMethod, symbols()->Classmethod());
+  moduleAddBuiltinType(
+      module, IntrinsicLayoutId::kDictionary, symbols()->Dict());
 
   addModule(module);
 }
 
 void Runtime::moduleAddBuiltinType(
     const Handle<Module>& module,
-    ClassId class_id,
+    IntrinsicLayoutId layout_id,
     Object* symbol) {
   HandleScope scope;
   Handle<Object> name(&scope, symbol);
-  Handle<Object> value(&scope, classAt(class_id));
+  Handle<Object> value(&scope, classAt(layout_id));
   moduleAddGlobal(module, name, value);
 }
 
@@ -1674,11 +1701,15 @@ Object* Runtime::classConstructor(const Handle<Class>& klass) {
   return ValueCell::cast(value)->value();
 }
 
-ObjectArray* Runtime::computeInstanceAttributeMap(const Handle<Class>& klass) {
-  HandleScope scope;
+Object* Runtime::computeInitialLayout(
+    Thread* thread,
+    const Handle<Class>& klass) {
+  HandleScope scope(thread);
   Handle<ObjectArray> mro(&scope, klass->mro());
   Handle<Dictionary> attrs(&scope, newDictionary());
 
+  // Collect set of in-object attributes by scanning the __init__ method of
+  // each class in the MRO
   for (word i = 0; i < mro->length(); i++) {
     Handle<Class> mro_klass(&scope, mro->at(i));
     Handle<Object> maybe_init(&scope, classConstructor(mro_klass));
@@ -1694,7 +1725,12 @@ ObjectArray* Runtime::computeInstanceAttributeMap(const Handle<Class>& klass) {
     collectAttributes(code, attrs);
   }
 
-  return dictionaryKeys(attrs);
+  // Create the layout
+  Handle<Layout> layout(&scope, newLayout());
+  Handle<ObjectArray> names(&scope, dictionaryKeys(attrs));
+  layoutInitializeInObjectAttributes(thread, layout, names);
+
+  return *layout;
 }
 
 Object* Runtime::lookupNameInMro(
@@ -1869,42 +1905,21 @@ Object* Runtime::newClassMethod() {
   return heap()->createClassMethod();
 }
 
-void Runtime::initializeClassMethodClass() {
-  HandleScope scope;
-  Handle<Class> classmethod(&scope, newClassWithId(ClassId::kClassMethod));
-  classmethod->setName(symbols()->Classmethod());
-  const ClassId classmethod_mro[] = {ClassId::kClassMethod, ClassId::kObject};
-  classmethod->setMro(createMro(classmethod_mro, ARRAYSIZE(classmethod_mro)));
-  Handle<Dictionary> dict(&scope, newDictionary());
-  classmethod->setDictionary(*dict);
-
-  classAddBuiltinFunction(
-      classmethod,
-      symbols()->DunderInit(),
-      nativeTrampoline<builtinClassMethodInit>,
-      unimplementedTrampoline);
-
-  classAddBuiltinFunction(
-      classmethod,
-      symbols()->DunderNew(),
-      nativeTrampoline<builtinClassMethodNew>,
-      unimplementedTrampoline);
-}
-
 Object* Runtime::computeBuiltinBaseClass(const Handle<Class>& klass) {
   // The delegate class can only be one of the builtin bases including object.
   // We use the first non-object builtin base if any, throw if multiple.
   HandleScope scope;
   Handle<ObjectArray> mro(&scope, klass->mro());
-  Handle<Class> candidate(&scope, classAt(ClassId::kObject));
+  Handle<Class> object_klass(&scope, classAt(IntrinsicLayoutId::kObject));
+  Handle<Class> candidate(&scope, *object_klass);
   for (word i = 0; i < mro->length(); i++) {
     Handle<Class> mro_klass(&scope, mro->at(i));
-    if (mro_klass->id() > ClassId::kLastId) {
+    if (!mro_klass->isIntrinsicOrExtension()) {
       continue;
     }
-    if (candidate->id() == ClassId::kObject) {
+    if (*candidate == *object_klass) {
       candidate = *mro_klass;
-    } else if (mro_klass->id() != ClassId::kObject) {
+    } else if (*mro_klass != *object_klass) {
       // TODO: throw TypeError
       CHECK(false, "multiple bases have instance lay-out conflict.");
     }
@@ -1914,19 +1929,201 @@ Object* Runtime::computeBuiltinBaseClass(const Handle<Class>& klass) {
 
 Object* Runtime::instanceDelegate(const Handle<Object>& instance) {
   HandleScope scope;
-  Handle<Class> klass(&scope, classOf(*instance));
-  assert(hasDelegate(klass));
-  return Instance::cast(*instance)->instanceVariableAt(klass->delegateOffset());
+  Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
+  CHECK(layout->hasDelegateSlot(), "instance layout missing delegate");
+  return Instance::cast(*instance)->instanceVariableAt(
+      layout->delegateOffset());
 }
 
 void Runtime::setInstanceDelegate(
     const Handle<Object>& instance,
     const Handle<Object>& delegate) {
   HandleScope scope;
-  Handle<Class> klass(&scope, classOf(*instance));
-  assert(hasDelegate(klass));
+  Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
+  CHECK(layout->hasDelegateSlot(), "instance layout missing delegate");
   return Instance::cast(*instance)->instanceVariableAtPut(
-      klass->delegateOffset(), *delegate);
+      layout->delegateOffset(), *delegate);
+}
+
+Object* Runtime::instanceAt(
+    Thread* thread,
+    const Handle<HeapObject>& instance,
+    const Handle<Object>& name) {
+  HandleScope scope(thread->handles());
+
+  // Figure out where the attribute lives in the instance
+  Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
+  Object* result = layoutFindAttribute(thread, layout, name);
+  if (result->isError()) {
+    return result;
+  }
+
+  // Retrieve the attribute
+  AttributeInfo info(result);
+  if (info.isInObject()) {
+    result = instance->instanceVariableAt(info.offset());
+  } else {
+    Handle<ObjectArray> overflow(
+        &scope, instance->instanceVariableAt(layout->overflowOffset()));
+    result = overflow->at(info.offset());
+  }
+
+  return result;
+}
+
+Object* Runtime::instanceAtPut(
+    Thread* thread,
+    const Handle<HeapObject>& instance,
+    const Handle<Object>& name,
+    const Handle<Object>& value) {
+  HandleScope scope(thread->handles());
+
+  // If the attribute doesn't exist, we'll need to grow the overflow array and
+  // transition the layout
+  Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
+  Object* result = layoutFindAttribute(thread, layout, name);
+  if (result->isError()) {
+    // Transition the layout
+    layout = layoutAddAttribute(thread, layout, name, 0);
+    result = layoutFindAttribute(thread, layout, name);
+    CHECK(!result->isError(), "couldn't find attribute on new layout");
+
+    // Build the new overflow array
+    Handle<ObjectArray> overflow(
+        &scope, instance->instanceVariableAt(layout->overflowOffset()));
+    Handle<ObjectArray> new_overflow(
+        &scope, newObjectArray(overflow->length() + 1));
+    overflow->copyTo(*new_overflow);
+    instance->instanceVariableAtPut(layout->overflowOffset(), *new_overflow);
+
+    // Update the instance's layout
+    instance->setHeader(instance->header()->withLayoutId(layout->id()));
+  }
+
+  // Store the attribute
+  AttributeInfo info(result);
+  if (info.isInObject()) {
+    instance->instanceVariableAtPut(info.offset(), *value);
+  } else {
+    Handle<ObjectArray> overflow(
+        &scope, instance->instanceVariableAt(layout->overflowOffset()));
+    overflow->atPut(info.offset(), *value);
+  }
+
+  return None::object();
+}
+
+Object* Runtime::layoutFollowEdge(
+    const Handle<List>& edges,
+    const Handle<Object>& label) {
+  CHECK(
+      edges->allocated() % 2 == 0,
+      "edges must contain an even number of elements");
+  for (word i = 0; i < edges->allocated(); i++) {
+    if (edges->at(i) == *label) {
+      return edges->at(i + 1);
+    }
+  }
+  return Error::object();
+}
+
+void Runtime::layoutAddEdge(
+    const Handle<List>& edges,
+    const Handle<Object>& label,
+    const Handle<Object>& layout) {
+  CHECK(
+      edges->allocated() % 2 == 0,
+      "edges must contain an even number of elements");
+  listAdd(edges, label);
+  listAdd(edges, layout);
+}
+
+void Runtime::layoutInitializeInObjectAttributes(
+    Thread* thread,
+    const Handle<Layout>& layout,
+    const Handle<ObjectArray>& names) {
+  HandleScope scope(thread);
+  Handle<ObjectArray> attributes(&scope, newObjectArray(names->length()));
+  for (word i = 0; i < names->length(); i++) {
+    Handle<ObjectArray> info(&scope, newObjectArray(2));
+    Handle<Object> name(&scope, names->at(i));
+    info->atPut(0, internString(name));
+    AttributeInfo data(i * kPointerSize, AttributeInfo::Flag::kInObject);
+    info->atPut(1, data.asSmallInteger());
+    attributes->atPut(i, *info);
+  }
+  layout->setInObjectAttributes(*attributes);
+}
+
+Object* Runtime::layoutFindAttribute(
+    Thread* thread,
+    const Handle<Layout>& layout,
+    const Handle<Object>& name) {
+  HandleScope scope(thread->handles());
+  Handle<Object> iname(&scope, internString(name));
+
+  // Check in-object attributes
+  Handle<ObjectArray> in_object(&scope, layout->inObjectAttributes());
+  for (word i = 0; i < in_object->length(); i++) {
+    Handle<ObjectArray> entry(&scope, in_object->at(i));
+    if (entry->at(0) == *iname) {
+      return entry->at(1);
+    }
+  }
+
+  // Check overflow attributes
+  Handle<ObjectArray> overflow(&scope, layout->overflowAttributes());
+  for (word i = 0; i < overflow->length(); i++) {
+    Handle<ObjectArray> entry(&scope, overflow->at(i));
+    if (entry->at(0) == *iname) {
+      return entry->at(1);
+    }
+  }
+
+  return Error::object();
+}
+
+Object* Runtime::layoutAddAttribute(
+    Thread* thread,
+    const Handle<Layout>& layout,
+    const Handle<Object>& name,
+    word flags) {
+  CHECK(
+      !(flags & AttributeInfo::Flag::kInObject),
+      "cannot add in-object properties");
+  HandleScope scope(thread->handles());
+  Handle<Object> iname(&scope, internString(name));
+
+  // Check if a edge for the attribute addition already exists
+  Handle<List> edges(&scope, layout->additions());
+  Object* result = layoutFollowEdge(edges, iname);
+  if (!result->isError()) {
+    return result;
+  }
+
+  // Create the new overflow array by copying the old
+  Handle<ObjectArray> overflow(&scope, layout->overflowAttributes());
+  Handle<ObjectArray> new_overflow(
+      &scope, newObjectArray(overflow->length() + 1));
+  overflow->copyTo(*new_overflow);
+
+  // Add the new attribute to the overflow array
+  Handle<ObjectArray> entry(&scope, newObjectArray(2));
+  entry->atPut(0, *iname);
+  entry->atPut(1, AttributeInfo(overflow->length(), flags).asSmallInteger());
+  new_overflow->atPut(overflow->length(), *entry);
+
+  // Create the new layout
+  Handle<Layout> new_layout(&scope, newLayout());
+  new_layout->setDescribedClass(layout->describedClass());
+  new_layout->setInObjectAttributes(layout->inObjectAttributes());
+  new_layout->setOverflowAttributes(*new_overflow);
+
+  // Add the edge to the existing layout
+  Handle<Object> value(&scope, *new_layout);
+  layoutAddEdge(edges, iname, value);
+
+  return *new_layout;
 }
 
 } // namespace python

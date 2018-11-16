@@ -55,9 +55,10 @@ Object* builtinIsinstance(Thread* thread, Frame* caller, word nargs) {
 }
 
 Object* builtinGenericNew(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope;
+  HandleScope scope(thread->handles());
   Handle<Class> klass(&scope, frame->valueStackTop()[nargs]);
-  return thread->runtime()->newInstance(klass->id());
+  Handle<Layout> layout(&scope, klass->instanceLayout());
+  return thread->runtime()->newInstance(layout);
 }
 
 Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
@@ -92,6 +93,7 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   result->setName(*name);
   result->setDictionary(*dictionary);
 
+  // Compute MRO
   Handle<ObjectArray> parents(&scope, runtime->newObjectArray(nargs - 2));
   for (word i = 0, j = 2; j < nargs; i++, j++) {
     parents->atPut(i, args.get(j));
@@ -101,25 +103,27 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
     return *mro;
   }
   result->setMro(*mro);
-  result->setInstanceAttributeMap(runtime->computeInstanceAttributeMap(result));
-  result->setInstanceSize(
-      ObjectArray::cast(result->instanceAttributeMap())->length());
 
+  // Initialize __new__
   thread->runtime()->classAddBuiltinFunction(
       result,
       thread->runtime()->symbols()->DunderNew(),
       nativeTrampoline<builtinGenericNew>,
       unimplementedTrampoline);
-  result->setBuiltinBaseClass(runtime->computeBuiltinBaseClass(result));
 
+  // Initialize instance layout
+  Handle<Layout> layout(&scope, runtime->computeInitialLayout(thread, result));
+  layout->setDescribedClass(*result);
+  result->setInstanceLayout(*layout);
+
+  // Initialize builtin base class
+  result->setBuiltinBaseClass(runtime->computeBuiltinBaseClass(result));
   Handle<Class> base(&scope, result->builtinBaseClass());
-  Handle<Class> list(&scope, thread->runtime()->classAt(ClassId::kList));
+  Handle<Class> list(
+      &scope, thread->runtime()->classAt(IntrinsicLayoutId::kList));
   if (Boolean::cast(thread->runtime()->isSubClass(base, list))->value()) {
     result->setFlag(Class::Flag::kListSubclass);
-    word num_attrs = result->instanceSize();
-    // append delegate to the end
-    result->setDelegateOffset(num_attrs * kPointerSize);
-    result->setInstanceSize(result->instanceSize() + 1);
+    layout->addDelegateSlot();
   }
 
   return *result;

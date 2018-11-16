@@ -15,15 +15,15 @@ namespace python {
 Object*
 Interpreter::call(Thread* thread, Frame* frame, Object** sp, word nargs) {
   Object* callable = sp[nargs];
-  switch (callable->classId()) {
-    case ClassId::kFunction: {
+  switch (callable->layoutId()) {
+    case IntrinsicLayoutId::kFunction: {
       frame->setValueStackTop(sp);
       return Function::cast(callable)->entry()(thread, frame, nargs);
     }
-    case ClassId::kBoundMethod: {
+    case IntrinsicLayoutId::kBoundMethod: {
       return callBoundMethod(thread, frame, sp, nargs);
     }
-    case ClassId::kType: {
+    case IntrinsicLayoutId::kType: {
       return callType(thread, frame, sp, nargs);
     }
     default: {
@@ -80,8 +80,8 @@ Object*
 Interpreter::callType(Thread* thread, Frame* frame, Object** sp, word nargs) {
   HandleScope scope;
   Runtime* runtime = thread->runtime();
-
   Handle<Class> klass(&scope, sp[nargs]);
+
   // dispatch it as python function?
   frame->setValueStackTop(sp);
   Handle<Object> name(&scope, runtime->symbols()->DunderNew());
@@ -89,7 +89,8 @@ Interpreter::callType(Thread* thread, Frame* frame, Object** sp, word nargs) {
       &scope, runtime->lookupNameInMro(thread, klass, name));
   Handle<Object> result(&scope, dunder_new->entry()(thread, frame, nargs));
 
-  if (result->isInstance() && runtime->hasDelegate(klass)) {
+  Handle<Layout> layout(&scope, runtime->layoutAt(result->layoutId()));
+  if (result->isInstance() && layout->hasDelegateSlot()) {
     // TODO(T27421748): pushing delegate __new__ into instance __new__
     Handle<Class> base_class(&scope, klass->builtinBaseClass());
     sp[nargs] = *base_class;

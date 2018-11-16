@@ -37,7 +37,6 @@ class Runtime {
   Object* newByteArrayWithAll(View<byte> array);
 
   Object* newClass();
-  Object* newClassWithId(ClassId class_id);
 
   Object* newClassMethod();
 
@@ -53,9 +52,12 @@ class Runtime {
   Object* newBuiltinFunction(Function::Entry entry, Function::Entry entryKw);
   Object* newFunction();
 
-  Object* newInstance(ClassId class_id);
+  Object* newInstance(const Handle<Layout>& layout);
 
   Object* newInteger(word value);
+
+  Object* newLayout();
+  Object* newLayoutWithId(word layout_id);
 
   Object* newList();
 
@@ -135,10 +137,12 @@ class Runtime {
       const char* buffer,
       const Handle<Object>& name);
 
-  Object* classAt(ClassId class_id);
   Object* classOf(Object* object);
 
-  ClassId newClassId();
+  Object* classAt(word layout_id);
+  Object* layoutAt(word layout_id);
+
+  word newLayoutId();
 
   Object* buildClass() {
     return build_class_;
@@ -249,15 +253,11 @@ class Runtime {
       const Handle<Code>& code,
       const Handle<Dictionary>& attributes);
 
-  // Constructs the mapping of where attributes are stored in instances.
+  // Constructs the initial layout for instances of klass.
   //
-  // The result is an ObjectArray of attribute names. For a given attribute,
-  // its offset in an instance is the same as the offset of its name in the
-  // returned ObjectArray.
-  //
-  // This is computed by scanning the constructors of every klass in klass's
-  // MRO.
-  ObjectArray* computeInstanceAttributeMap(const Handle<Class>& klass);
+  // The layout contains the set of in-object attributes. This is computed by
+  // scanning the constructors of every klass in klass's MRO.
+  Object* computeInitialLayout(Thread* thread, const Handle<Class>& klass);
 
   // Returns klass's __init__ method, or None
   Object* classConstructor(const Handle<Class>& klass);
@@ -283,6 +283,52 @@ class Runtime {
       const Handle<Object>& receiver,
       const Handle<Object>& name,
       const Handle<Object>& value);
+
+  // Attribute lookup primitive for instances.
+  //
+  // This operates directly on the instance and does not respect Python
+  // semantics for attribute lookup. Returns Error::object() if the attribute
+  // isn't found.
+  Object* instanceAt(
+      Thread* thread,
+      const Handle<HeapObject>& instance,
+      const Handle<Object>& name);
+
+  // Attribute setting primitive for instances.
+  //
+  // This operates directly on the instance and does not respect Python
+  // semantics for attribute storage. This handles mutating the instance's
+  // layout if the attribute does not already exist on the instance.
+  Object* instanceAtPut(
+      Thread* thread,
+      const Handle<HeapObject>& instance,
+      const Handle<Object>& name,
+      const Handle<Object>& value);
+
+  // Initialize the set of in-object attributes using the supplied attribute
+  // names.
+  //
+  // names is expected to be an object array of attribute names.
+  void layoutInitializeInObjectAttributes(
+      Thread* thread,
+      const Handle<Layout>& layout,
+      const Handle<ObjectArray>& names);
+
+  // Returns AttributeInfo if name is found in layout. Error otherwise.
+  Object* layoutFindAttribute(
+      Thread* thread,
+      const Handle<Layout>& layout,
+      const Handle<Object>& name);
+
+  // Add the attribute to the overflow array.
+  //
+  // This returns a new layout by either following a pre-existing edge or
+  // adding one.
+  Object* layoutAddAttribute(
+      Thread* thread,
+      const Handle<Layout>& layout,
+      const Handle<Object>& name,
+      word flags);
 
   // Pre-computes fast_globals for functions.
   Object* computeFastGlobals(
@@ -344,6 +390,7 @@ class Runtime {
  private:
   void initializeThreads();
   void initializeClasses();
+  void initializeLayouts();
   void initializeHeapClasses();
   void initializeImmediateClasses();
   void initializePrimitiveInstances();
@@ -353,10 +400,10 @@ class Runtime {
   void initializeSymbols();
 
   template <typename... Args>
-  void initializeHeapClass(const char* name, Args... args);
+  Object* initializeHeapClass(const char* name, Args... args);
+  void initializeClassMethodClass();
   void initializeListClass();
   void initializeSmallIntClass();
-  void initializeClassMethodClass();
 
   void createBuiltinsModule();
   void createSysModule();
@@ -371,7 +418,7 @@ class Runtime {
   Object* immediateHash(Object* object);
   Object* valueHash(Object* object);
 
-  Object* createMro(const ClassId* superclasses, word length);
+  Object* createMro(View<IntrinsicLayoutId> layout_ids);
 
   ObjectArray* dictionaryGrow(const Handle<ObjectArray>& data);
 
@@ -445,16 +492,40 @@ class Runtime {
   // helper function add builtin types
   void moduleAddBuiltinType(
       const Handle<Module>& module,
-      ClassId class_id,
+      IntrinsicLayoutId layout_id,
       Object* symbol);
+
+  // Appends the edge to the list of edges.
+  //
+  // edges is expected to be a list of edges (label, layout pairs) corresponding
+  // to a class of shape altering mutations (e.g. attribute addition).
+  void layoutAddEdge(
+      const Handle<List>& edges,
+      const Handle<Object>& label,
+      const Handle<Object>& layout);
+
+  // Follow the edge with the supplied label, if one exists.
+  //
+  // Edges is expected to be a list composed of flattened two tuples. The
+  // elements of each tuple are expected to be, in order,
+  //
+  //   1. The label
+  //   2. The layout that would be reached by following the edge.
+  //
+  // If an edge with the supplied label exists the corresponding layout is
+  // returned. If no edge with the supplied label exists Error::object() is
+  // returned.
+  Object* layoutFollowEdge(
+      const Handle<List>& edges,
+      const Handle<Object>& label);
 
   // The size ensureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
 
   Heap heap_;
 
-  // Classes
-  Object* class_table_;
+  // An ObjectArray of Layout objects, indexed by layout id.
+  Object* layouts_;
 
   // Cached instances
   Object* empty_byte_array_;

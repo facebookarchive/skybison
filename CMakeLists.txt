@@ -57,6 +57,7 @@ add_library(
   runtime/heap.h
   runtime/interpreter.cpp
   runtime/interpreter.h
+  runtime/layout.h
   runtime/marshal.cpp
   runtime/marshal.h
   runtime/mro.cpp
@@ -118,6 +119,7 @@ add_executable(
   runtime/bytecode-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
+  runtime/layout-test.cpp
   runtime/marshal-test.cpp
   runtime/objects-test.cpp
   runtime/os-test.cpp

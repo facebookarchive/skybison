@@ -73,6 +73,7 @@ class Object;
   V(Function)                       \
   V(LargeInteger)                   \
   V(LargeString)                    \
+  V(Layout)                         \
   V(List)                           \
   V(ListIterator)                   \
   V(Module)                         \
@@ -89,9 +90,20 @@ class Object;
   INTRINSIC_HEAP_CLASS_NAMES(V)
 // clang-format on
 
+// This enumerates layout ids of intrinsic classes. Notably, the layout of an
+// instance of an intrinsic class does not change.
+//
+// An instance of an intrinsic class that has an immediate representation
+// cannot have attributes added.  An instance of an intrinsic class that is heap
+// allocated has a predefined number in-object attributes in the base
+// instance.  For some of those types, the language forbids adding new
+// attributes.  For the types which are permitted to have attributes added,
+// these types must include a hidden attribute that indirects to attribute
+// storage.
+//
 // NB: If you add something here make sure you add it to the appropriate macro
 // above
-enum ClassId {
+enum IntrinsicLayoutId {
   // Immediate objects - note that the SmallInteger class is also aliased to
   // all even integers less than 32, so that classes of immediate objects can
   // be looked up simply by using the low 5 bits of the immediate value. This
@@ -116,6 +128,7 @@ enum ClassId {
   kFunction,
   kLargeInteger,
   kLargeString,
+  kLayout,
   kList,
   kListIterator,
   kModule,
@@ -135,7 +148,7 @@ class Object {
  public:
   // Getters and setters.
   inline bool isObject();
-  inline ClassId classId();
+  inline word layoutId();
 
   // Immediate objects
   inline bool isSmallInteger();
@@ -157,6 +170,7 @@ class Object {
   inline bool isEllipsis();
   inline bool isFunction();
   inline bool isInstance();
+  inline bool isLayout();
   inline bool isList();
   inline bool isListIterator();
   inline bool isModule();
@@ -271,7 +285,7 @@ enum class ObjectFormat {
  * ----------------------------------------------------------------------------
  * Tag          3   tag for a header object
  * Format       3   enumeration describing the object encoding
- * Class       20   identifier for the class, allowing 2^20 unique classes
+ * Layout      20   identifier for the layout, allowing 2^20 unique layouts
  * Hash        30   bits to use for an identity hash code
  * Count        8   number of array elements or instance variables
  */
@@ -282,14 +296,15 @@ class Header : public Object {
 
   inline ObjectFormat format();
 
-  inline ClassId classId();
+  inline word layoutId();
+  inline Header* withLayoutId(word layout_id);
 
   inline word count();
 
   inline bool hasOverflow();
 
   static inline Header*
-  from(word count, word hash, ClassId id, ObjectFormat format);
+  from(word count, word hash, word layout_id, ObjectFormat format);
 
   // Casting.
   static inline Header* cast(Object* object);
@@ -303,9 +318,9 @@ class Header : public Object {
   static const int kFormatOffset = 3;
   static const uword kFormatMask = (1 << kFormatSize) - 1;
 
-  static const int kClassIdSize = 20;
-  static const int kClassIdOffset = 6;
-  static const uword kClassIdMask = (1 << kClassIdSize) - 1;
+  static const int kLayoutIdSize = 20;
+  static const int kLayoutIdOffset = 6;
+  static const uword kLayoutIdMask = (1 << kLayoutIdSize) - 1;
 
   static const int kHashCodeOffset = 26;
   static const int kHashCodeSize = 30;
@@ -319,6 +334,9 @@ class Header : public Object {
   static const int kCountMax = kCountOverflowFlag - 1;
 
   static const int kSize = kPointerSize;
+
+  // Constants
+  static const word kMaxLayoutId = (1L << (kLayoutIdSize + 1)) - 1;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Header);
@@ -452,7 +470,7 @@ class HeapObject : public Object {
   inline void setHeader(Header* header);
   inline word headerOverflow();
   inline void
-  setHeaderAndOverflow(word count, word hash, ClassId id, ObjectFormat format);
+  setHeaderAndOverflow(word count, word hash, word id, ObjectFormat format);
   inline word headerCountOrOverflow();
   inline word size();
 
@@ -510,7 +528,8 @@ class Class : public HeapObject {
   };
 
   // Getters and setters.
-  inline ClassId id();
+  inline Object* instanceLayout();
+  inline void setInstanceLayout(Object* layout);
 
   inline Object* mro();
   inline void setMro(Object* object_array);
@@ -530,17 +549,6 @@ class Class : public HeapObject {
   inline Object* builtinBaseClass();
   inline void setBuiltinBaseClass(Object* base);
 
-  inline word delegateOffset();
-  inline void setDelegateOffset(word offset);
-
-  // ObjectArray mapping attribute name to offset within the instance when
-  // initialized.
-  inline void setInstanceAttributeMap(Object* object_array);
-  inline Object* instanceAttributeMap();
-
-  inline word instanceSize();
-  inline void setInstanceSize(word size);
-
   inline bool isIntrinsicOrExtension();
 
   // Casting.
@@ -551,15 +559,12 @@ class Class : public HeapObject {
 
   // Layout.
   static const int kMroOffset = HeapObject::kSize;
-  static const int kNameOffset = kMroOffset + kPointerSize;
+  static const int kInstanceLayoutOffset = kMroOffset + kPointerSize;
+  static const int kNameOffset = kInstanceLayoutOffset + kPointerSize;
   static const int kFlagsOffset = kNameOffset + kPointerSize;
   static const int kDictionaryOffset = kFlagsOffset + kPointerSize;
   static const int kBuiltinBaseClassOffset = kDictionaryOffset + kPointerSize;
-  static const int kDelegateOffset = kBuiltinBaseClassOffset + kPointerSize;
-  static const int kInstanceSizeOffset = kDelegateOffset + kPointerSize;
-  static const int kInstanceAttributeMapOffset =
-      kInstanceSizeOffset + kPointerSize;
-  static const int kSize = kInstanceAttributeMapOffset + kPointerSize;
+  static const int kSize = kBuiltinBaseClassOffset + kPointerSize;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Class);
@@ -1286,35 +1291,162 @@ class ClassMethod : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ClassMethod);
 };
 
+/**
+ * A Layout describes the in-memory shape of an instance.
+ *
+ * Instance attributes are split into two classes: in-object attributes, which
+ * exist directly in the instance, and overflow attributes, which are stored
+ * in an object array pointed to by the last word of the instance. Graphically,
+ * this looks like:
+ *
+ *   Instance                                   ObjectArray
+ *   +---------------------------+     +------->+--------------------------+
+ *   | First in-object attribute |     |        | First overflow attribute |
+ *   +---------------------------+     |        +--------------------------+
+ *   |            ...            |     |        |           ...            |
+ *   +---------------------------+     |        +--------------------------+
+ *   | Last in-object attribute  |     |        | Last overflow attribute  |
+ *   +---------------------------+     |        +--------------------------+
+ *   | Overflow Attributes       +-----+
+ *   +---------------------------+
+ *   | Delegate?                 |
+ *   +---------------------------+
+ *
+ * Each instance is associated with a layout (whose id is stored in the header
+ * word). The layout acts as a roadmap for the instance; it describes where to
+ * find each attribute.
+ *
+ * In general, instances of the same class will have the same shape. Idiomatic
+ * Python typically initializes attributes in the same order for instances of
+ * the same class. Ideally, we would be able to share the same concrete Layout
+ * between two instances of the same shape. This both reduces memory overhead
+ * and enables effective caching of attribute location.
+ *
+ * To achieve structural sharing, layouts form an immutable DAG. Every class
+ * has a root layout that contains only in-object attributes. When an instance
+ * is created, it is assigned the root layout of its class. When a shape
+ * altering mutation to the instance occurs (e.g. adding an attribute), the
+ * current layout is searched for a corresponding edge. If such an edge exists,
+ * it is followed and the instance is assigned the resulting layout. If there
+ * is no such edge, a new layout is created, an edge is inserted between
+ * the two layouts, and the instance is assigned the new layout.
+ *
+ */
+class Layout : public HeapObject {
+ public:
+  // Getters and setters.
+  inline word id();
+
+  // Returns the class whose instances are described by this layout
+  inline Object* describedClass();
+  inline void setDescribedClass(Object* klass);
+
+  // Returns an ObjectArray describing the attributes stored directly in
+  // in the instance.
+  //
+  // Each item in the object array is a two element tuple. Each tuple is
+  // composed of the following elements, in order:
+  //
+  //   1. The attribute name (String)
+  //   2. The attribute info (AttributeInfo)
+  inline Object* inObjectAttributes();
+  inline void setInObjectAttributes(Object* attributes);
+
+  // Returns an ObjectArray describing the attributes stored in the overflow
+  // array of the instance.
+  //
+  // Each item in the object array is a two element tuple. Each tuple is
+  // composed of the following elements, in order:
+  //
+  //   1. The attribute name (String)
+  //   2. The attribute info (AttributeInfo)
+  inline Object* overflowAttributes();
+  inline void setOverflowAttributes(Object* attributes);
+
+  // Returns a flattened list of tuples. Each tuple is composed of the
+  // following elements, in order:
+  //
+  //   1. The attribute name (String)
+  //   2. The layout that would result if an attribute with that name
+  //      was added.
+  inline Object* additions();
+  inline void setAdditions(Object* additions);
+
+  // Returns the number of words in an instance described by this layout,
+  // including the overflow array.
+  inline word instanceSize();
+  inline void setInstanceSize(word num_words);
+
+  // Return the offset, in bytes, of the overflow slot
+  inline word overflowOffset();
+
+  // Return the offset, in bytes, of the delegate slot, if one
+  // exists. Otherwise, return None.
+  //
+  // Instances of classes that descend from variable-sized intrinsic types
+  // (e.g. tuple, string) have an extra slot at the end of the instance that
+  // points to a delegate object of the appropriate type. Methods that operate
+  // expect to operate on the variable sized data are forwarded to the
+  // delegate.
+  inline word delegateOffset();
+  inline bool hasDelegateSlot();
+  inline void addDelegateSlot();
+
+  // Casting
+  inline static Layout* cast(Object* object);
+
+  // Sizing
+  static inline word allocationSize();
+
+  // Layout
+  static const int kDescribedClassOffset = HeapObject::kSize;
+  static const int kInObjectAttributesOffset =
+      kDescribedClassOffset + kPointerSize;
+  static const int kOverflowAttributesOffset =
+      kInObjectAttributesOffset + kPointerSize;
+  static const int kAdditionsOffset = kOverflowAttributesOffset + kPointerSize;
+  static const int kInstanceSizeOffset = kAdditionsOffset + kPointerSize;
+  static const int kOverflowOffsetOffset = kInstanceSizeOffset + kPointerSize;
+  static const int kDelegateOffsetOffset = kOverflowOffsetOffset + kPointerSize;
+  static const int kSize = kDelegateOffsetOffset + kPointerSize;
+
+ private:
+  inline void setDelegateOffset(word offset);
+  inline void setOverflowOffset(word offset);
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Layout);
+};
+
 // Object
 
 bool Object::isObject() {
   return true;
 }
 
-ClassId Object::classId() {
+word Object::layoutId() {
   if (isHeapObject()) {
-    return HeapObject::cast(this)->header()->classId();
+    return HeapObject::cast(this)->header()->layoutId();
   }
   if (isSmallInteger()) {
-    return ClassId::kSmallInteger;
+    return IntrinsicLayoutId::kSmallInteger;
   }
-  return static_cast<ClassId>(
-      reinterpret_cast<uword>(this) & kImmediateClassTableIndexMask);
+  return reinterpret_cast<uword>(this) & kImmediateClassTableIndexMask;
 }
 
 bool Object::isClass() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kType;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kType;
 }
 
 bool Object::isClassMethod() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kClassMethod;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kClassMethod;
 }
 
 bool Object::isSmallInteger() {
@@ -1352,116 +1484,140 @@ bool Object::isHeapObject() {
   return tag == HeapObject::kTag;
 }
 
+bool Object::isLayout() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kLayout;
+}
+
 bool Object::isBoundMethod() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kBoundMethod;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kBoundMethod;
 }
 
 bool Object::isByteArray() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kByteArray;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kByteArray;
 }
 
 bool Object::isObjectArray() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kObjectArray;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kObjectArray;
 }
 
 bool Object::isCode() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kCode;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kCode;
 }
 
 bool Object::isLargeString() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kLargeString;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kLargeString;
 }
 
 bool Object::isFunction() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kFunction;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kFunction;
 }
 
 bool Object::isInstance() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() > ClassId::kLastId;
+  return HeapObject::cast(this)->header()->layoutId() >
+      IntrinsicLayoutId::kLastId;
 }
 
 bool Object::isDictionary() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kDictionary;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kDictionary;
 }
 
 bool Object::isDouble() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kDouble;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kDouble;
 }
 
 bool Object::isSet() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kSet;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kSet;
 }
 
 bool Object::isModule() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kModule;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kModule;
 }
 
 bool Object::isList() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kList;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kList;
 }
 
 bool Object::isListIterator() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kListIterator;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kListIterator;
 }
 
 bool Object::isValueCell() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kValueCell;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kValueCell;
 }
 
 bool Object::isEllipsis() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kEllipsis;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kEllipsis;
 }
 
 bool Object::isLargeInteger() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kLargeInteger;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kLargeInteger;
 }
 
 bool Object::isInteger() {
@@ -1472,21 +1628,24 @@ bool Object::isRange() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kRange;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kRange;
 }
 
 bool Object::isRangeIterator() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kRangeIterator;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kRangeIterator;
 }
 
 bool Object::isSlice() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kSlice;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kSlice;
 }
 
 bool Object::isString() {
@@ -1497,7 +1656,8 @@ bool Object::isWeakRef() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kWeakRef;
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kWeakRef;
 }
 
 bool Object::equals(Object* lhs, Object* rhs) {
@@ -1621,9 +1781,17 @@ Header* Header::withHashCode(word value) {
   return reinterpret_cast<Header*>(header);
 }
 
-ClassId Header::classId() {
+word Header::layoutId() {
   auto header = reinterpret_cast<uword>(this);
-  return static_cast<ClassId>((header >> kClassIdOffset) & kClassIdMask);
+  return (header >> kLayoutIdOffset) & kLayoutIdMask;
+}
+
+Header* Header::withLayoutId(word layout_id) {
+  CHECK(layout_id <= kMaxLayoutId, "layout id %ld too large", layout_id);
+  auto header = reinterpret_cast<uword>(this);
+  header &= ~(kLayoutIdMask << kLayoutIdOffset);
+  header |= (layout_id & kLayoutIdMask) << kLayoutIdOffset;
+  return reinterpret_cast<Header*>(header);
 }
 
 ObjectFormat Header::format() {
@@ -1631,13 +1799,13 @@ ObjectFormat Header::format() {
   return static_cast<ObjectFormat>((header >> kFormatOffset) & kFormatMask);
 }
 
-Header* Header::from(word count, word hash, ClassId id, ObjectFormat format) {
+Header* Header::from(word count, word hash, word id, ObjectFormat format) {
   assert(count >= 0);
   assert(count <= kCountMax || count == kCountOverflowFlag);
   uword result = Header::kTag;
   result |= ((count > kCountMax) ? kCountOverflowFlag : count) << kCountOffset;
   result |= hash << kHashCodeOffset;
-  result |= static_cast<uword>(id) << kClassIdOffset;
+  result |= static_cast<uword>(id) << kLayoutIdOffset;
   result |= static_cast<uword>(format) << kFormatOffset;
   return reinterpret_cast<Header*>(result);
 }
@@ -1710,7 +1878,7 @@ word HeapObject::headerOverflow() {
 void HeapObject::setHeaderAndOverflow(
     word count,
     word hash,
-    ClassId id,
+    word id,
     ObjectFormat format) {
   if (count > Header::kCountMax) {
     instanceVariableAtPut(kHeaderOverflowOffset, SmallInteger::fromWord(count));
@@ -1815,16 +1983,20 @@ word Class::allocationSize() {
   return Header::kSize + Class::kSize;
 }
 
-ClassId Class::id() {
-  return static_cast<ClassId>(header()->hashCode());
-}
-
 Object* Class::mro() {
   return instanceVariableAt(kMroOffset);
 }
 
 void Class::setMro(Object* object_array) {
   instanceVariableAtPut(kMroOffset, object_array);
+}
+
+Object* Class::instanceLayout() {
+  return instanceVariableAt(kInstanceLayoutOffset);
+}
+
+void Class::setInstanceLayout(Object* layout) {
+  instanceVariableAtPut(kInstanceLayoutOffset, layout);
 }
 
 Object* Class::name() {
@@ -1870,37 +2042,13 @@ void Class::setBuiltinBaseClass(Object* base) {
   instanceVariableAtPut(kBuiltinBaseClassOffset, base);
 }
 
-word Class::delegateOffset() {
-  return SmallInteger::cast(instanceVariableAt(kDelegateOffset))->value();
-}
-
-void Class::setDelegateOffset(word offset) {
-  instanceVariableAtPut(kDelegateOffset, SmallInteger::fromWord(offset));
-}
-
-void Class::setInstanceAttributeMap(Object* object_array) {
-  instanceVariableAtPut(kInstanceAttributeMapOffset, object_array);
-}
-
-Object* Class::instanceAttributeMap() {
-  return instanceVariableAt(kInstanceAttributeMapOffset);
-}
-
-word Class::instanceSize() {
-  return SmallInteger::cast(instanceVariableAt(kInstanceSizeOffset))->value();
-}
-
-void Class::setInstanceSize(word size) {
-  instanceVariableAtPut(kInstanceSizeOffset, SmallInteger::fromWord(size));
-}
-
 Class* Class::cast(Object* object) {
   assert(object->isClass());
   return reinterpret_cast<Class*>(object);
 }
 
 bool Class::isIntrinsicOrExtension() {
-  return id() <= ClassId::kLastId;
+  return Layout::cast(instanceLayout())->id() <= IntrinsicLayoutId::kLastId;
 }
 
 // Array
@@ -2788,6 +2936,98 @@ Object* WeakRef::link() {
 
 void WeakRef::setLink(Object* reference) {
   instanceVariableAtPut(kLinkOffset, reference);
+}
+
+// Layout
+
+word Layout::id() {
+  return header()->hashCode();
+}
+
+void Layout::setDescribedClass(Object* klass) {
+  instanceVariableAtPut(kDescribedClassOffset, klass);
+}
+
+Object* Layout::describedClass() {
+  return instanceVariableAt(kDescribedClassOffset);
+}
+
+void Layout::setInObjectAttributes(Object* attributes) {
+  instanceVariableAtPut(kInObjectAttributesOffset, attributes);
+  word num_slots = ObjectArray::cast(attributes)->length();
+  setOverflowOffset(num_slots * kPointerSize);
+  // One extra slot for the overflow array
+  num_slots++;
+  if (hasDelegateSlot()) {
+    num_slots++;
+    setDelegateOffset(overflowOffset() + kPointerSize);
+  }
+  setInstanceSize(num_slots);
+}
+
+Object* Layout::inObjectAttributes() {
+  return instanceVariableAt(kInObjectAttributesOffset);
+}
+
+void Layout::setOverflowAttributes(Object* attributes) {
+  instanceVariableAtPut(kOverflowAttributesOffset, attributes);
+}
+
+word Layout::instanceSize() {
+  return SmallInteger::cast(instanceVariableAt(kInstanceSizeOffset))->value();
+}
+
+void Layout::setInstanceSize(word size) {
+  instanceVariableAtPut(kInstanceSizeOffset, SmallInteger::fromWord(size));
+}
+
+Object* Layout::overflowAttributes() {
+  return instanceVariableAt(kOverflowAttributesOffset);
+}
+
+void Layout::setAdditions(Object* additions) {
+  instanceVariableAtPut(kAdditionsOffset, additions);
+}
+
+Object* Layout::additions() {
+  return instanceVariableAt(kAdditionsOffset);
+}
+
+word Layout::allocationSize() {
+  return Header::kSize + Layout::kSize;
+}
+
+Layout* Layout::cast(Object* object) {
+  assert(object->isLayout());
+  return reinterpret_cast<Layout*>(object);
+}
+
+word Layout::overflowOffset() {
+  return SmallInteger::cast(instanceVariableAt(kOverflowOffsetOffset))->value();
+}
+
+void Layout::setOverflowOffset(word offset) {
+  instanceVariableAtPut(kOverflowOffsetOffset, SmallInteger::fromWord(offset));
+}
+
+word Layout::delegateOffset() {
+  return SmallInteger::cast(instanceVariableAt(kDelegateOffsetOffset))->value();
+}
+
+void Layout::setDelegateOffset(word offset) {
+  instanceVariableAtPut(kDelegateOffsetOffset, SmallInteger::fromWord(offset));
+}
+
+bool Layout::hasDelegateSlot() {
+  return !instanceVariableAt(kDelegateOffsetOffset)->isNone();
+}
+
+void Layout::addDelegateSlot() {
+  if (hasDelegateSlot()) {
+    return;
+  }
+  setDelegateOffset(overflowOffset() + kPointerSize);
+  setInstanceSize(instanceSize() + 1);
 }
 
 } // namespace python
