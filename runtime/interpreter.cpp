@@ -1350,8 +1350,9 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   }
   ObjectArray* tuple =
       ObjectArray::cast(runtime->newObjectArray(list->allocated()));
-  for (word i = 0; i < list->allocated(); i++)
+  for (word i = 0; i < list->allocated(); i++) {
     tuple->atPut(i, list->at(i));
+  }
   ctx->frame->dropValues(arg - 1);
   ctx->frame->setTopValue(tuple);
 }

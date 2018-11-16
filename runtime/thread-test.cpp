@@ -1974,8 +1974,9 @@ t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
   EXPECT_TRUE(t->isObjectArray());
   Handle<ObjectArray> tuple_t(&scope, *t);
   EXPECT_EQ(tuple_t->length(), 6);
-  for (word i = 0; i < tuple_t->length(); i++)
+  for (word i = 0; i < tuple_t->length(); i++) {
     EXPECT_EQ(SmallInteger::cast(tuple_t->at(i))->value(), i);
+  }
 
   Handle<Object> t1(&scope, findInModule(&runtime, main, "t1"));
   EXPECT_TRUE(t1->isObjectArray());

@@ -88,10 +88,11 @@ extern "C" PyObject* PyFalse_Ptr() {
 extern "C" PyObject* PyBool_FromLong(long ok) {
   PyObject* result;
 
-  if (ok)
+  if (ok) {
     result = Py_True;
-  else
+  } else {
     result = Py_False;
+  }
   Py_INCREF(result);
   return result;
 }

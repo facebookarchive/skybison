@@ -143,9 +143,10 @@ Object* builtinSmallIntegerAdd(Thread* thread, Frame* caller, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
 
-  if (!self->isSmallInteger())
+  if (!self->isSmallInteger()) {
     return thread->throwTypeErrorFromCString(
         "descriptor '__add__' requires a 'int' object");
+  }
 
   if (other->isSmallInteger()) {
     SmallInteger* left = SmallInteger::cast(self);
@@ -167,9 +168,10 @@ Object* builtinSmallIntegerSub(Thread* thread, Frame* frame, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
 
-  if (!self->isSmallInteger())
+  if (!self->isSmallInteger()) {
     return thread->throwTypeErrorFromCString(
         "descriptor '__sub__' requires a 'int' object");
+  }
 
   if (self->isSmallInteger() && other->isSmallInteger()) {
     SmallInteger* left = SmallInteger::cast(self);

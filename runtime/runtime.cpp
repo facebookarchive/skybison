@@ -1716,8 +1716,9 @@ void Runtime::listEnsureCapacity(const Handle<List>& list, word index) {
   word new_capacity = (list->capacity() < kInitialEnsuredCapacity)
       ? kInitialEnsuredCapacity
       : list->capacity() << 1;
-  if (new_capacity < index)
+  if (new_capacity < index) {
     new_capacity = Utils::nextPowerOfTwo(index);
+  }
   Handle<ObjectArray> old_array(&scope, list->items());
   Handle<ObjectArray> new_array(&scope, newObjectArray(new_capacity));
   old_array->copyTo(*new_array);
@@ -1744,15 +1745,17 @@ void Runtime::listExtend(
       word new_capacity = index + src->allocated();
       listEnsureCapacity(dest, new_capacity);
       dest->setAllocated(new_capacity);
-      for (word i = 0; i < src->allocated(); i++)
+      for (word i = 0; i < src->allocated(); i++) {
         dest->atPut(index++, src->at(i));
+      }
     }
   } else if (iterable->isListIterator()) {
     Handle<ListIterator> list_iter(&scope, *iterable);
     while (true) {
       elt = list_iter->next();
-      if (elt->isError())
+      if (elt->isError()) {
         break;
+      }
       listAdd(dest, elt);
     }
   } else if (iterable->isObjectArray()) {
@@ -1805,8 +1808,9 @@ void Runtime::listInsert(
     word index) {
   listAdd(list, value);
   word last_index = list->allocated() - 1;
-  if (index < 0)
+  if (index < 0) {
     index = last_index + index;
+  }
   index =
       Utils::maximum(static_cast<word>(0), Utils::minimum(last_index, index));
   for (word i = last_index; i > index; i--) {
@@ -1982,8 +1986,9 @@ ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
   // Re-insert items
   for (word i = 0; i < data->length(); i += Dictionary::Bucket::kNumPointers) {
     if (Dictionary::Bucket::isEmpty(*data, i) ||
-        Dictionary::Bucket::isTombstone(*data, i))
+        Dictionary::Bucket::isTombstone(*data, i)) {
       continue;
+    }
     Handle<Object> key(&scope, Dictionary::Bucket::key(*data, i));
     Handle<Object> hash(&scope, Dictionary::Bucket::hash(*data, i));
     word index = -1;
@@ -2184,8 +2189,9 @@ ObjectArray* Runtime::setGrow(const Handle<ObjectArray>& data) {
   Handle<ObjectArray> new_data(&scope, newObjectArray(new_length));
   // Re-insert items
   for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-    if (Set::Bucket::isEmpty(*data, i) || Set::Bucket::isTombstone(*data, i))
+    if (Set::Bucket::isEmpty(*data, i) || Set::Bucket::isTombstone(*data, i)) {
       continue;
+    }
     Handle<Object> key(&scope, Set::Bucket::key(*data, i));
     Handle<Object> hash(&scope, Set::Bucket::hash(*data, i));
     word index = -1;
@@ -2253,8 +2259,9 @@ void Runtime::setUpdate(
     if (src->numItems() > 0) {
       for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
         if (Set::Bucket::isTombstone(*data, i) ||
-            Set::Bucket::isEmpty(*data, i))
+            Set::Bucket::isEmpty(*data, i)) {
           continue;
+        }
         elt = Set::Bucket::key(*data, i);
         setAdd(dst, elt);
       }
@@ -2271,8 +2278,9 @@ void Runtime::setUpdate(
     Handle<ListIterator> list_iter(&scope, *iterable);
     while (true) {
       elt = list_iter->next();
-      if (elt->isError())
+      if (elt->isError()) {
         break;
+      }
       setAdd(dst, elt);
     }
   } else if (iterable->isObjectArray()) {

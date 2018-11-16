@@ -159,12 +159,14 @@ extern "C" PyObject* PyType_GenericAlloc(
   const size_t size = _PyObject_VAR_SIZE(type, nitems + 1);
   PyObject* obj = (PyObject*)PyObject_MALLOC(size);
 
-  if (obj == NULL)
+  if (obj == NULL) {
     return PyErr_NoMemory();
+  }
   memset(obj, 0, size);
 
-  if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+  if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
     Py_INCREF(type);
+  }
 
   (void)PyObject_INIT(obj, type);
   // TODO(T30111008): Add PyObject_INIT_VAR

@@ -382,8 +382,9 @@ TEST(RuntimeListTest, InsertToList) {
   Handle<List> list(&scope, runtime.newList());
 
   for (int i = 0; i < 9; i++) {
-    if (i == 1 || i == 6)
+    if (i == 1 || i == 6) {
       continue;
+    }
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
     runtime.listAdd(list, value);
   }
@@ -542,8 +543,9 @@ TEST(RuntimeListTest, ListExtendObjectArray) {
   ASSERT_GE(list->allocated(), 5);
   ASSERT_TRUE(list->at(4)->isNone());
 
-  for (word i = 0; i < 4; i++)
+  for (word i = 0; i < 4; i++) {
     object_array16->atPut(i, SmallInteger::fromWord(i));
+  }
 
   Handle<Object> object_array2_handle(&scope, *object_array16);
   runtime.listExtend(list, object_array2_handle);
@@ -1814,8 +1816,9 @@ TEST(RuntimeSetTest, UpdateObjectArray) {
   HandleScope scope;
   Handle<ObjectArray> object_array(&scope, runtime.newObjectArray(8));
   Handle<Set> set(&scope, runtime.newSet());
-  for (word i = 0; i < 8; i++)
+  for (word i = 0; i < 8; i++) {
     object_array->atPut(i, SmallInteger::fromWord(i));
+  }
   for (word i = 4; i < 12; i++) {
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
     runtime.setAdd(set, value);
