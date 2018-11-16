@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cassert>
+
 #include "globals.h"
-#include "utils.h"
 
 namespace python {
 
@@ -49,7 +50,7 @@ class Thread {
   void pushInitialFrame();
 
   Handles* handles_;
-
+  
   int size_;
   byte* start_;
   byte* end_;

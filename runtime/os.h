@@ -16,6 +16,8 @@ class Os {
 
   static bool protectMemory(byte* ptr, word size, Protection);
 
+  static bool secureRandom(byte* ptr, word size);
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Os);
 };

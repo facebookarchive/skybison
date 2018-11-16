@@ -2,6 +2,7 @@
 #include "utils.h"
 
 #include <sys/mman.h>
+#include <sys/random.h>
 
 #include <cassert>
 
@@ -17,6 +18,7 @@ byte* Os::allocateMemory(word size) {
 }
 
 bool Os::protectMemory(byte* address, word size, Protection mode) {
+  assert(size >= 0);
   int prot;
   switch (mode) {
     case kNoAccess:
@@ -34,8 +36,15 @@ bool Os::protectMemory(byte* address, word size, Protection mode) {
 }
 
 bool Os::freeMemory(byte* ptr, word size) {
+  assert(size >= 0);
   int result = ::munmap(ptr, size);
   assert(result != -1);
+  return result == 0;
+}
+
+bool Os::secureRandom(byte* ptr, word size) {
+  assert(size >= 0);
+  int result = getentropy(ptr, size);
   return result == 0;
 }
 

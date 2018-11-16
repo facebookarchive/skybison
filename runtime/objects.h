@@ -104,7 +104,6 @@ class Object {
   inline bool isList();
 
   static inline bool equals(Object* lhs, Object* rhs);
-  static inline Object* hash(Object* object);
 
   // Casting.
   static inline Object* cast(Object* object);
@@ -121,7 +120,6 @@ class SmallInteger : public Object {
  public:
   // Getters and setters.
   inline word value();
-  inline Object* hash();
 
   // Conversion.
   static inline SmallInteger* fromWord(word value);
@@ -174,7 +172,8 @@ enum class ObjectFormat {
  */
 class Header : public Object {
  public:
-  inline Object* hashCode();
+  inline word hashCode();
+  inline Header* withHashCode(word value);
 
   inline ObjectFormat format();
 
@@ -217,7 +216,6 @@ class Boolean : public Object {
  public:
   // Getters and setters.
   inline bool value();
-  inline Object* hash();
 
   // Conversion.
   static inline Boolean* fromBool(bool value);
@@ -236,9 +234,6 @@ class Boolean : public Object {
 
 class None : public Object {
  public:
-  // Getters and setters.
-  inline Object* hash();
-
   // Singletons.
   inline static None* object();
 
@@ -256,9 +251,6 @@ class None : public Object {
 
 class Ellipsis : public Object {
  public:
-  // Getters and setters.
-  inline Object* hash();
-
   // Singletons.
   inline static Ellipsis* object();
 
@@ -391,7 +383,6 @@ class String : public Array {
   // Getters and setters.
   inline byte charAt(word index);
   inline void charAtPut(word index, byte value);
-  Object* hash();
 
   // Equality checks.
   bool equals(Object* that);
@@ -864,27 +855,6 @@ T* Object::cast() {
   return T::cast(this);
 }
 
-Object* Object::hash(Object* object) {
-  // Until we have proper support for classes and methods so we can dispatch on
-  // __hash__, this is the "dumping ground" for hash related functionality.
-  //
-  // TODO: Need to support hashing of arbitrary objects using their identity
-  // hash code.
-  if (object->isString()) {
-    return String::cast(object)->hash();
-  } else if (object->isSmallInteger()) {
-    return SmallInteger::cast(object)->hash();
-  } else if (object->isBoolean()) {
-    return Boolean::cast(object)->hash();
-  } else if (object->isNone()) {
-    return None::cast(object)->hash();
-  } else if (object->isEllipsis()) {
-    return Ellipsis::cast(object)->hash();
-  }
-  assert(0);
-  return None::object();
-}
-
 // SmallInteger
 
 SmallInteger* SmallInteger::cast(Object* object) {
@@ -900,10 +870,6 @@ SmallInteger* SmallInteger::fromWord(word value) {
   return reinterpret_cast<SmallInteger*>(value << kTagSize);
 }
 
-Object* SmallInteger::hash() {
-  return this;
-}
-
 // Header
 
 Header* Header::cast(Object* object) {
@@ -912,22 +878,29 @@ Header* Header::cast(Object* object) {
 }
 
 word Header::count() {
-  uword header = reinterpret_cast<uword>(this);
+  auto header = reinterpret_cast<uword>(this);
   return (header >> kCountOffset) & kCountMask;
 }
 
-Object* Header::hashCode() {
-  uword header = reinterpret_cast<uword>(this);
-  return SmallInteger::fromWord((header >> kHashCodeOffset) & kHashCodeMask);
+word Header::hashCode() {
+  auto header = reinterpret_cast<uword>(this);
+  return (header >> kHashCodeOffset) & kHashCodeMask;
+}
+
+Header* Header::withHashCode(word value) {
+  auto header = reinterpret_cast<uword>(this);
+  header &= ~(kHashCodeMask << kHashCodeOffset);
+  header |= (value & kHashCodeMask) << kHashCodeOffset;
+  return reinterpret_cast<Header*>(header);
 }
 
 ClassId Header::classId() {
-  uword header = reinterpret_cast<uword>(this);
+  auto header = reinterpret_cast<uword>(this);
   return static_cast<ClassId>((header >> kClassIdOffset) & kClassIdMask);
 }
 
 ObjectFormat Header::format() {
-  uword header = reinterpret_cast<uword>(this);
+  auto header = reinterpret_cast<uword>(this);
   return static_cast<ObjectFormat>((header >> kFormatOffset) & kFormatMask);
 }
 
@@ -951,10 +924,6 @@ None* None::cast(Object* object) {
   return reinterpret_cast<None*>(object);
 }
 
-Object* None::hash() {
-  return SmallInteger::fromWord(reinterpret_cast<word>(this));
-}
-
 // Ellipsis
 
 Ellipsis* Ellipsis::object() {
@@ -964,10 +933,6 @@ Ellipsis* Ellipsis::object() {
 Ellipsis* Ellipsis::cast(Object* object) {
   assert(object->isEllipsis());
   return reinterpret_cast<Ellipsis*>(object);
-}
-
-Object* Ellipsis::hash() {
-  return SmallInteger::fromWord(reinterpret_cast<word>(this));
 }
 
 // Boolean
@@ -984,10 +949,6 @@ Boolean* Boolean::cast(Object* object) {
 
 bool Boolean::value() {
   return (reinterpret_cast<uword>(this) >> kTagSize) ? true : false;
-}
-
-Object* Boolean::hash() {
-  return SmallInteger::fromWord(value());
 }
 
 // HeapObject
@@ -1585,6 +1546,7 @@ String* String::cast(Object* object) {
 }
 
 void String::initialize(word length) {
+  assert(length >= 0);
   std::memset(reinterpret_cast<void*>(address() + String::kSize), 0, length);
 }
 

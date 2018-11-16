@@ -24,6 +24,11 @@ class Utils {
     return roundDown(x + n - 1, n);
   }
 
+  template <typename T>
+  static inline T rotateLeft(T x, int n) {
+    return (x << n) | (x >> (-n & (sizeof(T) * kBitsPerByte - 1)));
+  }
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Utils);
 };

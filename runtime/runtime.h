@@ -36,6 +36,10 @@ class Runtime {
 
   void collectGarbage();
 
+  Object* hash(Object* object);
+
+  uword random();
+
   Heap* heap() {
     return &heap_;
   };
@@ -60,11 +64,16 @@ class Runtime {
   void initializeClasses();
   void initializeInstances();
   void initializeModules();
+  void initializeRandom();
 
   void createBuiltinsModule();
 
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
+
+  Object* identityHash(Object* object);
+  Object* immediateHash(Object* object);
+  Object* valueHash(Object* object);
 
   // The size ensureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
@@ -89,6 +98,9 @@ class Runtime {
   Object* modules_;
 
   Thread* threads_;
+
+  uword random_state_[2];
+  uword hash_secret_[2];
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

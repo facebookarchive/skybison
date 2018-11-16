@@ -177,6 +177,9 @@ void Dictionary::grow(Dictionary* dict, Runtime* runtime) {
 // String
 
 bool String::equals(Object* that) {
+  if (this == that) {
+    return true;
+  }
   if (!that->isString()) {
     return false;
   }
@@ -198,14 +201,6 @@ bool String::equalsCString(const char* c_string) {
     }
   }
   return *cp == '\0';
-}
-
-Object* String::hash() {
-  // TODO(mpage) - Take the hash algorithm from CPython
-  auto rawStr = reinterpret_cast<char*>(address() + String::kSize);
-  std::string str(reinterpret_cast<char*>(rawStr), length());
-  std::hash<std::string> hashFunc;
-  return SmallInteger::fromWord(hashFunc(str));
 }
 
 } // namespace python

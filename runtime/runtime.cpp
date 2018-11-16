@@ -3,7 +3,8 @@
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
-#include "objects.h"
+#include "os.h"
+#include "siphash.h"
 #include "thread.h"
 #include "trampolines.h"
 #include "visitor.h"
@@ -11,6 +12,7 @@
 namespace python {
 
 Runtime::Runtime() : heap_(64 * MiB) {
+  initializeRandom();
   initializeThreads();
   initializeClasses();
   initializeInstances();
@@ -105,6 +107,66 @@ Object* Runtime::newStringFromCString(const char* c_string) {
   return result;
 }
 
+Object* Runtime::hash(Object* object) {
+  if (!object->isHeapObject()) {
+    return immediateHash(object);
+  }
+  if (object->isByteArray() || object->isString()) {
+    return valueHash(object);
+  }
+  return identityHash(object);
+}
+
+Object* Runtime::immediateHash(Object* object) {
+  if (object->isSmallInteger()) {
+    return object;
+  }
+  if (object->isBoolean()) {
+    return SmallInteger::fromWord(Boolean::cast(object)->value() ? 1 : 0);
+  }
+  return SmallInteger::fromWord(reinterpret_cast<uword>(object));
+}
+
+// Xoroshiro128+
+// http://xoroshiro.di.unimi.it/
+uword Runtime::random() {
+  const uint64_t s0 = random_state_[0];
+  uint64_t s1 = random_state_[1];
+  const uint64_t result = s0 + s1;
+  s1 ^= s0;
+  random_state_[0] = Utils::rotateLeft(s0, 55) ^ s1 ^ (s1 << 14);
+  random_state_[1] = Utils::rotateLeft(s1, 36);
+  return result;
+}
+
+Object* Runtime::identityHash(Object* object) {
+  HeapObject* src = HeapObject::cast(object);
+  word code = src->header()->hashCode();
+  if (code == 0) {
+    code = random();
+    code = (code == 0) ? 1 : code;
+    src->setHeader(src->header()->withHashCode(code));
+  }
+  return SmallInteger::fromWord(code);
+}
+
+Object* Runtime::valueHash(Object* object) {
+  HeapObject* src = HeapObject::cast(object);
+  Header* header = src->header();
+  if (header->hashCode() == 0) {
+    word code = 0;
+    halfsiphash(
+        reinterpret_cast<uint8_t*>(src->address()),
+        src->size(),
+        reinterpret_cast<uint8_t*>(hash_secret_),
+        reinterpret_cast<uint8_t*>(&code),
+        sizeof(code));
+    header = header->withHashCode(code);
+    src->setHeader(header);
+  }
+  return SmallInteger::fromWord(header->hashCode());
+}
+
 void Runtime::initializeClasses() {
   class_class_ = heap()->createClassClass();
 
@@ -151,6 +213,13 @@ void Runtime::initializeInstances() {
   empty_string_ = heap()->createString(0);
 }
 
+void Runtime::initializeRandom() {
+  Os::secureRandom(
+      reinterpret_cast<byte*>(&random_state_), sizeof(random_state_));
+  Os::secureRandom(
+      reinterpret_cast<byte*>(&hash_secret_), sizeof(hash_secret_));
+}
+
 void Runtime::visitRoots(PointerVisitor* visitor) {
   visitRuntimeRoots(visitor);
   visitThreadRoots(visitor);
@@ -185,7 +254,7 @@ void Runtime::visitThreadRoots(PointerVisitor* visitor) {
 
 void Runtime::addModule(Object* module) {
   Object* name = Module::cast(module)->name();
-  Dictionary::atPut(modules(), name, Object::hash(name), module, this);
+  Dictionary::atPut(modules(), name, hash(name), module, this);
 }
 
 void Runtime::initializeModules() {

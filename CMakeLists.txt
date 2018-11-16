@@ -6,8 +6,13 @@ set(PYTHON_EXECUTABLE /usr/bin/python)
 set(CMAKE_CXX_STANDARD 11)
 
 add_subdirectory(third-party/googletest-1.8.0)
-include_directories(third-party/googletest-1.8.0/googletest/include)
-include_directories(third-party/googletest-1.8.0/googlemock/include)
+include_directories(
+  third-party/googletest-1.8.0/googletest/include
+  third-party/googletest-1.8.0/googlemock/include)
+
+add_subdirectory(third-party/siphash-20170224)
+include_directories(
+  third-party/siphash-20170224/include)
 
 add_library(
   runtime
@@ -38,6 +43,9 @@ add_library(
   runtime/trampolines.h
   runtime/utils.h
   runtime/visitor.h)
+target_link_libraries(
+  runtime
+  siphash)
 
 add_executable(
   python
@@ -55,7 +63,8 @@ add_executable(
   runtime/os-test.cpp
   runtime/runtime-test.cpp
   runtime/space-test.cpp
-  runtime/thread-test.cpp)
+  runtime/thread-test.cpp
+  runtime/utils-test.cpp)
 target_link_libraries(
   python-tests
   gtest
