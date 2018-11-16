@@ -158,4 +158,42 @@ TEST_F(LongExtensionApiTest, AsLongAndOverflow) {
   EXPECT_EQ(overflow, -1);
 }
 
+TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithMax) {
+  auto const ulmax = std::numeric_limits<unsigned long>::max();
+  PyObject* pylong = PyLong_FromUnsignedLong(ulmax);
+  EXPECT_EQ(PyLong_AsUnsignedLongMask(pylong), ulmax);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsUnsignedLongLongMask(pylong), ulmax);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  auto const ullmax = std::numeric_limits<unsigned long long>::max();
+  pylong = PyLong_FromUnsignedLongLong(ullmax);
+  EXPECT_EQ(PyLong_AsUnsignedLongLongMask(pylong), ullmax);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithLargeInt) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  uword digits[] = {kMaxUword, kMaxUword >> 1};
+  // TODO(bsimmers): Rewrite this to use PyLong_FromString() once we've
+  // implemented it.
+  Handle<LargeInt> large(&scope, runtime->newIntWithDigits(digits));
+  PyObject* pylong = ApiHandle::fromObject(*large);
+  EXPECT_EQ(PyLong_AsUnsignedLongMask(pylong), -1UL);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsUnsignedLongLongMask(pylong), -1UL);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithNegative) {
+  PyObject* pylong = PyLong_FromLong(-17);
+  EXPECT_EQ(PyLong_AsUnsignedLongMask(pylong), -17UL);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsUnsignedLongLongMask(pylong), -17ULL);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python

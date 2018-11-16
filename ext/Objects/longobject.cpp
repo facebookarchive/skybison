@@ -98,6 +98,26 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
   return -1;
 }
 
+template <typename T>
+static T asIntWithoutOverflowCheck(PyObject* pylong) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  if (pylong == nullptr) {
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return -1;
+  }
+
+  Handle<Object> longobj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
+  if (!longobj->isInt()) {
+    // TODO(T29753730): Handle calling __int__ on pylong when appropriate.
+    return -1;
+  }
+  static_assert(sizeof(T) <= sizeof(word), "T requires multiple digits");
+  Handle<Int> intobj(&scope, *longobj);
+  return intobj->digitAt(0);
+}
+
 // Converting to signed ints.
 
 PY_EXPORT long PyLong_AsLong(PyObject* pylong) {
@@ -148,12 +168,12 @@ PY_EXPORT double PyLong_AsDouble(PyObject* /* v */) {
   UNIMPLEMENTED("PyLong_AsDouble");
 }
 
-PY_EXPORT unsigned long long PyLong_AsUnsignedLongLongMask(PyObject* /* p */) {
-  UNIMPLEMENTED("PyLong_AsUnsignedLongLongMask");
+PY_EXPORT unsigned long long PyLong_AsUnsignedLongLongMask(PyObject* op) {
+  return asIntWithoutOverflowCheck<unsigned long long>(op);
 }
 
-PY_EXPORT unsigned long PyLong_AsUnsignedLongMask(PyObject* /* p */) {
-  UNIMPLEMENTED("PyLong_AsUnsignedLongMask");
+PY_EXPORT unsigned long PyLong_AsUnsignedLongMask(PyObject* op) {
+  return asIntWithoutOverflowCheck<unsigned long>(op);
 }
 
 PY_EXPORT void* PyLong_AsVoidPtr(PyObject* /* v */) {
