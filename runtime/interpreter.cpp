@@ -176,6 +176,10 @@ struct Context {
   Object** sp;
   word pc;
 };
+Result INVALID_BYTECODE(Context*, word) {
+  // TODO: Distinguish between invalid & not implemented
+  return Result::NOT_IMPLEMENTED;
+}
 Result NOT_IMPLEMENTED(Context*, word) {
   return Result::NOT_IMPLEMENTED;
 }
@@ -485,7 +489,6 @@ Result BINARY_SUBTRACT(Context* ctx, word) {
   *ctx->sp = SmallInteger::fromWord(result);
   return Result::CONTINUE;
 }
-
 Result BINARY_MULTIPLY(Context* ctx, word) {
   Object**& sp = ctx->sp;
   if (sp[1]->isSmallInteger()) {
@@ -704,74 +707,14 @@ Result FORMAT_VALUE(Context* ctx, word flags) {
 }
 
 using Op = Result (*)(Context*, word);
-Op opTable[256];
+const Op opTable[] = {
+#define HANDLER(name, value, handler) handler,
+    FOREACH_BYTECODE(HANDLER)
+#undef HANDLER
+};
 } // namespace interpreter
-using namespace interpreter;
-void Interpreter::initOpTable() {
-  for (word i = 0; i < 256; i++) {
-    opTable[i] = interpreter::NOT_IMPLEMENTED;
-  }
-  opTable[Bytecode::LOAD_CONST] = interpreter::LOAD_CONST;
-  opTable[Bytecode::LOAD_FAST] = interpreter::LOAD_FAST;
-  opTable[Bytecode::STORE_FAST] = interpreter::STORE_FAST;
-  opTable[Bytecode::LOAD_NAME] = interpreter::LOAD_NAME;
-  opTable[Bytecode::STORE_NAME] = interpreter::STORE_NAME;
-  opTable[Bytecode::POP_TOP] = interpreter::POP_TOP;
-  opTable[Bytecode::DUP_TOP] = interpreter::DUP_TOP;
-  opTable[Bytecode::ROT_TWO] = interpreter::ROT_TWO;
-  opTable[Bytecode::CALL_FUNCTION] = interpreter::CALL_FUNCTION;
-  opTable[Bytecode::CALL_FUNCTION_KW] = interpreter::CALL_FUNCTION_KW;
-  opTable[Bytecode::LOAD_GLOBAL] = interpreter::LOAD_GLOBAL;
-  opTable[Bytecode::STORE_GLOBAL] = interpreter::STORE_GLOBAL;
-  opTable[Bytecode::MAKE_FUNCTION] = interpreter::MAKE_FUNCTION;
-  opTable[Bytecode::BUILD_LIST] = interpreter::BUILD_LIST;
-  opTable[Bytecode::BUILD_SET] = interpreter::BUILD_SET;
-  opTable[Bytecode::BUILD_TUPLE] = interpreter::BUILD_TUPLE;
-  opTable[Bytecode::BUILD_MAP] = interpreter::BUILD_MAP;
-  opTable[Bytecode::POP_JUMP_IF_FALSE] = interpreter::POP_JUMP_IF_FALSE;
-  opTable[Bytecode::POP_JUMP_IF_TRUE] = interpreter::POP_JUMP_IF_TRUE;
-  opTable[Bytecode::JUMP_IF_TRUE_OR_POP] = interpreter::JUMP_IF_TRUE_OR_POP;
-  opTable[Bytecode::JUMP_IF_FALSE_OR_POP] = interpreter::JUMP_IF_FALSE_OR_POP;
-  opTable[Bytecode::LOAD_BUILD_CLASS] = interpreter::LOAD_BUILD_CLASS;
-  opTable[Bytecode::UNARY_NOT] = interpreter::UNARY_NOT;
-  opTable[Bytecode::POP_JUMP_IF_TRUE] = interpreter::POP_JUMP_IF_TRUE;
-  opTable[Bytecode::JUMP_ABSOLUTE] = interpreter::JUMP_ABSOLUTE;
-  opTable[Bytecode::JUMP_FORWARD] = interpreter::JUMP_FORWARD;
-  opTable[Bytecode::SETUP_LOOP] = interpreter::SETUP_LOOP;
-  opTable[Bytecode::POP_BLOCK] = interpreter::POP_BLOCK;
-  opTable[Bytecode::FOR_ITER] = interpreter::FOR_ITER;
-  opTable[Bytecode::GET_ITER] = interpreter::GET_ITER;
-  opTable[Bytecode::BINARY_AND] = interpreter::BINARY_AND;
-  opTable[Bytecode::INPLACE_AND] = interpreter::BINARY_AND;
-  opTable[Bytecode::BINARY_ADD] = interpreter::BINARY_ADD;
-  opTable[Bytecode::INPLACE_ADD] = interpreter::BINARY_ADD;
-  opTable[Bytecode::BINARY_MODULO] = interpreter::BINARY_MODULO;
-  opTable[Bytecode::INPLACE_MODULO] = interpreter::BINARY_MODULO;
-  opTable[Bytecode::BINARY_SUBTRACT] = interpreter::BINARY_SUBTRACT;
-  opTable[Bytecode::INPLACE_SUBTRACT] = interpreter::BINARY_SUBTRACT;
-  opTable[Bytecode::BINARY_MULTIPLY] = interpreter::BINARY_MULTIPLY;
-  opTable[Bytecode::INPLACE_MULTIPLY] = interpreter::BINARY_MULTIPLY;
-  opTable[Bytecode::BINARY_XOR] = interpreter::BINARY_XOR;
-  opTable[Bytecode::INPLACE_XOR] = interpreter::BINARY_XOR;
-  opTable[Bytecode::BINARY_FLOOR_DIVIDE] = interpreter::BINARY_FLOOR_DIVIDE;
-  opTable[Bytecode::INPLACE_FLOOR_DIVIDE] = interpreter::BINARY_FLOOR_DIVIDE;
-  opTable[Bytecode::BINARY_SUBSCR] = interpreter::BINARY_SUBSCR;
-  opTable[Bytecode::STORE_SUBSCR] = interpreter::STORE_SUBSCR;
-  opTable[Bytecode::LOAD_ATTR] = interpreter::LOAD_ATTR;
-  opTable[Bytecode::STORE_ATTR] = interpreter::STORE_ATTR;
-  opTable[Bytecode::COMPARE_OP] = interpreter::COMPARE_OP;
-  opTable[Bytecode::IMPORT_NAME] = interpreter::IMPORT_NAME;
-  opTable[Bytecode::DELETE_GLOBAL] = interpreter::DELETE_GLOBAL;
-  opTable[Bytecode::BUILD_CONST_KEY_MAP] = interpreter::BUILD_CONST_KEY_MAP;
-  opTable[Bytecode::LOAD_CLOSURE] = interpreter::LOAD_CLOSURE;
-  opTable[Bytecode::STORE_DEREF] = interpreter::STORE_DEREF;
-  opTable[Bytecode::LOAD_DEREF] = interpreter::LOAD_DEREF;
-  opTable[Bytecode::UNPACK_SEQUENCE] = interpreter::UNPACK_SEQUENCE;
-  opTable[Bytecode::BINARY_TRUE_DIVIDE] = interpreter::BINARY_TRUE_DIVIDE;
-  opTable[Bytecode::BUILD_STRING] = interpreter::BUILD_STRING;
-  opTable[Bytecode::FORMAT_VALUE] = interpreter::FORMAT_VALUE;
-}
 
+using namespace interpreter;
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
   Code* code = Code::cast(frame->code());

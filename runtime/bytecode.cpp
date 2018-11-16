@@ -6,7 +6,7 @@
 using namespace python;
 
 static const char* const byteCodeName[] = {
-#define NAME(name, value) #name,
+#define NAME(name, value, handler) #name,
     FOREACH_BYTECODE(NAME)
 #undef NAME
 };

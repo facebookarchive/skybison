@@ -34,7 +34,6 @@ Runtime::Runtime(word heap_size)
   initializeSymbols();
   initializeClasses();
   initializeModules();
-  Interpreter::initOpTable();
 }
 
 Runtime::Runtime() : Runtime(64 * MiB) {}
