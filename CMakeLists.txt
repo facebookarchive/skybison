@@ -273,6 +273,7 @@ add_library(
   ext/Objects/tupleobject-test.cpp
   ext/Objects/typeobject-test.cpp
   ext/Objects/unicodeobject-test.cpp
+  ext/Python/errors-test.cpp
   ext/Python/modsupport-test.cpp
   ext/test/capi-fixture.h)
 target_include_directories(

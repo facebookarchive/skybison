@@ -50,9 +50,13 @@ PyAPI_FUNC(char *) PyUnicode_AsUTF8AndSize(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(PyObject *) PyErr_Occurred(void);
 PyAPI_FUNC(PyObject *) PyErr_NoMemory(void);
 PyAPI_FUNC(void) PyErr_SetString(PyObject *, const char *);
+PyAPI_FUNC(PyObject *) PyErr_Occurred(void);
 
 PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(int) Py_FinalizeEx(void);
+
+/* Non C-API functions */
+PyAPI_FUNC(int) _PyErr_ExceptionMessageMatches(const char *);
 
 /* Macros */
 /* Multiline macros should retain their structure to get properly substituted */
