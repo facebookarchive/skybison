@@ -129,6 +129,40 @@ TEST(IntegerTest, IsZero) {
   EXPECT_FALSE(min_word->isZero());
 }
 
+TEST(IntegerTest, Compare) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Integer> zero(&scope, runtime.newInteger(0));
+  Handle<Integer> one(&scope, runtime.newInteger(1));
+  Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
+
+  EXPECT_EQ(zero->compare(*zero), 0);
+  EXPECT_GE(one->compare(*neg_one), 1);
+  EXPECT_LE(neg_one->compare(*one), -1);
+
+  Handle<Integer> min_small_int(&scope,
+                                runtime.newInteger(SmallInteger::kMinValue));
+  Handle<Integer> max_small_int(&scope,
+                                runtime.newInteger(SmallInteger::kMaxValue));
+
+  EXPECT_GE(max_small_int->compare(*min_small_int), 1);
+  EXPECT_LE(min_small_int->compare(*max_small_int), -1);
+  EXPECT_EQ(min_small_int->compare(*min_small_int), 0);
+  EXPECT_EQ(max_small_int->compare(*max_small_int), 0);
+
+  Handle<Integer> min_word(&scope, runtime.newInteger(kMinWord));
+  Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
+
+  EXPECT_GE(max_word->compare(*min_word), 1);
+  EXPECT_LE(min_word->compare(*max_word), -1);
+  EXPECT_EQ(min_word->compare(*min_word), 0);
+  EXPECT_EQ(max_word->compare(*max_word), 0);
+
+  EXPECT_GE(max_word->compare(*max_small_int), 1);
+  EXPECT_LE(min_word->compare(*min_small_int), -1);
+}
+
 TEST(ModulesTest, TestCreate) {
   Runtime runtime;
   HandleScope scope;

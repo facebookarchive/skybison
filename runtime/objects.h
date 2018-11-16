@@ -177,16 +177,21 @@ class Integer : public Object {
   word asWord();
   void* asCPointer();
 
+  word compare(Integer* other);
+
   double doubleValue();
 
-  bool isPositive();
+  word highestBit();
+
   bool isNegative();
+  bool isPositive();
   bool isZero();
 
   // Casting.
   static Integer* cast(Object* object);
 
  private:
+  static word compareDigits(View<uword> lhs, View<uword> rhs);
   DISALLOW_COPY_AND_ASSIGN(Integer);
 };
 
@@ -624,33 +629,45 @@ class LargeString : public Array {
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeString);
 };
 
-// Currently a 64 bit signed integer - will eventually be extended to
-// support arbitrary precision.
-// TODO: arbitrary precision support.
+// Arbitrary precision signed integer, with 64 bit digits in two's complement
+// representation
 class LargeInteger : public HeapObject {
  public:
   // Getters and setters.
-  // TODO: when arbitrary precision is supported, how should these methods
-  // behave?
   word asWord();
 
   // LargeInteger is also used for storing native pointers.
   void* asCPointer();
 
+  // Sizing.
+  static word allocationSize(word num_digits);
+
   // Casting.
   static LargeInteger* cast(Object* object);
 
-  // Sizing.
-  static word allocationSize();
+  // Indexing into digits
+  uword digitAt(word index);
+  void digitAtPut(word index, uword digit);
 
-  // Allocation.
-  void initialize(word value);
+  // Backing array of unsigned words
+  View<uword> digits();
+
+  bool isNegative();
+  bool isPositive();
+
+  word highestBit();
+
+  // Number of digits
+  word numDigits();
 
   // Layout.
   static const int kValueOffset = HeapObject::kSize;
   static const int kSize = kValueOffset + kPointerSize;
 
  private:
+  friend class Integer;
+  friend class Runtime;
+
   DISALLOW_COPY_AND_ASSIGN(LargeInteger);
 };
 
@@ -1968,36 +1985,89 @@ inline void* Integer::asCPointer() {
   return LargeInteger::cast(this)->asCPointer();
 }
 
+inline word Integer::compare(Integer* that) {
+  if (this->isSmallInteger() && that->isSmallInteger()) {
+    return this->asWord() - that->asWord();
+  }
+  if (this->isNegative() != that->isNegative()) {
+    return this->isNegative() ? -1 : 1;
+  }
+
+  uword digit;
+  View<uword> lhs(&digit, 1);
+  if (this->isSmallInteger()) {
+    digit = this->asWord();
+  } else {
+    lhs = LargeInteger::cast(this)->digits();
+  }
+
+  View<uword> rhs(&digit, 1);
+  if (that->isSmallInteger()) {
+    digit = that->asWord();
+  } else {
+    rhs = LargeInteger::cast(that)->digits();
+  }
+  return compareDigits(lhs, rhs);
+}
+
+inline word Integer::compareDigits(View<uword> lhs, View<uword> rhs) {
+  if (lhs.length() > rhs.length()) {
+    return 1;
+  }
+  if (lhs.length() < rhs.length()) {
+    return -1;
+  }
+  for (word i = lhs.length() - 1; i >= 0; i--) {
+    if (lhs.get(i) > rhs.get(i)) {
+      return 1;
+    }
+    if (lhs.get(i) < rhs.get(i)) {
+      return -1;
+    }
+  }
+  return 0;
+}
+
 inline double Integer::doubleValue() {
   if (isSmallInteger()) {
     return static_cast<double>(asWord());
   }
   LargeInteger* large_int = LargeInteger::cast(this);
-  if (large_int->headerCountOrOverflow() == 1) {
+  if (large_int->numDigits() == 1) {
     return static_cast<double>(asWord());
   }
   // TODO(T30610701): Handle arbitrary precision LargeIntegers
   UNIMPLEMENTED("LargeIntegers with > 1 digit");
 }
 
+inline word Integer::highestBit() {
+  if (isSmallInteger()) {
+    uword self =
+        static_cast<uword>(std::abs(SmallInteger::cast(this)->value()));
+    return Utils::highestBit(self);
+  }
+  return LargeInteger::cast(this)->highestBit();
+}
+
 inline bool Integer::isPositive() {
   if (isSmallInteger()) {
     return SmallInteger::cast(this)->value() > 0;
   }
-  return LargeInteger::cast(this)->asWord() > 0;
+  return LargeInteger::cast(this)->isPositive();
 }
 
 inline bool Integer::isNegative() {
   if (isSmallInteger()) {
     return SmallInteger::cast(this)->value() < 0;
   }
-  return LargeInteger::cast(this)->asWord() < 0;
+  return LargeInteger::cast(this)->isNegative();
 }
 
 inline bool Integer::isZero() {
   if (isSmallInteger()) {
     return SmallInteger::cast(this)->value() == 0;
   }
+  // A LargeInteger can never be zero
   return false;
 }
 
@@ -2579,24 +2649,61 @@ inline void Code::setVarnames(Object* value) {
 // LargeInteger
 
 inline word LargeInteger::asWord() {
-  return *reinterpret_cast<word*>(address() + kValueOffset);
+  DCHECK(numDigits() == 1, "LargeInteger cannot fit in a word");
+  return static_cast<word>(digitAt(0));
 }
 
 inline void* LargeInteger::asCPointer() {
-  return *reinterpret_cast<void**>(address() + kValueOffset);
+  DCHECK(numDigits() == 1, "Large integer cannot fit in a pointer");
+  DCHECK(isPositive(), "Cannot cast a negative value to a C pointer");
+  return reinterpret_cast<void*>(asWord());
 }
 
-inline void LargeInteger::initialize(word value) {
-  *reinterpret_cast<word*>(address() + kValueOffset) = value;
+inline bool LargeInteger::isNegative() {
+  uword highest_digit = digitAt(numDigits() - 1);
+  return static_cast<word>(highest_digit) < 0;
 }
 
-inline word LargeInteger::allocationSize() {
-  return Header::kSize + LargeInteger::kSize;
+inline bool LargeInteger::isPositive() {
+  uword highest_digit = digitAt(numDigits() - 1);
+  return static_cast<word>(highest_digit) > 0;
+}
+
+inline uword LargeInteger::digitAt(word index) {
+  DCHECK_INDEX(index, numDigits());
+  return reinterpret_cast<uword*>(address() + kValueOffset)[index];
+}
+
+inline void LargeInteger::digitAtPut(word index, uword digit) {
+  DCHECK_INDEX(index, numDigits());
+  reinterpret_cast<uword*>(address() + kValueOffset)[index] = digit;
+}
+
+inline word LargeInteger::highestBit() {
+  word num_digits = numDigits();
+  uword high_word = digitAt(num_digits - 1);
+  if (isNegative()) {
+    high_word ^= kMaxUword;
+  }
+  word highest_bit = Utils::highestBit(high_word);
+  return highest_bit + ((num_digits - 1) * kBitsPerPointer);
+}
+
+inline word LargeInteger::numDigits() { return headerCountOrOverflow(); }
+
+inline word LargeInteger::allocationSize(word num_digits) {
+  word size = headerSize(num_digits) + num_digits * kPointerSize;
+  return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
 inline LargeInteger* LargeInteger::cast(Object* object) {
   DCHECK(object->isLargeInteger(), "not a large integer");
   return reinterpret_cast<LargeInteger*>(object);
+}
+
+inline View<uword> LargeInteger::digits() {
+  return View<uword>(reinterpret_cast<uword*>(address() + kValueOffset),
+                     headerCountOrOverflow());
 }
 
 // Double

@@ -63,6 +63,8 @@ class Runtime {
 
   Object* newInteger(word value);
 
+  Object* newIntegerWithDigits(View<uword> digits);
+
   Object* newLayout();
 
   Object* newList();

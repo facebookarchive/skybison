@@ -524,7 +524,7 @@ Object* Runtime::newInteger(word value) {
   if (SmallInteger::isValid(value)) {
     return SmallInteger::fromWord(value);
   }
-  return LargeInteger::cast(heap()->createLargeInteger(value));
+  return newIntegerWithDigits(View<uword>(reinterpret_cast<uword*>(&value), 1));
 }
 
 Object* Runtime::newDouble(double value) {
@@ -533,6 +533,26 @@ Object* Runtime::newDouble(double value) {
 
 Object* Runtime::newComplex(double real, double imag) {
   return Complex::cast(heap()->createComplex(real, imag));
+}
+
+Object* Runtime::newIntegerWithDigits(View<uword> digits) {
+  if (digits.length() == 0) {
+    return SmallInteger::fromWord(0);
+  }
+  if (digits.length() == 1) {
+    uword u_digit = digits.get(0);
+    word digit = *reinterpret_cast<word*>(&u_digit);
+    if (SmallInteger::isValid(digit)) {
+      return SmallInteger::fromWord(digit);
+    }
+  }
+  HandleScope scope;
+  Handle<LargeInteger> result(&scope,
+                              heap()->createLargeInteger(digits.length()));
+  for (word i = 0; i < digits.length(); i++) {
+    result->digitAtPut(i, digits.get(i));
+  }
+  return *result;
 }
 
 Object* Runtime::newProperty(const Handle<Object>& getter,

@@ -2419,4 +2419,57 @@ TEST(InstanceAttributeTest, NoInstanceDictionaryReturnsClassAttribute) {
   ASSERT_TRUE(attr->isBoundMethod());
 }
 
+TEST(RuntimeIntegerTest, NewSmallIntegerWithDigits) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Integer> zero(&scope,
+                       runtime.newIntegerWithDigits(View<uword>(nullptr, 0)));
+  ASSERT_TRUE(zero->isSmallInteger());
+  EXPECT_EQ(zero->asWord(), 0);
+
+  uword digit = 1;
+  Object* one = runtime.newIntegerWithDigits(View<uword>(&digit, 1));
+  ASSERT_TRUE(one->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(one)->value(), 1);
+
+  digit = kMaxUword;
+  Object* negative_one = runtime.newIntegerWithDigits(View<uword>(&digit, 1));
+  ASSERT_TRUE(negative_one->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(negative_one)->value(), -1);
+
+  word min_small_int = SmallInteger::kMaxValue;
+  digit = static_cast<uword>(min_small_int);
+  Handle<Integer> min_smallint(
+      &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
+  ASSERT_TRUE(min_smallint->isSmallInteger());
+  EXPECT_EQ(min_smallint->asWord(), min_small_int);
+
+  word max_small_int = SmallInteger::kMaxValue;
+  digit = static_cast<uword>(max_small_int);
+  Handle<Integer> max_smallint(
+      &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
+  ASSERT_TRUE(max_smallint->isSmallInteger());
+  EXPECT_EQ(max_smallint->asWord(), max_small_int);
+}
+
+TEST(RuntimeIntegerTest, NewLargeIntegerWithDigits) {
+  Runtime runtime;
+  HandleScope scope;
+
+  word negative_large_int = SmallInteger::kMinValue - 1;
+  uword digit = static_cast<uword>(negative_large_int);
+  Handle<Integer> negative_largeint(
+      &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
+  ASSERT_TRUE(negative_largeint->isLargeInteger());
+  EXPECT_EQ(negative_largeint->asWord(), negative_large_int);
+
+  word positive_large_int = SmallInteger::kMaxValue + 1;
+  digit = static_cast<uword>(positive_large_int);
+  Handle<Integer> positive_largeint(
+      &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
+  ASSERT_TRUE(positive_largeint->isLargeInteger());
+  EXPECT_EQ(positive_largeint->asWord(), positive_large_int);
+}
+
 }  // namespace python
