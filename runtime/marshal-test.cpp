@@ -78,8 +78,4 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   EXPECT_EQ(Code::cast(code)->argcount(), 0);
 }
 
-TEST(MarshalTest, Good) {
-  ASSERT_EQ(0, 0);
-}
-
 } // namespace python
