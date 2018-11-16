@@ -24,16 +24,7 @@ result = [i for i in fib(7)]
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Object> result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isList()) << typeName(&runtime, *result);
-  Handle<List> list(result);
-  ASSERT_EQ(list->numItems(), 7);
-  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 0);
-  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 1);
-  EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 1);
-  EXPECT_EQ(SmallInt::cast(list->at(3))->value(), 2);
-  EXPECT_EQ(SmallInt::cast(list->at(4))->value(), 3);
-  EXPECT_EQ(SmallInt::cast(list->at(5))->value(), 5);
-  EXPECT_EQ(SmallInt::cast(list->at(6))->value(), 8);
+  EXPECT_PYLIST_EQ(result, {0, 1, 1, 2, 3, 5, 8});
 }
 
 TEST(GeneratorTest, InitialSend) {
@@ -106,24 +97,17 @@ for i in g:
   HandleScope scope;
   runtime.runFromCStr(src);
   Handle<Object> result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(
+      result,
+      {"priming", "ready", "sending", "initial string", "initial string first",
+       "initial string first second", 0, 1, 2, 3, 4, "finished!"});
+
+  // Manually check element 3 for object identity
   ASSERT_TRUE(result->isList());
   Handle<List> list(result);
-  ASSERT_EQ(list->numItems(), 12);
-  EXPECT_PYSTRING_EQ(Str::cast(list->at(0)), "priming");
-  EXPECT_PYSTRING_EQ(Str::cast(list->at(1)), "ready");
-  EXPECT_PYSTRING_EQ(Str::cast(list->at(2)), "sending");
   Handle<Object> initial(&scope, moduleAt(&runtime, "__main__", "initial_str"));
-  ASSERT_TRUE(initial->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(*initial), "initial string");
+  EXPECT_GE(list->numItems(), 3);
   EXPECT_EQ(list->at(3), *initial);
-  EXPECT_PYSTRING_EQ(Str::cast(list->at(4)), "initial string first");
-  EXPECT_PYSTRING_EQ(Str::cast(list->at(5)), "initial string first second");
-  EXPECT_EQ(SmallInt::cast(list->at(6))->value(), 0);
-  EXPECT_EQ(SmallInt::cast(list->at(7))->value(), 1);
-  EXPECT_EQ(SmallInt::cast(list->at(8))->value(), 2);
-  EXPECT_EQ(SmallInt::cast(list->at(9))->value(), 3);
-  EXPECT_EQ(SmallInt::cast(list->at(10))->value(), 4);
-  EXPECT_PYSTRING_EQ(Str::cast(list->at(11)), "finished!");
 }
 
 TEST(CoroutineTest, Basic) {

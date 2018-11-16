@@ -50,6 +50,66 @@ std::string compileAndRunToStderrString(Runtime* runtime, const char* src);
 #define EXPECT_PYSTRING_EQ(s1, s2)                                             \
   EXPECT_PRED_FORMAT2(testing::AssertPyStringEqual, s1, s2)
 
+// Basic variant wrapper for a subset of Python values, used by
+// EXPECT_PYLIST_EQ().
+class Value {
+ public:
+  enum class Type {
+    None,
+    Bool,
+    Int,
+    Float,
+    Str,
+  };
+
+  Value(bool b) : bool_{b}, type_{Type::Bool} {}
+  Value(int i) : Value{static_cast<word>(i)} {}
+  Value(word i) : int_{i}, type_{Type::Int} {}
+  Value(double f) : float_{f}, type_{Type::Float} {}
+  Value(const char* s) : str_{s}, type_{Type::Str} {}
+
+  static Value none();
+
+  Type type() const;
+
+  bool boolVal() const;
+  word intVal() const;
+  double floatVal() const;
+  const char* strVal() const;
+
+ private:
+  union {
+    bool bool_;
+    word int_;
+    double float_;
+    const char* str_;
+  };
+
+  Value() : type_{Type::None} {}
+
+  Type type_;
+};
+
+inline Value Value::none() { return Value{}; }
+
+// Check if the given Object is a list containing the expected elements.
+::testing::AssertionResult AssertPyListEqual(
+    const char* actual_expr, const char* expected_expr,
+    const Handle<Object>& actual, const std::vector<Value>& expected);
+
+// The preprocessor doesn't understand grouping by {}, so EXPECT_PYLIST_EQ uses
+// this to support a nice-looking callsite.
+inline std::vector<Value> make_list(std::vector<Value> l) { return l; }
+
+// Used to verify the type, length, and contents of a list. Supports None, bool,
+// int, float, and str values:
+//
+// Handle<Object> list(&scope, moduleAt(...));
+// EXPECT_PYLIST_EQ(*list, {Value::None(), false, 42, 123.456, "a string"});
+#define EXPECT_PYLIST_EQ(l1, ...)                                              \
+  EXPECT_PRED_FORMAT2(::python::testing::AssertPyListEqual, l1,                \
+                      ::python::testing::make_list(__VA_ARGS__))
+
 // Calls func using the supplied arguments and captures output.
 //
 // This opens a new frame linked to the initial frame of the current thread,

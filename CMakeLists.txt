@@ -346,6 +346,7 @@ add_library(
   runtime/str-builtins-test.cpp
   runtime/super-builtins-test.cpp
   runtime/sys-module-test.cpp
+  runtime/test-utils-test.cpp
   runtime/test-utils.cpp
   runtime/test-utils.h
   runtime/thread-test.cpp

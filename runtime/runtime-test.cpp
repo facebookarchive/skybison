@@ -404,15 +404,7 @@ TEST(RuntimeListTest, InsertToList) {
   Handle<Object> value12(&scope, SmallInt::fromWord(6));
   runtime.listInsert(list, value12, 6);
 
-  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 0);
-  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 1);
-  EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 2);
-  EXPECT_EQ(SmallInt::cast(list->at(3))->value(), 3);
-  EXPECT_EQ(SmallInt::cast(list->at(4))->value(), 4);
-  EXPECT_EQ(SmallInt::cast(list->at(5))->value(), 5);
-  EXPECT_EQ(SmallInt::cast(list->at(6))->value(), 6);
-  EXPECT_EQ(SmallInt::cast(list->at(7))->value(), 7);
-  EXPECT_EQ(SmallInt::cast(list->at(8))->value(), 8);
+  EXPECT_PYLIST_EQ(list, {0, 1, 2, 3, 4, 5, 6, 7, 8});
 }
 
 TEST(RuntimeListTest, InsertToListBounds) {
@@ -493,15 +485,7 @@ TEST(RuntimeListTest, ListExtendList) {
   EXPECT_EQ(list->numItems(), 4);
   Handle<Object> list1_handle(&scope, *list1);
   runtime.listExtend(Thread::currentThread(), list, list1_handle);
-  ASSERT_EQ(list->numItems(), 8);
-  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 0);
-  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 1);
-  EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 2);
-  EXPECT_EQ(SmallInt::cast(list->at(3))->value(), 3);
-  EXPECT_EQ(SmallInt::cast(list->at(4))->value(), 4);
-  EXPECT_EQ(SmallInt::cast(list->at(5))->value(), 5);
-  EXPECT_EQ(SmallInt::cast(list->at(6))->value(), 6);
-  EXPECT_EQ(SmallInt::cast(list->at(7))->value(), 7);
+  EXPECT_PYLIST_EQ(list, {0, 1, 2, 3, 4, 5, 6, 7});
 }
 
 TEST(RuntimeListTest, ListExtendListIterator) {
@@ -519,15 +503,7 @@ TEST(RuntimeListTest, ListExtendListIterator) {
   Handle<Object> list1_handle(&scope, *list1);
   Handle<Object> list1_iterator(&scope, runtime.newListIterator(list1_handle));
   runtime.listExtend(Thread::currentThread(), list, list1_iterator);
-  ASSERT_EQ(list->numItems(), 8);
-  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 0);
-  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 1);
-  EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 2);
-  EXPECT_EQ(SmallInt::cast(list->at(3))->value(), 3);
-  EXPECT_EQ(SmallInt::cast(list->at(4))->value(), 4);
-  EXPECT_EQ(SmallInt::cast(list->at(5))->value(), 5);
-  EXPECT_EQ(SmallInt::cast(list->at(6))->value(), 6);
-  EXPECT_EQ(SmallInt::cast(list->at(7))->value(), 7);
+  EXPECT_PYLIST_EQ(list, {0, 1, 2, 3, 4, 5, 6, 7});
 }
 
 TEST(RuntimeListTest, ListExtendObjectArray) {
@@ -674,16 +650,7 @@ TEST(RuntimeListTest, ListExtendIterator) {
   Handle<Object> iterator(&scope, iterableWithLengthHint(&runtime));
   runtime.listExtend(Thread::currentThread(), list, iterator);
 
-  EXPECT_EQ(list->numItems(), 3);
-
-  ASSERT_TRUE(list->at(0)->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 1);
-
-  ASSERT_TRUE(list->at(1)->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 2);
-
-  ASSERT_TRUE(list->at(2)->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 3);
+  EXPECT_PYLIST_EQ(list, {1, 2, 3});
 }
 
 TEST(RuntimeListTest, ListExtendIteratorWithoutDunderLengthHint) {

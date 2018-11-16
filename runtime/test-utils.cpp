@@ -1,5 +1,7 @@
 #include "test-utils.h"
 
+#include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -70,6 +72,125 @@ static std::string pyStringToStdString(RawStr pystr) {
          << "      Which is: \"" << pyStringToStdString(actual_str) << "\"\n"
          << "To be equal to: \"" << expected_string_expr << "\"\n"
          << "      Which is: \"" << pyStringToStdString(expected_str) << "\"";
+}
+
+Value::Type Value::type() const { return type_; }
+
+bool Value::boolVal() const {
+  DCHECK(type() == Type::Bool, "expected bool");
+  return bool_;
+}
+
+word Value::intVal() const {
+  DCHECK(type() == Type::Int, "expected int");
+  return int_;
+}
+
+double Value::floatVal() const {
+  DCHECK(type() == Type::Float, "expected float");
+  return float_;
+}
+
+const char* Value::strVal() const {
+  DCHECK(type() == Type::Str, "expected str");
+  return str_;
+}
+
+template <typename T1, typename T2>
+::testing::AssertionResult badListValue(const char* actual_expr, word i,
+                                        const T1& actual, const T2& expected) {
+  return ::testing::AssertionFailure()
+         << "Value of: " << actual_expr << '[' << i << "]\n"
+         << "  Actual: " << actual << '\n'
+         << "Expected: " << expected;
+}
+
+::testing::AssertionResult AssertPyListEqual(
+    const char* actual_expr, const char* /* expected_expr */,
+    const Handle<Object>& actual, const std::vector<Value>& expected) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+
+  if (!actual->isList()) {
+    return ::testing::AssertionFailure()
+           << " Type of: " << actual_expr << "\n"
+           << "  Actual: " << typeName(runtime, *actual) << "\n"
+           << "Expected: list";
+  }
+
+  HandleScope scope(thread);
+  Handle<List> list(&scope, *actual);
+  if (list->numItems() != expected.size()) {
+    return ::testing::AssertionFailure()
+           << "Length of: " << actual_expr << "\n"
+           << "   Actual: " << list->numItems() << "\n"
+           << " Expected: " << expected.size();
+  }
+
+  for (word i = 0; i < expected.size(); i++) {
+    Handle<Object> actual_item(&scope, list->at(i));
+    const Value& expected_item = expected[i];
+
+    auto bad_type = [&](const char* expected_type) {
+      return ::testing::AssertionFailure()
+             << " Type of: " << actual_expr << '[' << i << "]\n"
+             << "  Actual: " << typeName(runtime, *actual_item) << '\n'
+             << "Expected: " << expected_type;
+    };
+
+    switch (expected_item.type()) {
+      case Value::Type::None: {
+        if (!actual_item->isNoneType()) return bad_type("NoneType");
+        break;
+      }
+
+      case Value::Type::Bool: {
+        if (!actual_item->isBool()) return bad_type("bool");
+        auto const actual_val = Bool::cast(*actual_item) == Bool::trueObj();
+        auto const expected_val = expected_item.boolVal();
+        if (actual_val != expected_val) {
+          return badListValue(actual_expr, i, actual_val ? "True" : "False",
+                              expected_val ? "True" : "False");
+        }
+        break;
+      }
+
+      case Value::Type::Int: {
+        if (!actual_item->isInt()) return bad_type("int");
+        Handle<Int> actual_val(actual_item);
+        Handle<Int> expected_val(&scope,
+                                 runtime->newInt(expected_item.intVal()));
+        if (actual_val->compare(*expected_val) != 0) {
+          // TODO(bsimmers): Support multi-digit values when we can print them.
+          return badListValue(actual_expr, i, actual_val->digitAt(0),
+                              expected_item.intVal());
+        }
+        break;
+      }
+
+      case Value::Type::Float: {
+        if (!actual_item->isFloat()) return bad_type("float");
+        auto const actual_val = Float::cast(*actual_item)->value();
+        auto const expected_val = expected_item.floatVal();
+        if (std::abs(actual_val - expected_val) >= DBL_EPSILON) {
+          return badListValue(actual_expr, i, actual_val, expected_val);
+        }
+        break;
+      }
+
+      case Value::Type::Str: {
+        if (!actual_item->isStr()) return bad_type("str");
+        Handle<Str> actual_val(actual_item);
+        const char* expected_val = expected_item.strVal();
+        if (!actual_val->equalsCStr(expected_val)) {
+          return badListValue(actual_expr, i, actual_val, expected_val);
+        }
+        break;
+      }
+    }
+  }
+
+  return ::testing::AssertionSuccess();
 }
 
 // helper function to redirect return stdout/stderr from running a module
