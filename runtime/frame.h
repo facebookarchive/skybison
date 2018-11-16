@@ -75,6 +75,7 @@ const int kMaxBlockStackDepth = 20;
  *     Builtins
  *     Globals
  *     Code Object
+ *     Stack top
  *     Saved frame pointer  <- Frame pointer
  *                          <- Top of stack / lower memory addresses
  */
@@ -136,14 +137,32 @@ class Frame {
   inline void setCode(Object* code);
 
   // A pointer to the previous frame or nullptr if this is the first frame
-  inline Object* previousFrame();
-  inline void setPreviousFrame(Object* frame);
+  inline Frame* previousFrame();
+  inline void setPreviousFrame(Frame* frame);
+
+  // A pointer to the top of the value stack
+  inline Object** top();
+  inline void setTop(Object** top);
+
+  // A pointer to the base of the value stack
+  inline Object** base();
+
+  // Return the object at offset from the top of the value stack (e.g. peek(0)
+  // returns the top of the stack)
+  inline Object* peek(word offset);
+
+  // A function lives immediately below the arguments on the value stack
+  inline Function* function(word argc);
+
+  inline bool isSentinelFrame();
+  inline void makeSentinel();
 
   // Compute the total space required for a frame object
   static int allocationSize(Object* code);
 
   static const int kPreviousFrameOffset = 0;
-  static const int kCodeOffset = kPreviousFrameOffset + kPointerSize;
+  static const int kTopOffset = kPreviousFrameOffset;
+  static const int kCodeOffset = kTopOffset + kPointerSize;
   static const int kGlobalsOffset = kCodeOffset + kPointerSize;
   static const int kBuiltinsOffset = kGlobalsOffset + kPointerSize;
   static const int kTracebackOffset = kBuiltinsOffset + kPointerSize;
@@ -266,12 +285,45 @@ Object** Frame::locals() {
   return reinterpret_cast<Object**>(address() + kSize);
 }
 
-Object* Frame::previousFrame() {
-  return at(kPreviousFrameOffset);
+Frame* Frame::previousFrame() {
+  Object* frame = at(kPreviousFrameOffset);
+  return reinterpret_cast<Frame*>(SmallInteger::cast(frame)->value());
 }
 
-void Frame::setPreviousFrame(Object* frame) {
-  atPut(kPreviousFrameOffset, frame);
+void Frame::setPreviousFrame(Frame* frame) {
+  atPut(
+      kPreviousFrameOffset,
+      SmallInteger::fromWord(reinterpret_cast<uword>(frame)));
+}
+
+Object** Frame::base() {
+  return reinterpret_cast<Object**>(this);
+}
+
+Object** Frame::top() {
+  Object* top = at(kTopOffset);
+  return reinterpret_cast<Object**>(SmallInteger::cast(top)->value());
+}
+
+void Frame::setTop(Object** top) {
+  atPut(kTopOffset, SmallInteger::fromWord(reinterpret_cast<uword>(top)));
+}
+
+Object* Frame::peek(word offset) {
+  assert(top() + offset < base());
+  return *(top() + offset);
+}
+
+Function* Frame::function(word argc) {
+  return Function::cast(peek(argc));
+}
+
+bool Frame::isSentinelFrame() {
+  return previousFrame() == nullptr;
+}
+
+void Frame::makeSentinel() {
+  memset(this, 0, Frame::kSize);
 }
 
 TryBlock TryBlock::fromSmallInteger(Object* object) {

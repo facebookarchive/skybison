@@ -21,14 +21,14 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, int argc) {
   // TODO: We may get passed a BoundMethod.  We'll need to detect that, unwrap
   // it, handle shifting the arguments down (or potentially replacing the
   // BoundMethod with the wrapped this object).
-  auto function = thread->peekObject(argc)->cast<Function>();
-  auto code = function->code()->cast<Code>();
+  auto function = previousFrame->function(argc);
+  auto code = Code::cast(function->code());
 
   // TODO: Raise an exception here instead of asserting
   assert(argc == code->argcount());
 
   // Set up the frame
-  auto frame = thread->pushFrame(code);
+  auto frame = thread->pushFrame(code, previousFrame);
   frame->setGlobals(function->globals());
 
   if (frame->globals() == previousFrame->globals()) {

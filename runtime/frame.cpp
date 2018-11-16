@@ -7,7 +7,8 @@ int Frame::allocationSize(Object* object) {
   Code* code = Code::cast(object);
   int ncells = ObjectArray::cast(code->cellvars())->length();
   int nfrees = ObjectArray::cast(code->freevars())->length();
-  int extras = code->nlocals() - code->argcount() + ncells + nfrees;
+  int extras =
+      code->nlocals() - code->argcount() + ncells + nfrees + code->stacksize();
   return kSize + extras * kPointerSize;
 }
 
