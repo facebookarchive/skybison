@@ -15,7 +15,7 @@ TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   Handle<Dict> dict(&scope, runtime.newDict(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   Handle<Object> val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
   frame->setLocal(0, *dict);
@@ -30,7 +30,7 @@ TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.newDict(0));
-  frame->setLocal(1, runtime.newStringFromCString("foo"));
+  frame->setLocal(1, runtime.newStrFromCStr("foo"));
   Object* result = DictBuiltins::dunderContains(thread, frame, 2);
   ASSERT_TRUE(result->isBool());
   EXPECT_FALSE(Bool::cast(result)->value());
@@ -38,7 +38,7 @@ TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
 
 TEST(DictBuiltinsTest, InWithExistingKeyReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 d = {"foo": 1}
 foo_in_d = "foo" in d
 )");
@@ -51,7 +51,7 @@ foo_in_d = "foo" in d
 
 TEST(DictBuiltinsTest, InWithNonexistentKeyReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 d = {}
 foo_in_d = "foo" in d
 )");
@@ -68,7 +68,7 @@ TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   Handle<Dict> dict(&scope, runtime.newDict(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   Handle<Object> val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
   frame->setLocal(0, *dict);
@@ -83,34 +83,34 @@ TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyThrowsKeyError) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   Handle<Dict> dict(&scope, runtime.newDict(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   Handle<Object> val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
   frame->setLocal(0, *dict);
   // "bar" doesn't exist in this dictionary, attempting to delete it should
   // cause a KeyError.
-  frame->setLocal(1, runtime.newStringFromCString("bar"));
+  frame->setLocal(1, runtime.newStrFromCStr("bar"));
   Object* result = DictBuiltins::dunderDelItem(thread, frame, 2);
   ASSERT_TRUE(result->isError());
 }
 
 TEST(DictBuiltinsTest, DelOnExistingKeyDeletesKey) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 d = {"foo": 1}
 del d["foo"]
 )");
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Dict> d(&scope, moduleAt(&runtime, main, "d"));
-  Handle<Object> foo(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> foo(&scope, runtime.newStrFromCStr("foo"));
 
   EXPECT_FALSE(runtime.dictIncludes(d, foo));
 }
 
 TEST(DictBuiltinsDeathTest, DelOnNonexistentKeyThrowsKeyError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCString(R"(
+  EXPECT_DEATH(runtime.runFromCStr(R"(
 d = {}
 del d["foo"]
 )"),

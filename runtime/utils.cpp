@@ -42,8 +42,8 @@ class TracebackPrinter : public FrameVisitor {
     Handle<Code> code(&scope, frame->code());
 
     // Extract filename
-    if (code->filename()->isString()) {
-      char* filename = String::cast(code->filename())->toCString();
+    if (code->filename()->isStr()) {
+      char* filename = Str::cast(code->filename())->toCStr();
       line << "  File '" << filename << "', ";
       std::free(filename);
     } else {
@@ -57,8 +57,8 @@ class TracebackPrinter : public FrameVisitor {
     line << "line " << linenum << ", ";
 
     // Extract function
-    if (code->name()->isString()) {
-      char* name = String::cast(code->name())->toCString();
+    if (code->name()->isStr()) {
+      char* name = Str::cast(code->name())->toCStr();
       line << "in " << name;
       std::free(name);
     } else {

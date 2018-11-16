@@ -36,13 +36,13 @@ extern "C" int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
 
   Handle<Object> tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   if (!tupleobj->isObjectArray()) {
-    thread->throwSystemErrorFromCString("bad argument to internal function");
+    thread->throwSystemErrorFromCStr("bad argument to internal function");
     return -1;
   }
 
   Handle<ObjectArray> tuple(&scope, *tupleobj);
   if (pos < 0 || pos >= tuple->length()) {
-    thread->throwIndexErrorFromCString("tuple assignment index out of range");
+    thread->throwIndexErrorFromCStr("tuple assignment index out of range");
     return -1;
   }
 

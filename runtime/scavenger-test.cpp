@@ -120,7 +120,7 @@ def g(ref, c=4):
   global b
   b = c
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<WeakRef> ref1(&scope, runtime.newWeakRef());
   Handle<WeakRef> ref2(&scope, runtime.newWeakRef());
@@ -169,7 +169,7 @@ def g(ref, c=4):
   global b
   b = c
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<WeakRef> ref1(&scope, runtime.newWeakRef());
@@ -219,7 +219,7 @@ def g(ref, b=2):
   global a
   a = b
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<WeakRef> ref1(&scope, runtime.newWeakRef());
   Handle<WeakRef> ref2(&scope, runtime.newWeakRef());
@@ -266,7 +266,7 @@ def g(ref, c=4):
   global b
   b = c
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<WeakRef> ref1(&scope, runtime.newWeakRef());
   Handle<WeakRef> ref2(&scope, runtime.newWeakRef());

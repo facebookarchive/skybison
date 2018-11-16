@@ -40,7 +40,7 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
 
 Object* ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "object.__hash__() takes no arguments");
   }
   Arguments args(frame, nargs);
@@ -52,7 +52,7 @@ Object* ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   // number of arguments are given. It only throws if __new__ is not overloaded
   // or __init__ was overloaded, else it allows the excess arguments.
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCString("__init__ needs an argument");
+    return thread->throwTypeErrorFromCStr("__init__ needs an argument");
   }
   if (nargs == 1) {
     return None::object();
@@ -68,7 +68,7 @@ Object* ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
       runtime->isMethodOverloaded(thread, type, SymbolId::kDunderInit)) {
     // Throw a TypeError if extra arguments were passed, and __new__ was not
     // overwritten by self, or __init__ was overloaded by self.
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "object.__init__() takes no parameters");
   }
   // Else it's alright to have extra arguments.
@@ -78,7 +78,7 @@ Object* ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
 Object* ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (nargs < 1) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "object.__new__() takes no arguments");
   }
   HandleScope scope(thread);
@@ -98,7 +98,7 @@ Object* ObjectBuiltins::dunderNewKw(Thread* thread, Frame* frame, word nargs) {
 
 Object* ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("expected 0 arguments");
+    return thread->throwTypeErrorFromCStr("expected 0 arguments");
   }
   Arguments args(frame, nargs);
 
@@ -109,9 +109,9 @@ Object* ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   // TODO(T31727304): Get the module and qualified subname. For now settle for
   // the class name.
   Handle<Type> type(&scope, runtime->typeOf(*self));
-  Handle<String> type_name(&scope, type->name());
-  char* c_string = type_name->toCString();
-  Object* str = thread->runtime()->newStringFromFormat(
+  Handle<Str> type_name(&scope, type->name());
+  char* c_string = type_name->toCStr();
+  Object* str = thread->runtime()->newStrFromFormat(
       "<%s object at %p>", c_string, static_cast<void*>(*self));
   free(c_string);
   return str;
@@ -134,7 +134,7 @@ void NoneBuiltins::initialize(Runtime* runtime) {
 
 Object* NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {
   if (nargs > 1) {
-    return thread->throwTypeErrorFromCString("None.__new__ takes no arguments");
+    return thread->throwTypeErrorFromCStr("None.__new__ takes no arguments");
   }
   return None::object();
 }

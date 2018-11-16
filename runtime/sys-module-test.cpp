@@ -53,7 +53,7 @@ import sys
 sys.exit()
 )";
   Runtime runtime;
-  ASSERT_EXIT(runtime.runFromCString(src), ::testing::ExitedWithCode(0), "");
+  ASSERT_EXIT(runtime.runFromCStr(src), ::testing::ExitedWithCode(0), "");
 }
 
 TEST(SysModuleTest, SysExitCode) {  // pystone dependency
@@ -62,7 +62,7 @@ import sys
 sys.exit(100)
 )";
   Runtime runtime;
-  ASSERT_EXIT(runtime.runFromCString(src), ::testing::ExitedWithCode(100), "");
+  ASSERT_EXIT(runtime.runFromCStr(src), ::testing::ExitedWithCode(100), "");
 }
 
 TEST(SysModuleTest, SysStdOutErr) {  // pystone dependency
@@ -78,23 +78,23 @@ print(sys.stdout, sys.stderr)
 TEST(SysModuleTest, Platform) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 import sys
 sysname = sys.platform
 )");
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> sysname(&scope, moduleAt(&runtime, main, "sysname"));
-  ASSERT_TRUE(sysname->isString());
+  ASSERT_TRUE(sysname->isStr());
   struct utsname name;
   ASSERT_EQ(uname(&name), 0);
   bool is_darwin = !strcmp(name.sysname, "Darwin");
   bool is_linux = !strcmp(name.sysname, "Linux");
   ASSERT_TRUE(is_darwin || is_linux);
   if (is_darwin) {
-    EXPECT_TRUE(String::cast(*sysname)->equalsCString("darwin"));
+    EXPECT_TRUE(Str::cast(*sysname)->equalsCStr("darwin"));
   }
   if (is_linux) {
-    EXPECT_TRUE(String::cast(*sysname)->equalsCString("linux"));
+    EXPECT_TRUE(Str::cast(*sysname)->equalsCStr("linux"));
   }
 }
 

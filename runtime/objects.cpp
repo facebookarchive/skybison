@@ -7,7 +7,7 @@ namespace python {
 
 // SmallStr
 
-Object* SmallStr::fromCString(const char* value) {
+Object* SmallStr::fromCStr(const char* value) {
   word len = strlen(value);
   return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));
 }
@@ -24,7 +24,7 @@ Object* SmallStr::fromBytes(View<byte> data) {
   return reinterpret_cast<SmallStr*>(result);
 }
 
-char* SmallStr::toCString() {
+char* SmallStr::toCStr() {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   CHECK(result != nullptr, "out of memory");
@@ -33,7 +33,7 @@ char* SmallStr::toCString() {
   return reinterpret_cast<char*>(result);
 }
 
-// String
+// Str
 
 bool LargeStr::equals(Object* that) {
   if (this == that) {
@@ -56,7 +56,7 @@ void LargeStr::copyTo(byte* dst, word length) {
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
-char* LargeStr::toCString() {
+char* LargeStr::toCStr() {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   CHECK(result != nullptr, "out of memory");

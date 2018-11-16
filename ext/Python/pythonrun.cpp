@@ -16,7 +16,7 @@ extern "C" PyObject* PyRun_SimpleStringFlags(const char* str,
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  return ApiHandle::fromObject(runtime->runFromCString(str))->asPyObject();
+  return ApiHandle::fromObject(runtime->runFromCStr(str))->asPyObject();
 }
 
 }  // namespace python

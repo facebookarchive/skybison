@@ -20,7 +20,7 @@ def func(self):
 def test(callable):
   return callable()
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   HandleScope scope;
   Handle<Module> module(&scope, findModule(&runtime, "__main__"));
@@ -51,7 +51,7 @@ def func(self, a, b):
 def test(callable):
   return callable(2222, 3333)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   HandleScope scope;
   Handle<Module> module(&scope, findModule(&runtime, "__main__"));
@@ -89,7 +89,7 @@ def func(self, a, b):
 def test(callable):
   return callable(a=2222, b=3333)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   HandleScope scope;
   Handle<Module> module(&scope, findModule(&runtime, "__main__"));
@@ -138,7 +138,7 @@ def test(callable):
   args = (2222, 3333)
   return callable(*args)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   HandleScope scope;
   Handle<Module> module(&scope, findModule(&runtime, "__main__"));
@@ -187,7 +187,7 @@ def test(callable):
   kwargs = {'a': 2222, 'b': 3333}
   return callable(**kwargs)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   HandleScope scope;
   Handle<Module> module(&scope, findModule(&runtime, "__main__"));
@@ -237,7 +237,7 @@ def test(callable):
   kwargs = {'b': 3333}
   return callable(*args, **kwargs)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   HandleScope scope;
   Handle<Module> module(&scope, findModule(&runtime, "__main__"));
@@ -679,8 +679,7 @@ static Object* returnsPositionalAndKeywordArgument(Thread* thread, Frame* frame,
                                                    word argc) {
   KwArguments args(frame, argc);
   HandleScope scope(thread);
-  Handle<Object> foo_name(&scope,
-                          thread->runtime()->newStringFromCString("foo"));
+  Handle<Object> foo_name(&scope, thread->runtime()->newStrFromCStr("foo"));
   Handle<Object> foo_val_opt(&scope, args.getKw(*foo_name));
   Handle<Object> foo_val(
       &scope, (foo_val_opt->isError() ? None::object() : *foo_val_opt));
@@ -703,9 +702,9 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(4));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1234));
-  consts->atPut(2, runtime.newStringFromCString("bar"));
+  consts->atPut(2, runtime.newStrFromCStr("bar"));
   Handle<ObjectArray> kw_tuple(&scope, runtime.newObjectArray(1));
-  kw_tuple->atPut(0, runtime.newStringFromCString("foo"));
+  kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
   consts->atPut(3, *kw_tuple);
   code->setConsts(*consts);
 
@@ -721,7 +720,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   Handle<ObjectArray> tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 2);
   EXPECT_EQ(SmallInt::cast(tuple->at(0))->value(), 1234);
-  EXPECT_TRUE(String::cast(tuple->at(1))->equalsCString("bar"));
+  EXPECT_TRUE(Str::cast(tuple->at(1))->equalsCStr("bar"));
 }
 
 // test "builtin-kw" func that returns a list of first position arg
@@ -732,8 +731,8 @@ static Object* returnsPositionalAndTwoKeywordArguments(Thread* thread,
   Runtime* runtime = thread->runtime();
   KwArguments args(frame, argc);
   HandleScope scope;
-  Handle<Object> foo_name(&scope, runtime->newStringFromCString("foo"));
-  Handle<Object> bar_name(&scope, runtime->newStringFromCString("bar"));
+  Handle<Object> foo_name(&scope, runtime->newStrFromCStr("foo"));
+  Handle<Object> bar_name(&scope, runtime->newStrFromCStr("bar"));
   Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(3));
   tuple->atPut(0, args.get(0));
   Handle<Object> foo_val(&scope, args.getKw(*foo_name));
@@ -758,11 +757,11 @@ TEST(TrampolineTest,
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(5));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1234));
-  consts->atPut(2, runtime.newStringFromCString("foo_val"));
-  consts->atPut(3, runtime.newStringFromCString("bar_val"));
+  consts->atPut(2, runtime.newStrFromCStr("foo_val"));
+  consts->atPut(3, runtime.newStrFromCStr("bar_val"));
   Handle<ObjectArray> kw_tuple(&scope, runtime.newObjectArray(2));
-  kw_tuple->atPut(0, runtime.newStringFromCString("foo"));
-  kw_tuple->atPut(1, runtime.newStringFromCString("bar"));
+  kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
+  kw_tuple->atPut(1, runtime.newStrFromCStr("bar"));
   consts->atPut(4, *kw_tuple);
   code->setConsts(*consts);
 
@@ -780,10 +779,10 @@ TEST(TrampolineTest,
   ASSERT_EQ(tuple->length(), 3);
   ASSERT_TRUE(tuple->at(0)->isInt());
   EXPECT_EQ(SmallInt::cast(tuple->at(0))->value(), 1234);
-  ASSERT_TRUE(tuple->at(1)->isString());
-  EXPECT_TRUE(String::cast(tuple->at(1))->equalsCString("foo_val"));
-  ASSERT_TRUE(tuple->at(2)->isString());
-  EXPECT_TRUE(String::cast(tuple->at(2))->equalsCString("bar_val"));
+  ASSERT_TRUE(tuple->at(1)->isStr());
+  EXPECT_TRUE(Str::cast(tuple->at(1))->equalsCStr("foo_val"));
+  ASSERT_TRUE(tuple->at(2)->isStr());
+  EXPECT_TRUE(Str::cast(tuple->at(2))->equalsCStr("bar_val"));
 }
 
 }  // namespace python

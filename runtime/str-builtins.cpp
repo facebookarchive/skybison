@@ -8,12 +8,12 @@
 
 namespace python {
 
-Object* builtinStringAdd(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCString("str.__add__ needs an argument");
+    return thread->throwTypeErrorFromCStr("str.__add__ needs an argument");
   }
   if (nargs != 2) {
-    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+    return thread->throwTypeError(thread->runtime()->newStrFromFormat(
         "expected 1 arguments, got %ld", nargs - 1));
   }
   Runtime* runtime = thread->runtime();
@@ -22,107 +22,105 @@ Object* builtinStringAdd(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> other(&scope, args.get(1));
   if (!runtime->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCString(
-        "str.__add__ requires a str object");
+    return thread->throwTypeErrorFromCStr("str.__add__ requires a str object");
   }
   if (!runtime->hasSubClassFlag(*other, Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCString("can only concatenate str to str");
+    return thread->throwTypeErrorFromCStr("can only concatenate str to str");
   }
-  if (!self->isString()) {
+  if (!self->isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-  if (!other->isString()) {
+  if (!other->isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-  Handle<String> self_str(&scope, *self);
-  Handle<String> other_str(&scope, *other);
-  return runtime->stringConcat(self_str, other_str);
+  Handle<Str> self_str(&scope, *self);
+  Handle<Str> other_str(&scope, *other);
+  return runtime->strConcat(self_str, other_str);
 }
 
-Object* builtinStringEq(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isString() && other->isString()) {
-    return Bool::fromBool(String::cast(self)->compare(other) == 0);
+  if (self->isStr() && other->isStr()) {
+    return Bool::fromBool(Str::cast(self)->compare(other) == 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStringGe(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrGe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isString() && other->isString()) {
-    return Bool::fromBool(String::cast(self)->compare(other) >= 0);
+  if (self->isStr() && other->isStr()) {
+    return Bool::fromBool(Str::cast(self)->compare(other) >= 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStringGt(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrGt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isString() && other->isString()) {
-    return Bool::fromBool(String::cast(self)->compare(other) > 0);
+  if (self->isStr() && other->isStr()) {
+    return Bool::fromBool(Str::cast(self)->compare(other) > 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStringLe(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isString() && other->isString()) {
-    return Bool::fromBool(String::cast(self)->compare(other) <= 0);
+  if (self->isStr() && other->isStr()) {
+    return Bool::fromBool(Str::cast(self)->compare(other) <= 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStringLen(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("expected 0 arguments");
+    return thread->throwTypeErrorFromCStr("expected 0 arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
-  if (self->isString()) {
+  if (self->isStr()) {
     // TODO(T33085486): __len__ for unicode should return number of code points,
     // not bytes
-    return SmallInt::fromWord(String::cast(*self)->length());
+    return SmallInt::fromWord(Str::cast(*self)->length());
   }
-  return thread->throwTypeErrorFromCString(
+  return thread->throwTypeErrorFromCStr(
       "descriptor '__len__' requires a 'str' object");
 }
 
-Object* builtinStringLower(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrLower(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("expected 0 arguments");
+    return thread->throwTypeErrorFromCStr("expected 0 arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> obj(&scope, args.get(0));
-  if (!obj->isString()) {
-    return thread->throwTypeErrorFromCString(
-        "str.lower(self): self is not a str");
+  if (!obj->isStr()) {
+    return thread->throwTypeErrorFromCStr("str.lower(self): self is not a str");
   }
-  Handle<String> self(&scope, *obj);
+  Handle<Str> self(&scope, *obj);
   byte* buf = new byte[self->length()];
   for (word i = 0; i < self->length(); i++) {
     byte c = self->charAt(i);
@@ -134,27 +132,27 @@ Object* builtinStringLower(Thread* thread, Frame* frame, word nargs) {
       buf[i] = c;
     }
   }
-  Handle<String> result(&scope, thread->runtime()->newStringWithAll(
-                                    View<byte>{buf, self->length()}));
+  Handle<Str> result(&scope, thread->runtime()->newStrWithAll(
+                                 View<byte>{buf, self->length()}));
   delete[] buf;
   return *result;
 }
 
-Object* builtinStringLt(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isString() && other->isString()) {
-    return Bool::fromBool(String::cast(self)->compare(other) < 0);
+  if (self->isStr() && other->isStr()) {
+    return Bool::fromBool(Str::cast(self)->compare(other) < 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
 }
 
-static word stringFormatBufferLength(const Handle<String>& fmt,
+static word stringFormatBufferLength(const Handle<Str>& fmt,
                                      const Handle<ObjectArray>& args) {
   word arg_idx = 0;
   word len = 0;
@@ -181,8 +179,8 @@ static word stringFormatBufferLength(const Handle<String>& fmt,
       } break;
       case 's': {
         len--;
-        CHECK(args->at(arg_idx)->isString(), "Argument mismatch");
-        len += String::cast(args->at(arg_idx))->length();
+        CHECK(args->at(arg_idx)->isStr(), "Argument mismatch");
+        len += Str::cast(args->at(arg_idx))->length();
         arg_idx++;
       } break;
       case '%':
@@ -194,7 +192,7 @@ static word stringFormatBufferLength(const Handle<String>& fmt,
   return len;
 }
 
-static void stringFormatToBuffer(const Handle<String>& fmt,
+static void stringFormatToBuffer(const Handle<Str>& fmt,
                                  const Handle<ObjectArray>& args, char* dst,
                                  word len) {
   word arg_idx = 0;
@@ -215,7 +213,7 @@ static void stringFormatToBuffer(const Handle<String>& fmt,
         dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%g", value);
       } break;
       case 's': {
-        String* value = String::cast(args->at(arg_idx));
+        Str* value = Str::cast(args->at(arg_idx));
         value->copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), value->length());
         dst_idx += value->length();
         arg_idx++;
@@ -230,7 +228,7 @@ static void stringFormatToBuffer(const Handle<String>& fmt,
   dst[len] = '\0';
 }
 
-Object* stringFormat(Thread* thread, const Handle<String>& fmt,
+Object* stringFormat(Thread* thread, const Handle<Str>& fmt,
                      const Handle<ObjectArray>& args) {
   if (fmt->length() == 0) {
     return *fmt;
@@ -239,22 +237,22 @@ Object* stringFormat(Thread* thread, const Handle<String>& fmt,
   char* dst = static_cast<char*>(std::malloc(len + 1));
   CHECK(dst != nullptr, "Buffer allocation failure");
   stringFormatToBuffer(fmt, args, dst, len);
-  Object* result = thread->runtime()->newStringFromCString(dst);
+  Object* result = thread->runtime()->newStrFromCStr(dst);
   std::free(dst);
   return result;
 }
 
-Object* builtinStringMod(Thread* thread, Frame* caller, word nargs) {
+Object* builtinStrMod(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(caller, nargs);
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> other(&scope, args.get(1));
-  if (self->isString()) {
-    Handle<String> format(&scope, *self);
+  if (self->isStr()) {
+    Handle<Str> format(&scope, *self);
     Handle<ObjectArray> format_args(&scope, runtime->newObjectArray(0));
     if (other->isObjectArray()) {
       format_args = *other;
@@ -269,27 +267,27 @@ Object* builtinStringMod(Thread* thread, Frame* caller, word nargs) {
   return runtime->notImplemented();
 }
 
-Object* builtinStringNe(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
-  if (self->isString() && other->isString()) {
-    return Bool::fromBool(String::cast(self)->compare(other) != 0);
+  if (self->isStr() && other->isStr()) {
+    return Bool::fromBool(Str::cast(self)->compare(other) != 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStringNew(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "str.__new__(): not enough arguments");
   }
   if (nargs > 4) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "str() takes at most three arguments");
   }
   Arguments args(frame, nargs);
@@ -297,11 +295,11 @@ Object* builtinStringNew(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Handle<Object> type(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*type, Type::Flag::kTypeSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "str.__new__(X): X is not a type object");
   }
   if (!Type::cast(*type)->hasFlag(Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "str.__new__(X): X is not a subtype of str");
   }
   Handle<Layout> layout(&scope, Type::cast(*type)->instanceLayout());
@@ -311,7 +309,7 @@ Object* builtinStringNew(Thread* thread, Frame* frame, word nargs) {
   }
   if (nargs == 1) {
     // No argument to str, return empty string.
-    return runtime->newStringFromCString("");
+    return runtime->newStrFromCStr("");
   }
   if (nargs > 2) {
     UNIMPLEMENTED("str() with encoding");
@@ -319,7 +317,7 @@ Object* builtinStringNew(Thread* thread, Frame* frame, word nargs) {
   // Only one argument, the value to be stringified.
   Handle<Object> arg(&scope, args.get(1));
   // If it's already exactly a string, return it immediately.
-  if (arg->isString()) {
+  if (arg->isStr()) {
     return *arg;
   }
   // If it's not exactly a string, call its __str__.
@@ -330,21 +328,21 @@ Object* builtinStringNew(Thread* thread, Frame* frame, word nargs) {
   Object* ret = Interpreter::callMethod1(thread, frame, method, arg);
   if (!ret->isError() &&
       !runtime->hasSubClassFlag(ret, Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCString("__str__ returned non-string");
+    return thread->throwTypeErrorFromCStr("__str__ returned non-string");
   }
   return ret;
 }
 
-Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
 
-  if (self->isString()) {
-    Handle<String> string(&scope, *self);
+  if (self->isStr()) {
+    Handle<Str> string(&scope, *self);
     Object* index = args.get(1);
     if (index->isSmallInt()) {
       word idx = SmallInt::cast(index)->value();
@@ -352,7 +350,7 @@ Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs) {
         idx = string->length() - idx;
       }
       if (idx < 0 || idx >= string->length()) {
-        return thread->throwIndexErrorFromCString("string index out of range");
+        return thread->throwIndexErrorFromCStr("string index out of range");
       }
       byte c = string->charAt(idx);
       return SmallStr::fromBytes(View<byte>(&c, 1));
@@ -367,16 +365,16 @@ Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs) {
       for (word i = start; i < stop; i += step) {
         *curr++ = string->charAt(i);
       }
-      Handle<String> result(
-          &scope, thread->runtime()->newStringWithAll(View<byte>{buf, length}));
+      Handle<Str> result(
+          &scope, thread->runtime()->newStrWithAll(View<byte>{buf, length}));
       delete[] buf;
       return *result;
     }
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "string indices must be integers or slices");
   }
   // TODO(jeethu): handle user-defined subtypes of string.
-  return thread->throwTypeErrorFromCString(
+  return thread->throwTypeErrorFromCStr(
       "__getitem__() must be called with a string instance as the first "
       "argument");
 }
@@ -392,22 +390,22 @@ static void byteToHex(byte** buf, byte convert) {
   *(*buf)++ = hexdigits[convert & 0x0f];
 }
 
-Object* builtinStringRepr(Thread* thread, Frame* frame, word nargs) {
+Object* builtinStrRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("expected 0 arguments");
+    return thread->throwTypeErrorFromCStr("expected 0 arguments");
   }
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*obj, Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "str.__repr__(self): self is not a str");
   }
-  if (!obj->isString()) {
+  if (!obj->isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-  Handle<String> self(&scope, *obj);
+  Handle<Str> self(&scope, *obj);
   const word self_len = self->length();
   word output_size = 0;
   word squote = 0;
@@ -506,8 +504,8 @@ Object* builtinStringRepr(Thread* thread, Frame* frame, word nargs) {
     DCHECK(curr == buf + output_size - 1,
            "Didn't write the correct number of characters out");
   }
-  Handle<String> output(
-      &scope, runtime->newStringWithAll(View<byte>{buf, output_size}));
+  Handle<Str> output(&scope,
+                     runtime->newStrWithAll(View<byte>{buf, output_size}));
   delete[] buf;
   return *output;
 }

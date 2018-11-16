@@ -264,10 +264,10 @@ Object* Runtime::newClassWithMetaclass(LayoutId metaclass_id) {
 
 Object* Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
                               const Handle<Object>& name) {
-  if (!name->isString()) {
+  if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCString("attribute name must be a string");
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
   }
 
   HandleScope scope(thread);
@@ -311,16 +311,16 @@ Object* Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
 
   // TODO(T25140871): Refactor this into something like:
   //     thread->throwMissingAttributeError(name)
-  return thread->throwAttributeErrorFromCString("missing attribute");
+  return thread->throwAttributeErrorFromCStr("missing attribute");
 }
 
 Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
                               const Handle<Object>& name,
                               const Handle<Object>& value) {
-  if (!name->isString()) {
+  if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCString("attribute name must be a string");
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
   }
 
   HandleScope scope(thread);
@@ -329,7 +329,7 @@ Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
     // TODO(T25140871): Refactor this into something that includes the type name
     // like:
     //     thread->throwImmutableTypeManipulationError(klass)
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "can't set attributes of built-in/extension type");
   }
 
@@ -352,10 +352,10 @@ Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
 
 Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
                               const Handle<Object>& name) {
-  if (!name->isString()) {
+  if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCString("attribute name must be a string");
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
   }
 
   HandleScope scope(thread);
@@ -365,7 +365,7 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
     // TODO(T25140871): Refactor this into something that includes the type name
     // like:
     //     thread->throwImmutableTypeManipulationError(klass)
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "can't set attributes of built-in/extension type");
   }
 
@@ -384,7 +384,7 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
   if (!dictRemove(klass_dict, name, nullptr)) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
-    return thread->throwAttributeErrorFromCString("missing attribute");
+    return thread->throwAttributeErrorFromCStr("missing attribute");
   }
 
   return None::object();
@@ -393,13 +393,13 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
 // Generic attribute lookup code used for instance objects
 Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
                                  const Handle<Object>& name) {
-  if (!name->isString()) {
+  if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCString("attribute name must be a string");
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
   }
 
-  if (String::cast(*name)->equals(symbols()->DunderClass())) {
+  if (Str::cast(*name)->equals(symbols()->DunderClass())) {
     // TODO(T27735822): Make __class__ a descriptor
     return typeOf(*receiver);
   }
@@ -440,16 +440,16 @@ Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
 
   // TODO(T25140871): Refactor this into something like:
   //     thread->throwMissingAttributeError(name)
-  return thread->throwAttributeErrorFromCString("missing attribute");
+  return thread->throwAttributeErrorFromCStr("missing attribute");
 }
 
 Object* Runtime::instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
                                  const Handle<Object>& name,
                                  const Handle<Object>& value) {
-  if (!name->isString()) {
+  if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCString("attribute name must be a string");
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
   }
 
   // Check for a data descriptor
@@ -470,10 +470,10 @@ Object* Runtime::instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
 
 Object* Runtime::instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
                                  const Handle<Object>& name) {
-  if (!name->isString()) {
+  if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCString("attribute name must be a string");
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
   }
 
   // Check for a descriptor with __delete__
@@ -493,7 +493,7 @@ Object* Runtime::instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
   if (result->isError()) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
-    return thread->throwAttributeErrorFromCString("missing attribute");
+    return thread->throwAttributeErrorFromCStr("missing attribute");
   }
 
   return *result;
@@ -503,10 +503,10 @@ Object* Runtime::instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
 // We are targeting python 3.6 for now, so we won't worry about that.
 Object* Runtime::moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
                                const Handle<Object>& name) {
-  if (!name->isString()) {
+  if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCString("attribute name must be a string");
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
   }
 
   HandleScope scope(thread);
@@ -518,17 +518,17 @@ Object* Runtime::moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
   } else {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
-    return thread->throwAttributeErrorFromCString("missing attribute");
+    return thread->throwAttributeErrorFromCStr("missing attribute");
   }
 }
 
 Object* Runtime::moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
                                const Handle<Object>& name,
                                const Handle<Object>& value) {
-  if (!name->isString()) {
+  if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCString("attribute name must be a string");
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
   }
 
   HandleScope scope(thread);
@@ -539,10 +539,10 @@ Object* Runtime::moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
 
 Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
                                const Handle<Object>& name) {
-  if (!name->isString()) {
+  if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCString("attribute name must be a string");
+    return thread->throwTypeErrorFromCStr("attribute name must be a string");
   }
 
   // Check for a descriptor with __delete__
@@ -562,7 +562,7 @@ Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
   if (!dictRemove(module_dict, name, nullptr)) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
-    return thread->throwAttributeErrorFromCString("missing attribute");
+    return thread->throwAttributeErrorFromCStr("missing attribute");
   }
 
   return None::object();
@@ -800,13 +800,13 @@ Object* Runtime::newSlice(const Handle<Object>& start,
 
 Object* Runtime::newStaticMethod() { return heap()->createStaticMethod(); }
 
-Object* Runtime::newStringFromCString(const char* c_string) {
-  word length = std::strlen(c_string);
-  auto data = reinterpret_cast<const byte*>(c_string);
-  return newStringWithAll(View<byte>(data, length));
+Object* Runtime::newStrFromCStr(const char* c_str) {
+  word length = std::strlen(c_str);
+  auto data = reinterpret_cast<const byte*>(c_str);
+  return newStrWithAll(View<byte>(data, length));
 }
 
-Object* Runtime::newStringFromFormat(const char* fmt, ...) {
+Object* Runtime::newStrFromFormat(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   int length = std::vsnprintf(nullptr, 0, fmt, args);
@@ -816,12 +816,12 @@ Object* Runtime::newStringFromFormat(const char* fmt, ...) {
   char* buf = new char[length + 1];
   std::vsprintf(buf, fmt, args);
   va_end(args);
-  Object* result = newStringFromCString(buf);
+  Object* result = newStrFromCStr(buf);
   delete[] buf;
   return result;
 }
 
-Object* Runtime::newStringWithAll(View<byte> code_units) {
+Object* Runtime::newStrWithAll(View<byte> code_units) {
   word length = code_units.length();
   if (length <= SmallStr::kMaxLength) {
     return SmallStr::fromBytes(code_units);
@@ -834,22 +834,22 @@ Object* Runtime::newStringWithAll(View<byte> code_units) {
   return result;
 }
 
-Object* Runtime::internStringFromCString(const char* c_string) {
+Object* Runtime::internStrFromCStr(const char* c_str) {
   HandleScope scope;
-  // TODO(T29648342): Optimize lookup to avoid creating an intermediary String
-  Handle<Object> str(&scope, newStringFromCString(c_string));
-  return internString(str);
+  // TODO(T29648342): Optimize lookup to avoid creating an intermediary Str
+  Handle<Object> str(&scope, newStrFromCStr(c_str));
+  return internStr(str);
 }
 
-Object* Runtime::internString(const Handle<Object>& string) {
+Object* Runtime::internStr(const Handle<Object>& str) {
   HandleScope scope;
   Handle<Set> set(&scope, interned());
-  DCHECK(string->isString(), "not a string");
-  if (string->isSmallStr()) {
-    return *string;
+  DCHECK(str->isStr(), "not a string");
+  if (str->isSmallStr()) {
+    return *str;
   }
-  Handle<Object> key_hash(&scope, hash(*string));
-  return setAddWithHash(set, string, key_hash);
+  Handle<Object> key_hash(&scope, hash(*str));
+  return setAddWithHash(set, str, key_hash);
 }
 
 Object* Runtime::hash(Object* object) {
@@ -893,7 +893,7 @@ void Runtime::setArgv(int argc, const char** argv) {
   Handle<List> list(&scope, newList());
   CHECK(argc >= 1, "Unexpected argc");
   for (int i = 1; i < argc; i++) {  // skip program name (i.e. "python")
-    Handle<Object> arg_val(&scope, newStringFromCString(argv[i]));
+    Handle<Object> arg_val(&scope, newStrFromCStr(argv[i]));
     listAdd(list, arg_val);
   }
 
@@ -1082,43 +1082,43 @@ void Runtime::initializeStrClass() {
   type->setFlag(Type::Flag::kStrSubclass);
 
   classAddBuiltinFunction(type, SymbolId::kDunderAdd,
-                          nativeTrampoline<builtinStringAdd>);
+                          nativeTrampoline<builtinStrAdd>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
-                          nativeTrampoline<builtinStringEq>);
+                          nativeTrampoline<builtinStrEq>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderGe,
-                          nativeTrampoline<builtinStringGe>);
+                          nativeTrampoline<builtinStrGe>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderGetItem,
-                          nativeTrampoline<builtinStringGetItem>);
+                          nativeTrampoline<builtinStrGetItem>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderGt,
-                          nativeTrampoline<builtinStringGt>);
+                          nativeTrampoline<builtinStrGt>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderLe,
-                          nativeTrampoline<builtinStringLe>);
+                          nativeTrampoline<builtinStrLe>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderLen,
-                          nativeTrampoline<builtinStringLen>);
+                          nativeTrampoline<builtinStrLen>);
 
   classAddBuiltinFunction(type, SymbolId::kLower,
-                          nativeTrampoline<builtinStringLower>);
+                          nativeTrampoline<builtinStrLower>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderLt,
-                          nativeTrampoline<builtinStringLt>);
+                          nativeTrampoline<builtinStrLt>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderMod,
-                          nativeTrampoline<builtinStringMod>);
+                          nativeTrampoline<builtinStrMod>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderNe,
-                          nativeTrampoline<builtinStringNe>);
+                          nativeTrampoline<builtinStrNe>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinStringNew>);
+                          nativeTrampoline<builtinStrNew>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderRepr,
-                          nativeTrampoline<builtinStringRepr>);
+                          nativeTrampoline<builtinStrRepr>);
 }
 
 void Runtime::initializeClassMethodClass() {
@@ -1274,8 +1274,8 @@ Object* Runtime::run(const char* buffer) {
   return executeModule(buffer, main);
 }
 
-Object* Runtime::runFromCString(const char* c_string) {
-  const char* buffer = compile(c_string);
+Object* Runtime::runFromCStr(const char* c_str) {
+  const char* buffer = compile(c_str);
   Object* result = run(buffer);
   delete[] buffer;
   return result;
@@ -1311,7 +1311,7 @@ Object* Runtime::importModule(const Handle<Object>& name) {
     return *cached_module;
   } else {
     for (int i = 0; kModuleInitializers[i].name != nullptr; i++) {
-      if (String::cast(*name)->equalsCString(kModuleInitializers[i].name)) {
+      if (Str::cast(*name)->equalsCStr(kModuleInitializers[i].name)) {
         (*kModuleInitializers[i].initfunc)();
         cached_module = findModule(name);
         return *cached_module;
@@ -1319,7 +1319,7 @@ Object* Runtime::importModule(const Handle<Object>& name) {
     }
   }
 
-  return Thread::currentThread()->throwRuntimeErrorFromCString(
+  return Thread::currentThread()->throwRuntimeErrorFromCStr(
       "importModule is unimplemented!");
 }
 
@@ -1372,7 +1372,7 @@ void Runtime::initializeSymbols() {
   for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
     SymbolId id = static_cast<SymbolId>(i);
     Handle<Object> symbol(&scope, symbols()->at(id));
-    internString(symbol);
+    internStr(symbol);
   }
 }
 
@@ -1424,7 +1424,7 @@ void Runtime::addModule(const Handle<Module>& module) {
 }
 
 Object* Runtime::findModule(const Handle<Object>& name) {
-  DCHECK(name->isString(), "name not a string");
+  DCHECK(name->isStr(), "name not a string");
 
   HandleScope scope;
   Handle<Dict> dict(&scope, modules());
@@ -1565,7 +1565,7 @@ Object* Runtime::moduleAddBuiltinFunction(const Handle<Module>& module,
 
 void Runtime::createBuiltinsModule() {
   HandleScope scope;
-  Handle<Object> name(&scope, newStringFromCString("builtins"));
+  Handle<Object> name(&scope, newStrFromCStr("builtins"));
   Handle<Module> module(&scope, newModule(name));
 
   // Fill in builtins...
@@ -1685,7 +1685,7 @@ void Runtime::createSysModule() {
   Handle<Object> meta_path(&scope, newList());
   moduleAddGlobal(module, SymbolId::kMetaPath, meta_path);
 
-  Handle<Object> platform(&scope, newStringFromCString(OS::name()));
+  Handle<Object> platform(&scope, newStrFromCStr(OS::name()));
   moduleAddGlobal(module, SymbolId::kPlatform, platform);
 
   addModule(module);
@@ -1835,7 +1835,7 @@ void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
-    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->throwTypeErrorFromCStr("object is not iterable");
     thread->abortOnPendingException();
     return;
   }
@@ -1843,7 +1843,7 @@ void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
       &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
                                        iter_method, iterable));
   if (iterator->isError()) {
-    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->throwTypeErrorFromCStr("object is not iterable");
     thread->abortOnPendingException();
     return;
   }
@@ -1851,7 +1851,7 @@ void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->throwTypeErrorFromCString("iter() returned a non-iterator");
+    thread->throwTypeErrorFromCStr("iter() returned a non-iterator");
     thread->abortOnPendingException();
   }
   Handle<Object> value(&scope, None::object());
@@ -2366,7 +2366,7 @@ void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
-    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->throwTypeErrorFromCStr("object is not iterable");
     thread->abortOnPendingException();
     return;
   }
@@ -2374,7 +2374,7 @@ void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
       &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
                                        iter_method, iterable));
   if (iterator->isError()) {
-    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->throwTypeErrorFromCStr("object is not iterable");
     thread->abortOnPendingException();
     return;
   }
@@ -2382,7 +2382,7 @@ void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->throwTypeErrorFromCString("iter() returned a non-iterator");
+    thread->throwTypeErrorFromCStr("iter() returned a non-iterator");
     thread->abortOnPendingException();
   }
   Handle<Object> value(&scope, None::object());
@@ -2518,7 +2518,7 @@ Object* Runtime::attributeAtPut(Thread* thread, const Handle<Object>& receiver,
                                 const Handle<Object>& name,
                                 const Handle<Object>& value) {
   HandleScope scope(thread);
-  Handle<Object> interned_name(&scope, internString(name));
+  Handle<Object> interned_name(&scope, internStr(name));
   // A minimal implementation of setattr needed to get richards running.
   Object* result;
   if (isInstanceOfClass(*receiver)) {
@@ -2554,8 +2554,7 @@ Object* Runtime::attributeDel(Thread* thread, const Handle<Object>& receiver,
   return result;
 }
 
-Object* Runtime::stringConcat(const Handle<String>& left,
-                              const Handle<String>& right) {
+Object* Runtime::strConcat(const Handle<Str>& left, const Handle<Str>& right) {
   HandleScope scope;
 
   const word llen = left->length();
@@ -2569,8 +2568,7 @@ Object* Runtime::stringConcat(const Handle<String>& left,
     return SmallStr::fromBytes(View<byte>(buffer, new_len));
   }
 
-  Handle<String> result(&scope,
-                        LargeStr::cast(heap()->createLargeStr(new_len)));
+  Handle<Str> result(&scope, LargeStr::cast(heap()->createLargeStr(new_len)));
   DCHECK(result->isLargeStr(), "not a large string");
   const word address = HeapObject::cast(*result)->address();
 
@@ -2689,8 +2687,8 @@ LayoutId Runtime::computeBuiltinBaseClass(const Handle<Type>& klass) {
 
       // TODO: throw TypeError
       CHECK(false, "multiple bases have instance lay-out conflict '%s' '%s'",
-            String::cast(candidate->name())->toCString(),
-            String::cast(mro_klass->name())->toCString());
+            Str::cast(candidate->name())->toCStr(),
+            Str::cast(mro_klass->name())->toCStr());
     }
   }
   return Layout::cast(candidate->instanceLayout())->id();
@@ -2814,7 +2812,7 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Handle<Layout>& layout,
                                   const Handle<Object>& name,
                                   AttributeInfo* info) {
   HandleScope scope(thread);
-  Handle<Object> iname(&scope, internString(name));
+  Handle<Object> iname(&scope, internStr(name));
 
   // Check in-object attributes
   Handle<ObjectArray> in_object(&scope, layout->inObjectAttributes());
@@ -2882,7 +2880,7 @@ Object* Runtime::layoutAddAttribute(Thread* thread,
                                     const Handle<Layout>& layout,
                                     const Handle<Object>& name, word flags) {
   HandleScope scope(thread);
-  Handle<Object> iname(&scope, internString(name));
+  Handle<Object> iname(&scope, internStr(name));
 
   // Check if a edge for the attribute addition already exists
   Handle<List> edges(&scope, layout->additions());
@@ -2925,7 +2923,7 @@ Object* Runtime::layoutDeleteAttribute(Thread* thread,
   }
 
   // Check if an edge exists for removing the attribute
-  Handle<Object> iname(&scope, internString(name));
+  Handle<Object> iname(&scope, internStr(name));
   Handle<List> edges(&scope, layout->deletions());
   Object* next_layout = layoutFollowEdge(edges, iname);
   if (!next_layout->isError()) {

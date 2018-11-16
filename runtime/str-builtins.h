@@ -8,18 +8,18 @@
 
 namespace python {
 
-Object* builtinStringAdd(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringEq(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringGe(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringGt(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringLe(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringLen(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringLower(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringLt(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringMod(Thread* thread, Frame* caller, word nargs);
-Object* builtinStringNe(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringNew(Thread* thread, Frame* frame, word nargs);
-Object* builtinStringRepr(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrAdd(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrEq(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrGe(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrGetItem(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrGt(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrLe(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrLen(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrLower(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrLt(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrMod(Thread* thread, Frame* caller, word nargs);
+Object* builtinStrNe(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrNew(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrRepr(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

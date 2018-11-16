@@ -189,7 +189,7 @@ class Object {
 
   // superclass objects
   bool isInt();
-  bool isString();
+  bool isStr();
 
   static bool equals(Object* lhs, Object* rhs);
 
@@ -417,7 +417,7 @@ class Error : public Object {
 };
 
 // Super class of common string functionality
-class String : public Object {
+class Str : public Object {
  public:
   // Getters and setters.
   byte charAt(word index);
@@ -427,23 +427,23 @@ class String : public Object {
   // Equality checks.
   word compare(Object* string);
   bool equals(Object* that);
-  bool equalsCString(const char* c_string);
+  bool equalsCStr(const char* c_str);
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
-  char* toCString();
+  char* toCStr();
 
   // Casting.
-  static String* cast(Object* object);
+  static Str* cast(Object* object);
 
  public:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(String);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Str);
 };
 
 class SmallStr : public Object {
  public:
   // Conversion.
-  static Object* fromCString(const char* value);
+  static Object* fromCStr(const char* value);
   static Object* fromBytes(View<byte> data);
 
   // Tagging.
@@ -455,7 +455,7 @@ class SmallStr : public Object {
 
  private:
   // Interface methods are private: strings should be manipulated via the
-  // String class, which delegates to LargeStr/SmallString appropriately.
+  // Str class, which delegates to LargeStr/SmallStr appropriately.
 
   // Getters and setters.
   word length();
@@ -464,7 +464,7 @@ class SmallStr : public Object {
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
-  char* toCString();
+  char* toCStr();
 
   // Casting.
   static SmallStr* cast(Object* object);
@@ -472,7 +472,7 @@ class SmallStr : public Object {
   friend class Heap;
   friend class Object;
   friend class Runtime;
-  friend class String;
+  friend class Str;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallStr);
 };
@@ -810,7 +810,7 @@ class LargeStr : public Array {
 
  private:
   // Interface methods are private: strings should be manipulated via the
-  // String class, which delegates to LargeStr/SmallStr appropriately.
+  // Str class, which delegates to LargeStr/SmallStr appropriately.
 
   // Getters and setters.
   byte charAt(word index);
@@ -821,12 +821,12 @@ class LargeStr : public Array {
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
-  char* toCString();
+  char* toCStr();
 
   friend class Heap;
   friend class Object;
   friend class Runtime;
-  friend class String;
+  friend class Str;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeStr);
 };
@@ -1861,7 +1861,7 @@ class Layout : public HeapObject {
   // Each item in the object array is a two element tuple. Each tuple is
   // composed of the following elements, in order:
   //
-  //   1. The attribute name (String)
+  //   1. The attribute name (Str)
   //   2. The attribute info (AttributeInfo)
   Object* inObjectAttributes();
   void setInObjectAttributes(Object* attributes);
@@ -1872,7 +1872,7 @@ class Layout : public HeapObject {
   // Each item in the object array is a two element tuple. Each tuple is
   // composed of the following elements, in order:
   //
-  //   1. The attribute name (String)
+  //   1. The attribute name (Str)
   //   2. The attribute info (AttributeInfo)
   Object* overflowAttributes();
   void setOverflowAttributes(Object* attributes);
@@ -1880,7 +1880,7 @@ class Layout : public HeapObject {
   // Returns a flattened list of tuples. Each tuple is composed of the
   // following elements, in order:
   //
-  //   1. The attribute name (String)
+  //   1. The attribute name (Str)
   //   2. The layout that would result if an attribute with that name
   //      was added.
   Object* additions();
@@ -1889,7 +1889,7 @@ class Layout : public HeapObject {
   // Returns a flattened list of tuples. Each tuple is composed of the
   // following elements, in order:
   //
-  //   1. The attribute name (String)
+  //   1. The attribute name (Str)
   //   2. The layout that would result if an attribute with that name
   //      was deleted.
   Object* deletions();
@@ -2261,7 +2261,7 @@ inline bool Object::isStopIteration() {
          LayoutId::kStopIteration;
 }
 
-inline bool Object::isString() { return isSmallStr() || isLargeStr(); }
+inline bool Object::isStr() { return isSmallStr() || isLargeStr(); }
 
 inline bool Object::isSystemExit() {
   if (!isHeapObject()) {
@@ -3679,10 +3679,10 @@ inline NotImplemented* NotImplemented::cast(Object* object) {
   return reinterpret_cast<NotImplemented*>(object);
 }
 
-// String
+// Str
 
-inline bool String::equalsCString(const char* c_string) {
-  const char* cp = c_string;
+inline bool Str::equalsCStr(const char* c_str) {
+  const char* cp = c_str;
   const word len = length();
   for (word i = 0; i < len; i++, cp++) {
     char ch = *cp;
@@ -3693,13 +3693,13 @@ inline bool String::equalsCString(const char* c_string) {
   return *cp == '\0';
 }
 
-inline String* String::cast(Object* object) {
+inline Str* Str::cast(Object* object) {
   DCHECK(object->isLargeStr() || object->isSmallStr(),
          "invalid cast, expected string");
-  return reinterpret_cast<String*>(object);
+  return reinterpret_cast<Str*>(object);
 }
 
-inline byte String::charAt(word index) {
+inline byte Str::charAt(word index) {
   if (isSmallStr()) {
     return SmallStr::cast(this)->charAt(index);
   }
@@ -3707,7 +3707,7 @@ inline byte String::charAt(word index) {
   return LargeStr::cast(this)->charAt(index);
 }
 
-inline word String::length() {
+inline word Str::length() {
   if (isSmallStr()) {
     return SmallStr::cast(this)->length();
   }
@@ -3715,8 +3715,8 @@ inline word String::length() {
   return LargeStr::cast(this)->length();
 }
 
-inline word String::compare(Object* string) {
-  String* that = String::cast(string);
+inline word Str::compare(Object* string) {
+  Str* that = Str::cast(string);
   word length = Utils::minimum(this->length(), that->length());
   for (word i = 0; i < length; i++) {
     word diff = this->charAt(i) - that->charAt(i);
@@ -3728,7 +3728,7 @@ inline word String::compare(Object* string) {
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
-inline bool String::equals(Object* that) {
+inline bool Str::equals(Object* that) {
   if (isSmallStr()) {
     return this == that;
   }
@@ -3736,7 +3736,7 @@ inline bool String::equals(Object* that) {
   return LargeStr::cast(this)->equals(that);
 }
 
-inline void String::copyTo(byte* dst, word length) {
+inline void Str::copyTo(byte* dst, word length) {
   if (isSmallStr()) {
     SmallStr::cast(this)->copyTo(dst, length);
     return;
@@ -3745,12 +3745,12 @@ inline void String::copyTo(byte* dst, word length) {
   return LargeStr::cast(this)->copyTo(dst, length);
 }
 
-inline char* String::toCString() {
+inline char* Str::toCStr() {
   if (isSmallStr()) {
-    return SmallStr::cast(this)->toCString();
+    return SmallStr::cast(this)->toCStr();
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return LargeStr::cast(this)->toCString();
+  return LargeStr::cast(this)->toCStr();
 }
 
 // LargeStr

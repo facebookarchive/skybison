@@ -18,13 +18,13 @@ void RangeBuiltins::initialize(Runtime *runtime) {
 
 Object *RangeBuiltins::dunderIter(Thread *thread, Frame *frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("__iter__() takes no arguments");
+    return thread->throwTypeErrorFromCStr("__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isRange()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__getitem__() must be called with a range instance as the first "
         "argument");
   }
@@ -52,13 +52,13 @@ void RangeIteratorBuiltins::initialize(Runtime *runtime) {
 Object *RangeIteratorBuiltins::dunderIter(Thread *thread, Frame *frame,
                                           word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("__iter__() takes no arguments");
+    return thread->throwTypeErrorFromCStr("__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isRangeIterator()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__iter__() must be called with a range iterator instance as the first "
         "argument");
   }
@@ -68,13 +68,13 @@ Object *RangeIteratorBuiltins::dunderIter(Thread *thread, Frame *frame,
 Object *RangeIteratorBuiltins::dunderNext(Thread *thread, Frame *frame,
                                           word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("__next__() takes no arguments");
+    return thread->throwTypeErrorFromCStr("__next__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isRangeIterator()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__next__() must be called with a range iterator instance as the first "
         "argument");
   }
@@ -88,14 +88,14 @@ Object *RangeIteratorBuiltins::dunderNext(Thread *thread, Frame *frame,
 Object *RangeIteratorBuiltins::dunderLengthHint(Thread *thread, Frame *frame,
                                                 word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__length_hint__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isRangeIterator()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__length_hint__() must be called with a range iterator instance as "
         "the first argument");
   }

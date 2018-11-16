@@ -55,7 +55,7 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   type->tp_dict = ApiHandle::fromObject(*dict)->asPyObject();
 
   // Set the class name
-  Handle<Object> name(&scope, runtime->newStringFromCString(type->tp_name));
+  Handle<Object> name(&scope, runtime->newStrFromCStr(type->tp_name));
   type_class->setName(*name);
   Handle<Object> dict_key(&scope, runtime->symbols()->DunderName());
   runtime->dictAtPutInValueCell(dict, dict_key, name);

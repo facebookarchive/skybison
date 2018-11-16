@@ -12,7 +12,7 @@ extern "C" PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   HandleScope scope(thread);
 
   const char* c_name = def->m_name;
-  Handle<Object> name(&scope, runtime->newStringFromCString(c_name));
+  Handle<Object> name(&scope, runtime->newStrFromCStr(c_name));
   Handle<Module> module(&scope, runtime->newModule(name));
   module->setDef(runtime->newIntFromCPointer(def));
   runtime->addModule(module);

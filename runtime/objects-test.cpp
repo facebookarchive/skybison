@@ -158,7 +158,7 @@ TEST(IntTest, Compare) {
 TEST(ModulesTest, TestCreate) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Object> name(&scope, runtime.newStringFromCString("mymodule"));
+  Handle<Object> name(&scope, runtime.newStrFromCStr("mymodule"));
   Handle<Module> module(&scope, runtime.newModule(name));
   EXPECT_EQ(module->name(), *name);
   EXPECT_TRUE(module->dict()->isDict());
@@ -276,9 +276,9 @@ TEST(SliceTest, adjustIndicesOutOfBounds) {
 TEST(LargeStrTest, CopyTo) {
   Runtime runtime;
 
-  Object* obj = runtime.newStringFromCString("hello world!");
+  Object* obj = runtime.newStrFromCStr("hello world!");
   ASSERT_TRUE(obj->isLargeStr());
-  String* str = String::cast(obj);
+  Str* str = Str::cast(obj);
 
   byte array[5];
   memset(array, 'a', ARRAYSIZE(array));
@@ -307,9 +307,9 @@ TEST(LargeStrTest, CopyTo) {
 }
 
 TEST(SmallStrTest, Tests) {
-  Object* obj0 = SmallStr::fromCString("AB");
+  Object* obj0 = SmallStr::fromCStr("AB");
   ASSERT_TRUE(obj0->isSmallStr());
-  auto* str0 = String::cast(obj0);
+  auto* str0 = Str::cast(obj0);
   EXPECT_EQ(str0->length(), 2);
   EXPECT_EQ(str0->charAt(0), 'A');
   EXPECT_EQ(str0->charAt(1), 'B');
@@ -324,32 +324,32 @@ TEST(StringTest, ToCString) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<String> empty(&scope, runtime.newStringFromCString(""));
-  char* c_empty = empty->toCString();
+  Handle<Str> empty(&scope, runtime.newStrFromCStr(""));
+  char* c_empty = empty->toCStr();
   ASSERT_NE(c_empty, nullptr);
   EXPECT_STREQ(c_empty, "");
   std::free(c_empty);
 
-  Handle<String> length1(&scope, runtime.newStringFromCString("a"));
-  char* c_length1 = length1->toCString();
+  Handle<Str> length1(&scope, runtime.newStrFromCStr("a"));
+  char* c_length1 = length1->toCStr();
   ASSERT_NE(c_length1, nullptr);
   EXPECT_STREQ(c_length1, "a");
   std::free(c_length1);
 
-  Handle<String> length2(&scope, runtime.newStringFromCString("ab"));
-  char* c_length2 = length2->toCString();
+  Handle<Str> length2(&scope, runtime.newStrFromCStr("ab"));
+  char* c_length2 = length2->toCStr();
   ASSERT_NE(c_length2, nullptr);
   EXPECT_STREQ(c_length2, "ab");
   std::free(c_length2);
 
-  Handle<String> length10(&scope, runtime.newStringFromCString("1234567890"));
-  char* c_length10 = length10->toCString();
+  Handle<Str> length10(&scope, runtime.newStrFromCStr("1234567890"));
+  char* c_length10 = length10->toCStr();
   ASSERT_NE(c_length10, nullptr);
   EXPECT_STREQ(c_length10, "1234567890");
   std::free(c_length10);
 
-  Handle<String> nulchar(&scope, runtime.newStringFromCString("wx\0yz"));
-  char* c_nulchar = nulchar->toCString();
+  Handle<Str> nulchar(&scope, runtime.newStrFromCStr("wx\0yz"));
+  char* c_nulchar = nulchar->toCStr();
   ASSERT_NE(c_nulchar, nullptr);
   EXPECT_STREQ(c_nulchar, "wx");
   std::free(c_nulchar);
@@ -359,14 +359,14 @@ TEST(StringTest, CompareSmallStr) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<String> small(&scope, runtime.newStringFromCString("foo"));
+  Handle<Str> small(&scope, runtime.newStrFromCStr("foo"));
   EXPECT_TRUE(small->isSmallStr());
 
-  EXPECT_TRUE(small->equalsCString("foo"));
+  EXPECT_TRUE(small->equalsCStr("foo"));
   // This apparently stupid test is in response to a bug where we assumed
-  // that the c-string passed to SmallStr::equalsCString would always
+  // that the c-string passed to SmallStr::equalsCStr would always
   // be small itself.
-  EXPECT_FALSE(small->equalsCString("123456789"));
+  EXPECT_FALSE(small->equalsCStr("123456789"));
 }
 
 TEST(WeakRefTest, EnqueueAndDequeue) {

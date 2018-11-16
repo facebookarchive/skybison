@@ -25,7 +25,7 @@ TEST(LayoutTest, FindAttribute) {
   Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
 
   // Should fail to find an attribute that isn't present
-  Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("myattr"));
   AttributeInfo info;
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout, attr, &info));
 
@@ -51,7 +51,7 @@ TEST(LayoutTest, AddNewAttributes) {
   Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
 
   // Should fail to find an attribute that isn't present
-  Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("myattr"));
   AttributeInfo info;
   ASSERT_FALSE(runtime.layoutFindAttribute(thread, layout, attr, &info));
 
@@ -67,7 +67,7 @@ TEST(LayoutTest, AddNewAttributes) {
   EXPECT_EQ(info.offset(), 0);
 
   // Adding another attribute should transition the layout again
-  Handle<Object> attr2(&scope, runtime.newStringFromCString("another_attr"));
+  Handle<Object> attr2(&scope, runtime.newStrFromCStr("another_attr"));
   ASSERT_FALSE(runtime.layoutFindAttribute(thread, layout2, attr2, &info));
   Handle<Layout> layout3(&scope,
                          runtime.layoutAddAttribute(thread, layout2, attr2, 0));
@@ -89,7 +89,7 @@ TEST(LayoutTest, AddDuplicateAttributes) {
   Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
 
   // Add an attribute
-  Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("myattr"));
   AttributeInfo info;
   ASSERT_FALSE(runtime.layoutFindAttribute(thread, layout, attr, &info));
 
@@ -115,7 +115,7 @@ TEST(LayoutTest, DeleteNonExistentAttribute) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
-  Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("myattr"));
   Object* result = runtime.layoutDeleteAttribute(thread, layout, attr);
   EXPECT_EQ(result, Error::object());
 }
@@ -126,7 +126,7 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
   Thread* thread = Thread::currentThread();
 
   // Create a new layout with a single in-object attribute
-  Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("myattr"));
   Handle<ObjectArray> entry(&scope, runtime.newObjectArray(2));
   entry->atPut(0, *attr);
   entry->atPut(
@@ -166,9 +166,9 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   Thread* thread = Thread::currentThread();
 
   // Create a new layout with several overflow attributes
-  Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
-  Handle<Object> attr2(&scope, runtime.newStringFromCString("myattr2"));
-  Handle<Object> attr3(&scope, runtime.newStringFromCString("myattr3"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("myattr"));
+  Handle<Object> attr2(&scope, runtime.newStrFromCStr("myattr2"));
+  Handle<Object> attr3(&scope, runtime.newStrFromCStr("myattr3"));
   Handle<ObjectArray> attrs(&scope, runtime.newObjectArray(3));
   Handle<Object>* names[] = {&attr, &attr2, &attr3};
   for (word i = 0; i < attrs->length(); i++) {
@@ -244,10 +244,10 @@ TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
   // Create a new layout with one overflow attribute and one in-object
   // attribute
   Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
-  Handle<Object> inobject(&scope, runtime.newStringFromCString("inobject"));
+  Handle<Object> inobject(&scope, runtime.newStrFromCStr("inobject"));
   layout->setInObjectAttributes(
       create_attrs(inobject, AttributeInfo::Flag::kInObject));
-  Handle<Object> overflow(&scope, runtime.newStringFromCString("overflow"));
+  Handle<Object> overflow(&scope, runtime.newStrFromCStr("overflow"));
   layout->setOverflowAttributes(create_attrs(overflow, 0));
 
   // Delete the in-object attribute and add it back. It should be re-added as
@@ -268,7 +268,7 @@ TEST(LayoutTest, VerifyChildLayout) {
   Runtime runtime;
   HandleScope scope;
   Handle<Layout> parent(&scope, runtime.newLayout());
-  Handle<Object> attr(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("foo"));
   Handle<Layout> child(
       &scope, runtime.layoutAddAttribute(Thread::currentThread(), parent, attr,
                                          AttributeInfo::Flag::kNone));

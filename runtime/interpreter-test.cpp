@@ -75,7 +75,7 @@ TEST(InterpreterTest, BinaryOpInvokesSelfMethod) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class C:
     def __sub__(self, other):
         return (C, '__sub__', self, other)
@@ -97,9 +97,9 @@ right = C()
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
-  ASSERT_TRUE(ObjectArray::cast(result)->at(1)->isString());
-  String* name = String::cast(ObjectArray::cast(result)->at(1));
-  EXPECT_TRUE(name->equalsCString("__sub__"));
+  ASSERT_TRUE(ObjectArray::cast(result)->at(1)->isStr());
+  Str* name = Str::cast(ObjectArray::cast(result)->at(1));
+  EXPECT_TRUE(name->equalsCStr("__sub__"));
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
   EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
 }
@@ -108,7 +108,7 @@ TEST(InterpreterTest, BinaryOpInvokesSelfMethodIgnoresReflectedMethod) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class C:
     def __sub__(self, other):
         return (C, '__sub__', self, other)
@@ -132,9 +132,9 @@ right = C()
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
-  ASSERT_TRUE(ObjectArray::cast(result)->at(1)->isString());
-  String* name = String::cast(ObjectArray::cast(result)->at(1));
-  EXPECT_TRUE(name->equalsCString("__sub__"));
+  ASSERT_TRUE(ObjectArray::cast(result)->at(1)->isStr());
+  Str* name = Str::cast(ObjectArray::cast(result)->at(1));
+  EXPECT_TRUE(name->equalsCStr("__sub__"));
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
   EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
 }
@@ -143,7 +143,7 @@ TEST(InterpreterTest, BinaryOperationInvokesSubclassReflectedMethod) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class C:
     def __sub__(self, other):
         return (C, '__sub__', self, other)
@@ -169,8 +169,8 @@ right = D()
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *d_class);
-  EXPECT_TRUE(String::cast(ObjectArray::cast(result)->at(1))
-                  ->equalsCString("__rsub__"));
+  EXPECT_TRUE(
+      Str::cast(ObjectArray::cast(result)->at(1))->equalsCStr("__rsub__"));
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *right);
   EXPECT_EQ(ObjectArray::cast(result)->at(3), *left);
 }
@@ -179,7 +179,7 @@ TEST(InterpreterTest, BinaryOperationInvokesOtherReflectedMethod) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class C:
     pass
 
@@ -204,8 +204,8 @@ right = D()
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *d_class);
-  EXPECT_TRUE(String::cast(ObjectArray::cast(result)->at(1))
-                  ->equalsCString("__rsub__"));
+  EXPECT_TRUE(
+      Str::cast(ObjectArray::cast(result)->at(1))->equalsCStr("__rsub__"));
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *right);
   EXPECT_EQ(ObjectArray::cast(result)->at(3), *left);
 }
@@ -214,7 +214,7 @@ TEST(InterpreterTest, InplaceOperationCallsInplaceMethod) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class C:
     def __isub__(self, other):
         return (C, '__isub__', self, other)
@@ -236,8 +236,8 @@ right = C()
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
-  EXPECT_TRUE(String::cast(ObjectArray::cast(result)->at(1))
-                  ->equalsCString("__isub__"));
+  EXPECT_TRUE(
+      Str::cast(ObjectArray::cast(result)->at(1))->equalsCStr("__isub__"));
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
   EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
 }
@@ -246,7 +246,7 @@ TEST(InterpreterTest, InplaceOperationCallsBinaryMethod) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class C:
     def __sub__(self, other):
         return (C, '__sub__', self, other)
@@ -269,7 +269,7 @@ right = C()
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
   EXPECT_TRUE(
-      String::cast(ObjectArray::cast(result)->at(1))->equalsCString("__sub__"));
+      Str::cast(ObjectArray::cast(result)->at(1))->equalsCStr("__sub__"));
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
   EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
 }
@@ -278,7 +278,7 @@ TEST(InterpreterTest, InplaceOperationCallsBinaryMethodAfterNotImplemented) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class C:
     def __isub__(self, other):
         return NotImplemented
@@ -303,7 +303,7 @@ right = C()
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
   EXPECT_TRUE(
-      String::cast(ObjectArray::cast(result)->at(1))->equalsCString("__sub__"));
+      Str::cast(ObjectArray::cast(result)->at(1))->equalsCStr("__sub__"));
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
   EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
 }
@@ -314,7 +314,7 @@ TEST(InterpreterTest, CompareOpSameClass) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class C:
     def __init__(self, value):
         self.value = value
@@ -348,7 +348,7 @@ TEST(InterpreterTest, CompareOpFallback) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class C:
     def __init__(self, value):
         self.value = value
@@ -385,7 +385,7 @@ TEST(InterpreterTest, SequenceContains) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = {1, 2}
 
 b = 1
@@ -427,7 +427,7 @@ with Foo():
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
   EXPECT_EQ(SmallInt::cast(*a)->value(), 3);
@@ -454,7 +454,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
   code->setArgcount(2);
@@ -508,7 +508,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
   code->setArgcount(2);
@@ -564,14 +564,14 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
   code->setArgcount(2);
   code->setStacksize(1);
   Handle<ObjectArray> var_names(&scope, runtime.newObjectArray(2));
-  var_names->atPut(0, runtime.newStringFromCString("a"));
-  var_names->atPut(1, runtime.newStringFromCString("b"));
+  var_names->atPut(0, runtime.newStrFromCStr("a"));
+  var_names->atPut(1, runtime.newStrFromCStr("b"));
   code->setVarnames(*var_names);
 
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
@@ -594,7 +594,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
 
   // Push function pointer and argument
   Handle<ObjectArray> arg_names(&scope, runtime.newObjectArray(1));
-  arg_names->atPut(0, runtime.newStringFromCString("b"));
+  arg_names->atPut(0, runtime.newStrFromCStr("b"));
   frame->pushValue(*callee);
   frame->pushValue(SmallInt::fromWord(4));
   frame->pushValue(*arg_names);
@@ -609,7 +609,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
 TEST(InterpreterTest, LookupMethodInvokesDescriptor) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 def f(): pass
 
 class D:
@@ -634,7 +634,7 @@ c = C()
 
 TEST(InterpreterDeathTest, CallingUncallableThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(R"(
+  ASSERT_DEATH(runtime.runFromCStr(R"(
 c = 1
 c()
   )"),
@@ -643,7 +643,7 @@ c()
 
 TEST(InterpreterDeathTest, CallingUncallableDunderCallThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(R"(
+  ASSERT_DEATH(runtime.runFromCStr(R"(
 class C:
   __call__ = 1
 
@@ -655,7 +655,7 @@ c()
 
 TEST(InterpreterDeathTest, CallingNonDescriptorDunderCallThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(R"(
+  ASSERT_DEATH(runtime.runFromCStr(R"(
 class D: pass
 
 class C:
@@ -669,7 +669,7 @@ c()
 
 TEST(InterpreterDeathTest, CallDescriptorReturningUncallableThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(R"(
+  ASSERT_DEATH(runtime.runFromCStr(R"(
 class D:
   def __get__(self, instance, owner):
     return 1
@@ -686,7 +686,7 @@ c()
 TEST(InterpreterTest, LookupMethodLoopsOnCallBoundToDescriptor) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 def f(args):
     return args
 
@@ -721,7 +721,7 @@ TEST(InterpreterDeathTest, IterateOnNonIterable) {
 a, b = None
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src), "object is not iterable");
+  ASSERT_DEATH(runtime.runFromCStr(src), "object is not iterable");
 }
 
 TEST(InterpreterDeathTest, DunderIterReturnsNonIterable) {
@@ -732,14 +732,14 @@ class Foo:
 a, b = Foo()
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src),
+  ASSERT_DEATH(runtime.runFromCStr(src),
                R"(iter\(\) returned non-iterator)");
 }
 
 TEST(InterpreterTest, UnpackSequence) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 l = [1, 2, 3]
 a, b, c = l
 )");
@@ -762,7 +762,7 @@ TEST(InterpreterDeathTest, UnpackSequenceTooFewElements) {
 l = [1, 2]
 a, b, c = l
 )";
-  ASSERT_DEATH(runtime.runFromCString(src), "not enough values to unpack");
+  ASSERT_DEATH(runtime.runFromCStr(src), "not enough values to unpack");
 }
 
 TEST(InterpreterDeathTest, UnpackSequenceTooManyElements) {
@@ -772,13 +772,13 @@ TEST(InterpreterDeathTest, UnpackSequenceTooManyElements) {
 l = [1, 2, 3, 4]
 a, b, c = l
 )";
-  ASSERT_DEATH(runtime.runFromCString(src), "too many values to unpack");
+  ASSERT_DEATH(runtime.runFromCStr(src), "too many values to unpack");
 }
 
 TEST(InterpreterTest, PrintExprInvokesDisplayhook) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 import sys
 
 MY_GLOBAL = 1234

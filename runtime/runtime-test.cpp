@@ -36,7 +36,7 @@ TEST(RuntimeTest, BuiltinsModuleExists) {
   HandleScope scope;
 
   Handle<Dict> modules(&scope, runtime.modules());
-  Handle<Object> name(&scope, runtime.newStringFromCString("builtins"));
+  Handle<Object> name(&scope, runtime.newStrFromCStr("builtins"));
   ASSERT_TRUE(runtime.dictAt(modules, name)->isModule());
 }
 
@@ -209,7 +209,7 @@ TEST(RuntimeDictTest, GrowWhenFull) {
 
   auto make_key = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
-    return runtime.newStringWithAll(View<byte>(text + i % 10, 10));
+    return runtime.newStrWithAll(View<byte>(text + i % 10, 10));
   };
   auto make_value = [](int i) { return SmallInt::fromWord(i); };
 
@@ -270,7 +270,7 @@ TEST(RuntimeDictTest, MixedKeys) {
   Handle<Object> int_key(&scope, SmallInt::fromWord(100));
   runtime.dictAtPut(dict, int_key, int_key);
 
-  Handle<Object> str_key(&scope, runtime.newStringFromCString("testing 123"));
+  Handle<Object> str_key(&scope, runtime.newStrFromCStr("testing 123"));
   runtime.dictAtPut(dict, str_key, str_key);
 
   // Make sure we get the appropriate values back out
@@ -280,7 +280,7 @@ TEST(RuntimeDictTest, MixedKeys) {
             SmallInt::cast(*int_key)->value());
 
   retrieved = runtime.dictAt(dict, str_key);
-  ASSERT_TRUE(retrieved->isString());
+  ASSERT_TRUE(retrieved->isStr());
   EXPECT_TRUE(Object::equals(*str_key, retrieved));
 }
 
@@ -291,7 +291,7 @@ TEST(RuntimeDictTest, GetKeys) {
   // Create keys
   Handle<ObjectArray> keys(&scope, runtime.newObjectArray(4));
   keys->atPut(0, SmallInt::fromWord(100));
-  keys->atPut(1, runtime.newStringFromCString("testing 123"));
+  keys->atPut(1, runtime.newStrFromCStr("testing 123"));
   keys->atPut(2, Bool::trueObj());
   keys->atPut(3, None::object());
 
@@ -600,7 +600,7 @@ TEST(RuntimeListTest, ListExtendIterator) {
   Runtime runtime;
   HandleScope scope;
   Handle<List> list(&scope, runtime.newList());
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Iterator:
     def __init__(self):
         self.current = 0
@@ -642,7 +642,7 @@ TEST(RuntimeListTest, ListExtendIteratorWithoutDunderLengthHint) {
   Runtime runtime;
   HandleScope scope;
   Handle<List> list(&scope, runtime.newList());
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Iterator:
     def __init__(self):
         self.current = 0
@@ -756,69 +756,68 @@ TEST(RuntimeTest, NewObjectArray) {
   ASSERT_EQ(a300->length(), 300);
 }
 
-TEST(RuntimeTest, NewString) {
+TEST(RuntimeTest, NewStr) {
   Runtime runtime;
   HandleScope scope;
   const byte bytes[400]{0};
-  Handle<String> empty0(&scope, runtime.newStringWithAll(View<byte>(bytes, 0)));
+  Handle<Str> empty0(&scope, runtime.newStrWithAll(View<byte>(bytes, 0)));
   ASSERT_TRUE(empty0->isSmallStr());
   EXPECT_EQ(empty0->length(), 0);
 
-  Handle<String> empty1(&scope, runtime.newStringWithAll(View<byte>(bytes, 0)));
+  Handle<Str> empty1(&scope, runtime.newStrWithAll(View<byte>(bytes, 0)));
   ASSERT_TRUE(empty1->isSmallStr());
   EXPECT_EQ(*empty0, *empty1);
 
-  Handle<String> empty2(&scope, runtime.newStringFromCString("\0"));
+  Handle<Str> empty2(&scope, runtime.newStrFromCStr("\0"));
   ASSERT_TRUE(empty2->isSmallStr());
   EXPECT_EQ(*empty0, *empty2);
 
-  Handle<String> s1(&scope, runtime.newStringWithAll(View<byte>(bytes, 1)));
+  Handle<Str> s1(&scope, runtime.newStrWithAll(View<byte>(bytes, 1)));
   ASSERT_TRUE(s1->isSmallStr());
   EXPECT_EQ(s1->length(), 1);
 
-  Handle<String> s254(&scope, runtime.newStringWithAll(View<byte>(bytes, 254)));
+  Handle<Str> s254(&scope, runtime.newStrWithAll(View<byte>(bytes, 254)));
   EXPECT_EQ(s254->length(), 254);
   ASSERT_TRUE(s254->isLargeStr());
   EXPECT_EQ(HeapObject::cast(*s254)->size(),
             Utils::roundUp(kPointerSize + 254, kPointerSize));
 
-  Handle<String> s255(&scope, runtime.newStringWithAll(View<byte>(bytes, 255)));
+  Handle<Str> s255(&scope, runtime.newStrWithAll(View<byte>(bytes, 255)));
   EXPECT_EQ(s255->length(), 255);
   ASSERT_TRUE(s255->isLargeStr());
   EXPECT_EQ(HeapObject::cast(*s255)->size(),
             Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 
-  Handle<String> s300(&scope, runtime.newStringWithAll(View<byte>(bytes, 300)));
+  Handle<Str> s300(&scope, runtime.newStrWithAll(View<byte>(bytes, 300)));
   ASSERT_EQ(s300->length(), 300);
 }
 
-TEST(RuntimeTest, NewStringFromFormatWithStringArg) {
+TEST(RuntimeTest, NewStrFromFormatWithCStrArg) {
   Runtime runtime;
   HandleScope scope;
 
   const char input[] = "hello";
-  Handle<String> str(&scope, runtime.newStringFromFormat("%s", input));
+  Handle<Str> str(&scope, runtime.newStrFromFormat("%s", input));
   EXPECT_PYSTRING_EQ(*str, input);
 }
 
-TEST(RuntimeTest, NewStringWithAll) {
+TEST(RuntimeTest, NewStrWithAll) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<String> string0(&scope,
-                         runtime.newStringWithAll(View<byte>(nullptr, 0)));
-  EXPECT_EQ(string0->length(), 0);
-  EXPECT_TRUE(string0->equalsCString(""));
+  Handle<Str> str0(&scope, runtime.newStrWithAll(View<byte>(nullptr, 0)));
+  EXPECT_EQ(str0->length(), 0);
+  EXPECT_TRUE(str0->equalsCStr(""));
 
   const byte bytes3[] = {'A', 'B', 'C'};
-  Handle<String> string3(&scope, runtime.newStringWithAll(bytes3));
-  EXPECT_EQ(string3->length(), 3);
-  EXPECT_TRUE(string3->equalsCString("ABC"));
+  Handle<Str> str3(&scope, runtime.newStrWithAll(bytes3));
+  EXPECT_EQ(str3->length(), 3);
+  EXPECT_TRUE(str3->equalsCStr("ABC"));
 
   const byte bytes10[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
-  Handle<String> string10(&scope, runtime.newStringWithAll(bytes10));
-  EXPECT_EQ(string10->length(), 10);
-  EXPECT_TRUE(string10->equalsCString("ABCDEFGHIJ"));
+  Handle<Str> str10(&scope, runtime.newStrWithAll(bytes10));
+  EXPECT_EQ(str10->length(), 10);
+  EXPECT_TRUE(str10->equalsCStr("ABCDEFGHIJ"));
 }
 
 TEST(RuntimeTest, HashBools) {
@@ -846,7 +845,7 @@ TEST(RuntimeTest, HashByteArrays) {
   word code1 = runtime.siphash24(src1);
   EXPECT_EQ(code1 & Header::kHashCodeMask, static_cast<uword>(hash1));
 
-  // String with different values should (ideally) hash differently.
+  // Str with different values should (ideally) hash differently.
   const byte src2[] = {0x3, 0x2, 0x1};
   Handle<ByteArray> arr2(&scope, runtime.newByteArrayWithAll(src2));
   word hash2 = SmallInt::cast(runtime.hash(*arr2))->value();
@@ -888,24 +887,24 @@ TEST(RuntimeTest, HashSingletonImmediates) {
   EXPECT_EQ(hash_error->value(), error_value);
 }
 
-TEST(RuntimeTest, HashStrings) {
+TEST(RuntimeTest, HashStr) {
   Runtime runtime;
   HandleScope scope;
 
   // LargeStr instances have their hash codes computed lazily.
-  Handle<Object> str1(&scope, runtime.newStringFromCString("testing 123"));
+  Handle<Object> str1(&scope, runtime.newStrFromCStr("testing 123"));
   EXPECT_EQ(HeapObject::cast(*str1)->header()->hashCode(), 0);
   SmallInt* hash1 = SmallInt::cast(runtime.hash(*str1));
   EXPECT_NE(HeapObject::cast(*str1)->header()->hashCode(), 0);
   EXPECT_EQ(HeapObject::cast(*str1)->header()->hashCode(), hash1->value());
 
-  // String with different values should (ideally) hash differently.
-  Handle<String> str2(&scope, runtime.newStringFromCString("321 testing"));
+  // Str with different values should (ideally) hash differently.
+  Handle<Str> str2(&scope, runtime.newStrFromCStr("321 testing"));
   SmallInt* hash2 = SmallInt::cast(runtime.hash(*str2));
   EXPECT_NE(hash1, hash2);
 
   // Strings with the same value should hash the same.
-  Handle<String> str3(&scope, runtime.newStringFromCString("testing 123"));
+  Handle<Str> str3(&scope, runtime.newStrFromCStr("testing 123"));
   SmallInt* hash3 = SmallInt::cast(runtime.hash(*str3));
   EXPECT_EQ(hash1, hash3);
 }
@@ -974,43 +973,43 @@ TEST(RuntimeTest, InternLargeStr) {
   Handle<Set> interned(&scope, runtime.interned());
 
   // Creating an ordinary large string should not affect on the intern table.
-  word num_interned_strings = interned->numItems();
-  Handle<Object> str1(&scope, runtime.newStringFromCString("hello, world"));
+  word num_interned = interned->numItems();
+  Handle<Object> str1(&scope, runtime.newStrFromCStr("hello, world"));
   ASSERT_TRUE(str1->isLargeStr());
-  EXPECT_EQ(num_interned_strings, interned->numItems());
+  EXPECT_EQ(num_interned, interned->numItems());
   EXPECT_FALSE(runtime.setIncludes(interned, str1));
 
   // Interning the string should add it to the intern table and increase the
   // size of the intern table by one.
-  num_interned_strings = interned->numItems();
-  Handle<Object> sym1(&scope, runtime.internString(str1));
+  num_interned = interned->numItems();
+  Handle<Object> sym1(&scope, runtime.internStr(str1));
   EXPECT_TRUE(runtime.setIncludes(interned, str1));
   EXPECT_EQ(*sym1, *str1);
-  EXPECT_EQ(num_interned_strings + 1, interned->numItems());
+  EXPECT_EQ(num_interned + 1, interned->numItems());
 
-  Handle<Object> str2(&scope, runtime.newStringFromCString("goodbye, world"));
+  Handle<Object> str2(&scope, runtime.newStrFromCStr("goodbye, world"));
   ASSERT_TRUE(str2->isLargeStr());
   EXPECT_NE(*str1, *str2);
 
   // Intern another string and make sure we get it back (as opposed to the
   // previously interned string).
-  num_interned_strings = interned->numItems();
-  Handle<Object> sym2(&scope, runtime.internString(str2));
-  EXPECT_EQ(num_interned_strings + 1, interned->numItems());
+  num_interned = interned->numItems();
+  Handle<Object> sym2(&scope, runtime.internStr(str2));
+  EXPECT_EQ(num_interned + 1, interned->numItems());
   EXPECT_TRUE(runtime.setIncludes(interned, str2));
   EXPECT_EQ(*sym2, *str2);
   EXPECT_NE(*sym1, *sym2);
 
   // Create a unique copy of a previously created string.
-  Handle<Object> str3(&scope, runtime.newStringFromCString("hello, world"));
+  Handle<Object> str3(&scope, runtime.newStrFromCStr("hello, world"));
   ASSERT_TRUE(str3->isLargeStr());
   EXPECT_NE(*str1, *str3);
   EXPECT_TRUE(runtime.setIncludes(interned, str3));
 
   // Interning a duplicate string should not affecct the intern table.
-  num_interned_strings = interned->numItems();
-  Handle<Object> sym3(&scope, runtime.internString(str3));
-  EXPECT_EQ(num_interned_strings, interned->numItems());
+  num_interned = interned->numItems();
+  Handle<Object> sym3(&scope, runtime.internStr(str3));
+  EXPECT_EQ(num_interned, interned->numItems());
   EXPECT_NE(*sym3, *str3);
   EXPECT_EQ(*sym3, *sym1);
 }
@@ -1022,40 +1021,40 @@ TEST(RuntimeTest, InternSmallStr) {
   Handle<Set> interned(&scope, runtime.interned());
 
   // Creating a small string should not affect the intern table.
-  word num_interned_strings = interned->numItems();
-  Handle<Object> str(&scope, runtime.newStringFromCString("a"));
+  word num_interned = interned->numItems();
+  Handle<Object> str(&scope, runtime.newStrFromCStr("a"));
   ASSERT_TRUE(str->isSmallStr());
   EXPECT_FALSE(runtime.setIncludes(interned, str));
-  EXPECT_EQ(num_interned_strings, interned->numItems());
+  EXPECT_EQ(num_interned, interned->numItems());
 
   // Interning a small string should have no affect on the intern table.
-  Handle<Object> sym(&scope, runtime.internString(str));
+  Handle<Object> sym(&scope, runtime.internStr(str));
   EXPECT_TRUE(sym->isSmallStr());
   EXPECT_FALSE(runtime.setIncludes(interned, str));
-  EXPECT_EQ(num_interned_strings, interned->numItems());
+  EXPECT_EQ(num_interned, interned->numItems());
   EXPECT_EQ(*sym, *str);
 }
 
-TEST(RuntimeTest, InternCString) {
+TEST(RuntimeTest, InternCStr) {
   Runtime runtime;
   HandleScope scope;
 
   Handle<Set> interned(&scope, runtime.interned());
 
-  word num_interned_strings = interned->numItems();
-  Handle<Object> sym(&scope, runtime.internStringFromCString("hello, world"));
-  EXPECT_TRUE(sym->isString());
+  word num_interned = interned->numItems();
+  Handle<Object> sym(&scope, runtime.internStrFromCStr("hello, world"));
+  EXPECT_TRUE(sym->isStr());
   EXPECT_TRUE(runtime.setIncludes(interned, sym));
-  EXPECT_EQ(num_interned_strings + 1, interned->numItems());
+  EXPECT_EQ(num_interned + 1, interned->numItems());
 }
 
 TEST(RuntimeTest, CollectAttributes) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Object> foo(&scope, runtime.newStringFromCString("foo"));
-  Handle<Object> bar(&scope, runtime.newStringFromCString("bar"));
-  Handle<Object> baz(&scope, runtime.newStringFromCString("baz"));
+  Handle<Object> foo(&scope, runtime.newStrFromCStr("foo"));
+  Handle<Object> bar(&scope, runtime.newStrFromCStr("bar"));
+  Handle<Object> baz(&scope, runtime.newStrFromCStr("baz"));
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(3));
   names->atPut(0, *foo);
@@ -1091,8 +1090,8 @@ TEST(RuntimeTest, CollectAttributes) {
 
   // Check that we collected 'foo'
   Handle<Object> result(&scope, runtime.dictAt(attributes, foo));
-  ASSERT_TRUE(result->isString());
-  EXPECT_TRUE(String::cast(*result)->equals(*foo));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_TRUE(Str::cast(*result)->equals(*foo));
 
   // Bytecode for the snippet:
   //
@@ -1110,21 +1109,21 @@ TEST(RuntimeTest, CollectAttributes) {
 
   // Check that we collected 'bar'
   result = runtime.dictAt(attributes, bar);
-  ASSERT_TRUE(result->isString());
-  EXPECT_TRUE(String::cast(*result)->equals(*bar));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_TRUE(Str::cast(*result)->equals(*bar));
 
   // Check that we collected 'baz'
   result = runtime.dictAt(attributes, baz);
-  ASSERT_TRUE(result->isString());
-  EXPECT_TRUE(String::cast(*result)->equals(*baz));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_TRUE(Str::cast(*result)->equals(*baz));
 }
 
 TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Object> foo(&scope, runtime.newStringFromCString("foo"));
-  Handle<Object> bar(&scope, runtime.newStringFromCString("bar"));
+  Handle<Object> foo(&scope, runtime.newStrFromCStr("foo"));
+  Handle<Object> bar(&scope, runtime.newStrFromCStr("bar"));
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(2));
   names->atPut(0, *foo);
@@ -1155,8 +1154,8 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
 
   // Check that we collected 'foo'
   Handle<Object> result(&scope, runtime.dictAt(attributes, foo));
-  ASSERT_TRUE(result->isString());
-  EXPECT_TRUE(String::cast(*result)->equals(*foo));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_TRUE(Str::cast(*result)->equals(*foo));
 }
 
 TEST(RuntimeTest, GetClassConstructor) {
@@ -1179,7 +1178,7 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString("class MyEmptyClass: pass");
+  runtime.runFromCStr("class MyEmptyClass: pass");
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Type> type(&scope, moduleAt(&runtime, main, "MyEmptyClass"));
@@ -1187,7 +1186,7 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
   EXPECT_EQ(layout->instanceSize(), 1);
 
   Handle<Type> cls(&scope, layout->describedClass());
-  EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyEmptyClass");
+  EXPECT_PYSTRING_EQ(Str::cast(cls->name()), "MyEmptyClass");
 
   Handle<Instance> instance(&scope, runtime.newInstance(layout));
   EXPECT_TRUE(instance->isInstance());
@@ -1205,7 +1204,7 @@ class MyClassWithAttributes():
     self.b = 2
     self.c = 3
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Type> type(&scope, moduleAt(&runtime, main, "MyClassWithAttributes"));
@@ -1213,7 +1212,7 @@ class MyClassWithAttributes():
   ASSERT_EQ(layout->instanceSize(), 4);
 
   Handle<Type> cls(&scope, layout->describedClass());
-  EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithAttributes");
+  EXPECT_PYSTRING_EQ(Str::cast(cls->name()), "MyClassWithAttributes");
 
   Handle<Instance> instance(&scope, runtime.newInstance(layout));
   EXPECT_TRUE(instance->isInstance());
@@ -1226,16 +1225,16 @@ TEST(RuntimeTest, VerifySymbols) {
   for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
     SymbolId id = static_cast<SymbolId>(i);
     Object* value = symbols->at(id);
-    ASSERT_TRUE(value->isString());
+    ASSERT_TRUE(value->isStr());
     const char* expected = symbols->literalAt(id);
-    EXPECT_TRUE(String::cast(value)->equalsCString(expected))
+    EXPECT_TRUE(Str::cast(value)->equalsCStr(expected))
         << "Incorrect symbol value for " << expected;
   }
 }
 
-static String* className(Runtime* runtime, Object* o) {
+static Str* className(Runtime* runtime, Object* o) {
   auto cls = Type::cast(runtime->typeOf(o));
-  auto name = String::cast(cls->name());
+  auto name = Str::cast(cls->name());
   return name;
 }
 
@@ -1245,7 +1244,7 @@ TEST(RuntimeTest, ClassIds) {
 
   EXPECT_PYSTRING_EQ(className(&runtime, Bool::trueObj()), "bool");
   EXPECT_PYSTRING_EQ(className(&runtime, None::object()), "NoneType");
-  EXPECT_PYSTRING_EQ(className(&runtime, runtime.newStringFromCString("abc")),
+  EXPECT_PYSTRING_EQ(className(&runtime, runtime.newStrFromCStr("abc")),
                      "smallstr");
 
   for (word i = 0; i < 16; i++) {
@@ -1254,22 +1253,22 @@ TEST(RuntimeTest, ClassIds) {
   }
 }
 
-TEST(RuntimeStringTest, StringConcat) {
+TEST(RuntimeStrTest, StrConcat) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<String> str1(&scope, runtime.newStringFromCString("abc"));
-  Handle<String> str2(&scope, runtime.newStringFromCString("def"));
+  Handle<Str> str1(&scope, runtime.newStrFromCStr("abc"));
+  Handle<Str> str2(&scope, runtime.newStrFromCStr("def"));
 
   // Large strings.
-  Handle<String> str3(&scope, runtime.newStringFromCString("0123456789abcdef"));
-  Handle<String> str4(&scope, runtime.newStringFromCString("fedbca9876543210"));
+  Handle<Str> str3(&scope, runtime.newStrFromCStr("0123456789abcdef"));
+  Handle<Str> str4(&scope, runtime.newStrFromCStr("fedbca9876543210"));
 
-  Handle<String> concat12(&scope, runtime.stringConcat(str1, str2));
-  Handle<String> concat34(&scope, runtime.stringConcat(str3, str4));
+  Handle<Str> concat12(&scope, runtime.strConcat(str1, str2));
+  Handle<Str> concat34(&scope, runtime.strConcat(str3, str4));
 
-  Handle<String> concat13(&scope, runtime.stringConcat(str1, str3));
-  Handle<String> concat31(&scope, runtime.stringConcat(str3, str1));
+  Handle<Str> concat13(&scope, runtime.strConcat(str1, str3));
+  Handle<Str> concat31(&scope, runtime.strConcat(str3, str1));
 
   // Test that we don't make large strings when small srings would suffice.
   EXPECT_PYSTRING_EQ(*concat12, "abcdef");
@@ -1304,7 +1303,7 @@ TEST_P(LookupNameInMroTest, Lookup) {
   auto create_class_with_attr = [&](const char* attr, word value) {
     Handle<Type> klass(&scope, runtime.newClass());
     Handle<Dict> dict(&scope, klass->dict());
-    Handle<Object> key(&scope, runtime.newStringFromCString(attr));
+    Handle<Object> key(&scope, runtime.newStrFromCStr(attr));
     Handle<Object> val(&scope, SmallInt::fromWord(value));
     runtime.dictAtPutInValueCell(dict, key, val);
     return *klass;
@@ -1319,7 +1318,7 @@ TEST_P(LookupNameInMroTest, Lookup) {
   klass->setMro(*mro);
 
   auto param = GetParam();
-  Handle<Object> key(&scope, runtime.newStringFromCString(param.name));
+  Handle<Object> key(&scope, runtime.newStrFromCStr(param.name));
   Object* result = runtime.lookupNameInMro(Thread::currentThread(), klass, key);
   EXPECT_EQ(result, param.expected);
 }
@@ -1344,7 +1343,7 @@ class MyClassWithNoInitMethod():
 
 c = MyClassWithNoInitMethod()
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> instance(&scope, moduleAt(&runtime, main, "c"));
@@ -1354,7 +1353,7 @@ c = MyClassWithNoInitMethod()
   EXPECT_EQ(layout->instanceSize(), 1);
 
   Handle<Type> cls(&scope, layout->describedClass());
-  EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithNoInitMethod");
+  EXPECT_PYSTRING_EQ(Str::cast(cls->name()), "MyClassWithNoInitMethod");
 }
 
 TEST(RuntimeTypeCallTest, TypeCallEmptyInitMethod) {
@@ -1370,7 +1369,7 @@ class MyClassWithEmptyInitMethod():
 
 c = MyClassWithEmptyInitMethod()
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> instance(&scope, moduleAt(&runtime, main, "c"));
@@ -1380,7 +1379,7 @@ c = MyClassWithEmptyInitMethod()
   EXPECT_EQ(layout->instanceSize(), 1);
 
   Handle<Type> cls(&scope, layout->describedClass());
-  EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithEmptyInitMethod");
+  EXPECT_PYSTRING_EQ(Str::cast(cls->name()), "MyClassWithEmptyInitMethod");
 }
 
 TEST(RuntimeTypeCallTest, TypeCallWithArguments) {
@@ -1396,7 +1395,7 @@ class MyClassWithAttributes():
 
 c = MyClassWithAttributes(1)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Type> type(&scope, moduleAt(&runtime, main, "MyClassWithAttributes"));
@@ -1410,9 +1409,9 @@ c = MyClassWithAttributes(1)
   ASSERT_EQ(layout->instanceSize(), 2);
 
   Handle<Type> cls(&scope, layout->describedClass());
-  EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithAttributes");
+  EXPECT_PYSTRING_EQ(Str::cast(cls->name()), "MyClassWithAttributes");
 
-  Handle<Object> name(&scope, runtime.newStringFromCString("x"));
+  Handle<Object> name(&scope, runtime.newStrFromCStr("x"));
   Handle<Object> value(
       &scope, runtime.attributeAt(Thread::currentThread(), instance, name));
   EXPECT_FALSE(value->isError());
@@ -1427,7 +1426,7 @@ def func():
   b = 2
   print(a, b)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Object> dunder_main(&scope, runtime.symbols()->DunderMain());
   Handle<Module> main(&scope, runtime.findModule(dunder_main));
@@ -1444,7 +1443,7 @@ def func():
   // LOAD_FAST
   // CALL_FUNCTION
 
-  Handle<Object> name(&scope, runtime.newStringFromCString("func"));
+  Handle<Object> name(&scope, runtime.newStrFromCStr("func"));
   Handle<Function> func(&scope, runtime.moduleAt(main, name));
   Handle<Code> code(&scope, func->code());
   ASSERT_EQ(code->firstlineno(), 2);
@@ -1560,7 +1559,7 @@ TEST(RuntimeSetTest, Grow) {
 
   auto make_key = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
-    return runtime.newStringWithAll(View<byte>(text + i % 10, 10));
+    return runtime.newStrWithAll(View<byte>(text + i % 10, 10));
   };
 
   // Fill in one fewer keys than would require growing the underlying object
@@ -1671,7 +1670,7 @@ TEST(RuntimeSetTest, UpdateIterator) {
   Runtime runtime;
   HandleScope scope;
   Handle<Set> set(&scope, runtime.newSet());
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Iterator:
     def __init__(self):
         self.current = 0
@@ -1704,7 +1703,7 @@ TEST(RuntimeSetTest, UpdateIteratorWithoutDunderLengthHint) {
   Runtime runtime;
   HandleScope scope;
   Handle<Set> set(&scope, runtime.newSet());
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Iterator:
     def __init__(self):
         self.current = 0
@@ -1772,7 +1771,7 @@ TEST(ClassGetAttrTest, MetaClassFunction) {
   Handle<Object> klass(&scope, createClass(&runtime));
 
   // Store the function on the metaclass
-  Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("test"));
   Handle<Object> value(&scope, runtime.newFunction());
   setInMetaclass(&runtime, klass, attr, value);
 
@@ -1791,7 +1790,7 @@ TEST(ClassGetAttrTest, MetaClassAttr) {
   Handle<Object> klass(&scope, createClass(&runtime));
 
   // Store the attribute on the metaclass
-  Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("test"));
   Handle<Object> value(&scope, SmallInt::fromWord(100));
   setInMetaclass(&runtime, klass, attr, value);
 
@@ -1808,7 +1807,7 @@ TEST(ClassGetAttrTest, ShadowingAttr) {
   Handle<Object> klass(&scope, createClass(&runtime));
 
   // Store the attribute on the metaclass
-  Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("test"));
   Handle<Object> meta_klass_value(&scope, SmallInt::fromWord(100));
   setInMetaclass(&runtime, klass, attr, meta_klass_value);
 
@@ -1847,15 +1846,15 @@ TEST_P(IntrinsicClassSetAttrTest, SetAttr) {
   Runtime runtime;
   HandleScope scope;
   Handle<Object> klass(&scope, runtime.typeAt(GetParam().layout_id));
-  Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("test"));
   Handle<Object> value(&scope, SmallInt::fromWord(100));
   Thread* thread = Thread::currentThread();
 
   Object* result = runtime.attributeAtPut(thread, klass, attr, value);
 
   EXPECT_TRUE(result->isError());
-  ASSERT_TRUE(thread->pendingException()->isString());
-  EXPECT_PYSTRING_EQ(String::cast(thread->pendingException()),
+  ASSERT_TRUE(thread->pendingException()->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(thread->pendingException()),
                      "can't set attributes of built-in/extension type");
 }
 
@@ -1869,7 +1868,7 @@ TEST(ClassAttributeTest, SetAttrOnClass) {
   HandleScope scope;
 
   Handle<Object> klass(&scope, createClass(&runtime));
-  Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("test"));
   Handle<Object> value(&scope, SmallInt::fromWord(100));
 
   Object* result =
@@ -1928,7 +1927,7 @@ TEST(ClassAttributeDeathTest, GetMissingAttribute) {
 class A: pass
 print(A.foo)
 )";
-  ASSERT_DEATH(runtime.runFromCString(src),
+  ASSERT_DEATH(runtime.runFromCStr(src),
                "aborting due to pending exception: missing attribute");
 }
 
@@ -1956,7 +1955,7 @@ class DataDescriptor:
   def __get__(self, instance, owner):
     pass
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Type> descr_klass(&scope,
@@ -1966,7 +1965,7 @@ class DataDescriptor:
   Handle<Object> klass(&scope, createClass(&runtime));
 
   // Create an instance of the descriptor and store it on the metaclass
-  Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("test"));
   Handle<Layout> layout(&scope, descr_klass->instanceLayout());
   Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, klass, attr, descr);
@@ -1984,7 +1983,7 @@ class DataDescriptor:
   def __get__(self, instance, owner):
     return (self, instance, owner)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Type> descr_klass(&scope,
@@ -1994,7 +1993,7 @@ class DataDescriptor:
   Handle<Object> klass(&scope, createClass(&runtime));
 
   // Create an instance of the descriptor and store it on the metaclass
-  Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("test"));
   Handle<Layout> layout(&scope, descr_klass->instanceLayout());
   Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, klass, attr, descr);
@@ -2015,7 +2014,7 @@ class DataDescriptor:
   def __get__(self, instance, owner):
     return (self, instance, owner)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Type> descr_klass(&scope,
@@ -2025,7 +2024,7 @@ class DataDescriptor:
   Handle<Object> klass(&scope, createClass(&runtime));
 
   // Create an instance of the descriptor and store it on the metaclass
-  Handle<Object> attr(&scope, runtime.newStringFromCString("test"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("test"));
   Handle<Layout> layout(&scope, descr_klass->instanceLayout());
   Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInClassDict(&runtime, klass, attr, descr);
@@ -2046,15 +2045,15 @@ class MyMeta(type):
 class Foo(metaclass=MyMeta):
     pass
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> foo(&scope, findInModule(&runtime, main, "Foo"));
-  Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("attr"));
   Handle<Object> result(
       &scope, runtime.attributeAt(Thread::currentThread(), foo, attr));
-  ASSERT_TRUE(result->isString());
-  EXPECT_PYSTRING_EQ(String::cast(*result), "foo");
+  ASSERT_TRUE(result->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*result), "foo");
 }
 
 // Fetch an unknown attribute
@@ -2067,7 +2066,7 @@ class Foo:
 def test(x):
   print(x.foo)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
@@ -2089,7 +2088,7 @@ class Foo:
 def test(x):
   print(x.attr)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   // Create the instance
   HandleScope scope;
@@ -2115,7 +2114,7 @@ def test(x):
   Foo.__init__(x)
   print(x.attr)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   // Create the instance
   HandleScope scope;
@@ -2144,7 +2143,7 @@ def test(x):
   x.attr = '321 testing'
   print(x.attr)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   // Create the instance
   HandleScope scope;
@@ -2176,7 +2175,7 @@ def test(x):
   x.baz = 'ccc'
   print(x.foo, x.bar, x.baz)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   // Create an instance of Foo
   HandleScope scope;
@@ -2217,7 +2216,7 @@ def test(x):
   Foo.__init__(x)
   x.doit()
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   // Create the instance
   HandleScope scope;
@@ -2245,14 +2244,14 @@ class DataDescr:
 class Foo:
   pass
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Type> descr_klass(&scope, findInModule(&runtime, main, "DataDescr"));
   Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
-  Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("attr"));
   Handle<Layout> descr_layout(&scope, descr_klass->instanceLayout());
   Handle<Object> descr(&scope, runtime.newInstance(descr_layout));
   setInClassDict(&runtime, klass, attr, descr);
@@ -2278,14 +2277,14 @@ class Descr:
 class Foo:
   pass
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Type> descr_klass(&scope, findInModule(&runtime, main, "Descr"));
   Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
-  Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("attr"));
   Handle<Layout> descr_layout(&scope, descr_klass->instanceLayout());
   Handle<Object> descr(&scope, runtime.newInstance(descr_layout));
   setInClassDict(&runtime, klass, attr, descr);
@@ -2318,7 +2317,7 @@ def test(x):
   x.baz = 'ccc'
   print(x.foo, x.bar, x.baz)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   // Create the instance
   HandleScope scope;
@@ -2348,7 +2347,7 @@ class Foo:
 foo = Foo()
 print(foo.bar)
 )";
-  ASSERT_DEATH(runtime.runFromCString(src),
+  ASSERT_DEATH(runtime.runFromCStr(src),
                "aborting due to pending exception: missing attribute");
 }
 
@@ -2482,8 +2481,8 @@ del foo.bar
 
   Handle<Object> foo(&scope, findInModule(&runtime, main, "foo"));
   EXPECT_EQ(result->at(0), *foo);
-  ASSERT_TRUE(result->at(1)->isString());
-  EXPECT_PYSTRING_EQ(String::cast(result->at(1)), "bar");
+  ASSERT_TRUE(result->at(1)->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(result->at(1)), "bar");
 }
 
 TEST(InstanceAttributeDeletionTest,
@@ -2514,8 +2513,8 @@ del bar.baz
 
   Handle<Object> bar(&scope, findInModule(&runtime, main, "bar"));
   EXPECT_EQ(result->at(0), *bar);
-  ASSERT_TRUE(result->at(1)->isString());
-  EXPECT_PYSTRING_EQ(String::cast(result->at(1)), "baz");
+  ASSERT_TRUE(result->at(1)->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(result->at(1)), "baz");
 }
 
 TEST(ClassAttributeDeletionTest, DeleteKnownAttribute) {
@@ -2559,7 +2558,7 @@ class Foo(metaclass=FooMeta):
 
 del Foo.attr
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> data(&scope, findInModule(&runtime, main, "args"));
   ASSERT_TRUE(data->isObjectArray());
@@ -2602,7 +2601,7 @@ class Foo(metaclass=FooMeta):
 
 del Foo.bar
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> data(&scope, findInModule(&runtime, main, "args"));
   ASSERT_TRUE(data->isObjectArray());
@@ -2613,7 +2612,7 @@ del Foo.bar
   Handle<Object> foo(&scope, findInModule(&runtime, main, "Foo"));
   EXPECT_EQ(args->at(0), *foo);
 
-  Handle<Object> attr(&scope, runtime.internStringFromCString("bar"));
+  Handle<Object> attr(&scope, runtime.internStrFromCStr("bar"));
   EXPECT_EQ(args->at(1), *attr);
 }
 
@@ -2649,7 +2648,7 @@ def test(module):
   args->atPut(0, *main);
   EXPECT_EQ(callFunction(test, args), SmallInt::fromWord(123));
 
-  Handle<Object> attr(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("foo"));
   Handle<Object> module(&scope, *main);
   EXPECT_EQ(runtime.attributeAt(Thread::currentThread(), module, attr),
             Error::object());
@@ -2720,7 +2719,7 @@ class Foo:
   Handle<Type> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   Handle<HeapObject> instance(&scope, runtime.newInstance(layout));
-  Handle<Object> attr(&scope, runtime.newStringFromCString("unknown"));
+  Handle<Object> attr(&scope, runtime.newStrFromCStr("unknown"));
   EXPECT_EQ(runtime.instanceDel(Thread::currentThread(), instance, attr),
             Error::object());
 }
@@ -2748,7 +2747,7 @@ def new_foo():
   // Verify that 'bar' is an in-object property
   Handle<Layout> layout(&scope,
                         runtime.layoutAt(instance->header()->layoutId()));
-  Handle<Object> attr(&scope, runtime.internStringFromCString("bar"));
+  Handle<Object> attr(&scope, runtime.internStrFromCStr("bar"));
   AttributeInfo info;
   Thread* thread = Thread::currentThread();
   ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, attr, &info));
@@ -2786,7 +2785,7 @@ def new_foo():
   // Verify that 'bar' is an overflow property
   Handle<Layout> layout(&scope,
                         runtime.layoutAt(instance->header()->layoutId()));
-  Handle<Object> attr(&scope, runtime.internStringFromCString("bar"));
+  Handle<Object> attr(&scope, runtime.internStrFromCStr("bar"));
   AttributeInfo info;
   Thread* thread = Thread::currentThread();
   ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, attr, &info));
@@ -2812,7 +2811,7 @@ class Bar(Foo):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
@@ -2832,7 +2831,7 @@ class Foo(type, metaclass=MyMeta):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
@@ -2849,7 +2848,7 @@ class Bar(Foo):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
@@ -2869,7 +2868,7 @@ class Foo(type, metaclass=MyMeta):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
   EXPECT_TRUE(runtime.isInstanceOfClass(*foo));
@@ -2888,7 +2887,7 @@ class ChildMeta(type, metaclass=ParentMeta):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> type(&scope, runtime.typeAt(LayoutId::kType));
 
@@ -2911,7 +2910,7 @@ Foo = MyMeta('Foo', (), {})
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> mymeta(&scope, moduleAt(&runtime, main, "MyMeta"));
   Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
@@ -2928,7 +2927,7 @@ meta_path = sys.meta_path
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> meta_path(&scope, moduleAt(&runtime, main, "meta_path"));
   ASSERT_TRUE(meta_path->isList());
@@ -2941,7 +2940,7 @@ class Test(Exception):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> value(&scope, moduleAt(&runtime, main, "Test"));
   ASSERT_TRUE(value->isType());

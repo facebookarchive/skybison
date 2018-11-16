@@ -14,7 +14,7 @@ namespace python {
 namespace testing {
 
 // Turn a Python string object into a standard string.
-static std::string pyStringToStdString(String* pystr) {
+static std::string pyStringToStdString(Str* pystr) {
   std::string std_str;
   std_str.reserve(pystr->length());
   for (word i = 0; i < pystr->length(); i++) {
@@ -24,33 +24,31 @@ static std::string pyStringToStdString(String* pystr) {
 }
 
 ::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
-                                               const char*,
-                                               String* actual_string,
+                                               const char*, Str* actual_str,
                                                std::string expected_string) {
-  if (actual_string->equalsCString(expected_string.c_str())) {
+  if (actual_str->equalsCStr(expected_string.c_str())) {
     return ::testing::AssertionSuccess();
   }
 
   return ::testing::AssertionFailure()
          << "      Expected: " << actual_string_expr << "\n"
-         << "      Which is: \"" << pyStringToStdString(actual_string) << "\"\n"
+         << "      Which is: \"" << pyStringToStdString(actual_str) << "\"\n"
          << "To be equal to: \"" << expected_string << "\"";
 }
 
 ::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
                                                const char* expected_string_expr,
-                                               String* actual_string,
-                                               String* expected_string) {
-  if (actual_string->equals(expected_string)) {
+                                               Str* actual_str,
+                                               Str* expected_str) {
+  if (actual_str->equals(expected_str)) {
     return ::testing::AssertionSuccess();
   }
 
   return ::testing::AssertionFailure()
          << "      Expected: " << actual_string_expr << "\n"
-         << "      Which is: \"" << pyStringToStdString(actual_string) << "\"\n"
+         << "      Which is: \"" << pyStringToStdString(actual_str) << "\"\n"
          << "To be equal to: \"" << expected_string_expr << "\"\n"
-         << "      Which is: \"" << pyStringToStdString(expected_string)
-         << "\"";
+         << "      Which is: \"" << pyStringToStdString(expected_str) << "\"";
 }
 
 // helper function to redirect return stdout from running
@@ -59,7 +57,7 @@ std::string compileAndRunToString(Runtime* runtime, const char* src) {
   std::stringstream tmp_stdout;
   std::ostream* saved_stdout = builtInStdout;
   builtInStdout = &tmp_stdout;
-  Object* result = runtime->runFromCString(src);
+  Object* result = runtime->runFromCStr(src);
   (void)result;
   CHECK(result == None::object(), "unexpected result");
   builtInStdout = saved_stdout;
@@ -69,7 +67,7 @@ std::string compileAndRunToString(Runtime* runtime, const char* src) {
 Object* findInModule(Runtime* runtime, const Handle<Module>& module,
                      const char* name) {
   HandleScope scope;
-  Handle<Object> key(&scope, runtime->newStringFromCString(name));
+  Handle<Object> key(&scope, runtime->newStrFromCStr(name));
   return runtime->moduleAt(module, key);
 }
 
@@ -115,14 +113,14 @@ bool objectArrayContains(const Handle<ObjectArray>& object_array,
 
 Object* findModule(Runtime* runtime, const char* name) {
   HandleScope scope;
-  Handle<Object> key(&scope, runtime->newStringFromCString(name));
+  Handle<Object> key(&scope, runtime->newStrFromCStr(name));
   return runtime->findModule(key);
 }
 
 Object* moduleAt(Runtime* runtime, const Handle<Module>& module,
                  const char* name) {
   HandleScope scope;
-  Handle<Object> key(&scope, runtime->newStringFromCString(name));
+  Handle<Object> key(&scope, runtime->newStrFromCStr(name));
   Handle<Object> value(&scope, runtime->moduleAt(module, key));
   return *value;
 }

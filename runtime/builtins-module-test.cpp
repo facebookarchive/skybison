@@ -10,7 +10,7 @@ using namespace testing;
 
 TEST(BuiltinsModuleDeathTest, BuiltinCallableOnClassReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   pass
 
@@ -24,7 +24,7 @@ a = callable(Foo)
 
 TEST(BuiltinsModuleDeathTest, BuiltinCallableOnMethodReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   def bar():
     return None
@@ -42,7 +42,7 @@ b = callable(Foo().bar)
 
 TEST(BuiltinsModuleDeathTest, BuiltinCallableOnNonCallableReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = callable(1)
 b = callable("hello")
   )");
@@ -57,7 +57,7 @@ b = callable("hello")
 TEST(BuiltinsModuleDeathTest,
      BuiltinCallableOnObjectWithCallOnTypeReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   def __call__(self):
     pass
@@ -74,7 +74,7 @@ a = callable(f)
 TEST(BuiltinsModuleDeathTest,
      BuiltinCallableOnObjectWithInstanceCallButNoTypeCallReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   pass
 
@@ -96,10 +96,10 @@ TEST(BuiltinsModuleDeathTest, BuiltinChr) {
   std::string result = compileAndRunToString(&runtime, "print(chr(65))");
   EXPECT_EQ(result, "A\n");
   ASSERT_DEATH(
-      runtime.runFromCString("print(chr(1,2))"),
+      runtime.runFromCStr("print(chr(1,2))"),
       "aborting due to pending exception: Unexpected 1 argumment in 'chr'");
   ASSERT_DEATH(
-      runtime.runFromCString("print(chr('A'))"),
+      runtime.runFromCStr("print(chr('A'))"),
       "aborting due to pending exception: Unsupported type in builtin 'chr'");
 }
 
@@ -109,12 +109,12 @@ TEST(BuiltinsModuleDeathTest, BuiltinIsinstance) {
 
   // Only accepts 2 arguments
   EXPECT_DEATH(
-      runtime.runFromCString("print(isinstance(1, 1, 1))"),
+      runtime.runFromCStr("print(isinstance(1, 1, 1))"),
       "aborting due to pending exception: isinstance expected 2 arguments");
 
   // 2nd argument must be a type
   EXPECT_DEATH(
-      runtime.runFromCString("print(isinstance(1, 1))"),
+      runtime.runFromCStr("print(isinstance(1, 1))"),
       "aborting due to pending exception: isinstance arg 2 must be a type");
 
   const char* src = R"(
@@ -126,7 +126,7 @@ class D(C, B): pass
 def test(a, b):
   print(isinstance(a, b))
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   // We can move these tests into the python code above once we can
   // call classes.
@@ -182,7 +182,7 @@ def test(a, b):
 
 TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithSubclassReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   pass
 
@@ -208,7 +208,7 @@ c = issubclass(Baz, type)
 
 TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithNonSubclassReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   pass
 
@@ -231,7 +231,7 @@ c = issubclass(dict, list)
 
 TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithOneSuperclassReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   pass
 
@@ -251,7 +251,7 @@ b = issubclass(Bar, (Foo))
 
 TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithNoSuperclassReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   pass
 
@@ -267,10 +267,10 @@ TEST(BuiltinsModuleDeathTest, BuiltinLen) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");
   EXPECT_EQ(result, "3\n");
-  ASSERT_DEATH(runtime.runFromCString("print(len(1,2))"),
+  ASSERT_DEATH(runtime.runFromCStr("print(len(1,2))"),
                "aborting due to pending exception: "
                "len\\(\\) takes exactly one argument");
-  ASSERT_DEATH(runtime.runFromCString("print(len(1))"),
+  ASSERT_DEATH(runtime.runFromCStr("print(len(1))"),
                "aborting due to pending exception: "
                "object has no len()");
 }
@@ -278,7 +278,7 @@ TEST(BuiltinsModuleDeathTest, BuiltinLen) {
 TEST(ThreadTest, BuiltinLenGetLenFromDict) {
   Runtime runtime;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 len0 = len({})
 len1 = len({'one': 1})
 len5 = len({'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5})
@@ -297,7 +297,7 @@ len5 = len({'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5})
 TEST(ThreadTest, BuiltinLenGetLenFromList) {
   Runtime runtime;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 len0 = len([])
 len1 = len([1])
 len5 = len([1,2,3,4,5])
@@ -316,7 +316,7 @@ len5 = len([1,2,3,4,5])
 TEST(ThreadTest, BuiltinLenGetLenFromSet) {
   Runtime runtime;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 len1 = len({1})
 len5 = len({1,2,3,4,5})
 )");
@@ -335,10 +335,10 @@ TEST(BuiltinsModuleDeathTest, BuiltinOrd) {
   std::string result = compileAndRunToString(&runtime, "print(ord('A'))");
   EXPECT_EQ(result, "65\n");
   ASSERT_DEATH(
-      runtime.runFromCString("print(ord(1,2))"),
+      runtime.runFromCStr("print(ord(1,2))"),
       "aborting due to pending exception: Unexpected 1 argumment in 'ord'");
   ASSERT_DEATH(
-      runtime.runFromCString("print(ord(1))"),
+      runtime.runFromCStr("print(ord(1))"),
       "aborting due to pending exception: Unsupported type in builtin 'ord'");
 }
 
@@ -394,7 +394,7 @@ print(None)
 TEST(BuiltinsModuleTest, BuiltInReprOnUserTypeWithDunderRepr) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   def __repr__(self):
     return "foo"
@@ -405,7 +405,7 @@ a = repr(Foo())
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
 
-  EXPECT_TRUE(String::cast(*a)->equalsCString("foo"));
+  EXPECT_TRUE(Str::cast(*a)->equalsCStr("foo"));
 }
 
 TEST(BuiltinsModuleTest, BuiltInGetAttr) {
@@ -418,7 +418,7 @@ c = getattr(Foo(), 'foo', 2)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
@@ -435,7 +435,7 @@ class Foo:
 getattr(Foo, 'foo')
 )";
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCString(src), "missing attribute");
+  EXPECT_DEATH(runtime.runFromCStr(src), "missing attribute");
 }
 
 TEST(BuiltinsModuleTest, BuiltInHasAttr) {
@@ -447,7 +447,7 @@ b = hasattr(Foo, 'bar')
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
@@ -464,7 +464,7 @@ b = Foo.foo
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
@@ -480,7 +480,7 @@ a = setattr(Foo, 2, 'foo')
 )";
   Runtime runtime;
   HandleScope scope;
-  EXPECT_DEATH(runtime.runFromCString(src), "attribute name must be string");
+  EXPECT_DEATH(runtime.runFromCStr(src), "attribute name must be string");
 }
 
 }  // namespace python

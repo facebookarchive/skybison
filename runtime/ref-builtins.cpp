@@ -10,7 +10,7 @@ namespace python {
 
 Object* builtinRefInit(Thread* thread, Frame*, word nargs) {
   if (nargs < 2 || nargs > 3) {
-    return thread->throwTypeErrorFromCString("ref() expected 2 or 3 arguments");
+    return thread->throwTypeErrorFromCStr("ref() expected 2 or 3 arguments");
   }
   return None::object();
 }
@@ -18,7 +18,7 @@ Object* builtinRefInit(Thread* thread, Frame*, word nargs) {
 Object* builtinRefNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   if (nargs < 2 || nargs > 3) {
-    return thread->throwTypeErrorFromCString("ref() expected 2 or 3 arguments");
+    return thread->throwTypeErrorFromCStr("ref() expected 2 or 3 arguments");
   }
   Arguments args(frame, nargs);
   Handle<WeakRef> ref(&scope, thread->runtime()->newWeakRef());

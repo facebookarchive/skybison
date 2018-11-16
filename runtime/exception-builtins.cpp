@@ -35,13 +35,13 @@ Object* BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
                                           word nargs) {
   HandleScope scope(thread);
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "'__init__' of 'BaseException' needs an argument");
   }
   Arguments args(frame, nargs);
   if (!thread->runtime()->hasSubClassFlag(args.get(0),
                                           Type::Flag::kBaseExceptionSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "'__init__' requires a 'BaseException' object");
   }
   UncheckedHandle<BaseException> self(&scope, args.get(0));
@@ -79,13 +79,13 @@ Object* StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
                                           word nargs) {
   HandleScope scope(thread);
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "'__init__' of 'StopIteration' needs an argument");
   }
   Arguments args(frame, nargs);
   if (!thread->runtime()->hasSubClassFlag(args.get(0),
                                           Type::Flag::kStopIterationSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "'__init__' requires a 'StopIteration' object");
   }
   UncheckedHandle<StopIteration> self(&scope, args.get(0));
@@ -124,13 +124,13 @@ Object* SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
                                        word nargs) {
   HandleScope scope(thread);
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "'__init__' of 'SystemExit' needs an argument");
   }
   Arguments args(frame, nargs);
   if (!thread->runtime()->hasSubClassFlag(args.get(0),
                                           Type::Flag::kSystemExitSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "'__init__' requires a 'SystemExit' object");
   }
   UncheckedHandle<SystemExit> self(&scope, args.get(0));

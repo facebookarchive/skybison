@@ -144,17 +144,17 @@ Object* Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
 Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
   word new_len = 0;
   for (word i = num - 1; i >= 0; i--) {
-    if (!sp[i]->isString()) {
+    if (!sp[i]->isStr()) {
       UNIMPLEMENTED("Conversion of non-string values not supported.");
     }
-    new_len += String::cast(sp[i])->length();
+    new_len += Str::cast(sp[i])->length();
   }
 
   if (new_len <= SmallStr::kMaxLength) {
     byte buffer[SmallStr::kMaxLength];
     byte* ptr = buffer;
     for (word i = num - 1; i >= 0; i--) {
-      String* str = String::cast(sp[i]);
+      Str* str = Str::cast(sp[i]);
       word len = str->length();
       str->copyTo(ptr, len);
       ptr += len;
@@ -167,7 +167,7 @@ Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
                           thread->runtime()->heap()->createLargeStr(new_len));
   word offset = LargeStr::kDataOffset;
   for (word i = num - 1; i >= 0; i--) {
-    String* str = String::cast(sp[i]);
+    Str* str = Str::cast(sp[i]);
     word len = str->length();
     str->copyTo(reinterpret_cast<byte*>(result->address() + offset), len);
     offset += len;
@@ -357,9 +357,8 @@ Object* Interpreter::binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
     }
   }
   UNIMPLEMENTED("Cannot do binary op %ld for types '%s' and '%s'",
-                static_cast<word>(op),
-                String::cast(self_type->name())->toCString(),
-                String::cast(other_type->name())->toCString());
+                static_cast<word>(op), Str::cast(self_type->name())->toCStr(),
+                Str::cast(other_type->name())->toCStr());
 }
 
 Object* Interpreter::inplaceOperation(Thread* thread, Frame* caller,
@@ -672,7 +671,7 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
       &scope,
       runtime->lookupSymbolInMro(ctx->thread, type, SymbolId::kDunderGetItem));
   if (getitem->isError()) {
-    ctx->frame->pushValue(ctx->thread->throwTypeErrorFromCString(
+    ctx->frame->pushValue(ctx->thread->throwTypeErrorFromCStr(
         "object does not support indexing"));
   } else {
     ctx->frame->pushValue(
@@ -886,7 +885,7 @@ void Interpreter::doGetIter(Context* ctx, word) {
   Handle<Object> method(&scope, lookupMethod(thread, thread->currentFrame(),
                                              iterable, SymbolId::kDunderIter));
   if (method->isError()) {
-    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->throwTypeErrorFromCStr("object is not iterable");
     thread->abortOnPendingException();
   }
   Handle<Object> iterator(
@@ -1073,7 +1072,7 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
       &scope, lookupMethod(thread, thread->currentFrame(), iterable,
                            SymbolId::kDunderIter));
   if (iter_method->isError()) {
-    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->throwTypeErrorFromCStr("object is not iterable");
     thread->abortOnPendingException();
   }
   Handle<Object> iterator(&scope, callMethod1(thread, thread->currentFrame(),
@@ -1082,7 +1081,7 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
   Handle<Object> next_method(&scope, lookupMethod(thread, ctx->frame, iterator,
                                                   SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->throwTypeErrorFromCString("iter() returned non-iterator");
+    thread->throwTypeErrorFromCStr("iter() returned non-iterator");
     thread->abortOnPendingException();
   }
   for (word i = 0; i < arg; i++) {
@@ -1103,12 +1102,12 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
   }
   if (num_pushed < arg) {
     ctx->frame->dropValues(arg);
-    thread->throwValueErrorFromCString("not enough values to unpack");
+    thread->throwValueErrorFromCStr("not enough values to unpack");
     thread->abortOnPendingException();
   }
   if (!thread->runtime()->isIteratorExhausted(thread, iterator)) {
     ctx->frame->dropValues(arg);
-    thread->throwValueErrorFromCString("too many values to unpack");
+    thread->throwValueErrorFromCStr("too many values to unpack");
     thread->abortOnPendingException();
   }
 }
@@ -1121,7 +1120,7 @@ void Interpreter::doForIter(Context* ctx, word arg) {
   Handle<Object> next_method(&scope, lookupMethod(thread, ctx->frame, iterator,
                                                   SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->throwValueErrorFromCString("iter() returned non-iterator");
+    thread->throwValueErrorFromCStr("iter() returned non-iterator");
     thread->abortOnPendingException();
   }
   if (thread->runtime()->isIteratorExhausted(thread, iterator)) {
@@ -1252,7 +1251,7 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
   }
 
   if (value->isError()) {
-    UNIMPLEMENTED("Unbound variable '%s'", String::cast(*key)->toCString());
+    UNIMPLEMENTED("Unbound variable '%s'", Str::cast(*key)->toCStr());
   }
   frame->pushValue(value);
 }
@@ -1364,7 +1363,7 @@ void Interpreter::doImportFrom(Context* ctx, word arg) {
   HandleScope scope(thread);
   Handle<Code> code(&scope, ctx->frame->code());
   Handle<Object> name(&scope, ObjectArray::cast(code->names())->at(arg));
-  CHECK(name->isString(), "name not found");
+  CHECK(name->isStr(), "name not found");
   Handle<Module> module(&scope, ctx->frame->topValue());
   Runtime* runtime = thread->runtime();
   CHECK(module->isModule(), "Unexpected type to import from");
@@ -1425,9 +1424,9 @@ void Interpreter::doLoadGlobal(Context* ctx, word arg) {
   if (value->isValueCell()) {
     CHECK(
         !ValueCell::cast(value)->isUnbound(), "Unbound global '%s'",
-        String::cast(
+        Str::cast(
             ObjectArray::cast(Code::cast(ctx->frame->code())->names())->at(arg))
-            ->toCString());
+            ->toCStr());
     value = ValueCell::cast(value)->value();
   }
   ctx->frame->pushValue(value);
@@ -1482,7 +1481,7 @@ void Interpreter::doLoadFast(Context* ctx, word arg) {
   if (value->isError()) {
     Object* name =
         ObjectArray::cast(Code::cast(ctx->frame->code())->varnames())->at(arg);
-    UNIMPLEMENTED("unbound local %s", String::cast(name)->toCString());
+    UNIMPLEMENTED("unbound local %s", Str::cast(name)->toCStr());
   }
   ctx->frame->pushValue(ctx->frame->getLocal(arg));
 }
@@ -1500,7 +1499,7 @@ void Interpreter::doDeleteFast(Context* ctx, word arg) {
   if (ctx->frame->getLocal(arg) == Error::object()) {
     Object* name =
         ObjectArray::cast(Code::cast(ctx->frame->code())->varnames())->at(arg);
-    UNIMPLEMENTED("unbound local %s", String::cast(name)->toCString());
+    UNIMPLEMENTED("unbound local %s", Str::cast(name)->toCStr());
   }
   ctx->frame->setLocal(arg, Error::object());
 }
@@ -1726,9 +1725,9 @@ void Interpreter::doFormatValue(Context* ctx, word flags) {
   }
 
   if (have_fmt_spec) {
-    Handle<String> fmt_str(&scope, ctx->frame->popValue());
-    Handle<String> value(&scope, ctx->frame->popValue());
-    ctx->frame->pushValue(thread->runtime()->stringConcat(fmt_str, value));
+    Handle<Str> fmt_str(&scope, ctx->frame->popValue());
+    Handle<Str> value(&scope, ctx->frame->popValue());
+    ctx->frame->pushValue(thread->runtime()->strConcat(fmt_str, value));
   }  // else no-op
 }
 
@@ -1753,7 +1752,7 @@ void Interpreter::doBuildString(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   switch (arg) {
     case 0:  // empty
-      ctx->frame->pushValue(runtime->newStringWithAll(View<byte>(nullptr, 0)));
+      ctx->frame->pushValue(runtime->newStrWithAll(View<byte>(nullptr, 0)));
       break;
     case 1:  // no-op
       break;

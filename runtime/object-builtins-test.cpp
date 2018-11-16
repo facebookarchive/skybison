@@ -11,7 +11,7 @@ using namespace testing;
 
 TEST(ObjectBuiltinsTest, ObjectDunderReprReturnsTypeNameAndPointer) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   pass
 
@@ -19,10 +19,10 @@ a = object.__repr__(Foo())
 )");
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
   // Storage for the class name. It must be shorter than the length of the whole
   // string.
-  char* c_str = a->toCString();
+  char* c_str = a->toCStr();
   char* class_name = static_cast<char*>(std::malloc(a->length()));
   void* ptr = nullptr;
   int num_written = std::sscanf(c_str, "<%s object at %p>", class_name, &ptr);
@@ -37,7 +37,7 @@ a = object.__repr__(Foo())
 
 TEST(ObjectBuiltinsTest, DunderStrReturnsDunderRepr) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   pass
 
@@ -47,14 +47,14 @@ b = object.__repr__(f)
 )");
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_PYSTRING_EQ(*a, *b);
 }
 
 TEST(ObjectBuiltinsTest, UserDefinedTypeInheritsDunderStr) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   pass
 
@@ -64,14 +64,14 @@ b = f.__str__()
 )");
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_PYSTRING_EQ(*a, *b);
 }
 
 TEST(ObjectBuiltinsTest, DunderInitDoesNotThrowIfNewIsDifferentButInitIsSame) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   def __new__(cls):
     return object.__new__(cls)
@@ -84,7 +84,7 @@ Foo.__init__(Foo(), 1)
 
 TEST(ObjectBuiltinsTest, DunderInitWithNonInstanceIsOk) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 object.__init__(object)
 )");
   // It doesn't matter what the output is, just that it doesn't throw a
@@ -97,8 +97,7 @@ TEST(ObjectBuiltinsDeathTest, DunderInitWithNoArgsThrowsTypeError) {
 object.__init__()
 )";
   // Passing no args to object.__init__ should throw a type error.
-  EXPECT_DEATH(runtime.runFromCString(src),
-               "aborting due to pending exception");
+  EXPECT_DEATH(runtime.runFromCStr(src), "aborting due to pending exception");
 }
 
 TEST(ObjectBuiltinsDeathTest, DunderInitWithArgsThrowsTypeError) {
@@ -111,8 +110,7 @@ class Foo:
 
 Foo.__init__(Foo(), 1)
 )";
-  EXPECT_DEATH(runtime.runFromCString(src),
-               "aborting due to pending exception");
+  EXPECT_DEATH(runtime.runFromCStr(src), "aborting due to pending exception");
 }
 
 TEST(ObjectBuiltinsDeathTest, DunderInitWithNewAndInitThrowsTypeError) {
@@ -126,8 +124,7 @@ class Foo:
 
 Foo()
 )";
-  EXPECT_DEATH(runtime.runFromCString(src),
-               "aborting due to pending exception");
+  EXPECT_DEATH(runtime.runFromCStr(src), "aborting due to pending exception");
 }
 
 TEST(NoneBuiltinsTest, NewReturnsNone) {

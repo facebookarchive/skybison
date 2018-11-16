@@ -11,7 +11,7 @@ TEST(ExceptionBuiltinsTest, BaseExceptionNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = BaseException()
 )");
 
@@ -29,7 +29,7 @@ TEST(ExceptionBuiltinsTest, BaseExceptionManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = BaseException(1,2,3)
 )");
 
@@ -50,12 +50,12 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionNoArgs) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = BaseException().__str__()
 )");
 
   Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Handle<Str> a(&scope, testing::moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "");
 }
 
@@ -63,12 +63,12 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionOneArg) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = BaseException("hello").__str__()
 )");
 
   Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Handle<Str> a(&scope, testing::moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "hello");
 }
 
@@ -76,12 +76,12 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionManyArgs) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = BaseException("hello", "world").__str__()
 )");
 
   Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Handle<Str> a(&scope, testing::moduleAt(&runtime, main, "a"));
   EXPECT_PYSTRING_EQ(*a, "('hello', 'world')");
 }
 
@@ -89,7 +89,7 @@ TEST(ExceptionBuiltinsTest, ExceptionManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = Exception(1,2,3)
 )");
 
@@ -110,7 +110,7 @@ TEST(ExceptionBuiltinsTest, SimpleExceptionTypesCanBeConstructed) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 attr_error = AttributeError()
 name_error = NameError()
 value_error = ValueError()
@@ -145,7 +145,7 @@ TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesHaveCorrectHierarchy) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 lookup_is_exc = issubclass(LookupError, Exception)
 index_is_lookup = issubclass(IndexError, LookupError)
 key_is_lookup = issubclass(KeyError, LookupError)
@@ -168,7 +168,7 @@ TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesCanBeConstructed) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 l = LookupError()
 i = IndexError()
 k = KeyError()
@@ -188,12 +188,12 @@ TEST(ExceptionBuiltinsTest, KeyErrorStrPrintsMissingKey) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 s = KeyError("key").__str__()
 )");
 
   Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<String> s(&scope, testing::moduleAt(&runtime, main, "s"));
+  Handle<Str> s(&scope, testing::moduleAt(&runtime, main, "s"));
   EXPECT_PYSTRING_EQ(*s, "'key'");
 }
 
@@ -202,14 +202,14 @@ TEST(ExceptionBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 s = KeyError("key", "key2").__str__()
 b = BaseException("key", "key2").__str__()
 )");
 
   Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<String> s(&scope, testing::moduleAt(&runtime, main, "s"));
-  Handle<String> b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Handle<Str> s(&scope, testing::moduleAt(&runtime, main, "s"));
+  Handle<Str> b(&scope, testing::moduleAt(&runtime, main, "b"));
   EXPECT_PYSTRING_EQ(*s, *b);
 }
 
@@ -217,7 +217,7 @@ TEST(ExceptionBuiltinsTest, TypeErrorReturnsTypeError) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = TypeError()
 )");
 
@@ -235,7 +235,7 @@ TEST(ExceptionBuiltinsTest, StopIterationNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = StopIteration()
 )");
 
@@ -257,7 +257,7 @@ TEST(ExceptionBuiltinsTest, StopIterationOneArgument) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = StopIteration(1)
 )");
 
@@ -280,7 +280,7 @@ TEST(ExceptionBuiltinsTest, StopIterationManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = StopIteration(4, 5, 6)
 )");
 
@@ -305,7 +305,7 @@ TEST(ExceptionBuiltinsTest, NotImplementedErrorNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = NotImplementedError()
 exc_is_rt_error = issubclass(NotImplementedError, RuntimeError)
 )");
@@ -326,7 +326,7 @@ TEST(ExceptionBuiltinsTest, SystemExitNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = SystemExit()
 )");
 
@@ -348,7 +348,7 @@ TEST(ExceptionBuiltinsTest, SystemExitOneArgument) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = SystemExit(1)
 )");
 
@@ -371,7 +371,7 @@ TEST(ExceptionBuiltinsTest, SystemExitManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = SystemExit(4, 5, 6)
 )");
 
@@ -396,7 +396,7 @@ TEST(ExceptionBuiltinsTest, SystemExitGetValue) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = SystemExit(1111)
 result = exc.value
 )");
@@ -414,7 +414,7 @@ x = ImportError()
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> data(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(data->isImportError());
@@ -443,7 +443,7 @@ x = ImportError(1111)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> data(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(data->isImportError());
@@ -461,7 +461,7 @@ x = ImportError(1111, name=2222, path=3333)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> data(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(data->isImportError());
@@ -481,14 +481,14 @@ x = ImportError(foo=123)
 )";
   Runtime runtime;
   HandleScope scope;
-  EXPECT_DEATH(runtime.runFromCString(src), "RAISE_VARARGS");
+  EXPECT_DEATH(runtime.runFromCStr(src), "RAISE_VARARGS");
 }
 
 TEST(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 exc = ModuleNotFoundError(1111, name=2222, path=3333)
 )");
 

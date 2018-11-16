@@ -13,12 +13,12 @@ int exceptionMessageMatches(const char* message) {
   if (exception_obj->isNone()) {
     return 0;
   }
-  if (!exception_obj->isString()) {
+  if (!exception_obj->isStr()) {
     UNIMPLEMENTED("Handle non string exception objects");
   }
-  Handle<String> exception(&scope, *exception_obj);
+  Handle<Str> exception(&scope, *exception_obj);
 
-  return exception->equalsCString(message);
+  return exception->equalsCStr(message);
 }
 
 PyObject* moduleGet(const char* module, const char* name) {

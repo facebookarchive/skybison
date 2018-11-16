@@ -33,7 +33,7 @@ extern "C" int PyDict_SetItemString(PyObject* pydict, const char* key,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> keyobj(&scope, runtime->newStringFromCString(key));
+  Handle<Object> keyobj(&scope, runtime->newStrFromCStr(key));
   return PyDict_SetItem(pydict, ApiHandle::fromObject(*keyobj)->asPyObject(),
                         value);
 }

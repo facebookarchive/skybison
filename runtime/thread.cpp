@@ -203,8 +203,8 @@ Object* Thread::throwRuntimeError(Object* value) {
   return Error::object();
 }
 
-Object* Thread::throwRuntimeErrorFromCString(const char* message) {
-  return throwRuntimeError(runtime()->newStringFromCString(message));
+Object* Thread::throwRuntimeErrorFromCStr(const char* message) {
+  return throwRuntimeError(runtime()->newStrFromCStr(message));
 }
 
 // Convenience method for throwing a SystemError exception with an error
@@ -215,9 +215,9 @@ Object* Thread::throwSystemError(Object* value) {
   return Error::object();
 }
 
-Object* Thread::throwSystemErrorFromCString(const char* message) {
+Object* Thread::throwSystemErrorFromCStr(const char* message) {
   // TODO: instantiate SystemError object.
-  return throwSystemError(runtime()->newStringFromCString(message));
+  return throwSystemError(runtime()->newStrFromCStr(message));
 }
 
 // Convenience method for throwing a TypeError exception with an error message.
@@ -227,8 +227,8 @@ Object* Thread::throwTypeError(Object* value) {
   return Error::object();
 }
 
-Object* Thread::throwTypeErrorFromCString(const char* message) {
-  return throwTypeError(runtime()->newStringFromCString(message));
+Object* Thread::throwTypeErrorFromCStr(const char* message) {
+  return throwTypeError(runtime()->newStrFromCStr(message));
 }
 
 // Convenience method for throwing a ValueError exception with an error message.
@@ -238,9 +238,9 @@ Object* Thread::throwValueError(Object* value) {
   return Error::object();
 }
 
-Object* Thread::throwValueErrorFromCString(const char* message) {
+Object* Thread::throwValueErrorFromCStr(const char* message) {
   // TODO: instantiate ValueError object.
-  return throwValueError(runtime()->newStringFromCString(message));
+  return throwValueError(runtime()->newStrFromCStr(message));
 }
 
 Object* Thread::throwAttributeError(Object* value) {
@@ -249,9 +249,9 @@ Object* Thread::throwAttributeError(Object* value) {
   return Error::object();
 }
 
-Object* Thread::throwAttributeErrorFromCString(const char* message) {
+Object* Thread::throwAttributeErrorFromCStr(const char* message) {
   // TODO: instantiate an AttributeError object.
-  return throwAttributeError(runtime()->newStringFromCString(message));
+  return throwAttributeError(runtime()->newStrFromCStr(message));
 }
 
 Object* Thread::throwKeyError(Object* value) {
@@ -260,9 +260,9 @@ Object* Thread::throwKeyError(Object* value) {
   return Error::object();
 }
 
-Object* Thread::throwKeyErrorFromCString(const char* message) {
+Object* Thread::throwKeyErrorFromCStr(const char* message) {
   // TODO(jeethu): instantiate a KeyError object.
-  return throwKeyError(runtime()->newStringFromCString(message));
+  return throwKeyError(runtime()->newStrFromCStr(message));
 }
 
 Object* Thread::throwOverflowError(Object* value) {
@@ -271,8 +271,8 @@ Object* Thread::throwOverflowError(Object* value) {
   return Error::object();
 }
 
-Object* Thread::throwOverflowErrorFromCString(const char* message) {
-  return throwOverflowError(runtime()->newStringFromCString(message));
+Object* Thread::throwOverflowErrorFromCStr(const char* message) {
+  return throwOverflowError(runtime()->newStrFromCStr(message));
 }
 
 Object* Thread::throwIndexError(Object* value) {
@@ -281,8 +281,8 @@ Object* Thread::throwIndexError(Object* value) {
   return Error::object();
 }
 
-Object* Thread::throwIndexErrorFromCString(const char* message) {
-  return throwIndexError(runtime()->newStringFromCString(message));
+Object* Thread::throwIndexErrorFromCStr(const char* message) {
+  return throwIndexError(runtime()->newStrFromCStr(message));
 }
 
 void Thread::ignorePendingException() {
@@ -293,8 +293,8 @@ void Thread::ignorePendingException() {
   }
 
   *builtinStderr << "ignore pending exception";
-  if (pending_exception->isString()) {
-    String* message = String::cast(*pending_exception);
+  if (pending_exception->isStr()) {
+    Str* message = Str::cast(*pending_exception);
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);
@@ -317,8 +317,8 @@ void Thread::abortOnPendingException() {
   }
 
   std::cerr << "aborting due to pending exception";
-  if (pending_ex->isString()) {
-    String* message = String::cast(*pending_ex);
+  if (pending_ex->isStr()) {
+    Str* message = Str::cast(*pending_ex);
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);

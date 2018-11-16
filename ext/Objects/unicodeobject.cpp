@@ -11,7 +11,7 @@ extern "C" PyObject* PyUnicode_FromString(const char* c_string) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Handle<Object> value(&scope, runtime->newStringFromCString(c_string));
+  Handle<Object> value(&scope, runtime->newStrFromCStr(c_string));
   return ApiHandle::fromObject(*value)->asPyObject();
 }
 
@@ -27,11 +27,11 @@ extern "C" char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,
 
   Handle<Object> str_obj(&scope,
                          ApiHandle::fromPyObject(pyunicode)->asObject());
-  if (!str_obj->isString()) {
+  if (!str_obj->isStr()) {
     return nullptr;
   }
 
-  Handle<String> str(&scope, *str_obj);
+  Handle<Str> str(&scope, *str_obj);
   word length = str->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   str->copyTo(result, length);

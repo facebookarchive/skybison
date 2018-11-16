@@ -24,8 +24,8 @@ extern "C" int PyModule_AddIntConstant(PyObject* pymodule, const char* name,
     // TODO(cshapiro): throw a TypeError
     return -1;
   }
-  Handle<Object> key(&scope, runtime->newStringFromCString(name));
-  if (!key->isString()) {
+  Handle<Object> key(&scope, runtime->newStrFromCStr(name));
+  if (!key->isStr()) {
     // TODO(cshapiro): throw a MemoryError
     return -1;
   }

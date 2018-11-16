@@ -13,7 +13,7 @@ using namespace testing;
 
 TEST(IntBuiltinsTest, NewWithStringReturnsInt) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = int("123")
 b = int("-987")
 )");
@@ -27,7 +27,7 @@ b = int("-987")
 
 TEST(IntBuiltinsTest, NewWithStringAndIntBaseReturnsInt) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = int("23", 8)
 b = int("abc", 16)
 c = int("023", 0)
@@ -49,7 +49,7 @@ TEST(IntBuiltinsTest, CompareSmallIntEq) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 1
 b = 2
 a_eq_b = a == b
@@ -70,7 +70,7 @@ TEST(IntBuiltinsTest, CompareSmallIntGe) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 1
 b = 2
 a_ge_a = a >= a
@@ -94,7 +94,7 @@ TEST(IntBuiltinsTest, CompareSmallIntGt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 1
 b = 2
 a_gt_a = a > a
@@ -118,7 +118,7 @@ TEST(IntBuiltinsTest, CompareSmallIntLe) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 1
 b = 2
 a_le_a = a <= a
@@ -142,7 +142,7 @@ TEST(IntBuiltinsTest, CompareSmallIntLt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 1
 b = 2
 a_lt_a = a < a
@@ -166,7 +166,7 @@ TEST(IntBuiltinsTest, CompareSmallIntNe) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 1
 b = 2
 a_ne_b = a != b
@@ -187,7 +187,7 @@ TEST(IntBuiltinsTest, CompareOpSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 1
 b = 2
 c = 1
@@ -228,7 +228,7 @@ neg = -456
 invert_neg = ~neg
 )";
 
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
@@ -252,7 +252,7 @@ neg = -123
 plus_neg = +neg
 )";
 
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
@@ -276,7 +276,7 @@ neg = -123
 minus_neg = -neg
 )";
 
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
@@ -363,7 +363,7 @@ TEST(IntBuiltinsTest, BinaryMulOverflowCheck) {
   Runtime runtime;
 
   // Overflows in the multiplication itself.
-  EXPECT_DEBUG_ONLY_DEATH(runtime.runFromCString(R"(
+  EXPECT_DEBUG_ONLY_DEATH(runtime.runFromCStr(R"(
 a = 268435456
 a = a * a * a
 )"),
@@ -387,7 +387,7 @@ TEST(IntBuiltinsTest, InplaceAdd) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 1
 a += 0
 b = a
@@ -406,7 +406,7 @@ TEST(IntBuiltinsTest, InplaceMultiply) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 5
 a *= 1
 b = a
@@ -425,7 +425,7 @@ TEST(IntBuiltinsTest, InplaceFloorDiv) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 5
 a //= 1
 b = a
@@ -444,7 +444,7 @@ TEST(IntBuiltinsTest, InplaceModulo) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 10
 a %= 7
 b = a
@@ -463,7 +463,7 @@ TEST(IntBuiltinsTest, InplaceSub) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 10
 a -= 0
 b = a
@@ -482,7 +482,7 @@ TEST(IntBuiltinsTest, InplaceXor) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 0xFE
 a ^= 0
 b = a
@@ -501,7 +501,7 @@ TEST(IntBuiltinsTest, BinaryAddSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 2
 b = 1
 c = a + b
@@ -965,17 +965,17 @@ TEST(IntBuiltinsTest, StringToIntDPos) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Handle<Object> str_d0(&scope, runtime.newStringFromCString("0"));
+  Handle<Object> str_d0(&scope, runtime.newStrFromCStr("0"));
   Handle<SmallInt> int_d0(&scope,
                           IntBuiltins::intFromString(thread, *str_d0, 10));
   EXPECT_EQ(int_d0->value(), 0);
 
-  Handle<Object> str_d123(&scope, runtime.newStringFromCString("123"));
+  Handle<Object> str_d123(&scope, runtime.newStrFromCStr("123"));
   Handle<SmallInt> int_d123(&scope,
                             IntBuiltins::intFromString(thread, *str_d123, 10));
   EXPECT_EQ(int_d123->value(), 123);
 
-  Handle<Object> str_d987n(&scope, runtime.newStringFromCString("-987"));
+  Handle<Object> str_d987n(&scope, runtime.newStrFromCStr("-987"));
   Handle<SmallInt> int_d987n(
       &scope, IntBuiltins::intFromString(thread, *str_d987n, 10));
   EXPECT_EQ(int_d987n->value(), -987);
@@ -986,11 +986,11 @@ TEST(IntBuiltinsTest, StringToIntDNeg) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Handle<Object> str1(&scope, runtime.newStringFromCString(""));
+  Handle<Object> str1(&scope, runtime.newStrFromCStr(""));
   Handle<Object> res1(&scope, IntBuiltins::intFromString(thread, *str1, 10));
   EXPECT_TRUE(res1->isError());
 
-  Handle<Object> str2(&scope, runtime.newStringFromCString("12ab"));
+  Handle<Object> str2(&scope, runtime.newStrFromCStr("12ab"));
   Handle<Object> res2(&scope, IntBuiltins::intFromString(thread, *str2, 10));
   EXPECT_TRUE(res2->isError());
 }
@@ -1000,7 +1000,7 @@ TEST(IntBuiltinsTest, DunderIndexReturnsSameValue) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = (7).__index__()
 b = int.__index__(7)
 )");
@@ -1019,7 +1019,7 @@ TEST(IntBuiltinsTest, DunderIntReturnsSameValue) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = (7).__int__()
 b = int.__int__(7)
 )");
@@ -1032,7 +1032,7 @@ b = int.__int__(7)
   EXPECT_EQ(7, SmallInt::cast(*b)->value());
 
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
-  frame->setLocal(0, runtime.newStringFromCString("python"));
+  frame->setLocal(0, runtime.newStrFromCStr("python"));
   Handle<Object> res(&scope, IntBuiltins::dunderInt(thread, frame, 1));
   EXPECT_TRUE(res->isError());
 }
@@ -1317,7 +1317,7 @@ TEST(BoolBuiltinsTest, NewFromNoneIsFalse) {
 TEST(BoolBuiltinsTest, NewFromUserDefinedType) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   def __bool__(self):
     return True

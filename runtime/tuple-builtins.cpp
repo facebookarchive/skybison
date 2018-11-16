@@ -32,7 +32,7 @@ void TupleBuiltins::initialize(Runtime* runtime) {
 
 Object* TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   if (args.get(0)->isObjectArray() && args.get(1)->isObjectArray()) {
@@ -78,7 +78,7 @@ Object* TupleBuiltins::slice(Thread* thread, ObjectArray* tuple, Slice* slice) {
 
 Object* TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -92,32 +92,32 @@ Object* TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
         idx = tuple->length() - idx;
       }
       if (idx < 0 || idx >= tuple->length()) {
-        return thread->throwIndexErrorFromCString("tuple index out of range");
+        return thread->throwIndexErrorFromCStr("tuple index out of range");
       }
       return tuple->at(idx);
     } else if (index->isSlice()) {
       Handle<Slice> tuple_slice(&scope, Slice::cast(index));
       return slice(thread, *tuple, *tuple_slice);
     }
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "tuple indices must be integers or slices");
   }
   // TODO(jeethu): handle user-defined subtypes of tuple.
-  return thread->throwTypeErrorFromCString(
+  return thread->throwTypeErrorFromCStr(
       "__getitem__() must be called with a tuple instance as the first "
       "argument");
 }
 
 Object* TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "tuple.__len__ takes exactly 1 argument");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> obj(&scope, args.get(0));
   if (!obj->isObjectArray()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "tuple.__len__(self): self is not a tuple");
   }
   Handle<ObjectArray> self(&scope, *obj);
@@ -126,11 +126,11 @@ Object* TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 
 Object* TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "descriptor '__mul__' of 'tuple' object needs an argument");
   }
   if (nargs != 2) {
-    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+    return thread->throwTypeError(thread->runtime()->newStrFromFormat(
         "expected 1 argument, got %ld", nargs - 1));
   }
   Arguments args(frame, nargs);
@@ -138,11 +138,10 @@ Object* TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Handle<ObjectArray> self(&scope, args.get(0));
   Handle<Object> rhs(&scope, args.get(1));
   if (!rhs->isInt()) {
-    return thread->throwTypeErrorFromCString(
-        "can't multiply sequence by non-int");
+    return thread->throwTypeErrorFromCStr("can't multiply sequence by non-int");
   }
   if (!rhs->isSmallInt()) {
-    return thread->throwOverflowErrorFromCString(
+    return thread->throwOverflowErrorFromCStr(
         "cannot fit 'int' into an index-sized integer");
   }
   Handle<SmallInt> right(&scope, *rhs);
@@ -158,7 +157,7 @@ Object* TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   word new_length = length * times;
   // If the new length overflows, raise an OverflowError.
   if ((new_length / length) != times) {
-    return thread->throwOverflowErrorFromCString(
+    return thread->throwOverflowErrorFromCStr(
         "cannot fit 'int' into an index-sized integer");
   }
 
@@ -174,11 +173,11 @@ Object* TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
 
 Object* TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "tuple.__new__(): not enough arguments");
   }
   if (nargs > 2) {
-    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+    return thread->throwTypeError(thread->runtime()->newStrFromFormat(
         "tuple() takes at most 1 argument (%ld given)", nargs - 1));
   }
 
@@ -187,13 +186,13 @@ Object* TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Handle<Object> type_obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "tuple.__new__(X): X is not a type object");
   }
 
   Handle<Type> type(&scope, *type_obj);
   if (!type->hasFlag(Type::Flag::kTupleSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "tuple.__new__(X): X is not a subclass of tuple");
   }
 
@@ -208,14 +207,14 @@ Object* TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
 Object* TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("__iter__() takes no arguments");
+    return thread->throwTypeErrorFromCStr("__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
 
   if (!self->isObjectArray()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__iter__() must be called with a tuple instance as the first "
         "argument");
   }
@@ -243,13 +242,13 @@ void TupleIteratorBuiltins::initialize(Runtime* runtime) {
 Object* TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                           word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("__iter__() takes no arguments");
+    return thread->throwTypeErrorFromCStr("__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isTupleIterator()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__iter__() must be called with a tuple iterator instance as the first "
         "argument");
   }
@@ -259,13 +258,13 @@ Object* TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 Object* TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                           word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString("__next__() takes no arguments");
+    return thread->throwTypeErrorFromCStr("__next__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isTupleIterator()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__next__() must be called with a tuple iterator instance as the first "
         "argument");
   }
@@ -279,14 +278,14 @@ Object* TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 Object* TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
                                                 word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__length_hint__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isTupleIterator()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__length_hint__() must be called with a tuple iterator instance as "
         "the "
         "first argument");

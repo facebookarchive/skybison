@@ -29,17 +29,17 @@ namespace testing {
 // Compile the supplied python snippet, run it, and return stdout.
 std::string compileAndRunToString(Runtime* runtime, const char* src);
 
-// A predicate-formatter for checking if a python::String* has the same contents
+// A predicate-formatter for checking if a python::Str* has the same contents
 // as a std::string
 ::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
                                                const char* expected_string_expr,
-                                               String* actual_string,
+                                               Str* actual_str,
                                                std::string expected_string);
 
 ::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
                                                const char* expected_string_expr,
-                                               String* actual_string,
-                                               String* expected_string);
+                                               Str* actual_str,
+                                               Str* expected_str);
 
 #define EXPECT_PYSTRING_EQ(s1, s2)                                             \
   EXPECT_PRED_FORMAT2(testing::AssertPyStringEqual, s1, s2)

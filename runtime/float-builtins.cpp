@@ -27,7 +27,7 @@ static Object* floatFromObject(Thread* thread, Frame* frame,
       &scope,
       Interpreter::lookupMethod(thread, frame, obj, SymbolId::kDunderFloat));
   if (method->isError()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "TypeError: float() argument must have a __float__");
   }
 
@@ -40,7 +40,7 @@ static Object* floatFromObject(Thread* thread, Frame* frame,
 
   // If __float__ returns a non-float, throw a type error.
   if (!runtime->hasSubClassFlag(*converted, Type::Flag::kFloatSubclass)) {
-    return thread->throwTypeErrorFromCString("__float__ returned non-float");
+    return thread->throwTypeErrorFromCStr("__float__ returned non-float");
   }
 
   // __float__ used to be allowed to return any subtype of float, but that
@@ -51,9 +51,9 @@ static Object* floatFromObject(Thread* thread, Frame* frame,
   return *converted;
 }
 
-static Object* floatFromString(Thread* thread, String* str) {
+static Object* floatFromString(Thread* thread, Str* str) {
   char* str_end = nullptr;
-  char* c_str = str->toCString();
+  char* c_str = str->toCStr();
   double result = std::strtod(c_str, &str_end);
   std::free(c_str);
 
@@ -68,15 +68,14 @@ static Object* floatFromString(Thread* thread, String* str) {
 
   // No conversion occurred, the string was not a valid float.
   if (c_str == str_end) {
-    return thread->throwValueErrorFromCString(
-        "could not convert string to float");
+    return thread->throwValueErrorFromCStr("could not convert string to float");
   }
   return thread->runtime()->newFloat(result);
 }
 
 Object* builtinDoubleEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -93,7 +92,7 @@ Object* builtinDoubleEq(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinDoubleGe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -110,7 +109,7 @@ Object* builtinDoubleGe(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinDoubleGt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -127,7 +126,7 @@ Object* builtinDoubleGt(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinDoubleLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -144,7 +143,7 @@ Object* builtinDoubleLe(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinDoubleLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -161,7 +160,7 @@ Object* builtinDoubleLt(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -178,11 +177,11 @@ Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinDoubleNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "float.__new__(): not enough arguments");
   }
   if (nargs > 2) {
-    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+    return thread->throwTypeError(thread->runtime()->newStrFromFormat(
         "float expected at most 1 arguments, got %ld", nargs));
   }
   Runtime* runtime = thread->runtime();
@@ -190,12 +189,12 @@ Object* builtinDoubleNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Handle<Object> obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*obj, Type::Flag::kTypeSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "float.__new__(X): X is not a type object");
   }
   Handle<Type> type(&scope, *obj);
   if (!type->hasFlag(Type::Flag::kFloatSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "float.__new__(X): X is not a subtype of float");
   }
   Handle<Layout> layout(&scope, type->instanceLayout());
@@ -211,22 +210,22 @@ Object* builtinDoubleNew(Thread* thread, Frame* frame, word nargs) {
 
   Handle<Object> arg(&scope, args.get(1));
   // Only convert exactly strings, not subtypes of string.
-  if (arg->isString()) {
-    return floatFromString(thread, String::cast(*arg));
+  if (arg->isStr()) {
+    return floatFromString(thread, Str::cast(*arg));
   }
   return floatFromObject(thread, frame, arg);
 }
 
 Object* builtinDoubleAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
 
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isFloat()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__add__() must be called with float instance as first argument");
   }
 
@@ -244,14 +243,14 @@ Object* builtinDoubleAdd(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCString("expected 1 argument");
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
 
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isFloat()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__sub__() must be called with float instance as first argument");
   }
 
@@ -269,17 +268,17 @@ Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinDoublePow(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2 || nargs > 3) {
-    return thread->throwTypeErrorFromCString("expected at most 2 arguments");
+    return thread->throwTypeErrorFromCStr("expected at most 2 arguments");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isFloat()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "__pow__() must be called with float instance as first argument");
   }
   if (nargs == 3) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "pow() 3rd argument not allowed unless all arguments are integers");
   }
   double left = Float::cast(self)->value();

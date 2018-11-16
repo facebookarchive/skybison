@@ -24,7 +24,7 @@ TEST(TupleBuiltinsTest, SubscriptTupleSlice) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = 1
 t = (a, 2, 3, 4, 5)
 slice = t[1:3]
@@ -44,7 +44,7 @@ TEST(TupleBuiltinsTest, DunderLen) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = (1, 2, 3)
 a_len = tuple.__len__(a)
 a_len_implicit = a.__len__()
@@ -271,14 +271,14 @@ TEST(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
 
 TEST(TupleBuiltinsTest, DunderReprWithManyPrimitives) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = (1, 2, 3).__repr__()
 b = ("hello", 2, "world", 4).__repr__()
 )");
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
 
   // TODO(dulinr): After int.__repr__ is implemented, fix this.
   EXPECT_PYSTRING_EQ(*a,
@@ -291,14 +291,14 @@ b = ("hello", 2, "world", 4).__repr__()
 
 TEST(TupleBuiltinsTest, DunderReprWithOnePrimitive) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = (1,).__repr__()
 b = ("foo",).__repr__()
 )");
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
 
   // TODO(dulinr): After int.__repr__ is implemented, fix this.
   EXPECT_PYSTRING_EQ(*a, "(<smallint object at 0x2>,)");
@@ -307,19 +307,19 @@ b = ("foo",).__repr__()
 
 TEST(TupleBuiltinsTest, DunderReprWithNoElements) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = ().__repr__()
 )");
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
 
   EXPECT_PYSTRING_EQ(*a, "()");
 }
 
 TEST(TupleBuiltinsTest, DunderMulWithOneElement) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = (1,) * 4
 )");
   HandleScope scope;
@@ -335,7 +335,7 @@ a = (1,) * 4
 
 TEST(TupleBuiltinsTest, DunderMulWithManyElements) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = (1,2,3) * 2
 )");
   HandleScope scope;
@@ -353,7 +353,7 @@ a = (1,2,3) * 2
 
 TEST(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = () * 5
 )");
   HandleScope scope;
@@ -365,7 +365,7 @@ a = () * 5
 
 TEST(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = (1,2,3) * -2
 )");
   HandleScope scope;

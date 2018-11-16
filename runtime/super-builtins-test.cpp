@@ -147,14 +147,14 @@ a = super()
 )";
 
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src),
+  ASSERT_DEATH(runtime.runFromCStr(src),
                "aborting due to pending exception: super\\(\\): no arguments");
   const char* src1 = R"(
 def f(a):
     super()
 f(1)
 )";
-  ASSERT_DEATH(runtime.runFromCString(src1),
+  ASSERT_DEATH(runtime.runFromCStr(src1),
                "aborting due to pending exception: super\\(\\): __class__ cell "
                "not found");
 }

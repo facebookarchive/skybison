@@ -65,7 +65,7 @@ x = property()
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(x->isProperty());
@@ -85,7 +85,7 @@ x = property(get_foo, set_foo)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(x->isProperty());
@@ -106,7 +106,7 @@ y = x.getter(get_foo)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(x->isProperty());
@@ -134,7 +134,7 @@ y = x.setter(set_foo)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(x->isProperty());
@@ -189,7 +189,7 @@ c1.x
 )";
 
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCString(src), "unreadable attribute");
+  EXPECT_DEATH(runtime.runFromCStr(src), "unreadable attribute");
 }
 
 TEST(DescriptorBuiltinsDeathTest,
@@ -209,7 +209,7 @@ c1.x = 42
 )";
 
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCString(src), "can't set attribute");
+  EXPECT_DEATH(runtime.runFromCStr(src), "can't set attribute");
 }
 
 TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaClass) {
@@ -228,7 +228,7 @@ x = C.x
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(x->isProperty());
@@ -256,7 +256,7 @@ x2 = c1.x
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x1(&scope, moduleAt(&runtime, main, "x1"));
   ASSERT_TRUE(x1->isInt());
@@ -287,7 +287,7 @@ x = c1.x
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(x->isInt());

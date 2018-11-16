@@ -4,7 +4,7 @@ namespace python {
 
 extern "C" void PyErr_SetString(PyObject*, const char* message) {
   // TODO(T32875119): Set the correct exception type.
-  Thread::currentThread()->throwSystemErrorFromCString(message);
+  Thread::currentThread()->throwSystemErrorFromCStr(message);
 }
 
 extern "C" PyObject* PyErr_Occurred(void) {

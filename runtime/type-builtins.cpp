@@ -17,7 +17,7 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
 
   // First, call __new__ to allocate a new instance.
   if (!runtime->isInstanceOfClass(args.get(0))) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "'__new__' requires a 'class' object");
   }
   Handle<Type> type(&scope, args.get(0));
@@ -56,7 +56,7 @@ Object* builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
 
   // First, call __new__ to allocate a new instance.
   if (!runtime->isInstanceOfClass(args.get(0))) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "'__new__' requires a 'class' object");
   }
   Handle<Type> type(&scope, args.get(0));
@@ -83,7 +83,7 @@ Object* builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2) {
-    return thread->throwTypeErrorFromCString("type() takes 1 or 3 arguments");
+    return thread->throwTypeErrorFromCStr("type() takes 1 or 3 arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -149,23 +149,23 @@ Object* builtinTypeInit(Thread*, Frame*, word) { return None::object(); }
 
 Object* builtinTypeRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "type.__repr__(): Need a self argument");
   }
   if (nargs > 1) {
-    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+    return thread->throwTypeError(thread->runtime()->newStrFromFormat(
         "expected 0 arguments, got %ld", nargs - 1));
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!thread->runtime()->hasSubClassFlag(*self, Type::Flag::kTypeSubclass)) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "type.__repr__() requires a 'type' object");
   }
 
   Handle<Type> type(&scope, *self);
-  Handle<String> type_name(&scope, type->name());
+  Handle<Str> type_name(&scope, type->name());
   // Make a buffer large enough to store the formatted string.
   const char prefix[] = "<class '";
   const char suffix[] = "'>";
@@ -181,7 +181,7 @@ Object* builtinTypeRepr(Thread* thread, Frame* frame, word nargs) {
   DCHECK(ptr == buf + len - 1, "Didn't write as many as expected");
   *ptr = '\0';
   // TODO(T32810595): Handle modules, qualname
-  Handle<String> result(&scope, thread->runtime()->newStringFromCString(buf));
+  Handle<Str> result(&scope, thread->runtime()->newStrFromCStr(buf));
   delete[] buf;
   return *result;
 }

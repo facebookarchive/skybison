@@ -15,7 +15,7 @@ s.pop()
 s.pop()
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src1),
+  ASSERT_DEATH(runtime.runFromCStr(src1),
                "aborting due to pending exception: "
                "pop from an empty set");
 }
@@ -28,7 +28,7 @@ b = len(s)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, findInModule(&runtime, main, "a"));
   Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
@@ -42,7 +42,7 @@ s = set()
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> s(&scope, findInModule(&runtime, main, "s"));
   EXPECT_TRUE(s->isSet());
@@ -57,12 +57,11 @@ s.add("Hello, World")
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Set> s(&scope, findInModule(&runtime, main, "s"));
   Handle<Object> one(&scope, runtime.newInt(1));
-  Handle<Object> hello_world(&scope,
-                             runtime.newStringFromCString("Hello, World"));
+  Handle<Object> hello_world(&scope, runtime.newStrFromCStr("Hello, World"));
   EXPECT_EQ(s->numItems(), 2);
   EXPECT_TRUE(runtime.setIncludes(s, one));
   EXPECT_TRUE(runtime.setIncludes(s, hello_world));
@@ -74,7 +73,7 @@ s = set()
 s.add(1, 2)
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src1),
+  ASSERT_DEATH(runtime.runFromCStr(src1),
                "aborting due to pending exception: "
                "add\\(\\) takes exactly one argument");
 }

@@ -85,7 +85,7 @@ c = C(10, 2)
 g = c(3)
 )";
 
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
@@ -114,7 +114,7 @@ class Stage0:
 c = Stage0()
 c(1111)
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> result(&scope, moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(result->isSmallInt());
@@ -135,7 +135,7 @@ result = c(y=3)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> result(&scope, moduleAt(&runtime, main, "result"));
@@ -155,7 +155,7 @@ result = c(*args)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> result(&scope, moduleAt(&runtime, main, "result"));
@@ -175,7 +175,7 @@ result = c(**kwargs)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> result(&scope, moduleAt(&runtime, main, "result"));
@@ -201,7 +201,7 @@ c(*args, **kwargs)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> result_x(&scope, moduleAt(&runtime, main, "result_x"));
@@ -606,7 +606,7 @@ TEST(ThreadTest, LoadGlobal) {
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
 
@@ -729,7 +729,7 @@ TEST_P(GlobalsTest, FastGlobal) {
   Runtime runtime;
   TestData data = GetParam();
   if (data.death) {
-    EXPECT_DEATH(runtime.runFromCString(data.src), data.expected_output);
+    EXPECT_DEATH(runtime.runFromCStr(data.src), data.expected_output);
   } else {
     std::string output = compileAndRunToString(&runtime, data.src);
     EXPECT_EQ(output, data.expected_output);
@@ -750,7 +750,7 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
 
@@ -784,7 +784,7 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
 
@@ -824,7 +824,7 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
 
@@ -855,7 +855,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   Handle<Code> code(&scope, runtime.newCode());
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
 
@@ -893,7 +893,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
 
@@ -932,7 +932,7 @@ TEST(ThreadTest, LoadNameInClassBodyFromGlobal) {
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
 
@@ -973,7 +973,7 @@ TEST(ThreadTest, LoadNameInClassBodyFromImplicitGlobals) {
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
   code->setNames(*names);
 
@@ -1009,13 +1009,13 @@ TEST(ThreadTest, MakeFunction) {
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
   Handle<Code> code(&scope, runtime.newCode());
   consts->atPut(0, *code);
-  Handle<Object> key(&scope, runtime.newStringFromCString("hello"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("hello"));
   consts->atPut(1, *key);
   consts->atPut(2, None::object());
   module->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  names->atPut(0, runtime.newStringFromCString("hello"));
+  names->atPut(0, runtime.newStrFromCStr("hello"));
   module->setNames(*names);
 
   const byte bc[] = {LOAD_CONST, 0, LOAD_CONST, 1, MAKE_FUNCTION, 0,
@@ -1054,7 +1054,7 @@ TEST(ThreadTest, BuildList) {
 
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
   consts->atPut(0, SmallInt::fromWord(111));
-  consts->atPut(1, runtime.newStringFromCString("qqq"));
+  consts->atPut(1, runtime.newStrFromCStr("qqq"));
   consts->atPut(2, None::object());
   code->setConsts(*consts);
 
@@ -1072,7 +1072,7 @@ TEST(ThreadTest, BuildList) {
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 111);
 
   ASSERT_TRUE(list->at(1)->isSmallStr());
-  EXPECT_EQ(list->at(1), SmallStr::fromCString("qqq"));
+  EXPECT_EQ(list->at(1), SmallStr::fromCStr("qqq"));
   EXPECT_EQ(list->at(2), None::object());
 }
 
@@ -1126,7 +1126,7 @@ TEST(ThreadTest, BuildSet) {
   consts->atPut(0, *smi);
   consts->atPut(1, *smi);  // dup
 
-  Handle<Object> str(&scope, runtime.newStringFromCString("qqq"));
+  Handle<Object> str(&scope, runtime.newStrFromCStr("qqq"));
   consts->atPut(2, *str);
 
   Handle<Object> none(&scope, None::object());
@@ -1367,18 +1367,18 @@ class C:
   pass
 )";
 
-  Object* result = runtime.runFromCString(src);
+  Object* result = runtime.runFromCStr(src);
   ASSERT_EQ(result, None::object());  // returns None
 
   Handle<Dict> dict(&scope, getMainModuleDict(&runtime));
 
-  Handle<Object> key(&scope, runtime.newStringFromCString("C"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("C"));
   Handle<Object> value(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(value->isValueCell());
 
   Handle<Type> cls(&scope, ValueCell::cast(*value)->value());
   ASSERT_TRUE(cls->name()->isSmallStr());
-  EXPECT_EQ(cls->name(), SmallStr::fromCString("C"));
+  EXPECT_EQ(cls->name(), SmallStr::fromCStr("C"));
 
   Handle<ObjectArray> mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
@@ -1396,7 +1396,7 @@ class C:
     pass
 )";
 
-  Object* result = runtime.runFromCString(src);
+  Object* result = runtime.runFromCStr(src);
   ASSERT_EQ(result, None::object());  // returns None
 
   Handle<Module> mod(&scope, findModule(&runtime, "__main__"));
@@ -1406,7 +1406,7 @@ class C:
   ASSERT_TRUE(mod_dict->isDict());
 
   // Check for the class name in the module dict
-  Handle<Object> cls_name(&scope, runtime.newStringFromCString("C"));
+  Handle<Object> cls_name(&scope, runtime.newStrFromCStr("C"));
   Handle<Object> value(&scope, runtime.dictAt(mod_dict, cls_name));
   ASSERT_TRUE(value->isValueCell());
   Handle<Type> cls(&scope, ValueCell::cast(*value)->value());
@@ -1419,7 +1419,7 @@ class C:
 
   // Check class name
   ASSERT_TRUE(cls->name()->isSmallStr());
-  EXPECT_EQ(cls->name(), SmallStr::fromCString("C"));
+  EXPECT_EQ(cls->name(), SmallStr::fromCStr("C"));
 
   Handle<Dict> cls_dict(&scope, cls->dict());
   ASSERT_TRUE(cls_dict->isDict());
@@ -1434,9 +1434,8 @@ class C:
 
 static Object* nativeExceptionTest(Thread* thread, Frame*, word) {
   HandleScope scope;
-  Handle<String> msg(
-      &scope,
-      String::cast(thread->runtime()->newStringFromCString("test exception")));
+  Handle<Str> msg(
+      &scope, Str::cast(thread->runtime()->newStrFromCStr("test exception")));
   return thread->throwRuntimeError(*msg);
 }
 
@@ -1464,10 +1463,10 @@ TEST(ThreadDeathTest, NativeExceptions) {
 
 // MRO tests
 
-static String* className(Object* obj) {
+static Str* className(Object* obj) {
   HandleScope scope;
   Handle<Type> cls(&scope, obj);
-  Handle<String> name(&scope, cls->name());
+  Handle<Str> name(&scope, cls->name());
   return *name;
 }
 
@@ -1475,11 +1474,10 @@ static Object* getMro(Runtime* runtime, const char* src,
                       const char* desired_class) {
   HandleScope scope;
 
-  Handle<Object> result(&scope, runtime->runFromCString(src));
+  Handle<Object> result(&scope, runtime->runFromCStr(src));
 
   Handle<Dict> mod_dict(&scope, getMainModuleDict(runtime));
-  Handle<Object> class_name(&scope,
-                            runtime->newStringFromCString(desired_class));
+  Handle<Object> class_name(&scope, runtime->newStrFromCStr(desired_class));
 
   Handle<Object> value(&scope, runtime->dictAt(mod_dict, class_name));
   Handle<Type> cls(&scope, ValueCell::cast(*value)->value());
@@ -1573,8 +1571,7 @@ class B(A): pass
 class C(A, B): pass
 )";
 
-  EXPECT_DEATH(runtime.runFromCString(src),
-               "consistent method resolution order");
+  EXPECT_DEATH(runtime.runFromCStr(src), "consistent method resolution order");
 }
 
 // iteration
@@ -1694,7 +1691,7 @@ INSTANTIATE_TEST_CASE_P(ManipulateLocals, LocalsTest,
 
 TEST(ThreadDeathTest, RaiseVarargs) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString("raise 1"),
+  ASSERT_DEATH(runtime.runFromCStr("raise 1"),
                "unimplemented: bytecode 'RAISE_VARARGS'");
 }
 
@@ -1704,7 +1701,7 @@ class Foo(object):
   pass
 )";
   Runtime runtime;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   // Look up the class Foo
   HandleScope scope;
@@ -1741,7 +1738,7 @@ hello.say_hello()
 
   // Pre-load the hello module so is cached.
   std::unique_ptr<char[]> module_buf(Runtime::compile(module_src));
-  Handle<Object> name(&scope, runtime.newStringFromCString("hello"));
+  Handle<Object> name(&scope, runtime.newStrFromCStr("hello"));
   runtime.importModuleFromBuffer(module_buf.get(), name);
 
   std::string output = compileAndRunToString(&runtime, main_src);
@@ -1757,8 +1754,7 @@ import hello
 hello.say_hello()
 )";
 
-  EXPECT_DEATH(runtime.runFromCString(main_src),
-               "importModule is unimplemented");
+  EXPECT_DEATH(runtime.runFromCStr(main_src), "importModule is unimplemented");
 }
 
 TEST(ThreadDeathTest, ImportMissingAttributeTest) {
@@ -1777,10 +1773,10 @@ hello.foo()
 
   // Pre-load the hello module so is cached.
   std::unique_ptr<char[]> module_buf(Runtime::compile(module_src));
-  Handle<Object> name(&scope, runtime.newStringFromCString("hello"));
+  Handle<Object> name(&scope, runtime.newStrFromCStr("hello"));
   runtime.importModuleFromBuffer(module_buf.get(), name);
 
-  EXPECT_DEATH(runtime.runFromCString(main_src), "missing attribute");
+  EXPECT_DEATH(runtime.runFromCStr(main_src), "missing attribute");
 }
 
 TEST(ThreadTest, ModuleSetAttrTest) {
@@ -1802,7 +1798,7 @@ hello.say_hello()
 
   // Pre-load the hello module so is cached.
   std::unique_ptr<char[]> module_buf(Runtime::compile(module_src));
-  Handle<Object> name(&scope, runtime.newStringFromCString("hello"));
+  Handle<Object> name(&scope, runtime.newStrFromCStr("hello"));
   runtime.importModuleFromBuffer(module_buf.get(), name);
 
   std::string output = compileAndRunToString(&runtime, main_src);
@@ -1843,7 +1839,7 @@ print(b[11])
 a = {"1": 2, 2: 3}
 print(a[1])
 )";
-  EXPECT_DEATH(runtime.runFromCString(src1), "KeyError");
+  EXPECT_DEATH(runtime.runFromCStr(src1), "KeyError");
 }
 
 TEST(ThreadTest, BuildDictNonLiteralKey) {
@@ -1881,7 +1877,7 @@ test()
       "  File '.+', line 9, in test\n"
       "  File '.+', line 6, in b\n"
       "  File '.+', line 3, in a\n";
-  EXPECT_DEATH(runtime.runFromCString(src), re);
+  EXPECT_DEATH(runtime.runFromCStr(src), re);
 }
 
 TEST(ThreadTest, Closure) {
@@ -1985,7 +1981,7 @@ t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> t(&scope, findInModule(&runtime, main, "t"));
@@ -2014,7 +2010,7 @@ l = [*[0], *[1, 2], *[], *[3, 4, 5]]
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
@@ -2035,7 +2031,7 @@ s = {*[0, 1], *{2, 3}, *(4, 5), *[]}
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> s(&scope, findInModule(&runtime, main, "s"));
@@ -2065,11 +2061,11 @@ TEST(BuildString, buildStringEmpty) {
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Object* obj = Thread::currentThread()->run(*code);
-  EXPECT_TRUE(obj->isString());
+  EXPECT_TRUE(obj->isStr());
   EXPECT_TRUE(obj->isSmallStr());
 
-  Handle<String> result(&scope, obj);
-  EXPECT_TRUE(result->equalsCString(""));
+  Handle<Str> result(&scope, obj);
+  EXPECT_TRUE(result->equalsCStr(""));
 }
 
 TEST(BuildString, buildStringSingle) {
@@ -2079,7 +2075,7 @@ TEST(BuildString, buildStringSingle) {
 
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
   const char* expected = "foo";
-  Handle<Object> str(&scope, SmallStr::fromCString(expected));
+  Handle<Object> str(&scope, SmallStr::fromCStr(expected));
   consts->atPut(0, *str);
   code->setConsts(*consts);
 
@@ -2087,11 +2083,11 @@ TEST(BuildString, buildStringSingle) {
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Object* obj = Thread::currentThread()->run(*code);
-  EXPECT_TRUE(obj->isString());
+  EXPECT_TRUE(obj->isStr());
   EXPECT_TRUE(obj->isSmallStr());
 
-  Handle<String> result(&scope, obj);
-  EXPECT_TRUE(result->equalsCString(expected));
+  Handle<Str> result(&scope, obj);
+  EXPECT_TRUE(result->equalsCStr(expected));
 }
 
 TEST(BuildString, buildStringMultiSmall) {
@@ -2100,8 +2096,8 @@ TEST(BuildString, buildStringMultiSmall) {
   Handle<Code> code(&scope, runtime.newCode());
 
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
-  Handle<Object> str(&scope, SmallStr::fromCString("foo"));
-  Handle<Object> str1(&scope, SmallStr::fromCString("bar"));
+  Handle<Object> str(&scope, SmallStr::fromCStr("foo"));
+  Handle<Object> str1(&scope, SmallStr::fromCStr("bar"));
   consts->atPut(0, *str);
   consts->atPut(1, *str1);
   code->setConsts(*consts);
@@ -2111,11 +2107,11 @@ TEST(BuildString, buildStringMultiSmall) {
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Object* obj = Thread::currentThread()->run(*code);
-  EXPECT_TRUE(obj->isString());
+  EXPECT_TRUE(obj->isStr());
   EXPECT_TRUE(obj->isSmallStr());
 
-  Handle<String> result(&scope, obj);
-  EXPECT_TRUE(result->equalsCString("foobar"));
+  Handle<Str> result(&scope, obj);
+  EXPECT_TRUE(result->equalsCStr("foobar"));
 }
 
 TEST(BuildString, buildStringMultiLarge) {
@@ -2124,9 +2120,9 @@ TEST(BuildString, buildStringMultiLarge) {
   Handle<Code> code(&scope, runtime.newCode());
 
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
-  Handle<Object> str(&scope, SmallStr::fromCString("hello"));
-  Handle<Object> str1(&scope, SmallStr::fromCString("world"));
-  Handle<Object> str2(&scope, SmallStr::fromCString("python"));
+  Handle<Object> str(&scope, SmallStr::fromCStr("hello"));
+  Handle<Object> str1(&scope, SmallStr::fromCStr("world"));
+  Handle<Object> str2(&scope, SmallStr::fromCStr("python"));
   consts->atPut(0, *str);
   consts->atPut(1, *str1);
   consts->atPut(2, *str2);
@@ -2137,11 +2133,11 @@ TEST(BuildString, buildStringMultiLarge) {
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Object* obj = Thread::currentThread()->run(*code);
-  EXPECT_TRUE(obj->isString());
+  EXPECT_TRUE(obj->isStr());
   EXPECT_TRUE(obj->isLargeStr());
 
-  Handle<String> result(&scope, obj);
-  EXPECT_TRUE(result->equalsCString("helloworldpython"));
+  Handle<Str> result(&scope, obj);
+  EXPECT_TRUE(result->equalsCStr("helloworldpython"));
 }
 
 TEST(UnpackSeq, unpackRangePyStone) {
@@ -2185,7 +2181,7 @@ b = {x for x in a}
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
   EXPECT_EQ(b->isSet(), true);
@@ -2200,7 +2196,7 @@ b = {x:x for x in a}
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
   EXPECT_EQ(b->isDict(), true);
@@ -2284,7 +2280,7 @@ for el in l:
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, findInModule(&runtime, main, "a"));
   Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
@@ -2312,7 +2308,7 @@ l.insert(-100, 0)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
   Handle<List> list_l(&scope, *l);
@@ -2333,7 +2329,7 @@ l.insert(-1, 3)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
   Handle<List> list_l(&scope, *l);
@@ -2350,7 +2346,7 @@ TEST(ThreadDeathTest, BaseClassConflict) {
 class Foo(list, dict): pass
 )";
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCString(src), "lay-out conflict");
+  EXPECT_DEATH(runtime.runFromCStr(src), "lay-out conflict");
 }
 
 TEST(BuildSlice, noneSliceCopyList) {
@@ -2466,7 +2462,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
-  Handle<Object> key(&scope, runtime.newStringFromCString("a"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("a"));
   names->atPut(0, *key);
   code->setNames(*names);
 
@@ -2531,7 +2527,7 @@ for x in range(4):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
   EXPECT_TRUE(l->isList());
@@ -2558,8 +2554,8 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   code->setNlocals(2);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(2));
-  Handle<Object> key0(&scope, runtime.newStringFromCString("cnt"));
-  Handle<Object> key1(&scope, runtime.newStringFromCString("s"));
+  Handle<Object> key0(&scope, runtime.newStrFromCStr("cnt"));
+  Handle<Object> key1(&scope, runtime.newStrFromCStr("s"));
   names->atPut(0, *key0);
   names->atPut(1, *key0);
   code->setNames(*names);
@@ -2662,7 +2658,7 @@ from time import foobarbaz
 )";
 
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCString(src), "cannot import name\n");
+  EXPECT_DEATH(runtime.runFromCStr(src), "cannot import name\n");
 }
 
 TEST(ThreadTest, StringFormatEmpty) {
@@ -2787,7 +2783,7 @@ class Foo(metaclass=type):
   pass
 a = Foo()
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
   EXPECT_TRUE(foo->isType());
@@ -2811,7 +2807,7 @@ b = Bar.lalala
 a = Bar()
 c = a.hahaha
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> bar(&scope, moduleAt(&runtime, main, "Bar"));
   EXPECT_TRUE(runtime.isInstanceOfClass(*bar));
@@ -2837,7 +2833,7 @@ class C:
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_EQ(SmallInt::cast(*a)->value(), 3);
@@ -2857,7 +2853,7 @@ class C:
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> one(&scope, moduleAt(&runtime, main, "one"));
   EXPECT_EQ(SmallInt::cast(*one)->value(), 1);
@@ -2872,7 +2868,7 @@ del var
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> var(&scope, moduleAt(&runtime, main, "var"));
   EXPECT_TRUE(var->isError());
@@ -2888,7 +2884,7 @@ finally:
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   EXPECT_EQ(*x, SmallInt::fromWord(2));
@@ -2903,17 +2899,17 @@ class_anno_dict = Foo.__annotations__
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Dict> module_anno_dict(&scope,
                                 moduleAt(&runtime, main, "__annotations__"));
-  Handle<Object> m_key(&scope, runtime.newStringFromCString("x"));
+  Handle<Object> m_key(&scope, runtime.newStrFromCStr("x"));
   Handle<Object> m_value(&scope, runtime.dictAt(module_anno_dict, m_key));
   EXPECT_EQ(*m_value, runtime.typeAt(LayoutId::kInt));
 
   Handle<Dict> class_anno_dict(&scope,
                                moduleAt(&runtime, main, "class_anno_dict"));
-  Handle<Object> c_key(&scope, runtime.newStringFromCString("bar"));
+  Handle<Object> c_key(&scope, runtime.newStrFromCStr("bar"));
   Handle<Object> c_value(&scope, runtime.dictAt(class_anno_dict, c_key));
   EXPECT_EQ(*c_value, runtime.typeAt(LayoutId::kInt));
 }
@@ -2927,7 +2923,7 @@ foo(1, 2, 3)
 )";
   Runtime runtime;
   HandleScope scope;
-  EXPECT_DEATH(runtime.runFromCString(src), "unbound local a");
+  EXPECT_DEATH(runtime.runFromCStr(src), "unbound local a");
 }
 
 TEST(ThreadTest, DeleteFastThrow) {
@@ -2939,7 +2935,7 @@ x = foo(1, 2, 3)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   EXPECT_EQ(*x, SmallInt::fromWord(2));
@@ -2962,7 +2958,7 @@ foo = Foo(1111, b=2222, c=3333)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> result_a(&scope, moduleAt(&runtime, main, "result_a"));

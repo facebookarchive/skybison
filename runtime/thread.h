@@ -15,7 +15,7 @@ class Object;
 class ObjectArray;
 class PointerVisitor;
 class Runtime;
-class String;
+class Str;
 
 class Thread {
  public:
@@ -82,35 +82,35 @@ class Thread {
 
   // Convenience methods for throwing an AttributeError exception.
   Object* throwAttributeError(Object* value);
-  Object* throwAttributeErrorFromCString(const char* message);
+  Object* throwAttributeErrorFromCStr(const char* message);
 
   // Convenience methods for throwin an IndexError exception.
   Object* throwIndexError(Object* value);
-  Object* throwIndexErrorFromCString(const char* message);
+  Object* throwIndexErrorFromCStr(const char* message);
 
   // Convenience methods for throwing a KeyError exception.
   Object* throwKeyError(Object* value);
-  Object* throwKeyErrorFromCString(const char* message);
+  Object* throwKeyErrorFromCStr(const char* message);
 
   // Convenience methods for throwing a KeyError exception.
   Object* throwOverflowError(Object* value);
-  Object* throwOverflowErrorFromCString(const char* message);
+  Object* throwOverflowErrorFromCStr(const char* message);
 
   // Convenience methods for throwing a RuntimeError exception.
   Object* throwRuntimeError(Object* value);
-  Object* throwRuntimeErrorFromCString(const char* message);
+  Object* throwRuntimeErrorFromCStr(const char* message);
 
   // Convenience methods for throwing a SystemError exception.
   Object* throwSystemError(Object* value);
-  Object* throwSystemErrorFromCString(const char* message);
+  Object* throwSystemErrorFromCStr(const char* message);
 
   // Convenience methods for throwing a TypeError exception.
   Object* throwTypeError(Object* value);
-  Object* throwTypeErrorFromCString(const char* message);
+  Object* throwTypeErrorFromCStr(const char* message);
 
   // Convenience methods for throwing a ValueError exception.
   Object* throwValueError(Object* value);
-  Object* throwValueErrorFromCString(const char* message);
+  Object* throwValueErrorFromCStr(const char* message);
 
   // Gets the pending exception object - if it is None, no exception has been
   // posted.

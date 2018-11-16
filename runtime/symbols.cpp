@@ -17,7 +17,7 @@ Symbols::Symbols(Runtime* runtime) {
   symbols_ = new Object*[static_cast<int>(SymbolId::kMaxId)];
 #define ADD_SYMBOL(symbol, value)                                              \
   symbols_[static_cast<int>(SymbolId::k##symbol)] =                            \
-      runtime->newStringFromCString(value);
+      runtime->newStrFromCStr(value);
   FOREACH_SYMBOL(ADD_SYMBOL)
 #undef ADD_SYMBOL
 }

@@ -285,7 +285,7 @@ class KwArguments : public Arguments {
 
   Object* getKw(Object* name) const {
     for (word i = 0; i < num_keywords_; i++) {
-      if (String::cast(name)->equals(kwnames_->at(i))) {
+      if (Str::cast(name)->equals(kwnames_->at(i))) {
         return frame_->getLocal(num_args_ + i);
       }
     }

@@ -25,7 +25,7 @@ weak = ref(a)
   EXPECT_EQ(WeakRef::cast(weak)->callback(), None::object());
 
   Handle<Dict> globals(&scope, main->dict());
-  Handle<Object> key(&scope, runtime.newStringFromCString("a"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("a"));
   runtime.dictRemove(globals, key, &a);
 
   runtime.collectGarbage();
@@ -55,7 +55,7 @@ weak = ref(a, f)
   EXPECT_EQ(SmallInt::cast(b)->value(), 1);
 
   Handle<Dict> globals(&scope, main->dict());
-  Handle<Object> key(&scope, runtime.newStringFromCString("a"));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("a"));
   runtime.dictRemove(globals, key, &a);
 
   runtime.collectGarbage();

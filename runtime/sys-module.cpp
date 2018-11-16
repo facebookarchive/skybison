@@ -11,7 +11,7 @@ namespace python {
 
 Object* builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "displayhook() takes exactly one argument");
   }
   Arguments args(frame, nargs);
@@ -25,8 +25,7 @@ Object* builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinSysExit(Thread* thread, Frame* frame, word nargs) {
   if (nargs > 1) {
-    return thread->throwTypeErrorFromCString(
-        "exit() accepts at most 1 argument");
+    return thread->throwTypeErrorFromCStr("exit() accepts at most 1 argument");
   }
 
   // TODO: PyExc_SystemExit
@@ -36,8 +35,7 @@ Object* builtinSysExit(Thread* thread, Frame* frame, word nargs) {
     Arguments args(frame, nargs);
     Object* arg = args.get(0);
     if (!arg->isSmallInt()) {
-      return thread->throwTypeErrorFromCString(
-          "exit() expects numeric argument");
+      return thread->throwTypeErrorFromCStr("exit() expects numeric argument");
     }
     code = SmallInt::cast(arg)->value();
   }

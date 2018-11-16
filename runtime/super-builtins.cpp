@@ -20,7 +20,7 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   if (!args.get(0)->isSuper()) {
-    return thread->throwTypeErrorFromCString("requires a super object");
+    return thread->throwTypeErrorFromCStr("requires a super object");
   }
   Handle<Super> super(&scope, args.get(0));
   Handle<Object> klass_obj(&scope, None::object());
@@ -29,31 +29,31 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     // frame is for __init__, previous frame is __call__
     // this will break if it's not invoked through __call__
     if (frame->previousFrame() == nullptr) {
-      return thread->throwRuntimeErrorFromCString("super(): no current frame");
+      return thread->throwRuntimeErrorFromCStr("super(): no current frame");
     }
     Frame* caller_frame = frame->previousFrame();
     if (caller_frame->previousFrame() == nullptr) {
-      return thread->throwRuntimeErrorFromCString("super(): no current frame");
+      return thread->throwRuntimeErrorFromCStr("super(): no current frame");
     }
     caller_frame = caller_frame->previousFrame();
     if (!caller_frame->code()->isCode()) {
-      return thread->throwRuntimeErrorFromCString("super(): no code object");
+      return thread->throwRuntimeErrorFromCStr("super(): no code object");
     }
     Handle<Code> code(&scope, caller_frame->code());
     if (code->argcount() == 0) {
-      return thread->throwRuntimeErrorFromCString("super(): no arguments");
+      return thread->throwRuntimeErrorFromCStr("super(): no arguments");
     }
     Handle<ObjectArray> free_vars(&scope, code->freevars());
     Object* cell = Error::object();
     for (word i = 0; i < free_vars->length(); i++) {
-      if (String::cast(free_vars->at(i))
+      if (Str::cast(free_vars->at(i))
               ->equals(thread->runtime()->symbols()->DunderClass())) {
         cell = caller_frame->getLocal(code->nlocals() + i);
         break;
       }
     }
     if (cell->isError() || !cell->isValueCell()) {
-      return thread->throwRuntimeErrorFromCString(
+      return thread->throwRuntimeErrorFromCStr(
           "super(): __class__ cell not found");
     }
     klass_obj = ValueCell::cast(cell)->value();
@@ -61,13 +61,13 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     obj = caller_frame->getLocal(0);
   } else {
     if (nargs != 3) {
-      return thread->throwTypeErrorFromCString("super() expected 2 arguments");
+      return thread->throwTypeErrorFromCStr("super() expected 2 arguments");
     }
     klass_obj = args.get(1);
     obj = args.get(2);
   }
   if (!klass_obj->isType()) {
-    return thread->throwTypeErrorFromCString("super() argument 1 must be type");
+    return thread->throwTypeErrorFromCStr("super() argument 1 must be type");
   }
   super->setType(*klass_obj);
   super->setObject(*obj);
@@ -85,7 +85,7 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     }
   }
   if (obj_type->isNone()) {
-    return thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCStr(
         "obj must be an instance or subtype of type");
   }
   super->setObjectType(*obj_type);

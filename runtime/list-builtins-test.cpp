@@ -12,7 +12,7 @@ using namespace testing;
 TEST(ListBuiltinsTest, DunderInitFromList) {
   Runtime runtime;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = list([1, 2])
 )");
   HandleScope scope;
@@ -26,7 +26,7 @@ a = list([1, 2])
 TEST(ListBuiltinsTest, NewListIsNotASingleton) {
   Runtime runtime;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = list() is not list()
 b = list([1, 2]) is not list([1, 2])
 )");
@@ -42,7 +42,7 @@ TEST(ListBuiltinsTest, AddToNonEmptyList) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = [1, 2]
 b = [3, 4, 5]
 c = a + b
@@ -62,7 +62,7 @@ TEST(ListBuiltinsTest, AddToEmptyList) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = []
 b = [1, 2, 3]
 c = a + b
@@ -81,7 +81,7 @@ TEST(ListBuiltinsDeathTest, AddWithNonListSelfThrows) {
 list.__add__(None, [])
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src),
+  ASSERT_DEATH(runtime.runFromCStr(src),
                "must be called with list instance as first argument");
 }
 
@@ -92,8 +92,7 @@ b = (4, 5, 6)
 c = a + b
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src),
-               "can only concatenate list to list");
+  ASSERT_DEATH(runtime.runFromCStr(src), "can only concatenate list to list");
 }
 
 TEST(ListBuiltinsTest, ListAppend) {
@@ -129,14 +128,14 @@ TEST(ListBuiltinsDeathTest, ListInsertExcept) {
 a = [1, 2]
 a.insert()
 )";
-  ASSERT_DEATH(runtime.runFromCString(src1),
+  ASSERT_DEATH(runtime.runFromCStr(src1),
                "aborting due to pending exception: "
                "insert\\(\\) takes exactly two arguments");
 
   const char* src2 = R"(
 list.insert(1, 2, 3)
 )";
-  ASSERT_DEATH(runtime.runFromCString(src2),
+  ASSERT_DEATH(runtime.runFromCStr(src2),
                "aborting due to pending exception: "
                "descriptor 'insert' requires a 'list' object");
 
@@ -144,7 +143,7 @@ list.insert(1, 2, 3)
 a = [1, 2]
 a.insert("i", "val")
 )";
-  ASSERT_DEATH(runtime.runFromCString(src3),
+  ASSERT_DEATH(runtime.runFromCStr(src3),
                "aborting due to pending exception: "
                "index object cannot be interpreted as an integer");
 }
@@ -176,14 +175,14 @@ TEST(ListBuiltinsDeathTest, ListPopExcept) {
 a = [1, 2]
 a.pop(1, 2, 3, 4)
 )";
-  ASSERT_DEATH(runtime.runFromCString(src1),
+  ASSERT_DEATH(runtime.runFromCStr(src1),
                "aborting due to pending exception: "
                "pop\\(\\) takes at most 1 argument");
 
   const char* src2 = R"(
 list.pop(1)
 )";
-  ASSERT_DEATH(runtime.runFromCString(src2),
+  ASSERT_DEATH(runtime.runFromCStr(src2),
                "aborting due to pending exception: "
                "descriptor 'pop' requires a 'list' object");
 
@@ -191,7 +190,7 @@ list.pop(1)
 a = [1, 2]
 a.pop("i")
 )";
-  ASSERT_DEATH(runtime.runFromCString(src3),
+  ASSERT_DEATH(runtime.runFromCStr(src3),
                "aborting due to pending exception: "
                "index object cannot be interpreted as an integer");
 
@@ -200,7 +199,7 @@ a = [1]
 a.pop()
 a.pop()
 )";
-  ASSERT_DEATH(runtime.runFromCString(src4),
+  ASSERT_DEATH(runtime.runFromCStr(src4),
                "unimplemented: "
                "Throw an IndexError for an out of range list");
 
@@ -208,7 +207,7 @@ a.pop()
 a = [1]
 a.pop(3)
 )";
-  ASSERT_DEATH(runtime.runFromCString(src5),
+  ASSERT_DEATH(runtime.runFromCStr(src5),
                "unimplemented: "
                "Throw an IndexError for an out of range list");
 }
@@ -474,7 +473,7 @@ TEST(ListBuiltinsDeathTest, SetItemWithFewerArgumentsThrows) {
 [].__setitem__(1)
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src), "expected 3 arguments");
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 3 arguments");
 }
 
 TEST(ListBuiltinsDeathTest, SetItemWithInvalidIndexThrows) {
@@ -482,8 +481,7 @@ TEST(ListBuiltinsDeathTest, SetItemWithInvalidIndexThrows) {
 [].__setitem__(1, "test")
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src),
-               "list assignment index out of range");
+  ASSERT_DEATH(runtime.runFromCStr(src), "list assignment index out of range");
 }
 
 TEST(ListBuiltinsDeathTest, NonTypeInDunderNew) {
@@ -491,7 +489,7 @@ TEST(ListBuiltinsDeathTest, NonTypeInDunderNew) {
 list.__new__(1)
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src), "not a type object");
+  ASSERT_DEATH(runtime.runFromCStr(src), "not a type object");
 }
 
 TEST(ListBuiltinsDeathTest, NonSubclassInDunderNew) {
@@ -500,7 +498,7 @@ class Foo: pass
 list.__new__(Foo)
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCString(src), "not a subtype of list");
+  ASSERT_DEATH(runtime.runFromCStr(src), "not a subtype of list");
 }
 
 TEST(ListBuiltinsTest, SubclassList) {
@@ -521,7 +519,7 @@ test6 = len(a)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> test1(&scope, findInModule(&runtime, main, "test1"));
   Handle<Object> test2(&scope, findInModule(&runtime, main, "test2"));
@@ -530,7 +528,7 @@ test6 = len(a)
   Handle<Object> test5(&scope, findInModule(&runtime, main, "test5"));
   Handle<Object> test6(&scope, findInModule(&runtime, main, "test6"));
   EXPECT_EQ(*test1, SmallInt::fromWord(1));
-  EXPECT_EQ(*test2, SmallStr::fromCString("a"));
+  EXPECT_EQ(*test2, SmallStr::fromCStr("a"));
   EXPECT_EQ(*test3, SmallInt::fromWord(2));
   EXPECT_EQ(*test4, SmallInt::fromWord(1));
   EXPECT_EQ(*test5, SmallInt::fromWord(2));
@@ -547,12 +545,12 @@ e = a[0]
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> len(&scope, findInModule(&runtime, main, "l"));
   Handle<Object> element(&scope, findInModule(&runtime, main, "e"));
   EXPECT_EQ(*len, SmallInt::fromWord(1));
-  EXPECT_EQ(*element, SmallStr::fromCString("foo"));
+  EXPECT_EQ(*element, SmallStr::fromCStr("foo"));
 }
 
 TEST(ListBuiltinsTest, DunderIterReturnsListIter) {

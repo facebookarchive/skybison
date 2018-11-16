@@ -19,7 +19,7 @@ class C: pass
 c = C()
 )";
 
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Type> type(&scope, moduleAt(&runtime, main, "C"));
@@ -46,7 +46,7 @@ g = 1
 C()
 )";
 
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
@@ -69,7 +69,7 @@ g = 1
 C(9)
 )";
 
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
@@ -85,7 +85,7 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   code->setArgcount(1);
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(*code);
-  frame->pushValue(runtime.newStringFromCString("not_a_cls"));
+  frame->pushValue(runtime.newStrFromCStr("not_a_cls"));
   Object* result = builtinTypeCall(thread, frame, 1);
   ASSERT_TRUE(result->isError());
   // TODO(rkng): validate TypeError is thrown
@@ -103,11 +103,11 @@ class C:
   __init__ = Callable()
 c = C()
 )";
-  runtime.runFromCString(src);
+  runtime.runFromCStr(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
   Thread* thread = Thread::currentThread();
-  Handle<Object> x(&scope, runtime.newStringFromCString("x"));
+  Handle<Object> x(&scope, runtime.newStrFromCStr("x"));
   Object* attr = runtime.attributeAt(thread, c, x);
   ASSERT_FALSE(attr->isNone());
   ASSERT_TRUE(attr->isInt());
@@ -120,13 +120,13 @@ TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsString) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kObject));
   Object* result = builtinTypeRepr(thread, frame, 1);
-  ASSERT_TRUE(result->isString());
-  EXPECT_PYSTRING_EQ(String::cast(result), "<class 'object'>");
+  ASSERT_TRUE(result->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(result), "<class 'object'>");
 }
 
 TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsString) {
   Runtime runtime;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo:
   pass
 )");
@@ -138,16 +138,16 @@ class Foo:
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
   frame->setLocal(0, *type);
   Object* result = builtinTypeRepr(thread, frame, 1);
-  ASSERT_TRUE(result->isString());
+  ASSERT_TRUE(result->isStr());
   // TODO(T32810595): Once module names are supported, this should become
   // "<class '__main__.Foo'>".
-  EXPECT_PYSTRING_EQ(String::cast(result), "<class 'Foo'>");
+  EXPECT_PYSTRING_EQ(Str::cast(result), "<class 'Foo'>");
 }
 
 TEST(TypeBuiltinTest, DunderNewWithOneArgReturnsTypeOfArg) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 a = type.__new__(type, 1);
 b = type.__new__(type, "hello");
 )");
@@ -162,7 +162,7 @@ b = type.__new__(type, "hello");
 TEST(TypeBuiltinTest, DunderNewWithOneMetaclassArgReturnsType) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCString(R"(
+  runtime.runFromCStr(R"(
 class Foo(type):
   pass
 a = type.__new__(type, Foo);

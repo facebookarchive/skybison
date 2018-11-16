@@ -37,7 +37,7 @@ extern "C" long PyLong_AsLong(PyObject* pylong) {
   HandleScope scope(thread);
 
   if (pylong == nullptr) {
-    thread->throwSystemErrorFromCString("bad argument to internal function");
+    thread->throwSystemErrorFromCStr("bad argument to internal function");
     return -1;
   }
 

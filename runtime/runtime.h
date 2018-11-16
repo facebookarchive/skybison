@@ -103,11 +103,11 @@ class Runtime {
 
   Object* newStaticMethod();
 
-  Object* newStringFromCString(const char* c_string);
+  Object* newStrFromCStr(const char* c_str);
   // Creates a new string constructed from a format and a list of arguments,
   // similar to sprintf.
-  Object* newStringFromFormat(const char* fmt, ...) FORMAT_ATTRIBUTE(2, 3);
-  Object* newStringWithAll(View<byte> code_units);
+  Object* newStrFromFormat(const char* fmt, ...) FORMAT_ATTRIBUTE(2, 3);
+  Object* newStrWithAll(View<byte> code_units);
 
   Object* newSuper();
 
@@ -115,20 +115,20 @@ class Runtime {
 
   void processCallbacks();
 
-  Object* stringConcat(const Handle<String>& a, const Handle<String>& b);
+  Object* strConcat(const Handle<Str>& a, const Handle<Str>& b);
 
   Object* newValueCell();
 
   Object* newWeakRef();
 
-  Object* internString(const Handle<Object>& string);
-  Object* internStringFromCString(const char* c_string);
+  Object* internStr(const Handle<Object>& str);
+  Object* internStrFromCStr(const char* c_str);
 
   void collectGarbage();
 
   Object* run(const char* buffer);
 
-  Object* runFromCString(const char* c_string);
+  Object* runFromCStr(const char* c_str);
 
   Object* hash(Object* object);
   word siphash24(View<byte> array);
