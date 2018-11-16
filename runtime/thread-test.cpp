@@ -2962,4 +2962,17 @@ for x in sys.argv:
   EXPECT_EQ(output, "2\n200\nSysArgv\n200\n");
 }
 
+TEST(ThreadTest, SetupExceptNoOp) { // pystone dependency
+  const char* src = R"(
+def f(x):
+  try: print(x)
+  except ValueError:
+    print("Invalid Argument")
+f(100)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "100\n");
+}
+
 } // namespace python

@@ -131,7 +131,7 @@ namespace python {
   V(UNUSED_BYTECODE_118, 118, interpreter::INVALID_BYTECODE)         \
   V(CONTINUE_LOOP, 119, interpreter::NOT_IMPLEMENTED)                \
   V(SETUP_LOOP, 120, interpreter::SETUP_LOOP)                        \
-  V(SETUP_EXCEPT, 121, interpreter::NOT_IMPLEMENTED)                 \
+  V(SETUP_EXCEPT, 121, interpreter::SETUP_EXCEPT)                    \
   V(SETUP_FINALLY, 122, interpreter::NOT_IMPLEMENTED)                \
   V(UNUSED_BYTECODE_123, 123, interpreter::INVALID_BYTECODE)         \
   V(LOAD_FAST, 124, interpreter::LOAD_FAST)                          \

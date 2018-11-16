@@ -476,6 +476,13 @@ void JUMP_FORWARD(Context* ctx, word arg) {
   ctx->pc += arg;
 }
 
+void SETUP_EXCEPT(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  word stackDepth = frame->valueStackBase() - ctx->sp;
+  BlockStack* blockStack = frame->blockStack();
+  blockStack->push(TryBlock(Bytecode::SETUP_EXCEPT, ctx->pc + arg, stackDepth));
+}
+
 void SETUP_LOOP(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stackDepth = frame->valueStackBase() - ctx->sp;
