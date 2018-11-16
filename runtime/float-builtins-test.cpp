@@ -148,14 +148,53 @@ b_ne_b = b != b
 }
 
 TEST(FloatBuiltinsTest, BinarySubtractDouble) {
-  const char* src = R"(
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
 a = 2.0
 b = 1.1
-print(a-b)
+c = a - b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(c->isDouble());
+  EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 0.9);
+}
+
+TEST(FloatBuiltinsTest, BinarySubtractSmallInteger) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 2.1
+b = 1
+c = a - b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(c->isDouble());
+  EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 1.1);
+}
+
+TEST(FloatBuiltinsDeathTest, BinarySubWithNonFloatArg) {
+  const char* src = R"(
+float.__sub__(None, 1.0)
 )";
   Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "0.9\n");
+  ASSERT_DEATH(
+      runtime.runFromCString(src),
+      "descriptor '__sub__' requires a 'float' object");
+}
+
+TEST(FloatBuiltinsDeathTest, BinarySubWithNonFloat2ndArg) {
+  const char* src = R"(
+1.0 - None
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(src), "unimplemented");
 }
 
 } // namespace python
