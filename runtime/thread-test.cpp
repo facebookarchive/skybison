@@ -152,7 +152,11 @@ TEST(ThreadTest, OverlappingFrames) {
 
 TEST(ThreadTest, EncodeTryBlock) {
   TryBlock block(100, 200, 300);
-  TryBlock decoded = TryBlock::fromSmallInteger(block.asSmallInteger());
+  EXPECT_EQ(block.kind(), 100);
+  EXPECT_EQ(block.handler(), 200);
+  EXPECT_EQ(block.level(), 300);
+
+  TryBlock decoded(block.asSmallInteger());
   EXPECT_EQ(decoded.kind(), block.kind());
   EXPECT_EQ(decoded.handler(), block.handler());
   EXPECT_EQ(decoded.level(), block.level());
@@ -174,7 +178,7 @@ TEST(ThreadTest, PushPopFrame) {
   EXPECT_EQ(frame->previousFrame(), thread->initialFrame());
   EXPECT_EQ(frame->code(), *code);
   EXPECT_EQ(frame->valueStackTop(), reinterpret_cast<Object**>(frame));
-  EXPECT_EQ(frame->base(), frame->valueStackTop());
+  EXPECT_EQ(frame->valueStackBase(), frame->valueStackTop());
   EXPECT_EQ(
       frame->locals() + code->nlocals(), reinterpret_cast<Object**>(prevSp));
   EXPECT_EQ(frame->previousSp(), prevSp);
@@ -215,6 +219,30 @@ TEST(ThreadTest, ManipulateValueStack) {
   ASSERT_TRUE(top->isSmallInteger()) << "Stack top isn't an integer";
   EXPECT_EQ(SmallInteger::cast(top)->value(), 1111)
       << "Incorrect value for stack top";
+}
+
+TEST(ThreadTest, ManipulateBlockStack) {
+  Runtime runtime;
+  HandleScope scope;
+  auto thread = Thread::currentThread();
+  auto frame = thread->openAndLinkFrame(0, 0, thread->initialFrame());
+  BlockStack* blockStack = frame->blockStack();
+
+  TryBlock pushed1(Bytecode::SETUP_LOOP, 100, 10);
+  blockStack->push(pushed1);
+
+  TryBlock pushed2(Bytecode::SETUP_EXCEPT, 200, 20);
+  blockStack->push(pushed2);
+
+  TryBlock popped2 = blockStack->pop();
+  EXPECT_EQ(popped2.kind(), pushed2.kind());
+  EXPECT_EQ(popped2.handler(), pushed2.handler());
+  EXPECT_EQ(popped2.level(), pushed2.level());
+
+  TryBlock popped1 = blockStack->pop();
+  EXPECT_EQ(popped1.kind(), pushed1.kind());
+  EXPECT_EQ(popped1.handler(), pushed1.handler());
+  EXPECT_EQ(popped1.level(), pushed1.level());
 }
 
 TEST(ThreadTest, CallFunction) {
@@ -661,6 +689,64 @@ TEST(ThreadTest, BuildList) {
       String::cast(list->at(1))->equals(runtime.newStringFromCString("qqq")));
 
   EXPECT_EQ(list->at(2), None::object());
+}
+
+TEST(ThreadTest, SetupLoop) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const byte bc[] = {SETUP_LOOP, 100, RETURN_VALUE, 0};
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+  code->setStacksize(3);
+
+  // Create a frame with three items on the stack
+  auto thread = Thread::currentThread();
+  auto frame = thread->pushFrame(*code, thread->initialFrame());
+  Object** sp = frame->valueStackTop();
+  *--sp = SmallInteger::fromWord(1111);
+  *--sp = SmallInteger::fromWord(2222);
+  *--sp = SmallInteger::fromWord(3333);
+  frame->setValueStackTop(sp);
+
+  Interpreter::execute(thread, frame);
+
+  // SETUP_LOOP should have pushed an entry onto the block stack with a
+  // stack depth of 3
+  TryBlock block = frame->blockStack()->pop();
+  EXPECT_EQ(block.kind(), Bytecode::SETUP_LOOP);
+  EXPECT_EQ(block.handler(), 102);
+  EXPECT_EQ(block.level(), 3);
+}
+
+TEST(ThreadTest, PopBlock) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const byte bc[] = {POP_BLOCK, 0, RETURN_VALUE, 0};
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+  code->setStacksize(3);
+
+  // Create a frame with three items on the stack
+  auto thread = Thread::currentThread();
+  auto frame = thread->pushFrame(*code, thread->initialFrame());
+  Object** sp = frame->valueStackTop();
+  *--sp = SmallInteger::fromWord(1111);
+  *--sp = SmallInteger::fromWord(2222);
+  *--sp = SmallInteger::fromWord(3333);
+  frame->setValueStackTop(sp);
+
+  // Push an entry onto the block stack. When popped, this should set the stack
+  // pointer to point to the bottom most element on the stack.
+  frame->blockStack()->push(TryBlock(Bytecode::SETUP_LOOP, 0, 1));
+
+  Object* result = Interpreter::execute(thread, frame);
+
+  // The RETURN_VALUE instruction should return bottom most item from the stack,
+  // assuming that POP_BLOCK worked correctly.
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
 }
 
 TEST(ThreadTest, PopJumpIfFalse) {

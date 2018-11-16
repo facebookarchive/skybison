@@ -15,6 +15,7 @@ namespace python {
 
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
   Code* code = Code::cast(frame->code());
+  BlockStack* blockStack = frame->blockStack();
   ByteArray* byteArray = ByteArray::cast(code->code());
   Object** sp = frame->valueStackTop();
   Object** locals = frame->locals() + code->nlocals();
@@ -198,6 +199,16 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         ValueCell* value_cell =
             ValueCell::cast(thread->runtime()->buildClass());
         *--sp = value_cell->value();
+        break;
+      }
+      case Bytecode::SETUP_LOOP: {
+        word stackDepth = frame->valueStackBase() - sp;
+        blockStack->push(TryBlock(bc, pc + arg, stackDepth));
+        break;
+      }
+      case Bytecode::POP_BLOCK: {
+        TryBlock block = frame->blockStack()->pop();
+        sp = frame->valueStackBase() - block.level();
         break;
       }
       default:

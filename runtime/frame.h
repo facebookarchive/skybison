@@ -23,44 +23,78 @@ class Object;
  */
 class TryBlock {
  public:
-  TryBlock(word kind, word handler, word level)
-      : kind_(kind), handler_(handler), level_(level) {}
-
-  inline static TryBlock fromSmallInteger(Object* object);
-  inline Object* asSmallInteger();
-
-  word kind() {
-    return kind_;
+  explicit TryBlock(Object* value) {
+    assert(value->isSmallInteger());
+    value_ = reinterpret_cast<uword>(value);
   }
 
-  word handler() {
-    return handler_;
+  TryBlock(word kind, word handler, word level) : value_(0) {
+    setKind(kind);
+    setHandler(handler);
+    setLevel(level);
   }
 
-  word level() {
-    return level_;
-  }
+  inline Object* asSmallInteger() const;
+
+  inline word kind() const;
+  inline void setKind(word kind);
+
+  inline word handler() const;
+  inline void setHandler(word handler);
+
+  inline word level() const;
+  inline void setLevel(word level);
 
  private:
-  word kind_;
-  word handler_;
-  word level_;
+  inline word valueBits(uword offset, uword mask) const;
+  inline void setValueBits(uword offset, uword mask, word value);
 
+  uword value_;
+
+  static const int kKindOffset = SmallInteger::kTagSize;
   static const int kKindSize = 8;
   static const uword kKindMask = (1 << kKindSize) - 1;
 
+  static const int kHandlerOffset = kKindOffset + kKindSize; // 9
   static const int kHandlerSize = 30;
-  static const int kHandlerOffset = 8;
   static const uword kHandlerMask = (1 << kHandlerSize) - 1;
 
+  static const int kLevelOffset = kHandlerOffset + kHandlerSize; // 39
   static const int kLevelSize = 25;
-  static const int kLevelOffset = 38;
   static const uword kLevelMask = (1 << kLevelSize) - 1;
+
+  static const int kSize = kLevelOffset + kLevelSize;
+
+  static_assert(
+      kSize <= kBitsPerByte * sizeof(uword),
+      "TryBlock must fit into a uword");
 };
 
 // TODO: Determine maximum block stack depth when the code object is loaded and
 //       dynamically allocate the minimum amount of space for the block stack.
 const int kMaxBlockStackDepth = 20;
+
+class BlockStack {
+ public:
+  inline void push(const TryBlock& block);
+
+  inline TryBlock pop();
+
+  static const int kStackOffset = 0;
+  static const int kTopOffset =
+      kStackOffset + kMaxBlockStackDepth * kPointerSize;
+  static const int kSize = kTopOffset + kPointerSize;
+
+ private:
+  inline uword address();
+  inline Object* at(int offset);
+  inline void atPut(int offset, Object* value);
+
+  inline word top();
+  inline void setTop(word newTop);
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(BlockStack);
+};
 
 /**
  * A stack frame.
@@ -85,7 +119,8 @@ const int kMaxBlockStackDepth = 20;
  *     Locals 0
  *     ...
  *     Locals N
- *     <Fixed size frame metadata>
+ *     Block stack
+ *     Saved virtual PC
  *     Builtins
  *     Globals
  *     Code Object
@@ -101,13 +136,7 @@ class Frame {
   // indices around.
   inline Object** locals();
 
-  // The block stack; its size is kMaxBlockStackSize. Entries are SmallInteger
-  // objects that can be decoded into a TryBlock.
-  inline Object** blockStack();
-
-  // Index of the active block in the block stack; a SmallInteger
-  inline Object* activeBlock();
-  inline void setActiveBlock(Object* activeBlock);
+  inline BlockStack* blockStack();
 
   // Index in the bytecode array of the last instruction that was executed
   inline Object* lastInstruction();
@@ -141,8 +170,7 @@ class Frame {
   inline byte* previousSp();
   inline void setPreviousSp(byte* sp);
 
-  // A pointer to the base of the value stack
-  inline Object** base();
+  inline Object** valueStackBase();
 
   // Return the object at offset from the top of the value stack (e.g. peek(0)
   // returns the top of the stack)
@@ -165,10 +193,8 @@ class Frame {
   static const int kImplicitGlobalsOffset = kGlobalsOffset + kPointerSize;
   static const int kBuiltinsOffset = kImplicitGlobalsOffset + kPointerSize;
   static const int kLastInstructionOffset = kBuiltinsOffset + kPointerSize;
-  static const int kActiveBlockOffset = kLastInstructionOffset + kPointerSize;
-  static const int kBlockStackOffset = kActiveBlockOffset + kPointerSize;
-  static const int kSize =
-      kBlockStackOffset + kMaxBlockStackDepth * kPointerSize;
+  static const int kBlockStackOffset = kLastInstructionOffset + kPointerSize;
+  static const int kSize = kBlockStackOffset + BlockStack::kSize;
 
  private:
   inline uword address();
@@ -190,16 +216,8 @@ void Frame::atPut(int offset, Object* value) {
   *reinterpret_cast<Object**>(address() + offset) = value;
 }
 
-Object** Frame::blockStack() {
-  return reinterpret_cast<Object**>(address() + kBlockStackOffset);
-}
-
-Object* Frame::activeBlock() {
-  return at(kActiveBlockOffset);
-}
-
-void Frame::setActiveBlock(Object* activeBlock) {
-  atPut(kActiveBlockOffset, activeBlock);
+BlockStack* Frame::blockStack() {
+  return reinterpret_cast<BlockStack*>(address() + kBlockStackOffset);
 }
 
 Object* Frame::lastInstruction() {
@@ -266,7 +284,7 @@ void Frame::setPreviousSp(byte* sp) {
   atPut(kPreviousSpOffset, SmallInteger::fromWord(reinterpret_cast<uword>(sp)));
 }
 
-Object** Frame::base() {
+Object** Frame::valueStackBase() {
   return reinterpret_cast<Object**>(this);
 }
 
@@ -282,7 +300,7 @@ void Frame::setValueStackTop(Object** top) {
 }
 
 Object* Frame::peek(word offset) {
-  assert(valueStackTop() + offset < base());
+  assert(valueStackTop() + offset < valueStackBase());
   return *(valueStackTop() + offset);
 }
 
@@ -294,19 +312,77 @@ bool Frame::isSentinelFrame() {
   return previousFrame() == nullptr;
 }
 
-TryBlock TryBlock::fromSmallInteger(Object* object) {
-  word encoded = SmallInteger::cast(object)->value();
-  word kind = encoded & kKindMask;
-  word handler = (encoded >> kHandlerOffset) & kHandlerMask;
-  word level = (encoded >> kLevelOffset) & kLevelMask;
-  return {kind, handler, level};
+Object* TryBlock::asSmallInteger() const {
+  auto obj = reinterpret_cast<Object*>(value_);
+  assert(obj->isSmallInteger());
+  return obj;
 }
 
-Object* TryBlock::asSmallInteger() {
-  word encoded = kind();
-  encoded |= (handler() << kHandlerOffset);
-  encoded |= (level() << kLevelOffset);
-  return SmallInteger::fromWord(encoded);
+word TryBlock::kind() const {
+  return valueBits(kKindOffset, kKindMask);
+}
+
+void TryBlock::setKind(word kind) {
+  setValueBits(kKindOffset, kKindMask, kind);
+}
+
+word TryBlock::handler() const {
+  return valueBits(kHandlerOffset, kHandlerMask);
+}
+
+void TryBlock::setHandler(word handler) {
+  setValueBits(kHandlerOffset, kHandlerMask, handler);
+}
+
+word TryBlock::level() const {
+  return valueBits(kLevelOffset, kLevelMask);
+}
+
+void TryBlock::setLevel(word level) {
+  setValueBits(kLevelOffset, kLevelMask, level);
+}
+
+word TryBlock::valueBits(uword offset, uword mask) const {
+  return (value_ >> offset) & mask;
+}
+
+void TryBlock::setValueBits(uword offset, uword mask, word value) {
+  value_ |= (value & mask) << offset;
+}
+
+uword BlockStack::address() {
+  return reinterpret_cast<uword>(this);
+}
+
+Object* BlockStack::at(int offset) {
+  return *reinterpret_cast<Object**>(address() + offset);
+}
+
+void BlockStack::atPut(int offset, Object* value) {
+  *reinterpret_cast<Object**>(address() + offset) = value;
+}
+
+word BlockStack::top() {
+  return SmallInteger::cast(at(kTopOffset))->value();
+}
+
+void BlockStack::setTop(word newTop) {
+  assert(newTop > -1 && newTop < kMaxBlockStackDepth + 1);
+  atPut(kTopOffset, SmallInteger::fromWord(newTop));
+}
+
+void BlockStack::push(const TryBlock& block) {
+  word stackTop = top();
+  atPut(kStackOffset + stackTop * kPointerSize, block.asSmallInteger());
+  setTop(stackTop + 1);
+}
+
+TryBlock BlockStack::pop() {
+  word stackTop = top() - 1;
+  assert(stackTop > -1);
+  Object* block = at(kStackOffset + stackTop * kPointerSize);
+  setTop(stackTop);
+  return TryBlock(block);
 }
 
 } // namespace python
