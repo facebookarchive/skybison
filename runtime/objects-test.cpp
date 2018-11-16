@@ -195,6 +195,30 @@ TEST(IntTest, Compare) {
   EXPECT_LE(min_word->compare(*min_small_int), -1);
 }
 
+TEST(IntTest, LargeIntCompare) {
+  Runtime runtime;
+  HandleScope scope;
+  Int great(&scope, testing::newIntWithDigits(&runtime, {1, 1}));
+  Int small(&scope, testing::newIntWithDigits(&runtime, {0, 0, -1}));
+  EXPECT_EQ(great->compare(small), 1);
+  EXPECT_EQ(small->compare(great), -1);
+
+  great = testing::newIntWithDigits(&runtime, {1, 1, 1});
+  small = testing::newIntWithDigits(&runtime, {1, 1});
+  EXPECT_EQ(great->compare(small), 1);
+  EXPECT_EQ(small->compare(great), -1);
+
+  great = testing::newIntWithDigits(&runtime, {-2, 1});
+  small = testing::newIntWithDigits(&runtime, {2, 1});
+  EXPECT_EQ(great->compare(small), 1);
+  EXPECT_EQ(small->compare(great), -1);
+
+  great = testing::newIntWithDigits(&runtime, {-2, -2});
+  small = testing::newIntWithDigits(&runtime, {2, -2});
+  EXPECT_EQ(great->compare(small), 1);
+  EXPECT_EQ(small->compare(great), -1);
+}
+
 #define EXPECT_VALID(expr, expected_value)                                     \
   {                                                                            \
     auto const result = (expr);                                                \

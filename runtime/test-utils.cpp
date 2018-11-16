@@ -282,5 +282,9 @@ std::string typeName(Runtime* runtime, RawObject obj) {
   return result;
 }
 
+RawObject newIntWithDigits(Runtime* runtime, const std::vector<word>& digits) {
+  return runtime->newIntWithDigits(View<word>(digits.data(), digits.size()));
+}
+
 }  // namespace testing
 }  // namespace python

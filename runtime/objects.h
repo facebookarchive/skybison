@@ -401,6 +401,9 @@ class RawInt : public RawObject {
   template <typename T>
   OptInt<T> asInt();
 
+  // Returns a positive value if 'this' is greater than 'other', zero if it
+  // is the same, a negavite value if smaller. The value does not have to be
+  // -1, 0, or 1.
   word compare(RawInt other);
 
   double floatValue();
@@ -2229,6 +2232,7 @@ inline word RawInt::compare(RawInt that) {
   if (this->isSmallInt() && that->isSmallInt()) {
     return this->asWord() - that->asWord();
   }
+  // compare with large ints always returns -1, 0, or 1
   if (this->isNegative() != that->isNegative()) {
     return this->isNegative() ? -1 : 1;
   }
@@ -2243,7 +2247,7 @@ inline word RawInt::compare(RawInt that) {
     return -1;
   }
   for (word i = left_digits - 1; i >= 0; i--) {
-    word left_digit = this->digitAt(i), right_digit = that->digitAt(i);
+    uword left_digit = this->digitAt(i), right_digit = that->digitAt(i);
     if (left_digit > right_digit) {
       return 1;
     }
