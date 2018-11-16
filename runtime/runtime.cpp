@@ -1001,6 +1001,21 @@ void Runtime::listInsert(
   list->atPut(index, *value);
 }
 
+void Runtime::listPop(const Handle<List>& list, word index) {
+  word last_index = list->allocated() - 1;
+  if (index < 0) {
+    index = last_index + index;
+  }
+  if (index < 0 || index > last_index) {
+    // TODO(T27365047): Raise an exception
+    UNIMPLEMENTED("Throw an IndexError for an out of range list index.");
+  }
+  for (word i = index; i < last_index; i++) {
+    list->atPut(i, list->at(i + 1));
+  }
+  list->setAllocated(list->allocated() - 1);
+}
+
 Object*
 Runtime::listReplicate(Thread* thread, const Handle<List>& list, word ntimes) {
   HandleScope scope(thread);
