@@ -217,13 +217,16 @@ Object* Heap::createList(Object* list_class, Object* elements) {
   return List::cast(result);
 }
 
-Object* Heap::createObjectArray(Object* object_array_class, intptr_t length) {
+Object* Heap::createObjectArray(
+    Object* object_array_class,
+    intptr_t length,
+    Object* value) {
   int size = ObjectArray::allocationSize(length);
   Object* raw = allocate(size);
   assert(raw != nullptr); // TODO
   ObjectArray* result = reinterpret_cast<ObjectArray*>(raw);
   result->setClass(Class::cast(object_array_class));
-  result->initialize(length, size, 0);
+  result->initialize(length, size, value);
   return ObjectArray::cast(result);
 }
 

@@ -65,7 +65,7 @@ Object* Runtime::createObjectArray(intptr_t length) {
   if (length == 0) {
     return empty_object_array_;
   }
-  return heap()->createObjectArray(object_array_class_, length);
+  return heap()->createObjectArray(object_array_class_, length, None::object());
 }
 
 Object* Runtime::createString(intptr_t length) {
@@ -153,7 +153,8 @@ void Runtime::collectGarbage() {
 
 void Runtime::initializeInstances() {
   empty_byte_array_ = heap()->createByteArray(byte_array_class_, 0);
-  empty_object_array_ = heap()->createObjectArray(object_array_class_, 0);
+  empty_object_array_ =
+      heap()->createObjectArray(object_array_class_, 0, None::object());
 }
 
 void Runtime::initializeModules() {
