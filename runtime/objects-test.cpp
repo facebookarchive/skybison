@@ -430,6 +430,160 @@ TEST(LargeStrTest, CopyTo) {
   EXPECT_EQ(array[4], 'o');
 }
 
+TEST(StringTest, CompareSmallStrCStrASCII) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str small_ascii(&scope, runtime.newStrFromCStr("sm"));
+  ASSERT_TRUE(small_ascii->isSmallStr());
+
+  // Equal
+  EXPECT_EQ(small_ascii.compareCStr("sm"), 0);
+
+  // Less
+  EXPECT_EQ(small_ascii.compareCStr("sma"), -1);
+  EXPECT_EQ(small_ascii.compareCStr("sn"), -1);
+
+  // Greater
+  EXPECT_EQ(small_ascii.compareCStr("s"), 1);
+  EXPECT_EQ(small_ascii.compareCStr("sl"), 1);
+}
+
+TEST(StringTest, CompareSmallStrWithNulCStrASCII) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const byte data[] = {'s', '\0', 'm'};
+  Str small_ascii(&scope, runtime.newStrWithAll(data));
+  ASSERT_TRUE(small_ascii->isSmallStr());
+
+  // Less
+  EXPECT_EQ(small_ascii.compareCStr("t"), -1);
+
+  // Greater
+  EXPECT_EQ(small_ascii.compareCStr("s"), 1);
+  EXPECT_EQ(small_ascii.compareCStr("a\0m"), 1);
+}
+
+TEST(StringTest, CompareLargeStrWithNulCStrASCII) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const byte data[] = {'l', 'a', 'r', 'g', 'e', '\0', 's', 't'};
+  Str large_ascii(&scope, runtime.newStrWithAll(data));
+  ASSERT_TRUE(large_ascii->isLargeStr());
+
+  // Less
+  EXPECT_EQ(large_ascii.compareCStr("largz"), -1);
+
+  // Greater
+  EXPECT_EQ(large_ascii.compareCStr("large"), 1);
+  EXPECT_EQ(large_ascii.compareCStr("larga\0st"), 1);
+}
+
+TEST(StringTest, CompareLargeStrCStrASCII) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str large_ascii(&scope, runtime.newStrFromCStr("large string"));
+  ASSERT_TRUE(large_ascii->isLargeStr());
+
+  // Equal
+  EXPECT_EQ(large_ascii.compareCStr("large string"), 0);
+
+  // Less
+  EXPECT_EQ(large_ascii.compareCStr("large strings"), -1);
+  EXPECT_EQ(large_ascii.compareCStr("large tbigger"), -1);
+
+  // Greater
+  EXPECT_EQ(large_ascii.compareCStr("large strin"), 1);
+  EXPECT_EQ(large_ascii.compareCStr("large smaller"), 1);
+}
+
+TEST(StringTest, CompareSmallStrCStrUTF8) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str small_utf8(&scope, runtime.newStrFromCStr("\xC3\x87"));
+  ASSERT_TRUE(small_utf8->isSmallStr());
+
+  // Equal
+  EXPECT_EQ(small_utf8.compareCStr("\xC3\x87"), 0);
+
+  // Less
+  EXPECT_EQ(small_utf8.compareCStr("\xC3\x87s"), -1);
+  EXPECT_EQ(small_utf8.compareCStr("\xC3\x88"), -1);
+  EXPECT_EQ(small_utf8.compareCStr("\xC3\xA7"), -1);
+
+  // Greater
+  EXPECT_EQ(small_utf8.compareCStr(""), 1);
+  EXPECT_EQ(small_utf8.compareCStr("\xC3\x86"), 1);
+  EXPECT_EQ(small_utf8.compareCStr("\xC3\x67"), 1);
+}
+
+TEST(StringTest, CompareLargeStrCStrUTF8) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str large_utf8(&scope, runtime.newStrFromCStr("\xC3\x87 large"));
+  ASSERT_TRUE(large_utf8->isLargeStr());
+
+  // Equal
+  EXPECT_EQ(large_utf8.compareCStr("\xC3\x87 large"), 0);
+
+  // Less
+  EXPECT_EQ(large_utf8.compareCStr("\xC3\x87 larges"), -1);
+  EXPECT_EQ(large_utf8.compareCStr("\xC3\x88 large"), -1);
+  EXPECT_EQ(large_utf8.compareCStr("\xC3\xA7 large"), -1);
+
+  // Greater
+  EXPECT_EQ(large_utf8.compareCStr("\xC3\x87"), 1);
+  EXPECT_EQ(large_utf8.compareCStr("\xC3\x86 large"), 1);
+  EXPECT_EQ(large_utf8.compareCStr("g large"), 1);
+}
+
+TEST(StringTest, CompareSmallStrCStrLatin1) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str small_latin1(&scope, runtime.newStrFromCStr("\xDC"));
+  ASSERT_TRUE(small_latin1->isSmallStr());
+
+  // Equal
+  EXPECT_EQ(small_latin1.compareCStr("\xDC"), 0);
+
+  // Less
+  EXPECT_EQ(small_latin1.compareCStr("\xDCs"), -1);
+  EXPECT_EQ(small_latin1.compareCStr("\xDD"), -1);
+  EXPECT_EQ(small_latin1.compareCStr("\xEC"), -1);
+
+  // Greater
+  EXPECT_EQ(small_latin1.compareCStr(""), 1);
+  EXPECT_EQ(small_latin1.compareCStr("\xDB"), 1);
+  EXPECT_EQ(small_latin1.compareCStr("\xAC"), 1);
+}
+
+TEST(StringTest, CompareLargeStrCStrLatin1) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str large_latin1(&scope, runtime.newStrFromCStr("\xDClarge str"));
+  ASSERT_TRUE(large_latin1->isLargeStr());
+
+  // Equal
+  EXPECT_EQ(large_latin1.compareCStr("\xDClarge str"), 0);
+
+  // Less
+  EXPECT_EQ(large_latin1.compareCStr("\xDClarge strs"), -1);
+  EXPECT_EQ(large_latin1.compareCStr("\xDDlarge str"), -1);
+  EXPECT_EQ(large_latin1.compareCStr("\xEClarge str"), -1);
+
+  // Greater
+  EXPECT_EQ(large_latin1.compareCStr("\xDC"), 1);
+  EXPECT_EQ(large_latin1.compareCStr("\xDBlarge str"), 1);
+  EXPECT_EQ(large_latin1.compareCStr("\xBClarge str"), 1);
+}
+
 TEST(SmallStrTest, Tests) {
   RawObject obj0 = SmallStr::fromCStr("AB");
   ASSERT_TRUE(obj0->isSmallStr());

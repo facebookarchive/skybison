@@ -347,6 +347,19 @@ word RawStr::compare(RawObject string) {
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
+word RawStr::compareCStr(const char* c_str) {
+  word c_length = std::strlen(c_str);
+  word length = Utils::minimum(this->length(), c_length);
+  for (word i = 0; i < length; i++) {
+    word diff = charAt(i) - static_cast<byte>(c_str[i]);
+    if (diff != 0) {
+      return (diff > 0) ? 1 : -1;
+    }
+  }
+  word diff = this->length() - c_length;
+  return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
+}
+
 bool RawStr::equalsCStr(const char* c_str) {
   const char* cp = c_str;
   const word len = length();

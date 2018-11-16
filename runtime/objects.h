@@ -622,6 +622,7 @@ class RawStr : public RawObject {
 
   // Equality checks.
   word compare(RawObject string);
+  word compareCStr(const char* c_str);
   bool equals(RawObject that);
   bool equalsCStr(const char* c_str);
 
