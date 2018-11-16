@@ -8,11 +8,11 @@
 
 namespace python {
 
-Object* builtinStringEq(Thread* thread, Frame* caller, word nargs) {
+Object* builtinStringEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
@@ -22,11 +22,11 @@ Object* builtinStringEq(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStringGe(Thread* thread, Frame* caller, word nargs) {
+Object* builtinStringGe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
@@ -36,11 +36,11 @@ Object* builtinStringGe(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStringGt(Thread* thread, Frame* caller, word nargs) {
+Object* builtinStringGt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
@@ -50,11 +50,11 @@ Object* builtinStringGt(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStringLe(Thread* thread, Frame* caller, word nargs) {
+Object* builtinStringLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
@@ -64,11 +64,11 @@ Object* builtinStringLe(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStringLt(Thread* thread, Frame* caller, word nargs) {
+Object* builtinStringLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
@@ -78,11 +78,11 @@ Object* builtinStringLt(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStringNe(Thread* thread, Frame* caller, word nargs) {
+Object* builtinStringNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {

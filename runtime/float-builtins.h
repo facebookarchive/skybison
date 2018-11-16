@@ -13,6 +13,6 @@ Object* builtinDoubleGt(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleLe(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleLt(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs);
-Object* builtinDoubleSub(Thread* thread, Frame* caller, word nargs);
+Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs);
 
 } // namespace python

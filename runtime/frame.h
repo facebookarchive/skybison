@@ -236,8 +236,8 @@ class FrameVisitor {
 
 class Arguments {
  public:
-  Arguments(Frame* caller, word nargs) {
-    frame_ = caller;
+  Arguments(Frame* frame, word nargs) {
+    frame_ = frame;
     num_args_ = nargs;
   }
 
@@ -257,8 +257,8 @@ class Arguments {
 
 class KwArguments : public Arguments {
  public:
-  KwArguments(Frame* caller, word nargs) : Arguments(caller, nargs) {
-    kwnames_ = ObjectArray::cast(caller->getLocal(nargs - 1));
+  KwArguments(Frame* frame, word nargs) : Arguments(frame, nargs) {
+    kwnames_ = ObjectArray::cast(frame->getLocal(nargs - 1));
     num_keywords_ = kwnames_->length();
     num_args_ = nargs - num_keywords_ - 1;
   }

@@ -8,11 +8,11 @@
 
 namespace python {
 
-Object* builtinListNew(Thread* thread, Frame* caller, word nargs) {
+Object* builtinListNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   if (!args.get(0)->isClass()) {
     return thread->throwTypeErrorFromCString("not a type object");
   }

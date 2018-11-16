@@ -8,12 +8,12 @@
 
 namespace python {
 
-Object* builtinSetLen(Thread* thread, Frame* caller, word nargs) {
+Object* builtinSetLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("__len__() takes no arguments");
   }
   HandleScope scope(thread);
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Handle<Object> self(&scope, args.get(0));
   if (self->isSet()) {
     return SmallInteger::fromWord(Set::cast(*self)->numItems());
@@ -22,12 +22,12 @@ Object* builtinSetLen(Thread* thread, Frame* caller, word nargs) {
   return thread->throwTypeErrorFromCString("'__len__' requires a 'set' object");
 }
 
-Object* builtinSetPop(Thread* thread, Frame* caller, word nargs) {
+Object* builtinSetPop(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("pop() takes no arguments");
   }
   HandleScope scope(thread);
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Handle<Set> self(&scope, args.get(0));
   if (self->isSet()) {
     Handle<ObjectArray> data(&scope, self->data());

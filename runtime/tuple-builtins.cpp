@@ -9,11 +9,11 @@
 
 namespace python {
 
-Object* builtinTupleEq(Thread* thread, Frame* caller, word nargs) {
+Object* builtinTupleEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   if (args.get(0)->isObjectArray() && args.get(1)->isObjectArray()) {
     HandleScope scope(thread->handles());
     Handle<ObjectArray> self(&scope, args.get(0));
@@ -28,7 +28,7 @@ Object* builtinTupleEq(Thread* thread, Frame* caller, word nargs) {
       left = self->at(i);
       right = other->at(i);
       Object* result = Interpreter::compareOperation(
-          thread, caller, caller->valueStackTop(), EQ, left, right);
+          thread, frame, frame->valueStackTop(), EQ, left, right);
       if (result == Boolean::falseObj()) {
         return result;
       }

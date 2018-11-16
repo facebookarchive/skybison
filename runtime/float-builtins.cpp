@@ -8,11 +8,11 @@
 
 namespace python {
 
-Object* builtinDoubleEq(Thread* thread, Frame* caller, word nargs) {
+Object* builtinDoubleEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isDouble() && other->isDouble()) {
@@ -25,11 +25,11 @@ Object* builtinDoubleEq(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleGe(Thread* thread, Frame* caller, word nargs) {
+Object* builtinDoubleGe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isDouble() && other->isDouble()) {
@@ -42,11 +42,11 @@ Object* builtinDoubleGe(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleGt(Thread* thread, Frame* caller, word nargs) {
+Object* builtinDoubleGt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isDouble() && other->isDouble()) {
@@ -59,11 +59,11 @@ Object* builtinDoubleGt(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleLe(Thread* thread, Frame* caller, word nargs) {
+Object* builtinDoubleLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isDouble() && other->isDouble()) {
@@ -76,11 +76,11 @@ Object* builtinDoubleLe(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleLt(Thread* thread, Frame* caller, word nargs) {
+Object* builtinDoubleLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isDouble() && other->isDouble()) {
@@ -93,11 +93,11 @@ Object* builtinDoubleLt(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleNe(Thread* thread, Frame* caller, word nargs) {
+Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isDouble() && other->isDouble()) {
@@ -110,11 +110,11 @@ Object* builtinDoubleNe(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleSub(Thread* thread, Frame* caller, word nargs) {
+Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isDouble() && other->isDouble()) {

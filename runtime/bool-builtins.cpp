@@ -7,11 +7,11 @@
 
 namespace python {
 
-Object* builtinBooleanBool(Thread* thread, Frame* caller, word nargs) {
+Object* builtinBooleanBool(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   if (args.get(0)->isBoolean()) {
     return args.get(0);
   }

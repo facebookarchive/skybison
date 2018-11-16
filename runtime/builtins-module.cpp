@@ -17,14 +17,14 @@ namespace python {
 std::ostream* builtInStdout = &std::cout;
 std::ostream* builtinStderr = &std::cerr;
 
-Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
+Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
   if (nargs < 2) {
     std::abort(); // TODO: throw a TypeError exception.
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   if (!args.get(0)->isFunction()) {
     std::abort(); // TODO: throw a TypeError exception.
   }
@@ -48,25 +48,25 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   // the on-stack state for the class body function call.
   thread->runClassFunction(*body, *dictionary);
 
-  Object** sp = caller->valueStackTop();
+  Object** sp = frame->valueStackTop();
   Handle<Class> klass(&scope, runtime->classAt(LayoutId::kType));
   *--sp = *klass;
   *--sp = *name;
   *--sp = *bases;
   *--sp = *dictionary;
-  caller->setValueStackTop(sp);
+  frame->setValueStackTop(sp);
   Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
   Handle<Function> dunder_call(
       &scope, runtime->lookupNameInMro(thread, klass, call_name));
-  Handle<Object> result(&scope, dunder_call->entry()(thread, caller, 4));
-  caller->setValueStackTop(sp + 4);
+  Handle<Object> result(&scope, dunder_call->entry()(thread, frame, 4));
+  frame->setValueStackTop(sp + 4);
   return *result;
 }
 
-Object* builtinBuildClassKw(Thread* thread, Frame* caller, word nargs) {
+Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  KwArguments args(caller, nargs);
+  KwArguments args(frame, nargs);
   if (args.numArgs() < 2) {
     return thread->throwTypeErrorFromCString(
         "not enough args for build class.");
@@ -96,26 +96,26 @@ Object* builtinBuildClassKw(Thread* thread, Frame* caller, word nargs) {
   // caller and the on-stack state for the class body function call.
   thread->runClassFunction(*body, *dictionary);
 
-  Object** sp = caller->valueStackTop();
+  Object** sp = frame->valueStackTop();
   *--sp = *metaclass;
   *--sp = *name;
   *--sp = *bases;
   *--sp = *dictionary;
-  caller->setValueStackTop(sp);
+  frame->setValueStackTop(sp);
   Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
   Handle<Function> dunder_call(
       &scope, runtime->lookupNameInMro(thread, metaclass, call_name));
-  Handle<Object> result(&scope, dunder_call->entry()(thread, caller, 4));
-  caller->setValueStackTop(sp + 4);
+  Handle<Object> result(&scope, dunder_call->entry()(thread, frame, 4));
+  frame->setValueStackTop(sp + 4);
 
   return *result;
 }
 
-Object* builtinChr(Thread* thread, Frame* caller_frame, word nargs) {
+Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("Unexpected 1 argumment in 'chr'");
   }
-  Arguments args(caller_frame, nargs);
+  Arguments args(frame_frame, nargs);
   Object* arg = args.get(0);
   if (!arg->isSmallInteger()) {
     return thread->throwTypeErrorFromCString(
@@ -126,13 +126,13 @@ Object* builtinChr(Thread* thread, Frame* caller_frame, word nargs) {
   return SmallString::fromCString(s);
 }
 
-Object* builtinInt(Thread* thread, Frame* caller_frame, word nargs) {
+Object* builtinInt(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString(
         "int() takes exactly 1 argument"); // TODO(rkng): base (kw/optional)
   }
   HandleScope scope(thread);
-  Arguments args(caller_frame, nargs);
+  Arguments args(frame_frame, nargs);
   Handle<Object> arg(&scope, args.get(0));
   return thread->runtime()->stringToInt(thread, arg);
 }
@@ -140,12 +140,12 @@ Object* builtinInt(Thread* thread, Frame* caller_frame, word nargs) {
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is
 // actually far more complicated than one might expect. This is enough to get
 // richards working.
-Object* builtinIsinstance(Thread* thread, Frame* caller, word nargs) {
+Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("isinstance expected 2 arguments");
   }
 
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   if (!args.get(1)->isClass()) {
     // TODO(mpage): This error message is misleading. Ultimately, isinstance()
     // may accept a type or a tuple.
@@ -159,31 +159,31 @@ Object* builtinIsinstance(Thread* thread, Frame* caller, word nargs) {
   return runtime->isInstance(obj, klass);
 }
 
-Object* builtinLen(Thread* thread, Frame* caller, word nargs) {
+Object* builtinLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString(
         "len() takes exactly one argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> selector(&scope, runtime->symbols()->DunderLen());
   Handle<Object> method(
-      &scope, Interpreter::lookupMethod(thread, caller, self, selector));
+      &scope, Interpreter::lookupMethod(thread, frame, self, selector));
   if (method->isError()) {
     thread->throwTypeErrorFromCString("object has no len()");
     return Error::object();
   }
   return Interpreter::callMethod1(
-      thread, caller, caller->valueStackTop(), method, self);
+      thread, frame, frame->valueStackTop(), method, self);
 }
 
-Object* builtinOrd(Thread* thread, Frame* caller_frame, word nargs) {
+Object* builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("Unexpected 1 argumment in 'ord'");
   }
-  Arguments args(caller_frame, nargs);
+  Arguments args(frame_frame, nargs);
   Object* arg = args.get(0);
   if (!arg->isString()) {
     return thread->throwTypeErrorFromCString(

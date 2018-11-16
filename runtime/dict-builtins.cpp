@@ -9,11 +9,11 @@
 
 namespace python {
 
-Object* builtinDictionaryEq(Thread* thread, Frame* caller, word nargs) {
+Object* builtinDictionaryEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   if (args.get(0)->isDictionary() && args.get(1)->isDictionary()) {
     HandleScope scope(thread->handles());
     Runtime* runtime = thread->runtime();
@@ -36,7 +36,7 @@ Object* builtinDictionaryEq(Thread* thread, Frame* caller, word nargs) {
         return Boolean::falseObj();
       }
       Object* result = Interpreter::compareOperation(
-          thread, caller, caller->valueStackTop(), EQ, left, right);
+          thread, frame, frame->valueStackTop(), EQ, left, right);
       if (result == Boolean::falseObj()) {
         return result;
       }

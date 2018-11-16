@@ -7,7 +7,7 @@
 
 namespace python {
 
-Object* builtinSetLen(Thread* thread, Frame* caller, word nargs);
-Object* builtinSetPop(Thread* thread, Frame* caller, word nargs);
+Object* builtinSetLen(Thread* thread, Frame* frame, word nargs);
+Object* builtinSetPop(Thread* thread, Frame* frame, word nargs);
 
 } // namespace python
