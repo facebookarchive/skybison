@@ -1,2 +1,4 @@
 BasedOnStyle: Google
 AlignEscapedNewlinesLeft: false
+DerivePointerAlignment: false
+PointerAlignment: Left
