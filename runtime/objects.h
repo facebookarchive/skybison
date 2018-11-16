@@ -688,8 +688,6 @@ class RawHeapObject : public RawObject {
   // Sizing
   static word headerSize(word count);
 
-  void initialize(word size, RawObject value);
-
   // Garbage collection.
   bool isRoot();
   bool isForwarding();
@@ -717,6 +715,10 @@ class RawHeapObject : public RawObject {
   void instanceVariableAtPut(word offset, RawObject value);
 
  private:
+  // Instance initialization should only done by the Heap.
+  void initialize(word size, RawObject value);
+
+  friend class Heap;
   friend class Runtime;
 };
 
@@ -1008,9 +1010,6 @@ class RawFloat : public RawHeapObject {
   // Getters and setters.
   double value();
 
-  // Allocation.
-  void initialize(double value);
-
   // Casting.
   static RawFloat cast(RawObject object);
 
@@ -1019,6 +1018,12 @@ class RawFloat : public RawHeapObject {
   static const int kSize = kValueOffset + kDoubleSize;
 
   RAW_OBJECT_COMMON_NO_CAST(Float);
+
+ private:
+  // Instance initialization should only done by the Heap.
+  void initialize(double value);
+
+  friend class Heap;
 };
 
 class RawComplex : public RawHeapObject {
@@ -1027,15 +1032,18 @@ class RawComplex : public RawHeapObject {
   double real();
   double imag();
 
-  // Allocation.
-  void initialize(double real, double imag);
-
   // Layout.
   static const int kRealOffset = RawHeapObject::kSize;
   static const int kImagOffset = kRealOffset + kDoubleSize;
   static const int kSize = kImagOffset + kDoubleSize;
 
   RAW_OBJECT_COMMON(Complex);
+
+ private:
+  // Instance initialization should only done by the Heap.
+  void initialize(double real, double imag);
+
+  friend class Heap;
 };
 
 class RawProperty : public RawHeapObject {
