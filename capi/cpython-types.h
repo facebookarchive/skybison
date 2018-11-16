@@ -23,8 +23,10 @@ typedef Py_ssize_t Py_hash_t;
     { _PyObject_EXTRA_INIT \
     1, type },
 
+/* The modification of PyVarObject_HEAD_INIT is described in detail here:
+ * https://mail.python.org/pipermail/python-dev/2018-August/154946.html */
 #define PyVarObject_HEAD_INIT(type, size) \
-    { PyObject_HEAD_INIT(type) size },
+    { PyObject_HEAD_INIT(NULL) 0 },
 /* clang-format on */
 
 #define Py_TPFLAGS_READY (1UL << 12)

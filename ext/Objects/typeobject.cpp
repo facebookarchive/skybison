@@ -72,6 +72,11 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
+  // Set the base type to PyType_Type
+  // TODO(T32512394): Handle metaclass initialization
+  type->ob_base.ob_base.ob_type =
+      runtime->builtinTypeHandles(ExtensionTypes::kType);
+
   // Create a new class for the PyTypeObject
   Handle<Class> type_class(&scope, runtime->newClass());
   Handle<Dictionary> dictionary(&scope, runtime->newDictionary());
