@@ -373,10 +373,10 @@ Object* Runtime::run(const char* buffer) {
 
   auto code = reader.readObject();
   assert(code->isCode());
-  assert(python::Code::cast(code)->argcount() == 0);
+  assert(Code::cast(code)->argcount() == 0);
 
   Handle<Module> main(&scope, createMainModule());
-  return python::Thread::currentThread()->runModuleFunction(*main, code);
+  return Thread::currentThread()->runModuleFunction(*main, code);
 }
 
 void Runtime::initializeThreads() {
