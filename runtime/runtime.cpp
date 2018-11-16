@@ -198,6 +198,12 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
 }
 
 Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                                 LayoutId superclass_id) {
+  return addBuiltinClass(name, subclass_id, superclass_id,
+                         View<BuiltinAttribute>(nullptr, 0));
+}
+
+Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
                                  LayoutId superclass_id,
                                  View<BuiltinAttribute> attributes) {
   HandleScope scope;
@@ -875,76 +881,65 @@ Object* Runtime::createMro(const Handle<Layout>& subclass_layout,
   return *dst;
 }
 
-Object* Runtime::initializeHeapClass(const char* name, LayoutId id,
-                                     LayoutId super_id) {
-  HandleScope scope;
-  Handle<Layout> layout(&scope, newLayout());
-  layout->setId(id);
-  Handle<Class> subclass(&scope, newClass());
-  layout->setDescribedClass(*subclass);
-  subclass->setName(newStringFromCString(name));
-  subclass->setMro(createMro(layout, super_id));
-  subclass->setInstanceLayout(*layout);
-  Handle<Class> superclass(&scope, classAt(super_id));
-  subclass->setFlags(superclass->flags());
-  layoutAtPut(id, *layout);
-  return *subclass;
-}
-
 void Runtime::initializeHeapClasses() {
   initializeObjectClass();
 
   // Abstract classes.
   initializeStrClass();
-  initializeHeapClass("int", LayoutId::kInteger, LayoutId::kObject);
+  addBuiltinClass(SymbolId::kInt, LayoutId::kInteger, LayoutId::kObject);
 
   // Exception hierarchy
   initializeExceptionClasses();
 
   // Concrete classes.
-  initializeHeapClass("bytearray", LayoutId::kByteArray, LayoutId::kObject);
+
+  addBuiltinClass(SymbolId::kByteArray, LayoutId::kByteArray,
+                  LayoutId::kObject);
   initializeClassMethodClass();
-  initializeHeapClass("code", LayoutId::kCode, LayoutId::kObject);
+  addBuiltinClass(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   initializeDictClass();
-  initializeHeapClass("ellipsis", LayoutId::kEllipsis, LayoutId::kObject);
+  addBuiltinClass(SymbolId::kEllipsis, LayoutId::kEllipsis, LayoutId::kObject);
   initializeFloatClass();
   initializeFunctionClass();
-  initializeHeapClass("largeint", LayoutId::kLargeInteger, LayoutId::kInteger);
-  initializeHeapClass("largestr", LayoutId::kLargeString, LayoutId::kString);
-  initializeHeapClass("layout", LayoutId::kLayout, LayoutId::kObject);
+  addBuiltinClass(SymbolId::kLargeInt, LayoutId::kLargeInteger,
+                  LayoutId::kInteger);
+  addBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeString,
+                  LayoutId::kString);
+  addBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
   initializeListClass();
-  initializeHeapClass("list_iterator", LayoutId::kListIterator,
-                      LayoutId::kObject);
-  initializeHeapClass("method", LayoutId::kBoundMethod, LayoutId::kObject);
-  initializeHeapClass("module", LayoutId::kModule, LayoutId::kObject);
-  initializeHeapClass("NotImplementedType", LayoutId::kNotImplemented,
-                      LayoutId::kObject);
+  addBuiltinClass(SymbolId::kListIterator, LayoutId::kListIterator,
+                  LayoutId::kObject);
+  addBuiltinClass(SymbolId::kMethod, LayoutId::kBoundMethod, LayoutId::kObject);
+  addBuiltinClass(SymbolId::kModule, LayoutId::kModule, LayoutId::kObject);
+  addBuiltinClass(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
+                  LayoutId::kObject);
   initializeObjectArrayClass();
   initializePropertyClass();
-  initializeHeapClass("range", LayoutId::kRange, LayoutId::kObject);
-  initializeHeapClass("range_iterator", LayoutId::kRangeIterator,
-                      LayoutId::kObject);
+  addBuiltinClass(SymbolId::kRange, LayoutId::kRange, LayoutId::kObject);
+  addBuiltinClass(SymbolId::kRangeIterator, LayoutId::kRangeIterator,
+                  LayoutId::kObject);
   initializeRefClass();
   initializeSetClass();
-  initializeHeapClass("slice", LayoutId::kSlice, LayoutId::kObject);
+  addBuiltinClass(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
   initializeStaticMethodClass();
   initializeSuperClass();
   initializeTypeClass();
-  initializeHeapClass("valuecell", LayoutId::kValueCell, LayoutId::kObject);
+  addBuiltinClass(SymbolId::kValueCell, LayoutId::kValueCell,
+                  LayoutId::kObject);
 }
 
 void Runtime::initializeExceptionClasses() {
   BaseExceptionBuiltins::initialize(this);
   SystemExitBuiltins::initialize(this);
   addBuiltinClass(SymbolId::kException, LayoutId::kException,
-                  LayoutId::kBaseException, View<BuiltinAttribute>(nullptr, 0));
+                  LayoutId::kBaseException);
   StopIterationBuiltins::initialize(this);
 }
 
 void Runtime::initializeRefClass() {
   HandleScope scope;
-  Handle<Class> ref(&scope, initializeHeapClass("ref", LayoutId::kWeakRef,
-                                                LayoutId::kObject));
+  Handle<Class> ref(&scope, addBuiltinClass(SymbolId::kRef, LayoutId::kWeakRef,
+                                            LayoutId::kObject));
 
   classAddBuiltinFunction(ref, SymbolId::kDunderInit,
                           nativeTrampoline<builtinRefInit>);
@@ -956,8 +951,8 @@ void Runtime::initializeRefClass() {
 void Runtime::initializeFunctionClass() {
   HandleScope scope;
   Handle<Class> function(
-      &scope,
-      initializeHeapClass("function", LayoutId::kFunction, LayoutId::kObject));
+      &scope, addBuiltinClass(SymbolId::kFunction, LayoutId::kFunction,
+                              LayoutId::kObject));
 
   classAddBuiltinFunction(function, SymbolId::kDunderGet,
                           nativeTrampoline<builtinFunctionGet>);
@@ -989,8 +984,8 @@ void Runtime::initializeObjectClass() {
 
 void Runtime::initializeStrClass() {
   HandleScope scope;
-  Handle<Class> type(
-      &scope, initializeHeapClass("str", LayoutId::kString, LayoutId::kObject));
+  Handle<Class> type(&scope, addBuiltinClass(SymbolId::kStr, LayoutId::kString,
+                                             LayoutId::kObject));
 
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinStringEq>);
@@ -1019,9 +1014,9 @@ void Runtime::initializeStrClass() {
 
 void Runtime::initializeObjectArrayClass() {
   HandleScope scope;
-  Handle<Class> type(
-      &scope,
-      initializeHeapClass("tuple", LayoutId::kObjectArray, LayoutId::kObject));
+  Handle<Class> type(&scope,
+                     addBuiltinClass(SymbolId::kTuple, LayoutId::kObjectArray,
+                                     LayoutId::kObject));
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinTupleEq>);
   classAddBuiltinFunction(type, SymbolId::kDunderGetItem,
@@ -1031,8 +1026,8 @@ void Runtime::initializeObjectArrayClass() {
 void Runtime::initializeDictClass() {
   HandleScope scope;
   Handle<Class> dict_type(
-      &scope,
-      initializeHeapClass("dict", LayoutId::kDictionary, LayoutId::kObject));
+      &scope, addBuiltinClass(SymbolId::kDict, LayoutId::kDictionary,
+                              LayoutId::kObject));
 
   classAddBuiltinFunction(dict_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDictionaryEq>);
@@ -1046,8 +1041,8 @@ void Runtime::initializeDictClass() {
 
 void Runtime::initializeListClass() {
   HandleScope scope;
-  Handle<Class> list(
-      &scope, initializeHeapClass("list", LayoutId::kList, LayoutId::kObject));
+  Handle<Class> list(&scope, addBuiltinClass(SymbolId::kList, LayoutId::kList,
+                                             LayoutId::kObject));
 
   classAddBuiltinFunction(list, SymbolId::kDunderAdd,
                           nativeTrampoline<builtinListAdd>);
@@ -1088,8 +1083,8 @@ void Runtime::initializeListClass() {
 void Runtime::initializeClassMethodClass() {
   HandleScope scope;
   Handle<Class> classmethod(
-      &scope, initializeHeapClass("classmethod", LayoutId::kClassMethod,
-                                  LayoutId::kObject));
+      &scope, addBuiltinClass(SymbolId::kClassmethod, LayoutId::kClassMethod,
+                              LayoutId::kObject));
 
   classAddBuiltinFunction(classmethod, SymbolId::kDunderGet,
                           nativeTrampoline<builtinClassMethodGet>);
@@ -1103,8 +1098,8 @@ void Runtime::initializeClassMethodClass() {
 
 void Runtime::initializeTypeClass() {
   HandleScope scope;
-  Handle<Class> type(
-      &scope, initializeHeapClass("type", LayoutId::kType, LayoutId::kObject));
+  Handle<Class> type(&scope, addBuiltinClass(SymbolId::kType, LayoutId::kType,
+                                             LayoutId::kObject));
 
   classAddBuiltinFunction(type, SymbolId::kDunderCall,
                           nativeTrampoline<builtinTypeCall>);
@@ -1118,15 +1113,17 @@ void Runtime::initializeTypeClass() {
 
 void Runtime::initializeImmediateClasses() {
   initializeBooleanClass();
-  initializeHeapClass("NoneType", LayoutId::kNone, LayoutId::kObject);
-  initializeHeapClass("smallstr", LayoutId::kSmallString, LayoutId::kString);
+  addBuiltinClass(SymbolId::kNoneType, LayoutId::kNone, LayoutId::kObject);
+  addBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallString,
+                  LayoutId::kString);
   initializeSmallIntClass();
 }
 
 void Runtime::initializeBooleanClass() {
   HandleScope scope;
-  Handle<Class> type(&scope, initializeHeapClass("bool", LayoutId::kBoolean,
-                                                 LayoutId::kInteger));
+  Handle<Class> type(
+      &scope,
+      addBuiltinClass(SymbolId::kBool, LayoutId::kBoolean, LayoutId::kInteger));
 
   classAddBuiltinFunction(type, SymbolId::kDunderBool,
                           nativeTrampoline<builtinBooleanBool>);
@@ -1136,7 +1133,7 @@ void Runtime::initializeFloatClass() {
   HandleScope scope;
   Handle<Class> float_type(
       &scope,
-      initializeHeapClass("float", LayoutId::kDouble, LayoutId::kObject));
+      addBuiltinClass(SymbolId::kFloat, LayoutId::kDouble, LayoutId::kObject));
 
   classAddBuiltinFunction(float_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDoubleEq>);
@@ -1165,8 +1162,8 @@ void Runtime::initializeFloatClass() {
 
 void Runtime::initializeSetClass() {
   HandleScope scope;
-  Handle<Class> set_type(
-      &scope, initializeHeapClass("set", LayoutId::kSet, LayoutId::kObject));
+  Handle<Class> set_type(&scope, addBuiltinClass(SymbolId::kSet, LayoutId::kSet,
+                                                 LayoutId::kObject));
 
   classAddBuiltinFunction(set_type, SymbolId::kAdd,
                           nativeTrampoline<builtinSetAdd>);
@@ -1190,8 +1187,8 @@ void Runtime::initializeSetClass() {
 void Runtime::initializePropertyClass() {
   HandleScope scope;
   Handle<Class> property(
-      &scope,
-      initializeHeapClass("property", LayoutId::kProperty, LayoutId::kObject));
+      &scope, addBuiltinClass(SymbolId::kProperty, LayoutId::kProperty,
+                              LayoutId::kObject));
 
   classAddBuiltinFunction(property, SymbolId::kDeleter,
                           nativeTrampoline<builtinPropertyDeleter>);
@@ -1218,8 +1215,8 @@ void Runtime::initializePropertyClass() {
 void Runtime::initializeSmallIntClass() {
   HandleScope scope;
   Handle<Class> small_integer(
-      &scope, initializeHeapClass("smallint", LayoutId::kSmallInteger,
-                                  LayoutId::kInteger));
+      &scope, addBuiltinClass(SymbolId::kSmallInt, LayoutId::kSmallInteger,
+                              LayoutId::kInteger));
 
   classAddBuiltinFunction(small_integer, SymbolId::kBitLength,
                           nativeTrampoline<builtinSmallIntegerBitLength>);
@@ -1285,8 +1282,8 @@ void Runtime::initializeSmallIntClass() {
 void Runtime::initializeStaticMethodClass() {
   HandleScope scope;
   Handle<Class> staticmethod(
-      &scope, initializeHeapClass("staticmethod", LayoutId::kStaticMethod,
-                                  LayoutId::kObject));
+      &scope, addBuiltinClass(SymbolId::kStaticMethod, LayoutId::kStaticMethod,
+                              LayoutId::kObject));
 
   classAddBuiltinFunction(staticmethod, SymbolId::kDunderGet,
                           nativeTrampoline<builtinStaticMethodGet>);
@@ -3030,8 +3027,9 @@ Object* Runtime::layoutDeleteAttribute(Thread* thread,
 
 void Runtime::initializeSuperClass() {
   HandleScope scope;
-  Handle<Class> super(&scope, initializeHeapClass("super", LayoutId::kSuper,
-                                                  LayoutId::kObject));
+  Handle<Class> super(
+      &scope,
+      addBuiltinClass(SymbolId::kSuper, LayoutId::kSuper, LayoutId::kObject));
 
   classAddBuiltinFunction(super, SymbolId::kDunderInit,
                           nativeTrampoline<builtinSuperInit>);

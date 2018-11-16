@@ -85,12 +85,16 @@ class Runtime;
   V(Argv, "argv")                                                              \
   V(BaseException, "BaseException")                                            \
   V(BitLength, "bit_length")                                                   \
+  V(Bool, "bool")                                                              \
   V(Builtins, "builtins")                                                      \
+  V(ByteArray, "bytearray")                                                    \
   V(Cause, "cause")                                                            \
   V(Chr, "chr")                                                                \
   V(Classmethod, "classmethod")                                                \
+  V(Code, "code")                                                              \
   V(Deleter, "deleter")                                                        \
   V(Dict, "dict")                                                              \
+  V(Ellipsis, "ellipsis")                                                      \
   V(End, "end")                                                                \
   V(Exception, "Exception")                                                    \
   V(Exit, "exit")                                                              \
@@ -98,39 +102,55 @@ class Runtime;
   V(ExtensionPtr, "___extension___")                                           \
   V(File, "file")                                                              \
   V(Float, "float")                                                            \
+  V(Function, "function")                                                      \
   V(Getter, "getter")                                                          \
   V(Insert, "insert")                                                          \
   V(Int, "int")                                                                \
   V(IsInstance, "isinstance")                                                  \
+  V(LargeInt, "largeint")                                                      \
+  V(LargeStr, "largestr")                                                      \
+  V(Layout, "layout")                                                          \
   V(Len, "len")                                                                \
   V(List, "list")                                                              \
+  V(ListIterator, "list_iterator")                                             \
   V(Metaclass, "metaclass")                                                    \
+  V(Method, "method")                                                          \
+  V(Module, "module")                                                          \
   V(Modules, "modules")                                                        \
+  V(NoneType, "NoneType")                                                      \
   V(NotImplemented, "NotImplemented")                                          \
+  V(NotImplementedType, "NotImplementedType")                                  \
   V(ObjectClassname, "object")                                                 \
   V(Ord, "ord")                                                                \
   V(Pop, "pop")                                                                \
   V(Print, "print")                                                            \
   V(Property, "property")                                                      \
   V(Range, "range")                                                            \
+  V(RangeIterator, "range_iterator")                                           \
   V(Ref, "ref")                                                                \
   V(Remove, "remove")                                                          \
   V(Repr, "repr")                                                              \
   V(Set, "set")                                                                \
   V(Setter, "setter")                                                          \
   V(Size, "size")                                                              \
+  V(Slice, "slice")                                                            \
+  V(SmallInt, "smallint")                                                      \
+  V(SmallStr, "smallstr")                                                      \
   V(StaticMethod, "staticmethod")                                              \
   V(Stderr, "stderr")                                                          \
   V(Stdout, "stdout")                                                          \
+  V(Str, "str")                                                                \
   V(StopIteration, "StopIteration")                                            \
   V(Super, "super")                                                            \
   V(Sys, "sys")                                                                \
   V(SystemExit, "SystemExit")                                                  \
   V(Time, "time")                                                              \
   V(Traceback, "traceback")                                                    \
+  V(Tuple, "tuple")                                                            \
   V(Type, "type")                                                              \
   V(UnderWeakRef, "_weakref")                                                  \
-  V(Value, "value")
+  V(Value, "value")                                                            \
+  V(ValueCell, "valuecell")
 
 // clang-format off
 enum class SymbolId {

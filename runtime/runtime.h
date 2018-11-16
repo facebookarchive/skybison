@@ -174,6 +174,8 @@ class Runtime {
   // Bootstrapping primitive for creating a built-in class that has built-in
   // attributes.
   Object* addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                          LayoutId superclass_id);
+  Object* addBuiltinClass(SymbolId name, LayoutId subclass_id,
                           LayoutId superclass_id,
                           View<BuiltinAttribute> attributes);
 
@@ -510,7 +512,7 @@ class Runtime {
   void initializeApiHandles();
   void initializeRandom();
   void initializeSymbols();
-  Object* initializeHeapClass(const char* name, LayoutId id, LayoutId super_id);
+
   void initializeBooleanClass();
   void initializeClassMethodClass();
   void initializeDictClass();
