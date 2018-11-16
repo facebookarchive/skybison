@@ -139,6 +139,13 @@ class Runtime {
       const Handle<Object>& key,
       Callback<Object*>* thunk);
 
+  // Stores value in a ValueCell stored at key in dict. Careful to
+  // reuse an existing value cell if one exists since it may be shared.
+  Object* dictionaryAtPutInValueCell(
+      const Handle<Dictionary>& dict,
+      const Handle<Object>& key,
+      const Handle<Object>& value);
+
   // Returns true if the dictionary contains the specified key.
   bool dictionaryIncludes(
       const Handle<Dictionary>& dict,

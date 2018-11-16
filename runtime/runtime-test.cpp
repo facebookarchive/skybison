@@ -474,12 +474,8 @@ TEST(RuntimeTest, GetClassConstructor) {
   EXPECT_EQ(runtime.classConstructor(klass), None::object());
 
   Handle<Object> init(&scope, runtime.newStringFromCString("__init__"));
-  Handle<ValueCell> value_cell(
-      &scope,
-      runtime.dictionaryAtIfAbsentPut(
-          klass_dict, init, runtime.newValueCellCallback()));
   Handle<Function> func(&scope, runtime.newFunction());
-  value_cell->setValue(*func);
+  runtime.dictionaryAtPutInValueCell(klass_dict, init, func);
 
   EXPECT_EQ(runtime.classConstructor(klass), *func);
 }
@@ -531,11 +527,7 @@ TEST(RuntimeTest, ComputeInstanceSize) {
 
     Handle<Dictionary> klass_dict(&scope, runtime.newDictionary());
     Handle<Object> init(&scope, runtime.newStringFromCString("__init__"));
-    Handle<ValueCell> value_cell(
-        &scope,
-        runtime.dictionaryAtIfAbsentPut(
-            klass_dict, init, runtime.newValueCellCallback()));
-    value_cell->setValue(*func);
+    runtime.dictionaryAtPutInValueCell(klass_dict, init, func);
 
     Handle<Class> klass(&scope, runtime.newClass());
     klass->setDictionary(*klass_dict);

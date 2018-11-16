@@ -53,11 +53,7 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   Handle<Dictionary> dictionary(&scope, runtime->newDictionary());
   Handle<Object> key(
       &scope, thread->runtime()->newStringFromCString("__name__"));
-  Handle<ValueCell> value_cell(
-      &scope,
-      runtime->dictionaryAtIfAbsentPut(
-          dictionary, key, runtime->newValueCellCallback()));
-  value_cell->setValue(*name);
+  thread->runtime()->dictionaryAtPutInValueCell(dictionary, key, name);
 
   // TODO: might need to do some kind of callback here and we want backtraces to
   // work correctly.  The key to doing that would be to put some state on the

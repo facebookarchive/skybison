@@ -70,12 +70,9 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
         Object* names = Code::cast(frame->code())->names();
         Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
-        Runtime* runtime = thread->runtime();
-        Handle<ValueCell> value_cell(
-            &scope,
-            runtime->dictionaryAtIfAbsentPut(
-                implicit_globals, key, runtime->newValueCellCallback()));
-        value_cell->setValue(*sp++);
+        Handle<Object> value(&scope, *sp++);
+        thread->runtime()->dictionaryAtPutInValueCell(
+            implicit_globals, key, value);
         break;
       }
       case Bytecode::POP_TOP: {
@@ -141,12 +138,9 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         Handle<Dictionary> globals(&scope, frame->globals());
         Object* names = Code::cast(frame->code())->names();
         Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
+        Handle<Object> value(&scope, *sp++);
         Runtime* runtime = thread->runtime();
-        Handle<ValueCell> value_cell(
-            &scope,
-            runtime->dictionaryAtIfAbsentPut(
-                globals, key, runtime->newValueCellCallback()));
-        value_cell->setValue(*sp++);
+        runtime->dictionaryAtPutInValueCell(globals, key, value);
         break;
       }
       case Bytecode::MAKE_FUNCTION: {

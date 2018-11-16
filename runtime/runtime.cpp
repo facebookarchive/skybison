@@ -500,9 +500,7 @@ void Runtime::moduleAddGlobal(
     const Handle<Object>& value) {
   HandleScope scope;
   Handle<Dictionary> dictionary(&scope, module->dictionary());
-  Handle<ValueCell> value_cell(
-      &scope, dictionaryAtIfAbsentPut(dictionary, key, newValueCellCallback()));
-  value_cell->setValue(*value);
+  dictionaryAtPutInValueCell(dictionary, key, value);
 }
 
 Object* Runtime::moduleAddBuiltinFunction(
@@ -513,10 +511,8 @@ Object* Runtime::moduleAddBuiltinFunction(
   HandleScope scope;
   Handle<Object> key(&scope, newStringFromCString(name));
   Handle<Dictionary> dictionary(&scope, module->dictionary());
-  Handle<ValueCell> value_cell(
-      &scope, dictionaryAtIfAbsentPut(dictionary, key, newValueCellCallback()));
-  value_cell->setValue(newBuiltinFunction(entry, entryKw));
-  return *value_cell;
+  Handle<Object> value(&scope, newBuiltinFunction(entry, entryKw));
+  return dictionaryAtPutInValueCell(dictionary, key, value);
 }
 
 void Runtime::moduleAddBuiltinPrint(const Handle<Module>& module) {
@@ -777,6 +773,15 @@ Object* Runtime::dictionaryAtIfAbsentPut(
   }
   dict->setNumItems(dict->numItems() + 1);
   return *value;
+}
+
+Object* Runtime::dictionaryAtPutInValueCell(
+    const Handle<Dictionary>& dict,
+    const Handle<Object>& key,
+    const Handle<Object>& value) {
+  Object* result = dictionaryAtIfAbsentPut(dict, key, newValueCellCallback());
+  ValueCell::cast(result)->setValue(*value);
+  return result;
 }
 
 bool Runtime::dictionaryIncludes(
