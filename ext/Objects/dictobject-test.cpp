@@ -27,9 +27,11 @@ TEST_F(DictExtensionApiTest, GetItemReturnsBorrowedValue) {
   PyObject* dict = PyDict_New();
   PyObject* key = PyLong_FromLong(10);
   PyObject* value = PyLong_FromLong(20);
+  EXPECT_EQ(Py_REFCNT(value), 1);
 
   // Insert key value
   ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+  EXPECT_EQ(Py_REFCNT(value), 2);
 
   // Pass existing key
   PyObject* result = PyDict_GetItem(dict, key);
@@ -37,7 +39,9 @@ TEST_F(DictExtensionApiTest, GetItemReturnsBorrowedValue) {
 
   // Check result value
   EXPECT_EQ(PyLong_AsLong(result), 20);
-  EXPECT_TRUE(testing::isBorrowed(result));
+  // PyDict_GetItem "borrows" a reference for the return value.  Verify the
+  // reference count did not change.
+  EXPECT_EQ(Py_REFCNT(result), 2);
 }
 
 }  // namespace python

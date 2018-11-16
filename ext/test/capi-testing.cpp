@@ -30,9 +30,5 @@ PyObject* moduleGet(const char* module, const char* name) {
   return PyObject_GetAttrString(mod, name);
 }
 
-bool isBorrowed(PyObject* pyobj) {
-  return ApiHandle::fromPyObject(pyobj)->isBorrowed();
-}
-
 }  // namespace testing
 }  // namespace python
