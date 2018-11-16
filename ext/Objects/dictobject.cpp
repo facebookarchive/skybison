@@ -32,7 +32,7 @@ extern "C" int PyDict_SetItem(PyObject* pydict, PyObject* key,
   Handle<Object> keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Handle<Object> valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Handle<Dict> dict(&scope, *dictobj);
-  runtime->dictAtPutInValueCell(dict, keyobj, valueobj);
+  runtime->dictAtPut(dict, keyobj, valueobj);
   // TODO(eelizondo): increment the reference count through ApiHandle
   key->ob_refcnt++;
   value->ob_refcnt++;

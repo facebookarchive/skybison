@@ -16,13 +16,13 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
   {
     PyObject *m, *d, *de;
     m = PyModule_Create(&def);
-    d = PyModule_GetDict(m);
     de = PyDict_New();
-    PyDict_SetItemString(d, "constants", de);
+    PyModule_AddObject(m, "constants", de);
 
-    PyObject* u = PyUnicode_FromString("CONST");
+    const char* c = "CONST";
+    PyObject* u = PyUnicode_FromString(c);
     PyObject* v = PyLong_FromLong(val);
-    PyDict_SetItem(d, u, v);
+    PyModule_AddIntConstant(m, c, val);
     PyDict_SetItem(de, v, u);
   }
 

@@ -49,8 +49,7 @@ TEST_F(TypeExtensionApiTest, ReadyCreatesRuntimeType) {
   };
   PyObject *m, *d;
   m = PyModule_Create(&def);
-  d = PyModule_GetDict(m);
-  PyDict_SetItemString(d, "Empty", reinterpret_cast<PyObject*>(&empty_type));
+  PyModule_AddObject(m, "Empty", reinterpret_cast<PyObject*>(&empty_type));
 
   PyRun_SimpleString(R"(
 import test
@@ -98,10 +97,8 @@ TEST_F(TypeExtensionApiTest, InitializeCustomTypeInstance) {
       PyModuleDef_HEAD_INIT,
       "custom",
   };
-  PyObject* pymodule = PyModule_Create(&def);
-  PyObject* pymodule_dict = PyModule_GetDict(pymodule);
-  PyDict_SetItemString(pymodule_dict, "Custom",
-                       reinterpret_cast<PyObject*>(&custom_type));
+  PyObject* m = PyModule_Create(&def);
+  PyModule_AddObject(m, "Custom", reinterpret_cast<PyObject*>(&custom_type));
 
   PyRun_SimpleString(R"(
 import custom
