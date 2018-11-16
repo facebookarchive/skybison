@@ -1129,48 +1129,57 @@ void Interpreter::doDeleteName(Context* ctx, word arg) {
 // opcode 92
 void Interpreter::doUnpackSequence(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Handle<Object> iterable(&scope, ctx->frame->popValue());
-  Handle<Object> iter_method(&scope, lookupMethod(thread, ctx->frame, iterable,
-                                                  SymbolId::kDunderIter));
+  Handle<Object> iterable(&scope, frame->popValue());
+  Handle<Object> iter_method(
+      &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
     thread->throwTypeErrorFromCStr("object is not iterable");
     thread->abortOnPendingException();
   }
-  Handle<Object> iterator(
-      &scope, callMethod1(thread, ctx->frame, iter_method, iterable));
+  Handle<Object> iterator(&scope,
+                          callMethod1(thread, frame, iter_method, iterable));
   thread->abortOnPendingException();
-  Handle<Object> next_method(&scope, lookupMethod(thread, ctx->frame, iterator,
-                                                  SymbolId::kDunderNext));
+  Handle<Object> next_method(
+      &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
     thread->throwTypeErrorFromCStr("iter() returned non-iterator");
     thread->abortOnPendingException();
   }
-  for (word i = 0; i < arg; i++) {
-    ctx->frame->pushValue(None::object());
-  }
-  word num_pushed;
-  for (num_pushed = 0; num_pushed < arg; num_pushed++) {
-    if (thread->runtime()->isIteratorExhausted(thread, iterator)) {
-      break;
-    }
-    Handle<Object> value(
-        &scope, callMethod1(thread, ctx->frame, next_method, iterator));
+  word num_pushed = 0;
+  for (; num_pushed < arg && !runtime->isIteratorExhausted(thread, iterator);
+       ++num_pushed) {
+    Handle<Object> value(&scope,
+                         callMethod1(thread, frame, next_method, iterator));
     if (value->isError()) {
       thread->abortOnPendingException();
-      break;
+      return;
     }
-    ctx->frame->setValueAt(*value, num_pushed);
+    frame->pushValue(*value);
   }
+
   if (num_pushed < arg) {
-    ctx->frame->dropValues(arg);
+    frame->dropValues(num_pushed);
     thread->throwValueErrorFromCStr("not enough values to unpack");
     thread->abortOnPendingException();
+    return;
   }
-  if (!thread->runtime()->isIteratorExhausted(thread, iterator)) {
-    ctx->frame->dropValues(arg);
+  if (!runtime->isIteratorExhausted(thread, iterator)) {
+    frame->dropValues(num_pushed);
     thread->throwValueErrorFromCStr("too many values to unpack");
     thread->abortOnPendingException();
+    return;
+  }
+
+  // swap values on the stack
+  Handle<Object> tmp(&scope, None::object());
+  for (word i = 0, j = num_pushed - 1, half = num_pushed / 2; i < half;
+       ++i, --j) {
+    tmp = frame->peek(i);
+    frame->setValueAt(frame->peek(j), i);
+    frame->setValueAt(*tmp, j);
   }
 }
 
@@ -1208,7 +1217,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Handle<Object> iterable(&scope, frame->topValue());
+  Handle<Object> iterable(&scope, frame->popValue());
   Handle<Object> iter_method(
       &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
@@ -1237,7 +1246,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
     if (value->isError()) {
       frame->dropValues(num_pushed);
       thread->abortOnPendingException();
-      break;
+      return;
     }
     frame->pushValue(*value);
   }
@@ -1255,7 +1264,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
     if (value->isError()) {
       frame->dropValues(num_pushed);
       thread->abortOnPendingException();
-      break;
+      return;
     }
     runtime->listAdd(list, value);
   }
@@ -1844,30 +1853,37 @@ void Interpreter::doLoadClassDeref(Context* ctx, word arg) {
 
 // opcode 149
 void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
-  Runtime* runtime = ctx->thread->runtime();
-  HandleScope scope(ctx->thread);
+  Frame* frame = ctx->frame;
+  Thread* thread = ctx->thread;
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
   Handle<List> list(&scope, runtime->newList());
   Handle<Object> obj(&scope, None::object());
   for (word i = arg - 1; i >= 0; i--) {
-    obj = ctx->frame->peek(i);
-    runtime->listExtend(ctx->thread, list, obj);
+    obj = frame->peek(i);
+    if (runtime->listExtend(thread, list, obj)->isError()) {
+      frame->dropValues(arg);
+      thread->abortOnPendingException();
+    }
   }
-  ctx->frame->dropValues(arg - 1);
-  ctx->frame->setTopValue(*list);
+  frame->dropValues(arg - 1);
+  frame->setTopValue(*list);
 }
 
 // opcode 150
 void Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
-  Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
+  Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Handle<Dict> dict(&scope, runtime->newDict());
   Handle<Object> obj(&scope, None::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    runtime->dictUpdate(thread, dict, obj);
-    thread->abortOnPendingException();
+    if (runtime->dictUpdate(thread, dict, obj)->isError()) {
+      frame->dropValues(arg);
+      thread->abortOnPendingException();
+    }
   }
   frame->dropValues(arg - 1);
   frame->setTopValue(*dict);
@@ -1875,35 +1891,44 @@ void Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
 
 // opcode 152 & opcode 158
 void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
-  Runtime* runtime = ctx->thread->runtime();
-  HandleScope scope(ctx->thread);
+  Frame* frame = ctx->frame;
+  Thread* thread = ctx->thread;
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
   Handle<List> list(&scope, runtime->newList());
   Handle<Object> obj(&scope, None::object());
   for (word i = arg - 1; i >= 0; i--) {
-    obj = ctx->frame->peek(i);
-    runtime->listExtend(ctx->thread, list, obj);
+    obj = frame->peek(i);
+    if (runtime->listExtend(thread, list, obj)->isError()) {
+      frame->dropValues(arg);
+      thread->abortOnPendingException();
+    }
   }
-  ObjectArray* tuple =
-      ObjectArray::cast(runtime->newObjectArray(list->allocated()));
+  Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(list->allocated()));
   for (word i = 0; i < list->allocated(); i++) {
     tuple->atPut(i, list->at(i));
   }
-  ctx->frame->dropValues(arg - 1);
-  ctx->frame->setTopValue(tuple);
+  frame->dropValues(arg - 1);
+  frame->setTopValue(*tuple);
 }
 
 // opcode 153
 void Interpreter::doBuildSetUnpack(Context* ctx, word arg) {
-  Runtime* runtime = ctx->thread->runtime();
-  HandleScope scope(ctx->thread);
+  Frame* frame = ctx->frame;
+  Thread* thread = ctx->thread;
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
   Handle<Set> set(&scope, runtime->newSet());
   Handle<Object> obj(&scope, None::object());
   for (word i = 0; i < arg; i++) {
-    obj = ctx->frame->peek(i);
-    runtime->setUpdate(ctx->thread, set, obj);
+    obj = frame->peek(i);
+    if (runtime->setUpdate(thread, set, obj)->isError()) {
+      frame->dropValues(arg);
+      thread->abortOnPendingException();
+    }
   }
-  ctx->frame->dropValues(arg - 1);
-  ctx->frame->setTopValue(*set);
+  frame->dropValues(arg - 1);
+  frame->setTopValue(*set);
 }
 
 // opcode 154

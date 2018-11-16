@@ -220,8 +220,9 @@ class Runtime {
   void listAdd(const Handle<List>& list, const Handle<Object>& value);
 
   // Extends a list from an iterator.
-  void listExtend(Thread* thread, const Handle<List>& dst,
-                  const Handle<Object>& iterable);
+  // Returns either the extended list or an Error object.
+  Object* listExtend(Thread* thread, const Handle<List>& dst,
+                     const Handle<Object>& iterable);
 
   // Inserts an element to the specified index of the list.
   // When index >= len(list) it is equivalent to appending to the list.
@@ -290,12 +291,13 @@ class Runtime {
   // Delete a key from the set, returns true if the key existed.
   bool setRemove(const Handle<Set>& set, const Handle<Object>& value);
 
-  // Update a set from an iterator.
-  void setUpdate(Thread* thread, const Handle<Set>& set,
-                 const Handle<Object>& iterable);
+  // Update a set from an iterator
+  // Returns either the updated set or an Error object.
+  Object* setUpdate(Thread* thread, const Handle<Set>& set,
+                    const Handle<Object>& iterable);
 
-  // Updates a dictionary from another dictionary or a mapping.
-  // Returns the updated dictionary or an Error object.
+  // Update a dictionary from another dictionary or an iterator.
+  // Returns either the updated dict or an Error object.
   Object* dictUpdate(Thread* thread, const Handle<Dict>& dict,
                      const Handle<Object>& mapping);
 

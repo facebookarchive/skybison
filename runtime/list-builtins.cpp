@@ -82,8 +82,10 @@ Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
         List::cast(*self)->allocated() + List::cast(*other)->allocated();
     Handle<List> new_list(&scope, runtime->newList());
     runtime->listEnsureCapacity(new_list, new_capacity);
-    runtime->listExtend(thread, new_list, self);
-    runtime->listExtend(thread, new_list, other);
+    new_list = runtime->listExtend(thread, new_list, self);
+    if (!new_list->isError()) {
+      new_list = runtime->listExtend(thread, new_list, other);
+    }
     return *new_list;
   }
   return thread->throwTypeErrorFromCStr("can only concatenate list to list");
@@ -121,8 +123,10 @@ Object* ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   }
   Handle<List> list(&scope, *self);
   Handle<Object> value(&scope, args.get(1));
-  // TODO(jeethu): Throw TypeError if value is not iterable.
-  thread->runtime()->listExtend(thread, list, value);
+  list = thread->runtime()->listExtend(thread, list, value);
+  if (list->isError()) {
+    return *list;
+  }
   return None::object();
 }
 

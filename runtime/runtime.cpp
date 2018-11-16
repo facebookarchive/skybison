@@ -1687,8 +1687,8 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   list->atPut(index, *value);
 }
 
-void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
-                         const Handle<Object>& iterable) {
+Object* Runtime::listExtend(Thread* thread, const Handle<List>& dst,
+                            const Handle<Object>& iterable) {
   HandleScope scope(thread);
   Handle<Object> elt(&scope, None::object());
   word index = dst->allocated();
@@ -1703,7 +1703,7 @@ void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
         dst->atPut(index++, src->at(i));
       }
     }
-    return;
+    return *dst;
   }
   // Special case for list iterators
   if (iterable->isListIterator()) {
@@ -1719,6 +1719,7 @@ void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
       }
       dst->atPut(index++, src->at(i));
     }
+    return *dst;
   }
   // Special case for tuples
   if (iterable->isObjectArray()) {
@@ -1731,7 +1732,7 @@ void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
         dst->atPut(index++, tuple->at(i));
       }
     }
-    return;
+    return *dst;
   }
   // Special case for sets
   if (iterable->isSet()) {
@@ -1749,7 +1750,7 @@ void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
         dst->atPut(index++, Set::Bucket::key(*data, i));
       }
     }
-    return;
+    return *dst;
   }
   // Special case for dicts
   if (iterable->isDict()) {
@@ -1763,42 +1764,37 @@ void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
         dst->atPut(index++, keys->at(i));
       }
     }
-    return;
+    return *dst;
   }
   // Generic case
   Handle<Object> iter_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
-    thread->throwTypeErrorFromCStr("object is not iterable");
-    thread->abortOnPendingException();
-    return;
+    return thread->throwTypeErrorFromCStr("object is not iterable");
   }
   Handle<Object> iterator(
       &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
                                        iter_method, iterable));
   if (iterator->isError()) {
-    thread->throwTypeErrorFromCStr("object is not iterable");
-    thread->abortOnPendingException();
-    return;
+    return thread->throwTypeErrorFromCStr("object is not iterable");
   }
   Handle<Object> next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->throwTypeErrorFromCStr("iter() returned a non-iterator");
-    thread->abortOnPendingException();
+    return thread->throwTypeErrorFromCStr("iter() returned a non-iterator");
   }
   Handle<Object> value(&scope, None::object());
   while (!isIteratorExhausted(thread, iterator)) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
                                      next_method, iterator);
     if (value->isError()) {
-      thread->abortOnPendingException();
-      break;
+      return *value;
     }
     listAdd(dst, value);
   }
+  return *dst;
 }
 
 void Runtime::listInsert(const Handle<List>& list, const Handle<Object>& value,
@@ -2230,8 +2226,8 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
   return found;
 }
 
-void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
-                        const Handle<Object>& iterable) {
+Object* Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
+                           const Handle<Object>& iterable) {
   HandleScope scope;
   Handle<Object> elt(&scope, None::object());
   // Special case for lists
@@ -2241,7 +2237,7 @@ void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
       elt = src->at(i);
       setAdd(dst, elt);
     }
-    return;
+    return *dst;
   }
   // Special case for lists iterators
   if (iterable->isListIterator()) {
@@ -2261,7 +2257,7 @@ void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
         setAdd(dst, elt);
       }
     }
-    return;
+    return *dst;
   }
   // Special case for sets
   if (iterable->isSet()) {
@@ -2277,7 +2273,7 @@ void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
         setAdd(dst, elt);
       }
     }
-    return;
+    return *dst;
   }
   // Special case for dicts
   if (iterable->isDict()) {
@@ -2290,46 +2286,37 @@ void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
         setAdd(dst, value);
       }
     }
-    return;
+    return *dst;
   }
   // Generic case
   Handle<Object> iter_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
-    thread->throwTypeErrorFromCStr("object is not iterable");
-    thread->abortOnPendingException();
-    return;
+    return thread->throwTypeErrorFromCStr("object is not iterable");
   }
   Handle<Object> iterator(
       &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
                                        iter_method, iterable));
   if (iterator->isError()) {
-    thread->throwTypeErrorFromCStr("object is not iterable");
-    thread->abortOnPendingException();
-    return;
+    return thread->throwTypeErrorFromCStr("object is not iterable");
   }
   Handle<Object> next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->throwTypeErrorFromCStr("iter() returned a non-iterator");
-    thread->abortOnPendingException();
+    return thread->throwTypeErrorFromCStr("iter() returned a non-iterator");
   }
   Handle<Object> value(&scope, None::object());
-  for (;;) {
-    if (isIteratorExhausted(thread, iterator)) {
-      break;
-    }
+  while (!isIteratorExhausted(thread, iterator)) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
                                      next_method, iterator);
-    if (!value->isError()) {
-      setAdd(dst, value);
-    } else {
-      break;
+    if (value->isError()) {
+      return *value;
     }
+    setAdd(dst, value);
   }
-  thread->abortOnPendingException();
+  return *dst;
 }
 
 Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
