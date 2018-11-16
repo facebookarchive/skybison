@@ -30,6 +30,8 @@ class Heap {
 
   Object* createFunction();
 
+  Object* createInstance(ClassId class_id, word num_attributes);
+
   Object* createList(Object* elements);
 
   Object* createModule(Object* name, Object* dictionary);

@@ -195,6 +195,17 @@ Object* Heap::createFunction() {
   return Function::cast(result);
 }
 
+Object* Heap::createInstance(ClassId class_id, word num_attributes) {
+  word size = Instance::allocationSize(num_attributes);
+  Object* raw = allocate(size, HeapObject::headerSize(num_attributes));
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<Function*>(raw);
+  result->setHeader(
+      Header::from(num_attributes, 0, class_id, ObjectFormat::kObjectInstance));
+  result->initialize();
+  return Instance::cast(result);
+}
+
 Object* Heap::createList(Object* elements) {
   word size = List::allocationSize();
   Object* raw = allocate(size, Header::kSize);

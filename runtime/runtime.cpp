@@ -67,11 +67,7 @@ Object* Runtime::newByteArrayWithAll(View<byte> array) {
 }
 
 Object* Runtime::newClass() {
-  ClassId class_id = newClassId();
-  HandleScope scope;
-  Handle<Class> klass(&scope, heap()->createClass(class_id));
-  klass->initialize(newDictionary());
-  return *klass;
+  return newClassWithId(newClassId());
 }
 
 Object* Runtime::newClassWithId(ClassId class_id) {
@@ -106,6 +102,12 @@ Object* Runtime::newFunction() {
   function->setEntry(unimplementedTrampoline);
   function->setEntryKw(unimplementedTrampoline);
   return function;
+}
+
+Object* Runtime::newInstance(ClassId class_id) {
+  Object* cls = classAt(class_id);
+  assert(!cls->isNone());
+  return heap()->createInstance(class_id, Class::cast(cls)->instanceSize());
 }
 
 Object* Runtime::newList() {

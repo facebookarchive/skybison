@@ -41,6 +41,8 @@ class Runtime {
   Object* newBuiltinFunction(Function::Entry entry, Function::Entry entryKw);
   Object* newFunction();
 
+  Object* newInstance(ClassId class_id);
+
   Object* newList();
 
   Object* newModule(const Handle<Object>& name);

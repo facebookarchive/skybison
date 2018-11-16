@@ -55,7 +55,7 @@ class Object;
 // [   ...  ]
 // [ elem N ]
 
-enum class ClassId {
+enum ClassId {
   // Immediate objects
   kSmallInteger = 0,
   kSmallString,
@@ -103,6 +103,7 @@ class Object {
   inline bool isCode();
   inline bool isDictionary();
   inline bool isFunction();
+  inline bool isInstance();
   inline bool isList();
   inline bool isModule();
   inline bool isObjectArray();
@@ -752,6 +753,21 @@ class Function : public HeapObject {
   DISALLOW_COPY_AND_ASSIGN(Function);
 };
 
+class Instance : public HeapObject {
+ public:
+  inline Object* attributeAt(word index);
+  inline void attributeAtPut(word index, Object* value);
+
+  // Casting.
+  inline static Instance* cast(Object* object);
+
+  // Sizing.
+  inline static word allocationSize(word num_attributes);
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(Instance);
+};
+
 class Module : public HeapObject {
  public:
   // Setters and getters.
@@ -982,6 +998,13 @@ bool Object::isFunction() {
     return false;
   }
   return HeapObject::cast(this)->header()->classId() == ClassId::kFunction;
+}
+
+bool Object::isInstance() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() > ClassId::kLastId;
 }
 
 bool Object::isDictionary() {
@@ -1837,6 +1860,27 @@ Function::Entry Function::entryFromObject(Object* object) {
 
 Object* Function::entryToObject(Function::Entry entry) {
   return SmallInteger::fromWord(reinterpret_cast<uword>(entry));
+}
+
+// Instance
+
+Object* Instance::attributeAt(word offset) {
+  return instanceVariableAt(offset);
+}
+
+void Instance::attributeAtPut(word offset, Object* value) {
+  return instanceVariableAtPut(offset, value);
+}
+
+word Instance::allocationSize(word num_attr) {
+  assert(num_attr >= 0);
+  word size = headerSize(num_attr) + num_attr * kPointerSize;
+  return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
+}
+
+Instance* Instance::cast(Object* object) {
+  assert(object->isInstance());
+  return reinterpret_cast<Instance*>(object);
 }
 
 // List

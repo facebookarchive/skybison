@@ -1,8 +1,11 @@
 #include "gtest/gtest.h"
 
+#include <memory>
+
 #include "bytecode.h"
 #include "runtime.h"
 #include "symbols.h"
+#include "test-utils.h"
 
 namespace python {
 
@@ -583,6 +586,50 @@ TEST(RuntimeTest, ComputeInstanceSize) {
   klass_c->setMro(*mro);
   // Both A and B have "attr0" which should only be counted once
   EXPECT_EQ(runtime.computeInstanceSize(klass_c), 5);
+}
+
+TEST(RuntimeTest, NewInstanceEmptyClass) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = "class MyEmptyClass: pass";
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  runtime.run(buffer.get());
+
+  ClassId class_id = static_cast<ClassId>(ClassId::kLastId + 1);
+  Handle<Class> cls(&scope, runtime.classAt(class_id));
+
+  EXPECT_TRUE(String::cast(cls->name())->equalsCString("MyEmptyClass"));
+  EXPECT_EQ(cls->instanceSize(), 0);
+
+  Handle<Instance> instance(&scope, runtime.newInstance(class_id));
+  EXPECT_TRUE(instance->isInstance());
+  EXPECT_TRUE(instance->header()->classId() == class_id);
+}
+
+TEST(RuntimeTest, NewInstanceManyAttributes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class MyClassWithAttributes():
+  def __init__(self):
+    self.a = 1
+    self.b = 2
+    self.c = 3
+)";
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  runtime.run(buffer.get());
+  ClassId class_id = static_cast<ClassId>(ClassId::kLastId + 1);
+  Handle<Class> cls(&scope, runtime.classAt(class_id));
+
+  ASSERT_TRUE(
+      String::cast(cls->name())->equalsCString("MyClassWithAttributes"));
+  ASSERT_EQ(cls->instanceSize(), 3);
+
+  Handle<Instance> instance(&scope, runtime.newInstance(class_id));
+  EXPECT_TRUE(instance->isInstance());
+  EXPECT_EQ(instance->header()->classId(), class_id);
 }
 
 TEST(RuntimeTest, VerifySymbols) {
