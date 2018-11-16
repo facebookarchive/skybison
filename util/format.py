@@ -71,7 +71,7 @@ class Git(VCS):
             Path(f.decode())
             for f in subprocess.check_output(
                 [str(self.exe), "diff", "--name-only"]
-                + (["HEAD~1..HEAD"] if from_commit else [])
+                + (["HEAD~1..HEAD"] if from_commit else ["HEAD"])
                 + ["--", "*.cpp", "*.h", "*.py"]
             ).splitlines()
         ]
