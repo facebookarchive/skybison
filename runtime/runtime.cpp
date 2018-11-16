@@ -2515,8 +2515,7 @@ Object* Runtime::computeFastGlobals(
       bc = static_cast<Bytecode>(bytes->byteAt(i));
       arg = (arg << 8) | bytes->byteAt(i + 1);
     }
-    if (bc != LOAD_GLOBAL && bc != STORE_GLOBAL && bc != DELETE_GLOBAL &&
-        bc != LOAD_NAME) {
+    if (bc != LOAD_GLOBAL && bc != STORE_GLOBAL && bc != DELETE_GLOBAL) {
       continue;
     }
     Handle<Object> key(&scope, names->at(arg));

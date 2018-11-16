@@ -859,6 +859,158 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   EXPECT_EQ(*result, ValueCell::cast(*value)->value());
 }
 
+TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+
+  const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+  Handle<Object> builtins_value(&scope, runtime.newInteger(123));
+  runtime.dictionaryAtPutInValueCell(builtins, key, builtins_value);
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code);
+  frame->setBuiltins(*builtins);
+  frame->setGlobals(*globals);
+  // This should be a no-op because there are no loads or stores to globals.
+  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
+  frame->setImplicitGlobals(*globals); // simulate module body
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+
+  Handle<Object> value_cell(&scope, runtime.dictionaryAt(builtins, key));
+  ASSERT_TRUE(value_cell->isValueCell());
+  EXPECT_EQ(*builtins_value, ValueCell::cast(*value_cell)->value());
+}
+
+TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInteger::fromWord(42));
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+
+  const byte bytecode[] = {
+      LOAD_CONST, 0, STORE_GLOBAL, 0, LOAD_NAME, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code);
+  frame->setBuiltins(*builtins);
+  frame->setGlobals(*globals);
+  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
+  frame->setImplicitGlobals(*globals); // simulate module body
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+
+  Handle<Object> val0(
+      &scope, runtime.dictionaryAt(globals, key)); // 2-level indirection
+  ASSERT_TRUE(val0->isValueCell());
+  Handle<Object> val1(&scope, ValueCell::cast(*val0));
+  ASSERT_TRUE(val1->isValueCell());
+  EXPECT_EQ(*result, ValueCell::cast(*val1)->value());
+}
+
+TEST(ThreadTest, LoadNameInClassBodyFromGlobal) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInteger::fromWord(42));
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+
+  const byte bytecode[] = {
+      LOAD_CONST, 0, STORE_GLOBAL, 0, LOAD_NAME, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code);
+  frame->setBuiltins(*builtins);
+  frame->setGlobals(*globals);
+  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
+
+  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
+  frame->setImplicitGlobals(*implicit_globals); // simulate cls body
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+
+  Handle<Object> val0(
+      &scope, runtime.dictionaryAt(globals, key)); // 2-level indirection
+  ASSERT_TRUE(val0->isValueCell());
+  Handle<Object> val1(&scope, ValueCell::cast(*val0));
+  ASSERT_TRUE(val1->isValueCell());
+  EXPECT_EQ(*result, ValueCell::cast(*val1)->value());
+}
+
+TEST(ThreadTest, LoadNameInClassBodyFromImplicitGlobals) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInteger::fromWord(42));
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+
+  const byte bytecode[] = {
+      LOAD_CONST, 0, STORE_NAME, 0, LOAD_NAME, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code);
+  frame->setBuiltins(*builtins);
+  frame->setGlobals(*globals);
+  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
+
+  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
+  frame->setImplicitGlobals(*implicit_globals); // simulate cls body
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+
+  Handle<Object> val(&scope, runtime.dictionaryAt(implicit_globals, key));
+  ASSERT_TRUE(val->isValueCell()); // 1-level indirection
+  EXPECT_EQ(*result, ValueCell::cast(*val)->value());
+}
+
 TEST(ThreadTest, MakeFunction) {
   Runtime runtime;
   HandleScope scope;
@@ -3726,6 +3878,48 @@ c = a.hahaha
   EXPECT_EQ(SmallInteger::cast(*b)->value(), 123);
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
   EXPECT_EQ(SmallInteger::cast(*c)->value(), 456);
+}
+
+TEST(ThreadTest, NameLookupInClassBodyFindsImplicitGlobal) {
+  const char* src = R"(
+a = 0
+b = 0
+class C:
+    global a
+    global b
+    PI = 3
+    a = PI
+    PIPI = PI * 2
+    b = PIPI
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_EQ(SmallInteger::cast(*a)->value(), 3);
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_EQ(SmallInteger::cast(*b)->value(), 6);
+}
+
+TEST(ThreadTest, NameLookupInClassBodyFindsGlobal) {
+  const char* src = R"(
+var = 1
+class C:
+  global one
+  global two
+  one = var
+  var = 2
+  two = var
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> one(&scope, moduleAt(&runtime, main, "one"));
+  EXPECT_EQ(SmallInteger::cast(*one)->value(), 1);
+  Handle<Object> two(&scope, moduleAt(&runtime, main, "two"));
+  EXPECT_EQ(SmallInteger::cast(*two)->value(), 2);
 }
 
 } // namespace python

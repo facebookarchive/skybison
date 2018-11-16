@@ -756,17 +756,57 @@ void Interpreter::doLoadConst(Context* ctx, word arg) {
 // opcode 101
 void Interpreter::doLoadName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
-  // This is for module level lookup, behaves the same as LOAD_GLOBAL
-  Object* value =
-      ValueCell::cast(ObjectArray::cast(frame->fastGlobals())->at(arg))
-          ->value();
+  Runtime* runtime = ctx->thread->runtime();
+  HandleScope scope(ctx->thread);
 
+  Handle<Object> names(&scope, Code::cast(frame->code())->names());
+  Handle<Object> key(&scope, ObjectArray::cast(*names)->at(arg));
+
+  // 1. implicitGlobals
+  Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
+  Object* value = runtime->dictionaryAt(implicit_globals, key);
   if (value->isValueCell()) {
-    DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound implicit globals");
+    // 3a. found in [implicit]/globals but with up to 2-layers of indirection
+    DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound globals");
+    value = ValueCell::cast(value)->value();
+    if (value->isValueCell()) {
+      DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound builtins");
+      value = ValueCell::cast(value)->value();
+    }
+    *--ctx->sp = value;
+    return;
+  }
 
+  // In the module body, globals == implicit_globals, so no need to check twice.
+  // However in class body, it is a different dictionary.
+  if (frame->implicitGlobals() != frame->globals()) {
+    // 2. globals
+    Handle<Dictionary> globals(&scope, frame->globals());
+    value = runtime->dictionaryAt(globals, key);
+  }
+  if (value->isValueCell()) {
+    // 3a. found in [implicit]/globals but with up to 2-layers of indirection
+    DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound globals");
+    value = ValueCell::cast(value)->value();
+    if (value->isValueCell()) {
+      DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound builtins");
+      value = ValueCell::cast(value)->value();
+    }
+    *--ctx->sp = value;
+    return;
+  }
+
+  // 3b. not found; check builtins -- one layer of indirection
+  Handle<Dictionary> builtins(&scope, frame->builtins());
+  value = runtime->dictionaryAt(builtins, key);
+  if (value->isValueCell()) {
+    DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound builtins");
     value = ValueCell::cast(value)->value();
   }
 
+  if (value->isError()) {
+    UNIMPLEMENTED("Unbound variable");
+  }
   *--ctx->sp = value;
 }
 
