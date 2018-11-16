@@ -246,15 +246,15 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
     if (result->isInteger()) {
       Handle<Integer> integer(&scope, *result);
       if (integer->isPositive()) {
-        return Boolean::fromBool(true);
+        return Boolean::trueObj();
       }
       if (integer->isZero()) {
-        return Boolean::fromBool(false);
+        return Boolean::falseObj();
       }
       UNIMPLEMENTED("throw");
     }
   }
-  return Boolean::fromBool(true);
+  return Boolean::trueObj();
 }
 
 Object* Interpreter::compare(
