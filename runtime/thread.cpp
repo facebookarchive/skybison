@@ -96,7 +96,7 @@ Frame* Thread::pushNativeFrame(void* fn, word nargs) {
   // a declaration of how much space is needed. However, that's of limited use
   // right now since we can't detect an "overflow" of a frame anyway.
   Frame* frame = openAndLinkFrame(nargs, 0, 0);
-  frame->makeNativeFrame(runtime()->newIntFromCPointer(fn));
+  frame->makeNativeFrame(runtime()->newIntFromCPtr(fn));
   return frame;
 }
 

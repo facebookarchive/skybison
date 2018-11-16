@@ -40,9 +40,9 @@ TEST(IntTest, IntTest) {
   EXPECT_EQ(i2->asWord(), 9223372036854775807L);
 
   int stack_val = 123;
-  Object* o3 = runtime.newIntFromCPointer(&stack_val);
+  Object* o3 = runtime.newIntFromCPtr(&stack_val);
   Int* i3 = Int::cast(o3);
-  EXPECT_EQ(*reinterpret_cast<int*>(i3->asCPointer()), 123);
+  EXPECT_EQ(*reinterpret_cast<int*>(i3->asCPtr()), 123);
 }
 
 TEST(IntTest, IsPositive) {

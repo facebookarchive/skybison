@@ -19,7 +19,7 @@ class TracebackPrinter : public FrameVisitor {
     std::stringstream line;
 
     if (frame->code()->isInt()) {
-      void* ptr = Int::cast(frame->code())->asCPointer();
+      void* ptr = Int::cast(frame->code())->asCPtr();
       line << "  <native function at " << ptr << " (";
 
       Dl_info info = Dl_info();

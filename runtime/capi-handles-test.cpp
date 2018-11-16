@@ -153,8 +153,8 @@ TEST(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
 
   PyObject* type_handle = ApiHandle::fromObject(*type_class)->asPyObject();
   PyObject pyobj = {nullptr, 1, reinterpret_cast<PyTypeObject*>(type_handle)};
-  Handle<Object> object_ptr(
-      &scope, runtime.newIntFromCPointer(static_cast<void*>(&pyobj)));
+  Handle<Object> object_ptr(&scope,
+                            runtime.newIntFromCPtr(static_cast<void*>(&pyobj)));
   runtime.instanceAtPut(thread, instance, attr_name, object_ptr);
 
   PyObject* result = ApiHandle::fromObject(*instance)->asPyObject();

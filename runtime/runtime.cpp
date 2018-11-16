@@ -664,7 +664,7 @@ void Runtime::classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
   Handle<Function> function(&scope, newFunction());
   Handle<Object> key(&scope, symbols()->at(name));
   function->setName(*key);
-  function->setCode(newIntFromCPointer(c_function));
+  function->setCode(newIntFromCPtr(c_function));
   function->setEntry(extensionTrampoline);
   function->setEntryKw(extensionTrampolineKw);
   function->setEntryEx(extensionTrampolineEx);
@@ -695,13 +695,13 @@ Object* Runtime::newModule(const Handle<Object>& name) {
   Handle<Dict> dict(&scope, newDict());
   result->setDict(*dict);
   result->setName(*name);
-  result->setDef(newIntFromCPointer(nullptr));
+  result->setDef(newIntFromCPtr(nullptr));
   Handle<Object> key(&scope, symbols()->DunderName());
   dictAtPutInValueCell(dict, key, name);
   return *result;
 }
 
-Object* Runtime::newIntFromCPointer(void* ptr) {
+Object* Runtime::newIntFromCPtr(void* ptr) {
   return newInt(reinterpret_cast<word>(ptr));
 }
 
@@ -3175,7 +3175,7 @@ void Runtime::freeApiHandles() {
   for (word i = 0; i < keys->length(); i++) {
     Handle<Object> key(&scope, keys->at(i));
     Object* value = dictAt(dict, key);
-    std::free(Int::cast(value)->asCPointer());
+    std::free(Int::cast(value)->asCPtr());
   }
 }
 

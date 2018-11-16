@@ -58,7 +58,7 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   type_class->setDict(*dict);
 
   // Add the PyTypeObject pointer to the class
-  type_class->setExtensionType(runtime->newIntFromCPointer(type));
+  type_class->setExtensionType(runtime->newIntFromCPtr(type));
 
   // Create the dict's ApiHandle
   type->tp_dict = ApiHandle::fromObject(*dict)->asPyObject();

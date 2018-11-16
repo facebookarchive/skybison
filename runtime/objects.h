@@ -231,7 +231,7 @@ class Int : public Object {
  public:
   // Getters and setters.
   word asWord();
-  void* asCPointer();
+  void* asCPtr();
 
   word compare(Int* other);
 
@@ -257,7 +257,7 @@ class SmallInt : public Object {
  public:
   // Getters and setters.
   word value();
-  void* asCPointer();
+  void* asCPtr();
 
   // Conversion.
   static SmallInt* fromWord(word value);
@@ -859,7 +859,7 @@ class LargeInt : public HeapObject {
   word asWord();
 
   // LargeInt is also used for storing native pointers.
-  void* asCPointer();
+  void* asCPtr();
 
   // Sizing.
   static word allocationSize(word num_digits);
@@ -2401,11 +2401,11 @@ inline word Int::asWord() {
   return LargeInt::cast(this)->asWord();
 }
 
-inline void* Int::asCPointer() {
+inline void* Int::asCPtr() {
   if (isSmallInt()) {
-    return SmallInt::cast(this)->asCPointer();
+    return SmallInt::cast(this)->asCPtr();
   }
-  return LargeInt::cast(this)->asCPointer();
+  return LargeInt::cast(this)->asCPtr();
 }
 
 inline word Int::compare(Int* that) {
@@ -2504,7 +2504,7 @@ inline word SmallInt::value() {
   return reinterpret_cast<word>(this) >> kTagSize;
 }
 
-inline void* SmallInt::asCPointer() { return reinterpret_cast<void*>(value()); }
+inline void* SmallInt::asCPtr() { return reinterpret_cast<void*>(value()); }
 
 inline SmallInt* SmallInt::fromWord(word value) {
   DCHECK(SmallInt::isValid(value), "invalid cast");
@@ -3226,7 +3226,7 @@ inline word LargeInt::asWord() {
   return static_cast<word>(digitAt(0));
 }
 
-inline void* LargeInt::asCPointer() {
+inline void* LargeInt::asCPtr() {
   DCHECK(numDigits() == 1, "Large integer cannot fit in a pointer");
   DCHECK(isPositive(), "Cannot cast a negative value to a C pointer");
   return reinterpret_cast<void*>(asWord());

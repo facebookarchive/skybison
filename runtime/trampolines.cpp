@@ -457,11 +457,11 @@ Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   if (object->isType()) {
     Handle<Type> type_class(&scope, *object);
     Handle<Int> extension_type(&scope, type_class->extensionType());
-    PyObject* type = static_cast<PyObject*>(extension_type->asCPointer());
+    PyObject* type = static_cast<PyObject*>(extension_type->asCPtr());
 
     // void* to CFunction idiom
     PyCFunction new_function;
-    *reinterpret_cast<void**>(&new_function) = address->asCPointer();
+    *reinterpret_cast<void**>(&new_function) = address->asCPtr();
 
     PyObject* new_pyobject = (*new_function)(type, none, none);
     return ApiHandle::fromPyObject(new_pyobject)->asObject();
@@ -470,11 +470,11 @@ Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   Handle<HeapObject> instance(&scope, *object);
   Handle<Int> object_ptr(&scope,
                          runtime->instanceAt(thread, instance, attr_name));
-  PyObject* self = static_cast<PyObject*>(object_ptr->asCPointer());
+  PyObject* self = static_cast<PyObject*>(object_ptr->asCPtr());
 
   // void* to CFunction idiom
   PyCFunction init_function;
-  *reinterpret_cast<void**>(&init_function) = address->asCPointer();
+  *reinterpret_cast<void**>(&init_function) = address->asCPtr();
   (*init_function)(self, none, none);
 
   return *instance;

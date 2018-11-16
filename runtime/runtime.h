@@ -88,7 +88,7 @@ class Runtime {
   Object* newModule(const Handle<Object>& name);
 
   // Returns an Int that stores the numerical address of the pointer.
-  Object* newIntFromCPointer(void* ptr);
+  Object* newIntFromCPtr(void* ptr);
 
   Object* newObjectArray(word length);
 

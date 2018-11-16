@@ -33,7 +33,7 @@ ApiHandle* ApiHandle::fromObject(Object* obj) {
 
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
-    return static_cast<ApiHandle*>(Int::cast(value)->asCPointer());
+    return static_cast<ApiHandle*>(Int::cast(value)->asCPtr());
   }
 
   // Get the PyObject pointer from the instance layout
@@ -43,8 +43,8 @@ ApiHandle* ApiHandle::fromObject(Object* obj) {
 
   // Initialize an ApiHandle for a builtin object
   ApiHandle* handle = ApiHandle::create(obj, 1);
-  Handle<Object> object(
-      &scope, runtime->newIntFromCPointer(static_cast<void*>(handle)));
+  Handle<Object> object(&scope,
+                        runtime->newIntFromCPtr(static_cast<void*>(handle)));
   runtime->dictAtPut(dict, key, object);
   return handle;
 }
@@ -60,7 +60,7 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
 
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
-    ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value)->asCPointer());
+    ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value)->asCPtr());
     handle->setBorrowed();
     return handle;
   }
@@ -74,8 +74,8 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
 
   // Initialize a Borrowed ApiHandle for a builtin object
   ApiHandle* handle = ApiHandle::create(obj, kBorrowedBit);
-  Handle<Object> object(
-      &scope, runtime->newIntFromCPointer(static_cast<void*>(handle)));
+  Handle<Object> object(&scope,
+                        runtime->newIntFromCPtr(static_cast<void*>(handle)));
   runtime->dictAtPut(dict, key, object);
   return handle;
 }
@@ -98,7 +98,7 @@ ApiHandle* ApiHandle::fromInstance(Object* obj) {
         "materialize PyObject");
   }
 
-  return static_cast<ApiHandle*>(Int::cast(*object_ptr)->asCPointer());
+  return static_cast<ApiHandle*>(Int::cast(*object_ptr)->asCPtr());
 }
 
 Object* ApiHandle::asInstance(Object* obj) {
@@ -110,8 +110,8 @@ Object* ApiHandle::asInstance(Object* obj) {
   Handle<Type> klass(&scope, obj);
   Handle<Layout> layout(&scope, klass->instanceLayout());
   Handle<HeapObject> instance(&scope, runtime->newInstance(layout));
-  Handle<Object> object_ptr(
-      &scope, runtime->newIntFromCPointer(static_cast<void*>(this)));
+  Handle<Object> object_ptr(&scope,
+                            runtime->newIntFromCPtr(static_cast<void*>(this)));
   Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
   runtime->instanceAtPut(thread, instance, attr_name, object_ptr);
 
