@@ -252,9 +252,9 @@ Object* Marshal::Reader::readObject() {
 
 word Marshal::Reader::addRef(Object* value) {
   HandleScope scope;
-  Handle<Object> valueHandle(&scope, value);
+  Handle<Object> value_handle(&scope, value);
   word result = refs_->allocated();
-  runtime_->listAdd(refs_, valueHandle);
+  runtime_->listAdd(refs_, value_handle);
   return result;
 }
 

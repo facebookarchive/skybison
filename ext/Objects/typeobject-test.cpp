@@ -12,21 +12,21 @@ TEST(PyTypeObject, EmptyType) {
   Handle<Dictionary> extensions_dict(&scope, runtime.extensionTypes());
 
   // Create a simple PyTypeObject
-  PyTypeObject EmptyType{PyObject_HEAD_INIT(nullptr)};
-  EmptyType.tp_name = "Empty";
-  EmptyType.tp_flags = Py_TPFLAGS_DEFAULT;
+  PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
+  empty_type.tp_name = "Empty";
+  empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
 
   // EmptyType is not initialized yet
-  EXPECT_FALSE(PyType_GetFlags(&EmptyType) & Py_TPFLAGS_READY);
+  EXPECT_FALSE(PyType_GetFlags(&empty_type) & Py_TPFLAGS_READY);
 
   // Run PyType_Ready
   EXPECT_EQ(0, extensions_dict->numItems());
-  EXPECT_EQ(0, PyType_Ready(&EmptyType));
+  EXPECT_EQ(0, PyType_Ready(&empty_type));
   EXPECT_EQ(1, extensions_dict->numItems());
 
   // Expect PyTypeObject to contain the correct flags
-  EXPECT_TRUE(PyType_GetFlags(&EmptyType) & Py_TPFLAGS_DEFAULT);
-  EXPECT_TRUE(PyType_GetFlags(&EmptyType) & Py_TPFLAGS_READY);
+  EXPECT_TRUE(PyType_GetFlags(&empty_type) & Py_TPFLAGS_DEFAULT);
+  EXPECT_TRUE(PyType_GetFlags(&empty_type) & Py_TPFLAGS_READY);
 }
 
 TEST(PyTypeObject, EmptyTypeGetRuntimeClass) {
@@ -35,14 +35,14 @@ TEST(PyTypeObject, EmptyTypeGetRuntimeClass) {
   Handle<Dictionary> extensions_dict(&scope, runtime.extensionTypes());
 
   // Create a simple PyTypeObject
-  PyTypeObject EmptyType{PyObject_HEAD_INIT(nullptr)};
-  EmptyType.tp_name = "Empty";
-  EmptyType.tp_flags = Py_TPFLAGS_DEFAULT;
-  PyType_Ready(&EmptyType);
+  PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
+  empty_type.tp_name = "Empty";
+  empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
+  PyType_Ready(&empty_type);
 
   // Obtain EmptyType Class object from the runtime
   Handle<Object> tp_name(
-      &scope, runtime.newStringFromCString(EmptyType.tp_name));
+      &scope, runtime.newStringFromCString(empty_type.tp_name));
   Handle<Object> type_class_obj(
       &scope, runtime.dictionaryAt(extensions_dict, tp_name));
   EXPECT_TRUE(type_class_obj->isClass());
@@ -50,11 +50,11 @@ TEST(PyTypeObject, EmptyTypeGetRuntimeClass) {
   // Confirm the class name
   Handle<Class> type_class(&scope, *type_class_obj);
   Handle<String> type_class_name(&scope, type_class->name());
-  EXPECT_TRUE(type_class_name->equalsCString(EmptyType.tp_name));
+  EXPECT_TRUE(type_class_name->equalsCString(empty_type.tp_name));
 
   // Confirm the PyTypeObject pointer
   Handle<Integer> pytype_addr_obj(&scope, type_class->extensionType());
-  EXPECT_EQ(&EmptyType, pytype_addr_obj->asCPointer());
+  EXPECT_EQ(&empty_type, pytype_addr_obj->asCPointer());
 }
 
 TEST(PyTypeObject, EmptyTypeInstantiateObject) {
@@ -63,12 +63,12 @@ TEST(PyTypeObject, EmptyTypeInstantiateObject) {
   Handle<Dictionary> extensions_dict(&scope, runtime.extensionTypes());
 
   // Create a simple PyTypeObject
-  PyTypeObject EmptyType{PyObject_HEAD_INIT(nullptr)};
-  EmptyType.tp_name = "Empty";
-  EmptyType.tp_flags = Py_TPFLAGS_DEFAULT;
-  PyType_Ready(&EmptyType);
+  PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
+  empty_type.tp_name = "Empty";
+  empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
+  PyType_Ready(&empty_type);
   Handle<Object> tp_name(
-      &scope, runtime.newStringFromCString(EmptyType.tp_name));
+      &scope, runtime.newStringFromCString(empty_type.tp_name));
   Handle<Class> type_class(
       &scope, runtime.dictionaryAt(extensions_dict, tp_name));
 

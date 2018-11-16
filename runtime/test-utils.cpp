@@ -49,11 +49,11 @@ std::string callFunctionToString(
   }
   frame->setValueStackTop(sp);
   std::stringstream stream;
-  std::ostream* oldStream = builtInStdout;
+  std::ostream* old_stream = builtInStdout;
   builtInStdout = &stream;
   func->entry()(thread, frame, code->argcount());
   thread->popFrame();
-  builtInStdout = oldStream;
+  builtInStdout = old_stream;
   return stream.str();
 }
 

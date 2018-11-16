@@ -238,7 +238,7 @@ Object* checkArgs(
     actual_names->atPut(arg_pos2, tmp);
   };
   // Helper function to retrieve argument
-  auto argAt = [kw_arg_base](word idx) -> Object*& {
+  auto arg_at = [kw_arg_base](word idx) -> Object*& {
     return *(kw_arg_base - idx);
   };
   for (word arg_pos = 0; arg_pos < num_actuals; arg_pos++) {
@@ -263,16 +263,16 @@ Object* checkArgs(
     }
     // Can't find an Actual for this Formal.
     // If we have a real actual in current slot, move it somewhere safe.
-    if (!argAt(arg_pos)->isError()) {
+    if (!arg_at(arg_pos)->isError()) {
       for (word i = arg_pos + 1; i < num_actuals; i++) {
-        if (argAt(i)->isError()) {
+        if (arg_at(i)->isError()) {
           // Found an uninitialized slot.  Use it to save current actual.
           swap(arg_pos, i);
           break;
         }
       }
       // If we were unable to find a slot to swap into, TypeError
-      if (!argAt(arg_pos)->isError()) {
+      if (!arg_at(arg_pos)->isError()) {
         return Thread::currentThread()->throwTypeErrorFromCString(
             "TypeError: invalid arguments");
       }
@@ -480,13 +480,13 @@ Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word arg) {
 
 typedef PyObject* (*PyCFunction)(PyObject*, PyObject*, PyObject*);
 
-Object* extensionTrampoline(Thread* thread, Frame* previousFrame, word argc) {
+Object* extensionTrampoline(Thread* thread, Frame* previous_frame, word argc) {
   Runtime* runtime = thread->runtime();
-  Object** sp = previousFrame->valueStackTop();
+  Object** sp = previous_frame->valueStackTop();
   HandleScope scope(thread->handles());
 
   // Set the address pointer to the function pointer
-  Handle<Function> function(&scope, previousFrame->function(argc));
+  Handle<Function> function(&scope, previous_frame->function(argc));
   Handle<Integer> address(&scope, function->code());
 
   Handle<Object> object(&scope, *sp++);

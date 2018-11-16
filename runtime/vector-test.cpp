@@ -143,7 +143,7 @@ class TestStatefulAllocator {
   void deallocate(T* p, size_t) {
     std::free(p);
   }
-  T* last_alloc() {
+  T* lastAlloc() {
     return last_alloc_;
   }
   T* last_alloc_;

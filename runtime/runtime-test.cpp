@@ -715,17 +715,18 @@ TEST(RuntimeTest, StringToIntDPos) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Handle<Object> strD0(&scope, runtime.newStringFromCString("0"));
-  Handle<SmallInteger> intD0(&scope, runtime.stringToInt(thread, strD0));
-  EXPECT_EQ(intD0->value(), 0);
+  Handle<Object> str_d0(&scope, runtime.newStringFromCString("0"));
+  Handle<SmallInteger> int_d0(&scope, runtime.stringToInt(thread, str_d0));
+  EXPECT_EQ(int_d0->value(), 0);
 
-  Handle<Object> strD123(&scope, runtime.newStringFromCString("123"));
-  Handle<SmallInteger> intD123(&scope, runtime.stringToInt(thread, strD123));
-  EXPECT_EQ(intD123->value(), 123);
+  Handle<Object> str_d123(&scope, runtime.newStringFromCString("123"));
+  Handle<SmallInteger> int_d123(&scope, runtime.stringToInt(thread, str_d123));
+  EXPECT_EQ(int_d123->value(), 123);
 
-  Handle<Object> strD987n(&scope, runtime.newStringFromCString("-987"));
-  Handle<SmallInteger> intD987n(&scope, runtime.stringToInt(thread, strD987n));
-  EXPECT_EQ(intD987n->value(), -987);
+  Handle<Object> str_d987n(&scope, runtime.newStringFromCString("-987"));
+  Handle<SmallInteger> int_d987n(
+      &scope, runtime.stringToInt(thread, str_d987n));
+  EXPECT_EQ(int_d987n->value(), -987);
 }
 
 TEST(RuntimeTest, StringToIntDNeg) {
@@ -866,7 +867,7 @@ TEST_P(LookupNameInMroTest, Lookup) {
   Runtime runtime;
   HandleScope scope;
 
-  auto createClassWithAttr = [&](const char* attr, word value) {
+  auto create_class_with_attr = [&](const char* attr, word value) {
     Handle<Class> klass(&scope, runtime.newClass());
     Handle<Dictionary> dict(&scope, klass->dictionary());
     Handle<Object> key(&scope, runtime.newStringFromCString(attr));
@@ -876,9 +877,9 @@ TEST_P(LookupNameInMroTest, Lookup) {
   };
 
   Handle<ObjectArray> mro(&scope, runtime.newObjectArray(3));
-  mro->atPut(0, createClassWithAttr("foo", 2));
-  mro->atPut(1, createClassWithAttr("bar", 4));
-  mro->atPut(2, createClassWithAttr("baz", 8));
+  mro->atPut(0, create_class_with_attr("foo", 2));
+  mro->atPut(1, create_class_with_attr("bar", 4));
+  mro->atPut(2, create_class_with_attr("baz", 8));
 
   Handle<Class> klass(&scope, mro->at(0));
   klass->setMro(*mro);

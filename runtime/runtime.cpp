@@ -383,14 +383,14 @@ Object* Runtime::newCode() {
 
 Object* Runtime::newBuiltinFunction(
     Function::Entry entry,
-    Function::Entry entryKw,
-    Function::Entry entryEx) {
+    Function::Entry entry_kw,
+    Function::Entry entry_ex) {
   Object* result = heap()->createFunction();
   DCHECK(result != nullptr, "failed to createFunction");
   auto function = Function::cast(result);
   function->setEntry(entry);
-  function->setEntryKw(entryKw);
-  function->setEntryEx(entryEx);
+  function->setEntryKw(entry_kw);
+  function->setEntryEx(entry_ex);
   return result;
 }
 
@@ -420,12 +420,12 @@ void Runtime::classAddBuiltinFunction(
     const Handle<Class>& klass,
     Object* name,
     Function::Entry entry,
-    Function::Entry entryKw,
-    Function::Entry entryEx) {
+    Function::Entry entry_kw,
+    Function::Entry entry_ex) {
   HandleScope scope;
   Handle<Object> key(&scope, name);
   Handle<Function> function(
-      &scope, newBuiltinFunction(entry, entryKw, entryEx));
+      &scope, newBuiltinFunction(entry, entry_kw, entry_ex));
   function->setName(*key);
   Handle<Object> value(&scope, *function);
   Handle<Dictionary> dict(&scope, klass->dictionary());
@@ -1548,12 +1548,12 @@ Object* Runtime::moduleAddBuiltinFunction(
     const Handle<Module>& module,
     Object* name,
     const Function::Entry entry,
-    const Function::Entry entryKw,
-    const Function::Entry entryEx) {
+    const Function::Entry entry_kw,
+    const Function::Entry entry_ex) {
   HandleScope scope;
   Handle<Object> key(&scope, name);
   Handle<Dictionary> dictionary(&scope, module->dictionary());
-  Handle<Object> value(&scope, newBuiltinFunction(entry, entryKw, entryEx));
+  Handle<Object> value(&scope, newBuiltinFunction(entry, entry_kw, entry_ex));
   return dictionaryAtPutInValueCell(dictionary, key, value);
 }
 
@@ -1729,13 +1729,13 @@ void Runtime::listEnsureCapacity(const Handle<List>& list, word index) {
     return;
   }
   HandleScope scope;
-  word newCapacity = (list->capacity() < kInitialEnsuredCapacity)
+  word new_capacity = (list->capacity() < kInitialEnsuredCapacity)
       ? kInitialEnsuredCapacity
       : list->capacity() << 1;
-  Handle<ObjectArray> oldArray(&scope, list->items());
-  Handle<ObjectArray> newArray(&scope, newObjectArray(newCapacity));
-  oldArray->copyTo(*newArray);
-  list->setItems(*newArray);
+  Handle<ObjectArray> old_array(&scope, list->items());
+  Handle<ObjectArray> new_array(&scope, newObjectArray(new_capacity));
+  old_array->copyTo(*new_array);
+  list->setItems(*new_array);
 }
 
 void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
@@ -1884,8 +1884,8 @@ char* Runtime::compile(const char* src) {
   }
 
   // Cache miss, must run the compiler.
-  std::unique_ptr<char[]> tmpDir(OS::temporaryDirectory("python-tests"));
-  const std::string dir(tmpDir.get());
+  std::unique_ptr<char[]> tmp_dir(OS::temporaryDirectory("python-tests"));
+  const std::string dir(tmp_dir.get());
   const std::string py = dir + "/foo.py";
   const std::string pyc = dir + "/foo.pyc";
   const std::string cleanup = "rm -rf " + dir;
@@ -1935,8 +1935,8 @@ class Bucket {
     data_->atPut(index_ + kValueOffset, value);
   }
 
-  bool hasKey(Object* thatKey) {
-    return !hash()->isNone() && Object::equals(key(), thatKey);
+  bool hasKey(Object* that_key) {
+    return !hash()->isNone() && Object::equals(key(), that_key);
   }
 
   bool isTombstone() {
@@ -1996,8 +1996,8 @@ class SetBucket {
     data_->atPut(index_ + kKeyOffset, key);
   }
 
-  bool hasKey(Object* thatKey) {
-    return !hash()->isNone() && Object::equals(key(), thatKey);
+  bool hasKey(Object* that_key) {
+    return !hash()->isNone() && Object::equals(key(), that_key);
   }
 
   bool isTombstone() {
@@ -2038,15 +2038,15 @@ Object* Runtime::newDictionary() {
   return *result;
 }
 
-Object* Runtime::newDictionary(word initialSize) {
+Object* Runtime::newDictionary(word initial_size) {
   HandleScope scope;
   // TODO: initialSize should be scaled up by a load factor.
-  word initialCapacity = Utils::nextPowerOfTwo(initialSize);
+  word initial_capacity = Utils::nextPowerOfTwo(initial_size);
   Handle<ObjectArray> array(
       &scope,
       newObjectArray(
           Utils::maximum(
-              static_cast<word>(kInitialDictionaryCapacity), initialCapacity) *
+              static_cast<word>(kInitialDictionaryCapacity), initial_capacity) *
           Bucket::kNumPointers));
   Handle<Dictionary> result(&scope, newDictionary());
   result->setData(*array);
@@ -2064,11 +2064,11 @@ void Runtime::dictionaryAtPut(
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    Handle<ObjectArray> newData(&scope, dictionaryGrow(data));
-    dictionaryLookup(newData, key, key_hash, &index);
+    Handle<ObjectArray> new_data(&scope, dictionaryGrow(data));
+    dictionaryLookup(new_data, key, key_hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
-    dict->setData(*newData);
-    Bucket bucket(newData, index);
+    dict->setData(*new_data);
+    Bucket bucket(new_data, index);
     bucket.set(*key_hash, *key, *value);
   } else {
     Bucket bucket(data, index);
@@ -2081,26 +2081,26 @@ void Runtime::dictionaryAtPut(
 
 ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
   HandleScope scope;
-  word newLength = data->length() * kDictionaryGrowthFactor;
-  if (newLength == 0) {
-    newLength = kInitialDictionaryCapacity * Bucket::kNumPointers;
+  word new_length = data->length() * kDictionaryGrowthFactor;
+  if (new_length == 0) {
+    new_length = kInitialDictionaryCapacity * Bucket::kNumPointers;
   }
-  Handle<ObjectArray> newData(&scope, newObjectArray(newLength));
+  Handle<ObjectArray> new_data(&scope, newObjectArray(new_length));
   // Re-insert items
   for (word i = 0; i < data->length(); i += Bucket::kNumPointers) {
-    Bucket oldBucket(data, i);
-    if (oldBucket.isEmpty() || oldBucket.isTombstone()) {
+    Bucket old_bucket(data, i);
+    if (old_bucket.isEmpty() || old_bucket.isTombstone()) {
       continue;
     }
-    Handle<Object> key(&scope, oldBucket.key());
-    Handle<Object> hash(&scope, oldBucket.hash());
+    Handle<Object> key(&scope, old_bucket.key());
+    Handle<Object> hash(&scope, old_bucket.hash());
     word index = -1;
-    dictionaryLookup(newData, key, hash, &index);
+    dictionaryLookup(new_data, key, hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
-    Bucket newBucket(newData, index);
-    newBucket.set(*hash, *key, oldBucket.value());
+    Bucket new_bucket(new_data, index);
+    new_bucket.set(*hash, *key, old_bucket.value());
   }
-  return *newData;
+  return *new_data;
 }
 
 Object* Runtime::dictionaryAt(
@@ -2193,7 +2193,7 @@ bool Runtime::dictionaryLookup(
     word* index) {
   word start = Bucket::getIndex(*data, *key_hash);
   word current = start;
-  word nextFreeIndex = -1;
+  word next_free_index = -1;
 
   // TODO(mpage) - Quadratic probing?
   word length = data->length();
@@ -2207,18 +2207,18 @@ bool Runtime::dictionaryLookup(
     if (bucket.hasKey(*key)) {
       *index = current;
       return true;
-    } else if (nextFreeIndex == -1 && bucket.isTombstone()) {
-      nextFreeIndex = current;
+    } else if (next_free_index == -1 && bucket.isTombstone()) {
+      next_free_index = current;
     } else if (bucket.isEmpty()) {
-      if (nextFreeIndex == -1) {
-        nextFreeIndex = current;
+      if (next_free_index == -1) {
+        next_free_index = current;
       }
       break;
     }
     current = (current + Bucket::kNumPointers) % length;
   } while (current != start);
 
-  *index = nextFreeIndex;
+  *index = next_free_index;
 
   return false;
 }
@@ -2227,16 +2227,17 @@ ObjectArray* Runtime::dictionaryKeys(const Handle<Dictionary>& dict) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   Handle<ObjectArray> keys(&scope, newObjectArray(dict->numItems()));
-  word numKeys = 0;
+  word num_keys = 0;
   for (word i = 0; i < data->length(); i += Bucket::kNumPointers) {
     Bucket bucket(data, i);
     if (bucket.isFilled()) {
-      DCHECK(numKeys < keys->length(), "%ld ! < %ld", numKeys, keys->length());
-      keys->atPut(numKeys, bucket.key());
-      numKeys++;
+      DCHECK(
+          num_keys < keys->length(), "%ld ! < %ld", num_keys, keys->length());
+      keys->atPut(num_keys, bucket.key());
+      num_keys++;
     }
   }
-  DCHECK(numKeys == keys->length(), "%ld != %ld", numKeys, keys->length());
+  DCHECK(num_keys == keys->length(), "%ld != %ld", num_keys, keys->length());
   return *keys;
 }
 
@@ -2255,7 +2256,7 @@ bool Runtime::setLookup(
     word* index) {
   word start = SetBucket::getIndex(*data, *key_hash);
   word current = start;
-  word nextFreeIndex = -1;
+  word next_free_index = -1;
 
   // TODO(mpage) - Quadratic probing?
   word length = data->length();
@@ -2269,44 +2270,44 @@ bool Runtime::setLookup(
     if (bucket.hasKey(*key)) {
       *index = current;
       return true;
-    } else if (nextFreeIndex == -1 && bucket.isTombstone()) {
-      nextFreeIndex = current;
+    } else if (next_free_index == -1 && bucket.isTombstone()) {
+      next_free_index = current;
     } else if (bucket.isEmpty()) {
-      if (nextFreeIndex == -1) {
-        nextFreeIndex = current;
+      if (next_free_index == -1) {
+        next_free_index = current;
       }
       break;
     }
     current = (current + SetBucket::kNumPointers) % length;
   } while (current != start);
 
-  *index = nextFreeIndex;
+  *index = next_free_index;
 
   return false;
 }
 
 ObjectArray* Runtime::setGrow(const Handle<ObjectArray>& data) {
   HandleScope scope;
-  word newLength = data->length() * kSetGrowthFactor;
-  if (newLength == 0) {
-    newLength = kInitialSetCapacity * SetBucket::kNumPointers;
+  word new_length = data->length() * kSetGrowthFactor;
+  if (new_length == 0) {
+    new_length = kInitialSetCapacity * SetBucket::kNumPointers;
   }
-  Handle<ObjectArray> newData(&scope, newObjectArray(newLength));
+  Handle<ObjectArray> new_data(&scope, newObjectArray(new_length));
   // Re-insert items
   for (word i = 0; i < data->length(); i += SetBucket::kNumPointers) {
-    SetBucket oldBucket(data, i);
-    if (oldBucket.isEmpty() || oldBucket.isTombstone()) {
+    SetBucket old_bucket(data, i);
+    if (old_bucket.isEmpty() || old_bucket.isTombstone()) {
       continue;
     }
-    Handle<Object> key(&scope, oldBucket.key());
-    Handle<Object> hash(&scope, oldBucket.hash());
+    Handle<Object> key(&scope, old_bucket.key());
+    Handle<Object> hash(&scope, old_bucket.hash());
     word index = -1;
-    setLookup(newData, key, hash, &index);
+    setLookup(new_data, key, hash, &index);
     DCHECK(index != -1, "unexpected index %ld", index);
-    SetBucket newBucket(newData, index);
-    newBucket.set(*hash, *key);
+    SetBucket new_bucket(new_data, index);
+    new_bucket.set(*hash, *key);
   }
-  return *newData;
+  return *new_data;
 }
 
 Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
@@ -2321,11 +2322,11 @@ Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
   }
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    Handle<ObjectArray> newData(&scope, setGrow(data));
-    setLookup(newData, value, key_hash, &index);
+    Handle<ObjectArray> new_data(&scope, setGrow(data));
+    setLookup(new_data, value, key_hash, &index);
     DCHECK(index != -1, "unexpected index %ld", index);
-    set->setData(*newData);
-    SetBucket bucket(newData, index);
+    set->setData(*new_data);
+    SetBucket bucket(new_data, index);
     bucket.set(*key_hash, *value);
   } else {
     SetBucket bucket(data, index);
@@ -3059,8 +3060,8 @@ Object* Runtime::superGetAttr(
     const Handle<Object>& name) {
   HandleScope scope(thread);
   Handle<Super> super(&scope, *receiver);
-  Handle<Class> startType(&scope, super->objectType());
-  Handle<ObjectArray> mro(&scope, startType->mro());
+  Handle<Class> start_type(&scope, super->objectType());
+  Handle<ObjectArray> mro(&scope, start_type->mro());
   word i;
   for (i = 0; i < mro->length(); i++) {
     if (super->type() == mro->at(i)) {
@@ -3081,10 +3082,10 @@ Object* Runtime::superGetAttr(
       return *value;
     } else {
       Handle<Object> self(&scope, None::object());
-      if (super->object() != *startType) {
+      if (super->object() != *start_type) {
         self = super->object();
       }
-      Handle<Object> owner(&scope, *startType);
+      Handle<Object> owner(&scope, *start_type);
       return Interpreter::callDescriptorGet(
           thread, thread->currentFrame(), value, self, owner);
     }

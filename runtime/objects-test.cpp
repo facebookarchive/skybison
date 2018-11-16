@@ -42,8 +42,8 @@ TEST(DictionaryTest, GetSet) {
       SmallInteger::cast(*stored)->value());
 
   // Overwrite the stored value
-  Handle<Object> newValue(&scope, SmallInteger::fromWord(5555));
-  runtime.dictionaryAtPut(dict, key, newValue);
+  Handle<Object> new_value(&scope, SmallInteger::fromWord(5555));
+  runtime.dictionaryAtPut(dict, key, new_value);
   EXPECT_EQ(dict->numItems(), 1);
 
   // Get the new value
@@ -51,7 +51,7 @@ TEST(DictionaryTest, GetSet) {
   ASSERT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(
       SmallInteger::cast(retrieved)->value(),
-      SmallInteger::cast(*newValue)->value());
+      SmallInteger::cast(*new_value)->value());
 }
 
 TEST(DictionaryTest, Remove) {
@@ -153,40 +153,40 @@ TEST(DictionaryTest, GrowWhenFull) {
 
   // Fill up the dict - we insert an initial key to force the allocation of the
   // backing ObjectArray.
-  Handle<Object> initKey(&scope, SmallInteger::fromWord(0));
-  runtime.dictionaryAtPut(dict, initKey, initKey);
+  Handle<Object> init_key(&scope, SmallInteger::fromWord(0));
+  runtime.dictionaryAtPut(dict, init_key, init_key);
   ASSERT_TRUE(dict->data()->isObjectArray());
-  word initDataSize = ObjectArray::cast(dict->data())->length();
+  word init_data_size = ObjectArray::cast(dict->data())->length();
 
-  auto makeKey = [&runtime](int i) {
+  auto make_key = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
     return runtime.newStringWithAll(View<byte>(text + i % 10, 10));
   };
-  auto makeValue = [](int i) { return SmallInteger::fromWord(i); };
+  auto make_value = [](int i) { return SmallInteger::fromWord(i); };
 
   // Fill in one fewer keys than would require growing the underlying object
   // array again
-  word numKeys = Runtime::kInitialDictionaryCapacity;
-  for (int i = 1; i < numKeys; i++) {
-    Handle<Object> key(&scope, makeKey(i));
-    Handle<Object> value(&scope, makeValue(i));
+  word num_keys = Runtime::kInitialDictionaryCapacity;
+  for (int i = 1; i < num_keys; i++) {
+    Handle<Object> key(&scope, make_key(i));
+    Handle<Object> value(&scope, make_value(i));
     runtime.dictionaryAtPut(dict, key, value);
   }
 
   // Add another key which should force us to double the capacity
-  Handle<Object> straw(&scope, makeKey(numKeys));
-  Handle<Object> strawValue(&scope, makeValue(numKeys));
-  runtime.dictionaryAtPut(dict, straw, strawValue);
+  Handle<Object> straw(&scope, make_key(num_keys));
+  Handle<Object> straw_value(&scope, make_value(num_keys));
+  runtime.dictionaryAtPut(dict, straw, straw_value);
   ASSERT_TRUE(dict->data()->isObjectArray());
-  word newDataSize = ObjectArray::cast(dict->data())->length();
-  EXPECT_EQ(newDataSize, Runtime::kDictionaryGrowthFactor * initDataSize);
+  word new_data_size = ObjectArray::cast(dict->data())->length();
+  EXPECT_EQ(new_data_size, Runtime::kDictionaryGrowthFactor * init_data_size);
 
   // Make sure we can still read all the stored keys/values
-  for (int i = 1; i <= numKeys; i++) {
-    Handle<Object> key(&scope, makeKey(i));
+  for (int i = 1; i <= num_keys; i++) {
+    Handle<Object> key(&scope, make_key(i));
     Object* value = runtime.dictionaryAt(dict, key);
     ASSERT_FALSE(value->isError());
-    EXPECT_TRUE(Object::equals(value, makeValue(i)));
+    EXPECT_TRUE(Object::equals(value, make_value(i)));
   }
 }
 
@@ -220,22 +220,22 @@ TEST(DictionaryTest, MixedKeys) {
   Handle<Dictionary> dict(&scope, runtime.newDictionary());
 
   // Add keys of different type
-  Handle<Object> intKey(&scope, SmallInteger::fromWord(100));
-  runtime.dictionaryAtPut(dict, intKey, intKey);
+  Handle<Object> int_key(&scope, SmallInteger::fromWord(100));
+  runtime.dictionaryAtPut(dict, int_key, int_key);
 
-  Handle<Object> strKey(&scope, runtime.newStringFromCString("testing 123"));
-  runtime.dictionaryAtPut(dict, strKey, strKey);
+  Handle<Object> str_key(&scope, runtime.newStringFromCString("testing 123"));
+  runtime.dictionaryAtPut(dict, str_key, str_key);
 
   // Make sure we get the appropriate values back out
-  Object* retrieved = runtime.dictionaryAt(dict, intKey);
+  Object* retrieved = runtime.dictionaryAt(dict, int_key);
   ASSERT_TRUE(retrieved->isSmallInteger());
   EXPECT_EQ(
       SmallInteger::cast(retrieved)->value(),
-      SmallInteger::cast(*intKey)->value());
+      SmallInteger::cast(*int_key)->value());
 
-  retrieved = runtime.dictionaryAt(dict, strKey);
+  retrieved = runtime.dictionaryAt(dict, str_key);
   ASSERT_TRUE(retrieved->isString());
-  EXPECT_TRUE(Object::equals(*strKey, retrieved));
+  EXPECT_TRUE(Object::equals(*str_key, retrieved));
 }
 
 TEST(DictionaryTest, GetKeys) {
@@ -397,12 +397,12 @@ TEST(ListTest, AppendToList) {
   Handle<List> list(&scope, runtime.newList());
 
   // Check that list capacity grows according to a doubling schedule
-  word expectedCapacity[] = {
+  word expected_capacity[] = {
       4, 4, 4, 4, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16};
   for (int i = 0; i < 16; i++) {
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
     runtime.listAdd(list, value);
-    ASSERT_EQ(list->capacity(), expectedCapacity[i]);
+    ASSERT_EQ(list->capacity(), expected_capacity[i]);
     ASSERT_EQ(list->allocated(), i + 1);
   }
 
@@ -460,8 +460,8 @@ TEST(ListTest, InsertToListBounds) {
   ASSERT_EQ(list->allocated(), 12);
   ASSERT_EQ(SmallInteger::cast(list->at(0))->value(), 400);
 
-  Handle<Object> valueN(&scope, SmallInteger::fromWord(-10));
-  runtime.listInsert(list, valueN, -10);
+  Handle<Object> value_n(&scope, SmallInteger::fromWord(-10));
+  runtime.listInsert(list, value_n, -10);
   ASSERT_EQ(list->allocated(), 13);
   ASSERT_EQ(SmallInteger::cast(list->at(0))->value(), -10);
 }
@@ -958,12 +958,12 @@ TEST(SetTest, Add) {
   ASSERT_TRUE(runtime.setIncludes(set, value));
 
   // Add a new value
-  Handle<Object> newValue(&scope, SmallInteger::fromWord(5555));
-  runtime.setAdd(set, newValue);
+  Handle<Object> new_value(&scope, SmallInteger::fromWord(5555));
+  runtime.setAdd(set, new_value);
   EXPECT_EQ(set->numItems(), 2);
 
   // Get the new value
-  ASSERT_TRUE(runtime.setIncludes(set, newValue));
+  ASSERT_TRUE(runtime.setIncludes(set, new_value));
 
   // Add a existing value
   Handle<Object> same_value(&scope, SmallInteger::fromWord(12345));
@@ -998,34 +998,34 @@ TEST(SetTest, Grow) {
 
   // Fill up the dict - we insert an initial key to force the allocation of the
   // backing ObjectArray.
-  Handle<Object> initKey(&scope, SmallInteger::fromWord(0));
-  runtime.setAdd(set, initKey);
+  Handle<Object> init_key(&scope, SmallInteger::fromWord(0));
+  runtime.setAdd(set, init_key);
   ASSERT_TRUE(set->data()->isObjectArray());
-  word initDataSize = ObjectArray::cast(set->data())->length();
+  word init_data_size = ObjectArray::cast(set->data())->length();
 
-  auto makeKey = [&runtime](int i) {
+  auto make_key = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
     return runtime.newStringWithAll(View<byte>(text + i % 10, 10));
   };
 
   // Fill in one fewer keys than would require growing the underlying object
   // array again
-  word numKeys = Runtime::kInitialSetCapacity;
-  for (int i = 1; i < numKeys; i++) {
-    Handle<Object> key(&scope, makeKey(i));
+  word num_keys = Runtime::kInitialSetCapacity;
+  for (int i = 1; i < num_keys; i++) {
+    Handle<Object> key(&scope, make_key(i));
     runtime.setAdd(set, key);
   }
 
   // Add another key which should force us to double the capacity
-  Handle<Object> straw(&scope, makeKey(numKeys));
+  Handle<Object> straw(&scope, make_key(num_keys));
   runtime.setAdd(set, straw);
   ASSERT_TRUE(set->data()->isObjectArray());
-  word newDataSize = ObjectArray::cast(set->data())->length();
-  EXPECT_EQ(newDataSize, Runtime::kSetGrowthFactor * initDataSize);
+  word new_data_size = ObjectArray::cast(set->data())->length();
+  EXPECT_EQ(new_data_size, Runtime::kSetGrowthFactor * init_data_size);
 
   // Make sure we can still read all the stored keys
-  for (int i = 1; i <= numKeys; i++) {
-    Handle<Object> key(&scope, makeKey(i));
+  for (int i = 1; i <= num_keys; i++) {
+    Handle<Object> key(&scope, make_key(i));
     bool found = runtime.setIncludes(set, key);
     ASSERT_TRUE(found);
   }

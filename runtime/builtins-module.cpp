@@ -106,11 +106,11 @@ Object* builtinBuildClassKw(Thread* thread, Frame* caller, word nargs) {
   return *result;
 }
 
-Object* builtinChr(Thread* thread, Frame* callerFrame, word nargs) {
+Object* builtinChr(Thread* thread, Frame* caller_frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("Unexpected 1 argumment in 'chr'");
   }
-  Object* arg = callerFrame->valueStackTop()[0];
+  Object* arg = caller_frame->valueStackTop()[0];
   if (!arg->isSmallInteger()) {
     return thread->throwTypeErrorFromCString(
         "Unsupported type in builtin 'chr'");
@@ -120,13 +120,13 @@ Object* builtinChr(Thread* thread, Frame* callerFrame, word nargs) {
   return SmallString::fromCString(s);
 }
 
-Object* builtinInt(Thread* thread, Frame* callerFrame, word nargs) {
+Object* builtinInt(Thread* thread, Frame* caller_frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString(
         "int() takes exactly 1 argument"); // TODO(rkng): base (kw/optional)
   }
   HandleScope scope(thread);
-  Handle<Object> arg(&scope, *callerFrame->valueStackTop());
+  Handle<Object> arg(&scope, *caller_frame->valueStackTop());
   return thread->runtime()->stringToInt(thread, arg);
 }
 
@@ -172,11 +172,11 @@ Object* builtinLen(Thread* thread, Frame* caller, word nargs) {
       thread, caller, caller->valueStackTop(), method, self);
 }
 
-Object* builtinOrd(Thread* thread, Frame* callerFrame, word nargs) {
+Object* builtinOrd(Thread* thread, Frame* caller_frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("Unexpected 1 argumment in 'ord'");
   }
-  Object* arg = callerFrame->valueStackTop()[0];
+  Object* arg = caller_frame->valueStackTop()[0];
   if (!arg->isString()) {
     return thread->throwTypeErrorFromCString(
         "Unsupported type in builtin 'ord'");

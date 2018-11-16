@@ -41,12 +41,12 @@ bool LargeString::equals(Object* that) {
   if (!that->isLargeString()) {
     return false;
   }
-  auto* thatStr = LargeString::cast(that);
-  if (length() != thatStr->length()) {
+  auto* that_str = LargeString::cast(that);
+  if (length() != that_str->length()) {
     return false;
   }
   auto s1 = reinterpret_cast<void*>(address());
-  auto s2 = reinterpret_cast<void*>(thatStr->address());
+  auto s2 = reinterpret_cast<void*>(that_str->address());
   return std::memcmp(s1, s2, length()) == 0;
 }
 

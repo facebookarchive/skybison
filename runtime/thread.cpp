@@ -60,28 +60,29 @@ byte* Thread::stackPtr() {
   return reinterpret_cast<byte*>(currentFrame_->valueStackTop());
 }
 
-Frame* Thread::openAndLinkFrame(word numArgs, word numVars, word stackDepth) {
-  DCHECK(numArgs >= 0, "must have 0 or more arguments");
-  DCHECK(numVars >= 0, "must have 0 or more locals");
-  DCHECK(stackDepth >= 0, "stack depth cannot be negative");
+Frame*
+Thread::openAndLinkFrame(word num_args, word num_vars, word stack_depth) {
+  DCHECK(num_args >= 0, "must have 0 or more arguments");
+  DCHECK(num_vars >= 0, "must have 0 or more locals");
+  DCHECK(stack_depth >= 0, "stack depth cannot be negative");
   // HACK: Reserve one extra stack slot for the case where we need to unwrap a
   // bound method
-  stackDepth += 1;
+  stack_depth += 1;
 
   // Check that there is sufficient space on the stack
   // TODO: Grow stack
   byte* sp = reinterpret_cast<byte*>(currentFrame_->valueStackTop());
-  word maxSize = Frame::kSize + (numVars + stackDepth) * kPointerSize;
-  CHECK(sp - maxSize >= start_, "stack overflow");
+  word max_size = Frame::kSize + (num_vars + stack_depth) * kPointerSize;
+  CHECK(sp - max_size >= start_, "stack overflow");
 
   // Initialize the frame.
-  word size = Frame::kSize + numVars * kPointerSize;
+  word size = Frame::kSize + num_vars * kPointerSize;
   sp -= size;
   std::memset(sp, 0, size);
   auto frame = reinterpret_cast<Frame*>(sp);
   frame->setPreviousFrame(currentFrame_);
   frame->setValueStackTop(reinterpret_cast<Object**>(frame));
-  frame->setNumLocals(numArgs + numVars);
+  frame->setNumLocals(num_args + num_vars);
 
   currentFrame_ = frame;
 
@@ -96,16 +97,16 @@ Frame* Thread::pushNativeFrame(void* fn) {
   // a declaration of how much space is needed. However, that's of limited use
   // right now since we can't detect an "overflow" of a frame anyway.
   auto frame = openAndLinkFrame(0, 0, 0);
-  auto fnInt = runtime()->newIntegerFromCPointer(fn);
-  frame->makeNativeFrame(fnInt);
+  auto fn_int = runtime()->newIntegerFromCPointer(fn);
+  frame->makeNativeFrame(fn_int);
   return frame;
 }
 
 Frame* Thread::pushFrame(Object* object) {
   HandleScope scope(this);
   Handle<Code> code(&scope, object);
-  word numVars = code->nlocals() + code->numCellvars() + code->numFreevars();
-  auto frame = openAndLinkFrame(code->totalArgs(), numVars, code->stacksize());
+  word num_vars = code->nlocals() + code->numCellvars() + code->numFreevars();
+  auto frame = openAndLinkFrame(code->totalArgs(), num_vars, code->stacksize());
   frame->setCode(*code);
   return frame;
 }

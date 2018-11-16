@@ -1036,17 +1036,18 @@ void Interpreter::doLoadGlobal(Context* ctx, word arg) {
 // opcode 120
 void Interpreter::doSetupLoop(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
-  word stackDepth = frame->valueStackBase() - ctx->sp;
-  BlockStack* blockStack = frame->blockStack();
-  blockStack->push(TryBlock(Bytecode::SETUP_LOOP, ctx->pc + arg, stackDepth));
+  word stack_depth = frame->valueStackBase() - ctx->sp;
+  BlockStack* block_stack = frame->blockStack();
+  block_stack->push(TryBlock(Bytecode::SETUP_LOOP, ctx->pc + arg, stack_depth));
 }
 
 // opcode 121
 void Interpreter::doSetupExcept(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
-  word stackDepth = frame->valueStackBase() - ctx->sp;
-  BlockStack* blockStack = frame->blockStack();
-  blockStack->push(TryBlock(Bytecode::SETUP_EXCEPT, ctx->pc + arg, stackDepth));
+  word stack_depth = frame->valueStackBase() - ctx->sp;
+  BlockStack* block_stack = frame->blockStack();
+  block_stack->push(
+      TryBlock(Bytecode::SETUP_EXCEPT, ctx->pc + arg, stack_depth));
 }
 
 // opcode 124
@@ -1272,7 +1273,7 @@ void Interpreter::doBuildString(Context* ctx, word arg) {
 }
 
 using Op = void (*)(Interpreter::Context*, word);
-const Op opTable[] = {
+const Op kOpTable[] = {
 #define HANDLER(name, value, handler) Interpreter::handler,
     FOREACH_BYTECODE(HANDLER)
 #undef HANDLER
@@ -1281,7 +1282,7 @@ const Op opTable[] = {
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
   Code* code = Code::cast(frame->code());
-  Handle<ByteArray> byteArray(&scope, code->code());
+  Handle<ByteArray> byte_array(&scope, code->code());
   Context ctx;
   ctx.pc = 0;
   ctx.sp = frame->valueStackTop();
@@ -1289,13 +1290,13 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
   ctx.frame = frame;
   for (;;) {
     frame->setVirtualPC(ctx.pc);
-    Bytecode bc = static_cast<Bytecode>(byteArray->byteAt(ctx.pc++));
-    int32 arg = byteArray->byteAt(ctx.pc++);
+    Bytecode bc = static_cast<Bytecode>(byte_array->byteAt(ctx.pc++));
+    int32 arg = byte_array->byteAt(ctx.pc++);
   dispatch:
     switch (bc) {
       case Bytecode::EXTENDED_ARG: {
-        bc = static_cast<Bytecode>(byteArray->byteAt(ctx.pc++));
-        arg = (arg << 8) | byteArray->byteAt(ctx.pc++);
+        bc = static_cast<Bytecode>(byte_array->byteAt(ctx.pc++));
+        arg = (arg << 8) | byte_array->byteAt(ctx.pc++);
         goto dispatch;
       }
       case Bytecode::RETURN_VALUE: {
@@ -1305,7 +1306,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         return result;
       }
       default:
-        opTable[bc](&ctx, arg);
+        kOpTable[bc](&ctx, arg);
     }
   }
 }
