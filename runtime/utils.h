@@ -82,29 +82,29 @@ namespace python {
 class Utils {
  public:
   template <typename T>
-  static inline bool isAligned(T x, int n) {
+  static bool isAligned(T x, int n) {
     DCHECK(isPowerOfTwo(n), "must be power of 2");
     return (x & (n - 1)) == 0;
   }
 
   template <typename T>
-  static inline bool isPowerOfTwo(T x) {
+  static bool isPowerOfTwo(T x) {
     return (x & (x - 1)) == 0;
   }
 
   template <typename T>
-  static inline T roundDown(T x, int n) {
+  static T roundDown(T x, int n) {
     DCHECK(isPowerOfTwo(n), "must be power of 2");
     return (x & -n);
   }
 
   template <typename T>
-  static inline T roundUp(T x, int n) {
+  static T roundUp(T x, int n) {
     return roundDown(x + n - 1, n);
   }
 
   template <typename T>
-  static inline T nextPowerOfTwo(T x) {
+  static T nextPowerOfTwo(T x) {
     // Turn off all but msb.
     while ((x & (x - 1u)) != 0) {
       x &= x - 1u;
@@ -113,17 +113,17 @@ class Utils {
   }
 
   template <typename T>
-  static inline T rotateLeft(T x, int n) {
+  static T rotateLeft(T x, int n) {
     return (x << n) | (x >> (-n & (sizeof(T) * kBitsPerByte - 1)));
   }
 
   template <typename T>
-  static inline T maximum(T x, T y) {
+  static T maximum(T x, T y) {
     return x > y ? x : y;
   }
 
   template <typename T>
-  static inline T minimum(T x, T y) {
+  static T minimum(T x, T y) {
     return x < y ? x : y;
   }
 
