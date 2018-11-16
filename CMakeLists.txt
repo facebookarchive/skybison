@@ -95,8 +95,6 @@ target_include_directories(
 add_library(
   runtime
   STATIC
-  runtime/bool-builtins.cpp
-  runtime/bool-builtins.h
   runtime/builtins-module.cpp
   runtime/builtins-module.h
   runtime/bytecode.cpp
@@ -252,7 +250,6 @@ add_library(
   runtime-tests
   STATIC
   runtime/builtins-module-test.cpp
-  runtime/bool-builtins-test.cpp
   runtime/capi-handles-test.cpp
   runtime/complex-builtins-test.cpp
   runtime/descriptor-builtins-test.cpp

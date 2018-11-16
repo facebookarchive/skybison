@@ -2971,11 +2971,7 @@ inline void LargeInt::digitAtPut(word index, uword digit) {
 
 inline word LargeInt::highestBit() {
   word num_digits = numDigits();
-  uword high_word = digitAt(num_digits - 1);
-  if (isNegative()) {
-    high_word ^= kMaxUword;
-  }
-  word highest_bit = Utils::highestBit(high_word);
+  word highest_bit = Utils::highestBit(digitAt(num_digits - 1));
   return highest_bit + ((num_digits - 1) * kBitsPerPointer);
 }
 

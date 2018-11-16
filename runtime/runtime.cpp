@@ -9,7 +9,6 @@
 #include <fstream>
 #include <memory>
 
-#include "bool-builtins.h"
 #include "builtins-module.h"
 #include "bytecode.h"
 #include "callback.h"
@@ -987,8 +986,6 @@ void Runtime::initializeHeapClasses() {
                        LayoutId::kObject);
   initializeFloatClass();
   initializeFunctionClass();
-  addEmptyBuiltinClass(SymbolId::kLargeInt, LayoutId::kLargeInt,
-                       LayoutId::kInt);
   addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeStr,
                        LayoutId::kString);
   addEmptyBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
@@ -1140,23 +1137,11 @@ void Runtime::initializeTypeClass() {
 }
 
 void Runtime::initializeImmediateClasses() {
-  initializeBoolClass();
+  BoolBuiltins::initialize(this);
   NoneBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallStr,
                        LayoutId::kString);
   SmallIntBuiltins::initialize(this);
-}
-
-void Runtime::initializeBoolClass() {
-  HandleScope scope;
-  Handle<Type> type(
-      &scope,
-      addEmptyBuiltinClass(SymbolId::kBool, LayoutId::kBool, LayoutId::kInt));
-
-  classAddBuiltinFunction(type, SymbolId::kDunderBool,
-                          nativeTrampoline<builtinBooldunderBool>);
-  classAddBuiltinFunction(type, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinBoolNew>);
 }
 
 void Runtime::initializeFloatClass() {

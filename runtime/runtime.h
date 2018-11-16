@@ -509,7 +509,6 @@ class Runtime {
   void initializeRandom();
   void initializeSymbols();
 
-  void initializeBoolClass();
   void initializeClassMethodClass();
   void initializeFloatClass();
   void initializeFunctionClass();

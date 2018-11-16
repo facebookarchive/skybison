@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "frame.h"
 #include "handles.h"
 #include "int-builtins.h"
 #include "objects.h"
@@ -496,6 +497,37 @@ a ^= 0x03
   EXPECT_EQ(SmallInt::cast(*b)->value(), 0xFE);
 }
 
+TEST(IntBuiltinsTest, BinaryAddSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 2
+b = 1
+c = a + b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(c->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*c)->value(), 3);
+}
+
+TEST(IntBuiltinsTest, BinaryAddSmallIntOverflow) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMaxValue - 1));
+  frame->setLocal(1, SmallInt::fromWord(2));
+  Handle<Object> c(&scope, SmallIntBuiltins::dunderAdd(thread, frame, 2));
+
+  ASSERT_TRUE(c->isLargeInt());
+  EXPECT_EQ(LargeInt::cast(*c)->asWord(), SmallInt::kMaxValue + 1);
+}
+
 TEST(IntBuiltinsTest, BitLength) {
   Runtime runtime;
   HandleScope scope;
@@ -504,38 +536,428 @@ TEST(IntBuiltinsTest, BitLength) {
 
   // (0).bit_length() == 0
   frame->setLocal(0, SmallInt::fromWord(0));
-  Handle<Object> bit_length(&scope,
-                            SmallIntBuiltins::bitLength(thread, frame, 1));
+  Handle<Object> bit_length(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length->isSmallInt());
   EXPECT_EQ(SmallInt::cast(*bit_length)->value(), 0);
 
   // (1).bit_length() == 1
   frame->setLocal(0, SmallInt::fromWord(1));
-  Handle<Object> bit_length1(&scope,
-                             SmallIntBuiltins::bitLength(thread, frame, 1));
+  Handle<Object> bit_length1(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length1->isSmallInt());
   EXPECT_EQ(SmallInt::cast(*bit_length1)->value(), 1);
 
   // (-1).bit_length() == 1
   frame->setLocal(0, SmallInt::fromWord(1));
-  Handle<Object> bit_length2(&scope,
-                             SmallIntBuiltins::bitLength(thread, frame, 1));
+  Handle<Object> bit_length2(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length2->isSmallInt());
   EXPECT_EQ(SmallInt::cast(*bit_length2)->value(), 1);
 
   // (SmallInt::kMaxValue).bit_length() == 62
   frame->setLocal(0, SmallInt::fromWord(SmallInt::kMaxValue));
-  Handle<Object> bit_length3(&scope,
-                             SmallIntBuiltins::bitLength(thread, frame, 1));
+  Handle<Object> bit_length3(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length3->isSmallInt());
   EXPECT_EQ(SmallInt::cast(*bit_length3)->value(), 62);
 
   // (SmallInt::kMinValue).bit_length() == 63
   frame->setLocal(0, SmallInt::fromWord(SmallInt::kMinValue));
-  Handle<Object> bit_length4(&scope,
-                             SmallIntBuiltins::bitLength(thread, frame, 1));
+  Handle<Object> bit_length4(&scope, IntBuiltins::bitLength(thread, frame, 1));
   ASSERT_TRUE(bit_length4->isSmallInt());
   EXPECT_EQ(SmallInt::cast(*bit_length4)->value(), 63);
+
+  // (kMaxInt64).bit_length() == 63
+  Handle<Object> large_int1(&scope, runtime.newInt(kMaxInt64));
+  frame->setLocal(0, *large_int1);
+  Handle<Object> bit_length5(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length5->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*bit_length5)->value(), 63);
+
+  // (kMinInt64).bit_length() == 64
+  Handle<Object> large_int2(&scope, runtime.newInt(kMinInt64));
+  frame->setLocal(0, *large_int2);
+  Handle<Object> bit_length6(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length6->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*bit_length6)->value(), 64);
+
+  uword digits[] = {0, kMaxInt32};
+  Handle<Object> large_int3(
+      &scope, runtime.newIntWithDigits(View<uword>(&digits[0], 2)));
+  frame->setLocal(0, *large_int3);
+  Handle<Object> bit_length7(&scope, IntBuiltins::bitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length7->isSmallInt());
+  // 31 bits for kMaxInt32 + 64 bits
+  EXPECT_EQ(SmallInt::cast(*bit_length7)->value(), 95);
+}
+
+TEST(IntBuiltinsTest, CompareLargeIntEq) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  ASSERT_TRUE(a->isLargeInt());
+  ASSERT_TRUE(b->isLargeInt());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_1(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  ASSERT_TRUE(cmp_1->isBool());
+  EXPECT_EQ(*cmp_1, Bool::falseObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_2(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  ASSERT_TRUE(cmp_2->isBool());
+  EXPECT_EQ(*cmp_2, Bool::falseObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_3(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  ASSERT_TRUE(cmp_3->isBool());
+  EXPECT_EQ(*cmp_3, Bool::trueObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_4(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  ASSERT_TRUE(cmp_4->isBool());
+  EXPECT_EQ(*cmp_4, Bool::falseObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_5(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  ASSERT_TRUE(cmp_5->isBool());
+  EXPECT_EQ(*cmp_5, Bool::falseObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_6(&scope, IntBuiltins::dunderEq(thread, frame, 2));
+  ASSERT_TRUE(cmp_6->isBool());
+  EXPECT_EQ(*cmp_6, Bool::trueObj());
+}
+
+TEST(IntBuiltinsTest, CompareLargeIntNe) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  ASSERT_TRUE(a->isLargeInt());
+  ASSERT_TRUE(b->isLargeInt());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_1(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  ASSERT_TRUE(cmp_1->isBool());
+  EXPECT_EQ(*cmp_1, Bool::trueObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_2(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  ASSERT_TRUE(cmp_2->isBool());
+  EXPECT_EQ(*cmp_2, Bool::trueObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_3(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  ASSERT_TRUE(cmp_3->isBool());
+  EXPECT_EQ(*cmp_3, Bool::falseObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_4(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  ASSERT_TRUE(cmp_4->isBool());
+  EXPECT_EQ(*cmp_4, Bool::trueObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_5(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  ASSERT_TRUE(cmp_5->isBool());
+  EXPECT_EQ(*cmp_5, Bool::trueObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_6(&scope, IntBuiltins::dunderNe(thread, frame, 2));
+  ASSERT_TRUE(cmp_6->isBool());
+  EXPECT_EQ(*cmp_6, Bool::falseObj());
+}
+
+TEST(LargeIntBuiltinsTest, UnaryPositive) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+
+  Handle<Object> smallint_max(&scope, runtime.newInt(SmallInt::kMaxValue));
+  frame->setLocal(0, *smallint_max);
+  Handle<Object> a(&scope, IntBuiltins::dunderPos(thread, frame, 1));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(),
+            static_cast<word>(SmallInt::kMaxValue));
+
+  Handle<Object> smallint_max1(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  frame->setLocal(0, *smallint_max1);
+  Handle<Object> b(&scope, IntBuiltins::dunderPos(thread, frame, 1));
+  ASSERT_TRUE(b->isLargeInt());
+  EXPECT_EQ(LargeInt::cast(*b)->asWord(), SmallInt::kMaxValue + 1);
+
+  Handle<Object> smallint_min(&scope, runtime.newInt(SmallInt::kMinValue));
+  frame->setLocal(0, *smallint_min);
+  Handle<Object> c(&scope, IntBuiltins::dunderPos(thread, frame, 1));
+  ASSERT_TRUE(c->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*c)->value(),
+            static_cast<word>(SmallInt::kMinValue));
+
+  Handle<Object> smallint_min1(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  frame->setLocal(0, *smallint_min1);
+  Handle<Object> d(&scope, IntBuiltins::dunderPos(thread, frame, 1));
+  ASSERT_TRUE(d->isLargeInt());
+  EXPECT_EQ(LargeInt::cast(*d)->asWord(), SmallInt::kMinValue - 1);
+}
+
+TEST(LargeIntBuiltinsTest, UnaryNegateTest) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+
+  Handle<Object> smallint_max(&scope, runtime.newInt(SmallInt::kMaxValue));
+  frame->setLocal(0, *smallint_max);
+  Handle<Object> a(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(), -SmallInt::kMaxValue);
+
+  Handle<Object> smallint_max1(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  frame->setLocal(0, *smallint_max1);
+  Handle<Object> b(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
+  ASSERT_TRUE(b->isLargeInt());
+  EXPECT_EQ(LargeInt::cast(*b)->asWord(), -(SmallInt::kMaxValue + 1));
+
+  Handle<Object> smallint_min(&scope, runtime.newInt(SmallInt::kMinValue));
+  frame->setLocal(0, *smallint_min);
+  Handle<Object> c(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
+  ASSERT_TRUE(c->isLargeInt());
+  EXPECT_EQ(LargeInt::cast(*c)->asWord(), -SmallInt::kMinValue);
+
+  Handle<Object> smallint_min1(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  frame->setLocal(0, *smallint_min1);
+  Handle<Object> d(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
+  ASSERT_TRUE(d->isLargeInt());
+  EXPECT_EQ(LargeInt::cast(*d)->asWord(), -(SmallInt::kMinValue - 1));
+}
+
+TEST(LargeIntBuiltinsTest, TruthyLargeInt) {
+  const char* src = R"(
+a = 4611686018427387903 + 1
+if a:
+  print("true")
+else:
+  print("false")
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "true\n");
+}
+
+TEST(IntBuiltinsTest, CompareLargeIntGe) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  ASSERT_TRUE(a->isLargeInt());
+  ASSERT_TRUE(b->isLargeInt());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_1(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  ASSERT_TRUE(cmp_1->isBool());
+  EXPECT_EQ(*cmp_1, Bool::trueObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_2(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  ASSERT_TRUE(cmp_2->isBool());
+  EXPECT_EQ(*cmp_2, Bool::trueObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_3(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  ASSERT_TRUE(cmp_3->isBool());
+  EXPECT_EQ(*cmp_3, Bool::trueObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_4(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  ASSERT_TRUE(cmp_4->isBool());
+  EXPECT_EQ(*cmp_4, Bool::falseObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_5(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  ASSERT_TRUE(cmp_5->isBool());
+  EXPECT_EQ(*cmp_5, Bool::falseObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_6(&scope, IntBuiltins::dunderGe(thread, frame, 2));
+  ASSERT_TRUE(cmp_6->isBool());
+  EXPECT_EQ(*cmp_6, Bool::trueObj());
+}
+
+TEST(IntBuiltinsTest, CompareLargeIntLe) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  ASSERT_TRUE(a->isLargeInt());
+  ASSERT_TRUE(b->isLargeInt());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_1(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  ASSERT_TRUE(cmp_1->isBool());
+  EXPECT_EQ(*cmp_1, Bool::falseObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_2(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  ASSERT_TRUE(cmp_2->isBool());
+  EXPECT_EQ(*cmp_2, Bool::falseObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_3(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  ASSERT_TRUE(cmp_3->isBool());
+  EXPECT_EQ(*cmp_3, Bool::trueObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_4(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  ASSERT_TRUE(cmp_4->isBool());
+  EXPECT_EQ(*cmp_4, Bool::trueObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_5(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  ASSERT_TRUE(cmp_5->isBool());
+  EXPECT_EQ(*cmp_5, Bool::trueObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_6(&scope, IntBuiltins::dunderLe(thread, frame, 2));
+  ASSERT_TRUE(cmp_6->isBool());
+  EXPECT_EQ(*cmp_6, Bool::trueObj());
+}
+
+TEST(IntBuiltinsTest, CompareLargeIntGt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  ASSERT_TRUE(a->isLargeInt());
+  ASSERT_TRUE(b->isLargeInt());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_1(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  ASSERT_TRUE(cmp_1->isBool());
+  EXPECT_EQ(*cmp_1, Bool::trueObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_2(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  ASSERT_TRUE(cmp_2->isBool());
+  EXPECT_EQ(*cmp_2, Bool::trueObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_3(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  ASSERT_TRUE(cmp_3->isBool());
+  EXPECT_EQ(*cmp_3, Bool::falseObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_4(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  ASSERT_TRUE(cmp_4->isBool());
+  EXPECT_EQ(*cmp_4, Bool::falseObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_5(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  ASSERT_TRUE(cmp_5->isBool());
+  EXPECT_EQ(*cmp_5, Bool::falseObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_6(&scope, IntBuiltins::dunderGt(thread, frame, 2));
+  ASSERT_TRUE(cmp_6->isBool());
+  EXPECT_EQ(*cmp_6, Bool::falseObj());
+}
+
+TEST(IntBuiltinsTest, CompareLargeIntLt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  Handle<Object> a(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  Handle<Object> b(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  ASSERT_TRUE(a->isLargeInt());
+  ASSERT_TRUE(b->isLargeInt());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_1(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  ASSERT_TRUE(cmp_1->isBool());
+  EXPECT_EQ(*cmp_1, Bool::falseObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_2(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  ASSERT_TRUE(cmp_2->isBool());
+  EXPECT_EQ(*cmp_2, Bool::falseObj());
+
+  frame->setLocal(0, *a);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_3(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  ASSERT_TRUE(cmp_3->isBool());
+  EXPECT_EQ(*cmp_3, Bool::falseObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *a);
+  Handle<Object> cmp_4(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  ASSERT_TRUE(cmp_4->isBool());
+  EXPECT_EQ(*cmp_4, Bool::trueObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Handle<Object> cmp_5(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  ASSERT_TRUE(cmp_5->isBool());
+  EXPECT_EQ(*cmp_5, Bool::trueObj());
+
+  frame->setLocal(0, *b);
+  frame->setLocal(1, *b);
+  Handle<Object> cmp_6(&scope, IntBuiltins::dunderLt(thread, frame, 2));
+  ASSERT_TRUE(cmp_6->isBool());
+  EXPECT_EQ(*cmp_6, Bool::falseObj());
 }
 
 TEST(IntBuiltinsTest, StringToIntDPos) {
@@ -613,6 +1035,321 @@ b = int.__int__(7)
   frame->setLocal(0, runtime.newStringFromCString("python"));
   Handle<Object> res(&scope, IntBuiltins::dunderInt(thread, frame, 1));
   EXPECT_TRUE(res->isError());
+}
+
+TEST(IntBuiltinsTest, DunderIntOnBool) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  Handle<Object> a(&scope, IntBuiltins::dunderInt(thread, frame, 1));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(1, SmallInt::cast(*a)->value());
+
+  frame->setLocal(0, Bool::falseObj());
+  Handle<Object> b(&scope, IntBuiltins::dunderInt(thread, frame, 1));
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(0, SmallInt::cast(*b)->value());
+}
+
+TEST(IntBuiltinsTest, DunderBoolOnBool) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  Object* result = IntBuiltins::dunderBool(thread, frame, 1);
+  EXPECT_EQ(result, Bool::trueObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  Object* result1 = IntBuiltins::dunderBool(thread, frame, 1);
+  EXPECT_EQ(result1, Bool::falseObj());
+}
+
+TEST(IntBuiltinsTest, BitLengthOnBool) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  Object* result = IntBuiltins::dunderBool(thread, frame, 1);
+  EXPECT_EQ(result, Bool::trueObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  Object* result1 = IntBuiltins::dunderBool(thread, frame, 1);
+  EXPECT_EQ(result1, Bool::falseObj());
+}
+
+TEST(IntBuiltinsTest, DunderEqOnBool) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  frame->setLocal(1, Bool::trueObj());
+  Object* result = IntBuiltins::dunderEq(thread, frame, 2);
+  EXPECT_EQ(result, Bool::trueObj());
+
+  frame->setLocal(1, Bool::falseObj());
+  Object* result1 = IntBuiltins::dunderEq(thread, frame, 2);
+  EXPECT_EQ(result1, Bool::falseObj());
+
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Object* result2 = IntBuiltins::dunderEq(thread, frame, 2);
+  EXPECT_EQ(result2, Bool::falseObj());
+
+  frame->setLocal(1, SmallInt::fromWord(1));
+  Object* result3 = IntBuiltins::dunderEq(thread, frame, 2);
+  EXPECT_EQ(result3, Bool::trueObj());
+}
+
+TEST(IntBuiltinsTest, DunderNeOnBool) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  frame->setLocal(1, Bool::trueObj());
+  Object* result = IntBuiltins::dunderNe(thread, frame, 2);
+  EXPECT_EQ(result, Bool::falseObj());
+
+  frame->setLocal(1, Bool::falseObj());
+  Object* result1 = IntBuiltins::dunderNe(thread, frame, 2);
+  EXPECT_EQ(result1, Bool::trueObj());
+
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Object* result2 = IntBuiltins::dunderNe(thread, frame, 2);
+  EXPECT_EQ(result2, Bool::trueObj());
+
+  frame->setLocal(1, SmallInt::fromWord(1));
+  Object* result3 = IntBuiltins::dunderNe(thread, frame, 2);
+  EXPECT_EQ(result3, Bool::falseObj());
+}
+
+TEST(IntBuiltinsTest, DunderNegOnBool) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  Object* result = IntBuiltins::dunderNeg(thread, frame, 1);
+  EXPECT_EQ(result, SmallInt::fromWord(-1));
+
+  frame->setLocal(0, Bool::falseObj());
+  Object* result1 = IntBuiltins::dunderNeg(thread, frame, 1);
+  EXPECT_EQ(result1, SmallInt::fromWord(0));
+}
+
+TEST(IntBuiltinsTest, DunderPosOnBool) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  Object* result = IntBuiltins::dunderPos(thread, frame, 1);
+  EXPECT_EQ(result, SmallInt::fromWord(1));
+
+  frame->setLocal(0, Bool::falseObj());
+  Object* result1 = IntBuiltins::dunderPos(thread, frame, 1);
+  EXPECT_EQ(result1, SmallInt::fromWord(0));
+}
+
+TEST(IntBuiltinsTest, DunderLtOnBool) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  frame->setLocal(1, Bool::falseObj());
+  Object* result = IntBuiltins::dunderLt(thread, frame, 2);
+  EXPECT_EQ(result, Bool::falseObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, Bool::trueObj());
+  Object* result1 = IntBuiltins::dunderLt(thread, frame, 2);
+  EXPECT_EQ(result1, Bool::trueObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, SmallInt::fromWord(1));
+  Object* result2 = IntBuiltins::dunderLt(thread, frame, 2);
+  EXPECT_EQ(result2, Bool::trueObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, SmallInt::fromWord(-1));
+  Object* result3 = IntBuiltins::dunderLt(thread, frame, 2);
+  EXPECT_EQ(result3, Bool::falseObj());
+}
+
+TEST(IntBuiltinsTest, DunderGeOnBool) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  frame->setLocal(1, Bool::falseObj());
+  Object* result = IntBuiltins::dunderGe(thread, frame, 2);
+  EXPECT_EQ(result, Bool::trueObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, Bool::trueObj());
+  Object* result1 = IntBuiltins::dunderGe(thread, frame, 2);
+  EXPECT_EQ(result1, Bool::falseObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, SmallInt::fromWord(1));
+  Object* result2 = IntBuiltins::dunderGe(thread, frame, 2);
+  EXPECT_EQ(result2, Bool::falseObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, SmallInt::fromWord(-1));
+  Object* result3 = IntBuiltins::dunderGe(thread, frame, 2);
+  EXPECT_EQ(result3, Bool::trueObj());
+}
+
+TEST(IntBuiltinsTest, DunderGtOnBool) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  frame->setLocal(1, Bool::falseObj());
+  Object* result = IntBuiltins::dunderGt(thread, frame, 2);
+  EXPECT_EQ(result, Bool::trueObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, Bool::trueObj());
+  Object* result1 = IntBuiltins::dunderGt(thread, frame, 2);
+  EXPECT_EQ(result1, Bool::falseObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, SmallInt::fromWord(1));
+  Object* result2 = IntBuiltins::dunderGt(thread, frame, 2);
+  EXPECT_EQ(result2, Bool::falseObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, SmallInt::fromWord(-1));
+  Object* result3 = IntBuiltins::dunderGt(thread, frame, 2);
+  EXPECT_EQ(result3, Bool::trueObj());
+}
+
+TEST(IntBuiltinsTest, DunderLeOnBool) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  frame->setLocal(0, Bool::trueObj());
+  frame->setLocal(1, Bool::falseObj());
+  Object* result = IntBuiltins::dunderLe(thread, frame, 2);
+  EXPECT_EQ(result, Bool::falseObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, Bool::trueObj());
+  Object* result1 = IntBuiltins::dunderLe(thread, frame, 2);
+  EXPECT_EQ(result1, Bool::trueObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, SmallInt::fromWord(1));
+  Object* result2 = IntBuiltins::dunderLe(thread, frame, 2);
+  EXPECT_EQ(result2, Bool::trueObj());
+
+  frame->setLocal(0, Bool::falseObj());
+  frame->setLocal(1, SmallInt::fromWord(-1));
+  Object* result3 = IntBuiltins::dunderLe(thread, frame, 2);
+  EXPECT_EQ(result3, Bool::falseObj());
+}
+
+TEST(BoolBuiltinsTest, NewFromNonZeroIntegerReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
+  frame->setLocal(1, SmallInt::fromWord(2));
+  Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+  EXPECT_TRUE(Bool::cast(result)->value());
+}
+
+TEST(BoolBuiltinsTest, NewFromZerorReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
+  frame->setLocal(1, SmallInt::fromWord(0));
+  Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+  EXPECT_FALSE(Bool::cast(result)->value());
+}
+
+TEST(BoolBuiltinsTest, NewFromTrueReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
+  frame->setLocal(1, Bool::trueObj());
+  Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+  EXPECT_TRUE(Bool::cast(result)->value());
+  thread->popFrame();
+}
+
+TEST(BoolBuiltinsTest, NewFromFalseReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
+  frame->setLocal(1, Bool::falseObj());
+  Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+  EXPECT_FALSE(Bool::cast(result)->value());
+  thread->popFrame();
+}
+
+TEST(BoolBuiltinsTest, NewFromNoneIsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
+  frame->setLocal(1, None::object());
+  Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+  EXPECT_FALSE(Bool::cast(result)->value());
+  thread->popFrame();
+}
+
+TEST(BoolBuiltinsTest, NewFromUserDefinedType) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  runtime.runFromCString(R"(
+class Foo:
+  def __bool__(self):
+    return True
+
+class Bar:
+  def __bool__(self):
+    return False
+
+foo = Foo()
+bar = Bar()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "foo"));
+  Handle<Object> bar(&scope, moduleAt(&runtime, main, "bar"));
+
+  {
+    Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+    frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
+    frame->setLocal(1, *foo);
+    Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+    EXPECT_TRUE(Bool::cast(result)->value());
+    thread->popFrame();
+  }
+  {
+    Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+    frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
+    frame->setLocal(1, *bar);
+    Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
+    EXPECT_FALSE(Bool::cast(result)->value());
+    thread->popFrame();
+  }
 }
 
 }  // namespace python
