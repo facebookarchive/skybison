@@ -15,10 +15,13 @@ class Runtime {
   ~Runtime();
 
   Object* newByteArray(word length);
+  Object* newByteArrayFromCString(const char* c_string, word length);
 
   Object* newCode();
 
   Object* newDictionary();
+
+  Object* newFunction();
 
   Object* newList();
 

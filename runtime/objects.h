@@ -108,6 +108,8 @@ class Object {
 
   // Casting.
   static inline Object* cast(Object* object);
+  template <typename T>
+  inline T* cast();
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
@@ -492,10 +494,73 @@ class Code : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Code);
 };
 
+/**
+ * A function object.
+ *
+ * This may contain a user-defined function or a built-in function.
+ *
+ * Function objects have a set of pre-defined attributes, only some of which
+ * are writable outside of the runtime. The full set is defined at
+ *
+ *     https://docs.python.org/3/reference/datamodel.html
+ */
 class Function : public HeapObject {
  public:
   // Getters and setters.
+
+  // A dictionary containing parameter annotations
+  inline Object* annotations();
+  inline void setAnnotations(Object* annotations);
+
+  // The code object backing this function or None
   inline Object* code();
+  inline void setCode(Object* code);
+
+  // A tuple of cell objects that contain bindings for the function's free
+  // variables. Read-only to user code.
+  inline Object* closure();
+  inline void setClosure(Object* closure);
+
+  // A tuple containing default values for arguments with defaults. Read-only
+  // to user code.
+  inline Object* defaults();
+  inline void setDefaults(Object* defaults);
+  inline bool hasDefaults();
+
+  // The function's docstring
+  inline Object* doc();
+  inline void setDoc(Object* doc);
+
+  // Returns a pointer to a trampoline that is responsible for executing the
+  // function when it is invoked via CALL_FUNCTION
+  inline Object* entry();
+  inline void setEntry(Object* entry);
+
+  // Returns a pointer to a trampoline that is responsible for executing the
+  // function when it is invoked via CALL_FUNCTION_KW
+  inline Object* entryKw();
+  inline void setEntryKw(Object* entryKw);
+
+  // The dictionary that holds this function's global namespace. User-code
+  // cannot change this
+  inline Object* globals();
+  inline void setGlobals(Object* globals);
+
+  // A dictionary containing defaults for keyword-only parameters
+  inline Object* kwDefaults();
+  inline void setKwDefaults(Object* kwDefaults);
+
+  // The name of the module the function was defined in
+  inline Object* module();
+  inline void setModule(Object* module);
+
+  // The function's name
+  inline Object* name();
+  inline void setName(Object* name);
+
+  // The function's qualname
+  inline Object* qualname();
+  inline void setQualname(Object* qualname);
 
   // Casting.
   inline static Function* cast(Object* object);
@@ -508,8 +573,19 @@ class Function : public HeapObject {
   inline void initialize();
 
   // Layout.
-  static const int kCodeOffset = HeapObject::kSize + kPointerSize;
-  static const int kSize = kCodeOffset + kPointerSize;
+  static const int kDocOffset = HeapObject::kSize;
+  static const int kNameOffset = kDocOffset + kPointerSize;
+  static const int kQualnameOffset = kNameOffset + kPointerSize;
+  static const int kModuleOffset = kQualnameOffset + kPointerSize;
+  static const int kDefaultsOffset = kModuleOffset + kPointerSize;
+  static const int kCodeOffset = kDefaultsOffset + kPointerSize;
+  static const int kAnnotationsOffset = kCodeOffset + kPointerSize;
+  static const int kKwDefaultsOffset = kAnnotationsOffset + kPointerSize;
+  static const int kClosureOffset = kKwDefaultsOffset + kPointerSize;
+  static const int kGlobalsOffset = kClosureOffset + kPointerSize;
+  static const int kEntryOffset = kGlobalsOffset + kPointerSize;
+  static const int kEntryKwOffset = kEntryOffset + kPointerSize;
+  static const int kSize = kEntryKwOffset;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Function);
@@ -786,6 +862,11 @@ bool Object::equals(Object* lhs, Object* rhs) {
 
 Object* Object::cast(Object* object) {
   return object;
+}
+
+template <typename T>
+T* Object::cast() {
+  return T::cast(this);
 }
 
 Object* Object::hash(Object* object) {
@@ -1301,8 +1382,104 @@ void Dictionary::setItems(Object* items) {
 
 // Function
 
-word Function::allocationSize() {
-  return Utils::roundUp(Function::kSize, kPointerSize);
+Object* Function::annotations() {
+  return instanceVariableAt(kAnnotationsOffset);
+}
+
+void Function::setAnnotations(Object* annotations) {
+  return instanceVariableAtPut(kAnnotationsOffset, annotations);
+}
+
+Object* Function::closure() {
+  return instanceVariableAt(kClosureOffset);
+}
+
+void Function::setClosure(Object* closure) {
+  return instanceVariableAtPut(kClosureOffset, closure);
+}
+
+Object* Function::code() {
+  return instanceVariableAt(kCodeOffset);
+}
+
+void Function::setCode(Object* code) {
+  return instanceVariableAtPut(kCodeOffset, code);
+}
+
+Object* Function::defaults() {
+  return instanceVariableAt(kDefaultsOffset);
+}
+
+void Function::setDefaults(Object* defaults) {
+  return instanceVariableAtPut(kDefaultsOffset, defaults);
+}
+
+bool Function::hasDefaults() {
+  return !defaults()->isNone();
+}
+
+Object* Function::doc() {
+  return instanceVariableAt(kDocOffset);
+}
+
+void Function::setDoc(Object* doc) {
+  instanceVariableAtPut(kDocOffset, doc);
+}
+
+Object* Function::entry() {
+  return instanceVariableAt(kEntryOffset);
+}
+
+void Function::setEntry(Object* entry) {
+  return instanceVariableAtPut(kEntryOffset, entry);
+}
+
+Object* Function::entryKw() {
+  return instanceVariableAt(kEntryKwOffset);
+}
+
+void Function::setEntryKw(Object* entryKw) {
+  return instanceVariableAtPut(kEntryKwOffset, entryKw);
+}
+
+Object* Function::globals() {
+  return instanceVariableAt(kGlobalsOffset);
+}
+
+void Function::setGlobals(Object* globals) {
+  return instanceVariableAtPut(kGlobalsOffset, globals);
+}
+
+Object* Function::kwDefaults() {
+  return instanceVariableAt(kKwDefaultsOffset);
+}
+
+void Function::setKwDefaults(Object* kwDefaults) {
+  return instanceVariableAtPut(kKwDefaultsOffset, kwDefaults);
+}
+
+Object* Function::module() {
+  return instanceVariableAt(kModuleOffset);
+}
+
+void Function::setModule(Object* module) {
+  return instanceVariableAtPut(kModuleOffset, module);
+}
+
+Object* Function::name() {
+  return instanceVariableAt(kNameOffset);
+}
+
+void Function::setName(Object* name) {
+  instanceVariableAtPut(kNameOffset, name);
+}
+
+Object* Function::qualname() {
+  return instanceVariableAt(kQualnameOffset);
+}
+
+void Function::setQualname(Object* qualname) {
+  instanceVariableAtPut(kQualnameOffset, qualname);
 }
 
 Function* Function::cast(Object* object) {
@@ -1310,12 +1487,15 @@ Function* Function::cast(Object* object) {
   return reinterpret_cast<Function*>(object);
 }
 
-Object* Function::code() {
-  return instanceVariableAt(Function::kCodeOffset);
+word Function::allocationSize() {
+  return Utils::roundUp(Function::kSize, kPointerSize);
 }
 
 void Function::initialize() {
-  // ???
+  for (word offset = HeapObject::kSize; offset < Function::kSize;
+       offset += kPointerSize) {
+    instanceVariableAtPut(offset, None::object());
+  }
 }
 
 word Function::bodySize() {

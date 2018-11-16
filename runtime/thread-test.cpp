@@ -1,9 +1,11 @@
 #include "gtest/gtest.h"
 
 #include "frame.h"
+#include "interpreter.h"
 #include "marshal.h"
 #include "runtime.h"
 #include "thread.h"
+#include "trampolines.h"
 
 namespace python {
 
@@ -34,7 +36,7 @@ TEST(ThreadTest, RunEmptyFunction) {
   ASSERT_EQ(result, None::object()); // returns None
 }
 
-TEST(ThreadTest, RunHelloWorld) {
+TEST(ThreadTest, DISABLED_RunHelloWorld) {
   Runtime runtime;
   HandleScope scope;
   const char* buffer =
@@ -128,6 +130,59 @@ TEST(ThreadTest, EncodeTryBlock) {
   EXPECT_EQ(decoded.kind, block.kind);
   EXPECT_EQ(decoded.handler, block.handler);
   EXPECT_EQ(decoded.level, block.level);
+}
+
+TEST(ThreadTest, CallFunction) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Build the code object for the following function
+  //
+  //     def noop(a, b):
+  //         return 2222
+  //
+  // whose bytecode is
+  //
+  //     LOAD_CONST    0
+  //     RETURN_VALUE
+  auto expectedResult = SmallInteger::fromWord(2222);
+  Handle<Code> calleeCode(&scope, runtime.newCode());
+  calleeCode->setArgcount(2);
+  calleeCode->setNlocals(2);
+  calleeCode->setConsts(runtime.newObjectArray(1));
+  ObjectArray::cast(calleeCode->consts())->atPut(0, expectedResult);
+  calleeCode->setCode(runtime.newByteArrayFromCString("\x64\x00\x53\x00", 4));
+
+  // Create the function object and bind it to the code object
+  Handle<Function> callee(&scope, runtime.newFunction());
+  callee->setCode(*calleeCode);
+  callee->setEntry(trampolineToObject(interpreterTrampoline));
+
+  // Build the code object for the following bytecode snippet
+  //
+  //     CALL_FUNCTION 2
+  //     RETURN_VALUE
+  Handle<Code> callerCode(&scope, runtime.newCode());
+  callerCode->setCode(runtime.newByteArrayFromCString("\x83\x02\x53\x00", 4));
+
+  // Set up the stack and call the function!
+  auto thread = Thread::currentThread();
+  auto sentinel = SmallInteger::fromWord(1111);
+  thread->pushObject(sentinel);
+  auto frame = thread->pushFrame(*callerCode);
+  thread->pushObject(*callee);
+  thread->pushObject(SmallInteger::fromWord(100));
+  thread->pushObject(SmallInteger::fromWord(200));
+  Object* result = Interpreter::execute(thread, frame);
+
+  // Make sure we computed the expected result
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), expectedResult->value());
+
+  // Check that the stack was unwound to the correct location
+  auto popped = thread->popObject();
+  ASSERT_TRUE(popped->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(popped)->value(), sentinel->value());
 }
 
 } // namespace python

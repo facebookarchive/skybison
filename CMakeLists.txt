@@ -34,6 +34,8 @@ add_library(
   runtime/space.h
   runtime/thread.cpp
   runtime/thread.h
+  runtime/trampolines.cpp
+  runtime/trampolines.h
   runtime/utils.h
   runtime/visitor.h)
 

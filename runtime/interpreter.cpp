@@ -5,6 +5,7 @@
 #include "interpreter.h"
 #include "objects.h"
 #include "thread.h"
+#include "trampolines.h"
 
 namespace python {
 
@@ -17,7 +18,9 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
     byte arg = byteArray->byteAt(pc++);
     switch (bc) {
       case Bytecode::RETURN_VALUE: {
-        Object* result = thread->popObject();
+        auto result = thread->popObject();
+        // Clean up after ourselves
+        thread->popFrame(frame);
         return result;
       }
       case Bytecode::LOAD_CONST: {
@@ -33,6 +36,12 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
       case Bytecode::CALL_FUNCTION: {
+        auto function = Function::cast(thread->peekObject(arg));
+        auto trampoline = trampolineFromObject(function->entry());
+        Object* result = trampoline(thread, frame, arg);
+        // Pop arguments + called function
+        thread->popObjects(arg + 1);
+        thread->pushObject(result);
         break;
       }
 

@@ -22,11 +22,17 @@ class Thread {
   Frame* pushFrame(Object* code);
   void popFrame(Frame* frame);
 
+  // Grab the n-th item from the top of the stack (e.g. 0 grabs top of stack).
+  inline Object* peekObject(int offset);
+
   // Push an object onto the thread stack
   inline void pushObject(Object* object);
 
   // Pop an object off of the thread stack
   inline Object* popObject();
+
+  // Pop count objects off of the stack
+  inline Object* popObjects(int count);
 
   Object* run(Object* object);
 
@@ -51,6 +57,11 @@ class Thread {
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
 
+Object* Thread::peekObject(int offset) {
+  assert(ptr_ + (offset + 1) * kPointerSize <= end_);
+  return *reinterpret_cast<Object**>(ptr_ + offset * kPointerSize);
+}
+
 void Thread::pushObject(Object* object) {
   assert(ptr_ - kPointerSize >= start_);
   ptr_ -= kPointerSize;
@@ -58,10 +69,14 @@ void Thread::pushObject(Object* object) {
 }
 
 Object* Thread::popObject() {
-  assert(ptr_ + kPointerSize <= end_);
-  auto ret = *reinterpret_cast<Object**>(ptr_);
-  ptr_ += kPointerSize;
-  return ret;
+  return popObjects(1);
+}
+
+Object* Thread::popObjects(int count) {
+  assert(count > 0);
+  assert(ptr_ + kPointerSize * count <= end_);
+  ptr_ += kPointerSize * count;
+  return *reinterpret_cast<Object**>(ptr_ - kPointerSize);
 }
 
 } // namespace python

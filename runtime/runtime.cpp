@@ -4,6 +4,7 @@
 #include "handles.h"
 #include "heap.h"
 #include "thread.h"
+#include "trampolines.h"
 #include "visitor.h"
 
 namespace python {
@@ -37,10 +38,32 @@ Object* Runtime::newCode() {
   return heap()->createCode(empty_object_array_);
 }
 
+Object* Runtime::newByteArrayFromCString(const char* c_string, word length) {
+  if (length == 0) {
+    return empty_byte_array_;
+  }
+  Object* result = newByteArray(length);
+  for (word i = 0; i < length; i++) {
+    ByteArray::cast(result)->byteAtPut(
+        i, *reinterpret_cast<const byte*>(c_string + i));
+  }
+  return result;
+}
+
 Object* Runtime::newDictionary() {
   Object* items = newObjectArray(Dictionary::kInitialItemsSize);
   assert(items != nullptr);
   return heap()->createDictionary(items);
+}
+
+Object* Runtime::newFunction() {
+  Object* object = heap()->createFunction();
+  assert(object != nullptr);
+  auto function = Function::cast(object);
+  auto tramp = trampolineToObject(unimplementedTrampoline);
+  function->setEntry(tramp);
+  function->setEntryKw(tramp);
+  return function;
 }
 
 Object* Runtime::newList() {
