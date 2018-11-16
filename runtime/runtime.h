@@ -34,6 +34,8 @@ class Runtime {
   Object* newString(word length);
   Object* newStringFromCString(const char* c_string);
 
+  Object* internString(const Handle<Object>& string);
+
   void collectGarbage();
 
   Object* hash(Object* object);
@@ -48,6 +50,10 @@ class Runtime {
   void visitRoots(PointerVisitor* visitor);
 
   void addModule(Object* module);
+
+  Object* interned() {
+    return interned_;
+  }
 
   Object* modules() {
     return modules_;
@@ -100,6 +106,7 @@ class Runtime {
   void initializeThreads();
   void initializeClasses();
   void initializeInstances();
+  void initializeInterned();
   void initializeModules();
   void initializeRandom();
 
@@ -144,6 +151,8 @@ class Runtime {
   Object* empty_byte_array_;
   Object* empty_object_array_;
   Object* empty_string_;
+
+  Object* interned_;
 
   // the equivalent of sys.modules in python
   Object* modules_;

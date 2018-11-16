@@ -18,6 +18,7 @@ Runtime::Runtime() : heap_(64 * MiB) {
   initializeThreads();
   initializeClasses();
   initializeInstances();
+  initializeInterned();
   initializeModules();
 }
 
@@ -100,6 +101,19 @@ Object* Runtime::newStringFromCString(const char* c_string) {
         i, *reinterpret_cast<const byte*>(c_string + i));
   }
   return result;
+}
+
+Object* Runtime::internString(const Handle<Object>& string) {
+  HandleScope scope;
+  Handle<Dictionary> dictionary(&scope, interned());
+  Handle<Object> key(&scope, *string);
+  Handle<Object> keyHash(&scope, hash(*string));
+  Object* value;
+  if (dictionaryAt(dictionary, key, keyHash, &value)) {
+    return value;
+  }
+  dictionaryAtPut(dictionary, key, keyHash, key);
+  return *string;
 }
 
 Object* Runtime::hash(Object* object) {
@@ -217,6 +231,10 @@ void Runtime::initializeInstances() {
   empty_string_ = heap()->createString(0);
 }
 
+void Runtime::initializeInterned() {
+  interned_ = newDictionary();
+}
+
 void Runtime::initializeRandom() {
   Os::secureRandom(
       reinterpret_cast<byte*>(&random_state_), sizeof(random_state_));
@@ -245,6 +263,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_byte_array_);
   visitor->visitPointer(&empty_object_array_);
   visitor->visitPointer(&empty_string_);
+
+  // Visit interned strings.
+  visitor->visitPointer(&interned_);
 
   // Visit modules
   visitor->visitPointer(&modules_);

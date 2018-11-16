@@ -649,8 +649,6 @@ class Dictionary : public HeapObject {
   inline word numItems();
   inline void setNumItems(word numItems);
 
-  inline Object* items();
-
   // Sizing.
   inline static word allocationSize();
 
