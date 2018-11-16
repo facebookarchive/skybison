@@ -258,4 +258,17 @@ Object* Heap::createString(word length) {
   return String::cast(result);
 }
 
+Object* Heap::createValueCell() {
+  word size = ValueCell::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<ValueCell*>(raw);
+  result->setHeader(Header::from(
+      ValueCell::kSize / kPointerSize,
+      0,
+      ClassId::kValueCell,
+      ObjectFormat::kObjectInstance));
+  return ValueCell::cast(result);
+}
+
 } // namespace python

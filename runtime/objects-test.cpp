@@ -19,19 +19,18 @@ TEST(DictionaryTest, GetSet) {
   HandleScope scope;
   Handle<Dictionary> dict(&scope, runtime.newDictionary());
   Handle<Object> key(&scope, SmallInteger::fromWord(12345));
-  Handle<Object> hash(&scope, SmallInteger::fromWord(12345));
   Object* retrieved;
 
   // Looking up a key that doesn't exist should fail
-  bool found = runtime.dictionaryAt(dict, key, hash, &retrieved);
+  bool found = runtime.dictionaryAt(dict, key, &retrieved);
   EXPECT_FALSE(found);
 
   // Store a value
   Handle<Object> stored(&scope, SmallInteger::fromWord(67890));
-  runtime.dictionaryAtPut(dict, key, hash, stored);
+  runtime.dictionaryAtPut(dict, key, stored);
 
   // Retrieve the stored value
-  found = runtime.dictionaryAt(dict, key, hash, &retrieved);
+  found = runtime.dictionaryAt(dict, key, &retrieved);
   ASSERT_TRUE(found);
   EXPECT_EQ(
       SmallInteger::cast(retrieved)->value(),
@@ -39,10 +38,10 @@ TEST(DictionaryTest, GetSet) {
 
   // Overwrite the stored value
   Handle<Object> newValue(&scope, SmallInteger::fromWord(5555));
-  runtime.dictionaryAtPut(dict, key, hash, newValue);
+  runtime.dictionaryAtPut(dict, key, newValue);
 
   // Get the new value
-  found = runtime.dictionaryAt(dict, key, hash, &retrieved);
+  found = runtime.dictionaryAt(dict, key, &retrieved);
   ASSERT_TRUE(found);
   EXPECT_EQ(
       SmallInteger::cast(retrieved)->value(),
@@ -54,26 +53,25 @@ TEST(DictionaryTest, Remove) {
   HandleScope scope;
   Handle<Dictionary> dict(&scope, runtime.newDictionary());
   Handle<Object> key(&scope, SmallInteger::fromWord(12345));
-  Handle<Object> hash(&scope, SmallInteger::fromWord(12345));
   Object* retrieved;
 
   // Removing a key that doesn't exist should fail
-  bool found = runtime.dictionaryRemove(dict, key, hash, &retrieved);
+  bool found = runtime.dictionaryRemove(dict, key, &retrieved);
   EXPECT_FALSE(found);
 
   // Removing a key that exists should succeed and return the value that was
   // stored.
   Handle<Object> stored(&scope, SmallInteger::fromWord(54321));
 
-  runtime.dictionaryAtPut(dict, key, hash, stored);
-  found = runtime.dictionaryRemove(dict, key, hash, &retrieved);
+  runtime.dictionaryAtPut(dict, key, stored);
+  found = runtime.dictionaryRemove(dict, key, &retrieved);
   ASSERT_TRUE(found);
   ASSERT_EQ(
       SmallInteger::cast(retrieved)->value(),
       SmallInteger::cast(*stored)->value());
 
   // Looking up a key that was deleted should fail
-  found = runtime.dictionaryAt(dict, key, hash, &retrieved);
+  found = runtime.dictionaryAt(dict, key, &retrieved);
   ASSERT_FALSE(found);
 }
 
@@ -85,7 +83,7 @@ TEST(DictionaryTest, Length) {
   // Add 10 items and make sure length reflects it
   for (int i = 0; i < 10; i++) {
     Handle<Object> key(&scope, SmallInteger::fromWord(i));
-    runtime.dictionaryAtPut(dict, key, key, key);
+    runtime.dictionaryAtPut(dict, key, key);
   }
   EXPECT_EQ(dict->numItems(), 10);
 
@@ -93,7 +91,7 @@ TEST(DictionaryTest, Length) {
   for (int i = 0; i < 5; i++) {
     Handle<Object> key(&scope, SmallInteger::fromWord(i));
     Object* retrieved;
-    bool found = runtime.dictionaryRemove(dict, key, key, &retrieved);
+    bool found = runtime.dictionaryRemove(dict, key, &retrieved);
     ASSERT_TRUE(found);
   }
   EXPECT_EQ(dict->numItems(), 5);
@@ -107,7 +105,7 @@ TEST(DictionaryTest, GrowWhenFull) {
   // Fill up the dict - we insert an initial key to force the allocation of the
   // backing ObjectArray.
   Handle<Object> initKey(&scope, SmallInteger::fromWord(0));
-  runtime.dictionaryAtPut(dict, initKey, initKey, initKey);
+  runtime.dictionaryAtPut(dict, initKey, initKey);
   ASSERT_TRUE(dict->data()->isObjectArray());
   word initDataSize = ObjectArray::cast(dict->data())->length();
 
@@ -116,12 +114,12 @@ TEST(DictionaryTest, GrowWhenFull) {
   word numKeys = Runtime::kInitialDictionaryCapacity + 1;
   for (int i = 1; i < numKeys; i++) {
     Handle<Object> key(&scope, SmallInteger::fromWord(i));
-    runtime.dictionaryAtPut(dict, key, key, key);
+    runtime.dictionaryAtPut(dict, key, key);
   }
 
   // Add another key which should force us to double the capacity
   Handle<Object> straw(&scope, SmallInteger::fromWord(numKeys));
-  runtime.dictionaryAtPut(dict, straw, straw, straw);
+  runtime.dictionaryAtPut(dict, straw, straw);
   ASSERT_TRUE(dict->data()->isObjectArray());
   word newDataSize = ObjectArray::cast(dict->data())->length();
   EXPECT_EQ(newDataSize, Runtime::kDictionaryGrowthFactor * initDataSize);
@@ -130,7 +128,7 @@ TEST(DictionaryTest, GrowWhenFull) {
   for (int i = 0; i < numKeys; i++) {
     Object* value;
     Handle<Object> key(&scope, SmallInteger::fromWord(i));
-    bool found = runtime.dictionaryAt(dict, key, key, &value);
+    bool found = runtime.dictionaryAt(dict, key, &value);
     ASSERT_TRUE(found);
     EXPECT_EQ(SmallInteger::cast(value)->value(), i);
   }
@@ -142,26 +140,23 @@ TEST(DictionaryTest, CollidingKeys) {
   Handle<Dictionary> dict(&scope, runtime.newDictionary());
 
   // Add two different keys with different values using the same hash
-  Handle<Object> key1(&scope, SmallInteger::fromWord(100));
-  Handle<Object> hash(&scope, SmallInteger::fromWord(22222));
-  runtime.dictionaryAtPut(dict, key1, hash, key1);
+  Handle<Object> key1(&scope, SmallInteger::fromWord(1));
+  runtime.dictionaryAtPut(dict, key1, key1);
 
-  Handle<Object> key2(&scope, SmallInteger::fromWord(200));
-  runtime.dictionaryAtPut(dict, key2, hash, key2);
+  Handle<Object> key2(&scope, Boolean::fromBool(true));
+  runtime.dictionaryAtPut(dict, key2, key2);
 
   // Make sure we get both back
   Object* retrieved;
-  bool found = runtime.dictionaryAt(dict, key1, hash, &retrieved);
+  bool found = runtime.dictionaryAt(dict, key1, &retrieved);
   EXPECT_TRUE(found);
   EXPECT_EQ(
       SmallInteger::cast(retrieved)->value(),
       SmallInteger::cast(*key1)->value());
 
-  found = runtime.dictionaryAt(dict, key2, hash, &retrieved);
+  found = runtime.dictionaryAt(dict, key2, &retrieved);
   EXPECT_TRUE(found);
-  EXPECT_EQ(
-      SmallInteger::cast(retrieved)->value(),
-      SmallInteger::cast(*key2)->value());
+  EXPECT_EQ(Boolean::cast(retrieved)->value(), Boolean::cast(*key2)->value());
 }
 
 TEST(DictionaryTest, MixedKeys) {
@@ -171,22 +166,20 @@ TEST(DictionaryTest, MixedKeys) {
 
   // Add keys of different type
   Handle<Object> intKey(&scope, SmallInteger::fromWord(100));
-  Handle<Object> intHash(&scope, SmallInteger::fromWord(2222));
-  runtime.dictionaryAtPut(dict, intKey, intHash, intKey);
+  runtime.dictionaryAtPut(dict, intKey, intKey);
 
-  Handle<Object> strHash(&scope, SmallInteger::fromWord(200));
   Handle<Object> strKey(&scope, runtime.newStringFromCString("testing 123"));
-  runtime.dictionaryAtPut(dict, strKey, strHash, strKey);
+  runtime.dictionaryAtPut(dict, strKey, strKey);
 
   // Make sure we get the appropriate values back out
   Object* retrieved;
-  bool found = runtime.dictionaryAt(dict, intKey, intHash, &retrieved);
+  bool found = runtime.dictionaryAt(dict, intKey, &retrieved);
   EXPECT_TRUE(found);
   EXPECT_EQ(
       SmallInteger::cast(retrieved)->value(),
       SmallInteger::cast(*intKey)->value());
 
-  found = runtime.dictionaryAt(dict, strKey, strHash, &retrieved);
+  found = runtime.dictionaryAt(dict, strKey, &retrieved);
   EXPECT_TRUE(found);
   EXPECT_TRUE(Object::equals(*strKey, retrieved));
 }
@@ -222,15 +215,11 @@ TEST(ListTest, AppendToList) {
 
 TEST(ModulesTest, TestCreate) {
   Runtime runtime;
-  Object* name = runtime.newStringFromCString("mymodule");
-  ASSERT_NE(name, nullptr);
-  Object* obj = runtime.newModule(name);
-  ASSERT_NE(obj, nullptr);
-  ASSERT_TRUE(obj->isModule());
-  Module* mod = Module::cast(obj);
-  EXPECT_EQ(mod->name(), name);
-  obj = mod->dictionary();
-  EXPECT_TRUE(obj->isDictionary());
+  HandleScope scope;
+  Handle<Object> name(&scope, runtime.newStringFromCString("mymodule"));
+  Handle<Module> module(&scope, runtime.newModule(name));
+  EXPECT_EQ(module->name(), *name);
+  EXPECT_TRUE(module->dictionary()->isDictionary());
 }
 
 TEST(ObjectArrayTest, Create) {

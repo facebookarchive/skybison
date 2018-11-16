@@ -402,4 +402,104 @@ TEST(ThreadTest, ExecuteStoreLoadFast) {
   EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
 }
 
+TEST(ThreadTest, LoadGlobal) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+
+  const char bytecode[] = {LOAD_GLOBAL, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code, thread->initialFrame());
+
+  Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  Handle<ValueCell> value_cell(&scope, runtime.newValueCell());
+  value_cell->setValue(SmallInteger::fromWord(1234));
+  Handle<Object> value(&scope, *value_cell);
+  runtime.dictionaryAtPut(globals, key, value);
+  frame->setGlobals(*globals);
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+  EXPECT_EQ(*result, value_cell->value());
+}
+
+TEST(ThreadTest, StoreGlobalCreateValueCell) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInteger::fromWord(42));
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+
+  const char bytecode[] = {
+      LOAD_CONST, 0, STORE_GLOBAL, 0, LOAD_GLOBAL, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code, thread->initialFrame());
+
+  Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  frame->setGlobals(*globals);
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+
+  Handle<Object> value(&scope, None::object());
+  bool is_present = runtime.dictionaryAt(globals, key, value.pointer());
+  ASSERT_TRUE(is_present);
+  Handle<ValueCell> value_cell(&scope, *value);
+  EXPECT_EQ(*result, value_cell->value());
+}
+
+TEST(ThreadTest, StoreGlobalReuseValueCell) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInteger::fromWord(42));
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+
+  const char bytecode[] = {
+      LOAD_CONST, 0, STORE_GLOBAL, 0, LOAD_GLOBAL, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code, thread->initialFrame());
+
+  Handle<ValueCell> value_cell1(&scope, runtime.newValueCell());
+  value_cell1->setValue(SmallInteger::fromWord(99));
+
+  Handle<Dictionary> globals(&scope, runtime.newDictionary());
+  Handle<Object> value(&scope, *value_cell1);
+  runtime.dictionaryAtPut(globals, key, value);
+  frame->setGlobals(*globals);
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+
+  Handle<Object> value_cell2(&scope, None::object());
+  bool is_present = runtime.dictionaryAt(globals, key, value_cell2.pointer());
+  ASSERT_TRUE(is_present);
+  EXPECT_EQ(*value_cell2, *value_cell1);
+  EXPECT_EQ(SmallInteger::fromWord(42), value_cell1->value());
+}
+
 } // namespace python

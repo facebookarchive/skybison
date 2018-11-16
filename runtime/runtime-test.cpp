@@ -17,9 +17,8 @@ TEST(RuntimeTest, BuiltinsModuleExists) {
 
   Handle<Dictionary> modules(&scope, runtime.modules());
   Handle<Object> name(&scope, runtime.newStringFromCString("builtins"));
-  Handle<Object> hash(&scope, runtime.hash(*name));
   Object* builtins;
-  bool found = runtime.dictionaryAt(modules, name, hash, &builtins);
+  bool found = runtime.dictionaryAt(modules, name, &builtins);
   ASSERT_TRUE(found);
   ASSERT_TRUE(builtins->isModule());
 }
@@ -269,25 +268,22 @@ TEST(RuntimeTest, InternString) {
   Handle<Dictionary> interned(&scope, runtime.interned());
 
   Handle<Object> str1(&scope, runtime.newStringFromCString("hello, world"));
-  Handle<Object> hash1(&scope, runtime.hash(*str1));
-  EXPECT_FALSE(runtime.dictionaryAt(interned, str1, hash1, &ignore));
+  EXPECT_FALSE(runtime.dictionaryAt(interned, str1, &ignore));
 
   Handle<Object> sym1(&scope, runtime.internString(str1));
-  EXPECT_TRUE(runtime.dictionaryAt(interned, str1, hash1, &ignore));
+  EXPECT_TRUE(runtime.dictionaryAt(interned, str1, &ignore));
   EXPECT_EQ(*sym1, *str1);
 
   Handle<Object> str2(&scope, runtime.newStringFromCString("goodbye, world"));
   EXPECT_NE(*str1, *str2);
 
   Handle<Object> sym2(&scope, runtime.internString(str2));
-  Handle<Object> hash2(&scope, runtime.hash(*str2));
-  EXPECT_TRUE(runtime.dictionaryAt(interned, str2, hash2, &ignore));
+  EXPECT_TRUE(runtime.dictionaryAt(interned, str2, &ignore));
   EXPECT_EQ(*sym2, *str2);
   EXPECT_NE(*sym1, *sym2);
 
   Handle<Object> str3(&scope, runtime.newStringFromCString("hello, world"));
-  Handle<Object> hash3(&scope, runtime.hash(*str3));
-  EXPECT_TRUE(runtime.dictionaryAt(interned, str3, hash3, &ignore));
+  EXPECT_TRUE(runtime.dictionaryAt(interned, str3, &ignore));
 
   Handle<Object> sym3(&scope, runtime.internString(str3));
   EXPECT_NE(*sym3, *str3);

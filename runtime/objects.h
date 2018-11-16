@@ -64,17 +64,16 @@ enum class ClassId {
   kEllipsis,
 
   // Heap object
-  kClass,
   kByteArray,
+  kClass,
+  kCode,
+  kDictionary,
+  kFunction,
+  kList,
+  kModule,
   kObjectArray,
   kString,
-  kCode,
-  kFunction,
-  kDictionary,
-
-  // Composite
-  kModule,
-  kList,
+  kValueCell,
 };
 
 class Object {
@@ -92,15 +91,16 @@ class Object {
 
   // Indirect
   inline bool isHeapObject();
+  inline bool isByteArray();
   inline bool isClass();
   inline bool isCode();
-  inline bool isByteArray();
+  inline bool isDictionary();
+  inline bool isFunction();
+  inline bool isList();
+  inline bool isModule();
   inline bool isObjectArray();
   inline bool isString();
-  inline bool isFunction();
-  inline bool isModule();
-  inline bool isDictionary();
-  inline bool isList();
+  inline bool isValueCell();
 
   static inline bool equals(Object* lhs, Object* rhs);
 
@@ -712,6 +712,29 @@ class List : public HeapObject {
   DISALLOW_COPY_AND_ASSIGN(List);
 };
 
+class ValueCell : public HeapObject {
+ public:
+  // Getters and setters
+  inline Object* value();
+  inline void setValue(Object* object);
+
+  // Casting.
+  static inline ValueCell* cast(Object* object);
+
+  // Sizing.
+  static inline word allocationSize();
+
+  // Allocation.
+  inline void initialize();
+
+  // Layout.
+  static const int kValueOffset = HeapObject::kSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(ValueCell);
+};
+
 // Object
 
 bool Object::isObject() {
@@ -809,6 +832,13 @@ bool Object::isList() {
     return false;
   }
   return HeapObject::cast(this)->header()->classId() == ClassId::kList;
+}
+
+bool Object::isValueCell() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() == ClassId::kValueCell;
 }
 
 bool Object::equals(Object* lhs, Object* rhs) {
@@ -1548,6 +1578,25 @@ void String::charAtPut(word index, byte value) {
   assert(index >= 0);
   assert(index < length());
   *reinterpret_cast<byte*>(address() + index) = value;
+}
+
+// ValueCell
+
+Object* ValueCell::value() {
+  return instanceVariableAt(kValueOffset);
+}
+
+void ValueCell::setValue(Object* object) {
+  instanceVariableAtPut(kValueOffset, object);
+}
+
+ValueCell* ValueCell::cast(Object* object) {
+  assert(object->isValueCell());
+  return reinterpret_cast<ValueCell*>(object);
+}
+
+word ValueCell::allocationSize() {
+  return Header::kSize + ValueCell::kSize;
 }
 
 } // namespace python

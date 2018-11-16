@@ -5,7 +5,9 @@
 
 #include "bytecode.h"
 #include "frame.h"
+#include "handles.h"
 #include "objects.h"
+#include "runtime.h"
 #include "thread.h"
 #include "trampolines.h"
 
@@ -79,7 +81,32 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         pc += arg;
         break;
       }
-
+      case Bytecode::LOAD_GLOBAL: {
+        HandleScope scope;
+        Handle<Dictionary> globals(&scope, frame->globals());
+        Handle<Object> key(
+            &scope,
+            ObjectArray::cast(Code::cast(frame->code())->names())->at(arg));
+        Object* value = None::object();
+        thread->runtime()->dictionaryAt(globals, key, &value);
+        // TODO(cshapiro): check for unbound global variables.
+        assert(value != None::object());
+        *--sp = ValueCell::cast(value)->value();
+        break;
+      }
+      case Bytecode::STORE_GLOBAL: {
+        HandleScope scope;
+        Handle<Dictionary> globals(&scope, frame->globals());
+        Object* names = Code::cast(frame->code())->names();
+        Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
+        Runtime* runtime = thread->runtime();
+        Handle<ValueCell> value_cell(
+            &scope,
+            runtime->dictionaryAtIfAbsentPut(
+                globals, key, runtime->newValueCellCallback()));
+        value_cell->setValue(*sp++);
+        break;
+      }
       default:
         abort();
     }

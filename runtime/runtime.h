@@ -1,5 +1,6 @@
 #pragma once
 
+#include "callback.h"
 #include "handles.h"
 #include "heap.h"
 
@@ -13,6 +14,15 @@ class Thread;
 
 class Runtime {
  public:
+  class NewValueCellCallback : public Callback<Object*> {
+   public:
+    NewValueCellCallback(Runtime* runtime) : runtime_(runtime) {}
+    Object* call() {
+      return runtime_->newValueCell();
+    }
+    Runtime* runtime_;
+  };
+
   Runtime();
   ~Runtime();
 
@@ -27,12 +37,14 @@ class Runtime {
 
   Object* newList();
 
-  Object* newModule(Object* name);
+  Object* newModule(const Handle<Object>& name);
 
   Object* newObjectArray(word length);
 
   Object* newString(word length);
   Object* newStringFromCString(const char* c_string);
+
+  Object* newValueCell();
 
   Object* internString(const Handle<Object>& string);
 
@@ -49,7 +61,7 @@ class Runtime {
 
   void visitRoots(PointerVisitor* visitor);
 
-  void addModule(Object* module);
+  void addModule(const Handle<Module>& module);
 
   Object* interned() {
     return interned_;
@@ -72,7 +84,6 @@ class Runtime {
   void dictionaryAtPut(
       const Handle<Dictionary>& dict,
       const Handle<Object>& key,
-      const Handle<Object>& hash,
       const Handle<Object>& value);
 
   // Look up the value associated with key.
@@ -82,8 +93,14 @@ class Runtime {
   bool dictionaryAt(
       const Handle<Dictionary>& dict,
       const Handle<Object>& key,
-      const Handle<Object>& hash,
       Object** value);
+
+  // Looks up and returns the value associated with the key.  If the key is
+  // absent, calls thunk and inserts its result as the value.
+  Object* dictionaryAtIfAbsentPut(
+      const Handle<Dictionary>& dict,
+      const Handle<Object>& key,
+      Callback<Object*>* thunk);
 
   // Delete a key from the dictionary.
   //
@@ -92,8 +109,11 @@ class Runtime {
   bool dictionaryRemove(
       const Handle<Dictionary>& dict,
       const Handle<Object>& key,
-      const Handle<Object>& hash,
       Object** value);
+
+  NewValueCellCallback* newValueCellCallback() {
+    return &new_value_cell_callback_;
+  }
 
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
@@ -111,6 +131,8 @@ class Runtime {
   void initializeRandom();
 
   void createBuiltinsModule();
+  void createSysModule();
+  void createMainModule();
 
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
@@ -130,7 +152,7 @@ class Runtime {
   bool dictionaryLookup(
       const Handle<ObjectArray>& data,
       const Handle<Object>& key,
-      const Handle<Object>& hash,
+      const Handle<Object>& key_hash,
       word* index);
 
   // The size ensureCapacity grows to if array is empty
@@ -161,6 +183,8 @@ class Runtime {
 
   uword random_state_[2];
   uword hash_secret_[2];
+
+  NewValueCellCallback new_value_cell_callback_;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

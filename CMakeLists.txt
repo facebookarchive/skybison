@@ -20,6 +20,7 @@ add_library(
   runtime/builtins.cpp
   runtime/builtins.h
   runtime/bytecode.h
+  runtime/callback.h
   runtime/frame.cpp
   runtime/frame.h
   runtime/globals.h

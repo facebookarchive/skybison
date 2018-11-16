@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "callback.h"
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
@@ -13,7 +14,7 @@
 
 namespace python {
 
-Runtime::Runtime() : heap_(64 * MiB) {
+Runtime::Runtime() : heap_(64 * MiB), new_value_cell_callback_(this) {
   initializeRandom();
   initializeThreads();
   initializeClasses();
@@ -69,10 +70,12 @@ Object* Runtime::newList() {
   return heap()->createList(empty_object_array_);
 }
 
-Object* Runtime::newModule(Object* name) {
-  Object* dict = newDictionary();
-  assert(dict != nullptr);
-  return heap()->createModule(name, dict);
+Object* Runtime::newModule(const Handle<Object>& name) {
+  HandleScope scope;
+  Handle<Dictionary> dictionary(&scope, newDictionary());
+  Handle<Object> key(&scope, newStringFromCString("__name__"));
+  dictionaryAtPut(dictionary, key, name);
+  return heap()->createModule(*name, *dictionary);
 }
 
 Object* Runtime::newObjectArray(word length) {
@@ -107,12 +110,11 @@ Object* Runtime::internString(const Handle<Object>& string) {
   HandleScope scope;
   Handle<Dictionary> dictionary(&scope, interned());
   Handle<Object> key(&scope, *string);
-  Handle<Object> keyHash(&scope, hash(*string));
   Object* value;
-  if (dictionaryAt(dictionary, key, keyHash, &value)) {
+  if (dictionaryAt(dictionary, key, &value)) {
     return value;
   }
-  dictionaryAtPut(dictionary, key, keyHash, key);
+  dictionaryAtPut(dictionary, key, key);
   return *string;
 }
 
@@ -277,27 +279,43 @@ void Runtime::visitThreadRoots(PointerVisitor* visitor) {
   }
 }
 
-void Runtime::addModule(Object* module) {
+void Runtime::addModule(const Handle<Module>& module) {
   HandleScope scope;
   Handle<Dictionary> dict(&scope, modules());
-  Handle<Object> key(&scope, Module::cast(module)->name());
-  Handle<Object> keyHash(&scope, hash(*key));
-  Handle<Object> value(&scope, module);
-  dictionaryAtPut(dict, key, keyHash, value);
+  Handle<Object> key(&scope, module->name());
+  Handle<Object> value(&scope, *module);
+  dictionaryAtPut(dict, key, value);
 }
 
 void Runtime::initializeModules() {
   modules_ = newDictionary();
   createBuiltinsModule();
+  createSysModule();
+  createMainModule();
 }
 
 void Runtime::createBuiltinsModule() {
-  Object* name = newStringFromCString("builtins");
-  assert(name != nullptr);
-  Object* builtins = newModule(name);
-  assert(builtins != nullptr);
+  HandleScope scope;
+  Handle<Object> name(&scope, newStringFromCString("builtins"));
+  Handle<Module> module(&scope, newModule(name));
   // Fill in builtins...
-  addModule(builtins);
+  addModule(module);
+}
+
+void Runtime::createSysModule() {
+  HandleScope scope;
+  Handle<Object> name(&scope, newStringFromCString("sys"));
+  Handle<Module> module(&scope, newModule(name));
+  // Fill in sys...
+  addModule(module);
+}
+
+void Runtime::createMainModule() {
+  HandleScope scope;
+  Handle<Object> name(&scope, newStringFromCString("__main__"));
+  Handle<Module> module(&scope, newModule(name));
+  // Fill in __main__...
+  addModule(module);
 }
 
 // List
@@ -399,23 +417,23 @@ Object* Runtime::newDictionary() {
 void Runtime::dictionaryAtPut(
     const Handle<Dictionary>& dict,
     const Handle<Object>& key,
-    const Handle<Object>& hash,
     const Handle<Object>& value) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
-  bool found = dictionaryLookup(data, key, hash, &index);
+  Handle<Object> key_hash(&scope, hash(*key));
+  bool found = dictionaryLookup(data, key, key_hash, &index);
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
     Handle<ObjectArray> newData(&scope, dictionaryGrow(data));
-    dictionaryLookup(newData, key, hash, &index);
+    dictionaryLookup(newData, key, key_hash, &index);
     assert(index != -1);
     dict->setData(*newData);
     Bucket bucket(newData, index);
-    bucket.set(*hash, *key, *value);
+    bucket.set(*key_hash, *key, *value);
   } else {
     Bucket bucket(data, index);
-    bucket.set(*hash, *key, *value);
+    bucket.set(*key_hash, *key, *value);
   }
   if (!found) {
     dict->setNumItems(dict->numItems() + 1);
@@ -449,12 +467,12 @@ ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
 bool Runtime::dictionaryAt(
     const Handle<Dictionary>& dict,
     const Handle<Object>& key,
-    const Handle<Object>& hash,
     Object** value) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
-  bool found = dictionaryLookup(data, key, hash, &index);
+  Handle<Object> key_hash(&scope, hash(*key));
+  bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
     assert(index != -1);
     *value = Bucket(data, index).value();
@@ -462,15 +480,44 @@ bool Runtime::dictionaryAt(
   return found;
 }
 
+Object* Runtime::dictionaryAtIfAbsentPut(
+    const Handle<Dictionary>& dict,
+    const Handle<Object>& key,
+    Callback<Object*>* thunk) {
+  HandleScope scope;
+  Handle<ObjectArray> data(&scope, dict->data());
+  word index = -1;
+  Handle<Object> key_hash(&scope, hash(*key));
+  bool found = dictionaryLookup(data, key, key_hash, &index);
+  if (found) {
+    assert(index != -1);
+    return Bucket(data, index).value();
+  }
+  Handle<Object> value(&scope, thunk->call());
+  if (index == -1) {
+    // TODO(mpage): Grow at a predetermined load factor, rather than when full
+    Handle<ObjectArray> new_data(&scope, dictionaryGrow(data));
+    dictionaryLookup(new_data, key, key_hash, &index);
+    assert(index != -1);
+    dict->setData(*new_data);
+    Bucket bucket(new_data, index);
+    bucket.set(*key_hash, *key, *value);
+  } else {
+    Bucket bucket(data, index);
+    bucket.set(*key_hash, *key, *value);
+  }
+  return *value;
+}
+
 bool Runtime::dictionaryRemove(
     const Handle<Dictionary>& dict,
     const Handle<Object>& key,
-    const Handle<Object>& hash,
     Object** value) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
-  bool found = dictionaryLookup(data, key, hash, &index);
+  Handle<Object> key_hash(&scope, hash(*key));
+  bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
     assert(index != -1);
     Bucket bucket(data, index);
@@ -484,9 +531,9 @@ bool Runtime::dictionaryRemove(
 bool Runtime::dictionaryLookup(
     const Handle<ObjectArray>& data,
     const Handle<Object>& key,
-    const Handle<Object>& hash,
+    const Handle<Object>& key_hash,
     word* index) {
-  word start = Bucket::getIndex(*data, *hash);
+  word start = Bucket::getIndex(*data, *key_hash);
   word current = start;
   word nextFreeIndex = -1;
 
@@ -516,6 +563,10 @@ bool Runtime::dictionaryLookup(
   *index = nextFreeIndex;
 
   return false;
+}
+
+Object* Runtime::newValueCell() {
+  return heap()->createValueCell();
 }
 
 } // namespace python

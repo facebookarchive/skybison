@@ -40,6 +40,8 @@ class Heap {
 
   Object* createString(word length);
 
+  Object* createValueCell();
+
  private:
   Space* from_;
   Space* to_;
