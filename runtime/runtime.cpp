@@ -2395,9 +2395,9 @@ RawObject Runtime::newSetWithSize(word initial_size) {
 }
 
 template <SetLookupType type>
-bool Runtime::setLookup(const Handle<ObjectArray>& data,
+word Runtime::setLookup(const Handle<ObjectArray>& data,
                         const Handle<Object>& key,
-                        const Handle<Object>& key_hash, word* index) {
+                        const Handle<Object>& key_hash) {
   word start = Set::Bucket::getIndex(*data, *key_hash);
   word current = start;
   word next_free_index = -1;
@@ -2405,32 +2405,31 @@ bool Runtime::setLookup(const Handle<ObjectArray>& data,
   // TODO(mpage) - Quadratic probing?
   word length = data->length();
   if (length == 0) {
-    *index = -1;
-    return false;
+    return -1;
   }
 
   do {
     if (Set::Bucket::hasKey(*data, current, *key)) {
-      *index = current;
-      return true;
+      return current;
     } else if (next_free_index == -1 &&
                Set::Bucket::isTombstone(*data, current)) {
-      next_free_index = current;
       if (type == SetLookupType::Insertion) {
-        break;
+        return current;
       }
+      next_free_index = current;
     } else if (Set::Bucket::isEmpty(*data, current)) {
       if (next_free_index == -1) {
         next_free_index = current;
       }
       break;
     }
-    current = (current + Set::Bucket::kNumPointers) % length;
+    current = (current + Set::Bucket::kNumPointers) & (length - 1);
   } while (current != start);
 
-  *index = next_free_index;
-
-  return false;
+  if (type == SetLookupType::Insertion) {
+    return next_free_index;
+  }
+  return -1;
 }
 
 RawObjectArray Runtime::setGrow(const Handle<ObjectArray>& data) {
@@ -2447,8 +2446,7 @@ RawObjectArray Runtime::setGrow(const Handle<ObjectArray>& data) {
     }
     Handle<Object> key(&scope, Set::Bucket::key(*data, i));
     Handle<Object> hash(&scope, Set::Bucket::hash(*data, i));
-    word index = -1;
-    setLookup<SetLookupType::Insertion>(new_data, key, hash, &index);
+    word index = setLookup<SetLookupType::Insertion>(new_data, key, hash);
     DCHECK(index != -1, "unexpected index %ld", index);
     Set::Bucket::set(*new_data, index, *hash, *key);
   }
@@ -2460,22 +2458,18 @@ RawObject Runtime::setAddWithHash(const Handle<Set>& set,
                                   const Handle<Object>& key_hash) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, set->data());
-  word index = -1;
-  bool found = setLookup<SetLookupType::Lookup>(data, value, key_hash, &index);
-  if (found) {
-    DCHECK(index != -1, "unexpected index %ld", index);
+  word index = setLookup<SetLookupType::Lookup>(data, value, key_hash);
+  if (index != -1) {
     return Set::Bucket::key(*data, index);
   }
-  if (index == -1) {
-    // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    Handle<ObjectArray> new_data(&scope, setGrow(data));
-    setLookup<SetLookupType::Insertion>(new_data, value, key_hash, &index);
-    DCHECK(index != -1, "unexpected index %ld", index);
-    set->setData(*new_data);
-    Set::Bucket::set(*new_data, index, *key_hash, *value);
-  } else {
-    Set::Bucket::set(*data, index, *key_hash, *value);
+  Handle<ObjectArray> new_data(&scope, *data);
+  if (data->length() == 0 || set->numItems() >= data->length() / 2) {
+    new_data = setGrow(data);
   }
+  index = setLookup<SetLookupType::Insertion>(new_data, value, key_hash);
+  DCHECK(index != -1, "unexpected index %ld", index);
+  set->setData(*new_data);
+  Set::Bucket::set(*new_data, index, *key_hash, *value);
   set->setNumItems(set->numItems() + 1);
   return *value;
 }
@@ -2515,8 +2509,7 @@ bool Runtime::setIncludes(const Handle<Set>& set, const Handle<Object>& value) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, set->data());
   Handle<Object> key_hash(&scope, hash(*value));
-  word ignore;
-  return setLookup<SetLookupType::Lookup>(data, value, key_hash, &ignore);
+  return setLookup<SetLookupType::Lookup>(data, value, key_hash) != -1;
 }
 
 RawObject Runtime::setIntersection(Thread* thread, const Handle<Set>& set,
@@ -2525,7 +2518,6 @@ RawObject Runtime::setIntersection(Thread* thread, const Handle<Set>& set,
   Handle<Set> dst(&scope, Runtime::newSet());
   Handle<Object> key(&scope, NoneType::object());
   Handle<Object> key_hash(&scope, NoneType::object());
-  word ignore;
   // Special case for sets
   if (iterable->isSet()) {
     Handle<Set> self(&scope, *set);
@@ -2547,8 +2539,7 @@ RawObject Runtime::setIntersection(Thread* thread, const Handle<Set>& set,
       }
       key = Set::Bucket::key(*data, i);
       key_hash = Set::Bucket::hash(*data, i);
-      if (setLookup<SetLookupType::Lookup>(other_data, key, key_hash,
-                                           &ignore)) {
+      if (setLookup<SetLookupType::Lookup>(other_data, key, key_hash) != -1) {
         setAddWithHash(dst, key, key_hash);
       }
     }
@@ -2584,7 +2575,7 @@ RawObject Runtime::setIntersection(Thread* thread, const Handle<Set>& set,
       return *key;
     }
     key_hash = hash(*key);
-    if (setLookup<SetLookupType::Lookup>(data, key, key_hash, &ignore)) {
+    if (setLookup<SetLookupType::Lookup>(data, key, key_hash) != -1) {
       setAddWithHash(dst, key, key_hash);
     }
   }
@@ -2595,14 +2586,13 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, set->data());
   Handle<Object> key_hash(&scope, hash(*value));
-  word index = -1;
-  bool found = setLookup<SetLookupType::Lookup>(data, value, key_hash, &index);
-  if (found) {
-    DCHECK(index != -1, "unexpected index %ld", index);
+  word index = setLookup<SetLookupType::Lookup>(data, value, key_hash);
+  if (index != -1) {
     Set::Bucket::setTombstone(*data, index);
     set->setNumItems(set->numItems() - 1);
+    return true;
   }
-  return found;
+  return false;
 }
 
 RawObject Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,

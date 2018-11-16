@@ -619,8 +619,8 @@ class Runtime {
                   const Handle<Object>& key_hash, word* index);
 
   template <SetLookupType type>
-  bool setLookup(const Handle<ObjectArray>& data, const Handle<Object>& key,
-                 const Handle<Object>& key_hash, word* index);
+  word setLookup(const Handle<ObjectArray>& data, const Handle<Object>& key,
+                 const Handle<Object>& key_hash);
 
   RawObjectArray setGrow(const Handle<ObjectArray>& data);
 
