@@ -33,7 +33,7 @@ char* SmallStr::toCStr() {
   return reinterpret_cast<char*>(result);
 }
 
-// Str
+// LargeStr
 
 bool LargeStr::equals(Object* that) {
   if (this == that) {
