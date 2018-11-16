@@ -2374,6 +2374,20 @@ Object* Runtime::newSet() {
   return *result;
 }
 
+Object* Runtime::newSetWithSize(word initial_size) {
+  HandleScope scope;
+  Handle<Set> result(&scope, heap()->create<Set>());
+  word initial_capacity = Utils::nextPowerOfTwo(initial_size);
+  Handle<ObjectArray> array(
+      &scope,
+      newObjectArray(Utils::maximum(static_cast<word>(kInitialSetCapacity),
+                                    initial_capacity) *
+                     Set::Bucket::kNumPointers));
+  result->setData(*array);
+  result->setNumItems(0);
+  return *result;
+}
+
 template <SetLookupType type>
 bool Runtime::setLookup(const Handle<ObjectArray>& data,
                         const Handle<Object>& key,
@@ -2466,12 +2480,109 @@ Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
   return setAddWithHash(set, value, key_hash);
 }
 
+Object* Runtime::setCopy(const Handle<Set>& set) {
+  word num_items = set->numItems();
+  if (num_items == 0) {
+    return newSet();
+  }
+
+  HandleScope scope;
+  Handle<Set> new_set(&scope, newSetWithSize(num_items));
+  Handle<ObjectArray> data(&scope, set->data());
+  Handle<ObjectArray> new_data(&scope, new_set->data());
+  Handle<Object> key(&scope, NoneType::object());
+  Handle<Object> key_hash(&scope, NoneType::object());
+  for (word i = 0, data_len = data->length(); i < data_len;
+       i += Set::Bucket::kNumPointers) {
+    if (Set::Bucket::isEmpty(*data, i) || Set::Bucket::isTombstone(*data, i)) {
+      continue;
+    }
+    key = Set::Bucket::key(*data, i);
+    key_hash = Set::Bucket::hash(*data, i);
+    Set::Bucket::set(*new_data, i, *key_hash, *key);
+  }
+  new_set->setNumItems(set->numItems());
+  return *new_set;
+}
+
 bool Runtime::setIncludes(const Handle<Set>& set, const Handle<Object>& value) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, set->data());
   Handle<Object> key_hash(&scope, hash(*value));
   word ignore;
   return setLookup<SetLookupType::Lookup>(data, value, key_hash, &ignore);
+}
+
+Object* Runtime::setIntersection(Thread* thread, const Handle<Set>& set,
+                                 const Handle<Object>& iterable) {
+  HandleScope scope;
+  Handle<Set> dst(&scope, Runtime::newSet());
+  Handle<Object> key(&scope, NoneType::object());
+  Handle<Object> key_hash(&scope, NoneType::object());
+  word ignore;
+  // Special case for sets
+  if (iterable->isSet()) {
+    Handle<Set> self(&scope, *set);
+    Handle<Set> other(&scope, *iterable);
+    if (set->numItems() == 0 || other->numItems() == 0) {
+      return *dst;
+    }
+    // Iterate over the smaller set
+    if (set->numItems() > other->numItems()) {
+      self = *iterable;
+      other = *set;
+    }
+    Handle<ObjectArray> data(&scope, self->data());
+    Handle<ObjectArray> other_data(&scope, other->data());
+    for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
+      if (Set::Bucket::isTombstone(*data, i) ||
+          Set::Bucket::isEmpty(*data, i)) {
+        continue;
+      }
+      key = Set::Bucket::key(*data, i);
+      key_hash = Set::Bucket::hash(*data, i);
+      if (setLookup<SetLookupType::Lookup>(other_data, key, key_hash,
+                                           &ignore)) {
+        setAddWithHash(dst, key, key_hash);
+      }
+    }
+    return *dst;
+  }
+  // Generic case
+  Handle<Object> iter_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterable, SymbolId::kDunderIter));
+  if (iter_method->isError()) {
+    return thread->raiseTypeErrorWithCStr("object is not iterable");
+  }
+  Handle<Object> iterator(
+      &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
+                                       iter_method, iterable));
+  if (iterator->isError()) {
+    return thread->raiseTypeErrorWithCStr("object is not iterable");
+  }
+  Handle<Object> next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterator, SymbolId::kDunderNext));
+  if (next_method->isError()) {
+    return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
+  }
+  if (set->numItems() == 0) {
+    return *dst;
+  }
+  Handle<ObjectArray> data(&scope, set->data());
+  while (!isIteratorExhausted(thread, iterator)) {
+    key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
+                                   iterator);
+    if (key->isError()) {
+      return *key;
+    }
+    key_hash = hash(*key);
+    if (setLookup<SetLookupType::Lookup>(data, key, key_hash, &ignore)) {
+      setAddWithHash(dst, key, key_hash);
+    }
+  }
+  return *dst;
 }
 
 bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {

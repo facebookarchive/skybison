@@ -157,6 +157,7 @@ class Runtime;
   V(Insert, "insert")                                                          \
   V(Int, "int")                                                                \
   V(InterruptedError, "InterruptedError")                                      \
+  V(Intersection, "intersection")                                              \
   V(IsADirectoryError, "IsADirectoryError")                                    \
   V(IsDisjoint, "isdisjoint")                                                  \
   V(IsInstance, "isinstance")                                                  \

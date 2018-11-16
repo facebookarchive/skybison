@@ -154,6 +154,7 @@ Object* IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
 
 const BuiltinMethod SmallIntBuiltins::kMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
+    {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
     {SymbolId::kDunderFloordiv, nativeTrampoline<dunderFloorDiv>},
     {SymbolId::kDunderInvert, nativeTrampoline<dunderInvert>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
@@ -633,6 +634,29 @@ Object* SmallIntBuiltins::dunderAdd(Thread* thread, Frame* caller, word nargs) {
   if (other->isInt()) {
     word right = Int::cast(other)->asWord();
     return thread->runtime()->newInt(left + right);
+  }
+  return thread->runtime()->notImplemented();
+}
+
+Object* SmallIntBuiltins::dunderAnd(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
+  }
+
+  Arguments args(caller, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> other(&scope, args.get(1));
+
+  if (!self->isSmallInt()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__and__() must be called with int instance as the first argument");
+  }
+
+  word left = SmallInt::cast(*self)->value();
+  if (other->isSmallInt()) {
+    word right = SmallInt::cast(*other)->value();
+    return SmallInt::fromWord(left & right);
   }
   return thread->runtime()->notImplemented();
 }

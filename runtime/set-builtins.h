@@ -13,11 +13,14 @@ class SetBuiltins {
   static void initialize(Runtime* runtime);
 
   static Object* add(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderAnd(Thread* thread, Frame* frame, word nargs);
   static Object* dunderContains(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderIand(Thread* thread, Frame* frame, word nargs);
   static Object* dunderInit(Thread* thread, Frame* frame, word nargs);
   static Object* dunderIter(Thread* thread, Frame* frame, word nargs);
   static Object* dunderLen(Thread* thread, Frame* frame, word nargs);
   static Object* dunderNew(Thread* thread, Frame* frame, word nargs);
+  static Object* intersection(Thread* thread, Frame* frame, word nargs);
   static Object* isDisjoint(Thread* thread, Frame* frame, word nargs);
   static Object* pop(Thread* thread, Frame* frame, word nargs);
 

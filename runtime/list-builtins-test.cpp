@@ -265,8 +265,9 @@ static Object* listFromRange(word start, word stop) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Handle<List> result(&scope, thread->runtime()->newList());
+  Handle<Object> value(&scope, NoneType::object());
   for (word i = start; i < stop; i++) {
-    Handle<Object> value(&scope, SmallInt::fromWord(i));
+    value = SmallInt::fromWord(i);
     thread->runtime()->listAdd(result, value);
   }
   return *result;

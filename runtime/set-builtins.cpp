@@ -11,12 +11,15 @@ namespace python {
 
 const BuiltinMethod SetBuiltins::kMethods[] = {
     {SymbolId::kAdd, nativeTrampoline<add>},
+    {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
     {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
+    {SymbolId::kDunderIand, nativeTrampoline<dunderIand>},
     {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
+    {SymbolId::kIntersection, nativeTrampoline<intersection>},
     {SymbolId::kPop, nativeTrampoline<pop>}};
 
 void SetBuiltins::initialize(Runtime* runtime) {
@@ -207,6 +210,95 @@ Object* SetBuiltins::isDisjoint(Thread* thread, Frame* frame, word nargs) {
       "descriptor 'is_disjoint' requires a 'set' object");
 }
 
+Object* SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->raiseTypeErrorWithCStr("__and__ takes 1 arguments.");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Set> self(&scope, args.get(0));
+  Handle<Object> other(&scope, args.get(1));
+  if (self->isSet()) {
+    if (!other->isSet()) {
+      return thread->runtime()->notImplemented();
+    }
+    return thread->runtime()->setIntersection(thread, self, other);
+  }
+  // TODO(jeethu): handle user-defined subtypes of set.
+  return thread->raiseTypeErrorWithCStr(
+      "descriptor '__and__' requires a 'set' object");
+}
+
+Object* SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->raiseTypeErrorWithCStr("__iand__ takes 1 arguments.");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Set> self(&scope, args.get(0));
+  Handle<Object> other(&scope, args.get(1));
+  if (self->isSet()) {
+    if (!other->isSet()) {
+      return thread->runtime()->notImplemented();
+    }
+    Handle<Object> intersection(
+        &scope, thread->runtime()->setIntersection(thread, self, other));
+    if (intersection->isError()) {
+      return *intersection;
+    }
+    Set* intersection_set = Set::cast(*intersection);
+    self->setData(intersection_set->data());
+    self->setNumItems(intersection_set->numItems());
+    return *self;
+  }
+  // TODO(jeethu): handle user-defined subtypes of set.
+  return thread->raiseTypeErrorWithCStr(
+      "descriptor '__iand__' requires a 'set' object");
+}
+
+Object* SetBuiltins::intersection(Thread* thread, Frame* frame, word nargs) {
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor 'intersection' of 'set' object needs an argument");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  if (self->isSet()) {
+    Handle<Set> set(&scope, *self);
+    if (nargs == 1) {
+      // Return a copy of the set
+      return thread->runtime()->setCopy(set);
+    }
+    // nargs is at least 2
+    Handle<Object> other(&scope, args.get(1));
+    Handle<Object> result(
+        &scope, thread->runtime()->setIntersection(thread, set, other));
+    if (result->isError() || nargs == 2) {
+      return *result;
+    }
+    if (nargs > 2) {
+      Handle<Set> base(&scope, *result);
+      for (word i = 2; i < nargs; i++) {
+        other = args.get(i);
+        result = thread->runtime()->setIntersection(thread, base, other);
+        if (result->isError()) {
+          return *result;
+        }
+        base = *result;
+        // Early exit
+        if (base->numItems() == 0) {
+          break;
+        }
+      }
+      return *result;
+    }
+  }
+  // TODO(jeethu): handle user-defined subtypes of set.
+  return thread->raiseTypeErrorWithCStr(
+      "descriptor 'intersection' requires a 'set' object");
+}
+
 const BuiltinMethod SetIteratorBuiltins::kMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
@@ -268,7 +360,7 @@ Object* SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   Handle<Object> self(&scope, args.get(0));
   if (!self->isSetIterator()) {
     return thread->raiseTypeErrorWithCStr(
-        "__length_hint__() must be called with a tuple iterator instance as "
+        "__length_hint__() must be called with a set iterator instance as "
         "the first argument");
   }
   Handle<SetIterator> set_iterator(&scope, *self);

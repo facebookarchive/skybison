@@ -830,9 +830,13 @@ void Interpreter::doBinaryRshift(Context* ctx, word) {
 
 // opcode 64
 void Interpreter::doBinaryAnd(Context* ctx, word) {
-  word right = SmallInt::cast(ctx->frame->popValue())->value();
-  word left = SmallInt::cast(ctx->frame->topValue())->value();
-  ctx->frame->setTopValue(SmallInt::fromWord(left & right));
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::AND, self, other);
+  ctx->frame->pushValue(result);
 }
 
 // opcode 65

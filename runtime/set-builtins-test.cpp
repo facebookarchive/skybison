@@ -91,6 +91,246 @@ TEST(SetBuiltinsTest, DunderIterReturnsSetIterator) {
   ASSERT_TRUE(iter->isSetIterator());
 }
 
+TEST(SetBuiltinsTest, DunderAnd) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(2, 0, 0);
+  HandleScope scope;
+
+  Handle<Set> set1(&scope, runtime.newSet());
+  Handle<Set> set2(&scope, runtime.newSet());
+  frame->setLocal(0, *set1);
+  frame->setLocal(1, *set2);
+  Handle<Object> result(&scope, SetBuiltins::dunderAnd(thread, frame, 2));
+  ASSERT_TRUE(result->isSet());
+  EXPECT_EQ(Set::cast(*result)->numItems(), 0);
+
+  Handle<Object> key(&scope, SmallInt::fromWord(1));
+  runtime.setAdd(set1, key);
+  key = SmallInt::fromWord(2);
+  runtime.setAdd(set1, key);
+  frame->setLocal(0, *set1);
+  frame->setLocal(1, *set2);
+  Handle<Object> result1(&scope, SetBuiltins::dunderAnd(thread, frame, 2));
+  ASSERT_TRUE(result1->isSet());
+  EXPECT_EQ(Set::cast(*result1)->numItems(), 0);
+
+  key = SmallInt::fromWord(1);
+  runtime.setAdd(set2, key);
+  frame->setLocal(0, *set1);
+  frame->setLocal(1, *set2);
+  Handle<Object> result2(&scope, SetBuiltins::dunderAnd(thread, frame, 2));
+  ASSERT_TRUE(result2->isSet());
+  Handle<Set> set(&scope, *result2);
+  EXPECT_EQ(set->numItems(), 1);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+}
+
+TEST(SetBuiltinsTest, DunderAndWithNonSet) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(2, 0, 0);
+  HandleScope scope;
+
+  Handle<Object> empty_set(&scope, runtime.newSet());
+  frame->setLocal(0, *empty_set);
+  frame->setLocal(1, NoneType::object());
+  Handle<Object> result(&scope, SetBuiltins::dunderAnd(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_TRUE(result->isNotImplemented());
+}
+
+TEST(SetBuiltinsTest, DunderIand) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(2, 0, 0);
+  HandleScope scope;
+
+  Handle<Set> set1(&scope, runtime.newSet());
+  Handle<Set> set2(&scope, runtime.newSet());
+  Handle<Object> key(&scope, NoneType::object());
+  frame->setLocal(0, *set1);
+  frame->setLocal(1, *set2);
+  Handle<Object> result(&scope, SetBuiltins::dunderIand(thread, frame, 2));
+  ASSERT_TRUE(result->isSet());
+  EXPECT_EQ(*result, *set1);
+  EXPECT_EQ(Set::cast(*result)->numItems(), 0);
+
+  key = SmallInt::fromWord(1);
+  runtime.setAdd(set1, key);
+  key = SmallInt::fromWord(2);
+  runtime.setAdd(set1, key);
+  frame->setLocal(0, *set1);
+  frame->setLocal(1, *set2);
+  Handle<Object> result1(&scope, SetBuiltins::dunderIand(thread, frame, 2));
+  ASSERT_TRUE(result1->isSet());
+  EXPECT_EQ(*result1, *set1);
+  EXPECT_EQ(Set::cast(*result1)->numItems(), 0);
+
+  set1 = runtime.newSet();
+  key = SmallInt::fromWord(1);
+  runtime.setAdd(set1, key);
+  key = SmallInt::fromWord(2);
+  runtime.setAdd(set1, key);
+  runtime.setAdd(set2, key);
+  frame->setLocal(0, *set1);
+  frame->setLocal(1, *set2);
+  Handle<Object> result2(&scope, SetBuiltins::dunderIand(thread, frame, 2));
+  ASSERT_TRUE(result2->isSet());
+  EXPECT_EQ(*result2, *set1);
+  Handle<Set> set(&scope, *result2);
+  EXPECT_EQ(set->numItems(), 1);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+}
+
+TEST(SetBuiltinsTest, DunderIandWithNonSet) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(2, 0, 0);
+  HandleScope scope;
+
+  Handle<Object> empty_set(&scope, runtime.newSet());
+  frame->setLocal(0, *empty_set);
+  frame->setLocal(1, NoneType::object());
+  Handle<Object> result(&scope, SetBuiltins::dunderIand(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_TRUE(result->isNotImplemented());
+}
+
+// Equivalent to evaluating "set(range(start, stop))" in Python
+static Object* setFromRange(word start, word stop) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Set> result(&scope, thread->runtime()->newSet());
+  Handle<Object> value(&scope, NoneType::object());
+  for (word i = start; i < stop; i++) {
+    value = SmallInt::fromWord(i);
+    thread->runtime()->setAdd(result, value);
+  }
+  return *result;
+}
+
+TEST(SetBuiltinsTest, SetIntersectionWithNoArgsReturnsCopy) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+  HandleScope scope;
+  Handle<Set> set(&scope, setFromRange(0, 3));
+  // set.intersect() with no arguments
+  frame->setLocal(0, *set);
+  Handle<Object> result(&scope, SetBuiltins::intersection(thread, frame, 1));
+  ASSERT_TRUE(result->isSet());
+  EXPECT_NE(*result, *set);
+  set = *result;
+  EXPECT_EQ(set->numItems(), 3);
+
+  Handle<Object> key(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(1);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(2);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+}
+
+TEST(SetBuiltinsTest, SetIntersectionWithOneArgumentReturnsIntersection) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(2, 0, 0);
+  HandleScope scope;
+  Handle<Set> set(&scope, setFromRange(0, 3));
+  Handle<Set> set1(&scope, setFromRange(0, 2));
+
+  // set.intersect() with 1 argument
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Handle<Object> result(&scope, SetBuiltins::intersection(thread, frame, 2));
+  ASSERT_TRUE(result->isSet());
+  EXPECT_NE(*result, *set);
+  set = *result;
+  EXPECT_EQ(set->numItems(), 2);
+  Handle<Object> key(&scope, SmallInt::fromWord(0));
+  key = SmallInt::fromWord(0);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(1);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+}
+
+TEST(SetBuiltinsTest, SetIntersectionWithTwoArgumentsReturnsIntersection) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(3, 0, 0);
+  HandleScope scope;
+  Handle<Set> set(&scope, setFromRange(0, 3));
+  Handle<Set> set1(&scope, setFromRange(0, 2));
+  Handle<Set> set2(&scope, setFromRange(0, 1));
+
+  // set.intersect() with 2 arguments
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  frame->setLocal(2, *set2);
+  Handle<Object> result(&scope, SetBuiltins::intersection(thread, frame, 3));
+  ASSERT_TRUE(result->isSet());
+  EXPECT_NE(*result, *set);
+  set = *result;
+  EXPECT_EQ(set->numItems(), 1);
+  Handle<Object> key(&scope, SmallInt::fromWord(0));
+  key = SmallInt::fromWord(0);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+}
+
+TEST(SetBuiltinsTest, SetIntersectionWithEmptySetReturnsEmptySet) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(3, 0, 0);
+  HandleScope scope;
+  Handle<Set> set(&scope, setFromRange(0, 3));
+  Handle<Set> set1(&scope, setFromRange(0, 2));
+  Handle<Set> set2(&scope, runtime.newSet());
+
+  // set.intersect() with 2 arguments
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  frame->setLocal(2, *set2);
+  Handle<Object> result(&scope, SetBuiltins::intersection(thread, frame, 3));
+  ASSERT_TRUE(result->isSet());
+  EXPECT_NE(*result, *set);
+  EXPECT_EQ(Set::cast(*result)->numItems(), 0);
+}
+
+TEST(SetBuiltinsTest, SetIntersectionWithEmptyIterableReturnsEmptySet) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(2, 0, 0);
+  HandleScope scope;
+  Handle<Set> set(&scope, setFromRange(0, 3));
+  Handle<List> list(&scope, runtime.newList());
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *list);
+  Handle<Object> result(&scope, SetBuiltins::intersection(thread, frame, 2));
+  ASSERT_TRUE(result->isSet());
+  EXPECT_EQ(Set::cast(*result)->numItems(), 0);
+}
+
+TEST(SetBuiltinsTest, SetIntersectionWithIterableReturnsIntersection) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(2, 0, 0);
+  HandleScope scope;
+  Handle<Set> set(&scope, setFromRange(0, 3));
+  Handle<List> list(&scope, runtime.newList());
+  Handle<Object> key(&scope, SmallInt::fromWord(4));
+  runtime.listAdd(list, key);
+  key = SmallInt::fromWord(0);
+  runtime.listAdd(list, key);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *list);
+  Handle<Object> result(&scope, SetBuiltins::intersection(thread, frame, 2));
+  ASSERT_TRUE(result->isSet());
+  EXPECT_EQ(Set::cast(*result)->numItems(), 1);
+  set = *result;
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+}
+
 TEST(SetIteratorBuiltinsTest, CallDunderNext) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();

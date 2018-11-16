@@ -37,6 +37,7 @@ class SmallIntBuiltins {
   static void initialize(Runtime* runtime);
 
   static Object* dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderAnd(Thread* thread, Frame* frame, word nargs);
   static Object* dunderFloorDiv(Thread* thread, Frame* frame, word nargs);
   static Object* dunderInvert(Thread* thread, Frame* frame, word nargs);
   static Object* dunderMod(Thread* thread, Frame* frame, word nargs);

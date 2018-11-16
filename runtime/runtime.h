@@ -69,6 +69,7 @@ class Runtime {
   Object* newFloat(double value);
 
   Object* newSet();
+  Object* newSetWithSize(word initial_size);
 
   Object* newBuiltinFunction(SymbolId name, Function::Entry entry,
                              Function::Entry entry_kw,
@@ -310,8 +311,16 @@ class Runtime {
   Object* setAddWithHash(const Handle<Set>& set, const Handle<Object>& value,
                          const Handle<Object>& key_hash);
 
+  // Return a shallow copy of a set
+  Object* setCopy(const Handle<Set>& set);
+
   // Returns true if the set contains the specified value.
   bool setIncludes(const Handle<Set>& set, const Handle<Object>& value);
+
+  // Compute the set intersection between a set and an iterator
+  // Returns either a new set with the intersection or an Error object.
+  Object* setIntersection(Thread* thread, const Handle<Set>& set,
+                          const Handle<Object>& iterable);
 
   // Delete a key from the set, returns true if the key existed.
   bool setRemove(const Handle<Set>& set, const Handle<Object>& value);

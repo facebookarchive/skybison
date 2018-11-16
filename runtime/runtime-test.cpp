@@ -614,11 +614,9 @@ TEST(RuntimeListTest, ListExtendDict) {
   ASSERT_EQ(sum, 0);
 }
 
-TEST(RuntimeListTest, ListExtendIterator) {
-  Runtime runtime;
+static Object* iterableWithLengthHint(Runtime* runtime) {
   HandleScope scope;
-  Handle<List> list(&scope, runtime.newList());
-  runtime.runFromCStr(R"(
+  runtime->runFromCStr(R"(
 class Iterator:
     def __init__(self):
         self.current = 0
@@ -639,9 +637,41 @@ class Iterator:
 
 iterator = Iterator()
 )");
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> iterator(&scope,
-                          testing::moduleAt(&runtime, main, "iterator"));
+  Handle<Module> main(&scope, testing::findModule(runtime, "__main__"));
+  Handle<Object> iterator(&scope, testing::moduleAt(runtime, main, "iterator"));
+  return *iterator;
+}
+
+static Object* iterableWithoutLengthHint(Runtime* runtime) {
+  HandleScope scope;
+  runtime->runFromCStr(R"(
+class Iterator:
+    def __init__(self):
+        self.current = 0
+        self.list = [1, 2, 3]
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current < len(self.list):
+            value = self.list[self.current]
+            self.current += 1
+            return value
+        raise StopIteration()
+
+iterator = Iterator()
+)");
+  Handle<Module> main(&scope, testing::findModule(runtime, "__main__"));
+  Handle<Object> iterator(&scope, testing::moduleAt(runtime, main, "iterator"));
+  return *iterator;
+}
+
+TEST(RuntimeListTest, ListExtendIterator) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  Handle<Object> iterator(&scope, iterableWithLengthHint(&runtime));
   runtime.listExtend(Thread::currentThread(), list, iterator);
 
   EXPECT_EQ(list->allocated(), 3);
@@ -660,27 +690,7 @@ TEST(RuntimeListTest, ListExtendIteratorWithoutDunderLengthHint) {
   Runtime runtime;
   HandleScope scope;
   Handle<List> list(&scope, runtime.newList());
-  runtime.runFromCStr(R"(
-class Iterator:
-    def __init__(self):
-        self.current = 0
-        self.list = [1, 2, 3]
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.current < len(self.list):
-            value = self.list[self.current]
-            self.current += 1
-            return value
-        raise StopIteration()
-
-iterator = Iterator()
-)");
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> iterator(&scope,
-                          testing::moduleAt(&runtime, main, "iterator"));
+  Handle<Object> iterator(&scope, iterableWithoutLengthHint(&runtime));
   runtime.listExtend(Thread::currentThread(), list, iterator);
 
   // An iterator with no __length_hint__ should not be consumed
@@ -1687,30 +1697,7 @@ TEST(RuntimeSetTest, UpdateIterator) {
   Runtime runtime;
   HandleScope scope;
   Handle<Set> set(&scope, runtime.newSet());
-  runtime.runFromCStr(R"(
-class Iterator:
-    def __init__(self):
-        self.current = 0
-        self.list = [1, 2, 3]
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.current < len(self.list):
-            value = self.list[self.current]
-            self.current += 1
-            return value
-        raise StopIteration()
-
-    def __length_hint__(self):
-        return len(self.list) - self.current
-
-iterator = Iterator()
-)");
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> iterator(&scope,
-                          testing::moduleAt(&runtime, main, "iterator"));
+  Handle<Object> iterator(&scope, iterableWithLengthHint(&runtime));
   runtime.setUpdate(Thread::currentThread(), set, iterator);
 
   ASSERT_EQ(set->numItems(), 3);
@@ -1720,31 +1707,177 @@ TEST(RuntimeSetTest, UpdateIteratorWithoutDunderLengthHint) {
   Runtime runtime;
   HandleScope scope;
   Handle<Set> set(&scope, runtime.newSet());
-  runtime.runFromCStr(R"(
-class Iterator:
-    def __init__(self):
-        self.current = 0
-        self.list = [1, 2, 3]
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.current < len(self.list):
-            value = self.list[self.current]
-            self.current += 1
-            return value
-        raise StopIteration()
-
-iterator = Iterator()
-)");
-  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> iterator(&scope,
-                          testing::moduleAt(&runtime, main, "iterator"));
+  Handle<Object> iterator(&scope, iterableWithoutLengthHint(&runtime));
   runtime.setUpdate(Thread::currentThread(), set, iterator);
 
   // An iterator with no __length_hint__ should not be consumed
   ASSERT_EQ(set->numItems(), 0);
+}
+
+TEST(RuntimeSetTest, UpdateWithNonIterable) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Object> non_iterable(&scope, NoneType::object());
+  Handle<Object> result(
+      &scope, runtime.setUpdate(Thread::currentThread(), set, non_iterable));
+  ASSERT_TRUE(result->isError());
+}
+
+TEST(RuntimeSetTest, EmptySetItersectionReturnsEmptySet) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Set> set1(&scope, runtime.newSet());
+
+  // set() & set()
+  Handle<Object> result(&scope, runtime.setIntersection(thread, set, set1));
+  ASSERT_TRUE(result->isSet());
+  EXPECT_EQ(Set::cast(*result)->numItems(), 0);
+}
+
+TEST(RuntimeSetTest, ItersectionWithEmptySetReturnsEmptySet) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Set> set1(&scope, runtime.newSet());
+
+  for (word i = 0; i < 8; i++) {
+    Handle<Object> value(&scope, SmallInt::fromWord(i));
+    runtime.setAdd(set1, value);
+  }
+
+  // set() & {0, 1, 2, 3, 4, 5, 6, 7}
+  Handle<Object> result(&scope, runtime.setIntersection(thread, set, set1));
+  ASSERT_TRUE(result->isSet());
+  EXPECT_EQ(Set::cast(*result)->numItems(), 0);
+
+  // {0, 1, 2, 3, 4, 5, 6, 7} & set()
+  Handle<Object> result1(&scope, runtime.setIntersection(thread, set1, set));
+  ASSERT_TRUE(result1->isSet());
+  EXPECT_EQ(Set::cast(*result1)->numItems(), 0);
+}
+
+TEST(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Set> set1(&scope, runtime.newSet());
+  Handle<Object> key(&scope, NoneType::object());
+
+  for (word i = 0; i < 8; i++) {
+    Handle<Object> value(&scope, SmallInt::fromWord(i));
+    runtime.setAdd(set1, value);
+  }
+
+  for (word i = 0; i < 4; i++) {
+    Handle<Object> value(&scope, SmallInt::fromWord(i));
+    runtime.setAdd(set, value);
+  }
+
+  // {0, 1, 2, 3} & {0, 1, 2, 3, 4, 5, 6, 7}
+  Handle<Set> result(&scope, runtime.setIntersection(thread, set, set1));
+  EXPECT_EQ(Set::cast(*result)->numItems(), 4);
+  key = SmallInt::fromWord(0);
+  EXPECT_TRUE(runtime.setIncludes(result, key));
+  key = SmallInt::fromWord(1);
+  EXPECT_TRUE(runtime.setIncludes(result, key));
+  key = SmallInt::fromWord(2);
+  EXPECT_TRUE(runtime.setIncludes(result, key));
+  key = SmallInt::fromWord(3);
+  EXPECT_TRUE(runtime.setIncludes(result, key));
+
+  // {0, 1, 2, 3, 4, 5, 6, 7} & {0, 1, 2, 3}
+  Handle<Set> result1(&scope, runtime.setIntersection(thread, set, set1));
+  EXPECT_EQ(Set::cast(*result1)->numItems(), 4);
+  key = SmallInt::fromWord(0);
+  EXPECT_TRUE(runtime.setIncludes(result1, key));
+  key = SmallInt::fromWord(1);
+  EXPECT_TRUE(runtime.setIncludes(result1, key));
+  key = SmallInt::fromWord(2);
+  EXPECT_TRUE(runtime.setIncludes(result1, key));
+  key = SmallInt::fromWord(3);
+  EXPECT_TRUE(runtime.setIncludes(result1, key));
+}
+
+TEST(RuntimeSetTest, IntersectIterator) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Object> iterator(&scope, iterableWithLengthHint(&runtime));
+  Handle<Set> result(&scope, runtime.setIntersection(thread, set, iterator));
+  EXPECT_EQ(result->numItems(), 0);
+
+  Handle<Object> key(&scope, SmallInt::fromWord(1));
+  runtime.setAdd(set, key);
+  key = SmallInt::fromWord(2);
+  runtime.setAdd(set, key);
+  Handle<Object> iterator1(&scope, iterableWithLengthHint(&runtime));
+  Handle<Set> result1(&scope, runtime.setIntersection(thread, set, iterator1));
+  EXPECT_EQ(result1->numItems(), 2);
+  EXPECT_TRUE(runtime.setIncludes(result1, key));
+  key = SmallInt::fromWord(1);
+  EXPECT_TRUE(runtime.setIncludes(result1, key));
+}
+
+TEST(RuntimeSetTest, IntersectIteratorWithoutDunderLengthHint) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Object> key(&scope, SmallInt::fromWord(0));
+  runtime.setAdd(set, key);
+  key = SmallInt::fromWord(1);
+  runtime.setAdd(set, key);
+  Handle<Object> iterator(&scope, iterableWithoutLengthHint(&runtime));
+  Handle<Set> result(&scope, runtime.setIntersection(thread, set, iterator));
+
+  // An iterator with no __length_hint__ should not be consumed
+  ASSERT_EQ(result->numItems(), 0);
+}
+
+TEST(RuntimeSetTest, IntersectWithNonIterable) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Object> non_iterable(&scope, NoneType::object());
+
+  Handle<Object> result(&scope,
+                        runtime.setIntersection(thread, set, non_iterable));
+  ASSERT_TRUE(result->isError());
+}
+
+TEST(RuntimeSetTest, SetCopy) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Object> set_copy(&scope, runtime.setCopy(set));
+  ASSERT_TRUE(set_copy->isSet());
+  EXPECT_EQ(Set::cast(*set_copy)->numItems(), 0);
+
+  Handle<Object> key(&scope, SmallInt::fromWord(0));
+  runtime.setAdd(set, key);
+  key = SmallInt::fromWord(1);
+  runtime.setAdd(set, key);
+  key = SmallInt::fromWord(2);
+  runtime.setAdd(set, key);
+
+  Handle<Object> set_copy1(&scope, runtime.setCopy(set));
+  ASSERT_TRUE(set_copy1->isSet());
+  EXPECT_EQ(Set::cast(*set_copy1)->numItems(), 3);
+  set = *set_copy1;
+  key = SmallInt::fromWord(0);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(1);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(2);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
 }
 
 // Attribute tests
