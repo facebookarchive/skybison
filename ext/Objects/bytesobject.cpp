@@ -2,6 +2,18 @@
 
 namespace python {
 
+PY_EXPORT int PyBytes_CheckExact_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->asObject()->isBytes();
+}
+
+PY_EXPORT int PyBytes_Check_Func(PyObject* obj) {
+  if (PyBytes_CheckExact_Func(obj)) {
+    return true;
+  }
+  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+                                                  LayoutId::kBytes);
+}
+
 PY_EXPORT char* PyBytes_AsString(PyObject* /* p */) {
   UNIMPLEMENTED("PyBytes_AsString");
 }
