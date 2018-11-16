@@ -485,7 +485,7 @@ TEST(RuntimeTest, GetClassConstructor) {
   EXPECT_EQ(runtime.classConstructor(klass), None::object());
 
   Handle<Object> init(&scope, runtime.symbols()->DunderInit());
-  Handle<Function> func(&scope, runtime.newFunction());
+  Handle<Object> func(&scope, runtime.newFunction());
   runtime.dictionaryAtPutInValueCell(klass_dict, init, func);
 
   EXPECT_EQ(runtime.classConstructor(klass), *func);
@@ -537,8 +537,9 @@ TEST(RuntimeTest, ComputeInstanceSize) {
     func->setCode(*code);
 
     Handle<Dictionary> klass_dict(&scope, runtime.newDictionary());
-    Handle<Object> init(&scope, runtime.symbols()->DunderInit());
-    runtime.dictionaryAtPutInValueCell(klass_dict, init, func);
+    Handle<Object> key(&scope, runtime.symbols()->DunderInit());
+    Handle<Object> value(&scope, *func);
+    runtime.dictionaryAtPutInValueCell(klass_dict, key, value);
 
     Handle<Class> klass(&scope, runtime.newClass());
     klass->setDictionary(*klass_dict);

@@ -140,7 +140,8 @@ class Handle : public ObjectHandle {
   }
 
   template <typename S>
-  Handle(const Handle<S>& other) : ObjectHandle(scope(other), T::cast(*other)) {
+  explicit Handle(const Handle<S>& other)
+      : ObjectHandle(scope(other), T::cast(*other)) {
     static_assert(
         std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
         "Only up- and down-casts are permitted.");
