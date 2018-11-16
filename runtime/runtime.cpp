@@ -385,7 +385,7 @@ Object* Runtime::newFunctionKwEx(Function::Entry entry,
                                  Function::Entry entry_kw,
                                  Function::Entry entry_ex) {
   Object* result = heap()->createFunction();
-  DCHECK(result != nullptr, "failed to createFunction");
+  DCHECK(result != Error::object(), "failed to createFunction");
   auto function = Function::cast(result);
   function->setEntry(entry);
   function->setEntryKw(entry_kw);
@@ -556,7 +556,7 @@ Object* Runtime::newStringWithAll(View<byte> code_units) {
     return SmallString::fromBytes(code_units);
   }
   Object* result = heap()->createLargeString(length);
-  DCHECK(result != nullptr, "failed to create large string");
+  DCHECK(result != Error::object(), "failed to create large string");
   byte* dst = reinterpret_cast<byte*>(LargeString::cast(result)->address());
   const byte* src = code_units.data();
   memcpy(dst, src, length);
