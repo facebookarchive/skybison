@@ -16,7 +16,7 @@ RawObject builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
 
   // First, call __new__ to allocate a new instance.
-  if (!runtime->isInstanceOfClass(args.get(0))) {
+  if (!runtime->isInstanceOfType(args.get(0))) {
     return thread->raiseTypeErrorWithCStr(
         "'__new__' requires a 'class' object");
   }
@@ -55,7 +55,7 @@ RawObject builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
 
   // First, call __new__ to allocate a new instance.
-  if (!runtime->isInstanceOfClass(args.get(0))) {
+  if (!runtime->isInstanceOfType(args.get(0))) {
     return thread->raiseTypeErrorWithCStr(
         "'__new__' requires a 'class' object");
   }

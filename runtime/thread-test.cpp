@@ -2808,7 +2808,7 @@ c = a.hahaha
   runtime.runFromCStr(src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object bar(&scope, moduleAt(&runtime, main, "Bar"));
-  EXPECT_TRUE(runtime.isInstanceOfClass(*bar));
+  EXPECT_TRUE(runtime.isInstanceOfType(*bar));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_TRUE(runtime.typeOf(*a) == *bar);
   Object b(&scope, moduleAt(&runtime, main, "b"));

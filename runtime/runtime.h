@@ -520,10 +520,10 @@ class Runtime {
   }
 
   // Returns whether or not instance is an instance of Type or a subclass of
-  // Type
+  // Type.
   //
   // This is equivalent to PyType_Check.
-  bool isInstanceOfClass(RawObject instance) {
+  bool isInstanceOfType(RawObject instance) {
     if (instance->isType()) {
       return true;
     }

@@ -3173,7 +3173,7 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& receiver,
   // A minimal implementation of getattr needed to get richards running.
   RawObject result;
   HandleScope scope(thread);
-  if (isInstanceOfClass(*receiver)) {
+  if (isInstanceOfType(*receiver)) {
     result = classGetAttr(thread, receiver, name);
   } else if (receiver->isModule()) {
     result = moduleGetAttr(thread, receiver, name);
@@ -3197,7 +3197,7 @@ RawObject Runtime::attributeAtPut(Thread* thread, const Object& receiver,
   Object interned_name(&scope, internStr(name));
   // A minimal implementation of setattr needed to get richards running.
   RawObject result;
-  if (isInstanceOfClass(*receiver)) {
+  if (isInstanceOfType(*receiver)) {
     result = classSetAttr(thread, receiver, interned_name, value);
   } else if (receiver->isModule()) {
     result = moduleSetAttr(thread, receiver, interned_name, value);
@@ -3219,7 +3219,7 @@ RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
   if (!dunder_delattr->isError()) {
     result = Interpreter::callMethod2(thread, thread->currentFrame(),
                                       dunder_delattr, receiver, name);
-  } else if (isInstanceOfClass(*receiver)) {
+  } else if (isInstanceOfType(*receiver)) {
     result = classDelAttr(thread, receiver, name);
   } else if (receiver->isModule()) {
     result = moduleDelAttr(thread, receiver, name);

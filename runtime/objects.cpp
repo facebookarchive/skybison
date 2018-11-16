@@ -420,7 +420,7 @@ RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
 
 RawType RawType::cast(RawObject object) {
   DCHECK(object->isType() ||
-             Thread::currentThread()->runtime()->isInstanceOfClass(object),
+             Thread::currentThread()->runtime()->isInstanceOfType(object),
          "invalid cast, expected class");
   return bit_cast<RawType>(object);
 }

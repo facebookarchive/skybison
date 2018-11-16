@@ -3529,10 +3529,10 @@ class Bar(Foo):
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_TRUE(runtime.isInstanceOfClass(*foo));
+  EXPECT_TRUE(runtime.isInstanceOfType(*foo));
 
   Object bar(&scope, moduleAt(&runtime, main, "Bar"));
-  EXPECT_TRUE(runtime.isInstanceOfClass(*bar));
+  EXPECT_TRUE(runtime.isInstanceOfType(*bar));
 }
 
 TEST(MetaclassTest, ClassWithCustomMetaclassIsInstanceOfClass) {
@@ -3548,7 +3548,7 @@ class Foo(type, metaclass=MyMeta):
   runtime.runFromCStr(src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_TRUE(runtime.isInstanceOfClass(*foo));
+  EXPECT_TRUE(runtime.isInstanceOfType(*foo));
 }
 
 TEST(MetaclassTest, VerifyMetaclassHierarchy) {
@@ -3593,7 +3593,7 @@ Foo = MyMeta('Foo', (), {})
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
   EXPECT_EQ(runtime.typeOf(*foo), *mymeta);
   EXPECT_FALSE(foo->isType());
-  EXPECT_TRUE(runtime.isInstanceOfClass(*foo));
+  EXPECT_TRUE(runtime.isInstanceOfType(*foo));
 }
 
 TEST(ImportlibTest, SysMetaPathIsList) {
