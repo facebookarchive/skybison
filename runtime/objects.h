@@ -1123,6 +1123,9 @@ class ListIterator : public HeapObject {
 class SetIterator : public HeapObject {
  public:
   // Getters and setters
+  word consumedCount();
+  void setConsumedCount(word consumed);
+
   word index();
   void setIndex(word index);
 
@@ -1144,7 +1147,7 @@ class SetIterator : public HeapObject {
   // Layout
   static const int kSetOffset = HeapObject::kSize;
   static const int kIndexOffset = kSetOffset + kPointerSize;
-  static const int kConsumedCountOffset = kSetOffset + kPointerSize;
+  static const int kConsumedCountOffset = kIndexOffset + kPointerSize;
   static const int kSize = kConsumedCountOffset + kPointerSize;
 
  private:
@@ -4113,6 +4116,14 @@ inline void SetIterator::setSet(Object* set) {
   instanceVariableAtPut(kConsumedCountOffset, SmallInt::fromWord(0));
 }
 
+inline word SetIterator::consumedCount() {
+  return SmallInt::cast(instanceVariableAt(kConsumedCountOffset))->value();
+}
+
+inline void SetIterator::setConsumedCount(word consumed) {
+  instanceVariableAtPut(kConsumedCountOffset, SmallInt::fromWord(consumed));
+}
+
 inline word SetIterator::index() {
   return SmallInt::cast(instanceVariableAt(kIndexOffset))->value();
 }
@@ -4125,30 +4136,24 @@ inline Object* SetIterator::next() {
   word idx = index();
   Set* underlying = Set::cast(set());
   ObjectArray* data = ObjectArray::cast(underlying->data());
-  if (idx >= data->length()) {
-    return Error::object();
-  }
+  word length = data->length();
   // Find the next non empty bucket
-  while (idx < data->length() && (Set::Bucket::isTombstone(data, idx) ||
-                                  Set::Bucket::isEmpty(data, idx))) {
-    idx++;
+  while (idx < length && (Set::Bucket::isTombstone(data, idx) ||
+                          Set::Bucket::isEmpty(data, idx))) {
+    idx += Set::Bucket::kNumPointers;
   }
-  setIndex(idx);
-  if (idx < data->length()) {
-    word consumed =
-        SmallInt::cast(instanceVariableAt(kConsumedCountOffset))->value();
-    instanceVariableAtPut(kConsumedCountOffset,
-                          SmallInt::fromWord(consumed + 1));
-    return Set::Bucket::key(data, idx);
-  } else {
+  if (idx >= length) {
     return Error::object();
   }
+  setConsumedCount(consumedCount() + 1);
+  word new_idx = (idx + Set::Bucket::kNumPointers);
+  setIndex(new_idx);
+  return Set::Bucket::key(data, idx);
 }
 
 inline word SetIterator::pendingLength() {
   Set* set = Set::cast(instanceVariableAt(kSetOffset));
-  return set->numItems() -
-         SmallInt::cast(instanceVariableAt(kConsumedCountOffset))->value();
+  return set->numItems() - consumedCount();
 }
 
 // Super

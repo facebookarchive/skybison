@@ -98,10 +98,10 @@ TEST(SetIteratorBuiltinsTest, CallDunderNext) {
 
   HandleScope scope(thread);
   Handle<Set> set(&scope, runtime.newSet());
-  Handle<Object> zero(&scope, SmallInt::fromWord(0));
-  Handle<Object> one(&scope, SmallInt::fromWord(1));
-  runtime.setAdd(set, zero);
-  runtime.setAdd(set, one);
+  Handle<Object> value(&scope, SmallInt::fromWord(0));
+  runtime.setAdd(set, value);
+  value = SmallInt::fromWord(1);
+  runtime.setAdd(set, value);
 
   frame->setLocal(0, *set);
   Handle<Object> iter(&scope, SetBuiltins::dunderIter(thread, frame, 1));
@@ -115,12 +115,38 @@ TEST(SetIteratorBuiltinsTest, CallDunderNext) {
   Handle<Object> item1(
       &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
   ASSERT_TRUE(item1->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*item1)->value(), 0);
+  EXPECT_EQ(SmallInt::cast(*item1)->value(), 0);
 
   Handle<Object> item2(
       &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
   ASSERT_TRUE(item2->isSmallInt());
-  ASSERT_EQ(SmallInt::cast(*item2)->value(), 1);
+  EXPECT_EQ(SmallInt::cast(*item2)->value(), 1);
+
+  Handle<Object> item3(
+      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  ASSERT_TRUE(item3->isError());
+}
+
+TEST(SetIteratorBuiltinsTest, CallDunderNextWithEmptySet) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<Set> set(&scope, runtime.newSet());
+
+  frame->setLocal(0, *set);
+  Handle<Object> iter(&scope, SetBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isSetIterator());
+
+  Handle<Object> next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
+                                        SymbolId::kDunderNext));
+  ASSERT_FALSE(next_method->isError());
+
+  Handle<Object> result(
+      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  ASSERT_TRUE(result->isError());
 }
 
 TEST(SetIteratorBuiltinsTes, DunderIterReturnsSelf) {
