@@ -27,7 +27,7 @@ TEST(OsTest, allocateUseAndFreeOnePage) {
   ASSERT_EQ(num_zeroes, Os::kPageSize);
 
   // Write to every allocated byte.
-  memset(page, 1, Os::kPageSize);
+  std::memset(page, 1, Os::kPageSize);
   int num_ones = count(page, 1, Os::kPageSize);
   // Every byte should have a value of one.
   ASSERT_EQ(num_ones, Os::kPageSize);
@@ -51,7 +51,7 @@ TEST(OsTest, allocateUseAndFreeMultiplePages) {
   ASSERT_EQ(num_zeroes, size);
 
   // Write to every allocated byte.
-  memset(page, 1, size);
+  std::memset(page, 1, size);
   int num_ones = count(page, 1, size);
   // Every byte should have a value of one.
   ASSERT_EQ(num_ones, size);

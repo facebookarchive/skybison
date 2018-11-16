@@ -2,7 +2,7 @@
 #include "runtime.h"
 
 #include <cassert>
-#include <string>
+#include <cstring>
 
 namespace python {
 
@@ -189,7 +189,7 @@ bool String::equals(Object* that) {
   }
   auto s1 = reinterpret_cast<void*>(address() + String::kSize);
   auto s2 = reinterpret_cast<void*>(thatStr->address() + String::kSize);
-  return memcmp(s1, s2, length()) == 0;
+  return std::memcmp(s1, s2, length()) == 0;
 }
 
 bool String::equalsCString(const char* c_string) {

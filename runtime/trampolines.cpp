@@ -1,10 +1,11 @@
+#include "trampolines.h"
+
+#include <cstdlib>
+
 #include "frame.h"
 #include "interpreter.h"
 #include "objects.h"
 #include "thread.h"
-#include "trampolines.h"
-
-#include <cstdlib>
 
 namespace python {
 
@@ -17,7 +18,7 @@ Object* trampolineToObject(FunctionTrampoline trampoline) {
   return SmallInteger::fromWord(reinterpret_cast<uword>(trampoline));
 }
 
-Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, int argc) {
+Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
   // TODO: We may get passed a BoundMethod.  We'll need to detect that, unwrap
   // it, handle shifting the arguments down (or potentially replacing the
   // BoundMethod with the wrapped this object).
@@ -48,12 +49,12 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, int argc) {
 }
 
 Object*
-interpreterTrampolineKw(Thread* thread, Frame* previousFrame, int argc) {
+interpreterTrampolineKw(Thread* thread, Frame* previousFrame, word argc) {
   assert(false);
 }
 
 Object*
-unimplementedTrampoline(Thread* thread, Frame* previousFrame, int argc) {
+unimplementedTrampoline(Thread* thread, Frame* previousFrame, word argc) {
   std::abort();
 }
 

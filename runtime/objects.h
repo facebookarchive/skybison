@@ -316,8 +316,8 @@ class Class : public HeapObject {
   inline static Class* cast(Object* object);
 
   // Sizing.
-  inline static int allocationSize();
-  inline static int bodySize();
+  inline static word allocationSize();
+  inline static word bodySize();
 
   // Allocation.
   inline void initialize(Object* super_class);
@@ -349,9 +349,6 @@ class ByteArray : public Array {
 
   // Sizing.
   inline static word allocationSize(word length);
-
-  // Allocation.
-  inline void initialize(word length);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ByteArray);
@@ -393,9 +390,6 @@ class String : public Array {
 
   // Sizing.
   inline static word allocationSize(word length);
-
-  // Allocation.
-  inline void initialize(word length);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(String);
@@ -777,7 +771,7 @@ bool Object::isNone() {
 }
 
 bool Object::isEllipsis() {
-  int tag = reinterpret_cast<uword>(this) & None::kTagMask;
+  uword tag = reinterpret_cast<uword>(this) & None::kTagMask;
   return tag == Ellipsis::kTag;
 }
 
@@ -1035,11 +1029,11 @@ void HeapObject::instanceVariableAtPut(word offset, Object* value) {
 
 // Class
 
-int Class::allocationSize() {
+word Class::allocationSize() {
   return Class::kSize;
 }
 
-int Class::bodySize() {
+word Class::bodySize() {
   return Class::kSize - HeapObject::kSize;
 }
 
@@ -1064,11 +1058,6 @@ word Array::length() {
 word ByteArray::allocationSize(word length) {
   assert(length >= 0);
   return Utils::roundUp(length + ByteArray::kSize, kPointerSize);
-}
-
-void ByteArray::initialize(word length) {
-  assert(length >= 0);
-  memset(reinterpret_cast<void*>(address() + ByteArray::kSize), 0, length);
 }
 
 byte ByteArray::byteAt(word index) {
@@ -1543,11 +1532,6 @@ Object* Module::dictionary() {
 String* String::cast(Object* object) {
   assert(object->isString());
   return reinterpret_cast<String*>(object);
-}
-
-void String::initialize(word length) {
-  assert(length >= 0);
-  std::memset(reinterpret_cast<void*>(address() + String::kSize), 0, length);
 }
 
 word String::allocationSize(word length) {

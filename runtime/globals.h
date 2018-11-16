@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cinttypes>
-#include <cstring>
+#include <cstdint>
 
 typedef unsigned char byte;
 typedef short int int16;

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cassert>
-
 #include "globals.h"
 
 namespace python {
@@ -15,7 +13,7 @@ class Thread {
  public:
   static const int kDefaultStackSize = 1 * MiB;
 
-  explicit Thread(int size);
+  explicit Thread(word size);
   ~Thread();
 
   static Thread* currentThread();
@@ -50,8 +48,8 @@ class Thread {
   void pushInitialFrame();
 
   Handles* handles_;
-  
-  int size_;
+
+  word size_;
   byte* start_;
   byte* end_;
   byte* ptr_;

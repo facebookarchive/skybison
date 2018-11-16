@@ -1,6 +1,7 @@
 #include "marshal.h"
 
 #include <cassert>
+#include <cstring>
 
 #include "heap.h"
 #include "runtime.h"
@@ -46,7 +47,7 @@ Marshal::Reader::Reader(
     const char* buffer)
     : runtime_(runtime),
       start_(reinterpret_cast<const byte*>(buffer)),
-      length_(strlen(buffer)),
+      length_(std::strlen(buffer)),
       scope_(scope),
       refs_(scope, runtime->newList()),
       pos_(0),
@@ -61,7 +62,7 @@ const byte* Marshal::Reader::readString(int length) {
 }
 
 byte Marshal::Reader::readByte() {
-  byte result = -1;
+  byte result = 0xFF;
   const byte* buffer = readString(1);
   if (buffer != nullptr) {
     result = buffer[0];
@@ -94,7 +95,7 @@ int32 Marshal::Reader::readLong() {
 template <typename T>
 class ScopedCounter {
  public:
-  ScopedCounter(T* counter) : counter_(counter) {
+  explicit ScopedCounter(T* counter) : counter_(counter) {
     (*counter_)++;
   }
   ~ScopedCounter() {

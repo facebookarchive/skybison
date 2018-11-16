@@ -1,5 +1,7 @@
 #include "runtime.h"
 
+#include <cstring>
+
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
@@ -94,7 +96,7 @@ Object* Runtime::newString(word length) {
 }
 
 Object* Runtime::newStringFromCString(const char* c_string) {
-  word length = strlen(c_string);
+  word length = std::strlen(c_string);
   if (length == 0) {
     return empty_string_;
   }

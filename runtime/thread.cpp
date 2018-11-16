@@ -1,5 +1,7 @@
 #include "thread.h"
 
+#include <cstring>
+
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
@@ -10,7 +12,7 @@ namespace python {
 
 thread_local Thread* current_thread_ = nullptr;
 
-Thread::Thread(int size)
+Thread::Thread(word size)
     : size_(Utils::roundUp(size, kPointerSize)),
       handles_(new Handles()),
       next_(nullptr),
@@ -36,7 +38,7 @@ void Thread::setCurrentThread(Thread* thread) {
 
 Frame* Thread::pushFrame(Object* object, Frame* previousFrame) {
   auto code = Code::cast(object);
-  int size = Frame::allocationSize(code);
+  word size = Frame::allocationSize(code);
 
   // allocate that much space on the stack
   // TODO: Grow stack
@@ -49,11 +51,11 @@ Frame* Thread::pushFrame(Object* object, Frame* previousFrame) {
   if (!previousFrame->isSentinelFrame()) {
     limit = reinterpret_cast<byte*>(previousFrame->top()) - size;
   }
-  int stackSize = code->stacksize() * kPointerSize;
+  word stackSize = code->stacksize() * kPointerSize;
   auto frame = reinterpret_cast<Frame*>(limit + stackSize);
 
   // Initialize the frame.
-  memset(ptr_, 0, size);
+  std::memset(ptr_, 0, size);
   frame->setCode(code);
   frame->setPreviousFrame(previousFrame);
   frame->setTop(reinterpret_cast<Object**>(frame));

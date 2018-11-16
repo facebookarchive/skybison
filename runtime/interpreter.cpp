@@ -1,8 +1,10 @@
+#include "interpreter.h"
+
+#include <cassert>
 #include <cstdlib>
 
 #include "bytecode.h"
 #include "frame.h"
-#include "interpreter.h"
 #include "objects.h"
 #include "thread.h"
 #include "trampolines.h"
@@ -13,7 +15,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
   Code* code = Code::cast(frame->code());
   ByteArray* byteArray = ByteArray::cast(code->code());
   Object** sp = frame->top();
-  int pc = 0;
+  word pc = 0;
   for (;;) {
     Bytecode bc = static_cast<Bytecode>(byteArray->byteAt(pc++));
     byte arg = byteArray->byteAt(pc++);

@@ -155,10 +155,10 @@ class Frame {
   inline Function* function(word argc);
 
   inline bool isSentinelFrame();
-  inline void makeSentinel();
+  void makeSentinel();
 
   // Compute the total space required for a frame object
-  static int allocationSize(Object* code);
+  static word allocationSize(Object* code);
 
   static const int kPreviousFrameOffset = 0;
   static const int kTopOffset = kPreviousFrameOffset;
@@ -322,16 +322,12 @@ bool Frame::isSentinelFrame() {
   return previousFrame() == nullptr;
 }
 
-void Frame::makeSentinel() {
-  memset(this, 0, Frame::kSize);
-}
-
 TryBlock TryBlock::fromSmallInteger(Object* object) {
   word encoded = SmallInteger::cast(object)->value();
-  return TryBlock(
-      encoded & kKindMask,
-      (encoded >> kHandlerOffset) & kHandlerMask,
-      (encoded >> kLevelOffset) & kLevelMask);
+  word kind = encoded & kKindMask;
+  word handler = (encoded >> kHandlerOffset) & kHandlerMask;
+  word level = (encoded >> kLevelOffset) & kLevelMask;
+  return {kind, handler, level};
 }
 
 Object* TryBlock::asSmallInteger() {

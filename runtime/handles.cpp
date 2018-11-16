@@ -16,7 +16,7 @@ Handles::~Handles() {
 void Handles::grow() {
   word new_size = size_ * 2;
   auto new_scopes = new HandleScope*[new_size];
-  memcpy(new_scopes, scopes_, size_ * sizeof(scopes_[0]));
+  std::memcpy(new_scopes, scopes_, size_ * sizeof(scopes_[0]));
   delete[] scopes_;
   size_ = new_size;
   scopes_ = new_scopes;

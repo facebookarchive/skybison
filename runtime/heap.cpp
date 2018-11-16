@@ -1,5 +1,7 @@
 #include "heap.h"
 
+#include <cstring>
+
 #include "objects.h"
 #include "runtime.h"
 #include "visitor.h"
@@ -63,7 +65,7 @@ Object* Heap::transport(Object* object) {
   uword address = to_->allocate(size);
   auto dst = reinterpret_cast<void*>(address);
   auto src = reinterpret_cast<void*>(from_object->address());
-  memcpy(dst, src, size);
+  std::memcpy(dst, src, size);
   HeapObject* to_object = HeapObject::fromAddress(address);
   from_object->forwardTo(to_object);
   return to_object;
@@ -150,7 +152,6 @@ Object* Heap::createByteArray(word length) {
   auto result = reinterpret_cast<ByteArray*>(raw);
   result->setHeader(Header::from(
       length, 0, ClassId::kByteArray, ObjectFormat::kObjectInstance));
-  result->initialize(length);
   return ByteArray::cast(result);
 }
 
@@ -197,7 +198,7 @@ Object* Heap::createList(Object* elements) {
 }
 
 Object* Heap::createModule(Object* name, Object* dictionary) {
-  int size = Module::allocationSize();
+  auto size = Module::allocationSize();
   Object* raw = allocate(size);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Module*>(raw);
@@ -211,7 +212,7 @@ Object* Heap::createModule(Object* name, Object* dictionary) {
 }
 
 Object* Heap::createObjectArray(word length, Object* value) {
-  int size = ObjectArray::allocationSize(length);
+  auto size = ObjectArray::allocationSize(length);
   Object* raw = allocate(size);
   assert(raw != nullptr);
   auto result = reinterpret_cast<ObjectArray*>(raw);
@@ -222,13 +223,12 @@ Object* Heap::createObjectArray(word length, Object* value) {
 }
 
 Object* Heap::createString(word length) {
-  int size = String::allocationSize(length);
+  auto size = String::allocationSize(length);
   Object* raw = allocate(size);
   assert(raw != nullptr);
   auto result = reinterpret_cast<String*>(raw);
   result->setHeader(
       Header::from(length, 0, ClassId::kString, ObjectFormat::kDataArray8));
-  result->initialize(length);
   return String::cast(result);
 }
 

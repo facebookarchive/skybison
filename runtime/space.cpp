@@ -1,5 +1,7 @@
 #include "space.h"
 
+#include <cstring>
+
 #include "os.h"
 
 namespace python {
@@ -24,6 +26,11 @@ void Space::protect() {
 
 void Space::unprotect() {
   Os::protectMemory(raw_, size(), Os::kReadWrite);
+}
+
+void Space::reset() {
+  std::memset(reinterpret_cast<void*>(start()), 0xFF, size());
+  fill_ = start();
 }
 
 } // namespace python

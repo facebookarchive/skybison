@@ -45,10 +45,7 @@ class Space {
     return fill_;
   }
 
-  void reset() {
-    memset(reinterpret_cast<void*>(start()), 0xFF, size());
-    fill_ = start();
-  }
+  void reset();
 
   word size() {
     return end_ - start_;
