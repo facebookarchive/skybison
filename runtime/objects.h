@@ -987,11 +987,14 @@ class RawFloat : public RawHeapObject {
   // Allocation.
   void initialize(double value);
 
+  // Casting.
+  static RawFloat cast(RawObject object);
+
   // RawLayout.
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kDoubleSize;
 
-  RAW_OBJECT_COMMON(Float)
+  RAW_OBJECT_COMMON_NO_CAST(Float)
 };
 
 class RawComplex : public RawHeapObject {

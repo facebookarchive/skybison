@@ -239,4 +239,11 @@ RawList RawList::cast(RawObject object) {
   return bit_cast<RawList>(object);
 }
 
+RawFloat RawFloat::cast(RawObject object) {
+  DCHECK(object->isFloat() ||
+             Thread::currentThread()->runtime()->isInstanceOfFloat(object),
+         "invalid cast, expected float");
+  return bit_cast<RawFloat>(object);
+}
+
 }  // namespace python

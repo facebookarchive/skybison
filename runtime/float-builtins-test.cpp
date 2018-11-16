@@ -287,6 +287,22 @@ a = float.__new__(float, "1.5")
   EXPECT_EQ(a->value(), 1.5);
 }
 
+TEST(FloatBuiltinsTest, FloatSubclassReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCStr(R"(
+class Foo(float):
+  def __new__(self, value):
+    return super().__new__(self, value)
+a = Foo(1.5)
+)");
+
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Float a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_EQ(a->value(), 1.5);
+}
+
 TEST(FloatBuiltinsTest, DunderNewWithStringOfHugeNumberReturnsInf) {
   Runtime runtime;
   HandleScope scope;

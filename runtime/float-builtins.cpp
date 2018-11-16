@@ -218,22 +218,29 @@ RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
         "float.__new__(X): X is not a subtype of float");
   }
   Layout layout(&scope, type->instanceLayout());
-  if (layout->id() != LayoutId::kFloat) {
-    // TODO(dulinr): Implement __new__ with subtypes of float.
-    UNIMPLEMENTED("float.__new__(<subtype of float>, ...)");
-  }
+  Float result(&scope, thread->runtime()->newInstance(layout));
 
   // No arguments.
   if (nargs == 1) {
-    return runtime->newFloat(0.0);
+    result->initialize(0.0);
+    return *result;
   }
 
   Object arg(&scope, args.get(1));
-  // Only convert exactly strings, not subtypes of string.
+  Object flt(&scope, Error::object());
   if (arg->isStr()) {
-    return floatFromString(thread, RawStr::cast(*arg));
+    // This only converts exact strings.
+    // TODO(eelizondo): Handle string subtypes.
+    flt = floatFromString(thread, RawStr::cast(*arg));
+  } else {
+    flt = floatFromObject(thread, frame, arg);
   }
-  return floatFromObject(thread, frame, arg);
+
+  if (flt->isError()) {
+    return *flt;
+  }
+  result->initialize(RawFloat::cast(*flt)->value());
+  return *result;
 }
 
 RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {

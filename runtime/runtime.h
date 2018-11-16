@@ -502,6 +502,13 @@ class Runtime {
     return RawType::cast(typeOf(instance))->hasFlag(Type::Flag::kListSubclass);
   }
 
+  bool isInstanceOfFloat(RawObject instance) {
+    if (instance->isFloat()) {
+      return true;
+    }
+    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kFloatSubclass);
+  }
+
   // Return true if obj is an instance of a subclass of klass
   RawObject isInstance(const Object& obj, const Type& klass);
 
