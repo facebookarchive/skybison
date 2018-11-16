@@ -533,8 +533,8 @@ RawObject SmallIntBuiltins::dunderMul(Thread* thread, Frame* caller,
   word left = SmallInt::cast(self)->value();
   if (other->isInt()) {
     word right = Int::cast(other)->asWord();
-    word product = left * right;
-    if (!(left == 0 || (product / left) == right)) {
+    word product;
+    if (__builtin_mul_overflow(left, right, &product)) {
       UNIMPLEMENTED("small integer overflow");
     }
     return thread->runtime()->newInt(product);
