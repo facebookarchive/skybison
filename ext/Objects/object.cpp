@@ -179,7 +179,7 @@ PY_EXPORT void _PyTrash_deposit_object(PyObject* /* p */) {
   UNIMPLEMENTED("_PyTrash_deposit_object");
 }
 
-PY_EXPORT void _PyTrash_destroy_chain(void) {
+PY_EXPORT void _PyTrash_destroy_chain() {
   UNIMPLEMENTED("_PyTrash_destroy_chain");
 }
 
@@ -187,7 +187,7 @@ PY_EXPORT void _PyTrash_thread_deposit_object(PyObject* /* p */) {
   UNIMPLEMENTED("_PyTrash_thread_deposit_object");
 }
 
-PY_EXPORT void _PyTrash_thread_destroy_chain(void) {
+PY_EXPORT void _PyTrash_thread_destroy_chain() {
   UNIMPLEMENTED("_PyTrash_thread_destroy_chain");
 }
 

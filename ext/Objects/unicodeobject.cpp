@@ -184,7 +184,7 @@ PY_EXPORT PyObject* PyUnicode_BuildEncodingMap(PyObject* /* g */) {
   UNIMPLEMENTED("PyUnicode_BuildEncodingMap");
 }
 
-PY_EXPORT int PyUnicode_ClearFreeList(void) {
+PY_EXPORT int PyUnicode_ClearFreeList() {
   UNIMPLEMENTED("PyUnicode_ClearFreeList");
 }
 
@@ -403,7 +403,7 @@ PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* /* u */,
   UNIMPLEMENTED("PyUnicode_FromWideChar");
 }
 
-PY_EXPORT const char* PyUnicode_GetDefaultEncoding(void) {
+PY_EXPORT const char* PyUnicode_GetDefaultEncoding() {
   UNIMPLEMENTED("PyUnicode_GetDefaultEncoding");
 }
 

@@ -126,6 +126,6 @@ PY_EXPORT PyObject* PyLong_FromVoidPtr(void* /* p */) {
   UNIMPLEMENTED("PyLong_FromVoidPtr");
 }
 
-PY_EXPORT PyObject* PyLong_GetInfo(void) { UNIMPLEMENTED("PyLong_GetInfo"); }
+PY_EXPORT PyObject* PyLong_GetInfo() { UNIMPLEMENTED("PyLong_GetInfo"); }
 
 }  // namespace python

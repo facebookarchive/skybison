@@ -2,13 +2,13 @@
 
 namespace python {
 
-PY_EXPORT wchar_t* Py_GetExecPrefix(void) { UNIMPLEMENTED("Py_GetExecPrefix"); }
+PY_EXPORT wchar_t* Py_GetExecPrefix() { UNIMPLEMENTED("Py_GetExecPrefix"); }
 
-PY_EXPORT wchar_t* Py_GetPath(void) { UNIMPLEMENTED("Py_GetPath"); }
+PY_EXPORT wchar_t* Py_GetPath() { UNIMPLEMENTED("Py_GetPath"); }
 
-PY_EXPORT wchar_t* Py_GetPrefix(void) { UNIMPLEMENTED("Py_GetPrefix"); }
+PY_EXPORT wchar_t* Py_GetPrefix() { UNIMPLEMENTED("Py_GetPrefix"); }
 
-PY_EXPORT wchar_t* Py_GetProgramFullPath(void) {
+PY_EXPORT wchar_t* Py_GetProgramFullPath() {
   UNIMPLEMENTED("Py_GetProgramFullPath");
 }
 

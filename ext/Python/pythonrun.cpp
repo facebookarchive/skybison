@@ -26,11 +26,11 @@ PY_EXPORT void PyErr_Display(PyObject* /* n */, PyObject* /* e */,
   UNIMPLEMENTED("PyErr_Display");
 }
 
-PY_EXPORT void PyErr_Print(void) { UNIMPLEMENTED("PyErr_Print"); }
+PY_EXPORT void PyErr_Print() { UNIMPLEMENTED("PyErr_Print"); }
 
 PY_EXPORT void PyErr_PrintEx(int /* s */) { UNIMPLEMENTED("PyErr_PrintEx"); }
 
-PY_EXPORT int PyOS_CheckStack(void) { UNIMPLEMENTED("PyOS_CheckStack"); }
+PY_EXPORT int PyOS_CheckStack() { UNIMPLEMENTED("PyOS_CheckStack"); }
 
 PY_EXPORT node* PyParser_SimpleParseFileFlags(FILE* /* p */,
                                               const char* /* e */, int /* t */,

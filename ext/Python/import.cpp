@@ -2,7 +2,7 @@
 
 namespace python {
 
-PY_EXPORT PyObject* PyImport_GetModuleDict(void) {
+PY_EXPORT PyObject* PyImport_GetModuleDict() {
   UNIMPLEMENTED("PyImport_GetModuleDict");
 }
 
@@ -27,7 +27,7 @@ PY_EXPORT int PyImport_AppendInittab(const char* /* e */,
   UNIMPLEMENTED("PyImport_AppendInittab");
 }
 
-PY_EXPORT void PyImport_Cleanup(void) { UNIMPLEMENTED("PyImport_Cleanup"); }
+PY_EXPORT void PyImport_Cleanup() { UNIMPLEMENTED("PyImport_Cleanup"); }
 
 PY_EXPORT PyObject* PyImport_ExecCodeModule(const char* /* e */,
                                             PyObject* /* o */) {
@@ -54,11 +54,11 @@ PY_EXPORT PyObject* PyImport_ExecCodeModuleWithPathnames(const char* /* e */,
   UNIMPLEMENTED("PyImport_ExecCodeModuleWithPathnames");
 }
 
-PY_EXPORT long PyImport_GetMagicNumber(void) {
+PY_EXPORT long PyImport_GetMagicNumber() {
   UNIMPLEMENTED("PyImport_GetMagicNumber");
 }
 
-PY_EXPORT const char* PyImport_GetMagicTag(void) {
+PY_EXPORT const char* PyImport_GetMagicTag() {
   UNIMPLEMENTED("PyImport_GetMagicTag");
 }
 

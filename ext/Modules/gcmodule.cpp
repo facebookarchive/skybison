@@ -2,7 +2,7 @@
 
 namespace python {
 
-PY_EXPORT Py_ssize_t PyGC_Collect(void) { UNIMPLEMENTED("PyGC_Collect"); }
+PY_EXPORT Py_ssize_t PyGC_Collect() { UNIMPLEMENTED("PyGC_Collect"); }
 
 PY_EXPORT void PyObject_GC_Del(void* /* p */) {
   UNIMPLEMENTED("PyObject_GC_Del");

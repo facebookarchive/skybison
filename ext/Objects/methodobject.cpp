@@ -7,7 +7,7 @@ PY_EXPORT PyObject* PyCFunction_NewEx(PyMethodDef* /* l */, PyObject* /* f */,
   UNIMPLEMENTED("PyCFunction_NewEx");
 }
 
-PY_EXPORT int PyCFunction_ClearFreeList(void) {
+PY_EXPORT int PyCFunction_ClearFreeList() {
   UNIMPLEMENTED("PyCFunction_ClearFreeList");
 }
 

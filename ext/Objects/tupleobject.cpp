@@ -97,7 +97,7 @@ PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   return ApiHandle::fromObject(*tuple);
 }
 
-PY_EXPORT int PyTuple_ClearFreeList(void) {
+PY_EXPORT int PyTuple_ClearFreeList() {
   UNIMPLEMENTED("PyTuple_ClearFreeList");
 }
 

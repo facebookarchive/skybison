@@ -6,7 +6,7 @@ PY_EXPORT int PyODict_DelItem(PyObject* /* d */, PyObject* /* y */) {
   UNIMPLEMENTED("PyODict_DelItem");
 }
 
-PY_EXPORT PyObject* PyODict_New(void) { UNIMPLEMENTED("PyODict_New"); }
+PY_EXPORT PyObject* PyODict_New() { UNIMPLEMENTED("PyODict_New"); }
 
 PY_EXPORT int PyODict_SetItem(PyObject* /* d */, PyObject* /* y */,
                               PyObject* /* e */) {

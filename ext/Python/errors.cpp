@@ -7,7 +7,7 @@ PY_EXPORT void PyErr_SetString(PyObject*, const char* message) {
   Thread::currentThread()->raiseSystemErrorWithCStr(message);
 }
 
-PY_EXPORT PyObject* PyErr_Occurred(void) {
+PY_EXPORT PyObject* PyErr_Occurred() {
   Thread* thread = Thread::currentThread();
   if (!thread->hasPendingException()) {
     return nullptr;
@@ -19,17 +19,17 @@ PY_EXPORT PyObject* PyErr_Format(PyObject*, const char*, ...) {
   UNIMPLEMENTED("PyErr_Format");
 }
 
-PY_EXPORT void PyErr_Clear(void) { UNIMPLEMENTED("PyErr_Clear"); }
+PY_EXPORT void PyErr_Clear() { UNIMPLEMENTED("PyErr_Clear"); }
 
-PY_EXPORT int PyErr_BadArgument(void) { UNIMPLEMENTED("PyErr_BadArgument"); }
+PY_EXPORT int PyErr_BadArgument() { UNIMPLEMENTED("PyErr_BadArgument"); }
 
-PY_EXPORT PyObject* PyErr_NoMemory(void) { UNIMPLEMENTED("PyErr_NoMemory"); }
+PY_EXPORT PyObject* PyErr_NoMemory() { UNIMPLEMENTED("PyErr_NoMemory"); }
 
 PY_EXPORT PyObject* _PyErr_FormatFromCause(PyObject*, const char*, ...) {
   UNIMPLEMENTED("_PyErr_FormatFromCause");
 }
 
-PY_EXPORT void PyErr_BadInternalCall(void) {
+PY_EXPORT void PyErr_BadInternalCall() {
   UNIMPLEMENTED("PyErr_BadInternalCall");
 }
 

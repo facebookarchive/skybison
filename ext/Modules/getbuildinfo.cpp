@@ -2,8 +2,6 @@
 
 namespace python {
 
-PY_EXPORT const char* Py_GetBuildInfo(void) {
-  UNIMPLEMENTED("Py_GetBuildInfo");
-}
+PY_EXPORT const char* Py_GetBuildInfo() { UNIMPLEMENTED("Py_GetBuildInfo"); }
 
 }  // namespace python

@@ -6,11 +6,11 @@ struct PyInterpreterState;
 struct PyThreadState;
 typedef enum { PyGILState_LOCKED, PyGILState_UNLOCKED } PyGILState_STATE;
 
-PY_EXPORT PyGILState_STATE PyGILState_Ensure(void) {
+PY_EXPORT PyGILState_STATE PyGILState_Ensure() {
   UNIMPLEMENTED("PyGILState_Ensure");
 }
 
-PY_EXPORT PyThreadState* PyGILState_GetThisThreadState(void) {
+PY_EXPORT PyThreadState* PyGILState_GetThisThreadState() {
   UNIMPLEMENTED("PyGILState_GetThisThreadState");
 }
 
@@ -51,11 +51,11 @@ PY_EXPORT void PyThreadState_DeleteCurrent() {
   UNIMPLEMENTED("PyThreadState_DeleteCurrent");
 }
 
-PY_EXPORT PyThreadState* PyThreadState_Get(void) {
+PY_EXPORT PyThreadState* PyThreadState_Get() {
   UNIMPLEMENTED("PyThreadState_Get");
 }
 
-PY_EXPORT PyObject* PyThreadState_GetDict(void) {
+PY_EXPORT PyObject* PyThreadState_GetDict() {
   UNIMPLEMENTED("PyThreadState_GetDict");
 }
 
@@ -85,7 +85,7 @@ PY_EXPORT PyThreadState* _PyThreadState_Prealloc(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("_PyThreadState_Prealloc");
 }
 
-PY_EXPORT PyInterpreterState* PyInterpreterState_Head(void) {
+PY_EXPORT PyInterpreterState* PyInterpreterState_Head() {
   UNIMPLEMENTED("PyInterpreterState_Head");
 }
 
@@ -99,7 +99,7 @@ PY_EXPORT PyThreadState* PyInterpreterState_ThreadHead(
   UNIMPLEMENTED("PyInterpreterState_ThreadHead");
 }
 
-PY_EXPORT void _PyState_ClearModules(void) {
+PY_EXPORT void _PyState_ClearModules() {
   UNIMPLEMENTED("_PyState_ClearModules");
 }
 

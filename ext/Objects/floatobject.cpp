@@ -33,10 +33,10 @@ PY_EXPORT PyObject* PyFloat_FromString(PyObject* /* v */) {
   UNIMPLEMENTED("PyFloat_FromString");
 }
 
-PY_EXPORT PyObject* PyFloat_GetInfo(void) { UNIMPLEMENTED("PyFloat_GetInfo"); }
+PY_EXPORT PyObject* PyFloat_GetInfo() { UNIMPLEMENTED("PyFloat_GetInfo"); }
 
-PY_EXPORT double PyFloat_GetMax(void) { UNIMPLEMENTED("PyFloat_GetMax"); }
+PY_EXPORT double PyFloat_GetMax() { UNIMPLEMENTED("PyFloat_GetMax"); }
 
-PY_EXPORT double PyFloat_GetMin(void) { UNIMPLEMENTED("PyFloat_GetMin"); }
+PY_EXPORT double PyFloat_GetMin() { UNIMPLEMENTED("PyFloat_GetMin"); }
 
 }  // namespace python

@@ -107,7 +107,7 @@ PY_EXPORT int PyType_Ready(PyTypeObject* type) {
   return 0;
 }
 
-PY_EXPORT unsigned int PyType_ClearCache(void) {
+PY_EXPORT unsigned int PyType_ClearCache() {
   UNIMPLEMENTED("PyType_ClearCache");
 }
 

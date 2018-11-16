@@ -2,8 +2,6 @@
 
 namespace python {
 
-PY_EXPORT const char* Py_GetCopyright(void) {
-  UNIMPLEMENTED("Py_GetCopyright");
-}
+PY_EXPORT const char* Py_GetCopyright() { UNIMPLEMENTED("Py_GetCopyright"); }
 
 }  // namespace python

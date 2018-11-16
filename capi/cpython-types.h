@@ -309,7 +309,7 @@ typedef struct {
 
 struct _inittab {
   const char *name;
-  PyObject *(*initfunc)();
+  PyObject *(*initfunc)(void);
 };
 
 #ifdef __cplusplus

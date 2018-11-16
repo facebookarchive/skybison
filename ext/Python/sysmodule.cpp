@@ -26,15 +26,11 @@ PY_EXPORT void PySys_FormatStdout(const char* /* t */, ...) {
   UNIMPLEMENTED("PySys_FormatStdout");
 }
 
-PY_EXPORT PyObject* PySys_GetXOptions(void) {
-  UNIMPLEMENTED("PySys_GetXOptions");
-}
+PY_EXPORT PyObject* PySys_GetXOptions() { UNIMPLEMENTED("PySys_GetXOptions"); }
 
-PY_EXPORT int PySys_HasWarnOptions(void) {
-  UNIMPLEMENTED("PySys_HasWarnOptions");
-}
+PY_EXPORT int PySys_HasWarnOptions() { UNIMPLEMENTED("PySys_HasWarnOptions"); }
 
-PY_EXPORT void PySys_ResetWarnOptions(void) {
+PY_EXPORT void PySys_ResetWarnOptions() {
   UNIMPLEMENTED("PySys_ResetWarnOptions");
 }
 

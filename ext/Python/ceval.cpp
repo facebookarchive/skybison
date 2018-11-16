@@ -6,19 +6,17 @@ struct PyFrameObject;
 struct PyThreadState;
 typedef int (*Py_tracefunc)(PyObject*, struct _frame*, int, PyObject*);
 
-PY_EXPORT PyObject* PyEval_GetBuiltins(void) {
+PY_EXPORT PyObject* PyEval_GetBuiltins() {
   UNIMPLEMENTED("PyEval_GetBuiltins");
 }
 
-PY_EXPORT PyObject* PyEval_GetGlobals(void) {
-  UNIMPLEMENTED("PyEval_GetGlobals");
-}
+PY_EXPORT PyObject* PyEval_GetGlobals() { UNIMPLEMENTED("PyEval_GetGlobals"); }
 
 PY_EXPORT int PyEval_MergeCompilerFlags(PyCompilerFlags* /* f */) {
   UNIMPLEMENTED("PyEval_MergeCompilerFlags");
 }
 
-PY_EXPORT void PyEval_AcquireLock(void) { UNIMPLEMENTED("PyEval_AcquireLock"); }
+PY_EXPORT void PyEval_AcquireLock() { UNIMPLEMENTED("PyEval_AcquireLock"); }
 
 PY_EXPORT void PyEval_AcquireThread(PyThreadState* /* e */) {
   UNIMPLEMENTED("PyEval_AcquireThread");
@@ -46,9 +44,7 @@ PY_EXPORT PyObject* PyEval_EvalFrameEx(PyFrameObject* /* f */, int /* g */) {
   UNIMPLEMENTED("PyEval_EvalFrameEx");
 }
 
-PY_EXPORT PyFrameObject* PyEval_GetFrame(void) {
-  UNIMPLEMENTED("PyEval_GetFrame");
-}
+PY_EXPORT PyFrameObject* PyEval_GetFrame() { UNIMPLEMENTED("PyEval_GetFrame"); }
 
 PY_EXPORT const char* PyEval_GetFuncDesc(PyObject* /* c */) {
   UNIMPLEMENTED("PyEval_GetFuncDesc");
@@ -58,17 +54,13 @@ PY_EXPORT const char* PyEval_GetFuncName(PyObject* /* c */) {
   UNIMPLEMENTED("PyEval_GetFuncName");
 }
 
-PY_EXPORT PyObject* PyEval_GetLocals(void) {
-  UNIMPLEMENTED("PyEval_GetLocals");
-}
+PY_EXPORT PyObject* PyEval_GetLocals() { UNIMPLEMENTED("PyEval_GetLocals"); }
 
-PY_EXPORT void PyEval_InitThreads(void) { UNIMPLEMENTED("PyEval_InitThreads"); }
+PY_EXPORT void PyEval_InitThreads() { UNIMPLEMENTED("PyEval_InitThreads"); }
 
-PY_EXPORT void PyEval_ReInitThreads(void) {
-  UNIMPLEMENTED("PyEval_ReInitThreads");
-}
+PY_EXPORT void PyEval_ReInitThreads() { UNIMPLEMENTED("PyEval_ReInitThreads"); }
 
-PY_EXPORT void PyEval_ReleaseLock(void) { UNIMPLEMENTED("PyEval_ReleaseLock"); }
+PY_EXPORT void PyEval_ReleaseLock() { UNIMPLEMENTED("PyEval_ReleaseLock"); }
 
 PY_EXPORT void PyEval_ReleaseThread(PyThreadState* /* e */) {
   UNIMPLEMENTED("PyEval_ReleaseThread");
@@ -78,7 +70,7 @@ PY_EXPORT void PyEval_RestoreThread(PyThreadState* /* e */) {
   UNIMPLEMENTED("PyEval_RestoreThread");
 }
 
-PY_EXPORT PyThreadState* PyEval_SaveThread(void) {
+PY_EXPORT PyThreadState* PyEval_SaveThread() {
   UNIMPLEMENTED("PyEval_SaveThread");
 }
 
@@ -86,13 +78,9 @@ PY_EXPORT int Py_AddPendingCall(int (*/* func */)(void*), void* /* g */) {
   UNIMPLEMENTED("Py_AddPendingCall");
 }
 
-PY_EXPORT int Py_GetRecursionLimit(void) {
-  UNIMPLEMENTED("Py_GetRecursionLimit");
-}
+PY_EXPORT int Py_GetRecursionLimit() { UNIMPLEMENTED("Py_GetRecursionLimit"); }
 
-PY_EXPORT int Py_MakePendingCalls(void) {
-  UNIMPLEMENTED("Py_MakePendingCalls");
-}
+PY_EXPORT int Py_MakePendingCalls() { UNIMPLEMENTED("Py_MakePendingCalls"); }
 
 PY_EXPORT void Py_SetRecursionLimit(int /* t */) {
   UNIMPLEMENTED("Py_SetRecursionLimit");

@@ -22,9 +22,9 @@ namespace python {
 struct PyThreadState;
 typedef void (*PyOS_sighandler_t)(int);
 
-PY_EXPORT void Py_Initialize(void) { new Runtime; }
+PY_EXPORT void Py_Initialize() { new Runtime; }
 
-PY_EXPORT int Py_FinalizeEx(void) {
+PY_EXPORT int Py_FinalizeEx() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   delete runtime;
@@ -54,23 +54,21 @@ PY_EXPORT void Py_FatalError(const char* /* g */) {
   UNIMPLEMENTED("Py_FatalError");
 }
 
-PY_EXPORT void Py_Finalize(void) { UNIMPLEMENTED("Py_Finalize"); }
+PY_EXPORT void Py_Finalize() { UNIMPLEMENTED("Py_Finalize"); }
 
 PY_EXPORT void Py_InitializeEx(int /* s */) {
   UNIMPLEMENTED("Py_InitializeEx");
 }
 
-PY_EXPORT int Py_IsInitialized(void) { UNIMPLEMENTED("Py_IsInitialized"); }
+PY_EXPORT int Py_IsInitialized() { UNIMPLEMENTED("Py_IsInitialized"); }
 
-PY_EXPORT PyThreadState* Py_NewInterpreter(void) {
+PY_EXPORT PyThreadState* Py_NewInterpreter() {
   UNIMPLEMENTED("Py_NewInterpreter");
 }
 
-PY_EXPORT wchar_t* Py_GetProgramName(void) {
-  UNIMPLEMENTED("Py_GetProgramName");
-}
+PY_EXPORT wchar_t* Py_GetProgramName() { UNIMPLEMENTED("Py_GetProgramName"); }
 
-PY_EXPORT wchar_t* Py_GetPythonHome(void) { UNIMPLEMENTED("Py_GetPythonHome"); }
+PY_EXPORT wchar_t* Py_GetPythonHome() { UNIMPLEMENTED("Py_GetPythonHome"); }
 
 PY_EXPORT void Py_SetProgramName(const wchar_t* /* e */) {
   UNIMPLEMENTED("Py_SetProgramName");
