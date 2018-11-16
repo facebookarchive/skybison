@@ -189,7 +189,6 @@ target_link_libraries(
 add_library(
   runtime-tests
   STATIC
-  runtime/attributes-test.cpp
   runtime/builtins-module-test.cpp
   runtime/trampolines-test.cpp
   runtime/float-builtins-test.cpp
