@@ -7,6 +7,26 @@
 
 namespace python {
 
+// TODO(eelizondo): Remove once typeobject.c is compiled in
+extern "C" PyObject* PyType_GenericAlloc(PyTypeObject* type,
+                                         Py_ssize_t nitems) {
+  // note that we need to add one, for the sentinel
+  const size_t size = _PyObject_VAR_SIZE(type, nitems + 1);
+  PyObject* obj = (PyObject*)PyObject_MALLOC(size);
+
+  if (obj == NULL) {
+    return PyErr_NoMemory();
+  }
+  memset(obj, 0, size);
+
+  if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+    Py_INCREF(type);
+  }
+
+  PyObject_INIT(obj, type);
+  return obj;
+}
+
 TEST(TypeObject, ReadyInitializesType) {
   Runtime runtime;
   HandleScope scope;

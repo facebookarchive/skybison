@@ -1,7 +1,5 @@
 // obmalloc.c implementation
 
-#include "Python.h"
-
 #include "runtime.h"
 
 namespace python {

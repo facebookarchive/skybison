@@ -98,7 +98,9 @@ def create_symbols_dict(modified_source_paths):
     symbols_dict = {x: [] for x in SYMBOL_REGEX.keys()}
     for path in modified_source_paths:
         lines = open(path, "r", encoding="utf-8").read()
-        symbols_dict.update(find_symbols_in_file(symbols_dict, lines))
+        symbols_found = find_symbols_in_file(symbols_dict, lines)
+        for symbol_type, symbols in symbols_found.items():
+            symbols_dict[symbol_type].extend(symbols)
     return symbols_dict
 
 
@@ -148,15 +150,20 @@ def create_output_file_dict(source_paths, symbols_dict):
 
 # Given a dictionary of files, write the files to the output directory
 def output_files_to_directory(output_directory, output_file_dict):
-    for file_name in output_file_dict.keys():
+    for file_path in output_file_dict.keys():
         # Create directory
-        file_path = f"{output_directory}/{file_name}"
-        if not os.path.exists(os.path.dirname(file_path)):
-            os.makedirs(os.path.dirname(file_path))
+        output_path = f"{output_directory}/gen"
+        file_name = file_path.split("/")[-1]
+        if file_name.endswith(".h"):
+            output_path = f"{output_path}/include/{file_name}"
+        else:
+            output_path = f"{output_path}/lib/{file_name}"
+        if not os.path.exists(os.path.dirname(output_path)):
+            os.makedirs(os.path.dirname(output_path))
 
         # Write files
-        with open(file_path, "w+", encoding="utf-8") as f:
-            f.writelines(output_file_dict[file_name])
+        with open(output_path, "w+", encoding="utf-8") as f:
+            f.writelines(output_file_dict[file_path])
 
 
 def main(args):

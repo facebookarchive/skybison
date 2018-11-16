@@ -1,6 +1,6 @@
 // exceptions.c implementation
 
-#include "Python.h"
+#include "cpython-types.h"
 
 PyObject* PyExc_AttributeError;
 PyObject* PyExc_OverflowError;

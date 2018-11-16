@@ -4,11 +4,9 @@
 #include "objects.h"
 #include "runtime.h"
 
-#include "Python.h"
-
 namespace python {
 
-void PyModule_Type_Init(void) {
+void PyModule_Type_Init() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 

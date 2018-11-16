@@ -1,14 +1,12 @@
 // dictobject.c implementation
 
-#include "Python.h"
-
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
 
 namespace python {
 
-void PyDict_Type_Init(void) {
+void PyDict_Type_Init() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
@@ -42,8 +40,9 @@ extern "C" int PyDict_SetItem(PyObject* pydict, PyObject* key,
   Handle<Object> valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Handle<Dictionary> dict(&scope, *dictobj);
   runtime->dictionaryAtPutInValueCell(dict, keyobj, valueobj);
-  Py_INCREF(key);
-  Py_INCREF(value);
+  // TODO(eelizondo): increment the reference count through ApiHandle
+  key->ob_refcnt++;
+  value->ob_refcnt++;
   return 0;
 }
 
@@ -58,7 +57,7 @@ extern "C" int PyDict_SetItemString(PyObject* pydict, const char* key,
                         value);
 }
 
-extern "C" PyObject* PyDict_New(void) {
+extern "C" PyObject* PyDict_New() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);

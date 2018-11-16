@@ -1,13 +1,12 @@
 // boolobject.c implementation
 
-#include "Python.h"
-
+#include "cpython-data.h"
 #include "objects.h"
 #include "runtime.h"
 
 namespace python {
 
-void PyBool_Type_Init(void) {
+void PyBool_Type_Init() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
@@ -34,7 +33,7 @@ extern "C" PyObject* PyFalse_Ptr() {
   return ApiHandle::fromObject(Boolean::falseObj())->asPyObject();
 }
 
-// Start of automatically generated code, from Object/boolobject.c
+// TODO(eelizondo): Remove once boolobject.c is complied in
 extern "C" PyObject* PyBool_FromLong(long ok) {
   PyObject* result;
 
@@ -43,9 +42,9 @@ extern "C" PyObject* PyBool_FromLong(long ok) {
   } else {
     result = Py_False;
   }
-  Py_INCREF(result);
+  // TODO(eelizondo): increment the reference count through ApiHandle
+  result->ob_refcnt++;
   return result;
 }
-// End of automatically generated code
 
 }  // namespace python

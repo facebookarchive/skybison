@@ -290,13 +290,13 @@ enum CompareOp {
 };
 
 enum FormatValueFlag {
-  FVC_MASK = 0x3,
-  FVC_NONE = 0x0,
-  FVC_STR = 0x1,
-  FVC_REPR = 0x2,
-  FVC_ASCII = 0x3,
-  FVS_MASK = 0x4,
-  FVS_HAVE_SPEC = 0x4
+  FVC_MASK_FLAG = 0x3,
+  FVC_NONE_FLAG = 0x0,
+  FVC_STR_FLAG = 0x1,
+  FVC_REPR_FLAG = 0x2,
+  FVC_ASCII_FLAG = 0x3,
+  FVS_MASK_FLAG = 0x4,
+  FVS_HAVE_SPEC_FLAG = 0x4
 };
 
 enum MakeFunctionFlag {

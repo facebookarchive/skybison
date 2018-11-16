@@ -6,19 +6,6 @@
 
 namespace python {
 
-TEST(UnicodeObject, FromIdentifierReturnsUnicodeObject) {
-  Runtime runtime;
-  HandleScope scope;
-
-  _Py_IDENTIFIER(__name__);
-  const char* str = "__name__";
-  PyObject* pyunicode = _PyUnicode_FromId(&PyId___name__);
-  Handle<Object> string_obj(&scope,
-                            ApiHandle::fromPyObject(pyunicode)->asObject());
-  ASSERT_TRUE(string_obj->isString());
-  EXPECT_TRUE(String::cast(*string_obj)->equalsCString(str));
-}
-
 TEST(UnicodeObject, AsUTF8FromNonStringReturnsNull) {
   Runtime runtime;
   HandleScope scope;

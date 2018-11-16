@@ -1489,12 +1489,12 @@ void Interpreter::doBuildSetUnpack(python::Interpreter::Context* ctx,
 void Interpreter::doFormatValue(Context* ctx, word flags) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
-  int conv = (flags & FVC_MASK);
-  int have_fmt_spec = (flags & FVS_MASK) == FVS_HAVE_SPEC;
+  int conv = (flags & FVC_MASK_FLAG);
+  int have_fmt_spec = (flags & FVS_MASK_FLAG) == FVS_HAVE_SPEC_FLAG;
   switch (conv) {
-    case FVC_STR:
-    case FVC_REPR:
-    case FVC_ASCII:
+    case FVC_STR_FLAG:
+    case FVC_REPR_FLAG:
+    case FVC_ASCII_FLAG:
       UNIMPLEMENTED("Conversion not supported.");
     default:  // 0: no conv
       break;

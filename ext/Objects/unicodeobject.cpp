@@ -1,14 +1,12 @@
 // unicodeobject.c implementation
 
-#include "Python.h"
-
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
 
 namespace python {
 
-void PyUnicode_Type_Init(void) {
+void PyUnicode_Type_Init() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
@@ -36,22 +34,13 @@ extern "C" PyObject* PyUnicode_FromString(const char* c_string) {
   return ApiHandle::fromObject(*value)->asPyObject();
 }
 
-extern "C" PyObject* _PyUnicode_FromId(_Py_Identifier* id) {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Handle<Object> result(&scope, runtime->internStringFromCString(id->string));
-  return ApiHandle::fromObject(*result)->asPyObject();
-}
-
 extern "C" char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,
                                          Py_ssize_t* size) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
 
   if (pyunicode == nullptr) {
-    PyErr_BadArgument();
+    UNIMPLEMENTED("PyErr_BadArgument");
     return nullptr;
   }
 

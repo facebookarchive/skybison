@@ -1,8 +1,7 @@
 // _warnings.c implementation
 
+#include "cpython-types.h"
 #include "utils.h"
-
-#include "Python.h"
 
 namespace python {
 

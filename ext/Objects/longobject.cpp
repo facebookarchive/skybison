@@ -1,14 +1,12 @@
 // longobject.c implementation
 
-#include "Python.h"
-
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
 
 namespace python {
 
-void PyLong_Type_Init(void) {
+void PyLong_Type_Init() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 

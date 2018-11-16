@@ -50,9 +50,22 @@ set(
 
 # Define the `cpython` target
 set(
-  CPYTHON_MODIFIED_SOURCES
-  capi/cpython-types.h)
+  CPYTHON_MODIFIED_HEADERS
+  ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
+  ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
+  ${CMAKE_SOURCE_DIR}/capi/cpython-types.h)
 include(CPythonBuild.cmake)
+
+add_library(capi-headers INTERFACE)
+target_sources(
+  capi-headers
+  INTERFACE
+  ${CPYTHON_MODIFIED_HEADERS}
+)
+target_include_directories(
+  capi-headers
+  INTERFACE
+  capi)
 
 add_library(
   runtime
@@ -139,13 +152,11 @@ target_compile_options(
   ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   runtime
+  PUBLIC
+  capi-headers
   PRIVATE
   dl
   siphash)
-target_include_directories(
-  runtime
-  PUBLIC
-  capi)
 
 add_library(
   extension
@@ -174,13 +185,10 @@ target_compile_options(
 target_include_directories(
   extension
   PUBLIC
-  capi
-  runtime
-  PRIVATE
-  ext/config)
+  runtime)
 target_link_libraries(
   extension
-  PRIVATE
+  PUBLIC
   cpython
   runtime)
 
@@ -194,15 +202,9 @@ target_compile_options(
   modules
   PUBLIC
   ${OS_DEFINE})
-target_include_directories(
-  modules
-  PRIVATE
-  capi
-  ext/config)
 target_link_libraries(
   modules
   PRIVATE
-  cpython
   extension)
 
 add_executable(
@@ -275,8 +277,7 @@ add_library(
 target_include_directories(
   extension-tests
   PRIVATE
-  runtime
-  ext/config)
+  runtime)
 target_link_libraries(
   extension-tests
   PUBLIC

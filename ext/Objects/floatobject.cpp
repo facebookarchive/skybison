@@ -1,13 +1,11 @@
 // floatobject.c implementation
 
-#include "Python.h"
-
 #include "objects.h"
 #include "runtime.h"
 
 namespace python {
 
-void PyFloat_Type_Init(void) {
+void PyFloat_Type_Init() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 

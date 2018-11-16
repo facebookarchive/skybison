@@ -1,8 +1,7 @@
 // errors.c implementation
 
+#include "cpython-func.h"
 #include "utils.h"
-
-#include "Python.h"
 
 void PyErr_SetString(PyObject*, const char*) {
   UNIMPLEMENTED("PyErr_SetString");

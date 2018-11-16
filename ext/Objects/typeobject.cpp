@@ -1,7 +1,5 @@
 // typeobject.c implementation
 
-#include "Python.h"
-
 #include "handles.h"
 #include "mro.h"
 #include "objects.h"
@@ -11,7 +9,7 @@
 
 namespace python {
 
-void PyType_Type_Init(void) {
+void PyType_Type_Init() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
@@ -33,7 +31,7 @@ extern "C" PyTypeObject* PyType_Type_Ptr() {
       runtime->builtinTypeHandles(ExtensionTypes::kType));
 }
 
-void PyBaseObject_Type_Init(void) {
+void PyBaseObject_Type_Init() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
@@ -56,27 +54,6 @@ extern "C" unsigned long PyType_GetFlags(PyTypeObject* type) {
   return type->tp_flags;
 }
 
-extern "C" PyObject* PyType_GenericAlloc(PyTypeObject* type,
-                                         Py_ssize_t nitems) {
-  // note that we need to add one, for the sentinel
-  const size_t size = _PyObject_VAR_SIZE(type, nitems + 1);
-  PyObject* obj = (PyObject*)PyObject_MALLOC(size);
-
-  if (obj == NULL) {
-    return PyErr_NoMemory();
-  }
-  memset(obj, 0, size);
-
-  if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-    Py_INCREF(type);
-  }
-
-  (void)PyObject_INIT(obj, type);
-  // TODO(T30111008): Add PyObject_INIT_VAR
-
-  return obj;
-}
-
 extern "C" int PyType_Ready(PyTypeObject* type) {
   // Type is already initialized
   if (type->tp_flags & Py_TPFLAGS_READY) {
@@ -86,7 +63,7 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   type->tp_flags |= Py_TPFLAGS_READYING;
 
   if (!type->tp_name) {
-    PyErr_Format(PyExc_SystemError, "Type does not define the tp_name field.");
+    UNIMPLEMENTED("PyExc_SystemError");
     type->tp_flags &= ~Py_TPFLAGS_READYING;
     return -1;
   }

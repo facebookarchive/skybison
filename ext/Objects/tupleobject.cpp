@@ -1,13 +1,13 @@
 // tupleobject.c implementation
 
-#include "Python.h"
+#include <cstdarg>
 
 #include "objects.h"
 #include "runtime.h"
 
 namespace python {
 
-void PyTuple_Type_Init(void) {
+void PyTuple_Type_Init() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
