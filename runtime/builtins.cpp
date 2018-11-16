@@ -4,7 +4,6 @@
 
 #include "frame.h"
 #include "globals.h"
-#include "handles.h"
 #include "mro.h"
 #include "objects.h"
 #include "runtime.h"
@@ -269,6 +268,7 @@ Object* builtinChr(Thread* thread, Frame* callerFrame, word nargs) {
   return SmallString::fromCString(s);
 }
 
+// List
 Object* builtinListNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newList();
 }
@@ -283,6 +283,45 @@ Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
   Handle<List> list(&scope, frame->valueStackTop()[1]);
   thread->runtime()->listAdd(list, arg);
   return None::object();
+}
+
+// Descriptor
+Object* functionDescriptorGet(
+    Thread* thread,
+    const Handle<Object>& self,
+    const Handle<Object>& instance,
+    const Handle<Object>& /* owner */) {
+  if (instance->isNone()) {
+    return *self;
+  }
+  return thread->runtime()->newBoundMethod(*self, *instance);
+}
+
+Object* classmethodDescriptorGet(
+    Thread* thread,
+    const Handle<Object>& self,
+    const Handle<Object>& /* instance */,
+    const Handle<Object>& type) {
+  return thread->runtime()->newBoundMethod(
+      ClassMethod::cast(*self)->function(), *type);
+}
+
+// ClassMethod
+Object* builtinClassMethodNew(Thread* thread, Frame*, word) {
+  return thread->runtime()->newClassMethod();
+}
+
+Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString(
+        "classmethod expected 1 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread->handles());
+  Handle<ClassMethod> classmethod(&scope, args.get(0));
+  Handle<Object> arg(&scope, args.get(1));
+  classmethod->setFunction(*arg);
+  return *classmethod;
 }
 
 } // namespace python

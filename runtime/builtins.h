@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "globals.h"
+#include "handles.h"
 
 namespace python {
 
@@ -33,5 +34,22 @@ Object* builtinGenericNew(Thread* thread, Frame* frame, word nargs);
 // List
 Object* builtinListNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinListAppend(Thread* thread, Frame* frame, word nargs);
+
+// Descriptor
+Object* functionDescriptorGet(
+    Thread* thread,
+    const Handle<Object>& self,
+    const Handle<Object>& instance,
+    const Handle<Object>& /* owner */) __attribute__((aligned(16)));
+
+Object* classmethodDescriptorGet(
+    Thread* thread,
+    const Handle<Object>& self,
+    const Handle<Object>& instance,
+    const Handle<Object>& /* owner */) __attribute__((aligned(16)));
+
+// ClassMethod
+Object* builtinClassMethodNew(Thread* thread, Frame* frame, word nargs);
+Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs);
 
 } // namespace python

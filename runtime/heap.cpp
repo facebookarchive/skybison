@@ -154,6 +154,18 @@ Object* Heap::createClass(ClassId class_id) {
   return Class::cast(result);
 }
 
+Object* Heap::createClassMethod() {
+  Object* raw = allocate(ClassMethod::allocationSize(), Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<ClassMethod*>(raw);
+  result->setHeader(Header::from(
+      ClassMethod::kSize / kPointerSize,
+      0,
+      ClassId::kClassMethod,
+      ObjectFormat::kObjectInstance));
+  return ClassMethod::cast(result);
+}
+
 Object* Heap::createCode(Object* empty_object_array) {
   Object* raw = allocate(Code::allocationSize(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");

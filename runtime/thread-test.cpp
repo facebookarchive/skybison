@@ -2128,4 +2128,21 @@ print(x)
       "Python is an interpreted high-level programming language for general-purpose programming.\n");
 }
 
+TEST(ThreadTest, Classmethod) {
+  const char* src = R"(
+class Foo():
+  a = 1
+  @classmethod
+  def bar(cls):
+    print(cls.a)
+a = Foo()
+a.bar()
+Foo.a = 2
+Foo.bar()
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1\n2\n");
+}
+
 } // namespace python

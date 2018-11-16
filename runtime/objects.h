@@ -104,6 +104,7 @@ enum ClassId {
   kObject = 32,
   kBoundMethod,
   kByteArray,
+  kClassMethod,
   kCode,
   kDictionary,
   kDouble,
@@ -142,6 +143,7 @@ class Object {
   inline bool isBoundMethod();
   inline bool isByteArray();
   inline bool isClass();
+  inline bool isClassMethod();
   inline bool isCode();
   inline bool isDictionary();
   inline bool isDouble();
@@ -1158,6 +1160,26 @@ class BoundMethod : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(BoundMethod);
 };
 
+class ClassMethod : public HeapObject {
+ public:
+  // Getters and setters
+  inline Object* function();
+  inline void setFunction(Object* function);
+
+  // Casting
+  static inline ClassMethod* cast(Object* object);
+
+  // Sizing
+  static inline word allocationSize();
+
+  // Layout
+  static const int kFunctionOffset = HeapObject::kSize;
+  static const int kSize = kFunctionOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ClassMethod);
+};
+
 // Object
 
 bool Object::isObject() {
@@ -1180,6 +1202,13 @@ bool Object::isClass() {
     return false;
   }
   return HeapObject::cast(this)->header()->classId() == ClassId::kType;
+}
+
+bool Object::isClassMethod() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() == ClassId::kClassMethod;
 }
 
 bool Object::isSmallInteger() {
@@ -2516,6 +2545,25 @@ void BoundMethod::setSelf(Object* self) {
 BoundMethod* BoundMethod::cast(Object* object) {
   assert(object->isBoundMethod());
   return reinterpret_cast<BoundMethod*>(object);
+}
+
+// ClassMethod
+
+Object* ClassMethod::function() {
+  return instanceVariableAt(kFunctionOffset);
+}
+
+void ClassMethod::setFunction(Object* function) {
+  instanceVariableAtPut(kFunctionOffset, function);
+}
+
+ClassMethod* ClassMethod::cast(Object* object) {
+  assert(object->isClassMethod());
+  return reinterpret_cast<ClassMethod*>(object);
+}
+
+word ClassMethod::allocationSize() {
+  return Header::kSize + ClassMethod::kSize;
 }
 
 } // namespace python

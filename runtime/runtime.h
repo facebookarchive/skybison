@@ -37,6 +37,8 @@ class Runtime {
   Object* newClass();
   Object* newClassWithId(ClassId class_id);
 
+  Object* newClassMethod();
+
   Object* newCode();
 
   Object* newDictionary();
@@ -307,6 +309,7 @@ class Runtime {
   void initializeSymbols();
 
   void initializeListClass();
+  void initializeClassMethodClass();
 
   void createBuiltinsModule();
   void createSysModule();

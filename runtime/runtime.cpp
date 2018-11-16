@@ -29,9 +29,9 @@ Runtime::Runtime(word heap_size)
   // This must be called before initializeClasses is called. Methods in
   // initializeClasses rely on instances that are created in this method.
   initializePrimitiveInstances();
-  initializeClasses();
   initializeInterned();
   initializeSymbols();
+  initializeClasses();
   initializeModules();
   Interpreter::initOpTable();
 }
@@ -85,17 +85,6 @@ Object* Runtime::newClass() {
   return newClassWithId(newClassId());
 }
 
-static Object* functionDescriptorGet(
-    Thread* thread,
-    const Handle<Object>& self,
-    const Handle<Object>& instance,
-    const Handle<Object>& /* owner */) {
-  if (instance->isNone()) {
-    return *self;
-  }
-  return thread->runtime()->newBoundMethod(*self, *instance);
-}
-
 Object* Runtime::classGetAttr(
     Thread* thread,
     const Handle<Object>& receiver,
@@ -123,6 +112,9 @@ Object* Runtime::classGetAttr(
     if (attr->isFunction()) {
       Handle<Object> none(&scope, None::object());
       return functionDescriptorGet(thread, attr, none, receiver);
+    } else if (attr->isClassMethod()) {
+      Handle<Object> none(&scope, None::object());
+      return classmethodDescriptorGet(thread, attr, none, receiver);
     } else if (isNonDataDescriptor(thread, attr)) {
       // TODO(T25692531): Call __get__ from meta_attr
       CHECK(false, "custom descriptors are unsupported");
@@ -136,6 +128,9 @@ Object* Runtime::classGetAttr(
     if (meta_attr->isFunction()) {
       Handle<Object> mk(&scope, *meta_klass);
       return functionDescriptorGet(thread, meta_attr, receiver, mk);
+    } else if (meta_attr->isClassMethod()) {
+      Handle<Object> mk(&scope, *meta_klass);
+      return classmethodDescriptorGet(thread, meta_attr, receiver, mk);
     } else {
       // TODO(T25692531): Call __get__ from meta_attr
       CHECK(false, "custom descriptors are unsupported");
@@ -226,6 +221,9 @@ Object* Runtime::instanceGetAttr(
     if (klass_attr->isFunction()) {
       Handle<Object> k(&scope, *klass);
       return functionDescriptorGet(thread, klass_attr, receiver, k);
+    } else if (klass_attr->isClassMethod()) {
+      Handle<Object> k(&scope, *klass);
+      return classmethodDescriptorGet(thread, klass_attr, receiver, k);
     }
     // TODO(T25692531): Call __get__ from klass_attr
     UNIMPLEMENTED("custom descriptors are unsupported");
@@ -318,7 +316,7 @@ Object* Runtime::moduleSetAttr(
 }
 
 bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
-  if (object->isFunction() || object->isError()) {
+  if (object->isFunction() || object->isClassMethod() || object->isError()) {
     return false;
   }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
@@ -331,7 +329,7 @@ bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
 bool Runtime::isNonDataDescriptor(
     Thread* thread,
     const Handle<Object>& object) {
-  if (object->isFunction()) {
+  if (object->isFunction() || object->isClassMethod()) {
     return true;
   } else if (object->isError()) {
     return false;
@@ -390,7 +388,7 @@ Object* Runtime::newInstance(ClassId class_id) {
 void Runtime::initializeListClass() {
   HandleScope scope;
   Handle<Class> list(&scope, newClassWithId(ClassId::kList));
-  list->setName(newStringFromCString("list"));
+  list->setName(symbols()->ListClassname());
   const ClassId list_mro[] = {ClassId::kList, ClassId::kObject};
   list->setMro(createMro(list_mro, ARRAYSIZE(list_mro)));
   Handle<Dictionary> dict(&scope, newDictionary());
@@ -687,6 +685,8 @@ void Runtime::initializeHeapClasses() {
                                         ClassId::kObject};
   range_iterator->setMro(
       createMro(range_iterator_mro, ARRAYSIZE(range_iterator_mro)));
+
+  initializeClassMethodClass();
 }
 
 void Runtime::initializeImmediateClasses() {
@@ -1006,6 +1006,10 @@ void Runtime::createBuiltinsModule() {
   Handle<Object> list_name(&scope, symbols()->ListClassname());
   Handle<Object> list_value(&scope, classAt(ClassId::kList));
   moduleAddGlobal(module, list_name, list_value);
+
+  Handle<Object> classmethod_name(&scope, symbols()->ClassmethodClassname());
+  Handle<Object> classmethod_value(&scope, classAt(ClassId::kClassMethod));
+  moduleAddGlobal(module, classmethod_name, classmethod_value);
 
   addModule(module);
 }
@@ -1816,6 +1820,32 @@ Object* Runtime::isInstance(
   HandleScope scope;
   Handle<Class> obj_class(&scope, classOf(*obj));
   return isSubClass(obj_class, klass);
+}
+
+Object* Runtime::newClassMethod() {
+  return heap()->createClassMethod();
+}
+
+void Runtime::initializeClassMethodClass() {
+  HandleScope scope;
+  Handle<Class> classmethod(&scope, newClassWithId(ClassId::kClassMethod));
+  classmethod->setName(symbols()->ClassmethodClassname());
+  const ClassId classmethod_mro[] = {ClassId::kClassMethod, ClassId::kObject};
+  classmethod->setMro(createMro(classmethod_mro, ARRAYSIZE(classmethod_mro)));
+  Handle<Dictionary> dict(&scope, newDictionary());
+  classmethod->setDictionary(*dict);
+
+  classAddBuiltinFunction(
+      classmethod,
+      "__init__",
+      nativeTrampoline<builtinClassMethodInit>,
+      unimplementedTrampoline);
+
+  Handle<Function> dunder_new(
+      &scope,
+      newBuiltinFunction(
+          nativeTrampoline<builtinClassMethodNew>, unimplementedTrampoline));
+  classmethod->setDunderNew(*dunder_new);
 }
 
 } // namespace python

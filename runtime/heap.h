@@ -26,6 +26,8 @@ class Heap {
 
   Object* createClass(ClassId class_id);
 
+  Object* createClassMethod();
+
   Object* createCode(Object* empty_object_array);
 
   Object* createDictionary(Object* items);
