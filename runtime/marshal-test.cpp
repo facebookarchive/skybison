@@ -43,21 +43,44 @@ TEST(MarshalReaderTest, ReadLong) {
   ASSERT_EQ(e, -2147483648); // INT32_MIN
 }
 
-TEST(MarshalReaderTest, ReadTypeInt) {
+TEST(MarshalReaderTest, ReadTypeIntMin) {
   Runtime runtime;
   HandleScope scope;
 
   // marshal.dumps(INT32_MIN)
-  Object* result =
-      Marshal::Reader(&scope, &runtime, "\xe9\x00\x00\x00\x80").readObject();
+  Marshal::Reader reader(&scope, &runtime, "\xe9\x00\x00\x00\x80");
+  Object* result = reader.readObject();
   ASSERT_TRUE(result->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(result)->value(), INT32_MIN);
+  ASSERT_EQ(reader.numRefs(), 1);
+  EXPECT_EQ(reader.getRef(0), result);
+
+  // marshal.dumps(INT32_MIN)
+  Marshal::Reader reader_norefs(&scope, &runtime, "\x69\x00\x00\x00\x80");
+  result = reader_norefs.readObject();
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), INT32_MIN);
+  EXPECT_EQ(reader_norefs.numRefs(), 0);
+}
+
+TEST(MarshalReaderTest, ReadTypeIntMax) {
+  Runtime runtime;
+  HandleScope scope;
 
   // marshal.dumps(INT32_MAX)
-  result =
-      Marshal::Reader(&scope, &runtime, "\xe9\xff\xff\xff\x7f").readObject();
+  Marshal::Reader reader(&scope, &runtime, "\xe9\xff\xff\xff\x7f");
+  Object* result = reader.readObject();
   ASSERT_TRUE(result->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(result)->value(), INT32_MAX);
+  ASSERT_EQ(reader.numRefs(), 1);
+  EXPECT_EQ(reader.getRef(0), result);
+
+  // marshal.dumps(INT32_MAX)
+  Marshal::Reader reader_norefs(&scope, &runtime, "\x69\xff\xff\xff\x7f");
+  result = reader_norefs.readObject();
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), INT32_MAX);
+  EXPECT_EQ(reader_norefs.numRefs(), 0);
 }
 
 TEST(MarshalReaderDeathTest, ReadNegativeTypeLong) {

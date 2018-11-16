@@ -148,6 +148,9 @@ Object* Marshal::Reader::readObject() {
         std::abort();
       }
       result = SmallInteger::fromWord(n);
+      if (isRef_) {
+        addRef(result);
+      }
       break;
     }
 
@@ -248,6 +251,10 @@ void Marshal::Reader::setRef(word index, Object* value) {
 
 Object* Marshal::Reader::getRef(word index) {
   return refs_->at(index);
+}
+
+word Marshal::Reader::numRefs() {
+  return refs_->allocated();
 }
 
 Object* Marshal::Reader::readTypeString() {

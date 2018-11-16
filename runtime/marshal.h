@@ -37,6 +37,7 @@ class Marshal {
     word addRef(Object* value);
     void setRef(word index, Object* value);
     Object* getRef(word index);
+    word numRefs();
 
    private:
     Runtime* runtime_;
