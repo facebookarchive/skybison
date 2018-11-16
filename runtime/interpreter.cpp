@@ -608,6 +608,17 @@ Result BINARY_SUBSCR(Context* ctx, word) {
   } else if (container->isObjectArray()) {
     word idx = SmallInteger::cast(*key)->value();
     *--sp = ObjectArray::cast(*container)->at(idx);
+  } else if (container->isString()) {
+    // TODO: throw TypeError & IndexError
+    if (!key->isInteger()) {
+      UNIMPLEMENTED("TypeError: string indices must be integers");
+    }
+    if (!key->isSmallInteger()) {
+      UNIMPLEMENTED("IndexError: cannot fit 'int' into an index-sized integer");
+    }
+    word idx = SmallInteger::cast(*key)->value();
+    byte c = String::cast(*container)->charAt(idx); // TODO: u8charAt?
+    *--sp = SmallString::fromBytes(View<byte>(&c, 1)); // safe for SmallString
   } else {
     UNIMPLEMENTED("Custom Subscription");
   }

@@ -2687,4 +2687,14 @@ for x in a:
   EXPECT_EQ(output, "L\nL\nx\nx\nx\n");
 }
 
+TEST(ThreadTest, BinSubscrString) { // pystone dependency
+  const char* src = R"(
+a = 'Hello'
+print(a[0],a[1],a[2],a[3],a[4])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "H e l l o\n");
+}
+
 } // namespace python
