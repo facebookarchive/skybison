@@ -250,6 +250,7 @@ target_compile_options(
   cpython
   PUBLIC
   ${OS_DEFINE}
+  "-Werror"
   "-DNDEBUG"
   "-DPy_BUILD_CORE")
 target_link_libraries(

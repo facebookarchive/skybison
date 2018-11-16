@@ -18,10 +18,14 @@ typedef struct newtype {
 typedef struct Hello World;
 
 typedef foo_bar Baz;
+
+typedef PyObject *(*Func)(PyObject *, PyObject *);
 """
         symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
         res = symbols_dict["typedef"]
-        self.assertListEqual(res, ["World", "Foo", "Bar", "Baz", "Foo_Bar"])
+        self.assertListEqual(
+            res, ["World", "Foo", "Bar", "Baz", "Func", "Foo_Bar"]
+        )
 
     def test_struct_regex_returns_multiple_symbols(self):
         lines = """
@@ -147,18 +151,19 @@ typedef struct newtype {
 typedef foo_bar Baz;
 
 typedef struct Foo FooAlias;
+
+typedef struct Bar BarAlias;
+
+typedef PyObject *(*Foo)(PyObject *, PyObject *);
 """
         expected_lines = """
-
-
 typedef struct newtype {
   int foo_bar;
 } Foo_Bar;
 
-
 typedef struct Foo FooAlias;
 """
-        symbols_to_replace = {"typedef": ["Foo", "Bar", "Baz"]}
+        symbols_to_replace = {"typedef": ["Foo", "Bar", "Baz", "BarAlias"]}
         res = gcs.modify_file(
             original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
         )
