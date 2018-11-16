@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cstdlib>
 
 #include "utils.h"
 
@@ -31,7 +32,7 @@ bool Os::protectMemory(byte* address, word size, Protection mode) {
       prot = PROT_READ | PROT_WRITE;
       break;
     default:
-      assert(0);
+      std::abort();
   }
   int result = mprotect(reinterpret_cast<void*>(address), size, prot);
   assert(result == 0);

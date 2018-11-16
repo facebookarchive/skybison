@@ -40,7 +40,7 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
 }
 
 Object* interpreterTrampolineKw(Thread*, Frame*, word) {
-  assert(false);
+  std::abort();
 }
 
 Object* unimplementedTrampoline(Thread*, Frame*, word) {
