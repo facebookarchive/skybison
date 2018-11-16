@@ -29,33 +29,46 @@ TEST(RuntimeTest, NewByteArray) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<ByteArray> empty0(&scope, runtime.newByteArray(0));
-  EXPECT_EQ(empty0->length(), 0);
+  Handle<ByteArray> len0(&scope, runtime.newByteArray(0, 0));
+  EXPECT_EQ(len0->length(), 0);
 
-  Handle<ByteArray> empty1(&scope, runtime.newByteArray(0));
-  EXPECT_EQ(*empty0, *empty1);
+  Handle<ByteArray> len3(&scope, runtime.newByteArray(3, 9));
+  EXPECT_EQ(len3->length(), 3);
+  EXPECT_EQ(len3->byteAt(0), 9);
+  EXPECT_EQ(len3->byteAt(1), 9);
+  EXPECT_EQ(len3->byteAt(2), 9);
+
+  Handle<ByteArray> len254(&scope, runtime.newByteArray(254, 0));
+  EXPECT_EQ(len254->length(), 254);
+  EXPECT_EQ(len254->size(), Utils::roundUp(kPointerSize + 254, kPointerSize));
+
+  Handle<ByteArray> len255(&scope, runtime.newByteArray(255, 0));
+  EXPECT_EQ(len255->length(), 255);
+  EXPECT_EQ(
+      len255->size(), Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
+}
+
+TEST(RuntimeTest, NewByteArrayWithAll) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<ByteArray> len0(
+      &scope, runtime.newByteArrayWithAll(View<byte>(nullptr, 0)));
+  EXPECT_EQ(len0->length(), 0);
 
   const byte src1[] = {0x42};
-  Handle<ByteArray> b1(&scope, runtime.newByteArrayWithAll(src1));
-  EXPECT_EQ(b1->length(), 1);
-  EXPECT_EQ(b1->size(), Utils::roundUp(kPointerSize + 1, kPointerSize));
-  EXPECT_EQ(b1->byteAt(0), 0x42);
+  Handle<ByteArray> len1(&scope, runtime.newByteArrayWithAll(src1));
+  EXPECT_EQ(len1->length(), 1);
+  EXPECT_EQ(len1->size(), Utils::roundUp(kPointerSize + 1, kPointerSize));
+  EXPECT_EQ(len1->byteAt(0), 0x42);
 
   const byte src3[] = {0xAA, 0xBB, 0xCC};
-  Handle<ByteArray> b3(&scope, runtime.newByteArrayWithAll(src3));
-  EXPECT_EQ(b3->length(), 3);
-  EXPECT_EQ(b3->size(), Utils::roundUp(kPointerSize + 3, kPointerSize));
-  EXPECT_EQ(b3->byteAt(0), 0xAA);
-  EXPECT_EQ(b3->byteAt(1), 0xBB);
-  EXPECT_EQ(b3->byteAt(2), 0xCC);
-
-  Handle<ByteArray> b254(&scope, runtime.newByteArray(254));
-  EXPECT_EQ(b254->length(), 254);
-  EXPECT_EQ(b254->size(), Utils::roundUp(kPointerSize + 254, kPointerSize));
-
-  Handle<ByteArray> b255(&scope, runtime.newByteArray(255));
-  EXPECT_EQ(b255->length(), 255);
-  EXPECT_EQ(b255->size(), Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
+  Handle<ByteArray> len3(&scope, runtime.newByteArrayWithAll(src3));
+  EXPECT_EQ(len3->length(), 3);
+  EXPECT_EQ(len3->size(), Utils::roundUp(kPointerSize + 3, kPointerSize));
+  EXPECT_EQ(len3->byteAt(0), 0xAA);
+  EXPECT_EQ(len3->byteAt(1), 0xBB);
+  EXPECT_EQ(len3->byteAt(2), 0xCC);
 }
 
 TEST(RuntimeTest, NewCode) {

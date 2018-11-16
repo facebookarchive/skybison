@@ -45,21 +45,24 @@ Runtime::~Runtime() {
   delete symbols_;
 }
 
-Object* Runtime::newByteArray(word length) {
+Object* Runtime::newByteArray(word length, byte fill) {
+  assert(length >= 0);
   if (length == 0) {
     return empty_byte_array_;
   }
-  return heap()->createByteArray(length);
+  Object* result = heap()->createByteArray(length);
+  byte* dst = reinterpret_cast<byte*>(ByteArray::cast(result)->address());
+  std::memset(dst, fill, length);
+  return result;
 }
 
 Object* Runtime::newByteArrayWithAll(View<byte> array) {
   if (array.length() == 0) {
     return empty_byte_array_;
   }
-  Object* result = newByteArray(array.length());
-  for (word i = 0; i < array.length(); i++) {
-    ByteArray::cast(result)->byteAtPut(i, array.get(i));
-  }
+  Object* result = heap()->createByteArray(array.length());
+  byte* dst = reinterpret_cast<byte*>(ByteArray::cast(result)->address());
+  std::memcpy(dst, array.data(), array.length());
   return result;
 }
 

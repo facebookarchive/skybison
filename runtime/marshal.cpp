@@ -260,12 +260,9 @@ word Marshal::Reader::numRefs() {
 Object* Marshal::Reader::readTypeString() {
   int32 length = readLong();
   const byte* data = readString(length);
-  Object* result = runtime_->newByteArray(length);
+  Object* result = runtime_->newByteArrayWithAll(View<byte>(data, length));
   if (isRef_) {
     addRef(result);
-  }
-  for (int i = 0; i < length; i++) {
-    ByteArray::cast(result)->byteAtPut(i, data[i]);
   }
   return result;
 }

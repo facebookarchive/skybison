@@ -28,7 +28,7 @@ class Runtime {
   Runtime();
   ~Runtime();
 
-  Object* newByteArray(word length);
+  Object* newByteArray(word length, byte fill);
   Object* newByteArrayWithAll(View<byte> array);
 
   Object* newClass();
