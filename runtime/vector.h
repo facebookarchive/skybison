@@ -1,10 +1,12 @@
 #pragma once
 
+#include "allocator.h"
 #include "globals.h"
 
 #include <cstddef>
-#include <cstdlib>
 #include <cstring>
+#include <memory>
+#include <tuple>
 #include <utility>
 
 namespace python {
@@ -17,8 +19,7 @@ namespace python {
 // You can pass a FixedVector<T, N> to such functions without requiring them to
 // depend on the value of N.
 //
-// TODO: custom allocator support.
-template <typename T>
+template <typename T, class Allocator = SimpleAllocator<T>>
 class Vector {
   // We can add support for non-POD types but its a lot harder to get right, so
   // we'll start with the simple thing.
@@ -28,8 +29,13 @@ class Vector {
   using size_type = word;
   using iterator = T*;
   using const_iterator = const T*;
+  using allocator_type = Allocator;
+  using allocator_traits = std::allocator_traits<allocator_type>;
 
-  Vector() = default;
+  Vector(Allocator const& allocator = Allocator()) {
+    _alloc() = allocator;
+  }
+
   ~Vector() {
     release();
   }
@@ -43,7 +49,7 @@ class Vector {
     auto const s = other.size();
     reserve(s);
     end_ = begin_ + s;
-    assert(end_ <= end_storage_);
+    assert(end_ <= _end_storage());
     std::memcpy(begin_, other.begin_, s * sizeof(T));
     return *this;
   }
@@ -61,7 +67,7 @@ class Vector {
       release();
       std::swap(begin_, other.begin_);
       std::swap(end_, other.end_);
-      std::swap(end_storage_, other.end_storage_);
+      std::swap(_end_storage(), other._end_storage());
     } else {
       // if the other vector is small, we have to copy its data, since that
       // memory can't be stolen.
@@ -122,7 +128,7 @@ class Vector {
   }
 
   size_type capacity() const {
-    return end_storage_ - begin_;
+    return _end_storage() - begin_;
   }
 
   void reserve(size_type new_capacity) {
@@ -138,7 +144,7 @@ class Vector {
   }
 
   void push_back(const T& t) {
-    if (end_ >= end_storage_) {
+    if (end_ >= _end_storage()) {
       grow(0);
     }
     *end_ = t;
@@ -152,8 +158,11 @@ class Vector {
 
  protected:
   // Used by FixedVector
-  Vector(T* begin, T* end_storage)
-      : begin_(begin), end_storage_(end_storage), end_(begin) {}
+  Vector(
+      T* begin,
+      T* end_storage,
+      allocator_type const& allocator = Allocator())
+      : begin_(begin), end_(begin), end_storage_(end_storage, allocator) {}
 
  private:
   static constexpr int growthFactor = 2;
@@ -164,11 +173,11 @@ class Vector {
 
   void release() {
     if (!is_small() and begin_ != nullptr) {
-      std::free(begin_);
+      allocator_traits::deallocate(_alloc(), begin_, sizeof(T));
     }
     begin_ = nullptr;
     end_ = nullptr;
-    end_storage_ = nullptr;
+    _end_storage() = nullptr;
   }
 
   void grow(size_type new_cap) {
@@ -190,24 +199,40 @@ class Vector {
 
     auto old_begin = begin_;
 
-    // TODO: custom allocator support.
-    begin_ = reinterpret_cast<T*>(std::malloc(new_cap * sizeof(T)));
+    begin_ = allocator_traits::allocate(_alloc(), new_cap * sizeof(T));
     assert(begin_ != nullptr);
-    end_storage_ = begin_ + new_cap;
+    _end_storage() = begin_ + new_cap;
     end_ = begin_ + old_size;
 
     if (old_begin != nullptr) {
       std::memcpy(begin_, old_begin, old_size * sizeof(T));
 
       if (!small) {
-        std::free(old_begin);
+        allocator_traits::deallocate(_alloc(), old_begin, sizeof(T));
       }
     }
   }
 
+  inline T* const& _end_storage() const noexcept {
+    return std::get<0>(end_storage_);
+  }
+
+  inline T*& _end_storage() noexcept {
+    return std::get<0>(end_storage_);
+  }
+
+  inline allocator_type& _alloc() noexcept {
+    return std::get<1>(end_storage_);
+  }
+
+  inline allocator_type const& _alloc() const noexcept {
+    return std::get<1>(end_storage_);
+  }
+
   T* begin_ = nullptr;
-  T* end_storage_ = nullptr;
   T* end_ = nullptr;
+  // A tuple is used for empty-base-optimization
+  std::tuple<T*, allocator_type> end_storage_;
 
   // If this is a FixedVector, begin_ will initially point here, which lets
   // us know not to free to the storage when growing.
@@ -219,8 +244,11 @@ class Vector {
   // Do not add members after storage_!
 };
 
-template <typename T, typename Vector<T>::size_type Size>
-class FixedVector : public Vector<T> {
+template <
+    typename T,
+    typename Vector<T>::size_type Size,
+    class Allocator = SimpleAllocator<T>>
+class FixedVector : public Vector<T, Allocator> {
  public:
   FixedVector()
       : Vector<T>(&Vector<T>::storage_[0], &Vector<T>::storage_[0] + Size) {}
