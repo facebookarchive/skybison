@@ -12,7 +12,6 @@ class Thread;
 
 class Interpreter {
  public:
-  static void initOpTable();
   static Object* execute(Thread* thread, Frame* frame);
 
   static Object* compare(
