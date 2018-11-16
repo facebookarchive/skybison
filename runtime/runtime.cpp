@@ -1346,37 +1346,37 @@ class Bucket {
   Bucket(const Handle<ObjectArray>& data, word index)
       : data_(data), index_(index) {}
 
-  inline Object* hash() {
+  Object* hash() {
     return data_->at(index_ + kHashOffset);
   }
 
-  inline Object* key() {
+  Object* key() {
     return data_->at(index_ + kKeyOffset);
   }
 
-  inline Object* value() {
+  Object* value() {
     return data_->at(index_ + kValueOffset);
   }
 
-  inline void set(Object* hash, Object* key, Object* value) {
+  void set(Object* hash, Object* key, Object* value) {
     data_->atPut(index_ + kHashOffset, hash);
     data_->atPut(index_ + kKeyOffset, key);
     data_->atPut(index_ + kValueOffset, value);
   }
 
-  inline bool hasKey(Object* thatKey) {
+  bool hasKey(Object* thatKey) {
     return !hash()->isNone() && Object::equals(key(), thatKey);
   }
 
-  inline bool isTombstone() {
+  bool isTombstone() {
     return hash()->isNone() && !key()->isNone();
   }
 
-  inline void setTombstone() {
+  void setTombstone() {
     set(None::object(), Error::object(), None::object());
   }
 
-  inline bool isEmpty() {
+  bool isEmpty() {
     return hash()->isNone() && key()->isNone();
   }
 
@@ -1384,7 +1384,7 @@ class Bucket {
     return !(isEmpty() || isTombstone());
   }
 
-  static inline word getIndex(Object* data, Object* hash) {
+  static word getIndex(Object* data, Object* hash) {
     word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
     word value = SmallInteger::cast(hash)->value();
@@ -1412,36 +1412,36 @@ class SetBucket {
   SetBucket(const Handle<ObjectArray>& data, word index)
       : data_(data), index_(index) {}
 
-  inline Object* hash() {
+  Object* hash() {
     return data_->at(index_ + kHashOffset);
   }
 
-  inline Object* key() {
+  Object* key() {
     return data_->at(index_ + kKeyOffset);
   }
 
-  inline void set(Object* hash, Object* key) {
+  void set(Object* hash, Object* key) {
     data_->atPut(index_ + kHashOffset, hash);
     data_->atPut(index_ + kKeyOffset, key);
   }
 
-  inline bool hasKey(Object* thatKey) {
+  bool hasKey(Object* thatKey) {
     return !hash()->isNone() && Object::equals(key(), thatKey);
   }
 
-  inline bool isTombstone() {
+  bool isTombstone() {
     return hash()->isNone() && !key()->isNone();
   }
 
-  inline void setTombstone() {
+  void setTombstone() {
     set(None::object(), Error::object());
   }
 
-  inline bool isEmpty() {
+  bool isEmpty() {
     return hash()->isNone() && key()->isNone();
   }
 
-  static inline word getIndex(Object* data, Object* hash) {
+  static word getIndex(Object* data, Object* hash) {
     word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
     word value = SmallInteger::cast(hash)->value();
