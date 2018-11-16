@@ -215,7 +215,7 @@ foo(11, c = 3);
   EXPECT_EQ(result, expected);
 }
 
-TEST(CallTest, VarArgs1) {
+TEST(CallTest, VarArgsWithExcess) {
   Runtime runtime;
   const char* src = R"(
 def foo(a, b, *c):
@@ -227,7 +227,7 @@ foo(1,2,3,4,5,6);
   EXPECT_EQ(result, expected);
 }
 
-TEST(CallTest, VarArgs2) {
+TEST(CallTest, VarArgsEmpty) {
   Runtime runtime;
   const char* src = R"(
 def foo(a, b, *c):
@@ -235,6 +235,102 @@ def foo(a, b, *c):
 foo(1,2);
 )";
   const char* expected = "1 2 ()\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(CallTest, CallWithKeywordsCalleeWithVarkeyword) {
+  Runtime runtime;
+  const char* src = R"(
+def foo(a,b,c,**d):
+    print(a,b,c,d)
+foo(1,2,c=3,g=4,h=5,i=6,j="bar")
+)";
+  const char* expected = "1 2 3 {'g': 4, 'h': 5, 'i': 6, 'j': 'bar'}\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(CallTest, CallWithNoArgsCalleeDefaultArgsVarargsVarkeyargs) {
+  Runtime runtime;
+  const char* src = R"(
+def bar(a=1, b=2, *c, **d):
+    print(a,b,c,d)
+bar()
+)";
+  const char* expected = "1 2 () {}\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(CallTest, CallPositionalCalleeVargsEmptyVarkeyargs) {
+  Runtime runtime;
+  const char* src = R"(
+def bar(a=1, b=2, *c, **d):
+    print(a,b,c,d)
+bar(1,2,3,4,5,6,7)
+)";
+  const char* expected = "1 2 (3, 4, 5, 6, 7) {}\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(CallTest, CallWithKeywordsCalleeEmptyVarargsFullVarkeyargs) {
+  Runtime runtime;
+  const char* src = R"(
+def bar(a=1, b=2, *c, **d):
+    print(a,b,c,d)
+bar(a1=11, a2=12, a3=13)
+)";
+  const char* expected = "1 2 () {'a1': 11, 'a2': 12, 'a3': 13}\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(CallTest, CallWithKeywordsCalleeFullVarargsFullVarkeyargs) {
+  Runtime runtime;
+  const char* src = R"(
+def bar(a=1, b=2, *c, **d):
+    print(a,b,c,d)
+bar(1,2,3,4,5,6,7,a9=9)
+)";
+  const char* expected = "1 2 (3, 4, 5, 6, 7) {'a9': 9}\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(CallTest, CallWithOutOfOrderKeywords) {
+  Runtime runtime;
+  const char* src = R"(
+def foobar(a,b,*,c):
+    print(a,b,c)
+foobar(c=3,a=1,b=2)
+)";
+  const char* expected = "1 2 3\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(CallTest, CallWithKeywordsCalleeVarargsKeywordOnly) {
+  Runtime runtime;
+  const char* src = R"(
+def foobar1(a,b,*c,d):
+    print(a,b,c,d)
+foobar1(1,2,3,4,5,d=9)
+)";
+  const char* expected = "1 2 (3, 4, 5) 9\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(CallTest, CallWithKeywordsCalleeVarargsVarkeyargsKeywordOnly) {
+  Runtime runtime;
+  const char* src = R"(
+def foobar2(a,b,*c, e, **d):
+    print(a,b,c,d,e)
+foobar2(1,e=9,b=2,f1="a",f11=12)
+)";
+  const char* expected = "1 2 () {'f1': 'a', 'f11': 12} 9\n";
   std::string result = compileAndRunToString(&runtime, src);
   EXPECT_EQ(result, expected);
 }
@@ -258,7 +354,7 @@ def foo(a,b, *, c):
 foo(1, 2);
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  EXPECT_DEATH(runtime.run(buffer.get()), "got 2 args, expected 3");
+  EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
 }
 
 TEST(CallTest, ArgNameMismatchDeath) {
@@ -302,7 +398,7 @@ def foo(a,b, c):
 foo(3, 4);
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  EXPECT_DEATH(runtime.run(buffer.get()), "got 2 args, expected 3");
+  EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
 }
 
 } // namespace python

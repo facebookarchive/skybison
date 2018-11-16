@@ -1001,6 +1001,7 @@ void Interpreter::doCallFunction(Context* ctx, word arg) {
   Object* result = call(ctx->thread, ctx->frame, ctx->sp, arg);
   ctx->sp += arg;
   *ctx->sp = result;
+  ctx->thread->abortOnPendingException();
 }
 
 // opcode 132
@@ -1076,6 +1077,7 @@ void Interpreter::doCallFunctionKw(Context* ctx, word arg) {
   Object* result = callKw(ctx->thread, ctx->frame, ctx->sp, arg);
   ctx->sp += arg + 1;
   *ctx->sp = result;
+  ctx->thread->abortOnPendingException();
 }
 
 // opcode 145

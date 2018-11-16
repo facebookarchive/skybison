@@ -307,6 +307,14 @@ static void printString(String* str) {
   }
 }
 
+static void printQuotedString(String* str) {
+  *builtInStdout << "'";
+  for (word i = 0; i < str->length(); i++) {
+    *builtInStdout << str->charAt(i);
+  }
+  *builtInStdout << "'";
+}
+
 static void printScalarTypes(Object* arg, std::ostream* ostream) {
   if (arg->isBoolean()) {
     *ostream << (Boolean::cast(arg)->value() ? "True" : "False");
@@ -371,6 +379,39 @@ static Object* doBuiltinPrint(
         }
       }
       *ostream << ")";
+    } else if (arg->isDictionary()) {
+      *ostream << "{";
+      HandleScope scope;
+      Handle<Dictionary> dict(&scope, arg);
+      Handle<ObjectArray> data(&scope, dict->data());
+      word items = dict->numItems();
+      // TODO: When rewriting this, use Bucket support
+      // class in runtime.cpp
+      for (word i = 0; i < data->length(); i += 3) {
+        if (!data->at(i)->isNone()) {
+          Handle<Object> key(&scope, data->at(i + 1));
+          Handle<Object> value(&scope, data->at(i + 2));
+          if (key->isString()) {
+            printQuotedString(String::cast(*key));
+          } else if (supportedScalarType(*key)) {
+            printScalarTypes(*key, ostream);
+          } else {
+            UNIMPLEMENTED("Custom print unsupported");
+          }
+          *ostream << ": ";
+          if (value->isString()) {
+            printQuotedString(String::cast(*value));
+          } else if (supportedScalarType(*value)) {
+            printScalarTypes(*value, ostream);
+          } else {
+            UNIMPLEMENTED("Custom print unsupported");
+          }
+          if (items-- != 1) {
+            *ostream << ", ";
+          }
+        }
+      }
+      *ostream << "}";
     } else {
       UNIMPLEMENTED("Custom print unsupported");
     }
