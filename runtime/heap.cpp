@@ -197,7 +197,7 @@ Object* Heap::createInstance(LayoutId layout_id, word num_attributes) {
   result->setHeader(Header::from(num_attributes, 0, layout_id,
                                  ObjectFormat::kObjectInstance));
   result->initialize(num_attributes * kPointerSize, None::object());
-  return Instance::cast(result);
+  return result;
 }
 
 Object* Heap::createLargeInteger(word value) {

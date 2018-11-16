@@ -64,7 +64,6 @@ class Runtime {
   Object* newInteger(word value);
 
   Object* newLayout();
-  Object* newLayoutWithId(LayoutId layout_id);
 
   Object* newList();
 
@@ -158,7 +157,7 @@ class Runtime {
   Object* layoutAt(LayoutId layout_id);
   void layoutAtPut(LayoutId layout_id, Object* object);
 
-  LayoutId newLayoutId();
+  LayoutId reserveLayoutId();
 
   SymbolId binaryOperationSelector(Interpreter::BinaryOp op);
   SymbolId swappedBinaryOperationSelector(Interpreter::BinaryOp op);
@@ -445,6 +444,9 @@ class Runtime {
   // Clear the allocated memory from all extension related objects
   void freeTrackedAllocations();
 
+  // Creates an layout with a new ID and no attributes.
+  Object* layoutCreateEmpty(Thread* thread);
+
  private:
   void initializeThreads();
   void initializeClasses();
@@ -457,9 +459,7 @@ class Runtime {
   void initializeApiHandles();
   void initializeRandom();
   void initializeSymbols();
-
-  template <typename... Args>
-  Object* initializeHeapClass(const char* name, Args... args);
+  Object* initializeHeapClass(const char* name, LayoutId id, LayoutId super_id);
   void initializeBooleanClass();
   void initializeClassMethodClass();
   void initializeDictClass();
@@ -492,7 +492,8 @@ class Runtime {
   Object* immediateHash(Object* object);
   Object* valueHash(Object* object);
 
-  Object* createMro(View<LayoutId> layout_ids);
+  Object* createMro(const Handle<Layout>& subclass_layout,
+                    LayoutId superclass_id);
 
   ObjectArray* dictionaryGrow(const Handle<ObjectArray>& data);
 

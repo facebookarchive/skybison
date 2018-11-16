@@ -1101,7 +1101,7 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
   runtime.runFromCString("class MyEmptyClass: pass");
 
   LayoutId layout_id =
-      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastId) + 1);
+      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastBuiltinId) + 1);
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
@@ -1127,7 +1127,7 @@ class MyClassWithAttributes():
   runtime.runFromCString(src);
 
   LayoutId layout_id =
-      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastId) + 1);
+      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastBuiltinId) + 1);
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   ASSERT_EQ(layout->instanceSize(), 4);
 
@@ -1406,7 +1406,7 @@ c = MyClassWithNoInitMethod()
   runtime.runFromCString(src);
 
   LayoutId layout_id =
-      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastId) + 1);
+      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastBuiltinId) + 1);
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
@@ -1436,7 +1436,7 @@ c = MyClassWithEmptyInitMethod()
   runtime.runFromCString(src);
 
   LayoutId layout_id =
-      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastId) + 1);
+      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastBuiltinId) + 1);
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
@@ -1466,7 +1466,7 @@ c = MyClassWithAttributes(1)
   runtime.runFromCString(src);
 
   LayoutId layout_id =
-      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastId) + 1);
+      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastBuiltinId) + 1);
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   ASSERT_EQ(layout->instanceSize(), 2);
 
@@ -1787,7 +1787,8 @@ TEST(RuntimeSetTest, UpdateObjectArray) {
 static Object* createClass(Runtime* runtime) {
   HandleScope scope;
   Handle<Class> klass(&scope, runtime->newClass());
-  Handle<Layout> layout(&scope, runtime->newLayout());
+  Thread* thread = Thread::currentThread();
+  Handle<Layout> layout(&scope, runtime->layoutCreateEmpty(thread));
   layout->setDescribedClass(*klass);
   klass->setInstanceLayout(*layout);
   Handle<ObjectArray> mro(&scope, runtime->newObjectArray(1));

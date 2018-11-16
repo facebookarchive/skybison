@@ -128,21 +128,14 @@ Object* Runtime::newBoundMethod(const Handle<Object>& function,
   return *bound_method;
 }
 
-Object* Runtime::newLayout() { return newLayoutWithId(newLayoutId()); }
-
-Object* Runtime::newLayoutWithId(LayoutId layout_id) {
-  DCHECK(layout_id >= LayoutId::kObject ||
-             layout_id == LayoutId::kSmallInteger ||
-             (static_cast<word>(layout_id) & 1) == 1,
-         "kSmallInteger must be the only even immediate layout id");
+Object* Runtime::newLayout() {
   HandleScope scope;
-  Handle<Layout> layout(&scope, heap()->createLayout(layout_id));
-  layout->setNumInObjectAttributes(0);
+  Handle<Layout> layout(&scope, heap()->createLayout(LayoutId::kError));
   layout->setInObjectAttributes(empty_object_array_);
   layout->setOverflowAttributes(empty_object_array_);
   layout->setAdditions(newList());
   layout->setDeletions(newList());
-  layoutAtPut(layout_id, *layout);
+  layout->setNumInObjectAttributes(0);
   return *layout;
 }
 
@@ -714,32 +707,41 @@ void Runtime::initializeLayouts() {
   Handle<ObjectArray> array(&scope, newObjectArray(256));
   Handle<List> list(&scope, newList());
   list->setItems(*array);
-  const word allocated = static_cast<word>(LayoutId::kLastId) + 1;
+  const word allocated = static_cast<word>(LayoutId::kLastBuiltinId) + 1;
   CHECK(allocated < array->length(), "bad allocation %ld", allocated);
   list->setAllocated(allocated);
   layouts_ = *list;
 }
 
-Object* Runtime::createMro(View<LayoutId> layout_ids) {
+Object* Runtime::createMro(const Handle<Layout>& subclass_layout,
+                           LayoutId superclass_id) {
   HandleScope scope;
-  Handle<ObjectArray> result(&scope, newObjectArray(layout_ids.length()));
-  for (word i = 0; i < layout_ids.length(); i++) {
-    result->atPut(i, classAt(layout_ids.get(i)));
+  CHECK(subclass_layout->describedClass()->isClass(),
+        "subclass layout must have a described class");
+  Handle<Class> superclass(&scope, classAt(superclass_id));
+  Handle<ObjectArray> src(&scope, superclass->mro());
+  Handle<ObjectArray> dst(&scope, newObjectArray(1 + src->length()));
+  dst->atPut(0, subclass_layout->describedClass());
+  for (word i = 0; i < src->length(); i++) {
+    dst->atPut(1 + i, src->at(i));
   }
-  return *result;
+  return *dst;
 }
 
-template <typename... Args>
-Object* Runtime::initializeHeapClass(const char* name, Args... args) {
+Object* Runtime::initializeHeapClass(const char* name, LayoutId id,
+                                     LayoutId super_id) {
   HandleScope scope;
-  const LayoutId layout_ids[] = {args..., LayoutId::kObject};
-  Handle<Layout> layout(&scope, newLayoutWithId(layout_ids[0]));
-  Handle<Class> klass(&scope, newClass());
-  layout->setDescribedClass(*klass);
-  klass->setName(newStringFromCString(name));
-  klass->setMro(createMro(layout_ids));
-  klass->setInstanceLayout(layoutAt(layout_ids[0]));
-  return *klass;
+  Handle<Layout> layout(&scope, newLayout());
+  layout->setId(id);
+  Handle<Class> subclass(&scope, newClass());
+  layout->setDescribedClass(*subclass);
+  subclass->setName(newStringFromCString(name));
+  subclass->setMro(createMro(layout, super_id));
+  subclass->setInstanceLayout(*layout);
+  Handle<Class> superclass(&scope, classAt(super_id));
+  subclass->setFlags(superclass->flags());
+  layoutAtPut(id, *layout);
+  return *subclass;
 }
 
 void Runtime::initializeHeapClasses() {
@@ -747,40 +749,44 @@ void Runtime::initializeHeapClasses() {
 
   // Abstract classes.
   initializeStrClass();
-  initializeHeapClass("int", LayoutId::kInteger);
+  initializeHeapClass("int", LayoutId::kInteger, LayoutId::kObject);
 
   // Concrete classes.
-  initializeHeapClass("bytearray", LayoutId::kByteArray);
+  initializeHeapClass("bytearray", LayoutId::kByteArray, LayoutId::kObject);
   initializeClassMethodClass();
-  initializeHeapClass("code", LayoutId::kCode);
+  initializeHeapClass("code", LayoutId::kCode, LayoutId::kObject);
   initializeDictClass();
-  initializeHeapClass("ellipsis", LayoutId::kEllipsis);
+  initializeHeapClass("ellipsis", LayoutId::kEllipsis, LayoutId::kObject);
   initializeFloatClass();
   initializeFunctionClass();
   initializeHeapClass("largeint", LayoutId::kLargeInteger, LayoutId::kInteger);
   initializeHeapClass("largestr", LayoutId::kLargeString, LayoutId::kString);
-  initializeHeapClass("layout", LayoutId::kLayout);
+  initializeHeapClass("layout", LayoutId::kLayout, LayoutId::kObject);
   initializeListClass();
-  initializeHeapClass("list_iterator", LayoutId::kListIterator);
-  initializeHeapClass("method", LayoutId::kBoundMethod);
-  initializeHeapClass("module", LayoutId::kModule);
-  initializeHeapClass("NotImplementedType", LayoutId::kNotImplemented);
+  initializeHeapClass("list_iterator", LayoutId::kListIterator,
+                      LayoutId::kObject);
+  initializeHeapClass("method", LayoutId::kBoundMethod, LayoutId::kObject);
+  initializeHeapClass("module", LayoutId::kModule, LayoutId::kObject);
+  initializeHeapClass("NotImplementedType", LayoutId::kNotImplemented,
+                      LayoutId::kObject);
   initializeObjectArrayClass();
   initializePropertyClass();
-  initializeHeapClass("range", LayoutId::kRange);
-  initializeHeapClass("range_iterator", LayoutId::kRangeIterator);
+  initializeHeapClass("range", LayoutId::kRange, LayoutId::kObject);
+  initializeHeapClass("range_iterator", LayoutId::kRangeIterator,
+                      LayoutId::kObject);
   initializeRefClass();
   initializeSetClass();
-  initializeHeapClass("slice", LayoutId::kSlice);
+  initializeHeapClass("slice", LayoutId::kSlice, LayoutId::kObject);
   initializeStaticMethodClass();
   initializeSuperClass();
   initializeTypeClass();
-  initializeHeapClass("valuecell", LayoutId::kValueCell);
+  initializeHeapClass("valuecell", LayoutId::kValueCell, LayoutId::kObject);
 }
 
 void Runtime::initializeRefClass() {
   HandleScope scope;
-  Handle<Class> ref(&scope, initializeHeapClass("ref", LayoutId::kWeakRef));
+  Handle<Class> ref(&scope, initializeHeapClass("ref", LayoutId::kWeakRef,
+                                                LayoutId::kObject));
 
   classAddBuiltinFunction(ref, SymbolId::kDunderInit,
                           nativeTrampoline<builtinRefInit>);
@@ -791,8 +797,9 @@ void Runtime::initializeRefClass() {
 
 void Runtime::initializeFunctionClass() {
   HandleScope scope;
-  Handle<Class> function(&scope,
-                         initializeHeapClass("function", LayoutId::kFunction));
+  Handle<Class> function(
+      &scope,
+      initializeHeapClass("function", LayoutId::kFunction, LayoutId::kObject));
 
   classAddBuiltinFunction(function, SymbolId::kDunderGet,
                           nativeTrampoline<builtinFunctionGet>);
@@ -800,18 +807,29 @@ void Runtime::initializeFunctionClass() {
 
 void Runtime::initializeObjectClass() {
   HandleScope scope;
-  Handle<Class> object(&scope, initializeHeapClass("object"));
 
-  classAddBuiltinFunction(object, SymbolId::kDunderInit,
+  Handle<Layout> layout(&scope, newLayout());
+  layout->setId(LayoutId::kObject);
+  Handle<Class> object_type(&scope, newClass());
+  layout->setDescribedClass(*object_type);
+  object_type->setName(symbols()->ObjectClassname());
+  Handle<ObjectArray> mro(&scope, newObjectArray(1));
+  mro->atPut(0, *object_type);
+  object_type->setMro(*mro);
+  object_type->setInstanceLayout(*layout);
+  layoutAtPut(LayoutId::kObject, *layout);
+
+  classAddBuiltinFunction(object_type, SymbolId::kDunderInit,
                           nativeTrampoline<builtinObjectInit>);
 
-  classAddBuiltinFunction(object, SymbolId::kDunderNew,
+  classAddBuiltinFunction(object_type, SymbolId::kDunderNew,
                           nativeTrampoline<builtinObjectNew>);
 }
 
 void Runtime::initializeStrClass() {
   HandleScope scope;
-  Handle<Class> type(&scope, initializeHeapClass("str", LayoutId::kString));
+  Handle<Class> type(
+      &scope, initializeHeapClass("str", LayoutId::kString, LayoutId::kObject));
 
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinStringEq>);
@@ -837,8 +855,9 @@ void Runtime::initializeStrClass() {
 
 void Runtime::initializeObjectArrayClass() {
   HandleScope scope;
-  Handle<Class> type(&scope,
-                     initializeHeapClass("tuple", LayoutId::kObjectArray));
+  Handle<Class> type(
+      &scope,
+      initializeHeapClass("tuple", LayoutId::kObjectArray, LayoutId::kObject));
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinTupleEq>);
   classAddBuiltinFunction(type, SymbolId::kDunderGetItem,
@@ -847,8 +866,10 @@ void Runtime::initializeObjectArrayClass() {
 
 void Runtime::initializeDictClass() {
   HandleScope scope;
-  Handle<Class> dict_type(&scope,
-                          initializeHeapClass("dict", LayoutId::kDictionary));
+  Handle<Class> dict_type(
+      &scope,
+      initializeHeapClass("dict", LayoutId::kDictionary, LayoutId::kObject));
+
   classAddBuiltinFunction(dict_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDictionaryEq>);
 
@@ -861,7 +882,8 @@ void Runtime::initializeDictClass() {
 
 void Runtime::initializeListClass() {
   HandleScope scope;
-  Handle<Class> list(&scope, initializeHeapClass("list", LayoutId::kList));
+  Handle<Class> list(
+      &scope, initializeHeapClass("list", LayoutId::kList, LayoutId::kObject));
 
   classAddBuiltinFunction(list, SymbolId::kDunderAdd,
                           nativeTrampoline<builtinListAdd>);
@@ -899,7 +921,8 @@ void Runtime::initializeListClass() {
 void Runtime::initializeClassMethodClass() {
   HandleScope scope;
   Handle<Class> classmethod(
-      &scope, initializeHeapClass("classmethod", LayoutId::kClassMethod));
+      &scope, initializeHeapClass("classmethod", LayoutId::kClassMethod,
+                                  LayoutId::kObject));
 
   classAddBuiltinFunction(classmethod, SymbolId::kDunderGet,
                           nativeTrampoline<builtinClassMethodGet>);
@@ -913,7 +936,8 @@ void Runtime::initializeClassMethodClass() {
 
 void Runtime::initializeTypeClass() {
   HandleScope scope;
-  Handle<Class> type(&scope, initializeHeapClass("type", LayoutId::kType));
+  Handle<Class> type(
+      &scope, initializeHeapClass("type", LayoutId::kType, LayoutId::kObject));
 
   classAddBuiltinFunction(type, SymbolId::kDunderCall,
                           nativeTrampoline<builtinTypeCall>);
@@ -927,7 +951,7 @@ void Runtime::initializeTypeClass() {
 
 void Runtime::initializeImmediateClasses() {
   initializeBooleanClass();
-  initializeHeapClass("NoneType", LayoutId::kNone);
+  initializeHeapClass("NoneType", LayoutId::kNone, LayoutId::kObject);
   initializeHeapClass("smallstr", LayoutId::kSmallString, LayoutId::kString);
   initializeSmallIntClass();
 }
@@ -943,8 +967,9 @@ void Runtime::initializeBooleanClass() {
 
 void Runtime::initializeFloatClass() {
   HandleScope scope;
-  Handle<Class> float_type(&scope,
-                           initializeHeapClass("float", LayoutId::kDouble));
+  Handle<Class> float_type(
+      &scope,
+      initializeHeapClass("float", LayoutId::kDouble, LayoutId::kObject));
 
   classAddBuiltinFunction(float_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDoubleEq>);
@@ -973,7 +998,8 @@ void Runtime::initializeFloatClass() {
 
 void Runtime::initializeSetClass() {
   HandleScope scope;
-  Handle<Class> set_type(&scope, initializeHeapClass("set", LayoutId::kSet));
+  Handle<Class> set_type(
+      &scope, initializeHeapClass("set", LayoutId::kSet, LayoutId::kObject));
 
   classAddBuiltinFunction(set_type, SymbolId::kAdd,
                           nativeTrampoline<builtinSetAdd>);
@@ -996,8 +1022,9 @@ void Runtime::initializeSetClass() {
 
 void Runtime::initializePropertyClass() {
   HandleScope scope;
-  Handle<Class> property(&scope,
-                         initializeHeapClass("property", LayoutId::kProperty));
+  Handle<Class> property(
+      &scope,
+      initializeHeapClass("property", LayoutId::kProperty, LayoutId::kObject));
 
   classAddBuiltinFunction(property, SymbolId::kDeleter,
                           nativeTrampoline<builtinPropertyDeleter>);
@@ -1079,7 +1106,8 @@ void Runtime::initializeSmallIntClass() {
 void Runtime::initializeStaticMethodClass() {
   HandleScope scope;
   Handle<Class> staticmethod(
-      &scope, initializeHeapClass("staticmethod", LayoutId::kStaticMethod));
+      &scope, initializeHeapClass("staticmethod", LayoutId::kStaticMethod,
+                                  LayoutId::kObject));
 
   classAddBuiltinFunction(staticmethod, SymbolId::kDunderGet,
                           nativeTrampoline<builtinStaticMethodGet>);
@@ -1343,7 +1371,7 @@ Object* Runtime::classAt(LayoutId layout_id) {
   return Layout::cast(layoutAt(layout_id))->describedClass();
 }
 
-LayoutId Runtime::newLayoutId() {
+LayoutId Runtime::reserveLayoutId() {
   HandleScope scope;
   Handle<List> list(&scope, layouts_);
   Handle<Object> value(&scope, None::object());
@@ -1395,9 +1423,11 @@ Object* Runtime::moduleAddBuiltinFunction(const Handle<Module>& module,
                                           const Function::Entry entry_kw,
                                           const Function::Entry entry_ex) {
   HandleScope scope;
+  Handle<Object> key(&scope, symbols()->at(name));
+  Handle<Dictionary> dictionary(&scope, module->dictionary());
   Handle<Object> value(&scope,
                        newBuiltinFunction(name, entry, entry_kw, entry_ex));
-  return moduleAddGlobal(module, name, value);
+  return dictionaryAtPutInValueCell(dictionary, key, value);
 }
 
 void Runtime::createBuiltinsModule() {
@@ -2139,7 +2169,7 @@ Object* Runtime::computeInitialLayout(Thread* thread,
   }
 
   // Create the layout
-  Handle<Layout> layout(&scope, newLayout());
+  Handle<Layout> layout(&scope, layoutCreateEmpty(thread));
   layout->setNumInObjectAttributes(attrs->numItems());
 
   return *layout;
@@ -2570,12 +2600,22 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Handle<Layout>& layout,
   return false;
 }
 
+Object* Runtime::layoutCreateEmpty(Thread* thread) {
+  HandleScope scope(thread);
+  Handle<Layout> result(&scope, newLayout());
+  result->setId(reserveLayoutId());
+  layoutAtPut(result->id(), *result);
+  return *result;
+}
+
 Object* Runtime::layoutCreateChild(Thread* thread,
                                    const Handle<Layout>& layout) {
   HandleScope scope(thread);
   Handle<Layout> new_layout(&scope, newLayout());
   std::memcpy(reinterpret_cast<byte*>(new_layout->address()),
               reinterpret_cast<byte*>(layout->address()), Layout::kSize);
+  new_layout->setId(reserveLayoutId());
+  layoutAtPut(new_layout->id(), *new_layout);
   return *new_layout;
 }
 
@@ -2704,7 +2744,8 @@ Object* Runtime::layoutDeleteAttribute(Thread* thread,
 
 void Runtime::initializeSuperClass() {
   HandleScope scope;
-  Handle<Class> super(&scope, initializeHeapClass("super", LayoutId::kSuper));
+  Handle<Class> super(&scope, initializeHeapClass("super", LayoutId::kSuper,
+                                                  LayoutId::kObject));
 
   classAddBuiltinFunction(super, SymbolId::kDunderInit,
                           nativeTrampoline<builtinSuperInit>);

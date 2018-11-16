@@ -22,7 +22,7 @@ TEST(LayoutTest, FindAttribute) {
   Runtime runtime;
   HandleScope scope;
   Thread* thread = Thread::currentThread();
-  Handle<Layout> layout(&scope, runtime.newLayout());
+  Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
 
   // Should fail to find an attribute that isn't present
   Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
@@ -48,7 +48,7 @@ TEST(LayoutTest, AddNewAttributes) {
   Runtime runtime;
   HandleScope scope;
   Thread* thread = Thread::currentThread();
-  Handle<Layout> layout(&scope, runtime.newLayout());
+  Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
 
   // Should fail to find an attribute that isn't present
   Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
@@ -86,7 +86,7 @@ TEST(LayoutTest, AddDuplicateAttributes) {
   Runtime runtime;
   HandleScope scope;
   Thread* thread = Thread::currentThread();
-  Handle<Layout> layout(&scope, runtime.newLayout());
+  Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
 
   // Add an attribute
   Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
@@ -113,9 +113,9 @@ TEST(LayoutTest, AddDuplicateAttributes) {
 TEST(LayoutTest, DeleteNonExistentAttribute) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Layout> layout(&scope, runtime.newLayout());
-  Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
   Thread* thread = Thread::currentThread();
+  Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
+  Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
   Object* result = runtime.layoutDeleteAttribute(thread, layout, attr);
   EXPECT_EQ(result, Error::object());
 }
@@ -123,6 +123,7 @@ TEST(LayoutTest, DeleteNonExistentAttribute) {
 TEST(LayoutTest, DeleteInObjectAttribute) {
   Runtime runtime;
   HandleScope scope;
+  Thread* thread = Thread::currentThread();
 
   // Create a new layout with a single in-object attribute
   Handle<Object> attr(&scope, runtime.newStringFromCString("myattr"));
@@ -132,11 +133,10 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
       1, AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInteger());
   Handle<ObjectArray> array(&scope, runtime.newObjectArray(1));
   array->atPut(0, *entry);
-  Handle<Layout> layout(&scope, runtime.newLayout());
+  Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
   layout->setInObjectAttributes(*array);
 
   // Deleting the attribute should succeed and return a new layout
-  Thread* thread = Thread::currentThread();
   Object* result = runtime.layoutDeleteAttribute(thread, layout, attr);
   ASSERT_TRUE(result->isLayout());
   Handle<Layout> layout2(&scope, result);
@@ -177,7 +177,7 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
     entry->atPut(1, AttributeInfo(i, 0).asSmallInteger());
     attrs->atPut(i, *entry);
   }
-  Handle<Layout> layout(&scope, runtime.newLayout());
+  Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
   layout->setOverflowAttributes(*attrs);
 
   // Delete the middle attribute. Make sure a new layout is created and the
@@ -243,7 +243,7 @@ TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
 
   // Create a new layout with one overflow attribute and one in-object
   // attribute
-  Handle<Layout> layout(&scope, runtime.newLayout());
+  Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
   Handle<Object> inobject(&scope, runtime.newStringFromCString("inobject"));
   layout->setInObjectAttributes(
       create_attrs(inobject, AttributeInfo::Flag::kInObject));

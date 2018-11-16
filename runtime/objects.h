@@ -103,7 +103,7 @@ enum class LayoutId : word {
   kValueCell,
   kWeakRef,
 
-  kLastId = kWeakRef,
+  kLastBuiltinId = kWeakRef,
 };
 
 class Object {
@@ -1555,6 +1555,7 @@ class Layout : public HeapObject {
  public:
   // Getters and setters.
   LayoutId id();
+  void setId(LayoutId id);
 
   // Returns the class whose instances are described by this layout
   Object* describedClass();
@@ -1807,7 +1808,8 @@ inline bool Object::isInstance() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() > LayoutId::kLastId;
+  return HeapObject::cast(this)->header()->layoutId() >
+         LayoutId::kLastBuiltinId;
 }
 
 inline bool Object::isDictionary() {
@@ -2352,7 +2354,7 @@ inline Class* Class::cast(Object* object) {
 }
 
 inline bool Class::isIntrinsicOrExtension() {
-  return Layout::cast(instanceLayout())->id() <= LayoutId::kLastId;
+  return Layout::cast(instanceLayout())->id() <= LayoutId::kLastBuiltinId;
 }
 
 // Array
@@ -3293,6 +3295,10 @@ inline void WeakRef::setLink(Object* reference) {
 
 inline LayoutId Layout::id() {
   return static_cast<LayoutId>(header()->hashCode());
+}
+
+inline void Layout::setId(LayoutId id) {
+  setHeader(header()->withHashCode(static_cast<word>(id)));
 }
 
 inline void Layout::setDescribedClass(Object* klass) {
