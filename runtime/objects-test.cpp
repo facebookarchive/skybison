@@ -45,7 +45,7 @@ TEST(IntTest, IntTest) {
   Handle<Object> o3(&scope, runtime.newIntFromCPtr(&stack_val));
   ASSERT_TRUE(o3->isInt());
   Handle<Int> i3(o3);
-  EXPECT_EQ(*reinterpret_cast<int*>(i3->asCPtr()), 123);
+  EXPECT_EQ(*static_cast<int*>(i3->asCPtr()), 123);
 
   Handle<Object> o4(&scope, runtime.newInt(kMinWord));
   ASSERT_TRUE(o4->isLargeInt());

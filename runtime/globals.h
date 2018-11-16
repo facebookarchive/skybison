@@ -2,6 +2,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <type_traits>
 
 typedef unsigned char byte;
 typedef signed char sbyte;
@@ -48,6 +50,20 @@ const int kNanosecondsPerMicrosecond = 1000;
 const int kNanosecondsPerSecond =
     kMicrosecondsPerSecond * kNanosecondsPerMicrosecond;
 
+template <typename D, typename S>
+inline D bit_cast(const S& src) {
+  static_assert(sizeof(S) == sizeof(D), "src and dst must be the same size");
+  static_assert(std::is_trivially_copyable<S>::value,
+                "src must be trivially copyable");
+  static_assert(std::is_trivially_copyable<D>::value,
+                "dst must be trivially copyable");
+  static_assert(std::is_trivially_destructible<D>::value,
+                "dst must be trivially destructable");
+  D dst;
+  std::memcpy(&dst, &src, sizeof(dst));
+  return dst;
+}
+
 #define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName)                                     \
@@ -63,16 +79,6 @@ const int kNanosecondsPerSecond =
   DISALLOW_COPY_AND_ASSIGN(TypeName)
 
 #define PY_EXPORT extern "C"
-
-#define OFFSET_OF(type, field)                                                 \
-  (reinterpret_cast<intptr_t>(&(reinterpret_cast<type*>(16)->field)) - 16)
-
-#if __GNUG__ && __GNUC__ < 5
-#define IS_TRIVIALLY_COPYABLE(T) __has_trivial_copy(T)
-#else
-#include <type_traits>
-#define IS_TRIVIALLY_COPYABLE(T) std::is_trivially_copyable<T>::value
-#endif
 
 // FORMAT_ATTRIBUTE allows typechecking by the compiler.
 // string_index: The function argument index where the format index is.

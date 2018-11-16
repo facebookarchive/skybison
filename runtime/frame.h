@@ -451,7 +451,7 @@ inline word Frame::numLocals() {
 
 inline Frame* Frame::previousFrame() {
   Object* frame = at(kPreviousFrameOffset);
-  return reinterpret_cast<Frame*>(SmallInt::cast(frame)->value());
+  return static_cast<Frame*>(SmallInt::cast(frame)->asCPtr());
 }
 
 inline void Frame::setPreviousFrame(Frame* frame) {
@@ -465,7 +465,7 @@ inline Object** Frame::valueStackBase() {
 
 inline Object** Frame::valueStackTop() {
   Object* top = at(kValueStackTopOffset);
-  return reinterpret_cast<Object**>(SmallInt::cast(top)->value());
+  return static_cast<Object**>(SmallInt::cast(top)->asCPtr());
 }
 
 inline void Frame::setValueStackTop(Object** top) {

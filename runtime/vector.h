@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <type_traits>
 #include <utility>
 
 namespace python {
@@ -19,7 +20,8 @@ template <typename T>
 class Vector {
   // We can add support for non-POD types but its a lot harder to get right, so
   // we'll start with the simple thing.
-  static_assert(IS_TRIVIALLY_COPYABLE(T), "Vector only supports POD types");
+  static_assert(std::is_trivially_copyable<T>::value,
+                "Vector only supports POD types");
 
  public:
   using size_type = word;
@@ -145,7 +147,7 @@ class Vector {
 
     auto old_begin = begin_;
 
-    begin_ = reinterpret_cast<T*>(std::malloc(new_cap * sizeof(T)));
+    begin_ = static_cast<T*>(std::malloc(new_cap * sizeof(T)));
     DCHECK(begin_ != nullptr, "out of memory");
     end_storage_ = begin_ + new_cap;
     end_ = begin_ + old_size;

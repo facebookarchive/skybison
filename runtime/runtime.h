@@ -501,7 +501,7 @@ class Runtime {
     // The reinterpret_cast here is needed to avoid self-recursion when this is
     // called by Type::cast(). It is safe, as typeOf() is guaranteed to return
     // a Type*.
-    return reinterpret_cast<Type*>(typeOf(instance))
+    return static_cast<Type*>(typeOf(instance))
         ->hasFlag(Type::Flag::kTypeSubclass);
   }
 

@@ -92,8 +92,10 @@ int32 Marshal::Reader::readLong() {
 }
 
 double Marshal::Reader::readBinaryFloat() {
-  const byte* buffer = readBytes(8);
-  return *reinterpret_cast<const double*>(buffer);
+  double result;
+  const byte* buffer = readBytes(sizeof(result));
+  std::memcpy(&result, buffer, sizeof(result));
+  return result;
 }
 
 template <typename T>

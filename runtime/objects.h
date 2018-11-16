@@ -1,10 +1,11 @@
 #pragma once
 
+#include <limits>
+
 #include "globals.h"
 #include "utils.h"
 #include "view.h"
 
-#include <limits>
 namespace python {
 
 #define INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                     \
@@ -420,9 +421,6 @@ class SmallInt : public Object {
 
   template <typename T>
   static SmallInt* fromFunctionPointer(T pointer);
-
-  template <typename T>
-  T asFunctionPointer();
 
   // Tags.
   static const int kTag = 0;
@@ -2454,11 +2452,6 @@ inline SmallInt* SmallInt::fromFunctionPointer(T pointer) {
   return SmallInt::cast(object);
 }
 
-template <typename T>
-inline T SmallInt::asFunctionPointer() {
-  return reinterpret_cast<T>(reinterpret_cast<uword>(this));
-}
-
 // SmallStr
 
 inline word SmallStr::length() {
@@ -3359,7 +3352,8 @@ inline void Function::setDoc(Object* doc) {
 
 inline Function::Entry Function::entry() {
   Object* object = instanceVariableAt(kEntryOffset);
-  return SmallInt::cast(object)->asFunctionPointer<Function::Entry>();
+  DCHECK(object->isSmallInt(), "entry address must look like a SmallInt");
+  return bit_cast<Function::Entry>(object);
 }
 
 inline void Function::setEntry(Function::Entry entry) {
@@ -3369,7 +3363,8 @@ inline void Function::setEntry(Function::Entry entry) {
 
 inline Function::Entry Function::entryKw() {
   Object* object = instanceVariableAt(kEntryKwOffset);
-  return SmallInt::cast(object)->asFunctionPointer<Function::Entry>();
+  DCHECK(object->isSmallInt(), "entryKw address must look like a SmallInt");
+  return bit_cast<Function::Entry>(object);
 }
 
 inline void Function::setEntryKw(Function::Entry entry_kw) {
@@ -3377,18 +3372,19 @@ inline void Function::setEntryKw(Function::Entry entry_kw) {
   instanceVariableAtPut(kEntryKwOffset, object);
 }
 
-inline Object* Function::globals() {
-  return instanceVariableAt(kGlobalsOffset);
-}
-
 Function::Entry Function::entryEx() {
   Object* object = instanceVariableAt(kEntryExOffset);
-  return SmallInt::cast(object)->asFunctionPointer<Function::Entry>();
+  DCHECK(object->isSmallInt(), "entryEx address must look like a SmallInt");
+  return bit_cast<Function::Entry>(object);
 }
 
 void Function::setEntryEx(Function::Entry entry_ex) {
   auto object = SmallInt::fromFunctionPointer(entry_ex);
   instanceVariableAtPut(kEntryExOffset, object);
+}
+
+inline Object* Function::globals() {
+  return instanceVariableAt(kGlobalsOffset);
 }
 
 inline void Function::setGlobals(Object* globals) {

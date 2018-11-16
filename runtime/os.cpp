@@ -38,7 +38,7 @@ bool OS::protectMemory(byte* address, word size, Protection mode) {
     default:
       std::abort();
   }
-  int result = mprotect(reinterpret_cast<void*>(address), size, prot);
+  int result = mprotect(address, size, prot);
   CHECK(result == 0, "mprotect failure");
   return result == 0;
 }

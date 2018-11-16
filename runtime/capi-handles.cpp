@@ -8,8 +8,7 @@ ApiHandle* ApiHandle::create(Object* reference, long refcnt) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
-  ApiHandle* handle =
-      reinterpret_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
+  ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
   handle->reference_ = reference;
   handle->ob_refcnt = refcnt;
   Object* reftype = runtime->typeOf(reference);

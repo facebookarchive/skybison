@@ -75,7 +75,7 @@ Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
   checkStackOverflow(Frame::kSize + (num_vars + stack_depth) * kPointerSize);
 
   // Initialize the frame.
-  byte* sp = reinterpret_cast<byte*>(currentFrame_->valueStackTop());
+  byte* sp = stackPtr();
   word size = Frame::kSize + num_vars * kPointerSize;
   sp -= size;
   std::memset(sp, 0, size);
@@ -95,7 +95,7 @@ Frame* Thread::linkFrame(Frame* frame) {
 void Thread::checkStackOverflow(word max_size) {
   // Check that there is sufficient space on the stack
   // TODO: Grow stack
-  byte* sp = reinterpret_cast<byte*>(currentFrame_->valueStackTop());
+  byte* sp = stackPtr();
   CHECK(sp - max_size >= start_, "stack overflow");
 }
 

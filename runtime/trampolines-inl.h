@@ -15,7 +15,7 @@ namespace python {
 template <Object* (*Fn)(Thread*, Frame*, word)>
 Object* nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
   HandleScope scope(thread);
-  Frame* frame = thread->pushNativeFrame(Utils::castFnPtrToVoid(Fn), argc);
+  Frame* frame = thread->pushNativeFrame(bit_cast<void*>(Fn), argc);
   Handle<Object> result(&scope, Fn(thread, frame, argc));
   DCHECK(result->isError() == thread->hasPendingException(),
          "error/exception mismatch");
@@ -32,7 +32,7 @@ Object* nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
 template <Object* (*Fn)(Thread*, Frame*, word)>
 Object* nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/, word argc) {
   HandleScope scope(thread);
-  Frame* frame = thread->pushNativeFrame(Utils::castFnPtrToVoid(Fn), argc + 1);
+  Frame* frame = thread->pushNativeFrame(bit_cast<void*>(Fn), argc + 1);
   Handle<Object> result(&scope, Fn(thread, frame, argc + 1));
   DCHECK(result->isError() == thread->hasPendingException(),
          "error/exception mismatch");

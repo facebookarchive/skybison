@@ -733,7 +733,8 @@ Object* Runtime::newInt(word value) {
   if (SmallInt::isValid(value)) {
     return SmallInt::fromWord(value);
   }
-  return newIntWithDigits(View<uword>(reinterpret_cast<uword*>(&value), 1));
+  uword digit[1] = {static_cast<uword>(value)};
+  return newIntWithDigits(digit);
 }
 
 Object* Runtime::newIntFromUnsigned(uword value) {
@@ -758,8 +759,7 @@ Object* Runtime::newIntWithDigits(View<uword> digits) {
     return SmallInt::fromWord(0);
   }
   if (digits.length() == 1) {
-    uword u_digit = digits.get(0);
-    word digit = *reinterpret_cast<word*>(&u_digit);
+    word digit = static_cast<word>(digits.get(0));
     if (SmallInt::isValid(digit)) {
       return SmallInt::fromWord(digit);
     }

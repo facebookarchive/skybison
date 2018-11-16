@@ -229,14 +229,14 @@ Type* Type::cast(Object* object) {
   DCHECK(object->isType() ||
              Thread::currentThread()->runtime()->isInstanceOfClass(object),
          "invalid cast, expected class");
-  return reinterpret_cast<Type*>(object);
+  return bit_cast<Type*>(object);
 }
 
 List* List::cast(Object* object) {
   DCHECK(object->isList() ||
              Thread::currentThread()->runtime()->isInstanceOfList(object),
          "invalid cast, expected list");
-  return reinterpret_cast<List*>(object);
+  return bit_cast<List*>(object);
 }
 
 }  // namespace python

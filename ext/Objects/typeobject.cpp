@@ -90,11 +90,11 @@ PY_EXPORT int PyType_Ready(PyTypeObject* type) {
 
   // Register DunderNew
   runtime->classAddExtensionFunction(type_class, SymbolId::kDunderNew,
-                                     Utils::castFnPtrToVoid(type->tp_new));
+                                     bit_cast<void*>(type->tp_new));
 
   // Register DunderInit
   runtime->classAddExtensionFunction(type_class, SymbolId::kDunderInit,
-                                     Utils::castFnPtrToVoid(type->tp_init));
+                                     bit_cast<void*>(type->tp_init));
 
   // TODO(T29618332): Implement missing PyType_Ready features
 

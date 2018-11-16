@@ -99,7 +99,7 @@ std::string callFunctionToString(const Handle<Function>& func,
   builtInStdout = &stream;
   Thread* thread = Thread::currentThread();
   Frame* frame =
-      thread->pushNativeFrame(Utils::castFnPtrToVoid(callFunctionToString), 0);
+      thread->pushNativeFrame(bit_cast<void*>(&callFunctionToString), 0);
   callFunction(func, args);
   thread->popFrame();
   builtInStdout = old_stream;
@@ -111,8 +111,8 @@ Object* callFunction(const Handle<Function>& func,
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Handle<Code> code(&scope, func->code());
-  Frame* frame = thread->pushNativeFrame(Utils::castFnPtrToVoid(callFunction),
-                                         args->length());
+  Frame* frame =
+      thread->pushNativeFrame(bit_cast<void*>(&callFunction), args->length());
   frame->pushValue(*func);
   for (word i = 0; i < args->length(); i++) {
     frame->pushValue(args->at(i));
