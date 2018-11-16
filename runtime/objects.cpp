@@ -14,7 +14,7 @@ namespace python {
 class DictItem {
  public:
   DictItem(Object* items, int bucket)
-      : items_(ObjectArray::cast(items)), bucket_(bucket){};
+      : items_(ObjectArray::cast(items)), bucket_(bucket) {}
 
   inline Object* hash() {
     return items_->at(bucket_ + Dictionary::kBucketHashOffset);

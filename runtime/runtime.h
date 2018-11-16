@@ -42,7 +42,7 @@ class Runtime {
 
   Heap* heap() {
     return &heap_;
-  };
+  }
 
   void visitRoots(PointerVisitor* visitor);
 
@@ -50,7 +50,7 @@ class Runtime {
 
   Object* modules() {
     return modules_;
-  };
+  }
 
   // Ensures that array has enough space for an atPut at index. If so, returns
   // array. If not, allocates and returns a new array with sufficient capacity
