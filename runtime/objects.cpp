@@ -419,19 +419,22 @@ RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
 }
 
 RawType RawType::cast(RawObject object) {
-  DCHECK(Thread::currentThread()->runtime()->isInstanceOfClass(object),
+  DCHECK(object->isType() ||
+             Thread::currentThread()->runtime()->isInstanceOfClass(object),
          "invalid cast, expected class");
   return bit_cast<RawType>(object);
 }
 
 RawList RawList::cast(RawObject object) {
-  DCHECK(Thread::currentThread()->runtime()->isInstanceOfList(object),
+  DCHECK(object->isList() ||
+             Thread::currentThread()->runtime()->isInstanceOfList(object),
          "invalid cast, expected list");
   return bit_cast<RawList>(object);
 }
 
 RawFloat RawFloat::cast(RawObject object) {
-  DCHECK(Thread::currentThread()->runtime()->isInstanceOfFloat(object),
+  DCHECK(object->isFloat() ||
+             Thread::currentThread()->runtime()->isInstanceOfFloat(object),
          "invalid cast, expected float");
   return bit_cast<RawFloat>(object);
 }
