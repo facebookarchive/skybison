@@ -143,7 +143,7 @@ Frame* Thread::pushClassFunctionFrame(Object* function, Object* dictionary) {
 }
 
 void Thread::pushInitialFrame() {
-  DCHECK(initialFrame_ == nullptr, "inital frame already pushed");
+  DCHECK(initialFrame_ == nullptr, "initial frame already pushed");
 
   byte* sp = end_ - Frame::kSize;
   CHECK(sp > start_, "no space for initial frame");
