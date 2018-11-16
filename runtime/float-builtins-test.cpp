@@ -228,6 +228,34 @@ c = a - b
   EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 1.1);
 }
 
+TEST(FloatBuiltinsTest, DunderNewWithNoArgsReturnsZero) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = float.__new__(float)
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  ASSERT_TRUE(a->isDouble());
+  EXPECT_EQ(Double::cast(*a)->value(), 0.0);
+}
+
+TEST(FloatBuiltinsTest, DunderNewWithFloatArgReturnsSameValue) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = float.__new__(float, 1.0)
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  ASSERT_TRUE(a->isDouble());
+  EXPECT_EQ(Double::cast(*a)->value(), 1.0);
+}
+
 TEST(FloatBuiltinsDeathTest, SubWithNonFloatSelfThrows) {
   const char* src = R"(
 float.__sub__(None, 1.0)

@@ -585,11 +585,12 @@ class Class : public HeapObject {
   enum Flag : word {
     kBaseExceptionSubclass = 1 << 0,
     kDictSubclass = 1 << 1,
-    kListSubclass = 1 << 2,
-    kStopIterationSubclass = 1 << 3,
-    kStrSubclass = 1 << 4,
-    kSystemExitSubclass = 1 << 5,
-    kClassSubclass = 1 << 6,
+    kFloatSubclass = 1 << 2,
+    kListSubclass = 1 << 3,
+    kStopIterationSubclass = 1 << 4,
+    kStrSubclass = 1 << 5,
+    kSystemExitSubclass = 1 << 6,
+    kClassSubclass = 1 << 7,
     kLast = kClassSubclass,
   };
   static_assert(Flag::kLast < SmallInteger::kMaxValue,

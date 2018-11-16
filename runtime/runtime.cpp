@@ -1169,6 +1169,10 @@ void Runtime::initializeFloatClass() {
   Handle<Class> float_type(
       &scope, addEmptyBuiltinClass(SymbolId::kFloat, LayoutId::kDouble,
                                    LayoutId::kObject));
+  float_type->setFlag(Class::Flag::kFloatSubclass);
+
+  classAddBuiltinFunction(float_type, SymbolId::kDunderNew,
+                          nativeTrampoline<builtinDoubleNew>);
 
   classAddBuiltinFunction(float_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDoubleEq>);

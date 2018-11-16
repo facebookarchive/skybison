@@ -110,6 +110,44 @@ Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinDoubleNew(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1) {
+    return thread->throwTypeErrorFromCString(
+        "float.__new__(): not enough arguments");
+  }
+  if (nargs > 2) {
+    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+        "float expected at most 1 arguments, got %ld", nargs));
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> obj(&scope, args.get(0));
+  if (!runtime->hasSubClassFlag(*obj, Class::Flag::kClassSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "float.__new__(X): X is not a type object");
+  }
+  Handle<Class> type(&scope, *obj);
+  if (!type->hasFlag(Class::Flag::kFloatSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "float.__new__(X): X is not a subtype of float");
+  }
+  // No arguments.
+  if (nargs == 1) {
+    return runtime->newDouble(0.0);
+  }
+  Handle<Layout> layout(&scope, type->instanceLayout());
+  if (layout->id() != LayoutId::kDouble) {
+    // TODO(dulinr): Implement __new__ with subtypes of float.
+    UNIMPLEMENTED("float.__new__(<subtype of float>, ...)");
+  }
+  Handle<Object> arg(&scope, args.get(1));
+  if (!arg->isDouble()) {
+    return *arg;
+  }
+  UNIMPLEMENTED("Handle arguments to float() that aren't floats");
+}
+
 Object* builtinDoubleAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
