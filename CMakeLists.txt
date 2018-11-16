@@ -3,9 +3,9 @@ project(python)
 
 # Add -DPYRO_ASAN=1 to the cmake command line to enable asan.
 if (${PYRO_ASAN})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -lpthread")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
   if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lrt -ldl")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ldl -lpthread -lrt")
   endif()
 endif()
 
