@@ -75,7 +75,7 @@ Frame* Thread::openAndLinkFrame(
   auto frame = reinterpret_cast<Frame*>(sp + stackDepth * kPointerSize);
 
   // Initialize the frame.
-  std::memset(ptr_, 0, size);
+  std::memset(sp, 0, size);
   frame->setPreviousFrame(previousFrame);
   frame->setValueStackTop(reinterpret_cast<Object**>(frame));
   frame->setPreviousSp(prevSp);

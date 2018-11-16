@@ -188,6 +188,22 @@ TEST(ThreadTest, PushFrameWithNoFreeVars) {
   EXPECT_EQ(thread->ptr(), prevSp - Frame::kSize - kPointerSize);
 }
 
+TEST(ThreadTest, ZeroInitializeBlockStack) {
+  Runtime runtime;
+  auto thread = Thread::currentThread();
+  Frame* frame1 = thread->openAndLinkFrame(0, 0, 10, thread->initialFrame());
+  Object** sp = frame1->valueStackTop();
+  for (word i = 0; i < 10; i++) {
+    *sp-- = SmallInteger::fromWord(1111);
+  }
+  Frame* frame2 = thread->openAndLinkFrame(0, 0, 10, frame1);
+  // The block stack is a continguous chunk of small integers.
+  Object** bs = reinterpret_cast<Object**>(frame2->blockStack());
+  for (word i = 0; i < BlockStack::kSize / kPointerSize; i++) {
+    EXPECT_EQ(bs[i], SmallInteger::fromWord(0));
+  }
+}
+
 TEST(ThreadTest, ManipulateValueStack) {
   Runtime runtime;
   HandleScope scope;
