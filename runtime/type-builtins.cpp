@@ -101,4 +101,43 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinTypeInit(Thread*, Frame*, word) { return None::object(); }
 
+Object* builtinTypeRepr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs == 0) {
+    return thread->throwTypeErrorFromCString(
+        "type.__repr__(): Need a self argument");
+  }
+  if (nargs > 1) {
+    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+        "expected 0 arguments, got %ld", nargs - 1));
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (!thread->runtime()->hasSubClassFlag(*self, Type::Flag::kTypeSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "type.__repr__() requires a 'type' object");
+  }
+
+  Handle<Type> type(&scope, *self);
+  Handle<String> type_name(&scope, type->name());
+  // Make a buffer large enough to store the formatted string.
+  const char prefix[] = "<class '";
+  const char suffix[] = "'>";
+  const word len = sizeof(prefix) - 1 + type_name->length() + sizeof(suffix);
+  char* buf = new char[len];
+  char* ptr = buf;
+  std::copy(prefix, prefix + sizeof(prefix), ptr);
+  ptr += sizeof(prefix) - 1;
+  type_name->copyTo(reinterpret_cast<byte*>(ptr), type_name->length());
+  ptr += type_name->length();
+  std::copy(suffix, suffix + sizeof(suffix), ptr);
+  ptr += sizeof(suffix) - 1;
+  DCHECK(ptr == buf + len - 1, "Didn't write as many as expected");
+  *ptr = '\0';
+  // TODO(T32810595): Handle modules, qualname
+  Handle<String> result(&scope, thread->runtime()->newStringFromCString(buf));
+  delete[] buf;
+  return *result;
+}
+
 }  // namespace python

@@ -114,4 +114,34 @@ c = C()
   ASSERT_EQ(SmallInt::cast(attr)->value(), 42);
 }
 
+TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsString) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+  frame->setLocal(0, runtime.typeAt(LayoutId::kObject));
+  Object* result = builtinTypeRepr(thread, frame, 1);
+  ASSERT_TRUE(result->isString());
+  EXPECT_PYSTRING_EQ(String::cast(result), "<class 'object'>");
+}
+
+TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsString) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  pass
+)");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> type(&scope, moduleAt(&runtime, main, "Foo"));
+
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+  frame->setLocal(0, *type);
+  Object* result = builtinTypeRepr(thread, frame, 1);
+  ASSERT_TRUE(result->isString());
+  // TODO(T32810595): Once module names are supported, this should become
+  // "<class '__main__.Foo'>".
+  EXPECT_PYSTRING_EQ(String::cast(result), "<class 'Foo'>");
+}
+
 }  // namespace python
