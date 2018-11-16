@@ -210,7 +210,7 @@ Object* Runtime::instanceGetAttr(
   Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
   for (word i = 0; i < map->length(); i++) {
     if (map->at(i) == *name) {
-      return instance->attributeAt(i);
+      return instance->attributeAt(i * kPointerSize);
     }
   }
 
@@ -260,7 +260,7 @@ Object* Runtime::instanceSetAttr(
   Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
   for (word i = 0; i < map->length(); i++) {
     if (map->at(i) == *name) {
-      instance->attributeAtPut(i, *value);
+      instance->attributeAtPut(i * kPointerSize, *value);
       return None::object();
     }
   }

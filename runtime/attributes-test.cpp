@@ -508,4 +508,35 @@ class Foo:
       "custom descriptors are unsupported");
 }
 
+TEST(InstanceAttributeTest, ManipulateMultipleAttributes) {
+  Runtime runtime;
+  const char* src = R"(
+class Foo:
+  def __init__(self):
+    self.foo = 'foo'
+    self.bar = 'bar'
+    self.baz = 'baz'
+
+def test(x):
+  Foo.__init__(x)
+  print(x.foo, x.bar, x.baz)
+  x.foo = 'aaa'
+  x.bar = 'bbb'
+  x.baz = 'ccc'
+  print(x.foo, x.bar, x.baz)
+)";
+  compileAndRunToString(&runtime, src);
+
+  // Create the instance
+  HandleScope scope;
+  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, runtime.newInstance(klass->id()));
+
+  // Run the test
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  EXPECT_EQ(callFunctionToString(test, args), "foo bar baz\naaa bbb ccc\n");
+}
+
 } // namespace python

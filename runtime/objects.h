@@ -832,8 +832,8 @@ class Function : public HeapObject {
 
 class Instance : public HeapObject {
  public:
-  inline Object* attributeAt(word index);
-  inline void attributeAtPut(word index, Object* value);
+  inline Object* attributeAt(word offset);
+  inline void attributeAtPut(word offset, Object* value);
 
   // Casting.
   inline static Instance* cast(Object* object);
