@@ -366,14 +366,6 @@ class Runtime {
   Object* instanceDel(Thread* thread, const Handle<HeapObject>& instance,
                       const Handle<Object>& name);
 
-  // Initialize the set of in-object attributes using the supplied attribute
-  // names.
-  //
-  // names is expected to be an object array of attribute names.
-  void layoutInitializeInObjectAttributes(Thread* thread,
-                                          const Handle<Layout>& layout,
-                                          const Handle<ObjectArray>& names);
-
   // Looks up the named attribute in the layout.
   //
   // If the attribute is found this returns true and sets info.
