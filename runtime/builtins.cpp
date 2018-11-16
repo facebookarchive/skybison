@@ -102,11 +102,25 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   }
   result->setMro(*mro);
   result->setInstanceAttributeMap(runtime->computeInstanceAttributeMap(result));
-  Handle<Function> dunder_new(
-      &scope,
-      runtime->newBuiltinFunction(
-          nativeTrampoline<builtinGenericNew>, unimplementedTrampoline));
-  result->setDunderNew(*dunder_new);
+  result->setInstanceSize(
+      ObjectArray::cast(result->instanceAttributeMap())->length());
+
+  thread->runtime()->classAddBuiltinFunction(
+      result,
+      thread->runtime()->symbols()->DunderNew(),
+      nativeTrampoline<builtinGenericNew>,
+      unimplementedTrampoline);
+  result->setBuiltinBaseClass(runtime->computeBuiltinBaseClass(result));
+
+  Handle<Class> base(&scope, result->builtinBaseClass());
+  Handle<Class> list(&scope, thread->runtime()->classAt(ClassId::kList));
+  if (Boolean::cast(thread->runtime()->isSubClass(base, list))->value()) {
+    result->setFlag(Class::Flag::kListSubclass);
+    word num_attrs = result->instanceSize();
+    // append delegate to the end
+    result->setDelegateOffset(num_attrs * kPointerSize);
+    result->setInstanceSize(result->instanceSize() + 1);
+  }
 
   return *result;
 }
@@ -294,8 +308,20 @@ Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope;
   Handle<Object> arg(&scope, frame->valueStackTop()[0]);
-  Handle<List> list(&scope, frame->valueStackTop()[1]);
-  thread->runtime()->listAdd(list, arg);
+  Handle<Object> instance(&scope, frame->valueStackTop()[1]);
+  if (instance->isList()) {
+    Handle<List> list(&scope, *instance);
+    thread->runtime()->listAdd(list, arg);
+  } else {
+    Handle<Class> klass(&scope, thread->runtime()->classOf(*instance));
+    if (klass->hasFlag(Class::Flag::kListSubclass)) {
+      Handle<List> list(&scope, thread->runtime()->instanceDelegate(instance));
+      thread->runtime()->listAdd(list, arg);
+    } else {
+      return thread->throwTypeErrorFromCString(
+          "append() only support list or its subclasses");
+    }
+  }
   return None::object();
 }
 

@@ -84,8 +84,22 @@ Interpreter::callType(Thread* thread, Frame* frame, Object** sp, word nargs) {
   Handle<Class> klass(&scope, sp[nargs]);
   // dispatch it as python function?
   frame->setValueStackTop(sp);
-  Handle<Function> dunder_new(&scope, klass->dunderNew());
+  Handle<Object> name(&scope, runtime->symbols()->DunderNew());
+  Handle<Function> dunder_new(
+      &scope, runtime->lookupNameInMro(thread, klass, name));
   Handle<Object> result(&scope, dunder_new->entry()(thread, frame, nargs));
+
+  if (result->isInstance() && runtime->hasDelegate(klass)) {
+    // TODO(T27421748): pushing delegate __new__ into instance __new__
+    Handle<Class> base_class(&scope, klass->builtinBaseClass());
+    sp[nargs] = *base_class;
+    frame->setValueStackTop(sp);
+    Handle<Function> base_new(
+        &scope, runtime->lookupNameInMro(thread, base_class, name));
+    Handle<Object> delegate(&scope, base_new->entry()(thread, frame, nargs));
+    runtime->setInstanceDelegate(result, delegate);
+    sp[nargs] = *klass;
+  }
 
   // Check for an __init__ method.
   //
@@ -535,6 +549,9 @@ Result BINARY_SUBSCR(Context* ctx, word) {
   HandleScope scope;
   Handle<Object> key(&scope, *sp++);
   Handle<Object> container(&scope, *sp++);
+  if (container->isInstance()) {
+    container = ctx->thread->runtime()->instanceDelegate(container);
+  }
   if (container->isList()) {
     word idx = SmallInteger::cast(*key)->value();
     *--sp = List::cast(*container)->at(idx);

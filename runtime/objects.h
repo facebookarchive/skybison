@@ -501,22 +501,32 @@ class Thread;
 
 class Class : public HeapObject {
  public:
+  enum Flag {
+    kListSubclass = 1,
+    kDictSubclass = 2,
+  };
   // Getters and setters.
   inline ClassId id();
   inline Object* mro();
   inline void setMro(Object* object_array);
   inline Object* name();
   inline void setName(Object* name);
+  inline Object* flag();
+  inline void setFlag(Flag flag);
+  inline bool hasFlag(Flag flag);
   inline Object* dictionary();
   inline void setDictionary(Object* name);
-  // Dunder slots
-  inline Object* dunderNew();
-  inline void setDunderNew(Object* f);
+  // builtin base related
+  inline Object* builtinBaseClass();
+  inline void setBuiltinBaseClass(Object* base);
+  inline word delegateOffset();
+  inline void setDelegateOffset(word offset);
   // ObjectArray mapping attribute name to offset within the instance when
   // initialized.
   inline void setInstanceAttributeMap(Object* object_array);
   inline Object* instanceAttributeMap();
   inline word instanceSize();
+  inline void setInstanceSize(word size);
 
   inline bool isIntrinsicOrExtension();
 
@@ -532,10 +542,13 @@ class Class : public HeapObject {
   // Layout.
   static const int kMroOffset = HeapObject::kSize;
   static const int kNameOffset = kMroOffset + kPointerSize;
-  static const int kDictionaryOffset = kNameOffset + kPointerSize;
-  static const int kDunderNewOffset = kDictionaryOffset + kPointerSize;
+  static const int kFlagOffset = kNameOffset + kPointerSize;
+  static const int kDictionaryOffset = kFlagOffset + kPointerSize;
+  static const int kBuiltinBaseClassOffset = kDictionaryOffset + kPointerSize;
+  static const int kDelegateOffset = kBuiltinBaseClassOffset + kPointerSize;
+  static const int kInstanceSizeOffset = kDelegateOffset + kPointerSize;
   static const int kInstanceAttributeMapOffset =
-      kDunderNewOffset + kPointerSize;
+      kInstanceSizeOffset + kPointerSize;
   static const int kSize = kInstanceAttributeMapOffset + kPointerSize;
 
  private:
@@ -1773,6 +1786,10 @@ word Class::allocationSize() {
 void Class::initialize(Object* dictionary, Object* map) {
   setInstanceAttributeMap(map);
   setDictionary(dictionary);
+  setBuiltinBaseClass(None::object());
+  setInstanceSize(0);
+  instanceVariableAtPut(kFlagOffset, SmallInteger::fromWord(0));
+  instanceVariableAtPut(kDelegateOffset, None::object());
 }
 
 ClassId Class::id() {
@@ -1795,6 +1812,21 @@ void Class::setName(Object* name) {
   instanceVariableAtPut(kNameOffset, name);
 }
 
+Object* Class::flag() {
+  return instanceVariableAt(kFlagOffset);
+}
+
+void Class::setFlag(Class::Flag bit) {
+  word f = SmallInteger::cast(flag())->value();
+  Object* new_flag = SmallInteger::fromWord(f | (1 << bit));
+  instanceVariableAtPut(kFlagOffset, new_flag);
+}
+
+bool Class::hasFlag(Class::Flag bit) {
+  word f = SmallInteger::cast(flag())->value();
+  return (f & (1 << bit)) != 0;
+}
+
 Object* Class::dictionary() {
   return instanceVariableAt(kDictionaryOffset);
 }
@@ -1803,12 +1835,20 @@ void Class::setDictionary(Object* dictionary) {
   instanceVariableAtPut(kDictionaryOffset, dictionary);
 }
 
-Object* Class::dunderNew() {
-  return instanceVariableAt(kDunderNewOffset);
+Object* Class::builtinBaseClass() {
+  return instanceVariableAt(kBuiltinBaseClassOffset);
 }
 
-void Class::setDunderNew(Object* f) {
-  instanceVariableAtPut(kDunderNewOffset, f);
+void Class::setBuiltinBaseClass(Object* base) {
+  instanceVariableAtPut(kBuiltinBaseClassOffset, base);
+}
+
+word Class::delegateOffset() {
+  return SmallInteger::cast(instanceVariableAt(kDelegateOffset))->value();
+}
+
+void Class::setDelegateOffset(word offset) {
+  instanceVariableAtPut(kDelegateOffset, SmallInteger::fromWord(offset));
 }
 
 void Class::setInstanceAttributeMap(Object* object_array) {
@@ -1820,7 +1860,11 @@ Object* Class::instanceAttributeMap() {
 }
 
 word Class::instanceSize() {
-  return ObjectArray::cast(instanceAttributeMap())->length();
+  return SmallInteger::cast(instanceVariableAt(kInstanceSizeOffset))->value();
+}
+
+void Class::setInstanceSize(word size) {
+  instanceVariableAtPut(kInstanceSizeOffset, SmallInteger::fromWord(size));
 }
 
 Class* Class::cast(Object* object) {

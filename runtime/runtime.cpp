@@ -382,9 +382,15 @@ Object* Runtime::newFunction() {
 }
 
 Object* Runtime::newInstance(ClassId class_id) {
-  Object* cls = classAt(class_id);
+  HandleScope scope;
+  Handle<Class> cls(&scope, classAt(class_id));
   assert(!cls->isNone());
-  return heap()->createInstance(class_id, Class::cast(cls)->instanceSize());
+  word slots = cls->instanceSize();
+  return heap()->createInstance(class_id, slots);
+}
+
+bool Runtime::hasDelegate(const Handle<Class>& klass) {
+  return !klass->instanceVariableAt(Class::kDelegateOffset)->isNone();
 }
 
 void Runtime::initializeListClass() {
@@ -408,11 +414,13 @@ void Runtime::initializeListClass() {
       nativeTrampoline<builtinListInsert>,
       unimplementedTrampoline);
 
-  Handle<Function> dunder_new(
-      &scope,
-      newBuiltinFunction(
-          nativeTrampoline<builtinListNew>, unimplementedTrampoline));
-  list->setDunderNew(*dunder_new);
+  classAddBuiltinFunction(
+      list,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinListNew>,
+      unimplementedTrampoline);
+
+  list->setFlag(Class::Flag::kListSubclass);
 }
 
 void Runtime::initializeSmallIntClass() {
@@ -641,7 +649,6 @@ void Runtime::initializeHeapClass(const char* name, Args... args) {
 void Runtime::initializeHeapClasses() {
   initializeHeapClass("object");
   initializeHeapClass("type", ClassId::kType);
-  initializeHeapClass("type", ClassId::kType);
   initializeHeapClass("method", ClassId::kBoundMethod);
   initializeHeapClass("byteArray", ClassId::kByteArray);
   initializeHeapClass("code", ClassId::kCode);
@@ -869,11 +876,11 @@ void Runtime::moduleAddGlobal(
 
 Object* Runtime::moduleAddBuiltinFunction(
     const Handle<Module>& module,
-    const char* name,
+    Object* name,
     const Function::Entry entry,
     const Function::Entry entryKw) {
   HandleScope scope;
-  Handle<Object> key(&scope, newStringFromCString(name));
+  Handle<Object> key(&scope, name);
   Handle<Dictionary> dictionary(&scope, module->dictionary());
   Handle<Object> value(&scope, newBuiltinFunction(entry, entryKw));
   return dictionaryAtPutInValueCell(dictionary, key, value);
@@ -902,50 +909,53 @@ void Runtime::createBuiltinsModule() {
   // Fill in builtins...
   build_class_ = moduleAddBuiltinFunction(
       module,
-      "__build_class__",
+      symbols()->DunderBuildClass(),
       nativeTrampoline<builtinBuildClass>,
       nativeTrampoline<unimplementedTrampoline>);
   moduleAddBuiltinPrint(module);
   moduleAddBuiltinFunction(
       module,
-      "ord",
+      symbols()->Ord(),
       nativeTrampoline<builtinOrd>,
       nativeTrampoline<unimplementedTrampoline>);
   moduleAddBuiltinFunction(
       module,
-      "chr",
+      symbols()->Chr(),
       nativeTrampoline<builtinChr>,
       nativeTrampoline<unimplementedTrampoline>);
   moduleAddBuiltinFunction(
       module,
-      "range",
+      symbols()->Range(),
       nativeTrampoline<builtinRange>,
       nativeTrampoline<unimplementedTrampoline>);
   moduleAddBuiltinFunction(
       module,
-      "isinstance",
+      symbols()->IsInstance(),
       nativeTrampoline<builtinIsinstance>,
       nativeTrampoline<unimplementedTrampoline>);
   moduleAddBuiltinFunction(
       module,
-      "len",
+      symbols()->Len(),
       nativeTrampoline<builtinLen>,
       nativeTrampoline<unimplementedTrampoline>);
 
-  // Add 'object'
-  Handle<Object> object_name(&scope, symbols()->ObjectClassname());
-  Handle<Object> object_value(&scope, classAt(ClassId::kObject));
-  moduleAddGlobal(module, object_name, object_value);
-
-  Handle<Object> list_name(&scope, symbols()->List());
-  Handle<Object> list_value(&scope, classAt(ClassId::kList));
-  moduleAddGlobal(module, list_name, list_value);
-
-  Handle<Object> classmethod_name(&scope, symbols()->Classmethod());
-  Handle<Object> classmethod_value(&scope, classAt(ClassId::kClassMethod));
-  moduleAddGlobal(module, classmethod_name, classmethod_value);
+  // Add builtin types
+  moduleAddBuiltinType(module, ClassId::kObject, symbols()->ObjectClassname());
+  moduleAddBuiltinType(module, ClassId::kList, symbols()->List());
+  moduleAddBuiltinType(module, ClassId::kClassMethod, symbols()->Classmethod());
+  moduleAddBuiltinType(module, ClassId::kDictionary, symbols()->Dict());
 
   addModule(module);
+}
+
+void Runtime::moduleAddBuiltinType(
+    const Handle<Module>& module,
+    ClassId class_id,
+    Object* symbol) {
+  HandleScope scope;
+  Handle<Object> name(&scope, symbol);
+  Handle<Object> value(&scope, classAt(class_id));
+  moduleAddGlobal(module, name, value);
 }
 
 void Runtime::createSysModule() {
@@ -1814,11 +1824,49 @@ void Runtime::initializeClassMethodClass() {
       nativeTrampoline<builtinClassMethodInit>,
       unimplementedTrampoline);
 
-  Handle<Function> dunder_new(
-      &scope,
-      newBuiltinFunction(
-          nativeTrampoline<builtinClassMethodNew>, unimplementedTrampoline));
-  classmethod->setDunderNew(*dunder_new);
+  classAddBuiltinFunction(
+      classmethod,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinClassMethodNew>,
+      unimplementedTrampoline);
+}
+
+Object* Runtime::computeBuiltinBaseClass(const Handle<Class>& klass) {
+  // The delegate class can only be one of the builtin bases including object.
+  // We use the first non-object builtin base if any, throw if multiple.
+  HandleScope scope;
+  Handle<ObjectArray> mro(&scope, klass->mro());
+  Handle<Class> candidate(&scope, classAt(ClassId::kObject));
+  for (word i = 0; i < mro->length(); i++) {
+    Handle<Class> mro_klass(&scope, mro->at(i));
+    if (mro_klass->id() > ClassId::kLastId) {
+      continue;
+    }
+    if (candidate->id() == ClassId::kObject) {
+      candidate = *mro_klass;
+    } else if (mro_klass->id() != ClassId::kObject) {
+      // TODO: throw TypeError
+      CHECK(false, "multiple bases have instance lay-out conflict.");
+    }
+  }
+  return *candidate;
+}
+
+Object* Runtime::instanceDelegate(const Handle<Object>& instance) {
+  HandleScope scope;
+  Handle<Class> klass(&scope, classOf(*instance));
+  assert(hasDelegate(klass));
+  return Instance::cast(*instance)->instanceVariableAt(klass->delegateOffset());
+}
+
+void Runtime::setInstanceDelegate(
+    const Handle<Object>& instance,
+    const Handle<Object>& delegate) {
+  HandleScope scope;
+  Handle<Class> klass(&scope, classOf(*instance));
+  assert(hasDelegate(klass));
+  return Instance::cast(*instance)->instanceVariableAtPut(
+      klass->delegateOffset(), *delegate);
 }
 
 } // namespace python

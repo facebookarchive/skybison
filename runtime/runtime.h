@@ -110,7 +110,7 @@ class Runtime {
 
   Object* moduleAddBuiltinFunction(
       const Handle<Module>& module,
-      const char* name,
+      Object* name,
       const Function::Entry entry,
       const Function::Entry entryKw);
 
@@ -279,6 +279,25 @@ class Runtime {
       const Handle<Dictionary>& globals,
       const Handle<Dictionary>& builtins);
 
+  Object* computeBuiltinBaseClass(const Handle<Class>& klass);
+
+  // Helper function to add builtin functions to classes
+  void classAddBuiltinFunction(
+      const Handle<Class>& klass,
+      Object* name,
+      Function::Entry entry,
+      Function::Entry entryKw);
+
+  // determine whether the instance needs a slot for delegate base instance
+  bool hasDelegate(const Handle<Class>& klass);
+
+  // Manipulate instance's delegate, since offset is only known by the type,
+  // this method needs to stay in runtime.
+  Object* instanceDelegate(const Handle<Object>& instance);
+  void setInstanceDelegate(
+      const Handle<Object>& instance,
+      const Handle<Object>& delegate);
+
   // Converts the offset in code's bytecode into the corresponding line number
   // in the backing source file.
   word
@@ -367,13 +386,6 @@ class Runtime {
 
   void moduleAddBuiltinPrint(const Handle<Module>& module);
 
-  // Helper function to add builtin functions to classes
-  void classAddBuiltinFunction(
-      const Handle<Class>& klass,
-      Object* name,
-      Function::Entry entry,
-      Function::Entry entryKw);
-
   // Generic attribute lookup code used for class objects
   Object* classGetAttr(
       Thread* thread,
@@ -418,6 +430,12 @@ class Runtime {
 
   // Returns whether object's class provides a __get__ method
   bool isNonDataDescriptor(Thread* thread, const Handle<Object>& object);
+
+  // helper function add builtin types
+  void moduleAddBuiltinType(
+      const Handle<Module>& module,
+      ClassId class_id,
+      Object* symbol);
 
   // The size ensureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;

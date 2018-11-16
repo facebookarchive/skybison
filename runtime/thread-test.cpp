@@ -2376,4 +2376,27 @@ print(len(b), len(b1), b11, b12)
   EXPECT_EQ(output, "3 2 1 2\n");
 }
 
+TEST(ThreadTest, SubclassList) {
+  const char* src = R"(
+class Foo():
+  def __init__(self):
+    self.a = "a"
+class Bar(Foo, list): pass
+a = Bar()
+a.append(1)
+print(a[0], a.a)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1 a\n");
+}
+
+TEST(ThreadTest, BaseClassConflict) {
+  const char* src = R"(
+class Foo(list, dict): pass
+)";
+  Runtime runtime;
+  EXPECT_DEATH(compileAndRunToString(&runtime, src), "lay-out conflict");
+}
+
 } // namespace python

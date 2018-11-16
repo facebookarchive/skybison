@@ -190,10 +190,10 @@ Object* Heap::createInstance(ClassId class_id, word num_attributes) {
   word size = Instance::allocationSize(num_attributes);
   Object* raw = allocate(size, HeapObject::headerSize(num_attributes));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Function*>(raw);
+  auto result = reinterpret_cast<Instance*>(raw);
   result->setHeader(
       Header::from(num_attributes, 0, class_id, ObjectFormat::kObjectInstance));
-  result->initialize();
+  result->initialize(num_attributes * kPointerSize, None::object());
   return Instance::cast(result);
 }
 
