@@ -8,15 +8,15 @@ import sys
 
 
 class FunctionEvent:
-    BUILTIN = 'builtin/extension'
-    INTERPRETED = 'interpreted'
+    BUILTIN = "builtin/extension"
+    INTERPRETED = "interpreted"
 
     def __init__(self, kind, function):
-        self.module_name = '[unknown module]'
-        self.function_name = '[unknown function]'
+        self.module_name = "[unknown module]"
+        self.function_name = "[unknown function]"
         self.kind = kind
         if function is not None:
-            if function.__module__ is not None and function.__module__ != '':
+            if function.__module__ is not None and function.__module__ != "":
                 self.module_name = function.__module__
             if function.__qualname__ is not None:
                 self.function_name = function.__qualname__
@@ -32,11 +32,11 @@ class Return(FunctionEvent):
 
 def _has_code(func, code):
     while func is not None:
-        func_code = getattr(func, '__code__', None)
+        func_code = getattr(func, "__code__", None)
         if func_code is code:
             return func
         # Attempt to find the decorated function
-        func = getattr(func, '__wrapped__', None)
+        func = getattr(func, "__wrapped__", None)
     return None
 
 
@@ -49,7 +49,9 @@ def get_func_in_mro(obj, code):
         return None
     if isinstance(val, (classmethod, staticmethod)):
         cand = val.__func__
-    elif isinstance(val, property) and (val.fset is None) and (val.fdel is None):
+    elif (
+        isinstance(val, property) and (val.fset is None) and (val.fdel is None)
+    ):
         cand = val.fget
     else:
         cand = val
@@ -84,22 +86,22 @@ def get_func(frame):
 
 
 class CallRecorder:
-    C_EVENTS = {'c_call', 'c_return'}
+    C_EVENTS = {"c_call", "c_return"}
 
     EVENT_CLASS = {
-        'c_call': Call,
-        'c_exception': Return,
-        'c_return': Return,
-        'call': Call,
-        'return': Return,
+        "c_call": Call,
+        "c_exception": Return,
+        "c_return": Return,
+        "call": Call,
+        "return": Return,
     }
 
     EVENT_TYP = {
-        'c_call': FunctionEvent.BUILTIN,
-        'c_exception': FunctionEvent.BUILTIN,
-        'c_return': FunctionEvent.BUILTIN,
-        'call': FunctionEvent.INTERPRETED,
-        'return': FunctionEvent.INTERPRETED,
+        "c_call": FunctionEvent.BUILTIN,
+        "c_exception": FunctionEvent.BUILTIN,
+        "c_return": FunctionEvent.BUILTIN,
+        "call": FunctionEvent.INTERPRETED,
+        "return": FunctionEvent.INTERPRETED,
     }
 
     def __init__(self, event_log):
@@ -117,7 +119,9 @@ class CallRecorder:
 
     def __call__(self, frame, event, arg):
         func = self.get_func(frame, event, arg)
-        self.event_log.append(self.EVENT_CLASS[event](self.EVENT_TYP[event], func))
+        self.event_log.append(
+            self.EVENT_CLASS[event](self.EVENT_TYP[event], func)
+        )
 
 
 class Node:
@@ -125,11 +129,13 @@ class Node:
         self.name = name
         self.attrs = attrs or {}
         self.children = children or []
-        self.opening_tag = f'<{self.name}>'
+        self.opening_tag = f"<{self.name}>"
         if attrs:
-            attrstr = ' '.join(f'{name}="{val}"' for name, val in self.attrs.items())
-            self.opening_tag = f'<{self.name} {attrstr}>'
-        self.closing_tag = f'</{self.name}>'
+            attrstr = " ".join(
+                f'{name}="{val}"' for name, val in self.attrs.items()
+            )
+            self.opening_tag = f"<{self.name} {attrstr}>"
+        self.closing_tag = f"</{self.name}>"
 
     def append(self, node):
         self.children.append(node)
@@ -174,6 +180,7 @@ class Document:
     </style>
   </head>
 """
+
     def __init__(self):
         self.level = 0
         self.lines = []
@@ -184,7 +191,11 @@ class Document:
     def process(self, node):
         if isinstance(node, Node):
             if len(node.children) == 1 and isinstance(node.children[0], Text):
-                self.append(node.opening_tag + node.children[0].content + node.closing_tag)
+                self.append(
+                    node.opening_tag
+                    + node.children[0].content
+                    + node.closing_tag
+                )
             else:
                 self.append(node.opening_tag)
                 self.level += 1
@@ -203,19 +214,19 @@ class Document:
 
 
 def toggle(node):
-    node_id = node.attrs['id']
+    node_id = node.attrs["id"]
     return Node(
-        'a',
+        "a",
         attrs={
-            'href': '#',
-            'onClick': f"$(\'#{node_id}\').toggle(); return false;",
+            "href": "#",
+            "onClick": f"$('#{node_id}').toggle(); return false;",
         },
-        children=[Text('+/-')]
+        children=[Text("+/-")],
     )
 
 
 def toggle_bar(node, title):
-    return Node('div', children=[toggle(node), title])
+    return Node("div", children=[toggle(node), title])
 
 
 CONTAINER_ID_CTR = 0
@@ -223,12 +234,9 @@ CONTAINER_ID_CTR = 0
 
 def toggle_bar_and_container(title):
     global CONTAINER_ID_CTR
-    node_id = f'c{CONTAINER_ID_CTR}'
+    node_id = f"c{CONTAINER_ID_CTR}"
     CONTAINER_ID_CTR += 1
-    container = Node('div', attrs={
-        'id': node_id,
-        'class': 'hidden indent'
-    })
+    container = Node("div", attrs={"id": node_id, "class": "hidden indent"})
     return toggle_bar(container, title), container
 
 
@@ -246,35 +254,48 @@ def called_function_section(called_funcs, kind):
     total_names = 0
     for names in called_funcs.values():
         total_names += len(names)
-    all_bar, all_funcs = toggle_bar_and_container(Text(f'Called {total_names} {kind} functions'))
-    for mod, funcs in sorted(called_funcs.items(), key=lambda kv: len(kv[1]), reverse=True):
-        mod_bar, mod_funcs = toggle_bar_and_container(Text(f'{mod} ({len(funcs)})'))
+    all_bar, all_funcs = toggle_bar_and_container(
+        Text(f"Called {total_names} {kind} functions")
+    )
+    for mod, funcs in sorted(
+        called_funcs.items(), key=lambda kv: len(kv[1]), reverse=True
+    ):
+        mod_bar, mod_funcs = toggle_bar_and_container(
+            Text(f"{mod} ({len(funcs)})")
+        )
         for func in sorted(funcs):
-            mod_funcs.append(Node('div', children=[Text(func)]))
+            mod_funcs.append(Node("div", children=[Text(func)]))
         all_funcs.append(mod_bar)
         all_funcs.append(mod_funcs)
-    return Node('div', children=[all_bar, all_funcs])
+    return Node("div", children=[all_bar, all_funcs])
 
 
 def call_node(event):
-    node = (
-        Node('span', children=[
-            Node('span', attrs={'class': 'fn'}, children=[
-                Text(event.function_name)
-            ]),
-            Text(' in '),
-            Node('span', attrs={'class': 'mn'}, children=[
-                Text(event.module_name)
-            ]),
-        ])
+    node = Node(
+        "span",
+        children=[
+            Node(
+                "span",
+                attrs={"class": "fn"},
+                children=[Text(event.function_name)],
+            ),
+            Text(" in "),
+            Node(
+                "span",
+                attrs={"class": "mn"},
+                children=[Text(event.module_name)],
+            ),
+        ],
     )
     if event.kind == FunctionEvent.BUILTIN:
-        node.append(Node('span', attrs={'class': 'fk'}, children=[Text(event.kind)]))
+        node.append(
+            Node("span", attrs={"class": "fk"}, children=[Text(event.kind)])
+        )
     return node
 
 
 def execution_trace_section(event_log):
-    section = Node('div')
+    section = Node("div")
     stack = [section]
     for event in event_log:
         if isinstance(event, Call):
@@ -289,7 +310,7 @@ def execution_trace_section(event_log):
                 # toggle bar. Replace it with a simple text node.
                 stack[-1].children.pop()
                 bar = stack[-1].children.pop()
-                stack[-1].append(Node('div', children=[bar.children[-1]]))
+                stack[-1].append(Node("div", children=[bar.children[-1]]))
     return section
 
 
@@ -365,33 +386,37 @@ class ImportTracer(modulefinder.ModuleFinder):
                     self._safe_import_hook(name, m, fromlist, level=level)
                 else:
                     parent = self.determine_parent(m, level=level)
-                    self._safe_import_hook(parent.__name__, None, fromlist, level=0)
+                    self._safe_import_hook(
+                        parent.__name__, None, fromlist, level=0
+                    )
             else:
                 # We don't expect anything else from the generator.
                 raise RuntimeError(what)
 
 
 def imported_modules_section(imports):
-    bar, mod_list = toggle_bar_and_container(Text(f'Imported {len(imports)} modules'))
+    bar, mod_list = toggle_bar_and_container(
+        Text(f"Imported {len(imports)} modules")
+    )
     for name in sorted(imports):
-        mod_list.append(Node('div', children=[Text(name)]))
-    return Node('div', children=[bar, mod_list])
+        mod_list.append(Node("div", children=[Text(name)]))
+    return Node("div", children=[bar, mod_list])
 
 
 def build_import_trace(trace, called_builtins, indent=False):
     attrs = {}
     if indent:
-        attrs = {'class': 'indent'}
+        attrs = {"class": "indent"}
     msg = trace.module
     try:
         module = importlib.import_module(trace.module)
         if module.__loader__ is _frozen_importlib.BuiltinImporter:
-            msg += ' (builtin)'
+            msg += " (builtin)"
     except:
-        msg += f' (failed importing module)'
+        msg += f" (failed importing module)"
     if trace.module in called_builtins:
-        msg += f' ({len(called_builtins[trace.module])} builtin/extension functions called)'
-    container = Node('div', children=[Text(msg)], attrs=attrs)
+        msg += f" ({len(called_builtins[trace.module])} builtin/extension functions called)"
+    container = Node("div", children=[Text(msg)], attrs=attrs)
     if trace.imports:
         for child in trace.imports:
             container.append(build_import_trace(child, called_builtins, True))
@@ -399,38 +424,40 @@ def build_import_trace(trace, called_builtins, indent=False):
 
 
 def import_trace_section(traces, called_builtins):
-    bar, container = toggle_bar_and_container(Text('Import Trace:'))
+    bar, container = toggle_bar_and_container(Text("Import Trace:"))
     for trace in traces:
         container.append(build_import_trace(trace, called_builtins))
-    return Node('div', children=[bar, container])
+    return Node("div", children=[bar, container])
 
 
 def render_summary(path, source, event_log):
     imported_modules, traces = ImportTracer().compute_imports(path)
     called_interpreted = compute_call_map(event_log, FunctionEvent.INTERPRETED)
     called_builtins = compute_call_map(event_log, FunctionEvent.BUILTIN)
-    body = (
-        Node('body', children=[
-            Node('h1', children=[Text(f'Tracing summary for {path}')]),
-            Node('h2', children=[Text('Source:')]),
-            Node('pre', children=[
-                Text(source)]),
-            Node('h2', children=[Text('Summary stats:')]),
+    body = Node(
+        "body",
+        children=[
+            Node("h1", children=[Text(f"Tracing summary for {path}")]),
+            Node("h2", children=[Text("Source:")]),
+            Node("pre", children=[Text(source)]),
+            Node("h2", children=[Text("Summary stats:")]),
             imported_modules_section(imported_modules),
             called_function_section(called_builtins, FunctionEvent.BUILTIN),
-            called_function_section(called_interpreted, FunctionEvent.INTERPRETED),
-            Node('h2', children=[Text('Import Trace:')]),
+            called_function_section(
+                called_interpreted, FunctionEvent.INTERPRETED
+            ),
+            Node("h2", children=[Text("Import Trace:")]),
             import_trace_section(traces, called_builtins),
-            Node('h2', children=[Text('Call Trace:')]),
+            Node("h2", children=[Text("Call Trace:")]),
             execution_trace_section(event_log),
-        ])
+        ],
     )
     doc = Document()
     doc.process(body)
     return doc.render()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
@@ -451,16 +478,16 @@ It then writes a report to [output_path] with the following information:
   - A call trace.
   - An import trace. Each imported module will appear exactly once in the trace,
     the first time it is executed.
-"""
+""",
     )
-    parser.add_argument('script_path', help='The path to the script to execute')
-    parser.add_argument('output_path', help='Where to write the report')
+    parser.add_argument("script_path", help="The path to the script to execute")
+    parser.add_argument("output_path", help="Where to write the report")
     args = parser.parse_args()
 
     # Compile the script
-    with open(args.script_path, 'r') as f:
+    with open(args.script_path, "r") as f:
         source = f.read()
-    code = compile(source, args.script_path, 'exec')
+    code = compile(source, args.script_path, "exec")
 
     event_log = []
     sys.setprofile(CallRecorder(event_log))
@@ -469,5 +496,5 @@ It then writes a report to [output_path] with the following information:
     finally:
         sys.setprofile(None)
 
-    with open(args.output_path, 'w+') as f:
+    with open(args.output_path, "w+") as f:
         f.write(render_summary(args.script_path, source, event_log))
