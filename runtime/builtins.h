@@ -15,6 +15,9 @@ class Thread;
 // during tests.
 extern std::ostream* builtinPrintStream;
 
-Object* builtinPrint(Thread* thread, Frame* frame, word argc);
+Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs)
+    __attribute__((aligned(16)));
+Object* builtinPrint(Thread* thread, Frame* frame, word nargs)
+    __attribute__((aligned(16)));
 
 } // namespace python

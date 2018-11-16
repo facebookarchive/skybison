@@ -341,10 +341,13 @@ class HeapObject : public Object {
 class Class : public HeapObject {
  public:
   // Getters and setters.
+  inline ClassId id();
   inline Object* mro();
   inline void setMro(Object* object_array);
   inline Object* name();
   inline void setName(Object* name);
+  inline Object* dictionary();
+  inline void setDictionary(Object* name);
 
   // Casting.
   inline static Class* cast(Object* object);
@@ -355,7 +358,8 @@ class Class : public HeapObject {
   // Layout.
   static const int kMroOffset = HeapObject::kSize;
   static const int kNameOffset = kMroOffset + kPointerSize;
-  static const int kSize = kNameOffset + kPointerSize;
+  static const int kDictionaryOffset = kNameOffset + kPointerSize;
+  static const int kSize = kDictionaryOffset + kPointerSize;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Class);
@@ -610,7 +614,7 @@ class Function : public HeapObject {
   static const int kGlobalsOffset = kClosureOffset + kPointerSize;
   static const int kEntryOffset = kGlobalsOffset + kPointerSize;
   static const int kEntryKwOffset = kEntryOffset + kPointerSize;
-  static const int kSize = kEntryKwOffset;
+  static const int kSize = kEntryKwOffset + kPointerSize;
 
  private:
   inline Object* entryToObject(Entry entry);
@@ -1100,6 +1104,10 @@ word Class::allocationSize() {
   return Header::kSize + Class::kSize;
 }
 
+ClassId Class::id() {
+  return static_cast<ClassId>(header()->hashCode());
+}
+
 Object* Class::mro() {
   return instanceVariableAt(kMroOffset);
 }
@@ -1114,6 +1122,14 @@ Object* Class::name() {
 
 void Class::setName(Object* name) {
   instanceVariableAtPut(kNameOffset, name);
+}
+
+Object* Class::dictionary() {
+  return instanceVariableAt(kDictionaryOffset);
+}
+
+void Class::setDictionary(Object* dictionary) {
+  instanceVariableAtPut(kDictionaryOffset, dictionary);
 }
 
 Class* Class::cast(Object* object) {
@@ -1436,6 +1452,10 @@ Function::Entry Function::entry() {
 }
 
 void Function::setEntry(Function::Entry entry) {
+  // The bit pattern for a function pointer object must be indistinguishable
+  // from that of a small integer object.
+  assert(reinterpret_cast<Object*>(reinterpret_cast<uword>(entry))
+             ->isSmallInteger());
   instanceVariableAtPut(kEntryOffset, entryToObject(entry));
 }
 
@@ -1444,6 +1464,10 @@ Function::Entry Function::entryKw() {
 }
 
 void Function::setEntryKw(Function::Entry entryKw) {
+  // The bit pattern for a function pointer object must be indistinguishable
+  // from that of a small integer object.
+  assert(reinterpret_cast<Object*>(reinterpret_cast<uword>(entryKw))
+             ->isSmallInteger());
   instanceVariableAtPut(kEntryKwOffset, entryToObject(entryKw));
 }
 

@@ -193,6 +193,13 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         *sp = Boolean::fromBool(negated);
         break;
       }
+      case Bytecode::LOAD_BUILD_CLASS: {
+        assert(arg == 0);
+        ValueCell* value_cell =
+            ValueCell::cast(thread->runtime()->buildClass());
+        *--sp = value_cell->value();
+        break;
+      }
       default:
         abort();
     }

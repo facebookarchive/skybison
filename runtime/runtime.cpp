@@ -57,8 +57,8 @@ Object* Runtime::newByteArrayWithAll(const byte* data, word length) {
 }
 
 Object* Runtime::newClass() {
-  // TODO(cshapiro): allocate and assign a unique class ID.
-  return heap()->createClass(static_cast<ClassId>(0));
+  ClassId class_id = newClassId();
+  return heap()->createClass(class_id);
 }
 
 Object* Runtime::newClassWithId(ClassId class_id) {
@@ -416,6 +416,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_byte_array_);
   visitor->visitPointer(&empty_object_array_);
   visitor->visitPointer(&empty_string_);
+  visitor->visitPointer(&build_class_);
 
   // Visit interned strings.
   visitor->visitPointer(&interned_);
@@ -438,13 +439,35 @@ void Runtime::addModule(const Handle<Module>& module) {
   dictionaryAtPut(dict, key, value);
 }
 
+Object* Runtime::findModule(const char* name) {
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, modules());
+  Handle<Object> key(&scope, newStringFromCString(name));
+  Handle<Object> value(&scope, None::object());
+  dictionaryAt(dict, key, value.pointer());
+  return *value;
+}
+
 void Runtime::initializeModules() {
   modules_ = newDictionary();
   createBuiltinsModule();
   createSysModule();
 }
 
-void Runtime::addModuleGlobal(
+Object* Runtime::classAt(ClassId class_id) {
+  return List::cast(class_table_)->at(static_cast<word>(class_id));
+}
+
+ClassId Runtime::newClassId() {
+  HandleScope scope;
+  Handle<List> list(&scope, class_table_);
+  Handle<Object> value(&scope, None::object());
+  auto result = static_cast<ClassId>(list->allocated());
+  appendToList(list, value);
+  return result;
+}
+
+void Runtime::moduleAddGlobal(
     const Handle<Module>& module,
     const Handle<Object>& key,
     const Handle<Object>& value) {
@@ -455,16 +478,28 @@ void Runtime::addModuleGlobal(
   value_cell->setValue(*value);
 }
 
+Object* Runtime::moduleAddBuiltinFunction(
+    const Handle<Module>& module,
+    const char* name,
+    const Function::Entry thunk) {
+  HandleScope scope;
+  Handle<Object> key(&scope, newStringFromCString(name));
+  Handle<Dictionary> dictionary(&scope, module->dictionary());
+  Handle<ValueCell> value_cell(
+      &scope, dictionaryAtIfAbsentPut(dictionary, key, newValueCellCallback()));
+  value_cell->setValue(newBuiltinFunction(thunk));
+  return *value_cell;
+}
+
 void Runtime::createBuiltinsModule() {
   HandleScope scope;
   Handle<Object> name(&scope, newStringFromCString("builtins"));
   Handle<Module> module(&scope, newModule(name));
 
   // Fill in builtins...
-  Handle<Object> key(&scope, newStringFromCString("print"));
-  Handle<Object> value(&scope, newBuiltinFunction(&builtinPrint));
-  addModuleGlobal(module, key, value);
-
+  build_class_ =
+      moduleAddBuiltinFunction(module, "__build_class__", builtinBuildClass);
+  moduleAddBuiltinFunction(module, "print", builtinPrint);
   addModule(module);
 }
 
@@ -472,6 +507,7 @@ void Runtime::createSysModule() {
   HandleScope scope;
   Handle<Object> name(&scope, newStringFromCString("sys"));
   Handle<Module> module(&scope, newModule(name));
+
   // Fill in sys...
   addModule(module);
 }
@@ -482,11 +518,7 @@ Object* Runtime::createMainModule() {
   Handle<Module> module(&scope, newModule(name));
 
   // Fill in __main__...
-  // TODO(cshapiro): inherit all symbols present in builtins.
-  Handle<Object> key(&scope, newStringFromCString("print"));
-  Handle<Object> value(&scope, newBuiltinFunction(&builtinPrint));
-  addModuleGlobal(module, key, value);
-
+  moduleAddBuiltinFunction(module, "print", &builtinPrint);
   addModule(module);
 
   return *module;
@@ -681,6 +713,16 @@ Object* Runtime::dictionaryAtIfAbsentPut(
     bucket.set(*key_hash, *key, *value);
   }
   return *value;
+}
+
+bool Runtime::dictionaryIncludes(
+    const Handle<Dictionary>& dict,
+    const Handle<Object>& key) {
+  HandleScope scope;
+  Handle<ObjectArray> data(&scope, dict->data());
+  Handle<Object> key_hash(&scope, hash(*key));
+  word ignore;
+  return dictionaryLookup(data, key, key_hash, &ignore);
 }
 
 bool Runtime::dictionaryRemove(

@@ -86,6 +86,17 @@ Frame* Thread::pushModuleFunctionFrame(
   return result;
 }
 
+Frame* Thread::pushClassFunctionFrame(
+    Object* function,
+    Object* dictionary,
+    Frame* caller) {
+  Object* code = Function::cast(function)->code();
+  Frame* result = pushFrame(code, caller);
+  result->setGlobals(Function::cast(function)->globals());
+  result->setImplicitGlobals(dictionary);
+  return result;
+}
+
 void Thread::pushInitialFrame() {
   assert(ptr_ == end_);
   assert(ptr_ - Frame::kSize > start_);
@@ -109,6 +120,12 @@ Object* Thread::run(Object* object) {
 Object* Thread::runModuleFunction(Module* module, Object* object) {
   assert(ptr_ == reinterpret_cast<byte*>(initialFrame_));
   Frame* frame = pushModuleFunctionFrame(module, object, initialFrame_);
+  return Interpreter::execute(this, frame);
+}
+
+Object*
+Thread::runClassFunction(Object* function, Object* dictionary, Frame* caller) {
+  Frame* frame = pushClassFunctionFrame(function, dictionary, caller);
   return Interpreter::execute(this, frame);
 }
 

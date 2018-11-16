@@ -14,11 +14,11 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc);
 
 // Entry point for an interpreted function with no defaults invoked via
 // CALL_FUNCTION_KW
-Object*
-interpreterTrampolineKw(Thread* thread, Frame* previousFrame, word argc);
+Object* interpreterTrampolineKw(Thread* thread, Frame* previousFrame, word argc)
+    __attribute__((aligned(16)));
 
 // Aborts immediately when called
-Object*
-unimplementedTrampoline(Thread* thread, Frame* previousFrame, word argc);
+Object* unimplementedTrampoline(Thread* thread, Frame* previousFrame, word argc)
+    __attribute__((aligned(16)));
 
 } // namespace python

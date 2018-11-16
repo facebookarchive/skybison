@@ -16,7 +16,7 @@ class Runtime {
  public:
   class NewValueCellCallback : public Callback<Object*> {
    public:
-    NewValueCellCallback(Runtime* runtime) : runtime_(runtime) {}
+    explicit NewValueCellCallback(Runtime* runtime) : runtime_(runtime) {}
     Object* call() {
       return runtime_->newValueCell();
     }
@@ -72,10 +72,25 @@ class Runtime {
   void visitRoots(PointerVisitor* visitor);
 
   void addModule(const Handle<Module>& module);
-  void addModuleGlobal(
+  void moduleAddGlobal(
       const Handle<Module>& module,
       const Handle<Object>& key,
       const Handle<Object>& value);
+
+  Object* moduleAddBuiltinFunction(
+      const Handle<Module>& module,
+      const char* name,
+      const Function::Entry thunk);
+
+  Object* findModule(const char* name);
+
+  Object* classAt(ClassId class_id);
+
+  ClassId newClassId();
+
+  Object* buildClass() {
+    return build_class_;
+  }
 
   Object* interned() {
     return interned_;
@@ -115,6 +130,11 @@ class Runtime {
       const Handle<Dictionary>& dict,
       const Handle<Object>& key,
       Callback<Object*>* thunk);
+
+  // Returns true if the dictionary contains the specified key.
+  bool dictionaryIncludes(
+      const Handle<Dictionary>& dict,
+      const Handle<Object>& key);
 
   // Delete a key from the dictionary.
   //
@@ -185,6 +205,7 @@ class Runtime {
   Object* empty_byte_array_;
   Object* empty_object_array_;
   Object* empty_string_;
+  Object* build_class_;
 
   // Interned strings
   Object* interned_;
