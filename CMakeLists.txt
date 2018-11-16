@@ -7,8 +7,6 @@ add_subdirectory(third-party/benchmark-1.3.0)
 include_directories(
   third-party/benchmark-1.3.0/include)
 
-set(CMAKE_CXX_STANDARD 11)
-
 add_subdirectory(third-party/googletest-1.8.0)
 include_directories(
   third-party/googletest-1.8.0/googletest/include
@@ -50,6 +48,12 @@ add_library(
   runtime/trampolines.h
   runtime/utils.h
   runtime/visitor.h)
+set_target_properties(
+  runtime
+  PROPERTIES
+  CXX_EXTENSIONS NO
+  CXX_STANDARD 11
+  CXX_STANDARD_REQUIRED YES)
 target_compile_options(
   runtime
   PRIVATE
@@ -61,6 +65,12 @@ target_link_libraries(
 add_executable(
   python
   main.cpp)
+set_target_properties(
+  python
+  PROPERTIES
+  CXX_EXTENSIONS NO
+  CXX_STANDARD 11
+  CXX_STANDARD_REQUIRED YES)
 target_compile_options(
   runtime
   PRIVATE
@@ -82,6 +92,12 @@ add_executable(
   runtime/thread-test.cpp
   runtime/utils-test.cpp
   runtime/vector-test.cpp)
+set_target_properties(
+  python-tests
+  PROPERTIES
+  CXX_EXTENSIONS NO
+  CXX_STANDARD 11
+  CXX_STANDARD_REQUIRED YES)
 target_compile_options(
   python-tests
   PRIVATE
