@@ -68,6 +68,16 @@ class Interpreter {
       const Handle<Object>& self,
       const Handle<Object>& other);
 
+  static Object* callMethod4(
+      Thread* thread,
+      Frame* caller,
+      Object** sp,
+      const Handle<Object>& method,
+      const Handle<Object>& self,
+      const Handle<Object>& arg1,
+      const Handle<Object>& arg2,
+      const Handle<Object>& arg3);
+
   static Object* unaryOperation(
       Thread* thread,
       Frame* caller,
@@ -142,7 +152,10 @@ class Interpreter {
   static void doGetIter(Context* ctx, word arg);
   static void doLoadBuildClass(Context* ctx, word arg);
   static void doBreakLoop(Context* ctx, word arg);
+  static void doWithCleanupStart(Context* ctx, word arg);
+  static void doWithCleanupFinish(Context* ctx, word arg);
   static void doPopBlock(Context* ctx, word arg);
+  static void doEndFinally(Context* ctx, word arg);
   static void doStoreName(Context* ctx, word arg);
   static void doUnpackSequence(Context* ctx, word arg);
   static void doForIter(Context* ctx, word arg);
@@ -178,6 +191,7 @@ class Interpreter {
   static void doStoreDeref(Context* ctx, word arg);
   static void doCallFunctionKw(Context* ctx, word arg);
   static void doCallFunctionEx(Context* ctx, word arg);
+  static void doSetupWith(Context* ctx, word arg);
   static void doListAppend(Context* ctx, word arg);
   static void doSetAdd(Context* ctx, word arg);
   static void doMapAdd(Context* ctx, word arg);

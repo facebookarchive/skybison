@@ -449,4 +449,31 @@ c = 3
   EXPECT_EQ(contains_false, Boolean::falseObj());
 }
 
+TEST(InterpreterTest, ContextManagerCallEnterExit) {
+  const char* src = R"(
+a = 1
+class Foo:
+  def __enter__(self):
+    global a
+    a = 2
+
+  def __exit__(self, e, t, b):
+    global a
+    a = 3
+
+b = 0
+with Foo():
+  b = a
+
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  EXPECT_EQ(SmallInteger::cast(*a)->value(), 3);
+  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
+  EXPECT_EQ(SmallInteger::cast(*b)->value(), 2);
+}
+
 } // namespace python

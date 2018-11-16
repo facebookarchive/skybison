@@ -18,7 +18,9 @@ class Runtime;
   V(DunderClass, "__class__")            \
   V(DunderContains, "__contains__")      \
   V(DunderDivmod, "__divmod__")          \
+  V(DunderEnter, "__enter__")            \
   V(DunderEq, "__eq__")                  \
+  V(DunderExit, "__exit__")            \
   V(DunderFloordiv, "__floordiv__")      \
   V(DunderGe, "__ge__")                  \
   V(DunderGet, "__get__")                \

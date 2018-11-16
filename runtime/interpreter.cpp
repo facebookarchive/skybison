@@ -235,6 +235,35 @@ Object* Interpreter::callMethod2(
   return result;
 }
 
+Object* Interpreter::callMethod4(
+    Thread* thread,
+    Frame* caller,
+    Object** sp,
+    const Handle<Object>& method,
+    const Handle<Object>& self,
+    const Handle<Object>& arg1,
+    const Handle<Object>& arg2,
+    const Handle<Object>& arg3) {
+  Object* result;
+  if (method->isFunction()) {
+    sp -= 5;
+    sp[4] = *method;
+    sp[3] = *self;
+    sp[2] = *arg1;
+    sp[1] = *arg2;
+    sp[0] = *arg3;
+    result = call(thread, caller, sp, 4);
+  } else {
+    sp -= 4;
+    sp[3] = *method;
+    sp[2] = *arg1;
+    sp[1] = *arg2;
+    sp[0] = *arg3;
+    result = call(thread, caller, sp, 3);
+  }
+  return result;
+}
+
 Object* Interpreter::unaryOperation(
     Thread* thread,
     Frame* caller,
@@ -737,11 +766,48 @@ void Interpreter::doBreakLoop(Context* ctx, word) {
   ctx->pc = block.handler();
 }
 
+// opcode 81
+void Interpreter::doWithCleanupStart(Context* ctx, word) {
+  HandleScope scope(ctx->thread);
+  Handle<Object> exc(&scope, *ctx->sp++);
+  if (exc->isNone()) {
+    // This is a bound method.
+    Handle<Object> exit(&scope, *ctx->sp);
+    Handle<Object> none(&scope, None::object());
+    *ctx->sp = *exc;
+    Handle<Object> result(
+        &scope,
+        callMethod4(
+            ctx->thread, ctx->frame, ctx->sp, exit, none, none, none, none));
+    *--ctx->sp = *exc;
+    *--ctx->sp = *result;
+  } else {
+    UNIMPLEMENTED("exception handling in context manager");
+  }
+}
+
+// opcode 82
+void Interpreter::doWithCleanupFinish(Context* ctx, word) {
+  HandleScope scope(ctx->thread);
+  Handle<Object> result(&scope, *ctx->sp++);
+  Handle<Object> exc(&scope, *ctx->sp++);
+  if (!exc->isNone()) {
+    UNIMPLEMENTED("exception handling in context manager");
+  }
+}
+
 // opcode 87
 void Interpreter::doPopBlock(Context* ctx, word) {
   Frame* frame = ctx->frame;
   TryBlock block = frame->blockStack()->pop();
   ctx->sp = frame->valueStackBase() - block.level();
+}
+
+void Interpreter::doEndFinally(Context* ctx, word) {
+  Object* status = *ctx->sp++;
+  if (!status->isNone()) {
+    UNIMPLEMENTED("exception handling in context manager");
+  }
 }
 
 // opcode 90
@@ -1209,6 +1275,30 @@ void Interpreter::doCallFunctionEx(Context* ctx, word arg) {
   ctx->sp += (arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
   *ctx->sp = result;
   ctx->thread->abortOnPendingException();
+}
+
+// opcode 143
+void Interpreter::doSetupWith(Context* ctx, word arg) {
+  HandleScope scope(ctx->thread);
+  Thread* thread = ctx->thread;
+  Runtime* runtime = thread->runtime();
+  Frame* frame = ctx->frame;
+  Handle<Object> mgr(&scope, *ctx->sp);
+  Handle<Object> enter_selector(&scope, runtime->symbols()->DunderEnter());
+  Handle<Object> exit_selector(&scope, runtime->symbols()->DunderExit());
+  Handle<Object> enter(
+      &scope, lookupMethod(thread, frame, mgr, enter_selector));
+  Handle<BoundMethod> exit(
+      &scope, runtime->attributeAt(thread, mgr, exit_selector));
+  *ctx->sp = *exit;
+  Handle<Object> result(
+      &scope, callMethod1(thread, frame, ctx->sp, enter, mgr));
+
+  word stack_depth = frame->valueStackBase() - ctx->sp;
+  BlockStack* block_stack = frame->blockStack();
+  block_stack->push(
+      TryBlock(Bytecode::SETUP_FINALLY, ctx->pc + arg, stack_depth));
+  *--ctx->sp = *result;
 }
 
 // opcode 145

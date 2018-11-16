@@ -90,14 +90,14 @@ namespace python {
   V(INPLACE_XOR, 78, doBinaryXor)                          \
   V(INPLACE_OR, 79, doNotImplemented)                      \
   V(BREAK_LOOP, 80, doBreakLoop)                           \
-  V(WITH_CLEANUP_START, 81, doNotImplemented)              \
-  V(WITH_CLEANUP_FINISH, 82, doNotImplemented)             \
+  V(WITH_CLEANUP_START, 81, doWithCleanupStart)            \
+  V(WITH_CLEANUP_FINISH, 82, doWithCleanupFinish)          \
   V(RETURN_VALUE, 83, doInvalidBytecode)                   \
   V(IMPORT_STAR, 84, doNotImplemented)                     \
   V(SETUP_ANNOTATIONS, 85, doNotImplemented)               \
   V(YIELD_VALUE, 86, doNotImplemented)                     \
   V(POP_BLOCK, 87, doPopBlock)                             \
-  V(END_FINALLY, 88, doNotImplemented)                     \
+  V(END_FINALLY, 88, doEndFinally)                         \
   V(POP_EXCEPT, 89, doNotImplemented)                      \
   V(STORE_NAME, 90, doStoreName)                           \
   V(DELETE_NAME, 91, doNotImplemented)                     \
@@ -152,7 +152,7 @@ namespace python {
   V(UNUSED_BYTECODE_140, 140, doInvalidBytecode)           \
   V(CALL_FUNCTION_KW, 141, doCallFunctionKw)               \
   V(CALL_FUNCTION_EX, 142, doCallFunctionEx)               \
-  V(SETUP_WITH, 143, doNotImplemented)                     \
+  V(SETUP_WITH, 143, doSetupWith)                          \
   V(EXTENDED_ARG, 144, doInvalidBytecode)                  \
   V(LIST_APPEND, 145, doListAppend)                        \
   V(SET_ADD, 146, doSetAdd)                                \
