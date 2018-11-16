@@ -492,4 +492,54 @@ a = setattr(Foo, 2, 'foo')
   EXPECT_DEATH(runtime.runFromCStr(src), "attribute name must be string");
 }
 
+TEST(BuiltinsModuleTest, ModuleAttrReturnsBuiltinsName) {
+  // TODO(eelizondo): Parameterize test for all builtin types
+  const char* src = R"(
+a = hasattr(object, '__module__')
+b = getattr(object, '__module__')
+c = hasattr(list, '__module__')
+d = getattr(list, '__module__')
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_EQ(*a, Bool::trueObj());
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  ASSERT_TRUE(b->isStr());
+  EXPECT_TRUE(Str::cast(b)->equalsCStr("builtins"));
+
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  EXPECT_EQ(*a, Bool::trueObj());
+  Object d(&scope, moduleAt(&runtime, "__main__", "d"));
+  ASSERT_TRUE(b->isStr());
+  EXPECT_TRUE(Str::cast(b)->equalsCStr("builtins"));
+}
+
+TEST(BuiltinsModuleTest, QualnameAttrReturnsTypeName) {
+  // TODO(eelizondo): Parameterize test for all builtin types
+  const char* src = R"(
+a = hasattr(object, '__qualname__')
+b = getattr(object, '__qualname__')
+c = hasattr(list, '__qualname__')
+d = getattr(list, '__qualname__')
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_EQ(*a, Bool::trueObj());
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  ASSERT_TRUE(b->isStr());
+  EXPECT_TRUE(Str::cast(b)->equalsCStr("object"));
+
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  EXPECT_EQ(*c, Bool::trueObj());
+  Object d(&scope, moduleAt(&runtime, "__main__", "d"));
+  ASSERT_TRUE(d->isStr());
+  EXPECT_TRUE(Str::cast(d)->equalsCStr("list"));
+}
+
 }  // namespace python
