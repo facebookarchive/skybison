@@ -114,6 +114,9 @@ typedef struct {
     Py_ssize_t ob_size; /* Number of items in variable part */
 } PyVarObject;
 
+#define Py_AsPyObject(ob) reinterpret_cast<PyObject*>(ob)
+#define Py_AsApiHandle(ob) reinterpret_cast<ApiHandle*>(ob)
+
 #define Py_REFCNT(ob)           (((PyObject*)(ob))->ob_refcnt)
 #define Py_TYPE(ob)             (((PyObject*)(ob))->ob_type)
 #define Py_SIZE(ob)             (((PyVarObject*)(ob))->ob_size)

@@ -13,16 +13,14 @@ int PyDict_SetItem(PyObject* op, PyObject* key, PyObject* value) {
   py::Runtime* runtime = thread->runtime();
   py::HandleScope scope(thread->handles());
 
-  py::Handle<py::Object> dictobj(
-      &scope, runtime->asObject(reinterpret_cast<ApiHandle*>(op)));
+  py::Handle<py::Object> dictobj(&scope, runtime->asObject(Py_AsApiHandle(op)));
   if (!dictobj->isDictionary()) {
     return -1;
   }
 
-  py::Handle<py::Object> keyobj(
-      &scope, runtime->asObject(reinterpret_cast<ApiHandle*>(key)));
+  py::Handle<py::Object> keyobj(&scope, runtime->asObject(Py_AsApiHandle(key)));
   py::Handle<py::Object> valueobj(
-      &scope, runtime->asObject(reinterpret_cast<ApiHandle*>(value)));
+      &scope, runtime->asObject(Py_AsApiHandle(value)));
   py::Handle<py::Dictionary> dict(&scope, *dictobj);
   key->ob_refcnt += 1;
   value->ob_refcnt += 1;
@@ -36,8 +34,7 @@ int PyDict_SetItemString(PyObject* v, const char* key, PyObject* item) {
   py::HandleScope scope(thread->handles());
 
   py::Handle<py::Object> keyobj(&scope, runtime->newStringFromCString(key));
-  return PyDict_SetItem(
-      v, reinterpret_cast<PyObject*>(runtime->asApiHandle(*keyobj)), item);
+  return PyDict_SetItem(v, Py_AsPyObject(runtime->asApiHandle(*keyobj)), item);
 }
 
 PyObject* PyDict_New(void) {
@@ -46,5 +43,5 @@ PyObject* PyDict_New(void) {
   py::HandleScope scope(thread->handles());
 
   py::Handle<py::Object> value(&scope, runtime->newDictionary());
-  return reinterpret_cast<PyObject*>(runtime->asApiHandle(*value));
+  return Py_AsPyObject(runtime->asApiHandle(*value));
 }

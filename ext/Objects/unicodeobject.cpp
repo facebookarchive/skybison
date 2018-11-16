@@ -14,5 +14,5 @@ PyObject* PyUnicode_FromString(const char* u) {
   py::HandleScope scope(thread->handles());
 
   py::Handle<py::Object> value(&scope, runtime->newStringFromCString(u));
-  return reinterpret_cast<PyObject*>(runtime->asApiHandle(*value));
+  return Py_AsPyObject(runtime->asApiHandle(*value));
 }
