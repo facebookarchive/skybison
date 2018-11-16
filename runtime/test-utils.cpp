@@ -48,8 +48,7 @@ std::string callFunctionToString(
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread->handles());
   Handle<Code> code(&scope, func->code());
-  Frame* frame = thread->openAndLinkFrame(
-      0, 0, code->argcount() + 1, thread->initialFrame());
+  Frame* frame = thread->openAndLinkFrame(0, 0, code->argcount() + 1);
   Object** sp = frame->valueStackTop();
   *--sp = *func;
   for (word i = 0; i < args->length(); i++) {

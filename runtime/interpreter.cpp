@@ -614,7 +614,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
       case Bytecode::RETURN_VALUE: {
         Object* result = *ctx.sp++;
         // Clean up after ourselves
-        thread->popFrame(frame);
+        thread->popFrame();
         return result;
       }
       default: {

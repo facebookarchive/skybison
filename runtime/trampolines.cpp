@@ -21,7 +21,7 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
   assert(argc == code->argcount());
 
   // Set up the frame
-  auto frame = thread->pushFrame(code, previousFrame);
+  auto frame = thread->pushFrame(code);
   frame->setGlobals(function->globals());
 
   if (frame->globals() == previousFrame->globals()) {

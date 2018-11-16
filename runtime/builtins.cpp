@@ -86,7 +86,7 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   // work correctly.  The key to doing that would be to put some state on the
   // stack in between the the incoming arguments from the builtin' caller and
   // the on-stack state for the class body function call.
-  thread->runClassFunction(*body, *dictionary, caller);
+  thread->runClassFunction(*body, *dictionary);
 
   Handle<Class> result(&scope, runtime->newClass());
   result->setName(*name);

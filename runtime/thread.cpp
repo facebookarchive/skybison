@@ -45,14 +45,10 @@ void Thread::setCurrentThread(Thread* thread) {
   current_thread_ = thread;
 }
 
-Frame* Thread::openAndLinkFrame(
-    word numArgs,
-    word numVars,
-    word stackDepth,
-    Frame* previousFrame) {
-  assert(numArgs >= 0);
-  assert(numVars >= 0);
-  assert(stackDepth >= 0);
+Frame* Thread::openAndLinkFrame(word numArgs, word numVars, word stackDepth) {
+  CHECK(numArgs >= 0, "must have 0 or more arguments");
+  CHECK(numVars >= 0, "must have 0 or more locals");
+  CHECK(stackDepth >= 0, "stack depth cannot be negative");
   // HACK: Reserve one extra stack slot for the case where we need to unwrap a
   // bound method
   stackDepth += 1;
@@ -68,39 +64,37 @@ Frame* Thread::openAndLinkFrame(
   // Take care to align the frame such that the arguments that were pushed on
   // the stack by the caller are adjacent to the locals of the callee.
   byte* sp = ptr_;
-  if (!previousFrame->isSentinelFrame()) {
-    sp = reinterpret_cast<byte*>(previousFrame->valueStackTop()) - size;
+  if (!currentFrame_->isSentinelFrame()) {
+    sp = reinterpret_cast<byte*>(currentFrame_->valueStackTop()) - size;
     CHECK(sp >= ptr_, "value stack overflow by %lu bytes\n", ptr_ - sp);
   }
   auto frame = reinterpret_cast<Frame*>(sp + stackDepth * kPointerSize);
 
   // Initialize the frame.
   std::memset(sp, 0, size);
-  frame->setPreviousFrame(previousFrame);
+  frame->setPreviousFrame(currentFrame_);
   frame->setValueStackTop(reinterpret_cast<Object**>(frame));
   frame->setPreviousSp(prevSp);
   frame->setNumLocals(numArgs + numVars);
+
+  currentFrame_ = frame;
 
   // return a pointer to the base of the frame
   return frame;
 }
 
-Frame* Thread::pushFrame(Object* object, Frame* previousFrame) {
+Frame* Thread::pushFrame(Object* object) {
   HandleScope scope(handles());
   Handle<Code> code(&scope, object);
   word numVars = code->nlocals() + code->numCellvars() + code->numFreevars();
-  auto frame = openAndLinkFrame(
-      code->argcount(), numVars, code->stacksize(), previousFrame);
+  auto frame = openAndLinkFrame(code->argcount(), numVars, code->stacksize());
   frame->setCode(*code);
   return frame;
 }
 
-Frame* Thread::pushModuleFunctionFrame(
-    Module* module,
-    Object* object,
-    Frame* previousFrame) {
+Frame* Thread::pushModuleFunctionFrame(Module* module, Object* object) {
   HandleScope scope;
-  Frame* result = pushFrame(object, previousFrame);
+  Frame* result = pushFrame(object);
   Handle<Code> code(&scope, object);
   Handle<Dictionary> globals(&scope, module->dictionary());
   Handle<Object> name(&scope, runtime()->newStringFromCString("builtins"));
@@ -114,13 +108,10 @@ Frame* Thread::pushModuleFunctionFrame(
   return result;
 }
 
-Frame* Thread::pushClassFunctionFrame(
-    Object* function,
-    Object* dictionary,
-    Frame* caller) {
+Frame* Thread::pushClassFunctionFrame(Object* function, Object* dictionary) {
   HandleScope scope;
   Handle<Code> code(&scope, Function::cast(function)->code());
-  Frame* result = pushFrame(*code, caller);
+  Frame* result = pushFrame(*code);
   Handle<Dictionary> globals(&scope, Function::cast(function)->globals());
   Handle<Object> name(&scope, runtime()->newStringFromCString("builtins"));
   Handle<Dictionary> builtins(
@@ -134,34 +125,40 @@ Frame* Thread::pushClassFunctionFrame(
 }
 
 void Thread::pushInitialFrame() {
-  assert(ptr_ == end_);
-  assert(ptr_ - Frame::kSize > start_);
+  CHECK(ptr_ == end_, "stack must be empty when pushing initial frame");
+  CHECK(ptr_ - Frame::kSize > start_, "no space for initial frame");
 
   ptr_ -= Frame::kSize;
   initialFrame_ = reinterpret_cast<Frame*>(ptr_);
   initialFrame_->makeSentinel();
+  currentFrame_ = initialFrame_;
 }
 
-void Thread::popFrame(Frame* frame) {
-  assert(!frame->isSentinelFrame());
+void Thread::popFrame() {
+  Frame* frame = currentFrame_;
+  CHECK(!frame->isSentinelFrame(), "cannot pop initial frame");
+  currentFrame_ = frame->previousFrame();
   ptr_ = frame->previousSp();
 }
 
 Object* Thread::run(Object* object) {
-  assert(ptr_ == reinterpret_cast<byte*>(initialFrame_));
-  Frame* frame = pushFrame(object, initialFrame_);
+  CHECK(
+      ptr_ == reinterpret_cast<byte*>(initialFrame_),
+      "thread must be inactive");
+  Frame* frame = pushFrame(object);
   return Interpreter::execute(this, frame);
 }
 
 Object* Thread::runModuleFunction(Module* module, Object* object) {
-  assert(ptr_ == reinterpret_cast<byte*>(initialFrame_));
-  Frame* frame = pushModuleFunctionFrame(module, object, initialFrame_);
+  CHECK(
+      ptr_ == reinterpret_cast<byte*>(initialFrame_),
+      "thread must be inactive");
+  Frame* frame = pushModuleFunctionFrame(module, object);
   return Interpreter::execute(this, frame);
 }
 
-Object*
-Thread::runClassFunction(Object* function, Object* dictionary, Frame* caller) {
-  Frame* frame = pushClassFunctionFrame(function, dictionary, caller);
+Object* Thread::runClassFunction(Object* function, Object* dictionary) {
+  Frame* frame = pushClassFunctionFrame(function, dictionary);
   return Interpreter::execute(this, frame);
 }
 

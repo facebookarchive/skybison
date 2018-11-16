@@ -30,22 +30,16 @@ class Thread {
     return ptr_;
   }
 
-  Frame* openAndLinkFrame(
-      word numArgs,
-      word numVars,
-      word stackDepth,
-      Frame* previousFrame);
-  Frame* pushFrame(Object* code, Frame* previousFrame);
-  Frame*
-  pushModuleFunctionFrame(Module* module, Object* code, Frame* previousFrame);
-  Frame*
-  pushClassFunctionFrame(Object* function, Object* dictionary, Frame* caller);
+  Frame* openAndLinkFrame(word numArgs, word numVars, word stackDepth);
+  Frame* pushFrame(Object* code);
+  Frame* pushModuleFunctionFrame(Module* module, Object* code);
+  Frame* pushClassFunctionFrame(Object* function, Object* dictionary);
 
-  void popFrame(Frame* frame);
+  void popFrame();
 
   Object* run(Object* object);
   Object* runModuleFunction(Module* module, Object* object);
-  Object* runClassFunction(Object* function, Object* dictionary, Frame* caller);
+  Object* runClassFunction(Object* function, Object* dictionary);
 
   Thread* next() {
     return next_;
@@ -61,6 +55,10 @@ class Thread {
 
   Frame* initialFrame() {
     return initialFrame_;
+  }
+
+  Frame* currentFrame() {
+    return currentFrame_;
   }
 
   void visitRoots(PointerVisitor* visitor);
@@ -127,7 +125,14 @@ class Thread {
   byte* end_;
   byte* ptr_;
 
+  // initialFrame_ is a sentinel frame (all zeros) that is pushed onto the
+  // stack when the thread is created.
   Frame* initialFrame_;
+
+  // currentFrame_ always points to the top-most frame on the stack. When there
+  // are no activations (e.g. immediately after the thread is created) this
+  // points at initialFrame_.
+  Frame* currentFrame_;
   Thread* next_;
   Runtime* runtime_;
 
