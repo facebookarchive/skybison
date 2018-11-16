@@ -38,7 +38,7 @@ class Heap {
 
   Object* createDouble(double value);
 
-  Object* createSet();
+  Object* createEllipsis();
 
   Object* createFunction();
 
@@ -58,15 +58,15 @@ class Heap {
 
   Object* createLargeString(word length);
 
-  Object* createValueCell();
-
-  Object* createEllipsis();
-
   Object* createRange();
 
   Object* createRangeIterator();
 
+  Object* createSet();
+
   Object* createSlice();
+
+  Object* createValueCell();
 
   Object* createWeakRef();
 

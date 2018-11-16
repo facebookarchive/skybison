@@ -83,17 +83,27 @@ bool Heap::verify() {
   return true;
 }
 
-Object* Heap::createLayout(word id) {
-  Object* raw = allocate(Layout::allocationSize(), Header::kSize);
+Object* Heap::createBoundMethod() {
+  word size = BoundMethod::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Layout*>(raw);
+  auto result = reinterpret_cast<BoundMethod*>(raw);
   result->setHeader(Header::from(
-      Layout::kSize / kPointerSize,
-      id,
-      IntrinsicLayoutId::kLayout,
+      BoundMethod::kSize / kPointerSize,
+      0,
+      IntrinsicLayoutId::kBoundMethod,
       ObjectFormat::kObjectInstance));
-  result->initialize(Layout::kSize, None::object());
-  return Layout::cast(result);
+  return BoundMethod::cast(result);
+}
+
+Object* Heap::createByteArray(word length) {
+  word size = ByteArray::allocationSize(length);
+  Object* raw = allocate(size, ByteArray::headerSize(length));
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<ByteArray*>(raw);
+  result->setHeaderAndOverflow(
+      length, 0, IntrinsicLayoutId::kByteArray, ObjectFormat::kDataArray8);
+  return ByteArray::cast(result);
 }
 
 Object* Heap::createClass() {
@@ -134,16 +144,6 @@ Object* Heap::createCode() {
   return Code::cast(result);
 }
 
-Object* Heap::createByteArray(word length) {
-  word size = ByteArray::allocationSize(length);
-  Object* raw = allocate(size, ByteArray::headerSize(length));
-  CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<ByteArray*>(raw);
-  result->setHeaderAndOverflow(
-      length, 0, IntrinsicLayoutId::kByteArray, ObjectFormat::kDataArray8);
-  return ByteArray::cast(result);
-}
-
 Object* Heap::createDictionary() {
   word size = Dictionary::allocationSize();
   Object* raw = allocate(size, Header::kSize);
@@ -172,18 +172,17 @@ Object* Heap::createDouble(double value) {
   return Double::cast(result);
 }
 
-Object* Heap::createSet() {
-  word size = Set::allocationSize();
+Object* Heap::createEllipsis() {
+  word size = Ellipsis::allocationSize();
   Object* raw = allocate(size, Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Set*>(raw);
+  auto result = reinterpret_cast<Ellipsis*>(raw);
   result->setHeader(Header::from(
-      Set::kSize / kPointerSize,
+      Ellipsis::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kSet,
-      ObjectFormat::kObjectInstance));
-  result->initialize(Set::kSize, None::object());
-  return Set::cast(result);
+      IntrinsicLayoutId::kEllipsis,
+      ObjectFormat::kDataInstance));
+  return Ellipsis::cast(result);
 }
 
 Object* Heap::createFunction() {
@@ -223,6 +222,30 @@ Object* Heap::createLargeInteger(word value) {
       ObjectFormat::kDataInstance));
   result->initialize(value);
   return LargeInteger::cast(result);
+}
+
+Object* Heap::createLargeString(word length) {
+  assert(length > SmallString::kMaxLength);
+  word size = LargeString::allocationSize(length);
+  Object* raw = allocate(size, LargeString::headerSize(length));
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<LargeString*>(raw);
+  result->setHeaderAndOverflow(
+      length, 0, IntrinsicLayoutId::kLargeString, ObjectFormat::kDataArray8);
+  return LargeString::cast(result);
+}
+
+Object* Heap::createLayout(word id) {
+  Object* raw = allocate(Layout::allocationSize(), Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<Layout*>(raw);
+  result->setHeader(Header::from(
+      Layout::kSize / kPointerSize,
+      id,
+      IntrinsicLayoutId::kLayout,
+      ObjectFormat::kObjectInstance));
+  result->initialize(Layout::kSize, None::object());
+  return Layout::cast(result);
 }
 
 Object* Heap::createList() {
@@ -279,43 +302,6 @@ Object* Heap::createObjectArray(word length, Object* value) {
   return ObjectArray::cast(result);
 }
 
-Object* Heap::createLargeString(word length) {
-  assert(length > SmallString::kMaxLength);
-  word size = LargeString::allocationSize(length);
-  Object* raw = allocate(size, LargeString::headerSize(length));
-  CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<LargeString*>(raw);
-  result->setHeaderAndOverflow(
-      length, 0, IntrinsicLayoutId::kLargeString, ObjectFormat::kDataArray8);
-  return LargeString::cast(result);
-}
-
-Object* Heap::createValueCell() {
-  word size = ValueCell::allocationSize();
-  Object* raw = allocate(size, Header::kSize);
-  CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<ValueCell*>(raw);
-  result->setHeader(Header::from(
-      ValueCell::kSize / kPointerSize,
-      0,
-      IntrinsicLayoutId::kValueCell,
-      ObjectFormat::kObjectInstance));
-  return ValueCell::cast(result);
-}
-
-Object* Heap::createEllipsis() {
-  word size = Ellipsis::allocationSize();
-  Object* raw = allocate(size, Header::kSize);
-  CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Ellipsis*>(raw);
-  result->setHeader(Header::from(
-      Ellipsis::kSize / kPointerSize,
-      0,
-      IntrinsicLayoutId::kEllipsis,
-      ObjectFormat::kDataInstance));
-  return Ellipsis::cast(result);
-}
-
 Object* Heap::createRange() {
   word size = Range::allocationSize();
   Object* raw = allocate(size, Header::kSize);
@@ -342,17 +328,18 @@ Object* Heap::createRangeIterator() {
   return RangeIterator::cast(result);
 }
 
-Object* Heap::createBoundMethod() {
-  word size = BoundMethod::allocationSize();
+Object* Heap::createSet() {
+  word size = Set::allocationSize();
   Object* raw = allocate(size, Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<BoundMethod*>(raw);
+  auto result = reinterpret_cast<Set*>(raw);
   result->setHeader(Header::from(
-      BoundMethod::kSize / kPointerSize,
+      Set::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kBoundMethod,
+      IntrinsicLayoutId::kSet,
       ObjectFormat::kObjectInstance));
-  return BoundMethod::cast(result);
+  result->initialize(Set::kSize, None::object());
+  return Set::cast(result);
 }
 
 Object* Heap::createSlice() {
@@ -367,6 +354,19 @@ Object* Heap::createSlice() {
       ObjectFormat::kObjectInstance));
   result->initialize(Slice::kSize, None::object());
   return Slice::cast(result);
+}
+
+Object* Heap::createValueCell() {
+  word size = ValueCell::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<ValueCell*>(raw);
+  result->setHeader(Header::from(
+      ValueCell::kSize / kPointerSize,
+      0,
+      IntrinsicLayoutId::kValueCell,
+      ObjectFormat::kObjectInstance));
+  return ValueCell::cast(result);
 }
 
 Object* Heap::createWeakRef() {
