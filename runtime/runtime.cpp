@@ -397,7 +397,7 @@ void Runtime::initializeListClass() {
 
   classAddBuiltinFunction(
       list,
-      "append",
+      symbols()->Append(),
       nativeTrampoline<builtinListAppend>,
       unimplementedTrampoline);
 
@@ -410,11 +410,11 @@ void Runtime::initializeListClass() {
 
 void Runtime::classAddBuiltinFunction(
     const Handle<Class>& klass,
-    const char* name,
+    Object* name,
     Function::Entry entry,
     Function::Entry entryKw) {
   HandleScope scope;
-  Handle<Object> key(&scope, newStringFromCString(name));
+  Handle<Object> key(&scope, name);
   Handle<Object> value(&scope, newBuiltinFunction(entry, entryKw));
   Handle<Dictionary> dict(&scope, klass->dictionary());
   dictionaryAtPutInValueCell(dict, key, value);
@@ -1832,7 +1832,7 @@ void Runtime::initializeClassMethodClass() {
 
   classAddBuiltinFunction(
       classmethod,
-      "__init__",
+      symbols()->DunderInit(),
       nativeTrampoline<builtinClassMethodInit>,
       unimplementedTrampoline);
 

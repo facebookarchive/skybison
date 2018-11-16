@@ -98,7 +98,7 @@ Frame* Thread::pushModuleFunctionFrame(Module* module, Object* object) {
   Frame* result = pushFrame(object);
   Handle<Code> code(&scope, object);
   Handle<Dictionary> globals(&scope, module->dictionary());
-  Handle<Object> name(&scope, runtime()->newStringFromCString("builtins"));
+  Handle<Object> name(&scope, runtime()->symbols()->Builtins());
   Handle<Dictionary> builtins(
       &scope, Module::cast(runtime()->findModule(name))->dictionary());
   result->setGlobals(*globals);
@@ -114,7 +114,7 @@ Frame* Thread::pushClassFunctionFrame(Object* function, Object* dictionary) {
   Handle<Code> code(&scope, Function::cast(function)->code());
   Frame* result = pushFrame(*code);
   Handle<Dictionary> globals(&scope, Function::cast(function)->globals());
-  Handle<Object> name(&scope, runtime()->newStringFromCString("builtins"));
+  Handle<Object> name(&scope, runtime()->symbols()->Builtins());
   Handle<Dictionary> builtins(
       &scope, Module::cast(runtime()->findModule(name))->dictionary());
   result->setGlobals(*globals);

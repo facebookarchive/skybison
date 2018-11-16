@@ -10,14 +10,16 @@ class Runtime;
 // List of predefined symbols, one per line
 // clang-format off
 #define FOREACH_SYMBOL(V)                \
+  V(DunderGet, "__get__")                \
   V(DunderInit, "__init__")              \
   V(DunderMain, "__main__")              \
   V(DunderName, "__name__")              \
-  V(DunderGet, "__get__")                \
   V(DunderSet, "__set__")                \
-  V(ObjectClassname, "object")           \
-  V(List, "list")               \
-  V(Classmethod, "classmethod")
+  V(Append, "append")                    \
+  V(Builtins, "builtins")                \
+  V(Classmethod, "classmethod")          \
+  V(List, "list")                        \
+  V(ObjectClassname, "object")
 // clang-format on
 
 // Provides convenient, fast access to commonly used names. Stolen from Dart.

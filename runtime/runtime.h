@@ -355,7 +355,7 @@ class Runtime {
   // Helper function to add builtin functions to classes
   void classAddBuiltinFunction(
       const Handle<Class>& klass,
-      const char* name,
+      Object* name,
       Function::Entry entry,
       Function::Entry entryKw);
 
