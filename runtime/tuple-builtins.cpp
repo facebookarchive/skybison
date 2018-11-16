@@ -6,10 +6,28 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
-Object* builtinTupleEq(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod TupleBuiltins::kMethods[] = {
+    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
+    {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
+    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>}};
+
+void TupleBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Type> type(
+      &scope, runtime->addEmptyBuiltinClass(
+                  SymbolId::kTuple, LayoutId::kObjectArray, LayoutId::kObject));
+  type->setFlag(Type::Flag::kTupleSubclass);
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(type, kMethods[i].name,
+                                     kMethods[i].address);
+  }
+}
+
+Object* TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -39,7 +57,7 @@ Object* builtinTupleEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* tupleSlice(Thread* thread, ObjectArray* tuple, Slice* slice) {
+Object* TupleBuiltins::slice(Thread* thread, ObjectArray* tuple, Slice* slice) {
   word start, stop, step;
   slice->unpack(&start, &stop, &step);
   word length = Slice::adjustIndices(tuple->length(), &start, &stop, step);
@@ -55,7 +73,7 @@ Object* tupleSlice(Thread* thread, ObjectArray* tuple, Slice* slice) {
   return *items;
 }
 
-Object* builtinTupleGetItem(Thread* thread, Frame* frame, word nargs) {
+Object* TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -75,8 +93,8 @@ Object* builtinTupleGetItem(Thread* thread, Frame* frame, word nargs) {
       }
       return tuple->at(idx);
     } else if (index->isSlice()) {
-      Handle<Slice> slice(&scope, Slice::cast(index));
-      return tupleSlice(thread, *tuple, *slice);
+      Handle<Slice> tuple_slice(&scope, Slice::cast(index));
+      return slice(thread, *tuple, *tuple_slice);
     }
     return thread->throwTypeErrorFromCString(
         "tuple indices must be integers or slices");
@@ -87,7 +105,7 @@ Object* builtinTupleGetItem(Thread* thread, Frame* frame, word nargs) {
       "argument");
 }
 
-Object* builtinTupleNew(Thread* thread, Frame* frame, word nargs) {
+Object* TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
     return thread->throwTypeErrorFromCString(
         "tuple.__new__(): not enough arguments");

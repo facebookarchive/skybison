@@ -63,7 +63,8 @@ TEST(TupleBuiltinsTest, SlicePositiveStartIndex) {
   Handle<Object> stop(&scope, None::object());
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
-  Handle<ObjectArray> test(&scope, tupleSlice(thread, *tuple1, *slice));
+  Handle<ObjectArray> test(&scope,
+                           TupleBuiltins::slice(thread, *tuple1, *slice));
   ASSERT_EQ(test->length(), 3);
   EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 3);
   EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 4);
@@ -81,7 +82,8 @@ TEST(TupleBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
   Handle<Object> stop(&scope, None::object());
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
-  Handle<ObjectArray> test(&scope, tupleSlice(thread, *tuple1, *slice));
+  Handle<ObjectArray> test(&scope,
+                           TupleBuiltins::slice(thread, *tuple1, *slice));
   ASSERT_EQ(test->length(), 2);
   EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 4);
   EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 5);
@@ -98,7 +100,8 @@ TEST(TupleBuiltinsTest, SlicePositiveStopIndex) {
   Handle<Object> stop(&scope, SmallInt::fromWord(2));
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
-  Handle<ObjectArray> test(&scope, tupleSlice(thread, *tuple1, *slice));
+  Handle<ObjectArray> test(&scope,
+                           TupleBuiltins::slice(thread, *tuple1, *slice));
   ASSERT_EQ(test->length(), 2);
   EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
   EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 2);
@@ -115,7 +118,8 @@ TEST(TupleBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
   Handle<Object> stop(&scope, SmallInt::fromWord(-2));
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
-  Handle<ObjectArray> test(&scope, tupleSlice(thread, *tuple1, *slice));
+  Handle<ObjectArray> test(&scope,
+                           TupleBuiltins::slice(thread, *tuple1, *slice));
   ASSERT_EQ(test->length(), 3);
   EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
   EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 2);
@@ -133,7 +137,8 @@ TEST(TupleBuiltinsTest, SlicePositiveStep) {
   Handle<Object> stop(&scope, None::object());
   Handle<Object> step(&scope, SmallInt::fromWord(2));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
-  Handle<ObjectArray> test(&scope, tupleSlice(thread, *tuple1, *slice));
+  Handle<ObjectArray> test(&scope,
+                           TupleBuiltins::slice(thread, *tuple1, *slice));
   ASSERT_EQ(test->length(), 3);
   EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
   EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 3);
@@ -151,7 +156,8 @@ TEST(TupleBuiltinsTest, SliceNegativeStepReversesOrder) {
   Handle<Object> stop(&scope, None::object());
   Handle<Object> step(&scope, SmallInt::fromWord(-2));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
-  Handle<ObjectArray> test(&scope, tupleSlice(thread, *tuple1, *slice));
+  Handle<ObjectArray> test(&scope,
+                           TupleBuiltins::slice(thread, *tuple1, *slice));
   ASSERT_EQ(test->length(), 3);
   EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 5);
   EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 3);
@@ -169,7 +175,8 @@ TEST(TupleBuiltinsTest, SliceStartIndexOutOfBounds) {
   Handle<Object> stop(&scope, None::object());
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
-  Handle<ObjectArray> test(&scope, tupleSlice(thread, *tuple1, *slice));
+  Handle<ObjectArray> test(&scope,
+                           TupleBuiltins::slice(thread, *tuple1, *slice));
   ASSERT_EQ(test->length(), 0);
 }
 
@@ -184,7 +191,8 @@ TEST(TupleBuiltinsTest, SliceStopIndexOutOfBounds) {
   Handle<Object> stop(&scope, SmallInt::fromWord(10));
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
-  Handle<ObjectArray> test(&scope, tupleSlice(thread, *tuple1, *slice));
+  Handle<ObjectArray> test(&scope,
+                           TupleBuiltins::slice(thread, *tuple1, *slice));
   ASSERT_EQ(test->length(), 5);
   EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
   EXPECT_EQ(SmallInt::cast(test->at(4))->value(), 5);
@@ -201,7 +209,8 @@ TEST(TupleBuiltinsTest, SliceStepOutOfBounds) {
   Handle<Object> stop(&scope, None::object());
   Handle<Object> step(&scope, SmallInt::fromWord(10));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
-  Handle<ObjectArray> test(&scope, tupleSlice(thread, *tuple1, *slice));
+  Handle<ObjectArray> test(&scope,
+                           TupleBuiltins::slice(thread, *tuple1, *slice));
   ASSERT_EQ(test->length(), 1);
   EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
 }
@@ -217,7 +226,8 @@ TEST(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
   Handle<Object> stop(&scope, None::object());
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
-  Handle<ObjectArray> test1(&scope, tupleSlice(thread, *tuple1, *slice));
+  Handle<ObjectArray> test1(&scope,
+                            TupleBuiltins::slice(thread, *tuple1, *slice));
   ASSERT_EQ(*test1, *tuple1);
 }
 
@@ -228,7 +238,7 @@ TEST(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
 
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kObjectArray));
-  Handle<ObjectArray> ret(&scope, builtinTupleNew(thread, frame, 1));
+  Handle<ObjectArray> ret(&scope, TupleBuiltins::dunderNew(thread, frame, 1));
   EXPECT_EQ(ret->length(), 0);
 }
 

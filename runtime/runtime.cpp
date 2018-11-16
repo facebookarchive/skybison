@@ -998,7 +998,7 @@ void Runtime::initializeHeapClasses() {
   addEmptyBuiltinClass(SymbolId::kModule, LayoutId::kModule, LayoutId::kObject);
   addEmptyBuiltinClass(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
                        LayoutId::kObject);
-  initializeObjectArrayClass();
+  TupleBuiltins::initialize(this);
   initializePropertyClass();
   addEmptyBuiltinClass(SymbolId::kRange, LayoutId::kRange, LayoutId::kObject);
   addEmptyBuiltinClass(SymbolId::kRangeIterator, LayoutId::kRangeIterator,
@@ -1079,20 +1079,6 @@ void Runtime::initializeStrClass() {
 
   classAddBuiltinFunction(type, SymbolId::kDunderNew,
                           nativeTrampoline<builtinStringNew>);
-}
-
-void Runtime::initializeObjectArrayClass() {
-  HandleScope scope;
-  Handle<Type> type(
-      &scope, addEmptyBuiltinClass(SymbolId::kTuple, LayoutId::kObjectArray,
-                                   LayoutId::kObject));
-  type->setFlag(Type::Flag::kTupleSubclass);
-  classAddBuiltinFunction(type, SymbolId::kDunderEq,
-                          nativeTrampoline<builtinTupleEq>);
-  classAddBuiltinFunction(type, SymbolId::kDunderGetItem,
-                          nativeTrampoline<builtinTupleGetItem>);
-  classAddBuiltinFunction(type, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinTupleNew>);
 }
 
 void Runtime::initializeClassMethodClass() {

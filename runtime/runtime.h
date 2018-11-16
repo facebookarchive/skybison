@@ -518,7 +518,6 @@ class Runtime {
   void initializeFloatClass();
   void initializeFunctionClass();
   void initializeObjectClass();
-  void initializeObjectArrayClass();
   void initializePropertyClass();
   void initializeRefClass();
   void initializeSetClass();
