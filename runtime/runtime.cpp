@@ -1390,11 +1390,6 @@ void Runtime::initializeModules() {
   }
 }
 
-// Keep this in sync with ExtensionTypeInitializer in ext/Modules/config.cpp
-struct ExtensionTypeInitializer {
-  void (*initfunc)();
-};
-
 void Runtime::initializeApiHandles() { api_handles_ = newDict(); }
 
 Object* Runtime::typeOf(Object* object) {

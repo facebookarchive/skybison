@@ -6,11 +6,6 @@ struct ModuleInitializer {
   void* (*initfunc)();
 };
 
-// Keep this in sync with ExtensionTypeInitializer in runtime/runtime.cpp
-struct ExtensionTypeInitializer {
-  void (*initfunc)();
-};
-
 extern "C" void* PyInit__stat();
 extern "C" void* PyInit_errno();
 
