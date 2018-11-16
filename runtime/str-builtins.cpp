@@ -134,7 +134,8 @@ static word stringFormatBufferLength(const Handle<String>& fmt,
     if (ch != '%') {
       continue;
     }
-    switch (fmt->charAt(++fmt_idx)) {
+    CHECK(++fmt_idx < fmt->length(), "Incomplete format");
+    switch (fmt->charAt(fmt_idx)) {
       case 'd': {
         len--;
         CHECK(args->at(arg_idx)->isInt(), "Argument mismatch");
