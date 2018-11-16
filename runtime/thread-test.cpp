@@ -1884,126 +1884,11 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::ValuesIn(kManipulateLocalsTests),
     TestName);
 
-TEST(ThreadTest, BuiltinChr) {
-  Runtime runtime;
-  std::string result = compileAndRunToString(&runtime, "print(chr(65))");
-  EXPECT_EQ(result, "A\n");
-  ASSERT_DEATH(
-      runtime.runFromCString("print(chr(1,2))"),
-      "aborting due to pending exception: Unexpected 1 argumment in 'chr'");
-  ASSERT_DEATH(
-      runtime.runFromCString("print(chr('A'))"),
-      "aborting due to pending exception: Unsupported type in builtin 'chr'");
-}
-
-TEST(ThreadTest, BuiltinLen) {
-  Runtime runtime;
-  std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");
-  EXPECT_EQ(result, "3\n");
-  ASSERT_DEATH(
-      runtime.runFromCString("print(len(1,2))"),
-      "aborting due to pending exception: "
-      "len\\(\\) takes exactly one argument");
-  ASSERT_DEATH(
-      runtime.runFromCString("print(len(1))"),
-      "aborting due to pending exception: "
-      "Unsupported type in builtin 'len'");
-}
-
-TEST(ThreadTest, BuiltinOrd) {
-  Runtime runtime;
-  std::string result = compileAndRunToString(&runtime, "print(ord('A'))");
-  EXPECT_EQ(result, "65\n");
-  ASSERT_DEATH(
-      runtime.runFromCString("print(ord(1,2))"),
-      "aborting due to pending exception: Unexpected 1 argumment in 'ord'");
-  ASSERT_DEATH(
-      runtime.runFromCString("print(ord(1))"),
-      "aborting due to pending exception: Unsupported type in builtin 'ord'");
-}
-
 TEST(ThreadTest, RaiseVarargs) {
   Runtime runtime;
   ASSERT_DEATH(
       runtime.runFromCString("raise 1"),
       "unimplemented: bytecode 'RAISE_VARARGS'");
-}
-
-TEST(ThreadTest, BuiltinIsinstance) {
-  Runtime runtime;
-  HandleScope scope;
-
-  // Only accepts 2 arguments
-  EXPECT_DEATH(
-      runtime.runFromCString("print(isinstance(1, 1, 1))"),
-      "aborting due to pending exception: isinstance expected 2 arguments");
-
-  // 2nd argument must be a type
-  EXPECT_DEATH(
-      runtime.runFromCString("print(isinstance(1, 1))"),
-      "aborting due to pending exception: isinstance arg 2 must be a type");
-
-  const char* src = R"(
-class A: pass
-class B(A): pass
-class C(A): pass
-class D(C, B): pass
-
-def test(a, b):
-  print(isinstance(a, b))
-)";
-  runtime.runFromCString(src);
-
-  // We can move these tests into the python code above once we can
-  // call classes.
-  Object* object = findModule(&runtime, "__main__");
-  ASSERT_TRUE(object->isModule());
-  Handle<Module> main(&scope, object);
-
-  // Create an instance of D
-  Handle<Object> klass_d(&scope, findInModule(&runtime, main, "D"));
-  ASSERT_TRUE(klass_d->isClass());
-  Handle<Layout> layout(&scope, Class::cast(*klass_d)->instanceLayout());
-  Handle<Object> instance(&scope, runtime.newInstance(layout));
-
-  // Fetch the test function
-  object = findInModule(&runtime, main, "test");
-  ASSERT_TRUE(object->isFunction());
-  Handle<Function> isinstance(&scope, object);
-
-  // isinstance(1, D) should be false
-  Handle<ObjectArray> args(&scope, runtime.newObjectArray(2));
-  args->atPut(0, SmallInteger::fromWord(100));
-  args->atPut(1, *klass_d);
-  EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");
-
-  // isinstance(D, D) should be false
-  args->atPut(0, *klass_d);
-  args->atPut(1, *klass_d);
-  EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");
-
-  // isinstance(D(), D) should be true
-  args->atPut(0, *instance);
-  args->atPut(1, *klass_d);
-  EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
-
-  // isinstance(D(), C) should be true
-  Handle<Object> klass_c(&scope, findInModule(&runtime, main, "C"));
-  ASSERT_TRUE(klass_c->isClass());
-  args->atPut(1, *klass_c);
-  EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
-
-  // isinstance(D(), B) should be true
-  Handle<Object> klass_b(&scope, findInModule(&runtime, main, "B"));
-  ASSERT_TRUE(klass_b->isClass());
-  args->atPut(1, *klass_b);
-  EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
-
-  // isinstance(C(), A) should be true
-  Handle<Object> klass_a(&scope, findInModule(&runtime, main, "A"));
-  ASSERT_TRUE(klass_a->isClass());
-  args->atPut(1, *klass_a);
-  EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 }
 
 TEST(ThreadTest, CompareSmallIntegerEq) {
@@ -3284,43 +3169,6 @@ print(len(a), a[0], a[1], a[2])
   EXPECT_EQ(output, "3 4 3 1\n");
 }
 
-TEST(ThreadTest, SysArgvProgArg) { // pystone dependency
-  const char* src = R"(
-import sys
-print(len(sys.argv))
-
-for x in sys.argv:
-  print(x)
-)";
-  Runtime runtime;
-  const char* argv[2];
-  argv[0] = "./python"; // program
-  argv[1] = "SysArgv"; // script
-  runtime.setArgv(2, argv);
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "1\nSysArgv\n");
-}
-
-TEST(ThreadTest, SysArgvMultiArgs) { // pystone dependency
-  const char* src = R"(
-import sys
-print(len(sys.argv))
-
-print(sys.argv[1])
-
-for x in sys.argv:
-  print(x)
-)";
-  Runtime runtime;
-  const char* argv[3];
-  argv[0] = "./python"; // program
-  argv[1] = "SysArgv"; // script
-  argv[2] = "200"; // argument
-  runtime.setArgv(3, argv);
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "2\n200\nSysArgv\n200\n");
-}
-
 TEST(ThreadTest, SetupExceptNoOp) { // pystone dependency
   const char* src = R"(
 def f(x):
@@ -3332,47 +3180,6 @@ f(100)
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "100\n");
-}
-
-TEST(ThreadTest, SysExit) {
-  const char* src = R"(
-import sys
-sys.exit()
-)";
-  Runtime runtime;
-  ASSERT_EXIT(runtime.runFromCString(src), ::testing::ExitedWithCode(0), "");
-}
-
-TEST(ThreadTest, SysExitCode) { // pystone dependency
-  const char* src = R"(
-import sys
-sys.exit(100)
-)";
-  Runtime runtime;
-  ASSERT_EXIT(runtime.runFromCString(src), ::testing::ExitedWithCode(100), "");
-}
-
-TEST(ThreadTest, BuiltinInt) { // pystone dependency
-  const char* src = R"(
-a = int("123")
-b = int("-987")
-print(a == 123, b == -987, a > b, a, b)
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "True True True 123 -987\n");
-}
-
-TEST(ThreadTest, TimeTime) { // pystone dependency
-  const char* src = R"(
-import time
-t = time.time()
-print(t.__class__ is float)
-)";
-
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "True\n");
 }
 
 TEST(ThreadTest, CompareDoubleEq) {
@@ -3513,18 +3320,6 @@ b_ne_b = b != b
   EXPECT_EQ(*b_ne_b, Boolean::falseObj());
 }
 
-TEST(ThreadTest, TimeTimeFromImport) { // pystone dependency
-  const char* src = R"(
-from time import time
-t = time()
-print(t.__class__ is float)
-)";
-
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "True\n");
-}
-
 TEST(ThreadTest, ImportFromNeg) {
   const char* src = R"(
 from time import foobarbaz
@@ -3532,91 +3327,6 @@ from time import foobarbaz
 
   Runtime runtime;
   EXPECT_DEATH(runtime.runFromCString(src), "cannot import name\n");
-}
-
-TEST(ThreadTest, SysStdOutErr) { // pystone dependency
-  const char* src = R"(
-import sys
-print(sys.stdout, sys.stderr)
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "1 2\n");
-}
-
-TEST(ThreadTest, BuiltInPrintStdOut) {
-  const char* src = R"(
-import sys
-print("hello", file=sys.stdout)
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "hello\n");
-}
-
-TEST(ThreadTest, BuiltInPrintEnd) {
-  const char* src = R"(
-import sys
-print("hi", end='ho')
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "hiho");
-}
-
-TEST(ThreadTest, BuiltInPrintStdOutEnd) {
-  const char* src = R"(
-import sys
-print("hi", end='ho', file=sys.stdout)
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "hiho");
-}
-
-TEST(ThreadTest, BuiltInPrintStdErr) { // pystone dependency
-  const char* src = R"(
-import sys
-print("hi", file=sys.stderr, end='ya')
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "hiya");
-}
-
-TEST(ThreadTest, TimeOpSub) { // pystone dependency
-  const char* src = R"(
-import time
-starttime = time.time()
-for i in range(10):
-  pass
-nulltime = time.time() - starttime
-print(nulltime.__class__ is float)
-)";
-
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "True\n");
-}
-
-TEST(ThreadTest, TimeOpDiv) { // pystone dependency
-  const char* src = R"(
-loops = 50
-from time import time
-starttime = time()
-for i in range(50):
-  pass
-benchtime = time() - starttime
-if benchtime == 0.0:
-  loopsPerBenchtime = 0.0
-else:
-  loopsPerBenchtime = (loops / benchtime)
-print(benchtime != 0.0)
-)";
-
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "True\n");
 }
 
 TEST(ThreadTest, StringFormatEmpty) {

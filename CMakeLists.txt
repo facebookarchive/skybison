@@ -48,6 +48,8 @@ add_library(
   runtime/allocator.h
   runtime/builtins.cpp
   runtime/builtins.h
+  runtime/builtins-module.cpp
+  runtime/builtins-module.h
   runtime/bytecode.cpp
   runtime/bytecode.h
   runtime/callback.h
@@ -77,8 +79,12 @@ add_library(
   runtime/space.h
   runtime/symbols.cpp
   runtime/symbols.h
+  runtime/sys-module.cpp
+  runtime/sys-module.h
   runtime/thread.cpp
   runtime/thread.h
+  runtime/time-module.cpp
+  runtime/time-module.h
   runtime/trampolines.cpp
   runtime/trampolines.h
   runtime/trampolines-inl.h
@@ -159,6 +165,7 @@ add_library(
   runtime-tests
   STATIC
   runtime/attributes-test.cpp
+  runtime/builtins-module-test.cpp
   runtime/trampolines-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
@@ -170,9 +177,11 @@ add_library(
   runtime/runtime-test.cpp
   runtime/scavenger-test.cpp
   runtime/space-test.cpp
+  runtime/sys-module-test.cpp
   runtime/test-utils.cpp
   runtime/test-utils.h
   runtime/thread-test.cpp
+  runtime/time-module-test.cpp
   runtime/utils-test.cpp
   runtime/vector-test.cpp)
 target_link_libraries(

@@ -2,7 +2,8 @@
 
 #include <memory>
 #include <sstream>
-#include "builtins.h"
+
+#include "builtins-module.h"
 #include "frame.h"
 #include "handles.h"
 #include "runtime.h"

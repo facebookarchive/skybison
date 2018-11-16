@@ -9,6 +9,7 @@
 #include <fstream>
 #include <memory>
 
+#include "builtins-module.h"
 #include "builtins.h"
 #include "bytecode.h"
 #include "callback.h"
@@ -22,7 +23,9 @@
 #include "os.h"
 #include "scavenger.h"
 #include "siphash.h"
+#include "sys-module.h"
 #include "thread.h"
+#include "time-module.h"
 #include "trampolines-inl.h"
 #include "utils.h"
 #include "visitor.h"
