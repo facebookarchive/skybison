@@ -10,9 +10,8 @@ TEST(ThreadModuleTest, ModuleImporting) {
   runtime.runFromCStr(R"(
 import _thread
   )");
-  HandleScope scope;
-  RawObject threadModule = testing::moduleAt(&runtime, "__main__", "_thread");
-  EXPECT_TRUE(threadModule->isModule());
+  RawObject thread_module = testing::moduleAt(&runtime, "__main__", "_thread");
+  EXPECT_TRUE(thread_module->isModule());
 }
 
 }  // namespace python
