@@ -78,6 +78,7 @@ enum class ExtensionTypes {
   kList,
   kLong,
   kMemberDescr,
+  kMethodDescr,
   kModule,
   kNone,
   kStr,
