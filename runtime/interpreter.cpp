@@ -752,6 +752,34 @@ void Interpreter::doGetAIter(Context* ctx, word) {
   ctx->frame->setTopValue(*aiter);
 }
 
+// opcode 52
+void Interpreter::doBeforeAsyncWith(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Frame* frame = ctx->frame;
+  Handle<Object> manager(&scope, frame->popValue());
+
+  // resolve __aexit__ an push it
+  Runtime* runtime = thread->runtime();
+  Handle<Object> exit_selector(&scope, runtime->symbols()->DunderAexit());
+  Handle<Object> exit(&scope,
+                      runtime->attributeAt(thread, manager, exit_selector));
+  if (exit->isError()) {
+    UNIMPLEMENTED("throw TypeError");
+  }
+  frame->pushValue(*exit);
+
+  // resolve __aenter__ call it and push the return value
+  Handle<Object> enter(
+      &scope, lookupMethod(thread, frame, manager, SymbolId::kDunderAenter));
+  if (enter->isError()) {
+    UNIMPLEMENTED("throw TypeError");
+  }
+  Object* result = callMethod1(thread, frame, enter, manager);
+  thread->abortOnPendingException();
+  frame->pushValue(result);
+}
+
 // opcode 55
 void Interpreter::doInplaceAdd(Context* ctx, word) {
   Thread* thread = ctx->thread;

@@ -61,7 +61,7 @@ namespace python {
   V(UNUSED_BYTECODE_49, 49, doInvalidBytecode)                                 \
   V(GET_AITER, 50, doGetAIter)                                                 \
   V(GET_ANEXT, 51, doNotImplemented)                                           \
-  V(BEFORE_ASYNC_WITH, 52, doNotImplemented)                                   \
+  V(BEFORE_ASYNC_WITH, 52, doBeforeAsyncWith)                                  \
   V(UNUSED_BYTECODE_53, 53, doInvalidBytecode)                                 \
   V(UNUSED_BYTECODE_54, 54, doInvalidBytecode)                                 \
   V(INPLACE_ADD, 55, doInplaceAdd)                                             \

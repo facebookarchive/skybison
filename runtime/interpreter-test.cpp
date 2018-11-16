@@ -858,6 +858,60 @@ TEST(InterpreterDeathTest, GetAIterOnNonIterable) {
                "'async for' requires an object with __aiter__ method");
 }
 
+TEST(InterpreterTest, BeforeAsyncWithCallsDunderAenter) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+enter = None
+exit = None
+
+class M:
+  def __aenter__(self):
+    global enter
+    enter = self
+
+  def __aexit__(self, exc_type, exc_value, traceback):
+    global exit
+    exit = self
+
+manager = M()
+  )");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setNlocals(0);
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInt::fromWord(42));
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  names->atPut(0, runtime.newStrFromCStr("manager"));
+  code->setNames(*names);
+
+  const byte bytecode[] = {LOAD_GLOBAL, 0, BEFORE_ASYNC_WITH, 0, POP_TOP, 0,
+                           LOAD_CONST,  0, RETURN_VALUE,      0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Dict> globals(&scope, main->dict());
+  Handle<Dict> builtins(&scope, runtime.newDict());
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code);
+  frame->setGlobals(*globals);
+  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+  ASSERT_EQ(*result, SmallInt::fromWord(42));
+
+  Handle<Object> manager(&scope, testing::moduleAt(&runtime, main, "manager"));
+  Handle<Object> enter(&scope, testing::moduleAt(&runtime, main, "enter"));
+  EXPECT_EQ(*enter, *manager);
+
+  Handle<Object> exit(&scope, testing::moduleAt(&runtime, main, "exit"));
+  EXPECT_EQ(*exit, None::object());
+}
+
 TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
   Runtime runtime;
   HandleScope scope;
@@ -875,26 +929,6 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
   code->setCode(runtime.newByteArrayWithAll(bc));
   Object* result = Thread::currentThread()->run(*code);
   EXPECT_EQ(result, SmallInt::fromWord(42));
-}
-
-TEST(InterpreterDeathTest, UnpackSequenceExWithTooFewObjectsBefore) {
-  Runtime runtime;
-  HandleScope scope;
-  const char* src = R"(
-l = [1, 2]
-a, b, c, *d  = l
-)";
-  ASSERT_DEATH(runtime.runFromCStr(src), "not enough values to unpack");
-}
-
-TEST(InterpreterDeathTest, UnpackSequenceExWithTooFewObjectsAfter) {
-  Runtime runtime;
-  HandleScope scope;
-  const char* src = R"(
-l = [1, 2]
-*a, b, c, d = l
-)";
-  ASSERT_DEATH(runtime.runFromCStr(src), "not enough values to unpack");
 }
 
 TEST(InterpreterTest, UnpackSequenceEx) {
@@ -1155,6 +1189,26 @@ class Foo:
 d = {**Foo(), 'd': 4}
   )"),
                "non list/tuple keys in dictionary update");
+}
+
+TEST(InterpreterDeathTest, UnpackSequenceExWithTooFewObjectsBefore) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+l = [1, 2]
+a, b, c, *d  = l
+)";
+  ASSERT_DEATH(runtime.runFromCStr(src), "not enough values to unpack");
+}
+
+TEST(InterpreterDeathTest, UnpackSequenceExWithTooFewObjectsAfter) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+l = [1, 2]
+*a, b, c, d = l
+)";
+  ASSERT_DEATH(runtime.runFromCStr(src), "not enough values to unpack");
 }
 
 }  // namespace python

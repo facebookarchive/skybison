@@ -10,6 +10,8 @@ class Runtime;
 // List of predefined symbols, one per line
 #define FOREACH_SYMBOL(V)                                                      \
   V(DunderAdd, "__add__")                                                      \
+  V(DunderAenter, "__aenter__")                                                \
+  V(DunderAexit, "__aexit__")                                                  \
   V(DunderAnd, "__and__")                                                      \
   V(DunderAnnotations, "__annotations__")                                      \
   V(DunderAIter, "__aiter__")                                                  \
