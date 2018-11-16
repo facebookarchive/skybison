@@ -1172,6 +1172,34 @@ for i in range(42,100,-1):
   EXPECT_EQ(output, "0\n1\n2\n3\n4\n5\n6\n8\n10\n6\n5\n4\n");
 }
 
+TEST(ThreadTest, BinaryOverflowCheck) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* mul_src = R"(
+a = 268435456
+a = a * a * a
+)";
+  (void)mul_src;
+
+  // Overflows in the multiplication itself.
+  EXPECT_DEBUG_ONLY_DEATH(
+      compileAndRunToString(&runtime, mul_src), "\\(result / left\\) == right");
+
+  const char* add_src = R"(
+a = 1048576
+a *= 2048
+a = a * a
+
+a += a
+)";
+  (void)add_src;
+
+  // No overflow per se, but result too large to store in a SmallInteger
+  EXPECT_DEBUG_ONLY_DEATH(
+      compileAndRunToString(&runtime, add_src), "SmallInteger::isValid");
+}
+
 TEST(ThreadTest, BinaryOps) {
   Runtime runtime;
   HandleScope scope;
@@ -1196,6 +1224,9 @@ print('c * b ==', c * b)
 
 print('c - b ==', c - b)
 print('b - c ==', b - c)
+
+print('d * 0 ==', d * 0)
+print('0 * d ==', 0 * d)
 )";
 
   std::string output = compileAndRunToString(&runtime, src);
@@ -1210,6 +1241,40 @@ d * b == 21
 c * b == 18
 c - b == 3
 b - c == -3
+d * 0 == 0
+0 * d == 0
+)");
+}
+
+TEST(ThreadTest, InplaceOps) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+a = 2
+print(a)
+a += 3
+print(a)
+a *= 5
+print(a)
+a //= 2
+print(a)
+a %= 5
+print(a)
+a -= -6
+print(a)
+a ^= 9
+print(a)
+)";
+
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, R"(2
+5
+25
+12
+2
+8
+1
 )");
 }
 

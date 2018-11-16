@@ -242,8 +242,12 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
       }
 
       // TODO: arithmetic operations are currently implemented only for
-      // SmallIntegers,
-      // for the purposes of running Richards.
+      // SmallIntegers, for the purposes of running Richards.
+      //
+      // Note that the INPLACE opcodes are only relevant for method dispatch.
+      // Python compiles `a *= b` to `a = a * b`, but it uses different opcodes
+      // so that the user-defined __iadd__, __imul__, etc can be called instead.
+      case Bytecode::INPLACE_AND:
       case Bytecode::BINARY_AND: {
         word right = SmallInteger::cast(*sp++)->value();
         word left = SmallInteger::cast(*sp)->value();
@@ -251,6 +255,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
 
+      case Bytecode::INPLACE_ADD:
       case Bytecode::BINARY_ADD: {
         word right = SmallInteger::cast(*sp++)->value();
         word left = SmallInteger::cast(*sp)->value();
@@ -258,6 +263,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
 
+      case Bytecode::INPLACE_FLOOR_DIVIDE:
       case Bytecode::BINARY_FLOOR_DIVIDE: {
         word divisor = SmallInteger::cast(*sp++)->value();
         word dividend = SmallInteger::cast(*sp)->value();
@@ -268,6 +274,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
 
+      case Bytecode::INPLACE_MODULO:
       case Bytecode::BINARY_MODULO: {
         word divisor = SmallInteger::cast(*sp++)->value();
         word dividend = SmallInteger::cast(*sp)->value();
@@ -278,13 +285,17 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
 
+      case Bytecode::INPLACE_MULTIPLY:
       case Bytecode::BINARY_MULTIPLY: {
         word right = SmallInteger::cast(*sp++)->value();
         word left = SmallInteger::cast(*sp)->value();
-        *sp = SmallInteger::fromWord(left * right);
+        word result = left * right;
+        assert(left == 0 || (result / left) == right);
+        *sp = SmallInteger::fromWord(result);
         break;
       }
 
+      case Bytecode::INPLACE_SUBTRACT:
       case Bytecode::BINARY_SUBTRACT: {
         word right = SmallInteger::cast(*sp++)->value();
         word left = SmallInteger::cast(*sp)->value();
@@ -292,6 +303,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
 
+      case Bytecode::INPLACE_XOR:
       case Bytecode::BINARY_XOR: {
         word right = SmallInteger::cast(*sp++)->value();
         word left = SmallInteger::cast(*sp)->value();
