@@ -947,6 +947,7 @@ void Interpreter::doStoreAttr(Context* ctx, word arg) {
   Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
   Handle<Object> value(&scope, ctx->frame->popValue());
   thread->runtime()->attributeAtPut(thread, receiver, name, value);
+  // TODO(T31788973): propagate an exception
   thread->abortOnPendingException();
 }
 
@@ -1099,9 +1100,10 @@ void Interpreter::doLoadAttr(Context* ctx, word arg) {
   Handle<Object> receiver(&scope, ctx->frame->topValue());
   auto* names = Code::cast(ctx->frame->code())->names();
   Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
-  ctx->frame->setTopValue(
-      thread->runtime()->attributeAt(ctx->thread, receiver, name));
+  Object* result = thread->runtime()->attributeAt(thread, receiver, name);
+  // TODO(T31788973): propagate an exception
   thread->abortOnPendingException();
+  ctx->frame->setTopValue(result);
 }
 
 // opcode 107
@@ -1135,8 +1137,10 @@ void Interpreter::doImportName(Context* ctx, word arg) {
   Handle<Object> level(&scope, ctx->frame->topValue());
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
-  ctx->frame->setTopValue(runtime->importModule(name));
+  Object* result = runtime->importModule(name);
+  // TODO(T31788973): propagate an exception
   thread->abortOnPendingException();
+  ctx->frame->setTopValue(result);
 }
 
 // opcode 109
@@ -1258,8 +1262,9 @@ void Interpreter::doStoreFast(Context* ctx, word arg) {
 // opcode 131
 void Interpreter::doCallFunction(Context* ctx, word arg) {
   Object* result = call(ctx->thread, ctx->frame, arg);
-  ctx->frame->pushValue(result);
+  // TODO(T31788973): propagate an exception
   ctx->thread->abortOnPendingException();
+  ctx->frame->pushValue(result);
 }
 
 // opcode 132
@@ -1336,15 +1341,17 @@ void Interpreter::doStoreDeref(Context* ctx, word arg) {
 // opcode 141
 void Interpreter::doCallFunctionKw(Context* ctx, word arg) {
   Object* result = callKw(ctx->thread, ctx->frame, arg);
-  ctx->frame->pushValue(result);
+  // TODO(T31788973): propagate an exception
   ctx->thread->abortOnPendingException();
+  ctx->frame->pushValue(result);
 }
 
 // opcode 142
 void Interpreter::doCallFunctionEx(Context* ctx, word arg) {
   Object* result = callEx(ctx->thread, ctx->frame, arg);
-  ctx->frame->pushValue(result);
+  // TODO(T31788973): propagate an exception
   ctx->thread->abortOnPendingException();
+  ctx->frame->pushValue(result);
 }
 
 // opcode 143
