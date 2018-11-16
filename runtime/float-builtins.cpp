@@ -142,7 +142,7 @@ Object* builtinDoubleNew(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("float.__new__(<subtype of float>, ...)");
   }
   Handle<Object> arg(&scope, args.get(1));
-  if (!arg->isDouble()) {
+  if (arg->isDouble()) {
     return *arg;
   }
   UNIMPLEMENTED("Handle arguments to float() that aren't floats");
