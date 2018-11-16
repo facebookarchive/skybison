@@ -2146,4 +2146,25 @@ b = getattr(baz, '__qualname__')
   EXPECT_TRUE(Str::cast(b)->equalsCStr("baz"));
 }
 
+TEST(InterpreterTest, MakeFunctionSetsDunderDoc) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+def foo():
+    """This is a docstring"""
+    pass
+def bar(): pass
+)");
+  HandleScope scope;
+  Object foo(&scope, testing::moduleAt(&runtime, "__main__", "foo"));
+  ASSERT_TRUE(foo->isFunction());
+  Object foo_docstring(&scope, RawFunction::cast(foo)->doc());
+  ASSERT_TRUE(foo_docstring->isStr());
+  EXPECT_TRUE(RawStr::cast(foo_docstring)->equalsCStr("This is a docstring"));
+
+  Object bar(&scope, testing::moduleAt(&runtime, "__main__", "bar"));
+  ASSERT_TRUE(bar->isFunction());
+  Object bar_docstring(&scope, RawFunction::cast(bar)->doc());
+  EXPECT_TRUE(bar_docstring->isNoneType());
+}
+
 }  // namespace python

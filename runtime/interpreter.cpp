@@ -1645,6 +1645,13 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   }
   Dict builtins(&scope, frame->builtins());
   Code code(&scope, function->code());
+  Object consts_obj(&scope, code->consts());
+  if (consts_obj->isTuple() && RawTuple::cast(consts_obj)->length() >= 1) {
+    Tuple consts(&scope, *consts_obj);
+    if (consts->at(0)->isStr()) {
+      function->setDoc(consts->at(0));
+    }
+  }
   function->setFastGlobals(
       runtime->computeFastGlobals(code, globals, builtins));
   function->setEntry(interpreterTrampoline);
