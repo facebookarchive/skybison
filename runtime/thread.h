@@ -112,6 +112,11 @@ class Thread {
   Object* throwAttributeError(String* message);
   Object* throwAttributeErrorFromCString(const char* message);
 
+  // Convenience method for throwing a KeyError exception with an error
+  // message.
+  Object* throwKeyError(String* message);
+  Object* throwKeyErrorFromCString(const char* message);
+
   // Gets the pending exception object - if it is None, no exception has been
   // posted.
   Object* pendingException();

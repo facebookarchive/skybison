@@ -1064,6 +1064,12 @@ void Runtime::initializeSetClass() {
       nativeTrampoline<builtinSetLen>,
       unimplementedTrampoline,
       unimplementedTrampoline);
+  classAddBuiltinFunction(
+      set_type,
+      symbols()->Pop(),
+      nativeTrampoline<builtinSetPop>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
 }
 
 void Runtime::initializeSmallIntClass() {
@@ -2031,62 +2037,6 @@ class Bucket {
   static const word kKeyOffset = kHashOffset + 1;
   static const word kValueOffset = kKeyOffset + 1;
   static const word kNumPointers = kValueOffset + 1;
-
- private:
-  const Handle<ObjectArray>& data_;
-  word index_;
-
-  DISALLOW_HEAP_ALLOCATION();
-};
-
-// Set
-
-// Helper class for manipulating buckets in the ObjectArray that backs the
-// Set, it has one less slot than Bucket.
-class SetBucket {
- public:
-  SetBucket(const Handle<ObjectArray>& data, word index)
-      : data_(data), index_(index) {}
-
-  Object* hash() {
-    return data_->at(index_ + kHashOffset);
-  }
-
-  Object* key() {
-    return data_->at(index_ + kKeyOffset);
-  }
-
-  void set(Object* hash, Object* key) {
-    data_->atPut(index_ + kHashOffset, hash);
-    data_->atPut(index_ + kKeyOffset, key);
-  }
-
-  bool hasKey(Object* that_key) {
-    return !hash()->isNone() && Object::equals(key(), that_key);
-  }
-
-  bool isTombstone() {
-    return hash()->isNone() && !key()->isNone();
-  }
-
-  void setTombstone() {
-    set(None::object(), Error::object());
-  }
-
-  bool isEmpty() {
-    return hash()->isNone() && key()->isNone();
-  }
-
-  static word getIndex(Object* data, Object* hash) {
-    word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
-    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
-    word value = SmallInteger::cast(hash)->value();
-    return (value & (nbuckets - 1)) * kNumPointers;
-  }
-
-  static const word kHashOffset = 0;
-  static const word kKeyOffset = kHashOffset + 1;
-  static const word kNumPointers = kKeyOffset + 1;
 
  private:
   const Handle<ObjectArray>& data_;

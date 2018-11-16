@@ -227,6 +227,18 @@ Object* Thread::throwAttributeErrorFromCString(const char* message) {
   return Error::object();
 }
 
+Object* Thread::throwKeyErrorFromCString(const char* message) {
+  // TODO(jeethu): instantiate a KeyError object.
+  pending_exception_ = runtime()->newStringFromCString(message);
+  return Error::object();
+}
+
+Object* Thread::throwKeyError(String* message) {
+  // TODO(jeethu): instantiate an KeyError object.
+  pending_exception_ = message;
+  return Error::object();
+}
+
 void Thread::ignorePendingException() {
   HandleScope scope(this);
   Handle<Object> pending_exception(&scope, pendingException());

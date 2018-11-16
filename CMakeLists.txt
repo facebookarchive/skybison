@@ -204,6 +204,7 @@ add_library(
   runtime/runtime-test.cpp
   runtime/ref-builtins-test.cpp
   runtime/scavenger-test.cpp
+  runtime/set-builtins-test.cpp
   runtime/space-test.cpp
   runtime/super-builtins-test.cpp
   runtime/sys-module-test.cpp
