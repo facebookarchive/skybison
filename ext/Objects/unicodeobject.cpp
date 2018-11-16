@@ -461,12 +461,46 @@ PY_EXPORT const char* PyUnicode_GetDefaultEncoding() {
   UNIMPLEMENTED("PyUnicode_GetDefaultEncoding");
 }
 
-PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* /* e */) {
-  UNIMPLEMENTED("PyUnicode_GetLength");
+PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* py_str) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Object str_obj(&scope, ApiHandle::fromPyObject(py_str)->asObject());
+  if (!runtime->isInstanceOfStr(str_obj)) {
+    // TODO(wmeehan) replace this error with PyErr_BadInternalCall
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return -1;
+  }
+
+  if (!str_obj->isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+
+  Str str(&scope, *str_obj);
+  return str->length();  // TODO(T36613745): this should return the number of
+                         // code points, not bytes
 }
 
-PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* /* e */) {
-  UNIMPLEMENTED("PyUnicode_GetSize");
+PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* py_str) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Object str_obj(&scope, ApiHandle::fromPyObject(py_str)->asObject());
+  if (!runtime->isInstanceOfStr(str_obj)) {
+    // TODO(wmeehan) replace this error with PyErr_BadInternalCall
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return -1;
+  }
+
+  if (!str_obj->isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+
+  Str str(&scope, *str_obj);
+  return str->length();  // TODO(T36613745): this should return the number of
+                         // code units, not bytes
 }
 
 PY_EXPORT PyObject* PyUnicode_InternFromString(const char* /* p */) {

@@ -180,4 +180,63 @@ TEST_F(UnicodeExtensionApiTest, CompareWithASCIIStringASCII) {
   EXPECT_EQ(PyUnicode_CompareWithASCIIString(pyunicode, "large strin"), 1);
   EXPECT_EQ(PyUnicode_CompareWithASCIIString(pyunicode, "large smaller"), 1);
 }
+
+TEST_F(UnicodeExtensionApiTest, GetLengthWithEmptyStrReturnsZero) {
+  PyObjectPtr str(PyUnicode_FromString(""));
+  EXPECT_EQ(PyUnicode_GetLength(str), 0);
+}
+
+TEST_F(UnicodeExtensionApiTest, GetLengthWithNonEmptyString) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PyUnicode_GetLength(str), 3);
+}
+
+TEST_F(UnicodeExtensionApiTest, GetLengthWithNonStrReturnsNegative) {
+  PyObjectPtr list(PyList_New(3));
+  EXPECT_EQ(PyUnicode_GetLength(list), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+
+  const char* expected_message = "bad argument to internal function";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(UnicodeExtensionApiTest, GETLENGTHAndGetLengthSame) {
+  PyObjectPtr mty(PyUnicode_FromString(""));
+  PyObjectPtr str(PyUnicode_FromString("some string"));
+  PyObjectPtr num(PyLong_FromLong(5));
+
+  EXPECT_EQ(PyUnicode_GET_LENGTH(mty), PyUnicode_GetLength(mty));
+  EXPECT_EQ(PyUnicode_GET_LENGTH(str), PyUnicode_GetLength(str));
+  EXPECT_EQ(PyUnicode_GET_LENGTH(num), PyUnicode_GetLength(num));
+}
+
+TEST_F(UnicodeExtensionApiTest, GetSizeWithEmptyStrReturnsZero) {
+  PyObjectPtr str(PyUnicode_FromString(""));
+  EXPECT_EQ(PyUnicode_GetSize(str), 0);
+}
+
+TEST_F(UnicodeExtensionApiTest, GetSizeWithNonEmptyString) {
+  PyObjectPtr str(PyUnicode_FromString("bar"));
+  EXPECT_EQ(PyUnicode_GetSize(str), 3);
+}
+
+TEST_F(UnicodeExtensionApiTest, GetSizeWithNonStrReturnsNegative) {
+  PyObjectPtr dict(PyDict_New());
+  EXPECT_EQ(PyUnicode_GetSize(dict), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+
+  const char* expected_message = "bad argument to internal function";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(UnicodeExtensionApiTest, GETSIZEAndGetSizeSame) {
+  PyObjectPtr mty(PyUnicode_FromString(""));
+  PyObjectPtr str(PyUnicode_FromString("another string"));
+  PyObjectPtr set(PySet_New(nullptr));
+
+  EXPECT_EQ(PyUnicode_GET_SIZE(mty), PyUnicode_GetSize(mty));
+  EXPECT_EQ(PyUnicode_GET_SIZE(str), PyUnicode_GetSize(str));
+  EXPECT_EQ(PyUnicode_GET_SIZE(set), PyUnicode_GetSize(set));
+}
+
 }  // namespace python

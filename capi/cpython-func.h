@@ -914,6 +914,7 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem((PyObject*)op, i, v)
 
 #define PyUnicode_GET_LENGTH(op) PyUnicode_GetLength((PyObject*)op)
+#define PyUnicode_GET_SIZE(op) PyUnicode_GetSize((PyObject*)op)
 #define PyUnicode_KIND(op) PyUnicode_KIND_Func((PyObject*)op)
 #define PyUnicode_DATA(op) PyUnicode_DATA_Func((PyObject*)op)
 #define PyUnicode_READ(kind, data, index)                                      \
