@@ -541,6 +541,37 @@ Object* Runtime::moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
   return None::object();
 }
 
+Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
+                               const Handle<Object>& name) {
+  if (!name->isString()) {
+    // TODO(T25140871): Refactor into something like:
+    //     thread->throwUnexpectedTypeError(expected, actual)
+    return thread->throwTypeErrorFromCString("attribute name must be a string");
+  }
+
+  // Check for a descriptor with __delete__
+  HandleScope scope(thread);
+  Handle<Class> klass(&scope, classOf(*receiver));
+  Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
+  if (!klass_attr->isError()) {
+    if (isDeleteDescriptor(thread, klass_attr)) {
+      return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
+                                               klass_attr, receiver);
+    }
+  }
+
+  // No delete descriptor found, attempt to delete from the module dictionary
+  Handle<Module> module(&scope, *receiver);
+  Handle<Dictionary> module_dict(&scope, module->dictionary());
+  if (!dictionaryRemove(module_dict, name, nullptr)) {
+    // TODO(T25140871): Refactor this into something like:
+    //     thread->throwMissingAttributeError(name)
+    return thread->throwAttributeErrorFromCString("missing attribute");
+  }
+
+  return None::object();
+}
+
 bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
@@ -2494,7 +2525,7 @@ Object* Runtime::attributeDel(Thread* thread, const Handle<Object>& receiver,
   } else if (isInstanceOfClass(*receiver)) {
     result = classDelAttr(thread, receiver, name);
   } else if (receiver->isModule()) {
-    UNIMPLEMENTED("del unsupported for modules");
+    result = moduleDelAttr(thread, receiver, name);
   } else {
     result = instanceDelAttr(thread, receiver, name);
   }

@@ -2630,6 +2630,44 @@ del Foo.bar
   EXPECT_EQ(args->at(1), *attr);
 }
 
+TEST(ModuleAttributeDeletionDeathTest, DeleteUnknownAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+def test(module):
+    del module.foo
+)";
+  compileAndRunToString(&runtime, src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, *main);
+  EXPECT_DEATH(callFunction(test, args), "missing attribute");
+}
+
+TEST(ModuleAttributeDeletionTest, DeleteKnownAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+foo = 'testing 123'
+
+def test(module):
+    del module.foo
+    return 123
+)";
+  compileAndRunToString(&runtime, src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, *main);
+  EXPECT_EQ(callFunction(test, args), SmallInteger::fromWord(123));
+
+  Handle<Object> attr(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> module(&scope, *main);
+  EXPECT_EQ(runtime.attributeAt(Thread::currentThread(), module, attr),
+            Error::object());
+}
+
 TEST(RuntimeIntegerTest, NewSmallIntegerWithDigits) {
   Runtime runtime;
   HandleScope scope;

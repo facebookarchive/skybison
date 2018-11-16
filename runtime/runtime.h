@@ -617,6 +617,10 @@ class Runtime {
                         const Handle<Object>& name,
                         const Handle<Object>& value);
 
+  // Generic attribute deletion code used for module objects
+  Object* moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
+                        const Handle<Object>& name);
+
   // Specialized attribute lookup code used for super objects
   Object* superGetAttr(Thread* thread, const Handle<Object>& receiver,
                        const Handle<Object>& name);
