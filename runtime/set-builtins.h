@@ -8,6 +8,8 @@
 
 namespace python {
 
+RawObject setAdd(Thread* thread, const Set& set, const Object& key);
+
 class SetBuiltins {
  public:
   static void initialize(Runtime* runtime);

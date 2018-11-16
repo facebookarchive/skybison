@@ -41,6 +41,13 @@ void SetBuiltins::initialize(Runtime* runtime) {
                                    LayoutId::kObject, kAttributes, kMethods));
 }
 
+// TODO(T36810889): implement high-level setAdd function with error handling
+RawObject setAdd(Thread* thread, const Set& set, const Object& key) {
+  // TODO(T36756972): raise MemoryError when heap is full
+  // TODO(T36757907): raise TypeError if key is unhashable
+  return thread->runtime()->setAdd(set, key);
+}
+
 RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("add() takes exactly one argument");
@@ -51,7 +58,11 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   Object key(&scope, args.get(1));
   if (self->isSet()) {
     Set set(&scope, *self);
-    thread->runtime()->setAdd(set, key);
+
+    if (setAdd(thread, set, key)->isError()) {
+      return Error::object();
+    }
+
     return NoneType::object();
   }
   // TODO(zekun): handle subclass of set
