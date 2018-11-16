@@ -3175,7 +3175,7 @@ void Runtime::freeApiHandles() {
   for (word i = 0; i < keys->length(); i++) {
     Handle<Object> key(&scope, keys->at(i));
     Object* value = dictAt(dict, key);
-    delete static_cast<ApiHandle*>(Int::cast(value)->asCPointer());
+    std::free(Int::cast(value)->asCPointer());
   }
 }
 

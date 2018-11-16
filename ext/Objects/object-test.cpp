@@ -100,4 +100,10 @@ TEST_F(ObjectExtensionApiTest, GetAttrReturnsZero) {
   EXPECT_EQ(result, expected_int);
 }
 
+TEST_F(ObjectExtensionApiTest, RefCountDecreaseDeallocsHandle) {
+  long value = 10;
+  PyObject* o = PyLong_FromLong(value);
+  Py_DECREF(o);
+}
+
 }  // namespace python

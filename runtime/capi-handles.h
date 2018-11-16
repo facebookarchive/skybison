@@ -27,6 +27,9 @@ class ApiHandle : public PyObject {
 
   ApiHandle* type();
 
+  // Remove the ApiHandle from the dictionary and free its memory
+  void dispose();
+
   // Check if the object is subtype of a type at given layout. This is used as a
   // helper for PyXyz_Check functions
   bool isSubClass(Thread* thread, LayoutId layout_id);
@@ -41,7 +44,9 @@ class ApiHandle : public PyObject {
   void clearBorrowed() { ob_refcnt &= ~kBorrowedBit; }
 
  private:
-  ApiHandle(Object* reference, long refcnt);
+  ApiHandle() = delete;
+
+  static ApiHandle* create(Object* reference, long refcnt);
 
   // Create a new runtime instance based on this ApiHandle
   Object* asInstance(Object* type);

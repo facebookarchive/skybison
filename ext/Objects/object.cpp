@@ -9,7 +9,9 @@ extern "C" PyObject* PyNone_Ptr() {
   return ApiHandle::fromObject(None::object())->asPyObject();
 }
 
-extern "C" void _Py_Dealloc_Func(PyObject* obj) { std::free(obj); }
+extern "C" void _Py_Dealloc_Func(PyObject* obj) {
+  ApiHandle::fromPyObject(obj)->dispose();
+}
 
 extern "C" int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
                                        PyObject* value) {

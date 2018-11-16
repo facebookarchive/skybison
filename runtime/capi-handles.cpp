@@ -4,19 +4,22 @@
 
 namespace python {
 
-ApiHandle::ApiHandle(Object* reference, long refcnt) {
+ApiHandle* ApiHandle::create(Object* reference, long refcnt) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
-  reference_ = reference;
-  ob_refcnt = refcnt;
+  ApiHandle* handle =
+      reinterpret_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
+  handle->reference_ = reference;
+  handle->ob_refcnt = refcnt;
   Object* reftype = runtime->typeOf(reference);
   if (reference == reftype) {
-    ob_type = reinterpret_cast<PyTypeObject*>(this);
+    handle->ob_type = reinterpret_cast<PyTypeObject*>(handle);
   } else {
-    ob_type = reinterpret_cast<PyTypeObject*>(
+    handle->ob_type = reinterpret_cast<PyTypeObject*>(
         ApiHandle::fromObject(reftype)->asPyObject());
   }
+  return handle;
 }
 
 ApiHandle* ApiHandle::fromObject(Object* obj) {
@@ -39,7 +42,7 @@ ApiHandle* ApiHandle::fromObject(Object* obj) {
   }
 
   // Initialize an ApiHandle for a builtin object
-  ApiHandle* handle = new ApiHandle(obj, 1);
+  ApiHandle* handle = ApiHandle::create(obj, 1);
   Handle<Object> object(
       &scope, runtime->newIntFromCPointer(static_cast<void*>(handle)));
   runtime->dictAtPut(dict, key, object);
@@ -70,7 +73,7 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
   }
 
   // Initialize a Borrowed ApiHandle for a builtin object
-  ApiHandle* handle = new ApiHandle(obj, kBorrowedBit);
+  ApiHandle* handle = ApiHandle::create(obj, kBorrowedBit);
   Handle<Object> object(
       &scope, runtime->newIntFromCPointer(static_cast<void*>(handle)));
   runtime->dictAtPut(dict, key, object);
@@ -144,6 +147,17 @@ bool ApiHandle::isSubClass(Thread* thread, LayoutId layout_id) {
   Handle<Type> superclass(&scope, runtime->typeAt(layout_id));
   Handle<Type> subclass(&scope, type()->asObject());
   return runtime->isSubClass(subclass, superclass) == Bool::trueObj();
+}
+
+void ApiHandle::dispose() {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Handle<Object> key(&scope, asObject());
+  Handle<Dict> dict(&scope, runtime->apiHandles());
+  runtime->dictRemove(dict, key, nullptr);
+  std::free(this);
 }
 
 }  // namespace python
