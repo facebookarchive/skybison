@@ -1,4 +1,5 @@
 #include "capi-fixture.h"
+#include "cpython-data.h"
 
 namespace python {
 

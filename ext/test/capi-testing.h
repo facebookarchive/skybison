@@ -1,7 +1,6 @@
 #pragma once
 
-#include "runtime.h"
-
+#include "cpython-types.h"
 #include "gtest/gtest.h"
 
 namespace python {

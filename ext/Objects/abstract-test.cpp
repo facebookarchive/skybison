@@ -1,5 +1,6 @@
+#include "Python.h"
+
 #include "capi-fixture.h"
-#include "capi-handles.h"
 #include "capi-testing.h"
 
 namespace python {

@@ -1,6 +1,8 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
+#include "Python.h"
+
 namespace python {
 
 using ModSupportExtensionApiTest = ExtensionApi;

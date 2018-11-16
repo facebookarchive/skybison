@@ -2,7 +2,7 @@
 
 #include "gtest/gtest.h"
 
-#include "Python.h"
+#include "cpython-func.h"
 
 namespace python {
 

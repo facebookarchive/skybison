@@ -1,5 +1,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
+#include "cpython-data.h"
+#include "cpython-func.h"
 
 namespace python {
 

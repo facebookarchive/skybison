@@ -1,3 +1,5 @@
+#include "Python.h"
+
 #include "capi-fixture.h"
 #include "capi-testing.h"
 

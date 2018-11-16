@@ -1,7 +1,7 @@
 #include "capi-testing.h"
+#include "cpython-func.h"
+#include "runtime.h"
 #include "test-utils.h"
-
-#include "Python.h"
 
 namespace python {
 namespace testing {
