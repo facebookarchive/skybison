@@ -1327,9 +1327,9 @@ TEST(ThreadDeathTest, NativeExceptions) {
   HandleScope scope;
 
   Handle<Function> fn(
-      &scope, runtime.newFunctionKwEx(nativeTrampoline<nativeExceptionTest>,
-                                      unimplementedTrampoline,
-                                      unimplementedTrampoline));
+      &scope, runtime.newBuiltinFunction(nativeTrampoline<nativeExceptionTest>,
+                                         unimplementedTrampoline,
+                                         unimplementedTrampoline));
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));

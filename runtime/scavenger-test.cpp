@@ -226,9 +226,9 @@ def g(ref, b=2):
   {
     Handle<ObjectArray> array1(&scope, runtime.newObjectArray(10));
     Handle<Function> collect(
-        &scope, runtime.newFunctionKwEx(nativeTrampoline<doGarbageCollection>,
-                                        unimplementedTrampoline,
-                                        unimplementedTrampoline));
+        &scope, runtime.newBuiltinFunction(
+                    nativeTrampoline<doGarbageCollection>,
+                    unimplementedTrampoline, unimplementedTrampoline));
     ref1->setReferent(*array1);
     ref1->setCallback(*collect);
 
