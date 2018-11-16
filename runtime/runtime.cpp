@@ -151,21 +151,30 @@ Object* Runtime::identityHash(Object* object) {
   return SmallInteger::fromWord(code);
 }
 
+word Runtime::siphash24(const byte* src, word size) {
+  word result = 0;
+  ::halfsiphash(
+      src,
+      size,
+      reinterpret_cast<uint8_t*>(hash_secret_),
+      reinterpret_cast<uint8_t*>(&result),
+      sizeof(result));
+  return result;
+}
+
 Object* Runtime::valueHash(Object* object) {
   HeapObject* src = HeapObject::cast(object);
   Header* header = src->header();
-  if (header->hashCode() == 0) {
-    word code = 0;
-    halfsiphash(
-        reinterpret_cast<uint8_t*>(src->address()),
-        src->size(),
-        reinterpret_cast<uint8_t*>(hash_secret_),
-        reinterpret_cast<uint8_t*>(&code),
-        sizeof(code));
-    header = header->withHashCode(code);
-    src->setHeader(header);
+  word code = header->hashCode();
+  if (code == 0) {
+    word size = src->headerCountOrOverflow();
+    code = siphash24(reinterpret_cast<const byte*>(src->address()), size);
+    code &= Header::kHashCodeMask;
+    code = (code == 0) ? 1 : code;
+    src->setHeader(header->withHashCode(code));
+    assert(code == src->header()->hashCode());
   }
-  return SmallInteger::fromWord(header->hashCode());
+  return SmallInteger::fromWord(code);
 }
 
 void Runtime::initializeClasses() {

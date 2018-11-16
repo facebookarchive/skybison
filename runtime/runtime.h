@@ -37,6 +37,7 @@ class Runtime {
   void collectGarbage();
 
   Object* hash(Object* object);
+  word siphash24(const byte* src, word size);
 
   uword random();
 

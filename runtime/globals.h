@@ -18,6 +18,8 @@ const int KiB = 1024;
 const int MiB = KiB * KiB;
 const int GiB = KiB * KiB * KiB;
 
+#define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&) = delete;      \
   void operator=(const TypeName&) = delete

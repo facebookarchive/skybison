@@ -181,6 +181,8 @@ class Header : public Object {
 
   inline word count();
 
+  inline bool hasOverflow();
+
   static inline Header*
   from(word count, word hash, ClassId id, ObjectFormat format);
 
@@ -210,6 +212,8 @@ class Header : public Object {
 
   static const int kCountOverflowFlag = (1 << kCountSize) - 1;
   static const int kCountMax = kCountOverflowFlag - 1;
+
+  static const int kSize = kPointerSize;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Header);
@@ -275,15 +279,23 @@ class HeapObject : public Object {
  public:
   // Getters and setters.
   inline uword address();
+  inline uword baseAddress();
   inline Header* header();
-  inline word size();
   inline void setHeader(Header* header);
+  inline word headerOverflow();
+  inline void
+  setHeaderAndOverflow(word count, word hash, ClassId id, ObjectFormat format);
+  inline word headerCountOrOverflow();
+  inline word size();
 
   // Conversion.
   inline static HeapObject* fromAddress(uword address);
 
   // Casting.
   inline static HeapObject* cast(Object* object);
+
+  // Sizing
+  inline static word headerSize(word count);
 
   // Garbage collection.
   inline bool isRoot();
@@ -299,8 +311,11 @@ class HeapObject : public Object {
   static const uword kIsForwarded = static_cast<uword>(-3);
 
   // Layout.
-  static const int kHeaderOffset = 0;
+  static const int kHeaderOffset = -kPointerSize;
+  static const int kHeaderOverflowOffset = kHeaderOffset - kPointerSize;
   static const int kSize = kHeaderOffset + kPointerSize;
+
+  static const word kMinimumSize = kPointerSize * 2;
 
  protected:
   inline Object* instanceVariableAt(word offset);
@@ -320,7 +335,6 @@ class Class : public HeapObject {
 
   // Sizing.
   inline static word allocationSize();
-  inline static word bodySize();
 
   // Allocation.
   inline void initialize(Object* super_class);
@@ -454,7 +468,6 @@ class Code : public HeapObject {
 
   // Sizing.
   inline static word allocationSize();
-  inline static word bodySize();
 
   // Allocation.
   inline void initialize(Object* empty_object_array);
@@ -557,7 +570,6 @@ class Function : public HeapObject {
 
   // Sizing.
   inline static word allocationSize();
-  inline static word bodySize();
 
   // Allocation.
   inline void initialize();
@@ -595,7 +607,6 @@ class Module : public HeapObject {
 
   // Allocation.
   inline static word allocationSize();
-  inline static word bodySize();
 
   // Allocation.
   inline void initialize(Object* name, Object* dict);
@@ -660,9 +671,10 @@ class Dictionary : public HeapObject {
   // Returns false otherwise.
   static bool remove(Object* dict, Object* key, Object* hash, Object** value);
 
+  inline Object* items();
+
   // Sizing.
   inline static word allocationSize();
-  inline static word bodySize();
 
   // Allocation.
   inline void initialize(Object* items);
@@ -685,7 +697,6 @@ class Dictionary : public HeapObject {
   static const int kSize = kItemsOffset + kPointerSize;
 
  private:
-  inline Object* items();
   inline void setItems(Object* items);
   inline void setNumItems(word numItems);
 
@@ -731,7 +742,6 @@ class List : public HeapObject {
 
   // Sizing.
   static inline word allocationSize();
-  static inline word bodySize();
 
   // Allocation
   inline void initialize(Object* items);
@@ -884,6 +894,10 @@ word Header::count() {
   return (header >> kCountOffset) & kCountMask;
 }
 
+bool Header::hasOverflow() {
+  return count() == kCountOverflowFlag;
+}
+
 word Header::hashCode() {
   auto header = reinterpret_cast<uword>(this);
   return (header >> kHashCodeOffset) & kHashCodeMask;
@@ -907,6 +921,8 @@ ObjectFormat Header::format() {
 }
 
 Header* Header::from(word count, word hash, ClassId id, ObjectFormat format) {
+  assert(count >= 0);
+  assert(count <= kCountMax || count == kCountOverflowFlag);
   uword result = Header::kTag;
   result |= ((count > kCountMax) ? kCountOverflowFlag : count) << kCountOffset;
   result |= hash << kHashCodeOffset;
@@ -959,8 +975,37 @@ uword HeapObject::address() {
   return reinterpret_cast<uword>(this) - HeapObject::kTag;
 }
 
+uword HeapObject::baseAddress() {
+  word result = address() - Header::kSize;
+  if (header()->hasOverflow()) {
+    result -= kPointerSize;
+  }
+  return result;
+}
+
 Header* HeapObject::header() {
   return Header::cast(instanceVariableAt(kHeaderOffset));
+}
+
+void HeapObject::setHeader(Header* header) {
+  instanceVariableAtPut(kHeaderOffset, header);
+}
+
+word HeapObject::headerOverflow() {
+  assert(header()->hasOverflow());
+  return SmallInteger::cast(instanceVariableAt(kHeaderOverflowOffset))->value();
+}
+
+void HeapObject::setHeaderAndOverflow(
+    word count,
+    word hash,
+    ClassId id,
+    ObjectFormat format) {
+  if (count > Header::kCountMax) {
+    instanceVariableAtPut(kHeaderOverflowOffset, SmallInteger::fromWord(count));
+    count = Header::kCountOverflowFlag;
+  }
+  setHeader(Header::from(count, hash, id, format));
 }
 
 HeapObject* HeapObject::fromAddress(uword address) {
@@ -968,41 +1013,52 @@ HeapObject* HeapObject::fromAddress(uword address) {
   return reinterpret_cast<HeapObject*>(address + kTag);
 }
 
-word HeapObject::size() {
-  word result = header()->count();
-  switch (header()->format()) {
-    case ObjectFormat::kDataArray8:
-      break;
-    case ObjectFormat::kDataArray16:
-      result <<= 1;
-      break;
-    case ObjectFormat::kDataArray32:
-      result <<= 2;
-      break;
-    case ObjectFormat::kDataArray64:
-      result <<= 3;
-      break;
-    case ObjectFormat::kDataArray128:
-      result <<= 4;
-      break;
-    case ObjectFormat::kObjectArray:
-      result *= kPointerSize;
-      break;
-    case ObjectFormat::kDataInstance:
-    case ObjectFormat::kObjectInstance:
-      result *= kPointerSize;
-      break;
+word HeapObject::headerCountOrOverflow() {
+  if (header()->hasOverflow()) {
+    return headerOverflow();
   }
-  return Utils::roundUp(result + HeapObject::kSize, kPointerSize * 2);
+  return header()->count();
 }
 
-void HeapObject::setHeader(Header* header) {
-  instanceVariableAtPut(kHeaderOffset, header);
+word HeapObject::size() {
+  word count = headerCountOrOverflow();
+  word result = headerSize(count);
+  switch (header()->format()) {
+    case ObjectFormat::kDataArray8:
+      result += count;
+      break;
+    case ObjectFormat::kDataArray16:
+      result += count * 2;
+      break;
+    case ObjectFormat::kDataArray32:
+      result += count * 4;
+      break;
+    case ObjectFormat::kDataArray64:
+      result += count * 8;
+      break;
+    case ObjectFormat::kDataArray128:
+      result += count * 16;
+      break;
+    case ObjectFormat::kObjectArray:
+    case ObjectFormat::kDataInstance:
+    case ObjectFormat::kObjectInstance:
+      result += count * kPointerSize;
+      break;
+  }
+  return Utils::maximum(Utils::roundUp(result, kPointerSize), kMinimumSize);
 }
 
 HeapObject* HeapObject::cast(Object* object) {
   assert(object->isHeapObject());
   return reinterpret_cast<HeapObject*>(object);
+}
+
+word HeapObject::headerSize(word count) {
+  word result = kPointerSize;
+  if (count > Header::kCountMax) {
+    result += kPointerSize;
+  }
+  return result;
 }
 
 bool HeapObject::isRoot() {
@@ -1011,20 +1067,21 @@ bool HeapObject::isRoot() {
 }
 
 bool HeapObject::isForwarding() {
-  return *reinterpret_cast<uword*>(address()) == kIsForwarded;
+  return *reinterpret_cast<uword*>(address() + kHeaderOffset) == kIsForwarded;
 }
 
 Object* HeapObject::forward() {
   // When a heap object is forwarding, its second word is the forwarding
   // address.
-  return *reinterpret_cast<Object**>(address() + kPointerSize);
+  return *reinterpret_cast<Object**>(address() + kHeaderOffset + kPointerSize);
 }
 
 void HeapObject::forwardTo(Object* object) {
   // Overwrite the header with the forwarding marker.
-  *reinterpret_cast<uword*>(address()) = kIsForwarded;
+  *reinterpret_cast<uword*>(address() + kHeaderOffset) = kIsForwarded;
   // Overwrite the second word with the forwarding addressing.
-  instanceVariableAtPut(kPointerSize, object);
+  *reinterpret_cast<Object**>(address() + kHeaderOffset + kPointerSize) =
+      object;
 }
 
 Object* HeapObject::instanceVariableAt(word offset) {
@@ -1038,11 +1095,7 @@ void HeapObject::instanceVariableAtPut(word offset, Object* value) {
 // Class
 
 word Class::allocationSize() {
-  return Class::kSize;
-}
-
-word Class::bodySize() {
-  return Class::kSize - HeapObject::kSize;
+  return Header::kSize + Class::kSize;
 }
 
 void Class::initialize(Object* super_class) {
@@ -1058,26 +1111,27 @@ Class* Class::cast(Object* object) {
 
 word Array::length() {
   assert(isByteArray() || isObjectArray() || isString());
-  return header()->count();
+  return headerCountOrOverflow();
 }
 
 // ByteArray
 
 word ByteArray::allocationSize(word length) {
   assert(length >= 0);
-  return Utils::roundUp(length + ByteArray::kSize, kPointerSize);
+  word size = headerSize(length) + length;
+  return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
 byte ByteArray::byteAt(word index) {
   assert(index >= 0);
   assert(index < length());
-  return *reinterpret_cast<byte*>(address() + ByteArray::kSize + index);
+  return *reinterpret_cast<byte*>(address() + index);
 }
 
 void ByteArray::byteAtPut(word index, byte value) {
   assert(index >= 0);
   assert(index < length());
-  *reinterpret_cast<byte*>(address() + ByteArray::kSize + index) = value;
+  *reinterpret_cast<byte*>(address() + index) = value;
 }
 
 ByteArray* ByteArray::cast(Object* object) {
@@ -1089,14 +1143,13 @@ ByteArray* ByteArray::cast(Object* object) {
 
 word ObjectArray::allocationSize(word length) {
   assert(length >= 0);
-  return Utils::roundUp(
-      length * kPointerSize + ObjectArray::kSize, kPointerSize);
+  word size = headerSize(length) + length * kPointerSize;
+  return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
 void ObjectArray::initialize(word size, Object* value) {
   assert(size >= 0);
-  for (word offset = ObjectArray::kSize; offset < size;
-       offset += kPointerSize) {
+  for (word offset = 0; offset < size; offset += kPointerSize) {
     instanceVariableAtPut(offset, value);
   }
 }
@@ -1109,13 +1162,13 @@ ObjectArray* ObjectArray::cast(Object* object) {
 Object* ObjectArray::at(word index) {
   assert(index >= 0);
   assert(index < length());
-  return instanceVariableAt(ObjectArray::kSize + (index * kPointerSize));
+  return instanceVariableAt(index * kPointerSize);
 }
 
 void ObjectArray::atPut(word index, Object* value) {
   assert(index >= 0);
   assert(index < length());
-  instanceVariableAtPut(ObjectArray::kSize + (index * kPointerSize), value);
+  instanceVariableAtPut(index * kPointerSize, value);
 }
 
 void ObjectArray::copyTo(Object* array) {
@@ -1136,11 +1189,7 @@ Code* Code::cast(Object* obj) {
 }
 
 word Code::allocationSize() {
-  return Utils::roundUp(kSize, kPointerSize);
-}
-
-word Code::bodySize() {
-  return Code::kSize - HeapObject::kSize;
+  return Header::kSize + Code::kSize;
 }
 
 // TODO: initialize instance variables with the None object.
@@ -1293,11 +1342,7 @@ void Code::setVarnames(Object* value) {
 // Dictionary
 
 word Dictionary::allocationSize() {
-  return Utils::roundUp(Module::kSize, kPointerSize);
-}
-
-word Dictionary::bodySize() {
-  return Dictionary::kSize - HeapObject::kSize;
+  return Header::kSize + Module::kSize;
 }
 
 void Dictionary::initialize(Object* items) {
@@ -1441,18 +1486,13 @@ Function* Function::cast(Object* object) {
 }
 
 word Function::allocationSize() {
-  return Utils::roundUp(Function::kSize, kPointerSize);
+  return Header::kSize + Function::kSize;
 }
 
 void Function::initialize() {
-  for (word offset = HeapObject::kSize; offset < Function::kSize;
-       offset += kPointerSize) {
+  for (word offset = 0; offset < Function::kSize; offset += kPointerSize) {
     instanceVariableAtPut(offset, None::object());
   }
-}
-
-word Function::bodySize() {
-  return Function::kSize - HeapObject::kSize;
 }
 
 FunctionTrampoline Function::trampolineFromObject(Object* object) {
@@ -1467,11 +1507,7 @@ Object* Function::trampolineToObject(FunctionTrampoline trampoline) {
 // List
 
 word List::allocationSize() {
-  return Utils::roundUp(List::kSize, kPointerSize);
-}
-
-word List::bodySize() {
-  return List::kSize - HeapObject::kSize;
+  return Header::kSize + List::kSize;
 }
 
 List* List::cast(Object* object) {
@@ -1519,11 +1555,7 @@ Object* List::at(word index) {
 // Module
 
 word Module::allocationSize() {
-  return Utils::roundUp(Module::kSize, kPointerSize);
-}
-
-word Module::bodySize() {
-  return Module::kSize - HeapObject::kSize;
+  return Header::kSize + Module::kSize;
 }
 
 Module* Module::cast(Object* object) {
@@ -1553,19 +1585,20 @@ String* String::cast(Object* object) {
 
 word String::allocationSize(word length) {
   assert(length >= 0);
-  return Utils::roundUp(String::kSize + length, kPointerSize);
+  word size = headerSize(length) + length;
+  return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
 byte String::charAt(word index) {
   assert(index >= 0);
   assert(index < length());
-  return *reinterpret_cast<byte*>(address() + String::kSize + index);
+  return *reinterpret_cast<byte*>(address() + index);
 }
 
 void String::charAtPut(word index, byte value) {
   assert(index >= 0);
   assert(index < length());
-  *reinterpret_cast<byte*>(address() + String::kSize + index) = value;
+  *reinterpret_cast<byte*>(address() + index) = value;
 }
 
 } // namespace python

@@ -11,7 +11,7 @@ class Heap {
   explicit Heap(word size);
   ~Heap();
 
-  Object* allocate(word size);
+  Object* allocate(word size, word offset);
 
   bool contains(void* address);
   bool verify();

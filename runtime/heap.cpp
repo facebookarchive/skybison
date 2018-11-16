@@ -18,12 +18,14 @@ Heap::~Heap() {
   delete to_;
 }
 
-Object* Heap::allocate(word size) {
+Object* Heap::allocate(word size, word offset) {
+  assert(size >= HeapObject::kMinimumSize);
+  assert(Utils::isAligned(size, kPointerSize));
   uword address = to_->allocate(size);
   if (address == 0) {
     return nullptr;
   }
-  return HeapObject::fromAddress(address);
+  return HeapObject::fromAddress(address + offset);
 }
 
 void Heap::scavengePointer(Object** pointer) {
@@ -43,17 +45,21 @@ void Heap::scavengePointer(Object** pointer) {
 void Heap::scavenge() {
   uword scan = to_->start();
   while (scan < to_->fill()) {
-    // Scan the class pointer embedded in the header word.
-    HeapObject* object = HeapObject::fromAddress(scan);
-    // Scan pointers that follow the header word, if any.
-    word size = object->size();
-    if (object->isRoot()) {
-      auto pointer = reinterpret_cast<Object**>(scan + HeapObject::kSize);
-      for (word i = HeapObject::kSize; i < size; i += kPointerSize) {
-        scavengePointer(pointer++);
+    if (!(*reinterpret_cast<Object**>(scan))->isHeader()) {
+      // Skip immediate values for alignment padding or header overflow.
+      scan += kPointerSize;
+    } else {
+      HeapObject* object = HeapObject::fromAddress(scan + Header::kSize);
+      uword end = object->baseAddress() + object->size();
+      // Scan pointers that follow the header word, if any.
+      if (!object->isRoot()) {
+        scan = end;
+      } else {
+        for (scan += Header::kSize; scan < end; scan += kPointerSize) {
+          scavengePointer(reinterpret_cast<Object**>(scan));
+        }
       }
     }
-    scan += size;
   }
   from_->reset();
   from_->protect();
@@ -64,9 +70,10 @@ Object* Heap::transport(Object* object) {
   word size = from_object->size();
   uword address = to_->allocate(size);
   auto dst = reinterpret_cast<void*>(address);
-  auto src = reinterpret_cast<void*>(from_object->address());
+  auto src = reinterpret_cast<void*>(from_object->baseAddress());
   std::memcpy(dst, src, size);
-  HeapObject* to_object = HeapObject::fromAddress(address);
+  word offset = from_object->address() - from_object->baseAddress();
+  HeapObject* to_object = HeapObject::fromAddress(address + offset);
   from_object->forwardTo(to_object);
   return to_object;
 }
@@ -83,35 +90,54 @@ bool Heap::contains(void* address) {
 }
 
 bool Heap::verify() {
-  uword address = to_->start();
-  while (address < to_->fill()) {
-    HeapObject* object = HeapObject::fromAddress(address);
-    // Check that the object is entirely within the heap.
-    word size = object->size();
-    if (address + size > to_->fill()) {
-      return false;
-    }
-    // If the object has pointers, check that they are valid.
-    if (object->isRoot()) {
-      auto pointer = reinterpret_cast<Object**>(address + HeapObject::kSize);
-      for (word i = HeapObject::kSize; i < size; i += kPointerSize) {
-        if ((*pointer)->isHeapObject()) {
-          if (!to_->isAllocated(HeapObject::cast(*pointer)->address()))
-            return false;
+  uword scan = to_->start();
+  while (scan < to_->fill()) {
+    if (!(*reinterpret_cast<Object**>(scan))->isHeader()) {
+      // Skip immediate values for alignment padding or header overflow.
+      scan += kPointerSize;
+    } else {
+      HeapObject* object = HeapObject::fromAddress(scan + Header::kSize);
+      // Objects start before the start of the space they are allocated in.
+      if (object->baseAddress() < to_->start()) {
+        return false;
+      }
+      // Objects must have their instance data after their header.
+      if (object->address() < object->baseAddress()) {
+        return false;
+      }
+      // Objects cannot start after the end of the space they are allocated in.
+      if (object->address() > to_->fill()) {
+        return false;
+      }
+      // Objects cannot end after the end of the space they are allocated in.
+      uword end = object->baseAddress() + object->size();
+      if (end > to_->fill()) {
+        return false;
+      }
+      // Scan pointers that follow the header word, if any.
+      if (!object->isRoot()) {
+        scan = end;
+      } else {
+        for (scan += Header::kSize; scan < end; scan += kPointerSize) {
+          auto pointer = reinterpret_cast<Object**>(scan);
+          if ((*pointer)->isHeapObject()) {
+            if (!to_->isAllocated(HeapObject::cast(*pointer)->address())) {
+              return false;
+            }
+          }
         }
       }
     }
-    address += size;
   }
   return true;
 }
 
 Object* Heap::createClass(ClassId class_id, Object* super_class) {
-  Object* raw = allocate(Class::allocationSize());
+  Object* raw = allocate(Class::allocationSize(), Header::kSize);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Class*>(raw);
   result->setHeader(Header::from(
-      Class::bodySize() / kPointerSize,
+      Class::kSize / kPointerSize,
       static_cast<uword>(class_id),
       ClassId::kClass,
       ObjectFormat::kObjectInstance));
@@ -120,11 +146,11 @@ Object* Heap::createClass(ClassId class_id, Object* super_class) {
 }
 
 Object* Heap::createClassClass() {
-  Object* raw = allocate(Class::allocationSize());
+  Object* raw = allocate(Class::allocationSize(), Header::kSize);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Class*>(raw);
   result->setHeader(Header::from(
-      Class::bodySize() / kPointerSize,
+      Class::kSize / kPointerSize,
       static_cast<uword>(ClassId::kClass),
       ClassId::kClass,
       ObjectFormat::kObjectInstance));
@@ -133,11 +159,11 @@ Object* Heap::createClassClass() {
 }
 
 Object* Heap::createCode(Object* empty_object_array) {
-  Object* raw = allocate(Code::allocationSize());
+  Object* raw = allocate(Code::allocationSize(), Header::kSize);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Code*>(raw);
   result->setHeader(Header::from(
-      Code::bodySize() / kPointerSize,
+      Code::kSize / kPointerSize,
       0,
       ClassId::kCode,
       ObjectFormat::kObjectInstance));
@@ -147,21 +173,21 @@ Object* Heap::createCode(Object* empty_object_array) {
 
 Object* Heap::createByteArray(word length) {
   word size = ByteArray::allocationSize(length);
-  Object* raw = allocate(size);
+  Object* raw = allocate(size, ByteArray::headerSize(length));
   assert(raw != nullptr);
   auto result = reinterpret_cast<ByteArray*>(raw);
-  result->setHeader(Header::from(
-      length, 0, ClassId::kByteArray, ObjectFormat::kObjectInstance));
+  result->setHeaderAndOverflow(
+      length, 0, ClassId::kByteArray, ObjectFormat::kDataArray8);
   return ByteArray::cast(result);
 }
 
 Object* Heap::createDictionary(Object* items) {
   word size = Dictionary::allocationSize();
-  Object* raw = allocate(size);
+  Object* raw = allocate(size, Header::kSize);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Dictionary*>(raw);
   result->setHeader(Header::from(
-      Dictionary::bodySize() / kPointerSize,
+      Dictionary::kSize / kPointerSize,
       0,
       ClassId::kDictionary,
       ObjectFormat::kObjectInstance));
@@ -171,11 +197,11 @@ Object* Heap::createDictionary(Object* items) {
 
 Object* Heap::createFunction() {
   word size = Function::allocationSize();
-  Object* raw = allocate(size);
+  Object* raw = allocate(size, Header::kSize);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Function*>(raw);
   result->setHeader(Header::from(
-      Function::bodySize() / kPointerSize,
+      Function::kSize / kPointerSize,
       0,
       ClassId::kFunction,
       ObjectFormat::kObjectInstance));
@@ -185,11 +211,11 @@ Object* Heap::createFunction() {
 
 Object* Heap::createList(Object* elements) {
   word size = List::allocationSize();
-  Object* raw = allocate(size);
+  Object* raw = allocate(size, Header::kSize);
   assert(raw != nullptr);
   auto result = reinterpret_cast<List*>(raw);
   result->setHeader(Header::from(
-      List::bodySize() / kPointerSize,
+      List::kSize / kPointerSize,
       0,
       ClassId::kList,
       ObjectFormat::kObjectInstance));
@@ -198,12 +224,12 @@ Object* Heap::createList(Object* elements) {
 }
 
 Object* Heap::createModule(Object* name, Object* dictionary) {
-  auto size = Module::allocationSize();
-  Object* raw = allocate(size);
+  word size = Module::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Module*>(raw);
   result->setHeader(Header::from(
-      Module::bodySize() / kPointerSize,
+      Module::kSize / kPointerSize,
       0,
       ClassId::kModule,
       ObjectFormat::kObjectInstance));
@@ -212,23 +238,23 @@ Object* Heap::createModule(Object* name, Object* dictionary) {
 }
 
 Object* Heap::createObjectArray(word length, Object* value) {
-  auto size = ObjectArray::allocationSize(length);
-  Object* raw = allocate(size);
+  word size = ObjectArray::allocationSize(length);
+  Object* raw = allocate(size, HeapObject::headerSize(length));
   assert(raw != nullptr);
   auto result = reinterpret_cast<ObjectArray*>(raw);
-  result->setHeader(Header::from(
-      length, 0, ClassId::kObjectArray, ObjectFormat::kObjectArray));
+  result->setHeaderAndOverflow(
+      length, 0, ClassId::kObjectArray, ObjectFormat::kObjectArray);
   result->initialize(size, value);
   return ObjectArray::cast(result);
 }
 
 Object* Heap::createString(word length) {
-  auto size = String::allocationSize(length);
-  Object* raw = allocate(size);
+  word size = String::allocationSize(length);
+  Object* raw = allocate(size, String::headerSize(length));
   assert(raw != nullptr);
   auto result = reinterpret_cast<String*>(raw);
-  result->setHeader(
-      Header::from(length, 0, ClassId::kString, ObjectFormat::kDataArray8));
+  result->setHeaderAndOverflow(
+      length, 0, ClassId::kString, ObjectFormat::kDataArray8);
   return String::cast(result);
 }
 
