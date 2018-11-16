@@ -861,6 +861,9 @@ PyAPI_FUNC(Py_ssize_t) Py_REFCNT_Func(PyObject*);
 PyAPI_FUNC(void) Py_XDECREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_XINCREF_Func(PyObject*);
 
+PyAPI_FUNC(void*) PyMem_New_Func(size_t size, size_t n);
+PyAPI_FUNC(void*) PyMem_Resize_Func(void* p, size_t size, size_t n);
+
 PyAPI_FUNC(char*) PyByteArray_AS_STRING_Func(PyObject*);
 
 /* Macros */
@@ -913,6 +916,16 @@ PyAPI_FUNC(char*) PyByteArray_AS_STRING_Func(PyObject*);
   PyObject_Init((PyObject*)op, (PyTypeObject*)typeobj)
 #define PyObject_INIT_VAR(op, typeobj, size)                                   \
   PyObject_InitVar((PyVarObject*)op, (PyTypeObject*)typeobj, size)
+
+/* Memory macros from pymem.h */
+#define PyMem_DEL(p) PyMem_Del(p)
+#define PyMem_FREE(p) PyMem_Free(p)
+#define PyMem_MALLOC(n) PyMem_Malloc(n)
+#define PyMem_New(type, n) ((type*)PyMem_New_Func(sizeof(type), n))
+#define PyMem_NEW(type, n) PyMem_New(type, n)
+#define PyMem_REALLOC(p, n) PyMem_Realloc(p, n)
+#define PyMem_Resize(p, type, n) ((type*)PyMem_Resize_Func(p, sizeof(type), n))
+#define PyMem_RESIZE(p, type, n) PyMem_Resize(p, type, n)
 
 #ifdef __cplusplus
 }

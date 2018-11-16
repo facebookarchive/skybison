@@ -53,4 +53,14 @@ PY_EXPORT void* PyMem_RawRealloc(void* ptr, size_t size) {
 
 PY_EXPORT void PyMem_RawFree(void* ptr) { return std::free(ptr); }
 
+PY_EXPORT void* PyMem_New_Func(size_t size, size_t n) {
+  if (n > kMaxWord / size) return nullptr;
+  return PyMem_Malloc(n * size);
+}
+
+PY_EXPORT void* PyMem_Resize_Func(void* p, size_t size, size_t n) {
+  if (n > kMaxWord / size) return nullptr;
+  return PyMem_Realloc(p, n * size);
+}
+
 }  // namespace python
