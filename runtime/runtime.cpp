@@ -93,7 +93,7 @@ Runtime::Runtime(word heap_size)
   initializeApiHandles();
 }
 
-Runtime::Runtime() : Runtime(64 * MiB) {}
+Runtime::Runtime() : Runtime(64 * kMiB) {}
 
 Runtime::~Runtime() {
   // TODO(T30392425): This is an ugly and fragile workaround for having multiple

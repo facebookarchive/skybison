@@ -92,7 +92,7 @@ class BlockStack {
   void atPut(int offset, Object* value);
 
   word top();
-  void setTop(word newTop);
+  void setTop(word new_top);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(BlockStack);
 };
@@ -150,7 +150,7 @@ class Frame {
   Object* getLocal(word idx);
   void setLocal(word idx, Object* local);
 
-  void setNumLocals(word numLocals);
+  void setNumLocals(word num_locals);
   word numLocals();
 
   BlockStack* blockStack();
@@ -217,7 +217,7 @@ class Frame {
 
   bool isNativeFrame();
   void* nativeFunctionPointer();
-  void makeNativeFrame(Object* fnPointerAsInt);
+  void makeNativeFrame(Object* fn_pointer_as_int);
 
   // Compute the total space required for a frame object
   static word allocationSize(Object* code);
@@ -357,11 +357,11 @@ inline void Frame::setLocal(word idx, Object* object) {
   *(locals() - idx) = object;
 }
 
-inline void Frame::setNumLocals(word numLocals) {
-  atPut(kNumLocalsOffset, SmallInteger::fromWord(numLocals));
+inline void Frame::setNumLocals(word num_locals) {
+  atPut(kNumLocalsOffset, SmallInteger::fromWord(num_locals));
   // Bias locals by 1 word to avoid doing so during {get,set}Local
   Object* locals = reinterpret_cast<Object*>(address() + Frame::kSize +
-                                             ((numLocals - 1) * kPointerSize));
+                                             ((num_locals - 1) * kPointerSize));
   DCHECK(locals->isSmallInteger(), "expected small integer");
   atPut(kLocalsOffset, locals);
 }
@@ -453,9 +453,9 @@ inline void* Frame::nativeFunctionPointer() {
 
 inline bool Frame::isNativeFrame() { return code()->isInteger(); }
 
-inline void Frame::makeNativeFrame(Object* fnPointerAsInt) {
-  DCHECK(fnPointerAsInt->isInteger(), "expected integer");
-  setCode(fnPointerAsInt);
+inline void Frame::makeNativeFrame(Object* fn_pointer_as_int) {
+  DCHECK(fn_pointer_as_int->isInteger(), "expected integer");
+  setCode(fn_pointer_as_int);
 }
 
 inline Object* TryBlock::asSmallInteger() const {
@@ -508,29 +508,29 @@ inline word BlockStack::top() {
   return SmallInteger::cast(at(kTopOffset))->value();
 }
 
-inline void BlockStack::setTop(word newTop) {
-  DCHECK_INDEX(newTop, kMaxBlockStackDepth);
-  atPut(kTopOffset, SmallInteger::fromWord(newTop));
+inline void BlockStack::setTop(word new_top) {
+  DCHECK_INDEX(new_top, kMaxBlockStackDepth);
+  atPut(kTopOffset, SmallInteger::fromWord(new_top));
 }
 
 inline TryBlock BlockStack::peek() {
-  word stackTop = top() - 1;
-  DCHECK(stackTop > -1, "block stack underflow %ld", stackTop);
-  Object* block = at(kStackOffset + stackTop * kPointerSize);
+  word stack_top = top() - 1;
+  DCHECK(stack_top > -1, "block stack underflow %ld", stack_top);
+  Object* block = at(kStackOffset + stack_top * kPointerSize);
   return TryBlock(block);
 }
 
 inline void BlockStack::push(const TryBlock& block) {
-  word stackTop = top();
-  atPut(kStackOffset + stackTop * kPointerSize, block.asSmallInteger());
-  setTop(stackTop + 1);
+  word stack_top = top();
+  atPut(kStackOffset + stack_top * kPointerSize, block.asSmallInteger());
+  setTop(stack_top + 1);
 }
 
 inline TryBlock BlockStack::pop() {
-  word stackTop = top() - 1;
-  DCHECK(stackTop > -1, "block stack underflow %ld", stackTop);
-  Object* block = at(kStackOffset + stackTop * kPointerSize);
-  setTop(stackTop);
+  word stack_top = top() - 1;
+  DCHECK(stack_top > -1, "block stack underflow %ld", stack_top);
+  Object* block = at(kStackOffset + stack_top * kPointerSize);
+  setTop(stack_top);
   return TryBlock(block);
 }
 

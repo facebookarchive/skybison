@@ -1123,12 +1123,12 @@ class Function : public HeapObject {
   // Returns the entry to be used when the function is invoked via
   // CALL_FUNCTION_KW
   Entry entryKw();
-  void setEntryKw(Entry entryKw);
+  void setEntryKw(Entry entry_kw);
 
   // Returns the entry to be used when the function is invoked via
   // CALL_FUNCTION_EX
   inline Entry entryEx();
-  inline void setEntryEx(Entry entryEx);
+  inline void setEntryEx(Entry entry_ex);
 
   // The dictionary that holds this function's global namespace. User-code
   // cannot change this
@@ -1137,7 +1137,7 @@ class Function : public HeapObject {
 
   // A dictionary containing defaults for keyword-only parameters
   Object* kwDefaults();
-  void setKwDefaults(Object* kwDefaults);
+  void setKwDefaults(Object* kw_defaults);
 
   // The name of the module the function was defined in
   Object* module();
@@ -1265,7 +1265,7 @@ class Dictionary : public HeapObject {
 
   // Number of items currently in the dictionary
   word numItems();
-  void setNumItems(word numItems);
+  void setNumItems(word num_items);
 
   // Sizing.
   static word allocationSize();
@@ -1358,7 +1358,7 @@ class Set : public HeapObject {
 
   // Number of items currently in the set
   word numItems();
-  void setNumItems(word numItems);
+  void setNumItems(word num_items);
 
   // Sizing.
   static word allocationSize();
@@ -3147,8 +3147,8 @@ inline word Dictionary::numItems() {
   return SmallInteger::cast(instanceVariableAt(kNumItemsOffset))->value();
 }
 
-inline void Dictionary::setNumItems(word numItems) {
-  instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(numItems));
+inline void Dictionary::setNumItems(word num_items) {
+  instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(num_items));
 }
 
 inline Object* Dictionary::data() { return instanceVariableAt(kDataOffset); }
@@ -3212,8 +3212,8 @@ inline Function::Entry Function::entryKw() {
   return SmallInteger::cast(object)->asFunctionPointer<Function::Entry>();
 }
 
-inline void Function::setEntryKw(Function::Entry entryKw) {
-  auto object = SmallInteger::fromFunctionPointer(entryKw);
+inline void Function::setEntryKw(Function::Entry entry_kw) {
+  auto object = SmallInteger::fromFunctionPointer(entry_kw);
   instanceVariableAtPut(kEntryKwOffset, object);
 }
 
@@ -3226,8 +3226,8 @@ Function::Entry Function::entryEx() {
   return SmallInteger::cast(object)->asFunctionPointer<Function::Entry>();
 }
 
-void Function::setEntryEx(Function::Entry entryEx) {
-  auto object = SmallInteger::fromFunctionPointer(entryEx);
+void Function::setEntryEx(Function::Entry entry_ex) {
+  auto object = SmallInteger::fromFunctionPointer(entry_ex);
   instanceVariableAtPut(kEntryExOffset, object);
 }
 
@@ -3239,8 +3239,8 @@ inline Object* Function::kwDefaults() {
   return instanceVariableAt(kKwDefaultsOffset);
 }
 
-inline void Function::setKwDefaults(Object* kwDefaults) {
-  return instanceVariableAtPut(kKwDefaultsOffset, kwDefaults);
+inline void Function::setKwDefaults(Object* kw_defaults) {
+  return instanceVariableAtPut(kKwDefaultsOffset, kw_defaults);
 }
 
 inline Object* Function::module() { return instanceVariableAt(kModuleOffset); }
@@ -3501,8 +3501,8 @@ inline word Set::numItems() {
   return SmallInteger::cast(instanceVariableAt(kNumItemsOffset))->value();
 }
 
-inline void Set::setNumItems(word numItems) {
-  instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(numItems));
+inline void Set::setNumItems(word num_items) {
+  instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(num_items));
 }
 
 inline Object* Set::data() { return instanceVariableAt(kDataOffset); }

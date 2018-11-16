@@ -104,7 +104,7 @@ class Vector {
 
   void clear() { end_ = begin_; }
 
-  void push_back(const T& t) {
+  void push_back(const T& t) {  // NOLINT
     if (end_ >= end_storage_) {
       grow(0);
     }
@@ -112,13 +112,13 @@ class Vector {
     end_++;
   }
 
-  void pop_back() {
+  void pop_back() {  // NOLINT
     DCHECK(!empty(), "pop back on empty");
     end_--;
   }
 
  private:
-  static constexpr int growthFactor = 2;
+  static constexpr int kGrowthFactor = 2;
 
   void release() {
     std::free(begin_);
@@ -135,7 +135,7 @@ class Vector {
       if (old_cap == 0) {
         new_cap = 4;
       } else {
-        new_cap = old_cap * growthFactor;
+        new_cap = old_cap * kGrowthFactor;
       }
     }
 

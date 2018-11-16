@@ -19,7 +19,7 @@ class String;
 
 class Thread {
  public:
-  static const int kDefaultStackSize = 1 * MiB;
+  static const int kDefaultStackSize = 1 * kMiB;
 
   explicit Thread(word size);
   ~Thread();
@@ -27,7 +27,7 @@ class Thread {
   static Thread* currentThread();
   static void setCurrentThread(Thread* thread);
 
-  Frame* openAndLinkFrame(word numArgs, word numVars, word stackDepth);
+  Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
   Frame* pushFrame(Object* code);
   Frame* pushNativeFrame(void* fn, word nargs);
   Frame* pushModuleFunctionFrame(Module* module, Object* code);

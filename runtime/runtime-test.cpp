@@ -19,7 +19,7 @@ TEST(RuntimeTest, CollectGarbage) {
 }
 
 TEST(RuntimeTest, AllocateAndCollectGarbage) {
-  const word heap_size = 32 * MiB;
+  const word heap_size = 32 * kMiB;
   const word array_length = 1024;
   const word allocation_size = ByteArray::allocationSize(array_length);
   const word total_allocation_size = heap_size * 10;

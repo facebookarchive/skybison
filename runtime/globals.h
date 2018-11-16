@@ -32,9 +32,9 @@ const word kMinWord = INTPTR_MIN;
 const word kMaxWord = INTPTR_MAX;
 const uword kMaxUword = UINTPTR_MAX;
 
-const int KiB = 1024;
-const int MiB = KiB * KiB;
-const int GiB = KiB * KiB * KiB;
+const int kKiB = 1024;
+const int kMiB = kKiB * kKiB;
+const int kGiB = kKiB * kKiB * kKiB;
 
 const int kMillisecondsPerSecond = 1000;
 const int kMillsecondsPerMicrosecond = 1000;

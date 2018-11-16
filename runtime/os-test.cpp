@@ -39,7 +39,7 @@ TEST(OsTest, allocateUseAndFreeOnePage) {
 
 TEST(OsTest, allocateUseAndFreeMultiplePages) {
   // Not a multiple of a page.
-  const int size = 17 * KiB;
+  const int size = 17 * kKiB;
 
   // Allocate the pages.
   byte* page = OS::allocateMemory(size);

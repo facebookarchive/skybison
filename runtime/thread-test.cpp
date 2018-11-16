@@ -45,7 +45,7 @@ TEST(ThreadTest, RunEmptyFunction) {
   ASSERT_TRUE(code->isCode());
   EXPECT_EQ(Code::cast(code)->argcount(), 0);
 
-  Thread thread(1 * KiB);
+  Thread thread(1 * kKiB);
   Object* result = thread.run(code);
   ASSERT_EQ(result, None::object());  // returns None
 }

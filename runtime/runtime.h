@@ -58,14 +58,15 @@ class Runtime {
   Object* newComplex(double real, double imag);
 
   Object* newDictionary();
-  Object* newDictionary(word initialSize);
+  Object* newDictionary(word initial_size);
 
   Object* newDouble(double value);
 
   Object* newSet();
 
   Object* newBuiltinFunction(SymbolId name, Function::Entry entry,
-                             Function::Entry entryKw, Function::Entry entryEx);
+                             Function::Entry entry_kw,
+                             Function::Entry entry_ex);
   Object* newFunction();
 
   Object* newInstance(const Handle<Layout>& layout);
@@ -148,8 +149,8 @@ class Runtime {
 
   Object* moduleAddBuiltinFunction(const Handle<Module>& module, SymbolId name,
                                    const Function::Entry entry,
-                                   const Function::Entry entryKw,
-                                   const Function::Entry entryEx);
+                                   const Function::Entry entry_kw,
+                                   const Function::Entry entry_ex);
 
   Object* findModule(const Handle<Object>& name);
 

@@ -5,7 +5,7 @@
 namespace python {
 
 TEST(SpaceTest, Allocate) {
-  Space space(64 * KiB);
+  Space space(64 * kKiB);
   EXPECT_EQ(space.start(), space.fill());
   EXPECT_LT(space.start(), space.end());
   EXPECT_TRUE(space.contains(space.start()));

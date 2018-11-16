@@ -285,14 +285,14 @@ void Thread::ignorePendingException() {
 
 void Thread::abortOnPendingException() {
   HandleScope scope(this);
-  Handle<Object> pending_exception(&scope, pendingException());
-  if (pending_exception->isNone()) {
+  Handle<Object> pending_ex(&scope, pendingException());
+  if (pending_ex->isNone()) {
     return;
   }
 
   std::cerr << "aborting due to pending exception";
-  if (pending_exception->isString()) {
-    String* message = String::cast(*pending_exception);
+  if (pending_ex->isString()) {
+    String* message = String::cast(*pending_ex);
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);

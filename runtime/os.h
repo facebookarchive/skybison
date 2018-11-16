@@ -6,7 +6,7 @@ namespace python {
 
 class OS {
  public:
-  enum { kPageSize = 4 * KiB };
+  enum { kPageSize = 4 * kKiB };
 
   enum Protection { kNoAccess, kReadWrite };
 
