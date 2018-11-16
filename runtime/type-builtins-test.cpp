@@ -92,4 +92,26 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   ASSERT_FALSE(thread->pendingException()->isNone());
 }
 
+TEST(TypeBuiltinTest, BuiltinTypeCallInvokeDunderInitAsCallable) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+class Callable:
+  def __call__(self, obj):
+    obj.x = 42
+class C:
+  __init__ = Callable()
+c = C()
+)";
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  Thread* thread = Thread::currentThread();
+  Handle<Object> x(&scope, runtime.newStringFromCString("x"));
+  Object* attr = runtime.attributeAt(thread, c, x);
+  ASSERT_FALSE(attr->isNone());
+  ASSERT_TRUE(attr->isInteger());
+  ASSERT_EQ(SmallInteger::cast(attr)->value(), 42);
+}
+
 }  // namespace python
