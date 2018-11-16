@@ -1451,7 +1451,7 @@ a = a * a * a
 
   // Overflows in the multiplication itself.
   EXPECT_DEBUG_ONLY_DEATH(
-      compileAndRunToString(&runtime, mul_src), "\\(result / left\\) == right");
+      compileAndRunToString(&runtime, mul_src), "small integer overflow");
 
   const char* add_src = R"(
 a = 1048576

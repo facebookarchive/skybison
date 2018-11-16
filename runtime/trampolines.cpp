@@ -58,7 +58,7 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
   }
 
   // initialize free var
-  CHECK(
+  DCHECK(
       code->numFreevars() == 0 ||
           code->numFreevars() ==
               ObjectArray::cast(function->closure())->length(),

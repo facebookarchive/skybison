@@ -1720,7 +1720,7 @@ Object* Object::cast(Object* object) {
 // Integer
 
 Integer* Integer::cast(Object* object) {
-  assert(object->isInteger());
+  DCHECK(object->isInteger(), "invalid cast");
   return reinterpret_cast<Integer*>(object);
 }
 
@@ -1741,7 +1741,7 @@ void* Integer::asCPointer() {
 // SmallInteger
 
 SmallInteger* SmallInteger::cast(Object* object) {
-  assert(object->isSmallInteger());
+  DCHECK(object->isSmallInteger(), "invalid cast");
   return reinterpret_cast<SmallInteger*>(object);
 }
 
@@ -1754,7 +1754,7 @@ void* SmallInteger::asCPointer() {
 }
 
 SmallInteger* SmallInteger::fromWord(word value) {
-  assert(SmallInteger::isValid(value));
+  DCHECK(SmallInteger::isValid(value), "invalid cast");
   return reinterpret_cast<SmallInteger*>(value << kTagSize);
 }
 
@@ -1778,28 +1778,26 @@ word SmallString::length() {
 }
 
 byte SmallString::charAt(word index) {
-  assert(0 <= index);
-  assert(index < length());
+  DCHECK_INDEX(index, length());
   return reinterpret_cast<word>(this) >> (kBitsPerByte * (index + 1));
 }
 
 void SmallString::copyTo(byte* dst, word length) {
-  assert(length >= 0);
-  assert(length <= this->length());
+  DCHECK_BOUND(length, this->length());
   for (word i = 0; i < length; ++i) {
     *dst++ = charAt(i);
   }
 }
 
 SmallString* SmallString::cast(Object* object) {
-  assert(object->isSmallString());
+  DCHECK(object->isSmallString(), "invalid cast");
   return reinterpret_cast<SmallString*>(object);
 }
 
 // Header
 
 Header* Header::cast(Object* object) {
-  assert(object->isHeader());
+  DCHECK(object->isHeader(), "invalid cast");
   return reinterpret_cast<Header*>(object);
 }
 
@@ -1830,7 +1828,7 @@ word Header::layoutId() {
 }
 
 Header* Header::withLayoutId(word layout_id) {
-  CHECK(layout_id <= kMaxLayoutId, "layout id %ld too large", layout_id);
+  DCHECK_BOUND(layout_id, kMaxLayoutId);
   auto header = reinterpret_cast<uword>(this);
   header &= ~(kLayoutIdMask << kLayoutIdOffset);
   header |= (layout_id & kLayoutIdMask) << kLayoutIdOffset;
@@ -1843,8 +1841,11 @@ ObjectFormat Header::format() {
 }
 
 Header* Header::from(word count, word hash, word id, ObjectFormat format) {
-  assert(count >= 0);
-  assert(count <= kCountMax || count == kCountOverflowFlag);
+  DCHECK(
+      (count >= 0) && ((count <= kCountMax) || (count == kCountOverflowFlag)),
+      "bounds violation, %ld not in 0..%d",
+      count,
+      kCountMax);
   uword result = Header::kTag;
   result |= ((count > kCountMax) ? kCountOverflowFlag : count) << kCountOffset;
   result |= hash << kHashCodeOffset;
@@ -1860,7 +1861,7 @@ None* None::object() {
 }
 
 None* None::cast(Object* object) {
-  assert(object->isNone());
+  DCHECK(object->isNone(), "invalid cast, expected None");
   return reinterpret_cast<None*>(object);
 }
 
@@ -1871,7 +1872,7 @@ Error* Error::object() {
 }
 
 Error* Error::cast(Object* object) {
-  assert(object->isError());
+  DCHECK(object->isError(), "invalid cast, expected Error");
   return reinterpret_cast<Error*>(object);
 }
 
@@ -1883,7 +1884,7 @@ Boolean* Boolean::fromBool(bool value) {
 }
 
 Boolean* Boolean::cast(Object* object) {
-  assert(object->isBoolean());
+  DCHECK(object->isBoolean(), "invalid cast, expected Boolean");
   return reinterpret_cast<Boolean*>(object);
 }
 
@@ -1914,7 +1915,7 @@ void HeapObject::setHeader(Header* header) {
 }
 
 word HeapObject::headerOverflow() {
-  assert(header()->hasOverflow());
+  DCHECK(header()->hasOverflow(), "expected Overflow");
   return SmallInteger::cast(instanceVariableAt(kHeaderOverflowOffset))->value();
 }
 
@@ -1931,7 +1932,7 @@ void HeapObject::setHeaderAndOverflow(
 }
 
 HeapObject* HeapObject::fromAddress(uword address) {
-  assert((address & kTagMask) == 0);
+  DCHECK((address & kTagMask) == 0, "invalid cast, expected heap address");
   return reinterpret_cast<HeapObject*>(address + kTag);
 }
 
@@ -1971,7 +1972,7 @@ word HeapObject::size() {
 }
 
 HeapObject* HeapObject::cast(Object* object) {
-  assert(object->isHeapObject());
+  DCHECK(object->isHeapObject(), "invalid cast, expected heap object");
   return reinterpret_cast<HeapObject*>(object);
 }
 
@@ -2086,7 +2087,7 @@ void Class::setBuiltinBaseClass(Object* base) {
 }
 
 Class* Class::cast(Object* object) {
-  assert(object->isClass());
+  DCHECK(object->isClass(), "invalid cast, expected class");
   return reinterpret_cast<Class*>(object);
 }
 
@@ -2097,64 +2098,62 @@ bool Class::isIntrinsicOrExtension() {
 // Array
 
 word Array::length() {
-  assert(isByteArray() || isObjectArray() || isLargeString());
+  DCHECK(
+      isByteArray() || isObjectArray() || isLargeString(),
+      "invalid array type");
   return headerCountOrOverflow();
 }
 
 // ByteArray
 
 word ByteArray::allocationSize(word length) {
-  assert(length >= 0);
+  DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
 byte ByteArray::byteAt(word index) {
-  assert(index >= 0);
-  assert(index < length());
+  DCHECK_INDEX(index, length());
   return *reinterpret_cast<byte*>(address() + index);
 }
 
 void ByteArray::byteAtPut(word index, byte value) {
-  assert(index >= 0);
-  assert(index < length());
+  DCHECK_INDEX(index, length());
   *reinterpret_cast<byte*>(address() + index) = value;
 }
 
 ByteArray* ByteArray::cast(Object* object) {
-  assert(object->isByteArray());
+  DCHECK(object->isByteArray(), "invalid cast, expected byte array");
   return reinterpret_cast<ByteArray*>(object);
 }
 
 // ObjectArray
 
 word ObjectArray::allocationSize(word length) {
-  assert(length >= 0);
+  DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length * kPointerSize;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
 ObjectArray* ObjectArray::cast(Object* object) {
-  assert(object->isObjectArray());
+  DCHECK(object->isObjectArray(), "invalid cast, expected object array");
   return reinterpret_cast<ObjectArray*>(object);
 }
 
 Object* ObjectArray::at(word index) {
-  assert(index >= 0);
-  assert(index < length());
+  DCHECK_INDEX(index, length());
   return instanceVariableAt(index * kPointerSize);
 }
 
 void ObjectArray::atPut(word index, Object* value) {
-  assert(index >= 0);
-  assert(index < length());
+  DCHECK_INDEX(index, length());
   instanceVariableAtPut(index * kPointerSize, value);
 }
 
 void ObjectArray::copyTo(Object* array) {
   word len = length();
   ObjectArray* dst = ObjectArray::cast(array);
-  assert(len <= dst->length());
+  DCHECK_BOUND(len, dst->length());
   for (int i = 0; i < len; i++) {
     Object* elem = at(i);
     dst->atPut(i, elem);
@@ -2164,7 +2163,7 @@ void ObjectArray::copyTo(Object* array) {
 // Code
 
 Code* Code::cast(Object* obj) {
-  assert(obj->isCode());
+  DCHECK(obj->isCode(), "invalid cast, expecting code object");
   return reinterpret_cast<Code*>(obj);
 }
 
@@ -2198,7 +2197,7 @@ void Code::setCellvars(Object* value) {
 
 word Code::numCellvars() {
   Object* object = cellvars();
-  assert(object->isNone() || object->isObjectArray());
+  DCHECK(object->isNone() || object->isObjectArray(), "not an object array");
   if (object->isNone()) {
     return 0;
   }
@@ -2255,7 +2254,7 @@ void Code::setFreevars(Object* value) {
 
 word Code::numFreevars() {
   Object* object = freevars();
-  assert(object->isNone() || object->isObjectArray());
+  DCHECK(object->isNone() || object->isObjectArray(), "not an object array");
   if (object->isNone()) {
     return 0;
   }
@@ -2337,7 +2336,7 @@ word LargeInteger::allocationSize() {
 }
 
 LargeInteger* LargeInteger::cast(Object* object) {
-  assert(object->isLargeInteger());
+  DCHECK(object->isLargeInteger(), "not a large integer");
   return reinterpret_cast<LargeInteger*>(object);
 }
 
@@ -2352,7 +2351,7 @@ word Double::allocationSize() {
 }
 
 Double* Double::cast(Object* object) {
-  assert(object->isDouble());
+  DCHECK(object->isDouble(), "not a double");
   return reinterpret_cast<Double*>(object);
 }
 
@@ -2391,7 +2390,7 @@ word Range::allocationSize() {
 }
 
 Range* Range::cast(Object* object) {
-  assert(object->isRange());
+  DCHECK(object->isRange(), "invalid cast, expected range");
   return reinterpret_cast<Range*>(object);
 }
 
@@ -2430,7 +2429,7 @@ word ListIterator::allocationSize() {
 }
 
 ListIterator* ListIterator::cast(Object* object) {
-  assert(object->isListIterator());
+  DCHECK(object->isListIterator(), "invalid cast, expected list iterator");
   return reinterpret_cast<ListIterator*>(object);
 }
 
@@ -2443,7 +2442,8 @@ void RangeIterator::setRange(Object* range) {
 }
 
 bool RangeIterator::isOutOfRange(word cur, word stop, word step) {
-  assert(step != 0); // should have been checked in builtinRange().
+  DCHECK(
+      step != 0, "invalid step"); // should have been checked in builtinRange().
 
   if (step < 0) {
     if (cur <= stop) {
@@ -2482,7 +2482,7 @@ word RangeIterator::allocationSize() {
 }
 
 RangeIterator* RangeIterator::cast(Object* object) {
-  assert(object->isRangeIterator());
+  DCHECK(object->isRangeIterator(), "invalid cast, expected range interator");
   return reinterpret_cast<RangeIterator*>(object);
 }
 
@@ -2517,7 +2517,7 @@ word Slice::allocationSize() {
 }
 
 Slice* Slice::cast(Object* object) {
-  assert(object->isSlice());
+  DCHECK(object->isSlice(), "invalid cast, expected slice");
   return reinterpret_cast<Slice*>(object);
 }
 
@@ -2528,7 +2528,7 @@ word Dictionary::allocationSize() {
 }
 
 Dictionary* Dictionary::cast(Object* object) {
-  assert(object->isDictionary());
+  DCHECK(object->isDictionary(), "invalid cast, expected dictionary");
   return reinterpret_cast<Dictionary*>(object);
 }
 
@@ -2663,7 +2663,7 @@ void Function::setFastGlobals(Object* fast_globals) {
 }
 
 Function* Function::cast(Object* object) {
-  assert(object->isFunction());
+  DCHECK(object->isFunction(), "invalid cast, expected function");
   return reinterpret_cast<Function*>(object);
 }
 
@@ -2674,13 +2674,13 @@ word Function::allocationSize() {
 // Instance
 
 word Instance::allocationSize(word num_attr) {
-  assert(num_attr >= 0);
+  DCHECK(num_attr >= 0, "invalid number of attributes %ld", num_attr);
   word size = headerSize(num_attr) + num_attr * kPointerSize;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
 Instance* Instance::cast(Object* object) {
-  assert(object->isInstance());
+  DCHECK(object->isInstance(), "invalid cast, expected instance");
   return reinterpret_cast<Instance*>(object);
 }
 
@@ -2691,7 +2691,7 @@ word List::allocationSize() {
 }
 
 List* List::cast(Object* object) {
-  assert(object->isList());
+  DCHECK(object->isList(), "invalid cast, expected list");
   return reinterpret_cast<List*>(object);
 }
 
@@ -2717,15 +2717,13 @@ void List::setAllocated(word new_allocated) {
 }
 
 void List::atPut(word index, Object* value) {
-  assert(index >= 0);
-  assert(index < allocated());
+  DCHECK_INDEX(index, allocated());
   Object* items = instanceVariableAt(kItemsOffset);
   ObjectArray::cast(items)->atPut(index, value);
 }
 
 Object* List::at(word index) {
-  assert(index >= 0);
-  assert(index < allocated());
+  DCHECK_INDEX(index, allocated());
   return ObjectArray::cast(items())->at(index);
 }
 
@@ -2736,7 +2734,7 @@ word Module::allocationSize() {
 }
 
 Module* Module::cast(Object* object) {
-  assert(object->isModule());
+  DCHECK(object->isModule(), "invalid cast, expected module");
   return reinterpret_cast<Module*>(object);
 }
 
@@ -2763,7 +2761,7 @@ word NotImplemented::allocationSize() {
 }
 
 NotImplemented* NotImplemented::cast(Object* object) {
-  assert(object->isNotImplemented());
+  DCHECK(object->isNotImplemented(), "invalid cast, expected NotImplemented");
   return reinterpret_cast<NotImplemented*>(object);
 }
 
@@ -2782,7 +2780,9 @@ bool String::equalsCString(const char* c_string) {
 }
 
 String* String::cast(Object* object) {
-  assert(object->isLargeString() || object->isSmallString());
+  DCHECK(
+      object->isLargeString() || object->isSmallString(),
+      "invalid cast, expected string");
   return reinterpret_cast<String*>(object);
 }
 
@@ -2790,7 +2790,7 @@ byte String::charAt(word index) {
   if (isSmallString()) {
     return SmallString::cast(this)->charAt(index);
   }
-  assert(isLargeString());
+  DCHECK(isLargeString(), "unexpected type");
   return LargeString::cast(this)->charAt(index);
 }
 
@@ -2798,7 +2798,7 @@ word String::length() {
   if (isSmallString()) {
     return SmallString::cast(this)->length();
   }
-  assert(isLargeString());
+  DCHECK(isLargeString(), "unexpected type");
   return LargeString::cast(this)->length();
 }
 
@@ -2819,7 +2819,7 @@ bool String::equals(Object* that) {
   if (isSmallString()) {
     return this == that;
   }
-  assert(isLargeString());
+  DCHECK(isLargeString(), "unexpected type");
   return LargeString::cast(this)->equals(that);
 }
 
@@ -2828,7 +2828,7 @@ void String::copyTo(byte* dst, word length) {
     SmallString::cast(this)->copyTo(dst, length);
     return;
   }
-  assert(isLargeString());
+  DCHECK(isLargeString(), "unexpected type");
   return LargeString::cast(this)->copyTo(dst, length);
 }
 
@@ -2836,26 +2836,25 @@ char* String::toCString() {
   if (isSmallString()) {
     return SmallString::cast(this)->toCString();
   }
-  assert(isLargeString());
+  DCHECK(isLargeString(), "unexpected type");
   return LargeString::cast(this)->toCString();
 }
 
 // LargeString
 
 LargeString* LargeString::cast(Object* object) {
-  assert(object->isLargeString());
+  DCHECK(object->isLargeString(), "unexpected type");
   return reinterpret_cast<LargeString*>(object);
 }
 
 word LargeString::allocationSize(word length) {
-  assert(length > SmallString::kMaxLength);
+  DCHECK(length > SmallString::kMaxLength, "length %ld overflows", length);
   word size = headerSize(length) + length;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
 byte LargeString::charAt(word index) {
-  assert(index >= 0);
-  assert(index < length());
+  DCHECK_INDEX(index, length());
   return *reinterpret_cast<byte*>(address() + index);
 }
 
@@ -2878,7 +2877,7 @@ void ValueCell::makeUnbound() {
 }
 
 ValueCell* ValueCell::cast(Object* object) {
-  assert(object->isValueCell());
+  DCHECK(object->isValueCell(), "invalid cast");
   return reinterpret_cast<ValueCell*>(object);
 }
 
@@ -2893,7 +2892,7 @@ word Ellipsis::allocationSize() {
 }
 
 Ellipsis* Ellipsis::cast(Object* object) {
-  assert(object->isEllipsis());
+  DCHECK(object->isEllipsis(), "invalid cast");
   return reinterpret_cast<Ellipsis*>(object);
 }
 
@@ -2904,7 +2903,7 @@ word Set::allocationSize() {
 }
 
 Set* Set::cast(Object* object) {
-  assert(object->isSet());
+  DCHECK(object->isSet(), "invalid cast");
   return reinterpret_cast<Set*>(object);
 }
 
@@ -2947,7 +2946,7 @@ void BoundMethod::setSelf(Object* self) {
 }
 
 BoundMethod* BoundMethod::cast(Object* object) {
-  assert(object->isBoundMethod());
+  DCHECK(object->isBoundMethod(), "invalid cast");
   return reinterpret_cast<BoundMethod*>(object);
 }
 
@@ -2962,7 +2961,7 @@ void ClassMethod::setFunction(Object* function) {
 }
 
 ClassMethod* ClassMethod::cast(Object* object) {
-  assert(object->isClassMethod());
+  DCHECK(object->isClassMethod(), "invalid cast");
   return reinterpret_cast<ClassMethod*>(object);
 }
 
@@ -2973,7 +2972,7 @@ word ClassMethod::allocationSize() {
 // WeakRef
 
 WeakRef* WeakRef::cast(Object* object) {
-  assert(object->isWeakRef());
+  DCHECK(object->isWeakRef(), "invalid cast");
   return reinterpret_cast<WeakRef*>(object);
 }
 
@@ -3064,7 +3063,7 @@ word Layout::allocationSize() {
 }
 
 Layout* Layout::cast(Object* object) {
-  assert(object->isLayout());
+  DCHECK(object->isLayout(), "invalid cast");
   return reinterpret_cast<Layout*>(object);
 }
 

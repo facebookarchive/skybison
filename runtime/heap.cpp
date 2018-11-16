@@ -1,6 +1,5 @@
 #include "heap.h"
 
-#include <cassert>
 #include <cstring>
 
 #include "objects.h"
@@ -18,8 +17,8 @@ Heap::~Heap() {
 }
 
 Object* Heap::allocate(word size, word offset) {
-  assert(size >= HeapObject::kMinimumSize);
-  assert(Utils::isAligned(size, kPointerSize));
+  DCHECK(size >= HeapObject::kMinimumSize, "allocation %ld too small", size);
+  DCHECK(Utils::isAligned(size, kPointerSize), "request %ld not aligned", size);
   // Try allocating.  If the allocation fails, invoke the garbage collector and
   // retry the allocation.
   for (word attempt = 0; attempt < 2 && size < space_->size(); attempt++) {
@@ -161,7 +160,7 @@ Object* Heap::createDictionary() {
 Object* Heap::createDouble(double value) {
   word size = Double::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Double*>(raw);
   result->setHeader(Header::from(
       Double::kSize / kPointerSize,
@@ -213,7 +212,7 @@ Object* Heap::createInstance(word class_id, word num_attributes) {
 Object* Heap::createLargeInteger(word value) {
   word size = LargeInteger::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<LargeInteger*>(raw);
   result->setHeader(Header::from(
       LargeInteger::kSize / kPointerSize,
@@ -225,7 +224,7 @@ Object* Heap::createLargeInteger(word value) {
 }
 
 Object* Heap::createLargeString(word length) {
-  assert(length > SmallString::kMaxLength);
+  DCHECK(length > SmallString::kMaxLength, "string len %ld too large", length);
   word size = LargeString::allocationSize(length);
   Object* raw = allocate(size, LargeString::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
@@ -303,7 +302,7 @@ Object* Heap::createNotImplemented() {
   return NotImplemented::cast(result);
 }
 Object* Heap::createObjectArray(word length, Object* value) {
-  CHECK(!value->isHeapObject(), "value must be an immediate object");
+  DCHECK(!value->isHeapObject(), "value must be an immediate object");
   word size = ObjectArray::allocationSize(length);
   Object* raw = allocate(size, HeapObject::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");

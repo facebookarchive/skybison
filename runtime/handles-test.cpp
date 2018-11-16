@@ -184,7 +184,7 @@ TEST(HandlesTest, NestedScopes) {
         EXPECT_FALSE(visitor.hasVisited(o3));
       }
       // Verify abort if handle is created with s1.
-      EXPECT_DEBUG_DEATH(Handle<Object> h3(&s1, o3), "handles_->top");
+      EXPECT_DEBUG_DEATH(Handle<Object> h3(&s1, o3), "unexpected");
     }
     // (Scope 2 is now popped.)
     {

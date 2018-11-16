@@ -9,7 +9,7 @@ namespace python {
 Space::Space(word size) {
   word rounded = Utils::roundUp(size, OS::kPageSize);
   raw_ = OS::allocateMemory(rounded);
-  assert(raw_ != nullptr);
+  CHECK(raw_ != nullptr, "out of memory");
   start_ = fill_ = reinterpret_cast<uword>(raw_);
   end_ = start_ + rounded;
 }

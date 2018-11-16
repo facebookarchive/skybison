@@ -1,6 +1,5 @@
 #include "marshal.h"
 
-#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -230,7 +229,7 @@ Object* Marshal::Reader::readObject() {
       break;
 
     default:
-      UNREACHABLE("unknown type '%c' (flags=%x)\n", type, flag);
+      UNREACHABLE("unknown type '%c' (flags=%x)", type, flag);
   }
   return result;
 }
@@ -361,7 +360,7 @@ Object* Marshal::Reader::readTypeCode() {
   result->setFirstlineno(readLong());
   result->setLnotab(readObject());
   if (isRef_) {
-    assert(index != -1);
+    DCHECK(index != -1, "unexpected addRef result");
     setRef(index, *result);
   }
   return *result;

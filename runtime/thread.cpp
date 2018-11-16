@@ -61,9 +61,9 @@ byte* Thread::stackPtr() {
 }
 
 Frame* Thread::openAndLinkFrame(word numArgs, word numVars, word stackDepth) {
-  CHECK(numArgs >= 0, "must have 0 or more arguments");
-  CHECK(numVars >= 0, "must have 0 or more locals");
-  CHECK(stackDepth >= 0, "stack depth cannot be negative");
+  DCHECK(numArgs >= 0, "must have 0 or more arguments");
+  DCHECK(numVars >= 0, "must have 0 or more locals");
+  DCHECK(stackDepth >= 0, "stack depth cannot be negative");
   // HACK: Reserve one extra stack slot for the case where we need to unwrap a
   // bound method
   stackDepth += 1;
@@ -143,7 +143,7 @@ Frame* Thread::pushClassFunctionFrame(Object* function, Object* dictionary) {
 }
 
 void Thread::pushInitialFrame() {
-  CHECK(initialFrame_ == nullptr, "inital frame already pushed");
+  DCHECK(initialFrame_ == nullptr, "inital frame already pushed");
 
   byte* sp = end_ - Frame::kSize;
   CHECK(sp > start_, "no space for initial frame");
@@ -156,18 +156,18 @@ void Thread::pushInitialFrame() {
 
 void Thread::popFrame() {
   Frame* frame = currentFrame_;
-  CHECK(!frame->isSentinelFrame(), "cannot pop initial frame");
+  DCHECK(!frame->isSentinelFrame(), "cannot pop initial frame");
   currentFrame_ = frame->previousFrame();
 }
 
 Object* Thread::run(Object* object) {
-  CHECK(currentFrame_ == initialFrame_, "thread must be inactive");
+  DCHECK(currentFrame_ == initialFrame_, "thread must be inactive");
   Frame* frame = pushFrame(object);
   return Interpreter::execute(this, frame);
 }
 
 Object* Thread::runModuleFunction(Module* module, Object* object) {
-  CHECK(currentFrame_ == initialFrame_, "thread must be inactive");
+  DCHECK(currentFrame_ == initialFrame_, "thread must be inactive");
   Frame* frame = pushModuleFunctionFrame(module, object);
   return Interpreter::execute(this, frame);
 }

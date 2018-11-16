@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 
@@ -12,15 +11,59 @@
       fprintf(                                                                 \
           stderr, "%s:%d assertion '%s' failed: ", __FILE__, __LINE__, #expr); \
       fprintf(stderr, __VA_ARGS__);                                            \
+      fputc('\n', stderr);                                                     \
       python::Utils::printTraceback();                                         \
       std::abort();                                                            \
     }                                                                          \
   } while (0)
 
+#define CHECK_INDEX(index, high)                            \
+  do {                                                      \
+    if (!((index >= 0) && (index < high))) {                \
+      fprintf(                                              \
+          stderr,                                           \
+          "%s:%d index out of range, %ld not in 0..%ld : ", \
+          __FILE__,                                         \
+          __LINE__,                                         \
+          static_cast<word>(index),                         \
+          static_cast<word>(high) - 1);                     \
+      fputc('\n', stderr);                                  \
+      python::Utils::printTraceback();                      \
+      std::abort();                                         \
+    }                                                       \
+  } while (0)
+
+#define CHECK_BOUND(val, high)                            \
+  do {                                                    \
+    if (!((val >= 0) && (val <= high))) {                 \
+      fprintf(                                            \
+          stderr,                                         \
+          "%s:%d bounds violation, %ld not in 0..%ld : ", \
+          __FILE__,                                       \
+          __LINE__,                                       \
+          static_cast<word>(val),                         \
+          static_cast<word>(high));                       \
+      fputc('\n', stderr);                                \
+      python::Utils::printTraceback();                    \
+      std::abort();                                       \
+    }                                                     \
+  } while (0)
+
+#ifdef NDEBUG
+#define DCHECK(...)
+#define DCHECK_BOUND(val, high)
+#define DCHECK_INDEX(index, high)
+#else
+#define DCHECK(...) CHECK(__VA_ARGS__)
+#define DCHECK_BOUND(val, high) CHECK_BOUND(val, high)
+#define DCHECK_INDEX(index, high) CHECK_INDEX(index, high)
+#endif
+
 #define UNIMPLEMENTED(...)                                        \
   do {                                                            \
     fprintf(stderr, "%s:%d unimplemented: ", __FILE__, __LINE__); \
     fprintf(stderr, __VA_ARGS__);                                 \
+    fputc('\n', stderr);                                          \
     python::Utils::printTraceback();                              \
     std::abort();                                                 \
   } while (0)
@@ -29,6 +72,7 @@
   do {                                                          \
     fprintf(stderr, "%s:%d unreachable: ", __FILE__, __LINE__); \
     fprintf(stderr, __VA_ARGS__);                               \
+    fputc('\n', stderr);                                        \
     python::Utils::printTraceback();                            \
     std::abort();                                               \
   } while (0)
@@ -39,7 +83,7 @@ class Utils {
  public:
   template <typename T>
   static inline bool isAligned(T x, int n) {
-    assert(isPowerOfTwo(n));
+    DCHECK(isPowerOfTwo(n), "must be power of 2");
     return (x & (n - 1)) == 0;
   }
 
@@ -50,7 +94,7 @@ class Utils {
 
   template <typename T>
   static inline T roundDown(T x, int n) {
-    assert(isPowerOfTwo(n));
+    DCHECK(isPowerOfTwo(n), "must be power of 2");
     return (x & -n);
   }
 

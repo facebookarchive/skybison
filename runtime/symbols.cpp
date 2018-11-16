@@ -34,8 +34,7 @@ void Symbols::visit(PointerVisitor* visitor) {
 }
 
 const char* Symbols::literalAt(SymbolId id) {
-  assert(id >= 0);
-  assert(id < kMaxSymbolId);
+  DCHECK_INDEX(id, kMaxSymbolId);
   return kPredefinedSymbolLiterals[id];
 }
 

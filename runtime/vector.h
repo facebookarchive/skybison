@@ -2,6 +2,7 @@
 
 #include "allocator.h"
 #include "globals.h"
+#include "utils.h"
 
 #include <cstddef>
 #include <cstring>
@@ -49,7 +50,7 @@ class Vector {
     auto const s = other.size();
     reserve(s);
     end_ = begin_ + s;
-    assert(end_ <= _end_storage());
+    DCHECK(end_ <= _end_storage(), "vector assignment overflow");
     std::memcpy(begin_, other.begin_, s * sizeof(T));
     return *this;
   }
@@ -93,29 +94,29 @@ class Vector {
   }
 
   T& operator[](size_type idx) {
-    assert(idx < size());
+    DCHECK_INDEX(idx, size());
     return begin()[idx];
   }
   const T& operator[](size_type idx) const {
-    assert(idx < size());
+    DCHECK_INDEX(idx, size());
     return begin()[idx];
   }
 
   T& front() {
-    assert(!empty());
+    DCHECK(!empty(), "front on empty");
     return begin()[0];
   }
   const T& front() const {
-    assert(!empty());
+    DCHECK(!empty(), "front on empty");
     return begin()[0];
   }
 
   T& back() {
-    assert(!empty());
+    DCHECK(!empty(), "back on empty");
     return end()[-1];
   }
   const T& back() const {
-    assert(!empty());
+    DCHECK(!empty(), "back on empty");
     return end()[-1];
   }
 
@@ -132,7 +133,7 @@ class Vector {
   }
 
   void reserve(size_type new_capacity) {
-    assert(new_capacity > 0);
+    DCHECK(new_capacity > 0, "invalid new_capacity %ld", new_capacity);
     if (new_capacity <= 0) {
       return;
     }
@@ -152,7 +153,7 @@ class Vector {
   }
 
   void pop_back() {
-    assert(!empty());
+    DCHECK(!empty(), "pop back on empty");
     end_--;
   }
 
@@ -200,7 +201,7 @@ class Vector {
     auto old_begin = begin_;
 
     begin_ = allocator_traits::allocate(_alloc(), new_cap * sizeof(T));
-    assert(begin_ != nullptr);
+    DCHECK(begin_ != nullptr, "out of memory");
     _end_storage() = begin_ + new_cap;
     end_ = begin_ + old_size;
 

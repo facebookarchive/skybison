@@ -20,7 +20,7 @@ std::string runToString(Runtime* runtime, const char* buffer) {
   builtinPrintStream = &stream;
   Object* result = runtime->run(buffer);
   (void)result;
-  assert(result == None::object());
+  CHECK(result == None::object(), "unexpected result");
   builtinPrintStream = oldStream;
   return stream.str();
 }

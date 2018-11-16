@@ -9,14 +9,14 @@ namespace python {
 class AttributeInfo {
  public:
   explicit AttributeInfo(Object* value) {
-    assert(value->isSmallInteger());
+    DCHECK(value->isSmallInteger(), "expected small integer");
     value_ = reinterpret_cast<word>(value);
   }
 
   AttributeInfo() : value_(SmallInteger::kTag) {}
 
   AttributeInfo(word offset, word flags) : value_(SmallInteger::kTag) {
-    CHECK(
+    DCHECK(
         isValidOffset(offset),
         "offset %ld too large (max is %ld)",
         offset,
@@ -103,7 +103,7 @@ bool AttributeInfo::testFlag(Flag flag) {
 
 SmallInteger* AttributeInfo::asSmallInteger() {
   auto smi = reinterpret_cast<SmallInteger*>(value_);
-  assert(smi->isSmallInteger());
+  DCHECK(smi->isSmallInteger(), "expected small integer");
   return smi;
 }
 

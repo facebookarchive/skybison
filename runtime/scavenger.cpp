@@ -55,7 +55,7 @@ bool Scavenger::hasWhiteReferent(Object* reference) {
 }
 
 void Scavenger::delayReference(Object* reference) {
-  CHECK(hasWhiteReferent(reference), "referent is not white");
+  DCHECK(hasWhiteReferent(reference), "referent is not white");
   WeakRef::cast(reference)->setLink(delayed_references_);
   delayed_references_ = reference;
 }

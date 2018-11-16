@@ -24,7 +24,7 @@ class Object;
 class TryBlock {
  public:
   explicit TryBlock(Object* value) {
-    assert(value->isSmallInteger());
+    DCHECK(value->isSmallInteger(), "expected small integer");
     value_ = reinterpret_cast<uword>(value);
   }
 
@@ -289,14 +289,12 @@ Object** Frame::locals() {
 }
 
 Object* Frame::getLocal(word idx) {
-  assert(idx >= 0);
-  assert(idx < numLocals());
+  DCHECK_INDEX(idx, numLocals());
   return *(locals() - idx);
 }
 
 void Frame::setLocal(word idx, Object* object) {
-  assert(idx >= 0);
-  assert(idx < numLocals());
+  DCHECK_INDEX(idx, numLocals());
   *(locals() - idx) = object;
 }
 
@@ -305,7 +303,7 @@ void Frame::setNumLocals(word numLocals) {
   // Bias locals by 1 word to avoid doing so during {get,set}Local
   Object* locals = reinterpret_cast<Object*>(
       address() + Frame::kSize + ((numLocals - 1) * kPointerSize));
-  assert(locals->isSmallInteger());
+  DCHECK(locals->isSmallInteger(), "expected small integer");
   atPut(kLocalsOffset, locals);
 }
 
@@ -340,7 +338,10 @@ void Frame::setValueStackTop(Object** top) {
 }
 
 Object* Frame::peek(word offset) {
-  assert(valueStackTop() + offset < valueStackBase());
+  DCHECK(
+      valueStackTop() + offset < valueStackBase(),
+      "offset %ld overflows",
+      offset);
   return *(valueStackTop() + offset);
 }
 
@@ -353,7 +354,7 @@ bool Frame::isSentinelFrame() {
 }
 
 void* Frame::nativeFunctionPointer() {
-  assert(isNativeFrame());
+  DCHECK(isNativeFrame(), "not native frame");
   return Integer::cast(code())->asCPointer();
 }
 
@@ -362,13 +363,13 @@ bool Frame::isNativeFrame() {
 }
 
 void Frame::makeNativeFrame(Object* fnPointerAsInt) {
-  assert(fnPointerAsInt->isInteger());
+  DCHECK(fnPointerAsInt->isInteger(), "expected integer");
   setCode(fnPointerAsInt);
 }
 
 Object* TryBlock::asSmallInteger() const {
   auto obj = reinterpret_cast<Object*>(value_);
-  assert(obj->isSmallInteger());
+  DCHECK(obj->isSmallInteger(), "expected small integer");
   return obj;
 }
 
@@ -421,7 +422,7 @@ word BlockStack::top() {
 }
 
 void BlockStack::setTop(word newTop) {
-  assert(newTop > -1 && newTop < kMaxBlockStackDepth + 1);
+  DCHECK_INDEX(newTop, kMaxBlockStackDepth);
   atPut(kTopOffset, SmallInteger::fromWord(newTop));
 }
 
@@ -433,7 +434,7 @@ void BlockStack::push(const TryBlock& block) {
 
 TryBlock BlockStack::pop() {
   word stackTop = top() - 1;
-  assert(stackTop > -1);
+  DCHECK(stackTop > -1, "block stack underflow %ld", stackTop);
   Object* block = at(kStackOffset + stackTop * kPointerSize);
   setTop(stackTop);
   return TryBlock(block);

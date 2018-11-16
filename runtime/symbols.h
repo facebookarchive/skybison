@@ -61,8 +61,7 @@ class Symbols {
   void visit(PointerVisitor* visitor);
 
   Object* at(SymbolId id) {
-    assert(id >= 0);
-    assert(id < kMaxSymbolId);
+    DCHECK_INDEX(id, kMaxSymbolId);
     return symbols_[id];
   }
 

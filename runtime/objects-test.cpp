@@ -559,9 +559,9 @@ TEST(SmallInteger, IsValid) {
   EXPECT_TRUE(SmallInteger::isValid(-1));
 
   EXPECT_FALSE(SmallInteger::isValid(INTPTR_MAX));
-  EXPECT_DEBUG_DEATH(SmallInteger::fromWord(INTPTR_MAX), "fromWord");
+  EXPECT_DEBUG_DEATH(SmallInteger::fromWord(INTPTR_MAX), "invalid cast");
   EXPECT_FALSE(SmallInteger::isValid(INTPTR_MIN));
-  EXPECT_DEBUG_DEATH(SmallInteger::fromWord(INTPTR_MIN), "fromWord");
+  EXPECT_DEBUG_DEATH(SmallInteger::fromWord(INTPTR_MIN), "invalid cast");
 
   EXPECT_TRUE(SmallInteger::isValid(SmallInteger::kMaxValue));
   EXPECT_TRUE(SmallInteger::isValid(SmallInteger::kMaxValue - 1));

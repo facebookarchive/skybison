@@ -43,7 +43,7 @@ Runtime::~Runtime() {
     if (thread == Thread::currentThread()) {
       Thread::setCurrentThread(nullptr);
     } else {
-      assert(0); // Not implemented.
+      UNIMPLEMENTED("threading");
     }
     auto prev = thread;
     thread = thread->next();
@@ -67,7 +67,7 @@ Object* Runtime::newLayout() {
 }
 
 Object* Runtime::newLayoutWithId(word layout_id) {
-  CHECK(
+  DCHECK(
       layout_id >= static_cast<word>(IntrinsicLayoutId::kObject) ||
           layout_id == IntrinsicLayoutId::kSmallInteger || (layout_id & 1) == 1,
       "kSmallInteger must be the only even immediate layout id");
@@ -83,7 +83,7 @@ Object* Runtime::newLayoutWithId(word layout_id) {
 }
 
 Object* Runtime::newByteArray(word length, byte fill) {
-  assert(length >= 0);
+  DCHECK(length >= 0, "invalid length %ld", length);
   if (length == 0) {
     return empty_byte_array_;
   }
@@ -130,7 +130,7 @@ Object* Runtime::classGetAttr(
   Handle<Object> meta_attr(&scope, lookupNameInMro(thread, meta_klass, name));
   if (isDataDescriptor(thread, meta_attr)) {
     // TODO(T25692531): Call __get__ from meta_attr
-    CHECK(false, "custom descriptors are unsupported");
+    UNIMPLEMENTED("custom descriptors are unsupported");
   }
 
   // No data descriptor found on the meta class, look in the mro of the klass
@@ -144,7 +144,7 @@ Object* Runtime::classGetAttr(
       return classmethodDescriptorGet(thread, attr, none, receiver);
     } else if (isNonDataDescriptor(thread, attr)) {
       // TODO(T25692531): Call __get__ from meta_attr
-      CHECK(false, "custom descriptors are unsupported");
+      UNIMPLEMENTED("custom descriptors are unsupported");
     }
     return *attr;
   }
@@ -160,7 +160,7 @@ Object* Runtime::classGetAttr(
       return classmethodDescriptorGet(thread, meta_attr, receiver, mk);
     } else {
       // TODO(T25692531): Call __get__ from meta_attr
-      CHECK(false, "custom descriptors are unsupported");
+      UNIMPLEMENTED("custom descriptors are unsupported");
     }
   }
 
@@ -200,7 +200,7 @@ Object* Runtime::classSetAttr(
   Handle<Object> meta_attr(&scope, lookupNameInMro(thread, metaklass, name));
   if (isDataDescriptor(thread, meta_attr)) {
     // TODO(T25692531): Call __set__ from meta_attr
-    CHECK(false, "custom descriptors are unsupported");
+    UNIMPLEMENTED("custom descriptors are unsupported");
   }
 
   // No data descriptor found, store the attribute in the klass dictionary
@@ -378,7 +378,7 @@ Object* Runtime::newBuiltinFunction(
     Function::Entry entry,
     Function::Entry entryKw) {
   Object* result = heap()->createFunction();
-  assert(result != nullptr);
+  DCHECK(result != nullptr, "failed to createFunction");
   auto function = Function::cast(result);
   function->setEntry(entry);
   function->setEntryKw(entryKw);
@@ -387,7 +387,7 @@ Object* Runtime::newBuiltinFunction(
 
 Object* Runtime::newFunction() {
   Object* object = heap()->createFunction();
-  assert(object != nullptr);
+  DCHECK(object != nullptr, "failed to createFunction");
   auto function = Function::cast(object);
   function->setEntry(unimplementedTrampoline);
   function->setEntryKw(unimplementedTrampoline);
@@ -509,7 +509,7 @@ Object* Runtime::newStringWithAll(View<byte> code_units) {
     return SmallString::fromBytes(code_units);
   }
   Object* result = heap()->createLargeString(length);
-  assert(result != nullptr);
+  DCHECK(result != nullptr, "failed to create large string");
   byte* dst = reinterpret_cast<byte*>(LargeString::cast(result)->address());
   const byte* src = code_units.data();
   memcpy(dst, src, length);
@@ -520,7 +520,7 @@ Object* Runtime::internString(const Handle<Object>& string) {
   HandleScope scope;
   Handle<Set> set(&scope, interned());
   Handle<Object> key(&scope, *string);
-  assert(string->isString());
+  DCHECK(string->isString(), "not a string");
   if (string->isSmallString()) {
     return *string;
   }
@@ -595,7 +595,7 @@ Object* Runtime::valueHash(Object* object) {
     code &= Header::kHashCodeMask;
     code = (code == 0) ? 1 : code;
     src->setHeader(header->withHashCode(code));
-    assert(code == src->header()->hashCode());
+    DCHECK(code == src->header()->hashCode(), "hash failure");
   }
   return SmallInteger::fromWord(code);
 }
@@ -612,7 +612,7 @@ void Runtime::initializeLayouts() {
   Handle<List> list(&scope, newList());
   list->setItems(*array);
   const word allocated = static_cast<word>(IntrinsicLayoutId::kLastId + 1);
-  assert(allocated < array->length());
+  CHECK(allocated < array->length(), "bad allocation %ld", allocated);
   list->setAllocated(allocated);
   layouts_ = *list;
 }
@@ -739,7 +739,8 @@ void Runtime::initializeSmallIntClass() {
   // value as an index into the class table.  Replicate the class object for
   // SmallInteger to all locations that decode to a SmallInteger tag.
   for (word i = 1; i < 16; i++) {
-    assert(List::cast(layouts_)->at(i << 1) == None::object());
+    DCHECK(
+        List::cast(layouts_)->at(i << 1) == None::object(), "list collision");
     List::cast(layouts_)->atPut(i << 1, *small_integer);
   }
 }
@@ -766,7 +767,7 @@ Object* Runtime::executeModule(
   reader.readLong();
 
   Handle<Code> code(&scope, reader.readObject());
-  assert(code->argcount() == 0);
+  DCHECK(code->argcount() == 0, "invalid argcount %ld", code->argcount());
 
   return Thread::currentThread()->runModuleFunction(*module, *code);
 }
@@ -879,7 +880,7 @@ void Runtime::addModule(const Handle<Module>& module) {
 }
 
 Object* Runtime::findModule(const Handle<Object>& name) {
-  assert(name->isString());
+  DCHECK(name->isString(), "name not a string");
 
   HandleScope scope;
   Handle<Dictionary> dict(&scope, modules());
@@ -936,7 +937,7 @@ word Runtime::newLayoutId() {
   Handle<List> list(&scope, layouts_);
   Handle<Object> value(&scope, None::object());
   word result = list->allocated();
-  CHECK(
+  DCHECK(
       result <= Header::kMaxLayoutId,
       "exceeded layout id space in header word");
   listAdd(list, value);
@@ -1269,7 +1270,7 @@ class Bucket {
 
   static inline word getIndex(Object* data, Object* hash) {
     word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
-    assert(Utils::isPowerOfTwo(nbuckets));
+    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
     word value = SmallInteger::cast(hash)->value();
     return (value & (nbuckets - 1)) * kNumPointers;
   }
@@ -1326,7 +1327,7 @@ class SetBucket {
 
   static inline word getIndex(Object* data, Object* hash) {
     word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
-    assert(Utils::isPowerOfTwo(nbuckets));
+    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
     word value = SmallInteger::cast(hash)->value();
     return (value & (nbuckets - 1)) * kNumPointers;
   }
@@ -1378,7 +1379,7 @@ void Runtime::dictionaryAtPut(
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
     Handle<ObjectArray> newData(&scope, dictionaryGrow(data));
     dictionaryLookup(newData, key, key_hash, &index);
-    assert(index != -1);
+    DCHECK(index != -1, "invalid index %ld", index);
     dict->setData(*newData);
     Bucket bucket(newData, index);
     bucket.set(*key_hash, *key, *value);
@@ -1408,7 +1409,7 @@ ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
     Handle<Object> hash(&scope, oldBucket.hash());
     word index = -1;
     dictionaryLookup(newData, key, hash, &index);
-    assert(index != -1);
+    DCHECK(index != -1, "invalid index %ld", index);
     Bucket newBucket(newData, index);
     newBucket.set(*hash, *key, oldBucket.value());
   }
@@ -1424,7 +1425,7 @@ Object* Runtime::dictionaryAt(
   Handle<Object> key_hash(&scope, hash(*key));
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
-    assert(index != -1);
+    DCHECK(index != -1, "invalid index %ld", index);
     return Bucket(data, index).value();
   }
   return Error::object();
@@ -1440,7 +1441,7 @@ Object* Runtime::dictionaryAtIfAbsentPut(
   Handle<Object> key_hash(&scope, hash(*key));
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
-    assert(index != -1);
+    DCHECK(index != -1, "invalid index %ld", index);
     return Bucket(data, index).value();
   }
   Handle<Object> value(&scope, thunk->call());
@@ -1448,7 +1449,7 @@ Object* Runtime::dictionaryAtIfAbsentPut(
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
     Handle<ObjectArray> new_data(&scope, dictionaryGrow(data));
     dictionaryLookup(new_data, key, key_hash, &index);
-    assert(index != -1);
+    DCHECK(index != -1, "invalid index %ld", index);
     dict->setData(*new_data);
     Bucket bucket(new_data, index);
     bucket.set(*key_hash, *key, *value);
@@ -1489,7 +1490,7 @@ bool Runtime::dictionaryRemove(
   Handle<Object> key_hash(&scope, hash(*key));
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
-    assert(index != -1);
+    DCHECK(index != -1, "unexpected index %ld", index);
     Bucket bucket(data, index);
     *value = bucket.value();
     bucket.setTombstone();
@@ -1543,12 +1544,12 @@ ObjectArray* Runtime::dictionaryKeys(const Handle<Dictionary>& dict) {
   for (word i = 0; i < data->length(); i += Bucket::kNumPointers) {
     Bucket bucket(data, i);
     if (bucket.isFilled()) {
-      assert(numKeys < keys->length());
+      DCHECK(numKeys < keys->length(), "%ld ! < %ld", numKeys, keys->length());
       keys->atPut(numKeys, bucket.key());
       numKeys++;
     }
   }
-  assert(numKeys == keys->length());
+  DCHECK(numKeys == keys->length(), "%ld != %ld", numKeys, keys->length());
   return *keys;
 }
 
@@ -1614,7 +1615,7 @@ ObjectArray* Runtime::setGrow(const Handle<ObjectArray>& data) {
     Handle<Object> hash(&scope, oldBucket.hash());
     word index = -1;
     setLookup(newData, key, hash, &index);
-    assert(index != -1);
+    DCHECK(index != -1, "unexpected index %ld", index);
     SetBucket newBucket(newData, index);
     newBucket.set(*hash, *key);
   }
@@ -1628,14 +1629,14 @@ Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
   Handle<Object> key_hash(&scope, hash(*value));
   bool found = setLookup(data, value, key_hash, &index);
   if (found) {
-    assert(index != -1);
+    DCHECK(index != -1, "unexpected index %ld", index);
     return SetBucket(data, index).key();
   }
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
     Handle<ObjectArray> newData(&scope, setGrow(data));
     setLookup(newData, value, key_hash, &index);
-    assert(index != -1);
+    DCHECK(index != -1, "unexpected index %ld", index);
     set->setData(*newData);
     SetBucket bucket(newData, index);
     bucket.set(*key_hash, *value);
@@ -1662,7 +1663,7 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
   word index = -1;
   bool found = setLookup(data, value, key_hash, &index);
   if (found) {
-    assert(index != -1);
+    DCHECK(index != -1, "unexpected index %ld", index);
     SetBucket bucket(data, index);
     bucket.setTombstone();
     set->setNumItems(set->numItems() - 1);
@@ -1830,7 +1831,7 @@ Object* Runtime::stringConcat(
 
   Handle<String> result(
       &scope, LargeString::cast(heap()->createLargeString(new_len)));
-  assert(result->isLargeString());
+  DCHECK(result->isLargeString(), "not a large string");
   const word address = HeapObject::cast(*result)->address();
 
   left->copyTo(reinterpret_cast<byte*>(address), llen);
@@ -1871,7 +1872,7 @@ Object* Runtime::computeFastGlobals(
       Handle<Object> handle(&scope, value);
       value = dictionaryAtPutInValueCell(globals, key, handle);
     }
-    assert(value->isValueCell());
+    DCHECK(value->isValueCell(), "not  value cell");
     fast_globals->atPut(arg, value);
   }
   return *fast_globals;
@@ -1947,7 +1948,7 @@ Object* Runtime::computeBuiltinBaseClass(const Handle<Class>& klass) {
 Object* Runtime::instanceDelegate(const Handle<Object>& instance) {
   HandleScope scope;
   Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
-  CHECK(layout->hasDelegateSlot(), "instance layout missing delegate");
+  DCHECK(layout->hasDelegateSlot(), "instance layout missing delegate");
   return Instance::cast(*instance)->instanceVariableAt(
       layout->delegateOffset());
 }
@@ -1957,7 +1958,7 @@ void Runtime::setInstanceDelegate(
     const Handle<Object>& delegate) {
   HandleScope scope;
   Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
-  CHECK(layout->hasDelegateSlot(), "instance layout missing delegate");
+  DCHECK(layout->hasDelegateSlot(), "instance layout missing delegate");
   return Instance::cast(*instance)->instanceVariableAtPut(
       layout->delegateOffset(), *delegate);
 }
@@ -2032,7 +2033,7 @@ Object* Runtime::instanceAtPut(
 Object* Runtime::layoutFollowEdge(
     const Handle<List>& edges,
     const Handle<Object>& label) {
-  CHECK(
+  DCHECK(
       edges->allocated() % 2 == 0,
       "edges must contain an even number of elements");
   for (word i = 0; i < edges->allocated(); i++) {
@@ -2047,7 +2048,7 @@ void Runtime::layoutAddEdge(
     const Handle<List>& edges,
     const Handle<Object>& label,
     const Handle<Object>& layout) {
-  CHECK(
+  DCHECK(
       edges->allocated() % 2 == 0,
       "edges must contain an even number of elements");
   listAdd(edges, label);

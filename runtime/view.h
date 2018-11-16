@@ -1,8 +1,7 @@
 #pragma once
 
 #include "globals.h"
-
-#include <cassert>
+#include "utils.h"
 
 namespace python {
 
@@ -15,8 +14,7 @@ class View {
   View(const T (&data)[N]) : data_(data), length_(N) {}
 
   T get(word i) {
-    assert(i >= 0);
-    assert(i < length_);
+    DCHECK_INDEX(i, length_);
     return data_[i];
   }
 

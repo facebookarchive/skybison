@@ -1,7 +1,6 @@
 #include "objects.h"
 #include "runtime.h"
 
-#include <cassert>
 #include <cstring>
 
 namespace python {
@@ -15,8 +14,7 @@ Object* SmallString::fromCString(const char* value) {
 
 Object* SmallString::fromBytes(View<byte> data) {
   word length = data.length();
-  assert(0 <= length);
-  assert(length <= kMaxLength);
+  DCHECK_BOUND(length, kMaxLength);
   word result = 0;
   for (word i = length; i > 0;) {
     i -= 1;
@@ -29,7 +27,7 @@ Object* SmallString::fromBytes(View<byte> data) {
 char* SmallString::toCString() {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
-  assert(result != nullptr);
+  CHECK(result != nullptr, "out of memory");
   copyTo(result, length);
   result[length] = '\0';
   return reinterpret_cast<char*>(result);
@@ -54,22 +52,21 @@ bool LargeString::equals(Object* that) {
 }
 
 void LargeString::copyTo(byte* dst, word length) {
-  assert(length >= 0);
-  assert(length <= this->length());
+  DCHECK_BOUND(length, this->length());
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
 char* LargeString::toCString() {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
-  assert(result != nullptr);
+  CHECK(result != nullptr, "out of memory");
   copyTo(result, length);
   result[length] = '\0';
   return reinterpret_cast<char*>(result);
 }
 
 word Slice::adjustIndices(word length, word* start, word* stop, word step) {
-  CHECK(step != 0, "Step should be non zero");
+  DCHECK(step != 0, "Step should be non zero");
 
   if (*start < 0) {
     *start += length;

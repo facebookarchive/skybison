@@ -19,7 +19,9 @@ Object* nativeTrampoline(Thread* thread, Frame* previousFrame, word argc) {
 
   Handle<Object> result(&scope, Fn(thread, previousFrame, argc));
   Handle<Object> pendingException(&scope, thread->pendingException());
-  assert(result->isError() != pendingException->isNone());
+  DCHECK(
+      result->isError() != pendingException->isNone(),
+      "error/exception mismatch");
   // TODO: pendingException should eventually be an instance of BaseException
   // (or a subclass), and it should be thrown up into python.
   thread->abortOnPendingException();

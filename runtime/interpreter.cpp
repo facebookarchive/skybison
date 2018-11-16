@@ -1,6 +1,5 @@
 #include "interpreter.h"
 
-#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 
@@ -225,7 +224,7 @@ void LOAD_NAME(Context* ctx, word arg) {
           ->value();
 
   if (value->isValueCell()) {
-    CHECK(!ValueCell::cast(value)->isUnbound(), "unbound implicit globals\n");
+    DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound implicit globals");
 
     value = ValueCell::cast(value)->value();
   }
@@ -236,7 +235,7 @@ void LOAD_NAME(Context* ctx, word arg) {
 void STORE_NAME(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  assert(frame->implicitGlobals()->isDictionary());
+  DCHECK(frame->implicitGlobals()->isDictionary(), "expected dictionary");
   HandleScope scope;
   Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
   Object* names = Code::cast(frame->code())->names();
@@ -295,7 +294,7 @@ void LOAD_GLOBAL(Context* ctx, word arg) {
     value = ValueCell::cast(value)->value();
   }
   *--ctx->sp = value;
-  assert(*ctx->sp != Error::object());
+  DCHECK(*ctx->sp != Error::object(), "unexpected error object");
 }
 
 void STORE_GLOBAL(Context* ctx, word arg) {
@@ -349,7 +348,7 @@ void MAKE_FUNCTION(Context* ctx, word arg) {
     function->setDefaults(*ctx->sp++);
   }
   if (arg & MakeFunctionFlag::CLOSURE) {
-    CHECK((*ctx->sp)->isObjectArray(), "Closure is not tuple.");
+    DCHECK((*ctx->sp)->isObjectArray(), "Closure is not tuple.");
     function->setClosure(*ctx->sp++);
   }
   *--ctx->sp = *function;
@@ -540,7 +539,9 @@ void BINARY_FLOOR_DIVIDE(Context* ctx, word) {
   word dividend = SmallInteger::cast(*ctx->sp)->value();
   // TODO: Throw:
   //   ZeroDivisionError: integer division or modulo by zero
-  assert(divisor != 0);
+  if (divisor == 0) {
+    UNIMPLEMENTED("ZeroDivisionError");
+  }
   *ctx->sp = SmallInteger::fromWord(dividend / divisor);
 }
 
@@ -549,7 +550,9 @@ void BINARY_MODULO(Context* ctx, word) {
   word dividend = SmallInteger::cast(*ctx->sp)->value();
   // TODO: Throw:
   //   ZeroDivisionError: integer division or modulo by zero
-  assert(divisor != 0);
+  if (divisor == 0) {
+    UNIMPLEMENTED("ZeroDivisionError");
+  }
   *ctx->sp = SmallInteger::fromWord(dividend % divisor);
 }
 
@@ -566,7 +569,9 @@ void BINARY_MULTIPLY(Context* ctx, word) {
     word right = SmallInteger::cast(*sp++)->value();
     word left = SmallInteger::cast(*sp)->value();
     word result = left * right;
-    assert(left == 0 || (result / left) == right);
+    if (!(left == 0 || (result / left) == right)) {
+      UNIMPLEMENTED("small integer overflow");
+    }
     *sp = SmallInteger::fromWord(result);
   } else {
     word ntimes = SmallInteger::cast(*sp++)->value();
@@ -663,7 +668,7 @@ void COMPARE_OP(Context* ctx, word arg) {
   Handle<Object> right(&scope, *sp++);
   Handle<Object> left(&scope, *sp++);
   Object* res = Interpreter::compare(static_cast<CompareOp>(arg), left, right);
-  assert(res->isBoolean());
+  DCHECK(res->isBoolean(), "unexpected comparison result");
   *--sp = res;
 }
 
@@ -714,14 +719,14 @@ void LOAD_CLOSURE(Context* ctx, word arg) {
 void UNPACK_SEQUENCE(Context* ctx, word arg) {
   Object* seq = *ctx->sp++;
   if (seq->isObjectArray()) {
-    CHECK(
+    DCHECK(
         ObjectArray::cast(seq)->length() == arg,
         "Wrong number of items to unpack");
     while (arg--) {
       *--ctx->sp = ObjectArray::cast(seq)->at(arg);
     }
   } else if (seq->isList()) {
-    CHECK(
+    DCHECK(
         List::cast(seq)->allocated() == arg, "Wrong number of items to unpack");
     while (arg--) {
       *--ctx->sp = List::cast(seq)->at(arg);

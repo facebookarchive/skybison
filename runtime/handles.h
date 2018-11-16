@@ -1,9 +1,8 @@
 #pragma once
 
-#include <cassert>
-
 #include "globals.h"
 #include "thread.h"
+#include "utils.h"
 #include "vector.h"
 
 namespace python {
@@ -27,12 +26,12 @@ class Handles {
   }
 
   void pop() {
-    assert(!scopes_.empty());
+    DCHECK(!scopes_.empty(), "pop on empty");
     scopes_.pop_back();
   }
 
   HandleScope* top() {
-    assert(!scopes_.empty());
+    DCHECK(!scopes_.empty(), "top on empty");
     return scopes_.back();
   }
 
@@ -63,12 +62,12 @@ class HandleScope {
   }
 
   ~HandleScope() {
-    assert(this == handles_->top());
+    DCHECK(this == handles_->top(), "unexpected this");
     handles_->pop();
   }
 
   ObjectHandle* push(ObjectHandle* handle) {
-    assert(this == handles_->top());
+    DCHECK(this == handles_->top(), "unexpected this");
     ObjectHandle* result = list_;
     list_ = handle;
     return result;
@@ -94,7 +93,7 @@ class ObjectHandle {
       : pointer_(pointer), next_(scope->push(this)), scope_(scope) {}
 
   ~ObjectHandle() {
-    assert(scope_->list() == this);
+    DCHECK(scope_->list() == this, "unexpected this");
     scope_->list_ = next_;
   }
 

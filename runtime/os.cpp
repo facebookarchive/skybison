@@ -5,7 +5,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cassert>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -20,12 +19,12 @@ byte* OS::allocateMemory(word size) {
   int prot = PROT_READ | PROT_WRITE;
   int flags = MAP_PRIVATE | MAP_ANONYMOUS;
   void* result = ::mmap(nullptr, size, prot, flags, -1, 0);
-  assert(result != MAP_FAILED);
+  CHECK(result != MAP_FAILED, "mmap failure");
   return static_cast<byte*>(result);
 }
 
 bool OS::protectMemory(byte* address, word size, Protection mode) {
-  assert(size >= 0);
+  DCHECK(size >= 0, "invalid size %ld", size);
   int prot;
   switch (mode) {
     case kNoAccess:
@@ -38,14 +37,14 @@ bool OS::protectMemory(byte* address, word size, Protection mode) {
       std::abort();
   }
   int result = mprotect(reinterpret_cast<void*>(address), size, prot);
-  assert(result == 0);
+  CHECK(result == 0, "mprotect failure");
   return result == 0;
 }
 
 bool OS::freeMemory(byte* ptr, word size) {
-  assert(size >= 0);
+  DCHECK(size >= 0, "invalid size %ld", size);
   int result = ::munmap(ptr, size);
-  assert(result != -1);
+  CHECK(result != -1, "munmap failure");
   return result == 0;
 }
 
@@ -69,7 +68,7 @@ class ScopedFd {
 };
 
 bool OS::secureRandom(byte* ptr, word size) {
-  assert(size >= 0);
+  DCHECK(size >= 0, "invalid size %ld", size);
   ScopedFd fd(::open("/dev/urandom", O_RDONLY));
   if (fd.get() == -1) {
     return false;
@@ -93,9 +92,9 @@ char* OS::readFile(const char* filename, word* len_out) {
   if (fd.get() == -1) {
     fprintf(stderr, "open error: %s %s\n", filename, std::strerror(errno));
   }
-  assert(fd.get() != -1);
+  CHECK(fd.get() != -1, "get failure");
   word length = ::lseek(fd.get(), 0, SEEK_END);
-  assert(length != -1);
+  CHECK(length != -1, "lseek failure");
   ::lseek(fd.get(), 0, SEEK_SET);
   auto result = new char[length];
   ::read(fd.get(), result, length);
@@ -108,7 +107,7 @@ char* OS::readFile(const char* filename, word* len_out) {
 
 void OS::writeFileExcl(const char* filename, const char* contents, word len) {
   ScopedFd fd(::open(filename, O_RDWR | O_CREAT | O_EXCL, 0644));
-  assert(fd.get() != -1);
+  CHECK(fd.get() != -1, "get failure");
   if (len < 0) {
     len = strlen(contents);
   }
@@ -125,7 +124,7 @@ char* OS::temporaryDirectory(const char* prefix) {
   char* buffer = new char[length];
   std::snprintf(buffer, length, format, tmpdir, prefix);
   char* result = ::mkdtemp(buffer);
-  assert(result != nullptr);
+  CHECK(result != nullptr, "mkdtemp failure");
   return result;
 }
 
