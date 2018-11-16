@@ -328,6 +328,10 @@ class Runtime {
                          const Handle<Object>& name,
                          const Handle<Object>& value);
 
+  // Implements `del receiver.name`
+  Object* attributeDel(Thread* thread, const Handle<Object>& receiver,
+                       const Handle<Object>& name);
+
   // Attribute lookup primitive for instances.
   //
   // This operates directly on the instance and does not respect Python
@@ -473,6 +477,9 @@ class Runtime {
   // Returns whether object's class provides a __get__ method
   bool isNonDataDescriptor(Thread* thread, const Handle<Object>& object);
 
+  // Returns whether object's class provides a __delete__ method
+  bool isDeleteDescriptor(Thread* thread, const Handle<Object>& object);
+
   // Returns a pointer of an initialized PyTypeObject
   void* builtinExtensionTypes(int type) {
     return builtin_extension_types_[type];
@@ -574,6 +581,10 @@ class Runtime {
   Object* instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
                           const Handle<Object>& name,
                           const Handle<Object>& value);
+
+  // Generic attribute deletion code used for instance objects
+  Object* instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
+                          const Handle<Object>& name);
 
   // Generic attribute lookup code used for module objects
   Object* moduleGetAttr(Thread* thread, const Handle<Object>& receiver,

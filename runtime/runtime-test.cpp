@@ -2422,6 +2422,134 @@ TEST(InstanceAttributeTest, NoInstanceDictionaryReturnsClassAttribute) {
   ASSERT_TRUE(attr->isBoundMethod());
 }
 
+TEST(InstanceAttributeDeletionTest, DeleteKnownAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+class Foo:
+    def __init__(self):
+      self.foo = 'foo'
+      self.bar = 'bar'
+
+def test():
+    foo = Foo()
+    del foo.bar
+)";
+  compileAndRunToString(&runtime, src);
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(0));
+  Handle<Object> result(&scope, callFunction(test, args));
+  EXPECT_EQ(*result, None::object());
+}
+
+TEST(InstanceAttributeDeletionTest, DeleteDescriptor) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+result = None
+
+class DeleteDescriptor:
+    def __delete__(self, instance):
+        global result
+        result = self, instance
+descr = DeleteDescriptor()
+
+class Foo:
+    bar = descr
+
+foo = Foo()
+del foo.bar
+)";
+  compileAndRunToString(&runtime, src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> data(&scope, findInModule(&runtime, main, "result"));
+  ASSERT_TRUE(data->isObjectArray());
+
+  Handle<ObjectArray> result(&scope, *data);
+  ASSERT_EQ(result->length(), 2);
+
+  Handle<Object> descr(&scope, findInModule(&runtime, main, "descr"));
+  EXPECT_EQ(result->at(0), *descr);
+
+  Handle<Object> foo(&scope, findInModule(&runtime, main, "foo"));
+  EXPECT_EQ(result->at(1), *foo);
+}
+
+TEST(InstanceAttributeDeletionDeathTest, DeleteUnknownAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+class Foo:
+    pass
+
+foo = Foo()
+del foo.bar
+)";
+  EXPECT_DEATH(compileAndRunToString(&runtime, src), "missing attribute");
+}
+
+TEST(InstanceAttributeDeletionTest, DeleteAttributeWithDunderDelattr) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+result = None
+
+class Foo:
+    def __delattr__(self, name):
+        global result
+        result = self, name
+
+foo = Foo()
+del foo.bar
+)";
+  compileAndRunToString(&runtime, src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> data(&scope, findInModule(&runtime, main, "result"));
+  ASSERT_TRUE(data->isObjectArray());
+
+  Handle<ObjectArray> result(&scope, *data);
+  ASSERT_EQ(result->length(), 2);
+
+  Handle<Object> foo(&scope, findInModule(&runtime, main, "foo"));
+  EXPECT_EQ(result->at(0), *foo);
+  ASSERT_TRUE(result->at(1)->isString());
+  EXPECT_PYSTRING_EQ(String::cast(result->at(1)), "bar");
+}
+
+TEST(InstanceAttributeDeletionTest,
+     DeleteAttributeWithDunderDelattrOnSuperclass) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+result = None
+
+class Foo:
+    def __delattr__(self, name):
+        global result
+        result = self, name
+
+class Bar(Foo):
+    pass
+
+bar = Bar()
+del bar.baz
+)";
+  compileAndRunToString(&runtime, src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> data(&scope, findInModule(&runtime, main, "result"));
+  ASSERT_TRUE(data->isObjectArray());
+
+  Handle<ObjectArray> result(&scope, *data);
+  ASSERT_EQ(result->length(), 2);
+
+  Handle<Object> bar(&scope, findInModule(&runtime, main, "bar"));
+  EXPECT_EQ(result->at(0), *bar);
+  ASSERT_TRUE(result->at(1)->isString());
+  EXPECT_PYSTRING_EQ(String::cast(result->at(1)), "baz");
+}
+
 TEST(RuntimeIntegerTest, NewSmallIntegerWithDigits) {
   Runtime runtime;
   HandleScope scope;

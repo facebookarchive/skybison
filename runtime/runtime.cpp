@@ -423,6 +423,37 @@ Object* Runtime::instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
   return thread->runtime()->instanceAtPut(thread, instance, name, value);
 }
 
+Object* Runtime::instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
+                                 const Handle<Object>& name) {
+  if (!name->isString()) {
+    // TODO(T25140871): Refactor into something like:
+    //     thread->throwUnexpectedTypeError(expected, actual)
+    return thread->throwTypeErrorFromCString("attribute name must be a string");
+  }
+
+  // Check for a descriptor with __delete__
+  HandleScope scope(thread);
+  Handle<Class> klass(&scope, classOf(*receiver));
+  Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
+  if (!klass_attr->isError()) {
+    if (isDeleteDescriptor(thread, klass_attr)) {
+      return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
+                                               klass_attr, receiver);
+    }
+  }
+
+  // No delete descriptor found, delete from the instance
+  Handle<HeapObject> instance(&scope, *receiver);
+  Handle<Object> result(&scope, instanceDel(thread, instance, name));
+  if (result->isError()) {
+    // TODO(T25140871): Refactor this into something like:
+    //     thread->throwMissingAttributeError(name)
+    return thread->throwAttributeErrorFromCString("missing attribute");
+  }
+
+  return *result;
+}
+
 // Note that PEP 562 adds support for data descriptors in module objects.
 // We are targeting python 3.6 for now, so we won't worry about that.
 Object* Runtime::moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
@@ -475,6 +506,14 @@ bool Runtime::isNonDataDescriptor(Thread* thread,
   HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*object));
   Handle<Object> dunder_get(&scope, symbols()->DunderGet());
+  return !lookupNameInMro(thread, klass, dunder_get)->isError();
+}
+
+bool Runtime::isDeleteDescriptor(Thread* thread, const Handle<Object>& object) {
+  // TODO(T25692962): Track "descriptorness" through a bit on the class
+  HandleScope scope(thread);
+  Handle<Class> klass(&scope, classOf(*object));
+  Handle<Object> dunder_get(&scope, symbols()->DunderDelete());
   return !lookupNameInMro(thread, klass, dunder_get)->isError();
 }
 
@@ -2394,6 +2433,30 @@ Object* Runtime::attributeAtPut(Thread* thread, const Handle<Object>& receiver,
     // everything else should fallback to instance
     result = instanceSetAttr(thread, receiver, interned_name, value);
   }
+  return result;
+}
+
+Object* Runtime::attributeDel(Thread* thread, const Handle<Object>& receiver,
+                              const Handle<Object>& name) {
+  HandleScope scope(thread);
+  Handle<Object> interned_name(&scope, internString(name));
+  Object* result;
+
+  // If present, __delattr__ overrides all attribute deletion logic.
+  Handle<Class> klass(&scope, classOf(*receiver));
+  Handle<Object> dunder_delattr(
+      &scope, lookupSymbolInMro(thread, klass, SymbolId::kDunderDelattr));
+  if (!dunder_delattr->isError()) {
+    result = Interpreter::callMethod2(thread, thread->currentFrame(),
+                                      dunder_delattr, receiver, name);
+  } else if (receiver->isClass()) {
+    UNIMPLEMENTED("del unsupported for classes");
+  } else if (receiver->isModule()) {
+    UNIMPLEMENTED("del unsupported for modules");
+  } else {
+    result = instanceDelAttr(thread, receiver, name);
+  }
+
   return result;
 }
 

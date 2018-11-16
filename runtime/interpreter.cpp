@@ -150,6 +150,19 @@ Object* Interpreter::callDescriptorSet(python::Thread* thread, Frame* caller,
   return callMethod3(thread, caller, method, descriptor, receiver, value);
 }
 
+Object* Interpreter::callDescriptorDelete(python::Thread* thread, Frame* caller,
+                                          const Handle<Object>& descriptor,
+                                          const Handle<Object>& receiver) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Handle<Object> selector(&scope, runtime->symbols()->DunderDelete());
+  Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
+  Handle<Object> method(
+      &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
+  DCHECK(!method->isError(), "no __delete__ method found");
+  return callMethod2(thread, caller, method, descriptor, receiver);
+}
+
 Object* Interpreter::lookupMethod(Thread* thread, Frame* caller,
                                   const Handle<Object>& receiver,
                                   SymbolId selector) {
@@ -947,6 +960,18 @@ void Interpreter::doStoreAttr(Context* ctx, word arg) {
   Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
   Handle<Object> value(&scope, ctx->frame->popValue());
   thread->runtime()->attributeAtPut(thread, receiver, name, value);
+  // TODO(T31788973): propagate an exception
+  thread->abortOnPendingException();
+}
+
+// opcode 96
+void Interpreter::doDeleteAttr(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  HandleScope scope;
+  Handle<Object> receiver(&scope, ctx->frame->popValue());
+  auto* names = Code::cast(ctx->frame->code())->names();
+  Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
+  thread->runtime()->attributeDel(ctx->thread, receiver, name);
   // TODO(T31788973): propagate an exception
   thread->abortOnPendingException();
 }

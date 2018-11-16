@@ -51,6 +51,10 @@ class Interpreter {
                                    const Handle<Object>& receiver,
                                    const Handle<Object>& value);
 
+  static Object* callDescriptorDelete(Thread* thread, Frame* caller,
+                                      const Handle<Object>& descriptor,
+                                      const Handle<Object>& receiver);
+
   static Object* lookupMethod(Thread* thread, Frame* caller,
                               const Handle<Object>& receiver,
                               SymbolId selector);
@@ -198,6 +202,7 @@ class Interpreter {
   static void doFormatValue(Context* ctx, word arg);
   static void doBuildConstKeyMap(Context* ctx, word arg);
   static void doBuildString(Context* ctx, word arg);
+  static void doDeleteAttr(Context* ctx, word arg);
 
  private:
   static Object* callBoundMethod(Thread* thread, Frame* frame, word nargs);
