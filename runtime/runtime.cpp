@@ -310,8 +310,8 @@ Object* Runtime::instanceSetAttr(
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
   if (!klass_attr->isError()) {
     if (isDataDescriptor(thread, klass_attr)) {
-      // TODO(T25692531): Call __set__ from klass_attr
-      UNIMPLEMENTED("custom descriptors are unsupported");
+      return Interpreter::callDescriptorSet(
+          thread, thread->currentFrame(), klass_attr, receiver, value);
     }
   }
 
@@ -1006,6 +1006,11 @@ void Runtime::initializePropertyClass() {
       property,
       symbols()->DunderGet(),
       nativeTrampoline<builtinPropertyDunderGet>);
+
+  classAddBuiltinFunction(
+      property,
+      symbols()->DunderSet(),
+      nativeTrampoline<builtinPropertyDunderSet>);
 
   classAddBuiltinFunction(
       property, symbols()->DunderInit(), nativeTrampoline<builtinPropertyInit>);

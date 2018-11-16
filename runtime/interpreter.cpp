@@ -138,6 +138,22 @@ Object* Interpreter::callDescriptorGet(
       thread, caller, method, descriptor, receiver, receiver_type);
 }
 
+Object* Interpreter::callDescriptorSet(
+    python::Thread* thread,
+    Frame* caller,
+    const Handle<Object>& descriptor,
+    const Handle<Object>& receiver,
+    const Handle<Object>& value) {
+  HandleScope scope(thread->handles());
+  Runtime* runtime = thread->runtime();
+  Handle<Object> selector(&scope, runtime->symbols()->DunderSet());
+  Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
+  Handle<Object> method(
+      &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
+  DCHECK(!method->isError(), "no __set__ method found");
+  return callMethod3(thread, caller, method, descriptor, receiver, value);
+}
+
 Object* Interpreter::lookupMethod(
     Thread* thread,
     Frame* caller,

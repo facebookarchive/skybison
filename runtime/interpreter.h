@@ -47,6 +47,13 @@ class Interpreter {
       const Handle<Object>& receiver,
       const Handle<Object>& receiver_type);
 
+  static Object* callDescriptorSet(
+      Thread* thread,
+      Frame* caller,
+      const Handle<Object>& descriptor,
+      const Handle<Object>& receiver,
+      const Handle<Object>& value);
+
   static Object* lookupMethod(
       Thread* thread,
       Frame* caller,

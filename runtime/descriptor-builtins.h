@@ -17,6 +17,7 @@ Object* builtinStaticMethodNew(Thread* thread, Frame* frame, word nargs);
 
 Object* builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs);
 Object* builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs);
+Object* builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs);
 Object* builtinPropertyGetter(Thread* thread, Frame* frame, word nargs);
 Object* builtinPropertyInit(Thread* thread, Frame* frame, word nargs);
 Object* builtinPropertyNew(Thread* thread, Frame* frame, word nargs);

@@ -78,6 +78,11 @@ Object* builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs) {
         "property.deleter expects 1 arguments");
   }
   Arguments args(frame, nargs);
+  if (!args.get(0)->isProperty()) {
+    return thread->throwTypeErrorFromCString(
+        "'deleter' requires a 'property' object");
+  }
+
   HandleScope scope(thread);
   Handle<Property> property(&scope, args.get(0));
   Handle<Object> getter(&scope, property->getter());
@@ -94,7 +99,10 @@ Object* builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
 
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-
+  if (!args.get(0)->isProperty()) {
+    return thread->throwTypeErrorFromCString(
+        "'__get__' requires a 'property' object");
+  }
   Handle<Property> property(&scope, args.get(0));
   Handle<Object> obj(&scope, args.get(1));
 
@@ -110,12 +118,40 @@ Object* builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::callMethod1(thread, frame, getter, obj);
 }
 
+Object* builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 3) {
+    return thread->throwTypeErrorFromCString(
+        "property.__set__ expects 2 arguments");
+  }
+
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  if (!args.get(0)->isProperty()) {
+    return thread->throwTypeErrorFromCString(
+        "'__set__' requires a 'property' object");
+  }
+  Handle<Property> property(&scope, args.get(0));
+  Handle<Object> obj(&scope, args.get(1));
+  Handle<Object> value(&scope, args.get(2));
+
+  if (property->setter()->isNone()) {
+    return thread->throwAttributeErrorFromCString("can't set attribute");
+  }
+
+  Handle<Object> setter(&scope, property->setter());
+  return Interpreter::callMethod2(thread, frame, setter, obj, value);
+}
+
 Object* builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString(
         "property.getter expects 1 arguments");
   }
   Arguments args(frame, nargs);
+  if (!args.get(0)->isProperty()) {
+    return thread->throwTypeErrorFromCString(
+        "'getter' requires a 'property' object");
+  }
   HandleScope scope(thread);
   Handle<Property> property(&scope, args.get(0));
   Handle<Object> getter(&scope, args.get(1));
@@ -125,13 +161,20 @@ Object* builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
 }
 
 Object* builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 2 || nargs > 4) {
-    return thread->throwTypeErrorFromCString("property expects 1-3 arguments");
+  if (nargs < 1 || nargs > 4) {
+    return thread->throwTypeErrorFromCString(
+        "property expects up to 3 arguments");
   }
   Arguments args(frame, nargs);
+  if (!args.get(0)->isProperty()) {
+    return thread->throwTypeErrorFromCString(
+        "'__init__' requires a 'property' object");
+  }
   HandleScope scope(thread);
   Handle<Property> property(&scope, args.get(0));
-  property->setGetter(args.get(1));
+  if (nargs > 1) {
+    property->setGetter(args.get(1));
+  }
   if (nargs > 2) {
     property->setSetter(args.get(2));
   }
@@ -153,6 +196,10 @@ Object* builtinPropertySetter(Thread* thread, Frame* frame, word nargs) {
         "property.setter expects 1 arguments");
   }
   Arguments args(frame, nargs);
+  if (!args.get(0)->isProperty()) {
+    return thread->throwTypeErrorFromCString(
+        "'setter' requires a 'property' object");
+  }
   HandleScope scope(thread);
   Handle<Property> property(&scope, args.get(0));
   Handle<Object> getter(&scope, property->getter());

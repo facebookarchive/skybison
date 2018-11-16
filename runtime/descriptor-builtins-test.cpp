@@ -58,6 +58,100 @@ print(E.f(1,2))
   EXPECT_EQ(output, "3\n");
 }
 
+TEST(
+    DescriptorBuiltinsTest,
+    PropertyCreateEmptyGetterSetterDeleterReturnsNone) {
+  const char* src = R"(
+x = property()
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
+  ASSERT_TRUE(x->isProperty());
+  Handle<Property> prop(&scope, *x);
+  ASSERT_TRUE(prop->getter()->isNone());
+  ASSERT_TRUE(prop->setter()->isNone());
+  ASSERT_TRUE(prop->deleter()->isNone());
+}
+
+TEST(DescriptorBuiltinsTest, PropertyCreateWithGetterSetterReturnsArgs) {
+  const char* src = R"(
+def get_foo():
+  pass
+def set_foo():
+  pass
+x = property(get_foo, set_foo)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
+  ASSERT_TRUE(x->isProperty());
+  Handle<Property> prop(&scope, *x);
+  ASSERT_TRUE(prop->getter()->isFunction());
+  ASSERT_TRUE(prop->setter()->isFunction());
+  ASSERT_TRUE(prop->deleter()->isNone());
+}
+
+TEST(DescriptorBuiltinsTest, PropertyModifyViaGetterReturnsGetter) {
+  const char* src = R"(
+def get_foo():
+  pass
+def set_foo():
+  pass
+x = property(None, set_foo)
+y = x.getter(get_foo)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
+  ASSERT_TRUE(x->isProperty());
+  Handle<Property> x_prop(&scope, *x);
+  ASSERT_TRUE(x_prop->getter()->isNone());
+  ASSERT_TRUE(x_prop->setter()->isFunction());
+  ASSERT_TRUE(x_prop->deleter()->isNone());
+
+  Handle<Object> y(&scope, moduleAt(&runtime, main, "y"));
+  ASSERT_TRUE(y->isProperty());
+  Handle<Property> y_prop(&scope, *y);
+  ASSERT_TRUE(y_prop->getter()->isFunction());
+  ASSERT_TRUE(y_prop->setter()->isFunction());
+  ASSERT_TRUE(y_prop->deleter()->isNone());
+}
+
+TEST(DescriptorBuiltinsTest, PropertyModifyViaSetterReturnsSetter) {
+  const char* src = R"(
+def get_foo():
+  pass
+def set_foo():
+  pass
+x = property(get_foo)
+y = x.setter(set_foo)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
+  ASSERT_TRUE(x->isProperty());
+  Handle<Property> x_prop(&scope, *x);
+  ASSERT_TRUE(x_prop->getter()->isFunction());
+  ASSERT_TRUE(x_prop->setter()->isNone());
+  ASSERT_TRUE(x_prop->deleter()->isNone());
+
+  Handle<Object> y(&scope, moduleAt(&runtime, main, "y"));
+  ASSERT_TRUE(y->isProperty());
+  Handle<Property> y_prop(&scope, *y);
+  ASSERT_TRUE(y_prop->getter()->isFunction());
+  ASSERT_TRUE(y_prop->setter()->isFunction());
+  ASSERT_TRUE(y_prop->deleter()->isNone());
+}
+
 TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaInstance) {
   const char* src = R"(
 class C:
@@ -77,6 +171,48 @@ print(c1.x, c2.x)
   Runtime runtime;
   const std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "24 42\n");
+}
+
+TEST(
+    DescriptorBuiltinsDeathTest,
+    PropertyNoGetterThrowsAttributeErrorUnreadable) {
+  const char* src = R"(
+class C:
+  def __init__(self, x):
+      self.__x = x
+
+  def setx(self, value):
+      self.__x = value
+
+  x = property(None, setx)
+
+c1 = C(24)
+c1.x
+)";
+
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCString(src), "unreadable attribute");
+}
+
+TEST(
+    DescriptorBuiltinsDeathTest,
+    PropertyNoSetterThrowsAttributeErrorCannotModify) {
+  const char* src = R"(
+class C:
+  def __init__(self, x):
+      self.__x = x
+
+  def getx(self):
+      return self.__x
+
+  x = property(getx)
+
+c1 = C(24)
+c1.x = 42
+)";
+
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCString(src), "can't set attribute");
 }
 
 TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaClass) {
@@ -101,17 +237,55 @@ x = C.x
   ASSERT_TRUE(x->isProperty());
 }
 
-TEST(DescriptorBuiltinsTest, PropertyAddedViaDecoratorAccessibleViaInstance) {
+TEST(DescriptorBuiltinsTest, PropertyAddedViaClassModifiedViaSetter) {
   const char* src = R"(
 class C:
-  def __init__(self, x = None):
+  def __init__(self, x):
+      self.__x = x
+
+  def getx(self):
+      return self.__x
+
+  def setx(self, value):
+      self.__x = value
+
+  x = property(getx, setx)
+
+c1 = C(24)
+x1 = c1.x
+c1.x = 42
+x2 = c1.x
+)";
+
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> x1(&scope, moduleAt(&runtime, main, "x1"));
+  ASSERT_TRUE(x1->isInteger());
+  EXPECT_EQ(SmallInteger::cast(*x1)->value(), 24);
+  Handle<Object> x2(&scope, moduleAt(&runtime, main, "x2"));
+  ASSERT_TRUE(x2->isInteger());
+  EXPECT_EQ(SmallInteger::cast(*x2)->value(), 42);
+}
+
+TEST(DescriptorBuiltinsTest, PropertyAddedViaDecoratorSanityCheck) {
+  const char* src = R"(
+class C:
+  def __init__(self, x):
       self.__x = x
 
   @property
   def x(self):
       return self.__x
 
-x = C(24).x
+  @x.setter
+  def x(self, value):
+      self.__x = value
+
+c1 = C(24)
+c1.x = 42
+x = c1.x
 )";
 
   Runtime runtime;
@@ -120,7 +294,7 @@ x = C(24).x
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(x->isInteger());
-  EXPECT_EQ(SmallInteger::cast(*x)->value(), 24);
+  EXPECT_EQ(SmallInteger::cast(*x)->value(), 42);
 }
 
 } // namespace python
