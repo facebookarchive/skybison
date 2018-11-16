@@ -55,11 +55,9 @@ TEST_F(TypeExtensionApiTest, ReadyCreatesRuntimeType) {
   m = PyModule_Create(&def);
   PyModule_AddObject(m, "Empty", reinterpret_cast<PyObject*>(&empty_type));
 
-  PyRun_SimpleString(R"(
-import test
-x = test.Empty
-)");
-
+  // TODO(miro): import the module instead of injecting it into __main__
+  testing::moduleSet("__main__", "test", m);
+  PyRun_SimpleString("x = test.Empty");
   EXPECT_TRUE(PyType_CheckExact(testing::moduleGet("__main__", "x")));
 }
 
@@ -105,8 +103,9 @@ TEST_F(TypeExtensionApiTest, InitializeCustomTypeInstance) {
   PyObject* m = PyModule_Create(&def);
   PyModule_AddObject(m, "Custom", reinterpret_cast<PyObject*>(&custom_type));
 
+  // TODO(miro): import the module instead of injecting it into __main__
+  testing::moduleSet("__main__", "custom", m);
   PyRun_SimpleString(R"(
-import custom
 instance1 = custom.Custom()
 instance2 = custom.Custom()
 )");

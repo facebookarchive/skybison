@@ -34,8 +34,6 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
     runtime->moduleAtPut(module, key, doc);
   }
 
-  runtime->addModule(module);
-
   // TODO: Check m_slots
   // TODO: Set md_state
   // TODO: Validate m_methods

@@ -1371,9 +1371,10 @@ RawObject Runtime::importModule(const Object& name) {
   } else {
     for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
       if (RawStr::cast(*name)->equalsCStr(_PyImport_Inittab[i].name)) {
-        (*_PyImport_Inittab[i].initfunc)();
-        cached_module = findModule(name);
-        return *cached_module;
+        PyObject* module = (*_PyImport_Inittab[i].initfunc)();
+        Module mod(&scope, ApiHandle::fromPyObject(module)->asObject());
+        addModule(mod);
+        return *mod;
       }
     }
   }

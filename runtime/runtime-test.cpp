@@ -3499,4 +3499,14 @@ def gen():
   EXPECT_EQ(heap_frame->maxStackSize(), code->stacksize());
 }
 
+extern "C" struct _inittab _PyImport_Inittab[];
+
+TEST(ModuleImportTest, ImportModuleFromInitTab) {
+  Runtime runtime;
+  runtime.runFromCStr("import _empty");
+  HandleScope scope;
+  Object mod(&scope, moduleAt(&runtime, "__main__", "_empty"));
+  EXPECT_TRUE(mod->isModule());
+}
+
 }  // namespace python

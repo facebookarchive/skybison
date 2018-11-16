@@ -51,7 +51,7 @@ TEST_F(ModuleExtensionApiTest, CreateAddsDocstring) {
   ASSERT_NE(module, nullptr);
   EXPECT_TRUE(PyModule_CheckExact(module));
 
-  PyObject* doc = testing::moduleGet("mymodule", "__doc__");
+  PyObject* doc = PyObject_GetAttrString(module, "__doc__");
   ASSERT_STREQ(PyUnicode_AsUTF8(doc), mod_doc);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -109,7 +109,7 @@ TEST_F(ModuleExtensionApiTest, SetDocStringChangesDoc) {
   ASSERT_NE(module, nullptr);
   EXPECT_TRUE(PyModule_CheckExact(module));
 
-  PyObject* orig_doc = testing::moduleGet("mymodule", "__doc__");
+  PyObject* orig_doc = PyObject_GetAttrString(module, "__doc__");
   ASSERT_NE(orig_doc, nullptr);
   EXPECT_TRUE(PyUnicode_CheckExact(orig_doc));
   ASSERT_STREQ(PyUnicode_AsUTF8(orig_doc), mod_doc);
@@ -119,7 +119,7 @@ TEST_F(ModuleExtensionApiTest, SetDocStringChangesDoc) {
   int result = PyModule_SetDocString(module, edit_mod_doc);
   ASSERT_EQ(result, 0);
 
-  PyObject* edit_doc = testing::moduleGet("mymodule", "__doc__");
+  PyObject* edit_doc = PyObject_GetAttrString(module, "__doc__");
   ASSERT_NE(edit_doc, nullptr);
   EXPECT_TRUE(PyUnicode_CheckExact(edit_doc));
   ASSERT_STREQ(PyUnicode_AsUTF8(edit_doc), edit_mod_doc);
@@ -140,8 +140,22 @@ TEST_F(ModuleExtensionApiTest, SetDocStringCreatesDoc) {
   const char* edit_mod_doc = "edited doc";
   ASSERT_EQ(PyModule_SetDocString(module, edit_mod_doc), 0);
 
-  PyObject* doc = testing::moduleGet("mymodule", "__doc__");
+  PyObject* doc = PyObject_GetAttrString(module, "__doc__");
   ASSERT_STREQ(PyUnicode_AsUTF8(doc), edit_mod_doc);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
+
+TEST_F(ModuleExtensionApiTest, ModuleCreateDoesNotAddToModuleDict) {
+  const char* name = "mymodule";
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      name,
+  };
+  ASSERT_NE(PyModule_Create(&def), nullptr);
+  PyObject* mods = PyImport_GetModuleDict();
+  PyObject* name_obj = PyUnicode_FromString(name);
+  EXPECT_EQ(PyDict_GetItem(mods, name_obj), nullptr);
+}
+
 }  // namespace python
