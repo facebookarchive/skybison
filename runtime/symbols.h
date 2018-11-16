@@ -84,6 +84,7 @@ class Runtime;
   V(DunderTruediv, "__truediv__")                                              \
   V(DunderXor, "__xor__")                                                      \
   V(Add, "add")                                                                \
+  V(Allocated, "allocated")                                                    \
   V(Append, "append")                                                          \
   V(Args, "args")                                                              \
   V(Argv, "argv")                                                              \
@@ -111,6 +112,7 @@ class Runtime;
   V(Insert, "insert")                                                          \
   V(Int, "int")                                                                \
   V(IsInstance, "isinstance")                                                  \
+  V(Items, "items")                                                            \
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
   V(Layout, "layout")                                                          \

@@ -3,6 +3,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
+#include "runtime.h"
 #include "thread.h"
 
 namespace python {
@@ -25,6 +26,8 @@ class ListBuiltins {
 
  private:
   static Object* slice(Thread* thread, List* list, Slice* slice);
+  static const BuiltinAttribute kAttributes[];
+  static const BuiltinMethod kMethods[];
 
   // TODO(jeethu): use FRIEND_TEST
   friend class ListBuiltinsTest_SlicePositiveStartIndex_Test;

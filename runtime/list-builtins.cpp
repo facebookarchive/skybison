@@ -9,45 +9,35 @@
 
 namespace python {
 
+const BuiltinAttribute ListBuiltins::kAttributes[] = {
+    {SymbolId::kItems, List::kItemsOffset},
+    {SymbolId::kAllocated, List::kAllocatedOffset},
+};
+
+const BuiltinMethod ListBuiltins::kMethods[] = {
+    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
+    {SymbolId::kAppend, nativeTrampoline<append>},
+    {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
+    {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
+    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
+    {SymbolId::kExtend, nativeTrampoline<extend>},
+    {SymbolId::kInsert, nativeTrampoline<insert>},
+    {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
+    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    {SymbolId::kPop, nativeTrampoline<pop>},
+    {SymbolId::kRemove, nativeTrampoline<remove>}};
+
 void ListBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Class> list(
-      &scope, runtime->addEmptyBuiltinClass(SymbolId::kList, LayoutId::kList,
-                                            LayoutId::kObject));
 
-  runtime->classAddBuiltinFunction(list, SymbolId::kDunderAdd,
-                                   nativeTrampoline<dunderAdd>);
-
-  runtime->classAddBuiltinFunction(list, SymbolId::kAppend,
-                                   nativeTrampoline<append>);
-
-  runtime->classAddBuiltinFunction(list, SymbolId::kDunderGetItem,
-                                   nativeTrampoline<dunderGetItem>);
-
-  runtime->classAddBuiltinFunction(list, SymbolId::kDunderSetItem,
-                                   nativeTrampoline<dunderSetItem>);
-
-  runtime->classAddBuiltinFunction(list, SymbolId::kDunderLen,
-                                   nativeTrampoline<dunderLen>);
-
-  runtime->classAddBuiltinFunction(list, SymbolId::kExtend,
-                                   nativeTrampoline<extend>);
-
-  runtime->classAddBuiltinFunction(list, SymbolId::kInsert,
-                                   nativeTrampoline<insert>);
-
-  runtime->classAddBuiltinFunction(list, SymbolId::kDunderMul,
-                                   nativeTrampoline<dunderMul>);
-
-  runtime->classAddBuiltinFunction(list, SymbolId::kDunderNew,
-                                   nativeTrampoline<dunderNew>);
-
-  runtime->classAddBuiltinFunction(list, SymbolId::kPop, nativeTrampoline<pop>);
-
-  runtime->classAddBuiltinFunction(list, SymbolId::kRemove,
-                                   nativeTrampoline<remove>);
-
+  Handle<Class> list(&scope,
+                     runtime->addBuiltinClass(SymbolId::kList, LayoutId::kList,
+                                              LayoutId::kObject, kAttributes));
   list->setFlag(Class::Flag::kListSubclass);
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(list, kMethods[i].name,
+                                     kMethods[i].address);
+  }
 }
 
 Object* ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
@@ -60,14 +50,21 @@ Object* ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Handle<Class> type(&scope, args.get(0));
+  if (!type->hasFlag(Class::Flag::kListSubclass)) {
+    return thread->throwTypeErrorFromCString("not a subtype of list");
+  }
   Handle<Layout> layout(&scope, type->instanceLayout());
+  Handle<Layout> list_layout(&scope,
+                             thread->runtime()->layoutAt(LayoutId::kList));
+  Handle<Object> list(&scope, thread->runtime()->newInstance(list_layout));
+  List::cast(*list)->setAllocated(0);
+  List::cast(*list)->setItems(thread->runtime()->newObjectArray(0));
   if (layout->id() == LayoutId::kList) {
-    return thread->runtime()->newList();
+    return *list;
   }
   CHECK(layout->hasDelegateSlot(), "must have a delegate slot");
   Handle<Object> result(&scope, thread->runtime()->newInstance(layout));
-  Handle<Object> delegate(&scope, thread->runtime()->newList());
-  thread->runtime()->setInstanceDelegate(result, delegate);
+  thread->runtime()->setInstanceDelegate(result, list);
   return *result;
 }
 

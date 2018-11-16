@@ -457,4 +457,21 @@ TEST(ListBuiltinsDeathTest, SetItemWithInvalidIndexThrows) {
                "list assignment index out of range");
 }
 
+TEST(ListBuiltinsDeathTest, NonTypeInDunderNew) {
+  const char* src = R"(
+list.__new__(1)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(src), "not a type object");
+}
+
+TEST(ListBuiltinsDeathTest, NonSubclassInDunderNew) {
+  const char* src = R"(
+class Foo: pass
+list.__new__(Foo)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(src), "not a subtype of list");
+}
+
 }  // namespace python
