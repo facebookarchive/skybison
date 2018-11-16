@@ -104,9 +104,11 @@ add_library(
   ext/Include/modsupport.h
   ext/Include/pyport.h
   ext/Objects/dictobject.cpp
+  ext/Objects/exceptions.cpp
   ext/Objects/longobject.cpp
   ext/Objects/moduleobject.cpp
-  ext/Objects/unicodeobject.cpp)
+  ext/Objects/unicodeobject.cpp
+  ext/Python/errors.cpp)
 target_compile_options(
   extension
   PUBLIC
