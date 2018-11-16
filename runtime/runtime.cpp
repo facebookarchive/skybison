@@ -3962,8 +3962,7 @@ RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
   return *result;
 }
 
-RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num,
-                                   word shift) {
+RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num, word shift) {
   DCHECK(shift >= 0, "shift count needs to be non-negative");
   if (shift == 0 || (num->isSmallInt() && num->asWord() == 0)) {
     return *num;
@@ -4003,7 +4002,7 @@ RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num,
     // signed shift takes cares of keeping the sign
     result->digitAtPut(num_digits - 1, static_cast<word>(prev) >> right_shift);
   }
-  return result;
+  return *result;
 }
 
 }  // namespace python
