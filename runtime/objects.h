@@ -491,7 +491,7 @@ enum class ObjectFormat {
  * ----------------------------------------------------------------------------
  * Tag          3   tag for a header object
  * Format       3   enumeration describing the object encoding
- * RawLayout      20   identifier for the layout, allowing 2^20 unique layouts
+ * LayoutId    20   identifier for the layout, allowing 2^20 unique layouts
  * Hash        30   bits to use for an identity hash code
  * Count        8   number of array elements or instance variables
  */
@@ -594,7 +594,7 @@ class RawError : public RawObject {
   RAW_OBJECT_COMMON(Error);
 };
 
-// RawSuper class of common string functionality
+// Super class of common string functionality
 class RawStr : public RawObject {
  public:
   // Getters and setters.
@@ -644,8 +644,8 @@ class RawSmallStr : public RawObject {
 
   friend class Heap;
   friend class RawObject;
-  friend class Runtime;
   friend class RawStr;
+  friend class Runtime;
 };
 
 // Heap objects
@@ -684,7 +684,7 @@ class RawHeapObject : public RawObject {
 
   static const uword kIsForwarded = static_cast<uword>(-3);
 
-  // RawLayout.
+  // Layout.
   static const int kHeaderOffset = -kPointerSize;
   static const int kHeaderOverflowOffset = kHeaderOffset - kPointerSize;
   static const int kSize = kHeaderOffset + kPointerSize;
@@ -855,7 +855,7 @@ class RawType : public RawHeapObject {
   // Casting.
   static RawType cast(RawObject object);
 
-  // RawLayout.
+  // Layout.
   static const int kMroOffset = RawHeapObject::kSize;
   static const int kInstanceLayoutOffset = kMroOffset + kPointerSize;
   static const int kNameOffset = kInstanceLayoutOffset + kPointerSize;
@@ -932,8 +932,8 @@ class RawLargeStr : public RawArray {
 
   friend class Heap;
   friend class RawObject;
-  friend class Runtime;
   friend class RawStr;
+  friend class Runtime;
 };
 
 // Arbitrary precision signed integer, with 64 bit digits in two's complement
@@ -974,7 +974,7 @@ class RawLargeInt : public RawHeapObject {
   // Number of digits
   word numDigits();
 
-  // RawLayout.
+  // Layout.
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kPointerSize;
 
@@ -996,7 +996,7 @@ class RawFloat : public RawHeapObject {
   // Casting.
   static RawFloat cast(RawObject object);
 
-  // RawLayout.
+  // Layout.
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kDoubleSize;
 
@@ -1012,7 +1012,7 @@ class RawComplex : public RawHeapObject {
   // Allocation.
   void initialize(double real, double imag);
 
-  // RawLayout.
+  // Layout.
   static const int kRealOffset = RawHeapObject::kSize;
   static const int kImagOffset = kRealOffset + kDoubleSize;
   static const int kSize = kImagOffset + kDoubleSize;
@@ -1032,7 +1032,7 @@ class RawProperty : public RawHeapObject {
   RawObject deleter();
   void setDeleter(RawObject function);
 
-  // RawLayout
+  // Layout.
   static const int kGetterOffset = RawHeapObject::kSize;
   static const int kSetterOffset = kGetterOffset + kPointerSize;
   static const int kDeleterOffset = kSetterOffset + kPointerSize;
@@ -1053,7 +1053,7 @@ class RawRange : public RawHeapObject {
   word step();
   void setStep(word value);
 
-  // RawLayout.
+  // Layout.
   static const int kStartOffset = RawHeapObject::kSize;
   static const int kStopOffset = kStartOffset + kPointerSize;
   static const int kStepOffset = kStopOffset + kPointerSize;
@@ -1076,7 +1076,7 @@ class RawRangeIterator : public RawHeapObject {
   // Number of unconsumed values in the range iterator
   word pendingLength();
 
-  // RawLayout.
+  // Layout.
   static const int kRangeOffset = RawHeapObject::kSize;
   static const int kCurValueOffset = kRangeOffset + kPointerSize;
   static const int kSize = kCurValueOffset + kPointerSize;
@@ -1106,7 +1106,7 @@ class RawSlice : public RawHeapObject {
   // Returns the length of the new list and the corrected start and stop values
   static word adjustIndices(word length, word* start, word* stop, word step);
 
-  // RawLayout.
+  // Layout.
   static const int kStartOffset = RawHeapObject::kSize;
   static const int kStopOffset = kStartOffset + kPointerSize;
   static const int kStepOffset = kStopOffset + kPointerSize;
@@ -1121,7 +1121,7 @@ class RawStaticMethod : public RawHeapObject {
   RawObject function();
   void setFunction(RawObject function);
 
-  // RawLayout
+  // Layout.
   static const int kFunctionOffset = RawHeapObject::kSize;
   static const int kSize = kFunctionOffset + kPointerSize;
 
@@ -1137,7 +1137,7 @@ class RawStrIterator : public RawHeapObject {
   RawObject str();
   void setStr(RawObject str);
 
-  // RawLayout.
+  // Layout.
   static const int kStrOffset = RawHeapObject::kSize;
   static const int kIndexOffset = kStrOffset + kPointerSize;
   static const int kSize = kIndexOffset + kPointerSize;
@@ -1157,7 +1157,7 @@ class RawListIterator : public RawHeapObject {
   // Iteration.
   RawObject next();
 
-  // RawLayout.
+  // Layout.
   static const int kListOffset = RawHeapObject::kSize;
   static const int kIndexOffset = kListOffset + kPointerSize;
   static const int kSize = kIndexOffset + kPointerSize;
@@ -1183,7 +1183,7 @@ class RawSetIterator : public RawHeapObject {
   // Number of unconsumed values in the set iterator
   word pendingLength();
 
-  // RawLayout
+  // Layout.
   static const int kSetOffset = RawHeapObject::kSize;
   static const int kIndexOffset = kSetOffset + kPointerSize;
   static const int kConsumedCountOffset = kIndexOffset + kPointerSize;
@@ -1206,7 +1206,7 @@ class RawTupleIterator : public RawHeapObject {
   // Iteration.
   RawObject next();
 
-  // RawLayout.
+  // Layout.
   static const int kTupleOffset = RawHeapObject::kSize;
   static const int kIndexOffset = kTupleOffset + kPointerSize;
   static const int kSize = kIndexOffset + kPointerSize;
@@ -1287,7 +1287,7 @@ class RawCode : public RawHeapObject {
   RawObject varnames();
   void setVarnames(RawObject value);
 
-  // RawLayout.
+  // Layout.
   static const int kArgcountOffset = RawHeapObject::kSize;
   static const int kKwonlyargcountOffset = kArgcountOffset + kPointerSize;
   static const int kNlocalsOffset = kKwonlyargcountOffset + kPointerSize;
@@ -1398,7 +1398,7 @@ class RawFunction : public RawHeapObject {
   RawObject fastGlobals();
   void setFastGlobals(RawObject fast_globals);
 
-  // RawLayout.
+  // Layout.
   static const int kDocOffset = RawHeapObject::kSize;
   static const int kNameOffset = kDocOffset + kPointerSize;
   static const int kQualnameOffset = kNameOffset + kPointerSize;
@@ -1440,7 +1440,7 @@ class RawModule : public RawHeapObject {
   RawObject def();
   void setDef(RawObject def);
 
-  // RawLayout.
+  // Layout.
   static const int kNameOffset = RawHeapObject::kSize;
   static const int kDictOffset = kNameOffset + kPointerSize;
   static const int kDefOffset = kDictOffset + kPointerSize;
@@ -1451,7 +1451,7 @@ class RawModule : public RawHeapObject {
 
 class RawNotImplemented : public RawHeapObject {
  public:
-  // RawLayout
+  // Layout.
   // kPaddingOffset is not used, but the GC expects the object to be
   // at least one word.
   static const int kPaddingOffset = RawHeapObject::kSize;
@@ -1488,7 +1488,7 @@ class RawDict : public RawHeapObject {
   word numItems();
   void setNumItems(word num_items);
 
-  // RawLayout.
+  // Layout.
   static const int kNumItemsOffset = RawHeapObject::kSize;
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kDataOffset + kPointerSize;
@@ -1549,7 +1549,7 @@ class RawDict::Bucket {
     return data->at(index + kValueOffset);
   }
 
-  // RawLayout.
+  // Layout.
   static const word kHashOffset = 0;
   static const word kKeyOffset = kHashOffset + 1;
   static const word kValueOffset = kKeyOffset + 1;
@@ -1578,7 +1578,7 @@ class RawSet : public RawHeapObject {
   // Casting.
   static RawSet cast(RawObject object);
 
-  // RawLayout.
+  // Layout.
   static const int kNumItemsOffset = RawHeapObject::kSize;
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kDataOffset + kPointerSize;
@@ -1633,7 +1633,7 @@ class RawSet::Bucket {
     set(data, index, RawNoneType::object(), RawError::object());
   }
 
-  // RawLayout.
+  // Layout.
   static const word kHashOffset = 0;
   static const word kKeyOffset = kHashOffset + 1;
   static const word kNumPointers = kKeyOffset + 1;
@@ -1668,7 +1668,7 @@ class RawList : public RawHeapObject {
   // Casting.
   static RawList cast(RawObject object);
 
-  // RawLayout.
+  // Layout.
   static const int kItemsOffset = RawHeapObject::kSize;
   static const int kAllocatedOffset = kItemsOffset + kPointerSize;
   static const int kSize = kAllocatedOffset + kPointerSize;
@@ -1685,7 +1685,7 @@ class RawValueCell : public RawHeapObject {
   bool isUnbound();
   void makeUnbound();
 
-  // RawLayout.
+  // Layout.
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kPointerSize;
 
@@ -1694,7 +1694,7 @@ class RawValueCell : public RawHeapObject {
 
 class RawEllipsis : public RawHeapObject {
  public:
-  // RawLayout
+  // Layout.
   // kPaddingOffset is not used, but the GC expects the object to be
   // at least one word.
   static const int kPaddingOffset = RawHeapObject::kSize;
@@ -1727,7 +1727,7 @@ class RawWeakRef : public RawHeapObject {
   static RawObject dequeueReference(RawObject* list);
   static RawObject spliceQueue(RawObject tail1, RawObject tail2);
 
-  // RawLayout.
+  // Layout.
   static const int kReferentOffset = RawHeapObject::kSize;
   static const int kCallbackOffset = kReferentOffset + kPointerSize;
   static const int kLinkOffset = kCallbackOffset + kPointerSize;
@@ -1771,7 +1771,7 @@ class RawBoundMethod : public RawHeapObject {
   RawObject self();
   void setSelf(RawObject self);
 
-  // RawLayout
+  // Layout.
   static const int kFunctionOffset = RawHeapObject::kSize;
   static const int kSelfOffset = kFunctionOffset + kPointerSize;
   static const int kSize = kSelfOffset + kPointerSize;
@@ -1785,7 +1785,7 @@ class RawClassMethod : public RawHeapObject {
   RawObject function();
   void setFunction(RawObject function);
 
-  // RawLayout
+  // Layout.
   static const int kFunctionOffset = RawHeapObject::kSize;
   static const int kSize = kFunctionOffset + kPointerSize;
 
@@ -1841,7 +1841,7 @@ class RawLayout : public RawHeapObject {
   RawObject describedClass();
   void setDescribedClass(RawObject type);
 
-  // RawSet the number of in-object attributes that may be stored on an instance
+  // Set the number of in-object attributes that may be stored on an instance
   // described by this layout.
   //
   // N.B. - This will always be larger than or equal to the length of the
@@ -1897,7 +1897,7 @@ class RawLayout : public RawHeapObject {
   // Return the offset, in bytes, of the overflow slot
   word overflowOffset();
 
-  // RawLayout
+  // Layout.
   static const int kDescribedClassOffset = RawHeapObject::kSize;
   static const int kInObjectAttributesOffset =
       kDescribedClassOffset + kPointerSize;
@@ -1927,7 +1927,7 @@ class RawSuper : public RawHeapObject {
   RawObject objectType();
   void setObjectType(RawObject tp);
 
-  // RawLayout
+  // Layout.
   static const int kTypeOffset = RawHeapObject::kSize;
   static const int kObjectOffset = kTypeOffset + kPointerSize;
   static const int kObjectTypeOffset = kObjectOffset + kPointerSize;
@@ -1946,7 +1946,7 @@ class RawGeneratorBase : public RawHeapObject {
   RawObject heapFrame();
   void setHeapFrame(RawObject obj);
 
-  // RawLayout.
+  // Layout.
   static const int kFrameOffset = RawHeapObject::kSize;
   static const int kIsRunningOffset = kFrameOffset + kPointerSize;
   static const int kCodeOffset = kIsRunningOffset + kPointerSize;
@@ -1965,7 +1965,7 @@ class RawGenerator : public RawGeneratorBase {
 
 class RawCoroutine : public RawGeneratorBase {
  public:
-  // RawLayout.
+  // Layout.
   static const int kAwaitOffset = RawGeneratorBase::kSize;
   static const int kOriginOffset = kAwaitOffset + kPointerSize;
   static const int kSize = kOriginOffset + kPointerSize;
@@ -2862,7 +2862,7 @@ inline word RawCode::flags() {
 inline void RawCode::setFlags(word value) {
   if ((kwonlyargcount() == 0) && (value & NOFREE) &&
       !(value & (VARARGS | VARKEYARGS))) {
-    // RawSet up shortcut for detecting fast case for calls
+    // Set up shortcut for detecting fast case for calls
     // TODO: move into equivalent of CPython's codeobject.c:PyCode_New()
     value |= SIMPLE_CALL;
   }
