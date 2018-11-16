@@ -3,6 +3,10 @@ project(python)
 
 set(PYTHON_EXECUTABLE /usr/bin/python)
 
+add_subdirectory(third-party/benchmark-1.3.0)
+include_directories(
+  third-party/benchmark-1.3.0/include)
+
 set(CMAKE_CXX_STANDARD 11)
 
 add_subdirectory(third-party/googletest-1.8.0)
@@ -67,6 +71,7 @@ target_link_libraries(
 
 add_executable(
   python-tests
+  runtime/python-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
   runtime/marshal-test.cpp
@@ -78,13 +83,13 @@ add_executable(
   runtime/utils-test.cpp
   runtime/vector-test.cpp)
 target_compile_options(
-  runtime
+  python-tests
   PRIVATE
   -Wall -Werror -Wextra -pedantic)
 target_link_libraries(
   python-tests
   gtest
-  gtest_main
+  benchmark
   runtime)
 
 add_custom_target(
