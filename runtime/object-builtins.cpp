@@ -122,4 +122,26 @@ Object* ObjectBuiltins::dunderStr(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::callMethod1(thread, frame, repr, self);
 }
 
+const BuiltinMethod NoneBuiltins::kMethods[] = {
+    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+};
+
+void NoneBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Class> type(
+      &scope, runtime->addEmptyBuiltinClass(
+                  SymbolId::kNoneType, LayoutId::kNoneType, LayoutId::kObject));
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(type, kMethods[i].name,
+                                     kMethods[i].address);
+  }
+}
+
+Object* NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {
+  if (nargs > 1) {
+    return thread->throwTypeErrorFromCString("None.__new__ takes no arguments");
+  }
+  return None::object();
+}
+
 }  // namespace python

@@ -21,4 +21,16 @@ class ObjectBuiltins {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectBuiltins);
 };
 
+class NoneBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+  static Object* dunderNew(Thread*, Frame*, word);
+
+ private:
+  static const BuiltinMethod kMethods[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(NoneBuiltins);
+};
+
 }  // namespace python

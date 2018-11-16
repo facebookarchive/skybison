@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "frame.h"
 #include "object-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
@@ -127,6 +128,25 @@ Foo()
 )";
   EXPECT_DEATH(runtime.runFromCString(src),
                "aborting due to pending exception");
+}
+
+TEST(NoneBuiltinsTest, NewReturnsNone) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+  frame->setLocal(0, runtime.classAt(LayoutId::kNoneType));
+  EXPECT_TRUE(NoneBuiltins::dunderNew(thread, frame, 1)->isNone());
+}
+
+TEST(NoneBuiltinsTest, NewWithExtraArgsThrows) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 4, 0);
+  frame->setLocal(0, runtime.classAt(LayoutId::kNoneType));
+  frame->setLocal(1, runtime.newInteger(1));
+  frame->setLocal(2, runtime.newInteger(2));
+  frame->setLocal(3, runtime.newInteger(3));
+  EXPECT_TRUE(NoneBuiltins::dunderNew(thread, frame, 4)->isError());
 }
 
 }  // namespace python
