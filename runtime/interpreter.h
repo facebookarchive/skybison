@@ -27,6 +27,7 @@ class Interpreter {
 
   static Object* call(Thread* thread, Frame* frame, Object** sp, word nargs);
   static Object* callKw(Thread* thread, Frame* frame, Object** sp, word nargs);
+  static Object* callEx(Thread* thread, Frame* frame, Object** sp, word flags);
 
   // batch concat/join <num> string objects on the stack (no conversion)
   static Object* stringJoin(Thread* thread, Object** sp, word num);
@@ -124,6 +125,7 @@ class Interpreter {
   static void doLoadDeref(Context* ctx, word arg);
   static void doStoreDeref(Context* ctx, word arg);
   static void doCallFunctionKw(Context* ctx, word arg);
+  static void doCallFunctionEx(Context* ctx, word arg);
   static void doListAppend(Context* ctx, word arg);
   static void doSetAdd(Context* ctx, word arg);
   static void doMapAdd(Context* ctx, word arg);

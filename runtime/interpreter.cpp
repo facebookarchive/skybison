@@ -68,6 +68,17 @@ Interpreter::callKw(Thread* thread, Frame* frame, Object** sp, word nargs) {
   return function->entryKw()(thread, frame, nargs);
 }
 
+Object*
+Interpreter::callEx(Thread* thread, Frame* frame, Object** sp, word flags) {
+  // Low bit of flags indicates whether var-keyword argument is on TOS.
+  // In all cases, var-positional tuple is next, followed by the function
+  // pointer.
+  frame->setValueStackTop(sp);
+  word function_position = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
+  auto function = Function::cast(*(sp + function_position));
+  return function->entryEx()(thread, frame, flags);
+}
+
 Object* Interpreter::callBoundMethod(
     Thread* thread,
     Frame* frame,
@@ -1080,6 +1091,14 @@ void Interpreter::doCallFunctionKw(Context* ctx, word arg) {
   ctx->thread->abortOnPendingException();
 }
 
+// opcode 142
+void Interpreter::doCallFunctionEx(Context* ctx, word arg) {
+  Object* result = callEx(ctx->thread, ctx->frame, ctx->sp, arg);
+  ctx->sp += (arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
+  *ctx->sp = result;
+  ctx->thread->abortOnPendingException();
+}
+
 // opcode 145
 void Interpreter::doListAppend(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
@@ -1120,7 +1139,7 @@ void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   *sp = *list;
 }
 
-// opcode 152
+// opcode 152 & opcode 158
 void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   Runtime* runtime = ctx->thread->runtime();
   HandleScope scope;

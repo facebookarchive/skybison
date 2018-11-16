@@ -335,6 +335,45 @@ foobar2(1,e=9,b=2,f1="a",f11=12)
   EXPECT_EQ(result, expected);
 }
 
+TEST(CallTest, CallEx) {
+  Runtime runtime;
+  const char* src = R"(
+def foo(a,b,c,d):
+    print(a,b,c,d)
+a = (1,2,3,4)
+foo(*a)
+)";
+  const char* expected = "1 2 3 4\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(CallTest, CallExBuildTupleUnpackWithCall) {
+  Runtime runtime;
+  const char* src = R"(
+def foo(a,b,c,d):
+    print(a,b,c,d)
+a = (3,4)
+foo(1,2,*a)
+)";
+  const char* expected = "1 2 3 4\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(CallTest, CallExKw) {
+  Runtime runtime;
+  const char* src = R"(
+def foo(a,b,c,d):
+    print(a,b,c,d)
+a = {'d': 4, 'b': 2, 'a': 1, 'c': 3}
+foo(**a)
+)";
+  const char* expected = "1 2 3 4\n";
+  std::string result = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(result, expected);
+}
+
 TEST(CallTest, KeyWordOnlyDeath) {
   Runtime runtime;
   const char* src = R"(

@@ -448,8 +448,34 @@ interpreterTrampolineKw(Thread* thread, Frame* caller_frame, word argc) {
   return res; // TypeError created by checkArgs.
 }
 
-Object* interpreterTrampolineEx(Thread*, Frame*, word) {
-  UNIMPLEMENTED("TrampolineEx");
+Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word arg) {
+  HandleScope scope(thread->handles());
+  Handle<Object> kw_dict(&scope, None::object());
+  Object** sp = caller_frame->valueStackTop();
+  if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
+    kw_dict = pop(sp);
+  }
+  Handle<ObjectArray> positional_args(&scope, pop(sp));
+  for (word i = 0; i < positional_args->length(); i++) {
+    push(sp, positional_args->at(i));
+  }
+  word argc = positional_args->length();
+  if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
+    Runtime* runtime = thread->runtime();
+    Handle<Dictionary> dict(&scope, *kw_dict);
+    Handle<ObjectArray> keys(&scope, runtime->dictionaryKeys(dict));
+    for (word i = 0; i < keys->length(); i++) {
+      Handle<Object> key(&scope, keys->at(i));
+      push(sp, runtime->dictionaryAt(dict, key));
+    }
+    argc += keys->length();
+    push(sp, *keys);
+    caller_frame->setValueStackTop(sp);
+    return interpreterTrampolineKw(thread, caller_frame, argc);
+  } else {
+    caller_frame->setValueStackTop(sp);
+    return interpreterTrampoline(thread, caller_frame, argc);
+  }
 }
 
 Object* unimplementedTrampoline(Thread*, Frame*, word) {
