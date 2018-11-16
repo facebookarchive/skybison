@@ -1152,7 +1152,10 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   HandleScope scope;
-  Handle<Function> function(&scope, thread->runtime()->newFunction());
+  Handle<Function> function(
+      &scope, thread->runtime()->newFunctionKwEx(interpreterTrampoline,
+                                                 interpreterTrampolineKw,
+                                                 interpreterTrampolineEx));
   function->setName(frame->popValue());
   function->setCode(frame->popValue());
   function->setGlobals(frame->globals());
@@ -1161,9 +1164,6 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   Handle<Code> code(&scope, function->code());
   function->setFastGlobals(
       thread->runtime()->computeFastGlobals(code, globals, builtins));
-  function->setEntry(interpreterTrampoline);
-  function->setEntryKw(interpreterTrampolineKw);
-  function->setEntryEx(interpreterTrampolineEx);
   if (arg & MakeFunctionFlag::CLOSURE) {
     DCHECK((frame->topValue())->isObjectArray(), "Closure expects tuple");
     function->setClosure(frame->popValue());

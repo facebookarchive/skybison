@@ -381,9 +381,9 @@ Object* Runtime::newCode() {
   return *result;
 }
 
-Object* Runtime::newBuiltinFunction(Function::Entry entry,
-                                    Function::Entry entry_kw,
-                                    Function::Entry entry_ex) {
+Object* Runtime::newFunctionKwEx(Function::Entry entry,
+                                 Function::Entry entry_kw,
+                                 Function::Entry entry_ex) {
   Object* result = heap()->createFunction();
   DCHECK(result != nullptr, "failed to createFunction");
   auto function = Function::cast(result);
@@ -394,13 +394,8 @@ Object* Runtime::newBuiltinFunction(Function::Entry entry,
 }
 
 Object* Runtime::newFunction() {
-  Object* object = heap()->createFunction();
-  DCHECK(object != nullptr, "failed to createFunction");
-  auto function = Function::cast(object);
-  function->setEntry(unimplementedTrampoline);
-  function->setEntryKw(unimplementedTrampoline);
-  function->setEntryEx(unimplementedTrampoline);
-  return function;
+  return newFunctionKwEx(unimplementedTrampoline, unimplementedTrampoline,
+                         unimplementedTrampoline);
 }
 
 Object* Runtime::newInstance(const Handle<Layout>& layout) {
@@ -432,8 +427,7 @@ void Runtime::classAddBuiltinFunctionKwEx(const Handle<Class>& klass,
                                           Function::Entry entry_ex) {
   HandleScope scope;
   Handle<Object> key(&scope, name);
-  Handle<Function> function(&scope,
-                            newBuiltinFunction(entry, entry_kw, entry_ex));
+  Handle<Function> function(&scope, newFunctionKwEx(entry, entry_kw, entry_ex));
   function->setName(*key);
   Handle<Object> value(&scope, *function);
   Handle<Dictionary> dict(&scope, klass->dictionary());
@@ -1459,16 +1453,16 @@ Object* Runtime::moduleAddBuiltinFunction(const Handle<Module>& module,
   HandleScope scope;
   Handle<Object> key(&scope, name);
   Handle<Dictionary> dictionary(&scope, module->dictionary());
-  Handle<Object> value(&scope, newBuiltinFunction(entry, entry_kw, entry_ex));
+  Handle<Object> value(&scope, newFunctionKwEx(entry, entry_kw, entry_ex));
   return dictionaryAtPutInValueCell(dictionary, key, value);
 }
 
 void Runtime::moduleAddBuiltinPrint(const Handle<Module>& module) {
   HandleScope scope;
   Handle<Function> print(&scope,
-                         newBuiltinFunction(nativeTrampoline<builtinPrint>,
-                                            nativeTrampolineKw<builtinPrintKw>,
-                                            unimplementedTrampoline));
+                         newFunctionKwEx(nativeTrampoline<builtinPrint>,
+                                         nativeTrampolineKw<builtinPrintKw>,
+                                         unimplementedTrampoline));
 
   // Name
   Handle<Object> name(&scope, newStringFromCString("print"));

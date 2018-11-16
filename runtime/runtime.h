@@ -53,8 +53,8 @@ class Runtime {
 
   Object* newSet();
 
-  Object* newBuiltinFunction(Function::Entry entry, Function::Entry entryKw,
-                             Function::Entry entryEx);
+  Object* newFunctionKwEx(Function::Entry entry, Function::Entry entryKw,
+                          Function::Entry entryEx);
   Object* newFunction();
 
   Object* newInstance(const Handle<Layout>& layout);
