@@ -40,7 +40,6 @@ Object* builtinTypeCall(Thread* thread, Frame* caller, word nargs)
 Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs);
 
 // List
-Object* listOrDelegate(Thread* thread, const Handle<Object>& instance);
 Object* builtinListNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinListAppend(Thread* thread, Frame* frame, word nargs);
 Object* builtinListInsert(Thread* thread, Frame* frame, word nargs);

@@ -401,6 +401,19 @@ Object* builtinInt(Thread* thread, Frame* callerFrame, word nargs) {
   return thread->runtime()->stringToInt(thread, arg);
 }
 
+static Object* listOrDelegate(Thread* thread, const Handle<Object>& instance) {
+  if (instance->isList()) {
+    return *instance;
+  } else {
+    HandleScope scope(thread);
+    Handle<Class> klass(&scope, thread->runtime()->classOf(*instance));
+    if (klass->hasFlag(Class::Flag::kListSubclass)) {
+      return thread->runtime()->instanceDelegate(instance);
+    }
+  }
+  return Error::object();
+}
+
 Object* builtinLen(Thread* thread, Frame* callerFrame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString(
@@ -441,19 +454,6 @@ Object* builtinSmallIntegerInvert(Thread* thread, Frame* caller, word nargs) {
 }
 
 // List
-Object* listOrDelegate(Thread* thread, const Handle<Object>& instance) {
-  if (instance->isList()) {
-    return *instance;
-  } else {
-    HandleScope scope(thread);
-    Handle<Class> klass(&scope, thread->runtime()->classOf(*instance));
-    if (klass->hasFlag(Class::Flag::kListSubclass)) {
-      return thread->runtime()->instanceDelegate(instance);
-    }
-  }
-  return Error::object();
-}
-
 Object* builtinListNew(Thread* thread, Frame* caller, word nargs) {
   if (nargs < 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
