@@ -154,6 +154,45 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         *--sp = list;
         break;
       }
+      case Bytecode::POP_JUMP_IF_FALSE: {
+        assert(arg < byteArray->length());
+        Object* cond = *sp++;
+        if (!thread->runtime()->isTruthy(cond)) {
+          pc = arg;
+        }
+        break;
+      }
+      case Bytecode::POP_JUMP_IF_TRUE: {
+        assert(arg < byteArray->length());
+        Object* cond = *sp++;
+        if (thread->runtime()->isTruthy(cond)) {
+          pc = arg;
+        }
+        break;
+      }
+      case Bytecode::JUMP_IF_FALSE_OR_POP: {
+        assert(arg < byteArray->length());
+        if (!thread->runtime()->isTruthy(*sp)) {
+          pc = arg;
+        } else {
+          sp++;
+        }
+        break;
+      }
+      case Bytecode::JUMP_IF_TRUE_OR_POP: {
+        assert(arg < byteArray->length());
+        if (thread->runtime()->isTruthy(*sp)) {
+          pc = arg;
+        } else {
+          sp++;
+        }
+        break;
+      }
+      case Bytecode::UNARY_NOT: {
+        bool negated = !thread->runtime()->isTruthy(*sp);
+        *sp = Boolean::fromBool(negated);
+        break;
+      }
       default:
         abort();
     }

@@ -56,6 +56,10 @@ class Runtime {
   Object* hash(Object* object);
   word siphash24(const byte* src, word size);
 
+  // Determines whether or not object is a truthy value. Exceptions are
+  // propagated using the normal exception handling mechanisms.
+  bool isTruthy(Object* object);
+
   uword random();
 
   Heap* heap() {

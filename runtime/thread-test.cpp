@@ -663,4 +663,165 @@ TEST(ThreadTest, BuildList) {
   EXPECT_EQ(list->at(2), None::object());
 }
 
+TEST(ThreadTest, PopJumpIfFalse) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
+  consts->atPut(0, Boolean::fromBool(true));
+  consts->atPut(1, SmallInteger::fromWord(1111));
+  consts->atPut(2, SmallInteger::fromWord(2222));
+  code->setConsts(*consts);
+  // Bytecode for the snippet:
+  //   if x:
+  //     return 1111
+  //   return 2222
+  const byte bc[] = {LOAD_CONST,
+                     0,
+                     POP_JUMP_IF_FALSE,
+                     8,
+                     LOAD_CONST,
+                     1,
+                     RETURN_VALUE,
+                     0,
+                     LOAD_CONST,
+                     2,
+                     RETURN_VALUE,
+                     0};
+  code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+
+  // Test when the condition evaluates to a truthy value
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
+
+  // Test when the condition evaluates to a falsey value
+  consts->atPut(0, Boolean::fromBool(false));
+  result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 2222);
+}
+
+TEST(ThreadTest, PopJumpIfTrue) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
+  consts->atPut(0, Boolean::fromBool(false));
+  consts->atPut(1, SmallInteger::fromWord(1111));
+  consts->atPut(2, SmallInteger::fromWord(2222));
+  code->setConsts(*consts);
+  // Bytecode for the snippet:
+  //   if not x:
+  //     return 1111
+  //   return 2222
+  const byte bc[] = {LOAD_CONST,
+                     0,
+                     POP_JUMP_IF_TRUE,
+                     8,
+                     LOAD_CONST,
+                     1,
+                     RETURN_VALUE,
+                     0,
+                     LOAD_CONST,
+                     2,
+                     RETURN_VALUE,
+                     0};
+  code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+
+  // Test when the condition evaluates to a falsey value
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
+
+  // Test when the condition evaluates to a truthy value
+  consts->atPut(0, Boolean::fromBool(true));
+  result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 2222);
+}
+
+TEST(ThreadTest, JumpIfFalseOrPop) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  consts->atPut(0, Boolean::fromBool(false));
+  consts->atPut(1, SmallInteger::fromWord(1111));
+  code->setConsts(*consts);
+  const byte bc[] = {
+      LOAD_CONST, 0, JUMP_IF_FALSE_OR_POP, 6, LOAD_CONST, 1, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+
+  // If the condition is false, we should return the top of the stack, which is
+  // the condition itself
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isBoolean());
+  EXPECT_FALSE(Boolean::cast(result)->value());
+
+  // If the condition is true, we should pop the top of the stack (the
+  // condition) and continue execution. In our case that loads a const and
+  // returns it.
+  consts->atPut(0, Boolean::fromBool(true));
+  result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
+}
+
+TEST(ThreadTest, JumpIfTrueOrPop) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  consts->atPut(0, Boolean::fromBool(true));
+  consts->atPut(1, SmallInteger::fromWord(1111));
+  code->setConsts(*consts);
+  const byte bc[] = {
+      LOAD_CONST, 0, JUMP_IF_TRUE_OR_POP, 6, LOAD_CONST, 1, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+
+  // If the condition is true, we should return the top of the stack, which is
+  // the condition itself
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isBoolean());
+  EXPECT_TRUE(Boolean::cast(result)->value());
+
+  // If the condition is false, we should pop the top of the stack (the
+  // condition) and continue execution. In our case that loads a const and
+  // returns it.
+  consts->atPut(0, Boolean::fromBool(false));
+  result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
+}
+
+TEST(ThreadTest, UnaryNot) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, Boolean::fromBool(true));
+  code->setConsts(*consts);
+  // Bytecode for the snippet:
+  //     return not x
+  const byte bc[] = {LOAD_CONST, 0, UNARY_NOT, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+
+  // If the condition is true, we should return false
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isBoolean());
+  EXPECT_FALSE(Boolean::cast(result)->value());
+
+  // If the condition is false, we should return true
+  consts->atPut(0, Boolean::fromBool(false));
+  result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isBoolean());
+  EXPECT_TRUE(Boolean::cast(result)->value());
+}
+
 } // namespace python

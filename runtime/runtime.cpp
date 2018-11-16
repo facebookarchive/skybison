@@ -620,4 +620,12 @@ Object* Runtime::newValueCell() {
   return heap()->createValueCell();
 }
 
+bool Runtime::isTruthy(Object* object) {
+  if (object->isBoolean()) {
+    return Boolean::cast(object)->value();
+  }
+  // TODO(mpage): Raise an exception
+  std::abort();
+}
+
 } // namespace python
