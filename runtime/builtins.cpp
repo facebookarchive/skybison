@@ -1,7 +1,9 @@
 #include "builtins.h"
 
+#include <unistd.h>
 #include <iostream>
 
+#include "bytecode.h"
 #include "frame.h"
 #include "globals.h"
 #include "interpreter.h"
@@ -14,7 +16,8 @@
 
 namespace python {
 
-std::ostream* builtinPrintStream = &std::cout;
+std::ostream* builtInStdout = &std::cout;
+std::ostream* builtinStderr = &std::cerr;
 
 class Arguments {
  public:
@@ -127,15 +130,18 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
 
 static void printString(String* str) {
   for (word i = 0; i < str->length(); i++) {
-    *builtinPrintStream << str->charAt(i);
+    *builtInStdout << str->charAt(i);
   }
 }
 
 // NB: The print functions do not represent the final state of builtin functions
 // and should not be emulated when creating new builtins. They are minimal
-// implementations intended to get the Richards benchmark working.
-static Object*
-doBuiltinPrint(const Arguments& args, word nargs, const Handle<Object>& end) {
+// implementations intended to get the Richards & Pystone benchmark working.
+static Object* doBuiltinPrint(
+    const Arguments& args,
+    word nargs,
+    const Handle<Object>& end,
+    std::ostream* ostream) {
   const char separator = ' ';
 
   for (word i = 0; i < nargs; i++) {
@@ -143,22 +149,24 @@ doBuiltinPrint(const Arguments& args, word nargs, const Handle<Object>& end) {
     if (arg->isString()) {
       printString(String::cast(arg));
     } else if (arg->isSmallInteger()) {
-      *builtinPrintStream << SmallInteger::cast(arg)->value();
+      *ostream << SmallInteger::cast(arg)->value();
     } else if (arg->isBoolean()) {
-      *builtinPrintStream << (Boolean::cast(arg)->value() ? "True" : "False");
+      *ostream << (Boolean::cast(arg)->value() ? "True" : "False");
     } else if (arg->isDouble()) {
-      *builtinPrintStream << Double::cast(arg)->value();
+      *ostream << Double::cast(arg)->value();
     } else {
       UNIMPLEMENTED("Custom print unsupported.");
     }
     if ((i + 1) != nargs) {
-      *builtinPrintStream << separator;
+      *ostream << separator;
     }
   }
   if (end->isNone()) {
-    *builtinPrintStream << "\n";
-  } else {
+    *ostream << "\n";
+  } else if (end->isString()) {
     printString(String::cast(*end));
+  } else {
+    UNIMPLEMENTED("Unexpected type for end: %ld", end->layoutId());
   }
 
   return None::object();
@@ -168,46 +176,71 @@ Object* builtinPrint(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Handle<Object> end(&scope, None::object());
   Arguments args(frame, nargs);
-  return doBuiltinPrint(args, nargs, end);
+  return doBuiltinPrint(args, nargs, end, builtInStdout);
 }
 
 Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs + 1);
-
-  Object* last_arg = args.get(nargs);
+  HandleScope scope;
+  Handle<Object> last_arg(&scope, args.get(nargs));
   if (!last_arg->isObjectArray()) {
     thread->throwTypeErrorFromCString("Keyword argument names must be a tuple");
     return Error::object();
   }
-
-  ObjectArray* kw_args = ObjectArray::cast(last_arg);
-  if (kw_args->length() != 1) {
+  Handle<ObjectArray> names(&scope, *last_arg);
+  word num_keywords = names->length();
+  if (num_keywords > 2) {
     thread->throwRuntimeErrorFromCString(
         "Too many keyword arguments supplied to print");
     return Error::object();
   }
 
-  Object* kw_arg = kw_args->at(0);
-  if (!kw_arg->isString()) {
-    thread->throwTypeErrorFromCString("Keyword argument names must be strings");
-    return Error::object();
-  }
-  if (!String::cast(kw_arg)->equalsCString("end")) {
-    thread->throwRuntimeErrorFromCString(
-        "Only the 'end' keyword argument is supported");
-    return Error::object();
-  }
-
-  HandleScope scope(thread);
-  Handle<Object> end(&scope, args.get(nargs - 1));
-  if (!(end->isString() || end->isNone())) {
-    thread->throwTypeErrorFromCString("'end' must be a string or None");
-    return Error::object();
+  Runtime* runtime = thread->runtime();
+  Object* end = None::object();
+  std::ostream* ostream = builtInStdout;
+  word num_positional = nargs - names->length();
+  for (word i = 0; i < names->length(); i++) {
+    Handle<Object> key(&scope, names->at(i));
+    DCHECK(key->isString(), "Keyword argument names must be strings");
+    Handle<Object> value(&scope, args.get(num_positional + i));
+    if (*key == runtime->symbols()->File()) {
+      if (value->isSmallInteger()) {
+        word stream_val = SmallInteger::cast(*value)->value();
+        switch (stream_val) {
+          case STDOUT_FILENO:
+            ostream = builtInStdout;
+            break;
+          case STDERR_FILENO:
+            ostream = builtinStderr;
+            break;
+          default:
+            thread->throwTypeErrorFromCString(
+                "Unsupported argument type for 'file'");
+            return Error::object();
+        }
+      } else {
+        thread->throwTypeErrorFromCString(
+            "Unsupported argument type for 'file'");
+        return Error::object();
+      }
+    } else if (*key == runtime->symbols()->End()) {
+      if ((value->isString() || value->isNone())) {
+        end = *value;
+      } else {
+        thread->throwTypeErrorFromCString("Unsupported argument for 'end'");
+        return Error::object();
+      }
+    } else {
+      thread->throwRuntimeErrorFromCString("Unsupported keyword arguments");
+      return Error::object();
+    }
   }
 
   // Remove kw arg tuple and the value for the end keyword argument
-  Arguments rest(frame->valueStackTop() + 2, nargs - 1);
-  return doBuiltinPrint(rest, nargs - 1, end);
+  Arguments rest(
+      frame->valueStackTop() + 1 + num_keywords, nargs - num_keywords);
+  Handle<Object> end_val(&scope, end);
+  return doBuiltinPrint(rest, nargs - num_keywords, end_val, ostream);
 }
 
 Object* builtinRange(Thread* thread, Frame* frame, word nargs) {

@@ -15,14 +15,14 @@ namespace testing {
 // helper function to redirect return stdout from running
 // a moodule
 std::string runToString(Runtime* runtime, const char* buffer) {
-  std::stringstream stream;
-  std::ostream* oldStream = builtinPrintStream;
-  builtinPrintStream = &stream;
+  std::stringstream sout;
+  std::ostream* oldStream = builtInStdout;
+  builtInStdout = &sout;
   Object* result = runtime->run(buffer);
   (void)result;
   CHECK(result == None::object(), "unexpected result");
-  builtinPrintStream = oldStream;
-  return stream.str();
+  builtInStdout = oldStream;
+  return sout.str();
 }
 
 std::string compileAndRunToString(Runtime* runtime, const char* src) {
@@ -53,11 +53,11 @@ std::string callFunctionToString(
   }
   frame->setValueStackTop(sp);
   std::stringstream stream;
-  std::ostream* oldStream = builtinPrintStream;
-  builtinPrintStream = &stream;
+  std::ostream* oldStream = builtInStdout;
+  builtInStdout = &stream;
   func->entry()(thread, frame, code->argcount());
   thread->popFrame();
-  builtinPrintStream = oldStream;
+  builtInStdout = oldStream;
   return stream.str();
 }
 

@@ -14,7 +14,8 @@ class Thread;
 // TODO: Remove this along with the iostream include once we have file-like
 // objects. This is a side channel that allows us to override print's stdout
 // during tests.
-extern std::ostream* builtinPrintStream;
+extern std::ostream* builtInStdout;
+extern std::ostream* builtinStderr;
 
 Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs);
 Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs);

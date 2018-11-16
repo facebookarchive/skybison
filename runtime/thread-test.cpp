@@ -3054,4 +3054,54 @@ from time import foobarbaz
   EXPECT_DEATH(compileAndRunToString(&runtime, src);, "cannot import name\n");
 }
 
+TEST(ThreadTest, SysStdOutErr) { // pystone dependency
+  const char* src = R"(
+import sys
+print(sys.stdout, sys.stderr)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1 2\n");
+}
+
+TEST(ThreadTest, BuiltInPrintStdOut) {
+  const char* src = R"(
+import sys
+print("hello", file=sys.stdout)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "hello\n");
+}
+
+TEST(ThreadTest, BuiltInPrintEnd) {
+  const char* src = R"(
+import sys
+print("hi", end='ho')
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "hiho");
+}
+
+TEST(ThreadTest, BuiltInPrintStdOutEnd) {
+  const char* src = R"(
+import sys
+print("hi", end='ho', file=sys.stdout)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "hiho");
+}
+
+TEST(ThreadTest, BuiltInPrintStdErr) { // pystone dependency
+  const char* src = R"(
+import sys
+print("hi", file=sys.stderr, end='ya')
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "hiya");
+}
+
 } // namespace python

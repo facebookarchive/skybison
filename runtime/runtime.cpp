@@ -1,5 +1,6 @@
 #include "runtime.h"
 
+#include <unistd.h>
 #include <cerrno>
 #include <climits>
 #include <cstdlib>
@@ -1112,6 +1113,13 @@ void Runtime::createSysModule() {
       nativeTrampoline<builtinSysExit>,
       nativeTrampoline<unimplementedTrampoline>);
 
+  Handle<Object> stdout_id(&scope, symbols()->Stdout());
+  Handle<Object> stdout_val(&scope, SmallInteger::fromWord(STDOUT_FILENO));
+  moduleAddGlobal(module, stdout_id, stdout_val);
+
+  Handle<Object> stderr_id(&scope, symbols()->Stderr());
+  Handle<Object> stderr_val(&scope, SmallInteger::fromWord(STDERR_FILENO));
+  moduleAddGlobal(module, stderr_id, stderr_val);
   addModule(module);
 }
 

@@ -24,6 +24,8 @@ class Runtime;
   V(Chr, "chr")                          \
   V(Classmethod, "classmethod")          \
   V(Float, "float")                      \
+  V(End, "end")                          \
+  V(File, "file")                        \
   V(Insert, "insert")                    \
   V(Int, "int")                          \
   V(Dict, "dict")                        \
@@ -39,7 +41,9 @@ class Runtime;
   V(Super, "super")                      \
   V(Remove, "remove")                    \
   V(Sys, "sys")                          \
-  V(Time, "time")
+  V(Time, "time")                        \
+  V(Stderr, "stderr")                    \
+  V(Stdout, "stdout")
 // clang-format on
 
 // Provides convenient, fast access to commonly used names. Stolen from Dart.
