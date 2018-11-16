@@ -155,7 +155,7 @@ TEST(RuntimeTest, HashByteArrays) {
 
   word code1 =
       runtime.siphash24(reinterpret_cast<const byte*>(src1), ARRAYSIZE(src1));
-  EXPECT_EQ(code1 & Header::kHashCodeMask, hash1);
+  EXPECT_EQ(code1 & Header::kHashCodeMask, static_cast<uword>(hash1));
 
   // String with different values should (ideally) hash differently.
   const byte src2[] = {0x3, 0x2, 0x1};
@@ -166,7 +166,7 @@ TEST(RuntimeTest, HashByteArrays) {
 
   word code2 =
       runtime.siphash24(reinterpret_cast<const byte*>(src2), ARRAYSIZE(src2));
-  EXPECT_EQ(code2 & Header::kHashCodeMask, hash2);
+  EXPECT_EQ(code2 & Header::kHashCodeMask, static_cast<uword>(hash2));
 
   // Strings with the same value should hash the same.
   const byte src3[] = {0x1, 0x2, 0x3};
@@ -177,7 +177,7 @@ TEST(RuntimeTest, HashByteArrays) {
 
   word code3 =
       runtime.siphash24(reinterpret_cast<const byte*>(src3), ARRAYSIZE(src3));
-  EXPECT_EQ(code3 & Header::kHashCodeMask, hash3);
+  EXPECT_EQ(code3 & Header::kHashCodeMask, static_cast<uword>(hash3));
 }
 
 TEST(RuntimeTest, HashSmallIntegers) {

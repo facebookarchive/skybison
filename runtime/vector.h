@@ -223,7 +223,7 @@ template <typename T, typename Vector<T>::size_type Size>
 class FixedVector : public Vector<T> {
  public:
   FixedVector()
-      : Vector<T>(&Vector<T>::storage_[0], &Vector<T>::storage_[Size]) {}
+      : Vector<T>(&Vector<T>::storage_[0], &Vector<T>::storage_[0] + Size) {}
 
   FixedVector(const Vector<T>& other) : Vector<T>(other) {}
   FixedVector(Vector<T>&& other) : Vector<T>(std::forward<Vector<T>>(other)) {}
