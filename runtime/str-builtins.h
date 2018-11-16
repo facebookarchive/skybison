@@ -20,5 +20,6 @@ Object* builtinStringLt(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringMod(Thread* thread, Frame* caller, word nargs);
 Object* builtinStringNe(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringNew(Thread* thread, Frame* frame, word nargs);
+Object* builtinStringRepr(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

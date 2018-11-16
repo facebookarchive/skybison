@@ -381,4 +381,135 @@ Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs) {
       "argument");
 }
 
+// Convert a byte to its hex digits, and write them out to buf.
+// Increments buf to point after the written characters.
+static void byteToHex(byte** buf, byte convert) {
+  static byte hexdigits[] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                             '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+  // Since convert is unsigned, the right shift will not propagate the sign
+  // bit, and the upper bits will be zero.
+  *(*buf)++ = hexdigits[convert >> 4];
+  *(*buf)++ = hexdigits[convert & 0x0f];
+}
+
+Object* builtinStringRepr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("expected 0 arguments");
+  }
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> obj(&scope, args.get(0));
+  if (!runtime->hasSubClassFlag(*obj, Type::Flag::kStrSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "str.__repr__(self): self is not a str");
+  }
+  if (!obj->isString()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Handle<String> self(&scope, *obj);
+  const word self_len = self->length();
+  word output_size = 0;
+  word squote = 0;
+  word dquote = 0;
+  // Precompute the size so that only one string allocation is necessary.
+  for (word i = 0; i < self_len; ++i) {
+    word incr = 1;
+    byte ch = self->charAt(i);
+    switch (ch) {
+      case '\'':
+        squote++;
+        break;
+      case '"':
+        dquote++;
+        break;
+      case '\\':
+        // FALLTHROUGH
+      case '\t':
+        // FALLTHROUGH
+      case '\r':
+        // FALLTHROUGH
+      case '\n':
+        incr = 2;
+        break;
+      default:
+        if (ch < ' ' || ch == 0x7f) {
+          incr = 4;  // \xHH
+        }
+        break;
+    }
+    output_size += incr;
+  }
+
+  byte quote = '\'';
+  bool unchanged = (output_size == self_len);
+  if (squote > 0) {
+    unchanged = false;
+    // If there are both single quotes and double quotes, the outer quote will
+    // be singles, and all internal quotes will need to be escaped.
+    if (dquote > 0) {
+      // Add the size of the escape backslashes on the single quotes.
+      output_size += squote;
+    } else {
+      quote = '"';
+    }
+  }
+  output_size += 2;  // quotes
+
+  byte* buf = new byte[output_size];
+  // Write in the quotes.
+  buf[0] = quote;
+  buf[output_size - 1] = quote;
+  if (unchanged) {
+    // Rest of the characters were all unmodified, copy them directly into the
+    // buffer.
+    self->copyTo(buf + 1, self_len);
+  } else {
+    byte* curr = buf + 1;
+    for (word i = 0; i < self_len; ++i) {
+      byte ch = self->charAt(i);
+      // quote can't be handled in the switch case because it's not a constant.
+      if (ch == quote) {
+        *curr++ = '\\';
+        *curr++ = ch;
+        continue;
+      }
+      switch (ch) {
+        case '\\':
+          *curr++ = '\\';
+          *curr++ = ch;
+          break;
+        case '\t':
+          *curr++ = '\\';
+          *curr++ = 't';
+          break;
+        case '\r':
+          *curr++ = '\\';
+          *curr++ = 'r';
+          break;
+        case '\n':
+          *curr++ = '\\';
+          *curr++ = 'n';
+          break;
+        default:
+          if (ch >= 32 && ch < 127) {
+            *curr++ = ch;
+          } else {
+            // Map non-printable ASCII to '\xhh'.
+            *curr++ = '\\';
+            *curr++ = 'x';
+            byteToHex(&curr, ch);
+          }
+          break;
+      }
+    }
+    DCHECK(curr == buf + output_size - 1,
+           "Didn't write the correct number of characters out");
+  }
+  Handle<String> output(
+      &scope, runtime->newStringWithAll(View<byte>{buf, output_size}));
+  delete[] buf;
+  return *output;
+}
+
 }  // namespace python

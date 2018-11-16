@@ -274,30 +274,19 @@ TEST(TupleBuiltinsTest, DunderReprWithManyPrimitives) {
   runtime.runFromCString(R"(
 a = (1, 2, 3).__repr__()
 b = ("hello", 2, "world", 4).__repr__()
-c = (1,).__repr__()
-d = ("foo",).__repr__()
-e = ().__repr__()
 )");
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<String> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<String> d(&scope, moduleAt(&runtime, main, "d"));
-  Handle<String> e(&scope, moduleAt(&runtime, main, "e"));
 
-  // TODO(dulinr): After int.__repr__ and str.__repr__ are implemented, fix
-  // these.
+  // TODO(dulinr): After int.__repr__ is implemented, fix this.
   EXPECT_PYSTRING_EQ(*a,
                      "(<smallint object at 0x2>, <smallint object at 0x4>, "
                      "<smallint object at 0x6>)");
   EXPECT_PYSTRING_EQ(
       *b,
-      "(<smallstr object at 0x6f6c6c6568bf>, <smallint object at 0x4>, "
-      "<smallstr object at 0x646c726f77bf>, <smallint object at 0x8>)");
-  EXPECT_PYSTRING_EQ(*c, "(<smallint object at 0x2>,)");
-  EXPECT_PYSTRING_EQ(*d, "(<smallstr object at 0x6f6f667f>,)");
-  EXPECT_PYSTRING_EQ(*e, "()");
+      "('hello', <smallint object at 0x4>, 'world', <smallint object at 0x8>)");
 }
 
 TEST(TupleBuiltinsTest, DunderReprWithOnePrimitive) {
@@ -311,10 +300,9 @@ b = ("foo",).__repr__()
   Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
 
-  // TODO(dulinr): After int.__repr__ and str.__repr__ are implemented, fix
-  // these.
+  // TODO(dulinr): After int.__repr__ is implemented, fix this.
   EXPECT_PYSTRING_EQ(*a, "(<smallint object at 0x2>,)");
-  EXPECT_PYSTRING_EQ(*b, "(<smallstr object at 0x6f6f667f>,)");
+  EXPECT_PYSTRING_EQ(*b, "('foo',)");
 }
 
 TEST(TupleBuiltinsTest, DunderReprWithNoElements) {

@@ -82,10 +82,7 @@ a = BaseException("hello", "world").__str__()
 
   Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
   Handle<String> a(&scope, testing::moduleAt(&runtime, main, "a"));
-  // TODO(dulinr): Fix this once str.__repr__ is implemented.
-  EXPECT_PYSTRING_EQ(*a,
-                     "(<smallstr object at 0x6f6c6c6568bf>, <smallstr object "
-                     "at 0x646c726f77bf>)");
+  EXPECT_PYSTRING_EQ(*a, "('hello', 'world')");
 }
 
 TEST(ExceptionBuiltinsTest, ExceptionManyArguments) {
@@ -197,8 +194,7 @@ s = KeyError("key").__str__()
 
   Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
   Handle<String> s(&scope, testing::moduleAt(&runtime, main, "s"));
-  // TODO(dulinr): Once str.__repr__ is implemented, fix this.
-  EXPECT_PYSTRING_EQ(*s, "<smallstr object at 0x79656b7f>");
+  EXPECT_PYSTRING_EQ(*s, "'key'");
 }
 
 TEST(ExceptionBuiltinsTest,

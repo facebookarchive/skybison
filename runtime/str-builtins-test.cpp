@@ -417,4 +417,89 @@ a = "%d%s" % ("pyro",)
   EXPECT_DEATH(runtime.runFromCString(src), "Argument mismatch");
 }
 
+TEST(StrBuiltinsTest, DunderReprOnASCIIStr) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello".__repr__()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+
+  EXPECT_PYSTRING_EQ(*a, "'hello'");
+}
+
+TEST(StrBuiltinsTest, DunderReprOnASCIINonPrintable) {
+  Runtime runtime;
+  // 6 is the ACK character.
+  runtime.runFromCString(R"(
+a = "\x06".__repr__()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+
+  EXPECT_PYSTRING_EQ(*a, "'\\x06'");
+}
+
+TEST(StrBuiltinsTest, DunderReprOnStrWithDoubleQuotes) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = 'hello "world"'.__repr__()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+
+  EXPECT_PYSTRING_EQ(*a, "'hello \"world\"'");
+}
+
+TEST(StrBuiltinsTest, DunderReprOnStrWithSingleQuotes) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello 'world'".__repr__()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+
+  EXPECT_PYSTRING_EQ(*a, "\"hello 'world'\"");
+}
+
+TEST(StrBuiltinsTest, DunderReprOnStrWithBothQuotes) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello 'world', I am your \"father\"".__repr__()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+
+  EXPECT_PYSTRING_EQ(*a, R"('hello \'world\', I am your "father"')");
+}
+
+TEST(StrBuiltinsTest, DunderReprOnStrWithNestedQuotes) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello 'world, \"I am 'your \"father\"'\"'".__repr__()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+
+  EXPECT_PYSTRING_EQ(*a, R"('hello \'world, "I am \'your "father"\'"\'')");
+}
+
+TEST(StrBuiltinsTest, DunderReprOnCommonEscapeSequences) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "\n \t \r \\".__repr__()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+
+  EXPECT_PYSTRING_EQ(*a, "'\\n \\t \\r \\\\'");
+}
+
 }  // namespace python

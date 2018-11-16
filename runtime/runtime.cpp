@@ -1108,6 +1108,9 @@ void Runtime::initializeStrClass() {
 
   classAddBuiltinFunction(type, SymbolId::kDunderNew,
                           nativeTrampoline<builtinStringNew>);
+
+  classAddBuiltinFunction(type, SymbolId::kDunderRepr,
+                          nativeTrampoline<builtinStringRepr>);
 }
 
 void Runtime::initializeClassMethodClass() {
