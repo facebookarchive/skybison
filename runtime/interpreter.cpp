@@ -22,8 +22,14 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
   word pc = 0;
   for (;;) {
     Bytecode bc = static_cast<Bytecode>(byteArray->byteAt(pc++));
-    byte arg = byteArray->byteAt(pc++);
+    int32 arg = byteArray->byteAt(pc++);
+  dispatch:
     switch (bc) {
+      case Bytecode::EXTENDED_ARG: {
+        bc = static_cast<Bytecode>(byteArray->byteAt(pc++));
+        arg = (arg << 8) | byteArray->byteAt(pc++);
+        goto dispatch;
+      }
       case Bytecode::RETURN_VALUE: {
         Object* result = *sp++;
         // Clean up after ourselves

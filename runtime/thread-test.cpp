@@ -328,6 +328,31 @@ TEST(ThreadTest, CallBuiltinFunction) {
   ASSERT_EQ(SmallInteger::cast(result)->value(), 1111);
 }
 
+TEST(ThreadTest, ExtendedArg) {
+  const word numConsts = 258;
+  const byte bytecode[] = {EXTENDED_ARG, 1, LOAD_CONST, 1, RETURN_VALUE, 0};
+
+  Runtime runtime;
+  HandleScope scope;
+  Handle<ObjectArray> constants(&scope, runtime.newObjectArray(numConsts));
+
+  auto zero = SmallInteger::fromWord(0);
+  auto nonZero = SmallInteger::fromWord(0xDEADBEEF);
+  for (word i = 0; i < numConsts - 2; i++) {
+    constants->atPut(i, zero);
+  }
+  constants->atPut(numConsts - 1, nonZero);
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setConsts(*constants);
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
+  code->setStacksize(2);
+
+  Object* result = Thread::currentThread()->run(*code);
+
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 0xDEADBEEF);
+}
+
 TEST(ThreadTest, CallBuiltinPrint) {
   Runtime runtime;
   HandleScope scope;
