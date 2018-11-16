@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <memory>
+
 #include "bytecode.h"
 #include "frame.h"
 #include "handles.h"
@@ -1371,7 +1373,8 @@ def public_symbol2():
 
   // Preload the module
   Handle<Object> name(&scope, runtime.newStrFromCStr("test_module"));
-  runtime.importModuleFromBuffer(Runtime::compile(module_src), name);
+  std::unique_ptr<char[]> buffer(Runtime::compile(module_src));
+  runtime.importModuleFromBuffer(buffer.get(), name);
 
   runtime.runFromCStr(R"(
 from test_module import *
@@ -1404,7 +1407,8 @@ def _private_symbol():
 
   // Preload the module
   Handle<Object> name(&scope, runtime.newStrFromCStr("test_module"));
-  runtime.importModuleFromBuffer(Runtime::compile(module_src), name);
+  std::unique_ptr<char[]> buffer(Runtime::compile(module_src));
+  runtime.importModuleFromBuffer(buffer.get(), name);
 
   const char* main_src = R"(
 from test_module import *

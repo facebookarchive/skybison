@@ -138,6 +138,7 @@ TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
 
   PyObject* result = PyType_GenericAlloc(&custom_type, 0);
   EXPECT_EQ(1, Py_REFCNT(result));
+  Py_DECREF(result);
 }
 
 }  // namespace python
