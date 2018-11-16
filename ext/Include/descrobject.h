@@ -74,7 +74,8 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyClassMethodDescr_Type;
 PyAPI_DATA(PyTypeObject) PyGetSetDescr_Type;
-PyAPI_DATA(PyTypeObject) PyMemberDescr_Type;
+PyAPI_FUNC(PyTypeObject*) PyMemberDescr_Type_Ptr(void);
+#define PyMemberDescr_Type (*PyMemberDescr_Type_Ptr())
 PyAPI_DATA(PyTypeObject) PyMethodDescr_Type;
 PyAPI_DATA(PyTypeObject) PyWrapperDescr_Type;
 PyAPI_DATA(PyTypeObject) PyDictProxy_Type;

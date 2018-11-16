@@ -141,6 +141,7 @@ add_library(
   ext/Include/modsupport.h
   ext/Include/pyport.h
   ext/Objects/boolobject.cpp
+  ext/Objects/descrobject.cpp
   ext/Objects/dictobject.cpp
   ext/Objects/exceptions.cpp
   ext/Objects/floatobject.cpp
