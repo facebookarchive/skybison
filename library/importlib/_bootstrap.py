@@ -385,7 +385,8 @@ class ModuleSpec:
             args.append(f'origin={repr(self.origin)}')
         if self.submodule_search_locations is not None:
             args.append(f'submodule_search_locations={self.submodule_search_locations}')
-        return f'{self.__class__.__name__}({', '.join(args)})'
+        joined_args = ', '.join(args)
+        return f'{self.__class__.__name__}({joined_args})'
 
     def __eq__(self, other):
         smsl = self.submodule_search_locations
