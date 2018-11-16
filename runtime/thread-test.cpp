@@ -1702,4 +1702,22 @@ hello.say_hello()
   EXPECT_EQ(output, "goodbye\n");
 }
 
+TEST(ThreadTest, StoreFastStackEffect) {
+  const char* src = R"(
+def printit(x, y, z):
+  print(x, y, z)
+
+def test():
+  x = 1
+  y = 2
+  z = 3
+  printit(x, y, z)
+
+test()
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1 2 3\n");
+}
+
 } // namespace python

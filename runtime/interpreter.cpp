@@ -152,7 +152,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
       case Bytecode::STORE_FAST: {
-        Object* value = *sp--;
+        Object* value = *sp++;
         frame->setLocal(arg, value);
         break;
       }

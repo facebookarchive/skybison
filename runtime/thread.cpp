@@ -70,6 +70,7 @@ Frame* Thread::openAndLinkFrame(
   byte* sp = ptr_;
   if (!previousFrame->isSentinelFrame()) {
     sp = reinterpret_cast<byte*>(previousFrame->valueStackTop()) - size;
+    CHECK(sp >= ptr_, "value stack overflow by %lu bytes\n", ptr_ - sp);
   }
   auto frame = reinterpret_cast<Frame*>(sp + stackDepth * kPointerSize);
 
