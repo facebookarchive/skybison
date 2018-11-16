@@ -2,6 +2,7 @@
 
 #include "scavenger.h"
 #include "test-utils.h"
+#include "trampolines-inl.h"
 #include "trampolines.h"
 
 namespace python {
@@ -203,6 +204,11 @@ def g(ref, c=4):
   EXPECT_EQ(b->value(), 4);
 }
 
+static Object* doGarbageCollection(Thread* thread, Frame*, word) {
+  thread->runtime()->collectGarbage();
+  return None::object();
+}
+
 TEST(ScavengerTest, CallbackInvokeGC) {
   Runtime runtime;
   HandleScope scope;
@@ -221,10 +227,7 @@ def g(ref, b=2):
     Handle<Function> collect(
         &scope,
         runtime.newBuiltinFunction(
-            [](Thread* thread, Frame*, word) -> Object* {
-              thread->runtime()->collectGarbage();
-              return None::object();
-            },
+            nativeTrampoline<doGarbageCollection>,
             unimplementedTrampoline,
             unimplementedTrampoline));
     ref1->setReferent(*array1);
