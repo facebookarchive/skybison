@@ -4,7 +4,7 @@
 
 namespace python {
 
-class Os {
+class OS {
  public:
   enum { kPageSize = 4 * KiB };
 
@@ -23,7 +23,7 @@ class Os {
   static char* temporaryDirectory(const char* prefix);
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Os);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(OS);
 };
 
 } // namespace python

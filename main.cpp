@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
   python::Runtime runtime;
-  std::unique_ptr<char[]> buffer(python::Os::readFile(argv[1]));
+  std::unique_ptr<char[]> buffer(python::OS::readFile(argv[1]));
   if (buffer.get() == nullptr) {
     std::exit(EXIT_FAILURE);
   }

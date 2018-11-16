@@ -397,9 +397,9 @@ void Runtime::initializeInterned() {
 }
 
 void Runtime::initializeRandom() {
-  Os::secureRandom(
+  OS::secureRandom(
       reinterpret_cast<byte*>(&random_state_), sizeof(random_state_));
-  Os::secureRandom(
+  OS::secureRandom(
       reinterpret_cast<byte*>(&hash_secret_), sizeof(hash_secret_));
 }
 

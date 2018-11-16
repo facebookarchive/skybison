@@ -18,22 +18,22 @@ static int count(const byte* array, byte ch, int length) {
 
 TEST(OsTest, allocateUseAndFreeOnePage) {
   // Allocate a page of memory.
-  byte* page = Os::allocateMemory(Os::kPageSize);
+  byte* page = OS::allocateMemory(OS::kPageSize);
   ASSERT_NE(page, nullptr);
 
   // Read from every allocated byte.
-  int num_zeroes = count(page, 0, Os::kPageSize);
+  int num_zeroes = count(page, 0, OS::kPageSize);
   // Every byte should have a value of zero.
-  ASSERT_EQ(num_zeroes, Os::kPageSize);
+  ASSERT_EQ(num_zeroes, OS::kPageSize);
 
   // Write to every allocated byte.
-  std::memset(page, 1, Os::kPageSize);
-  int num_ones = count(page, 1, Os::kPageSize);
+  std::memset(page, 1, OS::kPageSize);
+  int num_ones = count(page, 1, OS::kPageSize);
   // Every byte should have a value of one.
-  ASSERT_EQ(num_ones, Os::kPageSize);
+  ASSERT_EQ(num_ones, OS::kPageSize);
 
   // Release the page.
-  bool is_free = Os::freeMemory(page, Os::kPageSize);
+  bool is_free = OS::freeMemory(page, OS::kPageSize);
   EXPECT_TRUE(is_free);
 }
 
@@ -42,7 +42,7 @@ TEST(OsTest, allocateUseAndFreeMultiplePages) {
   const int size = 17 * KiB;
 
   // Allocate the pages.
-  byte* page = Os::allocateMemory(size);
+  byte* page = OS::allocateMemory(size);
   ASSERT_NE(page, nullptr);
 
   // Read from every allocated byte.
@@ -57,7 +57,7 @@ TEST(OsTest, allocateUseAndFreeMultiplePages) {
   ASSERT_EQ(num_ones, size);
 
   // Release the pages.
-  bool is_free = Os::freeMemory(page, size);
+  bool is_free = OS::freeMemory(page, size);
   EXPECT_TRUE(is_free);
 }
 

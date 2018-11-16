@@ -13,7 +13,7 @@
 
 namespace python {
 
-byte* Os::allocateMemory(word size) {
+byte* OS::allocateMemory(word size) {
   size = Utils::roundUp(size, 4 * KiB);
   int prot = PROT_READ | PROT_WRITE;
   int flags = MAP_PRIVATE | MAP_ANONYMOUS;
@@ -22,7 +22,7 @@ byte* Os::allocateMemory(word size) {
   return static_cast<byte*>(result);
 }
 
-bool Os::protectMemory(byte* address, word size, Protection mode) {
+bool OS::protectMemory(byte* address, word size, Protection mode) {
   assert(size >= 0);
   int prot;
   switch (mode) {
@@ -40,7 +40,7 @@ bool Os::protectMemory(byte* address, word size, Protection mode) {
   return result == 0;
 }
 
-bool Os::freeMemory(byte* ptr, word size) {
+bool OS::freeMemory(byte* ptr, word size) {
   assert(size >= 0);
   int result = ::munmap(ptr, size);
   assert(result != -1);
@@ -66,7 +66,7 @@ class ScopedFd {
   DISALLOW_COPY_AND_ASSIGN(ScopedFd);
 };
 
-bool Os::secureRandom(byte* ptr, word size) {
+bool OS::secureRandom(byte* ptr, word size) {
   assert(size >= 0);
   ScopedFd fd(::open("/dev/urandom", O_RDONLY));
   if (fd.get() == -1) {
@@ -86,7 +86,7 @@ bool Os::secureRandom(byte* ptr, word size) {
   return size == 0;
 }
 
-char* Os::readFile(const char* filename) {
+char* OS::readFile(const char* filename) {
   ScopedFd fd(::open(filename, O_RDONLY));
   assert(fd.get() != -1);
   word length = ::lseek(fd.get(), 0, SEEK_END);
@@ -97,7 +97,7 @@ char* Os::readFile(const char* filename) {
   return result;
 }
 
-char* Os::temporaryDirectory(const char* prefix) {
+char* OS::temporaryDirectory(const char* prefix) {
   const char* tmpdir = std::getenv("TMPDIR");
   if (tmpdir == nullptr) {
     tmpdir = "/tmp";
