@@ -58,4 +58,69 @@ print(E.f(1,2))
   EXPECT_EQ(output, "3\n");
 }
 
+TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaInstance) {
+  const char* src = R"(
+class C:
+  def __init__(self, x):
+      self.__x = x
+
+  def getx(self):
+      return self.__x
+
+  x = property(getx)
+
+c1 = C(24)
+c2 = C(42)
+print(c1.x, c2.x)
+)";
+
+  Runtime runtime;
+  const std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "24 42\n");
+}
+
+TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaClass) {
+  const char* src = R"(
+class C:
+  def __init__(self, x):
+      self.__x = x
+
+  def getx(self):
+      return self.__x
+
+  x = property(getx)
+
+x = C.x
+)";
+
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
+  ASSERT_TRUE(x->isProperty());
+}
+
+TEST(DescriptorBuiltinsTest, PropertyAddedViaDecoratorAccessibleViaInstance) {
+  const char* src = R"(
+class C:
+  def __init__(self, x = None):
+      self.__x = x
+
+  @property
+  def x(self):
+      return self.__x
+
+x = C(24).x
+)";
+
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
+  ASSERT_TRUE(x->isInteger());
+  EXPECT_EQ(SmallInteger::cast(*x)->value(), 24);
+}
+
 } // namespace python

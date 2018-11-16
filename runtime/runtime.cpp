@@ -255,8 +255,9 @@ Object* Runtime::instanceGetAttr(
   Handle<Class> klass(&scope, classOf(*receiver));
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
   if (isDataDescriptor(thread, klass_attr)) {
-    // TODO(T25692531): Call __get__ from klass_attr
-    UNIMPLEMENTED("custom descriptors are unsupported");
+    Handle<Object> owner(&scope, *klass);
+    return Interpreter::callDescriptorGet(
+        thread, thread->currentFrame(), klass_attr, receiver, owner);
   }
 
   // No data descriptor found on the class, look at the instance.
@@ -352,6 +353,9 @@ Object* Runtime::moduleSetAttr(
 }
 
 bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
+  if (object->isProperty()) {
+    return true;
+  }
   if (object->isFunction() || object->isClassMethod() ||
       object->isStaticMethod() || object->isError()) {
     return false;
@@ -367,7 +371,7 @@ bool Runtime::isNonDataDescriptor(
     Thread* thread,
     const Handle<Object>& object) {
   if (object->isFunction() || object->isClassMethod() ||
-      object->isStaticMethod()) {
+      object->isStaticMethod() || object->isProperty()) {
     return true;
   } else if (object->isError()) {
     return false;
@@ -532,6 +536,18 @@ Object* Runtime::newDouble(double value) {
 
 Object* Runtime::newComplex(double real, double imag) {
   return Complex::cast(heap()->createComplex(real, imag));
+}
+
+Object* Runtime::newProperty(
+    const Handle<Object>& getter,
+    const Handle<Object>& setter,
+    const Handle<Object>& deleter) {
+  HandleScope scope;
+  Handle<Property> new_prop(&scope, heap()->createProperty());
+  new_prop->setGetter(*getter);
+  new_prop->setSetter(*setter);
+  new_prop->setDeleter(*deleter);
+  return *new_prop;
 }
 
 Object* Runtime::newRange(word start, word stop, word step) {
@@ -754,6 +770,7 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("module", LayoutId::kModule);
   initializeHeapClass("NotImplementedType", LayoutId::kNotImplemented);
   initializeObjectArrayClass();
+  initializePropertyClass();
   initializeHeapClass("range", LayoutId::kRange);
   initializeHeapClass("range_iterator", LayoutId::kRangeIterator);
   initializeRefClass();
@@ -960,6 +977,32 @@ void Runtime::initializeSetClass() {
       set_type, symbols()->DunderLen(), nativeTrampoline<builtinSetLen>);
   classAddBuiltinFunction(
       set_type, symbols()->Pop(), nativeTrampoline<builtinSetPop>);
+}
+
+void Runtime::initializePropertyClass() {
+  HandleScope scope;
+  Handle<Class> property(
+      &scope, initializeHeapClass("property", LayoutId::kProperty));
+
+  classAddBuiltinFunction(
+      property, symbols()->Deleter(), nativeTrampoline<builtinPropertyDeleter>);
+
+  classAddBuiltinFunction(
+      property,
+      symbols()->DunderGet(),
+      nativeTrampoline<builtinPropertyDunderGet>);
+
+  classAddBuiltinFunction(
+      property, symbols()->DunderInit(), nativeTrampoline<builtinPropertyInit>);
+
+  classAddBuiltinFunction(
+      property, symbols()->DunderNew(), nativeTrampoline<builtinPropertyNew>);
+
+  classAddBuiltinFunction(
+      property, symbols()->Getter(), nativeTrampoline<builtinPropertyGetter>);
+
+  classAddBuiltinFunction(
+      property, symbols()->Setter(), nativeTrampoline<builtinPropertySetter>);
 }
 
 void Runtime::initializeSmallIntClass() {
@@ -1551,14 +1594,15 @@ void Runtime::createBuiltinsModule() {
       unimplementedTrampoline);
 
   // Add builtin types
-  moduleAddBuiltinType(module, LayoutId::kDouble, symbols()->Float());
-  moduleAddBuiltinType(module, LayoutId::kObject, symbols()->ObjectClassname());
-  moduleAddBuiltinType(module, LayoutId::kList, symbols()->List());
   moduleAddBuiltinType(
       module, LayoutId::kClassMethod, symbols()->Classmethod());
+  moduleAddBuiltinType(module, LayoutId::kDictionary, symbols()->Dict());
+  moduleAddBuiltinType(module, LayoutId::kDouble, symbols()->Float());
+  moduleAddBuiltinType(module, LayoutId::kList, symbols()->List());
+  moduleAddBuiltinType(module, LayoutId::kObject, symbols()->ObjectClassname());
+  moduleAddBuiltinType(module, LayoutId::kProperty, symbols()->Property());
   moduleAddBuiltinType(
       module, LayoutId::kStaticMethod, symbols()->StaticMethod());
-  moduleAddBuiltinType(module, LayoutId::kDictionary, symbols()->Dict());
   moduleAddBuiltinType(module, LayoutId::kSuper, symbols()->Super());
   moduleAddBuiltinType(module, LayoutId::kType, symbols()->Type());
 

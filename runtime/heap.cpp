@@ -315,6 +315,7 @@ Object* Heap::createNotImplemented() {
       ObjectFormat::kDataInstance));
   return NotImplemented::cast(result);
 }
+
 Object* Heap::createObjectArray(word length, Object* value) {
   DCHECK(!value->isHeapObject(), "value must be an immediate object");
   word size = ObjectArray::allocationSize(length);
@@ -325,6 +326,20 @@ Object* Heap::createObjectArray(word length, Object* value) {
       length, 0, LayoutId::kObjectArray, ObjectFormat::kObjectArray);
   result->initialize(size, value);
   return ObjectArray::cast(result);
+}
+
+Object* Heap::createProperty() {
+  word size = Property::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<Property*>(raw);
+  result->setHeader(Header::from(
+      Property::kSize / kPointerSize,
+      0,
+      LayoutId::kProperty,
+      ObjectFormat::kObjectInstance));
+  result->initialize(size, None::object());
+  return Property::cast(result);
 }
 
 Object* Heap::createRange() {

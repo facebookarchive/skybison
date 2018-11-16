@@ -70,4 +70,96 @@ Object* builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
   return *staticmethod;
 }
 
+// property
+
+Object* builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString(
+        "property.deleter expects 1 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Property> property(&scope, args.get(0));
+  Handle<Object> getter(&scope, property->getter());
+  Handle<Object> setter(&scope, property->setter());
+  Handle<Object> deleter(&scope, args.get(1));
+  return thread->runtime()->newProperty(getter, setter, deleter);
+}
+
+Object* builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 3 || nargs > 4) {
+    return thread->throwTypeErrorFromCString(
+        "property.__get__ expects 2-3 arguments");
+  }
+
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+
+  Handle<Property> property(&scope, args.get(0));
+  Handle<Object> obj(&scope, args.get(1));
+
+  if (property->getter() == None::object()) {
+    return thread->throwAttributeErrorFromCString("unreadable attribute");
+  }
+
+  if (obj->isNone()) {
+    return *property;
+  }
+
+  Handle<Object> getter(&scope, property->getter());
+  return Interpreter::callMethod1(
+      thread, frame, frame->valueStackTop(), getter, obj);
+}
+
+Object* builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString(
+        "property.getter expects 1 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Property> property(&scope, args.get(0));
+  Handle<Object> getter(&scope, args.get(1));
+  Handle<Object> setter(&scope, property->setter());
+  Handle<Object> deleter(&scope, property->deleter());
+  return thread->runtime()->newProperty(getter, setter, deleter);
+}
+
+Object* builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 2 || nargs > 4) {
+    return thread->throwTypeErrorFromCString("property expects 1-3 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Property> property(&scope, args.get(0));
+  property->setGetter(args.get(1));
+  if (nargs > 2) {
+    property->setSetter(args.get(2));
+  }
+  if (nargs > 3) {
+    property->setDeleter(args.get(3));
+  }
+  return *property;
+}
+
+Object* builtinPropertyNew(Thread* thread, Frame*, word) {
+  HandleScope scope(thread);
+  Handle<Object> none(&scope, None::object());
+  return thread->runtime()->newProperty(none, none, none);
+}
+
+Object* builtinPropertySetter(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString(
+        "property.setter expects 1 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Property> property(&scope, args.get(0));
+  Handle<Object> getter(&scope, property->getter());
+  Handle<Object> setter(&scope, args.get(1));
+  Handle<Object> deleter(&scope, property->deleter());
+  return thread->runtime()->newProperty(getter, setter, deleter);
+}
+
 } // namespace python

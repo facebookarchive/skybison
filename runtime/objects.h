@@ -31,10 +31,12 @@ namespace python {
   V(ListIterator)                   \
   V(Module)                         \
   V(ObjectArray)                    \
+  V(Property)                       \
   V(Range)                          \
   V(RangeIterator)                  \
   V(Set)                            \
   V(Slice)                          \
+  V(StaticMethod)                   \
   V(String)                         \
   V(Type)                           \
   V(ValueCell)                      \
@@ -91,6 +93,7 @@ enum class LayoutId : word {
   kModule,
   kNotImplemented,
   kObjectArray,
+  kProperty,
   kRange,
   kRangeIterator,
   kSet,
@@ -141,6 +144,7 @@ class Object {
   bool isModule();
   bool isNotImplemented();
   bool isObjectArray();
+  bool isProperty();
   bool isRange();
   bool isRangeIterator();
   bool isSet();
@@ -699,6 +703,34 @@ class Complex : public HeapObject {
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Complex);
+};
+
+class Property : public HeapObject {
+ public:
+  // Getters and setters
+  Object* getter();
+  void setGetter(Object* function);
+
+  Object* setter();
+  void setSetter(Object* function);
+
+  Object* deleter();
+  void setDeleter(Object* function);
+
+  // Casting
+  static Property* cast(Object* object);
+
+  // Sizing
+  static word allocationSize();
+
+  // Layout
+  static const int kGetterOffset = HeapObject::kSize;
+  static const int kSetterOffset = kGetterOffset + kPointerSize;
+  static const int kDeleterOffset = kSetterOffset + kPointerSize;
+  static const int kSize = kDeleterOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Property);
 };
 
 class Range : public HeapObject {
@@ -1869,6 +1901,13 @@ inline bool Object::isNotImplemented() {
       LayoutId::kNotImplemented;
 }
 
+inline bool Object::isProperty() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kProperty;
+}
+
 inline bool Object::isRange() {
   if (!isHeapObject()) {
     return false;
@@ -2717,6 +2756,41 @@ inline word ListIterator::allocationSize() {
 inline ListIterator* ListIterator::cast(Object* object) {
   DCHECK(object->isListIterator(), "invalid cast, expected list iterator");
   return reinterpret_cast<ListIterator*>(object);
+}
+
+// Property
+
+inline Object* Property::getter() {
+  return instanceVariableAt(kGetterOffset);
+}
+
+inline void Property::setGetter(Object* function) {
+  instanceVariableAtPut(kGetterOffset, function);
+}
+
+inline Object* Property::setter() {
+  return instanceVariableAt(kSetterOffset);
+}
+
+inline void Property::setSetter(Object* function) {
+  instanceVariableAtPut(kSetterOffset, function);
+}
+
+inline Object* Property::deleter() {
+  return instanceVariableAt(kDeleterOffset);
+}
+
+inline void Property::setDeleter(Object* function) {
+  instanceVariableAtPut(kDeleterOffset, function);
+}
+
+inline Property* Property::cast(Object* object) {
+  DCHECK(object->isProperty(), "invalid cast");
+  return reinterpret_cast<Property*>(object);
+}
+
+inline word Property::allocationSize() {
+  return Header::kSize + Property::kSize;
 }
 
 // RangeIterator

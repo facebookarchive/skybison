@@ -62,6 +62,8 @@ class Heap {
 
   Object* createObjectArray(word length, Object* value);
 
+  Object* createProperty();
+
   Object* createRange();
 
   Object* createRangeIterator();

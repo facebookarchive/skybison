@@ -167,6 +167,11 @@ class Runtime {
 
   Object* newObjectArray(word length);
 
+  Object* newProperty(
+      const Handle<Object>& getter,
+      const Handle<Object>& setter,
+      const Handle<Object>& deleter);
+
   Object* newRange(word start, word stop, word step);
 
   Object* newRangeIterator(const Handle<Object>& iterable);
@@ -624,6 +629,7 @@ class Runtime {
   void initializeListClass();
   void initializeObjectClass();
   void initializeObjectArrayClass();
+  void initializePropertyClass();
   void initializeRefClass();
   void initializeSetClass();
   void initializeSmallIntClass();

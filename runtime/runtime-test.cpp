@@ -2313,7 +2313,7 @@ def test(x):
   EXPECT_EQ(callFunctionToString(test, args), "testing 123\n321 testing\n");
 }
 
-TEST(InstanceAttributeDeathTest, GetDataDescriptor) {
+TEST(InstanceAttributeTest, GetDataDescriptor) {
   Runtime runtime;
   const char* src = R"(
 class DataDescr:
@@ -2321,7 +2321,7 @@ class DataDescr:
     pass
 
   def __get__(self, instance, owner):
-    pass
+    return (self, instance, owner)
 
 class Foo:
   pass
@@ -2341,9 +2341,12 @@ class Foo:
   // Fetch it from the instance
   Handle<Layout> instance_layout(&scope, Class::cast(*klass)->instanceLayout());
   Handle<Object> instance(&scope, runtime.newInstance(instance_layout));
-  ASSERT_DEATH(
-      runtime.attributeAt(Thread::currentThread(), instance, attr),
-      "custom descriptors are unsupported");
+  Handle<ObjectArray> result(
+      &scope, runtime.attributeAt(Thread::currentThread(), instance, attr));
+  ASSERT_EQ(result->length(), 3);
+  EXPECT_EQ(runtime.classOf(result->at(0)), *descr_klass);
+  EXPECT_EQ(result->at(1), *instance);
+  EXPECT_EQ(result->at(2), *klass);
 }
 
 TEST(InstanceAttributeTest, GetNonDataDescriptor) {

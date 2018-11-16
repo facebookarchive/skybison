@@ -79,6 +79,7 @@ class Runtime;
   V(Builtins, "builtins")                \
   V(Chr, "chr")                          \
   V(Classmethod, "classmethod")          \
+  V(Deleter, "deleter")                  \
   V(Dict, "dict")                        \
   V(End, "end")                          \
   V(Exit, "exit")                        \
@@ -86,6 +87,7 @@ class Runtime;
   V(ExtensionPtr, "___extension___")     \
   V(File, "file")                        \
   V(Float, "float")                      \
+  V(Getter, "getter")                    \
   V(Insert, "insert")                    \
   V(Int, "int")                          \
   V(IsInstance, "isinstance")            \
@@ -96,9 +98,11 @@ class Runtime;
   V(ObjectClassname, "object")           \
   V(Ord, "ord")                          \
   V(Pop, "pop")                          \
+  V(Property, "property")                \
   V(Range, "range")                      \
-  V(Remove, "remove")                    \
   V(Ref, "ref")                          \
+  V(Remove, "remove")                    \
+  V(Setter, "setter")                    \
   V(StaticMethod, "staticmethod")        \
   V(Stderr, "stderr")                    \
   V(Stdout, "stdout")                    \
