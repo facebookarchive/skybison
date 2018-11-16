@@ -48,4 +48,49 @@ TEST_F(DictExtensionApiTest, GetItemReturnsBorrowedValue) {
   EXPECT_EQ(Py_REFCNT(result), 2);
 }
 
+TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {
+  PyObject* list = PyList_New(0);
+  EXPECT_EQ(PyDict_Size(list), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+
+  const char* expected_message = "bad argument to internal function";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+
+  Py_DECREF_Func(list);
+}
+
+TEST_F(DictExtensionApiTest, SizeWithEmptyDictReturnsZero) {
+  PyObject* dict = PyDict_New();
+  EXPECT_EQ(PyDict_Size(dict), 0);
+  Py_DECREF_Func(dict);
+}
+
+TEST_F(DictExtensionApiTest, SizeWithNonEmptyDict) {
+  PyObject* dict = PyDict_New();
+  PyObject* key1 = PyLong_FromLong(1);
+  PyObject* key2 = PyLong_FromLong(2);
+  PyObject* value1 = testing::createUniqueObject();
+  PyObject* value2 = testing::createUniqueObject();
+  PyObject* value3 = testing::createUniqueObject();
+
+  // Dict starts out empty
+  EXPECT_EQ(PyDict_Size(dict), 0);
+
+  // Inserting items for two different keys
+  ASSERT_EQ(PyDict_SetItem(dict, key1, value1), 0);
+  ASSERT_EQ(PyDict_SetItem(dict, key2, value2), 0);
+  EXPECT_EQ(PyDict_Size(dict), 2);
+
+  // Replace value for existing key
+  ASSERT_EQ(PyDict_SetItem(dict, key1, value3), 0);
+  EXPECT_EQ(PyDict_Size(dict), 2);
+
+  Py_DECREF_Func(dict);
+  Py_DECREF_Func(key1);
+  Py_DECREF_Func(key2);
+  Py_DECREF_Func(value1);
+  Py_DECREF_Func(value2);
+  Py_DECREF_Func(value3);
+}
+
 }  // namespace python

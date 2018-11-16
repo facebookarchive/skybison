@@ -538,7 +538,14 @@ class Runtime {
     if (instance->isList()) {
       return true;
     }
-    return RawType::cast(typeOf(instance))->hasFlag(Type::Flag::kListSubclass);
+    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kListSubclass);
+  }
+
+  bool isInstanceOfDict(RawObject instance) {
+    if (instance->isDict()) {
+      return true;
+    }
+    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kDictSubclass);
   }
 
   bool isInstanceOfFloat(RawObject instance) {

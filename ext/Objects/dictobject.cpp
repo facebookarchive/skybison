@@ -93,10 +93,6 @@ PY_EXPORT int PyDict_DelItem(PyObject* /* p */, PyObject* /* y */) {
   UNIMPLEMENTED("PyDict_DelItem");
 }
 
-PY_EXPORT Py_ssize_t PyDict_Size(PyObject* /* p */) {
-  UNIMPLEMENTED("PyDict_Size");
-}
-
 PY_EXPORT int PyDict_DelItemString(PyObject* /* v */, const char* /* y */) {
   UNIMPLEMENTED("PyDict_DelItemString");
 }
@@ -131,6 +127,22 @@ PY_EXPORT int PyDict_MergeFromSeq2(PyObject* /* d */, PyObject* /* 2 */,
 PY_EXPORT int PyDict_Next(PyObject* /* p */, Py_ssize_t* /* s */,
                           PyObject** /* pkey */, PyObject** /* pvalue */) {
   UNIMPLEMENTED("PyDict_Next");
+}
+
+PY_EXPORT Py_ssize_t PyDict_Size(PyObject* p) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Object dict_obj(&scope, ApiHandle::fromPyObject(p)->asObject());
+  if (!runtime->isInstanceOfDict(dict_obj)) {
+    // TODO(wmeehan) replace with PyErr_BadInternalCall
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return -1;
+  }
+
+  Dict dict(&scope, *dict_obj);
+  return dict->numItems();
 }
 
 PY_EXPORT int PyDict_Update(PyObject* /* a */, PyObject* /* b */) {
