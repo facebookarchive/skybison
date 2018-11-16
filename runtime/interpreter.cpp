@@ -168,7 +168,6 @@ enum MakeFunctionFlag {
 
 enum class Result {
   CONTINUE,
-  RETURN,
   NOT_IMPLEMENTED,
 };
 struct Context {
@@ -486,14 +485,7 @@ Result BINARY_SUBTRACT(Context* ctx, word) {
   *ctx->sp = SmallInteger::fromWord(result);
   return Result::CONTINUE;
 }
-Result INPLACE_MULTIPLY(Context* ctx, word) {
-  word right = SmallInteger::cast(*ctx->sp++)->value();
-  word left = SmallInteger::cast(*ctx->sp)->value();
-  word result = left * right;
-  assert(left == 0 || (result / left) == right);
-  *ctx->sp = SmallInteger::fromWord(result);
-  return Result::CONTINUE;
-}
+
 Result BINARY_MULTIPLY(Context* ctx, word) {
   Object**& sp = ctx->sp;
   if (sp[1]->isSmallInteger()) {
