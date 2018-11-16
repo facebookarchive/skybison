@@ -1125,7 +1125,7 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
   }
 
   if (value->isError()) {
-    UNIMPLEMENTED("Unbound variable");
+    UNIMPLEMENTED("Unbound variable '%s'", String::cast(*key)->toCString());
   }
   frame->pushValue(value);
 }
