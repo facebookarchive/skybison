@@ -426,4 +426,27 @@ Object* builtinRepr(Thread* thread, Frame* frame, word nargs) {
   return ret;
 }
 
+Object* builtinGetattr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 2 || nargs > 3) {
+    return thread->throwTypeErrorFromCString(
+        "getattr expected 2 or 3 arguments.");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> name(&scope, args.get(1));
+  if (!name->isString()) {
+    return thread->throwTypeErrorFromCString(
+        "getattr(): attribute name must be string.");
+  }
+  Handle<Object> result(&scope,
+                        thread->runtime()->attributeAt(thread, self, name));
+  if (result->isError() && nargs == 3) {
+    result = args.get(2);
+    // TODO(T32775277) Implement PyErr_ExceptionMatches
+    thread->clearPendingException();
+  }
+  return *result;
+}
+
 }  // namespace python

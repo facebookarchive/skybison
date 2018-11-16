@@ -280,8 +280,11 @@ void Thread::ignorePendingException() {
     delete[] buffer;
   }
   *builtinStderr << "\n";
+  pending_exception_ = None::object();
   Utils::printTraceback();
 }
+
+void Thread::clearPendingException() { pending_exception_ = None::object(); }
 
 void Thread::abortOnPendingException() {
   HandleScope scope(this);

@@ -242,4 +242,34 @@ a = repr(Foo())
   EXPECT_TRUE(String::cast(*a)->equalsCString("foo"));
 }
 
+TEST(BuiltinsModuleTest, BuiltInGetAttr) {
+  const char* src = R"(
+class Foo:
+  bar = 1
+a = getattr(Foo, 'bar')
+b = getattr(Foo(), 'bar')
+c = getattr(Foo(), 'foo', 2)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  EXPECT_EQ(*a, SmallInt::fromWord(1));
+  EXPECT_EQ(*b, SmallInt::fromWord(1));
+  EXPECT_EQ(*c, SmallInt::fromWord(2));
+}
+
+TEST(BuiltinsModuleDeathTest, BuiltInGetAttrThrow) {
+  const char* src = R"(
+class Foo:
+  bar = 1
+getattr(Foo, 'foo')
+)";
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCString(src), "missing attribute");
+}
+
 }  // namespace python

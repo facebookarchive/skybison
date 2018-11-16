@@ -108,6 +108,9 @@ class Thread {
   // posted.
   Object* pendingException();
 
+  // If there's a pending exception, clear it.
+  void clearPendingException();
+
   // If there's a pending exception, prints it and ignores
   void ignorePendingException();
 

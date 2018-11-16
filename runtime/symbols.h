@@ -111,6 +111,7 @@ class Runtime;
   V(File, "file")                                                              \
   V(Float, "float")                                                            \
   V(Function, "function")                                                      \
+  V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
   V(Insert, "insert")                                                          \
   V(Int, "int")                                                                \
