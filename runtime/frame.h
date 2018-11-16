@@ -102,27 +102,9 @@ class Frame {
   inline Object* traceFlags();
   inline void setTraceFlags(Object* traceFlags);
 
-  // The following state is needed in the case where the frame is executing a
-  // generator and needs to be evicted to the heap and restored later.
-
   // Index in the bytecode array of the last instruction that was executed
   inline Object* lastInstruction();
   inline void setLastInstruction(Object* lastInstruction);
-
-  // In a generator, we need to be able to swap between the exception state
-  // inside the generator and the exception state of the calling frame (which
-  // shouldn't be impacted when the generator "yields" from an except handler).
-  // These three fields exist exactly for that, and are unused for
-  // non-generator frames. See the save_exc_state and swap_exc_state functions
-  // in ceval.c for details of their use.
-  inline Object* exceptionClass();
-  inline void setExceptionClass(Object* exceptionClass);
-
-  inline Object* exception();
-  inline void setException(Object* exception);
-
-  inline Object* traceback();
-  inline void setTraceback(Object* traceback);
 
   // The builtins namespace (a Dictionary)
   inline Object* builtins();
@@ -161,15 +143,11 @@ class Frame {
   static word allocationSize(Object* code);
 
   static const int kPreviousFrameOffset = 0;
-  static const int kTopOffset = kPreviousFrameOffset;
+  static const int kTopOffset = kPreviousFrameOffset + kPointerSize;
   static const int kCodeOffset = kTopOffset + kPointerSize;
   static const int kGlobalsOffset = kCodeOffset + kPointerSize;
   static const int kBuiltinsOffset = kGlobalsOffset + kPointerSize;
-  static const int kTracebackOffset = kBuiltinsOffset + kPointerSize;
-  static const int kExceptionOffset = kTracebackOffset + kPointerSize;
-  static const int kExceptionClassOffset = kExceptionOffset + kPointerSize;
-  static const int kLastInstructionOffset =
-      kExceptionClassOffset + kPointerSize;
+  static const int kLastInstructionOffset = kBuiltinsOffset + kPointerSize;
   static const int kTraceFlagsOffset = kLastInstructionOffset + kPointerSize;
   static const int kTraceFuncOffset = kTraceFlagsOffset + kPointerSize;
   static const int kActiveBlockOffset = kTraceFuncOffset + kPointerSize;
@@ -231,30 +209,6 @@ Object* Frame::lastInstruction() {
 
 void Frame::setLastInstruction(Object* lastInstruction) {
   atPut(kLastInstructionOffset, lastInstruction);
-}
-
-Object* Frame::exceptionClass() {
-  return at(kExceptionClassOffset);
-}
-
-void Frame::setExceptionClass(Object* exceptionClass) {
-  atPut(kExceptionClassOffset, exceptionClass);
-}
-
-Object* Frame::exception() {
-  return at(kExceptionOffset);
-}
-
-void Frame::setException(Object* exception) {
-  atPut(kExceptionOffset, exception);
-}
-
-Object* Frame::traceback() {
-  return at(kTracebackOffset);
-}
-
-void Frame::setTraceback(Object* traceback) {
-  atPut(kTracebackOffset, traceback);
 }
 
 Object* Frame::builtins() {

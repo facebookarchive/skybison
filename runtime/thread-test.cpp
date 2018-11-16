@@ -117,6 +117,69 @@ TEST(ThreadTest, EncodeTryBlock) {
   EXPECT_EQ(decoded.level, block.level);
 }
 
+TEST(ThreadTest, PushPopFrame) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setNlocals(2);
+  code->setStacksize(3);
+
+  auto thread = Thread::currentThread();
+  byte* prevLimit = thread->ptr();
+  auto frame = thread->pushFrame(*code, thread->initialFrame());
+
+  // Verify frame invariants post-push
+  EXPECT_EQ(frame->previousFrame(), thread->initialFrame());
+  EXPECT_EQ(frame->code(), *code);
+  EXPECT_EQ(frame->top(), reinterpret_cast<Object**>(frame));
+  EXPECT_EQ(frame->base(), frame->top());
+  EXPECT_EQ(
+      frame->locals() + code->nlocals(), reinterpret_cast<Object**>(prevLimit));
+
+  // Make sure we restore the thread's stack pointer back to its previous
+  // location
+  thread->popFrame(frame);
+  EXPECT_EQ(thread->ptr(), prevLimit);
+}
+
+TEST(ThreadTest, ManipulateValueStack) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setArgcount(2);
+  code->setNlocals(2);
+  code->setStacksize(3);
+  auto thread = Thread::currentThread();
+  auto frame = thread->pushFrame(*code, thread->initialFrame());
+
+  // Push 3 items on the value stack
+  Object** sp = frame->top();
+  *--sp = SmallInteger::fromWord(1111);
+  *--sp = SmallInteger::fromWord(2222);
+  *--sp = SmallInteger::fromWord(3333);
+  frame->setTop(sp);
+  ASSERT_EQ(frame->top(), sp);
+
+  // Verify the value stack is laid out as we expect
+  word values[] = {3333, 2222, 1111};
+  for (int i = 0; i < 3; i++) {
+    Object* object = frame->peek(i);
+    ASSERT_TRUE(object->isSmallInteger())
+        << "Value at stack depth " << i << " is not an integer";
+    EXPECT_EQ(SmallInteger::cast(object)->value(), values[i])
+        << "Incorrect value at stack depth " << i;
+  }
+
+  // Pop 2 items off the stack and check the stack is still as we expect
+  frame->setTop(sp + 2);
+  Object* top = frame->peek(0);
+  ASSERT_TRUE(top->isSmallInteger()) << "Stack top isn't an integer";
+  EXPECT_EQ(SmallInteger::cast(top)->value(), 1111)
+      << "Incorrect value for stack top";
+}
+
 TEST(ThreadTest, CallFunction) {
   Runtime runtime;
   HandleScope scope;

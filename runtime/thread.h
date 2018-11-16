@@ -19,6 +19,10 @@ class Thread {
   static Thread* currentThread();
   static void setCurrentThread(Thread* thread);
 
+  byte* ptr() {
+    return ptr_;
+  }
+
   Frame* pushFrame(Object* code, Frame* previousFrame);
   void popFrame(Frame* frame);
 
