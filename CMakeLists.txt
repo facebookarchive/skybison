@@ -146,22 +146,6 @@ target_link_libraries(
   PRIVATE
   extension)
 
-# TODO(eelizondo): remove this when extensions are completely standalone
-if(${CPYTHON_MODULES})
-    message("Building CPython...")
-    add_definitions(-DCPYTHON_MODULES)
-    execute_process(
-      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/cpython_build.py
-              ${CMAKE_BINARY_DIR}/cpython_build
-              ${CMAKE_CURRENT_SOURCE_DIR}/third-party/cpython
-              ${CMAKE_CURRENT_SOURCE_DIR}/ext/Objects
-      OUTPUT_VARIABLE libpython
-      ERROR_VARIABLE _unused)
-    string(STRIP "${libpython}" libpython)
-    find_package(Threads)
-    set(libpython "util ${CMAKE_THREAD_LIBS_INIT} ${libpython}")
-endif(${CPYTHON_MODULES})
-
 add_executable(
   python
   main.cpp)
