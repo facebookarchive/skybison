@@ -14,6 +14,7 @@
 #include "interpreter.h"
 #include "marshal.h"
 #include "os.h"
+#include "scavenger.h"
 #include "siphash.h"
 #include "thread.h"
 #include "trampolines-inl.h"
@@ -687,6 +688,11 @@ void Runtime::initializeHeapClasses() {
       createMro(range_iterator_mro, ARRAYSIZE(range_iterator_mro)));
 
   initializeClassMethodClass();
+
+  Handle<Class> weakref(&scope, newClassWithId(ClassId::kWeakRef));
+  weakref->setName(newStringFromCString("weakref"));
+  const ClassId weakref_mro[] = {ClassId::kWeakRef, ClassId::kObject};
+  weakref->setMro(createMro(weakref_mro, ARRAYSIZE(weakref_mro)));
 }
 
 void Runtime::initializeImmediateClasses() {
@@ -726,23 +732,8 @@ void Runtime::initializeImmediateClasses() {
   none->setMro(createMro(none_mro, ARRAYSIZE(none_mro)));
 }
 
-class ScavengeVisitor : public PointerVisitor {
- public:
-  explicit ScavengeVisitor(Heap* heap) : heap_(heap) {}
-
-  void visitPointer(Object** pointer) override {
-    heap_->scavengePointer(pointer);
-  }
-
- private:
-  Heap* heap_;
-};
-
 void Runtime::collectGarbage() {
-  heap()->flip();
-  ScavengeVisitor visitor(heap());
-  visitRoots(&visitor);
-  heap()->scavenge();
+  Scavenger(this).scavenge();
 }
 
 Object* Runtime::run(const char* buffer) {
@@ -1589,6 +1580,10 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
 
 Object* Runtime::newValueCell() {
   return heap()->createValueCell();
+}
+
+Object* Runtime::newWeakRef() {
+  return heap()->createWeakRef();
 }
 
 void Runtime::collectAttributes(

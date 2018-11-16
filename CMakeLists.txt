@@ -64,6 +64,8 @@ add_library(
   runtime/os.h
   runtime/runtime.cpp
   runtime/runtime.h
+  runtime/scavenger.cpp
+  runtime/scavenger.h
   runtime/space.cpp
   runtime/space.h
   runtime/symbols.cpp
@@ -115,6 +117,7 @@ add_executable(
   runtime/objects-test.cpp
   runtime/os-test.cpp
   runtime/runtime-test.cpp
+  runtime/scavenger-test.cpp
   runtime/space-test.cpp
   runtime/test-utils.cpp
   runtime/test-utils.h

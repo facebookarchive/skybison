@@ -15,10 +15,14 @@ class Heap {
 
   bool contains(void* address);
   bool verify();
-  void flip();
-  void scavenge();
-  void scavengePointer(Object** pointer);
-  Object* transport(Object* oldObject);
+
+  Space* space() {
+    return space_;
+  }
+
+  void setSpace(Space* new_space) {
+    space_ = new_space;
+  }
 
   Object* createBoundMethod();
 
@@ -58,9 +62,10 @@ class Heap {
 
   Object* createRangeIterator();
 
+  Object* createWeakRef();
+
  private:
-  Space* from_;
-  Space* to_;
+  Space* space_;
 };
 
 } // namespace python

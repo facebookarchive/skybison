@@ -66,6 +66,7 @@ class Object;
   V(Object)                         \
   V(ByteArray)                      \
   V(Code)                           \
+  V(ClassMethod)                    \
   V(Dictionary)                     \
   V(Double)                         \
   V(Ellipsis)                       \
@@ -78,7 +79,8 @@ class Object;
   V(Range)                          \
   V(RangeIterator)                  \
   V(Type)                           \
-  V(ValueCell)
+  V(ValueCell)                      \
+  V(WeakRef)
 
 #define INTRINSIC_CLASS_NAMES(V)     \
   INTRINSIC_IMMEDIATE_CLASS_NAMES(V) \
@@ -120,8 +122,9 @@ enum ClassId {
   kSet,
   kType,
   kValueCell,
+  kWeakRef,
 
-  kLastId = kValueCell,
+  kLastId = kWeakRef,
 };
 
 class Object {
@@ -160,6 +163,7 @@ class Object {
   inline bool isRangeIterator();
   inline bool isSet();
   inline bool isValueCell();
+  inline bool isWeakRef();
 
   // superclass objects
   inline bool isString();
@@ -454,6 +458,8 @@ class HeapObject : public Object {
 
   // Sizing
   inline static word headerSize(word count);
+
+  inline void initialize(word size, Object* value);
 
   // Garbage collection.
   inline bool isRoot();
@@ -1110,6 +1116,42 @@ class Ellipsis : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Ellipsis);
 };
 
+class WeakRef : public HeapObject {
+ public:
+  // Getters and setters
+
+  // The object weakly referred to by this instance.
+  inline Object* referent();
+  inline void setReferent(Object* referent);
+
+  // A callable object invoked with the referent as an argument when the
+  // referent is deemed to be "near death" and only reachable through this weak
+  // reference.
+  inline Object* callback();
+  inline void setCallback(Object* callable);
+
+  // Singly linked list of weak reference objects.  This field is used during
+  // garbage collection to represent the set of weak references that had been
+  // discovered by the initial trace with an otherwise unreachable referent.
+  inline Object* link();
+  inline void setLink(Object* reference);
+
+  // Casting.
+  static inline WeakRef* cast(Object* object);
+
+  // Sizing.
+  static inline word allocationSize();
+
+  // Layout.
+  static const int kReferentOffset = HeapObject::kSize;
+  static const int kCallbackOffset = kReferentOffset + kPointerSize;
+  static const int kLinkOffset = kCallbackOffset + kPointerSize;
+  static const int kSize = kLinkOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(WeakRef);
+};
+
 /**
  * A BoundMethod binds a Function and its first argument (called `self`).
  *
@@ -1371,6 +1413,13 @@ bool Object::isRangeIterator() {
 
 bool Object::isString() {
   return isSmallString() || isLargeString();
+}
+
+bool Object::isWeakRef() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() == ClassId::kWeakRef;
 }
 
 bool Object::equals(Object* lhs, Object* rhs) {
@@ -1643,6 +1692,12 @@ word HeapObject::headerSize(word count) {
     result += kPointerSize;
   }
   return result;
+}
+
+void HeapObject::initialize(word size, Object* value) {
+  for (word offset = HeapObject::kSize; offset < size; offset += kPointerSize) {
+    instanceVariableAtPut(offset, value);
+  }
 }
 
 bool HeapObject::isRoot() {
@@ -2564,6 +2619,41 @@ ClassMethod* ClassMethod::cast(Object* object) {
 
 word ClassMethod::allocationSize() {
   return Header::kSize + ClassMethod::kSize;
+}
+
+// WeakRef
+
+WeakRef* WeakRef::cast(Object* object) {
+  assert(object->isWeakRef());
+  return reinterpret_cast<WeakRef*>(object);
+}
+
+word WeakRef::allocationSize() {
+  return Header::kSize + WeakRef::kSize;
+}
+
+Object* WeakRef::referent() {
+  return instanceVariableAt(kReferentOffset);
+}
+
+void WeakRef::setReferent(Object* referent) {
+  instanceVariableAtPut(kReferentOffset, referent);
+}
+
+Object* WeakRef::callback() {
+  return instanceVariableAt(kCallbackOffset);
+}
+
+void WeakRef::setCallback(Object* callable) {
+  instanceVariableAtPut(kCallbackOffset, callable);
+}
+
+Object* WeakRef::link() {
+  return instanceVariableAt(kLinkOffset);
+}
+
+void WeakRef::setLink(Object* reference) {
+  instanceVariableAtPut(kLinkOffset, reference);
 }
 
 } // namespace python

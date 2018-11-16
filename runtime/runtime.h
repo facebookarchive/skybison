@@ -75,6 +75,8 @@ class Runtime {
 
   Object* newValueCell();
 
+  Object* newWeakRef();
+
   Object* internString(const Handle<Object>& string);
 
   void collectGarbage();

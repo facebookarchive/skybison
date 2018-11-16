@@ -10,13 +10,11 @@
 namespace python {
 
 Heap::Heap(word size) {
-  from_ = new Space(size);
-  to_ = new Space(size);
+  space_ = new Space(size);
 }
 
 Heap::~Heap() {
-  delete from_;
-  delete to_;
+  delete space_;
 }
 
 Object* Heap::allocate(word size, word offset) {
@@ -24,8 +22,8 @@ Object* Heap::allocate(word size, word offset) {
   assert(Utils::isAligned(size, kPointerSize));
   // Try allocating.  If the allocation fails, invoke the garbage collector and
   // retry the allocation.
-  for (word attempt = 0; attempt < 2 && size < to_->size(); attempt++) {
-    uword address = to_->allocate(size);
+  for (word attempt = 0; attempt < 2 && size < space_->size(); attempt++) {
+    uword address = space_->allocate(size);
     if (address != 0) {
       // Allocation succeeded return the address as an object.
       return HeapObject::fromAddress(address + offset);
@@ -38,77 +36,20 @@ Object* Heap::allocate(word size, word offset) {
   return Error::object();
 }
 
-void Heap::scavengePointer(Object** pointer) {
-  if (!(*pointer)->isHeapObject()) {
-    return;
-  }
-  HeapObject* object = HeapObject::cast(*pointer);
-  if (from_->contains(object->address())) {
-    if (object->isForwarding()) {
-      *pointer = object->forward();
-    } else {
-      *pointer = transport(object);
-    }
-  }
-}
-
-void Heap::scavenge() {
-  uword scan = to_->start();
-  while (scan < to_->fill()) {
-    if (!(*reinterpret_cast<Object**>(scan))->isHeader()) {
-      // Skip immediate values for alignment padding or header overflow.
-      scan += kPointerSize;
-    } else {
-      HeapObject* object = HeapObject::fromAddress(scan + Header::kSize);
-      uword end = object->baseAddress() + object->size();
-      // Scan pointers that follow the header word, if any.
-      if (!object->isRoot()) {
-        scan = end;
-      } else {
-        for (scan += Header::kSize; scan < end; scan += kPointerSize) {
-          scavengePointer(reinterpret_cast<Object**>(scan));
-        }
-      }
-    }
-  }
-  from_->reset();
-  from_->protect();
-}
-
-Object* Heap::transport(Object* object) {
-  HeapObject* from_object = HeapObject::cast(object);
-  word size = from_object->size();
-  uword address = to_->allocate(size);
-  auto dst = reinterpret_cast<void*>(address);
-  auto src = reinterpret_cast<void*>(from_object->baseAddress());
-  std::memcpy(dst, src, size);
-  word offset = from_object->address() - from_object->baseAddress();
-  HeapObject* to_object = HeapObject::fromAddress(address + offset);
-  from_object->forwardTo(to_object);
-  return to_object;
-}
-
-void Heap::flip() {
-  from_->unprotect();
-  Space* tmp = from_;
-  from_ = to_;
-  to_ = tmp;
-}
-
 bool Heap::contains(void* address) {
-  return to_->contains(reinterpret_cast<uword>(address));
+  return space_->contains(reinterpret_cast<uword>(address));
 }
 
 bool Heap::verify() {
-  uword scan = to_->start();
-  while (scan < to_->fill()) {
+  uword scan = space_->start();
+  while (scan < space_->fill()) {
     if (!(*reinterpret_cast<Object**>(scan))->isHeader()) {
       // Skip immediate values for alignment padding or header overflow.
       scan += kPointerSize;
     } else {
       HeapObject* object = HeapObject::fromAddress(scan + Header::kSize);
       // Objects start before the start of the space they are allocated in.
-      if (object->baseAddress() < to_->start()) {
+      if (object->baseAddress() < space_->start()) {
         return false;
       }
       // Objects must have their instance data after their header.
@@ -116,12 +57,12 @@ bool Heap::verify() {
         return false;
       }
       // Objects cannot start after the end of the space they are allocated in.
-      if (object->address() > to_->fill()) {
+      if (object->address() > space_->fill()) {
         return false;
       }
       // Objects cannot end after the end of the space they are allocated in.
       uword end = object->baseAddress() + object->size();
-      if (end > to_->fill()) {
+      if (end > space_->fill()) {
         return false;
       }
       // Scan pointers that follow the header word, if any.
@@ -131,7 +72,7 @@ bool Heap::verify() {
         for (scan += Header::kSize; scan < end; scan += kPointerSize) {
           auto pointer = reinterpret_cast<Object**>(scan);
           if ((*pointer)->isHeapObject()) {
-            if (!to_->isAllocated(HeapObject::cast(*pointer)->address())) {
+            if (!space_->isAllocated(HeapObject::cast(*pointer)->address())) {
               return false;
             }
           }
@@ -383,6 +324,20 @@ Object* Heap::createBoundMethod() {
       ClassId::kBoundMethod,
       ObjectFormat::kObjectInstance));
   return BoundMethod::cast(result);
+}
+
+Object* Heap::createWeakRef() {
+  word size = WeakRef::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<WeakRef*>(raw);
+  result->setHeader(Header::from(
+      WeakRef::kSize / kPointerSize,
+      0,
+      ClassId::kWeakRef,
+      ObjectFormat::kObjectInstance));
+  result->initialize(WeakRef::kSize, None::object());
+  return WeakRef::cast(result);
 }
 
 } // namespace python
