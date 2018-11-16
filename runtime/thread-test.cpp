@@ -1872,10 +1872,13 @@ TEST(ThreadTest, SubscriptDict) {
   const char* src = R"(
 a = {"1": 2, 2: 3}
 print(a["1"])
+# exceeds kInitialDictionaryCapacity
+b = { 0:0, 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11 }
+print(b[11])
 )";
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "2\n");
+  EXPECT_EQ(output, "2\n11\n");
 
   const char* src1 = R"(
 a = {"1": 2, 2: 3}
@@ -1893,6 +1896,21 @@ print(b[0])
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "1\n");
+}
+
+TEST(ThreadTest, BuildDictNonLiteralKey) {
+  const char* src = R"(
+b = "foo"
+a = { b: 3, 'c': 4 }
+# we need one dictionary that exceeds kInitialDictionaryCapacity
+c = { b: 1, 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11 }
+print(a["foo"])
+print(a["c"])
+print(c[11])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "3\n4\n11\n");
 }
 
 TEST(ThreadTest, PrintStackTrace) {

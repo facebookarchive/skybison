@@ -60,6 +60,15 @@ class Utils {
   }
 
   template <typename T>
+  static inline T nextPowerOfTwo(T x) {
+    // Turn off all but msb.
+    while ((x & (x - 1u)) != 0) {
+      x &= x - 1u;
+    }
+    return x << 1u;
+  }
+
+  template <typename T>
   static inline T rotateLeft(T x, int n) {
     return (x << n) | (x >> (-n & (sizeof(T) * kBitsPerByte - 1)));
   }

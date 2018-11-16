@@ -1,5 +1,6 @@
 #include "runtime.h"
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <memory>
@@ -1231,6 +1232,19 @@ class SetBucket {
 
 Object* Runtime::newDictionary() {
   return heap()->createDictionary(empty_object_array_);
+}
+
+Object* Runtime::newDictionary(word initialSize) {
+  HandleScope scope;
+  // TODO: initialSize should be scaled up by a load factor.
+  auto initialCapacity = Utils::nextPowerOfTwo(initialSize);
+  Handle<ObjectArray> array(
+      &scope,
+      newObjectArray(
+          std::max(
+              static_cast<word>(kInitialDictionaryCapacity), initialCapacity) *
+          Bucket::kNumPointers));
+  return heap()->createDictionary(*array);
 }
 
 void Runtime::dictionaryAtPut(

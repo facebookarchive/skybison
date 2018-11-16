@@ -294,6 +294,20 @@ Result BUILD_TUPLE(Context* ctx, word arg) {
   *--sp = *tuple;
   return Result::CONTINUE;
 }
+Result BUILD_MAP(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  Runtime* runtime = thread->runtime();
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, runtime->newDictionary(arg));
+  Object**& sp = ctx->sp;
+  for (int i = 0; i < arg; i++) {
+    Handle<Object> value(&scope, *sp++);
+    Handle<Object> key(&scope, *sp++);
+    runtime->dictionaryAtPut(dict, key, value);
+  }
+  *--sp = *dict;
+  return Result::CONTINUE;
+}
 Result POP_JUMP_IF_FALSE(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Object* cond = *ctx->sp++;
@@ -531,8 +545,9 @@ Result BUILD_CONST_KEY_MAP(Context* ctx, word arg) {
   Object**& sp = ctx->sp;
   Thread* thread = ctx->thread;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, thread->runtime()->newDictionary());
   Handle<ObjectArray> keys(&scope, *sp++);
+  Handle<Dictionary> dict(
+      &scope, thread->runtime()->newDictionary(keys->length()));
   for (int i = arg - 1; i >= 0; i--) {
     Handle<Object> key(&scope, keys->at(i));
     Handle<Object> value(&scope, *sp++);
@@ -624,6 +639,7 @@ void Interpreter::initOpTable() {
   opTable[Bytecode::MAKE_FUNCTION] = interpreter::MAKE_FUNCTION;
   opTable[Bytecode::BUILD_LIST] = interpreter::BUILD_LIST;
   opTable[Bytecode::BUILD_TUPLE] = interpreter::BUILD_TUPLE;
+  opTable[Bytecode::BUILD_MAP] = interpreter::BUILD_MAP;
   opTable[Bytecode::POP_JUMP_IF_FALSE] = interpreter::POP_JUMP_IF_FALSE;
   opTable[Bytecode::POP_JUMP_IF_TRUE] = interpreter::POP_JUMP_IF_TRUE;
   opTable[Bytecode::JUMP_IF_TRUE_OR_POP] = interpreter::JUMP_IF_TRUE_OR_POP;

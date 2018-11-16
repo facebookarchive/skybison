@@ -40,6 +40,7 @@ class Runtime {
   Object* newCode();
 
   Object* newDictionary();
+  Object* newDictionary(word initialSize);
 
   Object* newDouble(double value);
 
