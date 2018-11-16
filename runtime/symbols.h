@@ -101,6 +101,7 @@ class Runtime;
   V(Bootstrap, "bootstrap")                                                    \
   V(Builtins, "builtins")                                                      \
   V(ByteArray, "bytearray")                                                    \
+  V(Callable, "callable")                                                      \
   V(Cause, "cause")                                                            \
   V(Chr, "chr")                                                                \
   V(Classmethod, "classmethod")                                                \

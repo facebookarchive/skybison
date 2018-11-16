@@ -1603,6 +1603,9 @@ void Runtime::createBuiltinsModule() {
       module, SymbolId::kDunderBuildClass, nativeTrampoline<builtinBuildClass>,
       nativeTrampolineKw<builtinBuildClassKw>, unimplementedTrampoline);
 
+  moduleAddBuiltinFunction(module, SymbolId::kCallable,
+                           nativeTrampoline<builtinCallable>,
+                           unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kChr, nativeTrampoline<builtinChr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kGetattr,

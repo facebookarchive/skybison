@@ -136,6 +136,27 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call(thread, frame, 4);
 }
 
+Object* builtinCallable(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("callable expects one argument");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> arg(&scope, args.get(0));
+  if (arg->isFunction() || arg->isBoundMethod() || arg->isType()) {
+    return Bool::trueObj();
+  }
+  Runtime* runtime = thread->runtime();
+  Handle<Type> type(&scope, runtime->typeOf(*arg));
+  // If its type defines a __call__, it is also callable (even if __call__ is
+  // not actually callable).
+  // Note that this does not include __call__ defined on the particular
+  // instance, only __call__ defined on the type.
+  Handle<Object> callable(&scope, thread->runtime()->lookupSymbolInMro(
+                                      thread, type, SymbolId::kDunderCall));
+  return Bool::fromBool(!callable->isError());
+}
+
 Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("Unexpected 1 argumment in 'chr'");

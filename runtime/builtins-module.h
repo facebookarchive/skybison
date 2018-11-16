@@ -13,6 +13,7 @@ extern std::ostream* builtinStderr;
 
 Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs);
 Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs);
+Object* builtinCallable(Thread* thread, Frame* frame, word nargs);
 Object* builtinChr(Thread* thread, Frame* frame, word nargs);
 Object* builtinGetattr(Thread* thread, Frame* frame, word nargs);
 Object* builtinHasattr(Thread* thread, Frame* frame, word nargs);

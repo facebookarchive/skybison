@@ -8,6 +8,89 @@ namespace python {
 
 using namespace testing;
 
+TEST(BuiltinsModuleDeathTest, BuiltinCallableOnClassReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  pass
+
+a = callable(Foo)
+  )");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_TRUE(a->value());
+}
+
+TEST(BuiltinsModuleDeathTest, BuiltinCallableOnMethodReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  def bar():
+    return None
+
+a = callable(Foo.bar)
+b = callable(Foo().bar)
+  )");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+}
+
+TEST(BuiltinsModuleDeathTest, BuiltinCallableOnNonCallableReturnsFalse) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = callable(1)
+b = callable("hello")
+  )");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_FALSE(a->value());
+  EXPECT_FALSE(b->value());
+}
+
+TEST(BuiltinsModuleDeathTest,
+     BuiltinCallableOnObjectWithCallOnTypeReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  def __call__(self):
+    pass
+
+f = Foo()
+a = callable(f)
+  )");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_TRUE(a->value());
+}
+
+TEST(BuiltinsModuleDeathTest,
+     BuiltinCallableOnObjectWithInstanceCallButNoTypeCallReturnsFalse) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  pass
+
+def fakecall():
+  pass
+
+f = Foo()
+f.__call__ = fakecall
+a = callable(f)
+  )");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_FALSE(a->value());
+}
+
 TEST(BuiltinsModuleDeathTest, BuiltinChr) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(chr(65))");
