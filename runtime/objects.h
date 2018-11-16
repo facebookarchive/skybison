@@ -2338,15 +2338,15 @@ inline word Int::compare(Int* that) {
     return this->isNegative() ? -1 : 1;
   }
 
-  uword digit;
-  View<uword> lhs(&digit, 1);
+  word digit;
+  View<uword> lhs(reinterpret_cast<uword*>(&digit), 1);
   if (this->isSmallInt()) {
     digit = this->asWord();
   } else {
     lhs = LargeInt::cast(this)->digits();
   }
 
-  View<uword> rhs(&digit, 1);
+  View<uword> rhs(reinterpret_cast<uword*>(&digit), 1);
   if (that->isSmallInt()) {
     digit = that->asWord();
   } else {
