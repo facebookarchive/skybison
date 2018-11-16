@@ -2375,6 +2375,55 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
   return found;
 }
 
+void Runtime::setUpdate(
+    const Handle<Set>& dst,
+    const Handle<Object>& iterable) {
+  HandleScope scope;
+  Handle<Object> elt(&scope, None::object());
+  if (iterable->isSet()) {
+    Handle<Set> src(&scope, *iterable);
+    Handle<ObjectArray> data(&scope, src->data());
+    if (src->numItems() > 0) {
+      for (word i = 0; i < data->length(); i += SetBucket::kNumPointers) {
+        SetBucket bucket(data, i);
+        if (bucket.isTombstone() || bucket.isEmpty())
+          continue;
+        elt = bucket.key();
+        setAdd(dst, elt);
+      }
+    }
+  } else if (iterable->isList()) {
+    Handle<List> list(&scope, *iterable);
+    if (list->allocated() > 0) {
+      for (word i = 0; i < list->allocated(); i++) {
+        elt = list->at(i);
+        setAdd(dst, elt);
+      }
+    }
+  } else if (iterable->isListIterator()) {
+    Handle<ListIterator> list_iter(&scope, *iterable);
+    while (true) {
+      elt = list_iter->next();
+      if (elt->isError())
+        break;
+      setAdd(dst, elt);
+    }
+  } else if (iterable->isObjectArray()) {
+    Handle<ObjectArray> tuple(&scope, *iterable);
+    if (tuple->length() > 0) {
+      for (word i = 0; i < tuple->length(); i++) {
+        elt = tuple->at(i);
+        setAdd(dst, elt);
+      }
+    }
+  } else {
+    // TODO(T30211199): Add support for python iterators here.
+    UNIMPLEMENTED(
+        "Set.update only supports extending from"
+        "Set, List, ListIterator & Tuple");
+  }
+}
+
 Object* Runtime::newValueCell() {
   return heap()->createValueCell();
 }

@@ -1031,6 +1031,86 @@ TEST(SetTest, Grow) {
   }
 }
 
+TEST(SetTest, UpdateSet) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Set> set1(&scope, runtime.newSet());
+  Handle<Object> set1_handle(&scope, *set1);
+  for (word i = 0; i < 8; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.setAdd(set, value);
+  }
+  runtime.setUpdate(set, set1_handle);
+  ASSERT_EQ(set->numItems(), 8);
+  for (word i = 4; i < 12; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.setAdd(set1, value);
+  }
+  runtime.setUpdate(set, set1_handle);
+  ASSERT_EQ(set->numItems(), 12);
+  runtime.setUpdate(set, set1_handle);
+  ASSERT_EQ(set->numItems(), 12);
+}
+
+TEST(SetTest, UpdateList) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  Handle<Set> set(&scope, runtime.newSet());
+  for (word i = 0; i < 8; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.listAdd(list, value);
+  }
+  for (word i = 4; i < 12; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.setAdd(set, value);
+  }
+  ASSERT_EQ(set->numItems(), 8);
+  Handle<Object> list_handle(&scope, *list);
+  runtime.setUpdate(set, list_handle);
+  ASSERT_EQ(set->numItems(), 12);
+  runtime.setUpdate(set, list_handle);
+  ASSERT_EQ(set->numItems(), 12);
+}
+
+TEST(SetTest, UpdateListIterator) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  Handle<Set> set(&scope, runtime.newSet());
+  for (word i = 0; i < 8; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.listAdd(list, value);
+  }
+  for (word i = 4; i < 12; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.setAdd(set, value);
+  }
+  ASSERT_EQ(set->numItems(), 8);
+  Handle<Object> list_handle(&scope, *list);
+  Handle<Object> list_iterator(&scope, runtime.newListIterator(list_handle));
+  runtime.setUpdate(set, list_iterator);
+  ASSERT_EQ(set->numItems(), 12);
+}
+
+TEST(SetTest, UpdateObjectArray) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<ObjectArray> object_array(&scope, runtime.newObjectArray(8));
+  Handle<Set> set(&scope, runtime.newSet());
+  for (word i = 0; i < 8; i++)
+    object_array->atPut(i, SmallInteger::fromWord(i));
+  for (word i = 4; i < 12; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.setAdd(set, value);
+  }
+  ASSERT_EQ(set->numItems(), 8);
+  Handle<Object> object_array_handle(&scope, *object_array);
+  runtime.setUpdate(set, object_array_handle);
+  ASSERT_EQ(set->numItems(), 12);
+}
+
 TEST(StringTest, CompareSmallStr) {
   Runtime runtime;
   HandleScope scope;

@@ -176,6 +176,7 @@ class Interpreter {
   static void doMapAdd(Context* ctx, word arg);
   static void doBuildListUnpack(Context* ctx, word arg);
   static void doBuildTupleUnpack(Context* ctx, word arg);
+  static void doBuildSetUnpack(Context* ctx, word arg);
   static void doFormatValue(Context* ctx, word arg);
   static void doBuildConstKeyMap(Context* ctx, word arg);
   static void doBuildString(Context* ctx, word arg);

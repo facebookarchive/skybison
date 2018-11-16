@@ -335,6 +335,9 @@ class Runtime {
   // Delete a key from the set, returns true if the key existed.
   bool setRemove(const Handle<Set>& set, const Handle<Object>& value);
 
+  // Update a set from an iterator.
+  void setUpdate(const Handle<Set>& set, const Handle<Object>& iterable);
+
   NewValueCellCallback* newValueCellCallback() {
     return &new_value_cell_callback_;
   }

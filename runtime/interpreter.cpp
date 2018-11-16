@@ -1246,6 +1246,24 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   ctx->sp = sp;
 }
 
+// opcode 153
+void Interpreter::doBuildSetUnpack(
+    python::Interpreter::Context* ctx,
+    word arg) {
+  Runtime* runtime = ctx->thread->runtime();
+  HandleScope scope(ctx->thread);
+  Handle<Set> set(&scope, runtime->newSet());
+  Handle<Object> obj(&scope, None::object());
+  Object** sp = ctx->sp;
+  for (word i = 0; i < arg; i++) {
+    obj = *(sp + i);
+    runtime->setUpdate(set, obj);
+  }
+  sp += arg - 1;
+  *sp = *set;
+  ctx->sp = sp;
+}
+
 // opcode 155
 // A incomplete impl of FORMAT_VALUE; assumes no conv
 void Interpreter::doFormatValue(Context* ctx, word flags) {

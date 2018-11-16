@@ -2132,6 +2132,33 @@ l = [*[0], *[1, 2], *[], *[3, 4, 5]]
   EXPECT_EQ(SmallInteger::cast(list_l->at(5))->value(), 5);
 }
 
+TEST(TestThread, BuildSetUnpack) {
+  const char* src = R"(
+s = {*[0, 1], *{2, 3}, *(4, 5), *[]}
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> s(&scope, findInModule(&runtime, main, "s"));
+  EXPECT_TRUE(s->isSet());
+  Handle<Set> set_s(&scope, *s);
+  EXPECT_EQ(set_s->numItems(), 6);
+  Handle<Object> small_int(&scope, SmallInteger::fromWord(0));
+  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  small_int = SmallInteger::fromWord(1);
+  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  small_int = SmallInteger::fromWord(2);
+  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  small_int = SmallInteger::fromWord(3);
+  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  small_int = SmallInteger::fromWord(4);
+  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  small_int = SmallInteger::fromWord(5);
+  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+}
+
 TEST(BuildString, buildStringEmpty) {
   Runtime runtime;
   HandleScope scope;
