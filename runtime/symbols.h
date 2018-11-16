@@ -28,6 +28,7 @@ class Runtime;
   V(DunderDelete, "__delete__")                                                \
   V(DunderDelItem, "__delitem__")                                              \
   V(DunderDivmod, "__divmod__")                                                \
+  V(DunderDoc, "__doc__")                                                      \
   V(DunderEnter, "__enter__")                                                  \
   V(DunderEq, "__eq__")                                                        \
   V(DunderExit, "__exit__")                                                    \

@@ -27,13 +27,19 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   Object name(&scope, runtime->newStrFromCStr(c_name));
   Module module(&scope, runtime->newModule(name));
   module->setDef(runtime->newIntFromCPtr(def));
+
+  if (def->m_doc != nullptr) {
+    Object doc(&scope, runtime->newStrFromCStr(def->m_doc));
+    Object key(&scope, runtime->symbols()->DunderDoc());
+    runtime->moduleAtPut(module, key, doc);
+  }
+
   runtime->addModule(module);
 
   // TODO: Check m_slots
   // TODO: Set md_state
   // TODO: Validate m_methods
   // TODO: Add methods
-  // TODO: Add m_doc
 
   return ApiHandle::fromObject(*module);
 }

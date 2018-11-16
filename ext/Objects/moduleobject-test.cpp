@@ -38,11 +38,30 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
   ASSERT_EQ(result, val);
 }
 
+TEST_F(ModuleExtensionApiTest, CreateAddsDocstring) {
+  const char* mod_doc = "documentation for spam";
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+      mod_doc,
+  };
+
+  PyObject* module = PyModule_Create(&def);
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  PyObject* doc = testing::moduleGet("mymodule", "__doc__");
+  ASSERT_STREQ(PyUnicode_AsUTF8(doc), mod_doc);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(ModuleExtensionApiTest, GetDefWithExtensionModuleRetunsNonNull) {
   static PyModuleDef def;
   def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
+      "mydoc",
   };
 
   PyObject* module = PyModule_Create(&def);
