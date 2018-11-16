@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include <climits>
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -733,6 +734,21 @@ Object* Runtime::newStringFromCString(const char* c_string) {
   word length = std::strlen(c_string);
   auto data = reinterpret_cast<const byte*>(c_string);
   return newStringWithAll(View<byte>(data, length));
+}
+
+Object* Runtime::newStringFromFormat(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int length = std::vsnprintf(nullptr, 0, fmt, args);
+  DCHECK(length >= 0, "Error occurred doing snprintf");
+  va_end(args);
+  va_start(args, fmt);
+  char* buf = new char[length + 1];
+  std::vsprintf(buf, fmt, args);
+  va_end(args);
+  Object* result = newStringFromCString(buf);
+  delete[] buf;
+  return result;
 }
 
 Object* Runtime::newStringWithAll(View<byte> code_units) {

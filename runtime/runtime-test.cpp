@@ -719,6 +719,15 @@ TEST(RuntimeTest, NewString) {
   ASSERT_EQ(s300->length(), 300);
 }
 
+TEST(RuntimeTest, NewStringFromFormatWithStringArg) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char input[] = "hello";
+  Handle<String> str(&scope, runtime.newStringFromFormat("%s", input));
+  EXPECT_PYSTRING_EQ(*str, input);
+}
+
 TEST(RuntimeTest, NewStringWithAll) {
   Runtime runtime;
   HandleScope scope;

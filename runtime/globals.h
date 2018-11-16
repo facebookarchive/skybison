@@ -68,6 +68,14 @@ const int kNanosecondsPerSecond =
 #define IS_TRIVIALLY_COPYABLE(T) std::is_trivially_copyable<T>::value
 #endif
 
+// FORMAT_ATTRIBUTE allows typechecking by the compiler.
+// string_index: The function argument index where the format index is.
+//               this has the implicit index 1.
+// varargs_index: The function argument index where varargs start.
+// The archetype chosen is printf since this is being used for output strings.
+#define FORMAT_ATTRIBUTE(string_index, first_to_check)                         \
+  __attribute__((format(printf, string_index, first_to_check)))
+
 // Branch prediction hints for the compiler.  Use in performance critial code
 // which almost always branches one way.
 #define LIKELY(x) __builtin_expect(!!(x), 1)

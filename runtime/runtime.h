@@ -105,6 +105,9 @@ class Runtime {
   Object* newStaticMethod();
 
   Object* newStringFromCString(const char* c_string);
+  // Creates a new string constructed from a format and a list of arguments,
+  // similar to sprintf.
+  Object* newStringFromFormat(const char* fmt, ...) FORMAT_ATTRIBUTE(2, 3);
   Object* newStringWithAll(View<byte> code_units);
 
   Object* newSuper();
