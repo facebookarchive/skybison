@@ -300,6 +300,11 @@ void Runtime::initializeHeapClasses() {
   value_cell->setName(newStringFromCString("valuecell"));
   const ClassId value_cell_mro[] = {ClassId::kValueCell, ClassId::kObject};
   value_cell->setMro(createMro(value_cell_mro, ARRAYSIZE(value_cell_mro)));
+
+  Handle<Class> ellipsis(&scope, newClassWithId(ClassId::kEllipsis));
+  ellipsis->setName(newStringFromCString("ellipsis"));
+  const ClassId ellipsis_mro[] = {ClassId::kEllipsis, ClassId::kObject};
+  ellipsis->setMro(createMro(ellipsis_mro, ARRAYSIZE(ellipsis_mro)));
 }
 
 void Runtime::initializeImmediateClasses() {
@@ -336,11 +341,6 @@ void Runtime::initializeImmediateClasses() {
   none->setName(newStringFromCString("NoneType"));
   const ClassId none_mro[] = {ClassId::kNone, ClassId::kObject};
   none->setMro(createMro(none_mro, ARRAYSIZE(none_mro)));
-
-  Handle<Class> ellipsis(&scope, newClassWithId(ClassId::kEllipsis));
-  ellipsis->setName(newStringFromCString("ellipsis"));
-  const ClassId ellipsis_mro[] = {ClassId::kEllipsis, ClassId::kObject};
-  ellipsis->setMro(createMro(ellipsis_mro, ARRAYSIZE(ellipsis_mro)));
 }
 
 class ScavengeVisitor : public PointerVisitor {
@@ -390,6 +390,7 @@ void Runtime::initializeInstances() {
   empty_byte_array_ = heap()->createByteArray(0);
   empty_object_array_ = heap()->createObjectArray(0, None::object());
   empty_string_ = heap()->createString(0);
+  ellipsis_ = heap()->createEllipsis();
 }
 
 void Runtime::initializeInterned() {
@@ -416,6 +417,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_byte_array_);
   visitor->visitPointer(&empty_object_array_);
   visitor->visitPointer(&empty_string_);
+  visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&build_class_);
 
   // Visit interned strings.

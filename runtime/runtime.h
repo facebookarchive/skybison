@@ -206,6 +206,7 @@ class Runtime {
   Object* empty_byte_array_;
   Object* empty_object_array_;
   Object* empty_string_;
+  Object* ellipsis_;
   Object* build_class_;
 
   // Interned strings

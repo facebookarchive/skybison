@@ -60,13 +60,13 @@ enum class ClassId {
   kSmallString,
   kBoolean,
   kNone,
-  kEllipsis,
 
   // Heap objects
   kObject = 32,
   kByteArray,
   kCode,
   kDictionary,
+  kEllipsis,
   kFunction,
   kInteger,
   kList,
@@ -104,6 +104,7 @@ class Object {
   inline bool isObjectArray();
   inline bool isString();
   inline bool isValueCell();
+  inline bool isEllipsis();
 
   static inline bool equals(Object* lhs, Object* rhs);
 
@@ -764,6 +765,24 @@ class ValueCell : public HeapObject {
   DISALLOW_COPY_AND_ASSIGN(ValueCell);
 };
 
+class Ellipsis : public HeapObject {
+ public:
+  // Casting.
+  static inline Ellipsis* cast(Object* object);
+
+  // Sizing.
+  static inline word allocationSize();
+
+  // Layout
+  // kPaddingOffset is not used, but the GC expects the object to be
+  // at least one word.
+  static const int kPaddingOffset = HeapObject::kSize;
+  static const int kSize = kPaddingOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Ellipsis);
+};
+
 // Object
 
 bool Object::isObject() {
@@ -868,6 +887,13 @@ bool Object::isValueCell() {
     return false;
   }
   return HeapObject::cast(this)->header()->classId() == ClassId::kValueCell;
+}
+
+bool Object::isEllipsis() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() == ClassId::kEllipsis;
 }
 
 bool Object::equals(Object* lhs, Object* rhs) {
@@ -1659,6 +1685,17 @@ ValueCell* ValueCell::cast(Object* object) {
 
 word ValueCell::allocationSize() {
   return Header::kSize + ValueCell::kSize;
+}
+
+// Ellipsis
+
+word Ellipsis::allocationSize() {
+  return Header::kSize + Ellipsis::kSize;
+}
+
+Ellipsis* Ellipsis::cast(Object* object) {
+  assert(object->isEllipsis());
+  return reinterpret_cast<Ellipsis*>(object);
 }
 
 } // namespace python

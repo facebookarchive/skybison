@@ -40,6 +40,8 @@ class Heap {
 
   Object* createValueCell();
 
+  Object* createEllipsis();
+
  private:
   Space* from_;
   Space* to_;

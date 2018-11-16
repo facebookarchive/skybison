@@ -257,4 +257,17 @@ Object* Heap::createValueCell() {
   return ValueCell::cast(result);
 }
 
+Object* Heap::createEllipsis() {
+  word size = Ellipsis::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<Ellipsis*>(raw);
+  result->setHeader(Header::from(
+      Ellipsis::kSize / kPointerSize,
+      0,
+      ClassId::kEllipsis,
+      ObjectFormat::kDataInstance));
+  return Ellipsis::cast(result);
+}
+
 } // namespace python
