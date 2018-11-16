@@ -1854,19 +1854,15 @@ void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
     thread->abortOnPendingException();
   }
   Handle<Object> value(&scope, None::object());
-  for (;;) {
-    if (isIteratorExhausted(thread, iterator)) {
-      break;
-    }
+  while (!isIteratorExhausted(thread, iterator)) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
                                      next_method, iterator);
-    if (!value->isError()) {
-      listAdd(dst, value);
-    } else {
+    if (value->isError()) {
+      thread->abortOnPendingException();
       break;
     }
+    listAdd(dst, value);
   }
-  thread->abortOnPendingException();
 }
 
 void Runtime::listInsert(const Handle<List>& list, const Handle<Object>& value,
