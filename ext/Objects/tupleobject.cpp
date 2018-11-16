@@ -97,4 +97,13 @@ extern "C" PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   return ApiHandle::fromObject(*tuple)->asPyObject();
 }
 
+extern "C" int PyTuple_ClearFreeList(void) {
+  UNIMPLEMENTED("PyTuple_ClearFreeList");
+}
+
+extern "C" PyObject* PyTuple_GetSlice(PyObject* /* p */, Py_ssize_t /* i */,
+                                      Py_ssize_t /* j */) {
+  UNIMPLEMENTED("PyTuple_GetSlice");
+}
+
 }  // namespace python

@@ -34,4 +34,32 @@ extern "C" int PyModule_AddIntConstant(PyObject* pymodule, const char* name,
   return 0;
 }
 
+extern "C" int PyModule_AddObject(PyObject* /* m */, const char* /* e */,
+                                  PyObject* /* o */) {
+  UNIMPLEMENTED("PyModule_AddObject");
+}
+
+extern "C" int PyModule_AddStringConstant(PyObject* /* m */,
+                                          const char* /* e */,
+                                          const char* /* e */) {
+  UNIMPLEMENTED("PyModule_AddStringConstant");
+}
+
+extern "C" PyObject* Py_BuildValue(const char* /* t */, ...) {
+  UNIMPLEMENTED("Py_BuildValue");
+}
+
+extern "C" PyObject* Py_VaBuildValue(const char* /* t */, va_list /* a */) {
+  UNIMPLEMENTED("Py_VaBuildValue");
+}
+
+extern "C" PyObject* _Py_BuildValue_SizeT(const char* /* t */, ...) {
+  UNIMPLEMENTED("_Py_BuildValue_SizeT");
+}
+
+extern "C" PyObject* _Py_VaBuildValue_SizeT(const char* /* t */,
+                                            va_list /* a */) {
+  UNIMPLEMENTED("_Py_VaBuildValue_SizeT");
+}
+
 }  // namespace python

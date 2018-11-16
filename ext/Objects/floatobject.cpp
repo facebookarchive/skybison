@@ -29,4 +29,14 @@ extern "C" int PyFloat_Check_Func(PyObject* obj) {
                                                   LayoutId::kFloat);
 }
 
+extern "C" PyObject* PyFloat_FromString(PyObject* /* v */) {
+  UNIMPLEMENTED("PyFloat_FromString");
+}
+
+extern "C" PyObject* PyFloat_GetInfo(void) { UNIMPLEMENTED("PyFloat_GetInfo"); }
+
+extern "C" double PyFloat_GetMax(void) { UNIMPLEMENTED("PyFloat_GetMax"); }
+
+extern "C" double PyFloat_GetMin(void) { UNIMPLEMENTED("PyFloat_GetMin"); }
+
 }  // namespace python

@@ -51,4 +51,53 @@ extern "C" PyObject* PyModule_GetDict(PyObject* pymodule) {
   return ApiHandle::fromObject(module->dict())->asPyObject();
 }
 
+extern "C" PyObject* PyModule_GetNameObject(PyObject* /* m */) {
+  UNIMPLEMENTED("PyModule_GetNameObject");
+}
+
+extern "C" void* PyModule_GetState(PyObject* /* m */) {
+  UNIMPLEMENTED("PyModule_GetState");
+}
+
+extern "C" PyObject* PyModuleDef_Init(struct PyModuleDef* /* f */) {
+  UNIMPLEMENTED("PyModuleDef_Init");
+}
+
+extern "C" int PyModule_AddFunctions(PyObject* /* m */, PyMethodDef* /* s */) {
+  UNIMPLEMENTED("PyModule_AddFunctions");
+}
+
+extern "C" int PyModule_ExecDef(PyObject* /* e */, PyModuleDef* /* f */) {
+  UNIMPLEMENTED("PyModule_ExecDef");
+}
+
+extern "C" PyObject* PyModule_FromDefAndSpec2(struct PyModuleDef* /* f */,
+                                              PyObject* /* c */, int /* n */) {
+  UNIMPLEMENTED("PyModule_FromDefAndSpec2");
+}
+
+extern "C" const char* PyModule_GetFilename(PyObject* /* m */) {
+  UNIMPLEMENTED("PyModule_GetFilename");
+}
+
+extern "C" PyObject* PyModule_GetFilenameObject(PyObject* /* m */) {
+  UNIMPLEMENTED("PyModule_GetFilenameObject");
+}
+
+extern "C" const char* PyModule_GetName(PyObject* /* m */) {
+  UNIMPLEMENTED("PyModule_GetName");
+}
+
+extern "C" PyObject* PyModule_New(const char* /* e */) {
+  UNIMPLEMENTED("PyModule_New");
+}
+
+extern "C" PyObject* PyModule_NewObject(PyObject* /* e */) {
+  UNIMPLEMENTED("PyModule_NewObject");
+}
+
+extern "C" int PyModule_SetDocString(PyObject* /* m */, const char* /* c */) {
+  UNIMPLEMENTED("PyModule_SetDocString");
+}
+
 }  // namespace python

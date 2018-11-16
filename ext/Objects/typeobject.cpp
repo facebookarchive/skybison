@@ -9,6 +9,8 @@
 
 namespace python {
 
+struct PyType_Spec;
+
 extern "C" int PyType_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isType();
 }
@@ -99,6 +101,36 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   // All done -- set the ready flag
   type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
   return 0;
+}
+
+extern "C" unsigned int PyType_ClearCache(void) {
+  UNIMPLEMENTED("PyType_ClearCache");
+}
+
+extern "C" PyObject* PyType_FromSpec(PyType_Spec* /* c */) {
+  UNIMPLEMENTED("PyType_FromSpec");
+}
+
+extern "C" PyObject* PyType_FromSpecWithBases(PyType_Spec* /* c */,
+                                              PyObject* /* s */) {
+  UNIMPLEMENTED("PyType_FromSpecWithBases");
+}
+
+extern "C" PyObject* PyType_GenericNew(PyTypeObject* /* e */, PyObject* /* s */,
+                                       PyObject* /* s */) {
+  UNIMPLEMENTED("PyType_GenericNew");
+}
+
+extern "C" void* PyType_GetSlot(PyTypeObject* /* e */, int /* t */) {
+  UNIMPLEMENTED("PyType_GetSlot");
+}
+
+extern "C" int PyType_IsSubtype(PyTypeObject* /* a */, PyTypeObject* /* b */) {
+  UNIMPLEMENTED("PyType_IsSubtype");
+}
+
+extern "C" void PyType_Modified(PyTypeObject* /* e */) {
+  UNIMPLEMENTED("PyType_Modified");
 }
 
 }  // namespace python

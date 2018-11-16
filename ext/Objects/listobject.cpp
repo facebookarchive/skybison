@@ -35,4 +35,46 @@ extern "C" int PyList_Check_Func(PyObject* obj) {
                                                   LayoutId::kList);
 }
 
+extern "C" PyObject* PyList_AsTuple(PyObject* /* v */) {
+  UNIMPLEMENTED("PyList_AsTuple");
+}
+
+extern "C" PyObject* PyList_GetItem(PyObject* /* p */, Py_ssize_t /* i */) {
+  UNIMPLEMENTED("PyList_GetItem");
+}
+
+extern "C" int PyList_Reverse(PyObject* /* v */) {
+  UNIMPLEMENTED("PyList_Reverse");
+}
+
+extern "C" int PyList_SetItem(PyObject* /* p */, Py_ssize_t /* i */,
+                              PyObject* /* m */) {
+  UNIMPLEMENTED("PyList_SetItem");
+}
+
+extern "C" int PyList_Append(PyObject* /* p */, PyObject* /* m */) {
+  UNIMPLEMENTED("PyList_Append");
+}
+
+extern "C" PyObject* PyList_GetSlice(PyObject* /* a */, Py_ssize_t /* w */,
+                                     Py_ssize_t /* h */) {
+  UNIMPLEMENTED("PyList_GetSlice");
+}
+
+extern "C" int PyList_Insert(PyObject* /* p */, Py_ssize_t /* e */,
+                             PyObject* /* m */) {
+  UNIMPLEMENTED("PyList_Insert");
+}
+
+extern "C" int PyList_SetSlice(PyObject* /* a */, Py_ssize_t /* w */,
+                               Py_ssize_t /* h */, PyObject* /* v */) {
+  UNIMPLEMENTED("PyList_SetSlice");
+}
+
+extern "C" Py_ssize_t PyList_Size(PyObject* /* p */) {
+  UNIMPLEMENTED("PyList_Size");
+}
+
+extern "C" int PyList_Sort(PyObject* /* v */) { UNIMPLEMENTED("PyList_Sort"); }
+
 }  // namespace python

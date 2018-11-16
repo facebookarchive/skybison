@@ -48,22 +48,61 @@ set(
   ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
+  ${CMAKE_SOURCE_DIR}/ext/Objects/abstract.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/boolobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/bytearrayobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/bytesobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/call.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/capsule.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/classobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/codeobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/complexobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/descrobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/dictobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/exceptions.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/fileobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/floatobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/frameobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/funcobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/iterobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/listobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/longobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/memoryobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/methodobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/moduleobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/object.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/obmalloc.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/odictobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/setobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/sliceobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/structseq.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/tupleobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/typeobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/unicodeobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/weakrefobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/_warnings.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/ceval.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/codecs.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/errors.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/fileutils.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/getargs.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/getcompiler.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/getcopyright.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/getplatform.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/getversion.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/import.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/modsupport.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/mysnprintf.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/mystrtoul.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/pathconfig.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/pyarena.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pylifecycle.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/pythonrun.cpp)
+  ${CMAKE_SOURCE_DIR}/ext/Python/pystate.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/pystrcmp.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/pystrtod.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/pythonrun.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/sysmodule.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/traceback.cpp)
 include(CPythonBuild.cmake)
 
 add_library(capi-headers INTERFACE)

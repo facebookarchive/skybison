@@ -77,4 +77,72 @@ extern "C" PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
   return ApiHandle::fromBorrowedObject(value)->asPyObject();
 }
 
+extern "C" void PyDict_Clear(PyObject* /* p */) {
+  UNIMPLEMENTED("PyDict_Clear");
+}
+
+extern "C" int PyDict_Contains(PyObject* /* p */, PyObject* /* y */) {
+  UNIMPLEMENTED("PyDict_Contains");
+}
+
+extern "C" PyObject* PyDict_Copy(PyObject* /* o */) {
+  UNIMPLEMENTED("PyDict_Copy");
+}
+
+extern "C" int PyDict_DelItem(PyObject* /* p */, PyObject* /* y */) {
+  UNIMPLEMENTED("PyDict_DelItem");
+}
+
+extern "C" Py_ssize_t PyDict_Size(PyObject* /* p */) {
+  UNIMPLEMENTED("PyDict_Size");
+}
+
+extern "C" int PyDict_DelItemString(PyObject* /* v */, const char* /* y */) {
+  UNIMPLEMENTED("PyDict_DelItemString");
+}
+
+extern "C" PyObject* PyDict_GetItemString(PyObject* /* v */,
+                                          const char* /* y */) {
+  UNIMPLEMENTED("PyDict_GetItemString");
+}
+
+extern "C" PyObject* PyDict_GetItemWithError(PyObject* /* p */,
+                                             PyObject* /* y */) {
+  UNIMPLEMENTED("PyDict_GetItemWithError");
+}
+
+extern "C" PyObject* PyDict_Items(PyObject* /* p */) {
+  UNIMPLEMENTED("PyDict_Items");
+}
+
+extern "C" PyObject* PyDict_Keys(PyObject* /* p */) {
+  UNIMPLEMENTED("PyDict_Keys");
+}
+
+extern "C" int PyDict_Merge(PyObject* /* a */, PyObject* /* b */, int /* e */) {
+  UNIMPLEMENTED("PyDict_Merge");
+}
+
+extern "C" int PyDict_MergeFromSeq2(PyObject* /* d */, PyObject* /* 2 */,
+                                    int /* e */) {
+  UNIMPLEMENTED("PyDict_MergeFromSeq2");
+}
+
+extern "C" int PyDict_Next(PyObject* /* p */, Py_ssize_t* /* s */,
+                           PyObject** /* pkey */, PyObject** /* pvalue */) {
+  UNIMPLEMENTED("PyDict_Next");
+}
+
+extern "C" int PyDict_Update(PyObject* /* a */, PyObject* /* b */) {
+  UNIMPLEMENTED("PyDict_Update");
+}
+
+extern "C" PyObject* PyDict_Values(PyObject* /* p */) {
+  UNIMPLEMENTED("PyDict_Values");
+}
+
+extern "C" PyObject* PyObject_GenericGetDict(PyObject* /* j */, void* /* t */) {
+  UNIMPLEMENTED("PyObject_GenericGetDict");
+}
+
 }  // namespace python
