@@ -6,18 +6,16 @@
 #include "runtime/objects.h"
 #include "runtime/runtime.h"
 
-namespace py = python;
+namespace python {
 
-extern "C" {
-
-PyObject* PyLong_FromLong(long ival) {
-  py::Thread* thread = py::Thread::currentThread();
-  py::Runtime* runtime = thread->runtime();
-  py::HandleScope scope(thread->handles());
+extern "C" PyObject* PyLong_FromLong(long ival) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread->handles());
 
   word val = reinterpret_cast<word>(ival);
-  py::Handle<py::Object> value(&scope, runtime->newInteger(val));
+  Handle<Object> value(&scope, runtime->newInteger(val));
   return runtime->asApiHandle(*value)->asPyObject();
 }
 
-} /* extern "C" */
+} // namespace python

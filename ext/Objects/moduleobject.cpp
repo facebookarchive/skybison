@@ -6,16 +6,16 @@
 
 #include "Python.h"
 
-namespace py = python;
+namespace python {
 
-PyObject* PyModule_Create2(struct PyModuleDef* pymodule, int) {
-  py::Thread* thread = py::Thread::currentThread();
-  py::Runtime* runtime = thread->runtime();
-  py::HandleScope scope(thread->handles());
+extern "C" PyObject* PyModule_Create2(struct PyModuleDef* pymodule, int) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread->handles());
 
   const char* c_name = pymodule->m_name;
-  py::Handle<py::Object> name(&scope, runtime->newStringFromCString(c_name));
-  py::Handle<py::Module> module(&scope, runtime->newModule(name));
+  Handle<Object> name(&scope, runtime->newStringFromCString(c_name));
+  Handle<Module> module(&scope, runtime->newModule(name));
   runtime->addModule(module);
 
   // TODO: Check m_slots
@@ -27,11 +27,13 @@ PyObject* PyModule_Create2(struct PyModuleDef* pymodule, int) {
   return runtime->asApiHandle(*module)->asPyObject();
 }
 
-PyObject* PyModule_GetDict(PyObject* pymodule) {
-  py::Thread* thread = py::Thread::currentThread();
-  py::Runtime* runtime = thread->runtime();
-  py::HandleScope scope(thread->handles());
+extern "C" PyObject* PyModule_GetDict(PyObject* pymodule) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread->handles());
 
-  py::Handle<py::Module> module(&scope, runtime->asObject(pymodule));
+  Handle<Module> module(&scope, runtime->asObject(pymodule));
   return runtime->asApiHandle(module->dictionary())->asPyObject();
 }
+
+} // namespace python
