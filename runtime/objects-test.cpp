@@ -268,9 +268,18 @@ TEST(DictionaryTest, GetKeys) {
 TEST(DoubleTest, DoubleTest) {
   Runtime runtime;
   Object* o = runtime.newDouble(3.14);
-  EXPECT_TRUE(o->isDouble());
+  ASSERT_TRUE(o->isDouble());
   Double* d = Double::cast(o);
   EXPECT_EQ(d->value(), 3.14);
+}
+
+TEST(ComplexTest, ComplexTest) {
+  Runtime runtime;
+  Object* o = runtime.newComplex(1.0, 2.0);
+  ASSERT_TRUE(o->isComplex());
+  Complex* c = Complex::cast(o);
+  EXPECT_EQ(c->real(), 1.0);
+  EXPECT_EQ(c->imag(), 2.0);
 }
 
 TEST(IntegerTest, IntegerTest) {

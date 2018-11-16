@@ -122,6 +122,7 @@ enum IntrinsicLayoutId {
   kByteArray,
   kClassMethod,
   kCode,
+  kComplex,
   kDictionary,
   kDouble,
   kEllipsis,
@@ -167,6 +168,7 @@ class Object {
   inline bool isClass();
   inline bool isClassMethod();
   inline bool isCode();
+  inline bool isComplex();
   inline bool isDictionary();
   inline bool isDouble();
   inline bool isEllipsis();
@@ -696,6 +698,30 @@ class Double : public HeapObject {
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Double);
+};
+
+class Complex : public HeapObject {
+ public:
+  // Getters
+  inline double real();
+  inline double imag();
+
+  // Casting.
+  static inline Complex* cast(Object* object);
+
+  // Sizing.
+  static inline word allocationSize();
+
+  // Allocation.
+  inline void initialize(double real, double imag);
+
+  // Layout.
+  static const int kRealOffset = HeapObject::kSize;
+  static const int kImagOffset = kRealOffset + kDoubleSize;
+  static const int kSize = kImagOffset + kDoubleSize;
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(Complex);
 };
 
 class Range : public HeapObject {
@@ -1595,6 +1621,14 @@ bool Object::isCode() {
       IntrinsicLayoutId::kCode;
 }
 
+bool Object::isComplex() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+      IntrinsicLayoutId::kComplex;
+}
+
 bool Object::isLargeString() {
   if (!isHeapObject()) {
     return false;
@@ -2396,6 +2430,29 @@ Double* Double::cast(Object* object) {
 
 void Double::initialize(double value) {
   *reinterpret_cast<double*>(address() + kValueOffset) = value;
+}
+
+// Complex
+double Complex::real() {
+  return *reinterpret_cast<double*>(address() + kRealOffset);
+}
+
+double Complex::imag() {
+  return *reinterpret_cast<double*>(address() + kImagOffset);
+}
+
+word Complex::allocationSize() {
+  return Header::kSize + Complex::kSize;
+}
+
+Complex* Complex::cast(Object* object) {
+  DCHECK(object->isComplex(), "not a complex");
+  return reinterpret_cast<Complex*>(object);
+}
+
+void Complex::initialize(double real, double imag) {
+  *reinterpret_cast<double*>(address() + kRealOffset) = real;
+  *reinterpret_cast<double*>(address() + kImagOffset) = imag;
 }
 
 // Range

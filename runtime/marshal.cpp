@@ -92,6 +92,11 @@ int32 Marshal::Reader::readLong() {
   return result;
 }
 
+double Marshal::Reader::readBinaryFloat() {
+  const byte* buffer = readBytes(8);
+  return *reinterpret_cast<const double*>(buffer);
+}
+
 template <typename T>
 class ScopedCounter {
  public:
@@ -157,17 +162,28 @@ Object* Marshal::Reader::readObject() {
       UNIMPLEMENTED("TYPE_FLOAT");
       break;
 
-    case TYPE_BINARY_FLOAT:
-      UNIMPLEMENTED("TYPE_BINARY_FLOAT");
+    case TYPE_BINARY_FLOAT: {
+      double n = readBinaryFloat();
+      result = runtime_->newDouble(n);
+      if (isRef_) {
+        addRef(result);
+      }
       break;
+    }
 
     case TYPE_COMPLEX:
       UNIMPLEMENTED("TYPE_COMPLEX");
       break;
 
-    case TYPE_BINARY_COMPLEX:
-      UNIMPLEMENTED("TYPE_BINARY_COMPLEX");
+    case TYPE_BINARY_COMPLEX: {
+      double real = readBinaryFloat();
+      double imag = readBinaryFloat();
+      result = runtime_->newComplex(real, imag);
+      if (isRef_) {
+        addRef(result);
+      }
       break;
+    }
 
     case TYPE_STRING: // Misnomer, should be TYPE_BYTES
       result = readTypeString();

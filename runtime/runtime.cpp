@@ -470,6 +470,10 @@ Object* Runtime::newDouble(double value) {
   return Double::cast(heap()->createDouble(value));
 }
 
+Object* Runtime::newComplex(double real, double imag) {
+  return Complex::cast(heap()->createComplex(real, imag));
+}
+
 Object* Runtime::newRange(word start, word stop, word step) {
   auto range = Range::cast(heap()->createRange());
   range->setStart(start);

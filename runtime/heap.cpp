@@ -143,6 +143,20 @@ Object* Heap::createCode() {
   return Code::cast(result);
 }
 
+Object* Heap::createComplex(double real, double imag) {
+  word size = Complex::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<Complex*>(raw);
+  result->setHeader(Header::from(
+      Complex::kSize / kPointerSize,
+      0,
+      IntrinsicLayoutId::kComplex,
+      ObjectFormat::kDataInstance));
+  result->initialize(real, imag);
+  return Complex::cast(result);
+}
+
 Object* Heap::createDictionary() {
   word size = Dictionary::allocationSize();
   Object* raw = allocate(size, Header::kSize);

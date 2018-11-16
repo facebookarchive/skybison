@@ -15,6 +15,8 @@ class Marshal {
    public:
     Reader(HandleScope* scope, Runtime* runtime, const char* buffer);
 
+    double readBinaryFloat();
+
     byte readByte();
 
     int32 readLong();

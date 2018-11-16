@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include <cmath>
 #include <cstdint>
 
 #include "globals.h"
@@ -253,6 +254,30 @@ TEST(MarshalReaderTest, ReadTypeIntMax) {
   ASSERT_TRUE(result->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(result)->value(), INT32_MAX);
   EXPECT_EQ(reader_norefs.numRefs(), 0);
+}
+
+TEST(MarshalReaderTest, ReadBinaryFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  double a =
+      Marshal::Reader(&scope, &runtime, "\x00\x00\x00\x00\x00\x00\x00\x00")
+          .readBinaryFloat();
+  ASSERT_EQ(a, 0.0);
+
+  double b = Marshal::Reader(&scope, &runtime, "\x00\x00\x00\x00\x00\x00\xf0?")
+                 .readBinaryFloat();
+  ASSERT_EQ(b, 1.0);
+
+  double c =
+      Marshal::Reader(&scope, &runtime, "\x00\x00\x00\x00\x00\x00\xf0\x7f")
+          .readBinaryFloat();
+  ASSERT_TRUE(std::isinf(c));
+
+  double d =
+      Marshal::Reader(&scope, &runtime, "\x00\x00\x00\x00\x00\x00\xf8\x7f")
+          .readBinaryFloat();
+  ASSERT_TRUE(std::isnan(d));
 }
 
 TEST(MarshalReaderDeathTest, ReadNegativeTypeLong) {

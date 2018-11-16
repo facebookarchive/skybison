@@ -34,6 +34,8 @@ class Heap {
 
   Object* createCode();
 
+  Object* createComplex(double real, double imag);
+
   Object* createDictionary();
 
   Object* createDouble(double value);

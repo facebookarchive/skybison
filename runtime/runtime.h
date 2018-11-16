@@ -43,6 +43,8 @@ class Runtime {
 
   Object* newCode();
 
+  Object* newComplex(double real, double imag);
+
   Object* newDictionary();
   Object* newDictionary(word initialSize);
 
