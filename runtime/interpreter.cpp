@@ -48,7 +48,10 @@ Object* Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
   // Top of stack is a tuple of keyword argument names in the order they
   // appear on the stack.
   Function* function = Function::cast(frame->peek(nargs + 1));
-  return function->entryKw()(thread, frame, nargs);
+  Object** sp = frame->valueStackTop() + nargs + 2;
+  Object* result = function->entryKw()(thread, frame, nargs);
+  frame->setValueStackTop(sp);
+  return result;
 }
 
 Object* Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
@@ -57,7 +60,10 @@ Object* Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
   // pointer.
   word function_position = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
   Function* function = Function::cast(frame->peek(function_position));
-  return function->entryEx()(thread, frame, flags);
+  Object** sp = frame->valueStackTop() + function_position + 1;
+  Object* result = function->entryEx()(thread, frame, flags);
+  frame->setValueStackTop(sp);
+  return result;
 }
 
 Object* Interpreter::callBoundMethod(Thread* thread, Frame* frame, word nargs) {

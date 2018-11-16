@@ -6,6 +6,7 @@
 #include "interpreter.h"
 #include "objects.h"
 #include "runtime.h"
+#include "trampolines.h"
 
 #include "test-utils.h"
 
@@ -432,6 +433,177 @@ with Foo():
   EXPECT_EQ(SmallInt::cast(*a)->value(), 3);
   Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
   EXPECT_EQ(SmallInt::cast(*b)->value(), 2);
+}
+
+TEST(InterpreterTest, StackCleanupAfterCallFunction) {
+  // Build the following function
+  //    def foo(a=1, b=2):
+  //      return 42
+  //
+  // Then call as foo(1) and verify that the stack is cleaned up after
+  // default argument expansion
+  //
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInt::fromWord(42));
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+  code->setArgcount(2);
+  code->setStacksize(1);
+
+  const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Function> callee(&scope, runtime.newFunction());
+  callee->setCode(*code);
+  callee->setEntry(interpreterTrampoline);
+  Handle<ObjectArray> defaults(&scope, runtime.newObjectArray(2));
+
+  defaults->atPut(0, SmallInt::fromWord(1));
+  defaults->atPut(1, SmallInt::fromWord(2));
+  callee->setDefaults(*defaults);
+
+  // Create a caller frame
+  Frame* frame = thread->pushFrame(*code);
+
+  // Save starting value stack top
+  Object** value_stack_start = frame->valueStackTop();
+
+  // Push function pointer and argument
+  frame->pushValue(*callee);
+  frame->pushValue(SmallInt::fromWord(1));
+
+  Object* result = Interpreter::call(thread, frame, 1);
+
+  // Make sure we got the right result and stack is back where it should be
+  EXPECT_EQ(SmallInt::cast(result)->value(), 42);
+  EXPECT_EQ(value_stack_start, frame->valueStackTop());
+}
+
+TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
+  // Build the following function
+  //    def foo(a=1, b=2):
+  //      return 42
+  //
+  // Then call as "f=(2,); foo(*f)" and verify that the stack is cleaned up
+  // after ex and default argument expansion
+  //
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInt::fromWord(42));
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+  code->setArgcount(2);
+  code->setStacksize(1);
+
+  const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Function> callee(&scope, runtime.newFunction());
+  callee->setCode(*code);
+  callee->setEntryEx(interpreterTrampolineEx);
+  Handle<ObjectArray> defaults(&scope, runtime.newObjectArray(2));
+
+  defaults->atPut(0, SmallInt::fromWord(1));
+  defaults->atPut(1, SmallInt::fromWord(2));
+  callee->setDefaults(*defaults);
+
+  // Create a caller frame
+  Frame* frame = thread->pushFrame(*code);
+
+  // Save starting value stack top
+  Object** value_stack_start = frame->valueStackTop();
+
+  // Push function pointer and argument
+  Handle<ObjectArray> ex(&scope, runtime.newObjectArray(1));
+  ex->atPut(0, SmallInt::fromWord(2));
+  frame->pushValue(*callee);
+  frame->pushValue(*ex);
+
+  Object* result = Interpreter::callEx(thread, frame, 0);
+
+  // Make sure we got the right result and stack is back where it should be
+  EXPECT_EQ(SmallInt::cast(result)->value(), 42);
+  EXPECT_EQ(value_stack_start, frame->valueStackTop());
+}
+
+TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
+  // Build the following function
+  //    def foo(a=1, b=2):
+  //      return 42
+  //
+  // Then call as "foo(b=4)" and verify that the stack is cleaned up after
+  // ex and default argument expansion
+  //
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInt::fromWord(42));
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("foo"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+  code->setArgcount(2);
+  code->setStacksize(1);
+  Handle<ObjectArray> var_names(&scope, runtime.newObjectArray(2));
+  var_names->atPut(0, runtime.newStringFromCString("a"));
+  var_names->atPut(1, runtime.newStringFromCString("b"));
+  code->setVarnames(*var_names);
+
+  const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Function> callee(&scope, runtime.newFunction());
+  callee->setCode(*code);
+  callee->setEntryKw(interpreterTrampolineKw);
+  Handle<ObjectArray> defaults(&scope, runtime.newObjectArray(2));
+
+  defaults->atPut(0, SmallInt::fromWord(1));
+  defaults->atPut(1, SmallInt::fromWord(2));
+  callee->setDefaults(*defaults);
+
+  // Create a caller frame
+  Frame* frame = thread->pushFrame(*code);
+
+  // Save starting value stack top
+  Object** value_stack_start = frame->valueStackTop();
+
+  // Push function pointer and argument
+  Handle<ObjectArray> arg_names(&scope, runtime.newObjectArray(1));
+  arg_names->atPut(0, runtime.newStringFromCString("b"));
+  frame->pushValue(*callee);
+  frame->pushValue(SmallInt::fromWord(4));
+  frame->pushValue(*arg_names);
+
+  Object* result = Interpreter::callKw(thread, frame, 1);
+
+  // Make sure we got the right result and stack is back where it should be
+  EXPECT_EQ(SmallInt::cast(result)->value(), 42);
+  EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
 }  // namespace python
