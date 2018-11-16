@@ -121,7 +121,7 @@ TEST_F(ObjectExtensionApiTest, RefCountDecreaseDeallocsHandle) {
 }
 
 TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCount) {
-  PyObject* o = PyLong_FromLong(42);
+  PyObject* o = testing::createUniqueObject();
   EXPECT_EQ(Py_REFCNT(o), 1);
   Py_INCREF(o);
   EXPECT_EQ(Py_REFCNT(o), 2);

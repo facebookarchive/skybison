@@ -53,5 +53,12 @@ int moduleSet(const char* module, const char* name, PyObject* value) {
   return ret;
 }
 
+PyObject* createUniqueObject() {
+  PyObject* pytuple = PyTuple_New(1);
+  PyTuple_SetItem(pytuple, 0, Py_None);
+  DCHECK(Py_REFCNT(pytuple) == 1, "ref count should be 1");
+  return pytuple;
+}
+
 }  // namespace testing
 }  // namespace python
