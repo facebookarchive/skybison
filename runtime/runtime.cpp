@@ -147,10 +147,10 @@ Object* Runtime::classGetAttr(
   // No data descriptor found on the meta class, look in the mro of the klass
   Handle<Object> attr(&scope, lookupNameInMro(thread, klass, name));
   if (!attr->isError()) {
-    Handle<Object> none(&scope, None::object());
     if (isNonDataDescriptor(thread, attr)) {
+      Handle<Object> instance(&scope, None::object());
       return Interpreter::callDescriptorGet(
-          thread, thread->currentFrame(), attr, none, receiver);
+          thread, thread->currentFrame(), attr, instance, receiver);
     }
     return *attr;
   }
@@ -158,9 +158,9 @@ Object* Runtime::classGetAttr(
   // No attr found in klass or its mro, use the non-data descriptor found in
   // the metaclass (if any).
   if (isNonDataDescriptor(thread, meta_attr)) {
-    Handle<Object> mk(&scope, *meta_klass);
+    Handle<Object> owner(&scope, *meta_klass);
     return Interpreter::callDescriptorGet(
-        thread, thread->currentFrame(), meta_attr, receiver, mk);
+        thread, thread->currentFrame(), meta_attr, receiver, owner);
   }
 
   // If a regular attribute was found in the metaclass, return it
@@ -244,9 +244,9 @@ Object* Runtime::instanceGetAttr(
   // Nothing found in the instance, if we found a non-data descriptor via the
   // class search, use it.
   if (isNonDataDescriptor(thread, klass_attr)) {
-    Handle<Object> k(&scope, *klass);
+    Handle<Object> owner(&scope, *klass);
     return Interpreter::callDescriptorGet(
-        thread, thread->currentFrame(), klass_attr, receiver, k);
+        thread, thread->currentFrame(), klass_attr, receiver, owner);
   }
 
   // If a regular attribute was found in the class, return it
@@ -2940,9 +2940,9 @@ Object* Runtime::superGetAttr(
       if (super->object() != *startType) {
         self = super->object();
       }
-      Handle<Object> type(&scope, *startType);
+      Handle<Object> owner(&scope, *startType);
       return Interpreter::callDescriptorGet(
-          thread, thread->currentFrame(), value, self, type);
+          thread, thread->currentFrame(), value, self, owner);
     }
   }
   // fallback to normal instance getattr

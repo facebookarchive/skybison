@@ -186,8 +186,8 @@ Object* Interpreter::lookupMethod(
     return *method;
   }
   if (runtime->isNonDataDescriptor(thread, method)) {
-    Handle<Object> tp(&scope, *type);
-    return callDescriptorGet(thread, caller, method, receiver, tp);
+    Handle<Object> owner(&scope, *type);
+    return callDescriptorGet(thread, caller, method, receiver, owner);
   }
   return *method;
 }
