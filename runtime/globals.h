@@ -7,6 +7,8 @@ typedef unsigned char byte;
 typedef signed char sbyte;
 typedef short int int16;
 typedef int int32;
+typedef long long int64;
+typedef unsigned long long uint64;
 typedef intptr_t word;
 typedef uintptr_t uword;
 
@@ -18,6 +20,13 @@ const int kBitsPerByte = 8;
 const int kBitsPerPointer = kBitsPerByte * kWordSize;
 const int kBitsPerWord = kBitsPerByte * kWordSize;
 
+const int16 kMaxInt16 = 0x7FFF;
+const int16 kMinInt16 = -kMaxInt16 - 1;
+const int32 kMaxInt32 = 0x7FFFFFFF;
+const int32 kMinInt32 = -kMaxInt32 - 1;
+const int64 kMaxInt64 = 0x7FFFFFFFFFFFFFFFLL;
+const int64 kMinInt64 = -kMaxInt64 - 1;
+const uint64 kMaxUint64 = 0xFFFFFFFFFFFFFFFFULL;
 const word kMinWord = INTPTR_MIN;
 const word kMaxWord = INTPTR_MAX;
 
