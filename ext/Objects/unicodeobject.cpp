@@ -84,8 +84,24 @@ PY_EXPORT const char* PyUnicode_AsUTF8(PyObject* unicode) {
   return PyUnicode_AsUTF8AndSize(unicode, nullptr);
 }
 
-PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char*, Py_ssize_t) {
-  UNIMPLEMENTED("PyUnicode_FromStringAndSize");
+PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char* u,
+                                                Py_ssize_t size) {
+  Thread* thread = Thread::currentThread();
+
+  if (size < 0) {
+    thread->raiseSystemErrorWithCStr(
+        "Negative size passed to PyUnicode_FromStringAndSize");
+    return nullptr;
+  }
+  if (u == nullptr) {
+    // TODO(T36562134): Implement _PyUnicode_New
+    UNIMPLEMENTED("_PyUnicode_New");
+  }
+  HandleScope scope(thread);
+  const byte* data = reinterpret_cast<const byte*>(u);
+  Object value(&scope,
+               thread->runtime()->newStrWithAll(View<byte>(data, size)));
+  return ApiHandle::fromObject(value);
 }
 
 PY_EXPORT PyObject* PyUnicode_EncodeFSDefault(PyObject* /* e */) {

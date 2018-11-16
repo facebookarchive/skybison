@@ -6,6 +6,8 @@
 
 namespace python {
 
+using namespace testing;
+
 using UnicodeExtensionApiTest = ExtensionApi;
 
 TEST_F(UnicodeExtensionApiTest, AsUTF8FromNonStringReturnsNull) {
@@ -58,6 +60,40 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8ReturnsCString) {
 
 TEST_F(UnicodeExtensionApiTest, ClearFreeListReturnsZero) {
   EXPECT_EQ(PyUnicode_ClearFreeList(), 0);
+}
+
+TEST_F(UnicodeExtensionApiTest, FromStringAndSizeCreatesSizedString) {
+  const char* str = "Some string";
+  PyObjectPtr pyuni(PyUnicode_FromStringAndSize(str, 11));
+  ASSERT_NE(pyuni, nullptr);
+
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(pyuni, str));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FromStringAndSizeCreatesSmallerString) {
+  PyObjectPtr str(PyUnicode_FromStringAndSize("1234567890", 5));
+  ASSERT_NE(str, nullptr);
+
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "12345"));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FromStringAndSizeFailsNegSize) {
+  PyObjectPtr pyuni(PyUnicode_FromStringAndSize("a", -1));
+  ASSERT_EQ(pyuni, nullptr);
+
+  const char* expected_message =
+      "Negative size passed to PyUnicode_FromStringAndSize";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromStringAndSizeIncrementsRefCount) {
+  PyObject* pyuni = PyUnicode_FromStringAndSize("Some string", 11);
+  ASSERT_NE(pyuni, nullptr);
+  EXPECT_GE(Py_REFCNT(pyuni), 1);
+  Py_DECREF(pyuni);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {
