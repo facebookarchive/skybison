@@ -18,9 +18,18 @@ class OS {
 
   static bool secureRandom(byte* ptr, word size);
 
-  static char* readFile(const char* filename);
+  static char* readFile(const char* filename, word* len_out = nullptr);
+
+  static void
+  writeFileExcl(const char* filename, const char* contents, word len = -1);
 
   static char* temporaryDirectory(const char* prefix);
+
+  static const char* getenv(const char* var);
+
+  static bool dirExists(const char* dir);
+
+  static bool fileExists(const char* file);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(OS);

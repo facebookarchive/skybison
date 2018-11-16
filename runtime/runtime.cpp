@@ -1045,6 +1045,40 @@ Runtime::listReplicate(Thread* thread, const Handle<List>& list, word ntimes) {
 }
 
 char* Runtime::compile(const char* src) {
+  // increment this if you change the caching code, to invalidate existing
+  // cache entries.
+  uint64_t seed[2] = {0, 1};
+  word hash = 0;
+
+  // Hash the input.
+  ::siphash(
+      reinterpret_cast<const uint8_t*>(src),
+      strlen(src),
+      reinterpret_cast<const uint8_t*>(seed),
+      reinterpret_cast<uint8_t*>(&hash),
+      sizeof(hash));
+
+  const char* cache_env = OS::getenv("PYRO_CACHE_DIR");
+  std::string cache_dir;
+  if (cache_env != nullptr) {
+    cache_dir = cache_env;
+  } else {
+    const char* home_env = OS::getenv("HOME");
+    if (home_env != nullptr) {
+      cache_dir = home_env;
+      cache_dir += "/.pyro-compile-cache";
+    }
+  }
+
+  char filename_buf[512] = {};
+  snprintf(filename_buf, 512, "%s/%016zx", cache_dir.c_str(), hash);
+
+  // Read compiled code from the cache
+  if (!cache_dir.empty() && OS::fileExists(filename_buf)) {
+    return OS::readFile(filename_buf);
+  }
+
+  // Cache miss, must run the compiler.
   std::unique_ptr<char[]> tmpDir(OS::temporaryDirectory("python-tests"));
   const std::string dir(tmpDir.get());
   const std::string py = dir + "/foo.py";
@@ -1057,8 +1091,15 @@ char* Runtime::compile(const char* src) {
       "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6 -m compileall -q -b " +
       py;
   system(command.c_str());
-  char* result = OS::readFile(pyc.c_str());
+  word len;
+  char* result = OS::readFile(pyc.c_str(), &len);
   system(cleanup.c_str());
+
+  // Cache the output if possible.
+  if (!cache_dir.empty() && OS::dirExists(cache_dir.c_str())) {
+    OS::writeFileExcl(filename_buf, result, len);
+  }
+
   return result;
 }
 

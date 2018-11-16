@@ -2,12 +2,14 @@
 
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <cassert>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #include "utils.h"
 
@@ -86,15 +88,31 @@ bool OS::secureRandom(byte* ptr, word size) {
   return size == 0;
 }
 
-char* OS::readFile(const char* filename) {
+char* OS::readFile(const char* filename, word* len_out) {
   ScopedFd fd(::open(filename, O_RDONLY));
+  if (fd.get() == -1) {
+    fprintf(stderr, "open error: %s %s\n", filename, std::strerror(errno));
+  }
   assert(fd.get() != -1);
   word length = ::lseek(fd.get(), 0, SEEK_END);
   assert(length != -1);
   ::lseek(fd.get(), 0, SEEK_SET);
   auto result = new char[length];
   ::read(fd.get(), result, length);
+
+  if (len_out != nullptr) {
+    *len_out = length;
+  }
   return result;
+}
+
+void OS::writeFileExcl(const char* filename, const char* contents, word len) {
+  ScopedFd fd(::open(filename, O_RDWR | O_CREAT | O_EXCL, 0644));
+  assert(fd.get() != -1);
+  if (len < 0) {
+    len = strlen(contents);
+  }
+  CHECK(::write(fd.get(), contents, len) == len, "Incomplete write");
 }
 
 char* OS::temporaryDirectory(const char* prefix) {
@@ -109,6 +127,36 @@ char* OS::temporaryDirectory(const char* prefix) {
   char* result = ::mkdtemp(buffer);
   assert(result != nullptr);
   return result;
+}
+
+const char* OS::getenv(const char* var) {
+  return ::getenv(var);
+}
+
+bool OS::dirExists(const char* dir) {
+  struct stat st;
+  int err = ::stat(dir, &st);
+  if (err == 0 && (st.st_mode & S_IFDIR)) {
+    return true;
+  } else {
+    if (errno != ENOENT) {
+      fprintf(stderr, "stat error: %s %s\n", dir, std::strerror(errno));
+    }
+    return false;
+  }
+}
+
+bool OS::fileExists(const char* file) {
+  struct stat st;
+  int err = ::stat(file, &st);
+  if (err == 0) {
+    return true;
+  } else {
+    if (errno != ENOENT) {
+      fprintf(stderr, "stat error: %s %s\n", file, std::strerror(errno));
+    }
+    return false;
+  }
 }
 
 } // namespace python
