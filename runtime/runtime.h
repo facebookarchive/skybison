@@ -286,6 +286,10 @@ class Runtime {
   Object* lookupNameInMro(Thread* thread, const Handle<Class>& klass,
                           const Handle<Object>& name);
 
+  // Looks up symbol name in the dict of each entry in klass's MRO.
+  Object* lookupSymbolInMro(Thread* thread, const Handle<Class>& klass,
+                            SymbolId symbol);
+
   // Implements `receiver.name`
   Object* attributeAt(Thread* thread, const Handle<Object>& receiver,
                       const Handle<Object>& name);

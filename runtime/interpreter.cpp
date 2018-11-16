@@ -156,8 +156,8 @@ Object* Interpreter::lookupMethod(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Class> type(&scope, runtime->classOf(*receiver));
-  Handle<Object> symbol(&scope, runtime->symbols()->at(selector));
-  Handle<Object> method(&scope, runtime->lookupNameInMro(thread, type, symbol));
+  Handle<Object> method(&scope,
+                        runtime->lookupSymbolInMro(thread, type, selector));
   if (method->isFunction()) {
     // Do not create a short-lived bound method object.
     return *method;

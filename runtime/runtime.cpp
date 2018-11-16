@@ -2851,4 +2851,20 @@ void Runtime::freeTrackedAllocations() {
   }
 }
 
+Object* Runtime::lookupSymbolInMro(Thread* thread, const Handle<Class>& klass,
+                                   SymbolId symbol) {
+  HandleScope scope(thread);
+  Handle<ObjectArray> mro(&scope, klass->mro());
+  for (word i = 0; i < mro->length(); i++) {
+    Handle<Class> mro_klass(&scope, mro->at(i));
+    Handle<Dictionary> dict(&scope, mro_klass->dictionary());
+    Handle<Object> symbol_string(&scope, symbols()->at(symbol));
+    Handle<Object> value_cell(&scope, dictionaryAt(dict, symbol_string));
+    if (!value_cell->isError()) {
+      return ValueCell::cast(*value_cell)->value();
+    }
+  }
+  return Error::object();
+}
+
 }  // namespace python
