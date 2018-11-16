@@ -5,10 +5,40 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
-Object* builtinStrAdd(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod StrBuiltins::kMethods[] = {
+    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
+    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
+    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
+    {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
+    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
+    {SymbolId::kJoin, nativeTrampoline<join>},
+    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
+    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
+    {SymbolId::kLower, nativeTrampoline<lower>},
+    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
+    {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
+    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
+    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
+};
+
+void StrBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Type> type(
+      &scope, runtime->addEmptyBuiltinClass(SymbolId::kStr, LayoutId::kStr,
+                                            LayoutId::kObject));
+  type->setFlag(Type::Flag::kStrSubclass);
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(type, kMethods[i].name,
+                                     kMethods[i].address);
+  }
+}
+
+Object* StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
     return thread->throwTypeErrorFromCStr("str.__add__ needs an argument");
   }
@@ -38,7 +68,7 @@ Object* builtinStrAdd(Thread* thread, Frame* frame, word nargs) {
   return runtime->strConcat(self_str, other_str);
 }
 
-Object* builtinStrEq(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -52,7 +82,7 @@ Object* builtinStrEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStrGe(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -66,7 +96,7 @@ Object* builtinStrGe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStrGt(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -80,7 +110,7 @@ Object* builtinStrGt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStrJoin(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -110,7 +140,7 @@ Object* builtinStrJoin(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->strJoin(thread, sep, tuple, list->allocated());
 }
 
-Object* builtinStrLe(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -124,7 +154,7 @@ Object* builtinStrLe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStrLen(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCStr("expected 0 arguments");
   }
@@ -140,7 +170,7 @@ Object* builtinStrLen(Thread* thread, Frame* frame, word nargs) {
       "descriptor '__len__' requires a 'str' object");
 }
 
-Object* builtinStrLower(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCStr("expected 0 arguments");
   }
@@ -168,7 +198,7 @@ Object* builtinStrLower(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-Object* builtinStrLt(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -182,8 +212,8 @@ Object* builtinStrLt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-static word stringFormatBufferLength(const Handle<Str>& fmt,
-                                     const Handle<ObjectArray>& args) {
+word StrBuiltins::strFormatBufferLength(const Handle<Str>& fmt,
+                                        const Handle<ObjectArray>& args) {
   word arg_idx = 0;
   word len = 0;
   for (word fmt_idx = 0; fmt_idx < fmt->length(); fmt_idx++, len++) {
@@ -258,12 +288,12 @@ static void stringFormatToBuffer(const Handle<Str>& fmt,
   dst[len] = '\0';
 }
 
-Object* stringFormat(Thread* thread, const Handle<Str>& fmt,
-                     const Handle<ObjectArray>& args) {
+Object* StrBuiltins::strFormat(Thread* thread, const Handle<Str>& fmt,
+                               const Handle<ObjectArray>& args) {
   if (fmt->length() == 0) {
     return *fmt;
   }
-  word len = stringFormatBufferLength(fmt, args);
+  word len = strFormatBufferLength(fmt, args);
   char* dst = static_cast<char*>(std::malloc(len + 1));
   CHECK(dst != nullptr, "Buffer allocation failure");
   stringFormatToBuffer(fmt, args, dst, len);
@@ -272,7 +302,7 @@ Object* stringFormat(Thread* thread, const Handle<Str>& fmt,
   return result;
 }
 
-Object* builtinStrMod(Thread* thread, Frame* caller, word nargs) {
+Object* StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -291,13 +321,13 @@ Object* builtinStrMod(Thread* thread, Frame* caller, word nargs) {
       tuple->atPut(0, *other);
       format_args = *tuple;
     }
-    return stringFormat(thread, format, format_args);
+    return strFormat(thread, format, format_args);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return runtime->notImplemented();
 }
 
-Object* builtinStrNe(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -311,7 +341,7 @@ Object* builtinStrNe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinStrNew(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
     return thread->throwTypeErrorFromCStr(
         "str.__new__(): not enough arguments");
@@ -363,7 +393,7 @@ Object* builtinStrNew(Thread* thread, Frame* frame, word nargs) {
   return ret;
 }
 
-Object* builtinStrGetItem(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -411,7 +441,7 @@ Object* builtinStrGetItem(Thread* thread, Frame* frame, word nargs) {
 
 // Convert a byte to its hex digits, and write them out to buf.
 // Increments buf to point after the written characters.
-static void byteToHex(byte** buf, byte convert) {
+void StrBuiltins::byteToHex(byte** buf, byte convert) {
   static byte hexdigits[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                              '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
   // Since convert is unsigned, the right shift will not propagate the sign
@@ -420,7 +450,7 @@ static void byteToHex(byte** buf, byte convert) {
   *(*buf)++ = hexdigits[convert & 0x0f];
 }
 
-Object* builtinStrRepr(Thread* thread, Frame* frame, word nargs) {
+Object* StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCStr("expected 0 arguments");
   }

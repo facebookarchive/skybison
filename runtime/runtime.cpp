@@ -973,7 +973,7 @@ void Runtime::initializeHeapClasses() {
   ObjectBuiltins::initialize(this);
 
   // Abstract classes.
-  initializeStrClass();
+  StrBuiltins::initialize(this);
   IntBuiltins::initialize(this);
 
   // Exception hierarchy
@@ -1072,55 +1072,6 @@ void Runtime::initializeFunctionClass() {
 
   classAddBuiltinFunction(function, SymbolId::kDunderGet,
                           nativeTrampoline<builtinFunctionGet>);
-}
-
-void Runtime::initializeStrClass() {
-  HandleScope scope;
-  Handle<Type> type(&scope, addEmptyBuiltinClass(SymbolId::kStr, LayoutId::kStr,
-                                                 LayoutId::kObject));
-  type->setFlag(Type::Flag::kStrSubclass);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderAdd,
-                          nativeTrampoline<builtinStrAdd>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderEq,
-                          nativeTrampoline<builtinStrEq>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderGe,
-                          nativeTrampoline<builtinStrGe>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderGetItem,
-                          nativeTrampoline<builtinStrGetItem>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderGt,
-                          nativeTrampoline<builtinStrGt>);
-
-  classAddBuiltinFunction(type, SymbolId::kJoin,
-                          nativeTrampoline<builtinStrJoin>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderLe,
-                          nativeTrampoline<builtinStrLe>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderLen,
-                          nativeTrampoline<builtinStrLen>);
-
-  classAddBuiltinFunction(type, SymbolId::kLower,
-                          nativeTrampoline<builtinStrLower>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderLt,
-                          nativeTrampoline<builtinStrLt>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderMod,
-                          nativeTrampoline<builtinStrMod>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderNe,
-                          nativeTrampoline<builtinStrNe>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinStrNew>);
-
-  classAddBuiltinFunction(type, SymbolId::kDunderRepr,
-                          nativeTrampoline<builtinStrRepr>);
 }
 
 void Runtime::initializeClassMethodClass() {

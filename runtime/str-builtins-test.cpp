@@ -187,7 +187,7 @@ TEST(StrBuiltinsTest, DunderAddWithTwoStringsReturnsConcatenatedString) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.newStrFromCStr("hello"));
   frame->setLocal(1, runtime.newStrFromCStr("world"));
-  Object* str = builtinStrAdd(thread, frame, 2);
+  Object* str = StrBuiltins::dunderAdd(thread, frame, 2);
   ASSERT_TRUE(str->isStr());
   EXPECT_PYSTRING_EQ(Str::cast(str), "helloworld");
 }
@@ -198,7 +198,7 @@ TEST(StrBuiltinsTest, DunderAddWithLeftEmptyAndReturnsRight) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.newStrFromCStr(""));
   frame->setLocal(1, runtime.newStrFromCStr("world"));
-  Object* str = builtinStrAdd(thread, frame, 2);
+  Object* str = StrBuiltins::dunderAdd(thread, frame, 2);
   ASSERT_TRUE(str->isStr());
   EXPECT_PYSTRING_EQ(Str::cast(str), "world");
 }
@@ -209,7 +209,7 @@ TEST(StrBuiltinsTest, DunderAddWithRightEmptyAndReturnsRight) {
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.newStrFromCStr("hello"));
   frame->setLocal(1, runtime.newStrFromCStr(""));
-  Object* str = builtinStrAdd(thread, frame, 2);
+  Object* str = StrBuiltins::dunderAdd(thread, frame, 2);
   ASSERT_TRUE(str->isStr());
   EXPECT_PYSTRING_EQ(Str::cast(str), "hello");
 }

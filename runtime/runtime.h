@@ -514,7 +514,6 @@ class Runtime {
   void initializeRefClass();
 
   void initializeStaticMethodClass();
-  void initializeStrClass();
   void initializeSuperClass();
   void initializeTypeClass();
 
