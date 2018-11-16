@@ -286,6 +286,17 @@ Result BUILD_LIST(Context* ctx, word arg) {
   *--ctx->sp = list;
   return Result::CONTINUE;
 }
+Result BUILD_SET(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  HandleScope scope;
+  Runtime* runtime = thread->runtime();
+  Handle<Set> set(&scope, Set::cast(runtime->newSet()));
+  for (int i = arg - 1; i >= 0; i--) {
+    runtime->setAdd(set, Handle<Object>(&scope, *ctx->sp++));
+  }
+  *--ctx->sp = *set;
+  return Result::CONTINUE;
+}
 Result BUILD_TUPLE(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -641,6 +652,7 @@ void Interpreter::initOpTable() {
   opTable[Bytecode::STORE_GLOBAL] = interpreter::STORE_GLOBAL;
   opTable[Bytecode::MAKE_FUNCTION] = interpreter::MAKE_FUNCTION;
   opTable[Bytecode::BUILD_LIST] = interpreter::BUILD_LIST;
+  opTable[Bytecode::BUILD_SET] = interpreter::BUILD_SET;
   opTable[Bytecode::BUILD_TUPLE] = interpreter::BUILD_TUPLE;
   opTable[Bytecode::BUILD_MAP] = interpreter::BUILD_MAP;
   opTable[Bytecode::POP_JUMP_IF_FALSE] = interpreter::POP_JUMP_IF_FALSE;

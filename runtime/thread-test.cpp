@@ -828,6 +828,89 @@ TEST(ThreadTest, BuildList) {
   EXPECT_EQ(list->at(2), None::object());
 }
 
+TEST(ThreadTest, BuildSetEmpty) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  const byte bc[] = {BUILD_SET, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bc));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSet());
+
+  Handle<Set> set(&scope, result);
+  EXPECT_EQ(set->numItems(), 0);
+}
+
+TEST(ThreadTest, BuildSetWithOneItem) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  Handle<Object> smi(&scope, SmallInteger::fromWord(111));
+  consts->atPut(0, *smi);
+  consts->atPut(1, *smi); // dup
+  code->setConsts(*consts);
+
+  const byte bc[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, BUILD_SET, 2, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bc));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSet());
+
+  Handle<Set> set(&scope, result);
+  EXPECT_EQ(set->numItems(), 1);
+
+  EXPECT_TRUE(runtime.setIncludes(set, smi));
+}
+
+TEST(ThreadTest, BuildSet) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(4));
+
+  Handle<Object> smi(&scope, SmallInteger::fromWord(111));
+  consts->atPut(0, *smi);
+  consts->atPut(1, *smi); // dup
+
+  Handle<Object> str(&scope, runtime.newStringFromCString("qqq"));
+  consts->atPut(2, *str);
+
+  Handle<Object> none(&scope, None::object());
+  consts->atPut(3, *none);
+
+  code->setConsts(*consts);
+
+  const byte bc[] = {LOAD_CONST,
+                     0,
+                     LOAD_CONST,
+                     1,
+                     LOAD_CONST,
+                     2,
+                     LOAD_CONST,
+                     3,
+                     BUILD_SET,
+                     4,
+                     RETURN_VALUE,
+                     0};
+  code->setCode(runtime.newByteArrayWithAll(bc));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSet());
+
+  Handle<Set> set(&scope, result);
+  EXPECT_EQ(set->numItems(), 3);
+
+  EXPECT_TRUE(runtime.setIncludes(set, smi));
+  EXPECT_TRUE(runtime.setIncludes(set, str));
+  EXPECT_TRUE(runtime.setIncludes(set, none));
+}
+
 TEST(ThreadTest, SetupLoop) {
   Runtime runtime;
   HandleScope scope;
