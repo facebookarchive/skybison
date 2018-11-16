@@ -7,17 +7,37 @@
 
 namespace python {
 
-Object* builtinListAdd(Thread* thread, Frame* frame, word nargs);
-Object* builtinListAppend(Thread* thread, Frame* frame, word nargs);
-Object* builtinListExtend(Thread* thread, Frame* frame, word nargs);
-Object* builtinListGetItem(Thread* thread, Frame* frame, word nargs);
-Object* builtinListInsert(Thread* thread, Frame* frame, word nargs);
-Object* builtinListLen(Thread* thread, Frame* frame, word nargs);
-Object* builtinListMul(Thread* thread, Frame* frame, word nargs);
-Object* builtinListNew(Thread* thread, Frame* frame, word nargs);
-Object* builtinListPop(Thread* thread, Frame* frame, word nargs);
-Object* builtinListRemove(Thread* thread, Frame* frame, word nargs);
+class ListBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
 
-Object* listSlice(Thread* thread, List* list, Slice* slice);
+  static Object* append(Thread* thread, Frame* frame, word nargs);
+  static Object* extend(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderGetItem(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderLen(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderMul(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderNew(Thread* thread, Frame* frame, word nargs);
+  static Object* insert(Thread* thread, Frame* frame, word nargs);
+  static Object* pop(Thread* thread, Frame* frame, word nargs);
+  static Object* remove(Thread* thread, Frame* frame, word nargs);
+
+ private:
+  static Object* slice(Thread* thread, List* list, Slice* slice);
+
+  // TODO(jeethu): use FRIEND_TEST
+  friend class ListBuiltinsTest_SlicePositiveStartIndex_Test;
+  friend class ListBuiltinsTest_SliceNegativeStartIndexIsRelativeToEnd_Test;
+  friend class ListBuiltinsTest_SlicePositiveStopIndex_Test;
+  friend class ListBuiltinsTest_SliceNegativeStopIndexIsRelativeToEnd_Test;
+  friend class ListBuiltinsTest_SlicePositiveStep_Test;
+  friend class ListBuiltinsTest_SliceNegativeStepReversesOrder_Test;
+  friend class ListBuiltinsTest_SliceStartOutOfBounds_Test;
+  friend class ListBuiltinsTest_SliceStopOutOfBounds_Test;
+  friend class ListBuiltinsTest_SliceStepOutOfBounds_Test;
+  friend class ListBuiltinsTest_IdenticalSliceIsCopy_Test;
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ListBuiltins);
+};
 
 }  // namespace python

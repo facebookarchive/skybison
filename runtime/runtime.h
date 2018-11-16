@@ -518,7 +518,6 @@ class Runtime {
   void initializeDictClass();
   void initializeFloatClass();
   void initializeFunctionClass();
-  void initializeListClass();
   void initializeObjectClass();
   void initializeObjectArrayClass();
   void initializePropertyClass();

@@ -906,7 +906,7 @@ void Runtime::initializeHeapClasses() {
   addBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeString,
                   LayoutId::kString);
   addBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
-  initializeListClass();
+  ListBuiltins::initialize(this);
   addBuiltinClass(SymbolId::kListIterator, LayoutId::kListIterator,
                   LayoutId::kObject);
   addBuiltinClass(SymbolId::kMethod, LayoutId::kBoundMethod, LayoutId::kObject);
@@ -1037,47 +1037,6 @@ void Runtime::initializeDictClass() {
 
   classAddBuiltinFunction(dict_type, SymbolId::kDunderLen,
                           nativeTrampoline<builtinDictionaryLen>);
-}
-
-void Runtime::initializeListClass() {
-  HandleScope scope;
-  Handle<Class> list(&scope, addBuiltinClass(SymbolId::kList, LayoutId::kList,
-                                             LayoutId::kObject));
-
-  classAddBuiltinFunction(list, SymbolId::kDunderAdd,
-                          nativeTrampoline<builtinListAdd>);
-
-  classAddBuiltinFunction(list, SymbolId::kAppend,
-                          nativeTrampoline<builtinListAppend>);
-
-  classAddBuiltinFunction(list, SymbolId::kDunderGetItem,
-                          nativeTrampoline<builtinListGetItem>);
-
-  classAddBuiltinFunction(list, SymbolId::kDunderLen,
-                          nativeTrampoline<builtinListLen>);
-
-  classAddBuiltinFunction(list, SymbolId::kExtend,
-                          nativeTrampoline<builtinListExtend>);
-
-  classAddBuiltinFunction(list, SymbolId::kInsert,
-                          nativeTrampoline<builtinListInsert>);
-
-  classAddBuiltinFunction(list, SymbolId::kInsert,
-                          nativeTrampoline<builtinListInsert>);
-
-  classAddBuiltinFunction(list, SymbolId::kDunderMul,
-                          nativeTrampoline<builtinListMul>);
-
-  classAddBuiltinFunction(list, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinListNew>);
-
-  classAddBuiltinFunction(list, SymbolId::kPop,
-                          nativeTrampoline<builtinListPop>);
-
-  classAddBuiltinFunction(list, SymbolId::kRemove,
-                          nativeTrampoline<builtinListRemove>);
-
-  list->setFlag(Class::Flag::kListSubclass);
 }
 
 void Runtime::initializeClassMethodClass() {

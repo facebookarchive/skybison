@@ -5,10 +5,49 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
-Object* builtinListNew(Thread* thread, Frame* frame, word nargs) {
+void ListBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Class> list(&scope,
+                     runtime->addBuiltinClass(SymbolId::kList, LayoutId::kList,
+                                              LayoutId::kObject));
+
+  runtime->classAddBuiltinFunction(list, SymbolId::kDunderAdd,
+                                   nativeTrampoline<dunderAdd>);
+
+  runtime->classAddBuiltinFunction(list, SymbolId::kAppend,
+                                   nativeTrampoline<append>);
+
+  runtime->classAddBuiltinFunction(list, SymbolId::kDunderGetItem,
+                                   nativeTrampoline<dunderGetItem>);
+
+  runtime->classAddBuiltinFunction(list, SymbolId::kDunderLen,
+                                   nativeTrampoline<dunderLen>);
+
+  runtime->classAddBuiltinFunction(list, SymbolId::kExtend,
+                                   nativeTrampoline<extend>);
+
+  runtime->classAddBuiltinFunction(list, SymbolId::kInsert,
+                                   nativeTrampoline<insert>);
+
+  runtime->classAddBuiltinFunction(list, SymbolId::kDunderMul,
+                                   nativeTrampoline<dunderMul>);
+
+  runtime->classAddBuiltinFunction(list, SymbolId::kDunderNew,
+                                   nativeTrampoline<dunderNew>);
+
+  runtime->classAddBuiltinFunction(list, SymbolId::kPop, nativeTrampoline<pop>);
+
+  runtime->classAddBuiltinFunction(list, SymbolId::kRemove,
+                                   nativeTrampoline<remove>);
+
+  list->setFlag(Class::Flag::kListSubclass);
+}
+
+Object* ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
@@ -42,7 +81,7 @@ static Object* listOrDelegate(Thread* thread, const Handle<Object>& instance) {
   return Error::object();
 }
 
-Object* builtinListAdd(Thread* thread, Frame* frame, word nargs) {
+Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -67,7 +106,7 @@ Object* builtinListAdd(Thread* thread, Frame* frame, word nargs) {
   return thread->throwTypeErrorFromCString("can only concatenate list to list");
 }
 
-Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
+Object* ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString(
         "append() takes exactly one argument");
@@ -86,7 +125,7 @@ Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
   return None::object();
 }
 
-Object* builtinListExtend(Thread* thread, Frame* frame, word nargs) {
+Object* ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString(
         "extend() takes exactly one argument");
@@ -106,7 +145,7 @@ Object* builtinListExtend(Thread* thread, Frame* frame, word nargs) {
   return None::object();
 }
 
-Object* builtinListLen(Thread* thread, Frame* frame, word nargs) {
+Object* ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("__len__() takes no arguments");
   }
@@ -122,7 +161,7 @@ Object* builtinListLen(Thread* thread, Frame* frame, word nargs) {
   return SmallInteger::fromWord(list->allocated());
 }
 
-Object* builtinListInsert(Thread* thread, Frame* frame, word nargs) {
+Object* ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
     return thread->throwTypeErrorFromCString(
         "insert() takes exactly two arguments");
@@ -147,7 +186,7 @@ Object* builtinListInsert(Thread* thread, Frame* frame, word nargs) {
   return None::object();
 }
 
-Object* builtinListMul(Thread* thread, Frame* frame, word nargs) {
+Object* ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -168,7 +207,7 @@ Object* builtinListMul(Thread* thread, Frame* frame, word nargs) {
   return thread->throwTypeErrorFromCString("can't multiply list by non-int");
 }
 
-Object* builtinListPop(Thread* thread, Frame* frame, word nargs) {
+Object* ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   if (nargs > 2) {
     return thread->throwTypeErrorFromCString("pop() takes at most 1 argument");
   }
@@ -206,7 +245,7 @@ Object* builtinListPop(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->listPop(list, index);
 }
 
-Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
+Object* ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString(
         "remove() takes exactly one argument");
@@ -233,7 +272,7 @@ Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
   return thread->throwValueErrorFromCString("list.remove(x) x not in list");
 }
 
-Object* listSlice(Thread* thread, List* list, Slice* slice) {
+Object* ListBuiltins::slice(Thread* thread, List* list, Slice* slice) {
   word start, stop, step;
   slice->unpack(&start, &stop, &step);
   word length = Slice::adjustIndices(list->allocated(), &start, &stop, step);
@@ -251,7 +290,7 @@ Object* listSlice(Thread* thread, List* list, Slice* slice) {
   return *result;
 }
 
-Object* builtinListGetItem(Thread* thread, Frame* frame, word nargs) {
+Object* ListBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -278,8 +317,8 @@ Object* builtinListGetItem(Thread* thread, Frame* frame, word nargs) {
     }
     return list->at(idx);
   } else if (index->isSlice()) {
-    Handle<Slice> slice(&scope, Slice::cast(index));
-    return listSlice(thread, *list, *slice);
+    Handle<Slice> list_slice(&scope, Slice::cast(index));
+    return slice(thread, *list, *list_slice);
   } else {
     return thread->throwTypeErrorFromCString(
         "list indices must be integers or slices");
