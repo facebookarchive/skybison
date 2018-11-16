@@ -1224,7 +1224,7 @@ void Runtime::createBuiltinsModule() {
       module,
       symbols()->DunderBuildClass(),
       nativeTrampoline<builtinBuildClass>,
-      unimplementedTrampoline,
+      nativeTrampoline<builtinBuildClassKw>,
       unimplementedTrampoline);
   moduleAddBuiltinPrint(module);
   moduleAddBuiltinFunction(
@@ -1276,6 +1276,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(
       module, IntrinsicLayoutId::kDictionary, symbols()->Dict());
   moduleAddBuiltinType(module, IntrinsicLayoutId::kSuper, symbols()->Super());
+  moduleAddBuiltinType(module, IntrinsicLayoutId::kType, symbols()->Type());
 
   Handle<Object> not_implemented_str(&scope, symbols()->NotImplemented());
   Handle<Object> not_implemented(&scope, not_implemented_);

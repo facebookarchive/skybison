@@ -18,6 +18,7 @@ extern std::ostream* builtInStdout;
 extern std::ostream* builtinStderr;
 
 Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs);
+Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs);
 Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs);
 
 // CALL_FUNCTION entry point for print()

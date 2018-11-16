@@ -22,19 +22,55 @@ std::ostream* builtinStderr = &std::cerr;
 class Arguments {
  public:
   Arguments(Frame* caller, word nargs)
-      : tos_(caller->valueStackTop()), nargs_(nargs) {}
+      : Arguments(caller->valueStackTop(), nargs) {}
 
-  // TODO: Remove this and flesh out the Arguments interface to support
-  // keyword argument access.
-  Arguments(Object** tos, word nargs) : tos_(tos), nargs_(nargs) {}
+  Arguments(Object** tos, word nargs) {
+    bos_ = tos + nargs - 1;
+    num_args_ = nargs;
+  }
 
   Object* get(word n) const {
-    return tos_[nargs_ - 1 - n];
+    CHECK(n < num_args_, "index out of range");
+    return *(bos_ - n);
+  }
+
+  word numArgs() const {
+    return num_args_;
+  }
+
+ protected:
+  Object** bos_;
+  word num_args_;
+};
+
+class KwArguments : public Arguments {
+ public:
+  KwArguments(Frame* caller, word nargs)
+      : KwArguments(caller->valueStackTop(), nargs) {}
+
+  // +1 for the keywords names tuple
+  KwArguments(Object** tos, word nargs) : Arguments(tos, nargs + 1) {
+    kwnames_ = ObjectArray::cast(*tos);
+    num_keywords_ = kwnames_->length();
+    num_args_ = nargs - num_keywords_;
+  }
+
+  Object* getKw(Object* name) const {
+    for (word i = 0; i < num_keywords_; i++) {
+      if (String::cast(name)->equals(kwnames_->at(i))) {
+        return *(bos_ - num_args_ - i);
+      }
+    }
+    CHECK(false, "keyword argument not found");
+  }
+
+  word numKeywords() const {
+    return num_keywords_;
   }
 
  private:
-  Object** tos_;
-  word nargs_;
+  word num_keywords_;
+  ObjectArray* kwnames_;
 };
 
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is
@@ -209,6 +245,52 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
 
   Object** sp = caller->valueStackTop();
   *--sp = runtime->classAt(IntrinsicLayoutId::kType);
+  *--sp = *name;
+  *--sp = *bases;
+  *--sp = *dictionary;
+  caller->setValueStackTop(sp);
+  Handle<Class> result(&scope, builtinTypeCall(thread, caller, 4));
+  caller->setValueStackTop(sp + 4);
+
+  return *result;
+}
+
+Object* builtinBuildClassKw(Thread* thread, Frame* caller, word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  KwArguments args(caller, nargs);
+  if (args.numArgs() < 2) {
+    return thread->throwTypeErrorFromCString(
+        "not enough args for build class.");
+  }
+  if (!args.get(0)->isFunction()) {
+    return thread->throwTypeErrorFromCString("class body is not function.");
+  }
+  if (!args.get(1)->isString()) {
+    return thread->throwTypeErrorFromCString("class name is not string.");
+  }
+
+  Handle<Function> body(&scope, args.get(0));
+  Handle<Object> name(&scope, args.get(1));
+  Handle<Class> metaclass(&scope, args.getKw(runtime->symbols()->Metaclass()));
+  Handle<ObjectArray> bases(
+      &scope, runtime->newObjectArray(args.numArgs() - 2));
+  for (word i = 0, j = 2; j < args.numArgs(); i++, j++) {
+    bases->atPut(i, args.get(j));
+  }
+
+  Handle<Dictionary> dictionary(&scope, runtime->newDictionary());
+  Handle<Object> key(&scope, runtime->symbols()->DunderName());
+  runtime->dictionaryAtPutInValueCell(dictionary, key, name);
+  // TODO(zekun): might need to do some kind of callback here and we want
+  // backtraces to work correctly.  The key to doing that would be to put some
+  // state on the stack in between the the incoming arguments from the builtin'
+  // caller and the on-stack state for the class body function call.
+  thread->runClassFunction(*body, *dictionary);
+
+  Object** sp = caller->valueStackTop();
+  *--sp = *metaclass;
   *--sp = *name;
   *--sp = *bases;
   *--sp = *dictionary;

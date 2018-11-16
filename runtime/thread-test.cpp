@@ -3449,4 +3449,48 @@ print(E.f(1,2))
   EXPECT_EQ(output, "3\n");
 }
 
+TEST(ThreadTest, BuildClassWithMetaClass) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+class Foo(metaclass=type):
+  pass
+a = Foo()
+)";
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> foo(&scope, moduleAt(&runtime, main, "Foo"));
+  EXPECT_TRUE(foo->isClass());
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_TRUE(runtime.classOf(*a) == *foo);
+}
+
+TEST(ThreadTest, BuildClassWithMetaClass2) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+class Foo(type):
+  def __new__(mcls, name, bases, dictionary):
+    cls = super(Foo, mcls).__new__(mcls, name, bases, dictionary)
+    cls.lalala = 123
+    return cls
+class Bar(metaclass=Foo):
+  def __init__(self):
+    self.hahaha = 456
+b = Bar.lalala
+a = Bar()
+c = a.hahaha
+)";
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> bar(&scope, moduleAt(&runtime, main, "Bar"));
+  EXPECT_TRUE(bar->isClass());
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_TRUE(runtime.classOf(*a) == *bar);
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_EQ(SmallInteger::cast(*b)->value(), 123);
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  EXPECT_EQ(SmallInteger::cast(*c)->value(), 456);
+}
+
 } // namespace python

@@ -34,6 +34,7 @@ class Runtime;
   V(File, "file")                        \
   V(Insert, "insert")                    \
   V(Int, "int")                          \
+  V(Metaclass, "metaclass")              \
   V(Dict, "dict")                        \
   V(Exit, "exit")                        \
   V(IsInstance, "isinstance")            \
@@ -48,6 +49,7 @@ class Runtime;
   V(Remove, "remove")                    \
   V(Sys, "sys")                          \
   V(Time, "time")                        \
+  V(Type, "type")                        \
   V(StaticMethod, "staticmethod")        \
   V(Stderr, "stderr")                    \
   V(Stdout, "stdout")
