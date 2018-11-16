@@ -78,6 +78,11 @@ class Utils {
     return x > y ? x : y;
   }
 
+  template <typename T>
+  static inline T minimum(T x, T y) {
+    return x < y ? x : y;
+  }
+
   // Prints a python level stack trace to stderr
   static void printTraceback();
 

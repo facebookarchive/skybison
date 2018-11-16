@@ -1,6 +1,5 @@
 #include "runtime.h"
 
-#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <memory>
@@ -1029,7 +1028,8 @@ void Runtime::listInsert(
   // TODO: Add insert(-x) where it inserts at pos: len(list) - x
   listAdd(list, value);
   word last_index = list->allocated() - 1;
-  index = std::max(static_cast<word>(0), std::min(last_index, index));
+  index =
+      Utils::maximum(static_cast<word>(0), Utils::minimum(last_index, index));
   for (word i = last_index; i > index; i--) {
     list->atPut(i, list->at(i - 1));
   }
@@ -1259,7 +1259,7 @@ Object* Runtime::newDictionary(word initialSize) {
   Handle<ObjectArray> array(
       &scope,
       newObjectArray(
-          std::max(
+          Utils::maximum(
               static_cast<word>(kInitialDictionaryCapacity), initialCapacity) *
           Bucket::kNumPointers));
   return heap()->createDictionary(*array);
