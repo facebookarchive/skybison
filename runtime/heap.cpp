@@ -213,7 +213,8 @@ Object* Heap::createLargeInteger(word value) {
 }
 
 Object* Heap::createLargeString(word length) {
-  DCHECK(length > SmallString::kMaxLength, "string len %ld too large", length);
+  DCHECK(length > SmallString::kMaxLength,
+         "string len %ld is too small to be a large string", length);
   word size = LargeString::allocationSize(length);
   Object* raw = allocate(size, LargeString::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
