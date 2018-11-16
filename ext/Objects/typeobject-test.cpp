@@ -23,7 +23,8 @@ TEST_F(TypeExtensionApiTest, PyTypeCheckOnType) {
 
 TEST_F(TypeExtensionApiTest, ReadyInitializesType) {
   // Create a simple PyTypeObject
-  PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
+  static PyTypeObject empty_type;
+  empty_type = {PyObject_HEAD_INIT(nullptr)};
   empty_type.tp_name = "Empty";
   empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
 
@@ -40,7 +41,8 @@ TEST_F(TypeExtensionApiTest, ReadyInitializesType) {
 
 TEST_F(TypeExtensionApiTest, ReadyCreatesRuntimeType) {
   // Create a simple PyTypeObject
-  PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
+  static PyTypeObject empty_type;
+  empty_type = {PyObject_HEAD_INIT(nullptr)};
   empty_type.tp_name = "test.Empty";
   empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
   ASSERT_EQ(PyType_Ready(&empty_type), 0);
@@ -83,7 +85,8 @@ static void Custom_dealloc(CustomObject* self) {
 
 TEST_F(TypeExtensionApiTest, InitializeCustomTypeInstance) {
   // Instantiate Type
-  PyTypeObject custom_type{PyObject_HEAD_INIT(nullptr)};
+  static PyTypeObject custom_type;
+  custom_type = {PyObject_HEAD_INIT(nullptr)};
   custom_type.tp_basicsize = sizeof(CustomObject);
   custom_type.tp_name = "custom.Custom";
   custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
@@ -126,7 +129,8 @@ instance2 = custom.Custom()
 
 TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
   // Instantiate Type
-  PyTypeObject custom_type{PyObject_HEAD_INIT(nullptr)};
+  static PyTypeObject custom_type;
+  custom_type = {PyObject_HEAD_INIT(nullptr)};
   custom_type.tp_basicsize = sizeof(CustomObject);
   custom_type.tp_name = "custom.Custom";
   custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
