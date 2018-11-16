@@ -18,6 +18,17 @@ class ImportError(bootstrap=True):
         self.path = path
 
 
+class BaseException(bootstrap=True):
+    def __str__(self):
+        if not isinstance(self, BaseException):
+            raise TypeError("not a BaseException object")
+        if not self.args:
+            return ""
+        if len(self.args) == 1:
+            return str(self.args[0])
+        return str(self.args)
+
+
 class tuple(bootstrap=True):
     def __repr__(self):
         num_elems = len(self)
@@ -36,4 +47,3 @@ class tuple(bootstrap=True):
 class list(bootstrap=True):
     def __init__(self, iterable=()):
         self.extend(iterable)
-

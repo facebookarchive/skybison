@@ -46,6 +46,48 @@ exc = BaseException(1,2,3)
   EXPECT_EQ(args->at(2), SmallInt::fromWord(3));
 }
 
+TEST(ExceptionBuiltinsTest, StrFromBaseExceptionNoArgs) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = BaseException().__str__()
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "");
+}
+
+TEST(ExceptionBuiltinsTest, StrFromBaseExceptionOneArg) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = BaseException("hello").__str__()
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "hello");
+}
+
+TEST(ExceptionBuiltinsTest, StrFromBaseExceptionManyArgs) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = BaseException("hello", "world").__str__()
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  // TODO(dulinr): Fix this once str.__repr__ is implemented.
+  EXPECT_PYSTRING_EQ(*a,
+                     "(<smallstr object at 0x6f6c6c6568bf>, <smallstr object "
+                     "at 0x646c726f77bf>)");
+}
+
 TEST(ExceptionBuiltinsTest, ExceptionManyArguments) {
   Runtime runtime;
   HandleScope scope;
