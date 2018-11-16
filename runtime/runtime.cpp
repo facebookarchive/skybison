@@ -816,6 +816,25 @@ void Runtime::initializeSmallIntClass() {
           IntrinsicLayoutId::kSmallInteger,
           IntrinsicLayoutId::kInteger,
           IntrinsicLayoutId::kObject));
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderInvert(),
+      nativeTrampoline<builtinSmallIntegerInvert>,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderNeg(),
+      nativeTrampoline<builtinSmallIntegerNeg>,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderPos(),
+      nativeTrampoline<builtinSmallIntegerPos>,
+      unimplementedTrampoline);
+
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
   // SmallInteger to all locations that decode to a SmallInteger tag.

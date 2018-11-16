@@ -20,12 +20,12 @@ namespace python {
   V(UNUSED_BYTECODE_7, 7, interpreter::INVALID_BYTECODE)             \
   V(UNUSED_BYTECODE_8, 8, interpreter::INVALID_BYTECODE)             \
   V(NOP, 9, interpreter::NOP)                                        \
-  V(UNARY_POSITIVE, 10, interpreter::NOT_IMPLEMENTED)                \
-  V(UNARY_NEGATIVE, 11, interpreter::NOT_IMPLEMENTED)                \
+  V(UNARY_POSITIVE, 10, interpreter::UNARY_POSITIVE)                 \
+  V(UNARY_NEGATIVE, 11, interpreter::UNARY_NEGATIVE)                 \
   V(UNARY_NOT, 12, interpreter::UNARY_NOT)                           \
   V(UNUSED_BYTECODE_13, 13, interpreter::INVALID_BYTECODE)           \
   V(UNUSED_BYTECODE_14, 14, interpreter::INVALID_BYTECODE)           \
-  V(UNARY_INVERT, 15, interpreter::NOT_IMPLEMENTED)                  \
+  V(UNARY_INVERT, 15, interpreter::UNARY_INVERT)                     \
   V(BINARY_MATRIX_MULTIPLY, 16, interpreter::NOT_IMPLEMENTED)        \
   V(INPLACE_MATRIX_MULTIPLY, 17, interpreter::NOT_IMPLEMENTED)       \
   V(UNUSED_BYTECODE_18, 18, interpreter::INVALID_BYTECODE)           \

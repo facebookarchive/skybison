@@ -417,6 +417,29 @@ Object* builtinLen(Thread* thread, Frame* callerFrame, word nargs) {
   return SmallInteger::fromWord(List::cast(*list_or_error)->allocated());
 }
 
+Object* builtinSmallIntegerNeg(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  SmallInteger* x = SmallInteger::cast(*caller->valueStackTop());
+  return SmallInteger::fromWord(-x->value());
+}
+
+Object* builtinSmallIntegerPos(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  return SmallInteger::cast(*caller->valueStackTop());
+}
+
+Object* builtinSmallIntegerInvert(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  SmallInteger* x = SmallInteger::cast(*caller->valueStackTop());
+  return SmallInteger::fromWord(-(x->value() + 1));
+}
+
 // List
 Object* listOrDelegate(Thread* thread, const Handle<Object>& instance) {
   if (instance->isList()) {

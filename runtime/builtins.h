@@ -47,6 +47,11 @@ Object* builtinListInsert(Thread* thread, Frame* frame, word nargs);
 Object* builtinListPop(Thread* thread, Frame* frame, word nargs);
 Object* builtinListRemove(Thread* thread, Frame* frame, word nargs);
 
+// SmallInteger
+Object* builtinSmallIntegerInvert(Thread* thread, Frame* frame, word nargs);
+Object* builtinSmallIntegerNeg(Thread* thread, Frame* frame, word nargs);
+Object* builtinSmallIntegerPos(Thread* thread, Frame* frame, word nargs);
+
 // Descriptor
 Object* functionDescriptorGet(
     Thread* thread,

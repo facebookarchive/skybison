@@ -3332,4 +3332,76 @@ print("There are %d pystones %g %s what" % (a, d, c))
   EXPECT_EQ(output, "There are 123 pystones 67.89 now what\n");
 }
 
+TEST(ThreadTest, UnaryInvertSmallInteger) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+pos = 123
+invert_pos = ~pos
+neg = -456
+invert_neg = ~neg
+)";
+
+  runtime.runFromCString(src);
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> invert_pos(&scope, moduleAt(&runtime, main, "invert_pos"));
+  ASSERT_TRUE(invert_pos->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*invert_pos)->value(), -124);
+
+  Handle<Object> invert_neg(&scope, moduleAt(&runtime, main, "invert_neg"));
+  ASSERT_TRUE(invert_neg->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*invert_neg)->value(), 455);
+}
+
+TEST(ThreadTest, UnaryPositiveSmallInteger) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+pos = 123
+plus_pos = +pos
+neg = -123
+plus_neg = +neg
+)";
+
+  runtime.runFromCString(src);
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> plus_pos(&scope, moduleAt(&runtime, main, "plus_pos"));
+  ASSERT_TRUE(plus_pos->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*plus_pos)->value(), 123);
+
+  Handle<Object> plus_neg(&scope, moduleAt(&runtime, main, "plus_neg"));
+  ASSERT_TRUE(plus_neg->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*plus_neg)->value(), -123);
+}
+
+TEST(ThreadTest, UnaryNegateSmallInteger) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+pos = 123
+minus_pos = -pos
+neg = -123
+minus_neg = -neg
+)";
+
+  runtime.runFromCString(src);
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> minus_pos(&scope, moduleAt(&runtime, main, "minus_pos"));
+  ASSERT_TRUE(minus_pos->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*minus_pos)->value(), -123);
+
+  Handle<Object> minus_neg(&scope, moduleAt(&runtime, main, "minus_neg"));
+  ASSERT_TRUE(minus_neg->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*minus_neg)->value(), 123);
+}
+
 } // namespace python

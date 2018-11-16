@@ -15,9 +15,12 @@ class Runtime;
   V(DunderClass, "__class__")            \
   V(DunderGet, "__get__")                \
   V(DunderInit, "__init__")              \
+  V(DunderInvert, "__invert__")          \
   V(DunderMain, "__main__")              \
   V(DunderName, "__name__")              \
+  V(DunderNeg, "__neg__")                \
   V(DunderNew, "__new__")                \
+  V(DunderPos, "__pos__")                \
   V(DunderSet, "__set__")                \
   V(Append, "append")                    \
   V(Argv, "argv")                        \

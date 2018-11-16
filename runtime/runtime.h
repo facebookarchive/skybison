@@ -426,6 +426,12 @@ class Runtime {
     hash_secret_[1] = hash_secret[1];
   }
 
+  // Returns whether object's class provides a __set__ method
+  bool isDataDescriptor(Thread* thread, const Handle<Object>& object);
+
+  // Returns whether object's class provides a __get__ method
+  bool isNonDataDescriptor(Thread* thread, const Handle<Object>& object);
+
  private:
   void initializeThreads();
   void initializeClasses();
@@ -531,12 +537,6 @@ class Runtime {
       Thread* thread,
       const Handle<Object>& receiver,
       const Handle<Object>& name);
-
-  // Returns whether object's class provides a __set__ method
-  bool isDataDescriptor(Thread* thread, const Handle<Object>& object);
-
-  // Returns whether object's class provides a __get__ method
-  bool isNonDataDescriptor(Thread* thread, const Handle<Object>& object);
 
   // helper function add builtin types
   void moduleAddBuiltinType(
