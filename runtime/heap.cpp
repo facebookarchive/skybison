@@ -208,16 +208,16 @@ Object* Heap::createLargeInt(word num_digits) {
   return LargeInt::cast(result);
 }
 
-Object* Heap::createLargeString(word length) {
+Object* Heap::createLargeStr(word length) {
   DCHECK(length > SmallStr::kMaxLength,
          "string len %ld is too small to be a large string", length);
-  word size = LargeString::allocationSize(length);
-  Object* raw = allocate(size, LargeString::headerSize(length));
+  word size = LargeStr::allocationSize(length);
+  Object* raw = allocate(size, LargeStr::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<LargeString*>(raw);
-  result->setHeaderAndOverflow(length, 0, LayoutId::kLargeString,
+  auto result = reinterpret_cast<LargeStr*>(raw);
+  result->setHeaderAndOverflow(length, 0, LayoutId::kLargeStr,
                                ObjectFormat::kDataArray8);
-  return LargeString::cast(result);
+  return LargeStr::cast(result);
 }
 
 Object* Heap::createLayout(LayoutId layout_id) {

@@ -44,7 +44,7 @@ class Heap {
 
   Object* createLargeInt(word num_digits);
 
-  Object* createLargeString(word length);
+  Object* createLargeStr(word length);
 
   Object* createLayout(LayoutId layout_id);
 

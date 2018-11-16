@@ -703,13 +703,13 @@ TEST(RuntimeTest, NewString) {
 
   Handle<String> s254(&scope, runtime.newStringWithAll(View<byte>(bytes, 254)));
   EXPECT_EQ(s254->length(), 254);
-  ASSERT_TRUE(s254->isLargeString());
+  ASSERT_TRUE(s254->isLargeStr());
   EXPECT_EQ(HeapObject::cast(*s254)->size(),
             Utils::roundUp(kPointerSize + 254, kPointerSize));
 
   Handle<String> s255(&scope, runtime.newStringWithAll(View<byte>(bytes, 255)));
   EXPECT_EQ(s255->length(), 255);
-  ASSERT_TRUE(s255->isLargeString());
+  ASSERT_TRUE(s255->isLargeStr());
   EXPECT_EQ(HeapObject::cast(*s255)->size(),
             Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 
@@ -817,7 +817,7 @@ TEST(RuntimeTest, HashStrings) {
   Runtime runtime;
   HandleScope scope;
 
-  // LargeStrings have their hash codes computed lazily.
+  // LargeStr instances have their hash codes computed lazily.
   Handle<Object> str1(&scope, runtime.newStringFromCString("testing 123"));
   EXPECT_EQ(HeapObject::cast(*str1)->header()->hashCode(), 0);
   SmallInt* hash1 = SmallInt::cast(runtime.hash(*str1));
@@ -892,7 +892,7 @@ TEST(RuntimeTest, EnsureCapacity) {
   ASSERT_EQ(ensured1->length(), orig->length() * 2);
 }
 
-TEST(RuntimeTest, InternLargeString) {
+TEST(RuntimeTest, InternLargeStr) {
   Runtime runtime;
   HandleScope scope;
 
@@ -901,7 +901,7 @@ TEST(RuntimeTest, InternLargeString) {
   // Creating an ordinary large string should not affect on the intern table.
   word num_interned_strings = interned->numItems();
   Handle<Object> str1(&scope, runtime.newStringFromCString("hello, world"));
-  ASSERT_TRUE(str1->isLargeString());
+  ASSERT_TRUE(str1->isLargeStr());
   EXPECT_EQ(num_interned_strings, interned->numItems());
   EXPECT_FALSE(runtime.setIncludes(interned, str1));
 
@@ -914,7 +914,7 @@ TEST(RuntimeTest, InternLargeString) {
   EXPECT_EQ(num_interned_strings + 1, interned->numItems());
 
   Handle<Object> str2(&scope, runtime.newStringFromCString("goodbye, world"));
-  ASSERT_TRUE(str2->isLargeString());
+  ASSERT_TRUE(str2->isLargeStr());
   EXPECT_NE(*str1, *str2);
 
   // Intern another string and make sure we get it back (as opposed to the
@@ -928,7 +928,7 @@ TEST(RuntimeTest, InternLargeString) {
 
   // Create a unique copy of a previously created string.
   Handle<Object> str3(&scope, runtime.newStringFromCString("hello, world"));
-  ASSERT_TRUE(str3->isLargeString());
+  ASSERT_TRUE(str3->isLargeStr());
   EXPECT_NE(*str1, *str3);
   EXPECT_TRUE(runtime.setIncludes(interned, str3));
 
@@ -1204,9 +1204,9 @@ TEST(RuntimeStringTest, StringConcat) {
   EXPECT_PYSTRING_EQ(*concat31, "0123456789abcdefabc");
 
   EXPECT_TRUE(concat12->isSmallStr());
-  EXPECT_TRUE(concat34->isLargeString());
-  EXPECT_TRUE(concat13->isLargeString());
-  EXPECT_TRUE(concat31->isLargeString());
+  EXPECT_TRUE(concat34->isLargeStr());
+  EXPECT_TRUE(concat13->isLargeStr());
+  EXPECT_TRUE(concat31->isLargeStr());
 }
 
 TEST(RuntimeStringTest, StringFormat) {

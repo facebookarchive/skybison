@@ -109,9 +109,9 @@ Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
   }
 
   HandleScope scope(thread);
-  Handle<LargeString> result(
-      &scope, thread->runtime()->heap()->createLargeString(new_len));
-  word offset = LargeString::kDataOffset;
+  Handle<LargeStr> result(&scope,
+                          thread->runtime()->heap()->createLargeStr(new_len));
+  word offset = LargeStr::kDataOffset;
   for (word i = num - 1; i >= 0; i--) {
     String* str = String::cast(sp[i]);
     word len = str->length();

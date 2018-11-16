@@ -273,11 +273,11 @@ TEST(SliceTest, adjustIndicesOutOfBounds) {
   ASSERT_EQ(stop, 4);
 }
 
-TEST(LargeStringTest, CopyTo) {
+TEST(LargeStrTest, CopyTo) {
   Runtime runtime;
 
   Object* obj = runtime.newStringFromCString("hello world!");
-  ASSERT_TRUE(obj->isLargeString());
+  ASSERT_TRUE(obj->isLargeStr());
   String* str = String::cast(obj);
 
   byte array[5];

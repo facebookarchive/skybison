@@ -35,14 +35,14 @@ char* SmallStr::toCString() {
 
 // String
 
-bool LargeString::equals(Object* that) {
+bool LargeStr::equals(Object* that) {
   if (this == that) {
     return true;
   }
-  if (!that->isLargeString()) {
+  if (!that->isLargeStr()) {
     return false;
   }
-  auto* that_str = LargeString::cast(that);
+  auto* that_str = LargeStr::cast(that);
   if (length() != that_str->length()) {
     return false;
   }
@@ -51,12 +51,12 @@ bool LargeString::equals(Object* that) {
   return std::memcmp(s1, s2, length()) == 0;
 }
 
-void LargeString::copyTo(byte* dst, word length) {
+void LargeStr::copyTo(byte* dst, word length) {
   DCHECK_BOUND(length, this->length());
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
-char* LargeString::toCString() {
+char* LargeStr::toCString() {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   CHECK(result != nullptr, "out of memory");

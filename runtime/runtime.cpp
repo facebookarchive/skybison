@@ -823,9 +823,9 @@ Object* Runtime::newStringWithAll(View<byte> code_units) {
   if (length <= SmallStr::kMaxLength) {
     return SmallStr::fromBytes(code_units);
   }
-  Object* result = heap()->createLargeString(length);
+  Object* result = heap()->createLargeStr(length);
   DCHECK(result != Error::object(), "failed to create large string");
-  byte* dst = reinterpret_cast<byte*>(LargeString::cast(result)->address());
+  byte* dst = reinterpret_cast<byte*>(LargeStr::cast(result)->address());
   const byte* src = code_units.data();
   memcpy(dst, src, length);
   return result;
@@ -853,7 +853,7 @@ Object* Runtime::hash(Object* object) {
   if (!object->isHeapObject()) {
     return immediateHash(object);
   }
-  if (object->isByteArray() || object->isLargeString()) {
+  if (object->isByteArray() || object->isLargeStr()) {
     return valueHash(object);
   }
   return identityHash(object);
@@ -990,7 +990,7 @@ void Runtime::initializeHeapClasses() {
   initializeFunctionClass();
   addEmptyBuiltinClass(SymbolId::kLargeInt, LayoutId::kLargeInt,
                        LayoutId::kInt);
-  addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeString,
+  addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeStr,
                        LayoutId::kString);
   addEmptyBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
   ListBuiltins::initialize(this);
@@ -2482,8 +2482,8 @@ Object* Runtime::stringConcat(const Handle<String>& left,
   }
 
   Handle<String> result(&scope,
-                        LargeString::cast(heap()->createLargeString(new_len)));
-  DCHECK(result->isLargeString(), "not a large string");
+                        LargeStr::cast(heap()->createLargeStr(new_len)));
+  DCHECK(result->isLargeStr(), "not a large string");
   const word address = HeapObject::cast(*result)->address();
 
   left->copyTo(reinterpret_cast<byte*>(address), llen);

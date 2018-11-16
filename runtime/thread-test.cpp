@@ -2020,7 +2020,7 @@ TEST(BuildString, buildStringMultiLarge) {
 
   Object* obj = Thread::currentThread()->run(*code);
   EXPECT_TRUE(obj->isString());
-  EXPECT_TRUE(obj->isLargeString());
+  EXPECT_TRUE(obj->isLargeStr());
 
   Handle<String> result(&scope, obj);
   EXPECT_TRUE(result->equalsCString("helloworldpython"));

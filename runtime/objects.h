@@ -26,7 +26,7 @@ namespace python {
   V(Function)                                                                  \
   V(Int)                                                                       \
   V(LargeInt)                                                                  \
-  V(LargeString)                                                               \
+  V(LargeStr)                                                                  \
   V(Layout)                                                                    \
   V(List)                                                                      \
   V(ListIterator)                                                              \
@@ -90,7 +90,7 @@ enum class LayoutId : word {
   kFunction,
   kInt,
   kLargeInt,
-  kLargeString,
+  kLargeStr,
   kLayout,
   kList,
   kListIterator,
@@ -145,7 +145,7 @@ class Object {
   bool isHeapObject();
   bool isInstance();
   bool isLargeInt();
-  bool isLargeString();
+  bool isLargeStr();
   bool isLayout();
   bool isList();
   bool isListIterator();
@@ -432,7 +432,7 @@ class SmallStr : public Object {
 
  private:
   // Interface methods are private: strings should be manipulated via the
-  // String class, which delegates to LargeString/SmallStr appropriately.
+  // String class, which delegates to LargeStr/SmallString appropriately.
 
   // Getters and setters.
   word length();
@@ -692,10 +692,10 @@ class ObjectArray : public Array {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectArray);
 };
 
-class LargeString : public Array {
+class LargeStr : public Array {
  public:
   // Casting.
-  static LargeString* cast(Object* object);
+  static LargeStr* cast(Object* object);
 
   // Sizing.
   static word allocationSize(word length);
@@ -704,7 +704,7 @@ class LargeString : public Array {
 
  private:
   // Interface methods are private: strings should be manipulated via the
-  // String class, which delegates to LargeString/SmallStr appropriately.
+  // String class, which delegates to LargeStr/SmallStr appropriately.
 
   // Getters and setters.
   byte charAt(word index);
@@ -722,7 +722,7 @@ class LargeString : public Array {
   friend class Runtime;
   friend class String;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(LargeString);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(LargeStr);
 };
 
 // Arbitrary precision signed integer, with 64 bit digits in two's complement
@@ -1907,11 +1907,11 @@ inline bool Object::isComplex() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kComplex;
 }
 
-inline bool Object::isLargeString() {
+inline bool Object::isLargeStr() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLargeString;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLargeStr;
 }
 
 inline bool Object::isFunction() {
@@ -2055,7 +2055,7 @@ inline bool Object::isStopIteration() {
          LayoutId::kStopIteration;
 }
 
-inline bool Object::isString() { return isSmallStr() || isLargeString(); }
+inline bool Object::isString() { return isSmallStr() || isLargeStr(); }
 
 inline bool Object::isSystemExit() {
   if (!isHeapObject()) {
@@ -2073,7 +2073,7 @@ inline bool Object::isWeakRef() {
 
 inline bool Object::equals(Object* lhs, Object* rhs) {
   return (lhs == rhs) ||
-         (lhs->isLargeString() && LargeString::cast(lhs)->equals(rhs));
+         (lhs->isLargeStr() && LargeStr::cast(lhs)->equals(rhs));
 }
 
 inline Object* Object::cast(Object* object) { return object; }
@@ -2606,7 +2606,7 @@ inline bool Type::isIntrinsicOrExtension() {
 // Array
 
 inline word Array::length() {
-  DCHECK(isByteArray() || isObjectArray() || isLargeString(),
+  DCHECK(isByteArray() || isObjectArray() || isLargeStr(),
          "invalid array type");
   return headerCountOrOverflow();
 }
@@ -3363,7 +3363,7 @@ inline bool String::equalsCString(const char* c_string) {
 }
 
 inline String* String::cast(Object* object) {
-  DCHECK(object->isLargeString() || object->isSmallStr(),
+  DCHECK(object->isLargeStr() || object->isSmallStr(),
          "invalid cast, expected string");
   return reinterpret_cast<String*>(object);
 }
@@ -3372,16 +3372,16 @@ inline byte String::charAt(word index) {
   if (isSmallStr()) {
     return SmallStr::cast(this)->charAt(index);
   }
-  DCHECK(isLargeString(), "unexpected type");
-  return LargeString::cast(this)->charAt(index);
+  DCHECK(isLargeStr(), "unexpected type");
+  return LargeStr::cast(this)->charAt(index);
 }
 
 inline word String::length() {
   if (isSmallStr()) {
     return SmallStr::cast(this)->length();
   }
-  DCHECK(isLargeString(), "unexpected type");
-  return LargeString::cast(this)->length();
+  DCHECK(isLargeStr(), "unexpected type");
+  return LargeStr::cast(this)->length();
 }
 
 inline word String::compare(Object* string) {
@@ -3401,8 +3401,8 @@ inline bool String::equals(Object* that) {
   if (isSmallStr()) {
     return this == that;
   }
-  DCHECK(isLargeString(), "unexpected type");
-  return LargeString::cast(this)->equals(that);
+  DCHECK(isLargeStr(), "unexpected type");
+  return LargeStr::cast(this)->equals(that);
 }
 
 inline void String::copyTo(byte* dst, word length) {
@@ -3410,32 +3410,32 @@ inline void String::copyTo(byte* dst, word length) {
     SmallStr::cast(this)->copyTo(dst, length);
     return;
   }
-  DCHECK(isLargeString(), "unexpected type");
-  return LargeString::cast(this)->copyTo(dst, length);
+  DCHECK(isLargeStr(), "unexpected type");
+  return LargeStr::cast(this)->copyTo(dst, length);
 }
 
 inline char* String::toCString() {
   if (isSmallStr()) {
     return SmallStr::cast(this)->toCString();
   }
-  DCHECK(isLargeString(), "unexpected type");
-  return LargeString::cast(this)->toCString();
+  DCHECK(isLargeStr(), "unexpected type");
+  return LargeStr::cast(this)->toCString();
 }
 
-// LargeString
+// LargeStr
 
-inline LargeString* LargeString::cast(Object* object) {
-  DCHECK(object->isLargeString(), "unexpected type");
-  return reinterpret_cast<LargeString*>(object);
+inline LargeStr* LargeStr::cast(Object* object) {
+  DCHECK(object->isLargeStr(), "unexpected type");
+  return reinterpret_cast<LargeStr*>(object);
 }
 
-inline word LargeString::allocationSize(word length) {
+inline word LargeStr::allocationSize(word length) {
   DCHECK(length > SmallStr::kMaxLength, "length %ld overflows", length);
   word size = headerSize(length) + length;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-inline byte LargeString::charAt(word index) {
+inline byte LargeStr::charAt(word index) {
   DCHECK_INDEX(index, length());
   return *reinterpret_cast<byte*>(address() + index);
 }
