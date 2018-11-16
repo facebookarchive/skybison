@@ -83,12 +83,14 @@ Object* Runtime::newCode() {
   return heap()->createCode(empty_object_array_);
 }
 
-Object* Runtime::newBuiltinFunction(Function::Entry entry) {
+Object* Runtime::newBuiltinFunction(
+    Function::Entry entry,
+    Function::Entry entryKw) {
   Object* result = heap()->createFunction();
   assert(result != nullptr);
   auto function = Function::cast(result);
   function->setEntry(entry);
-  function->setEntryKw(unimplementedTrampoline);
+  function->setEntryKw(entryKw);
   return result;
 }
 
@@ -435,6 +437,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_string_);
   visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&build_class_);
+  visitor->visitPointer(&print_default_end_);
 
   // Visit interned strings.
   visitor->visitPointer(&interned_);
@@ -499,14 +502,30 @@ void Runtime::moduleAddGlobal(
 Object* Runtime::moduleAddBuiltinFunction(
     const Handle<Module>& module,
     const char* name,
-    const Function::Entry thunk) {
+    const Function::Entry entry,
+    const Function::Entry entryKw) {
   HandleScope scope;
   Handle<Object> key(&scope, newStringFromCString(name));
   Handle<Dictionary> dictionary(&scope, module->dictionary());
   Handle<ValueCell> value_cell(
       &scope, dictionaryAtIfAbsentPut(dictionary, key, newValueCellCallback()));
-  value_cell->setValue(newBuiltinFunction(thunk));
+  value_cell->setValue(newBuiltinFunction(entry, entryKw));
   return *value_cell;
+}
+
+void Runtime::moduleAddBuiltinPrint(const Handle<Module>& module) {
+  HandleScope scope;
+  Handle<Function> print(
+      &scope,
+      newBuiltinFunction(
+          nativeTrampoline<builtinPrint>, nativeTrampoline<builtinPrintKw>));
+
+  // Name
+  Handle<Object> name(&scope, newStringFromCString("print"));
+  print->setName(*name);
+
+  Handle<Object> val(&scope, *print);
+  moduleAddGlobal(module, name, val);
 }
 
 void Runtime::createBuiltinsModule() {
@@ -516,8 +535,12 @@ void Runtime::createBuiltinsModule() {
 
   // Fill in builtins...
   build_class_ = moduleAddBuiltinFunction(
-      module, "__build_class__", nativeTrampoline<builtinBuildClass>);
-  moduleAddBuiltinFunction(module, "print", nativeTrampoline<builtinPrint>);
+      module,
+      "__build_class__",
+      nativeTrampoline<builtinBuildClass>,
+      nativeTrampoline<unimplementedTrampoline>);
+  moduleAddBuiltinPrint(module);
+
   addModule(module);
 }
 
@@ -536,7 +559,8 @@ Object* Runtime::createMainModule() {
   Handle<Module> module(&scope, newModule(name));
 
   // Fill in __main__...
-  moduleAddBuiltinFunction(module, "print", nativeTrampoline<builtinPrint>);
+  moduleAddBuiltinPrint(module);
+
   addModule(module);
 
   return *module;

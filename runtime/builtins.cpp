@@ -17,7 +17,12 @@ class Arguments {
  public:
   Arguments(Frame* caller, word nargs)
       : tos_(caller->valueStackTop()), nargs_(nargs) {}
-  Object* get(word n) {
+
+  // TODO: Remove this and flesh out the Arguments interface to support
+  // keyword argument access.
+  Arguments(Object** tos, word nargs) : tos_(tos), nargs_(nargs) {}
+
+  Object* get(word n) const {
     return tos_[nargs_ - 1 - n];
   }
 
@@ -84,11 +89,13 @@ static void printString(String* str) {
   }
 }
 
-Object* builtinPrint(Thread*, Frame* caller, word nargs) {
+// NB: The print functions do not represent the final state of builtin functions
+// and should not be emulated when creating new builtins. They are minimal
+// implementations intended to get the Richards benchmark working.
+static Object*
+doBuiltinPrint(const Arguments& args, word nargs, const Handle<Object>& end) {
   const char separator = ' ';
-  const char terminator = '\n';
 
-  Arguments args(caller, nargs);
   for (word i = 0; i < nargs; i++) {
     Object* arg = args.get(i);
     if (arg->isString()) {
@@ -104,9 +111,59 @@ Object* builtinPrint(Thread*, Frame* caller, word nargs) {
       *builtinPrintStream << separator;
     }
   }
-  *builtinPrintStream << terminator;
+  if (end->isNone()) {
+    *builtinPrintStream << "\n";
+  } else {
+    printString(String::cast(*end));
+  }
 
   return None::object();
+}
+
+Object* builtinPrint(Thread*, Frame* frame, word nargs) {
+  HandleScope scope;
+  Handle<Object> end(&scope, None::object());
+  Arguments args(frame, nargs);
+  return doBuiltinPrint(args, nargs, end);
+}
+
+Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs + 1);
+
+  Object* last_arg = args.get(nargs);
+  if (!last_arg->isObjectArray()) {
+    thread->throwTypeErrorFromCString("Keyword argument names must be a tuple");
+    return Error::object();
+  }
+
+  ObjectArray* kw_args = ObjectArray::cast(last_arg);
+  if (kw_args->length() != 1) {
+    thread->throwRuntimeErrorFromCString(
+        "Too many keyword arguments supplied to print");
+    return Error::object();
+  }
+
+  Object* kw_arg = kw_args->at(0);
+  if (!kw_arg->isString()) {
+    thread->throwTypeErrorFromCString("Keyword argument names must be strings");
+    return Error::object();
+  }
+  if (!String::cast(kw_arg)->equalsCString("end")) {
+    thread->throwRuntimeErrorFromCString(
+        "Only the 'end' keyword argument is supported");
+    return Error::object();
+  }
+
+  HandleScope scope;
+  Handle<Object> end(&scope, args.get(nargs - 1));
+  if (!(end->isString() || end->isNone())) {
+    thread->throwTypeErrorFromCString("'end' must be a string or None");
+    return Error::object();
+  }
+
+  // Remove kw arg tuple and the value for the end keyword argument
+  Arguments rest(frame->valueStackTop() + 2, nargs - 1);
+  return doBuiltinPrint(rest, nargs - 1, end);
 }
 
 } // namespace python

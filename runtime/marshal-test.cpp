@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <cstdint>
+
 #include "globals.h"
 #include "marshal.h"
 #include "runtime.h"
@@ -39,6 +41,45 @@ TEST(MarshalReaderTest, ReadLong) {
 
   int32 e = Marshal::Reader(&scope, &runtime, "\x00\x00\x00\x80").readLong();
   ASSERT_EQ(e, -2147483648); // INT32_MIN
+}
+
+TEST(MarshalReaderTest, ReadTypeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // marshal.dumps(INT32_MIN)
+  Object* result =
+      Marshal::Reader(&scope, &runtime, "\xe9\x00\x00\x00\x80").readObject();
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), INT32_MIN);
+
+  // marshal.dumps(INT32_MAX)
+  result =
+      Marshal::Reader(&scope, &runtime, "\xe9\xff\xff\xff\x7f").readObject();
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), INT32_MAX);
+}
+
+TEST(MarshalReaderDeathTest, ReadNegativeTypeLong) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // marshal.dumps(INT32_MIN - 1)
+  const char buf[] = "\xec\xfd\xff\xff\xff\x01\x00\x00\x00\x02\x00";
+  EXPECT_DEATH(
+      Marshal::Reader(&scope, &runtime, buf).readObject(),
+      "Cannot handle TYPE_LONG");
+}
+
+TEST(MarshalReaderDeathTest, ReadPositiveTypeLong) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // marshal.dumps(INT32_MAX + 1)
+  const char buf[] = "\xec\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00";
+  EXPECT_DEATH(
+      Marshal::Reader(&scope, &runtime, buf).readObject(),
+      "Cannot handle TYPE_LONG");
 }
 
 TEST(MarshalReaderTest, ReadShort) {

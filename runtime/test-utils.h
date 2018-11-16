@@ -22,5 +22,9 @@ namespace python {
 class Runtime;
 namespace testing {
 std::string runToString(Runtime* runtime, const char* buffer);
-}
+
+// Compile the supplied python snippet, run it, and return stdout.
+std::string compileAndRunToString(Runtime* runtime, const char* src);
+
+} // namespace testing
 } // namespace python

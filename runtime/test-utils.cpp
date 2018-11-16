@@ -1,5 +1,6 @@
 #include "test-utils.h"
 
+#include <memory>
 #include <sstream>
 #include "builtins.h"
 #include "runtime.h"
@@ -19,5 +20,11 @@ std::string runToString(Runtime* runtime, const char* buffer) {
   builtinPrintStream = oldStream;
   return stream.str();
 }
+
+std::string compileAndRunToString(Runtime* runtime, const char* src) {
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  return runToString(runtime, buffer.get());
+}
+
 } // namespace testing
 } // namespace python

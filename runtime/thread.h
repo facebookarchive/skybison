@@ -90,10 +90,12 @@ class Thread {
   // Convenience method for throwing a RuntimeError exception with an error
   // message.
   void throwRuntimeError(String* message);
+  void throwRuntimeErrorFromCString(const char* message);
 
   // Convenience method for throwing a TypeError exception with an error
   // message.
   void throwTypeError(String* message);
+  void throwTypeErrorFromCString(const char* message);
 
   // Gets the pending exception object - if it is None, no exception has been
   // posted.

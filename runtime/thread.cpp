@@ -8,6 +8,7 @@
 #include "handles.h"
 #include "interpreter.h"
 #include "objects.h"
+#include "runtime.h"
 #include "visitor.h"
 
 namespace python {
@@ -76,8 +77,21 @@ Frame* Thread::openAndLinkFrame(
 
 Frame* Thread::pushFrame(Object* object, Frame* previousFrame) {
   Code* code = Code::cast(object);
-  word ncells = ObjectArray::cast(code->cellvars())->length();
-  word nfrees = ObjectArray::cast(code->freevars())->length();
+
+  word ncells = 0;
+  Object* cellvars = code->cellvars();
+  assert(cellvars->isNone() || cellvars->isObjectArray());
+  if (cellvars->isObjectArray()) {
+    ncells = ObjectArray::cast(cellvars)->length();
+  }
+
+  word nfrees = 0;
+  Object* freevars = code->freevars();
+  assert(freevars->isNone() || freevars->isObjectArray());
+  if (freevars->isObjectArray()) {
+    nfrees = ObjectArray::cast(freevars)->length();
+  }
+
   word nlocals = code->nlocals() - code->argcount() + ncells + nfrees;
   auto frame = openAndLinkFrame(nlocals, code->stacksize(), previousFrame);
   frame->setCode(code);
@@ -144,10 +158,20 @@ void Thread::throwRuntimeError(String* message) {
   pending_exception_ = message;
 }
 
+void Thread::throwRuntimeErrorFromCString(const char* message) {
+  // TODO: instantiate RuntimeError object.
+  pending_exception_ = runtime()->newStringFromCString(message);
+}
+
 // Convenience method for throwing a TypeError exception with an error message.
 void Thread::throwTypeError(String* message) {
   // TODO: instantiate TypeError object.
   pending_exception_ = message;
+}
+
+void Thread::throwTypeErrorFromCString(const char* message) {
+  // TODO: instantiate TypeError object.
+  pending_exception_ = runtime()->newStringFromCString(message);
 }
 
 Object* Thread::pendingException() {

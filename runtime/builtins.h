@@ -17,7 +17,13 @@ extern std::ostream* builtinPrintStream;
 
 Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs)
     __attribute__((aligned(16)));
+
+// CALL_FUNCTION entry point for print()
 Object* builtinPrint(Thread* thread, Frame* frame, word nargs)
+    __attribute__((aligned(16)));
+
+// CALL_FUNCTION_KW entry pointer for print()
+Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs)
     __attribute__((aligned(16)));
 
 } // namespace python

@@ -1,7 +1,9 @@
 #include "marshal.h"
 
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 #include "heap.h"
 #include "runtime.h"
@@ -137,9 +139,17 @@ Object* Marshal::Reader::readObject() {
       result = Boolean::fromBool(true);
       break;
 
-    case TYPE_INT:
-      assert(0);
+    case TYPE_INT: {
+      // NB: this will continue to work as long as SmallInteger can contain the
+      // full range of 32 bit signed integer values. Notably, this will break if
+      // we need to support 32 bit machines.
+      word n = readLong();
+      if (!SmallInteger::isValid(n)) {
+        std::abort();
+      }
+      result = SmallInteger::fromWord(n);
       break;
+    }
 
     case TYPE_FLOAT:
       assert(0);
@@ -211,6 +221,11 @@ Object* Marshal::Reader::readObject() {
 
     case TYPE_REF:
       result = readTypeRef();
+      break;
+
+    case TYPE_LONG:
+      std::cerr << "Cannot handle TYPE_LONG" << std::endl;
+      std::abort();
       break;
 
     default:

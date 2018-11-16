@@ -160,6 +160,34 @@ TEST(ThreadTest, PushPopFrame) {
   EXPECT_EQ(thread->ptr(), prevSp);
 }
 
+TEST(ThreadTest, PushFrameWithNoCellVars) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setCellvars(None::object());
+  code->setFreevars(runtime.newObjectArray(0));
+  auto thread = Thread::currentThread();
+  byte* prevSp = thread->ptr();
+  thread->pushFrame(*code, thread->initialFrame());
+
+  EXPECT_EQ(thread->ptr(), prevSp - Frame::kSize);
+}
+
+TEST(ThreadTest, PushFrameWithNoFreeVars) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setFreevars(None::object());
+  code->setCellvars(runtime.newObjectArray(0));
+  auto thread = Thread::currentThread();
+  byte* prevSp = thread->ptr();
+  thread->pushFrame(*code, thread->initialFrame());
+
+  EXPECT_EQ(thread->ptr(), prevSp - Frame::kSize);
+}
+
 TEST(ThreadTest, ManipulateValueStack) {
   Runtime runtime;
   HandleScope scope;
@@ -327,46 +355,16 @@ TEST(ThreadTest, ExtendedArg) {
 
 TEST(ThreadTest, CallBuiltinPrint) {
   Runtime runtime;
-  HandleScope scope;
+  std::string output = compileAndRunToString(
+      &runtime, "print(1111, 'testing 123', True, False)");
+  EXPECT_EQ(output, "1111 testing 123 True False\n");
+}
 
-  // Create the builtin function
-  Handle<Function> callee(&scope, runtime.newFunction());
-  callee->setEntry(builtinPrint);
-
-  Handle<Code> code(&scope, runtime.newCode());
-  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(5));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInteger::fromWord(1111));
-  consts->atPut(2, runtime.newStringFromCString("testing 123"));
-  consts->atPut(3, Boolean::fromBool(true));
-  consts->atPut(4, Boolean::fromBool(false));
-  code->setConsts(*consts);
-  const byte bytecode[] = {LOAD_CONST,
-                           0,
-                           LOAD_CONST,
-                           1,
-                           LOAD_CONST,
-                           2,
-                           LOAD_CONST,
-                           3,
-                           LOAD_CONST,
-                           4,
-                           CALL_FUNCTION,
-                           4,
-                           RETURN_VALUE,
-                           0};
-  code->setCode(runtime.newByteArrayWithAll(bytecode));
-  code->setStacksize(5);
-
-  std::stringstream stream;
-  std::ostream* oldStream = builtinPrintStream;
-  builtinPrintStream = &stream;
-
-  // Execute the code and make sure we get back the result we expect
-  Thread::currentThread()->run(*code);
-  builtinPrintStream = oldStream;
-
-  EXPECT_STREQ(stream.str().c_str(), "1111 testing 123 True False\n");
+TEST(ThreadTest, CallBuiltinPrintKw) {
+  Runtime runtime;
+  std::string output =
+      compileAndRunToString(&runtime, "print('testing 123', end='abc')");
+  EXPECT_STREQ(output.c_str(), "testing 123abc");
 }
 
 TEST(ThreadTest, ExecuteDupTop) {
@@ -1038,7 +1036,9 @@ TEST(ThreadTest, NativeExceptions) {
 
   Handle<Function> fn(
       &scope,
-      runtime.newBuiltinFunction(nativeTrampoline<nativeExceptionTest>));
+      runtime.newBuiltinFunction(
+          nativeTrampoline<nativeExceptionTest>,
+          nativeTrampoline<unimplementedTrampoline>));
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));

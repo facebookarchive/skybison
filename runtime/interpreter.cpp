@@ -102,6 +102,17 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         *sp = result;
         break;
       }
+      case Bytecode::CALL_FUNCTION_KW: {
+        frame->setValueStackTop(sp);
+        // Top of stack is a tuple of keyword argument names in the order they
+        // appear on the stack.
+        auto function = Function::cast(*(sp + arg + 1));
+        Object* result = function->entryKw()(thread, frame, arg);
+        // Pop arguments + called function and push return value
+        sp += arg + 1;
+        *sp = result;
+        break;
+      }
       case Bytecode::JUMP_ABSOLUTE: {
         assert(arg < byteArray->length());
         pc = arg;

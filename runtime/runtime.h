@@ -37,7 +37,7 @@ class Runtime {
 
   Object* newDictionary();
 
-  Object* newBuiltinFunction(Function::Entry entry);
+  Object* newBuiltinFunction(Function::Entry entry, Function::Entry entryKw);
   Object* newFunction();
 
   Object* newList();
@@ -82,7 +82,8 @@ class Runtime {
   Object* moduleAddBuiltinFunction(
       const Handle<Module>& module,
       const char* name,
-      const Function::Entry thunk);
+      const Function::Entry entry,
+      const Function::Entry entryKw);
 
   Object* findModule(const char* name);
 
@@ -212,6 +213,8 @@ class Runtime {
       const Handle<Object>& key_hash,
       word* index);
 
+  void moduleAddBuiltinPrint(const Handle<Module>& module);
+
   // The size ensureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
 
@@ -226,6 +229,7 @@ class Runtime {
   Object* empty_string_;
   Object* ellipsis_;
   Object* build_class_;
+  Object* print_default_end_;
 
   // Interned strings
   Object* interned_;
