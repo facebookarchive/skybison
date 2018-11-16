@@ -16,6 +16,7 @@ class Runtime;
   V(DunderBuildClass, "__build_class__") \
   V(DunderCall, "__call__")              \
   V(DunderClass, "__class__")            \
+  V(DunderClassCell, "__classcell__")    \
   V(DunderContains, "__contains__")      \
   V(DunderDivmod, "__divmod__")          \
   V(DunderEnter, "__enter__")            \

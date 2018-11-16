@@ -72,6 +72,14 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   result->setMro(*mro);
 
   Handle<Dictionary> dictionary(&scope, args.get(3));
+  Handle<Object> class_cell_key(&scope, runtime->symbols()->DunderClassCell());
+  Handle<Object> class_cell(
+      &scope, runtime->dictionaryAt(dictionary, class_cell_key));
+  if (!class_cell->isError()) {
+    ValueCell::cast(ValueCell::cast(*class_cell)->value())->setValue(*result);
+    Object* tmp;
+    runtime->dictionaryRemove(dictionary, class_cell_key, &tmp);
+  }
   result->setDictionary(*dictionary);
 
   // Initialize instance layout

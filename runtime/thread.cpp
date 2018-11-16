@@ -140,6 +140,25 @@ Frame* Thread::pushClassFunctionFrame(Object* function, Object* dictionary) {
   result->setFastGlobals(
       runtime()->computeFastGlobals(code, globals, builtins));
   result->setImplicitGlobals(dictionary);
+
+  word num_locals = code->nlocals();
+  word num_cellvars = code->numCellvars();
+  DCHECK(code->cell2arg() == 0, "class body cannot have cell2arg.");
+  for (word i = 0; i < code->numCellvars(); i++) {
+    result->setLocal(num_locals + i, runtime()->newValueCell());
+  }
+
+  // initialize free vars
+  DCHECK(
+      code->numFreevars() == 0 ||
+          code->numFreevars() ==
+              ObjectArray::cast(Function::cast(function)->closure())->length(),
+      "Number of freevars is different than the closure.");
+  for (word i = 0; i < code->numFreevars(); i++) {
+    result->setLocal(
+        num_locals + num_cellvars + i,
+        ObjectArray::cast(Function::cast(function)->closure())->at(i));
+  }
   return result;
 }
 

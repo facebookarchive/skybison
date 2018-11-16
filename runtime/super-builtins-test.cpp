@@ -88,4 +88,68 @@ print(e.cm() == (e, (E, (E, (E, 1), 2), 3), 4))
   EXPECT_EQ(output, "True\nTrue\nTrue\nTrue\nTrue\nTrue\n");
 }
 
+TEST(SuperBuiltinsTest, SuperTestNoArgument) {
+  const char* src = R"(
+class A:
+    @classmethod
+    def cm(cls):
+        return (cls, 1)
+
+    def f(self):
+        return 1
+
+class B(A):
+    @classmethod
+    def cm(cls):
+        return (cls, super().cm(), 2)
+
+    def f(self):
+        return super().f() + 2
+
+class C(A):
+    @classmethod
+    def cm(cls):
+        return (cls, super().cm(), 3)
+
+    def f(self):
+        return super().f() + 3
+
+class D(C, B):
+    def cm(cls):
+        return (cls, super().cm(), 4)
+
+    def f(self):
+        return super().f() + 4
+
+a = B().f()
+b = D().f()
+c = B.cm() == (B, (B, 1), 2)
+d = D()
+e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
+)";
+  Runtime runtime;
+  compileAndRunToString(&runtime, src);
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Integer> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Integer> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Boolean> c(&scope, moduleAt(&runtime, main, "c"));
+  Handle<Boolean> e(&scope, moduleAt(&runtime, main, "e"));
+  EXPECT_EQ(a->asWord(), 3);
+  EXPECT_EQ(b->asWord(), 10);
+  EXPECT_EQ(*c, Boolean::trueObj());
+  EXPECT_EQ(*e, Boolean::trueObj());
+}
+
+TEST(SuperDeathTest, NoArugmentNoClassCell) {
+  const char* src = R"(
+a = super()
+)";
+
+  Runtime runtime;
+  ASSERT_DEATH(
+      runtime.runFromCString(src),
+      "aborting due to pending exception: super\\(\\): no arguments");
+}
+
 } // namespace python

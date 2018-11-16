@@ -14,35 +14,75 @@ Object* builtinSuperNew(Thread* thread, Frame*, word) {
 
 Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   // only support idiomatic usage for now
+  // super() -> same as super(__class__, <first argument>)
   // super(type, obj) -> bound super object; requires isinstance(obj, type)
   // super(type, type2) -> bound super object; requires issubclass(type2, type)
-  if (nargs != 3) {
-    return thread->throwTypeErrorFromCString("super() expected 2 arguments");
-  }
   Arguments args(frame, nargs);
-  if (!args.get(1)->isClass()) {
+  HandleScope scope(thread);
+  if (!args.get(0)->isSuper()) {
+    return thread->throwTypeErrorFromCString("requires a super object");
+  }
+  Handle<Super> super(&scope, args.get(0));
+  Handle<Object> klass_obj(&scope, None::object());
+  Handle<Object> obj(&scope, None::object());
+  if (nargs == 1) {
+    // frame is for __init__, previous frame is __call__
+    // this will break if it's not invoked through __call__
+    if (frame->previousFrame() == nullptr) {
+      return thread->throwRuntimeErrorFromCString("super(): no current frame");
+    }
+    Frame* caller_frame = frame->previousFrame();
+    if (caller_frame->previousFrame() == nullptr) {
+      return thread->throwRuntimeErrorFromCString("super(): no current frame");
+    }
+    caller_frame = caller_frame->previousFrame();
+    if (!caller_frame->code()->isCode()) {
+      return thread->throwRuntimeErrorFromCString("super(): no code object");
+    }
+    Handle<Code> code(&scope, caller_frame->code());
+    if (code->argcount() == 0) {
+      return thread->throwRuntimeErrorFromCString("super(): no arguments");
+    }
+    Handle<ObjectArray> free_vars(&scope, code->freevars());
+    Object* cell = Error::object();
+    for (word i = 0; i < free_vars->length(); i++) {
+      if (String::cast(free_vars->at(i))
+              ->equals(thread->runtime()->symbols()->DunderClass())) {
+        cell = caller_frame->getLocal(code->nlocals() + i);
+        break;
+      }
+    }
+    if (cell->isError() || !cell->isValueCell()) {
+      return thread->throwRuntimeErrorFromCString(
+          "super(): __class__ cell not found");
+    }
+    klass_obj = ValueCell::cast(cell)->value();
+    // TODO(zekun): handle cell2arg case
+    obj = caller_frame->getLocal(0);
+  } else {
+    if (nargs != 3) {
+      return thread->throwTypeErrorFromCString("super() expected 2 arguments");
+    }
+    klass_obj = args.get(1);
+    obj = args.get(2);
+  }
+  if (!klass_obj->isClass()) {
     return thread->throwTypeErrorFromCString("super() argument 1 must be type");
   }
-  HandleScope scope(thread);
-  Handle<Super> super(&scope, args.get(0));
-  Handle<Class> klass(&scope, args.get(1));
-  Handle<Object> obj(&scope, args.get(2));
-  super->setType(*klass);
+  super->setType(*klass_obj);
   super->setObject(*obj);
   Handle<Object> obj_type(&scope, None::object());
+  Handle<Class> klass(&scope, *klass_obj);
   if (obj->isClass()) {
     Handle<Class> obj_klass(&scope, *obj);
-    if (Boolean::cast(thread->runtime()->isSubClass(obj_klass, klass))
-            ->value()) {
+    if (thread->runtime()->isSubClass(obj_klass, klass) == Boolean::trueObj()) {
       obj_type = *obj;
     }
   } else {
     Handle<Class> obj_klass(&scope, thread->runtime()->classOf(*obj));
-    if (Boolean::cast(thread->runtime()->isSubClass(obj_klass, klass))
-            ->value()) {
+    if (thread->runtime()->isSubClass(obj_klass, klass) == Boolean::trueObj()) {
       obj_type = *obj_klass;
     }
-    // Fill in the __class__ case
   }
   if (obj_type->isNone()) {
     return thread->throwTypeErrorFromCString(
