@@ -144,7 +144,7 @@ def main() -> int:
     elif vcs.authored_previous():
         print("There are no modified files, but you authored the last commit:")
         print(vcs.get_commit_title())
-        reply = input("Format files in that commit? [y/N] ")
+        reply = input("Format files in that commit? [Y/n] ")
         if not reply or reply.lower() == "y":
             files = vcs.get_changed_files(from_commit=True)
     else:
