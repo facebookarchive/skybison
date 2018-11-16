@@ -92,7 +92,7 @@ namespace python {
   V(BREAK_LOOP, 80, doBreakLoop)                         \
   V(WITH_CLEANUP_START, 81, doNotImplemented)            \
   V(WITH_CLEANUP_FINISH, 82, doNotImplemented)           \
-  V(RETURN_VALUE, 83, doNotImplemented)                  \
+  V(RETURN_VALUE, 83, doInvalidBytecode)                 \
   V(IMPORT_STAR, 84, doNotImplemented)                   \
   V(SETUP_ANNOTATIONS, 85, doNotImplemented)             \
   V(YIELD_VALUE, 86, doNotImplemented)                   \
@@ -153,7 +153,7 @@ namespace python {
   V(CALL_FUNCTION_KW, 141, doCallFunctionKw)             \
   V(CALL_FUNCTION_EX, 142, doNotImplemented)             \
   V(SETUP_WITH, 143, doNotImplemented)                   \
-  V(EXTENDED_ARG, 144, doNotImplemented)                 \
+  V(EXTENDED_ARG, 144, doInvalidBytecode)                \
   V(LIST_APPEND, 145, doListAppend)                      \
   V(SET_ADD, 146, doSetAdd)                              \
   V(MAP_ADD, 147, doMapAdd)                              \
@@ -169,8 +169,8 @@ namespace python {
   V(BUILD_STRING, 157, doBuildString)                    \
   V(BUILD_TUPLE_UNPACK_WITH_CALL, 158, doNotImplemented) \
   V(UNUSED_BYTECODE_159, 159, doInvalidBytecode)         \
-  V(LOAD_METHOD, 160, doNotImplemented)                  \
-  V(CALL_METHOD, 161, doNotImplemented)                  \
+  V(UNUSED_BYTECODE_160, 160, doInvalidBytecode)         \
+  V(UNUSED_BYTECODE_161, 161, doInvalidBytecode)         \
   V(UNUSED_BYTECODE_162, 162, doInvalidBytecode)         \
   V(UNUSED_BYTECODE_163, 163, doInvalidBytecode)         \
   V(UNUSED_BYTECODE_164, 164, doInvalidBytecode)         \
