@@ -412,12 +412,13 @@ Object* Runtime::newCode() {
   return *result;
 }
 
-Object* Runtime::newBuiltinFunction(Function::Entry entry,
+Object* Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
                                     Function::Entry entry_kw,
                                     Function::Entry entry_ex) {
   Object* result = heap()->createFunction();
   DCHECK(result != Error::object(), "failed to createFunction");
   auto function = Function::cast(result);
+  function->setName(symbols()->at(name));
   function->setEntry(entry);
   function->setEntryKw(entry_kw);
   function->setEntryEx(entry_ex);
@@ -444,46 +445,45 @@ Object* Runtime::newInstance(const Handle<Layout>& layout) {
   return instance;
 }
 
-void Runtime::classAddBuiltinFunction(const Handle<Class>& klass, Object* name,
+void Runtime::classAddBuiltinFunction(const Handle<Class>& klass, SymbolId name,
                                       Function::Entry entry) {
   classAddBuiltinFunctionKwEx(klass, name, entry, unimplementedTrampoline,
                               unimplementedTrampoline);
 }
 
 void Runtime::classAddBuiltinFunctionKw(const Handle<Class>& klass,
-                                        Object* name, Function::Entry entry,
+                                        SymbolId name, Function::Entry entry,
                                         Function::Entry entry_kw) {
   classAddBuiltinFunctionKwEx(klass, name, entry, entry_kw,
                               unimplementedTrampoline);
 }
 
 void Runtime::classAddBuiltinFunctionKwEx(const Handle<Class>& klass,
-                                          Object* name, Function::Entry entry,
+                                          SymbolId name, Function::Entry entry,
                                           Function::Entry entry_kw,
                                           Function::Entry entry_ex) {
   HandleScope scope;
-  Handle<Object> key(&scope, name);
-  Handle<Function> function(&scope,
-                            newBuiltinFunction(entry, entry_kw, entry_ex));
-  function->setName(*key);
+  Handle<Function> function(
+      &scope, newBuiltinFunction(name, entry, entry_kw, entry_ex));
+  Handle<Object> key(&scope, symbols()->at(name));
   Handle<Object> value(&scope, *function);
   Handle<Dictionary> dict(&scope, klass->dictionary());
   dictionaryAtPutInValueCell(dict, key, value);
 }
 
 void Runtime::classAddExtensionFunction(const Handle<Class>& klass,
-                                        Object* name, void* c_function) {
+                                        SymbolId name, void* c_function) {
   DCHECK(!klass->extensionType()->isNone(),
          "Class must contain extension type");
 
   HandleScope scope;
   Handle<Function> function(&scope, newFunction());
-  function->setName(name);
+  Handle<Object> key(&scope, symbols()->at(name));
+  function->setName(*key);
   function->setCode(newIntegerFromCPointer(c_function));
   function->setEntry(extensionTrampoline);
   function->setEntryKw(extensionTrampolineKw);
   function->setEntryEx(extensionTrampolineEx);
-  Handle<Object> key(&scope, name);
   Handle<Object> value(&scope, *function);
   Handle<Dictionary> dict(&scope, klass->dictionary());
   dictionaryAtPutInValueCell(dict, key, value);
@@ -665,9 +665,8 @@ void Runtime::setArgv(int argc, const char** argv) {
 
   Handle<Object> module_name(&scope, symbols()->Sys());
   Handle<Module> sys_module(&scope, findModule(module_name));
-  Handle<Object> argv_name(&scope, symbols()->Argv());
   Handle<Object> argv_value(&scope, *list);
-  moduleAddGlobal(sys_module, argv_name, argv_value);
+  moduleAddGlobal(sys_module, SymbolId::kArgv, argv_value);
 }
 
 Object* Runtime::identityHash(Object* object) {
@@ -783,10 +782,10 @@ void Runtime::initializeRefClass() {
   HandleScope scope;
   Handle<Class> ref(&scope, initializeHeapClass("ref", LayoutId::kWeakRef));
 
-  classAddBuiltinFunction(ref, symbols()->DunderInit(),
+  classAddBuiltinFunction(ref, SymbolId::kDunderInit,
                           nativeTrampoline<builtinRefInit>);
 
-  classAddBuiltinFunction(ref, symbols()->DunderNew(),
+  classAddBuiltinFunction(ref, SymbolId::kDunderNew,
                           nativeTrampoline<builtinRefNew>);
 }
 
@@ -795,7 +794,7 @@ void Runtime::initializeFunctionClass() {
   Handle<Class> function(&scope,
                          initializeHeapClass("function", LayoutId::kFunction));
 
-  classAddBuiltinFunction(function, symbols()->DunderGet(),
+  classAddBuiltinFunction(function, SymbolId::kDunderGet,
                           nativeTrampoline<builtinFunctionGet>);
 }
 
@@ -803,10 +802,10 @@ void Runtime::initializeObjectClass() {
   HandleScope scope;
   Handle<Class> object(&scope, initializeHeapClass("object"));
 
-  classAddBuiltinFunction(object, symbols()->DunderInit(),
+  classAddBuiltinFunction(object, SymbolId::kDunderInit,
                           nativeTrampoline<builtinObjectInit>);
 
-  classAddBuiltinFunction(object, symbols()->DunderNew(),
+  classAddBuiltinFunction(object, SymbolId::kDunderNew,
                           nativeTrampoline<builtinObjectNew>);
 }
 
@@ -814,25 +813,25 @@ void Runtime::initializeStrClass() {
   HandleScope scope;
   Handle<Class> type(&scope, initializeHeapClass("str", LayoutId::kString));
 
-  classAddBuiltinFunction(type, symbols()->DunderEq(),
+  classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinStringEq>);
 
-  classAddBuiltinFunction(type, symbols()->DunderGe(),
+  classAddBuiltinFunction(type, SymbolId::kDunderGe,
                           nativeTrampoline<builtinStringGe>);
 
-  classAddBuiltinFunction(type, symbols()->DunderGetItem(),
+  classAddBuiltinFunction(type, SymbolId::kDunderGetItem,
                           nativeTrampoline<builtinStringGetItem>);
 
-  classAddBuiltinFunction(type, symbols()->DunderGt(),
+  classAddBuiltinFunction(type, SymbolId::kDunderGt,
                           nativeTrampoline<builtinStringGt>);
 
-  classAddBuiltinFunction(type, symbols()->DunderLe(),
+  classAddBuiltinFunction(type, SymbolId::kDunderLe,
                           nativeTrampoline<builtinStringLe>);
 
-  classAddBuiltinFunction(type, symbols()->DunderLt(),
+  classAddBuiltinFunction(type, SymbolId::kDunderLt,
                           nativeTrampoline<builtinStringLt>);
 
-  classAddBuiltinFunction(type, symbols()->DunderNe(),
+  classAddBuiltinFunction(type, SymbolId::kDunderNe,
                           nativeTrampoline<builtinStringNe>);
 }
 
@@ -840,9 +839,9 @@ void Runtime::initializeObjectArrayClass() {
   HandleScope scope;
   Handle<Class> type(&scope,
                      initializeHeapClass("tuple", LayoutId::kObjectArray));
-  classAddBuiltinFunction(type, symbols()->DunderEq(),
+  classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinTupleEq>);
-  classAddBuiltinFunction(type, symbols()->DunderGetItem(),
+  classAddBuiltinFunction(type, SymbolId::kDunderGetItem,
                           nativeTrampoline<builtinTupleGetItem>);
 }
 
@@ -850,13 +849,13 @@ void Runtime::initializeDictClass() {
   HandleScope scope;
   Handle<Class> dict_type(&scope,
                           initializeHeapClass("dict", LayoutId::kDictionary));
-  classAddBuiltinFunction(dict_type, symbols()->DunderEq(),
+  classAddBuiltinFunction(dict_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDictionaryEq>);
 
-  classAddBuiltinFunction(dict_type, symbols()->DunderGetItem(),
+  classAddBuiltinFunction(dict_type, SymbolId::kDunderGetItem,
                           nativeTrampoline<builtinDictionaryGetItem>);
 
-  classAddBuiltinFunction(dict_type, symbols()->DunderLen(),
+  classAddBuiltinFunction(dict_type, SymbolId::kDunderLen,
                           nativeTrampoline<builtinDictionaryLen>);
 }
 
@@ -864,34 +863,34 @@ void Runtime::initializeListClass() {
   HandleScope scope;
   Handle<Class> list(&scope, initializeHeapClass("list", LayoutId::kList));
 
-  classAddBuiltinFunction(list, symbols()->DunderAdd(),
+  classAddBuiltinFunction(list, SymbolId::kDunderAdd,
                           nativeTrampoline<builtinListAdd>);
 
-  classAddBuiltinFunction(list, symbols()->Append(),
+  classAddBuiltinFunction(list, SymbolId::kAppend,
                           nativeTrampoline<builtinListAppend>);
 
-  classAddBuiltinFunction(list, symbols()->DunderGetItem(),
+  classAddBuiltinFunction(list, SymbolId::kDunderGetItem,
                           nativeTrampoline<builtinListGetItem>);
 
-  classAddBuiltinFunction(list, symbols()->DunderLen(),
+  classAddBuiltinFunction(list, SymbolId::kDunderLen,
                           nativeTrampoline<builtinListLen>);
 
-  classAddBuiltinFunction(list, symbols()->Extend(),
+  classAddBuiltinFunction(list, SymbolId::kExtend,
                           nativeTrampoline<builtinListExtend>);
 
-  classAddBuiltinFunction(list, symbols()->Insert(),
+  classAddBuiltinFunction(list, SymbolId::kInsert,
                           nativeTrampoline<builtinListInsert>);
 
-  classAddBuiltinFunction(list, symbols()->Insert(),
+  classAddBuiltinFunction(list, SymbolId::kInsert,
                           nativeTrampoline<builtinListInsert>);
 
-  classAddBuiltinFunction(list, symbols()->DunderNew(),
+  classAddBuiltinFunction(list, SymbolId::kDunderNew,
                           nativeTrampoline<builtinListNew>);
 
-  classAddBuiltinFunction(list, symbols()->Pop(),
+  classAddBuiltinFunction(list, SymbolId::kPop,
                           nativeTrampoline<builtinListPop>);
 
-  classAddBuiltinFunction(list, symbols()->Remove(),
+  classAddBuiltinFunction(list, SymbolId::kRemove,
                           nativeTrampoline<builtinListRemove>);
 
   list->setFlag(Class::Flag::kListSubclass);
@@ -902,13 +901,13 @@ void Runtime::initializeClassMethodClass() {
   Handle<Class> classmethod(
       &scope, initializeHeapClass("classmethod", LayoutId::kClassMethod));
 
-  classAddBuiltinFunction(classmethod, symbols()->DunderGet(),
+  classAddBuiltinFunction(classmethod, SymbolId::kDunderGet,
                           nativeTrampoline<builtinClassMethodGet>);
 
-  classAddBuiltinFunction(classmethod, symbols()->DunderInit(),
+  classAddBuiltinFunction(classmethod, SymbolId::kDunderInit,
                           nativeTrampoline<builtinClassMethodInit>);
 
-  classAddBuiltinFunction(classmethod, symbols()->DunderNew(),
+  classAddBuiltinFunction(classmethod, SymbolId::kDunderNew,
                           nativeTrampoline<builtinClassMethodNew>);
 }
 
@@ -916,13 +915,13 @@ void Runtime::initializeTypeClass() {
   HandleScope scope;
   Handle<Class> type(&scope, initializeHeapClass("type", LayoutId::kType));
 
-  classAddBuiltinFunction(type, symbols()->DunderCall(),
+  classAddBuiltinFunction(type, SymbolId::kDunderCall,
                           nativeTrampoline<builtinTypeCall>);
 
-  classAddBuiltinFunction(type, symbols()->DunderInit(),
+  classAddBuiltinFunction(type, SymbolId::kDunderInit,
                           nativeTrampoline<builtinTypeInit>);
 
-  classAddBuiltinFunction(type, symbols()->DunderNew(),
+  classAddBuiltinFunction(type, SymbolId::kDunderNew,
                           nativeTrampoline<builtinTypeNew>);
 }
 
@@ -938,7 +937,7 @@ void Runtime::initializeBooleanClass() {
   Handle<Class> type(&scope, initializeHeapClass("bool", LayoutId::kBoolean,
                                                  LayoutId::kInteger));
 
-  classAddBuiltinFunction(type, symbols()->DunderBool(),
+  classAddBuiltinFunction(type, SymbolId::kDunderBool,
                           nativeTrampoline<builtinBooleanBool>);
 }
 
@@ -947,28 +946,28 @@ void Runtime::initializeFloatClass() {
   Handle<Class> float_type(&scope,
                            initializeHeapClass("float", LayoutId::kDouble));
 
-  classAddBuiltinFunction(float_type, symbols()->DunderEq(),
+  classAddBuiltinFunction(float_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDoubleEq>);
 
-  classAddBuiltinFunction(float_type, symbols()->DunderGe(),
+  classAddBuiltinFunction(float_type, SymbolId::kDunderGe,
                           nativeTrampoline<builtinDoubleGe>);
 
-  classAddBuiltinFunction(float_type, symbols()->DunderGt(),
+  classAddBuiltinFunction(float_type, SymbolId::kDunderGt,
                           nativeTrampoline<builtinDoubleGt>);
 
-  classAddBuiltinFunction(float_type, symbols()->DunderLe(),
+  classAddBuiltinFunction(float_type, SymbolId::kDunderLe,
                           nativeTrampoline<builtinDoubleLe>);
 
-  classAddBuiltinFunction(float_type, symbols()->DunderLt(),
+  classAddBuiltinFunction(float_type, SymbolId::kDunderLt,
                           nativeTrampoline<builtinDoubleLt>);
 
-  classAddBuiltinFunction(float_type, symbols()->DunderNe(),
+  classAddBuiltinFunction(float_type, SymbolId::kDunderNe,
                           nativeTrampoline<builtinDoubleNe>);
 
-  classAddBuiltinFunction(float_type, symbols()->DunderAdd(),
+  classAddBuiltinFunction(float_type, SymbolId::kDunderAdd,
                           nativeTrampoline<builtinDoubleAdd>);
 
-  classAddBuiltinFunction(float_type, symbols()->DunderSub(),
+  classAddBuiltinFunction(float_type, SymbolId::kDunderSub,
                           nativeTrampoline<builtinDoubleSub>);
 }
 
@@ -976,22 +975,22 @@ void Runtime::initializeSetClass() {
   HandleScope scope;
   Handle<Class> set_type(&scope, initializeHeapClass("set", LayoutId::kSet));
 
-  classAddBuiltinFunction(set_type, symbols()->Add(),
+  classAddBuiltinFunction(set_type, SymbolId::kAdd,
                           nativeTrampoline<builtinSetAdd>);
 
-  classAddBuiltinFunction(set_type, symbols()->DunderContains(),
+  classAddBuiltinFunction(set_type, SymbolId::kDunderContains,
                           nativeTrampoline<builtinSetContains>);
 
-  classAddBuiltinFunction(set_type, symbols()->DunderInit(),
+  classAddBuiltinFunction(set_type, SymbolId::kDunderInit,
                           nativeTrampoline<builtinSetInit>);
 
-  classAddBuiltinFunction(set_type, symbols()->DunderNew(),
+  classAddBuiltinFunction(set_type, SymbolId::kDunderNew,
                           nativeTrampoline<builtinSetNew>);
 
-  classAddBuiltinFunction(set_type, symbols()->DunderLen(),
+  classAddBuiltinFunction(set_type, SymbolId::kDunderLen,
                           nativeTrampoline<builtinSetLen>);
 
-  classAddBuiltinFunction(set_type, symbols()->Pop(),
+  classAddBuiltinFunction(set_type, SymbolId::kPop,
                           nativeTrampoline<builtinSetPop>);
 }
 
@@ -1000,25 +999,25 @@ void Runtime::initializePropertyClass() {
   Handle<Class> property(&scope,
                          initializeHeapClass("property", LayoutId::kProperty));
 
-  classAddBuiltinFunction(property, symbols()->Deleter(),
+  classAddBuiltinFunction(property, SymbolId::kDeleter,
                           nativeTrampoline<builtinPropertyDeleter>);
 
-  classAddBuiltinFunction(property, symbols()->DunderGet(),
+  classAddBuiltinFunction(property, SymbolId::kDunderGet,
                           nativeTrampoline<builtinPropertyDunderGet>);
 
-  classAddBuiltinFunction(property, symbols()->DunderSet(),
+  classAddBuiltinFunction(property, SymbolId::kDunderSet,
                           nativeTrampoline<builtinPropertyDunderSet>);
 
-  classAddBuiltinFunction(property, symbols()->DunderInit(),
+  classAddBuiltinFunction(property, SymbolId::kDunderInit,
                           nativeTrampoline<builtinPropertyInit>);
 
-  classAddBuiltinFunction(property, symbols()->DunderNew(),
+  classAddBuiltinFunction(property, SymbolId::kDunderNew,
                           nativeTrampoline<builtinPropertyNew>);
 
-  classAddBuiltinFunction(property, symbols()->Getter(),
+  classAddBuiltinFunction(property, SymbolId::kGetter,
                           nativeTrampoline<builtinPropertyGetter>);
 
-  classAddBuiltinFunction(property, symbols()->Setter(),
+  classAddBuiltinFunction(property, SymbolId::kSetter,
                           nativeTrampoline<builtinPropertySetter>);
 }
 
@@ -1028,43 +1027,43 @@ void Runtime::initializeSmallIntClass() {
       &scope, initializeHeapClass("smallint", LayoutId::kSmallInteger,
                                   LayoutId::kInteger));
 
-  classAddBuiltinFunction(small_integer, symbols()->BitLength(),
+  classAddBuiltinFunction(small_integer, SymbolId::kBitLength,
                           nativeTrampoline<builtinSmallIntegerBitLength>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderBool(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderBool,
                           nativeTrampoline<builtinSmallIntegerBool>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderEq(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderEq,
                           nativeTrampoline<builtinSmallIntegerEq>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderGe(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderGe,
                           nativeTrampoline<builtinSmallIntegerGe>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderGt(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderGt,
                           nativeTrampoline<builtinSmallIntegerGt>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderInvert(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderInvert,
                           nativeTrampoline<builtinSmallIntegerInvert>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderLe(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderLe,
                           nativeTrampoline<builtinSmallIntegerLe>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderLt(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderLt,
                           nativeTrampoline<builtinSmallIntegerLt>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderNe(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderNe,
                           nativeTrampoline<builtinSmallIntegerNe>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderNeg(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderNeg,
                           nativeTrampoline<builtinSmallIntegerNeg>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderPos(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderPos,
                           nativeTrampoline<builtinSmallIntegerPos>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderAdd(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderAdd,
                           nativeTrampoline<builtinSmallIntegerAdd>);
 
-  classAddBuiltinFunction(small_integer, symbols()->DunderSub(),
+  classAddBuiltinFunction(small_integer, SymbolId::kDunderSub,
                           nativeTrampoline<builtinSmallIntegerSub>);
 
   // We want to lookup the class of an immediate type by using the 5-bit tag
@@ -1082,13 +1081,13 @@ void Runtime::initializeStaticMethodClass() {
   Handle<Class> staticmethod(
       &scope, initializeHeapClass("staticmethod", LayoutId::kStaticMethod));
 
-  classAddBuiltinFunction(staticmethod, symbols()->DunderGet(),
+  classAddBuiltinFunction(staticmethod, SymbolId::kDunderGet,
                           nativeTrampoline<builtinStaticMethodGet>);
 
-  classAddBuiltinFunction(staticmethod, symbols()->DunderInit(),
+  classAddBuiltinFunction(staticmethod, SymbolId::kDunderInit,
                           nativeTrampoline<builtinStaticMethodInit>);
 
-  classAddBuiltinFunction(staticmethod, symbols()->DunderNew(),
+  classAddBuiltinFunction(staticmethod, SymbolId::kDunderNew,
                           nativeTrampoline<builtinStaticMethodNew>);
 }
 
@@ -1382,39 +1381,23 @@ SymbolId Runtime::swappedComparisonSelector(CompareOp op) {
   return comparisonSelector(swapped_op);
 }
 
-void Runtime::moduleAddGlobal(const Handle<Module>& module,
-                              const Handle<Object>& key,
-                              const Handle<Object>& value) {
+Object* Runtime::moduleAddGlobal(const Handle<Module>& module, SymbolId name,
+                                 const Handle<Object>& value) {
   HandleScope scope;
   Handle<Dictionary> dictionary(&scope, module->dictionary());
-  dictionaryAtPutInValueCell(dictionary, key, value);
+  Handle<Object> key(&scope, symbols()->at(name));
+  return dictionaryAtPutInValueCell(dictionary, key, value);
 }
 
 Object* Runtime::moduleAddBuiltinFunction(const Handle<Module>& module,
-                                          Object* name,
+                                          SymbolId name,
                                           const Function::Entry entry,
                                           const Function::Entry entry_kw,
                                           const Function::Entry entry_ex) {
   HandleScope scope;
-  Handle<Object> key(&scope, name);
-  Handle<Dictionary> dictionary(&scope, module->dictionary());
-  Handle<Object> value(&scope, newBuiltinFunction(entry, entry_kw, entry_ex));
-  return dictionaryAtPutInValueCell(dictionary, key, value);
-}
-
-void Runtime::moduleAddBuiltinPrint(const Handle<Module>& module) {
-  HandleScope scope;
-  Handle<Function> print(&scope,
-                         newBuiltinFunction(nativeTrampoline<builtinPrint>,
-                                            nativeTrampolineKw<builtinPrintKw>,
-                                            unimplementedTrampoline));
-
-  // Name
-  Handle<Object> name(&scope, newStringFromCString("print"));
-  print->setName(*name);
-
-  Handle<Object> val(&scope, *print);
-  moduleAddGlobal(module, name, val);
+  Handle<Object> value(&scope,
+                       newBuiltinFunction(name, entry, entry_kw, entry_ex));
+  return moduleAddGlobal(module, name, value);
 }
 
 void Runtime::createBuiltinsModule() {
@@ -1424,54 +1407,49 @@ void Runtime::createBuiltinsModule() {
 
   // Fill in builtins...
   build_class_ = moduleAddBuiltinFunction(
-      module, symbols()->DunderBuildClass(),
-      nativeTrampoline<builtinBuildClass>,
+      module, SymbolId::kDunderBuildClass, nativeTrampoline<builtinBuildClass>,
       nativeTrampolineKw<builtinBuildClassKw>, unimplementedTrampoline);
-  moduleAddBuiltinPrint(module);
-  moduleAddBuiltinFunction(module, symbols()->Ord(),
-                           nativeTrampoline<builtinOrd>,
+
+  moduleAddBuiltinFunction(
+      module, SymbolId::kPrint, nativeTrampoline<builtinPrint>,
+      nativeTrampolineKw<builtinPrintKw>, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kOrd, nativeTrampoline<builtinOrd>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, symbols()->Chr(),
-                           nativeTrampoline<builtinChr>,
+  moduleAddBuiltinFunction(module, SymbolId::kChr, nativeTrampoline<builtinChr>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, symbols()->Int(),
-                           nativeTrampoline<builtinInt>,
+  moduleAddBuiltinFunction(module, SymbolId::kInt, nativeTrampoline<builtinInt>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, symbols()->Range(),
+  moduleAddBuiltinFunction(module, SymbolId::kRange,
                            nativeTrampoline<builtinRange>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, symbols()->IsInstance(),
+  moduleAddBuiltinFunction(module, SymbolId::kIsInstance,
                            nativeTrampoline<builtinIsinstance>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, symbols()->Len(),
-                           nativeTrampoline<builtinLen>,
+  moduleAddBuiltinFunction(module, SymbolId::kLen, nativeTrampoline<builtinLen>,
                            unimplementedTrampoline, unimplementedTrampoline);
 
   // Add builtin types
-  moduleAddBuiltinType(module, LayoutId::kClassMethod,
-                       symbols()->Classmethod());
-  moduleAddBuiltinType(module, LayoutId::kDictionary, symbols()->Dict());
-  moduleAddBuiltinType(module, LayoutId::kDouble, symbols()->Float());
-  moduleAddBuiltinType(module, LayoutId::kList, symbols()->List());
-  moduleAddBuiltinType(module, LayoutId::kObject, symbols()->ObjectClassname());
-  moduleAddBuiltinType(module, LayoutId::kProperty, symbols()->Property());
-  moduleAddBuiltinType(module, LayoutId::kStaticMethod,
-                       symbols()->StaticMethod());
-  moduleAddBuiltinType(module, LayoutId::kSet, symbols()->Set());
-  moduleAddBuiltinType(module, LayoutId::kSuper, symbols()->Super());
-  moduleAddBuiltinType(module, LayoutId::kType, symbols()->Type());
+  moduleAddBuiltinType(module, SymbolId::kClassmethod, LayoutId::kClassMethod);
+  moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDictionary);
+  moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kDouble);
+  moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
+  moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
+  moduleAddBuiltinType(module, SymbolId::kProperty, LayoutId::kProperty);
+  moduleAddBuiltinType(module, SymbolId::kStaticMethod,
+                       LayoutId::kStaticMethod);
+  moduleAddBuiltinType(module, SymbolId::kSet, LayoutId::kSet);
+  moduleAddBuiltinType(module, SymbolId::kSuper, LayoutId::kSuper);
+  moduleAddBuiltinType(module, SymbolId::kType, LayoutId::kType);
 
-  Handle<Object> not_implemented_str(&scope, symbols()->NotImplemented());
   Handle<Object> not_implemented(&scope, notImplemented());
-  moduleAddGlobal(module, not_implemented_str, not_implemented);
+  moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
 
   addModule(module);
 }
 
-void Runtime::moduleAddBuiltinType(const Handle<Module>& module,
-                                   LayoutId layout_id, Object* symbol) {
+void Runtime::moduleAddBuiltinType(const Handle<Module>& module, SymbolId name,
+                                   LayoutId layout_id) {
   HandleScope scope;
-  Handle<Object> name(&scope, symbol);
   Handle<Object> value(&scope, classAt(layout_id));
   moduleAddGlobal(module, name, value);
 }
@@ -1481,22 +1459,19 @@ void Runtime::createSysModule() {
   Handle<Object> name(&scope, symbols()->Sys());
   Handle<Module> module(&scope, newModule(name));
 
-  Handle<Object> modules_id(&scope, newStringFromCString("modules"));
   Handle<Object> modules(&scope, modules_);
-  moduleAddGlobal(module, modules_id, modules);
+  moduleAddGlobal(module, SymbolId::kModules, modules);
 
   // Fill in sys...
-  moduleAddBuiltinFunction(module, symbols()->Exit(),
+  moduleAddBuiltinFunction(module, SymbolId::kExit,
                            nativeTrampoline<builtinSysExit>,
                            unimplementedTrampoline, unimplementedTrampoline);
 
-  Handle<Object> stdout_id(&scope, symbols()->Stdout());
   Handle<Object> stdout_val(&scope, SmallInteger::fromWord(STDOUT_FILENO));
-  moduleAddGlobal(module, stdout_id, stdout_val);
+  moduleAddGlobal(module, SymbolId::kStdout, stdout_val);
 
-  Handle<Object> stderr_id(&scope, symbols()->Stderr());
   Handle<Object> stderr_val(&scope, SmallInteger::fromWord(STDERR_FILENO));
-  moduleAddGlobal(module, stderr_id, stderr_val);
+  moduleAddGlobal(module, SymbolId::kStderr, stderr_val);
   addModule(module);
 }
 
@@ -1505,7 +1480,7 @@ void Runtime::createWeakRefModule() {
   Handle<Object> name(&scope, symbols()->UnderWeakRef());
   Handle<Module> module(&scope, newModule(name));
 
-  moduleAddBuiltinType(module, LayoutId::kWeakRef, symbols()->Ref());
+  moduleAddBuiltinType(module, SymbolId::kRef, LayoutId::kWeakRef);
   addModule(module);
 }
 
@@ -1515,8 +1490,8 @@ void Runtime::createTimeModule() {
   Handle<Module> module(&scope, newModule(name));
 
   // time.time
-  Handle<Object> time(&scope, newStringFromCString("time"));
-  moduleAddBuiltinFunction(module, *time, nativeTrampoline<builtinTime>,
+  moduleAddBuiltinFunction(module, SymbolId::kTime,
+                           nativeTrampoline<builtinTime>,
                            unimplementedTrampoline, unimplementedTrampoline);
 
   addModule(module);
@@ -2731,10 +2706,10 @@ void Runtime::initializeSuperClass() {
   HandleScope scope;
   Handle<Class> super(&scope, initializeHeapClass("super", LayoutId::kSuper));
 
-  classAddBuiltinFunction(super, symbols()->DunderInit(),
+  classAddBuiltinFunction(super, SymbolId::kDunderInit,
                           nativeTrampoline<builtinSuperInit>);
 
-  classAddBuiltinFunction(super, symbols()->DunderNew(),
+  classAddBuiltinFunction(super, SymbolId::kDunderNew,
                           nativeTrampoline<builtinSuperNew>);
 }
 

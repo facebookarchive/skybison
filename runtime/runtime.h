@@ -53,8 +53,8 @@ class Runtime {
 
   Object* newSet();
 
-  Object* newBuiltinFunction(Function::Entry entry, Function::Entry entryKw,
-                             Function::Entry entryEx);
+  Object* newBuiltinFunction(SymbolId name, Function::Entry entry,
+                             Function::Entry entryKw, Function::Entry entryEx);
   Object* newFunction();
 
   Object* newInstance(const Handle<Layout>& layout);
@@ -131,10 +131,10 @@ class Runtime {
   void visitRoots(PointerVisitor* visitor);
 
   void addModule(const Handle<Module>& module);
-  void moduleAddGlobal(const Handle<Module>& module, const Handle<Object>& key,
-                       const Handle<Object>& value);
+  Object* moduleAddGlobal(const Handle<Module>& module, SymbolId name,
+                          const Handle<Object>& value);
 
-  Object* moduleAddBuiltinFunction(const Handle<Module>& module, Object* name,
+  Object* moduleAddBuiltinFunction(const Handle<Module>& module, SymbolId name,
                                    const Function::Entry entry,
                                    const Function::Entry entryKw,
                                    const Function::Entry entryEx);
@@ -353,24 +353,24 @@ class Runtime {
 
   // Adds a builtin function with a positional entry point definition
   // using the default keyword and splatting entry points.
-  void classAddBuiltinFunction(const Handle<Class>& klass, Object* name,
+  void classAddBuiltinFunction(const Handle<Class>& klass, SymbolId name,
                                Function::Entry entry);
 
   // Adds a builtin function with positional and keyword entry point
   // definitions, using the default splatting entry point.
-  void classAddBuiltinFunctionKw(const Handle<Class>& klass, Object* name,
+  void classAddBuiltinFunctionKw(const Handle<Class>& klass, SymbolId name,
                                  Function::Entry entry,
                                  Function::Entry entry_kw);
 
   // Adds a builtin function with positional, keyword & splatting entry point
   // definitions
-  void classAddBuiltinFunctionKwEx(const Handle<Class>& klass, Object* name,
+  void classAddBuiltinFunctionKwEx(const Handle<Class>& klass, SymbolId name,
                                    Function::Entry entry,
                                    Function::Entry entry_kw,
                                    Function::Entry entry_ex);
 
   // Helper function to add extension functions to extension classes
-  void classAddExtensionFunction(const Handle<Class>& klass, Object* name,
+  void classAddExtensionFunction(const Handle<Class>& klass, SymbolId name,
                                  void* c_function);
 
   // determine whether the instance needs a slot for delegate base instance
@@ -511,8 +511,6 @@ class Runtime {
 
   ObjectArray* setGrow(const Handle<ObjectArray>& data);
 
-  void moduleAddBuiltinPrint(const Handle<Module>& module);
-
   // Generic attribute lookup code used for class objects
   Object* classGetAttr(Thread* thread, const Handle<Object>& receiver,
                        const Handle<Object>& name);
@@ -544,8 +542,8 @@ class Runtime {
                        const Handle<Object>& name);
 
   // helper function add builtin types
-  void moduleAddBuiltinType(const Handle<Module>& module, LayoutId layout_id,
-                            Object* symbol);
+  void moduleAddBuiltinType(const Handle<Module>& module, SymbolId name,
+                            LayoutId layout_id);
 
   // Appends the edge to the list of edges.
   //

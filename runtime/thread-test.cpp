@@ -1326,10 +1326,8 @@ TEST(ThreadDeathTest, NativeExceptions) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Function> fn(
-      &scope, runtime.newBuiltinFunction(nativeTrampoline<nativeExceptionTest>,
-                                         unimplementedTrampoline,
-                                         unimplementedTrampoline));
+  Handle<Function> fn(&scope, runtime.newFunction());
+  fn->setEntry(nativeTrampoline<nativeExceptionTest>);
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));

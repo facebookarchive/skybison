@@ -225,10 +225,9 @@ def g(ref, b=2):
   Handle<WeakRef> ref2(&scope, runtime.newWeakRef());
   {
     Handle<ObjectArray> array1(&scope, runtime.newObjectArray(10));
-    Handle<Function> collect(
-        &scope, runtime.newBuiltinFunction(
-                    nativeTrampoline<doGarbageCollection>,
-                    unimplementedTrampoline, unimplementedTrampoline));
+    Handle<Function> collect(&scope, runtime.newFunction());
+    collect->setEntry(nativeTrampoline<doGarbageCollection>);
+
     ref1->setReferent(*array1);
     ref1->setCallback(*collect);
 

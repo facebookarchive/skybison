@@ -97,10 +97,12 @@ class Runtime;
   V(Len, "len")                                                                \
   V(List, "list")                                                              \
   V(Metaclass, "metaclass")                                                    \
+  V(Modules, "modules")                                                        \
   V(NotImplemented, "NotImplemented")                                          \
   V(ObjectClassname, "object")                                                 \
   V(Ord, "ord")                                                                \
   V(Pop, "pop")                                                                \
+  V(Print, "print")                                                            \
   V(Property, "property")                                                      \
   V(Range, "range")                                                            \
   V(Ref, "ref")                                                                \

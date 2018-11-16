@@ -224,13 +224,11 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   type_class->setInstanceLayout(*layout);
 
   // Register DunderNew
-  runtime->classAddExtensionFunction(type_class,
-                                     runtime->symbols()->DunderNew(),
+  runtime->classAddExtensionFunction(type_class, SymbolId::kDunderNew,
                                      Utils::castFnPtrToVoid(type->tp_new));
 
   // Register DunderInit
-  runtime->classAddExtensionFunction(type_class,
-                                     runtime->symbols()->DunderInit(),
+  runtime->classAddExtensionFunction(type_class, SymbolId::kDunderInit,
                                      Utils::castFnPtrToVoid(type->tp_init));
 
   // TODO(T29618332): Implement missing PyType_Ready features
