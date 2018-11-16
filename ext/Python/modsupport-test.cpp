@@ -2,7 +2,9 @@
 
 namespace python {
 
-TEST_F(ExtensionApi, ModSupportAddIntConstantAddsToModule) {
+using ModSupportExtensionApiTest = ExtensionApi;
+
+TEST_F(ModSupportExtensionApiTest, AddIntConstantAddsToModule) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
@@ -24,7 +26,7 @@ x = mymodule.myglobal
   ASSERT_EQ(result, 123);
 }
 
-TEST_F(ExtensionApi, ModSupportAddIntConstantWithNullNameFails) {
+TEST_F(ModSupportExtensionApiTest, AddIntConstantWithNullNameFails) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
@@ -37,7 +39,7 @@ TEST_F(ExtensionApi, ModSupportAddIntConstantWithNullNameFails) {
   ASSERT_EQ(result, -1);
 }
 
-TEST_F(ExtensionApi, ModSupportRepeatedAddIntConstantOverwritesValue) {
+TEST_F(ModSupportExtensionApiTest, RepeatedAddIntConstantOverwritesValue) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
