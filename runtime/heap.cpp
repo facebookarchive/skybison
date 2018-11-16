@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "frame.h"
 #include "objects.h"
 #include "runtime.h"
 #include "visitor.h"
@@ -141,14 +142,8 @@ Object* Heap::createComplex(double real, double imag) {
   return Complex::cast(result);
 }
 
-Object* Heap::createCoro() {
-  word size = Coro::allocationSize();
-  Object* raw = allocate(size, Header::kSize);
-  CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Coro*>(raw);
-  result->setHeader(Header::from(Coro::kSize / kPointerSize, 0, LayoutId::kCoro,
-                                 ObjectFormat::kDataInstance));
-  return Coro::cast(result);
+Object* Heap::createCoroutine() {
+  return createInstance(LayoutId::kCoroutine, Coroutine::kSize / kPointerSize);
 }
 
 Object* Heap::createDict() {
@@ -197,14 +192,13 @@ Object* Heap::createFunction() {
   return Function::cast(result);
 }
 
-Object* Heap::createGen() {
-  word size = Gen::allocationSize();
-  Object* raw = allocate(size, Header::kSize);
-  CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<Gen*>(raw);
-  result->setHeader(Header::from(Gen::kSize / kPointerSize, 0, LayoutId::kGen,
-                                 ObjectFormat::kDataInstance));
-  return Gen::cast(result);
+Object* Heap::createGenerator() {
+  return createInstance(LayoutId::kGenerator, Generator::kSize / kPointerSize);
+}
+
+Object* Heap::createHeapFrame(word extra_words) {
+  return createInstance(LayoutId::kHeapFrame,
+                        HeapFrame::numAttributes(extra_words));
 }
 
 Object* Heap::createInstance(LayoutId layout_id, word num_attributes) {

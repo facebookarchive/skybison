@@ -127,6 +127,7 @@ class Runtime;
   V(ExtensionPtr, "___extension___")                                           \
   V(File, "file")                                                              \
   V(Float, "float")                                                            \
+  V(Frame, "frame")                                                            \
   V(Function, "function")                                                      \
   V(Generator, "generator")                                                    \
   V(Getattr, "getattr")                                                        \
@@ -180,6 +181,7 @@ class Runtime;
   V(Set, "set")                                                                \
   V(SetIterator, "set_iterator")                                               \
   V(Setattr, "setattr")                                                        \
+  V(Send, "send")                                                              \
   V(Setter, "setter")                                                          \
   V(Size, "size")                                                              \
   V(Slice, "slice")                                                            \

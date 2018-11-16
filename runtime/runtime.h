@@ -57,7 +57,7 @@ class Runtime {
 
   Object* newComplex(double real, double imag);
 
-  Object* newCoro();
+  Object* newCoroutine();
 
   Object* newDict();
   Object* newDict(word initial_size);
@@ -71,7 +71,9 @@ class Runtime {
                              Function::Entry entry_ex);
   Object* newFunction();
 
-  Object* newGen();
+  Object* newGenerator();
+
+  Object* newHeapFrame(const Handle<Code>& code);
 
   Object* newInstance(const Handle<Layout>& layout);
 
@@ -320,6 +322,19 @@ class Runtime {
   // if any of the mappings have the same key repeated in them.
   Object* dictMerge(Thread* thread, const Handle<Dict>& dict,
                     const Handle<Object>& mapping);
+
+  // Resume a GeneratorBase, passing it the given value and returning either the
+  // yielded value or Error on termination.
+  Object* genSend(Thread* thread, const Handle<GeneratorBase>& gen,
+                  const Handle<Object>& value);
+
+  // Save the current Frame to the given generator and pop the Frame off of the
+  // stack.
+  void genSave(Thread* thread, const Handle<GeneratorBase>& gen);
+
+  // Get the GeneratorBase* corresponding to the given Frame, assuming it is
+  // executing in a resumed GeneratorBase.
+  GeneratorBase* genFromStackFrame(Frame* frame);
 
   NewValueCellCallback* newValueCellCallback() {
     return &new_value_cell_callback_;

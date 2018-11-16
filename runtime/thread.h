@@ -28,10 +28,12 @@ class Thread {
   static void setCurrentThread(Thread* thread);
 
   Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
+  Frame* linkFrame(Frame* frame);
   Frame* pushFrame(Object* code);
   Frame* pushNativeFrame(void* fn, word nargs);
   Frame* pushModuleFunctionFrame(Module* module, Object* code);
   Frame* pushClassFunctionFrame(Object* function, Object* dict);
+  void checkStackOverflow(word max_size);
 
   void popFrame();
 
@@ -99,8 +101,16 @@ class Thread {
   Object* raiseValueError(Object* value);
   Object* raiseValueErrorWithCStr(const char* message);
 
+  // Raises a StopIteration exception and returns an Error object that must be
+  // returned up the stack by the caller.
+  Object* raiseStopIteration(Object* value);
+
   // Returns true if there is an exception pending.
   bool hasPendingException();
+
+  // Returns true if there is a StopIteration exception pending. Special-cased
+  // to support generators until we have proper exception support.
+  bool hasPendingStopIteration();
 
   // If there's a pending exception, clear it.
   void clearPendingException();

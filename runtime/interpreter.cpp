@@ -485,6 +485,50 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
   return Bool::trueObj();
 }
 
+Object* Interpreter::yieldFrom(Thread* thread, Frame* frame) {
+  HandleScope scope(thread);
+  Handle<Object> value(&scope, frame->popValue());
+  Handle<Object> iterator(&scope, frame->topValue());
+  Handle<Object> result(&scope, None::object());
+  if (value->isNone()) {
+    Handle<Object> next_method(
+        &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
+    if (next_method->isError()) {
+      thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+      thread->abortOnPendingException();
+    }
+    result = callMethod1(thread, frame, next_method, iterator);
+    if (result->isError() && !thread->hasPendingStopIteration()) {
+      thread->abortOnPendingException();
+    }
+  } else {
+    Handle<Object> send_method(
+        &scope, lookupMethod(thread, frame, iterator, SymbolId::kSend));
+    if (send_method->isError()) {
+      thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+      thread->abortOnPendingException();
+    }
+    result = callMethod2(thread, frame, send_method, iterator, value);
+    if (result->isError() && !thread->hasPendingStopIteration()) {
+      thread->abortOnPendingException();
+    }
+  }
+  if (result->isError()) {
+    if (thread->hasPendingStopIteration()) {
+      frame->setTopValue(thread->exceptionValue());
+      thread->clearPendingException();
+      return Error::object();
+    }
+    thread->abortOnPendingException();
+  }
+  // Unlike YIELD_VALUE, don't update PC in the frame: we want this
+  // instruction to re-execute until the subiterator is exhausted.
+  Handle<GeneratorBase> gen(&scope,
+                            thread->runtime()->genFromStackFrame(frame));
+  thread->runtime()->genSave(thread, gen);
+  return *result;
+}
+
 static Bytecode currentBytecode(const Interpreter::Context* ctx) {
   ByteArray* code = ByteArray::cast(Code::cast(ctx->frame->code())->code());
   word pc = ctx->pc;
@@ -977,11 +1021,11 @@ void Interpreter::doGetYieldFromIter(Context* ctx, word) {
   HandleScope scope(thread);
   Handle<Object> iterable(&scope, frame->topValue());
 
-  if (iterable->isGen()) {
+  if (iterable->isGenerator()) {
     return;
   }
 
-  if (iterable->isCoro()) {
+  if (iterable->isCoroutine()) {
     Handle<Code> code(&scope, frame->code());
     if (code->flags() &
         (Code::Flags::COROUTINE | Code::Flags::ITERABLE_COROUTINE)) {
@@ -1277,24 +1321,21 @@ void Interpreter::doForIter(Context* ctx, word arg) {
   Handle<Object> next_method(&scope, lookupMethod(thread, ctx->frame, iterator,
                                                   SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->raiseValueErrorWithCStr("iter() returned non-iterator");
+    thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
     thread->abortOnPendingException();
   }
-  if (thread->runtime()->isIteratorExhausted(thread, iterator)) {
-    // Break out of the loop
+  Handle<Object> value(&scope,
+                       callMethod1(thread, ctx->frame, next_method, iterator));
+  if (value->isError() && !thread->hasPendingStopIteration()) {
+    thread->abortOnPendingException();
+  }
+  if (thread->hasPendingStopIteration()) {
+    thread->clearPendingException();
     ctx->frame->popValue();
     ctx->pc += arg;
     return;
   }
-  Handle<Object> value(&scope,
-                       callMethod1(thread, ctx->frame, next_method, iterator));
-  if (!value->isError()) {
-    // Common case of the iterator returning a value
-    ctx->frame->pushValue(*value);
-    return;
-  }
-  // Slow-path for all other exception types
-  ctx->thread->abortOnPendingException();
+  ctx->frame->pushValue(*value);
 }
 
 // opcode 94
@@ -2114,10 +2155,10 @@ const Op kOpTable[] = {
 
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
-  Code* code = Code::cast(frame->code());
+  Handle<Code> code(&scope, Code::cast(frame->code()));
   Handle<ByteArray> byte_array(&scope, code->code());
   Context ctx;
-  ctx.pc = 0;
+  ctx.pc = frame->virtualPC();
   ctx.thread = thread;
   ctx.frame = frame;
   for (;;) {
@@ -2135,7 +2176,25 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         Object* result = ctx.frame->popValue();
         // Clean up after ourselves
         thread->popFrame();
+        if (code->flags() & Code::GENERATOR) {
+          return thread->raiseStopIteration(result);
+        }
         return result;
+      }
+      case Bytecode::YIELD_FROM: {
+        Object* result = yieldFrom(thread, frame);
+        if (result->isError()) {
+          continue;
+        }
+        return result;
+      }
+      case Bytecode::YIELD_VALUE: {
+        Handle<Object> result(&scope, frame->popValue());
+        frame->setVirtualPC(ctx.pc);
+        Handle<GeneratorBase> gen(&scope,
+                                  thread->runtime()->genFromStackFrame(frame));
+        thread->runtime()->genSave(thread, gen);
+        return *result;
       }
       default:
         kOpTable[bc](&ctx, arg);

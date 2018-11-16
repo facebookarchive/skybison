@@ -174,6 +174,7 @@ add_library(
   runtime/frame.cpp
   runtime/frame.h
   runtime/function-builtins.cpp
+  runtime/generator-builtins.cpp
   runtime/globals.h
   runtime/handles.cpp
   runtime/handles.h
@@ -296,6 +297,7 @@ add_library(
   runtime/dict-builtins-test.cpp
   runtime/exception-builtins-test.cpp
   runtime/float-builtins-test.cpp
+  runtime/generator-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
   runtime/int-builtins-test.cpp

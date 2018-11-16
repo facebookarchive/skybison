@@ -28,6 +28,26 @@ static inline void initFrame(Thread* thread, Function* function,
   new_frame->setFastGlobals(function->fastGlobals());
 }
 
+// If the given Code object represents any kind of resumable function, create
+// and return the corresponding object. Otherwise, return None.
+static inline Object* checkCreateGenerator(Code* raw_code, Thread* thread) {
+  word flags = raw_code->flags();
+  if ((flags & (Code::GENERATOR | Code::COROUTINE)) == 0) {
+    return None::object();
+  }
+
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Handle<Code> code(&scope, raw_code);
+  Handle<HeapFrame> heap_frame(&scope, runtime->newHeapFrame(code));
+  Handle<GeneratorBase> gen_base(&scope, (flags & Code::GENERATOR)
+                                             ? runtime->newGenerator()
+                                             : runtime->newCoroutine());
+  gen_base->setHeapFrame(*heap_frame);
+  runtime->genSave(thread, gen_base);
+  return *gen_base;
+}
+
 // Final stage of a call when arguments are all in place
 static inline Object* callNoChecks(Thread* thread, Function* function,
                                    Frame* caller_frame, Code* code) {
@@ -36,6 +56,11 @@ static inline Object* callNoChecks(Thread* thread, Function* function,
 
   // Initialize it
   initFrame(thread, function, callee_frame, caller_frame);
+
+  Object* generator = checkCreateGenerator(code, thread);
+  if (!generator->isNone()) {
+    return generator;
+  }
 
   // Off we go!
   return Interpreter::execute(thread, callee_frame);
@@ -66,6 +91,11 @@ static inline Object* callCheckFreeCell(Thread* thread, Function* function,
   for (word i = 0; i < code->numFreevars(); i++) {
     callee_frame->setLocal(num_locals + num_cellvars + i,
                            ObjectArray::cast(function->closure())->at(i));
+  }
+
+  Object* generator = checkCreateGenerator(code, thread);
+  if (!generator->isNone()) {
+    return generator;
   }
 
   // Off we go!

@@ -20,6 +20,7 @@
 #include "frame.h"
 #include "frozen-modules.h"
 #include "function-builtins.h"
+#include "generator-builtins.h"
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
@@ -595,8 +596,6 @@ Object* Runtime::newCode() {
   return *result;
 }
 
-Object* Runtime::newCoro() { return heap()->createCoro(); }
-
 Object* Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
                                     Function::Entry entry_kw,
                                     Function::Entry entry_ex) {
@@ -618,7 +617,22 @@ Object* Runtime::newFunction() {
   return *result;
 }
 
-Object* Runtime::newGen() { return heap()->createGen(); }
+Object* Runtime::newCoroutine() { return heap()->createCoroutine(); }
+
+Object* Runtime::newGenerator() { return heap()->createGenerator(); }
+
+Object* Runtime::newHeapFrame(const Handle<Code>& code) {
+  DCHECK(code->flags() & (Code::GENERATOR | Code::COROUTINE),
+         "expected a Generator/Coroutine code object");
+
+  word num_args = code->totalArgs();
+  word num_vars = code->totalVars();
+  word extra_words = num_args + num_vars + code->stacksize();
+  HandleScope scope;
+  Handle<HeapFrame> frame(&scope, heap()->createHeapFrame(extra_words));
+  frame->setMaxStackSize(code->stacksize());
+  return *frame;
+}
 
 Object* Runtime::newInstance(const Handle<Layout>& layout) {
   word num_words = layout->instanceSize();
@@ -982,6 +996,8 @@ void Runtime::initializeHeapClasses() {
   addEmptyBuiltinClass(SymbolId::kEllipsis, LayoutId::kEllipsis,
                        LayoutId::kObject);
   FloatBuiltins::initialize(this);
+  addEmptyBuiltinClass(SymbolId::kFrame, LayoutId::kHeapFrame,
+                       LayoutId::kObject);
   initializeFunctionClass();
   addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeStr,
                        LayoutId::kStr);
@@ -1001,9 +1017,7 @@ void Runtime::initializeHeapClasses() {
   initializeRefClass();
   SetBuiltins::initialize(this);
   SetIteratorBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kGenerator, LayoutId::kGen, LayoutId::kObject);
-  addEmptyBuiltinClass(SymbolId::kCoroutine, LayoutId::kCoro,
-                       LayoutId::kObject);
+  GeneratorBaseBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
   initializeStaticMethodClass();
   initializeSuperClass();
@@ -2489,6 +2503,35 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
     dictAtPut(dict, key, value);
   }
   return *dict;
+}
+
+Object* Runtime::genSend(Thread* thread, const Handle<GeneratorBase>& gen,
+                         const Handle<Object>& value) {
+  HandleScope scope(thread);
+  Handle<HeapFrame> heap_frame(&scope, gen->heapFrame());
+  thread->checkStackOverflow(heap_frame->numFrameWords() * kPointerSize);
+  Frame* live_frame = heap_frame->copyToNewStackFrame(thread->currentFrame());
+  if (live_frame->virtualPC() != 0) {
+    live_frame->pushValue(*value);
+  }
+  thread->linkFrame(live_frame);
+  return Interpreter::execute(thread, live_frame);
+}
+
+void Runtime::genSave(Thread* thread, const Handle<GeneratorBase>& gen) {
+  HandleScope scope(thread);
+  Handle<HeapFrame> heap_frame(&scope, gen->heapFrame());
+  Frame* live_frame = thread->currentFrame();
+  DCHECK(live_frame->valueStackSize() <= heap_frame->maxStackSize(),
+         "not enough space in GeneratorBase to save live stack");
+  heap_frame->copyFromStackFrame(live_frame);
+  thread->popFrame();
+}
+
+GeneratorBase* Runtime::genFromStackFrame(Frame* frame) {
+  // For now, we have the invariant that GeneratorBase bodies are only invoked
+  // by __next__() or send(), which have the GeneratorBase as their first local.
+  return GeneratorBase::cast(frame->previousFrame()->getLocal(0));
 }
 
 Object* Runtime::newValueCell() { return heap()->createValueCell(); }

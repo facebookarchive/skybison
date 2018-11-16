@@ -79,5 +79,8 @@ Object* moduleAt(Runtime* runtime, const Handle<Module>& module,
 // returning Error::object() if either can't be found.
 Object* moduleAt(Runtime* runtime, const char* module_name, const char* name);
 
+// Get the name of the type of the given object.
+std::string typeName(Runtime* runtime, Object* obj);
+
 }  // namespace testing
 }  // namespace python

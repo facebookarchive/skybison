@@ -135,5 +135,13 @@ Object* moduleAt(Runtime* runtime, const char* module_name, const char* name) {
   return moduleAt(runtime, module, name);
 }
 
+std::string typeName(Runtime* runtime, Object* obj) {
+  Str* name = Str::cast(Type::cast(runtime->typeOf(obj))->name());
+  word length = name->length();
+  std::string result(length, '\0');
+  name->copyTo(reinterpret_cast<byte*>(&result[0]), length);
+  return result;
+}
+
 }  // namespace testing
 }  // namespace python

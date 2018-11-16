@@ -72,25 +72,31 @@ Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
   // bound method
   stack_depth += 1;
 
-  // Check that there is sufficient space on the stack
-  // TODO: Grow stack
-  byte* sp = reinterpret_cast<byte*>(currentFrame_->valueStackTop());
-  word max_size = Frame::kSize + (num_vars + stack_depth) * kPointerSize;
-  CHECK(sp - max_size >= start_, "stack overflow");
+  checkStackOverflow(Frame::kSize + (num_vars + stack_depth) * kPointerSize);
 
   // Initialize the frame.
+  byte* sp = reinterpret_cast<byte*>(currentFrame_->valueStackTop());
   word size = Frame::kSize + num_vars * kPointerSize;
   sp -= size;
   std::memset(sp, 0, size);
   auto frame = reinterpret_cast<Frame*>(sp);
-  frame->setPreviousFrame(currentFrame_);
   frame->setValueStackTop(reinterpret_cast<Object**>(frame));
   frame->setNumLocals(num_args + num_vars);
 
-  currentFrame_ = frame;
-
   // return a pointer to the base of the frame
-  return frame;
+  return linkFrame(frame);
+}
+
+Frame* Thread::linkFrame(Frame* frame) {
+  frame->setPreviousFrame(currentFrame_);
+  return currentFrame_ = frame;
+}
+
+void Thread::checkStackOverflow(word max_size) {
+  // Check that there is sufficient space on the stack
+  // TODO: Grow stack
+  byte* sp = reinterpret_cast<byte*>(currentFrame_->valueStackTop());
+  CHECK(sp - max_size >= start_, "stack overflow");
 }
 
 Frame* Thread::pushNativeFrame(void* fn, word nargs) {
@@ -107,8 +113,8 @@ Frame* Thread::pushNativeFrame(void* fn, word nargs) {
 Frame* Thread::pushFrame(Object* object) {
   HandleScope scope(this);
   Handle<Code> code(&scope, object);
-  word num_vars = code->nlocals() + code->numCellvars() + code->numFreevars();
-  auto frame = openAndLinkFrame(code->totalArgs(), num_vars, code->stacksize());
+  auto frame =
+      openAndLinkFrame(code->totalArgs(), code->totalVars(), code->stacksize());
   frame->setCode(*code);
   return frame;
 }
@@ -286,7 +292,19 @@ Object* Thread::raiseIndexErrorWithCStr(const char* message) {
   return raiseIndexError(runtime()->newStrFromCStr(message));
 }
 
+Object* Thread::raiseStopIteration(Object* value) {
+  setExceptionType(runtime()->typeAt(LayoutId::kStopIteration));
+  setExceptionValue(value);
+  return Error::object();
+}
+
 bool Thread::hasPendingException() { return !exception_type_->isNone(); }
+
+bool Thread::hasPendingStopIteration() {
+  return exception_type_->isType() &&
+         Type::cast(exception_type_)
+             ->hasFlag(Type::Flag::kStopIterationSubclass);
+}
 
 void Thread::ignorePendingException() {
   if (!hasPendingException()) {

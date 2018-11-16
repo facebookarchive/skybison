@@ -32,7 +32,7 @@ class Heap {
 
   Object* createComplex(double real, double imag);
 
-  Object* createCoro();
+  Object* createCoroutine();
 
   Object* createDict();
 
@@ -42,7 +42,9 @@ class Heap {
 
   Object* createFunction();
 
-  Object* createGen();
+  Object* createGenerator();
+
+  Object* createHeapFrame(word extra_words);
 
   Object* createInstance(LayoutId layout_id, word num_attributes);
 

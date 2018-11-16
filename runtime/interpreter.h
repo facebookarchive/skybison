@@ -101,6 +101,11 @@ class Interpreter {
                                   const Handle<Object>& value,
                                   const Handle<Object>& container);
 
+  // Perform the meat of YIELD_FROM. Returns Error if the subiterator is
+  // finished and execution should continue. Otherwise, returns the value from
+  // the subiterator to return to the caller.
+  static Object* yieldFrom(Thread* thread, Frame* frame);
+
   struct Context {
     Thread* thread;
     Frame* frame;

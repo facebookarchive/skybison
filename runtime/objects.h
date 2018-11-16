@@ -22,13 +22,14 @@ namespace python {
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \
-  V(Coro)                                                                      \
+  V(Coroutine)                                                                 \
   V(Dict)                                                                      \
   V(Ellipsis)                                                                  \
   V(Exception)                                                                 \
   V(Float)                                                                     \
   V(Function)                                                                  \
-  V(Gen)                                                                       \
+  V(Generator)                                                                 \
+  V(HeapFrame)                                                                 \
   V(ImportError)                                                               \
   V(IndexError)                                                                \
   V(Int)                                                                       \
@@ -106,13 +107,14 @@ enum class LayoutId : word {
   kClassMethod,
   kCode,
   kComplex,
-  kCoro,
+  kCoroutine,
   kDict,
   kEllipsis,
   kException,
   kFloat,
   kFunction,
-  kGen,
+  kGenerator,
+  kHeapFrame,
   kImportError,
   kInt,
   kIndexError,
@@ -175,13 +177,14 @@ class Object {
   bool isClassMethod();
   bool isCode();
   bool isComplex();
-  bool isCoro();
+  bool isCoroutine();
   bool isDict();
   bool isEllipsis();
   bool isException();
   bool isFloat();
+  bool isHeapFrame();
   bool isFunction();
-  bool isGen();
+  bool isGenerator();
   bool isHeapObject();
   bool isImportError();
   bool isIndexError();
@@ -201,6 +204,7 @@ class Object {
   bool isProperty();
   bool isRange();
   bool isRangeIterator();
+  bool isGeneratorBase();
   bool isRuntimeError();
   bool isSet();
   bool isSetIterator();
@@ -1237,6 +1241,10 @@ class Code : public HeapObject {
   word nlocals();
   void setNlocals(word value);
 
+  // The total number of variables in this code object: normal locals, cell
+  // variables, and free variables.
+  word totalVars();
+
   word stacksize();
   void setStacksize(word value);
 
@@ -1981,43 +1989,50 @@ class Super : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Super);
 };
 
-class Coro : public HeapObject {
+/**
+ * Base class containing functionality needed by all objects representing a
+ * suspended execution frame: Generator, Coroutine, and AsyncGenerator.
+ */
+class GeneratorBase : public HeapObject {
  public:
+  // Get or set the HeapFrame embedded in this GeneratorBase.
+  Object* heapFrame();
+  void setHeapFrame(Object* obj);
+
   // Casting.
-  static Coro* cast(Object* object);
+  static GeneratorBase* cast(Object* obj);
 
   // Sizing.
   static word allocationSize();
 
-  // Layout
-  static const int kAwaitOffset = HeapObject::kSize;
-  static const int kFrameOffset = kAwaitOffset + kPointerSize;
-  static const int kIsRunningOffset = kFrameOffset + kPointerSize;
-  static const int kCodeOffset = kIsRunningOffset + kPointerSize;
-  static const int kOriginOffset = kCodeOffset + kPointerSize;
-  static const int kSize = kOriginOffset + kPointerSize;
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Coro);
-};
-
-class Gen : public HeapObject {
- public:
-  // Casting.
-  static Gen* cast(Object* object);
-
-  // Sizing.
-  static word allocationSize();
-
-  // Layout
-  static const int kYieldFromOffset = HeapObject::kSize;
-  static const int kFrameOffset = kYieldFromOffset + kPointerSize;
+  // Layout.
+  static const int kFrameOffset = HeapObject::kSize;
   static const int kIsRunningOffset = kFrameOffset + kPointerSize;
   static const int kCodeOffset = kIsRunningOffset + kPointerSize;
   static const int kSize = kCodeOffset + kPointerSize;
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Gen);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(GeneratorBase);
+};
+
+class Generator : public GeneratorBase {
+ public:
+  // Casting.
+  static Generator* cast(Object* object);
+
+  static const int kYieldFromOffset = GeneratorBase::kSize;
+  static const int kSize = kYieldFromOffset + kPointerSize;
+};
+
+class Coroutine : public GeneratorBase {
+ public:
+  // Casting.
+  static Coroutine* cast(Object* object);
+
+  // Layout.
+  static const int kAwaitOffset = GeneratorBase::kSize;
+  static const int kOriginOffset = kAwaitOffset + kPointerSize;
+  static const int kSize = kOriginOffset + kPointerSize;
 };
 
 // Object
@@ -2141,11 +2156,11 @@ inline bool Object::isComplex() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kComplex;
 }
 
-inline bool Object::isCoro() {
+inline bool Object::isCoroutine() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kCoro;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kCoroutine;
 }
 
 inline bool Object::isLargeStr() {
@@ -2189,6 +2204,13 @@ inline bool Object::isFloat() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kFloat;
+}
+
+inline bool Object::isHeapFrame() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kHeapFrame;
 }
 
 inline bool Object::isSet() {
@@ -2255,11 +2277,11 @@ inline bool Object::isEllipsis() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kEllipsis;
 }
 
-inline bool Object::isGen() {
+inline bool Object::isGenerator() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kGen;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kGenerator;
 }
 
 inline bool Object::isLargeInt() {
@@ -2308,6 +2330,8 @@ inline bool Object::isRangeIterator() {
   return HeapObject::cast(this)->header()->layoutId() ==
          LayoutId::kRangeIterator;
 }
+
+inline bool Object::isGeneratorBase() { return isGenerator() || isCoroutine(); }
 
 inline bool Object::isRuntimeError() {
   if (!isHeapObject()) {
@@ -3209,6 +3233,10 @@ inline word Code::nlocals() {
 
 inline void Code::setNlocals(word value) {
   instanceVariableAtPut(kNlocalsOffset, SmallInt::fromWord(value));
+}
+
+inline word Code::totalVars() {
+  return nlocals() + numCellvars() + numFreevars();
 }
 
 inline word Code::stacksize() {
@@ -4193,22 +4221,36 @@ inline Object* TupleIterator::next() {
   return item;
 }
 
-// Coro
+// GeneratorBase
 
-inline word Coro::allocationSize() { return Header::kSize + Coro::kSize; }
-
-inline Coro* Coro::cast(Object* object) {
-  DCHECK(object->isCoro(), "invalid cast, expected Coro");
-  return reinterpret_cast<Coro*>(object);
+inline Object* GeneratorBase::heapFrame() {
+  return instanceVariableAt(kFrameOffset);
 }
 
-// Gen
+inline void GeneratorBase::setHeapFrame(Object* obj) {
+  instanceVariableAtPut(kFrameOffset, obj);
+}
 
-inline word Gen::allocationSize() { return Header::kSize + Gen::kSize; }
+inline word GeneratorBase::allocationSize() { return Header::kSize + kSize; }
 
-inline Gen* Gen::cast(Object* object) {
-  DCHECK(object->isGen(), "invalid cast, expected Gen");
-  return reinterpret_cast<Gen*>(object);
+inline GeneratorBase* GeneratorBase::cast(Object* obj) {
+  DCHECK(obj->isGeneratorBase(),
+         "invalid cast, expected GeneratorBase subclass");
+  return reinterpret_cast<GeneratorBase*>(obj);
+}
+
+// Generator
+
+inline Generator* Generator::cast(Object* obj) {
+  DCHECK(obj->isGenerator(), "invalid cast, expected generator");
+  return reinterpret_cast<Generator*>(obj);
+}
+
+// Coroutine
+
+inline Coroutine* Coroutine::cast(Object* obj) {
+  DCHECK(obj->isCoroutine(), "invalid cast, expected coroutine");
+  return reinterpret_cast<Coroutine*>(obj);
 }
 
 }  // namespace python

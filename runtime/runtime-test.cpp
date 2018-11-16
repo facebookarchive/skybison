@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "bytecode.h"
+#include "frame.h"
 #include "layout.h"
 #include "runtime.h"
 #include "symbols.h"
@@ -2998,20 +2999,22 @@ TEST(ModuleImportTest, ModuleImportsAllPublicSymbols) {
   EXPECT_PYSTRING_EQ(Str::cast(result->value()), "public_symbol");
 }
 
-TEST(CoroutineTest, New) {
+TEST(HeapFrameTest, Create) {
+  const char* src = R"(
+def gen():
+  yield 12
+)";
+
   Runtime runtime;
   HandleScope scope;
-
-  Handle<Object> coroutine(&scope, runtime.newCoro());
-  EXPECT_TRUE(coroutine->isCoro());
-}
-
-TEST(GeneratorTest, New) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Handle<Object> generator(&scope, runtime.newGen());
-  EXPECT_TRUE(generator->isGen());
+  runtime.runFromCStr(src);
+  Handle<Object> gen(&scope, moduleAt(&runtime, "__main__", "gen"));
+  ASSERT_TRUE(gen->isFunction());
+  Handle<Code> code(&scope, Function::cast(*gen)->code());
+  Handle<Object> frame_obj(&scope, runtime.newHeapFrame(code));
+  ASSERT_TRUE(frame_obj->isHeapFrame());
+  Handle<HeapFrame> heap_frame(frame_obj);
+  EXPECT_EQ(heap_frame->maxStackSize(), code->stacksize());
 }
 
 }  // namespace python

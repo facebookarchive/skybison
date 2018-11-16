@@ -2022,7 +2022,8 @@ TEST(InterpreterDeathTest, YieldFromIterThrowsException) {
 def yield_from_func():
     yield from 1
 
-yield_from_func()
+for i in yield_from_func():
+    pass
 	)";
 
   ASSERT_DEATH(runtime.runFromCStr(src), "object is not iterable");

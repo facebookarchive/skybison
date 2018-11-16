@@ -3,10 +3,9 @@
 #include "globals.h"
 #include "objects.h"
 
-namespace python {
+#include <cstring>
 
-class Code;
-class Object;
+namespace python {
 
 /**
  * TryBlock contains the unmarshaled block stack information.
@@ -225,6 +224,14 @@ class Frame {
   void* nativeFunctionPointer();
   void makeNativeFrame(Object* fn_pointer_as_int);
 
+  // Adjust and/or save the values of internal pointers after copying this Frame
+  // from the stack to the heap.
+  void stashInternalPointers(Frame* old_frame);
+
+  // Adjust and/or restore internal pointers after copying this Frame from the
+  // heap to the stack.
+  void unstashInternalPointers();
+
   // Compute the total space required for a frame object
   static word allocationSize(Object* code);
 
@@ -247,7 +254,70 @@ class Frame {
   void atPut(int offset, Object* value);
   Object** locals();
 
+  // Re-compute the locals pointer based on this and num_locals.
+  void resetLocals(word num_locals);
+
   DISALLOW_COPY_AND_ASSIGN(Frame);
+};
+
+/**
+ * A Frame in a HeapObject, with space allocated before and after for stack and
+ * locals, respectively. It looks almost exactly like the ascii art diagram for
+ * Frame, except that there is a fixed amount of space allocated for the value
+ * stack, which comes from stacksize() on the Code object this is created from:
+ *
+ *   +----------------------+  <--+
+ *   | Arg 0                |     |
+ *   | ...                  |     |
+ *   | Arg N                |     |
+ *   | Local 0              |     | frame()-code()->totalVars() * kPointerSize
+ *   | ...                  |     |
+ *   | Local N              |     |
+ *   +----------------------+  <--+
+ *   |                      |     |
+ *   | Frame                |     | Frame::kSize
+ *   |                      |     |
+ *   +----------------------+  <--+  <-- frame()
+ *   |                      |     |
+ *   | Value stack          |     | maxStackSize() * kPointerSize
+ *   |                      |     |
+ *   +----------------------+  <--+
+ *   | maxStackSize         |
+ *   +----------------------+
+ */
+struct HeapFrame : public HeapObject {
+ public:
+  // The Frame contained in this HeapFrame.
+  Frame* frame();
+
+  // The size of the embedded frame + stack and locals, in words.
+  word numFrameWords();
+
+  // Get or set the number of words allocated for the value stack. Used to
+  // derive a pointer to the Frame inside this HeapFrame.
+  word maxStackSize();
+  void setMaxStackSize(word offset);
+
+  // Push a new Frame below caller_frame, and copy this HeapFrame into it. Stack
+  // overflow checks must be done by the caller. Returns a pointer to the new
+  // stack Frame.
+  Frame* copyToNewStackFrame(Frame* caller_frame);
+
+  // Copy a Frame from the stack back into this HeapFrame.
+  void copyFromStackFrame(Frame* frame);
+
+  // Casting.
+  static HeapFrame* cast(Object* object);
+
+  // Sizing.
+  static word numAttributes(word extra_words);
+
+  // Layout.
+  static const int kMaxStackSizeOffset = HeapObject::kSize;
+  static const int kFrameOffset = kMaxStackSizeOffset + kPointerSize;
+
+  // Number of words that aren't the Frame.
+  static const int kNumOverheadWords = kFrameOffset / kPointerSize;
 };
 
 class FrameVisitor {
@@ -365,6 +435,10 @@ inline void Frame::setLocal(word idx, Object* object) {
 
 inline void Frame::setNumLocals(word num_locals) {
   atPut(kNumLocalsOffset, SmallInt::fromWord(num_locals));
+  resetLocals(num_locals);
+}
+
+inline void Frame::resetLocals(word num_locals) {
   // Bias locals by 1 word to avoid doing so during {get,set}Local
   Object* locals = reinterpret_cast<Object*>(address() + Frame::kSize +
                                              ((num_locals - 1) * kPointerSize));
@@ -472,6 +546,64 @@ inline bool Frame::isNativeFrame() { return code()->isInt(); }
 inline void Frame::makeNativeFrame(Object* fn_pointer_as_int) {
   DCHECK(fn_pointer_as_int->isInt(), "expected integer");
   setCode(fn_pointer_as_int);
+}
+
+inline void Frame::stashInternalPointers(Frame* old_frame) {
+  // Replace ValueStackTop with the stack depth while this Frame is on the heap,
+  // to survive being moved by the GC.
+  setValueStackTop(reinterpret_cast<Object**>(old_frame->valueStackSize()));
+}
+
+inline void Frame::unstashInternalPointers() {
+  auto stashed_size = reinterpret_cast<word>(valueStackTop());
+  setValueStackTop(valueStackBase() - stashed_size);
+  resetLocals(numLocals());
+}
+
+// HeapFrame
+
+inline Frame* HeapFrame::frame() {
+  return reinterpret_cast<Frame*>(address() + kFrameOffset +
+                                  maxStackSize() * kPointerSize);
+}
+
+inline word HeapFrame::numFrameWords() {
+  return header()->count() - kNumOverheadWords;
+}
+
+inline word HeapFrame::maxStackSize() {
+  return SmallInt::cast(instanceVariableAt(kMaxStackSizeOffset))->value();
+}
+
+inline void HeapFrame::setMaxStackSize(word offset) {
+  instanceVariableAtPut(kMaxStackSizeOffset, SmallInt::fromWord(offset));
+}
+
+inline Frame* HeapFrame::copyToNewStackFrame(Frame* caller_frame) {
+  auto src_base = reinterpret_cast<Object**>(address() + kFrameOffset);
+  word frame_words = numFrameWords();
+  Object** dest_base = caller_frame->valueStackTop() - frame_words;
+  std::memcpy(dest_base, src_base, frame_words * kPointerSize);
+
+  auto live_frame = reinterpret_cast<Frame*>(dest_base + maxStackSize());
+  live_frame->unstashInternalPointers();
+  return live_frame;
+}
+
+inline void HeapFrame::copyFromStackFrame(Frame* live_frame) {
+  auto dest_base = reinterpret_cast<Object**>(address() + kFrameOffset);
+  Object** src_base = live_frame->valueStackBase() - maxStackSize();
+  std::memcpy(dest_base, src_base, numFrameWords() * kPointerSize);
+  frame()->stashInternalPointers(live_frame);
+}
+
+inline HeapFrame* HeapFrame::cast(Object* object) {
+  DCHECK(object->isHeapFrame(), "invalid cast, expected HeapFrame");
+  return reinterpret_cast<HeapFrame*>(object);
+}
+
+inline word HeapFrame::numAttributes(word extra_words) {
+  return kNumOverheadWords + Frame::kSize / kPointerSize + extra_words;
 }
 
 inline Object* TryBlock::asSmallInt() const {

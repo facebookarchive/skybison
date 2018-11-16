@@ -177,7 +177,7 @@ Object* SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Handle<Object> value(&scope, SetIterator::cast(*self)->next());
   if (value->isError()) {
-    UNIMPLEMENTED("throw StopIteration");
+    return thread->raiseStopIteration(None::object());
   }
   return *value;
 }
