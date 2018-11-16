@@ -1390,43 +1390,24 @@ Object* Runtime::getIter(const Handle<Object>& iterable) {
 
 // List
 
-ObjectArray* Runtime::ensureCapacity(
-    const Handle<ObjectArray>& array,
-    word index) {
-  HandleScope scope;
-  word capacity = array->length();
-  if (index < capacity) {
-    return *array;
+void Runtime::listEnsureCapacity(const Handle<List>& list, word index) {
+  if (index < list->capacity()) {
+    return;
   }
-  word newCapacity = (capacity == 0) ? kInitialEnsuredCapacity : capacity << 1;
+  HandleScope scope;
+  word newCapacity = (list->capacity() < kInitialEnsuredCapacity)
+      ? kInitialEnsuredCapacity
+      : list->capacity() << 1;
+  Handle<ObjectArray> oldArray(&scope, list->items());
   Handle<ObjectArray> newArray(&scope, newObjectArray(newCapacity));
-  array->copyTo(*newArray);
-  return *newArray;
-}
-
-void Runtime::listEnsureDownsizeCapacity(const Handle<List>& list) {
-  HandleScope scope;
-  Handle<ObjectArray> items(&scope, list->items());
-  word allocated = list->allocated();
-  word capacity = items->length();
-  if (capacity > kInitialEnsuredCapacity && allocated < (capacity / 2)) {
-    word newCapacity = Utils::maximum(
-        static_cast<word>(kInitialEnsuredCapacity), capacity / 2);
-    Handle<ObjectArray> newItems(&scope, newObjectArray(newCapacity));
-    for (word i = 0; i < allocated; i++)
-      newItems->atPut(i, items->at(i));
-    list->setItems(*newItems);
-  }
+  oldArray->copyTo(*newArray);
+  list->setItems(*newArray);
 }
 
 void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   HandleScope scope;
   word index = list->allocated();
-  Handle<ObjectArray> items(&scope, list->items());
-  Handle<ObjectArray> newItems(&scope, ensureCapacity(items, index));
-  if (*items != *newItems) {
-    list->setItems(*newItems);
-  }
+  listEnsureCapacity(list, index);
   list->setAllocated(index + 1);
   list->atPut(index, *value);
 }
@@ -1440,11 +1421,7 @@ void Runtime::listExtend(
     Handle<List> ext_list(&scope, *iterator);
     if (ext_list->allocated() > 0) {
       word new_capacity = index + ext_list->allocated();
-      Handle<ObjectArray> items(&scope, list->items());
-      Handle<ObjectArray> newItems(&scope, ensureCapacity(items, new_capacity));
-      if (*items != *newItems) {
-        list->setItems(*newItems);
-      }
+      listEnsureCapacity(list, new_capacity);
       list->setAllocated(new_capacity);
       for (word i = 0; i < ext_list->allocated(); i++)
         list->atPut(index++, ext_list->at(i));
@@ -1461,11 +1438,7 @@ void Runtime::listExtend(
     Handle<ObjectArray> tuple(&scope, *iterator);
     if (tuple->length() > 0) {
       word new_capacity = index + tuple->length();
-      Handle<ObjectArray> items(&scope, list->items());
-      Handle<ObjectArray> newItems(&scope, ensureCapacity(items, new_capacity));
-      if (*items != *newItems) {
-        list->setItems(*newItems);
-      }
+      listEnsureCapacity(list, new_capacity);
       list->setAllocated(new_capacity);
       for (word i = 0; i < tuple->length(); i++) {
         list->atPut(index++, tuple->at(i));
@@ -1496,12 +1469,12 @@ void Runtime::listInsert(
 Object* Runtime::listPop(const Handle<List>& list, word index) {
   HandleScope scope;
   Handle<Object> popped(&scope, list->at(index));
+  list->atPut(index, None::object());
   word last_index = list->allocated() - 1;
   for (word i = index; i < last_index; i++) {
     list->atPut(i, list->at(i + 1));
   }
   list->setAllocated(list->allocated() - 1);
-  listEnsureDownsizeCapacity(list);
   return *popped;
 }
 

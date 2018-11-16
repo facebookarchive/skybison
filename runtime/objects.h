@@ -2341,8 +2341,8 @@ inline void ObjectArray::atPut(word index, Object* value) {
 }
 
 inline void ObjectArray::copyTo(Object* array) {
-  word len = length();
   ObjectArray* dst = ObjectArray::cast(array);
+  word len = length();
   DCHECK_BOUND(len, dst->length());
   for (word i = 0; i < len; i++) {
     Object* elem = at(i);

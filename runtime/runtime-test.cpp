@@ -342,19 +342,21 @@ TEST(RuntimeTest, EnsureCapacity) {
   HandleScope scope;
 
   // Check that empty arrays expand
-  Handle<ObjectArray> empty(&scope, runtime.newObjectArray(0));
-  Handle<ObjectArray> orig(&scope, runtime.ensureCapacity(empty, 0));
+  Handle<List> list(&scope, runtime.newList());
+  Handle<ObjectArray> empty(&scope, list->items());
+  runtime.listEnsureCapacity(list, 0);
+  Handle<ObjectArray> orig(&scope, list->items());
   ASSERT_NE(*empty, *orig);
   ASSERT_GT(orig->length(), 0);
 
   // We shouldn't grow the array if there is sufficient capacity
-  Handle<ObjectArray> ensured0(
-      &scope, runtime.ensureCapacity(orig, orig->length() - 1));
+  runtime.listEnsureCapacity(list, orig->length() - 1);
+  Handle<ObjectArray> ensured0(&scope, list->items());
   ASSERT_EQ(*orig, *ensured0);
 
   // We should double the array if there is insufficient capacity
-  Handle<ObjectArray> ensured1(
-      &scope, runtime.ensureCapacity(orig, orig->length()));
+  runtime.listEnsureCapacity(list, orig->length());
+  Handle<ObjectArray> ensured1(&scope, list->items());
   ASSERT_EQ(ensured1->length(), orig->length() * 2);
 }
 
@@ -1079,6 +1081,32 @@ TEST(RuntimeTest, borrowedApiHandles) {
   EXPECT_TRUE(integer_handle2->isBorrowed());
   ApiHandle* integer_handle3 = runtime.asBorrowedApiHandle(*obj2);
   EXPECT_FALSE(integer_handle3->isBorrowed());
+}
+
+TEST(RuntimeTest, ListGrowth) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  Handle<ObjectArray> array1(&scope, runtime.newObjectArray(1));
+  list->setItems(*array1);
+  EXPECT_EQ(array1->length(), 1);
+  runtime.listEnsureCapacity(list, 2);
+  Handle<ObjectArray> array2(&scope, list->items());
+  EXPECT_NE(*array1, *array2);
+  EXPECT_GT(array2->length(), 2);
+
+  Handle<ObjectArray> array4(&scope, runtime.newObjectArray(4));
+  EXPECT_EQ(array4->length(), 4);
+  list->setItems(*array4);
+  runtime.listEnsureCapacity(list, 5);
+  Handle<ObjectArray> array8(&scope, list->items());
+  EXPECT_NE(*array4, *array8);
+  EXPECT_EQ(array8->length(), 8);
+  list->setItems(*array8);
+  runtime.listEnsureCapacity(list, 9);
+  Handle<ObjectArray> array16(&scope, list->items());
+  EXPECT_NE(*array8, *array16);
+  EXPECT_EQ(array16->length(), 16);
 }
 
 } // namespace python

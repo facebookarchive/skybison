@@ -244,10 +244,7 @@ class Runtime {
   // Ensures that array has enough space for an atPut at index. If so, returns
   // array. If not, allocates and returns a new array with sufficient capacity
   // and identical contents.
-  ObjectArray* ensureCapacity(const Handle<ObjectArray>& array, word index);
-
-  // Downsize the backing array of a List, if needed.
-  void listEnsureDownsizeCapacity(const Handle<List>& list);
+  void listEnsureCapacity(const Handle<List>& list, word index);
 
   // Appends an element to the end of the list.
   void listAdd(const Handle<List>& list, const Handle<Object>& value);
@@ -655,7 +652,7 @@ class Runtime {
   // Creates a new layout that will be a child layout of the supplied parent.
   Object* layoutCreateChild(Thread* thread, const Handle<Layout>& parent);
 
-  // The size ensureCapacity grows to if array is empty
+  // The size listEnsureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
 
   Heap heap_;

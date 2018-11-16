@@ -2273,48 +2273,6 @@ a.pop(3)
       "Throw an IndexError for an out of range list");
 }
 
-TEST(ThreadTest, ListResize) {
-  const char* src = R"(
-l = [x for x in range(16)]
-l1 = []
-for x in range(9):
-  l1.append(l.pop())
-l2 = [1, 2, 3]
-l3 = [1, 2]
-l3.append(3)
-l4 = [1, 2, 3, 4]
-l4.append(5)
-)";
-  Runtime runtime;
-  HandleScope scope;
-  runtime.runFromCString(src);
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> l(&scope, findInModule(&runtime, main, "l"));
-  Handle<Object> l1(&scope, findInModule(&runtime, main, "l1"));
-  Handle<Object> l2(&scope, findInModule(&runtime, main, "l2"));
-  Handle<Object> l3(&scope, findInModule(&runtime, main, "l3"));
-  Handle<Object> l4(&scope, findInModule(&runtime, main, "l4"));
-  Handle<List> list_l(&scope, *l);
-  Handle<List> list_l1(&scope, *l1);
-  Handle<List> list_l2(&scope, *l2);
-  Handle<List> list_l3(&scope, *l3);
-  Handle<List> list_l4(&scope, *l4);
-  ASSERT_EQ(list_l->allocated(), 7);
-  // When allocated < (capacity / 2), the backing vector must shrink
-  ASSERT_LE(list_l->capacity(), 8);
-  ASSERT_EQ(list_l1->allocated(), 9);
-  for (word i = 0, j = 15; i < 9; i++, j--) {
-    EXPECT_EQ(SmallInteger::cast(list_l1->at(i))->value(), j);
-  }
-  // Lists with 4 or fewer elements are allocated with no excess capacity.
-  ASSERT_EQ(list_l2->capacity(), list_l2->allocated());
-  // Appending to a list with fewer than 4 elements rounds up capacity to 4.
-  ASSERT_GT(list_l3->capacity(), list_l3->allocated());
-  // Appending to a list with 4 or more elements rounds up capacity to
-  // the nearest power of two.
-  ASSERT_GT(list_l4->capacity(), list_l4->allocated());
-}
-
 TEST(FormatTest, NoConvEmpty) {
   const char* src = R"(
 print(f'')
