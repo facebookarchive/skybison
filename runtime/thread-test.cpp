@@ -7,27 +7,6 @@
 
 namespace python {
 
-Object* createDummyCodeObject(Runtime* runtime, int nargs, int nlocals) {
-  auto emptyArr = runtime->newObjectArray(0);
-  auto none = None::object();
-  return runtime->newCode(
-      nargs, // argcount
-      0, // kwonlyargcount
-      nlocals, // nlocals (args + local variables)
-      0, // stacksize (unused)
-      0, // flags
-      none, // code
-      none, // consts
-      none, // names
-      none, // varnames
-      emptyArr, // freevars
-      emptyArr, // cellvars
-      none, // filename
-      none, // name
-      1, // firstlineno
-      none); // lnotab
-}
-
 TEST(ThreadTest, RunEmptyFunction) {
   Runtime runtime;
   HandleScope scope;
@@ -101,7 +80,7 @@ TEST(ThreadTest, PushPopFrame) {
   thread.pushObject(sentinel);
 
   // Push and pop a frame
-  auto code = createDummyCodeObject(&runtime, 0, 0);
+  auto code = runtime.newCode();
   auto frame = thread.pushFrame(code);
   thread.popFrame(frame);
 
@@ -125,7 +104,9 @@ TEST(ThreadTest, ReadFrameLocals) {
 
   // Push a frame for a code object that expects 3 arguments and needs space
   // for 3 local variables
-  auto code = createDummyCodeObject(&runtime, 3, 6);
+  auto code = runtime.newCode();
+  Code::cast(code)->setArgcount(3);
+  Code::cast(code)->setNlocals(6);
   auto frame = thread.pushFrame(code);
 
   // Make sure we can read the args from the frame

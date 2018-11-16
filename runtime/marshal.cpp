@@ -288,41 +288,28 @@ Object* Marshal::Reader::readTypeCode() {
   if (isRef_) {
     index = addRef(None::object());
   }
-  int32 argcount = readLong();
-  int32 kwonlyargcount = readLong();
-  int32 nlocals = readLong();
-  int32 stacksize = readLong();
-  int32 flags = readLong();
-  Object* code = readObject();
-  Object* consts = readObject();
-  Object* names = readObject();
-  Object* varnames = readObject();
-  Object* freevars = readObject();
-  Object* cellvars = readObject();
-  Object* filename = readObject();
-  Object* name = readObject();
-  int32 firstlineno = readLong();
-  Object* lnotab = readObject();
-  Object* result = runtime_->newCode(
-      argcount,
-      kwonlyargcount,
-      nlocals,
-      stacksize,
-      flags,
-      code,
-      consts,
-      names,
-      varnames,
-      freevars,
-      cellvars,
-      filename,
-      name,
-      firstlineno,
-      lnotab);
-  if (index != -1) {
-    setRef(index, result);
+  HandleScope scope;
+  Handle<Code> result(&scope, runtime_->newCode());
+  result->setArgcount(readLong());
+  result->setKwonlyargcount(readLong());
+  result->setNlocals(readLong());
+  result->setStacksize(readLong());
+  result->setFlags(readLong());
+  result->setCode(readObject());
+  result->setConsts(readObject());
+  result->setNames(readObject());
+  result->setVarnames(readObject());
+  result->setFreevars(readObject());
+  result->setCellvars(readObject());
+  result->setFilename(readObject());
+  result->setName(readObject());
+  result->setFirstlineno(readLong());
+  result->setLnotab(readObject());
+  if (isRef_) {
+    assert(index != -1);
+    setRef(index, *result);
   }
-  return result;
+  return *result;
 }
 
 Object* Marshal::Reader::readTypeRef() {

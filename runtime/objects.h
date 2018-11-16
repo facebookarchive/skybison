@@ -412,21 +412,52 @@ class Code : public HeapObject {
  public:
   // Getters and setters.
   inline word argcount();
-  inline int cell2arg();
+  inline void setArgcount(word value);
+
+  inline word cell2arg();
+  inline void setCell2arg(word value);
+
   inline Object* cellvars();
+  inline void setCellvars(Object* value);
+
   inline Object* code();
+  inline void setCode(Object* value);
+
   inline Object* consts();
+  inline void setConsts(Object* value);
+
   inline Object* filename();
-  inline int firstlineno();
-  inline int flags();
+  inline void setFilename(Object* value);
+
+  inline word firstlineno();
+  inline void setFirstlineno(word value);
+
+  inline word flags();
+  inline void setFlags(word value);
+
   inline Object* freevars();
-  inline int kwonlyargcount();
+  inline void setFreevars(Object* value);
+
+  inline word kwonlyargcount();
+  inline void setKwonlyargcount(word value);
+
   inline Object* lnotab();
+  inline void setLnotab(Object* value);
+
   inline Object* name();
+  inline void setName(Object* value);
+
   inline Object* names();
-  inline int nlocals();
-  inline int stacksize();
+  inline void setNames(Object* value);
+
+  inline word nlocals();
+  inline void setNlocals(word value);
+
+  inline word stacksize();
+  inline void setStacksize(word value);
+
   inline Object* varnames();
+  inline void setVarnames(Object* value);
 
   // Casting.
   inline static Code* cast(Object* obj);
@@ -435,23 +466,8 @@ class Code : public HeapObject {
   inline static word allocationSize();
   inline static word bodySize();
 
-  // Does this really need to take so many arguments?
-  inline void initialize(
-      int argcount,
-      int kwonlyargcount,
-      int nlocals,
-      int stacksize,
-      int flags,
-      Object* code,
-      Object* consts,
-      Object* names,
-      Object* varnames,
-      Object* freevars,
-      Object* cellvars,
-      Object* filename,
-      Object* name,
-      int firstlineno,
-      Object* lnotab);
+  // Allocation.
+  inline void initialize(Object* empty_object_array);
 
   // Layout.
   static const int kArgcountOffset = HeapObject::kSize;
@@ -470,10 +486,7 @@ class Code : public HeapObject {
   static const int kFilenameOffset = kCell2argOffset + kPointerSize;
   static const int kNameOffset = kFilenameOffset + kPointerSize;
   static const int kLnotabOffset = kNameOffset + kPointerSize;
-  static const int kZombieframeOffset = kLnotabOffset + kPointerSize;
-  static const int kWeakreflistOffset = kZombieframeOffset + kPointerSize;
-  static const int kExtraOffset = kWeakreflistOffset + kPointerSize;
-  static const int kSize = kExtraOffset + kPointerSize;
+  static const int kSize = kLnotabOffset + kPointerSize;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Code);
@@ -1096,103 +1109,151 @@ word Code::bodySize() {
   return Code::kSize - HeapObject::kSize;
 }
 
-void Code::initialize(
-    int argcount,
-    int kwonlyargcount,
-    int nlocals,
-    int stacksize,
-    int flags,
-    Object* code,
-    Object* consts,
-    Object* names,
-    Object* varnames,
-    Object* freevars,
-    Object* cellvars,
-    Object* filename,
-    Object* name,
-    int firstlineno,
-    Object* lnotab) {
-  instanceVariableAtPut(kArgcountOffset, SmallInteger::fromWord(argcount));
-  instanceVariableAtPut(
-      kKwonlyargcountOffset, SmallInteger::fromWord(kwonlyargcount));
-  instanceVariableAtPut(kNlocalsOffset, SmallInteger::fromWord(nlocals));
-  instanceVariableAtPut(kStacksizeOffset, SmallInteger::fromWord(stacksize));
-  instanceVariableAtPut(kFlagsOffset, SmallInteger::fromWord(flags));
-  instanceVariableAtPut(kCodeOffset, code);
-  instanceVariableAtPut(kConstsOffset, consts);
-  instanceVariableAtPut(kNamesOffset, names);
-  instanceVariableAtPut(kVarnamesOffset, varnames);
-  instanceVariableAtPut(kFreevarsOffset, freevars);
-  instanceVariableAtPut(kCellvarsOffset, cellvars);
-  instanceVariableAtPut(kFilenameOffset, filename);
-  instanceVariableAtPut(kNameOffset, name);
-  instanceVariableAtPut(
-      kFirstlinenoOffset, SmallInteger::fromWord(firstlineno));
-  instanceVariableAtPut(kLnotabOffset, lnotab);
+// TODO: initialize instance variables with the None object.
+void Code::initialize(Object* empty_object_array) {
+  instanceVariableAtPut(kArgcountOffset, SmallInteger::fromWord(0));
+  instanceVariableAtPut(kKwonlyargcountOffset, SmallInteger::fromWord(0));
+  instanceVariableAtPut(kNlocalsOffset, SmallInteger::fromWord(0));
+  instanceVariableAtPut(kStacksizeOffset, SmallInteger::fromWord(0));
+  instanceVariableAtPut(kFlagsOffset, SmallInteger::fromWord(0));
+  instanceVariableAtPut(kCodeOffset, None::object());
+  instanceVariableAtPut(kConstsOffset, None::object());
+  instanceVariableAtPut(kNamesOffset, None::object());
+  instanceVariableAtPut(kVarnamesOffset, None::object());
+  instanceVariableAtPut(kFreevarsOffset, empty_object_array);
+  instanceVariableAtPut(kCellvarsOffset, empty_object_array);
+  instanceVariableAtPut(kFilenameOffset, None::object());
+  instanceVariableAtPut(kNameOffset, None::object());
+  instanceVariableAtPut(kFirstlinenoOffset, SmallInteger::fromWord(0));
+  instanceVariableAtPut(kLnotabOffset, None::object());
 }
 
 word Code::argcount() {
   return SmallInteger::cast(instanceVariableAt(kArgcountOffset))->value();
 }
 
-int Code::kwonlyargcount() {
-  return SmallInteger::cast(instanceVariableAt(kKwonlyargcountOffset))->value();
+void Code::setArgcount(word value) {
+  instanceVariableAtPut(kArgcountOffset, SmallInteger::fromWord(value));
 }
 
-Object* Code::code() {
-  return instanceVariableAt(kCodeOffset);
+word Code::cell2arg() {
+  return SmallInteger::cast(instanceVariableAt(kCell2argOffset))->value();
+}
+
+void Code::setCell2arg(word value) {
+  instanceVariableAtPut(kCell2argOffset, SmallInteger::fromWord(value));
 }
 
 Object* Code::cellvars() {
   return instanceVariableAt(kCellvarsOffset);
 }
 
-Object* Code::filename() {
-  return instanceVariableAt(kFilenameOffset);
+void Code::setCellvars(Object* value) {
+  instanceVariableAtPut(kCellvarsOffset, value);
 }
 
-Object* Code::lnotab() {
-  return instanceVariableAt(kLnotabOffset);
+Object* Code::code() {
+  return instanceVariableAt(kCodeOffset);
 }
 
-int Code::flags() {
-  return SmallInteger::cast(instanceVariableAt(kFlagsOffset))->value();
-}
-
-int Code::firstlineno() {
-  return SmallInteger::cast(instanceVariableAt(kFirstlinenoOffset))->value();
-}
-
-int Code::cell2arg() {
-  return SmallInteger::cast(instanceVariableAt(kCell2argOffset))->value();
-}
-
-Object* Code::freevars() {
-  return instanceVariableAt(kFreevarsOffset);
-}
-
-int Code::stacksize() {
-  return SmallInteger::cast(instanceVariableAt(kStacksizeOffset))->value();
-}
-
-int Code::nlocals() {
-  return SmallInteger::cast(instanceVariableAt(kNlocalsOffset))->value();
-}
-
-Object* Code::name() {
-  return instanceVariableAt(kNameOffset);
-}
-
-Object* Code::names() {
-  return instanceVariableAt(kNamesOffset);
+void Code::setCode(Object* value) {
+  instanceVariableAtPut(kCodeOffset, value);
 }
 
 Object* Code::consts() {
   return instanceVariableAt(kConstsOffset);
 }
 
+void Code::setConsts(Object* value) {
+  instanceVariableAtPut(kConstsOffset, value);
+}
+
+Object* Code::filename() {
+  return instanceVariableAt(kFilenameOffset);
+}
+
+void Code::setFilename(Object* value) {
+  instanceVariableAtPut(kFilenameOffset, value);
+}
+
+word Code::firstlineno() {
+  return SmallInteger::cast(instanceVariableAt(kFirstlinenoOffset))->value();
+}
+
+void Code::setFirstlineno(word value) {
+  instanceVariableAtPut(kFirstlinenoOffset, SmallInteger::fromWord(value));
+}
+
+word Code::flags() {
+  return SmallInteger::cast(instanceVariableAt(kFlagsOffset))->value();
+}
+
+void Code::setFlags(word value) {
+  instanceVariableAtPut(kFlagsOffset, SmallInteger::fromWord(value));
+}
+
+Object* Code::freevars() {
+  return instanceVariableAt(kFreevarsOffset);
+}
+
+void Code::setFreevars(Object* value) {
+  instanceVariableAtPut(kFreevarsOffset, value);
+}
+
+word Code::kwonlyargcount() {
+  return SmallInteger::cast(instanceVariableAt(kKwonlyargcountOffset))->value();
+}
+
+void Code::setKwonlyargcount(word value) {
+  instanceVariableAtPut(kKwonlyargcountOffset, SmallInteger::fromWord(value));
+}
+
+Object* Code::lnotab() {
+  return instanceVariableAt(kLnotabOffset);
+}
+
+void Code::setLnotab(Object* value) {
+  instanceVariableAtPut(kLnotabOffset, value);
+}
+
+Object* Code::name() {
+  return instanceVariableAt(kNameOffset);
+}
+
+void Code::setName(Object* value) {
+  instanceVariableAtPut(kNameOffset, value);
+}
+
+Object* Code::names() {
+  return instanceVariableAt(kNamesOffset);
+}
+
+void Code::setNames(Object* value) {
+  instanceVariableAtPut(kNamesOffset, value);
+}
+
+word Code::nlocals() {
+  return SmallInteger::cast(instanceVariableAt(kNlocalsOffset))->value();
+}
+
+void Code::setNlocals(word value) {
+  instanceVariableAtPut(kNlocalsOffset, SmallInteger::fromWord(value));
+}
+
+word Code::stacksize() {
+  return SmallInteger::cast(instanceVariableAt(kStacksizeOffset))->value();
+}
+
+void Code::setStacksize(word value) {
+  instanceVariableAtPut(kStacksizeOffset, SmallInteger::fromWord(value));
+}
+
 Object* Code::varnames() {
   return instanceVariableAt(kVarnamesOffset);
+}
+
+void Code::setVarnames(Object* value) {
+  instanceVariableAtPut(kVarnamesOffset, value);
 }
 
 // Dictionary

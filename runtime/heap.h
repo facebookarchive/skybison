@@ -26,23 +26,7 @@ class Heap {
 
   Object* createClassClass();
 
-  Object* createCode(
-      Object* code_class,
-      int32 argcount,
-      int32 kwonlyargcount,
-      int32 nlocals,
-      int32 stacksize,
-      int32 flags,
-      Object* code,
-      Object* consts,
-      Object* names,
-      Object* varnames,
-      Object* freevars,
-      Object* cellvars,
-      Object* filename,
-      Object* name,
-      int32 firstlineno,
-      Object* lnotab);
+  Object* createCode(Object* empty_object_array);
 
   Object* createDictionary(Object* items);
 

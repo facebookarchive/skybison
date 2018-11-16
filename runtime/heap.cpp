@@ -130,23 +130,7 @@ Object* Heap::createClassClass() {
   return Class::cast(result);
 }
 
-Object* Heap::createCode(
-    Object* code_class,
-    int32 argcount,
-    int32 kwonlyargcount,
-    int32 nlocals,
-    int32 stacksize,
-    int32 flags,
-    Object* code,
-    Object* consts,
-    Object* names,
-    Object* varnames,
-    Object* freevars,
-    Object* cellvars,
-    Object* filename,
-    Object* name,
-    int32 firstlineno,
-    Object* lnotab) {
+Object* Heap::createCode(Object* empty_object_array) {
   Object* raw = allocate(Code::allocationSize());
   assert(raw != nullptr);
   auto result = reinterpret_cast<Code*>(raw);
@@ -155,22 +139,7 @@ Object* Heap::createCode(
       0,
       ClassId::kCode,
       ObjectFormat::kObjectInstance));
-  result->initialize(
-      argcount,
-      kwonlyargcount,
-      nlocals,
-      stacksize,
-      flags,
-      code,
-      consts,
-      names,
-      varnames,
-      freevars,
-      cellvars,
-      filename,
-      name,
-      firstlineno,
-      lnotab);
+  result->initialize(empty_object_array);
   return Code::cast(result);
 }
 

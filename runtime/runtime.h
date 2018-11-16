@@ -16,22 +16,7 @@ class Runtime {
 
   Object* newByteArray(word length);
 
-  Object* newCode(
-      int32 argcount,
-      int32 kwonlyargcount,
-      int32 nlocals,
-      int32 stacksize,
-      int32 flags,
-      Object* code,
-      Object* consts,
-      Object* names,
-      Object* varnames,
-      Object* freevars,
-      Object* cellvars,
-      Object* filename,
-      Object* name,
-      int32 firstlineno,
-      Object* lnotab);
+  Object* newCode();
 
   Object* newDictionary();
 

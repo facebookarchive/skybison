@@ -23,6 +23,30 @@ TEST(RuntimeTest, BuiltinsModuleExists) {
   ASSERT_TRUE(builtins->isModule());
 }
 
+TEST(RuntimeTest, NewCode) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  EXPECT_EQ(code->argcount(), 0);
+  EXPECT_EQ(code->cell2arg(), 0);
+  ASSERT_TRUE(code->cellvars()->isObjectArray());
+  EXPECT_EQ(ObjectArray::cast(code->cellvars())->length(), 0);
+  EXPECT_TRUE(code->code()->isNone());
+  EXPECT_TRUE(code->consts()->isNone());
+  EXPECT_TRUE(code->filename()->isNone());
+  EXPECT_EQ(code->firstlineno(), 0);
+  EXPECT_EQ(code->flags(), 0);
+  ASSERT_TRUE(code->freevars()->isObjectArray());
+  EXPECT_EQ(ObjectArray::cast(code->freevars())->length(), 0);
+  EXPECT_EQ(code->kwonlyargcount(), 0);
+  EXPECT_TRUE(code->lnotab()->isNone());
+  EXPECT_TRUE(code->name()->isNone());
+  EXPECT_EQ(code->nlocals(), 0);
+  EXPECT_EQ(code->stacksize(), 0);
+  EXPECT_TRUE(code->varnames()->isNone());
+}
+
 TEST(RuntimeTest, NewString) {
   Runtime runtime;
   HandleScope scope;

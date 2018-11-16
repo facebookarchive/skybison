@@ -33,39 +33,8 @@ Object* Runtime::newByteArray(word length) {
   return heap()->createByteArray(length);
 }
 
-Object* Runtime::newCode(
-    int32 argcount,
-    int32 kwonlyargcount,
-    int32 nlocals,
-    int32 stacksize,
-    int32 flags,
-    Object* code,
-    Object* consts,
-    Object* names,
-    Object* varnames,
-    Object* freevars,
-    Object* cellvars,
-    Object* filename,
-    Object* name,
-    int32 firstlineno,
-    Object* lnotab) {
-  return heap()->createCode(
-      code_class_,
-      argcount,
-      kwonlyargcount,
-      nlocals,
-      stacksize,
-      flags,
-      code,
-      consts,
-      names,
-      varnames,
-      freevars,
-      cellvars,
-      filename,
-      name,
-      firstlineno,
-      lnotab);
+Object* Runtime::newCode() {
+  return heap()->createCode(empty_object_array_);
 }
 
 Object* Runtime::newDictionary() {
