@@ -6,20 +6,19 @@
 extern "C" {
 #endif
 
-
-PyAPI_DATA(PyTypeObject) PyBool_Type;
+PyAPI_FUNC(PyTypeObject*) PyBool_Type_Ptr(void);
+#define PyBool_Type (*PyBool_Type_Ptr()) /* built-in 'bool' */
 
 #define PyBool_Check(x) (Py_TYPE(x) == &PyBool_Type)
 
 /* Py_False and Py_True are the only two bools in existence.
 Don't forget to apply Py_INCREF() when returning either!!! */
 
-/* Don't use these directly */
-PyAPI_DATA(struct _longobject) _Py_FalseStruct, _Py_TrueStruct;
-
 /* Use these macros */
-#define Py_False ((PyObject *) &_Py_FalseStruct)
-#define Py_True ((PyObject *) &_Py_TrueStruct)
+PyAPI_FUNC(PyObject*) PyFalse_Ptr(void);
+#define Py_False ((PyObject *) &(*PyFalse_Ptr()))
+PyAPI_FUNC(PyObject*) PyTrue_Ptr(void);
+#define Py_True ((PyObject *) &(*PyTrue_Ptr()))
 
 /* Macros for returning Py_True or Py_False, respectively */
 #define Py_RETURN_TRUE return Py_INCREF(Py_True), Py_True

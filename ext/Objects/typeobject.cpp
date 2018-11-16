@@ -70,7 +70,7 @@ void PyType_Type_Init(void) {
   runtime->addBuiltinExtensionType(pytype_type);
 }
 
-PyTypeObject* PyType_Type_Ptr() {
+extern "C" PyTypeObject* PyType_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(
@@ -135,7 +135,7 @@ void PyBaseObject_Type_Init(void) {
   runtime->addBuiltinExtensionType(pybaseobject_type);
 }
 
-PyTypeObject* PyBaseObject_Type_Ptr() {
+extern "C" PyTypeObject* PyBaseObject_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(runtime->builtinExtensionTypes(

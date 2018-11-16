@@ -133,6 +133,7 @@ add_library(
   ext/Include/Python.h
   ext/Include/modsupport.h
   ext/Include/pyport.h
+  ext/Objects/boolobject.cpp
   ext/Objects/dictobject.cpp
   ext/Objects/exceptions.cpp
   ext/Objects/longobject.cpp
@@ -227,6 +228,7 @@ target_link_libraries(
 add_library(
   extension-tests
   STATIC
+  ext/Objects/boolobject-test.cpp
   ext/Objects/dictobject-test.cpp
   ext/Objects/moduleobject-test.cpp
   ext/Objects/typeobject-test.cpp

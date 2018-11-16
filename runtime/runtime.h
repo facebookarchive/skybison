@@ -69,6 +69,7 @@ class ApiHandle {
 enum class ExtensionTypes {
   kType = 0,
   kBaseObject = 1,
+  kBool = 2,
 };
 
 class Runtime {
