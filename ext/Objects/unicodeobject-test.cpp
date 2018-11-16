@@ -34,4 +34,9 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8WithReferencedSizeReturnsCString) {
   std::free(cstring);
 }
 
+TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {
+  PyObject* pyunicode = PyUnicode_FromString("some string");
+  EXPECT_EQ(0, PyUnicode_READY(pyunicode));
+}
+
 }  // namespace python

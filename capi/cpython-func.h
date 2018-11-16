@@ -186,6 +186,9 @@ PyAPI_FUNC(char *) PyByteArray_AS_STRING_Func(PyObject *);
 // TODO(T33954927): redefine PyTuple_GET_ITEM in a way that doesnt break pyro
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem((PyObject*)op, i, v)
 
+#define PyUnicode_READY(op) \
+  0
+
 /* clang-format on */
 
 #ifdef __cplusplus
