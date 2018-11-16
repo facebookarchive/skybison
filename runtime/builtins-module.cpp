@@ -23,14 +23,14 @@ RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
 
   if (nargs < 2) {
-    std::abort();  // TODO: throw a TypeError exception.
+    std::abort();  // TODO(cshapiro): throw a TypeError exception.
   }
   Arguments args(frame, nargs);
   if (!args.get(0)->isFunction()) {
-    std::abort();  // TODO: throw a TypeError exception.
+    std::abort();  // TODO(cshapiro): throw a TypeError exception.
   }
   if (!args.get(1)->isStr()) {
-    std::abort();  // TODO: throw a TypeError exception.
+    std::abort();  // TODO(cshapiro): throw a TypeError exception.
   }
 
   Function body(&scope, args.get(0));
@@ -43,10 +43,10 @@ RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   Dict dict(&scope, runtime->newDict());
   Object key(&scope, runtime->symbols()->DunderName());
   runtime->dictAtPutInValueCell(dict, key, name);
-  // TODO: might need to do some kind of callback here and we want backtraces to
-  // work correctly.  The key to doing that would be to put some state on the
-  // stack in between the the incoming arguments from the builtin' caller and
-  // the on-stack state for the class body function call.
+  // TODO(cshapiro): might need to do some kind of callback here and we want
+  // backtraces to work correctly.  The key to doing that would be to put some
+  // state on the stack in between the the incoming arguments from the builtin'
+  // caller and the on-stack state for the class body function call.
   thread->runClassFunction(*body, *dict);
 
   Type type(&scope, runtime->typeAt(LayoutId::kType));

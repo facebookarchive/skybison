@@ -11,7 +11,7 @@ RawObject moduleAt(Runtime*, const Module&, const char*);
 
 PY_EXPORT PyObject* PyRun_SimpleStringFlags(const char* str,
                                             PyCompilerFlags* flags) {
-  // TODO: Implement the usage of flags
+  // TODO(eelizondo): Implement the usage of flags
   if (flags != nullptr) {
     UNIMPLEMENTED("Can't specify compiler flags");
   }

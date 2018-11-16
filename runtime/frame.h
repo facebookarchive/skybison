@@ -69,8 +69,9 @@ class TryBlock {
                 "TryBlock must fit into a uword");
 };
 
-// TODO: Determine maximum block stack depth when the code object is loaded and
-//       dynamically allocate the minimum amount of space for the block stack.
+// TODO(mpage): Determine maximum block stack depth when the code object is
+// loaded and dynamically allocate the minimum amount of space for the block
+// stack.
 const int kMaxBlockStackDepth = 20;
 
 class BlockStack {

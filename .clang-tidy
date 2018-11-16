@@ -1,6 +1,7 @@
 Checks: >
   -*,
   google-readability-casting,
+  google-readability-todo,
   modernize-use-nullptr,
   readability-braces-around-statements,
   readability-else-after-return,

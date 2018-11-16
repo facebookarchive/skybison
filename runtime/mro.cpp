@@ -120,7 +120,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
 
   for (word i = 0; i < merge_list_indices.size(); i++) {
     if (merge_list_indices[i] != RawTuple::cast(merge_lists->at(i))->length()) {
-      // TODO: list bases in error message.
+      // TODO(T36404516): list bases in error message.
       return thread->raiseTypeErrorWithCStr(
           "Cannot create a consistent method resolution order (MRO)");
     }

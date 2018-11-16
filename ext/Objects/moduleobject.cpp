@@ -34,10 +34,10 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
     runtime->moduleAtPut(module, key, doc);
   }
 
-  // TODO: Check m_slots
-  // TODO: Set md_state
-  // TODO: Validate m_methods
-  // TODO: Add methods
+  // TODO(eelizondo): Check m_slots
+  // TODO(eelizondo): Set md_state
+  // TODO(eelizondo): Validate m_methods
+  // TODO(eelizondo): Add methods
 
   return ApiHandle::fromObject(*module);
 }

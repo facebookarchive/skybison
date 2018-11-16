@@ -1371,8 +1371,8 @@ RawObject Runtime::importModule(const Object& name) {
       "importModule is unimplemented!");
 }
 
-// TODO: support fromlist and level. Ideally, we'll never implement that
-// functionality in c++, instead using the pure-python importlib
+// TODO(cshapiro): support fromlist and level. Ideally, we'll never implement
+// that functionality in c++, instead using the pure-python importlib
 // implementation that ships with cpython.
 RawObject Runtime::importModuleFromBuffer(const char* buffer,
                                           const Object& name) {
@@ -2245,7 +2245,7 @@ RawObject Runtime::newDict() {
 
 RawObject Runtime::newDictWithSize(word initial_size) {
   HandleScope scope;
-  // TODO: initialSize should be scaled up by a load factor.
+  // TODO(jeethu): initialSize should be scaled up by a load factor.
   word initial_capacity = Utils::nextPowerOfTwo(initial_size);
   Tuple array(&scope,
               newTuple(Utils::maximum(static_cast<word>(kInitialDictCapacity),
@@ -3405,7 +3405,7 @@ LayoutId Runtime::computeBuiltinBase(const Type& type) {
       // Allow subclassing of built-in classes that are themselves subclasses
       // of built-in classes (e.g. Exception)
 
-      // TODO: throw TypeError
+      // TODO(cshapiro): throw TypeError
       CHECK(false, "multiple bases have instance lay-out conflict '%s' '%s'",
             RawStr::cast(candidate->name())->toCStr(),
             RawStr::cast(mro_type->name())->toCStr());

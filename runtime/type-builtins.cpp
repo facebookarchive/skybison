@@ -43,7 +43,8 @@ RawObject builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
     frame->pushValue(args.get(i));
   }
 
-  // TODO: throw a type error if the __init__ method does not return None.
+  // TODO(T36407643): throw a type error if the __init__ method does not return
+  // None.
   Interpreter::call(thread, frame, nargs);
 
   return *result;
@@ -75,7 +76,8 @@ RawObject builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
   // Copy down everything that __call_ was called with, except for the first
   // argument (the type)
   frame->pushLocals(nargs - 1, 1);
-  // TODO: throw a type error if the __init__ method does not return None.
+  // TODO(T36407643): throw a type error if the __init__ method does not return
+  // None.
   Interpreter::callKw(thread, frame, nargs - 1);
 
   return *result;

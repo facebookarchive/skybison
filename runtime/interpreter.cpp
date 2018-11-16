@@ -645,8 +645,6 @@ void Interpreter::doBinarySubtract(Context* ctx, word) {
 
 // opcode 25
 void Interpreter::doBinarySubscr(Context* ctx, word) {
-  // TODO: The implementation of the {BINARY,STORE}_SUBSCR opcodes are
-  // enough to get richards working.
   HandleScope scope(ctx->thread);
   Runtime* runtime = ctx->thread->runtime();
   Object key(&scope, ctx->frame->popValue());
@@ -1575,7 +1573,7 @@ void Interpreter::doSetupFinally(Context* ctx, word arg) {
 
 // opcode 124
 void Interpreter::doLoadFast(Context* ctx, word arg) {
-  // TODO: Need to handle unbound local error
+  // TODO(cshapiro): Need to handle unbound local error
   RawObject value = ctx->frame->getLocal(arg);
   if (value->isError()) {
     RawObject name =

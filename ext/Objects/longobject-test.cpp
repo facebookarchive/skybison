@@ -50,7 +50,7 @@ TEST_F(LongExtensionApiTest, AsLongWithNullReturnsNegative) {
 TEST_F(LongExtensionApiTest, AsLongWithNonIntegerReturnsNegative) {
   long res = PyLong_AsLong(Py_None);
   EXPECT_EQ(res, -1);
-  // TODO: Add exception checks once PyLong_AsLong is fully implemented
+  // TODO(eelizondo): Add exception checks once PyLong_AsLong is fully implemented
 }
 
 TEST_F(LongExtensionApiTest, FromLongReturnsLong) {

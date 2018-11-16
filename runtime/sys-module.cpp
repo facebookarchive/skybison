@@ -27,9 +27,7 @@ RawObject builtinSysExit(Thread* thread, Frame* frame, word nargs) {
   if (nargs > 1) {
     return thread->raiseTypeErrorWithCStr("exit() accepts at most 1 argument");
   }
-
-  // TODO: PyExc_SystemExit
-
+  // TODO(T36407058): raise SystemExit instead of calling std::exit
   word code = 0;  // success
   if (nargs == 1) {
     Arguments args(frame, nargs);

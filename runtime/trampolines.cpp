@@ -16,7 +16,7 @@ static inline void initFrame(Thread* thread, RawFunction function,
   if (new_frame->globals() == caller_frame->globals()) {
     new_frame->setBuiltins(caller_frame->builtins());
   } else {
-    // TODO: Set builtins appropriately
+    // TODO(T36407403): Set builtins appropriately
     // See PyFrame_New in cpython frameobject.c.
     // If caller_frame->globals() contains the __builtins__ key and the
     // associated value is a module, use its dict. Otherwise, create a new
@@ -79,7 +79,7 @@ static inline RawObject callCheckFreeCell(Thread* thread, RawFunction function,
   auto num_locals = code->nlocals();
   auto num_cellvars = code->numCellvars();
   for (word i = 0; i < code->numCellvars(); i++) {
-    // TODO: implement cell2arg
+    // TODO(T36407558): implement cell2arg
     callee_frame->setLocal(num_locals + i, thread->runtime()->newValueCell());
   }
 

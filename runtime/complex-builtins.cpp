@@ -47,7 +47,7 @@ RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   Layout layout(&scope, type->instanceLayout());
   if (layout->id() != LayoutId::kComplex) {
-    // TODO: Implement __new__ with subtypes of complex.
+    // TODO(T32518507): Implement __new__ with subtypes of complex.
     UNIMPLEMENTED("complex.__new__(<subtype of complex>, ...)");
   }
 

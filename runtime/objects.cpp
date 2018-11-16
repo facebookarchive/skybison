@@ -232,11 +232,11 @@ RawObject RawRangeIterator::next() {
   word stop = range->stop();
   word step = range->step();
 
-  // TODO: range overflow is unchecked. Since a correct implementation
+  // TODO(jeethu): range overflow is unchecked. Since a correct implementation
   // has to support arbitrary precision anyway, there's no point in checking
   // for overflow.
   if (isOutOfRange(cur, stop, step)) {
-    // TODO: Use RawStopIteration for control flow.
+    // TODO(bsimmers): Use RawStopIteration for control flow.
     return RawError::object();
   }
 

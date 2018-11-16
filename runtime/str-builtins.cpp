@@ -362,7 +362,7 @@ RawObject StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
   Layout layout(&scope, RawType::cast(*type)->instanceLayout());
   if (layout->id() != LayoutId::kStr) {
-    // TODO: Implement __new__ with subtypes of str.
+    // TODO(T36406531): Implement __new__ with subtypes of str.
     UNIMPLEMENTED("str.__new__(<subtype of str>, ...)");
   }
   if (nargs == 1) {

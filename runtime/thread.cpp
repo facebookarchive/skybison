@@ -94,17 +94,18 @@ Frame* Thread::linkFrame(Frame* frame) {
 
 void Thread::checkStackOverflow(word max_size) {
   // Check that there is sufficient space on the stack
-  // TODO: Grow stack
+  // TODO(T36407214): Grow stack
   byte* sp = stackPtr();
   CHECK(sp - max_size >= start_, "stack overflow");
 }
 
 Frame* Thread::pushNativeFrame(void* fn, word nargs) {
-  // TODO: native frames push arguments onto the stack when calling back into
-  // the interpreter, but we can't statically know how much stack space they
-  // will need. We may want to extend the api for such native calls to include
-  // a declaration of how much space is needed. However, that's of limited use
-  // right now since we can't detect an "overflow" of a frame anyway.
+  // TODO(T36407290): native frames push arguments onto the stack when calling
+  // back into the interpreter, but we can't statically know how much stack
+  // space they will need. We may want to extend the api for such native calls
+  // to include a declaration of how much space is needed. However, that's of
+  // limited use right now since we can't detect an "overflow" of a frame
+  // anyway.
   Frame* frame = openAndLinkFrame(nargs, 0, 0);
   frame->makeNativeFrame(runtime()->newIntFromCPtr(fn));
   return frame;
@@ -224,7 +225,6 @@ RawObject Thread::raiseSystemError(RawObject value) {
 }
 
 RawObject Thread::raiseSystemErrorWithCStr(const char* message) {
-  // TODO: instantiate SystemError object.
   return raiseSystemError(runtime()->newStrFromCStr(message));
 }
 
