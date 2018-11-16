@@ -14,8 +14,9 @@ Thread::Thread(int size)
     : size_(Utils::roundUp(size, kPointerSize)),
       handles_(new Handles()),
       next_(nullptr) {
-  start_ = ptr_ = new byte[size];
-  end_ = start_ + size;
+  start_ = new byte[size];
+  // Stack growns down in order to match machine convention
+  end_ = ptr_ = start_ + size;
 }
 
 Thread::~Thread() {
@@ -32,33 +33,28 @@ void Thread::setCurrentThread(Thread* thread) {
 }
 
 Frame* Thread::pushFrame(Object* object) {
-  // compute the frame size
-
-  Code* code = Code::cast(object);
-  int ncells = ObjectArray::cast(code->cellvars())->length();
-  int nfrees = ObjectArray::cast(code->freevars())->length();
-  int extras0 = code->nlocals() + ncells + nfrees;
-  int extras = code->stacksize() + extras0;
-  int size = OFFSET_OF(Frame, f_localsplus) + extras * kPointerSize;
+  auto code = Code::cast(object);
+  int size = Frame::allocationSize(code);
 
   // allocate that much space on the stack
+  // TODO: Grow stack
+  assert(ptr_ - size >= start_);
 
+  ptr_ -= size;
   Frame* frame = reinterpret_cast<Frame*>(ptr_);
-  ptr_ += size;
 
   // Initialize the frame.
-  memset(frame, 0, size);
-
-  frame->f_code = code;
-  frame->f_valuestack = frame->f_localsplus + extras0;
-  frame->f_stacktop = frame->f_valuestack;
+  memset(ptr_, 0, size);
+  frame->setCode(code);
 
   // return a pointer to the base of the frame
 
   return frame;
 }
 
-void Thread::popFrame(Frame* frame) {}
+void Thread::popFrame(Frame* frame) {
+  ptr_ += Frame::allocationSize(frame->code());
+}
 
 Object* Thread::run(Object* object) {
   Frame* frame = pushFrame(object);

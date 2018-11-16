@@ -1,53 +1,292 @@
 #pragma once
 
 #include "globals.h"
+#include "objects.h"
 
 namespace python {
 
+class Code;
 class Object;
 
+/**
+ * TryBlock contains the unmarshaled block stack information.
+ *
+ * Block stack entries are encoded and stored on the stack as a single
+ * SmallInteger using the following format:
+ *
+ * Name    Size    Description
+ * ----------------------------------------------------
+ * Kind    8       The kind of block this entry represents. CPython uses the
+ *                 raw opcode, but AFAICT, only 4 are actually used.
+ * Handler 30      Where to jump to find the handler
+ * Level   25      Value stack level to pop to
+ */
+class TryBlock {
+ public:
+  TryBlock(word kind, word handler, word level)
+      : kind(kind), handler(handler), level(level){};
+  inline static TryBlock fromSmallInteger(Object* object);
+  inline Object* asSmallInteger();
+
+  word kind;
+  word handler;
+  word level;
+
+  static const int kKindSize = 8;
+  static const uword kKindMask = (1 << kKindSize) - 1;
+
+  static const int kHandlerSize = 30;
+  static const int kHandlerOffset = 8;
+  static const uword kHandlerMask = (1 << kHandlerSize) - 1;
+
+  static const int kLevelSize = 25;
+  static const int kLevelOffset = 38;
+  static const uword kLevelMask = (1 << kLevelSize) - 1;
+};
+
+// TODO: Determine maximum block stack depth when the code object is loaded and
+//       dynamically allocate the minimum amount of space for the block stack.
+const int kMaxBlockStackDepth = 20;
+
+/**
+ * A stack frame.
+ *
+ * Prior to a function call, the stack will look like
+ *
+ *     Function
+ *     Arg 0
+ *     ...
+ *     Arg N
+ *            <- Top of stack / lower memory addresses
+ *
+ * The function prologue is responsible for reserving space for local variables
+ * and pushing other frame metadata needed by the interpreter onto the stack.
+ * After the prologue, and immediately before the interpreter is re-invoked,
+ * the stack looks like:
+ *
+ *     Function
+ *     Arg 0
+ *     ...
+ *     Arg N
+ *     Locals 0
+ *     ...
+ *     Locals N
+ *     <Fixed size frame metadata>
+ *     Builtins
+ *     Globals
+ *     Code Object
+ *     Saved frame pointer  <- Frame pointer
+ *                          <- Top of stack / lower memory addresses
+ */
 class Frame {
  public:
-  // PyObject_VAR_HEAD
-  Frame* f_back; /* previous frame, or NULL */
-  Object* f_code; /* code segment */
-  Object* f_builtins; /* builtin symbol table (PyDictObject) */
-  Object* f_globals; /* global symbol table (PyDictObject) */
-  Object* f_locals; /* local symbol table (any mapping) */
-  Object** f_valuestack; /* points after the last local */
-  /* Next free slot in f_valuestack.  Frame creation sets to f_valuestack.
-     Frame evaluation usually NULLs it, but a frame that yields sets it
-     to the current stack top. */
-  Object** f_stacktop;
-  Object* f_trace; /* Trace function */
-  char f_trace_lines; /* Emit per-line trace events? */
-  char f_trace_opcodes; /* Emit per-opcode trace events? */
+  // Function arguments, local variables, cell variables, and free variables
+  // NB: This points at the last local, so you'll need to flip your array
+  // indices around.
+  inline Object** locals();
 
-  /* In a generator, we need to be able to swap between the exception
-     state inside the generator and the exception state of the calling
-     frame (which shouldn't be impacted when the generator "yields"
-     from an except handler).
-     These three fields exist exactly for that, and are unused for
-     non-generator frames. See the save_exc_state and swap_exc_state
-     functions in ceval.c for details of their use. */
-  Object *f_exc_type, *f_exc_value, *f_exc_traceback;
-  /* Borrowed reference to a generator, or NULL */
-  Object* f_gen;
+  // The block stack; its size is kMaxBlockStackSize. Entries are SmallInteger
+  // objects that can be decoded into a TryBlock.
+  inline Object** blockStack();
 
-  int f_lasti; /* Last instruction if called */
-  /* Call PyFrame_GetLineNumber() instead of reading this field
-     directly.  As of 2.3 f_lineno is only valid when tracing is
-     active (i.e. when f_trace is set).  At other times we use
-     PyCode_Addr2Line to calculate the line from the current
-     bytecode index. */
-  int f_lineno; /* Current line number */
-  int f_iblock; /* index in f_blockstack */
-  char f_executing; /* whether the frame is still executing */
-  // PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
-  Object* f_localsplus[1]; /* locals+stack, dynamically sized */
+  // Index of the active block in the block stack; a SmallInteger
+  inline Object* activeBlock();
+  inline void setActiveBlock(Object* activeBlock);
+
+  // Trace function
+  inline Object* traceFunc();
+  inline void setTraceFunc(Object* traceFunc);
+
+  // Tracing flags: emit per-line/per-opcode events?
+  inline Object* traceFlags();
+  inline void setTraceFlags(Object* traceFlags);
+
+  // The following state is needed in the case where the frame is executing a
+  // generator and needs to be evicted to the heap and restored later.
+
+  // Index in the bytecode array of the last instruction that was executed
+  inline Object* lastInstruction();
+  inline void setLastInstruction(Object* lastInstruction);
+
+  // In a generator, we need to be able to swap between the exception state
+  // inside the generator and the exception state of the calling frame (which
+  // shouldn't be impacted when the generator "yields" from an except handler).
+  // These three fields exist exactly for that, and are unused for
+  // non-generator frames. See the save_exc_state and swap_exc_state functions
+  // in ceval.c for details of their use.
+  inline Object* exceptionClass();
+  inline void setExceptionClass(Object* exceptionClass);
+
+  inline Object* exception();
+  inline void setException(Object* exception);
+
+  inline Object* traceback();
+  inline void setTraceback(Object* traceback);
+
+  // The builtins namespace (a Dictionary)
+  inline Object* builtins();
+  inline void setBuiltins(Object* builtins);
+
+  // The globals namespace (a Dictionary)
+  inline Object* globals();
+  inline void setGlobals(Object* globals);
+
+  // The code object
+  inline Object* code();
+  inline void setCode(Object* code);
+
+  // A pointer to the previous frame or nullptr if this is the first frame
+  inline Object* previousFrame();
+  inline void setPreviousFrame(Object* frame);
+
+  // Compute the total space required for a frame object
+  static int allocationSize(Object* code);
+
+  static const int kPreviousFrameOffset = 0;
+  static const int kCodeOffset = kPreviousFrameOffset + kPointerSize;
+  static const int kGlobalsOffset = kCodeOffset + kPointerSize;
+  static const int kBuiltinsOffset = kGlobalsOffset + kPointerSize;
+  static const int kTracebackOffset = kBuiltinsOffset + kPointerSize;
+  static const int kExceptionOffset = kTracebackOffset + kPointerSize;
+  static const int kExceptionClassOffset = kExceptionOffset + kPointerSize;
+  static const int kLastInstructionOffset =
+      kExceptionClassOffset + kPointerSize;
+  static const int kTraceFlagsOffset = kLastInstructionOffset + kPointerSize;
+  static const int kTraceFuncOffset = kTraceFlagsOffset + kPointerSize;
+  static const int kActiveBlockOffset = kTraceFuncOffset + kPointerSize;
+  static const int kBlockStackOffset = kActiveBlockOffset + kPointerSize;
+  static const int kSize =
+      kBlockStackOffset + kMaxBlockStackDepth * kPointerSize;
 
  private:
+  inline uword address();
+  inline Object* at(int offset);
+  inline void atPut(int offset, Object* value);
+
   DISALLOW_COPY_AND_ASSIGN(Frame);
 };
+
+uword Frame::address() {
+  return reinterpret_cast<uword>(this);
+}
+
+Object* Frame::at(int offset) {
+  return *reinterpret_cast<Object**>(address() + offset);
+}
+
+void Frame::atPut(int offset, Object* value) {
+  *reinterpret_cast<Object**>(address() + offset) = value;
+}
+
+Object** Frame::blockStack() {
+  return reinterpret_cast<Object**>(address() + kBlockStackOffset);
+}
+
+Object* Frame::activeBlock() {
+  return at(kActiveBlockOffset);
+}
+
+void Frame::setActiveBlock(Object* activeBlock) {
+  atPut(kActiveBlockOffset, activeBlock);
+}
+
+Object* Frame::traceFunc() {
+  return at(kTraceFuncOffset);
+}
+
+void Frame::setTraceFunc(Object* traceFunc) {
+  atPut(kTraceFuncOffset, traceFunc);
+}
+
+Object* Frame::traceFlags() {
+  return at(kTraceFlagsOffset);
+}
+
+void Frame::setTraceFlags(Object* traceFlags) {
+  atPut(kTraceFlagsOffset, traceFlags);
+}
+
+Object* Frame::lastInstruction() {
+  return at(kLastInstructionOffset);
+}
+
+void Frame::setLastInstruction(Object* lastInstruction) {
+  atPut(kLastInstructionOffset, lastInstruction);
+}
+
+Object* Frame::exceptionClass() {
+  return at(kExceptionClassOffset);
+}
+
+void Frame::setExceptionClass(Object* exceptionClass) {
+  atPut(kExceptionClassOffset, exceptionClass);
+}
+
+Object* Frame::exception() {
+  return at(kExceptionOffset);
+}
+
+void Frame::setException(Object* exception) {
+  atPut(kExceptionOffset, exception);
+}
+
+Object* Frame::traceback() {
+  return at(kTracebackOffset);
+}
+
+void Frame::setTraceback(Object* traceback) {
+  atPut(kTracebackOffset, traceback);
+}
+
+Object* Frame::builtins() {
+  return at(kBuiltinsOffset);
+}
+
+void Frame::setBuiltins(Object* builtins) {
+  atPut(kBuiltinsOffset, builtins);
+}
+
+Object* Frame::globals() {
+  return at(kGlobalsOffset);
+}
+
+void Frame::setGlobals(Object* globals) {
+  atPut(kGlobalsOffset, globals);
+}
+
+Object* Frame::code() {
+  return at(kCodeOffset);
+}
+
+void Frame::setCode(Object* code) {
+  atPut(kCodeOffset, code);
+}
+
+Object** Frame::locals() {
+  return reinterpret_cast<Object**>(address() + kSize);
+}
+
+Object* Frame::previousFrame() {
+  return at(kPreviousFrameOffset);
+}
+
+void Frame::setPreviousFrame(Object* frame) {
+  atPut(kPreviousFrameOffset, frame);
+}
+
+TryBlock TryBlock::fromSmallInteger(Object* object) {
+  word encoded = SmallInteger::cast(object)->value();
+  return TryBlock(
+      encoded & kKindMask,
+      (encoded >> kHandlerOffset) & kHandlerMask,
+      (encoded >> kLevelOffset) & kLevelMask);
+}
+
+Object* TryBlock::asSmallInteger() {
+  word encoded = kind;
+  encoded |= (handler << kHandlerOffset);
+  encoded |= (level << kLevelOffset);
+  return SmallInteger::fromWord(encoded);
+}
 
 } // namespace python

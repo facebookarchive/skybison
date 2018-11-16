@@ -20,6 +20,7 @@ add_library(
   runtime
   STATIC
   runtime/bytecode.h
+  runtime/frame.cpp
   runtime/frame.h
   runtime/globals.h
   runtime/handles.cpp

@@ -22,6 +22,12 @@ class Thread {
   Frame* pushFrame(Object* code);
   void popFrame(Frame* frame);
 
+  // Push an object onto the thread stack
+  inline void pushObject(Object* object);
+
+  // Pop an object off of the thread stack
+  inline Object* popObject();
+
   Object* run(Object* object);
 
   Thread* next() {
@@ -44,5 +50,18 @@ class Thread {
 
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
+
+void Thread::pushObject(Object* object) {
+  assert(ptr_ - kPointerSize >= start_);
+  ptr_ -= kPointerSize;
+  *reinterpret_cast<Object**>(ptr_) = object;
+}
+
+Object* Thread::popObject() {
+  assert(ptr_ + kPointerSize <= end_);
+  auto ret = *reinterpret_cast<Object**>(ptr_);
+  ptr_ += kPointerSize;
+  return ret;
+}
 
 } // namespace python
