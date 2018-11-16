@@ -1778,6 +1778,23 @@ void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   ctx->frame->setTopValue(*list);
 }
 
+// opcode 150
+void Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Handle<Dict> dict(&scope, runtime->newDict());
+  Handle<Object> obj(&scope, None::object());
+  for (word i = arg - 1; i >= 0; i--) {
+    obj = frame->peek(i);
+    runtime->dictUpdate(thread, dict, obj);
+    thread->abortOnPendingException();
+  }
+  frame->dropValues(arg - 1);
+  frame->setTopValue(*dict);
+}
+
 // opcode 152 & opcode 158
 void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   Runtime* runtime = ctx->thread->runtime();

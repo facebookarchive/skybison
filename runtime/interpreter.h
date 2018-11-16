@@ -207,6 +207,7 @@ class Interpreter {
   static void doSetAdd(Context* ctx, word arg);
   static void doMapAdd(Context* ctx, word arg);
   static void doBuildListUnpack(Context* ctx, word arg);
+  static void doBuildMapUnpack(Context* ctx, word arg);
   static void doBuildTupleUnpack(Context* ctx, word arg);
   static void doBuildSetUnpack(Context* ctx, word arg);
   static void doSetupAsyncWith(Context* ctx, word flags);

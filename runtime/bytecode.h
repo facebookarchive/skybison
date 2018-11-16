@@ -159,7 +159,7 @@ namespace python {
   V(MAP_ADD, 147, doMapAdd)                                                    \
   V(LOAD_CLASSDEREF, 148, doNotImplemented)                                    \
   V(BUILD_LIST_UNPACK, 149, doBuildListUnpack)                                 \
-  V(BUILD_MAP_UNPACK, 150, doNotImplemented)                                   \
+  V(BUILD_MAP_UNPACK, 150, doBuildMapUnpack)                                   \
   V(BUILD_MAP_UNPACK_WITH_CALL, 151, doNotImplemented)                         \
   V(BUILD_TUPLE_UNPACK, 152, doBuildTupleUnpack)                               \
   V(BUILD_SET_UNPACK, 153, doBuildSetUnpack)                                   \

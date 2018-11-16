@@ -2400,6 +2400,79 @@ void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
   thread->abortOnPendingException();
 }
 
+void Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
+                         const Handle<Object>& mapping) {
+  HandleScope scope;
+  Handle<Object> key(&scope, None::object());
+  Handle<Object> value(&scope, None::object());
+  if (mapping->isDict()) {
+    DCHECK(*mapping != *dict, "Cannot update dict with itself");
+    Handle<Dict> other(&scope, *mapping);
+    Handle<ObjectArray> data(&scope, other->data());
+    for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
+      if (Dict::Bucket::isFilled(*data, i)) {
+        key = Dict::Bucket::key(*data, i);
+        value = Dict::Bucket::value(*data, i);
+        dictAtPut(dict, key, value);
+      }
+    }
+    return;
+  }
+  Frame* frame = thread->currentFrame();
+  Handle<Object> keys_method(
+      &scope,
+      Interpreter::lookupMethod(thread, frame, mapping, SymbolId::kKeys));
+
+  if (keys_method->isError()) {
+    thread->throwTypeErrorFromCStr("object is not a mapping");
+    thread->abortOnPendingException();
+    return;
+  }
+
+  // Generic mapping, use keys() and __getitem__()
+  Handle<Object> subscr_method(
+      &scope, Interpreter::lookupMethod(thread, frame, mapping,
+                                        SymbolId::kDunderGetItem));
+  if (subscr_method->isError()) {
+    thread->throwTypeErrorFromCStr("object is not subscriptable");
+    thread->abortOnPendingException();
+    return;
+  }
+  Handle<Object> keys(
+      &scope, Interpreter::callMethod1(thread, frame, keys_method, mapping));
+  if (keys->isList()) {
+    Handle<List> keys_list(&scope, *keys);
+    for (word i = 0; i < keys_list->allocated(); ++i) {
+      key = keys_list->at(i);
+      value =
+          Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
+      if (value->isError()) {
+        thread->abortOnPendingException();
+        return;
+      }
+      dictAtPut(dict, key, value);
+    }
+    return;
+  }
+  if (keys->isObjectArray()) {
+    Handle<ObjectArray> keys_tuple(&scope, *keys);
+    for (word i = 0; i < keys_tuple->length(); ++i) {
+      key = keys_tuple->at(i);
+      value =
+          Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
+      if (value->isError()) {
+        thread->abortOnPendingException();
+        return;
+      }
+      dictAtPut(dict, key, value);
+    }
+    return;
+  }
+  // Keys probably is an iterator
+  // TODO(T33562788): Support iterable keys in dictUpdate
+  UNIMPLEMENTED("non list/tuple keys in dictionary update");
+}
+
 Object* Runtime::newValueCell() { return heap()->createValueCell(); }
 
 Object* Runtime::newWeakRef() { return heap()->createWeakRef(); }

@@ -132,6 +132,7 @@ class Runtime;
   V(Items, "items")                                                            \
   V(IndexError, "IndexError")                                                  \
   V(KeyError, "KeyError")                                                      \
+  V(Keys, "keys")                                                              \
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
   V(Layout, "layout")                                                          \
