@@ -105,7 +105,7 @@ Frame* Thread::pushFrame(Object* object) {
   HandleScope scope(this);
   Handle<Code> code(&scope, object);
   word numVars = code->nlocals() + code->numCellvars() + code->numFreevars();
-  auto frame = openAndLinkFrame(code->argcount(), numVars, code->stacksize());
+  auto frame = openAndLinkFrame(code->totalArgs(), numVars, code->stacksize());
   frame->setCode(*code);
   return frame;
 }

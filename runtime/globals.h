@@ -55,3 +55,8 @@ const int kNanosecondsPerSecond =
 #include <type_traits>
 #define IS_TRIVIALLY_COPYABLE(T) std::is_trivially_copyable<T>::value
 #endif
+
+// Branch prediction hints for the compiler.  Use in performance critial code
+// which almost always branches one way.
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)

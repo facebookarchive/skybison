@@ -172,6 +172,7 @@ add_library(
   runtime-tests
   STATIC
   runtime/attributes-test.cpp
+  runtime/trampolines-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
   runtime/interpreter-test.cpp

@@ -1020,19 +1020,24 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   function->setFastGlobals(
       thread->runtime()->computeFastGlobals(code, globals, builtins));
   function->setEntry(interpreterTrampoline);
+  function->setEntryKw(interpreterTrampolineKw);
+  function->setEntryEx(interpreterTrampolineEx);
+  if (arg & MakeFunctionFlag::CLOSURE) {
+    DCHECK((*ctx->sp)->isObjectArray(), "Closure expects tuple");
+    function->setClosure(*ctx->sp++);
+  }
   if (arg & MakeFunctionFlag::ANNOTATION_DICT) {
-    UNIMPLEMENTED("func annotations");
+    DCHECK(
+        (*ctx->sp)->isDictionary(), "Parameter annotations expect dictionary");
+    function->setAnnotations(*ctx->sp++);
   }
   if (arg & MakeFunctionFlag::DEFAULT_KW) {
+    DCHECK((*ctx->sp)->isDictionary(), "Keyword arguments expect dictionary");
     function->setKwDefaults(*ctx->sp++);
-    UNIMPLEMENTED("func keyword defaults");
   }
   if (arg & MakeFunctionFlag::DEFAULT) {
+    DCHECK((*ctx->sp)->isObjectArray(), "Default arguments expect tuple");
     function->setDefaults(*ctx->sp++);
-  }
-  if (arg & MakeFunctionFlag::CLOSURE) {
-    DCHECK((*ctx->sp)->isObjectArray(), "Closure is not tuple.");
-    function->setClosure(*ctx->sp++);
   }
   *--ctx->sp = *function;
 }

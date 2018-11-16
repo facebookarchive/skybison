@@ -860,9 +860,25 @@ class ListIterator : public HeapObject {
 
 class Code : public HeapObject {
  public:
+  // Matching CPython
+  enum Flags {
+    OPTIMIZED = 0x0001,
+    NEWLOCALS = 0x0002,
+    VARARGS = 0x0004,
+    VARKEYARGS = 0x0008,
+    NESTED = 0x0010,
+    GENERATOR = 0x0020,
+    NOFREE = 0x0040, // Shortcut for no free or cell vars
+    COROUTINE = 0x0080,
+    ITERABLE_COROUTINE = 0x0100,
+    ASYNC_GENERATOR = 0x0200,
+    SIMPLE_CALL = 0x0400, // Pyro addition; speeds detection of fast call
+  };
+
   // Getters and setters.
   word argcount();
   void setArgcount(word value);
+  word totalArgs();
 
   word cell2arg();
   void setCell2arg(word value);
@@ -993,10 +1009,15 @@ class Function : public HeapObject {
   Entry entry();
   void setEntry(Entry entry);
 
-  // Returns the entry to be used when the fucntion is invoked via
+  // Returns the entry to be used when the function is invoked via
   // CALL_FUNCTION_KW
   Entry entryKw();
   void setEntryKw(Entry entryKw);
+
+  // Returns the entry to be used when the function is invoked via
+  // CALL_FUNCTION_EX
+  inline Entry entryEx();
+  inline void setEntryEx(Entry entryEx);
 
   // The dictionary that holds this function's global namespace. User-code
   // cannot change this
@@ -1043,7 +1064,8 @@ class Function : public HeapObject {
   static const int kGlobalsOffset = kClosureOffset + kPointerSize;
   static const int kEntryOffset = kGlobalsOffset + kPointerSize;
   static const int kEntryKwOffset = kEntryOffset + kPointerSize;
-  static const int kFastGlobalsOffset = kEntryKwOffset + kPointerSize;
+  static const int kEntryExOffset = kEntryKwOffset + kPointerSize;
+  static const int kFastGlobalsOffset = kEntryExOffset + kPointerSize;
   static const int kSize = kFastGlobalsOffset + kPointerSize;
 
  private:
@@ -2302,6 +2324,18 @@ inline word Code::cell2arg() {
   return SmallInteger::cast(instanceVariableAt(kCell2argOffset))->value();
 }
 
+inline word Code::totalArgs() {
+  uword f = flags();
+  word res = argcount() + kwonlyargcount();
+  if (f & VARARGS) {
+    res++;
+  }
+  if (f & VARKEYARGS) {
+    res++;
+  }
+  return res;
+}
+
 inline void Code::setCell2arg(word value) {
   instanceVariableAtPut(kCell2argOffset, SmallInteger::fromWord(value));
 }
@@ -2360,6 +2394,12 @@ inline word Code::flags() {
 }
 
 inline void Code::setFlags(word value) {
+  if ((kwonlyargcount() == 0) && (value & NOFREE) &&
+      !(value & (VARARGS | VARKEYARGS))) {
+    // Set up shortcut for detecting fast case for calls
+    // TODO: move into equivalent of CPython's codeobject.c:PyCode_New()
+    value |= SIMPLE_CALL;
+  }
   instanceVariableAtPut(kFlagsOffset, SmallInteger::fromWord(value));
 }
 
@@ -2758,6 +2798,16 @@ inline void Function::setEntryKw(Function::Entry entryKw) {
 
 inline Object* Function::globals() {
   return instanceVariableAt(kGlobalsOffset);
+}
+
+Function::Entry Function::entryEx() {
+  Object* object = instanceVariableAt(kEntryExOffset);
+  return SmallInteger::cast(object)->asFunctionPointer<Function::Entry>();
+}
+
+void Function::setEntryEx(Function::Entry entryEx) {
+  auto object = SmallInteger::fromFunctionPointer(entryEx);
+  instanceVariableAtPut(kEntryExOffset, object);
 }
 
 inline void Function::setGlobals(Object* globals) {

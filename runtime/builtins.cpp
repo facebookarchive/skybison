@@ -274,6 +274,21 @@ static Object* doBuiltinPrint(
         }
       }
       *ostream << "]";
+    } else if (arg->isObjectArray()) {
+      *ostream << "(";
+      HandleScope scope;
+      Handle<ObjectArray> array(&scope, arg);
+      for (word i = 0; i < array->length(); i++) {
+        if (supportedScalarType(array->at(i))) {
+          printScalarTypes(array->at(i), ostream);
+        } else {
+          UNIMPLEMENTED("Custom print unsupported");
+        }
+        if (i != array->length() - 1) {
+          *ostream << ", ";
+        }
+      }
+      *ostream << ")";
     } else {
       UNIMPLEMENTED("Custom print unsupported");
     }

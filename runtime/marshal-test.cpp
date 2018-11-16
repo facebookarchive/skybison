@@ -359,7 +359,7 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   EXPECT_EQ(code->nlocals(), 0);
   EXPECT_EQ(code->stacksize(), 1);
   EXPECT_EQ(code->cell2arg(), 0);
-  EXPECT_EQ(code->flags(), 0x00000040);
+  EXPECT_EQ(code->flags(), Code::SIMPLE_CALL | Code::NOFREE);
 
   ASSERT_TRUE(code->code()->isByteArray());
   EXPECT_NE(ByteArray::cast(code->code())->length(), 0);

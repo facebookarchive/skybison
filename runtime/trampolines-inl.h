@@ -13,7 +13,7 @@ namespace python {
 // that.
 template <Object* (*Fn)(Thread*, Frame*, word)>
 Object* nativeTrampoline(Thread* thread, Frame* previousFrame, word argc) {
-  HandleScope scope;
+  HandleScope scope(thread->handles());
 
   thread->pushNativeFrame(Utils::castFnPtrToVoid(Fn));
 

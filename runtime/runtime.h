@@ -59,7 +59,10 @@ class Runtime {
 
   Object* newSet();
 
-  Object* newBuiltinFunction(Function::Entry entry, Function::Entry entryKw);
+  Object* newBuiltinFunction(
+      Function::Entry entry,
+      Function::Entry entryKw,
+      Function::Entry entryEx);
   Object* newFunction();
 
   Object* newInstance(const Handle<Layout>& layout);
@@ -141,7 +144,8 @@ class Runtime {
       const Handle<Module>& module,
       Object* name,
       const Function::Entry entry,
-      const Function::Entry entryKw);
+      const Function::Entry entryKw,
+      const Function::Entry entryEx);
 
   Object* findModule(const Handle<Object>& name);
 
@@ -385,7 +389,8 @@ class Runtime {
       const Handle<Class>& klass,
       Object* name,
       Function::Entry entry,
-      Function::Entry entryKw);
+      Function::Entry entryKw,
+      Function::Entry entryEx);
 
   // determine whether the instance needs a slot for delegate base instance
   bool hasDelegate(const Handle<Class>& klass);

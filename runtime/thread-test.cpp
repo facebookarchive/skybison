@@ -1356,7 +1356,8 @@ TEST(ThreadTest, NativeExceptions) {
       &scope,
       runtime.newBuiltinFunction(
           nativeTrampoline<nativeExceptionTest>,
-          nativeTrampoline<unimplementedTrampoline>));
+          unimplementedTrampoline,
+          unimplementedTrampoline));
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
@@ -1767,119 +1768,6 @@ TEST(ThreadTest, BuiltinOrd) {
   ASSERT_DEATH(
       runtime.runFromCString("print(ord(1))"),
       "aborting due to pending exception: Unsupported type in builtin 'ord'");
-}
-
-TEST(ThreadTest, CallBoundMethod) {
-  Runtime runtime;
-
-  const char* src = R"(
-def func(self):
-  print(self)
-
-def test(callable):
-  return callable()
-)";
-  runtime.runFromCString(src);
-
-  HandleScope scope;
-  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
-  ASSERT_TRUE(function->isFunction());
-
-  Handle<Object> self(&scope, SmallInteger::fromWord(1111));
-  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
-
-  Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
-  ASSERT_TRUE(test->isFunction());
-  Handle<Function> func(&scope, *test);
-
-  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
-  args->atPut(0, *method);
-
-  std::string output = callFunctionToString(func, args);
-  EXPECT_EQ(output, "1111\n");
-}
-
-TEST(ThreadTest, CallBoundMethodWithArgs) {
-  Runtime runtime;
-
-  const char* src = R"(
-def func(self, a, b):
-  print(self, a, b)
-
-def test(callable):
-  return callable(2222, 3333)
-)";
-  runtime.runFromCString(src);
-
-  HandleScope scope;
-  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
-  ASSERT_TRUE(function->isFunction());
-
-  Handle<Object> self(&scope, SmallInteger::fromWord(1111));
-  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
-
-  Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
-  ASSERT_TRUE(test->isFunction());
-  Handle<Function> func(&scope, *test);
-
-  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
-  args->atPut(0, *method);
-
-  std::string output = callFunctionToString(func, args);
-  EXPECT_EQ(output, "1111 2222 3333\n");
-}
-
-TEST(ThreadTest, CallDefaultArgs) {
-  Runtime runtime;
-  HandleScope scope;
-
-  const char* src = R"(
-def foo(a=1, b=2, c=3):
-  print(a, b, c)
-
-print()
-foo(33, 22, 11)
-foo()
-foo(1001)
-foo(1001, 1002)
-foo(1001, 1002, 1003)
-)";
-
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, R"(
-33 22 11
-1 2 3
-1001 2 3
-1001 1002 3
-1001 1002 1003
-)");
-}
-
-TEST(ThreadTest, CallMethodMixPosDefaultArgs) {
-  const char* src = R"(
-def foo(a, b=2):
-  print(a, b)
-foo(1)
-)";
-
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "1 2\n");
-}
-
-TEST(ThreadTest, CallBoundMethodMixed) {
-  const char* src = R"(
-class R:
-  def __init__(self, a, b=2):
-    print(a, b)
-a = R(9)
-)";
-
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "9 2\n");
 }
 
 TEST(ThreadTest, RaiseVarargs) {
