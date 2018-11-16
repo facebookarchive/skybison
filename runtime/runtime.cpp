@@ -124,13 +124,6 @@ Object* Runtime::newObjectArray(word length) {
   return heap()->createObjectArray(length, None::object());
 }
 
-Object* Runtime::newString(word length) {
-  if (length == 0) {
-    return empty_string_;
-  }
-  return heap()->createLargeString(length);
-}
-
 Object* Runtime::newStringFromCString(const char* c_string) {
   word length = std::strlen(c_string);
   auto data = reinterpret_cast<const byte*>(c_string);
@@ -139,10 +132,10 @@ Object* Runtime::newStringFromCString(const char* c_string) {
 
 Object* Runtime::newStringWithAll(View<byte> code_units) {
   word length = code_units.length();
-  if (code_units.length() == 0) {
-    return empty_string_;
+  if (length <= SmallString::kMaxLength) {
+    return SmallString::fromBytes(code_units);
   }
-  Object* result = newString(length);
+  Object* result = heap()->createLargeString(length);
   assert(result != nullptr);
   byte* dst = reinterpret_cast<byte*>(LargeString::cast(result)->address());
   const byte* src = code_units.data();
@@ -409,7 +402,6 @@ void Runtime::initializeThreads() {
 void Runtime::initializePrimitiveInstances() {
   empty_object_array_ = heap()->createObjectArray(0, None::object());
   empty_byte_array_ = heap()->createByteArray(0);
-  empty_string_ = heap()->createLargeString(0); // TODO use SmallString
   ellipsis_ = heap()->createEllipsis();
 }
 
@@ -446,7 +438,6 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit instances
   visitor->visitPointer(&empty_byte_array_);
   visitor->visitPointer(&empty_object_array_);
-  visitor->visitPointer(&empty_string_);
   visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&build_class_);
   visitor->visitPointer(&print_default_end_);

@@ -47,7 +47,6 @@ class Runtime {
 
   Object* newObjectArray(word length);
 
-  Object* newString(word length);
   Object* newStringFromCString(const char* c_string);
   Object* newStringWithAll(View<byte> code_units);
 
@@ -232,7 +231,6 @@ class Runtime {
   // Cached instances
   Object* empty_byte_array_;
   Object* empty_object_array_;
-  Object* empty_string_;
   Object* ellipsis_;
   Object* build_class_;
   Object* print_default_end_;

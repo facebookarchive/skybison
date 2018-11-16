@@ -6,6 +6,26 @@
 
 namespace python {
 
+// SmallString
+
+Object* SmallString::fromCString(const char* value) {
+  word len = strlen(value);
+  return fromBytes(view(reinterpret_cast<const byte*>(value), len));
+}
+
+Object* SmallString::fromBytes(View<byte> data) {
+  word length = data.length();
+  assert(0 <= length);
+  assert(length <= kMaxLength);
+  word result = 0;
+  for (word i = length; i > 0;) {
+    i -= 1;
+    result = (result << kBitsPerByte) | data.get(i);
+  }
+  result = (result << kBitsPerByte) | (length << kTagSize) | kTag;
+  return reinterpret_cast<SmallString*>(result);
+}
+
 // String
 
 bool LargeString::equals(Object* that) {
@@ -38,7 +58,7 @@ bool LargeString::equalsCString(const char* c_string) {
 void LargeString::copyTo(byte* dst, word length) {
   assert(length >= 0);
   assert(length <= this->length());
-  std::memcpy(dst, reinterpret_cast<byte*>(address()), length);
+  std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
 } // namespace python

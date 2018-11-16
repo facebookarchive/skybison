@@ -21,14 +21,13 @@ Object* nativeTrampoline(Thread* thread, Frame* previousFrame, word argc) {
     // TODO: pendingException should eventually be an instance of BaseException
     // (or a subclass), and it should be thrown up into python.
     fprintf(stderr, "aborting due to pending exception");
-    if (pendingException->isLargeString()) {
-      // TODO handle small string's too
-      LargeString* s = LargeString::cast(*pendingException);
-      fprintf(
-          stderr,
-          ": %.*s",
-          static_cast<int>(s->length()),
-          reinterpret_cast<const char*>(s->address()));
+    if (pendingException->isString()) {
+      String* message = String::cast(*pendingException);
+      word len = message->length();
+      byte* buffer = new byte[len + 1];
+      message->copyTo(buffer, len);
+      buffer[len] = 0;
+      fprintf(stderr, ": %.*s", static_cast<int>(len), buffer);
     }
     fprintf(stderr, "\n");
 

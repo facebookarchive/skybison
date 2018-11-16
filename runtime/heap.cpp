@@ -235,6 +235,7 @@ Object* Heap::createObjectArray(word length, Object* value) {
 }
 
 Object* Heap::createLargeString(word length) {
+  assert(length > SmallString::kMaxLength);
   word size = LargeString::allocationSize(length);
   Object* raw = allocate(size, LargeString::headerSize(length));
   assert(raw != nullptr);

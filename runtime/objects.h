@@ -2,6 +2,7 @@
 
 #include "globals.h"
 #include "utils.h"
+#include "view.h"
 
 namespace python {
 
@@ -87,6 +88,7 @@ class Object {
 
   // Immediate objects
   inline bool isSmallInteger();
+  inline bool isSmallString();
   inline bool isHeader();
   inline bool isNone();
   inline bool isError();
@@ -295,6 +297,7 @@ class String : public Object {
   // Getters and setters.
   inline byte charAt(word index);
   inline word length();
+  inline void copyTo(byte* dst, word length);
 
   // Equality checks.
   inline bool equals(Object* that);
@@ -309,10 +312,24 @@ class String : public Object {
 
 class SmallString : public Object {
  public:
+  // Getters and setters.
+  inline word length();
+  inline byte charAt(word index);
+  inline void copyTo(byte* dst, word length);
+
+  // Conversion.
+  static Object* fromCString(const char* value);
+  static Object* fromBytes(View<byte> data);
+
+  // Casting.
+  static inline SmallString* cast(Object* object);
+
   // Tagging.
   static const int kTag = 31; // 0b11111
   static const int kTagSize = 5;
   static const uword kTagMask = (1 << kTagSize) - 1;
+
+  static const word kMaxLength = kWordSize - 1;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallString);
@@ -453,7 +470,8 @@ class LargeString : public Array {
  public:
   // Getters and setters.
   inline byte charAt(word index);
-  void copyTo(byte* dst, word length);
+  void copyTo(byte* bytes, word length);
+  inline void charAtPut(word index, byte value);
 
   // Equality checks.
   bool equals(Object* that);
@@ -829,6 +847,11 @@ bool Object::isSmallInteger() {
   return tag == SmallInteger::kTag;
 }
 
+bool Object::isSmallString() {
+  uword tag = reinterpret_cast<uword>(this) & SmallString::kTagMask;
+  return tag == SmallString::kTag;
+}
+
 bool Object::isHeader() {
   uword tag = reinterpret_cast<uword>(this) & Header::kTagMask;
   return tag == Header::kTag;
@@ -925,7 +948,7 @@ bool Object::isEllipsis() {
 }
 
 bool Object::isString() {
-  return isLargeString();
+  return isSmallString() || isLargeString();
 }
 
 bool Object::equals(Object* lhs, Object* rhs) {
@@ -956,6 +979,31 @@ word SmallInteger::value() {
 SmallInteger* SmallInteger::fromWord(word value) {
   assert(SmallInteger::isValid(value));
   return reinterpret_cast<SmallInteger*>(value << kTagSize);
+}
+
+// SmallString
+
+word SmallString::length() {
+  return (reinterpret_cast<word>(this) >> kTagSize) & kMaxLength;
+}
+
+byte SmallString::charAt(word index) {
+  assert(0 <= index);
+  assert(index < length());
+  return reinterpret_cast<word>(this) >> (kBitsPerByte * (index + 1));
+}
+
+void SmallString::copyTo(byte* dst, word length) {
+  assert(length >= 0);
+  assert(length <= this->length());
+  for (word i = 0; i < length; ++i) {
+    *dst++ = charAt(i);
+  }
+}
+
+SmallString* SmallString::cast(Object* object) {
+  assert(object->isSmallString());
+  return reinterpret_cast<SmallString*>(object);
 }
 
 // Header
@@ -1693,28 +1741,49 @@ Object* Module::dictionary() {
 // String
 
 String* String::cast(Object* object) {
-  assert(object->isLargeString());
+  assert(object->isLargeString() || object->isSmallString());
   return reinterpret_cast<String*>(object);
 }
 
 byte String::charAt(word index) {
+  if (isSmallString()) {
+    return SmallString::cast(this)->charAt(index);
+  }
   assert(isLargeString());
   return LargeString::cast(this)->charAt(index);
 }
 
 word String::length() {
+  if (isSmallString()) {
+    return SmallString::cast(this)->length();
+  }
   assert(isLargeString());
   return LargeString::cast(this)->length();
 }
 
 bool String::equals(Object* that) {
+  if (isSmallString()) {
+    return this == that;
+  }
   assert(isLargeString());
   return LargeString::cast(this)->equals(that);
 }
 
 bool String::equalsCString(const char* c_string) {
+  if (isSmallString()) {
+    return this == SmallString::fromCString(c_string);
+  }
   assert(isLargeString());
   return LargeString::cast(this)->equalsCString(c_string);
+}
+
+void String::copyTo(byte* dst, word length) {
+  if (isSmallString()) {
+    SmallString::cast(this)->copyTo(dst, length);
+    return;
+  }
+  assert(isLargeString());
+  LargeString::cast(this)->copyTo(dst, length);
 }
 
 // LargeString
@@ -1725,7 +1794,7 @@ LargeString* LargeString::cast(Object* object) {
 }
 
 word LargeString::allocationSize(word length) {
-  assert(length >= 0);
+  assert(length > SmallString::kMaxLength);
   word size = headerSize(length) + length;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
@@ -1734,6 +1803,12 @@ byte LargeString::charAt(word index) {
   assert(index >= 0);
   assert(index < length());
   return *reinterpret_cast<byte*>(address() + index);
+}
+
+void LargeString::charAtPut(word index, byte value) {
+  assert(index >= 0);
+  assert(index < length());
+  *reinterpret_cast<byte*>(address() + index) = value;
 }
 
 // ValueCell

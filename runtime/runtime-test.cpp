@@ -102,38 +102,43 @@ TEST(RuntimeTest, NewObjectArray) {
 TEST(RuntimeTest, NewString) {
   Runtime runtime;
   HandleScope scope;
-
-  Handle<String> empty0(&scope, runtime.newString(0));
+  const byte bytes[400]{0};
+  Handle<SmallString> empty0(
+      &scope, runtime.newStringWithAll(View<byte>(bytes, 0)));
+  ASSERT_TRUE(empty0->isSmallString());
   EXPECT_EQ(empty0->length(), 0);
 
-  Handle<String> empty1(&scope, runtime.newString(0));
+  Handle<SmallString> empty1(
+      &scope, runtime.newStringWithAll(View<byte>(bytes, 0)));
+  ASSERT_TRUE(empty1->isSmallString());
   EXPECT_EQ(*empty0, *empty1);
 
-  Handle<String> empty2(&scope, runtime.newStringFromCString("\0"));
+  Handle<SmallString> empty2(&scope, runtime.newStringFromCString("\0"));
+  ASSERT_TRUE(empty2->isSmallString());
   EXPECT_EQ(*empty0, *empty2);
 
-  Handle<String> s1(&scope, runtime.newString(1));
+  Handle<SmallString> s1(
+      &scope, runtime.newStringWithAll(View<byte>(bytes, 1)));
+  ASSERT_TRUE(s1->isSmallString());
   EXPECT_EQ(s1->length(), 1);
-  ASSERT_TRUE(s1->isLargeString());
-  EXPECT_EQ(
-      LargeString::cast(*s1)->size(),
-      Utils::roundUp(kPointerSize + 1, kPointerSize));
 
-  Handle<LargeString> s254(&scope, runtime.newString(254));
+  Handle<LargeString> s254(
+      &scope, runtime.newStringWithAll(View<byte>(bytes, 254)));
   EXPECT_EQ(s254->length(), 254);
-  ASSERT_TRUE(s1->isLargeString());
+  ASSERT_TRUE(s254->isLargeString());
   EXPECT_EQ(
       LargeString::cast(*s254)->size(),
       Utils::roundUp(kPointerSize + 254, kPointerSize));
 
-  Handle<LargeString> s255(&scope, runtime.newString(255));
+  Handle<LargeString> s255(
+      &scope, runtime.newStringWithAll(View<byte>(bytes, 255)));
   EXPECT_EQ(s255->length(), 255);
-  ASSERT_TRUE(s1->isLargeString());
+  ASSERT_TRUE(s255->isLargeString());
   EXPECT_EQ(
       LargeString::cast(*s255)->size(),
       Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 
-  Handle<String> s300(&scope, runtime.newString(300));
+  Handle<String> s300(&scope, runtime.newStringWithAll(View<byte>(bytes, 300)));
   ASSERT_EQ(s300->length(), 300);
 }
 
@@ -232,7 +237,7 @@ TEST(RuntimeTest, HashStrings) {
   Runtime runtime;
   HandleScope scope;
 
-  // Strings have their hash codes computed lazily.
+  // LargeStrings have their hash codes computed lazily.
   Handle<LargeString> str1(&scope, runtime.newStringFromCString("testing 123"));
   EXPECT_EQ(str1->header()->hashCode(), 0);
   SmallInteger* hash1 = SmallInteger::cast(runtime.hash(*str1));

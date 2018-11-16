@@ -317,7 +317,7 @@ TEST(SmallInteger, IsValid) {
 TEST(LargeString, CopyTo) {
   Runtime runtime;
 
-  Object* obj = runtime.newStringFromCString("hello");
+  Object* obj = runtime.newStringFromCString("hello world!");
   ASSERT_TRUE(obj->isLargeString());
   LargeString* str = LargeString::cast(obj);
 
@@ -345,6 +345,20 @@ TEST(LargeString, CopyTo) {
   EXPECT_EQ(array[2], 'l');
   EXPECT_EQ(array[3], 'l');
   EXPECT_EQ(array[4], 'o');
+}
+
+TEST(SmallStringTest, Tests) {
+  Object* obj0 = SmallString::fromCString("AB");
+  ASSERT_TRUE(obj0->isSmallString());
+  auto* str0 = SmallString::cast(obj0);
+  EXPECT_EQ(str0->length(), 2);
+  EXPECT_EQ(str0->charAt(0), 'A');
+  EXPECT_EQ(str0->charAt(1), 'B');
+  byte array[3]{0, 0, 0};
+  str0->copyTo(array, 2);
+  EXPECT_EQ(array[0], 'A');
+  EXPECT_EQ(array[1], 'B');
+  EXPECT_EQ(array[2], 0);
 }
 
 } // namespace python

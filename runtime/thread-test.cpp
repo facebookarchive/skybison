@@ -679,10 +679,8 @@ TEST(ThreadTest, BuildList) {
   ASSERT_TRUE(list->at(0)->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 111);
 
-  ASSERT_TRUE(list->at(1)->isString());
-  EXPECT_TRUE(
-      String::cast(list->at(1))->equals(runtime.newStringFromCString("qqq")));
-
+  ASSERT_TRUE(list->at(1)->isSmallString());
+  EXPECT_EQ(list->at(1), SmallString::fromCString("qqq"));
   EXPECT_EQ(list->at(2), None::object());
 }
 
@@ -943,8 +941,8 @@ TEST(ThreadTest, LoadBuildClassEmptyClass) {
   ASSERT_TRUE(value->isValueCell());
 
   Handle<Class> cls(&scope, ValueCell::cast(*value)->value());
-  ASSERT_TRUE(cls->name()->isString());
-  EXPECT_TRUE(String::cast(cls->name())->equalsCString("C"));
+  ASSERT_TRUE(cls->name()->isSmallString());
+  EXPECT_EQ(cls->name(), SmallString::fromCString("C"));
 
   Handle<ObjectArray> mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
@@ -1007,8 +1005,8 @@ TEST(ThreadTest, LoadBuildClassClassWithInit) {
   EXPECT_EQ(mro->at(1), runtime.classAt(ClassId::kObject));
 
   // Check class name
-  ASSERT_TRUE(cls->name()->isString());
-  EXPECT_TRUE(String::cast(cls->name())->equalsCString("C"));
+  ASSERT_TRUE(cls->name()->isSmallString());
+  EXPECT_EQ(cls->name(), SmallString::fromCString("C"));
 
   Handle<Dictionary> cls_dict(&scope, cls->dictionary());
   ASSERT_TRUE(cls_dict->isDictionary());
