@@ -6,25 +6,6 @@
 
 namespace python {
 
-void PyModule_Type_Init() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  ApiTypeHandle* pytype_type =
-      runtime->builtinTypeHandles(ExtensionTypes::kType);
-  ApiTypeHandle* pymodule_type =
-      ApiTypeHandle::newTypeHandle("module", pytype_type);
-
-  runtime->addBuiltinTypeHandle(pymodule_type);
-}
-
-extern "C" PyTypeObject* PyModule_Type_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(
-      runtime->builtinTypeHandles(ExtensionTypes::kModule));
-}
-
 extern "C" PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();

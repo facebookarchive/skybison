@@ -8,7 +8,6 @@
 #include "interpreter.h"
 #include "layout.h"
 #include "symbols.h"
-#include "tracked-allocation.h"
 #include "view.h"
 
 namespace python {
@@ -199,8 +198,6 @@ class Runtime {
   Object* notImplemented() { return not_implemented_; }
 
   Object* apiHandles() { return api_handles_; }
-
-  Object* extensionTypes() { return extension_types_; }
 
   Symbols* symbols() { return symbols_; }
 
@@ -478,21 +475,8 @@ class Runtime {
   // Returns whether object's class provides a __delete__ method
   bool isDeleteDescriptor(Thread* thread, const Handle<Object>& object);
 
-  // Returns a pointer of an initialized PyTypeObject
-  ApiTypeHandle* builtinTypeHandles(ExtensionTypes type) {
-    return builtin_type_handles_[static_cast<int>(type)];
-  }
-
-  // Saves an initialized PyTypeObject
-  void addBuiltinTypeHandle(ApiTypeHandle* type_handle) {
-    builtin_type_handles_.push_back(type_handle);
-  }
-
-  // Linked list of all tracked allocations
-  TrackedAllocation** trackedAllocations() { return &tracked_allocations_; }
-
   // Clear the allocated memory from all extension related objects
-  void freeTrackedAllocations();
+  void freeApiHandles();
 
   // Creates an layout with a new ID and no attributes.
   Object* layoutCreateEmpty(Thread* thread);
@@ -663,7 +647,6 @@ class Runtime {
   Object* ellipsis_;
   Object* not_implemented_;
   Object* build_class_;
-  Object* print_default_end_;
 
   // Interned strings
   Object* interned_;
@@ -673,9 +656,6 @@ class Runtime {
 
   // ApiHandles
   Object* api_handles_;
-
-  // Extension Types
-  Object* extension_types_;
 
   // Weak reference callback list
   Object* callbacks_;
@@ -688,10 +668,6 @@ class Runtime {
   NewValueCellCallback new_value_cell_callback_;
 
   Symbols* symbols_;
-
-  Vector<ApiTypeHandle*> builtin_type_handles_;
-
-  TrackedAllocation* tracked_allocations_;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

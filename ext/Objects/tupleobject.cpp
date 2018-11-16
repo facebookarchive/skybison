@@ -7,25 +7,6 @@
 
 namespace python {
 
-void PyTuple_Type_Init() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  ApiTypeHandle* pytype_type =
-      runtime->builtinTypeHandles(ExtensionTypes::kType);
-  ApiTypeHandle* pytuple_type =
-      ApiTypeHandle::newTypeHandle("tuple", pytype_type);
-
-  runtime->addBuiltinTypeHandle(pytuple_type);
-}
-
-extern "C" PyTypeObject* PyTuple_Type_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(
-      runtime->builtinTypeHandles(ExtensionTypes::kTuple));
-}
-
 extern "C" PyObject* PyTuple_New(Py_ssize_t length) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();

@@ -6,25 +6,6 @@
 
 namespace python {
 
-void PyDict_Type_Init() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  ApiTypeHandle* pytype_type =
-      runtime->builtinTypeHandles(ExtensionTypes::kType);
-  ApiTypeHandle* pydict_type =
-      ApiTypeHandle::newTypeHandle("dict", pytype_type);
-
-  runtime->addBuiltinTypeHandle(pydict_type);
-}
-
-extern "C" PyTypeObject* PyDict_Type_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(
-      runtime->builtinTypeHandles(ExtensionTypes::kDict));
-}
-
 extern "C" int PyDict_SetItem(PyObject* pydict, PyObject* key,
                               PyObject* value) {
   Thread* thread = Thread::currentThread();

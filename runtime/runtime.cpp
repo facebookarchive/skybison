@@ -80,9 +80,7 @@ static const SymbolId kComparisonSelector[] = {
     SymbolId::kDunderNe, SymbolId::kDunderGt, SymbolId::kDunderGe};
 
 Runtime::Runtime(word heap_size)
-    : heap_(heap_size),
-      new_value_cell_callback_(this),
-      tracked_allocations_(nullptr) {
+    : heap_(heap_size), new_value_cell_callback_(this) {
   initializeRandom();
   initializeThreads();
   // This must be called before initializeClasses is called. Methods in
@@ -104,7 +102,7 @@ Runtime::~Runtime() {
     CHECK(threads_ != nullptr, "the runtime does not have any threads");
     Thread::setCurrentThread(threads_);
   }
-  freeTrackedAllocations();
+  freeApiHandles();
   for (Thread* thread = threads_; thread != nullptr;) {
     if (thread == Thread::currentThread()) {
       Thread::setCurrentThread(nullptr);
@@ -1404,7 +1402,6 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&not_implemented_);
   visitor->visitPointer(&build_class_);
-  visitor->visitPointer(&print_default_end_);
 
   // Visit interned strings.
   visitor->visitPointer(&interned_);
@@ -1414,9 +1411,6 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
   // Visit C-API handles
   visitor->visitPointer(&api_handles_);
-
-  // Visit Extension types
-  visitor->visitPointer(&extension_types_);
 
   // Visit symbols
   symbols_->visit(visitor);
@@ -1483,16 +1477,7 @@ struct ExtensionTypeInitializer {
   void (*initfunc)();
 };
 
-extern struct ExtensionTypeInitializer kExtensionTypeInitializers[];
-
-void Runtime::initializeApiHandles() {
-  api_handles_ = newDict();
-  extension_types_ = newDict();
-  // Initialize the extension types
-  for (int i = 0; kExtensionTypeInitializers[i].initfunc != nullptr; i++) {
-    (*kExtensionTypeInitializers[i].initfunc)();
-  }
-}
+void Runtime::initializeApiHandles() { api_handles_ = newDict(); }
 
 Object* Runtime::typeOf(Object* object) {
   HandleScope scope;
@@ -3043,11 +3028,7 @@ Object* Runtime::superGetAttr(Thread* thread, const Handle<Object>& receiver,
   return instanceGetAttr(thread, receiver, name);
 }
 
-void Runtime::freeTrackedAllocations() {
-  while (tracked_allocations_ != nullptr) {
-    TrackedAllocation::free(trackedAllocations(), tracked_allocations_);
-  }
-
+void Runtime::freeApiHandles() {
   // Clear the allocated ApiHandles
   HandleScope scope;
   Handle<Dict> dict(&scope, apiHandles());

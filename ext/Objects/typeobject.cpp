@@ -9,46 +9,9 @@
 
 namespace python {
 
-void PyType_Type_Init() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  // PyType_Type init is handled independently as its metatype is itself
-  ApiTypeHandle* pytype_type =
-      static_cast<ApiTypeHandle*>(TrackedAllocation::calloc(
-          runtime->trackedAllocations(), 1, sizeof(PyTypeObject)));
-  pytype_type->ob_base.ob_base.ob_type = pytype_type;
-  pytype_type->ob_base.ob_base.ob_refcnt = 1;
-  pytype_type->tp_name = "type";
-  pytype_type->tp_flags = ApiTypeHandle::kFlagsBuiltin;
-
-  runtime->addBuiltinTypeHandle(pytype_type);
-}
-
-extern "C" PyTypeObject* PyType_Type_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(
-      runtime->builtinTypeHandles(ExtensionTypes::kType));
-}
-
-void PyBaseObject_Type_Init() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  ApiTypeHandle* pytype_type =
-      runtime->builtinTypeHandles(ExtensionTypes::kType);
-  ApiTypeHandle* pybaseobject_type =
-      ApiTypeHandle::newTypeHandle("object", pytype_type);
-
-  runtime->addBuiltinTypeHandle(pybaseobject_type);
-}
-
-extern "C" PyTypeObject* PyBaseObject_Type_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(
-      runtime->builtinTypeHandles(ExtensionTypes::kBaseObject));
+extern "C" int PyType_CheckExact_Func(PyObject* obj) {
+  PyObject* type = reinterpret_cast<PyObject*>(obj->ob_type);
+  return ApiHandle::fromPyObject(type)->asObject()->isType();
 }
 
 extern "C" unsigned long PyType_GetFlags(PyTypeObject* type) {
@@ -75,8 +38,10 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
 
   // Set the base type to PyType_Type
   // TODO(T32512394): Handle metaclass initialization
-  type->ob_base.ob_base.ob_type =
-      runtime->builtinTypeHandles(ExtensionTypes::kType);
+  PyObject* pyobj = reinterpret_cast<PyObject*>(type);
+  PyObject* pytype_type =
+      ApiHandle::fromObject(runtime->typeAt(LayoutId::kType))->asPyObject();
+  pyobj->ob_type = reinterpret_cast<PyTypeObject*>(pytype_type);
 
   // Create a new class for the PyTypeObject
   Handle<Type> type_class(&scope, runtime->newClass());
@@ -121,11 +86,8 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   // TODO(T29618332): Implement missing PyType_Ready features
 
   // Add the runtime class object reference to PyTypeObject
-  Handle<Dict> extensions_dict(&scope, runtime->extensionTypes());
-  Handle<Object> type_class_obj(&scope, *type_class);
-  Handle<Object> type_class_id(
-      &scope, runtime->newIntFromCPointer(static_cast<void*>(type)));
-  runtime->dictAtPut(extensions_dict, type_class_id, type_class_obj);
+  // TODO(eelizondo): Handled this automatically in PyType_FromSpec
+  pyobj->reference_ = *type_class;
 
   // All done -- set the ready flag
   type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;

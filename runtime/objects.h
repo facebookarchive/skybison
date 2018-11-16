@@ -3241,7 +3241,7 @@ inline word RangeIterator::pendingLength() {
   if (isOutOfRange(current, stop, step)) {
     return 0;
   }
-  return abs((stop - current) / step);
+  return std::abs((stop - current) / step);
 }
 
 inline Object* RangeIterator::next() {

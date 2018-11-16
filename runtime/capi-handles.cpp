@@ -4,18 +4,19 @@
 
 namespace python {
 
-// TODO(T32685074): Handle PyTypeObject as any other ApiHandle
-ApiTypeHandle* ApiTypeHandle::newTypeHandle(const char* name,
-                                            PyTypeObject* metatype) {
+ApiHandle::ApiHandle(Object* reference, long refcnt) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  PyTypeObject* pytype = static_cast<PyTypeObject*>(TrackedAllocation::calloc(
-      runtime->trackedAllocations(), 1, sizeof(PyTypeObject)));
-  pytype->ob_base.ob_base.ob_type = metatype;
-  pytype->ob_base.ob_base.ob_refcnt = 1;
-  pytype->tp_name = name;
-  pytype->tp_flags = ApiTypeHandle::kFlagsBuiltin;
-  return ApiTypeHandle::fromPyTypeObject(pytype);
+
+  reference_ = reference;
+  ob_refcnt = refcnt;
+  Object* reftype = runtime->typeOf(reference);
+  if (reference == reftype) {
+    ob_type = reinterpret_cast<PyTypeObject*>(this);
+  } else {
+    ob_type = reinterpret_cast<PyTypeObject*>(
+        ApiHandle::fromObject(reftype)->asPyObject());
+  }
 }
 
 ApiHandle* ApiHandle::fromObject(Object* obj) {
@@ -30,13 +31,6 @@ ApiHandle* ApiHandle::fromObject(Object* obj) {
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
     return static_cast<ApiHandle*>(Int::cast(value)->asCPointer());
-  }
-
-  // TODO(T32685074): Handle PyTypeObject as any other ApiHandle
-  // Get the PyTypeObject pointer from the Type layout
-  if (obj->isType()) {
-    return ApiHandle::fromPyObject(
-        ApiTypeHandle::fromObject(obj)->asPyObject());
   }
 
   // Get the PyObject pointer from the instance layout
@@ -64,15 +58,6 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
     ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value)->asCPointer());
-    handle->setBorrowed();
-    return handle;
-  }
-
-  // TODO(T32685074): Handle PyTypeObject as any other ApiHandle
-  // Get the PyTypeObject pointer from the Type layout
-  if (obj->isType()) {
-    ApiHandle* handle =
-        ApiHandle::fromPyObject(ApiTypeHandle::fromObject(obj)->asPyObject());
     handle->setBorrowed();
     return handle;
   }
@@ -137,14 +122,10 @@ Object* ApiHandle::asObject() {
     return static_cast<Object*>(reference_);
   }
 
-  // Get the Type object from the runtime dict
   DCHECK(type(), "ApiHandles must contain a type pointer");
-  if (isType()) {
-    return ApiTypeHandle::fromPyObject(asPyObject())->asObject();
-  }
+  // TODO(eelizondo): Add a way to check for builtin objects
 
   // Create a runtime instance to hold the PyObject pointer
-  DCHECK(!type()->isBuiltin(), "Builtins should never be extension instances");
   return asInstance(type()->asObject());
 }
 
@@ -153,42 +134,8 @@ bool ApiHandle::isType() {
   return this->type() == ApiHandle::fromPyObject(type()->asPyObject())->type();
 }
 
-// TODO(T32685074): Handle PyTypeObject as any other ApiHandle
-ApiTypeHandle* ApiHandle::type() {
-  return ApiTypeHandle::fromPyTypeObject(ob_type);
-}
-
-// TODO(T32685074): Handle PyTypeObject as any other ApiHandle
-ApiTypeHandle* ApiTypeHandle::fromObject(Object* type) {
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-
-  DCHECK(type->isType(), "not a Type object");
-  Handle<Type> klass(&scope, type);
-  Handle<Object> extension_type_obj(&scope, klass->extensionType());
-
-  if (!extension_type_obj->isInt()) {
-    UNIMPLEMENTED("Type object doesn't contain an ApiTypeHandle");
-  }
-
-  Handle<Int> extension_type(&scope, *extension_type_obj);
-  return static_cast<ApiTypeHandle*>(extension_type->asCPointer());
-}
-
-// TODO(T32685074): Handle PyTypeObject as any other ApiHandle
-Object* ApiTypeHandle::asObject() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  // Get type Type
-  Handle<Dict> extensions_dict(&scope, runtime->extensionTypes());
-  Handle<Object> address(&scope,
-                         runtime->newIntFromCPointer(static_cast<void*>(this)));
-  Handle<Object> result(&scope, runtime->dictAt(extensions_dict, address));
-  CHECK(!result->isError(),
-        "Uninitialized PyTypeObject. Run PyType_Ready on it");
-  return *result;
+ApiHandle* ApiHandle::type() {
+  return ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(ob_type));
 }
 
 }  // namespace python

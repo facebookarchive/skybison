@@ -8,19 +8,6 @@ extern "C" {
 
 #define PyAPI_FUNC(RTYPE) RTYPE
 
-/* Types */
-PyAPI_FUNC(PyTypeObject *) PyBaseObject_Type_Ptr();
-PyAPI_FUNC(PyTypeObject *) PyBool_Type_Ptr();
-PyAPI_FUNC(PyTypeObject *) PyDict_Type_Ptr();
-PyAPI_FUNC(PyTypeObject *) PyFloat_Type_Ptr();
-PyAPI_FUNC(PyTypeObject *) PyList_Type_Ptr();
-PyAPI_FUNC(PyTypeObject *) PyLong_Type_Ptr();
-PyAPI_FUNC(PyTypeObject *) PyModule_Type_Ptr();
-PyAPI_FUNC(PyTypeObject *) PyNone_Type_Ptr();
-PyAPI_FUNC(PyTypeObject *) PyTuple_Type_Ptr();
-PyAPI_FUNC(PyTypeObject *) PyType_Type_Ptr();
-PyAPI_FUNC(PyTypeObject *) PyUnicode_Type_Ptr();
-
 /* Singletons */
 PyAPI_FUNC(PyObject *) PyFalse_Ptr();
 PyAPI_FUNC(PyObject *) PyNone_Ptr();
@@ -47,6 +34,8 @@ PyAPI_FUNC(PyObject *) PyTuple_GetItem(PyObject *, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyTuple_Pack(Py_ssize_t, ...);
 PyAPI_FUNC(PyObject *) PyUnicode_FromString(const char *);
 PyAPI_FUNC(char *) PyUnicode_AsUTF8AndSize(PyObject *, Py_ssize_t *);
+PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
+PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject *);
 
 PyAPI_FUNC(PyObject *) PyErr_Occurred(void);
 PyAPI_FUNC(PyObject *) PyErr_NoMemory(void);
@@ -60,12 +49,14 @@ PyAPI_FUNC(int) PyRun_SimpleString(const char *, PyCompilerFlags *flags);
 /* Non C-API functions */
 PyAPI_FUNC(int) _PyErr_ExceptionMessageMatches(const char *);
 PyAPI_FUNC(PyObject *) _PyModuleGet(const char *, const char *);
+PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
 
 /* Macros */
 /* Multiline macros should retain their structure to get properly substituted */
 /* clang-format off */
 #define _Py_Dealloc \
     (*_Py_Dealloc_Func)
+#define PyType_CheckExact(op) PyType_CheckExact_Func(op)
 /* clang-format on */
 
 #ifdef __cplusplus

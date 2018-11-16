@@ -6,25 +6,6 @@
 
 namespace python {
 
-void PyList_Type_Init() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  ApiTypeHandle* pytype_type =
-      runtime->builtinTypeHandles(ExtensionTypes::kType);
-  ApiTypeHandle* pylist_type =
-      ApiTypeHandle::newTypeHandle("list", pytype_type);
-
-  runtime->addBuiltinTypeHandle(pylist_type);
-}
-
-extern "C" PyTypeObject* PyList_Type_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(
-      runtime->builtinTypeHandles(ExtensionTypes::kList));
-}
-
 extern "C" PyObject* PyList_New(Py_ssize_t size) {
   if (size < 0) {
     return nullptr;

@@ -26,7 +26,7 @@ extern "C" PyObject* PyType_GenericAlloc(PyTypeObject* type,
 
 TEST_F(TypeExtensionApiTest, ReadyInitializesType) {
   // Create a simple PyTypeObject
-  PyTypeObject empty_type{PyObject_HEAD_INIT(nullptr)};
+  PyTypeObject empty_type{PyObject_HEAD_INIT(NULL)};
   empty_type.tp_name = "Empty";
   empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
 
@@ -43,7 +43,7 @@ TEST_F(TypeExtensionApiTest, ReadyInitializesType) {
 
 TEST_F(TypeExtensionApiTest, ReadyCreatesRuntimeType) {
   // Create a simple PyTypeObject
-  PyTypeObject empty_type{PyVarObject_HEAD_INIT(NULL, 0)};
+  PyTypeObject empty_type{PyObject_HEAD_INIT(NULL)};
   empty_type.tp_name = "test.Empty";
   empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
   ASSERT_EQ(PyType_Ready(&empty_type), 0);
@@ -88,15 +88,15 @@ static void Custom_dealloc(CustomObject* self) {
 
 TEST_F(TypeExtensionApiTest, InitializeCustomTypeInstance) {
   // Instantiate Type
-  PyTypeObject custom_type{PyVarObject_HEAD_INIT(NULL, 0)};
+  PyTypeObject custom_type{PyObject_HEAD_INIT(NULL)};
   custom_type.tp_basicsize = sizeof(CustomObject);
   custom_type.tp_name = "custom.Custom";
   custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
   custom_type.tp_alloc = PyType_GenericAlloc;
-  custom_type.tp_new = Custom_new;
+  custom_type.tp_new = reinterpret_cast<newfunc>(Custom_new);
   custom_type.tp_init = reinterpret_cast<initproc>(Custom_init);
   custom_type.tp_dealloc = reinterpret_cast<destructor>(Custom_dealloc);
-  custom_type.tp_free = PyObject_Del;
+  custom_type.tp_free = reinterpret_cast<freefunc>(PyObject_Del);
   PyType_Ready(&custom_type);
 
   // Add to a module
@@ -111,25 +111,29 @@ TEST_F(TypeExtensionApiTest, InitializeCustomTypeInstance) {
 
   PyRun_SimpleString(R"(
 import custom
-instance = custom.Custom()
+instance1 = custom.Custom()
 instance2 = custom.Custom()
 )");
 
   // Verify the initialized value
-  CustomObject* instance =
-      reinterpret_cast<CustomObject*>(_PyModuleGet("__main__", "instance"));
-  EXPECT_EQ(instance->value, 30);
+  CustomObject* instance1 =
+      reinterpret_cast<CustomObject*>(_PyModuleGet("__main__", "instance1"));
+  EXPECT_EQ(instance1->value, 30);
 
-  // Decref and dealloc custom instance
   CustomObject* instance2 =
       reinterpret_cast<CustomObject*>(_PyModuleGet("__main__", "instance2"));
-  EXPECT_EQ(Py_REFCNT(instance2), 1);
+  EXPECT_EQ(instance2->value, 30);
+
+  // Decref and dealloc custom instances
+  ASSERT_EQ(Py_REFCNT(instance1), 1);
+  ASSERT_EQ(Py_REFCNT(instance2), 1);
   Py_DECREF(instance2);
+  Py_DECREF(instance1);
 }
 
 TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
   // Instantiate Type
-  PyTypeObject custom_type{PyVarObject_HEAD_INIT(NULL, 0)};
+  PyTypeObject custom_type{PyObject_HEAD_INIT(NULL)};
   custom_type.tp_basicsize = sizeof(CustomObject);
   custom_type.tp_name = "custom.Custom";
   custom_type.tp_flags = Py_TPFLAGS_DEFAULT;

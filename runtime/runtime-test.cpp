@@ -2957,21 +2957,4 @@ class Test(Exception):
   EXPECT_EQ(mro->at(3), runtime.typeAt(LayoutId::kObject));
 }
 
-TEST(ExtensionTypes, RuntimeInitializesStaticTypeObjects) {
-  Runtime runtime;
-  Runtime runtime2;
-
-  PyTypeObject* pytype1 = static_cast<PyTypeObject*>(
-      runtime.builtinTypeHandles(ExtensionTypes::kType));
-  PyTypeObject* pytype2 = static_cast<PyTypeObject*>(
-      runtime2.builtinTypeHandles(ExtensionTypes::kType));
-  EXPECT_NE(pytype1, pytype2);
-  EXPECT_STREQ(pytype1->tp_name, pytype2->tp_name);
-
-  // Both PyTypeObject will have a different memory from the PyVarObject header.
-  // This offsets past the header, and compares the rest of memory
-  word length = sizeof(*pytype1) - OFFSET_OF(PyTypeObject, tp_name);
-  EXPECT_EQ(0, memcmp(&pytype1->tp_name, &pytype2->tp_name, length));
-}
-
 }  // namespace python

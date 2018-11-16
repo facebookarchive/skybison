@@ -6,25 +6,6 @@
 
 namespace python {
 
-void PyBool_Type_Init() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  ApiTypeHandle* pytype_type =
-      runtime->builtinTypeHandles(ExtensionTypes::kType);
-  ApiTypeHandle* pybool_type =
-      ApiTypeHandle::newTypeHandle("bool", pytype_type);
-
-  runtime->addBuiltinTypeHandle(pybool_type);
-}
-
-extern "C" PyTypeObject* PyBool_Type_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(
-      runtime->builtinTypeHandles(ExtensionTypes::kBool));
-}
-
 extern "C" PyObject* PyTrue_Ptr() {
   return ApiHandle::fromObject(Bool::trueObj())->asPyObject();
 }

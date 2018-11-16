@@ -6,25 +6,6 @@
 
 namespace python {
 
-void PyLong_Type_Init() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  ApiTypeHandle* pytype_type =
-      runtime->builtinTypeHandles(ExtensionTypes::kType);
-  ApiTypeHandle* pylong_type =
-      ApiTypeHandle::newTypeHandle("long", pytype_type);
-
-  runtime->addBuiltinTypeHandle(pylong_type);
-}
-
-extern "C" PyTypeObject* PyLong_Type_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(
-      runtime->builtinTypeHandles(ExtensionTypes::kLong));
-}
-
 extern "C" PyObject* PyLong_FromLong(long ival) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();

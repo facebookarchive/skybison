@@ -6,25 +6,6 @@
 
 namespace python {
 
-void PyUnicode_Type_Init() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  ApiTypeHandle* pytype_type =
-      runtime->builtinTypeHandles(ExtensionTypes::kType);
-  ApiTypeHandle* pyunicode_type =
-      ApiTypeHandle::newTypeHandle("str", pytype_type);
-
-  runtime->addBuiltinTypeHandle(pyunicode_type);
-}
-
-extern "C" PyTypeObject* PyUnicode_Type_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(
-      runtime->builtinTypeHandles(ExtensionTypes::kStr));
-}
-
 extern "C" PyObject* PyUnicode_FromString(const char* c_string) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
