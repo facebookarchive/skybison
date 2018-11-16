@@ -269,10 +269,12 @@ Object* Runtime::instanceGetAttr(
   }
 
   // No data descriptor found on the class, look at the instance.
-  Handle<HeapObject> instance(&scope, *receiver);
-  Object* result = thread->runtime()->instanceAt(thread, instance, name);
-  if (!result->isError()) {
-    return result;
+  if (receiver->isHeapObject()) {
+    Handle<HeapObject> instance(&scope, *receiver);
+    Object* result = thread->runtime()->instanceAt(thread, instance, name);
+    if (!result->isError()) {
+      return result;
+    }
   }
 
   // Nothing found in the instance, if we found a non-data descriptor via the

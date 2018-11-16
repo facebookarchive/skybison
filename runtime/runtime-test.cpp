@@ -2437,7 +2437,7 @@ print(foo.bar)
       "aborting due to pending exception: missing attribute");
 }
 
-TEST(InstanceAttributeTest, DunderClasss) {
+TEST(InstanceAttributeTest, DunderClass) {
   Runtime runtime;
   const char* src = R"(
 class Foo: pass
@@ -2464,6 +2464,15 @@ a = Foo()
 )";
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "New\nInit\n");
+}
+
+TEST(InstanceAttributeTest, NoInstanceDictionaryReturnsClassAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Object> immediate(&scope, SmallInteger::fromWord(-1));
+  Handle<Object> name(&scope, runtime.symbols()->DunderNeg());
+  Object* attr = runtime.attributeAt(Thread::currentThread(), immediate, name);
+  ASSERT_TRUE(attr->isBoundMethod());
 }
 
 } // namespace python
