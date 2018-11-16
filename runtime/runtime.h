@@ -515,7 +515,6 @@ class Runtime {
 
   void initializeBoolClass();
   void initializeClassMethodClass();
-  void initializeDictClass();
   void initializeFloatClass();
   void initializeFunctionClass();
   void initializeObjectClass();

@@ -20,7 +20,7 @@ TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
   runtime.dictAtPut(dict, key, val);
   frame->setLocal(0, *dict);
   frame->setLocal(1, *key);
-  Object* result = builtinDictDelItem(thread, frame, 2);
+  Object* result = DictBuiltins::dunderDelItem(thread, frame, 2);
   EXPECT_TRUE(result->isNone());
 }
 
@@ -37,7 +37,7 @@ TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyThrowsKeyError) {
   // "bar" doesn't exist in this dictionary, attempting to delete it should
   // cause a KeyError.
   frame->setLocal(1, runtime.newStringFromCString("bar"));
-  Object* result = builtinDictDelItem(thread, frame, 2);
+  Object* result = DictBuiltins::dunderDelItem(thread, frame, 2);
   ASSERT_TRUE(result->isError());
 }
 

@@ -6,10 +6,30 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
-Object* builtinDictDelItem(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod DictBuiltins::kMethods[] = {
+    {SymbolId::kDunderDelItem, nativeTrampoline<dunderDelItem>},
+    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
+    {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
+    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
+};
+
+void DictBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Type> dict_type(
+      &scope, runtime->addEmptyBuiltinClass(SymbolId::kDict, LayoutId::kDict,
+                                            LayoutId::kObject));
+  dict_type->setFlag(Type::Flag::kDictSubclass);
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(dict_type, kMethods[i].name,
+                                     kMethods[i].address);
+  }
+}
+
+Object* DictBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -31,7 +51,7 @@ Object* builtinDictDelItem(Thread* thread, Frame* frame, word nargs) {
       "argument");
 }
 
-Object* builtinDictEq(Thread* thread, Frame* frame, word nargs) {
+Object* DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
@@ -69,7 +89,7 @@ Object* builtinDictEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDictLen(Thread* thread, Frame* frame, word nargs) {
+Object* DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("__len__() takes no arguments");
   }
@@ -84,7 +104,7 @@ Object* builtinDictLen(Thread* thread, Frame* frame, word nargs) {
       "'__len__' requires a 'dict' object");
 }
 
-Object* builtinDictGetItem(Thread* thread, Frame* frame, word nargs) {
+Object* DictBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }

@@ -980,7 +980,7 @@ void Runtime::initializeHeapClasses() {
   initializeClassMethodClass();
   addEmptyBuiltinClass(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   ComplexBuiltins::initialize(this);
-  initializeDictClass();
+  DictBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kEllipsis, LayoutId::kEllipsis,
                        LayoutId::kObject);
   initializeFloatClass();
@@ -1093,25 +1093,6 @@ void Runtime::initializeObjectArrayClass() {
                           nativeTrampoline<builtinTupleGetItem>);
   classAddBuiltinFunction(type, SymbolId::kDunderNew,
                           nativeTrampoline<builtinTupleNew>);
-}
-
-void Runtime::initializeDictClass() {
-  HandleScope scope;
-  Handle<Type> dict_type(&scope,
-                         addEmptyBuiltinClass(SymbolId::kDict, LayoutId::kDict,
-                                              LayoutId::kObject));
-
-  classAddBuiltinFunction(dict_type, SymbolId::kDunderDelItem,
-                          nativeTrampoline<builtinDictDelItem>);
-
-  classAddBuiltinFunction(dict_type, SymbolId::kDunderEq,
-                          nativeTrampoline<builtinDictEq>);
-
-  classAddBuiltinFunction(dict_type, SymbolId::kDunderGetItem,
-                          nativeTrampoline<builtinDictGetItem>);
-
-  classAddBuiltinFunction(dict_type, SymbolId::kDunderLen,
-                          nativeTrampoline<builtinDictLen>);
 }
 
 void Runtime::initializeClassMethodClass() {
