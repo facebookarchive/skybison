@@ -6,10 +6,10 @@ int main(int argc, char* argv[]) {
 
   // Default to running no benchmarks.
   extern std::string FLAGS_benchmark_filter;
-  FLAGS_benchmark_filter = ".^";
+  FLAGS_benchmark_filter.clear();
   benchmark::Initialize(&argc, argv);
-  if (benchmark::RunSpecifiedBenchmarks() != 0) {
-    return 0;
+  if (FLAGS_benchmark_filter.empty()) {
+    return RUN_ALL_TESTS();
   }
-  return RUN_ALL_TESTS();
+  return (benchmark::RunSpecifiedBenchmarks() == 0);
 }
