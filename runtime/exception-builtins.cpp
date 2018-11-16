@@ -31,13 +31,13 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' of 'RawBaseException' needs an argument");
+        "'__init__' of 'BaseException' needs an argument");
   }
   Arguments args(frame, nargs);
   if (!thread->runtime()->hasSubClassFlag(args.get(0),
                                           Type::Flag::kBaseExceptionSubclass)) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'RawBaseException' object");
+        "'__init__' requires a 'BaseException' object");
   }
   UncheckedHandle<RawBaseException> self(&scope, args.get(0));
   Tuple tuple(&scope, thread->runtime()->newTuple(nargs - 1));
@@ -69,13 +69,13 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' of 'RawStopIteration' needs an argument");
+        "'__init__' of 'StopIteration' needs an argument");
   }
   Arguments args(frame, nargs);
   if (!thread->runtime()->hasSubClassFlag(args.get(0),
                                           Type::Flag::kStopIterationSubclass)) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'RawStopIteration' object");
+        "'__init__' requires a 'StopIteration' object");
   }
   UncheckedHandle<RawStopIteration> self(&scope, args.get(0));
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
@@ -110,13 +110,13 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' of 'RawSystemExit' needs an argument");
+        "'__init__' of 'SystemExit' needs an argument");
   }
   Arguments args(frame, nargs);
   if (!thread->runtime()->hasSubClassFlag(args.get(0),
                                           Type::Flag::kSystemExitSubclass)) {
     return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'RawSystemExit' object");
+        "'__init__' requires a 'SystemExit' object");
   }
   UncheckedHandle<RawSystemExit> self(&scope, args.get(0));
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
