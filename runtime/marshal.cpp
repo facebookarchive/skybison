@@ -217,30 +217,19 @@ Object* Marshal::Reader::readObject() {
 
 int Marshal::Reader::addRef(Object* value) {
   if (refs_ == nullptr) {
-    // Lazily create a new refs array.
-    refs_ = runtime_->createObjectArray(1);
-    ObjectArray::cast(refs_)->set(0, value);
-    return 0;
-  } else {
-    // Grow the refs array
-    int length = ObjectArray::cast(refs_)->length();
-    Object* new_array = runtime_->createObjectArray(length + 1);
-    for (int i = 0; i < length; i++) {
-      Object* value = ObjectArray::cast(refs_)->get(i);
-      ObjectArray::cast(new_array)->set(i, value);
-    }
-    ObjectArray::cast(new_array)->set(length, value);
-    refs_ = new_array;
-    return length;
+    // Lazily create a new refs list.
+    refs_ = runtime_->createList();
   }
+  List::appendAndGrow(List::cast(refs_), value, runtime_);
+  return 0;
 }
 
 void Marshal::Reader::setRef(int index, Object* value) {
-  ObjectArray::cast(refs_)->set(index, value);
+  List::cast(refs_)->set(index, value);
 }
 
 Object* Marshal::Reader::getRef(int index) {
-  return ObjectArray::cast(refs_)->get(index);
+  return List::cast(refs_)->get(index);
 }
 
 Object* Marshal::Reader::readTypeString() {

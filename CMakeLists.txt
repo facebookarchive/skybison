@@ -23,6 +23,7 @@ add_library(
   runtime/interpreter.h
   runtime/marshal.cpp
   runtime/marshal.h
+  runtime/objects.cpp
   runtime/objects.h
   runtime/os.cpp
   runtime/os.h
@@ -44,6 +45,7 @@ add_executable(
   python-tests
   runtime/handles-test.cpp
   runtime/heap-test.cpp
+  runtime/list-test.cpp
   runtime/marshal-test.cpp
   runtime/os-test.cpp
   runtime/thread-test.cpp)

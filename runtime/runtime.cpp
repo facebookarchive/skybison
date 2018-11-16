@@ -59,6 +59,10 @@ Object* Runtime::createString(intptr_t length) {
   return heap()->createString(stringClass_, length);
 }
 
+Object* Runtime::createList() {
+  return heap()->createList(listClass_);
+}
+
 void Runtime::allocateClasses() {
   classClass_ = heap()->createClassClass();
   byteArrayClass_ = heap()->createClass(classClass_, Layout::BYTE_ARRAY);
@@ -66,6 +70,7 @@ void Runtime::allocateClasses() {
   codeClass_ = heap()->createClass(classClass_, Layout::CODE);
   stringClass_ = heap()->createClass(classClass_, Layout::STRING);
   functionClass_ = heap()->createClass(classClass_, Layout::FUNCTION);
+  listClass_ = heap()->createClass(classClass_, Layout::LIST);
 }
 
 } // namespace python

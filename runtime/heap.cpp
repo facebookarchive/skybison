@@ -132,4 +132,14 @@ Object* Heap::createDictionary(Object* dictionary_class) {
   return nullptr;
 }
 
+Object* Heap::createList(Object* list_class) {
+  int size = List::allocationSize();
+  Object* raw = allocate(size);
+  assert(raw != nullptr);
+  List* result = reinterpret_cast<List*>(raw);
+  result->setClass(Class::cast(list_class));
+  result->initialize();
+  return List::cast(result);
+}
+
 } // namespace python

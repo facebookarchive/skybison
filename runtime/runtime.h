@@ -33,6 +33,8 @@ class Runtime {
 
   Object* createString(intptr_t length);
 
+  Object* createList();
+
   Heap* heap() {
     return &heap_;
   };
@@ -54,6 +56,7 @@ class Runtime {
   Object* codeClass_;
   Object* dictionaryClass_;
   Object* functionClass_;
+  Object* listClass_;
   Object* moduleClass_;
   Object* objectArrayClass_;
   Object* stringClass_;

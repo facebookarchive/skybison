@@ -62,7 +62,8 @@ enum Layout {
   STRING,
   FUNCTION,
   MODULE,
-  DICTIONARY
+  DICTIONARY,
+  LIST
 };
 
 class Object {
@@ -87,6 +88,7 @@ class Object {
   inline bool isFunction();
   inline bool isModule();
   inline bool isDictionary();
+  inline bool isList();
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
@@ -236,6 +238,8 @@ class ObjectArray : public Array {
 
   inline void initialize(int length, int size, Object* value);
 
+  inline void copyTo(ObjectArray* dst);
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectArray);
 };
@@ -363,6 +367,42 @@ class Dictionary : public HeapObject {
   DISALLOW_COPY_AND_ASSIGN(Dictionary);
 };
 
+class Runtime;
+
+/**
+ * A growable array
+ *
+ * Layout:
+ *
+ *   [Class pointer]
+ *   [Length       ] - Number of elements currently in the list
+ *   [Elems        ] - Pointer to an ObjectArray that contains list elements
+ */
+class List : public Array {
+ public:
+  static List* cast(Object* object);
+  static int allocationSize();
+  void initialize();
+
+  // Return the total number of elements that may be held without growing the
+  // list
+  word capacity();
+
+  Object* get(int index);
+  void set(int index, Object* value);
+
+  static void appendAndGrow(List* list, Object* value, Runtime* runtime);
+
+  ObjectArray* elems();
+  void setElems(ObjectArray* elems);
+
+  static const int kElemsOffset = Array::kSize;
+  static const int kSize = kElemsOffset + kPointerSize;
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(List);
+};
+
 // Object
 
 bool Object::isClass() {
@@ -444,6 +484,13 @@ bool Object::isModule() {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::MODULE;
+}
+
+bool Object::isList() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->getClass()->layout() == Layout::LIST;
 }
 
 // None
@@ -613,6 +660,15 @@ void ObjectArray::set(int index, Object* value) {
   assert(index >= 0);
   assert(index < length());
   atPut(Array::kSize + (index * kPointerSize), value);
+}
+
+void ObjectArray::copyTo(ObjectArray* dst) {
+  word len = length();
+  assert(len <= dst->length());
+  for (int i = 0; i < len; i++) {
+    Object* elem = get(i);
+    dst->set(i, elem);
+  }
 }
 
 // Code

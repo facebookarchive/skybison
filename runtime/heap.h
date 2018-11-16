@@ -42,6 +42,8 @@ class Heap {
 
   Object* createFunction(Object* function_class);
 
+  Object* createList(Object* list_class);
+
   Object* createObjectArray(Object* object_array_class, intptr_t length);
 
   Object* createString(Object* string_class, intptr_t length);
