@@ -12,6 +12,8 @@ class IntegerBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
+  static Object* intFromString(Thread* thread, Object* str);
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntegerBuiltins);
 };

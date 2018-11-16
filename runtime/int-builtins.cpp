@@ -1,5 +1,8 @@
 #include "int-builtins.h"
 
+#include <cerrno>
+#include <climits>
+
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
@@ -14,6 +17,35 @@ void IntegerBuiltins::initialize(Runtime* runtime) {
       &scope, runtime->addEmptyBuiltinClass(SymbolId::kInt, LayoutId::kInteger,
                                             LayoutId::kObject));
   type->setFlag(Class::Flag::kIntSubclass);
+}
+
+Object* IntegerBuiltins::intFromString(Thread* thread, Object* arg_raw) {
+  HandleScope scope(thread);
+  Handle<Object> arg(&scope, arg_raw);
+  if (arg->isInteger()) {
+    return *arg;
+  }
+
+  CHECK(arg->isString(), "not string type");
+  Handle<String> s(&scope, *arg);
+  if (s->length() == 0) {
+    return thread->throwValueErrorFromCString("invalid literal");
+  }
+  char* c_string = s->toCString();  // for strtol()
+  char* end_ptr;
+  errno = 0;
+  long res = std::strtol(c_string, &end_ptr, 10);
+  int saved_errno = errno;
+  bool is_complete = (*end_ptr == '\0');
+  free(c_string);
+  if (!is_complete || (res == 0 && saved_errno == EINVAL)) {
+    return thread->throwValueErrorFromCString("invalid literal");
+  } else if ((res == LONG_MAX || res == LONG_MIN) && saved_errno == ERANGE) {
+    return thread->throwValueErrorFromCString("invalid literal (range)");
+  } else if (!SmallInteger::isValid(res)) {
+    return thread->throwValueErrorFromCString("unsupported type");
+  }
+  return SmallInteger::fromWord(res);
 }
 
 const BuiltinMethod SmallIntegerBuiltins::kMethods[] = {

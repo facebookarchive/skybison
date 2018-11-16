@@ -6,6 +6,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
+#include "int-builtins.h"
 #include "interpreter.h"
 #include "objects.h"
 #include "runtime.h"
@@ -131,7 +132,7 @@ Object* builtinInt(Thread* thread, Frame* frame_frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame_frame, nargs);
   Handle<Object> arg(&scope, args.get(0));
-  return thread->runtime()->stringToInt(thread, arg);
+  return IntegerBuiltins::intFromString(thread, *arg);
 }
 
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is

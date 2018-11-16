@@ -1213,39 +1213,6 @@ TEST(RuntimeStringTest, StringConcat) {
   EXPECT_TRUE(concat31->isLargeString());
 }
 
-TEST(RuntimeStringTest, StringToIntDPos) {
-  Runtime runtime;
-  HandleScope scope;
-  Thread* thread = Thread::currentThread();
-
-  Handle<Object> str_d0(&scope, runtime.newStringFromCString("0"));
-  Handle<SmallInteger> int_d0(&scope, runtime.stringToInt(thread, str_d0));
-  EXPECT_EQ(int_d0->value(), 0);
-
-  Handle<Object> str_d123(&scope, runtime.newStringFromCString("123"));
-  Handle<SmallInteger> int_d123(&scope, runtime.stringToInt(thread, str_d123));
-  EXPECT_EQ(int_d123->value(), 123);
-
-  Handle<Object> str_d987n(&scope, runtime.newStringFromCString("-987"));
-  Handle<SmallInteger> int_d987n(&scope,
-                                 runtime.stringToInt(thread, str_d987n));
-  EXPECT_EQ(int_d987n->value(), -987);
-}
-
-TEST(RuntimeStringTest, StringToIntDNeg) {
-  Runtime runtime;
-  HandleScope scope;
-  Thread* thread = Thread::currentThread();
-
-  Handle<Object> str1(&scope, runtime.newStringFromCString(""));
-  Handle<Object> res1(&scope, runtime.stringToInt(thread, str1));
-  EXPECT_TRUE(res1->isError());
-
-  Handle<Object> str2(&scope, runtime.newStringFromCString("12ab"));
-  Handle<Object> res2(&scope, runtime.stringToInt(thread, str2));
-  EXPECT_TRUE(res2->isError());
-}
-
 TEST(RuntimeStringTest, StringFormat) {
   Runtime runtime;
   HandleScope scope;
