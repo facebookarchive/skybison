@@ -13,6 +13,46 @@
 namespace python {
 namespace testing {
 
+// Turn a Python string object into a standard string.
+static std::string pyStringToStdString(String* pystr) {
+  std::string std_str;
+  std_str.reserve(pystr->length());
+  for (word i = 0; i < pystr->length(); i++) {
+    std_str += pystr->charAt(i);
+  }
+  return std_str;
+}
+
+::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
+                                               const char*,
+                                               String* actual_string,
+                                               std::string expected_string) {
+  if (actual_string->equalsCString(expected_string.c_str())) {
+    return ::testing::AssertionSuccess();
+  }
+
+  return ::testing::AssertionFailure()
+         << "      Expected: " << actual_string_expr << "\n"
+         << "      Which is: \"" << pyStringToStdString(actual_string) << "\"\n"
+         << "To be equal to: \"" << expected_string << "\"";
+}
+
+::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
+                                               const char* expected_string_expr,
+                                               String* actual_string,
+                                               String* expected_string) {
+  if (actual_string->equals(expected_string)) {
+    return ::testing::AssertionSuccess();
+  }
+
+  return ::testing::AssertionFailure()
+         << "      Expected: " << actual_string_expr << "\n"
+         << "      Which is: \"" << pyStringToStdString(actual_string) << "\"\n"
+         << "To be equal to: \"" << expected_string_expr << "\"\n"
+         << "      Which is: \"" << pyStringToStdString(expected_string)
+         << "\"";
+}
+
 // helper function to redirect return stdout from running
 // a module
 std::string compileAndRunToString(Runtime* runtime, const char* src) {
