@@ -218,6 +218,7 @@ add_library(
   runtime/layout-test.cpp
   runtime/list-builtins-test.cpp
   runtime/marshal-test.cpp
+  runtime/object-builtins-test.cpp
   runtime/objects-test.cpp
   runtime/os-test.cpp
   runtime/ref-builtins-test.cpp

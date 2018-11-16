@@ -236,4 +236,21 @@ print(None)
   EXPECT_EQ(output, "None\n");
 }
 
+TEST(BuiltinsModuleTest, BuiltInReprOnUserTypeWithDunderRepr) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  runtime.runFromCString(R"(
+class Foo:
+  def __repr__(self):
+    return "foo"
+
+a = repr(Foo())
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+
+  EXPECT_TRUE(String::cast(*a)->equalsCString("foo"));
+}
+
 }  // namespace python

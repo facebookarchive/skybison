@@ -21,5 +21,6 @@ Object* builtinOrd(Thread* thread, Frame* frame, word nargs);
 Object* builtinPrint(Thread* thread, Frame* frame, word nargs);
 Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs);
 Object* builtinRange(Thread* thread, Frame* frame, word nargs);
+Object* builtinRepr(Thread* thread, Frame* frame, word nargs);
 
 }  // namespace python

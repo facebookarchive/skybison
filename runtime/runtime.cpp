@@ -943,6 +943,9 @@ void Runtime::initializeObjectClass() {
 
   classAddBuiltinFunction(object_type, SymbolId::kDunderNew,
                           nativeTrampoline<builtinObjectNew>);
+
+  classAddBuiltinFunction(object_type, SymbolId::kDunderRepr,
+                          nativeTrampoline<builtinObjectRepr>);
 }
 
 void Runtime::initializeStrClass() {
@@ -1588,6 +1591,9 @@ void Runtime::createBuiltinsModule() {
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kRange,
                            nativeTrampoline<builtinRange>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kRepr,
+                           nativeTrampoline<builtinRepr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kIsInstance,
                            nativeTrampoline<builtinIsinstance>,

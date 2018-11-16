@@ -412,4 +412,28 @@ Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newRange(start, stop, step);
 }
 
+Object* builtinRepr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString(
+        "repr() takes exactly one argument");
+  }
+  Arguments args(frame, nargs);
+
+  HandleScope scope(thread);
+  Handle<Object> obj(&scope, args.get(0));
+  // Only one argument, the value to be repr'ed.
+  Handle<Object> method(&scope, Interpreter::lookupMethod(
+                                    thread, frame, obj, SymbolId::kDunderRepr));
+  CHECK(!method->isError(),
+        "__repr__ doesn't exist for this object, which is impossible since "
+        "object has a __repr__, and everything descends from object");
+  Object* ret = Interpreter::callMethod1(thread, frame, method, obj);
+  if (!ret->isString() && !ret->isError()) {
+    // TODO(T31744782): Change this to allow subtypes of string.
+    // If __repr__ doesn't return a string or error, throw a type error
+    return thread->throwTypeErrorFromCString("__repr__ returned non-string");
+  }
+  return ret;
+}
+
 }  // namespace python

@@ -60,6 +60,7 @@ class Runtime;
   V(DunderRadd, "__radd__")                                                    \
   V(DunderRand, "__rand__")                                                    \
   V(DunderRdivmod, "__rdivmod__")                                              \
+  V(DunderRepr, "__repr__")                                                    \
   V(DunderRfloordiv, "__rfloordiv__")                                          \
   V(DunderRlshift, "__rlshift__")                                              \
   V(DunderRmatmul, "__rmatmul__")                                              \
@@ -112,6 +113,7 @@ class Runtime;
   V(Range, "range")                                                            \
   V(Ref, "ref")                                                                \
   V(Remove, "remove")                                                          \
+  V(Repr, "repr")                                                              \
   V(Set, "set")                                                                \
   V(Setter, "setter")                                                          \
   V(Size, "size")                                                              \
