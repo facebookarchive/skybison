@@ -22,7 +22,8 @@ TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidTypeReturnsNegative) {
 }
 
 TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidKeyReturnsNegative) {
-  static PyModuleDef def = {
+  static PyModuleDef def;
+  def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   PyObject* module = PyModule_Create(&def);
@@ -31,7 +32,8 @@ TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidKeyReturnsNegative) {
 }
 
 TEST_F(ObjectExtensionApiTest, SetAttrReturnsZero) {
-  static PyModuleDef def = {
+  static PyModuleDef def;
+  def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   PyObject* module = PyModule_Create(&def);
@@ -41,7 +43,8 @@ TEST_F(ObjectExtensionApiTest, SetAttrReturnsZero) {
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrWithNoneExistingKeyReturnsNull) {
-  static PyModuleDef def = {
+  static PyModuleDef def;
+  def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
@@ -52,7 +55,8 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithNoneExistingKeyReturnsNull) {
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidTypeReturnsNull) {
-  static PyModuleDef def = {
+  static PyModuleDef def;
+  def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
@@ -65,7 +69,8 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidTypeReturnsNull) {
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidKeyReturnsNull) {
-  static PyModuleDef def = {
+  static PyModuleDef def;
+  def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
@@ -78,7 +83,8 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidKeyReturnsNull) {
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrReturnsCorrectValue) {
-  static PyModuleDef def = {
+  static PyModuleDef def;
+  def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   int expected_int = 5;
@@ -93,7 +99,8 @@ TEST_F(ObjectExtensionApiTest, GetAttrReturnsCorrectValue) {
 }
 
 TEST_F(ObjectExtensionApiTest, GetAttrStringReturnsCorrectValue) {
-  static PyModuleDef def = {
+  static PyModuleDef def;
+  def = {
       PyModuleDef_HEAD_INIT, "test",
   };
   const char* key = "a_key";

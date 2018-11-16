@@ -46,7 +46,8 @@ TEST_F(TypeExtensionApiTest, ReadyCreatesRuntimeType) {
   ASSERT_EQ(PyType_Ready(&empty_type), 0);
 
   // Add to a module
-  static PyModuleDef def = {
+  static PyModuleDef def;
+  def = {
       PyModuleDef_HEAD_INIT,
       "test",
   };
@@ -96,7 +97,8 @@ TEST_F(TypeExtensionApiTest, InitializeCustomTypeInstance) {
   PyType_Ready(&custom_type);
 
   // Add to a module
-  static PyModuleDef def = {
+  static PyModuleDef def;
+  def = {
       PyModuleDef_HEAD_INIT,
       "custom",
   };
