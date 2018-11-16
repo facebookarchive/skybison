@@ -1735,7 +1735,10 @@ Object* Runtime::getIter(const Handle<Object>& iterable) {
   } else if (iterable->isRange()) {
     return newRangeIterator(iterable);
   } else {
-    UNIMPLEMENTED("GET_ITER only supported for List & Range");
+    HandleScope scope;
+    Handle<Type> type(&scope, typeOf(*iterable));
+    UNIMPLEMENTED("GET_ITER only supported for List & Range. Got '%s'.",
+                  String::cast(type->name())->toCString());
   }
 }
 

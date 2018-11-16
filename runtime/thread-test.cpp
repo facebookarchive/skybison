@@ -542,7 +542,7 @@ f()
 )",
      false},
 
-    {"LoadGlobalUnbound", ".*Unbound Globals.*",
+    {"LoadGlobalUnbound", ".*Unbound global 'a'",
      R"(
 def f():
   print(a)

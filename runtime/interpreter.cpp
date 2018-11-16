@@ -302,7 +302,10 @@ Object* Interpreter::binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
       }
     }
   }
-  UNIMPLEMENTED("throw");
+  UNIMPLEMENTED("Cannot do binary op %ld for types '%s' and '%s'",
+                static_cast<word>(op),
+                String::cast(self_type->name())->toCString(),
+                String::cast(other_type->name())->toCString());
 }
 
 Object* Interpreter::inplaceOperation(Thread* thread, Frame* caller,
@@ -1293,7 +1296,11 @@ void Interpreter::doLoadGlobal(Context* ctx, word arg) {
       ValueCell::cast(ObjectArray::cast(ctx->frame->fastGlobals())->at(arg))
           ->value();
   if (value->isValueCell()) {
-    CHECK(!ValueCell::cast(value)->isUnbound(), "Unbound Globals");
+    CHECK(
+        !ValueCell::cast(value)->isUnbound(), "Unbound global '%s'",
+        String::cast(
+            ObjectArray::cast(Code::cast(ctx->frame->code())->names())->at(arg))
+            ->toCString());
     value = ValueCell::cast(value)->value();
   }
   ctx->frame->pushValue(value);
