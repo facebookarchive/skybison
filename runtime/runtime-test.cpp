@@ -101,7 +101,6 @@ TEST(RuntimeDictTest, GetSet) {
   HandleScope scope;
   Handle<Dict> dict(&scope, runtime.newDict());
   Handle<Object> key(&scope, SmallInt::fromWord(12345));
-  Object* retrieved;
 
   // Looking up a key that doesn't exist should fail
   EXPECT_TRUE(runtime.dictAt(dict, key)->isError());
@@ -112,7 +111,7 @@ TEST(RuntimeDictTest, GetSet) {
   EXPECT_EQ(dict->numItems(), 1);
 
   // Retrieve the stored value
-  retrieved = runtime.dictAt(dict, key);
+  Object* retrieved = runtime.dictAt(dict, key);
   ASSERT_TRUE(retrieved->isSmallInt());
   EXPECT_EQ(SmallInt::cast(retrieved)->value(),
             SmallInt::cast(*stored)->value());
@@ -134,10 +133,9 @@ TEST(RuntimeDictTest, Remove) {
   HandleScope scope;
   Handle<Dict> dict(&scope, runtime.newDict());
   Handle<Object> key(&scope, SmallInt::fromWord(12345));
-  Object* retrieved;
 
   // Removing a key that doesn't exist should fail
-  bool found = runtime.dictRemove(dict, key, &retrieved);
+  bool found = runtime.dictRemove(dict, key, nullptr);
   EXPECT_FALSE(found);
 
   // Removing a key that exists should succeed and return the value that was
@@ -147,6 +145,7 @@ TEST(RuntimeDictTest, Remove) {
   runtime.dictAtPut(dict, key, stored);
   EXPECT_EQ(dict->numItems(), 1);
 
+  Object* retrieved;
   found = runtime.dictRemove(dict, key, &retrieved);
   ASSERT_TRUE(found);
   ASSERT_EQ(SmallInt::cast(retrieved)->value(),
@@ -172,8 +171,7 @@ TEST(RuntimeDictTest, Length) {
   // Remove half the items
   for (int i = 0; i < 5; i++) {
     Handle<Object> key(&scope, SmallInt::fromWord(i));
-    Object* retrieved;
-    bool found = runtime.dictRemove(dict, key, &retrieved);
+    bool found = runtime.dictRemove(dict, key, nullptr);
     ASSERT_TRUE(found);
   }
   EXPECT_EQ(dict->numItems(), 5);

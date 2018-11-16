@@ -113,7 +113,6 @@ Object* Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
   word function_position = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
   Object** sp = frame->valueStackTop() + function_position + 1;
   Object* function = frame->peek(function_position);
-  Object* result;
   if (!function->isFunction()) {
     HandleScope scope(thread);
     Handle<Object> callable(&scope, function);
@@ -136,7 +135,7 @@ Object* Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
     frame->setValueAt(*new_args, args_position);
     function = *target;
   }
-  result = Function::cast(function)->entryEx()(thread, frame, flags);
+  Object* result = Function::cast(function)->entryEx()(thread, frame, flags);
   frame->setValueStackTop(sp);
   return result;
 }
@@ -1074,8 +1073,7 @@ void Interpreter::doDeleteName(Context* ctx, word arg) {
   Handle<Dict> implicit_globals(&scope, frame->implicitGlobals());
   Object* names = Code::cast(frame->code())->names();
   Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
-  Object* value;
-  if (!thread->runtime()->dictRemove(implicit_globals, key, &value)) {
+  if (!thread->runtime()->dictRemove(implicit_globals, key, nullptr)) {
     UNIMPLEMENTED("item not found in delete name");
   }
 }

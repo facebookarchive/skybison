@@ -326,7 +326,6 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
   word num_positional_args = argc - num_keyword_args;
   Handle<ObjectArray> formal_parm_names(&scope, code->varnames());
   word flags = code->flags();
-  Object* res;
   Handle<Object> tmp_varargs(&scope, NoneType::object());
   Handle<Object> tmp_dict(&scope, NoneType::object());
 
@@ -425,8 +424,8 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
     keywords = *padded_keywords;
   }
   // Now we've got the right number.  Do they match up?
-  res = checkArgs(*function, kw_arg_base, *keywords, *formal_parm_names,
-                  num_positional_args);
+  Object* res = checkArgs(*function, kw_arg_base, *keywords, *formal_parm_names,
+                          num_positional_args);
   // If we're a vararg form, need to push the tuple/dict.
   if (res->isNone()) {
     if (flags & Code::VARARGS) {

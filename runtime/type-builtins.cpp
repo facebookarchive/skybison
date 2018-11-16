@@ -117,8 +117,7 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> class_cell(&scope, runtime->dictAt(dict, class_cell_key));
   if (!class_cell->isError()) {
     ValueCell::cast(ValueCell::cast(*class_cell)->value())->setValue(*result);
-    Object* tmp;
-    runtime->dictRemove(dict, class_cell_key, &tmp);
+    runtime->dictRemove(dict, class_cell_key, nullptr);
   }
   Handle<Object> name_key(&scope, runtime->symbols()->DunderName());
   runtime->dictAtPutInValueCell(dict, name_key, name);
