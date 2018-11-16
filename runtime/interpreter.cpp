@@ -174,13 +174,6 @@ Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
 }
 
 namespace interpreter {
-enum MakeFunctionFlag {
-  DEFAULT = 0x01,
-  DEFAULT_KW = 0x02,
-  ANNOTATION_DICT = 0X04,
-  CLOSURE = 0X08,
-};
-
 enum class Result {
   CONTINUE,
   NOT_IMPLEMENTED,
@@ -334,6 +327,16 @@ Result MAKE_FUNCTION(Context* ctx, word arg) {
   function->setFastGlobals(
       thread->runtime()->computeFastGlobals(code, globals, builtins));
   function->setEntry(interpreterTrampoline);
+  if (arg & MakeFunctionFlag::ANNOTATION_DICT) {
+    UNIMPLEMENTED("func annotations");
+  }
+  if (arg & MakeFunctionFlag::DEFAULT_KW) {
+    function->setKwDefaults(*ctx->sp++);
+    UNIMPLEMENTED("func keyword defaults");
+  }
+  if (arg & MakeFunctionFlag::DEFAULT) {
+    function->setDefaults(*ctx->sp++);
+  }
   if (arg & MakeFunctionFlag::CLOSURE) {
     CHECK((*ctx->sp)->isObjectArray(), "Closure is not tuple.");
     function->setClosure(*ctx->sp++);

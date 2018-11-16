@@ -1749,6 +1749,31 @@ def test(callable):
   EXPECT_EQ(output, "1111 2222 3333\n");
 }
 
+TEST(ThreadTest, CallDefaultArgs) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+def foo(a=1, b=2, c=3):
+  print(a, b, c)
+
+print()
+foo(33, 22, 11)
+foo()
+foo(1001)
+foo(1001, 1002)
+foo(1001, 1002, 1003)
+)";
+
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, R"(
+33 22 11
+1 2 3
+1001 2 3
+1001 1002 3
+1001 1002 1003
+)");
+}
 TEST(ThreadTest, RaiseVarargs) {
   Runtime runtime;
   ASSERT_DEATH(

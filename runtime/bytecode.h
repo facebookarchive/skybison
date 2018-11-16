@@ -300,6 +300,13 @@ enum FormatValueFlag {
   FVS_HAVE_SPEC = 0x4
 };
 
+enum MakeFunctionFlag {
+  DEFAULT = 0x01,
+  DEFAULT_KW = 0x02,
+  ANNOTATION_DICT = 0x04,
+  CLOSURE = 0x08,
+};
+
 namespace bytecode {
 const char* name(Bytecode);
 }

@@ -17,6 +17,15 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
   HandleScope scope;
   Handle<Function> function(&scope, previousFrame->function(argc));
   Handle<Code> code(&scope, function->code());
+  if (argc < code->argcount() && function->hasDefaults()) {
+    // Copy default args to stack, left to right
+    Object** sp = previousFrame->valueStackTop();
+    for (; argc < code->argcount(); argc++) {
+      *--sp = ObjectArray::cast(function->defaults())->at(argc);
+    }
+    previousFrame->setValueStackTop(sp);
+  }
+  // TODO: Throw execption here instead of CHECK
   CHECK(argc == code->argcount(), "argc != argcount");
 
   // Set up the frame
