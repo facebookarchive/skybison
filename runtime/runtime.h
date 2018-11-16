@@ -59,6 +59,8 @@ class Runtime {
 
   Object* newList();
 
+  Object* newListIterator(const Handle<Object>& list);
+
   Object* newModule(const Handle<Object>& name);
 
   // Returns a LargeInteger that stores the value in ptr.

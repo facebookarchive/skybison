@@ -225,6 +225,20 @@ Object* Heap::createList(Object* elements) {
   return List::cast(result);
 }
 
+Object* Heap::createListIterator() {
+  word size = ListIterator::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  ListIterator* result = reinterpret_cast<ListIterator*>(raw);
+  result->setHeader(Header::from(
+      ListIterator::kSize / kPointerSize,
+      0,
+      ClassId::kListIterator,
+      ObjectFormat::kObjectInstance));
+  result->initialize(size, None::object());
+  return result;
+}
+
 Object* Heap::createModule(Object* name, Object* dictionary) {
   word size = Module::allocationSize();
   Object* raw = allocate(size, Header::kSize);

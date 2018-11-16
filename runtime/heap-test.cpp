@@ -23,7 +23,7 @@ TEST(HeapTest, AllocateObjects) {
 }
 
 TEST(HeapTest, AllocateFails) {
-  int size = OS::kPageSize * 4;
+  int size = OS::kPageSize * 8;
   Runtime runtime(size);
   Heap* heap = runtime.heap();
 

@@ -74,6 +74,7 @@ class Object;
   V(LargeInteger)                   \
   V(LargeString)                    \
   V(List)                           \
+  V(ListIterator)                   \
   V(Module)                         \
   V(ObjectArray)                    \
   V(Range)                          \
@@ -115,6 +116,7 @@ enum ClassId {
   kLargeInteger,
   kLargeString,
   kList,
+  kListIterator,
   kModule,
   kObjectArray,
   kRange,
@@ -154,6 +156,7 @@ class Object {
   inline bool isFunction();
   inline bool isInstance();
   inline bool isList();
+  inline bool isListIterator();
   inline bool isModule();
   inline bool isObjectArray();
   inline bool isLargeString();
@@ -721,6 +724,29 @@ class RangeIterator : public HeapObject {
   static inline bool isOutOfRange(word cur, word stop, word step);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIterator);
+};
+
+class ListIterator : public HeapObject {
+ public:
+  // Getters and setters.
+  inline void setList(Object* list);
+
+  // Iteration.
+  inline Object* next();
+
+  // Sizing.
+  static inline word allocationSize();
+
+  // Casting.
+  static inline ListIterator* cast(Object* object);
+
+  // Layout.
+  static const int kListOffset = HeapObject::kSize;
+  static const int kIndexOffset = kListOffset + kPointerSize;
+  static const int kSize = kIndexOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ListIterator);
 };
 
 class Code : public HeapObject {
@@ -1370,6 +1396,13 @@ bool Object::isList() {
     return false;
   }
   return HeapObject::cast(this)->header()->classId() == ClassId::kList;
+}
+
+bool Object::isListIterator() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() == ClassId::kListIterator;
 }
 
 bool Object::isValueCell() {
@@ -2124,6 +2157,34 @@ word Range::allocationSize() {
 Range* Range::cast(Object* object) {
   assert(object->isRange());
   return reinterpret_cast<Range*>(object);
+}
+
+// ListIterator
+
+void ListIterator::setList(Object* list) {
+  instanceVariableAtPut(kIndexOffset, SmallInteger::fromWord(0));
+  instanceVariableAtPut(kListOffset, list);
+}
+
+Object* ListIterator::next() {
+  auto idx = SmallInteger::cast(instanceVariableAt(kIndexOffset))->value();
+  auto list = List::cast(instanceVariableAt(kListOffset));
+  if (idx >= list->allocated()) {
+    return Error::object();
+  }
+
+  Object* item = list->at(idx);
+  instanceVariableAtPut(kIndexOffset, SmallInteger::fromWord(idx + 1));
+  return item;
+}
+
+word ListIterator::allocationSize() {
+  return Header::kSize + ListIterator::kSize;
+}
+
+ListIterator* ListIterator::cast(Object* object) {
+  assert(object->isListIterator());
+  return reinterpret_cast<ListIterator*>(object);
 }
 
 // RangeIterator

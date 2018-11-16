@@ -312,6 +312,15 @@ Result MAKE_FUNCTION(Context* ctx, word arg) {
   *--ctx->sp = *function;
   return Result::CONTINUE;
 }
+
+Result LIST_APPEND(Context* ctx, word arg) {
+  HandleScope scope(ctx->thread);
+  Handle<Object> value(&scope, *ctx->sp++);
+  Handle<List> list(&scope, List::cast(*(ctx->sp + arg - 1)));
+  ctx->thread->runtime()->listAdd(list, value);
+  return Result::CONTINUE;
+}
+
 Result BUILD_LIST(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -435,20 +444,27 @@ Result GET_ITER(Context* ctx, word) {
   HandleScope scope(thread->handles());
   Handle<Object> iterable(&scope, *ctx->sp);
   *ctx->sp = thread->runtime()->getIter(iterable);
-  // This is currently the only implemented iterator type.
-  assert((*ctx->sp)->isRangeIterator());
   return Result::CONTINUE;
 }
 Result FOR_ITER(Context* ctx, word arg) {
-  auto iter = RangeIterator::cast(*ctx->sp);
-  Object* next = iter->next();
-  // TODO: Support StopIteration exceptions.
+  Object* top = *ctx->sp;
+  Object* next = Error::object();
+  if (top->isRangeIterator()) {
+    next = RangeIterator::cast(top)->next();
+    // TODO: Support StopIteration exceptions.
+  } else if (top->isListIterator()) {
+    next = ListIterator::cast(top)->next();
+  } else {
+    UNIMPLEMENTED("FOR_ITER only support List & Range");
+  }
+
   if (next->isError()) {
     ctx->sp++;
     ctx->pc += arg;
   } else {
     *--ctx->sp = next;
   }
+
   return Result::CONTINUE;
 }
 
@@ -631,7 +647,7 @@ Result UNPACK_SEQUENCE(Context* ctx, word arg) {
     }
   } else if (seq->isList()) {
     CHECK(
-        List::cast(seq)->capacity() == arg, "Wrong number of items to unpack");
+        List::cast(seq)->allocated() == arg, "Wrong number of items to unpack");
     while (arg--) {
       *--ctx->sp = List::cast(seq)->at(arg);
     }

@@ -2318,6 +2318,20 @@ print(a, b, c)
   EXPECT_EQ(output, "2 3 4\n");
 }
 
+// LIST_APPEND(listAdd) in list_comp, followed by unpack
+// TODO(rkng): list support in BINARY_ADD
+TEST(UnpackList, unpackListCompAppend) {
+  const char* src = R"(
+a = [1, 2, 3]
+b = [x for x in a]
+b1, b2, b3 = b
+print(b1, b2, b3)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1 2 3\n");
+}
+
 TEST(UnpackSeq, unpackRangeStep) {
   const char* src = R"(
 [a ,b, c, d] = range(2, 10, 2)
@@ -2337,4 +2351,29 @@ print(a, b, c, d, e)
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "-10 -8 -6 -4 -2\n");
 }
+
+TEST(ListIterTest, build) {
+  const char* src = R"(
+a = [1, 2, 3]
+for x in a:
+  print(x)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1\n2\n3\n");
+}
+
+TEST(ListAppendTest, buildAndUnpack) {
+  const char* src = R"(
+a = [1, 2]
+b = [x for x in [a] * 3]
+b1, b2, b3 = b
+b11, b12 = b1
+print(len(b), len(b1), b11, b12)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "3 2 1 2\n");
+}
+
 } // namespace python

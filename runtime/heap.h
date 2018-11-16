@@ -48,6 +48,8 @@ class Heap {
 
   Object* createList(Object* elements);
 
+  Object* createListIterator();
+
   Object* createModule(Object* name, Object* dictionary);
 
   Object* createObjectArray(word length, Object* value);

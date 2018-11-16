@@ -449,6 +449,13 @@ Object* Runtime::newList() {
   return heap()->createList(empty_object_array_);
 }
 
+Object* Runtime::newListIterator(const Handle<Object>& list) {
+  HandleScope scope;
+  Handle<ListIterator> list_iterator(&scope, heap()->createListIterator());
+  list_iterator->setList(*list);
+  return *list_iterator;
+}
+
 Object* Runtime::newModule(const Handle<Object>& name) {
   HandleScope scope;
   Handle<Dictionary> dictionary(&scope, newDictionary());
@@ -642,6 +649,7 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("double", ClassId::kDouble);
   initializeHeapClass("function", ClassId::kFunction);
   initializeHeapClass("integer", ClassId::kLargeInteger);
+  initializeHeapClass("list_iterator", ClassId::kListIterator);
   initializeHeapClass("module", ClassId::kModule);
   initializeHeapClass("objectarray", ClassId::kObjectArray);
   initializeHeapClass("str", ClassId::kLargeString);
@@ -967,7 +975,13 @@ Object* Runtime::createMainModule() {
 
 Object* Runtime::getIter(const Handle<Object>& iterable) {
   // TODO: Support other forms of iteration.
-  return newRangeIterator(iterable);
+  if (iterable->isList()) {
+    return newListIterator(iterable);
+  } else if (iterable->isRange()) {
+    return newRangeIterator(iterable);
+  } else {
+    UNIMPLEMENTED("GET_ITER only supported for List & Range");
+  }
 }
 
 // List

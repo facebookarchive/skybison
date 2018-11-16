@@ -155,7 +155,7 @@ namespace python {
   V(CALL_FUNCTION_EX, 142, interpreter::NOT_IMPLEMENTED)             \
   V(SETUP_WITH, 143, interpreter::NOT_IMPLEMENTED)                   \
   V(EXTENDED_ARG, 144, interpreter::NOT_IMPLEMENTED)                 \
-  V(LIST_APPEND, 145, interpreter::NOT_IMPLEMENTED)                  \
+  V(LIST_APPEND, 145, interpreter::LIST_APPEND)                      \
   V(SET_ADD, 146, interpreter::NOT_IMPLEMENTED)                      \
   V(MAP_ADD, 147, interpreter::NOT_IMPLEMENTED)                      \
   V(LOAD_CLASSDEREF, 148, interpreter::NOT_IMPLEMENTED)              \
