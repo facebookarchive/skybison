@@ -95,11 +95,7 @@ Object* computeMro(
     return *new_mro;
   }
 
-  // Arbitrarily chosen constant that should be big enough for 99% of
-  // class creations.
-  constexpr int kVecSize = 6;
-  FixedVector<word, kVecSize> merge_list_indices;
-
+  Vector<word> merge_list_indices;
   Handle<ObjectArray> merge_lists(
       &scope, runtime->newObjectArray(parents->length() + 1));
   word new_mro_length =

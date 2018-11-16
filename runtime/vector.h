@@ -245,21 +245,4 @@ class Vector {
   // Do not add members after storage_!
 };
 
-template <
-    typename T,
-    typename Vector<T>::size_type Size,
-    class Allocator = SimpleAllocator<T>>
-class FixedVector : public Vector<T, Allocator> {
- public:
-  FixedVector()
-      : Vector<T>(&Vector<T>::storage_[0], &Vector<T>::storage_[0] + Size) {}
-
-  FixedVector(const Vector<T>& other) : Vector<T>(other) {}
-  FixedVector(Vector<T>&& other) : Vector<T>(std::forward<Vector<T>>(other)) {}
-
- private:
-  // TODO: this gets much messier if we want to support non-POD types.
-  T array_[Size - 1];
-};
-
 } // namespace python
