@@ -139,11 +139,11 @@ Object* IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Handle<Object> arg(&scope, args.get(0));
-  if (arg->isInt()) {
-    return *arg;
-  }
   if (arg->isBool()) {
     return SmallInt::fromWord(*arg == Bool::trueObj());
+  }
+  if (arg->isInt()) {
+    return *arg;
   }
   if (thread->runtime()->hasSubClassFlag(*arg, Type::Flag::kIntSubclass)) {
     UNIMPLEMENTED("Strict subclass of int");
@@ -190,7 +190,8 @@ static bool negationOverflows(const Handle<LargeInt>& value) {
       return false;
     }
   }
-  return value->digitAt(num_digits - 1) == (1ULL << (kBitsPerWord - 1));
+  return value->digitAt(num_digits - 1) ==
+         static_cast<word>(1ULL << (kBitsPerWord - 1));
 }
 
 Object* IntBuiltins::negateLargeInteger(Runtime* runtime,
@@ -217,14 +218,11 @@ Object* IntBuiltins::negateLargeInteger(Runtime* runtime,
   }
 
   Handle<LargeInt> result(&scope, runtime->heap()->createLargeInt(num_digits));
-  uword carry = 1;
+  word carry = 1;
   for (word i = 0; i < num_digits; i++) {
-    uword digit = ~src->digitAt(i);
-    uword sum = digit + carry;
-    result->digitAtPut(i, sum);
-    if (sum >= digit) {
-      carry = 0;
-    }
+    word digit = src->digitAt(i);
+    carry = __builtin_saddl_overflow(~digit, carry, &digit);
+    result->digitAtPut(i, digit);
   }
   DCHECK(carry == 0, "Carry should be zero");
   DCHECK(result->isValid(), "Invalid LargeInt");

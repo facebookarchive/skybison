@@ -394,8 +394,13 @@ class Int : public Object {
 
   RAW_OBJECT_COMMON(Int)
 
+  // Indexing into digits
+  word digitAt(word index);
+
+  // Number of digits
+  word numDigits();
+
  private:
-  static word compareDigits(View<uword> lhs, View<uword> rhs);
   DISALLOW_COPY_AND_ASSIGN(Int);
 };
 
@@ -1001,8 +1006,8 @@ class LargeInt : public HeapObject {
   static word allocationSize(word num_digits);
 
   // Indexing into digits
-  uword digitAt(word index);
-  void digitAtPut(word index, uword digit);
+  word digitAt(word index);
+  void digitAtPut(word index, word digit);
 
   bool isNegative();
   bool isPositive();
@@ -1021,9 +1026,6 @@ class LargeInt : public HeapObject {
  private:
   friend class Int;
   friend class Runtime;
-
-  // Backing array of unsigned words. Extremely GC-unsafe; use with care.
-  View<uword> digits();
 
   DISALLOW_COPY_AND_ASSIGN(LargeInt);
 };
@@ -2230,7 +2232,7 @@ inline bool Object::isLargeInt() {
   return isHeapObjectWithLayout(LayoutId::kLargeInt);
 }
 
-inline bool Object::isInt() { return isSmallInt() || isLargeInt(); }
+inline bool Object::isInt() { return isSmallInt() || isLargeInt() || isBool(); }
 
 inline bool Object::isNotImplemented() {
   return isHeapObjectWithLayout(LayoutId::kNotImplemented);
@@ -2331,35 +2333,21 @@ inline word Int::compare(Int* that) {
     return this->isNegative() ? -1 : 1;
   }
 
-  word digit;
-  View<uword> lhs(reinterpret_cast<uword*>(&digit), 1);
-  if (this->isSmallInt()) {
-    digit = this->asWord();
-  } else {
-    lhs = LargeInt::cast(this)->digits();
-  }
+  word left_digits = this->numDigits();
+  word right_digits = that->numDigits();
 
-  View<uword> rhs(reinterpret_cast<uword*>(&digit), 1);
-  if (that->isSmallInt()) {
-    digit = that->asWord();
-  } else {
-    rhs = LargeInt::cast(that)->digits();
-  }
-  return compareDigits(lhs, rhs);
-}
-
-inline word Int::compareDigits(View<uword> lhs, View<uword> rhs) {
-  if (lhs.length() > rhs.length()) {
+  if (left_digits > right_digits) {
     return 1;
   }
-  if (lhs.length() < rhs.length()) {
+  if (left_digits < right_digits) {
     return -1;
   }
-  for (word i = lhs.length() - 1; i >= 0; i--) {
-    if (lhs.get(i) > rhs.get(i)) {
+  for (word i = left_digits - 1; i >= 0; i--) {
+    word left_digit = this->digitAt(i), right_digit = that->digitAt(i);
+    if (left_digit > right_digit) {
       return 1;
     }
-    if (lhs.get(i) < rhs.get(i)) {
+    if (left_digit < right_digit) {
       return -1;
     }
   }
@@ -2369,6 +2357,9 @@ inline word Int::compareDigits(View<uword> lhs, View<uword> rhs) {
 inline double Int::floatValue() {
   if (isSmallInt()) {
     return static_cast<double>(asWord());
+  }
+  if (isBool()) {
+    return Bool::cast(this) == Bool::trueObj() ? 1.0 : 0.0;
   }
   LargeInt* large_int = LargeInt::cast(this);
   if (large_int->numDigits() == 1) {
@@ -2383,12 +2374,18 @@ inline word Int::bitLength() {
     uword self = static_cast<uword>(std::abs(SmallInt::cast(this)->value()));
     return Utils::highestBit(self);
   }
+  if (isBool()) {
+    return Bool::cast(this) == Bool::trueObj() ? 1 : 0;
+  }
   return LargeInt::cast(this)->bitLength();
 }
 
 inline bool Int::isPositive() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value() > 0;
+  }
+  if (isBool()) {
+    return Bool::cast(this) == Bool::trueObj();
   }
   return LargeInt::cast(this)->isPositive();
 }
@@ -2397,6 +2394,9 @@ inline bool Int::isNegative() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value() < 0;
   }
+  if (isBool()) {
+    return false;
+  }
   return LargeInt::cast(this)->isNegative();
 }
 
@@ -2404,8 +2404,31 @@ inline bool Int::isZero() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value() == 0;
   }
+  if (isBool()) {
+    return Bool::cast(this) == Bool::falseObj();
+  }
   // A LargeInt can never be zero
+  DCHECK(isLargeInt(), "Object must be a LargeInt");
   return false;
+}
+
+inline word Int::numDigits() {
+  if (isSmallInt() || isBool()) {
+    return 1;
+  }
+  return LargeInt::cast(this)->numDigits();
+}
+
+inline word Int::digitAt(word index) {
+  if (isSmallInt()) {
+    DCHECK(index == 0, "SmallInt digit index out of bounds");
+    return SmallInt::cast(this)->value();
+  }
+  if (isBool()) {
+    DCHECK(index == 0, "Bool digit index out of bounds");
+    return Bool::cast(this) == Bool::trueObj() ? 1 : 0;
+  }
+  return LargeInt::cast(this)->digitAt(index);
 }
 
 // SmallInt
@@ -3078,23 +3101,23 @@ if_unsigned_t<T, OptInt<T>> LargeInt::asInt() {
 }
 
 inline bool LargeInt::isNegative() {
-  uword highest_digit = digitAt(numDigits() - 1);
-  return static_cast<word>(highest_digit) < 0;
+  word highest_digit = digitAt(numDigits() - 1);
+  return highest_digit < 0;
 }
 
 inline bool LargeInt::isPositive() {
-  uword highest_digit = digitAt(numDigits() - 1);
-  return static_cast<word>(highest_digit) >= 0;
+  word highest_digit = digitAt(numDigits() - 1);
+  return highest_digit >= 0;
 }
 
-inline uword LargeInt::digitAt(word index) {
+inline word LargeInt::digitAt(word index) {
   DCHECK_INDEX(index, numDigits());
-  return reinterpret_cast<uword*>(address() + kValueOffset)[index];
+  return reinterpret_cast<word*>(address() + kValueOffset)[index];
 }
 
-inline void LargeInt::digitAtPut(word index, uword digit) {
+inline void LargeInt::digitAtPut(word index, word digit) {
   DCHECK_INDEX(index, numDigits());
-  reinterpret_cast<uword*>(address() + kValueOffset)[index] = digit;
+  reinterpret_cast<word*>(address() + kValueOffset)[index] = digit;
 }
 
 inline word LargeInt::numDigits() { return headerCountOrOverflow(); }
@@ -3102,11 +3125,6 @@ inline word LargeInt::numDigits() { return headerCountOrOverflow(); }
 inline word LargeInt::allocationSize(word num_digits) {
   word size = headerSize(num_digits) + num_digits * kPointerSize;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
-}
-
-inline View<uword> LargeInt::digits() {
-  return View<uword>(reinterpret_cast<uword*>(address() + kValueOffset),
-                     headerCountOrOverflow());
 }
 
 // Float
