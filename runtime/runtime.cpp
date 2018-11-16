@@ -408,6 +408,24 @@ void Runtime::initializeListClass() {
   list->setDunderNew(*dunder_new);
 }
 
+void Runtime::initializeSmallIntClass() {
+  HandleScope scope;
+  Handle<Class> small_integer(&scope, newClassWithId(ClassId::kSmallInteger));
+  small_integer->setName(newStringFromCString("smallint"));
+  const ClassId small_integer_mro[] = {
+      ClassId::kSmallInteger, ClassId::kLargeInteger, ClassId::kObject};
+  small_integer->setMro(
+      createMro(small_integer_mro, ARRAYSIZE(small_integer_mro)));
+
+  // We want to lookup the class of an immediate type by using the 5-bit tag
+  // value as an index into the class table.  Replicate the class object for
+  // SmallInteger to all locations that decode to a SmallInteger tag.
+  for (word i = 1; i < 16; i++) {
+    assert(List::cast(class_table_)->at(i << 1) == None::object());
+    List::cast(class_table_)->atPut(i << 1, *small_integer);
+  }
+}
+
 void Runtime::classAddBuiltinFunction(
     const Handle<Class>& klass,
     Object* name,
@@ -599,137 +617,34 @@ Object* Runtime::createMro(const ClassId* superclasses, word length) {
 }
 
 void Runtime::initializeHeapClasses() {
-  HandleScope scope;
-
-  Handle<Class> object(&scope, newClassWithId(ClassId::kObject));
-  object->setName(newStringFromCString("object"));
-  const ClassId object_mro[] = {ClassId::kObject};
-  object->setMro(createMro(object_mro, ARRAYSIZE(object_mro)));
-
-  Handle<Class> type(&scope, newClassWithId(ClassId::kType));
-  type->setName(newStringFromCString("type"));
-  const ClassId type_mro[] = {ClassId::kType, ClassId::kObject};
-  type->setMro(createMro(type_mro, ARRAYSIZE(type_mro)));
-
-  Handle<Class> bound_method(&scope, newClassWithId(ClassId::kBoundMethod));
-  bound_method->setName(newStringFromCString("method"));
-  const ClassId bound_method_mro[] = {ClassId::kBoundMethod, ClassId::kObject};
-  bound_method->setMro(
-      createMro(bound_method_mro, ARRAYSIZE(bound_method_mro)));
-
-  Handle<Class> byte_array(&scope, newClassWithId(ClassId::kByteArray));
-  byte_array->setName(newStringFromCString("bytearray"));
-  const ClassId byte_array_mro[] = {ClassId::kByteArray, ClassId::kObject};
-  byte_array->setMro(createMro(byte_array_mro, ARRAYSIZE(byte_array_mro)));
-
-  Handle<Class> code(&scope, newClassWithId(ClassId::kCode));
-  code->setName(newStringFromCString("code"));
-  const ClassId code_mro[] = {ClassId::kCode, ClassId::kObject};
-  code->setMro(createMro(code_mro, ARRAYSIZE(code_mro)));
-
-  Handle<Class> dictionary(&scope, newClassWithId(ClassId::kDictionary));
-  dictionary->setName(newStringFromCString("dictionary"));
-  const ClassId dictionary_mro[] = {ClassId::kDictionary, ClassId::kObject};
-  dictionary->setMro(createMro(dictionary_mro, ARRAYSIZE(dictionary_mro)));
-
-  Handle<Class> dbl(&scope, newClassWithId(ClassId::kDouble));
-  dbl->setName(newStringFromCString("double"));
-  const ClassId double_mro[] = {ClassId::kDouble, ClassId::kObject};
-  dbl->setMro(createMro(double_mro, ARRAYSIZE(double_mro)));
-
-  Handle<Class> function(&scope, newClassWithId(ClassId::kFunction));
-  function->setName(newStringFromCString("function"));
-  const ClassId function_mro[] = {ClassId::kFunction, ClassId::kObject};
-  function->setMro(createMro(function_mro, ARRAYSIZE(function_mro)));
-
-  Handle<Class> integer(&scope, newClassWithId(ClassId::kLargeInteger));
-  integer->setName(newStringFromCString("integer"));
-  const ClassId integer_mro[] = {ClassId::kLargeInteger, ClassId::kObject};
-  integer->setMro(createMro(integer_mro, ARRAYSIZE(integer_mro)));
-
+  initializeHeapClass("object");
+  initializeHeapClass("type", ClassId::kType);
+  initializeHeapClass("type", ClassId::kType);
+  initializeHeapClass("method", ClassId::kBoundMethod);
+  initializeHeapClass("byteArray", ClassId::kByteArray);
+  initializeHeapClass("code", ClassId::kCode);
+  initializeHeapClass("dictionary", ClassId::kDictionary);
+  initializeHeapClass("double", ClassId::kDouble);
+  initializeHeapClass("function", ClassId::kFunction);
+  initializeHeapClass("integer", ClassId::kLargeInteger);
+  initializeHeapClass("module", ClassId::kModule);
+  initializeHeapClass("objectarray", ClassId::kObjectArray);
+  initializeHeapClass("str", ClassId::kLargeString);
+  initializeHeapClass("valuecell", ClassId::kValueCell);
+  initializeHeapClass("ellipsis", ClassId::kEllipsis);
+  initializeHeapClass("range", ClassId::kRange);
+  initializeHeapClass("range_iterator", ClassId::kRangeIterator);
+  initializeHeapClass("weakref", ClassId::kWeakRef);
   initializeListClass();
-
-  Handle<Class> module(&scope, newClassWithId(ClassId::kModule));
-  module->setName(newStringFromCString("module"));
-  const ClassId module_mro[] = {ClassId::kModule, ClassId::kObject};
-  module->setMro(createMro(module_mro, ARRAYSIZE(module_mro)));
-
-  Handle<Class> object_array(&scope, newClassWithId(ClassId::kObjectArray));
-  object_array->setName(newStringFromCString("objectarray"));
-  const ClassId object_array_mro[] = {ClassId::kObjectArray, ClassId::kObject};
-  object_array->setMro(
-      createMro(object_array_mro, ARRAYSIZE(object_array_mro)));
-
-  Handle<Class> string(&scope, newClassWithId(ClassId::kLargeString));
-  string->setName(newStringFromCString("str"));
-  const ClassId string_mro[] = {ClassId::kLargeString, ClassId::kObject};
-  string->setMro(createMro(string_mro, ARRAYSIZE(string_mro)));
-
-  Handle<Class> value_cell(&scope, newClassWithId(ClassId::kValueCell));
-  value_cell->setName(newStringFromCString("valuecell"));
-  const ClassId value_cell_mro[] = {ClassId::kValueCell, ClassId::kObject};
-  value_cell->setMro(createMro(value_cell_mro, ARRAYSIZE(value_cell_mro)));
-
-  Handle<Class> ellipsis(&scope, newClassWithId(ClassId::kEllipsis));
-  ellipsis->setName(newStringFromCString("ellipsis"));
-  const ClassId ellipsis_mro[] = {ClassId::kEllipsis, ClassId::kObject};
-  ellipsis->setMro(createMro(ellipsis_mro, ARRAYSIZE(ellipsis_mro)));
-
-  Handle<Class> range(&scope, newClassWithId(ClassId::kRange));
-  range->setName(newStringFromCString("range"));
-  const ClassId range_mro[] = {ClassId::kRange, ClassId::kObject};
-  range->setMro(createMro(range_mro, ARRAYSIZE(range_mro)));
-
-  Handle<Class> range_iterator(&scope, newClassWithId(ClassId::kRangeIterator));
-  range_iterator->setName(newStringFromCString("range_iterator"));
-  const ClassId range_iterator_mro[] = {ClassId::kRangeIterator,
-                                        ClassId::kObject};
-  range_iterator->setMro(
-      createMro(range_iterator_mro, ARRAYSIZE(range_iterator_mro)));
-
   initializeClassMethodClass();
-
-  Handle<Class> weakref(&scope, newClassWithId(ClassId::kWeakRef));
-  weakref->setName(newStringFromCString("weakref"));
-  const ClassId weakref_mro[] = {ClassId::kWeakRef, ClassId::kObject};
-  weakref->setMro(createMro(weakref_mro, ARRAYSIZE(weakref_mro)));
 }
 
 void Runtime::initializeImmediateClasses() {
-  HandleScope scope;
-
-  Handle<Class> small_integer(&scope, newClassWithId(ClassId::kSmallInteger));
-  small_integer->setName(newStringFromCString("smallint"));
-  const ClassId small_integer_mro[] = {
-      ClassId::kSmallInteger, ClassId::kLargeInteger, ClassId::kObject};
-  small_integer->setMro(
-      createMro(small_integer_mro, ARRAYSIZE(small_integer_mro)));
-
-  // We want to lookup the class of an immediate type by using the 5-bit tag
-  // value as an index into the class table.  Replicate the class object for
-  // SmallInteger to all locations that decode to a SmallInteger tag.
-  for (word i = 1; i < 16; i++) {
-    assert(List::cast(class_table_)->at(i << 1) == None::object());
-    List::cast(class_table_)->atPut(i << 1, *small_integer);
-  }
-
-  Handle<Class> small_string(&scope, newClassWithId(ClassId::kSmallString));
-  small_string->setName(newStringFromCString("smallstr"));
-  const ClassId small_string_mro[] = {
-      ClassId::kSmallString, ClassId::kLargeInteger, ClassId::kObject};
-  small_string->setMro(
-      createMro(small_string_mro, ARRAYSIZE(small_string_mro)));
-
-  Handle<Class> boolean(&scope, newClassWithId(ClassId::kBoolean));
-  boolean->setName(newStringFromCString("bool"));
-  const ClassId boolean_mro[] = {
-      ClassId::kBoolean, ClassId::kLargeInteger, ClassId::kObject};
-  boolean->setMro(createMro(boolean_mro, ARRAYSIZE(boolean_mro)));
-
-  Handle<Class> none(&scope, newClassWithId(ClassId::kNone));
-  none->setName(newStringFromCString("NoneType"));
-  const ClassId none_mro[] = {ClassId::kNone, ClassId::kObject};
-  none->setMro(createMro(none_mro, ARRAYSIZE(none_mro)));
+  initializeHeapClass("bool", ClassId::kBoolean, ClassId::kLargeInteger);
+  initializeHeapClass("NoneType", ClassId::kNone);
+  initializeHeapClass(
+      "smallstr", ClassId::kSmallString, ClassId::kLargeInteger);
+  initializeSmallIntClass();
 }
 
 void Runtime::collectGarbage() {

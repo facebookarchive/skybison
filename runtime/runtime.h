@@ -310,7 +310,16 @@ class Runtime {
   void initializeRandom();
   void initializeSymbols();
 
+  template <typename... Args>
+  void initializeHeapClass(const char* name, Args... args) {
+    HandleScope scope;
+    const ClassId mro[] = {args..., ClassId::kObject};
+    Handle<Class> handle(&scope, newClassWithId(mro[0]));
+    handle->setName(newStringFromCString(name));
+    handle->setMro(createMro(mro, ARRAYSIZE(mro)));
+  }
   void initializeListClass();
+  void initializeSmallIntClass();
   void initializeClassMethodClass();
 
   void createBuiltinsModule();
