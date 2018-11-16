@@ -580,7 +580,7 @@ TEST(IntBuiltinsTest, BitLength) {
   ASSERT_TRUE(bit_length6->isSmallInt());
   EXPECT_EQ(SmallInt::cast(*bit_length6)->value(), 64);
 
-  uword digits[] = {0, kMaxInt32};
+  word digits[] = {0, kMaxInt32};
   Handle<Object> large_int3(&scope, runtime.newIntWithDigits(digits));
   frame->setLocal(0, *large_int3);
   Handle<Object> bit_length7(&scope, IntBuiltins::bitLength(thread, frame, 1));
@@ -589,7 +589,7 @@ TEST(IntBuiltinsTest, BitLength) {
   EXPECT_EQ(SmallInt::cast(*bit_length7)->value(), 95);
 
   // (kMinInt64 * 4).bit_length() == 66
-  uword digits2[] = {0, kMaxUword - 1};
+  word digits2[] = {0, -2};
   Handle<Object> large_int4(&scope, runtime.newIntWithDigits(digits2));
   frame->setLocal(0, *large_int4);
   Handle<Object> bit_length8(&scope, IntBuiltins::bitLength(thread, frame, 1));
@@ -597,7 +597,7 @@ TEST(IntBuiltinsTest, BitLength) {
   EXPECT_EQ(SmallInt::cast(*bit_length8)->value(), 66);
 
   // (kMinInt64 * 4 + 3).bit_length() == 65
-  uword digits3[] = {3, kMaxUword - 1};
+  word digits3[] = {3, -2};
   Handle<Object> large_int5(&scope, runtime.newIntWithDigits(digits3));
   frame->setLocal(0, *large_int5);
   Handle<Object> bit_length9(&scope, IntBuiltins::bitLength(thread, frame, 1));

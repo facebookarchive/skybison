@@ -121,7 +121,7 @@ class Utils {
     return x < y ? x : y;
   }
 
-  static int highestBit(uword x) {
+  static int highestBit(word x) {
     return x == 0 ? 0 : kBitsPerWord - __builtin_clzl(x);
   }
 

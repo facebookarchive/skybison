@@ -83,11 +83,11 @@ bool LargeInt::isValid() {
     return !SmallInt::isValid(digitAt(0));
   }
 
-  uword high_digit = digitAt(digits - 1);
-  uword next_sign_bit = digitAt(digits - 2) >> (kBitsPerWord - 1);
+  word high_digit = digitAt(digits - 1);
+  word next_sign_bit = digitAt(digits - 2) >> (kBitsPerWord - 1);
 
   // Redundant sign-extension for negative values.
-  if (high_digit == kMaxUword && next_sign_bit == 1) {
+  if (high_digit == -1 && next_sign_bit == 1) {
     return false;
   }
 
@@ -101,9 +101,9 @@ bool LargeInt::isValid() {
 
 word LargeInt::bitLength() {
   word num_digits = numDigits();
-  uword high_digit = digitAt(num_digits - 1);
+  word high_digit = digitAt(num_digits - 1);
 
-  if (high_digit > static_cast<uword>(kMaxWord)) {
+  if (high_digit < 0) {
     // We're negative. Calculate what high_digit would be after negation.
     uword carry = [&] {
       for (word i = 0; i < num_digits - 1; i++) {

@@ -52,12 +52,12 @@ TEST(IntTest, IntTest) {
   EXPECT_EQ(LargeInt::cast(*o4)->numDigits(), 1);
   EXPECT_EQ(LargeInt::cast(*o4)->asWord(), kMinWord);
 
-  uword digits[] = {kMaxUword, 0};
+  word digits[] = {-1, 0};
   Handle<Int> o5(&scope, runtime.newIntWithDigits(digits));
   EXPECT_TRUE(o5->isLargeInt());
   EXPECT_EQ(o5->bitLength(), kBitsPerWord);
 
-  uword digits2[] = {kMaxUword, 1};
+  word digits2[] = {-1, 1};
   Handle<Int> o6(&scope, runtime.newIntWithDigits(digits2));
   EXPECT_TRUE(o6->isLargeInt());
   EXPECT_EQ(o6->bitLength(), kBitsPerWord + 1);
@@ -225,7 +225,7 @@ TEST(IntTest, AsInt) {
   EXPECT_EQ(word_min->asInt<uword>().error, CastError::Underflow);
   EXPECT_EQ(word_min->asInt<int32>().error, CastError::Overflow);
 
-  uword digits[] = {0, 0xffff000000000000LL};
+  word digits[] = {0, -1};
   Handle<Int> negative(&scope, runtime.newIntWithDigits(digits));
   EXPECT_EQ(negative->asInt<word>().error, CastError::Underflow);
   EXPECT_EQ(negative->asInt<uword>().error, CastError::Underflow);

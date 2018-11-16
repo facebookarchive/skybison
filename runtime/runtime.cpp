@@ -736,7 +736,7 @@ RawObject Runtime::newInt(word value) {
   if (SmallInt::isValid(value)) {
     return SmallInt::fromWord(value);
   }
-  uword digit[1] = {static_cast<uword>(value)};
+  word digit[1] = {value};
   return newIntWithDigits(digit);
 }
 
@@ -744,8 +744,8 @@ RawObject Runtime::newIntFromUnsigned(uword value) {
   if (static_cast<word>(value) >= 0 && SmallInt::isValid(value)) {
     return SmallInt::fromWord(value);
   }
-  uword digits[] = {value, 0};
-  View<uword> view(digits, digits[0] >> (kBitsPerWord - 1) ? 2 : 1);
+  word digits[] = {static_cast<word>(value), 0};
+  View<word> view(digits, digits[0] >> (kBitsPerWord - 1) ? 2 : 1);
   return newIntWithDigits(view);
 }
 
@@ -757,7 +757,7 @@ RawObject Runtime::newComplex(double real, double imag) {
   return Complex::cast(heap()->createComplex(real, imag));
 }
 
-RawObject Runtime::newIntWithDigits(View<uword> digits) {
+RawObject Runtime::newIntWithDigits(View<word> digits) {
   if (digits.length() == 0) {
     return SmallInt::fromWord(0);
   }

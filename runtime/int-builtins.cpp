@@ -141,7 +141,7 @@ RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Handle<Object> arg(&scope, args.get(0));
   if (arg->isBool()) {
-    return SmallInt::fromWord(*arg == Bool::trueObj());
+    return intFromBool(*arg);
   }
   if (arg->isInt()) {
     return *arg;

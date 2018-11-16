@@ -97,7 +97,7 @@ TEST_F(LongExtensionApiTest, Overflow) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  uword digits[] = {kMaxUword, kMaxUword >> 1};
+  word digits[] = {-1, kMaxWord};
   // TODO(bsimmers): Rewrite this to use PyLong_FromString() once we've
   // implemented it.
   Handle<LargeInt> large(&scope, runtime->newIntWithDigits(digits));
@@ -148,7 +148,7 @@ TEST_F(LongExtensionApiTest, AsLongAndOverflow) {
 
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
-  uword digits[] = {kMaxUword, kMaxUword << 1};
+  word digits[] = {-1, -2};
   // TODO(bsimmers): Rewrite this to use PyLong_FromString() once we've
   // implemented it.
   Handle<LargeInt> large_int(&scope,
@@ -181,7 +181,7 @@ TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithLargeInt) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  uword digits[] = {kMaxUword, kMaxUword >> 1};
+  word digits[] = {-1, kMaxWord};
   // TODO(bsimmers): Rewrite this to use PyLong_FromString() once we've
   // implemented it.
   Handle<LargeInt> large(&scope, runtime->newIntWithDigits(digits));

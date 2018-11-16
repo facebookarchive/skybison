@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 
 #include "heap.h"
 #include "runtime.h"
@@ -394,19 +395,18 @@ RawObject Marshal::Reader::readLongObject() {
   }
   word bits_consumed = 0;
   word n_bits = std::abs(n) * kBitsPerLongDigit;
-  word largeint_digits = ((n_bits + kBitsPerWord + 1) / kBitsPerWord) + 1;
-  uword* digits = new uword[largeint_digits];
-  uword digits_idx = 0;
-  uword buf = 0;
-  uword word_offset = 0;
+  word num_digits = ((n_bits + kBitsPerWord + 1) / kBitsPerWord) + 1;
+  std::unique_ptr<word[]> digits{new word[num_digits]};
+  word digits_idx = 0;
+  word buf = 0;
+  word word_offset = 0;
   while (bits_consumed < n_bits) {
     int16 digit = readShort();
     if (digit < 0) {
-      delete[] digits;
       return Thread::currentThread()->raiseValueErrorWithCStr(
           "bad marshal data (negative long digit)");
     }
-    uword unsigned_digit = static_cast<uword>(digit);
+    auto unsigned_digit = static_cast<uword>(digit);
     if (word_offset + kBitsPerLongDigit <= kBitsPerWord) {
       buf |= unsigned_digit << word_offset;
       word_offset += kBitsPerLongDigit;
@@ -416,8 +416,8 @@ RawObject Marshal::Reader::readLongObject() {
         word_offset = 0;
       }
     } else {
-      uword extra_bits = (word_offset + kBitsPerLongDigit) % kBitsPerWord;
-      uword bits_to_include = kBitsPerLongDigit - extra_bits;
+      word extra_bits = (word_offset + kBitsPerLongDigit) % kBitsPerWord;
+      word bits_to_include = kBitsPerLongDigit - extra_bits;
       buf |= (unsigned_digit & ((1 << bits_to_include) - 1)) << word_offset;
       digits[digits_idx++] = buf;
       buf = (unsigned_digit >> bits_to_include) & ((1 << extra_bits) - 1);
@@ -427,8 +427,9 @@ RawObject Marshal::Reader::readLongObject() {
   }
   if (word_offset > 0 && buf != 0) {
     digits[digits_idx++] = buf;
-  } else if (digits[digits_idx - 1] >> (kBitsPerWord - 1) &&
-             (n > 0 || digits[digits_idx - 1] << 1)) {
+  } else if (digits[digits_idx - 1] < 0 &&
+             (n > 0 ||
+              (digits[digits_idx - 1] & ~(1ULL << (kBitsPerWord - 1))))) {
     // Zero extend if the MSB is set in the top digit and either the result is
     // positive or the top digit has at least one other bit set (in which case
     // we need the extra digit for the negation).
@@ -436,19 +437,16 @@ RawObject Marshal::Reader::readLongObject() {
   }
   if (n < 0) {
     uword carry = 1;
-    for (uword i = 0; i < digits_idx; i++) {
-      uword i_digit = digits[i] ^ kMaxUword;
-      digits[i] = i_digit + carry;
-      if (digits[i] >= i_digit) {
-        carry = 0;
-      }
+    for (word i = 0; i < digits_idx; i++) {
+      auto digit = static_cast<uword>(digits[i]);
+      carry = __builtin_uaddl_overflow(~digit, carry, &digit);
+      digits[i] = static_cast<word>(digit);
     }
     DCHECK(carry == 0, "Carry should be zero");
   }
 
   RawObject result =
-      runtime_->newIntWithDigits(View<uword>(digits, digits_idx));
-  delete[] digits;
+      runtime_->newIntWithDigits(View<word>(digits.get(), digits_idx));
   if (isRef_) {
     addRef(result);
   }
