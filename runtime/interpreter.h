@@ -36,7 +36,6 @@ class Interpreter {
   static Object*
   callCallable(Thread* thread, Frame* frame, Object** sp, word nargs);
 
- private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };
 
