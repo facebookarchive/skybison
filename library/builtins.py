@@ -16,3 +16,18 @@ class ImportError(bootstrap=True):
             self.msg = args[0]
         self.name = name
         self.path = path
+
+
+class tuple(bootstrap=True):
+    def __repr__(self):
+        num_elems = len(self)
+        if num_elems == 1:
+            return f"({repr(self[0])},)"
+        output = "("
+        i = 0
+        while i < num_elems:
+            if i != 0:
+                output += ", "
+            output += repr(self[i])
+            i += 1
+        return output + ")"
