@@ -129,4 +129,21 @@ TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCount) {
   EXPECT_EQ(Py_REFCNT(o), 1);
 }
 
+TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCountWithPyObjectPtr) {
+  PyObject* o = testing::createUniqueObject();
+  {
+    Py_INCREF(o);
+    EXPECT_EQ(Py_REFCNT(o), 2);
+    testing::PyObjectPtr h(o);
+  }
+  EXPECT_EQ(Py_REFCNT(o), 1);
+  {
+    Py_INCREF(o);
+    EXPECT_EQ(Py_REFCNT(o), 2);
+    testing::PyObjectPtr h(o);
+    h = nullptr;
+    EXPECT_EQ(Py_REFCNT(o), 1);
+  }
+}
+
 }  // namespace python
