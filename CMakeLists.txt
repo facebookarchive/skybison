@@ -145,6 +145,7 @@ add_library(
   ext/Objects/moduleobject.cpp
   ext/Objects/object.cpp
   ext/Objects/obmalloc.cpp
+  ext/Objects/tupleobject.cpp
   ext/Objects/typeobject.cpp
   ext/Objects/unicodeobject.cpp
   ext/Python/errors.cpp)
@@ -239,6 +240,7 @@ add_library(
   ext/Objects/boolobject-test.cpp
   ext/Objects/dictobject-test.cpp
   ext/Objects/moduleobject-test.cpp
+  ext/Objects/tupleobject-test.cpp
   ext/Objects/typeobject-test.cpp
   ext/Objects/unicodeobject-test.cpp)
 target_include_directories(

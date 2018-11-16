@@ -72,6 +72,7 @@ enum class ExtensionTypes {
   kType = 0,
   kBaseObject = 1,
   kBool = 2,
+  kTuple = 3,
 };
 
 class TrackedAllocation {
