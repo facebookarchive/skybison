@@ -203,7 +203,7 @@ print(C.foo, C.bar)
   EXPECT_EQ(output, "hello there\n");
 }
 
-TEST(ClassAttributeTest, GetMissingAttribute) {
+TEST(ClassAttributeDeathTest, GetMissingAttribute) {
   Runtime runtime;
   const char* src = R"(
 class A: pass
@@ -226,7 +226,7 @@ Foo.bar('testing 123')
   EXPECT_EQ(output, "testing 123\n");
 }
 
-TEST(ClassAttributeTest, GetDataDescriptorOnMetaClass) {
+TEST(ClassAttributeDeathTest, GetDataDescriptorOnMetaClass) {
   Runtime runtime;
 
   // Create the data descriptor class
@@ -321,7 +321,7 @@ class DataDescriptor:
 }
 
 // Fetch an unknown attribute
-TEST(InstanceAttributeTest, GetMissing) {
+TEST(InstanceAttributeDeathTest, GetMissing) {
   Runtime runtime;
   const char* src = R"(
 class Foo:
@@ -495,7 +495,7 @@ def test(x):
   EXPECT_EQ(callFunctionToString(test, args), "testing 123\n321 testing\n");
 }
 
-TEST(InstanceAttributeTest, GetDataDescriptor) {
+TEST(InstanceAttributeDeathTest, GetDataDescriptor) {
   Runtime runtime;
   const char* src = R"(
 class DataDescr:
@@ -593,7 +593,7 @@ def test(x):
   EXPECT_EQ(callFunctionToString(test, args), "foo bar baz\naaa bbb ccc\n");
 }
 
-TEST(InstanceAttributeTest, FetchConditionalInstanceAttribute) {
+TEST(InstanceAttributeDeathTest, FetchConditionalInstanceAttribute) {
   Runtime runtime;
   const char* src = R"(
 def false():

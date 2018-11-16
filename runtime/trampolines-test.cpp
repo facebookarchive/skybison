@@ -181,7 +181,7 @@ foo(1, c = 3, b = 2)
   EXPECT_EQ(result, expected);
 }
 
-TEST(CallTest, KeyWordOnly1) {
+TEST(CallTest, KeywordOnly1) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, *, c):
@@ -193,7 +193,7 @@ foo(1, 2, c = 3);
   EXPECT_EQ(result, expected);
 }
 
-TEST(CallTest, KeyWordOnly2) {
+TEST(CallTest, KeywordOnly2) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, *, c):
@@ -376,7 +376,7 @@ foo(**a)
   EXPECT_EQ(result, expected);
 }
 
-TEST(CallTest, KeyWordOnlyDeath) {
+TEST(CallDeathTest, KeywordOnly) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, *, c):
@@ -387,7 +387,7 @@ foo(1, 2, 3);
   EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
 }
 
-TEST(CallTest, MissingKeywordDeath) {
+TEST(CallDeathTest, MissingKeyword) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, *, c):
@@ -398,7 +398,7 @@ foo(1, 2);
   EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
 }
 
-TEST(CallTest, ArgNameMismatchDeath) {
+TEST(CallDeathTest, ArgNameMismatch) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, *, c):
@@ -409,7 +409,7 @@ foo(1, d = 2, c = 3);
   EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
 }
 
-TEST(CallTest, TooManyKWArgsDeath) {
+TEST(CallDeathTest, TooManyKWArgs) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, *, c):
@@ -420,7 +420,7 @@ foo(1, 2, 4, c = 3);
   EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
 }
 
-TEST(CallTest, TooManyArgsDeath) {
+TEST(CallDeathTest, TooManyArgs) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, c):
@@ -431,7 +431,7 @@ foo(1, 2, 3, 4);
   EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
 }
 
-TEST(CallTest, TooFewArgsDeath) {
+TEST(CallDeathTest, TooFewArgs) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, c):

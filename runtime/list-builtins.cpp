@@ -14,7 +14,7 @@ Object* builtinListNew(Thread* thread, Frame* caller, word nargs) {
   }
   Arguments args(caller, nargs);
   if (!args.get(0)->isClass()) {
-    thread->throwTypeErrorFromCString("not a type object");
+    return thread->throwTypeErrorFromCString("not a type object");
   }
   HandleScope scope(thread->handles());
   Handle<Class> type(&scope, args.get(0));

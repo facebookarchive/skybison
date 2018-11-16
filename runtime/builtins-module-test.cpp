@@ -8,7 +8,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(BuiltinsModuleTest, BuiltinChr) {
+TEST(BuiltinsModuleDeathTest, BuiltinChr) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(chr(65))");
   EXPECT_EQ(result, "A\n");
@@ -31,7 +31,7 @@ print(a == 123, b == -987, a > b, a, b)
   EXPECT_EQ(output, "True True True 123 -987\n");
 }
 
-TEST(BuiltinsModuleTest, BuiltinIsinstance) {
+TEST(BuiltinsModuleDeathTest, BuiltinIsinstance) {
   Runtime runtime;
   HandleScope scope;
 
@@ -108,7 +108,7 @@ def test(a, b):
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 }
 
-TEST(BuiltinsModuleTest, BuiltinLen) {
+TEST(BuiltinsModuleDeathTest, BuiltinLen) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");
   EXPECT_EQ(result, "3\n");
@@ -177,7 +177,7 @@ len5 = len({1,2,3,4,5})
   EXPECT_EQ(*len5, SmallInteger::fromWord(5));
 }
 
-TEST(BuiltinsModuleTest, BuiltinOrd) {
+TEST(BuiltinsModuleDeathTest, BuiltinOrd) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(ord('A'))");
   EXPECT_EQ(result, "65\n");

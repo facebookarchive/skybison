@@ -1465,7 +1465,7 @@ static Object* nativeExceptionTest(Thread* thread, Frame*, word) {
   return Error::object();
 }
 
-TEST(ThreadTest, NativeExceptions) {
+TEST(ThreadDeathTest, NativeExceptions) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1593,7 +1593,7 @@ class D(B,C): pass
   EXPECT_PYSTRING_EQ(className(mro->at(4)), "object");
 }
 
-TEST(ThreadTest, LoadBuildClassVerifyMroError) {
+TEST(ThreadDeathTest, LoadBuildClassVerifyMroError) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1732,7 +1732,7 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::ValuesIn(kManipulateLocalsTests),
     TestName);
 
-TEST(ThreadTest, RaiseVarargs) {
+TEST(ThreadDeathTest, RaiseVarargs) {
   Runtime runtime;
   ASSERT_DEATH(
       runtime.runFromCString("raise 1"),
@@ -1789,7 +1789,7 @@ hello.say_hello()
   EXPECT_EQ(output, "hello\n");
 }
 
-TEST(ThreadTest, FailedImportTest) {
+TEST(ThreadDeathTest, FailedImportTest) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1802,7 +1802,7 @@ hello.say_hello()
       runtime.runFromCString(main_src), "importModule is unimplemented");
 }
 
-TEST(ThreadTest, ImportMissingAttributeTest) {
+TEST(ThreadDeathTest, ImportMissingAttributeTest) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1868,7 +1868,7 @@ test()
   EXPECT_EQ(output, "1 2 3\n");
 }
 
-TEST(ThreadTest, SubscriptDict) {
+TEST(ThreadDeathTest, SubscriptDict) {
   const char* src = R"(
 a = {"1": 2, 2: 3}
 print(a["1"])
@@ -1913,7 +1913,7 @@ print(c[11])
   EXPECT_EQ(output, "3\n4\n11\n");
 }
 
-TEST(ThreadTest, PrintStackTrace) {
+TEST(ThreadDeathTest, PrintStackTrace) {
   const char* src = R"(
 def a():
   raise 'testing 123'
@@ -2442,7 +2442,7 @@ print(len(a))
   EXPECT_EQ(output, "1 a\n2 1\n2\n0\n");
 }
 
-TEST(ThreadTest, BaseClassConflict) {
+TEST(ThreadDeathTest, BaseClassConflict) {
   const char* src = R"(
 class Foo(list, dict): pass
 )";
@@ -2647,7 +2647,7 @@ f(100)
   EXPECT_EQ(output, "100\n");
 }
 
-TEST(ThreadTest, ImportFromNeg) {
+TEST(ThreadDeathTest, ImportFromNeg) {
   const char* src = R"(
 from time import foobarbaz
 )";
@@ -2688,7 +2688,7 @@ print("%%%s" % (""))
   EXPECT_EQ(output, "%\n");
 }
 
-TEST(ThreadTest, StringFormatNeg1) {
+TEST(ThreadDeathTest, StringFormatNeg1) {
   const char* src = R"(
 h = "hi"
 print("%" % (h, "world"))
