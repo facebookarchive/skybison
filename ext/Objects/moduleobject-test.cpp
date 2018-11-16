@@ -1,70 +1,44 @@
-#include "gtest/gtest.h"
-
-#include "Python.h"
-#include "runtime.h"
-#include "test-utils.h"
-
-static PyMethodDef SpamMethods[] = {{NULL, NULL, -1, NULL}};
-
-static struct PyModuleDef spammodule = {
-    PyModuleDef_HEAD_INIT,
-    "spam",
-    NULL,
-    -1,
-    SpamMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-};
-
-PyMODINIT_FUNC PyInit_spam(void) {
-  PyObject *m, *d, *de;
-  m = PyModule_Create(&spammodule);
-  d = PyModule_GetDict(m);
-  de = PyDict_New();
-  PyDict_SetItemString(d, "constants", de);
-
-  PyObject* u = PyUnicode_FromString("CONST");
-  PyObject* v = PyLong_FromLong(5);
-  PyDict_SetItem(d, u, v);
-  PyDict_SetItem(de, v, u);
-  return m;
-}
+#include "capi-fixture.h"
 
 namespace python {
 
-using namespace testing;
+using ModuleExtensionApiTest = ExtensionApi;
 
-TEST(ModuleObject, SpamModule) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ModuleExtensionApiTest, SpamModule) {
+  PyModuleDef def = {
+      PyModuleDef_HEAD_INIT,
+      "spam",
+  };
 
-  PyInit_spam();
+  // PyInit_spam
+  const int val = 5;
+  {
+    PyObject *m, *d, *de;
+    m = PyModule_Create(&def);
+    d = PyModule_GetDict(m);
+    de = PyDict_New();
+    PyDict_SetItemString(d, "constants", de);
 
-  const char* src = R"(
+    PyObject* u = PyUnicode_FromString("CONST");
+    PyObject* v = PyLong_FromLong(val);
+    PyDict_SetItem(d, u, v);
+    PyDict_SetItem(de, v, u);
+  }
+
+  PyRun_SimpleString(R"(
 import spam
-print(spam.CONST)
-)";
+x = spam.CONST
+)");
 
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "5\n");
+  PyObject* x = _PyModuleGet("__main__", "x");
+  int result = PyLong_AsLong(x);
+  ASSERT_EQ(result, val);
 }
 
-TEST(ModuleObject, GetDefwithExtensionModuleRetunsNonNull) {
-  Runtime runtime;
-  HandleScope scope;
-
+TEST_F(ModuleExtensionApiTest, GetDefWithExtensionModuleRetunsNonNull) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
-      nullptr,
-      -1,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
   };
 
   PyObject* module = PyModule_Create(&def);
@@ -74,10 +48,7 @@ TEST(ModuleObject, GetDefwithExtensionModuleRetunsNonNull) {
   EXPECT_EQ(result, &def);
 }
 
-TEST(ModuleObject, GetDefWithNonModuleRetunsNull) {
-  Runtime runtime;
-  HandleScope scope;
-
+TEST_F(ModuleExtensionApiTest, GetDefWithNonModuleRetunsNull) {
   PyObject* integer = PyBool_FromLong(0);
   PyModuleDef* result = PyModule_GetDef(integer);
   EXPECT_EQ(result, nullptr);
