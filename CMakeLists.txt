@@ -141,6 +141,7 @@ add_library(
   ext/Objects/boolobject.cpp
   ext/Objects/dictobject.cpp
   ext/Objects/exceptions.cpp
+  ext/Objects/floatobject.cpp
   ext/Objects/listobject.cpp
   ext/Objects/longobject.cpp
   ext/Objects/moduleobject.cpp

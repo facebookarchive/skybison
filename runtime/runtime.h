@@ -71,14 +71,15 @@ class ApiHandle {
 enum class ExtensionTypes {
   kType = 0,
   kBaseObject,
-  kNone,
   kBool,
+  kDict,
+  kFloat,
+  kList,
   kLong,
+  kModule,
+  kNone,
   kStr,
   kTuple,
-  kList,
-  kDict,
-  kModule,
 };
 
 class TrackedAllocation {
