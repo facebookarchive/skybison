@@ -416,4 +416,45 @@ TEST(ListBuiltinsTest, IdenticalSliceIsCopy) {
   ASSERT_NE(*test, *list1);
 }
 
+TEST(ListBuiltinsTest, SetItem) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 3, 0);
+  Handle<List> list(&scope, listFromRange(1, 5));
+
+  frame->setLocal(0, Object::cast(*list));
+  frame->setLocal(1, SmallInteger::fromWord(0));
+  frame->setLocal(2, SmallInteger::fromWord(2));
+
+  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 1);
+  Handle<Object> result(&scope, ListBuiltins::dunderSetItem(thread, frame, 3));
+  EXPECT_TRUE(result->isNone());
+  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 2);
+
+  // Negative index
+  frame->setLocal(1, SmallInteger::fromWord(-1));
+  EXPECT_EQ(SmallInteger::cast(list->at(3))->value(), 4);
+  Handle<Object> result1(&scope, ListBuiltins::dunderSetItem(thread, frame, 3));
+  EXPECT_TRUE(result1->isNone());
+  EXPECT_EQ(SmallInteger::cast(list->at(3))->value(), 2);
+}
+
+TEST(ListBuiltinsDeathTest, SetItemWithFewerArgumentsThrows) {
+  const char* src = R"(
+[].__setitem__(1)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(src), "expected 3 arguments");
+}
+
+TEST(ListBuiltinsDeathTest, SetItemWithInvalidIndexThrows) {
+  const char* src = R"(
+[].__setitem__(1, "test")
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(src),
+               "list assignment index out of range");
+}
+
 }  // namespace python

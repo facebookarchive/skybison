@@ -18,6 +18,7 @@ class ListBuiltins {
   static Object* dunderLen(Thread* thread, Frame* frame, word nargs);
   static Object* dunderMul(Thread* thread, Frame* frame, word nargs);
   static Object* dunderNew(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderSetItem(Thread* thread, Frame* frame, word nargs);
   static Object* insert(Thread* thread, Frame* frame, word nargs);
   static Object* pop(Thread* thread, Frame* frame, word nargs);
   static Object* remove(Thread* thread, Frame* frame, word nargs);

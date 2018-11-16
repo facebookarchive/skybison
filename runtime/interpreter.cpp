@@ -711,11 +711,21 @@ void Interpreter::doInplaceModulo(Context* ctx, word) {
 
 // opcode 60
 void Interpreter::doStoreSubscr(Context* ctx, word) {
-  // TODO: The implementation of the {BINARY,STORE}_SUBSCR opcodes are
-  // enough to get richards working.
-  word idx = SmallInteger::cast(ctx->frame->popValue())->value();
-  auto list = List::cast(ctx->frame->popValue());
-  list->atPut(idx, ctx->frame->popValue());
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> key(&scope, ctx->frame->popValue());
+  Handle<Object> container(&scope, ctx->frame->popValue());
+  Handle<Object> setitem(&scope, lookupMethod(thread, ctx->frame, container,
+                                              SymbolId::kDunderSetItem));
+  if (setitem->isError()) {
+    UNIMPLEMENTED("throw TypeError");
+  }
+  Handle<Object> value(&scope, ctx->frame->popValue());
+  Object* result =
+      callMethod3(thread, ctx->frame, setitem, container, key, value);
+  // TODO(T31788973): propagate an exception
+  thread->abortOnPendingException();
+  ctx->frame->pushValue(result);
 }
 
 // opcode 62

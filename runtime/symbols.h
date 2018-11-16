@@ -77,6 +77,7 @@ class Runtime;
   V(DunderRtruediv, "__rtruediv__")                                            \
   V(DunderRxor, "__rxor__")                                                    \
   V(DunderSet, "__set__")                                                      \
+  V(DunderSetItem, "__setitem__")                                              \
   V(DunderSub, "__sub__")                                                      \
   V(DunderTruediv, "__truediv__")                                              \
   V(DunderXor, "__xor__")                                                      \

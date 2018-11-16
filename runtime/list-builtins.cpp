@@ -24,6 +24,9 @@ void ListBuiltins::initialize(Runtime* runtime) {
   runtime->classAddBuiltinFunction(list, SymbolId::kDunderGetItem,
                                    nativeTrampoline<dunderGetItem>);
 
+  runtime->classAddBuiltinFunction(list, SymbolId::kDunderSetItem,
+                                   nativeTrampoline<dunderSetItem>);
+
   runtime->classAddBuiltinFunction(list, SymbolId::kDunderLen,
                                    nativeTrampoline<dunderLen>);
 
@@ -323,6 +326,41 @@ Object* ListBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString(
         "list indices must be integers or slices");
   }
+}
+
+Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 3) {
+    return thread->throwTypeErrorFromCString("expected 3 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
+    return thread->throwTypeErrorFromCString(
+        "__setitem__() must be called with a list instance as the first "
+        "argument");
+  }
+
+  Handle<List> list(&scope, *list_or_error);
+  Object* index = args.get(1);
+  if (index->isSmallInteger()) {
+    word idx = SmallInteger::cast(index)->value();
+    if (idx < 0) {
+      idx = list->allocated() + idx;
+    }
+    if (idx < 0 || idx >= list->allocated()) {
+      return thread->throwIndexErrorFromCString(
+          "list assignment index out of range");
+    }
+    Handle<Object> value(&scope, args.get(2));
+    list->atPut(idx, *value);
+    return None::object();
+  }
+  // TODO(T31826482): Add support for slices
+  return thread->throwTypeErrorFromCString(
+      "list indices must be integers or slices");
 }
 
 }  // namespace python
