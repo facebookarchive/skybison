@@ -1,33 +1,20 @@
-#include "gtest/gtest.h"
-
-#include "Python.h"
-#include "runtime.h"
-#include "test-utils.h"
+#include "capi-fixture.h"
 
 namespace python {
 
-TEST(BoolObject, ConvertLongToBool) {
-  Runtime runtime;
-  HandleScope scope;
+using BoolExtensionApiTest = ExtensionApi;
 
+TEST_F(BoolExtensionApiTest, ConvertLongToBool) {
   // Test True
   PyObject* pybool_true = PyBool_FromLong(1);
-  Handle<Object> bool_true(&scope,
-                           ApiHandle::fromPyObject(pybool_true)->asObject());
-  ASSERT_TRUE(bool_true->isBool());
-  EXPECT_TRUE(Bool::cast(*bool_true)->value());
+  EXPECT_EQ(pybool_true, Py_True);
 
   // Test False
   PyObject* pybool_false = PyBool_FromLong(0);
-  Handle<Object> bool_false(&scope,
-                            ApiHandle::fromPyObject(pybool_false)->asObject());
-  ASSERT_TRUE(bool_false->isBool());
-  EXPECT_FALSE(Bool::cast(*bool_false)->value());
+  EXPECT_EQ(pybool_false, Py_False);
 }
 
-TEST(BoolObject, CheckBoolIdentity) {
-  Runtime runtime;
-
+TEST_F(BoolExtensionApiTest, CheckBoolIdentity) {
   // Test Identitiy
   PyObject* pybool_true = PyBool_FromLong(1);
   PyObject* pybool1 = PyBool_FromLong(2);

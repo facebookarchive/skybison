@@ -171,7 +171,8 @@ add_library(
   ext/Objects/unicodeobject.cpp
   ext/Python/_warnings.cpp
   ext/Python/errors.cpp
-  ext/Python/modsupport.cpp)
+  ext/Python/modsupport.cpp
+  ext/Python/pylifecycle.cpp)
 target_compile_options(
   extension
   PUBLIC
@@ -272,11 +273,13 @@ add_library(
   ext/Objects/tupleobject-test.cpp
   ext/Objects/typeobject-test.cpp
   ext/Objects/unicodeobject-test.cpp
-  ext/Python/modsupport-test.cpp)
+  ext/Python/modsupport-test.cpp
+  ext/test/capi-fixture.h)
 target_include_directories(
   extension-tests
   PRIVATE
-  runtime)
+  runtime
+  ext/test)
 target_link_libraries(
   extension-tests
   PUBLIC

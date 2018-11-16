@@ -50,6 +50,9 @@ PyAPI_FUNC(PyObject *) PyErr_Occurred(void);
 PyAPI_FUNC(PyObject *) PyErr_NoMemory(void);
 PyAPI_FUNC(void) PyErr_SetString(PyObject *, const char *);
 
+PyAPI_FUNC(void) Py_Initialize(void);
+PyAPI_FUNC(int) Py_FinalizeEx(void);
+
 /* Macros */
 /* Multiline macros should retain their structure to get properly substituted */
 /* clang-format off */
