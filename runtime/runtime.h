@@ -298,6 +298,8 @@ class Runtime {
   void initializeRandom();
   void initializeSymbols();
 
+  void initializeListClass();
+
   void createBuiltinsModule();
   void createSysModule();
   Object* createMainModule();
@@ -336,6 +338,13 @@ class Runtime {
   ObjectArray* setGrow(const Handle<ObjectArray>& data);
 
   void moduleAddBuiltinPrint(const Handle<Module>& module);
+
+  // Helper function to add builtin functions to classes
+  void classAddBuiltinFunction(
+      const Handle<Class>& klass,
+      const char* name,
+      Function::Entry entry,
+      Function::Entry entryKw);
 
   // Generic attribute lookup code used for class objects
   Object* classGetAttr(

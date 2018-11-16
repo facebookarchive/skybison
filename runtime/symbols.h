@@ -15,7 +15,8 @@ class Runtime;
   V(DunderName, "__name__")              \
   V(DunderGet, "__get__")                \
   V(DunderSet, "__set__")                \
-  V(ObjectClassname, "object")
+  V(ObjectClassname, "object")           \
+  V(ListClassname, "list")
 // clang-format on
 
 // Provides convenient, fast access to commonly used names. Stolen from Dart.

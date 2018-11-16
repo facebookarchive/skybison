@@ -212,11 +212,14 @@ Object* Runtime::instanceGetAttr(
   // attributes.
   //
   // TODO: Support overflow attributs
-  Handle<Instance> instance(&scope, *receiver);
-  Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
-  for (word i = 0; i < map->length(); i++) {
-    if (map->at(i) == *name) {
-      return instance->attributeAt(i * kPointerSize);
+  // TODO(T26871525): add an instance attribute map to builtin types
+  if (receiver->isInstance()) {
+    Handle<Instance> instance(&scope, *receiver);
+    Handle<ObjectArray> map(&scope, klass->instanceAttributeMap());
+    for (word i = 0; i < map->length(); i++) {
+      if (map->at(i) == *name) {
+        return instance->attributeAt(i * kPointerSize);
+      }
     }
   }
 
@@ -385,6 +388,40 @@ Object* Runtime::newInstance(ClassId class_id) {
   Object* cls = classAt(class_id);
   assert(!cls->isNone());
   return heap()->createInstance(class_id, Class::cast(cls)->instanceSize());
+}
+
+void Runtime::initializeListClass() {
+  HandleScope scope;
+  Handle<Class> list(&scope, newClassWithId(ClassId::kList));
+  list->setName(newStringFromCString("list"));
+  const ClassId list_mro[] = {ClassId::kList, ClassId::kObject};
+  list->setMro(createMro(list_mro, ARRAYSIZE(list_mro)));
+  Handle<Dictionary> dict(&scope, newDictionary());
+  list->setDictionary(*dict);
+
+  classAddBuiltinFunction(
+      list,
+      "append",
+      nativeTrampoline<builtinListAppend>,
+      unimplementedTrampoline);
+
+  Handle<Function> dunder_new(
+      &scope,
+      newBuiltinFunction(
+          nativeTrampoline<builtinListNew>, unimplementedTrampoline));
+  list->setDunderNew(*dunder_new);
+}
+
+void Runtime::classAddBuiltinFunction(
+    const Handle<Class>& klass,
+    const char* name,
+    Function::Entry entry,
+    Function::Entry entryKw) {
+  HandleScope scope;
+  Handle<Object> key(&scope, newStringFromCString(name));
+  Handle<Object> value(&scope, newBuiltinFunction(entry, entryKw));
+  Handle<Dictionary> dict(&scope, klass->dictionary());
+  dictionaryAtPutInValueCell(dict, key, value);
 }
 
 Object* Runtime::newList() {
@@ -614,10 +651,7 @@ void Runtime::initializeHeapClasses() {
   const ClassId integer_mro[] = {ClassId::kLargeInteger, ClassId::kObject};
   integer->setMro(createMro(integer_mro, ARRAYSIZE(integer_mro)));
 
-  Handle<Class> list(&scope, newClassWithId(ClassId::kList));
-  list->setName(newStringFromCString("list"));
-  const ClassId list_mro[] = {ClassId::kList, ClassId::kObject};
-  list->setMro(createMro(list_mro, ARRAYSIZE(list_mro)));
+  initializeListClass();
 
   Handle<Class> module(&scope, newClassWithId(ClassId::kModule));
   module->setName(newStringFromCString("module"));
@@ -968,9 +1002,13 @@ void Runtime::createBuiltinsModule() {
       nativeTrampoline<unimplementedTrampoline>);
 
   // Add 'object'
-  Handle<Object> object(&scope, symbols()->ObjectClassname());
-  Handle<Object> value(&scope, classAt(ClassId::kObject));
-  moduleAddGlobal(module, object, value);
+  Handle<Object> object_name(&scope, symbols()->ObjectClassname());
+  Handle<Object> object_value(&scope, classAt(ClassId::kObject));
+  moduleAddGlobal(module, object_name, object_value);
+
+  Handle<Object> list_name(&scope, symbols()->ListClassname());
+  Handle<Object> list_value(&scope, classAt(ClassId::kList));
+  moduleAddGlobal(module, list_name, list_value);
 
   addModule(module);
 }
@@ -1640,13 +1678,11 @@ Object* Runtime::attributeAt(
   Object* result;
   if (receiver->isClass()) {
     result = classGetAttr(thread, receiver, name);
-  } else if (receiver->isInstance()) {
-    result = instanceGetAttr(thread, receiver, name);
   } else if (receiver->isModule()) {
     result = moduleGetAttr(thread, receiver, name);
   } else {
-    result = thread->throwTypeErrorFromCString(
-        "can only look up attributes from classes or instances");
+    // everything else should fallback to instance
+    result = instanceGetAttr(thread, receiver, name);
   }
   return result;
 }
@@ -1662,13 +1698,11 @@ Object* Runtime::attributeAtPut(
   Object* result;
   if (receiver->isClass()) {
     result = classSetAttr(thread, receiver, interned_name, value);
-  } else if (receiver->isInstance()) {
-    result = instanceSetAttr(thread, receiver, interned_name, value);
   } else if (receiver->isModule()) {
     result = moduleSetAttr(thread, receiver, interned_name, value);
   } else {
-    result = thread->throwTypeErrorFromCString(
-        "can only set attributes on classes or instances");
+    // everything else should fallback to instance
+    result = instanceSetAttr(thread, receiver, interned_name, value);
   }
   return result;
 }

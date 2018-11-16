@@ -9,6 +9,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
@@ -60,6 +61,12 @@ Object* builtinIsinstance(Thread* thread, Frame* caller, word nargs) {
   return Boolean::fromBool(false);
 }
 
+Object* builtinGenericNew(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope;
+  Handle<Class> klass(&scope, frame->valueStackTop()[nargs]);
+  return thread->runtime()->newInstance(klass->id());
+}
+
 Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread->handles());
@@ -102,6 +109,11 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   }
   result->setMro(*mro);
   result->setInstanceAttributeMap(runtime->computeInstanceAttributeMap(result));
+  Handle<Function> dunder_new(
+      &scope,
+      runtime->newBuiltinFunction(
+          nativeTrampoline<builtinGenericNew>, unimplementedTrampoline));
+  result->setDunderNew(*dunder_new);
 
   return *result;
 }
@@ -261,6 +273,22 @@ Object* builtinChr(Thread* thread, Frame* callerFrame, word nargs) {
   word w = SmallInteger::cast(arg)->value();
   const char s[2]{static_cast<char>(w), 0};
   return SmallString::fromCString(s);
+}
+
+Object* builtinListNew(Thread* thread, Frame*, word) {
+  return thread->runtime()->newList();
+}
+
+Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString(
+        "append() takes exactly one argument");
+  }
+  HandleScope scope;
+  Handle<Object> arg(&scope, frame->valueStackTop()[0]);
+  Handle<List> list(&scope, frame->valueStackTop()[1]);
+  thread->runtime()->listAdd(list, arg);
+  return None::object();
 }
 
 } // namespace python

@@ -82,7 +82,10 @@ Interpreter::callType(Thread* thread, Frame* frame, Object** sp, word nargs) {
   Runtime* runtime = thread->runtime();
 
   Handle<Class> klass(&scope, sp[nargs]);
-  Handle<Object> result(&scope, runtime->newInstance(klass->id()));
+  // dispatch it as python function?
+  frame->setValueStackTop(sp);
+  Handle<Function> dunder_new(&scope, klass->dunderNew());
+  Handle<Object> result(&scope, dunder_new->entry()(thread, frame, nargs));
 
   // Check for an __init__ method.
   //

@@ -496,6 +496,9 @@ class Class : public HeapObject {
   inline void setName(Object* name);
   inline Object* dictionary();
   inline void setDictionary(Object* name);
+  // Dunder slots
+  inline Object* dunderNew();
+  inline void setDunderNew(Object* f);
   // ObjectArray mapping attribute name to offset within the instance when
   // initialized.
   inline void setInstanceAttributeMap(Object* object_array);
@@ -517,8 +520,9 @@ class Class : public HeapObject {
   static const int kMroOffset = HeapObject::kSize;
   static const int kNameOffset = kMroOffset + kPointerSize;
   static const int kDictionaryOffset = kNameOffset + kPointerSize;
+  static const int kDunderNewOffset = kDictionaryOffset + kPointerSize;
   static const int kInstanceAttributeMapOffset =
-      kDictionaryOffset + kPointerSize;
+      kDunderNewOffset + kPointerSize;
   static const int kSize = kInstanceAttributeMapOffset + kPointerSize;
 
  private:
@@ -1681,6 +1685,14 @@ Object* Class::dictionary() {
 
 void Class::setDictionary(Object* dictionary) {
   instanceVariableAtPut(kDictionaryOffset, dictionary);
+}
+
+Object* Class::dunderNew() {
+  return instanceVariableAt(kDunderNewOffset);
+}
+
+void Class::setDunderNew(Object* f) {
+  instanceVariableAtPut(kDunderNewOffset, f);
 }
 
 void Class::setInstanceAttributeMap(Object* object_array) {

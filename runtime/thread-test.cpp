@@ -1982,4 +1982,19 @@ print(a / b)
   EXPECT_EQ(output, "3\n2.5\n");
 }
 
+TEST(ThreadTest, ListAppend) {
+  const char* src = R"(
+a = list()
+b = list()
+a.append(1)
+a.append("2")
+b.append(3)
+a.append(b)
+print(a[0], a[1], a[2][0])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1 2 3\n");
+}
+
 } // namespace python
