@@ -174,4 +174,35 @@ RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
       "argument");
 }
 
+void DictItemIteratorBuiltins::initialize(Runtime* runtime) {
+  runtime->addEmptyBuiltinClass(SymbolId::kDictItemIterator,
+                                LayoutId::kDictItemIterator, LayoutId::kObject);
+}
+
+void DictItemsBuiltins::initialize(Runtime* runtime) {
+  runtime->addEmptyBuiltinClass(SymbolId::kDictItems, LayoutId::kDictItems,
+                                LayoutId::kObject);
+}
+
+void DictKeyIteratorBuiltins::initialize(Runtime* runtime) {
+  runtime->addEmptyBuiltinClass(SymbolId::kDictKeyIterator,
+                                LayoutId::kDictKeyIterator, LayoutId::kObject);
+}
+
+void DictKeysBuiltins::initialize(Runtime* runtime) {
+  runtime->addEmptyBuiltinClass(SymbolId::kDictKeys, LayoutId::kDictKeys,
+                                LayoutId::kObject);
+}
+
+void DictValueIteratorBuiltins::initialize(Runtime* runtime) {
+  runtime->addEmptyBuiltinClass(SymbolId::kDictValueIterator,
+                                LayoutId::kDictValueIterator,
+                                LayoutId::kObject);
+}
+
+void DictValuesBuiltins::initialize(Runtime* runtime) {
+  runtime->addEmptyBuiltinClass(SymbolId::kDictValues, LayoutId::kDictValues,
+                                LayoutId::kObject);
+}
+
 }  // namespace python

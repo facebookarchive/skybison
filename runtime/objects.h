@@ -37,6 +37,12 @@ namespace python {
   V(Coroutine)                                                                 \
   V(DeprecationWarning)                                                        \
   V(Dict)                                                                      \
+  V(DictItemIterator)                                                          \
+  V(DictItems)                                                                 \
+  V(DictKeyIterator)                                                           \
+  V(DictKeys)                                                                  \
+  V(DictValueIterator)                                                         \
+  V(DictValues)                                                                \
   V(EOFError)                                                                  \
   V(Ellipsis)                                                                  \
   V(Exception)                                                                 \
@@ -170,6 +176,12 @@ enum class LayoutId : word {
   kCoroutine,
   kDeprecationWarning,
   kDict,
+  kDictItemIterator,
+  kDictItems,
+  kDictKeyIterator,
+  kDictKeys,
+  kDictValueIterator,
+  kDictValues,
   kEOFError,
   kEllipsis,
   kException,
@@ -311,6 +323,12 @@ class RawObject {
   bool isComplex();
   bool isCoroutine();
   bool isDict();
+  bool isDictItemIterator();
+  bool isDictItems();
+  bool isDictKeyIterator();
+  bool isDictKeys();
+  bool isDictValueIterator();
+  bool isDictValues();
   bool isEllipsis();
   bool isException();
   bool isFloat();
@@ -1559,6 +1577,62 @@ class RawDict::Bucket {
   DISALLOW_HEAP_ALLOCATION();
 };
 
+class RawDictIteratorBase : public RawHeapObject {
+ public:
+  // Getters and setters.
+  RawObject dict();
+  void setDict(RawObject dict);
+
+  word index();
+  void setIndex(word index);
+
+  // Layout
+  static const int kDictOffset = RawHeapObject::kSize;
+  static const int kIndexOffset = kDictOffset + kPointerSize;
+  static const int kSize = kIndexOffset + kPointerSize;
+};
+
+class RawDictViewBase : public RawHeapObject {
+ public:
+  // Getters and setters
+  RawObject dict();
+  void setDict(RawObject dict);
+
+  // Layout
+  static const int kDictOffset = RawHeapObject::kSize;
+  static const int kSize = kDictOffset + kPointerSize;
+};
+
+class RawDictItemIterator : public RawDictIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(DictItemIterator);
+};
+
+class RawDictItems : public RawDictViewBase {
+ public:
+  RAW_OBJECT_COMMON(DictItems);
+};
+
+class RawDictKeyIterator : public RawDictIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(DictKeyIterator);
+};
+
+class RawDictKeys : public RawDictViewBase {
+ public:
+  RAW_OBJECT_COMMON(DictKeys);
+};
+
+class RawDictValueIterator : public RawDictIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(DictValueIterator);
+};
+
+class RawDictValues : public RawDictViewBase {
+ public:
+  RAW_OBJECT_COMMON(DictValues);
+};
+
 /**
  * A simple set implementation.
  */
@@ -2092,6 +2166,30 @@ inline bool RawObject::isKeyError() {
 
 inline bool RawObject::isDict() {
   return isHeapObjectWithLayout(LayoutId::kDict);
+}
+
+inline bool RawObject::isDictItemIterator() {
+  return isHeapObjectWithLayout(LayoutId::kDictItemIterator);
+}
+
+inline bool RawObject::isDictItems() {
+  return isHeapObjectWithLayout(LayoutId::kDictItems);
+}
+
+inline bool RawObject::isDictKeyIterator() {
+  return isHeapObjectWithLayout(LayoutId::kDictKeyIterator);
+}
+
+inline bool RawObject::isDictKeys() {
+  return isHeapObjectWithLayout(LayoutId::kDictKeys);
+}
+
+inline bool RawObject::isDictValueIterator() {
+  return isHeapObjectWithLayout(LayoutId::kDictValueIterator);
+}
+
+inline bool RawObject::isDictValues() {
+  return isHeapObjectWithLayout(LayoutId::kDictValues);
 }
 
 inline bool RawObject::isFloat() {
@@ -3157,6 +3255,34 @@ inline RawObject RawDict::data() { return instanceVariableAt(kDataOffset); }
 
 inline void RawDict::setData(RawObject data) {
   instanceVariableAtPut(kDataOffset, data);
+}
+
+// RawDictIteratorBase
+
+inline RawObject RawDictIteratorBase::dict() {
+  return instanceVariableAt(kDictOffset);
+}
+
+inline void RawDictIteratorBase::setDict(RawObject dict) {
+  instanceVariableAtPut(kDictOffset, dict);
+}
+
+inline word RawDictIteratorBase::index() {
+  return RawSmallInt::cast(instanceVariableAt(kIndexOffset))->value();
+}
+
+inline void RawDictIteratorBase::setIndex(word index) {
+  instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
+}
+
+// RawDictViewBase
+
+inline RawObject RawDictViewBase::dict() {
+  return instanceVariableAt(kDictOffset);
+}
+
+inline void RawDictViewBase::setDict(RawObject dict) {
+  instanceVariableAtPut(kDictOffset, dict);
 }
 
 // RawFunction

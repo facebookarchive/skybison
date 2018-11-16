@@ -25,4 +25,64 @@ class DictBuiltins {
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictBuiltins);
 };
 
+class DictItemIteratorBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+ private:
+  static const BuiltinMethod kMethods[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemIteratorBuiltins);
+};
+
+class DictItemsBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+ private:
+  static const BuiltinMethod kMethods[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemsBuiltins);
+};
+
+class DictKeyIteratorBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+ private:
+  static const BuiltinMethod kMethods[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeyIteratorBuiltins);
+};
+
+class DictKeysBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+ private:
+  static const BuiltinMethod kMethods[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeysBuiltins);
+};
+
+class DictValueIteratorBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+ private:
+  static const BuiltinMethod kMethods[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(DictValueIteratorBuiltins);
+};
+
+class DictValuesBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+ private:
+  static const BuiltinMethod kMethods[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(DictValuesBuiltins);
+};
+
 }  // namespace python

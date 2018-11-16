@@ -70,6 +70,10 @@ class Runtime {
   RawObject newDict();
   RawObject newDictWithSize(word initial_size);
 
+  RawObject newDictItemIterator(const Dict& dict);
+  RawObject newDictKeyIterator(const Dict& dict);
+  RawObject newDictValueIterator(const Dict& dict);
+
   RawObject newFloat(double value);
 
   RawObject newSet();
@@ -313,6 +317,18 @@ class Runtime {
                            const Object& key_hash);
 
   RawObjectArray dictKeys(const Dict& dict);
+
+  // Returns next item in the dict as (key, value) tuple (ObjectArray)
+  // Returns Error::object() if there are no more objects
+  RawObject dictItemIteratorNext(Thread* thread, DictItemIterator& iter);
+
+  // Returns next key in the dict
+  // Returns Error::object() if there are no more objects
+  RawObject dictKeyIteratorNext(Thread* thread, DictKeyIterator& iter);
+
+  // Returns next value in the dict
+  // Returns Error::object() if there are no more objects
+  RawObject dictValueIteratorNext(Thread* thread, DictValueIterator& iter);
 
   // Set related function, based on dict.
   // Add a value to set and return the object in set.

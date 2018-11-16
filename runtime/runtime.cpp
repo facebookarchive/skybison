@@ -1003,6 +1003,12 @@ void Runtime::initializeHeapClasses() {
   addEmptyBuiltinClass(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   ComplexBuiltins::initialize(this);
   DictBuiltins::initialize(this);
+  DictItemsBuiltins::initialize(this);
+  DictItemIteratorBuiltins::initialize(this);
+  DictKeysBuiltins::initialize(this);
+  DictKeyIteratorBuiltins::initialize(this);
+  DictValuesBuiltins::initialize(this);
+  DictValueIteratorBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kEllipsis, LayoutId::kEllipsis,
                        LayoutId::kObject);
   FloatBuiltins::initialize(this);
@@ -2434,6 +2440,38 @@ RawObjectArray Runtime::dictKeys(const Dict& dict) {
   return *keys;
 }
 
+// DictItemIterator
+
+RawObject Runtime::newDictItemIterator(const Dict& dict) {
+  HandleScope scope;
+  DictItemIterator result(&scope, heap()->create<RawDictItemIterator>());
+  result->setIndex(0);
+  result->setDict(*dict);
+  return *result;
+}
+
+// DictKeyIterator
+
+RawObject Runtime::newDictKeyIterator(const Dict& dict) {
+  HandleScope scope;
+  DictKeyIterator result(&scope, heap()->create<RawDictKeyIterator>());
+  result->setIndex(0);
+  result->setDict(*dict);
+  return *result;
+}
+
+// DictValueIterator
+
+RawObject Runtime::newDictValueIterator(const Dict& dict) {
+  HandleScope scope;
+  DictValueIterator result(&scope, heap()->create<RawDictValueIterator>());
+  result->setIndex(0);
+  result->setDict(*dict);
+  return *result;
+}
+
+// Set
+
 RawObject Runtime::newSet() {
   HandleScope scope;
   Set result(&scope, heap()->create<RawSet>());
@@ -2929,6 +2967,79 @@ inline RawObject Runtime::dictUpdate(Thread* thread, const Dict& dict,
     dictAtPut(dict, key, value);
   }
   return *dict;
+}
+
+RawObject Runtime::dictItemIteratorNext(Thread* thread,
+                                        DictItemIterator& iter) {
+  HandleScope scope(thread);
+  Dict dict(&scope, iter.dict());
+  ObjectArray buckets(&scope, dict.data());
+  word jump = Dict::Bucket::kNumPointers;
+
+  word i = iter.index();
+  for (; i < buckets->length() && Dict::Bucket::isEmpty(*buckets, i);
+       i += jump) {
+  }
+
+  if (i < buckets->length()) {
+    // At this point, we have found a valid index in the buckets.
+    Object key(&scope, Dict::Bucket::key(*buckets, i));
+    Object value(&scope, Dict::Bucket::value(*buckets, i));
+    ObjectArray kv_pair(&scope, newObjectArray(2));
+    kv_pair->atPut(0, *key);
+    kv_pair->atPut(1, *value);
+    iter.setIndex(i + jump);
+    return *kv_pair;
+  }
+
+  // We hit the end.
+  iter.setIndex(i);
+  return Error::object();
+}
+
+RawObject Runtime::dictKeyIteratorNext(Thread* thread, DictKeyIterator& iter) {
+  HandleScope scope(thread);
+  Dict dict(&scope, iter.dict());
+  ObjectArray buckets(&scope, dict.data());
+  word jump = Dict::Bucket::kNumPointers;
+
+  word i = iter.index();
+  for (; i < buckets->length() && Dict::Bucket::isEmpty(*buckets, i);
+       i += jump) {
+  }
+
+  if (i < buckets->length()) {
+    // At this point, we have found a valid index in the buckets.
+    iter.setIndex(i + jump);
+    return Dict::Bucket::key(*buckets, i);
+  }
+
+  // We hit the end.
+  iter.setIndex(i);
+  return Error::object();
+}
+
+RawObject Runtime::dictValueIteratorNext(Thread* thread,
+                                         DictValueIterator& iter) {
+  HandleScope scope(thread);
+  Dict dict(&scope, iter.dict());
+  ObjectArray buckets(&scope, dict.data());
+  word jump = Dict::Bucket::kNumPointers;
+
+  word i = iter.index();
+  for (; i < buckets->length() && Dict::Bucket::isEmpty(*buckets, i);
+       i += jump) {
+  }
+
+  if (i < buckets->length()) {
+    // At this point, we have found a valid index in the buckets.
+    iter.setIndex(i + jump);
+    return Dict::Bucket::value(*buckets, i);
+  }
+
+  // We hit the end.
+  iter.setIndex(i);
+  return Error::object();
 }
 
 RawObject Runtime::genSend(Thread* thread, const GeneratorBase& gen,

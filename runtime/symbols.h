@@ -132,6 +132,12 @@ class Runtime;
   V(Deleter, "deleter")                                                        \
   V(DeprecationWarning, "DeprecationWarning")                                  \
   V(Dict, "dict")                                                              \
+  V(DictItems, "dict_items")                                                   \
+  V(DictItemIterator, "dict_itemiterator")                                     \
+  V(DictKeys, "dict_keys")                                                     \
+  V(DictKeyIterator, "dict_keyiterator")                                       \
+  V(DictValues, "dict_values")                                                 \
+  V(DictValueIterator, "dict_valueiterator")                                   \
   V(Displayhook, "displayhook")                                                \
   V(EOFError, "EOFError")                                                      \
   V(Ellipsis, "ellipsis")                                                      \
