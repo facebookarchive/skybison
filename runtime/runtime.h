@@ -1,8 +1,8 @@
 #pragma once
 
 #include "bytecode.h"
-#include "c-api.h"
 #include "callback.h"
+#include "capi-handles.h"
 #include "handles.h"
 #include "heap.h"
 #include "interpreter.h"
