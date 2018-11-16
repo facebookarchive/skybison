@@ -23,4 +23,9 @@ extern "C" PyObject* PyCFunction_GetSelf(PyObject* /* p */) {
   UNIMPLEMENTED("PyCFunction_GetSelf");
 }
 
+extern "C" PyObject* PyCFunction_Call(PyObject* /* c */, PyObject* /* s */,
+                                      PyObject* /* s */) {
+  UNIMPLEMENTED("PyCFunction_Call");
+}
+
 }  // namespace python

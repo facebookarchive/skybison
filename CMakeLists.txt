@@ -52,7 +52,6 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Objects/boolobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/bytearrayobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/bytesobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/call.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/capsule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/classobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/codeobject.cpp

@@ -62,4 +62,14 @@ extern "C" PyObject* _Py_VaBuildValue_SizeT(const char* /* t */,
   UNIMPLEMENTED("_Py_VaBuildValue_SizeT");
 }
 
+extern "C" PyObject* PyEval_CallFunction(PyObject* /* e */, const char* /* t */,
+                                         ...) {
+  UNIMPLEMENTED("PyEval_CallFunction");
+}
+
+extern "C" PyObject* PyEval_CallMethod(PyObject* /* j */, const char* /* e */,
+                                       const char* /* t */, ...) {
+  UNIMPLEMENTED("PyEval_CallMethod");
+}
+
 }  // namespace python

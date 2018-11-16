@@ -49,4 +49,20 @@ extern "C" PyThreadState* Py_NewInterpreter(void) {
   UNIMPLEMENTED("Py_NewInterpreter");
 }
 
+extern "C" wchar_t* Py_GetProgramName(void) {
+  UNIMPLEMENTED("Py_GetProgramName");
+}
+
+extern "C" wchar_t* Py_GetPythonHome(void) {
+  UNIMPLEMENTED("Py_GetPythonHome");
+}
+
+extern "C" void Py_SetProgramName(const wchar_t* /* e */) {
+  UNIMPLEMENTED("Py_SetProgramName");
+}
+
+extern "C" void Py_SetPythonHome(const wchar_t* /* e */) {
+  UNIMPLEMENTED("Py_SetPythonHome");
+}
+
 }  // namespace python

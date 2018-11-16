@@ -116,4 +116,10 @@ extern "C" void PyEval_SetTrace(Py_tracefunc /* c */, PyObject* /* g */) {
   UNIMPLEMENTED("PyEval_SetTrace");
 }
 
+extern "C" PyObject* PyEval_CallObjectWithKeywords(PyObject* /* e */,
+                                                   PyObject* /* s */,
+                                                   PyObject* /* s */) {
+  UNIMPLEMENTED("PyEval_CallObjectWithKeywords");
+}
+
 }  // namespace python
