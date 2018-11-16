@@ -18,6 +18,10 @@ class Os {
 
   static bool secureRandom(byte* ptr, word size);
 
+  static char* readFile(const char* filename);
+
+  static char* temporaryDirectory(const char* prefix);
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Os);
 };

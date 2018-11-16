@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cstdio>
 #include <cstdlib>
 
 #include "utils.h"
@@ -67,14 +68,14 @@ class ScopedFd {
 
 bool Os::secureRandom(byte* ptr, word size) {
   assert(size >= 0);
-  ScopedFd fd(open("/dev/urandom", O_RDONLY));
+  ScopedFd fd(::open("/dev/urandom", O_RDONLY));
   if (fd.get() == -1) {
     return false;
   }
   do {
     word result;
     do {
-      result = read(fd.get(), ptr, size);
+      result = ::read(fd.get(), ptr, size);
     } while (result == -1 && errno == EINTR);
     if (result == -1) {
       break;
@@ -83,6 +84,31 @@ bool Os::secureRandom(byte* ptr, word size) {
     ptr += result;
   } while (size > 0);
   return size == 0;
+}
+
+char* Os::readFile(const char* filename) {
+  ScopedFd fd(::open(filename, O_RDONLY));
+  assert(fd.get() != -1);
+  word length = ::lseek(fd.get(), 0, SEEK_END);
+  assert(length != -1);
+  ::lseek(fd.get(), 0, SEEK_SET);
+  auto result = new char[length];
+  ::read(fd.get(), result, length);
+  return result;
+}
+
+char* Os::temporaryDirectory(const char* prefix) {
+  const char* tmpdir = std::getenv("TMPDIR");
+  if (tmpdir == nullptr) {
+    tmpdir = "/tmp";
+  }
+  const char format[] = "%s/%s.XXXXXXXX";
+  word length = std::snprintf(nullptr, 0, format, tmpdir, prefix);
+  char* buffer = new char[length];
+  std::snprintf(buffer, length, format, tmpdir, prefix);
+  char* result = ::mkdtemp(buffer);
+  assert(result != nullptr);
+  return result;
 }
 
 } // namespace python
