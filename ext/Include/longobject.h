@@ -9,7 +9,8 @@ extern "C" {
 
 typedef struct _longobject PyLongObject; /* Revealed in longintrepr.h */
 
-PyAPI_DATA(PyTypeObject) PyLong_Type;
+PyAPI_FUNC(PyTypeObject*) PyLong_Type_Ptr(void);
+#define PyLong_Type (*PyLong_Type_Ptr()) /* built-in 'long' */
 
 #define PyLong_Check(op) \
         PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_LONG_SUBCLASS)

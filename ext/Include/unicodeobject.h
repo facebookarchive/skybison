@@ -360,7 +360,8 @@ typedef struct {
 } PyUnicodeObject;
 #endif
 
-PyAPI_DATA(PyTypeObject) PyUnicode_Type;
+PyAPI_FUNC(PyTypeObject*) PyUnicode_Type_Ptr(void);
+#define PyUnicode_Type (*PyUnicode_Type_Ptr()) /* built-in 'str' */
 PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 #define PyUnicode_Check(op) \

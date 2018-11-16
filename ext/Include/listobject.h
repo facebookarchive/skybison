@@ -40,7 +40,8 @@ typedef struct {
 } PyListObject;
 #endif
 
-PyAPI_DATA(PyTypeObject) PyList_Type;
+PyAPI_FUNC(PyTypeObject*) PyList_Type_Ptr(void);
+#define PyList_Type (*PyList_Type_Ptr()) /* built-in 'list' */
 PyAPI_DATA(PyTypeObject) PyListIter_Type;
 PyAPI_DATA(PyTypeObject) PyListRevIter_Type;
 PyAPI_DATA(PyTypeObject) PySortWrapper_Type;

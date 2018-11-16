@@ -47,7 +47,8 @@ typedef struct {
 
 #endif /* Py_LIMITED_API */
 
-PyAPI_DATA(PyTypeObject) PyDict_Type;
+PyAPI_FUNC(PyTypeObject*) PyDict_Type_Ptr(void);
+#define PyDict_Type (*PyDict_Type_Ptr()) /* built-in 'dict' */
 PyAPI_DATA(PyTypeObject) PyDictIterKey_Type;
 PyAPI_DATA(PyTypeObject) PyDictIterValue_Type;
 PyAPI_DATA(PyTypeObject) PyDictIterItem_Type;

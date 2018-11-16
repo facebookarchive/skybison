@@ -70,9 +70,14 @@ class ApiHandle {
 // Builtin Extension Types
 enum class ExtensionTypes {
   kType = 0,
-  kBaseObject = 1,
-  kBool = 2,
-  kTuple = 3,
+  kBaseObject,
+  kBool,
+  kLong,
+  kStr,
+  kTuple,
+  kList,
+  kDict,
+  kModule,
 };
 
 class TrackedAllocation {
