@@ -2569,10 +2569,12 @@ a.insert(0, 2)
 print(a[0], a[1])
 a.pop()
 print(a[0])
+a.remove(2)
+print(len(a))
 )";
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "1 a\n2 1\n2\n");
+  EXPECT_EQ(output, "1 a\n2 1\n2\n0\n");
 }
 
 TEST(ThreadTest, BaseClassConflict) {
@@ -2874,6 +2876,18 @@ print(e.cm() == (e, (E, (E, (E, 1), 2), 3), 4))
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "True\nTrue\nTrue\nTrue\nTrue\nTrue\n");
+}
+
+TEST(ThreadTest, ListRemove) {
+  const char* src = R"(
+a = [5, 4, 3, 2, 1]
+a.remove(2)
+a.remove(5)
+print(len(a), a[0], a[1], a[2])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "3 4 3 1\n");
 }
 
 } // namespace python

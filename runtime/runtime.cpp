@@ -712,6 +712,12 @@ void Runtime::initializeListClass() {
       nativeTrampoline<builtinListNew>,
       unimplementedTrampoline);
 
+  classAddBuiltinFunction(
+      list,
+      symbols()->Remove(),
+      nativeTrampoline<builtinListRemove>,
+      unimplementedTrampoline);
+
   list->setFlag(Class::Flag::kListSubclass);
 }
 

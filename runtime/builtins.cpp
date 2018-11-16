@@ -4,6 +4,7 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "interpreter.h"
 #include "mro.h"
 #include "objects.h"
 #include "runtime.h"
@@ -291,13 +292,15 @@ Object* builtinLen(Thread* thread, Frame* callerFrame, word nargs) {
     return thread->throwTypeErrorFromCString(
         "len() takes exactly one argument");
   }
-  Object* arg = callerFrame->valueStackTop()[0];
-  if (!arg->isList()) {
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, callerFrame->valueStackTop()[0]);
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
     // TODO(T27377670): Support calling __len__
     return thread->throwTypeErrorFromCString(
         "Unsupported type in builtin 'len'");
   }
-  return SmallInteger::fromWord(List::cast(arg)->allocated());
+  return SmallInteger::fromWord(List::cast(*list_or_error)->allocated());
 }
 
 // List
@@ -398,6 +401,32 @@ Object* builtinListPop(Thread* thread, Frame* frame, word nargs) {
   }
 
   return thread->runtime()->listPop(list, index);
+}
+
+Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString(
+        "remove() takes exactly one argument");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> value(&scope, args.get(1));
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
+    return thread->throwTypeErrorFromCString(
+        "descriptor 'remove' requires a 'list' object");
+  }
+  Handle<List> list(&scope, *list_or_error);
+  for (word i = 0; i < list->allocated(); i++) {
+    Handle<Object> item(&scope, list->at(i));
+    if (Boolean::cast(Interpreter::richCompare(CompareOp::EQ, item, value))
+            ->value()) {
+      thread->runtime()->listPop(list, i);
+      return None::object();
+    }
+  }
+  return thread->throwValueErrorFromCString("list.remove(x) x not in list");
 }
 
 // Descriptor

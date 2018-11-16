@@ -32,7 +32,8 @@ class Runtime;
   V(Ord, "ord")                          \
   V(Pop, "pop")                          \
   V(Range, "range")                      \
-  V(Super, "super")
+  V(Super, "super")                      \
+  V(Remove, "remove")
 // clang-format on
 
 // Provides convenient, fast access to commonly used names. Stolen from Dart.
