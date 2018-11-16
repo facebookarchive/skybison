@@ -370,6 +370,22 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
 
+      // TODO: The implementation of the {BINARY,STORE}_SUBSCR opcodes are
+      // enough to get richards working.
+      case Bytecode::BINARY_SUBSCR: {
+        word idx = SmallInteger::cast(*sp++)->value();
+        auto list = List::cast(*sp);
+        *sp = list->at(idx);
+        break;
+      }
+
+      case Bytecode::STORE_SUBSCR: {
+        word idx = SmallInteger::cast(*sp++)->value();
+        auto list = List::cast(*sp++);
+        list->atPut(idx, *sp++);
+        break;
+      }
+
       default:
         abort();
     }
