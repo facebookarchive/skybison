@@ -25,6 +25,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
     {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
+    {SymbolId::kDunderLshift, nativeTrampoline<dunderLshift>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
     {SymbolId::kDunderNeg, nativeTrampoline<dunderNeg>},
@@ -634,6 +635,34 @@ RawObject IntBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
     Int self_int(&scope, self);
     Int other_int(&scope, other);
     return runtime->intBinaryOr(thread, self_int, other_int);
+  }
+  // signal to binary dispatch to try another method
+  return thread->runtime()->notImplemented();
+}
+
+RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  HandleScope scope;
+  Object self(&scope, args.get(0));
+  Object arg(&scope, args.get(1));
+  if (!self->isInt()) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__lshift__' requires a 'int' object");
+  }
+  if (arg->isInt()) {
+    Int arg_int(&scope, arg);
+    if (arg_int->isNegative()) {
+      return thread->raiseValueErrorWithCStr("negative shift count");
+    }
+    if (arg_int->isLargeInt()) {
+      return thread->raiseOverflowErrorWithCStr("shift count too large");
+    }
+    Int self_int(&scope, self);
+    return runtime->intBinaryLshift(thread, self_int, arg_int->asWord());
   }
   // signal to binary dispatch to try another method
   return thread->runtime()->notImplemented();

@@ -527,6 +527,36 @@ TEST(IntBuiltinsDeathTest, DunderOrWithInvalidArgumentThrowsException) {
                "descriptor '__or__' requires a 'int' object");
 }
 
+TEST(IntBuiltinsDeathTest, DunderLshift) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+a = 0b1101
+b = a << 3
+)");
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 0b1101000);
+}
+
+TEST(IntBuiltinsDeathTest, DunderLshiftWithNonIntReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr("a = int.__lshift__(10, '')");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(a->isNotImplemented());
+}
+
+TEST(IntBuiltinsDeathTest, DunderLshiftWithInvalidArgumentThrowsException) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr("a = 10 << ''"), "Cannot do binary op");
+  EXPECT_DEATH(runtime.runFromCStr("a = int.__lshift__('', 3)"),
+               "'__lshift__' requires a 'int' object");
+  EXPECT_DEATH(runtime.runFromCStr("a = 10 << -3"), "negative shift count");
+  EXPECT_DEATH(runtime.runFromCStr("a = 10 << (1 << 100)"),
+               "shift count too large");
+}
+
 TEST(IntBuiltinsTest, BinaryAddSmallInt) {
   Runtime runtime;
   HandleScope scope;

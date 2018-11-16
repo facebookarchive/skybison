@@ -3962,4 +3962,48 @@ RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
   return *result;
 }
 
+RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num,
+                                   word shift) {
+  DCHECK(shift >= 0, "shift count needs to be non-negative");
+  if (shift == 0 || (num->isSmallInt() && num->asWord() == 0)) {
+    return *num;
+  }
+  const word shift_bits = shift % kBitsPerWord;
+  const word shift_words = shift / kBitsPerWord;
+  const word high_digit = num->digitAt(num->numDigits() - 1);
+
+  // check if high digit overflows when shifted - if we need an extra digit
+  word bit_length =
+      Utils::highestBit(high_digit >= 0 ? high_digit : ~high_digit);
+  bool overflow = bit_length + shift_bits >= kBitsPerWord;
+
+  // check if result fits into one word
+  if (num->numDigits() == 1 && (shift_words == 0 && !overflow)) {
+    return newInt(high_digit << shift_bits);
+  }
+
+  // allocate large int and zero-initialize low digits
+  const word num_digits = num->numDigits() + shift_words + overflow;
+  HandleScope scope(thread);
+  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  for (word i = 0; i < shift_words; i++) {
+    result->digitAtPut(i, 0);
+  }
+
+  // iterate over digits of num and handle carrying
+  const word right_shift = kBitsPerWord - shift_bits;
+  uword prev = 0;
+  for (word i = 0; i < num->numDigits(); i++) {
+    const uword digit = num->digitAt(i);
+    result->digitAtPut(i + shift_words,
+                       (digit << shift_bits) + (prev >> right_shift));
+    prev = digit;
+  }
+  if (overflow) {
+    // signed shift takes cares of keeping the sign
+    result->digitAtPut(num_digits - 1, static_cast<word>(prev) >> right_shift);
+  }
+  return result;
+}
+
 }  // namespace python

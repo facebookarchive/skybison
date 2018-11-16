@@ -598,6 +598,9 @@ class Runtime {
   // Import all the public module's symbols to the given dict
   void moduleImportAllFrom(const Dict& dict, const Module& module);
 
+  // Returns the result of bitwise left shift of the arguments
+  RawObject intBinaryLshift(Thread* thread, const Int& num, word shift);
+
   // Returns the result of bitwise logical OR of the arguments
   RawObject intBinaryOr(Thread* thread, const Int& left, const Int& right);
 
