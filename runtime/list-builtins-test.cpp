@@ -508,4 +508,22 @@ test6 = len(a)
   EXPECT_EQ(*test6, SmallInteger::fromWord(0));
 }
 
+TEST(ListBuiltinsTest, DelItem) {
+  const char* src = R"(
+a = [42,'foo', 'bar']
+del a[2]
+del a[0]
+l = len(a)
+e = a[0]
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> len(&scope, findInModule(&runtime, main, "l"));
+  Handle<Object> element(&scope, findInModule(&runtime, main, "e"));
+  EXPECT_EQ(*len, SmallInteger::fromWord(1));
+  EXPECT_EQ(*element, SmallString::fromCString("foo"));
+}
+
 }  // namespace python

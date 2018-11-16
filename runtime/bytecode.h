@@ -70,7 +70,7 @@ namespace python {
   V(UNUSED_BYTECODE_58, 58, doInvalidBytecode)                                 \
   V(INPLACE_MODULO, 59, doInplaceModulo)                                       \
   V(STORE_SUBSCR, 60, doStoreSubscr)                                           \
-  V(DELETE_SUBSCR, 61, doNotImplemented)                                       \
+  V(DELETE_SUBSCR, 61, doDeleteSubscr)                                         \
   V(BINARY_LSHIFT, 62, doBinaryLshift)                                         \
   V(BINARY_RSHIFT, 63, doBinaryRshift)                                         \
   V(BINARY_AND, 64, doBinaryAnd)                                               \

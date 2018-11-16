@@ -725,6 +725,23 @@ void Interpreter::doStoreSubscr(Context* ctx, word) {
   ctx->frame->pushValue(result);
 }
 
+// opcode 61
+void Interpreter::doDeleteSubscr(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> key(&scope, ctx->frame->popValue());
+  Handle<Object> container(&scope, ctx->frame->popValue());
+  Handle<Object> delitem(&scope, lookupMethod(thread, ctx->frame, container,
+                                              SymbolId::kDunderDelItem));
+  if (delitem->isError()) {
+    UNIMPLEMENTED("throw TypeError");
+  }
+  Object* result = callMethod2(thread, ctx->frame, delitem, container, key);
+  // TODO(T31788973): propagate an exception
+  thread->abortOnPendingException();
+  ctx->frame->pushValue(result);
+}
+
 // opcode 62
 void Interpreter::doBinaryLshift(Context* ctx, word) {
   Thread* thread = ctx->thread;

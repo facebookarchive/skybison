@@ -15,15 +15,16 @@ const BuiltinAttribute ListBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod ListBuiltins::kMethods[] = {
-    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kAppend, nativeTrampoline<append>},
+    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
+    {SymbolId::kDunderDelItem, nativeTrampoline<dunderDelItem>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
-    {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
-    {SymbolId::kExtend, nativeTrampoline<extend>},
-    {SymbolId::kInsert, nativeTrampoline<insert>},
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
+    {SymbolId::kExtend, nativeTrampoline<extend>},
+    {SymbolId::kInsert, nativeTrampoline<insert>},
     {SymbolId::kPop, nativeTrampoline<pop>},
     {SymbolId::kRemove, nativeTrampoline<remove>}};
 
@@ -323,6 +324,36 @@ Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
     Handle<Object> value(&scope, args.get(2));
     list->atPut(idx, *value);
     return None::object();
+  }
+  // TODO(T31826482): Add support for slices
+  return thread->throwTypeErrorFromCString(
+      "list indices must be integers or slices");
+}
+
+Object* ListBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 2 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+
+  if (!thread->runtime()->isInstanceOfList(*self)) {
+    return thread->throwTypeErrorFromCString(
+        "__delitem__() must be called with a list instance as the first "
+        "argument");
+  }
+
+  Handle<List> list(&scope, *self);
+  Object* index = args.get(1);
+  if (index->isSmallInteger()) {
+    word idx = SmallInteger::cast(index)->value();
+    idx = idx < 0 ? list->allocated() + idx : idx;
+    if (idx < 0 || idx >= list->allocated()) {
+      return thread->throwIndexErrorFromCString(
+          "list assignment index out of range");
+    }
+    return thread->runtime()->listPop(list, idx);
   }
   // TODO(T31826482): Add support for slices
   return thread->throwTypeErrorFromCString(

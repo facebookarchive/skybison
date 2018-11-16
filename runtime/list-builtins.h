@@ -15,6 +15,7 @@ class ListBuiltins {
   static Object* append(Thread* thread, Frame* frame, word nargs);
   static Object* extend(Thread* thread, Frame* frame, word nargs);
   static Object* dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderDelItem(Thread* thread, Frame* frame, word nargs);
   static Object* dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static Object* dunderLen(Thread* thread, Frame* frame, word nargs);
   static Object* dunderMul(Thread* thread, Frame* frame, word nargs);

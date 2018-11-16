@@ -138,6 +138,7 @@ class Interpreter {
   static void doInplaceMultiply(Context* ctx, word arg);
   static void doInplaceModulo(Context* ctx, word arg);
   static void doStoreSubscr(Context* ctx, word arg);
+  static void doDeleteSubscr(Context* ctx, word arg);
   static void doBinaryLshift(Context* ctx, word arg);
   static void doBinaryRshift(Context* ctx, word arg);
   static void doBinaryAnd(Context* ctx, word arg);
