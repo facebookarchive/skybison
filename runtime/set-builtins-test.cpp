@@ -1286,4 +1286,81 @@ set.__lt__(set(), set(), set())
   ASSERT_DEATH(runtime.runFromCStr(src), "expected 1 arguments, got 2");
 }
 
+TEST(SetBuiltinsDeathTest, DunderInitWithNonSetFirstArgThrowsTypeError) {
+  const char* src = R"(
+set.__init__([])
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__init__' requires a 'set' object");
+}
+
+TEST(SetBuiltinsDeathTest, DunderInitWithTooFewArgsThrowsTypeError) {
+  const char* src = R"(
+set.__init__()
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__init__' of 'set' object needs an argument");
+}
+
+TEST(SetBuiltinsDeathTest, DunderInitWithTooManyArgsThrowsTypeError) {
+  const char* src = R"(
+set.__init__(set(), None, None, None)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "set expected at most 1 arguments, got 3");
+}
+
+TEST(SetBuiltinsDeathTest, DunderInitWithNonIterableThrowsTypeError) {
+  const char* src = R"(
+set.__init__(set(), None)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "object is not iterable");
+}
+
+TEST(SetBuiltinsTest, DunderInitWithIteratorUpdatesSet) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, runtime.newSet());
+  Set set1(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(2, 0, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderInit(thread, frame, 2));
+  ASSERT_TRUE(result->isNoneType());
+  EXPECT_EQ(set->numItems(), set1->numItems());
+  Object key(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(1);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(2);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+}
+
+TEST(SetBuiltinsTest, DunderInitWithSetSubclassUpdatesSet) {
+  const char* src = R"(
+class Set(set): pass
+
+s = Set([0, 1, 2])
+)";
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  runtime.runFromCStr(src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object s(&scope, moduleAt(&runtime, main, "s"));
+  ASSERT_TRUE(runtime.isInstanceOfSet(s));
+  Object key(&scope, SmallInt::fromWord(0));
+  Set set(&scope, *s);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(1);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(2);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+}
+
 }  // namespace python

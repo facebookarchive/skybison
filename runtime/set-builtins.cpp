@@ -118,12 +118,30 @@ RawObject SetBuiltins::dunderContains(Thread* thread, Frame* frame,
       "descriptor 'pop' requires a 'set' object");
 }
 
-RawObject SetBuiltins::dunderInit(Thread* thread, Frame*, word nargs) {
+RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__init__' of 'set' object needs an argument");
+  }
   if (nargs > 2) {
-    return thread->raiseTypeErrorWithCStr("set expected at most 1 arguments.");
+    return thread->raiseTypeError(runtime->newStrFromFormat(
+        "set expected at most 1 arguments, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__init__' requires a 'set' object");
   }
   if (nargs == 2) {
-    UNIMPLEMENTED("construct set with iterable");
+    Set set(&scope, self);
+    Object iterable(&scope, args.get(1));
+    Object result(&scope, runtime->setUpdate(thread, set, iterable));
+    if (result->isError()) {
+      return *result;
+    }
   }
   return NoneType::object();
 }

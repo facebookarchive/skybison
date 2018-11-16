@@ -2499,15 +2499,15 @@ RawObjectArray Runtime::setGrow(const ObjectArray& data) {
   }
   ObjectArray new_data(&scope, newObjectArray(new_length));
   // Re-insert items
-  for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-    if (!Set::Bucket::isFilled(*data, i)) {
-      continue;
+  for (word i = 0, length = data->length(); i < length;
+       i += Set::Bucket::kNumPointers) {
+    if (Set::Bucket::isFilled(*data, i)) {
+      Object key(&scope, Set::Bucket::key(*data, i));
+      Object hash(&scope, Set::Bucket::hash(*data, i));
+      word index = setLookup<SetLookupType::Insertion>(new_data, key, hash);
+      DCHECK(index != -1, "unexpected index %ld", index);
+      Set::Bucket::set(*new_data, index, *hash, *key);
     }
-    Object key(&scope, Set::Bucket::key(*data, i));
-    Object hash(&scope, Set::Bucket::hash(*data, i));
-    word index = setLookup<SetLookupType::Insertion>(new_data, key, hash);
-    DCHECK(index != -1, "unexpected index %ld", index);
-    Set::Bucket::set(*new_data, index, *hash, *key);
   }
   return *new_data;
 }
@@ -2690,7 +2690,7 @@ bool Runtime::setRemove(const Set& set, const Object& value) {
 
 RawObject Runtime::setUpdate(Thread* thread, const Set& dst,
                              const Object& iterable) {
-  HandleScope scope;
+  HandleScope scope(thread);
   Object elt(&scope, NoneType::object());
   // Special case for lists
   if (iterable->isList()) {
@@ -2726,12 +2726,14 @@ RawObject Runtime::setUpdate(Thread* thread, const Set& dst,
     Set src(&scope, *iterable);
     ObjectArray data(&scope, src->data());
     if (src->numItems() > 0) {
+      Object hash(&scope, NoneType::object());
       for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-        if (!Set::Bucket::isFilled(*data, i)) {
-          continue;
+        if (Set::Bucket::isFilled(*data, i)) {
+          elt = Set::Bucket::key(*data, i);
+          // take hash from data to avoid recomputing it.
+          hash = Set::Bucket::hash(*data, i);
+          setAddWithHash(dst, elt, hash);
         }
-        elt = Set::Bucket::key(*data, i);
-        setAdd(dst, elt);
       }
     }
     return *dst;
