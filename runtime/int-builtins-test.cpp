@@ -1260,6 +1260,29 @@ TEST(IntBuiltinsTest, DunderLeOnBool) {
   EXPECT_EQ(result3, Bool::falseObj());
 }
 
+TEST(IntBuiltinsTest, SmallIntDunderRepr) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMinValue));
+  Handle<Str> str(&scope, SmallIntBuiltins::dunderRepr(thread, frame, 1));
+  EXPECT_PYSTRING_EQ(*str, "-4611686018427387904");
+
+  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMaxValue));
+  str = SmallIntBuiltins::dunderRepr(thread, frame, 1);
+  EXPECT_PYSTRING_EQ(*str, "4611686018427387903");
+
+  frame->setLocal(0, SmallInt::fromWord(0));
+  str = SmallIntBuiltins::dunderRepr(thread, frame, 1);
+  EXPECT_PYSTRING_EQ(*str, "0");
+
+  frame->setLocal(0, SmallInt::fromWord(0xdeadbeef));
+  str = SmallIntBuiltins::dunderRepr(thread, frame, 1);
+  EXPECT_PYSTRING_EQ(*str, "3735928559");
+}
+
 TEST(BoolBuiltinsTest, NewFromNonZeroIntegerReturnsTrue) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();

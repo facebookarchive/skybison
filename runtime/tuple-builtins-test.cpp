@@ -280,13 +280,8 @@ b = ("hello", 2, "world", 4).__repr__()
   Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
 
-  // TODO(dulinr): After int.__repr__ is implemented, fix this.
-  EXPECT_PYSTRING_EQ(*a,
-                     "(<smallint object at 0x2>, <smallint object at 0x4>, "
-                     "<smallint object at 0x6>)");
-  EXPECT_PYSTRING_EQ(
-      *b,
-      "('hello', <smallint object at 0x4>, 'world', <smallint object at 0x8>)");
+  EXPECT_PYSTRING_EQ(*a, "(1, 2, 3)");
+  EXPECT_PYSTRING_EQ(*b, "('hello', 2, 'world', 4)");
 }
 
 TEST(TupleBuiltinsTest, DunderReprWithOnePrimitive) {
@@ -300,8 +295,7 @@ b = ("foo",).__repr__()
   Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Str> b(&scope, moduleAt(&runtime, main, "b"));
 
-  // TODO(dulinr): After int.__repr__ is implemented, fix this.
-  EXPECT_PYSTRING_EQ(*a, "(<smallint object at 0x2>,)");
+  EXPECT_PYSTRING_EQ(*a, "(1,)");
   EXPECT_PYSTRING_EQ(*b, "('foo',)");
 }
 

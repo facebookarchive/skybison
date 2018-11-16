@@ -117,5 +117,15 @@ Object* moduleAt(Runtime* runtime, const Handle<Module>& module,
   return runtime->moduleAt(module, key);
 }
 
+Object* moduleAt(Runtime* runtime, const char* module_name, const char* name) {
+  HandleScope scope;
+  Handle<Object> mod_obj(&scope, findModule(runtime, module_name));
+  if (mod_obj->isNone()) {
+    return Error::object();
+  }
+  Handle<Module> module(mod_obj);
+  return moduleAt(runtime, module, name);
+}
+
 }  // namespace testing
 }  // namespace python

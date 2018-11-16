@@ -43,6 +43,7 @@ class SmallIntBuiltins {
   static Object* dunderMul(Thread* thread, Frame* frame, word nargs);
   static Object* dunderSub(Thread* thread, Frame* frame, word nargs);
   static Object* dunderXor(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderRepr(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinMethod kMethods[];

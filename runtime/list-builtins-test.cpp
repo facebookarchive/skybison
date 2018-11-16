@@ -566,6 +566,18 @@ TEST(ListBuiltinsTest, DunderIterReturnsListIter) {
   ASSERT_TRUE(iter->isListIterator());
 }
 
+TEST(ListBuiltinsTest, DunderRepr) {
+  const char* src = R"(
+result = [1, 2, 'hello'].__repr__()
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Handle<Object> result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*result), "[1, 2, 'hello']");
+}
+
 TEST(ListIteratorBuiltinsTest, CallDunderNext) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();

@@ -55,6 +55,9 @@ class list(bootstrap=True):
     def __init__(self, iterable=()):
         self.extend(iterable)
 
+    def __repr__(self):
+        return "[" + ", ".join([i.__repr__() for i in self]) + "]"
+
 
 class str(bootstrap=True):
     def partition(self, sep):
@@ -223,3 +226,6 @@ class str(bootstrap=True):
             if suffix_match(self, suf, start, end):
                 return True
         return False
+
+    def __str__(self):
+        return self

@@ -752,6 +752,18 @@ a = "\n \t \r \\".__repr__()
   EXPECT_PYSTRING_EQ(*a, "'\\n \\t \\r \\\\'");
 }
 
+TEST(StrBuiltinsTest, DunderStr) {
+  const char* src = R"(
+result = 'Hello, World!'.__str__()
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Handle<Object> result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(*result), "Hello, World!");
+}
+
 TEST(StrBuiltinsTest, JoinWithEmptyArray) {
   Runtime runtime;
   runtime.runFromCStr(R"(

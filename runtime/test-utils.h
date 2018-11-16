@@ -74,5 +74,9 @@ Object* findModule(Runtime* runtime, const char* name);
 Object* moduleAt(Runtime* runtime, const Handle<Module>& module,
                  const char* name);
 
+// Variant of moduleAt() that looks up the module and name at the same time,
+// returning Error::object() if either can't be found.
+Object* moduleAt(Runtime* runtime, const char* module_name, const char* name);
+
 }  // namespace testing
 }  // namespace python

@@ -1,6 +1,7 @@
 #include "int-builtins.h"
 
 #include <cerrno>
+#include <cinttypes>
 #include <climits>
 
 #include "frame.h"
@@ -158,6 +159,7 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
     {SymbolId::kDunderXor, nativeTrampoline<dunderXor>},
+    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
 
 void SmallIntBuiltins::initialize(Runtime* runtime) {
@@ -575,6 +577,24 @@ Object* SmallIntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
     return thread->runtime()->newInt(left ^ right);
   }
   return thread->runtime()->notImplemented();
+}
+
+Object* SmallIntBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCStr("expected no arguments");
+  }
+  Arguments args(frame, nargs);
+  Object* self = args.get(0);
+  if (!self->isSmallInt()) {
+    return thread->throwTypeErrorFromCStr(
+        "__repr__() must be called with int instance as first argument");
+  }
+  word value = SmallInt::cast(self)->value();
+  char buffer[21];
+  int size = std::snprintf(buffer, sizeof(buffer), "%" PRIdPTR, value);
+  (void)size;
+  DCHECK(size < int{sizeof(buffer)}, "buffer too small");
+  return thread->runtime()->newStrFromCStr(buffer);
 }
 
 Object* BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
