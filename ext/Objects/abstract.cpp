@@ -18,16 +18,17 @@ _Py_CheckFunctionResult(PyObject* func, PyObject* result, const char* where) {
 
   if (result == nullptr) {
     if (!err_occurred) {
-      if (func)
+      if (func) {
         PyErr_Format(
             PyExc_SystemError,
             "%R returned NULL without setting an error",
             func);
-      else
+      } else {
         PyErr_Format(
             PyExc_SystemError,
             "%s returned NULL without setting an error",
             where);
+      }
       return nullptr;
     }
   } else {
