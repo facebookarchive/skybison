@@ -665,14 +665,25 @@ Object* Runtime::initializeHeapClass(const char* name, Args... args) {
 
 void Runtime::initializeHeapClasses() {
   initializeObjectClass();
-  initializeHeapClass("byteArray", IntrinsicLayoutId::kByteArray);
+
+  // Abstract classes.
+  initializeHeapClass("str", IntrinsicLayoutId::kString);
+  initializeHeapClass("int", IntrinsicLayoutId::kInteger);
+
+  // Concrete classes.
+  initializeHeapClass("bytearray", IntrinsicLayoutId::kByteArray);
   initializeClassMethodClass();
   initializeHeapClass("code", IntrinsicLayoutId::kCode);
   initializeHeapClass("dictionary", IntrinsicLayoutId::kDictionary);
   initializeHeapClass("double", IntrinsicLayoutId::kDouble);
   initializeHeapClass("ellipsis", IntrinsicLayoutId::kEllipsis);
   initializeHeapClass("function", IntrinsicLayoutId::kFunction);
-  initializeHeapClass("integer", IntrinsicLayoutId::kLargeInteger);
+  initializeHeapClass(
+      "largeint",
+      IntrinsicLayoutId::kLargeInteger,
+      IntrinsicLayoutId::kInteger);
+  initializeHeapClass(
+      "largestr", IntrinsicLayoutId::kLargeString, IntrinsicLayoutId::kString);
   initializeHeapClass("layout", IntrinsicLayoutId::kLayout);
   initializeListClass();
   initializeHeapClass("list_iterator", IntrinsicLayoutId::kListIterator);
@@ -680,9 +691,9 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("module", IntrinsicLayoutId::kModule);
   initializeHeapClass("NotImplementedType", IntrinsicLayoutId::kNotImplemented);
   initializeHeapClass("objectarray", IntrinsicLayoutId::kObjectArray);
-  initializeHeapClass("str", IntrinsicLayoutId::kLargeString);
   initializeHeapClass("range", IntrinsicLayoutId::kRange);
   initializeHeapClass("range_iterator", IntrinsicLayoutId::kRangeIterator);
+  initializeHeapClass("set", IntrinsicLayoutId::kSet);
   initializeHeapClass("slice", IntrinsicLayoutId::kSlice);
   initializeSuperClass();
   initializeTypeClass();
@@ -780,12 +791,10 @@ void Runtime::initializeTypeClass() {
 
 void Runtime::initializeImmediateClasses() {
   initializeHeapClass(
-      "bool", IntrinsicLayoutId::kBoolean, IntrinsicLayoutId::kLargeInteger);
+      "bool", IntrinsicLayoutId::kBoolean, IntrinsicLayoutId::kInteger);
   initializeHeapClass("NoneType", IntrinsicLayoutId::kNone);
   initializeHeapClass(
-      "smallstr",
-      IntrinsicLayoutId::kSmallString,
-      IntrinsicLayoutId::kLargeInteger);
+      "smallstr", IntrinsicLayoutId::kSmallString, IntrinsicLayoutId::kString);
   initializeSmallIntClass();
 }
 
@@ -796,7 +805,7 @@ void Runtime::initializeSmallIntClass() {
       initializeHeapClass(
           "smallint",
           IntrinsicLayoutId::kSmallInteger,
-          IntrinsicLayoutId::kLargeInteger,
+          IntrinsicLayoutId::kInteger,
           IntrinsicLayoutId::kObject));
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for

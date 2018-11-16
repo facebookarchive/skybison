@@ -64,13 +64,15 @@ class Object;
 
 #define INTRINSIC_HEAP_CLASS_NAMES(V) \
   V(Object)                         \
+  V(BoundMethod)                    \
   V(ByteArray)                      \
-  V(Code)                           \
   V(ClassMethod)                    \
+  V(Code)                           \
   V(Dictionary)                     \
   V(Double)                         \
   V(Ellipsis)                       \
   V(Function)                       \
+  V(Integer)                        \
   V(LargeInteger)                   \
   V(LargeString)                    \
   V(Layout)                         \
@@ -80,7 +82,9 @@ class Object;
   V(ObjectArray)                    \
   V(Range)                          \
   V(RangeIterator)                  \
+  V(Set)                            \
   V(Slice)                          \
+  V(String)                         \
   V(Type)                           \
   V(ValueCell)                      \
   V(WeakRef)
@@ -127,6 +131,7 @@ enum IntrinsicLayoutId {
   kDouble,
   kEllipsis,
   kFunction,
+  kInteger,
   kLargeInteger,
   kLargeString,
   kLayout,
@@ -139,6 +144,7 @@ enum IntrinsicLayoutId {
   kRangeIterator,
   kSet,
   kSlice,
+  kString,
   kSuper,
   kType,
   kValueCell,
@@ -154,12 +160,12 @@ class Object {
   word layoutId();
 
   // Immediate objects
-  bool isSmallInteger();
-  bool isSmallString();
+  bool isBoolean();
+  bool isError();
   bool isHeader();
   bool isNone();
-  bool isError();
-  bool isBoolean();
+  bool isSmallInteger();
+  bool isSmallString();
 
   // Heap objects
   bool isHeapObject();

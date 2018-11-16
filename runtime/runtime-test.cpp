@@ -39,6 +39,34 @@ TEST(RuntimeTest, BuiltinsModuleExists) {
   ASSERT_TRUE(runtime.dictionaryAt(modules, name)->isModule());
 }
 
+class BuiltinClassIdsTest : public ::testing::TestWithParam<IntrinsicLayoutId> {
+};
+
+// Make sure that each built-in class has a class object.  Check that its class
+// object points to a layout with the same layout ID as the built-in class.
+TEST_P(BuiltinClassIdsTest, HasClassObject) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Object> elt(&scope, runtime.classAt(GetParam()));
+  ASSERT_TRUE(elt->isClass());
+  Handle<Class> cls(&scope, *elt);
+  Handle<Layout> layout(&scope, cls->instanceLayout());
+  EXPECT_EQ(layout->id(), GetParam());
+}
+
+static const IntrinsicLayoutId kBuiltinHeapClassIds[] = {
+#define ENUM(x) k##x,
+    INTRINSIC_HEAP_CLASS_NAMES(ENUM)
+#undef ENUM
+};
+
+INSTANTIATE_TEST_CASE_P(
+    BuiltinClassIdsParameters,
+    BuiltinClassIdsTest,
+    ::testing::ValuesIn(kBuiltinHeapClassIds),
+    ::testing::PrintToStringParamName());
+
 TEST(RuntimeTest, NewByteArray) {
   Runtime runtime;
   HandleScope scope;
