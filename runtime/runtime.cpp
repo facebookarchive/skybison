@@ -3078,7 +3078,7 @@ ApiHandle* Runtime::asBorrowedApiHandle(Object* obj) {
 
 void Runtime::freeTrackedAllocations() {
   while (tracked_allocations_ != nullptr) {
-    TrackedAllocation::free(this, tracked_allocations_);
+    TrackedAllocation::free(trackedAllocations(), tracked_allocations_);
   }
 
   // Clear the allocated ApiHandles
@@ -3089,55 +3089,6 @@ void Runtime::freeTrackedAllocations() {
     Handle<Object> key(&scope, keys->at(i));
     Object* value = dictionaryAt(dict, key);
     delete static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
-  }
-}
-
-void* TrackedAllocation::malloc(Runtime* runtime, word num_bytes) {
-  word size = sizeof(TrackedAllocation) + num_bytes;
-  TrackedAllocation* alloc = static_cast<TrackedAllocation*>(std::malloc(size));
-
-  // Add to extensions list
-  TrackedAllocation::insert(runtime->trackedAllocations(), alloc);
-  return static_cast<void*>(alloc + 1);
-}
-
-void TrackedAllocation::freePtr(Runtime* runtime, void* ptr) {
-  TrackedAllocation::free(runtime, static_cast<TrackedAllocation*>(ptr) - 1);
-}
-
-void TrackedAllocation::free(Runtime* runtime, TrackedAllocation* alloc) {
-  // Remove from extensions list
-  TrackedAllocation::remove(runtime->trackedAllocations(), alloc);
-  std::free(static_cast<void*>(alloc));
-}
-
-void TrackedAllocation::insert(
-    TrackedAllocation** head,
-    TrackedAllocation* alloc) {
-  if (*head == nullptr) {
-    alloc->previous_ = alloc;
-    alloc->next_ = alloc;
-    *head = alloc;
-  } else {
-    TrackedAllocation* previous = (*head)->previous_;
-    previous->next_ = alloc;
-    (*head)->previous_ = alloc;
-    alloc->previous_ = previous;
-    alloc->next_ = *head;
-  }
-}
-
-void TrackedAllocation::remove(
-    TrackedAllocation** head,
-    TrackedAllocation* alloc) {
-  if ((*head)->next_ == *head) {
-    *head = nullptr;
-  } else {
-    alloc->previous_->next_ = alloc->next_;
-    alloc->next_->previous_ = alloc->previous_;
-    if (*head == alloc) {
-      *head = alloc->next_;
-    }
   }
 }
 

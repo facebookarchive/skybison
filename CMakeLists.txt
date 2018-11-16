@@ -111,6 +111,8 @@ add_library(
   runtime/thread.h
   runtime/time-module.cpp
   runtime/time-module.h
+  runtime/tracked-allocation.cpp
+  runtime/tracked-allocation.h
   runtime/trampolines-inl.h
   runtime/trampolines.cpp
   runtime/trampolines.h
@@ -224,6 +226,7 @@ add_library(
   runtime/test-utils.h
   runtime/thread-test.cpp
   runtime/time-module-test.cpp
+  runtime/tracked-allocation-test.cpp
   runtime/trampolines-test.cpp
   runtime/type-builtins-test.cpp
   runtime/utils-test.cpp

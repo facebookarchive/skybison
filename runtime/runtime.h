@@ -6,6 +6,7 @@
 #include "heap.h"
 #include "interpreter.h"
 #include "symbols.h"
+#include "tracked-allocation.h"
 #include "view.h"
 
 typedef struct _object PyObject;
@@ -80,30 +81,6 @@ enum class ExtensionTypes {
   kNone,
   kStr,
   kTuple,
-};
-
-class TrackedAllocation {
- public:
-  static void* malloc(Runtime* runtime, word num_bytes);
-  static void freePtr(Runtime* runtime, void* ptr);
-  static void free(Runtime* runtime, TrackedAllocation* alloc);
-
-  static void insert(TrackedAllocation** head, TrackedAllocation* alloc);
-  static void remove(TrackedAllocation** head, TrackedAllocation* alloc);
-
-  TrackedAllocation* previous() {
-    return previous_;
-  }
-
-  TrackedAllocation* next() {
-    return next_;
-  }
-
- private:
-  TrackedAllocation* previous_;
-  TrackedAllocation* next_;
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(TrackedAllocation);
 };
 
 class Runtime {
