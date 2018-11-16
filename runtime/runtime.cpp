@@ -768,7 +768,7 @@ ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
     dictionaryLookup(newData, key, hash, &index);
     assert(index != -1);
     Bucket newBucket(newData, index);
-    newBucket.set(*key, *hash, oldBucket.value());
+    newBucket.set(*hash, *key, oldBucket.value());
   }
   return *newData;
 }

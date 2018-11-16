@@ -158,28 +158,36 @@ TEST(DictionaryTest, GrowWhenFull) {
   ASSERT_TRUE(dict->data()->isObjectArray());
   word initDataSize = ObjectArray::cast(dict->data())->length();
 
+  auto makeKey = [&runtime](int i) {
+    byte text[]{"0123456789abcdeghiklmn"};
+    return runtime.newStringWithAll(view(text + i % 10, 10));
+  };
+  auto makeValue = [](int i) { return SmallInteger::fromWord(i); };
+
   // Fill in one fewer keys than would require growing the underlying object
   // array again
-  word numKeys = Runtime::kInitialDictionaryCapacity + 1;
+  word numKeys = Runtime::kInitialDictionaryCapacity;
   for (int i = 1; i < numKeys; i++) {
-    Handle<Object> key(&scope, SmallInteger::fromWord(i));
-    runtime.dictionaryAtPut(dict, key, key);
+    Handle<Object> key(&scope, makeKey(i));
+    Handle<Object> value(&scope, makeValue(i));
+    runtime.dictionaryAtPut(dict, key, value);
   }
 
   // Add another key which should force us to double the capacity
-  Handle<Object> straw(&scope, SmallInteger::fromWord(numKeys));
-  runtime.dictionaryAtPut(dict, straw, straw);
+  Handle<Object> straw(&scope, makeKey(numKeys));
+  Handle<Object> strawValue(&scope, makeValue(numKeys));
+  runtime.dictionaryAtPut(dict, straw, strawValue);
   ASSERT_TRUE(dict->data()->isObjectArray());
   word newDataSize = ObjectArray::cast(dict->data())->length();
   EXPECT_EQ(newDataSize, Runtime::kDictionaryGrowthFactor * initDataSize);
 
   // Make sure we can still read all the stored keys/values
-  for (int i = 0; i < numKeys; i++) {
-    Object* value;
-    Handle<Object> key(&scope, SmallInteger::fromWord(i));
+  for (int i = 1; i <= numKeys; i++) {
+    Object* value = None::object();
+    Handle<Object> key(&scope, makeKey(i));
     bool found = runtime.dictionaryAt(dict, key, &value);
     ASSERT_TRUE(found);
-    EXPECT_EQ(SmallInteger::cast(value)->value(), i);
+    EXPECT_TRUE(Object::equals(value, makeValue(i)));
   }
 }
 
