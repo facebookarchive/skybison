@@ -6,7 +6,7 @@
 
 namespace python {
 
-extern "C" PyObject* PyList_New(Py_ssize_t size) {
+PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
   if (size < 0) {
     return nullptr;
   }
@@ -23,11 +23,11 @@ extern "C" PyObject* PyList_New(Py_ssize_t size) {
   return ApiHandle::fromObject(*list);
 }
 
-extern "C" int PyList_CheckExact_Func(PyObject* obj) {
+PY_EXPORT int PyList_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isList();
 }
 
-extern "C" int PyList_Check_Func(PyObject* obj) {
+PY_EXPORT int PyList_Check_Func(PyObject* obj) {
   if (PyList_CheckExact_Func(obj)) {
     return true;
   }
@@ -35,46 +35,46 @@ extern "C" int PyList_Check_Func(PyObject* obj) {
                                                   LayoutId::kList);
 }
 
-extern "C" PyObject* PyList_AsTuple(PyObject* /* v */) {
+PY_EXPORT PyObject* PyList_AsTuple(PyObject* /* v */) {
   UNIMPLEMENTED("PyList_AsTuple");
 }
 
-extern "C" PyObject* PyList_GetItem(PyObject* /* p */, Py_ssize_t /* i */) {
+PY_EXPORT PyObject* PyList_GetItem(PyObject* /* p */, Py_ssize_t /* i */) {
   UNIMPLEMENTED("PyList_GetItem");
 }
 
-extern "C" int PyList_Reverse(PyObject* /* v */) {
+PY_EXPORT int PyList_Reverse(PyObject* /* v */) {
   UNIMPLEMENTED("PyList_Reverse");
 }
 
-extern "C" int PyList_SetItem(PyObject* /* p */, Py_ssize_t /* i */,
-                              PyObject* /* m */) {
+PY_EXPORT int PyList_SetItem(PyObject* /* p */, Py_ssize_t /* i */,
+                             PyObject* /* m */) {
   UNIMPLEMENTED("PyList_SetItem");
 }
 
-extern "C" int PyList_Append(PyObject* /* p */, PyObject* /* m */) {
+PY_EXPORT int PyList_Append(PyObject* /* p */, PyObject* /* m */) {
   UNIMPLEMENTED("PyList_Append");
 }
 
-extern "C" PyObject* PyList_GetSlice(PyObject* /* a */, Py_ssize_t /* w */,
-                                     Py_ssize_t /* h */) {
+PY_EXPORT PyObject* PyList_GetSlice(PyObject* /* a */, Py_ssize_t /* w */,
+                                    Py_ssize_t /* h */) {
   UNIMPLEMENTED("PyList_GetSlice");
 }
 
-extern "C" int PyList_Insert(PyObject* /* p */, Py_ssize_t /* e */,
-                             PyObject* /* m */) {
+PY_EXPORT int PyList_Insert(PyObject* /* p */, Py_ssize_t /* e */,
+                            PyObject* /* m */) {
   UNIMPLEMENTED("PyList_Insert");
 }
 
-extern "C" int PyList_SetSlice(PyObject* /* a */, Py_ssize_t /* w */,
-                               Py_ssize_t /* h */, PyObject* /* v */) {
+PY_EXPORT int PyList_SetSlice(PyObject* /* a */, Py_ssize_t /* w */,
+                              Py_ssize_t /* h */, PyObject* /* v */) {
   UNIMPLEMENTED("PyList_SetSlice");
 }
 
-extern "C" Py_ssize_t PyList_Size(PyObject* /* p */) {
+PY_EXPORT Py_ssize_t PyList_Size(PyObject* /* p */) {
   UNIMPLEMENTED("PyList_Size");
 }
 
-extern "C" int PyList_Sort(PyObject* /* v */) { UNIMPLEMENTED("PyList_Sort"); }
+PY_EXPORT int PyList_Sort(PyObject* /* v */) { UNIMPLEMENTED("PyList_Sort"); }
 
 }  // namespace python

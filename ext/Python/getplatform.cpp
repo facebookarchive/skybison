@@ -2,6 +2,6 @@
 
 namespace python {
 
-extern "C" const char* Py_GetPlatform(void) { UNIMPLEMENTED("Py_GetPlatform"); }
+PY_EXPORT const char* Py_GetPlatform(void) { UNIMPLEMENTED("Py_GetPlatform"); }
 
 }  // namespace python

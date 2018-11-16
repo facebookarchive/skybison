@@ -2,11 +2,11 @@
 
 namespace python {
 
-extern "C" wchar_t* Py_DecodeLocale(const char* /* g */, size_t* /* n */) {
+PY_EXPORT wchar_t* Py_DecodeLocale(const char* /* g */, size_t* /* n */) {
   UNIMPLEMENTED("Py_DecodeLocale");
 }
 
-extern "C" char* Py_EncodeLocale(const wchar_t* /* t */, size_t* /* s */) {
+PY_EXPORT char* Py_EncodeLocale(const wchar_t* /* t */, size_t* /* s */) {
   UNIMPLEMENTED("Py_EncodeLocale");
 }
 

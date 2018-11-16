@@ -5,7 +5,7 @@
 
 namespace python {
 
-extern "C" PyObject* PyFloat_FromDouble(double fval) {
+PY_EXPORT PyObject* PyFloat_FromDouble(double fval) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -13,15 +13,15 @@ extern "C" PyObject* PyFloat_FromDouble(double fval) {
   return ApiHandle::fromObject(*flt);
 }
 
-extern "C" double PyFloat_AsDouble(PyObject*) {
+PY_EXPORT double PyFloat_AsDouble(PyObject*) {
   UNIMPLEMENTED("PyFloat_AsDouble");
 }
 
-extern "C" int PyFloat_CheckExact_Func(PyObject* obj) {
+PY_EXPORT int PyFloat_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isFloat();
 }
 
-extern "C" int PyFloat_Check_Func(PyObject* obj) {
+PY_EXPORT int PyFloat_Check_Func(PyObject* obj) {
   if (PyFloat_CheckExact_Func(obj)) {
     return true;
   }
@@ -29,14 +29,14 @@ extern "C" int PyFloat_Check_Func(PyObject* obj) {
                                                   LayoutId::kFloat);
 }
 
-extern "C" PyObject* PyFloat_FromString(PyObject* /* v */) {
+PY_EXPORT PyObject* PyFloat_FromString(PyObject* /* v */) {
   UNIMPLEMENTED("PyFloat_FromString");
 }
 
-extern "C" PyObject* PyFloat_GetInfo(void) { UNIMPLEMENTED("PyFloat_GetInfo"); }
+PY_EXPORT PyObject* PyFloat_GetInfo(void) { UNIMPLEMENTED("PyFloat_GetInfo"); }
 
-extern "C" double PyFloat_GetMax(void) { UNIMPLEMENTED("PyFloat_GetMax"); }
+PY_EXPORT double PyFloat_GetMax(void) { UNIMPLEMENTED("PyFloat_GetMax"); }
 
-extern "C" double PyFloat_GetMin(void) { UNIMPLEMENTED("PyFloat_GetMin"); }
+PY_EXPORT double PyFloat_GetMin(void) { UNIMPLEMENTED("PyFloat_GetMin"); }
 
 }  // namespace python

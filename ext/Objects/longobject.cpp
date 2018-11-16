@@ -6,11 +6,11 @@
 
 namespace python {
 
-extern "C" int PyLong_CheckExact_Func(PyObject* obj) {
+PY_EXPORT int PyLong_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isInt();
 }
 
-extern "C" int PyLong_Check_Func(PyObject* obj) {
+PY_EXPORT int PyLong_Check_Func(PyObject* obj) {
   if (PyLong_CheckExact_Func(obj)) {
     return true;
   }
@@ -18,7 +18,7 @@ extern "C" int PyLong_Check_Func(PyObject* obj) {
                                                   LayoutId::kInt);
 }
 
-extern "C" PyObject* PyLong_FromLong(long ival) {
+PY_EXPORT PyObject* PyLong_FromLong(long ival) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -28,23 +28,23 @@ extern "C" PyObject* PyLong_FromLong(long ival) {
   return ApiHandle::fromObject(*value);
 }
 
-extern "C" PyObject* PyLong_FromLongLong(long long) {
+PY_EXPORT PyObject* PyLong_FromLongLong(long long) {
   UNIMPLEMENTED("PyLong_FromLongLong");
 }
 
-extern "C" PyObject* PyLong_FromUnsignedLong(unsigned long) {
+PY_EXPORT PyObject* PyLong_FromUnsignedLong(unsigned long) {
   UNIMPLEMENTED("PyLong_FromUnsignedLong");
 }
 
-extern "C" PyObject* PyLong_FromUnsignedLongLong(unsigned long long) {
+PY_EXPORT PyObject* PyLong_FromUnsignedLongLong(unsigned long long) {
   UNIMPLEMENTED("PyLong_FromUnsignedLongLong");
 }
 
-extern "C" PyObject* PyLong_FromSsize_t(Py_ssize_t) {
+PY_EXPORT PyObject* PyLong_FromSsize_t(Py_ssize_t) {
   UNIMPLEMENTED("PyLong_FromSsize_t");
 }
 
-extern "C" long PyLong_AsLong(PyObject* pylong) {
+PY_EXPORT long PyLong_AsLong(PyObject* pylong) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
 
@@ -64,68 +64,68 @@ extern "C" long PyLong_AsLong(PyObject* pylong) {
   return integer->asWord();
 }
 
-extern "C" long long PyLong_AsLongLong(PyObject*) {
+PY_EXPORT long long PyLong_AsLongLong(PyObject*) {
   UNIMPLEMENTED("PYLong_AsLongLong");
 }
 
-extern "C" unsigned long PyLong_AsUnsignedLong(PyObject*) {
+PY_EXPORT unsigned long PyLong_AsUnsignedLong(PyObject*) {
   UNIMPLEMENTED("PyLong_AsUnsignedLong");
 }
 
-extern "C" unsigned long long PyLong_AsUnsignedLongLong(PyObject*) {
+PY_EXPORT unsigned long long PyLong_AsUnsignedLongLong(PyObject*) {
   UNIMPLEMENTED("PyLong_AsUnsignedLongLong");
 }
 
-extern "C" Py_ssize_t PyLong_AsSsize_t(PyObject*) {
+PY_EXPORT Py_ssize_t PyLong_AsSsize_t(PyObject*) {
   UNIMPLEMENTED("PyLong_AsSsize_t");
 }
 
-extern "C" long PyLong_AsLongAndOverflow(PyObject* /* v */, int* /* w */) {
+PY_EXPORT long PyLong_AsLongAndOverflow(PyObject* /* v */, int* /* w */) {
   UNIMPLEMENTED("PyLong_AsLongAndOverflow");
 }
 
-extern "C" PyObject* PyLong_FromDouble(double /* l */) {
+PY_EXPORT PyObject* PyLong_FromDouble(double /* l */) {
   UNIMPLEMENTED("PyLong_FromDouble");
 }
 
-extern "C" PyObject* PyLong_FromSize_t(size_t /* l */) {
+PY_EXPORT PyObject* PyLong_FromSize_t(size_t /* l */) {
   UNIMPLEMENTED("PyLong_FromSize_t");
 }
 
-extern "C" PyObject* PyLong_FromString(const char* /* r */, char** /* pend */,
-                                       int /* e */) {
+PY_EXPORT PyObject* PyLong_FromString(const char* /* r */, char** /* pend */,
+                                      int /* e */) {
   UNIMPLEMENTED("PyLong_FromString");
 }
 
-extern "C" double PyLong_AsDouble(PyObject* /* v */) {
+PY_EXPORT double PyLong_AsDouble(PyObject* /* v */) {
   UNIMPLEMENTED("PyLong_AsDouble");
 }
 
-extern "C" long long PyLong_AsLongLongAndOverflow(PyObject* /* v */,
-                                                  int* /* w */) {
+PY_EXPORT long long PyLong_AsLongLongAndOverflow(PyObject* /* v */,
+                                                 int* /* w */) {
   UNIMPLEMENTED("PyLong_AsLongLongAndOverflow");
 }
 
-extern "C" size_t PyLong_AsSize_t(PyObject* /* v */) {
+PY_EXPORT size_t PyLong_AsSize_t(PyObject* /* v */) {
   UNIMPLEMENTED("PyLong_AsSize_t");
 }
 
-extern "C" unsigned long long PyLong_AsUnsignedLongLongMask(PyObject* /* p */) {
+PY_EXPORT unsigned long long PyLong_AsUnsignedLongLongMask(PyObject* /* p */) {
   UNIMPLEMENTED("PyLong_AsUnsignedLongLongMask");
 }
 
-extern "C" unsigned long PyLong_AsUnsignedLongMask(PyObject* /* p */) {
+PY_EXPORT unsigned long PyLong_AsUnsignedLongMask(PyObject* /* p */) {
   UNIMPLEMENTED("PyLong_AsUnsignedLongMask");
 }
 
-extern "C" void* PyLong_AsVoidPtr(PyObject* /* v */) {
+PY_EXPORT void* PyLong_AsVoidPtr(PyObject* /* v */) {
   UNIMPLEMENTED("PyLong_AsVoidPtr");
 }
 
-extern "C" PyObject* PyLong_FromVoidPtr(void* /* p */) {
+PY_EXPORT PyObject* PyLong_FromVoidPtr(void* /* p */) {
   UNIMPLEMENTED("PyLong_FromVoidPtr");
 }
 
-extern "C" PyObject* PyLong_GetInfo(void) { UNIMPLEMENTED("PyLong_GetInfo"); }
+PY_EXPORT PyObject* PyLong_GetInfo(void) { UNIMPLEMENTED("PyLong_GetInfo"); }
 
 }  // namespace python

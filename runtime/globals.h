@@ -62,6 +62,8 @@ const int kNanosecondsPerSecond =
   TypeName() = delete;                                                         \
   DISALLOW_COPY_AND_ASSIGN(TypeName)
 
+#define PY_EXPORT extern "C"
+
 #define OFFSET_OF(type, field)                                                 \
   (reinterpret_cast<intptr_t>(&(reinterpret_cast<type*>(16)->field)) - 16)
 

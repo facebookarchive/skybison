@@ -6,19 +6,19 @@
 
 namespace python {
 
-extern "C" PyObject* PyTrue_Ptr() {
+PY_EXPORT PyObject* PyTrue_Ptr() {
   return ApiHandle::fromObject(Bool::trueObj());
 }
 
-extern "C" PyObject* PyFalse_Ptr() {
+PY_EXPORT PyObject* PyFalse_Ptr() {
   return ApiHandle::fromObject(Bool::falseObj());
 }
 
-extern "C" int PyBool_Check_Func(PyObject* obj) {
+PY_EXPORT int PyBool_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isBool();
 }
 
-extern "C" PyObject* PyBool_FromLong(long v) {
+PY_EXPORT PyObject* PyBool_FromLong(long v) {
   return ApiHandle::fromObject(Bool::fromBool(v));
 }
 

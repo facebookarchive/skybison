@@ -4,11 +4,11 @@ namespace python {
 
 struct PyFrameObject;
 
-extern "C" int PyTraceBack_Here(PyFrameObject* /* e */) {
+PY_EXPORT int PyTraceBack_Here(PyFrameObject* /* e */) {
   UNIMPLEMENTED("PyTraceBack_Here");
 }
 
-extern "C" int PyTraceBack_Print(PyObject* /* v */, PyObject* /* f */) {
+PY_EXPORT int PyTraceBack_Print(PyObject* /* v */, PyObject* /* f */) {
   UNIMPLEMENTED("PyTraceBack_Print");
 }
 

@@ -7,7 +7,7 @@
 
 namespace python {
 
-extern "C" PyObject* PyTuple_New(Py_ssize_t length) {
+PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -16,11 +16,11 @@ extern "C" PyObject* PyTuple_New(Py_ssize_t length) {
   return ApiHandle::fromObject(*tuple);
 }
 
-extern "C" int PyTuple_CheckExact_Func(PyObject* obj) {
+PY_EXPORT int PyTuple_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isObjectArray();
 }
 
-extern "C" int PyTuple_Check_Func(PyObject* obj) {
+PY_EXPORT int PyTuple_Check_Func(PyObject* obj) {
   if (PyTuple_CheckExact_Func(obj)) {
     return true;
   }
@@ -28,7 +28,7 @@ extern "C" int PyTuple_Check_Func(PyObject* obj) {
                                                   LayoutId::kObjectArray);
 }
 
-extern "C" Py_ssize_t PyTuple_Size(PyObject* pytuple) {
+PY_EXPORT Py_ssize_t PyTuple_Size(PyObject* pytuple) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
 
@@ -41,8 +41,8 @@ extern "C" Py_ssize_t PyTuple_Size(PyObject* pytuple) {
   return tuple->length();
 }
 
-extern "C" int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
-                               PyObject* pyitem) {
+PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
+                              PyObject* pyitem) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
 
@@ -63,7 +63,7 @@ extern "C" int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
   return 0;
 }
 
-extern "C" PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
+PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
 
@@ -80,7 +80,7 @@ extern "C" PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
   return ApiHandle::fromBorrowedObject(tuple->at(pos));
 }
 
-extern "C" PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
+PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -97,12 +97,12 @@ extern "C" PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   return ApiHandle::fromObject(*tuple);
 }
 
-extern "C" int PyTuple_ClearFreeList(void) {
+PY_EXPORT int PyTuple_ClearFreeList(void) {
   UNIMPLEMENTED("PyTuple_ClearFreeList");
 }
 
-extern "C" PyObject* PyTuple_GetSlice(PyObject* /* p */, Py_ssize_t /* i */,
-                                      Py_ssize_t /* j */) {
+PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* /* p */, Py_ssize_t /* i */,
+                                     Py_ssize_t /* j */) {
   UNIMPLEMENTED("PyTuple_GetSlice");
 }
 

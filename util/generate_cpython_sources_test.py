@@ -150,7 +150,7 @@ typedef int FooBar;
 
     def test_pyfunction_regex_returns_multiple_symbols(self):
         lines = """
-extern "C" type* foo_function() {
+PY_EXPORT type* foo_function() {
   // Implmementation
 }
 
@@ -158,12 +158,12 @@ void Foo_Type_Init(void) {
   // Implementation
 }
 
-extern "C" PyTypeObject *bar_function() {
+PY_EXPORT PyTypeObject *bar_function() {
   // Implmementation
 }
 
-extern "C" PyObject *baz_function_with_many_args(PyObject *, PyObject *,
-                                                 PyObject *, PyObject *) {
+PY_EXPORT PyObject *baz_function_with_many_args(PyObject *, PyObject *,
+                                                PyObject *, PyObject *) {
   // Implementation
 }
 """

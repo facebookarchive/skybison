@@ -2,11 +2,11 @@
 
 namespace python {
 
-extern "C" PyObject* PySeqIter_New(PyObject* /* q */) {
+PY_EXPORT PyObject* PySeqIter_New(PyObject* /* q */) {
   UNIMPLEMENTED("PySeqIter_New");
 }
 
-extern "C" PyObject* PyCallIter_New(PyObject* /* e */, PyObject* /* l */) {
+PY_EXPORT PyObject* PyCallIter_New(PyObject* /* e */, PyObject* /* l */) {
   UNIMPLEMENTED("PyCallIter_New");
 }
 

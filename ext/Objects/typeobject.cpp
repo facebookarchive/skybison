@@ -15,11 +15,11 @@ namespace python {
 struct PyType_Spec;
 struct _Py_Identifier;
 
-extern "C" int PyType_CheckExact_Func(PyObject* obj) {
+PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isType();
 }
 
-extern "C" int PyType_Check_Func(PyObject* obj) {
+PY_EXPORT int PyType_Check_Func(PyObject* obj) {
   if (PyType_CheckExact_Func(obj)) {
     return true;
   }
@@ -27,11 +27,11 @@ extern "C" int PyType_Check_Func(PyObject* obj) {
                                                   LayoutId::kType);
 }
 
-extern "C" unsigned long PyType_GetFlags(PyTypeObject* type) {
+PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type) {
   return type->tp_flags;
 }
 
-extern "C" int PyType_Ready(PyTypeObject* type) {
+PY_EXPORT int PyType_Ready(PyTypeObject* type) {
   // Type is already initialized
   if (type->tp_flags & Py_TPFLAGS_READY) {
     return 0;
@@ -107,21 +107,20 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   return 0;
 }
 
-extern "C" unsigned int PyType_ClearCache(void) {
+PY_EXPORT unsigned int PyType_ClearCache(void) {
   UNIMPLEMENTED("PyType_ClearCache");
 }
 
-extern "C" PyObject* PyType_FromSpec(PyType_Spec* /* c */) {
+PY_EXPORT PyObject* PyType_FromSpec(PyType_Spec* /* c */) {
   UNIMPLEMENTED("PyType_FromSpec");
 }
 
-extern "C" PyObject* PyType_FromSpecWithBases(PyType_Spec* /* c */,
-                                              PyObject* /* s */) {
+PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* /* c */,
+                                             PyObject* /* s */) {
   UNIMPLEMENTED("PyType_FromSpecWithBases");
 }
 
-extern "C" PyObject* PyType_GenericAlloc(PyTypeObject* type,
-                                         Py_ssize_t nitems) {
+PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type, Py_ssize_t nitems) {
   size_t size = Utils::roundUp(
       type->tp_basicsize + ((nitems + 1) * type->tp_itemsize), kWordSize);
   PyObject* obj = static_cast<PyObject*>(PyObject_Calloc(1, size));
@@ -136,25 +135,25 @@ extern "C" PyObject* PyType_GenericAlloc(PyTypeObject* type,
   return obj;
 }
 
-extern "C" PyObject* PyType_GenericNew(PyTypeObject* /* e */, PyObject* /* s */,
-                                       PyObject* /* s */) {
+PY_EXPORT PyObject* PyType_GenericNew(PyTypeObject* /* e */, PyObject* /* s */,
+                                      PyObject* /* s */) {
   UNIMPLEMENTED("PyType_GenericNew");
 }
 
-extern "C" void* PyType_GetSlot(PyTypeObject* /* e */, int /* t */) {
+PY_EXPORT void* PyType_GetSlot(PyTypeObject* /* e */, int /* t */) {
   UNIMPLEMENTED("PyType_GetSlot");
 }
 
-extern "C" int PyType_IsSubtype(PyTypeObject* /* a */, PyTypeObject* /* b */) {
+PY_EXPORT int PyType_IsSubtype(PyTypeObject* /* a */, PyTypeObject* /* b */) {
   UNIMPLEMENTED("PyType_IsSubtype");
 }
 
-extern "C" void PyType_Modified(PyTypeObject* /* e */) {
+PY_EXPORT void PyType_Modified(PyTypeObject* /* e */) {
   UNIMPLEMENTED("PyType_Modified");
 }
 
-extern "C" PyObject* _PyObject_LookupSpecial(PyObject* /* f */,
-                                             _Py_Identifier* /* d */) {
+PY_EXPORT PyObject* _PyObject_LookupSpecial(PyObject* /* f */,
+                                            _Py_Identifier* /* d */) {
   UNIMPLEMENTED("_PyObject_LookupSpecial");
 }
 

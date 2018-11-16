@@ -2,8 +2,7 @@
 
 namespace python {
 
-extern "C" long PyOS_strtol(const char* /* r */, char** /* ptr */,
-                            int /* e */) {
+PY_EXPORT long PyOS_strtol(const char* /* r */, char** /* ptr */, int /* e */) {
   UNIMPLEMENTED("PyOS_strtol");
 }
 

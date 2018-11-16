@@ -2,17 +2,15 @@
 
 namespace python {
 
-extern "C" int PyErr_CheckSignals(void) { UNIMPLEMENTED("PyErr_CheckSignals"); }
+PY_EXPORT int PyErr_CheckSignals(void) { UNIMPLEMENTED("PyErr_CheckSignals"); }
 
-extern "C" void PyErr_SetInterrupt(void) {
-  UNIMPLEMENTED("PyErr_SetInterrupt");
-}
+PY_EXPORT void PyErr_SetInterrupt(void) { UNIMPLEMENTED("PyErr_SetInterrupt"); }
 
-extern "C" void PyOS_InitInterrupts(void) {
+PY_EXPORT void PyOS_InitInterrupts(void) {
   UNIMPLEMENTED("PyOS_InitInterrupts");
 }
 
-extern "C" int PyOS_InterruptOccurred(void) {
+PY_EXPORT int PyOS_InterruptOccurred(void) {
   UNIMPLEMENTED("PyOS_InterruptOccurred");
 }
 

@@ -40,7 +40,7 @@ SOURCE_SYMBOL_REGEX = {
         pos=3,
     ),
     "pyfunction": SymbolRegex(
-        regex=re.compile('^extern "C"(?:[^{]|\n)*{', re.MULTILINE), pos=3
+        regex=re.compile("^PY_EXPORT(?:[^{]|\n)*{", re.MULTILINE), pos=2
     ),
 }
 

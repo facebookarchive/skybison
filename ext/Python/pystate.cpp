@@ -6,100 +6,100 @@ struct PyInterpreterState;
 struct PyThreadState;
 typedef enum { PyGILState_LOCKED, PyGILState_UNLOCKED } PyGILState_STATE;
 
-extern "C" PyGILState_STATE PyGILState_Ensure(void) {
+PY_EXPORT PyGILState_STATE PyGILState_Ensure(void) {
   UNIMPLEMENTED("PyGILState_Ensure");
 }
 
-extern "C" PyThreadState* PyGILState_GetThisThreadState(void) {
+PY_EXPORT PyThreadState* PyGILState_GetThisThreadState(void) {
   UNIMPLEMENTED("PyGILState_GetThisThreadState");
 }
 
-extern "C" void PyGILState_Release(PyGILState_STATE /* e */) {
+PY_EXPORT void PyGILState_Release(PyGILState_STATE /* e */) {
   UNIMPLEMENTED("PyGILState_Release");
 }
 
-extern "C" void PyInterpreterState_Clear(PyInterpreterState* /* p */) {
+PY_EXPORT void PyInterpreterState_Clear(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyInterpreterState_Clear");
 }
 
-extern "C" void PyInterpreterState_Delete(PyInterpreterState* /* p */) {
+PY_EXPORT void PyInterpreterState_Delete(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyInterpreterState_Delete");
 }
 
-extern "C" int PyState_AddModule(PyObject* /* e */,
-                                 struct PyModuleDef* /* f */) {
+PY_EXPORT int PyState_AddModule(PyObject* /* e */,
+                                struct PyModuleDef* /* f */) {
   UNIMPLEMENTED("PyState_AddModule");
 }
 
-extern "C" PyObject* PyState_FindModule(struct PyModuleDef* /* e */) {
+PY_EXPORT PyObject* PyState_FindModule(struct PyModuleDef* /* e */) {
   UNIMPLEMENTED("PyState_FindModule");
 }
 
-extern "C" int PyState_RemoveModule(struct PyModuleDef* /* f */) {
+PY_EXPORT int PyState_RemoveModule(struct PyModuleDef* /* f */) {
   UNIMPLEMENTED("PyState_RemoveModule");
 }
 
-extern "C" void PyThreadState_Clear(PyThreadState* /* e */) {
+PY_EXPORT void PyThreadState_Clear(PyThreadState* /* e */) {
   UNIMPLEMENTED("PyThreadState_Clear");
 }
 
-extern "C" void PyThreadState_Delete(PyThreadState* /* e */) {
+PY_EXPORT void PyThreadState_Delete(PyThreadState* /* e */) {
   UNIMPLEMENTED("PyThreadState_Delete");
 }
 
-extern "C" void PyThreadState_DeleteCurrent() {
+PY_EXPORT void PyThreadState_DeleteCurrent() {
   UNIMPLEMENTED("PyThreadState_DeleteCurrent");
 }
 
-extern "C" PyThreadState* PyThreadState_Get(void) {
+PY_EXPORT PyThreadState* PyThreadState_Get(void) {
   UNIMPLEMENTED("PyThreadState_Get");
 }
 
-extern "C" PyObject* PyThreadState_GetDict(void) {
+PY_EXPORT PyObject* PyThreadState_GetDict(void) {
   UNIMPLEMENTED("PyThreadState_GetDict");
 }
 
-extern "C" PyThreadState* PyThreadState_New(PyInterpreterState* /* p */) {
+PY_EXPORT PyThreadState* PyThreadState_New(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyThreadState_New");
 }
 
-extern "C" int PyThreadState_SetAsyncExc(unsigned long /* d */,
-                                         PyObject* /* c */) {
+PY_EXPORT int PyThreadState_SetAsyncExc(unsigned long /* d */,
+                                        PyObject* /* c */) {
   UNIMPLEMENTED("PyThreadState_SetAsyncExc");
 }
 
-extern "C" PyThreadState* PyThreadState_Swap(PyThreadState* /* s */) {
+PY_EXPORT PyThreadState* PyThreadState_Swap(PyThreadState* /* s */) {
   UNIMPLEMENTED("PyThreadState_Swap");
 }
 
-extern "C" int _PyState_AddModule(PyObject* /* e */,
-                                  struct PyModuleDef* /* f */) {
+PY_EXPORT int _PyState_AddModule(PyObject* /* e */,
+                                 struct PyModuleDef* /* f */) {
   UNIMPLEMENTED("_PyState_AddModule");
 }
 
-extern "C" void _PyThreadState_Init(PyThreadState* /* e */) {
+PY_EXPORT void _PyThreadState_Init(PyThreadState* /* e */) {
   UNIMPLEMENTED("_PyThreadState_Init");
 }
 
-extern "C" PyThreadState* _PyThreadState_Prealloc(PyInterpreterState* /* p */) {
+PY_EXPORT PyThreadState* _PyThreadState_Prealloc(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("_PyThreadState_Prealloc");
 }
 
-extern "C" PyInterpreterState* PyInterpreterState_Head(void) {
+PY_EXPORT PyInterpreterState* PyInterpreterState_Head(void) {
   UNIMPLEMENTED("PyInterpreterState_Head");
 }
 
-extern "C" PyInterpreterState* PyInterpreterState_Next(
+PY_EXPORT PyInterpreterState* PyInterpreterState_Next(
     PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyInterpreterState_Next");
 }
 
-extern "C" PyThreadState* PyInterpreterState_ThreadHead(
+PY_EXPORT PyThreadState* PyInterpreterState_ThreadHead(
     PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyInterpreterState_ThreadHead");
 }
 
-extern "C" void _PyState_ClearModules(void) {
+PY_EXPORT void _PyState_ClearModules(void) {
   UNIMPLEMENTED("_PyState_ClearModules");
 }
 

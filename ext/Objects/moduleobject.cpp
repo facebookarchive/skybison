@@ -6,7 +6,7 @@
 
 namespace python {
 
-extern "C" PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
+PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -26,7 +26,7 @@ extern "C" PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   return ApiHandle::fromObject(*module);
 }
 
-extern "C" PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
+PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Handle<Object> module_obj(&scope,
@@ -43,7 +43,7 @@ extern "C" PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
   return static_cast<PyModuleDef*>(def->asCPtr());
 }
 
-extern "C" PyObject* PyModule_GetDict(PyObject* pymodule) {
+PY_EXPORT PyObject* PyModule_GetDict(PyObject* pymodule) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
 
@@ -51,52 +51,52 @@ extern "C" PyObject* PyModule_GetDict(PyObject* pymodule) {
   return ApiHandle::fromObject(module->dict());
 }
 
-extern "C" PyObject* PyModule_GetNameObject(PyObject* /* m */) {
+PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* /* m */) {
   UNIMPLEMENTED("PyModule_GetNameObject");
 }
 
-extern "C" void* PyModule_GetState(PyObject* /* m */) {
+PY_EXPORT void* PyModule_GetState(PyObject* /* m */) {
   UNIMPLEMENTED("PyModule_GetState");
 }
 
-extern "C" PyObject* PyModuleDef_Init(struct PyModuleDef* /* f */) {
+PY_EXPORT PyObject* PyModuleDef_Init(struct PyModuleDef* /* f */) {
   UNIMPLEMENTED("PyModuleDef_Init");
 }
 
-extern "C" int PyModule_AddFunctions(PyObject* /* m */, PyMethodDef* /* s */) {
+PY_EXPORT int PyModule_AddFunctions(PyObject* /* m */, PyMethodDef* /* s */) {
   UNIMPLEMENTED("PyModule_AddFunctions");
 }
 
-extern "C" int PyModule_ExecDef(PyObject* /* e */, PyModuleDef* /* f */) {
+PY_EXPORT int PyModule_ExecDef(PyObject* /* e */, PyModuleDef* /* f */) {
   UNIMPLEMENTED("PyModule_ExecDef");
 }
 
-extern "C" PyObject* PyModule_FromDefAndSpec2(struct PyModuleDef* /* f */,
-                                              PyObject* /* c */, int /* n */) {
+PY_EXPORT PyObject* PyModule_FromDefAndSpec2(struct PyModuleDef* /* f */,
+                                             PyObject* /* c */, int /* n */) {
   UNIMPLEMENTED("PyModule_FromDefAndSpec2");
 }
 
-extern "C" const char* PyModule_GetFilename(PyObject* /* m */) {
+PY_EXPORT const char* PyModule_GetFilename(PyObject* /* m */) {
   UNIMPLEMENTED("PyModule_GetFilename");
 }
 
-extern "C" PyObject* PyModule_GetFilenameObject(PyObject* /* m */) {
+PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* /* m */) {
   UNIMPLEMENTED("PyModule_GetFilenameObject");
 }
 
-extern "C" const char* PyModule_GetName(PyObject* /* m */) {
+PY_EXPORT const char* PyModule_GetName(PyObject* /* m */) {
   UNIMPLEMENTED("PyModule_GetName");
 }
 
-extern "C" PyObject* PyModule_New(const char* /* e */) {
+PY_EXPORT PyObject* PyModule_New(const char* /* e */) {
   UNIMPLEMENTED("PyModule_New");
 }
 
-extern "C" PyObject* PyModule_NewObject(PyObject* /* e */) {
+PY_EXPORT PyObject* PyModule_NewObject(PyObject* /* e */) {
   UNIMPLEMENTED("PyModule_NewObject");
 }
 
-extern "C" int PyModule_SetDocString(PyObject* /* m */, const char* /* c */) {
+PY_EXPORT int PyModule_SetDocString(PyObject* /* m */, const char* /* c */) {
   UNIMPLEMENTED("PyModule_SetDocString");
 }
 

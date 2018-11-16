@@ -2,7 +2,7 @@
 
 namespace python {
 
-extern "C" const char* Py_GetBuildInfo(void) {
+PY_EXPORT const char* Py_GetBuildInfo(void) {
   UNIMPLEMENTED("Py_GetBuildInfo");
 }
 
