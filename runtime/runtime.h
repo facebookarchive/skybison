@@ -176,8 +176,9 @@ class Runtime {
   void
   listInsert(const Handle<List>& list, const Handle<Object>& value, word index);
 
-  // Deletes an element in the specified list index.
-  void listPop(const Handle<List>& list, word index);
+  // Removes and returns an element from the specified list index.
+  // Expects index to be within [0, len(list)]
+  Object* listPop(const Handle<List>& list, word index);
 
   // Return a new list that is composed of list repeated ntimes
   Object* listReplicate(Thread* thread, const Handle<List>& list, word ntimes);

@@ -2235,6 +2235,75 @@ a.insert("i", "val")
       "index object cannot be interpreted as an integer");
 }
 
+TEST(ThreadTest, ListPop) {
+  const char* src = R"(
+a = [1,2,3,4,5]
+a.pop()
+print(len(a))
+a.pop(0)
+a.pop(-1)
+print(len(a), a[0], a[1])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "4\n2 2 4\n");
+
+  const char* src2 = R"(
+a = [1,2,3,4,5]
+print(a.pop(), a.pop(0), a.pop(-2))
+)";
+  std::string output2 = compileAndRunToString(&runtime, src2);
+  EXPECT_EQ(output2, "5 1 2\n");
+}
+
+TEST(ThreadTest, ListPopExcept) {
+  Runtime runtime;
+  const char* src1 = R"(
+a = [1, 2]
+a.pop(1, 2, 3, 4)
+)";
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, src1),
+      "aborting due to pending exception: "
+      "pop\\(\\) takes at most 1 argument");
+
+  const char* src2 = R"(
+list.pop(1)
+)";
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, src2),
+      "aborting due to pending exception: "
+      "descriptor 'pop' requires a 'list' object");
+
+  const char* src3 = R"(
+a = [1, 2]
+a.pop("i")
+)";
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, src3),
+      "aborting due to pending exception: "
+      "index object cannot be interpreted as an integer");
+
+  const char* src4 = R"(
+a = [1]
+a.pop()
+a.pop()
+)";
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, src4),
+      "unimplemented: "
+      "Throw an IndexError for an out of range list");
+
+  const char* src5 = R"(
+a = [1]
+a.pop(3)
+)";
+  ASSERT_DEATH(
+      compileAndRunToString(&runtime, src5),
+      "unimplemented: "
+      "Throw an IndexError for an out of range list");
+}
+
 TEST(FormatTest, NoConvEmpty) {
   const char* src = R"(
 print(f'')

@@ -36,6 +36,7 @@ Object* builtinGenericNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinListNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinListAppend(Thread* thread, Frame* frame, word nargs);
 Object* builtinListInsert(Thread* thread, Frame* frame, word nargs);
+Object* builtinListPop(Thread* thread, Frame* frame, word nargs);
 
 // Descriptor
 Object* functionDescriptorGet(

@@ -15,19 +15,20 @@ class Runtime;
   V(DunderInit, "__init__")              \
   V(DunderMain, "__main__")              \
   V(DunderName, "__name__")              \
-  V(DunderNew, "__new__")              \
+  V(DunderNew, "__new__")                \
   V(DunderSet, "__set__")                \
   V(Append, "append")                    \
   V(Builtins, "builtins")                \
-  V(Chr, "chr")                        \
+  V(Chr, "chr")                          \
   V(Classmethod, "classmethod")          \
   V(Insert, "insert")                    \
-  V(Dict, "dict")          \
+  V(Dict, "dict")                        \
   V(IsInstance, "isinstance")            \
   V(Len, "len")                          \
   V(List, "list")                        \
   V(ObjectClassname, "object")           \
   V(Ord, "ord")                          \
+  V(Pop, "pop")                          \
   V(Range, "range")
 // clang-format on
 

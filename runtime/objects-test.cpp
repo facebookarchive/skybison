@@ -384,13 +384,15 @@ TEST(ListTest, PopList) {
   ASSERT_EQ(list->allocated(), 16);
 
   // Pop from the end
-  runtime.listPop(list, 15);
+  Object* res1 = runtime.listPop(list, 15);
   ASSERT_EQ(list->allocated(), 15);
   ASSERT_EQ(SmallInteger::cast(list->at(14))->value(), 14);
+  ASSERT_EQ(SmallInteger::cast(res1)->value(), 15);
 
   // Pop elements from 5 - 10
   for (int i = 0; i < 5; i++) {
-    runtime.listPop(list, 5);
+    Object* res5 = runtime.listPop(list, 5);
+    ASSERT_EQ(SmallInteger::cast(res5)->value(), i + 5);
   }
   ASSERT_EQ(list->allocated(), 10);
   for (int i = 0; i < 5; i++) {
@@ -403,36 +405,10 @@ TEST(ListTest, PopList) {
   }
 
   // Pop element 0
-  runtime.listPop(list, 0);
+  Object* res0 = runtime.listPop(list, 0);
   ASSERT_EQ(list->allocated(), 9);
   ASSERT_EQ(SmallInteger::cast(list->at(0))->value(), 1);
-
-  // Pop with negative index
-  ASSERT_EQ(SmallInteger::cast(list->at(7))->value(), 13);
-  runtime.listPop(list, -1);
-  ASSERT_EQ(list->allocated(), 8);
-  ASSERT_EQ(SmallInteger::cast(list->at(7))->value(), 14);
-}
-
-TEST(ListTest, PopListOutOfBounds) {
-  Runtime runtime;
-  HandleScope scope;
-  Handle<List> list(&scope, runtime.newList());
-  for (int i = 0; i < 4; i++) {
-    Handle<Object> value(&scope, SmallInteger::fromWord(i));
-    runtime.listAdd(list, value);
-  }
-  ASSERT_EQ(list->allocated(), 4);
-
-  // Pop a negative element
-  ASSERT_DEATH(
-      runtime.listPop(list, -100),
-      "Throw an IndexError for an out of range list index.");
-
-  // Pop an element larger than len(list)
-  ASSERT_DEATH(
-      runtime.listPop(list, 5),
-      "Throw an IndexError for an out of range list index.");
+  ASSERT_EQ(SmallInteger::cast(res0)->value(), 0);
 }
 
 TEST(SliceTest, adjustIndices) {

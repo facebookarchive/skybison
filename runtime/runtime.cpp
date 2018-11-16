@@ -678,6 +678,12 @@ void Runtime::initializeListClass() {
 
   classAddBuiltinFunction(
       list,
+      symbols()->Pop(),
+      nativeTrampoline<builtinListPop>,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      list,
       symbols()->DunderNew(),
       nativeTrampoline<builtinListNew>,
       unimplementedTrampoline);
@@ -1104,19 +1110,16 @@ void Runtime::listInsert(
   list->atPut(index, *value);
 }
 
-void Runtime::listPop(const Handle<List>& list, word index) {
+Object* Runtime::listPop(const Handle<List>& list, word index) {
+  HandleScope scope;
+  Handle<Object> popped(&scope, list->at(index));
   word last_index = list->allocated() - 1;
-  if (index < 0) {
-    index = last_index + index;
-  }
-  if (index < 0 || index > last_index) {
-    // TODO(T27365047): Raise an exception
-    UNIMPLEMENTED("Throw an IndexError for an out of range list index.");
-  }
   for (word i = index; i < last_index; i++) {
     list->atPut(i, list->at(i + 1));
   }
+  // TODO(T27814770): Reduce total size when appropriate (i.e. len(list)/2)
   list->setAllocated(list->allocated() - 1);
+  return *popped;
 }
 
 Object*

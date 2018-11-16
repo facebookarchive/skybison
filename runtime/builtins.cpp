@@ -352,6 +352,42 @@ Object* builtinListInsert(Thread* thread, Frame* frame, word nargs) {
   return None::object();
 }
 
+Object* builtinListPop(Thread* thread, Frame* frame, word nargs) {
+  if (nargs > 2) {
+    return thread->throwTypeErrorFromCString("pop() takes at most 1 argument");
+  }
+  Arguments args(frame, nargs);
+  if (!args.get(0)->isList()) {
+    return thread->throwTypeErrorFromCString(
+        "descriptor 'pop' requires a 'list' object");
+  }
+  if (nargs == 2 && !args.get(1)->isSmallInteger()) {
+    return thread->throwTypeErrorFromCString(
+        "index object cannot be interpreted as an integer");
+  }
+
+  HandleScope scope;
+  Handle<List> list(&scope, args.get(0));
+  word index = list->allocated() - 1;
+  if (nargs == 2) {
+    word last_index = index;
+    index = SmallInteger::cast(args.get(1))->value();
+    index = index < 0 ? last_index + index : index;
+    // Pop out of bounds
+    if (index > last_index) {
+      // TODO(T27365047): Throw an IndexError exception
+      UNIMPLEMENTED("Throw an IndexError for an out of range list index.");
+    }
+  }
+  // Pop empty, or negative out of bounds
+  if (index < 0) {
+    // TODO(T27365047): Throw an IndexError exception
+    UNIMPLEMENTED("Throw an IndexError for an out of range list index.");
+  }
+
+  return thread->runtime()->listPop(list, index);
+}
+
 // Descriptor
 Object* functionDescriptorGet(
     Thread* thread,
