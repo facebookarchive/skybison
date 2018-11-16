@@ -35,9 +35,8 @@ Object* Interpreter::callCallable(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Object> callable(&scope, frame->peek(nargs));
-  Handle<Object> name(&scope, runtime->symbols()->DunderCall());
   Handle<Type> type(&scope, runtime->typeOf(*callable));
-  callable = runtime->lookupNameInMro(thread, type, name);
+  callable = runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderCall);
   CHECK(!callable->isError(), "object has no __call__ attribute");
   CHECK(callable->isFunction(), "__call__ attribute is not a function");
   frame->insertValueAt(*callable, nargs + 1);
@@ -127,10 +126,10 @@ Object* Interpreter::callDescriptorGet(Thread* thread, Frame* caller,
                                        const Handle<Object>& receiver_type) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Handle<Object> selector(&scope, runtime->symbols()->DunderGet());
   Handle<Type> descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Handle<Object> method(
-      &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
+  Handle<Object> method(&scope,
+                        runtime->lookupSymbolInMro(thread, descriptor_type,
+                                                   SymbolId::kDunderGet));
   DCHECK(!method->isError(), "no __get__ method found");
   return callMethod3(thread, caller, method, descriptor, receiver,
                      receiver_type);
@@ -142,10 +141,10 @@ Object* Interpreter::callDescriptorSet(Thread* thread, Frame* caller,
                                        const Handle<Object>& value) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Handle<Object> selector(&scope, runtime->symbols()->DunderSet());
   Handle<Type> descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Handle<Object> method(
-      &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
+  Handle<Object> method(&scope,
+                        runtime->lookupSymbolInMro(thread, descriptor_type,
+                                                   SymbolId::kDunderSet));
   DCHECK(!method->isError(), "no __set__ method found");
   return callMethod3(thread, caller, method, descriptor, receiver, value);
 }
@@ -155,10 +154,10 @@ Object* Interpreter::callDescriptorDelete(Thread* thread, Frame* caller,
                                           const Handle<Object>& receiver) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Handle<Object> selector(&scope, runtime->symbols()->DunderDelete());
   Handle<Type> descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Handle<Object> method(
-      &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
+  Handle<Object> method(&scope,
+                        runtime->lookupSymbolInMro(thread, descriptor_type,
+                                                   SymbolId::kDunderDelete));
   DCHECK(!method->isError(), "no __delete__ method found");
   return callMethod2(thread, caller, method, descriptor, receiver);
 }
@@ -602,10 +601,10 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
   Runtime* runtime = ctx->thread->runtime();
   Handle<Object> key(&scope, ctx->frame->popValue());
   Handle<Object> container(&scope, ctx->frame->popValue());
-  Handle<Object> selector(&scope, runtime->symbols()->DunderGetItem());
   Handle<Type> type(&scope, runtime->typeOf(*container));
-  Handle<Object> getitem(&scope,
-                         runtime->lookupNameInMro(ctx->thread, type, selector));
+  Handle<Object> getitem(
+      &scope,
+      runtime->lookupSymbolInMro(ctx->thread, type, SymbolId::kDunderGetItem));
   if (getitem->isError()) {
     ctx->frame->pushValue(ctx->thread->throwTypeErrorFromCString(
         "object does not support indexing"));

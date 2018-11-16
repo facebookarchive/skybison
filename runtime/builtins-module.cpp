@@ -50,9 +50,8 @@ Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   thread->runClassFunction(*body, *dict);
 
   Handle<Type> type(&scope, runtime->typeAt(LayoutId::kType));
-  Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
   Handle<Function> dunder_call(
-      &scope, runtime->lookupNameInMro(thread, type, call_name));
+      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderCall));
   frame->pushValue(*dunder_call);
   frame->pushValue(*type);
   frame->pushValue(*name);
@@ -98,9 +97,8 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   // caller and the on-stack state for the class body function call.
   thread->runClassFunction(*body, *dict);
 
-  Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
   Handle<Function> dunder_call(
-      &scope, runtime->lookupNameInMro(thread, metaclass, call_name));
+      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderCall));
   frame->pushValue(*dunder_call);
   frame->pushValue(*metaclass);
   frame->pushValue(*name);

@@ -573,8 +573,7 @@ bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Handle<Type> type(&scope, typeOf(*object));
-  Handle<Object> dunder_set(&scope, symbols()->DunderSet());
-  return !lookupNameInMro(thread, type, dunder_set)->isError();
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderSet)->isError();
 }
 
 bool Runtime::isNonDataDescriptor(Thread* thread,
@@ -582,16 +581,14 @@ bool Runtime::isNonDataDescriptor(Thread* thread,
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Handle<Type> type(&scope, typeOf(*object));
-  Handle<Object> dunder_get(&scope, symbols()->DunderGet());
-  return !lookupNameInMro(thread, type, dunder_get)->isError();
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGet)->isError();
 }
 
 bool Runtime::isDeleteDescriptor(Thread* thread, const Handle<Object>& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Handle<Type> type(&scope, typeOf(*object));
-  Handle<Object> dunder_get(&scope, symbols()->DunderDelete());
-  return !lookupNameInMro(thread, type, dunder_get)->isError();
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderDelete)->isError();
 }
 
 Object* Runtime::newCode() {

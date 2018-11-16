@@ -14,7 +14,6 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
 
   Runtime* runtime = thread->runtime();
-  Handle<Object> name(&scope, runtime->symbols()->DunderNew());
 
   // First, call __new__ to allocate a new instance.
   if (!runtime->isInstanceOfClass(args.get(0))) {
@@ -22,8 +21,8 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
         "'__new__' requires a 'class' object");
   }
   Handle<Type> type(&scope, args.get(0));
-  Handle<Object> dunder_new(&scope,
-                            runtime->lookupNameInMro(thread, type, name));
+  Handle<Object> dunder_new(
+      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderNew));
 
   frame->pushValue(*dunder_new);
   for (word i = 0; i < nargs; i++) {
@@ -35,9 +34,8 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   // Second, call __init__ to initialize the instance.
 
   // top of the stack should be the new instance
-  Handle<Object> init(&scope, runtime->symbols()->DunderInit());
-  Handle<Object> dunder_init(&scope,
-                             runtime->lookupNameInMro(thread, type, init));
+  Handle<Object> dunder_init(
+      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderInit));
 
   frame->pushValue(*dunder_init);
   frame->pushValue(*result);
