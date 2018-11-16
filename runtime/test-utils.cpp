@@ -15,8 +15,9 @@ namespace python {
 
 std::ostream& operator<<(std::ostream& os, const Handle<Str>& str) {
   char* data = str->toCStr();
-  return os.write(data, str->length());
+  os.write(data, str->length());
   std::free(data);
+  return os;
 }
 
 std::ostream& operator<<(std::ostream& os, CastError err) {
