@@ -12,7 +12,9 @@ class Runtime;
 #define FOREACH_SYMBOL(V)                \
   V(DunderInit, "__init__")              \
   V(DunderMain, "__main__")              \
-  V(DunderName, "__name__")
+  V(DunderName, "__name__")              \
+  V(DunderGet, "__get__")                \
+  V(DunderSet, "__set__")
 // clang-format on
 
 // Provides convenient, fast access to commonly used names. Stolen from Dart.

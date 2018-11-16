@@ -731,4 +731,55 @@ TEST(RuntimeTest, StringConcat) {
   EXPECT_TRUE(concat31->isLargeString());
 }
 
+struct LookupNameInMroData {
+  const char* test_name;
+  const char* name;
+  Object* expected;
+};
+
+static std::string lookupNameInMroTestName(
+    ::testing::TestParamInfo<LookupNameInMroData> info) {
+  return info.param.test_name;
+}
+
+class LookupNameInMroTest
+    : public ::testing::TestWithParam<LookupNameInMroData> {};
+
+TEST_P(LookupNameInMroTest, Lookup) {
+  Runtime runtime;
+  HandleScope scope;
+
+  auto createClassWithAttr = [&](const char* attr, word value) {
+    Handle<Class> klass(&scope, runtime.newClass());
+    Handle<Dictionary> dict(&scope, klass->dictionary());
+    Handle<Object> key(&scope, runtime.newStringFromCString(attr));
+    Handle<Object> val(&scope, SmallInteger::fromWord(value));
+    runtime.dictionaryAtPutInValueCell(dict, key, val);
+    return *klass;
+  };
+
+  Handle<ObjectArray> mro(&scope, runtime.newObjectArray(3));
+  mro->atPut(0, createClassWithAttr("foo", 2));
+  mro->atPut(1, createClassWithAttr("bar", 4));
+  mro->atPut(2, createClassWithAttr("baz", 8));
+
+  Handle<Class> klass(&scope, mro->at(0));
+  klass->setMro(*mro);
+
+  auto param = GetParam();
+  Handle<Object> key(&scope, runtime.newStringFromCString(param.name));
+  Object* result = runtime.lookupNameInMro(Thread::currentThread(), klass, key);
+  EXPECT_EQ(result, param.expected);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    LookupNameInMro,
+    LookupNameInMroTest,
+    ::testing::Values(
+        LookupNameInMroData{"OnInstance", "foo", SmallInteger::fromWord(2)},
+        LookupNameInMroData{"OnParent", "bar", SmallInteger::fromWord(4)},
+        LookupNameInMroData{"OnGrandParent", "baz", SmallInteger::fromWord(8)},
+        LookupNameInMroData{"NonExistent", "xxx", Error::object()}),
+    lookupNameInMroTestName);
+
 } // namespace python

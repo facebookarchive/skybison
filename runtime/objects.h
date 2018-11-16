@@ -55,6 +55,37 @@ class Object;
 // [   ...  ]
 // [ elem N ]
 
+// clang-format off
+#define INTRINSIC_IMMEDIATE_CLASS_NAMES(V) \
+  V(SmallInteger)                        \
+  V(SmallString)                         \
+  V(Boolean)                             \
+  V(None)
+
+#define INTRINSIC_HEAP_CLASS_NAMES(V) \
+  V(Object)                         \
+  V(ByteArray)                      \
+  V(Code)                           \
+  V(Dictionary)                     \
+  V(Ellipsis)                       \
+  V(Function)                       \
+  V(Integer)                        \
+  V(LargeString)                    \
+  V(List)                           \
+  V(Module)                         \
+  V(ObjectArray)                    \
+  V(Range)                          \
+  V(RangeIterator)                  \
+  V(Type)                           \
+  V(ValueCell)
+
+#define INTRINSIC_CLASS_NAMES(V)     \
+  INTRINSIC_IMMEDIATE_CLASS_NAMES(V) \
+  INTRINSIC_HEAP_CLASS_NAMES(V)
+// clang-format on
+
+// NB: If you add something here make sure you add it to the appropriate macro
+// above
 enum ClassId {
   // Immediate objects - note that the SmallInteger class is also aliased to
   // all even integers less than 32, so that classes of immediate objects can
@@ -155,6 +186,12 @@ class SmallInteger : public Object {
   static inline constexpr bool isValid(word value) {
     return (value >= kMinValue) && (value <= kMaxValue);
   }
+
+  template <typename T>
+  static inline SmallInteger* fromFunctionPointer(T pointer);
+
+  template <typename T>
+  inline T asFunctionPointer();
 
   // Casting.
   static inline SmallInteger* cast(Object* object);
@@ -424,6 +461,11 @@ class HeapObject : public Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(HeapObject);
 };
 
+template <typename T>
+class Handle;
+
+class Thread;
+
 class Class : public HeapObject {
  public:
   // Getters and setters.
@@ -437,6 +479,8 @@ class Class : public HeapObject {
   // Number of attributes in instances of this class when allocated
   inline void setInstanceSize(word instance_size);
   inline word instanceSize();
+
+  inline bool isIntrinsicOrExtension();
 
   // Casting.
   inline static Class* cast(Object* object);
@@ -452,7 +496,11 @@ class Class : public HeapObject {
   static const int kNameOffset = kMroOffset + kPointerSize;
   static const int kDictionaryOffset = kNameOffset + kPointerSize;
   static const int kInstanceSizeOffset = kDictionaryOffset + kPointerSize;
-  static const int kSize = kInstanceSizeOffset + kPointerSize;
+  static const int kGetAttrOffset = kInstanceSizeOffset + kPointerSize;
+  static const int kSetAttrOffset = kGetAttrOffset + kPointerSize;
+  static const int kDescriptorGetOffset = kSetAttrOffset + kPointerSize;
+  static const int kDescriptorSetOffset = kDescriptorGetOffset + kPointerSize;
+  static const int kSize = kDescriptorSetOffset + kPointerSize;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Class);
@@ -781,9 +829,6 @@ class Function : public HeapObject {
   static const int kSize = kEntryKwOffset + kPointerSize;
 
  private:
-  inline Object* entryToObject(Entry entry);
-  inline Entry entryFromObject(Object* entry);
-
   DISALLOW_COPY_AND_ASSIGN(Function);
 };
 
@@ -1230,6 +1275,19 @@ SmallInteger* SmallInteger::fromWord(word value) {
   return reinterpret_cast<SmallInteger*>(value << kTagSize);
 }
 
+template <typename T>
+SmallInteger* SmallInteger::fromFunctionPointer(T pointer) {
+  // The bit pattern for a function pointer object must be indistinguishable
+  // from that of a small integer object.
+  auto object = reinterpret_cast<Object*>(reinterpret_cast<uword>(pointer));
+  return SmallInteger::cast(object);
+}
+
+template <typename T>
+T SmallInteger::asFunctionPointer() {
+  return reinterpret_cast<T>(reinterpret_cast<uword>(this));
+}
+
 // SmallString
 
 word SmallString::length() {
@@ -1516,6 +1574,10 @@ word Class::instanceSize() {
 Class* Class::cast(Object* object) {
   assert(object->isClass());
   return reinterpret_cast<Class*>(object);
+}
+
+bool Class::isIntrinsicOrExtension() {
+  return id() <= ClassId::kLastId;
 }
 
 // Array
@@ -1934,27 +1996,23 @@ void Function::setDoc(Object* doc) {
 }
 
 Function::Entry Function::entry() {
-  return entryFromObject(instanceVariableAt(kEntryOffset));
+  Object* object = instanceVariableAt(kEntryOffset);
+  return SmallInteger::cast(object)->asFunctionPointer<Function::Entry>();
 }
 
 void Function::setEntry(Function::Entry entry) {
-  // The bit pattern for a function pointer object must be indistinguishable
-  // from that of a small integer object.
-  assert(reinterpret_cast<Object*>(reinterpret_cast<uword>(entry))
-             ->isSmallInteger());
-  instanceVariableAtPut(kEntryOffset, entryToObject(entry));
+  auto object = SmallInteger::fromFunctionPointer(entry);
+  instanceVariableAtPut(kEntryOffset, object);
 }
 
 Function::Entry Function::entryKw() {
-  return entryFromObject(instanceVariableAt(kEntryKwOffset));
+  Object* object = instanceVariableAt(kEntryKwOffset);
+  return SmallInteger::cast(object)->asFunctionPointer<Function::Entry>();
 }
 
 void Function::setEntryKw(Function::Entry entryKw) {
-  // The bit pattern for a function pointer object must be indistinguishable
-  // from that of a small integer object.
-  assert(reinterpret_cast<Object*>(reinterpret_cast<uword>(entryKw))
-             ->isSmallInteger());
-  instanceVariableAtPut(kEntryKwOffset, entryToObject(entryKw));
+  auto object = SmallInteger::fromFunctionPointer(entryKw);
+  instanceVariableAtPut(kEntryKwOffset, object);
 }
 
 Object* Function::globals() {
@@ -2010,14 +2068,6 @@ void Function::initialize() {
   for (word offset = 0; offset < Function::kSize; offset += kPointerSize) {
     instanceVariableAtPut(offset, None::object());
   }
-}
-
-Function::Entry Function::entryFromObject(Object* object) {
-  return reinterpret_cast<Function::Entry>(SmallInteger::cast(object)->value());
-}
-
-Object* Function::entryToObject(Function::Entry entry) {
-  return SmallInteger::fromWord(reinterpret_cast<uword>(entry));
 }
 
 // Instance

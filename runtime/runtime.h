@@ -205,6 +205,28 @@ class Runtime {
   // Returns klass's __init__ method, or None
   Object* classConstructor(const Handle<Class>& klass);
 
+  // Looks up name in the dict of each entry in klass's MRO.
+  //
+  // This is equivalent to CPython's PyType_Lookup. Returns the Error object if
+  // the name wasn't found.
+  Object* lookupNameInMro(
+      Thread* thread,
+      const Handle<Class>& klass,
+      const Handle<Object>& name);
+
+  // Implements `receiver.name`
+  Object* attributeAt(
+      Thread* thread,
+      const Handle<Object>& receiver,
+      const Handle<Object>& name);
+
+  // Implements `receiver.name = value`
+  Object* attributeAtPut(
+      Thread* thread,
+      const Handle<Object>& receiver,
+      const Handle<Object>& name,
+      const Handle<Object>& value);
+
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
   // dictobject.c this accommodates the majority of dictionaries without needing
@@ -263,6 +285,25 @@ class Runtime {
   ObjectArray* setGrow(const Handle<ObjectArray>& data);
 
   void moduleAddBuiltinPrint(const Handle<Module>& module);
+
+  // Generic attribute lookup code used for class objects
+  Object* classGetAttr(
+      Thread* thread,
+      const Handle<Object>& receiver,
+      const Handle<Object>& name);
+
+  // Generic attribute setting code used for class objects
+  Object* classSetAttr(
+      Thread* thread,
+      const Handle<Object>& receiver,
+      const Handle<Object>& name,
+      const Handle<Object>& value);
+
+  // Returns whether object's class provides a __set__ method
+  bool isDataDescriptor(Thread* thread, const Handle<Object>& object);
+
+  // Returns whether object's class provides a __get__ method
+  bool isNonDataDescriptor(Thread* thread, const Handle<Object>& object);
 
   // The size ensureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;

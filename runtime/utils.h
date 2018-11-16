@@ -1,8 +1,20 @@
 #pragma once
 
 #include <cassert>
+#include <cstdio>
+#include <cstdlib>
 
 #include "globals.h"
+
+#define CHECK(expr, ...)                                                       \
+  do {                                                                         \
+    if (!(expr)) {                                                             \
+      fprintf(                                                                 \
+          stderr, "%s:%d assertion '%s' failed: ", __FILE__, __LINE__, #expr); \
+      fprintf(stderr, __VA_ARGS__);                                            \
+      std::abort();                                                            \
+    }                                                                          \
+  } while (0)
 
 namespace python {
 

@@ -181,6 +181,39 @@ void Thread::throwValueErrorFromCString(const char* message) {
   pending_exception_ = runtime()->newStringFromCString(message);
 }
 
+Object* Thread::throwAttributeError(String* message) {
+  // TODO: instantiate an AttributeError object.
+  pending_exception_ = message;
+  return Error::object();
+}
+
+Object* Thread::throwAttributeErrorFromCString(const char* message) {
+  // TODO: instantiate an AttributeError object.
+  pending_exception_ = runtime()->newStringFromCString(message);
+  return Error::object();
+}
+
+void Thread::abortOnPendingException() {
+  HandleScope scope(handles());
+  Handle<Object> pending_exception(&scope, pendingException());
+  if (pending_exception->isNone()) {
+    return;
+  }
+
+  fprintf(stderr, "aborting due to pending exception");
+  if (pending_exception->isString()) {
+    String* message = String::cast(*pending_exception);
+    word len = message->length();
+    byte* buffer = new byte[len + 1];
+    message->copyTo(buffer, len);
+    buffer[len] = 0;
+    fprintf(stderr, ": %.*s", static_cast<int>(len), buffer);
+  }
+  fprintf(stderr, "\n");
+
+  std::abort();
+}
+
 Object* Thread::pendingException() {
   return pending_exception_;
 }

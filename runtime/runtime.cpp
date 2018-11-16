@@ -15,6 +15,7 @@
 #include "siphash.h"
 #include "thread.h"
 #include "trampolines-inl.h"
+#include "utils.h"
 #include "visitor.h"
 
 namespace python {
@@ -76,6 +77,135 @@ Object* Runtime::newByteArrayWithAll(View<byte> array) {
 
 Object* Runtime::newClass() {
   return newClassWithId(newClassId());
+}
+
+static Object* functionDescriptorGet(
+    Thread* thread,
+    const Handle<Object>& self,
+    const Handle<Object>& instance,
+    const Handle<Object>& /* owner */) {
+  if (instance->isNone()) {
+    return *self;
+  }
+  return thread->runtime()->newBoundMethod(*self, *instance);
+}
+
+Object* Runtime::classGetAttr(
+    Thread* thread,
+    const Handle<Object>& receiver,
+    const Handle<Object>& name) {
+  if (!name->isString()) {
+    // TODO(T25140871): Refactor into something like:
+    //     thread->throwUnexpectedTypeError(expected, actual)
+    return thread->throwTypeErrorFromCString("attribute name must be a string");
+  }
+
+  HandleScope scope(thread->handles());
+  Handle<Class> klass(&scope, *receiver);
+  Handle<Class> meta_klass(&scope, classOf(*receiver));
+
+  // Look for the attribute in the meta class
+  Handle<Object> meta_attr(&scope, lookupNameInMro(thread, meta_klass, name));
+  if (isDataDescriptor(thread, meta_attr)) {
+    // TODO(T25692531): Call __get__ from meta_attr
+    CHECK(false, "custom descriptors are unsupported");
+  }
+
+  // No data descriptor found on the meta class, look in the mro of the klass
+  Handle<Object> attr(&scope, lookupNameInMro(thread, klass, name));
+  if (!attr->isError()) {
+    if (attr->isFunction()) {
+      Handle<Object> none(&scope, None::object());
+      return functionDescriptorGet(thread, attr, none, receiver);
+    } else if (isNonDataDescriptor(thread, attr)) {
+      // TODO(T25692531): Call __get__ from meta_attr
+      CHECK(false, "custom descriptors are unsupported");
+    }
+    return *attr;
+  }
+
+  // No attr found in klass or its mro, use the non-data descriptor found in
+  // the metaclass (if any).
+  if (isNonDataDescriptor(thread, meta_attr)) {
+    if (meta_attr->isFunction()) {
+      Handle<Object> mk(&scope, *meta_klass);
+      return functionDescriptorGet(thread, meta_attr, receiver, mk);
+    } else {
+      // TODO(T25692531): Call __get__ from meta_attr
+      CHECK(false, "custom descriptors are unsupported");
+    }
+  }
+
+  // If a regular attribute was found in the metaclass, return it
+  if (!meta_attr->isError()) {
+    return *meta_attr;
+  }
+
+  // TODO(T25140871): Refactor this into something like:
+  //     thread->throwMissingAttributeError(name)
+  return thread->throwAttributeErrorFromCString("missing attribute");
+}
+
+Object* Runtime::classSetAttr(
+    Thread* thread,
+    const Handle<Object>& receiver,
+    const Handle<Object>& name,
+    const Handle<Object>& value) {
+  if (!name->isString()) {
+    // TODO(T25140871): Refactor into something like:
+    //     thread->throwUnexpectedTypeError(expected, actual)
+    return thread->throwTypeErrorFromCString("attribute name must be a string");
+  }
+
+  HandleScope scope(thread->handles());
+  Handle<Class> klass(&scope, *receiver);
+  if (klass->isIntrinsicOrExtension()) {
+    // TODO(T25140871): Refactor this into something that includes the type name
+    // like:
+    //     thread->throwImmutableTypeManipulationError(klass)
+    return thread->throwTypeErrorFromCString(
+        "can't set attributes of built-in/extension type");
+  }
+
+  // Check for a data descriptor
+  Handle<Class> metaklass(&scope, classOf(*receiver));
+  Handle<Object> meta_attr(&scope, lookupNameInMro(thread, metaklass, name));
+  if (isDataDescriptor(thread, meta_attr)) {
+    // TODO(T25692531): Call __set__ from meta_attr
+    CHECK(false, "custom descriptors are unsupported");
+  }
+
+  // No data descriptor found, store the attribute in the klass dictionary
+  Handle<Dictionary> klass_dict(&scope, klass->dictionary());
+  dictionaryAtPutInValueCell(klass_dict, name, value);
+
+  return None::object();
+}
+
+bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
+  if (object->isFunction() || object->isError()) {
+    return false;
+  }
+  // TODO(T25692962): Track "descriptorness" through a bit on the class
+  HandleScope scope(thread->handles());
+  Handle<Class> klass(&scope, classOf(*object));
+  Handle<Object> dunder_set(&scope, symbols()->DunderSet());
+  return !lookupNameInMro(thread, klass, dunder_set)->isError();
+}
+
+bool Runtime::isNonDataDescriptor(
+    Thread* thread,
+    const Handle<Object>& object) {
+  if (object->isFunction()) {
+    return true;
+  } else if (object->isError()) {
+    return false;
+  }
+  // TODO(T25692962): Track "descriptorness" through a bit on the class
+  HandleScope scope(thread->handles());
+  Handle<Class> klass(&scope, classOf(*object));
+  Handle<Object> dunder_get(&scope, symbols()->DunderGet());
+  return !lookupNameInMro(thread, klass, dunder_get)->isError();
 }
 
 Object* Runtime::newClassWithId(ClassId class_id) {
@@ -204,6 +334,10 @@ Object* Runtime::immediateHash(Object* object) {
   if (object->isBoolean()) {
     return SmallInteger::fromWord(Boolean::cast(object)->value() ? 1 : 0);
   }
+  if (object->isSmallString()) {
+    return SmallInteger::fromWord(
+        reinterpret_cast<uword>(object) >> SmallString::kTagSize);
+  }
   return SmallInteger::fromWord(reinterpret_cast<uword>(object));
 }
 
@@ -262,7 +396,7 @@ void Runtime::initializeClasses() {
   Handle<ObjectArray> array(&scope, newObjectArray(256));
   Handle<List> list(&scope, newList());
   list->setItems(*array);
-  const word allocated = static_cast<word>(ClassId::kLastId) + 1;
+  const word allocated = static_cast<word>(ClassId::kLastId + 1);
   assert(allocated < array->length());
   list->setAllocated(allocated);
   class_table_ = *list;
@@ -1171,6 +1305,58 @@ word Runtime::computeInstanceSize(const Handle<Class>& klass) {
   }
 
   return attrs->numItems();
+}
+
+Object* Runtime::lookupNameInMro(
+    Thread* thread,
+    const Handle<Class>& klass,
+    const Handle<Object>& name) {
+  HandleScope scope(thread->handles());
+  Handle<ObjectArray> mro(&scope, klass->mro());
+  for (word i = 0; i < mro->length(); i++) {
+    Handle<Class> mro_klass(&scope, mro->at(i));
+    Handle<Dictionary> dict(&scope, mro_klass->dictionary());
+    Handle<Object> value_cell(&scope, None::object());
+    if (dictionaryAt(dict, name, value_cell.pointer())) {
+      return ValueCell::cast(*value_cell)->value();
+    }
+  }
+  return Error::object();
+}
+
+Object* Runtime::attributeAt(
+    Thread* thread,
+    const Handle<Object>& receiver,
+    const Handle<Object>& name) {
+  // A minimal implementation of getattr needed to get richards running. We
+  // still need to add support for instances.
+  Object* result;
+  if (receiver->isClass()) {
+    result = classGetAttr(thread, receiver, name);
+  } else {
+    result = thread->throwTypeErrorFromCString(
+        "can only look up attributes from classes");
+  }
+  return result;
+}
+
+Object* Runtime::attributeAtPut(
+    Thread* thread,
+    const Handle<Object>& receiver,
+    const Handle<Object>& name,
+    const Handle<Object>& value) {
+  HandleScope scope(thread->handles());
+  Handle<Object> interned_name(&scope, internString(name));
+  // A minimal implementation of setattr needed to get richards running. We
+  // still need to add support for instances.
+  Object* result;
+  if (receiver->isClass()) {
+    result = classSetAttr(thread, receiver, interned_name, value);
+  } else {
+    result =
+        thread->throwTypeErrorFromCString("can only set attributes on classes");
+  }
+  return result;
 }
 
 bool Runtime::isTruthy(Object* object) {

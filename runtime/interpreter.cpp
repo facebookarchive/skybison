@@ -387,6 +387,26 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
 
+      case Bytecode::LOAD_ATTR: {
+        HandleScope scope;
+        Handle<Object> receiver(&scope, *sp);
+        Handle<Object> name(&scope, ObjectArray::cast(code->names())->at(arg));
+        *sp = thread->runtime()->attributeAt(thread, receiver, name);
+        thread->abortOnPendingException();
+        break;
+      }
+
+      case Bytecode::STORE_ATTR: {
+        HandleScope scope;
+        Handle<Object> receiver(&scope, *sp);
+        Handle<Object> name(&scope, ObjectArray::cast(code->names())->at(arg));
+        Handle<Object> value(&scope, *(sp + 1));
+        sp += 2;
+        thread->runtime()->attributeAtPut(thread, receiver, name, value);
+        thread->abortOnPendingException();
+        break;
+      }
+
       default:
         // TODO: Distinguish between intentionally unimplemented bytecode
         // and unreachable code.

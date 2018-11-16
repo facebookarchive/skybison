@@ -98,6 +98,7 @@ target_link_libraries(
 add_executable(
   python-tests
   runtime/python-test.cpp
+  runtime/attributes-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
   runtime/marshal-test.cpp
