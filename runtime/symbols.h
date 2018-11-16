@@ -127,12 +127,15 @@ class Runtime;
   V(IsInstance, "isinstance")                                                  \
   V(IsSubclass, "issubclass")                                                  \
   V(Items, "items")                                                            \
+  V(IndexError, "IndexError")                                                  \
+  V(KeyError, "KeyError")                                                      \
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
   V(Layout, "layout")                                                          \
   V(Len, "len")                                                                \
   V(List, "list")                                                              \
   V(ListIterator, "list_iterator")                                             \
+  V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
   V(Metaclass, "metaclass")                                                    \
   V(MetaPath, "meta_path")                                                     \

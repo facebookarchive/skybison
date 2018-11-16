@@ -93,11 +93,14 @@ enum class LayoutId : word {
   kFunction,
   kImportError,
   kInt,
+  kIndexError,
+  kKeyError,
   kLargeInt,
   kLargeStr,
   kLayout,
   kList,
   kListIterator,
+  kLookupError,
   kModule,
   kModuleNotFoundError,
   kNameError,
@@ -152,12 +155,15 @@ class Object {
   bool isFunction();
   bool isHeapObject();
   bool isImportError();
+  bool isIndexError();
   bool isInstance();
+  bool isKeyError();
   bool isLargeInt();
   bool isLargeStr();
   bool isLayout();
   bool isList();
   bool isListIterator();
+  bool isLookupError();
   bool isModule();
   bool isModuleNotFoundError();
   bool isNotImplemented();
@@ -622,6 +628,33 @@ class ModuleNotFoundError : public ImportError {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleNotFoundError);
+};
+
+class LookupError : public Exception {
+ public:
+  // Casting.
+  static LookupError* cast(Object* object);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(LookupError);
+};
+
+class IndexError : public LookupError {
+ public:
+  // Casting.
+  static IndexError* cast(Object* object);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(IndexError);
+};
+
+class KeyError : public LookupError {
+ public:
+  // Casting.
+  static KeyError* cast(Object* object);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(KeyError);
 };
 
 class Type : public HeapObject {
@@ -1976,6 +2009,13 @@ inline bool Object::isInstance() {
          LayoutId::kLastBuiltinId;
 }
 
+inline bool Object::isKeyError() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kKeyError;
+}
+
 inline bool Object::isDict() {
   if (!isHeapObject()) {
     return false;
@@ -2024,6 +2064,13 @@ inline bool Object::isListIterator() {
   }
   return HeapObject::cast(this)->header()->layoutId() ==
          LayoutId::kListIterator;
+}
+
+inline bool Object::isLookupError() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLookupError;
 }
 
 inline bool Object::isValueCell() {
@@ -2116,6 +2163,13 @@ inline bool Object::isImportError() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kImportError;
+}
+
+inline bool Object::isIndexError() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kIndexError;
 }
 
 inline bool Object::isWeakRef() {
@@ -2629,6 +2683,27 @@ inline ModuleNotFoundError* ModuleNotFoundError::cast(Object* object) {
   DCHECK(object->isModuleNotFoundError(),
          "invalid cast, expected ModuleNotFoundError");
   return reinterpret_cast<ModuleNotFoundError*>(object);
+}
+
+// LookupError
+
+inline LookupError* LookupError::cast(Object* object) {
+  DCHECK(object->isLookupError(), "invalid cast, expected LookupError");
+  return reinterpret_cast<LookupError*>(object);
+}
+
+// IndexError
+
+inline IndexError* IndexError::cast(Object* object) {
+  DCHECK(object->isIndexError(), "invalid cast, expected IndexError");
+  return reinterpret_cast<IndexError*>(object);
+}
+
+// KeyError
+
+inline KeyError* KeyError::cast(Object* object) {
+  DCHECK(object->isKeyError(), "invalid cast, expected KeyError");
+  return reinterpret_cast<KeyError*>(object);
 }
 
 // Type

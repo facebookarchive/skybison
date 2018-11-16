@@ -1025,6 +1025,14 @@ void Runtime::initializeExceptionClasses() {
   addEmptyBuiltinClass(SymbolId::kValueError, LayoutId::kValueError,
                        LayoutId::kException);
 
+  // LookupError and subclasses.
+  addEmptyBuiltinClass(SymbolId::kLookupError, LayoutId::kLookupError,
+                       LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kIndexError, LayoutId::kIndexError,
+                       LayoutId::kLookupError);
+  addEmptyBuiltinClass(SymbolId::kKeyError, LayoutId::kKeyError,
+                       LayoutId::kLookupError);
+
   // RuntimeError and subclasses.
   addEmptyBuiltinClass(SymbolId::kRuntimeError, LayoutId::kRuntimeError,
                        LayoutId::kException);
@@ -1634,7 +1642,10 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kFloat);
   moduleAddBuiltinType(module, SymbolId::kImportError, LayoutId::kImportError);
   moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInt);
+  moduleAddBuiltinType(module, SymbolId::kIndexError, LayoutId::kIndexError);
+  moduleAddBuiltinType(module, SymbolId::kKeyError, LayoutId::kKeyError);
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
+  moduleAddBuiltinType(module, SymbolId::kLookupError, LayoutId::kLookupError);
   moduleAddBuiltinType(module, SymbolId::kModuleNotFoundError,
                        LayoutId::kModuleNotFoundError);
   moduleAddBuiltinType(module, SymbolId::kNameError, LayoutId::kNameError);

@@ -144,6 +144,79 @@ rt_error = RuntimeError()
   EXPECT_EQ(rt_error->layoutId(), LayoutId::kRuntimeError);
 }
 
+TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesHaveCorrectHierarchy) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+lookup_is_exc = issubclass(LookupError, Exception)
+index_is_lookup = issubclass(IndexError, LookupError)
+key_is_lookup = issubclass(KeyError, LookupError)
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Bool> lookup_is_exc(
+      &scope, testing::moduleAt(&runtime, main, "lookup_is_exc"));
+  Handle<Bool> index_is_lookup(
+      &scope, testing::moduleAt(&runtime, main, "index_is_lookup"));
+  Handle<Bool> key_is_lookup(
+      &scope, testing::moduleAt(&runtime, main, "key_is_lookup"));
+
+  EXPECT_TRUE(lookup_is_exc->value());
+  EXPECT_TRUE(index_is_lookup->value());
+  EXPECT_TRUE(key_is_lookup->value());
+}
+
+TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesCanBeConstructed) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+l = LookupError()
+i = IndexError()
+k = KeyError()
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<LookupError> l(&scope, testing::moduleAt(&runtime, main, "l"));
+  Handle<IndexError> i(&scope, testing::moduleAt(&runtime, main, "i"));
+  Handle<KeyError> k(&scope, testing::moduleAt(&runtime, main, "k"));
+
+  EXPECT_TRUE(runtime.hasSubClassFlag(*l, Type::Flag::kBaseExceptionSubclass));
+  EXPECT_TRUE(runtime.hasSubClassFlag(*i, Type::Flag::kBaseExceptionSubclass));
+  EXPECT_TRUE(runtime.hasSubClassFlag(*k, Type::Flag::kBaseExceptionSubclass));
+}
+
+TEST(ExceptionBuiltinsTest, KeyErrorStrPrintsMissingKey) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+s = KeyError("key").__str__()
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<String> s(&scope, testing::moduleAt(&runtime, main, "s"));
+  // TODO(dulinr): Once str.__repr__ is implemented, fix this.
+  EXPECT_PYSTRING_EQ(*s, "<smallstr object at 0x79656b7f>");
+}
+
+TEST(ExceptionBuiltinsTest,
+     KeyErrorStrWithMoreThanOneArgPrintsBaseExceptionStr) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+s = KeyError("key", "key2").__str__()
+b = BaseException("key", "key2").__str__()
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<String> s(&scope, testing::moduleAt(&runtime, main, "s"));
+  Handle<String> b(&scope, testing::moduleAt(&runtime, main, "b"));
+  EXPECT_PYSTRING_EQ(*s, *b);
+}
+
 TEST(ExceptionBuiltinsTest, TypeErrorReturnsTypeError) {
   Runtime runtime;
   HandleScope scope;

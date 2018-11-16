@@ -29,6 +29,13 @@ class BaseException(bootstrap=True):
         return str(self.args)
 
 
+class KeyError(bootstrap=True):
+    def __str__(self):
+        if isinstance(self.args, tuple) and len(self.args) == 1:
+            return repr(self.args[0])
+        return super(KeyError, self).__str__()
+
+
 class tuple(bootstrap=True):
     def __repr__(self):
         num_elems = len(self)
