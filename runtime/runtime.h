@@ -105,7 +105,8 @@ class Runtime {
   // and identical contents.
   ObjectArray* ensureCapacity(const Handle<ObjectArray>& array, word index);
 
-  void appendToList(const Handle<List>& list, const Handle<Object>& value);
+  // Appends an element to the end of the list.
+  void listAdd(const Handle<List>& list, const Handle<Object>& value);
 
   // Associate a value with the supplied key.
   //

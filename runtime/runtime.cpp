@@ -463,7 +463,7 @@ ClassId Runtime::newClassId() {
   Handle<List> list(&scope, class_table_);
   Handle<Object> value(&scope, None::object());
   auto result = static_cast<ClassId>(list->allocated());
-  appendToList(list, value);
+  listAdd(list, value);
   return result;
 }
 
@@ -540,9 +540,7 @@ ObjectArray* Runtime::ensureCapacity(
   return *newArray;
 }
 
-void Runtime::appendToList(
-    const Handle<List>& list,
-    const Handle<Object>& value) {
+void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   HandleScope scope;
   word index = list->allocated();
   Handle<ObjectArray> items(&scope, list->items());

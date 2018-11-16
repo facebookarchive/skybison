@@ -201,7 +201,7 @@ TEST(ListTest, AppendToList) {
       4, 4, 4, 4, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16};
   for (int i = 0; i < 16; i++) {
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
-    runtime.appendToList(list, value);
+    runtime.listAdd(list, value);
     ASSERT_EQ(list->capacity(), expectedCapacity[i]);
     ASSERT_EQ(list->allocated(), i + 1);
   }
