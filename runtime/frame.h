@@ -284,7 +284,7 @@ class KwArguments : public Arguments {
         return frame_->getLocal(num_args_ + i);
       }
     }
-    CHECK(false, "keyword argument not found");
+    return Error::object();
   }
 
   word numKeywords() const {

@@ -77,7 +77,11 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
 
   Handle<Function> body(&scope, args.get(0));
   Handle<Object> name(&scope, args.get(1));
-  Handle<Class> metaclass(&scope, args.getKw(runtime->symbols()->Metaclass()));
+  Handle<Object> kw_val(&scope, args.getKw(runtime->symbols()->Metaclass()));
+  if (kw_val->isError()) {
+    return thread->throwTypeErrorFromCString("metaclass not found.");
+  }
+  Handle<Class> metaclass(&scope, *kw_val);
   Handle<ObjectArray> bases(
       &scope, runtime->newObjectArray(args.numArgs() - 2));
   for (word i = 0, j = 2; j < args.numArgs(); i++, j++) {
@@ -326,16 +330,9 @@ Object* builtinPrint(Thread* thread, Frame* frame, word nargs) {
 }
 
 Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope;
-  Handle<Object> last_arg(&scope, args.get(nargs - 1));
-  if (!last_arg->isObjectArray()) {
-    return thread->throwTypeErrorFromCString(
-        "Keyword argument names must be a tuple");
-  }
-  Handle<ObjectArray> names(&scope, *last_arg);
-  word num_keywords = names->length();
-  if (num_keywords > 2) {
+  KwArguments kw_args(frame, nargs);
+  HandleScope scope(thread);
+  if (kw_args.numKeywords() > 2) {
     return thread->throwRuntimeErrorFromCString(
         "Too many keyword arguments supplied to print");
   }
@@ -343,46 +340,43 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object* end = None::object();
   std::ostream* ostream = builtInStdout;
-  word num_positional = nargs - names->length() - 1;
-  for (word i = 0; i < names->length(); i++) {
-    Handle<Object> key(&scope, names->at(i));
-    DCHECK(key->isString(), "Keyword argument names must be strings");
-    Handle<Object> value(&scope, args.get(num_positional + i));
-    if (*key == runtime->symbols()->File()) {
-      if (value->isSmallInteger()) {
-        word stream_val = SmallInteger::cast(*value)->value();
-        switch (stream_val) {
-          case STDOUT_FILENO:
-            ostream = builtInStdout;
-            break;
-          case STDERR_FILENO:
-            ostream = builtinStderr;
-            break;
-          default:
-            return thread->throwTypeErrorFromCString(
-                "Unsupported argument type for 'file'");
-        }
-      } else {
-        return thread->throwTypeErrorFromCString(
-            "Unsupported argument type for 'file'");
-      }
-    } else if (*key == runtime->symbols()->End()) {
-      if ((value->isString() || value->isNone())) {
-        end = *value;
-      } else {
-        return thread->throwTypeErrorFromCString(
-            "Unsupported argument for 'end'");
+
+  Handle<Object> file_arg(&scope, kw_args.getKw(runtime->symbols()->File()));
+  if (!file_arg->isError()) {
+    if (file_arg->isSmallInteger()) {
+      word stream_val = SmallInteger::cast(*file_arg)->value();
+      switch (stream_val) {
+        case STDOUT_FILENO:
+          ostream = builtInStdout;
+          break;
+        case STDERR_FILENO:
+          ostream = builtinStderr;
+          break;
+        default:
+          return thread->throwTypeErrorFromCString(
+              "Unsupported argument type for 'file'");
       }
     } else {
-      return thread->throwRuntimeErrorFromCString(
-          "Unsupported keyword arguments");
+      return thread->throwTypeErrorFromCString(
+          "Unsupported argument type for 'file'");
+    }
+  }
+
+  Handle<Object> end_arg(&scope, kw_args.getKw(runtime->symbols()->End()));
+  if (!end_arg->isError()) {
+    if ((end_arg->isString() || end_arg->isNone())) {
+      end = *end_arg;
+    } else {
+      return thread->throwTypeErrorFromCString(
+          "Unsupported argument for 'end'");
     }
   }
 
   // Remove kw arg tuple and the value for the end keyword argument
-  Arguments rest(frame, nargs - num_keywords - 1);
+  Arguments rest(frame, nargs - kw_args.numKeywords() - 1);
   Handle<Object> end_val(&scope, end);
-  return doBuiltinPrint(rest, nargs - num_keywords - 1, end_val, ostream);
+  return doBuiltinPrint(
+      rest, nargs - kw_args.numKeywords() - 1, end_val, ostream);
 }
 
 Object* builtinRange(Thread* thread, Frame* frame, word nargs) {

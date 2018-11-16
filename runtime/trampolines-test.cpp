@@ -483,7 +483,9 @@ returnsPositionalAndKeywordArgument(Thread* thread, Frame* frame, word argc) {
   HandleScope scope(thread);
   Handle<Object> foo_name(
       &scope, thread->runtime()->newStringFromCString("foo"));
-  Handle<Object> foo_val(&scope, args.getKw(*foo_name));
+  Handle<Object> foo_val_opt(&scope, args.getKw(*foo_name));
+  Handle<Object> foo_val(
+      &scope, (foo_val_opt->isError() ? None::object() : *foo_val_opt));
   Handle<ObjectArray> tuple(&scope, thread->runtime()->newObjectArray(2));
   tuple->atPut(0, args.get(0));
   tuple->atPut(1, *foo_val);
@@ -547,8 +549,10 @@ static Object* returnsPositionalAndTwoKeywordArguments(
   Handle<Object> bar_name(&scope, runtime->newStringFromCString("bar"));
   Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(3));
   tuple->atPut(0, args.get(0));
-  tuple->atPut(1, args.getKw(*foo_name));
-  tuple->atPut(2, args.getKw(*bar_name));
+  Handle<Object> foo_val(&scope, args.getKw(*foo_name));
+  tuple->atPut(1, (foo_val->isError() ? None::object() : *foo_val));
+  Handle<Object> bar_val(&scope, args.getKw(*bar_name));
+  tuple->atPut(2, (bar_val->isError() ? None::object() : *bar_val));
   return *tuple;
 }
 
