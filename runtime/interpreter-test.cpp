@@ -1973,4 +1973,59 @@ foo(**{'a': 1, 'b': 2}, **Foo())
                "got multiple values for keyword argument");
 }
 
+TEST(InterpreterTest, YieldFromIterReturnsIter) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCStr(R"(
+class FooIterator:
+    pass
+
+class Foo:
+    def __iter__(self):
+        return FooIterator()
+
+foo = Foo()
+	)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> foo(&scope, testing::moduleAt(&runtime, main, "foo"));
+
+  // Create a code object and set the foo instance as a const
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, *foo);
+  code->setConsts(*consts);
+
+  // Python code:
+  // foo = Foo()
+  // def bar():
+  //     yield from foo
+  const byte bc[] = {
+      LOAD_CONST,          0,  // (foo)
+      GET_YIELD_FROM_ITER, 0,  // iter(foo)
+      RETURN_VALUE,        0,
+  };
+  code->setCode(runtime.newByteArrayWithAll(bc));
+
+  // Confirm that the returned value is the iterator of Foo
+  Handle<Object> result(&scope, Thread::currentThread()->run(*code));
+  Handle<Type> result_type(&scope, runtime.typeOf(*result));
+  EXPECT_PYSTRING_EQ(Str::cast(result_type->name()), "FooIterator");
+}
+
+TEST(InterpreterDeathTest, YieldFromIterThrowsException) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+def yield_from_func():
+    yield from 1
+
+yield_from_func()
+	)";
+
+  ASSERT_DEATH(runtime.runFromCStr(src), "object is not iterable");
+}
+
 }  // namespace python

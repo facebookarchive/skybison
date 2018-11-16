@@ -78,7 +78,7 @@ namespace python {
   V(BINARY_OR, 66, doBinaryOr)                                                 \
   V(INPLACE_POWER, 67, doInplacePower)                                         \
   V(GET_ITER, 68, doGetIter)                                                   \
-  V(GET_YIELD_FROM_ITER, 69, doNotImplemented)                                 \
+  V(GET_YIELD_FROM_ITER, 69, doGetYieldFromIter)                               \
   V(PRINT_EXPR, 70, doPrintExpr)                                               \
   V(LOAD_BUILD_CLASS, 71, doLoadBuildClass)                                    \
   V(YIELD_FROM, 72, doNotImplemented)                                          \

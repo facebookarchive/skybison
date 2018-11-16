@@ -150,6 +150,7 @@ class Interpreter {
   static void doBinaryOr(Context* ctx, word arg);
   static void doInplacePower(Context* ctx, word arg);
   static void doGetIter(Context* ctx, word arg);
+  static void doGetYieldFromIter(Context* ctx, word arg);
   static void doPrintExpr(Context* ctx, word);
   static void doLoadBuildClass(Context* ctx, word arg);
   static void doGetAwaitable(Context* ctx, word arg);

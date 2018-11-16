@@ -970,6 +970,40 @@ void Interpreter::doGetIter(Context* ctx, word) {
   ctx->frame->setTopValue(*iterator);
 }
 
+// opcode 69
+void Interpreter::doGetYieldFromIter(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  HandleScope scope(thread);
+  Handle<Object> iterable(&scope, frame->topValue());
+
+  if (iterable->isGen()) {
+    return;
+  }
+
+  if (iterable->isCoro()) {
+    Handle<Code> code(&scope, frame->code());
+    if (code->flags() &
+        (Code::Flags::COROUTINE | Code::Flags::ITERABLE_COROUTINE)) {
+      thread->throwTypeErrorFromCStr(
+          "cannot 'yield from' a coroutine object in a non-coroutine "
+          "generator");
+      thread->abortOnPendingException();
+    }
+    return;
+  }
+
+  Handle<Object> method(
+      &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
+  if (method->isError()) {
+    thread->throwTypeErrorFromCStr("object is not iterable");
+    thread->abortOnPendingException();
+  }
+  Handle<Object> iterator(&scope, callMethod1(thread, frame, method, iterable));
+  thread->abortOnPendingException();
+  frame->setTopValue(*iterator);
+}
+
 // opcode 70
 void Interpreter::doPrintExpr(Context* ctx, word) {
   Thread* thread = ctx->thread;
