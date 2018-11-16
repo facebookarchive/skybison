@@ -591,6 +591,10 @@ class Runtime {
   Object* classSetAttr(Thread* thread, const Handle<Object>& receiver,
                        const Handle<Object>& name, const Handle<Object>& value);
 
+  // Generic attribute deletion code used for class objects
+  Object* classDelAttr(Thread* thread, const Handle<Object>& receiver,
+                       const Handle<Object>& name);
+
   // Generic attribute lookup code used for instance objects
   Object* instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
                           const Handle<Object>& name);

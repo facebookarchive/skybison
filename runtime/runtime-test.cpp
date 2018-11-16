@@ -2531,6 +2531,105 @@ del bar.baz
   EXPECT_PYSTRING_EQ(String::cast(result->at(1)), "baz");
 }
 
+TEST(ClassAttributeDeletionTest, DeleteKnownAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+class Foo:
+    foo = 'foo'
+    bar = 'bar'
+
+def test():
+    del Foo.bar
+)";
+  compileAndRunToString(&runtime, src);
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(0));
+  Handle<Object> result(&scope, callFunction(test, args));
+  EXPECT_EQ(*result, None::object());
+}
+
+TEST(ClassAttributeDeletionTest, DeleteDescriptorOnMetaclass) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+args = None
+
+class DeleteDescriptor:
+    def __delete__(self, instance):
+        global args
+        args = (self, instance)
+
+descr = DeleteDescriptor()
+
+class FooMeta(type):
+    attr = descr
+
+class Foo(metaclass=FooMeta):
+    pass
+
+del Foo.attr
+)";
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> data(&scope, findInModule(&runtime, main, "args"));
+  ASSERT_TRUE(data->isObjectArray());
+
+  Handle<ObjectArray> args(&scope, *data);
+  ASSERT_EQ(args->length(), 2);
+
+  Handle<Object> descr(&scope, findInModule(&runtime, main, "descr"));
+  EXPECT_EQ(args->at(0), *descr);
+
+  Handle<Object> foo(&scope, findInModule(&runtime, main, "Foo"));
+  EXPECT_EQ(args->at(1), *foo);
+}
+
+TEST(ClassAttributeDeletionDeathTest, DeleteUnknownAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+class Foo:
+    pass
+
+del Foo.bar
+)";
+  EXPECT_DEATH(compileAndRunToString(&runtime, src), "missing attribute");
+}
+
+TEST(ClassAttributeDeletionTest, DeleteAttributeWithDunderDelattrOnMetaclass) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+args = None
+
+class FooMeta(type):
+    def __delattr__(self, name):
+        global args
+        args = self, name
+
+class Foo(metaclass=FooMeta):
+    pass
+
+del Foo.bar
+)";
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> data(&scope, findInModule(&runtime, main, "args"));
+  ASSERT_TRUE(data->isObjectArray());
+
+  Handle<ObjectArray> args(&scope, *data);
+  ASSERT_EQ(args->length(), 2);
+
+  Handle<Object> foo(&scope, findInModule(&runtime, main, "Foo"));
+  EXPECT_EQ(args->at(0), *foo);
+
+  Handle<Object> attr(&scope, runtime.internStringFromCString("bar"));
+  EXPECT_EQ(args->at(1), *attr);
+}
+
 TEST(RuntimeIntegerTest, NewSmallIntegerWithDigits) {
   Runtime runtime;
   HandleScope scope;

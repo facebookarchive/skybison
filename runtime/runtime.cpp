@@ -354,6 +354,46 @@ Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
   return None::object();
 }
 
+Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
+                              const Handle<Object>& name) {
+  if (!name->isString()) {
+    // TODO(T25140871): Refactor into something like:
+    //     thread->throwUnexpectedTypeError(expected, actual)
+    return thread->throwTypeErrorFromCString("attribute name must be a string");
+  }
+
+  HandleScope scope(thread);
+  Handle<Class> klass(&scope, *receiver);
+  // TODO(mpage): This needs to handle built-in extension types.
+  if (klass->isIntrinsicOrExtension()) {
+    // TODO(T25140871): Refactor this into something that includes the type name
+    // like:
+    //     thread->throwImmutableTypeManipulationError(klass)
+    return thread->throwTypeErrorFromCString(
+        "can't set attributes of built-in/extension type");
+  }
+
+  // Check for a delete descriptor
+  Handle<Class> metaklass(&scope, classOf(*receiver));
+  Handle<Object> meta_attr(&scope, lookupNameInMro(thread, metaklass, name));
+  if (!meta_attr->isError()) {
+    if (isDeleteDescriptor(thread, meta_attr)) {
+      return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
+                                               meta_attr, receiver);
+    }
+  }
+
+  // No delete descriptor found, attempt to delete from the klass dictionary
+  Handle<Dictionary> klass_dict(&scope, klass->dictionary());
+  if (!dictionaryRemove(klass_dict, name, nullptr)) {
+    // TODO(T25140871): Refactor this into something like:
+    //     thread->throwMissingAttributeError(name)
+    return thread->throwAttributeErrorFromCString("missing attribute");
+  }
+
+  return None::object();
+}
+
 // Generic attribute lookup code used for instance objects
 Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
                                  const Handle<Object>& name) {
@@ -2086,7 +2126,9 @@ bool Runtime::dictionaryRemove(const Handle<Dictionary>& dict,
   bool found = dictionaryLookup(data, key, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
-    *value = Dictionary::Bucket::value(*data, index);
+    if (value != nullptr) {
+      *value = Dictionary::Bucket::value(*data, index);
+    }
     Dictionary::Bucket::setTombstone(*data, index);
     dict->setNumItems(dict->numItems() - 1);
   }
@@ -2441,18 +2483,16 @@ Object* Runtime::attributeAtPut(Thread* thread, const Handle<Object>& receiver,
 Object* Runtime::attributeDel(Thread* thread, const Handle<Object>& receiver,
                               const Handle<Object>& name) {
   HandleScope scope(thread);
-  Handle<Object> interned_name(&scope, internString(name));
-  Object* result;
-
   // If present, __delattr__ overrides all attribute deletion logic.
   Handle<Class> klass(&scope, classOf(*receiver));
   Handle<Object> dunder_delattr(
       &scope, lookupSymbolInMro(thread, klass, SymbolId::kDunderDelattr));
+  Object* result;
   if (!dunder_delattr->isError()) {
     result = Interpreter::callMethod2(thread, thread->currentFrame(),
                                       dunder_delattr, receiver, name);
-  } else if (receiver->isClass()) {
-    UNIMPLEMENTED("del unsupported for classes");
+  } else if (isInstanceOfClass(*receiver)) {
+    result = classDelAttr(thread, receiver, name);
   } else if (receiver->isModule()) {
     UNIMPLEMENTED("del unsupported for modules");
   } else {
