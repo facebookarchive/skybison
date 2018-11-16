@@ -1953,4 +1953,16 @@ f()
   EXPECT_EQ(output, "1\n2\n3\n");
 }
 
+TEST(ThreadTest, UnpackSequence) {
+  const char* src = R"(
+a, b = (1, 2)
+print(a, b)
+a, b = [3, 4]
+print(a, b)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1 2\n3 4\n");
+}
+
 } // namespace python

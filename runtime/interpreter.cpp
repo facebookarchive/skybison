@@ -559,6 +559,26 @@ Result LOAD_CLOSURE(Context* ctx, word arg) {
   *--ctx->sp = ctx->frame->getLocal(code->nlocals() + arg);
   return Result::CONTINUE;
 }
+Result UNPACK_SEQUENCE(Context* ctx, word arg) {
+  Object* seq = *ctx->sp++;
+  if (seq->isObjectArray()) {
+    CHECK(
+        ObjectArray::cast(seq)->length() == arg,
+        "Wrong number of items to unpack");
+    while (arg--) {
+      *--ctx->sp = ObjectArray::cast(seq)->at(arg);
+    }
+  } else if (seq->isList()) {
+    CHECK(
+        List::cast(seq)->capacity() == arg, "Wrong number of items to unpack");
+    while (arg--) {
+      *--ctx->sp = List::cast(seq)->at(arg);
+    }
+  } else {
+    UNIMPLEMENTED("Iterable unpack not supported.");
+  }
+  return Result::CONTINUE;
+}
 
 using Op = Result (*)(Context*, word);
 Op opTable[256];
@@ -621,6 +641,7 @@ void Interpreter::initOpTable() {
   opTable[Bytecode::LOAD_CLOSURE] = interpreter::LOAD_CLOSURE;
   opTable[Bytecode::STORE_DEREF] = interpreter::STORE_DEREF;
   opTable[Bytecode::LOAD_DEREF] = interpreter::LOAD_DEREF;
+  opTable[Bytecode::UNPACK_SEQUENCE] = interpreter::UNPACK_SEQUENCE;
 }
 
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
