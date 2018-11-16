@@ -115,7 +115,7 @@ class Runtime {
 
   void processCallbacks();
 
-  Object* strConcat(const Handle<Str>& a, const Handle<Str>& b);
+  Object* strConcat(const Handle<Str>& left, const Handle<Str>& right);
 
   Object* newValueCell();
 
