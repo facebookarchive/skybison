@@ -58,4 +58,92 @@ a_le_a = 'a' <= 'a'
   EXPECT_EQ(*a_le_a, Boolean::trueObj());
 }
 
+TEST(StrBuiltinsTest, DunderNewCallsDunderStr) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+    def __str__(self):
+        return "foo"
+a = str.__new__(str, Foo())
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "foo");
+}
+
+TEST(StrBuiltinsTest, DunderNewCallsReprIfNoDunderStr) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  pass
+f = Foo()
+a = str.__new__(str, f)
+b = repr(f)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_PYSTRING_EQ(*a, *b);
+}
+
+TEST(StrBuiltinsTest, DunderNewWithNoArgsExceptTypeReturnsEmptyString) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = str.__new__(str)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "");
+}
+
+TEST(StrBuiltinsTest, DunderNewWithStrReturnsSameStr) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = str.__new__(str, "hello")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "hello");
+}
+
+TEST(StrBuiltinsDeathTest, DunderNewWithNoArgsThrows) {
+  Runtime runtime;
+  const char* src = R"(
+str.__new__()
+)";
+  EXPECT_DEATH(runtime.runFromCString(src),
+               "aborting due to pending exception");
+}
+
+TEST(StrBuiltinsDeathTest, DunderNewWithTooManyArgsThrows) {
+  Runtime runtime;
+  const char* src = R"(
+str.__new__(str, 1, 2, 3, 4)
+)";
+  EXPECT_DEATH(runtime.runFromCString(src),
+               "aborting due to pending exception");
+}
+
+TEST(StrBuiltinsDeathTest, DunderNewWithNonTypeArgThrows) {
+  Runtime runtime;
+  const char* src = R"(
+str.__new__(1)
+)";
+  EXPECT_DEATH(runtime.runFromCString(src),
+               "aborting due to pending exception");
+}
+
+TEST(StrBuiltinsDeathTest, DunderNewWithNonSubtypeArgThrows) {
+  Runtime runtime;
+  const char* src = R"(
+str.__new__(object)
+)";
+  EXPECT_DEATH(runtime.runFromCString(src),
+               "aborting due to pending exception");
+}
+
 }  // namespace python

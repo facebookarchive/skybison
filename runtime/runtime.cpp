@@ -1086,6 +1086,7 @@ void Runtime::initializeStrClass() {
   Handle<Class> type(&scope,
                      addEmptyBuiltinClass(SymbolId::kStr, LayoutId::kString,
                                           LayoutId::kObject));
+  type->setFlag(Class::Flag::kStrSubclass);
 
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinStringEq>);
@@ -1110,6 +1111,9 @@ void Runtime::initializeStrClass() {
 
   classAddBuiltinFunction(type, SymbolId::kDunderNe,
                           nativeTrampoline<builtinStringNe>);
+
+  classAddBuiltinFunction(type, SymbolId::kDunderNew,
+                          nativeTrampoline<builtinStringNew>);
 }
 
 void Runtime::initializeObjectArrayClass() {
@@ -1666,6 +1670,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kSet, LayoutId::kSet);
   moduleAddBuiltinType(module, SymbolId::kStopIteration,
                        LayoutId::kStopIteration);
+  moduleAddBuiltinType(module, SymbolId::kStr, LayoutId::kString);
   moduleAddBuiltinType(module, SymbolId::kSystemExit, LayoutId::kSystemExit);
   moduleAddBuiltinType(module, SymbolId::kSuper, LayoutId::kSuper);
   moduleAddBuiltinType(module, SymbolId::kType, LayoutId::kType);

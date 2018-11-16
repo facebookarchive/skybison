@@ -587,8 +587,9 @@ class Class : public HeapObject {
     kDictSubclass = 1 << 1,
     kListSubclass = 1 << 2,
     kStopIterationSubclass = 1 << 3,
-    kSystemExitSubclass = 1 << 4,
-    kClassSubclass = 1 << 5,
+    kStrSubclass = 1 << 4,
+    kSystemExitSubclass = 1 << 5,
+    kClassSubclass = 1 << 6,
     kLast = kClassSubclass,
   };
   static_assert(Flag::kLast < SmallInteger::kMaxValue,

@@ -117,6 +117,58 @@ Object* builtinStringNe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinStringNew(Thread* thread, Frame* frame, word nargs) {
+  if (nargs == 0) {
+    return thread->throwTypeErrorFromCString(
+        "str.__new__(): not enough arguments");
+  }
+  if (nargs > 4) {
+    return thread->throwTypeErrorFromCString(
+        "str() takes at most three arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Handle<Object> type(&scope, args.get(0));
+  if (!runtime->hasSubClassFlag(*type, Class::Flag::kClassSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "str.__new__(X): X is not a type object");
+  }
+  if (!Class::cast(*type)->hasFlag(Class::Flag::kStrSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "str.__new__(X): X is not a subtype of str");
+  }
+  Handle<Layout> layout(&scope, Class::cast(*type)->instanceLayout());
+  if (layout->id() != LayoutId::kString) {
+    // TODO: Implement __new__ with subtypes of str.
+    UNIMPLEMENTED("str.__new__(<subtype of str>, ...)");
+  }
+  if (nargs == 1) {
+    // No argument to str, return empty string.
+    return runtime->newStringFromCString("");
+  }
+  if (nargs > 2) {
+    UNIMPLEMENTED("str() with encoding");
+  }
+  // Only one argument, the value to be stringified.
+  Handle<Object> arg(&scope, args.get(1));
+  // If it's already exactly a string, return it immediately.
+  if (arg->isString()) {
+    return *arg;
+  }
+  // If it's not exactly a string, call its __str__.
+  Handle<Object> method(&scope, Interpreter::lookupMethod(
+                                    thread, frame, arg, SymbolId::kDunderStr));
+  DCHECK(!method->isError(),
+         "No __str__ found on the object even though everything inherits one");
+  Object* ret = Interpreter::callMethod1(thread, frame, method, arg);
+  if (!ret->isError() &&
+      !runtime->hasSubClassFlag(ret, Class::Flag::kStrSubclass)) {
+    return thread->throwTypeErrorFromCString("__str__ returned non-string");
+  }
+  return ret;
+}
+
 Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
