@@ -38,6 +38,8 @@ class Runtime {
 
   Object* newDictionary();
 
+  Object* newSet();
+
   Object* newBuiltinFunction(Function::Entry entry, Function::Entry entryKw);
   Object* newFunction();
 
@@ -170,6 +172,16 @@ class Runtime {
       const Handle<Object>& key,
       Object** value);
 
+  // Set related function, based on dictionary.
+  // Add a value to set and return the object in set.
+  Object* setAdd(const Handle<Set>& set, const Handle<Object>& value);
+
+  // Returns true if the set contains the specified value.
+  bool setIncludes(const Handle<Set>& set, const Handle<Object>& value);
+
+  // Delete a key from the set, returns true if the key existed.
+  bool setRemove(const Handle<Set>& set, const Handle<Object>& value);
+
   NewValueCellCallback* newValueCellCallback() {
     return &new_value_cell_callback_;
   }
@@ -196,6 +208,10 @@ class Runtime {
   // a resize (obviously this depends on the load factor used to resize the
   // dict).
   static const int kInitialDictionaryCapacity = 8;
+
+  // Initial data of the set.
+  static const int kSetGrowthFactor = 2;
+  static const int kInitialSetCapacity = 8;
 
  private:
   void initializeThreads();
@@ -234,6 +250,14 @@ class Runtime {
       const Handle<Object>& key,
       const Handle<Object>& key_hash,
       word* index);
+
+  bool setLookup(
+      const Handle<ObjectArray>& data,
+      const Handle<Object>& key,
+      const Handle<Object>& key_hash,
+      word* index);
+
+  ObjectArray* setGrow(const Handle<ObjectArray>& data);
 
   void moduleAddBuiltinPrint(const Handle<Module>& module);
 

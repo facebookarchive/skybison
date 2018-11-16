@@ -76,6 +76,7 @@ enum ClassId {
   kObjectArray,
   kRange,
   kRangeIterator,
+  kSet,
   kType,
   kValueCell,
 
@@ -102,16 +103,17 @@ class Object {
   inline bool isClass();
   inline bool isCode();
   inline bool isDictionary();
+  inline bool isEllipsis();
   inline bool isFunction();
   inline bool isInstance();
   inline bool isList();
   inline bool isModule();
   inline bool isObjectArray();
   inline bool isLargeString();
-  inline bool isValueCell();
-  inline bool isEllipsis();
   inline bool isRange();
   inline bool isRangeIterator();
+  inline bool isSet();
+  inline bool isValueCell();
 
   // superclass objects
   inline bool isString();
@@ -854,6 +856,37 @@ class Dictionary : public HeapObject {
 };
 
 /**
+ * A simple set implementation.
+ */
+class Set : public HeapObject {
+ public:
+  // Getters and setters.
+  inline static Set* cast(Object* object);
+
+  // The ObjectArray backing the set
+  inline Object* data();
+  inline void setData(Object* data);
+
+  // Number of items currently in the set
+  inline word numItems();
+  inline void setNumItems(word numItems);
+
+  // Sizing.
+  inline static word allocationSize();
+
+  // Allocation.
+  inline void initialize(Object* items);
+
+  // Layout.
+  static const int kNumItemsOffset = HeapObject::kSize;
+  static const int kDataOffset = kNumItemsOffset + kPointerSize;
+  static const int kSize = kDataOffset + kPointerSize;
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(Set);
+};
+
+/**
  * A growable array
  *
  * Layout:
@@ -1030,6 +1063,13 @@ bool Object::isDictionary() {
     return false;
   }
   return HeapObject::cast(this)->header()->classId() == ClassId::kDictionary;
+}
+
+bool Object::isSet() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() == ClassId::kSet;
 }
 
 bool Object::isModule() {
@@ -1736,7 +1776,7 @@ RangeIterator* RangeIterator::cast(Object* object) {
 // Dictionary
 
 word Dictionary::allocationSize() {
-  return Header::kSize + Module::kSize;
+  return Header::kSize + Dictionary::kSize;
 }
 
 void Dictionary::initialize(Object* data) {
@@ -2096,6 +2136,38 @@ word Ellipsis::allocationSize() {
 Ellipsis* Ellipsis::cast(Object* object) {
   assert(object->isEllipsis());
   return reinterpret_cast<Ellipsis*>(object);
+}
+
+// Set
+
+word Set::allocationSize() {
+  return Header::kSize + Set::kSize;
+}
+
+void Set::initialize(Object* data) {
+  instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(0));
+  instanceVariableAtPut(kDataOffset, data);
+}
+
+Set* Set::cast(Object* object) {
+  assert(object->isSet());
+  return reinterpret_cast<Set*>(object);
+}
+
+word Set::numItems() {
+  return SmallInteger::cast(instanceVariableAt(kNumItemsOffset))->value();
+}
+
+void Set::setNumItems(word numItems) {
+  instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(numItems));
+}
+
+Object* Set::data() {
+  return instanceVariableAt(kDataOffset);
+}
+
+void Set::setData(Object* data) {
+  instanceVariableAtPut(kDataOffset, data);
 }
 
 } // namespace python

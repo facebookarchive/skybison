@@ -181,6 +181,20 @@ Object* Heap::createDictionary(Object* data) {
   return Dictionary::cast(result);
 }
 
+Object* Heap::createSet(Object* data) {
+  word size = Set::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<Set*>(raw);
+  result->setHeader(Header::from(
+      Set::kSize / kPointerSize,
+      0,
+      ClassId::kSet,
+      ObjectFormat::kObjectInstance));
+  result->initialize(data);
+  return Set::cast(result);
+}
+
 Object* Heap::createFunction() {
   word size = Function::allocationSize();
   Object* raw = allocate(size, Header::kSize);

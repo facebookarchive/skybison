@@ -404,4 +404,102 @@ TEST(String, ToCString) {
   std::free(c_nulchar);
 }
 
+TEST(SetTest, EmptySetInvariants) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Set> set(&scope, runtime.newSet());
+
+  EXPECT_EQ(set->numItems(), 0);
+  ASSERT_TRUE(set->isSet());
+  ASSERT_TRUE(set->data()->isObjectArray());
+  EXPECT_EQ(ObjectArray::cast(set->data())->length(), 0);
+}
+
+TEST(SetTest, Add) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Object> value(&scope, SmallInteger::fromWord(12345));
+
+  // Store a value
+  runtime.setAdd(set, value);
+  EXPECT_EQ(set->numItems(), 1);
+
+  // Retrieve the stored value
+  ASSERT_TRUE(runtime.setIncludes(set, value));
+
+  // Add a new value
+  Handle<Object> newValue(&scope, SmallInteger::fromWord(5555));
+  runtime.setAdd(set, newValue);
+  EXPECT_EQ(set->numItems(), 2);
+
+  // Get the new value
+  ASSERT_TRUE(runtime.setIncludes(set, newValue));
+
+  // Add a existing value
+  Handle<Object> same_value(&scope, SmallInteger::fromWord(12345));
+  Object* old_value = runtime.setAdd(set, same_value);
+  EXPECT_EQ(set->numItems(), 2);
+  EXPECT_EQ(old_value, *value);
+}
+
+TEST(SetTest, Remove) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Set> set(&scope, runtime.newSet());
+  Handle<Object> value(&scope, SmallInteger::fromWord(12345));
+
+  // Removing a key that doesn't exist should fail
+  EXPECT_FALSE(runtime.setRemove(set, value));
+
+  runtime.setAdd(set, value);
+  EXPECT_EQ(set->numItems(), 1);
+
+  ASSERT_TRUE(runtime.setRemove(set, value));
+  EXPECT_EQ(set->numItems(), 0);
+
+  // Looking up a key that was deleted should fail
+  ASSERT_FALSE(runtime.setIncludes(set, value));
+}
+
+TEST(SetTest, Grow) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Set> set(&scope, runtime.newSet());
+
+  // Fill up the dict - we insert an initial key to force the allocation of the
+  // backing ObjectArray.
+  Handle<Object> initKey(&scope, SmallInteger::fromWord(0));
+  runtime.setAdd(set, initKey);
+  ASSERT_TRUE(set->data()->isObjectArray());
+  word initDataSize = ObjectArray::cast(set->data())->length();
+
+  auto makeKey = [&runtime](int i) {
+    byte text[]{"0123456789abcdeghiklmn"};
+    return runtime.newStringWithAll(view(text + i % 10, 10));
+  };
+
+  // Fill in one fewer keys than would require growing the underlying object
+  // array again
+  word numKeys = Runtime::kInitialSetCapacity;
+  for (int i = 1; i < numKeys; i++) {
+    Handle<Object> key(&scope, makeKey(i));
+    runtime.setAdd(set, key);
+  }
+
+  // Add another key which should force us to double the capacity
+  Handle<Object> straw(&scope, makeKey(numKeys));
+  runtime.setAdd(set, straw);
+  ASSERT_TRUE(set->data()->isObjectArray());
+  word newDataSize = ObjectArray::cast(set->data())->length();
+  EXPECT_EQ(newDataSize, Runtime::kSetGrowthFactor * initDataSize);
+
+  // Make sure we can still read all the stored keys
+  for (int i = 1; i <= numKeys; i++) {
+    Handle<Object> key(&scope, makeKey(i));
+    bool found = runtime.setIncludes(set, key);
+    ASSERT_TRUE(found);
+  }
+}
+
 } // namespace python

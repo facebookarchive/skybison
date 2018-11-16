@@ -28,6 +28,8 @@ class Heap {
 
   Object* createDictionary(Object* items);
 
+  Object* createSet(Object* items);
+
   Object* createFunction();
 
   Object* createInstance(ClassId class_id, word num_attributes);

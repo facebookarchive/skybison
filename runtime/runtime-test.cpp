@@ -302,27 +302,26 @@ TEST(RuntimeTest, EnsureCapacity) {
 TEST(RuntimeTest, InternString) {
   Runtime runtime;
   HandleScope scope;
-  Object* ignore;
 
-  Handle<Dictionary> interned(&scope, runtime.interned());
+  Handle<Set> interned(&scope, runtime.interned());
 
   Handle<Object> str1(&scope, runtime.newStringFromCString("hello, world"));
-  EXPECT_FALSE(runtime.dictionaryAt(interned, str1, &ignore));
+  EXPECT_FALSE(runtime.setIncludes(interned, str1));
 
   Handle<Object> sym1(&scope, runtime.internString(str1));
-  EXPECT_TRUE(runtime.dictionaryAt(interned, str1, &ignore));
+  EXPECT_TRUE(runtime.setIncludes(interned, str1));
   EXPECT_EQ(*sym1, *str1);
 
   Handle<Object> str2(&scope, runtime.newStringFromCString("goodbye, world"));
   EXPECT_NE(*str1, *str2);
 
   Handle<Object> sym2(&scope, runtime.internString(str2));
-  EXPECT_TRUE(runtime.dictionaryAt(interned, str2, &ignore));
+  EXPECT_TRUE(runtime.setIncludes(interned, str2));
   EXPECT_EQ(*sym2, *str2);
   EXPECT_NE(*sym1, *sym2);
 
   Handle<Object> str3(&scope, runtime.newStringFromCString("hello, world"));
-  EXPECT_TRUE(runtime.dictionaryAt(interned, str3, &ignore));
+  EXPECT_TRUE(runtime.setIncludes(interned, str3));
 
   Handle<Object> sym3(&scope, runtime.internString(str3));
   EXPECT_NE(*sym3, *str3);

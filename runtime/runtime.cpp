@@ -166,14 +166,9 @@ Object* Runtime::newStringWithAll(View<byte> code_units) {
 
 Object* Runtime::internString(const Handle<Object>& string) {
   HandleScope scope;
-  Handle<Dictionary> dictionary(&scope, interned());
+  Handle<Set> set(&scope, interned());
   Handle<Object> key(&scope, *string);
-  Object* value;
-  if (dictionaryAt(dictionary, key, &value)) {
-    return value;
-  }
-  dictionaryAtPut(dictionary, key, key);
-  return *string;
+  return setAdd(set, key);
 }
 
 Object* Runtime::hash(Object* object) {
@@ -439,7 +434,7 @@ void Runtime::initializePrimitiveInstances() {
 }
 
 void Runtime::initializeInterned() {
-  interned_ = newDictionary();
+  interned_ = newSet();
 }
 
 void Runtime::initializeRandom() {
@@ -729,6 +724,62 @@ class Bucket {
   DISALLOW_HEAP_ALLOCATION();
 };
 
+// Set
+
+// Helper class for manipulating buckets in the ObjectArray that backs the
+// Set, it has one less slot than Bucket.
+class SetBucket {
+ public:
+  SetBucket(const Handle<ObjectArray>& data, word index)
+      : data_(data), index_(index) {}
+
+  inline Object* hash() {
+    return data_->at(index_ + kHashOffset);
+  }
+
+  inline Object* key() {
+    return data_->at(index_ + kKeyOffset);
+  }
+
+  inline void set(Object* hash, Object* key) {
+    data_->atPut(index_ + kHashOffset, hash);
+    data_->atPut(index_ + kKeyOffset, key);
+  }
+
+  inline bool hasKey(Object* thatKey) {
+    return !hash()->isNone() && Object::equals(key(), thatKey);
+  }
+
+  inline bool isTombstone() {
+    return hash()->isNone() && !key()->isNone();
+  }
+
+  inline void setTombstone() {
+    set(None::object(), Error::object());
+  }
+
+  inline bool isEmpty() {
+    return hash()->isNone() && key()->isNone();
+  }
+
+  static inline word getIndex(Object* data, Object* hash) {
+    word nbuckets = ObjectArray::cast(data)->length() / kNumPointers;
+    assert(Utils::isPowerOfTwo(nbuckets));
+    word value = SmallInteger::cast(hash)->value();
+    return (value & (nbuckets - 1)) * kNumPointers;
+  }
+
+  static const word kHashOffset = 0;
+  static const word kKeyOffset = kHashOffset + 1;
+  static const word kNumPointers = kKeyOffset + 1;
+
+ private:
+  const Handle<ObjectArray>& data_;
+  word index_;
+
+  DISALLOW_HEAP_ALLOCATION();
+};
+
 Object* Runtime::newDictionary() {
   return heap()->createDictionary(empty_object_array_);
 }
@@ -902,6 +953,120 @@ bool Runtime::dictionaryLookup(
   *index = nextFreeIndex;
 
   return false;
+}
+
+Object* Runtime::newSet() {
+  return heap()->createSet(empty_object_array_);
+}
+
+bool Runtime::setLookup(
+    const Handle<ObjectArray>& data,
+    const Handle<Object>& key,
+    const Handle<Object>& key_hash,
+    word* index) {
+  word start = SetBucket::getIndex(*data, *key_hash);
+  word current = start;
+  word nextFreeIndex = -1;
+
+  // TODO(mpage) - Quadratic probing?
+  word length = data->length();
+  if (length == 0) {
+    *index = -1;
+    return false;
+  }
+
+  do {
+    SetBucket bucket(data, current);
+    if (bucket.hasKey(*key)) {
+      *index = current;
+      return true;
+    } else if (nextFreeIndex == -1 && bucket.isTombstone()) {
+      nextFreeIndex = current;
+    } else if (bucket.isEmpty()) {
+      if (nextFreeIndex == -1) {
+        nextFreeIndex = current;
+      }
+      break;
+    }
+    current = (current + SetBucket::kNumPointers) % length;
+  } while (current != start);
+
+  *index = nextFreeIndex;
+
+  return false;
+}
+
+ObjectArray* Runtime::setGrow(const Handle<ObjectArray>& data) {
+  HandleScope scope;
+  word newLength = data->length() * kSetGrowthFactor;
+  if (newLength == 0) {
+    newLength = kInitialSetCapacity * SetBucket::kNumPointers;
+  }
+  Handle<ObjectArray> newData(&scope, newObjectArray(newLength));
+  // Re-insert items
+  for (word i = 0; i < data->length(); i += SetBucket::kNumPointers) {
+    SetBucket oldBucket(data, i);
+    if (oldBucket.isEmpty() || oldBucket.isTombstone()) {
+      continue;
+    }
+    Handle<Object> key(&scope, oldBucket.key());
+    Handle<Object> hash(&scope, oldBucket.hash());
+    word index = -1;
+    setLookup(newData, key, hash, &index);
+    assert(index != -1);
+    SetBucket newBucket(newData, index);
+    newBucket.set(*hash, *key);
+  }
+  return *newData;
+}
+
+Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
+  HandleScope scope;
+  Handle<ObjectArray> data(&scope, set->data());
+  word index = -1;
+  Handle<Object> key_hash(&scope, hash(*value));
+  bool found = setLookup(data, value, key_hash, &index);
+  if (found) {
+    assert(index != -1);
+    return SetBucket(data, index).key();
+  }
+  if (index == -1) {
+    // TODO(mpage): Grow at a predetermined load factor, rather than when full
+    Handle<ObjectArray> newData(&scope, setGrow(data));
+    setLookup(newData, value, key_hash, &index);
+    assert(index != -1);
+    set->setData(*newData);
+    SetBucket bucket(newData, index);
+    bucket.set(*key_hash, *value);
+  } else {
+    SetBucket bucket(data, index);
+    bucket.set(*key_hash, *value);
+  }
+  set->setNumItems(set->numItems() + 1);
+  return *value;
+}
+
+bool Runtime::setIncludes(const Handle<Set>& set, const Handle<Object>& value) {
+  HandleScope scope;
+  Handle<ObjectArray> data(&scope, set->data());
+  Handle<Object> key_hash(&scope, hash(*value));
+  word ignore;
+  return setLookup(data, value, key_hash, &ignore);
+}
+
+bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
+  HandleScope scope;
+  Handle<ObjectArray> data(&scope, set->data());
+  Handle<Object> key_hash(&scope, hash(*value));
+  word index = -1;
+  bool found = setLookup(data, value, key_hash, &index);
+  if (found) {
+    assert(index != -1);
+    SetBucket bucket(data, index);
+    bucket.setTombstone();
+    set->setNumItems(set->numItems() - 1);
+  }
+  return found;
 }
 
 Object* Runtime::newValueCell() {
