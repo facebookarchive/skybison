@@ -2596,6 +2596,41 @@ print(len(b), b[0], b[1], b[2])
   EXPECT_EQ(output, "3 1 2 3\n");
 }
 
+TEST(BuildSlice, sliceOperations) {
+  const char* src = R"(
+a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+b = a[1:2:3]
+print(len(b), b[0])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1 2\n");
+
+  const char* src2 = R"(
+a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+b = a[1::3]
+print(len(b), b[0], b[1], b[2])
+)";
+  std::string output2 = compileAndRunToString(&runtime, src2);
+  EXPECT_EQ(output2, "3 2 5 8\n");
+
+  const char* src3 = R"(
+a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+b = a[8:2:-2]
+print(len(b), b[0], b[1], b[2])
+)";
+  std::string output3 = compileAndRunToString(&runtime, src3);
+  ASSERT_EQ(output3, "3 9 7 5\n");
+
+  const char* src4 = R"(
+a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+b = a[8:2:2]
+print(len(b))
+)";
+  std::string output4 = compileAndRunToString(&runtime, src4);
+  EXPECT_EQ(output4, "0\n");
+}
+
 TEST(BuildSlice, noneSliceCopyListComp) { // pystone
   const char* src = R"(
 a = [1, 2, 3]

@@ -605,7 +605,7 @@ void BINARY_SUBSCR(Context* ctx, word) {
     } else if (key->isSlice()) { // slice as key: custom behavior
       Handle<Slice> slice(&scope, *key);
       Handle<List> list(&scope, *container);
-      *--sp = ctx->thread->runtime()->listSlice(ctx->thread, list, slice);
+      *--sp = ctx->thread->runtime()->listSlice(list, slice);
     }
   } else if (container->isDictionary()) {
     Handle<Dictionary> dict(&scope, *container);

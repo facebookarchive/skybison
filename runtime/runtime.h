@@ -187,11 +187,8 @@ class Runtime {
   // Return a new list that is composed of list repeated ntimes
   Object* listReplicate(Thread* thread, const Handle<List>& list, word ntimes);
 
-  // Limited implementation: only copy via [:] supported
-  Object* listSlice(
-      Thread* thread,
-      const Handle<List>& list,
-      const Handle<Slice>& slice);
+  // Returns a subset of the given list as a newly allocated list.
+  Object* listSlice(const Handle<List>& list, const Handle<Slice>& slice);
 
   // Associate a value with the supplied key.
   //

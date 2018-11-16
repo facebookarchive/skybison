@@ -64,6 +64,39 @@ char* LargeString::toCString() {
   return reinterpret_cast<char*>(result);
 }
 
+void Slice::unpack(word* start, word* stop, word* step) {
+  if (this->step()->isNone()) {
+    *step = 1;
+  } else {
+    // TODO(T27897506): CPython uses _PyEval_SliceIndex to convert any
+    //       integer to eval any object into a valid index. For now, it'll
+    //       assume that all indices are SmallIntegers.
+    *step = SmallInteger::cast(this->step())->value();
+    if (*step == 0) {
+      UNIMPLEMENTED("Throw ValueError. slice step cannot be zero");
+    }
+    // Here *step might be -SmallInteger::kMaxValue-1; in this case we replace
+    // it with -SmallInteger::kMaxValue.  This doesn't affect the semantics,
+    // and it guards against later undefined behaviour resulting from code that
+    // does "step = -step" as part of a slice reversal.
+    if (*step < -SmallInteger::kMaxValue) {
+      *step = -SmallInteger::kMaxValue;
+    }
+  }
+
+  if (this->start()->isNone()) {
+    *start = (*step < 0) ? SmallInteger::kMaxValue : 0;
+  } else {
+    *start = SmallInteger::cast(this->start())->value();
+  }
+
+  if (this->stop()->isNone()) {
+    *stop = (*step < 0) ? SmallInteger::kMinValue : SmallInteger::kMaxValue;
+  } else {
+    *stop = SmallInteger::cast(this->stop())->value();
+  }
+}
+
 word Slice::adjustIndices(word length, word* start, word* stop, word step) {
   DCHECK(step != 0, "Step should be non zero");
 

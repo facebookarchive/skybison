@@ -520,6 +520,118 @@ TEST(SliceTest, adjustIndicesOutOfBounds) {
   ASSERT_EQ(stop, 4);
 }
 
+TEST(SliceTest, sliceList) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // list = [1,2,3,4,5]
+  Handle<List> list(&scope, runtime.newList());
+  for (int i = 1; i < 6; i++) {
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    runtime.listAdd(list, value);
+  }
+
+  // Test: [::]
+  Handle<Object> start(&scope, None::object());
+  Handle<Object> stop(&scope, None::object());
+  Handle<Object> step(&scope, None::object());
+  Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
+  Handle<List> test1(&scope, runtime.listSlice(list, slice));
+  ASSERT_EQ(test1->allocated(), 5);
+  ASSERT_EQ(SmallInteger::cast(test1->at(0))->value(), 1);
+  ASSERT_EQ(SmallInteger::cast(test1->at(4))->value(), 5);
+
+  /// consts->atPut(0, SmallInteger::fromWord(0));
+  // Test: [2:]
+  start = SmallInteger::fromWord(2);
+  stop = None::object();
+  step = None::object();
+  slice = runtime.newSlice(start, stop, step);
+  Handle<List> test2(&scope, runtime.listSlice(list, slice));
+  ASSERT_EQ(test2->allocated(), 3);
+  ASSERT_EQ(SmallInteger::cast(test2->at(0))->value(), 3);
+  ASSERT_EQ(SmallInteger::cast(test2->at(2))->value(), 5);
+
+  // Test: [-2:]
+  start = SmallInteger::fromWord(-2);
+  stop = None::object();
+  step = None::object();
+  slice = runtime.newSlice(start, stop, step);
+  Handle<List> test3(&scope, runtime.listSlice(list, slice));
+  ASSERT_EQ(test3->allocated(), 2);
+  ASSERT_EQ(SmallInteger::cast(test3->at(0))->value(), 4);
+  ASSERT_EQ(SmallInteger::cast(test3->at(1))->value(), 5);
+
+  // Test [:2]
+  start = None::object();
+  stop = SmallInteger::fromWord(2);
+  step = None::object();
+  slice = runtime.newSlice(start, stop, step);
+  Handle<List> test4(&scope, runtime.listSlice(list, slice));
+  ASSERT_EQ(test4->allocated(), 2);
+  ASSERT_EQ(SmallInteger::cast(test4->at(0))->value(), 1);
+  ASSERT_EQ(SmallInteger::cast(test4->at(1))->value(), 2);
+
+  // Test [:-2]
+  start = None::object();
+  stop = SmallInteger::fromWord(-2);
+  step = None::object();
+  slice = runtime.newSlice(start, stop, step);
+  Handle<List> test5(&scope, runtime.listSlice(list, slice));
+  ASSERT_EQ(test5->allocated(), 3);
+  ASSERT_EQ(SmallInteger::cast(test5->at(0))->value(), 1);
+  ASSERT_EQ(SmallInteger::cast(test5->at(2))->value(), 3);
+
+  // Test [::2]
+  start = None::object();
+  stop = None::object();
+  step = SmallInteger::fromWord(2);
+  slice = runtime.newSlice(start, stop, step);
+  Handle<List> test6(&scope, runtime.listSlice(list, slice));
+  ASSERT_EQ(test6->allocated(), 3);
+  ASSERT_EQ(SmallInteger::cast(test6->at(0))->value(), 1);
+  ASSERT_EQ(SmallInteger::cast(test6->at(2))->value(), 5);
+
+  // Test [::-2]
+  start = None::object();
+  stop = None::object();
+  step = SmallInteger::fromWord(-2);
+  slice = runtime.newSlice(start, stop, step);
+  Handle<List> test7(&scope, runtime.listSlice(list, slice));
+  ASSERT_EQ(test7->allocated(), 3);
+  ASSERT_EQ(SmallInteger::cast(test7->at(0))->value(), 5);
+  ASSERT_EQ(SmallInteger::cast(test7->at(2))->value(), 1);
+
+  // Out of bounds:
+
+  // Test [10:]
+  start = SmallInteger::fromWord(10);
+  stop = None::object();
+  step = None::object();
+  slice = runtime.newSlice(start, stop, step);
+  Handle<List> test8(&scope, runtime.listSlice(list, slice));
+  ASSERT_EQ(test8->allocated(), 0);
+
+  // Test [:10]
+  start = None::object();
+  stop = SmallInteger::fromWord(10);
+  step = None::object();
+  slice = runtime.newSlice(start, stop, step);
+  Handle<List> test9(&scope, runtime.listSlice(list, slice));
+  ASSERT_EQ(test9->allocated(), 5);
+  ASSERT_EQ(SmallInteger::cast(test9->at(0))->value(), 1);
+  ASSERT_EQ(SmallInteger::cast(test9->at(4))->value(), 5);
+
+  // Test [::10]
+  start = None::object();
+  stop = None::object();
+  step = SmallInteger::fromWord(10);
+  slice = runtime.newSlice(start, stop, step);
+  Handle<List> test10(&scope, runtime.listSlice(list, slice));
+  ASSERT_EQ(test10->allocated(), 1);
+  ASSERT_EQ(SmallInteger::cast(test10->at(0))->value(), 1);
+}
+
 TEST(ModulesTest, TestCreate) {
   Runtime runtime;
   HandleScope scope;

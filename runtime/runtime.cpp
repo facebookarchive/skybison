@@ -486,9 +486,6 @@ Object* Runtime::newSlice(
     const Handle<Object>& start,
     const Handle<Object>& stop,
     const Handle<Object>& step) {
-  CHECK(
-      start->isNone() && stop->isNone() && step->isNone(),
-      "Only empty slice supported.");
   HandleScope scope;
   Handle<Slice> slice(&scope, heap()->createSlice());
   slice->setStart(*start);
@@ -1193,14 +1190,24 @@ Runtime::listReplicate(Thread* thread, const Handle<List>& list, word ntimes) {
 }
 
 Object* Runtime::listSlice(
-    Thread* thread,
     const Handle<List>& list,
     const Handle<Slice>& slice) {
-  CHECK(
-      slice->start()->isNone() && slice->stop()->isNone() &&
-          slice->step()->isNone(),
-      "Only empty slice supported.");
-  return thread->runtime()->listReplicate(thread, list, 1);
+  word start, stop, step;
+  slice->unpack(&start, &stop, &step);
+  word length = Slice::adjustIndices(list->allocated(), &start, &stop, step);
+
+  HandleScope scope;
+  Handle<ObjectArray> items(&scope, newObjectArray(length));
+  word index = start;
+  for (word i = 0; i < length; i++) {
+    items->atPut(i, list->at(index));
+    index += step;
+  }
+
+  Handle<List> result(&scope, newList());
+  result->setItems(*items);
+  result->setAllocated(items->length());
+  return *result;
 }
 
 char* Runtime::compile(const char* src) {
