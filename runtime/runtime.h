@@ -64,7 +64,7 @@ class Runtime {
   Object* newCoroutine();
 
   Object* newDict();
-  Object* newDict(word initial_size);
+  Object* newDictWithSize(word initial_size);
 
   Object* newFloat(double value);
 

@@ -2156,7 +2156,7 @@ Object* Runtime::newDict() {
   return *result;
 }
 
-Object* Runtime::newDict(word initial_size) {
+Object* Runtime::newDictWithSize(word initial_size) {
   HandleScope scope;
   // TODO: initialSize should be scaled up by a load factor.
   word initial_capacity = Utils::nextPowerOfTwo(initial_size);

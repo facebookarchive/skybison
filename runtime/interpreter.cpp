@@ -1405,7 +1405,7 @@ void Interpreter::doBuildMap(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
   HandleScope scope;
-  Handle<Dict> dict(&scope, runtime->newDict(arg));
+  Handle<Dict> dict(&scope, runtime->newDictWithSize(arg));
   for (word i = 0; i < arg; i++) {
     Handle<Object> value(&scope, ctx->frame->popValue());
     Handle<Object> key(&scope, ctx->frame->popValue());
@@ -1939,7 +1939,7 @@ void Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<ObjectArray> keys(&scope, ctx->frame->popValue());
-  Handle<Dict> dict(&scope, thread->runtime()->newDict(keys->length()));
+  Handle<Dict> dict(&scope, thread->runtime()->newDictWithSize(keys->length()));
   for (word i = arg - 1; i >= 0; i--) {
     Handle<Object> key(&scope, keys->at(i));
     Handle<Object> value(&scope, ctx->frame->popValue());

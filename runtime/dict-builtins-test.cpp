@@ -14,7 +14,7 @@ TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
-  Handle<Dict> dict(&scope, runtime.newDict(1));
+  Handle<Dict> dict(&scope, runtime.newDictWithSize(1));
   Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   Handle<Object> val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
@@ -29,7 +29,7 @@ TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
-  frame->setLocal(0, runtime.newDict(0));
+  frame->setLocal(0, runtime.newDictWithSize(0));
   frame->setLocal(1, runtime.newStrFromCStr("foo"));
   Object* result = DictBuiltins::dunderContains(thread, frame, 2);
   ASSERT_TRUE(result->isBool());
@@ -67,7 +67,7 @@ TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
-  Handle<Dict> dict(&scope, runtime.newDict(1));
+  Handle<Dict> dict(&scope, runtime.newDictWithSize(1));
   Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   Handle<Object> val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
@@ -82,7 +82,7 @@ TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyThrowsKeyError) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
-  Handle<Dict> dict(&scope, runtime.newDict(1));
+  Handle<Dict> dict(&scope, runtime.newDictWithSize(1));
   Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   Handle<Object> val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
@@ -122,7 +122,7 @@ TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 3, 0);
-  Handle<Dict> dict(&scope, runtime.newDict(1));
+  Handle<Dict> dict(&scope, runtime.newDictWithSize(1));
   Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   Handle<Object> val(&scope, runtime.newInt(0));
   Handle<Object> val2(&scope, runtime.newInt(1));
@@ -141,7 +141,7 @@ TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 3, 0);
-  Handle<Dict> dict(&scope, runtime.newDict(1));
+  Handle<Dict> dict(&scope, runtime.newDictWithSize(1));
   Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
   Handle<Object> val(&scope, runtime.newInt(0));
   frame->setLocal(0, *dict);
