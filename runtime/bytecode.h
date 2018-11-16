@@ -82,7 +82,7 @@ namespace python {
   V(PRINT_EXPR, 70, doPrintExpr)                                               \
   V(LOAD_BUILD_CLASS, 71, doLoadBuildClass)                                    \
   V(YIELD_FROM, 72, doNotImplemented)                                          \
-  V(GET_AWAITABLE, 73, doNotImplemented)                                       \
+  V(GET_AWAITABLE, 73, doGetAwaitable)                                         \
   V(UNUSED_BYTECODE_74, 74, doInvalidBytecode)                                 \
   V(INPLACE_LSHIFT, 75, doInplaceLshift)                                       \
   V(INPLACE_RSHIFT, 76, doInplaceRshift)                                       \

@@ -1494,4 +1494,44 @@ a = AsyncIterator()
                "'async for' received an invalid object from __anext__");
 }
 
+TEST(InterpreterTest, GetAwaitableCallsAwait) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+class Awaitable:
+  def __await__(self):
+    return 42
+
+a = Awaitable()
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, *a);
+  code->setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Handle<Object> result(&scope, Thread::currentThread()->run(*code));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(42, SmallInt::cast(*result)->value());
+}
+
+TEST(InterpreterDeathTest, GetAwaitableOnNonAwaitable) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, runtime.newStrFromCStr("foo"));
+  code->setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  ASSERT_DEATH(Thread::currentThread()->run(*code),
+               "can't be used in 'await' expression");
+}
+
 }  // namespace python

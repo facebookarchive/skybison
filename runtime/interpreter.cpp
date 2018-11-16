@@ -992,6 +992,27 @@ void Interpreter::doLoadBuildClass(Context* ctx, word) {
   ctx->frame->pushValue(value_cell->value());
 }
 
+// opcode 73
+void Interpreter::doGetAwaitable(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> obj(&scope, ctx->frame->topValue());
+
+  // TODO(T33628943): Check if `obj` is a native or generator-based
+  // coroutine and if it is, no need to call __await__
+  Handle<Object> await(
+      &scope, lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAwait));
+  if (await->isError()) {
+    thread->throwTypeErrorFromCStr(
+        "object can't be used in 'await' expression");
+    thread->abortOnPendingException();
+  }
+  Handle<Object> iter(&scope, callMethod1(thread, ctx->frame, await, obj));
+  thread->abortOnPendingException();
+
+  ctx->frame->setTopValue(*iter);
+}
+
 // opcode 75
 void Interpreter::doInplaceLshift(Context* ctx, word) {
   Thread* thread = ctx->thread;

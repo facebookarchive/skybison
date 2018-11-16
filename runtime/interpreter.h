@@ -152,6 +152,7 @@ class Interpreter {
   static void doGetIter(Context* ctx, word arg);
   static void doPrintExpr(Context* ctx, word);
   static void doLoadBuildClass(Context* ctx, word arg);
+  static void doGetAwaitable(Context* ctx, word arg);
   static void doInplaceLshift(Context* ctx, word arg);
   static void doInplaceRshift(Context* ctx, word arg);
   static void doInplaceAnd(Context* ctx, word arg);
