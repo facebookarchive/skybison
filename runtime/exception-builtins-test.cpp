@@ -288,4 +288,51 @@ x = ImportError()
   EXPECT_EQ(SmallInt::cast(err->name())->value(), 3333);
 }
 
+TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
+  const char* src = R"(
+x = ImportError(1111)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> data(&scope, moduleAt(&runtime, main, "x"));
+  ASSERT_TRUE(data->isImportError());
+
+  Handle<ImportError> err(&scope, *data);
+  ASSERT_TRUE(err->msg()->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(err->msg())->value(), 1111);
+  EXPECT_EQ(err->path(), None::object());
+  EXPECT_EQ(err->name(), None::object());
+}
+
+TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
+  const char* src = R"(
+x = ImportError(1111, name=2222, path=3333)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> data(&scope, moduleAt(&runtime, main, "x"));
+  ASSERT_TRUE(data->isImportError());
+
+  Handle<ImportError> err(&scope, *data);
+  ASSERT_TRUE(err->msg()->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(err->msg())->value(), 1111);
+  ASSERT_TRUE(err->name()->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(err->name())->value(), 2222);
+  ASSERT_TRUE(err->path()->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(err->path())->value(), 3333);
+}
+
+TEST(ExceptionBuiltinsDeathTest, ImportErrorConstructWithInvalidKwargs) {
+  const char* src = R"(
+x = ImportError(foo=123)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  EXPECT_DEATH(runtime.runFromCString(src), "RAISE_VARARGS");
+}
+
 }  // namespace python
