@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <type_traits>
 
 #include "globals.h"
 
@@ -114,8 +115,12 @@ class Handle : public ObjectHandle {
     return *pointer();
   }
 
-  Handle(HandleScope* scope, T* pointer)
-      : ObjectHandle(scope, reinterpret_cast<Object*>(pointer)) {}
+  Handle(HandleScope* scope, Object* pointer)
+      : ObjectHandle(scope, T::cast(pointer)) {
+    static_assert(
+        std::is_base_of<Object, T>::value,
+        "You can only get a handle to a python::Object.");
+  }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Handle);

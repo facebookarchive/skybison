@@ -72,6 +72,12 @@ class Object {
     return true;
   }
 
+  // The constructor for Handle<T> calls T::cast, thus an implementation is
+  // required in order to create a Handle<Object>.
+  static inline Object* cast(Object* object) {
+    return object;
+  }
+
   // Immediate
   inline bool isSmallInteger();
   inline bool isNone();
