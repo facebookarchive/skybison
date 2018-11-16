@@ -1338,6 +1338,7 @@ Object* Runtime::executeModule(const char* buffer,
   return Thread::currentThread()->runModuleFunction(*module, *code);
 }
 
+// Keep this in sync with ModuleInitializer in ext/Modules/config.cpp
 struct ModuleInitializer {
   const char* name;
   void* (*initfunc)();
@@ -1506,6 +1507,7 @@ void Runtime::initializeModules() {
   createWeakRefModule();
 }
 
+// Keep this in sync with ExtensionTypeInitializer in ext/Modules/config.cpp
 struct ExtensionTypeInitializer {
   void (*initfunc)();
 };
