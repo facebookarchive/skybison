@@ -8,8 +8,8 @@
 namespace python {
 
 class HandleScope;
-class Object;
-class ObjectHandle;
+template <typename T, bool is_checked = true>
+class Handle;
 class PointerVisitor;
 
 class Handles {
@@ -35,7 +35,7 @@ class Handles {
 
   Vector<HandleScope*> scopes_;
 
-  template <typename T>
+  template <typename, bool>
   friend class Handle;
   friend class HandleScope;
 
@@ -59,10 +59,11 @@ class HandleScope {
     handles_->pop();
   }
 
-  ObjectHandle* push(ObjectHandle* handle) {
+  template <typename T, bool is_checked>
+  Handle<RawObject>* push(Handle<T, is_checked>* handle) {
     DCHECK(this == handles_->top(), "unexpected this");
-    ObjectHandle* result = list_;
-    list_ = handle;
+    Handle<RawObject>* result = list_;
+    list_ = reinterpret_cast<Handle<RawObject>*>(handle);
     return result;
   }
 
@@ -71,13 +72,14 @@ class HandleScope {
     handles_->push(this);
   }
 
-  ObjectHandle* list() { return list_; }
+  Handle<RawObject>* list() { return list_; }
 
-  ObjectHandle* list_;
+  Handle<RawObject>* list_;
   Handles* handles_;
 
   friend class Handles;
-  friend class ObjectHandle;
+  template <typename, bool>
+  friend class Handle;
 
   // TODO(jeethu): use FRIEND_TEST
   friend class HandlesTest_UpCastTest_Test;
@@ -92,39 +94,32 @@ class HandleScope {
   DISALLOW_COPY_AND_ASSIGN(HandleScope);
 };
 
-class ObjectHandle {
+template <typename T, bool is_checked>
+class Handle : public T {
  public:
-  ObjectHandle(HandleScope* scope, RawObject pointer)
-      : pointer_(pointer), next_(scope->push(this)), scope_(scope) {}
+  Handle(HandleScope* scope, RawObject pointer)
+      : T(is_checked ? T::cast(pointer) : bit_cast<T>(pointer)),
+        next_(scope->push(this)),
+        scope_(scope) {}
 
-  ~ObjectHandle() {
-    DCHECK(scope_->list() == this, "unexpected this");
+  template <typename S>
+  explicit Handle(const Handle<S, is_checked>& other)
+      : Handle(other.scope_, other) {
+    static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
+                  "Only up- and down-casts are permitted.");
+  }
+
+  ~Handle() {
+    DCHECK(scope_->list_ == reinterpret_cast<Handle<RawObject>*>(this),
+           "unexpected this");
     scope_->list_ = next_;
   }
 
-  RawObject* pointer() { return &pointer_; }
+  RawObject* pointer() { return this; }
 
-  ObjectHandle* next() const { return next_; }
+  Handle<RawObject>* next() const { return next_; }
 
- protected:
-  RawObject pointer_;
-
-  // The casting constructor below needs this, but it appears you can't
-  // access your parent's protected fields when they are on a sibling class.
-  static HandleScope* scope(const ObjectHandle& o) { return o.scope_; }
-
- private:
-  ObjectHandle* next_;
-  HandleScope* scope_;
-  DISALLOW_COPY_AND_ASSIGN(ObjectHandle);
-};
-
-template <typename T>
-class Handle : public ObjectHandle {
- public:
-  T* operator->() const {
-    return static_cast<T*>(const_cast<Object*>(&pointer_));
-  }
+  T* operator->() const { return const_cast<Handle*>(this); }
 
   T operator*() const { return *operator->(); }
 
@@ -132,61 +127,41 @@ class Handle : public ObjectHandle {
   // to assign handles, one writes: `lhandle = *rhandle;`. (This is to avoid
   // confusion about which HandleScope tracks lhandle after the assignment.)
   template <typename S>
-  Handle<T>& operator=(S other) {
+  Handle& operator=(S other) {
     static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
                   "Only up- and down-casts are permitted.");
-    pointer_ = T::cast(other);
+    *static_cast<T*>(this) = is_checked ? T::cast(other) : bit_cast<T>(other);
     return *this;
-  }
-
-  template <typename S>
-  explicit Handle(const Handle<S>& other)
-      : ObjectHandle(scope(other), T::cast(*other)) {
-    static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
-                  "Only up- and down-casts are permitted.");
-  }
-
-  Handle(HandleScope* scope, RawObject pointer)
-      : ObjectHandle(scope, T::cast(pointer)) {
-    static_assert(std::is_base_of<Object, T>::value,
-                  "You can only get a handle to a python::Object.");
   }
 
   // Let Handle<T> pretend to be a subtype of Handle<S> when T is a subtype of
   // S.
   template <typename S>
-  operator const Handle<S>&() const {
+  operator const Handle<S, is_checked>&() const {
     static_assert(std::is_base_of<S, T>::value, "Only up-casts are permitted");
-    return *reinterpret_cast<const Handle<S>*>(this);
+    return *reinterpret_cast<const Handle<S, is_checked>*>(this);
   }
 
+  static_assert(std::is_base_of<RawObject, T>::value,
+                "You can only get a handle to a python::RawObject.");
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Handle);
+  DISALLOW_HEAP_ALLOCATION();
+
  private:
-  DISALLOW_COPY_AND_ASSIGN(Handle);
+  template <typename, bool>
+  friend class Handle;
+
+  Handle<RawObject>* next_;
+  HandleScope* scope_;
 };
 
-// This class is a temporary workaround until there is infrastructure to do a
+// This is a temporary workaround until there is infrastructure to do a
 // checked up-cast based on a class flag instead of a class ID.  This is only
 // needed when a handle must up-cast a user-defined subclass to a built-in class
 // type.  The use of this handle should be limited to handles types that are
 // subclasses of BaseException.
 template <typename T>
-class UncheckedHandle : public ObjectHandle {
- public:
-  T* operator->() const {
-    return static_cast<T*>(const_cast<Object*>(&pointer_));
-  }
-
-  T operator*() const { return *operator->(); }
-
-  UncheckedHandle(HandleScope* scope, RawObject pointer)
-      : ObjectHandle(scope, pointer) {
-    static_assert(std::is_base_of<Object, T>::value,
-                  "You can only get a handle to a python::Object.");
-  }
-
- private:
-  DISALLOW_HEAP_ALLOCATION();
-  DISALLOW_COPY_AND_ASSIGN(UncheckedHandle);
-};
+using UncheckedHandle = Handle<T, false>;
 
 }  // namespace python
