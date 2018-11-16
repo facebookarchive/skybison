@@ -269,7 +269,8 @@ RawObject ListBuiltins::slice(Thread* thread, RawList list, RawSlice slice) {
 RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "__getitem__() takes exactly one argument (%ld given)", nargs - 1));
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -282,13 +283,14 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   }
 
   List list(&scope, *self);
+  word length = list->numItems();
   RawObject index = args.get(1);
   if (index->isSmallInt()) {
     word idx = RawSmallInt::cast(index)->value();
     if (idx < 0) {
-      idx = list->numItems() - idx;
+      idx += length;
     }
-    if (idx < 0 || idx >= list->numItems()) {
+    if (idx < 0 || idx >= length) {
       return thread->raiseIndexErrorWithCStr("list index out of range");
     }
     return list->at(idx);
@@ -493,7 +495,8 @@ static RawObject setItemSlice(Thread* thread, List& list, Object& slice_index,
 RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs != 3) {
-    return thread->raiseTypeErrorWithCStr("expected 3 arguments");
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "expected 2 arguments, got %ld", nargs - 1));
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -511,10 +514,11 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
 
   if (index->isSmallInt()) {
     word idx = RawSmallInt::cast(index)->value();
+    word length = list->numItems();
     if (idx < 0) {
-      idx = list->numItems() + idx;
+      idx += length;
     }
-    if (idx < 0 || idx >= list->numItems()) {
+    if (idx < 0 || idx >= length) {
       return thread->raiseIndexErrorWithCStr(
           "list assignment index out of range");
     }
@@ -531,7 +535,8 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
 RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 2 arguments");
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "expected 1 arguments, got %ld", nargs - 1));
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -544,15 +549,19 @@ RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   }
 
   List list(&scope, *self);
+  word length = list->numItems();
   RawObject index = args.get(1);
   if (index->isSmallInt()) {
     word idx = RawSmallInt::cast(index)->value();
-    idx = idx < 0 ? list->numItems() + idx : idx;
-    if (idx < 0 || idx >= list->numItems()) {
+    if (idx < 0) {
+      idx += length;
+    }
+    if (idx < 0 || idx >= length) {
       return thread->raiseIndexErrorWithCStr(
           "list assignment index out of range");
     }
-    return thread->runtime()->listPop(list, idx);
+    thread->runtime()->listPop(list, idx);
+    return NoneType::object();
   }
   // TODO(T31826482): Add support for slices
   return thread->raiseTypeErrorWithCStr(

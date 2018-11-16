@@ -469,17 +469,106 @@ TEST(ListBuiltinsTest, SetItem) {
   EXPECT_EQ(RawSmallInt::cast(list->at(3))->value(), 2);
 }
 
-TEST(ListBuiltinsDeathTest, SetItemWithFewerArgumentsThrows) {
+TEST(ListBuiltinsTest, GetItemWithNegativeIndex) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  List list(&scope, listFromRange(1, 4));
+  frame->setLocal(0, RawObject::cast(*list));
+  frame->setLocal(1, SmallInt::fromWord(-3));
+
+  Object result(&scope, ListBuiltins::dunderGetItem(thread, frame, 2));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(result)->value(), 1);
+  thread->popFrame();
+}
+
+TEST(ListBuiltinsTest, DelItemWithNegativeIndex) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  List list(&scope, listFromRange(1, 4));
+  frame->setLocal(0, RawObject::cast(*list));
+  frame->setLocal(1, SmallInt::fromWord(-3));
+
+  Object result(&scope, ListBuiltins::dunderDelItem(thread, frame, 2));
+  ASSERT_TRUE(result->isNoneType());
+  ASSERT_EQ(list->numItems(), 2);
+  EXPECT_EQ(RawSmallInt::cast(list->at(0))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(list->at(1))->value(), 3);
+  thread->popFrame();
+}
+
+TEST(ListBuiltinsTest, SetItemWithNegativeIndex) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 3, 0);
+  List list(&scope, listFromRange(1, 4));
+  frame->setLocal(0, RawObject::cast(*list));
+  frame->setLocal(1, SmallInt::fromWord(-3));
+  frame->setLocal(2, SmallInt::fromWord(0));
+
+  Object result(&scope, ListBuiltins::dunderSetItem(thread, frame, 3));
+  ASSERT_TRUE(result->isNoneType());
+  ASSERT_EQ(list->numItems(), 3);
+  EXPECT_EQ(RawSmallInt::cast(list->at(0))->value(), 0);
+  EXPECT_EQ(RawSmallInt::cast(list->at(1))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(list->at(2))->value(), 3);
+  thread->popFrame();
+}
+
+TEST(ListBuiltinsDeathTest, GetItemWithInvalidNegativeIndexThrows) {
   const char* src = R"(
-[].__setitem__(1)
+l = [1, 2, 3]
+l[-4]
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(src), "expected 3 arguments");
+  ASSERT_DEATH(runtime.runFromCStr(src), "list index out of range");
+}
+
+TEST(ListBuiltinsDeathTest, DelItemWithInvalidNegativeIndexThrows) {
+  const char* src = R"(
+l = [1, 2, 3]
+del l[-4]
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "list assignment index out of range");
+}
+
+TEST(ListBuiltinsDeathTest, SetItemWithInvalidNegativeIndexThrows) {
+  const char* src = R"(
+l = [1, 2, 3]
+l[-4] = 0
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "list assignment index out of range");
+}
+
+TEST(ListBuiltinsDeathTest, GetItemWithInvalidIndexThrows) {
+  const char* src = R"(
+l = [1, 2, 3]
+l[5]
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "list index out of range");
+}
+
+TEST(ListBuiltinsDeathTest, DelItemWithInvalidIndexThrows) {
+  const char* src = R"(
+l = [1, 2, 3]
+del l[5]
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "list assignment index out of range");
 }
 
 TEST(ListBuiltinsDeathTest, SetItemWithInvalidIndexThrows) {
   const char* src = R"(
-[].__setitem__(1, "test")
+l = [1, 2, 3]
+l[5] = 4
 )";
   Runtime runtime;
   ASSERT_DEATH(runtime.runFromCStr(src), "list assignment index out of range");
@@ -626,6 +715,83 @@ result = a
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0,  1,  "a", 3,  4,  "b", 6,  7,  "c", 9,
                             10, 11, 12,  13, 14, 15,  16, 17, 18,  19});
+}
+
+TEST(ListBuiltinsDeathTest, GetItemWithTooFewArgumentsThrowsTypeError) {
+  const char* src = R"(
+[].__getitem__()
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               R"(__getitem__\(\) takes exactly one argument \(0 given\))");
+}
+
+TEST(ListBuiltinsDeathTest, DelItemWithTooFewArgumentsThrowsTypeError) {
+  const char* src = R"(
+[].__delitem__()
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 1 arguments, got 0");
+}
+
+TEST(ListBuiltinsDeathTest, SetItemWithTooFewArgumentsThrowsTypeError) {
+  const char* src = R"(
+[].__setitem__(1)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 2 arguments, got 1");
+}
+
+TEST(ListBuiltinsDeathTest, DelItemWithTooManyArgumentsThrowsTypeError) {
+  const char* src = R"(
+[].__delitem__(1, 2)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 1 arguments, got 2");
+}
+
+TEST(ListBuiltinsDeathTest, GetItemWithTooManyArgumentsThrowsTypeError) {
+  const char* src = R"(
+[].__getitem__(1, 2)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               R"(__getitem__\(\) takes exactly one argument \(2 given\))");
+}
+
+TEST(ListBuiltinsDeathTest, SetItemWithTooManyArgumentsThrowsTypeError) {
+  const char* src = R"(
+[].__setitem__(1, 2, 3)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 2 arguments, got 3");
+}
+
+TEST(ListBuiltinsDeathTest, GetItemWithNonIntegralIndexThrowsTypeError) {
+  const char* src = R"(
+[].__getitem__("test")
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "list indices must be integers or slices");
+}
+
+TEST(ListBuiltinsDeathTest, DelItemWithNonIntegralIndexThrowsTypeError) {
+  const char* src = R"(
+[].__delitem__("test")
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "list indices must be integers or slices");
+}
+
+TEST(ListBuiltinsDeathTest, SetItemWithNonIntegralIndexThrowsTypeError) {
+  const char* src = R"(
+[].__setitem__("test", 1)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "list indices must be integers or slices");
 }
 
 TEST(ListBuiltinsDeathTest, NonTypeInDunderNew) {
