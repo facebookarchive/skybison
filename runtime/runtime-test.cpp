@@ -1106,17 +1106,17 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
 
   runtime.runFromCString("class MyEmptyClass: pass");
 
-  LayoutId layout_id =
-      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastBuiltinId) + 1);
-  Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Type> type(&scope, moduleAt(&runtime, main, "MyEmptyClass"));
+  Handle<Layout> layout(&scope, type->instanceLayout());
   EXPECT_EQ(layout->instanceSize(), 1);
 
   Handle<Type> cls(&scope, layout->describedClass());
-  EXPECT_TRUE(String::cast(cls->name())->equalsCString("MyEmptyClass"));
+  EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyEmptyClass");
 
   Handle<Instance> instance(&scope, runtime.newInstance(layout));
   EXPECT_TRUE(instance->isInstance());
-  EXPECT_TRUE(instance->header()->layoutId() == layout_id);
+  EXPECT_EQ(instance->header()->layoutId(), layout->id());
 }
 
 TEST(RuntimeTest, NewInstanceManyAttributes) {
@@ -1132,18 +1132,17 @@ class MyClassWithAttributes():
 )";
   runtime.runFromCString(src);
 
-  LayoutId layout_id =
-      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastBuiltinId) + 1);
-  Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Type> type(&scope, moduleAt(&runtime, main, "MyClassWithAttributes"));
+  Handle<Layout> layout(&scope, type->instanceLayout());
   ASSERT_EQ(layout->instanceSize(), 4);
 
   Handle<Type> cls(&scope, layout->describedClass());
-  ASSERT_TRUE(
-      String::cast(cls->name())->equalsCString("MyClassWithAttributes"));
+  EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithAttributes");
 
   Handle<Instance> instance(&scope, runtime.newInstance(layout));
   EXPECT_TRUE(instance->isInstance());
-  EXPECT_EQ(instance->header()->layoutId(), layout_id);
+  EXPECT_EQ(instance->header()->layoutId(), layout->id());
 }
 
 TEST(RuntimeTest, VerifySymbols) {
@@ -1378,19 +1377,15 @@ c = MyClassWithNoInitMethod()
 )";
   runtime.runFromCString(src);
 
-  LayoutId layout_id =
-      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastBuiltinId) + 1);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> instance(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(instance->isInstance());
+  LayoutId layout_id = instance->layoutId();
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
   Handle<Type> cls(&scope, layout->describedClass());
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithNoInitMethod");
-
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> key(&scope, runtime.newStringFromCString("c"));
-  Handle<Object> instance(&scope, runtime.moduleAt(main, key));
-  ASSERT_TRUE(instance->isInstance());
-  EXPECT_EQ(instance->layoutId(), layout_id);
 }
 
 TEST(RuntimeTypeCallTest, TypeCallEmptyInitMethod) {
@@ -1408,19 +1403,15 @@ c = MyClassWithEmptyInitMethod()
 )";
   runtime.runFromCString(src);
 
-  LayoutId layout_id =
-      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastBuiltinId) + 1);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> instance(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(instance->isInstance());
+  LayoutId layout_id = instance->layoutId();
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
   Handle<Type> cls(&scope, layout->describedClass());
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithEmptyInitMethod");
-
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> key(&scope, runtime.newStringFromCString("c"));
-  Handle<Object> instance(&scope, runtime.moduleAt(main, key));
-  ASSERT_TRUE(instance->isInstance());
-  EXPECT_EQ(instance->layoutId(), layout_id);
 }
 
 TEST(RuntimeTypeCallTest, TypeCallWithArguments) {
@@ -1438,19 +1429,19 @@ c = MyClassWithAttributes(1)
 )";
   runtime.runFromCString(src);
 
-  LayoutId layout_id =
-      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastBuiltinId) + 1);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Type> type(&scope, moduleAt(&runtime, main, "MyClassWithAttributes"));
+  Handle<Object> instance(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(instance->isInstance());
+  LayoutId layout_id = instance->layoutId();
+  // Since this class has extra attributes, its layout id should be greater than
+  // the layout id from the type.
+  ASSERT_GT(layout_id, Layout::cast(type->instanceLayout())->id());
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   ASSERT_EQ(layout->instanceSize(), 2);
 
   Handle<Type> cls(&scope, layout->describedClass());
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithAttributes");
-
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> key(&scope, runtime.newStringFromCString("c"));
-  Handle<Object> instance(&scope, runtime.moduleAt(main, key));
-  ASSERT_TRUE(instance->isInstance());
-  ASSERT_GT(instance->layoutId(), layout_id);
 
   Handle<Object> name(&scope, runtime.newStringFromCString("x"));
   Handle<Object> value(
