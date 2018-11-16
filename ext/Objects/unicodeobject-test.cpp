@@ -24,13 +24,13 @@ TEST(ExtensionTest, PyUnicode_AsUTF8AndSize) {
 
   // Pass a non string object
   Handle<Object> integer_obj(&scope, runtime.newInteger(15));
-  PyObject* pylong = runtime.asPyObject(*integer_obj);
+  PyObject* pylong = runtime.asApiHandle(*integer_obj)->asPyObject();
   char* null_cstring2 = PyUnicode_AsUTF8AndSize(pylong, nullptr);
   EXPECT_EQ(nullptr, null_cstring2);
 
   const char* str = "Some C String";
   Handle<String> string_obj(&scope, runtime.newStringFromCString(str));
-  PyObject* pyunicode = runtime.asPyObject(*string_obj);
+  PyObject* pyunicode = runtime.asApiHandle(*string_obj)->asPyObject();
 
   // Pass a nullptr size
   char* cstring = PyUnicode_AsUTF8AndSize(pyunicode, nullptr);
