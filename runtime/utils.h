@@ -4,6 +4,8 @@
 
 #include "globals.h"
 
+namespace python {
+
 class Utils {
  public:
   template <typename T>
@@ -25,3 +27,5 @@ class Utils {
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Utils);
 };
+
+} // namespace
