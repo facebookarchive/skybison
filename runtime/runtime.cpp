@@ -1616,6 +1616,9 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinFunction(module, SymbolId::kRepr,
                            nativeTrampoline<builtinRepr>,
                            unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kSetattr,
+                           nativeTrampoline<builtinSetattr>,
+                           unimplementedTrampoline, unimplementedTrampoline);
   // Add builtin types
   moduleAddBuiltinType(module, SymbolId::kBaseException,
                        LayoutId::kBaseException);

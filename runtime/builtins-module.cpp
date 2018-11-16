@@ -470,4 +470,26 @@ Object* builtinHasattr(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
+Object* builtinSetattr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 3) {
+    return thread->throwTypeErrorFromCString("setattr expected 3 arguments.");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> name(&scope, args.get(1));
+  Handle<Object> value(&scope, args.get(2));
+  if (!name->isString()) {
+    return thread->throwTypeErrorFromCString(
+        "setattr(): attribute name must be string.");
+  }
+  Handle<Object> result(
+      &scope, thread->runtime()->attributeAtPut(thread, self, name, value));
+  if (result->isError()) {
+    // populate the exception
+    return *result;
+  }
+  return None::object();
+}
+
 }  // namespace python

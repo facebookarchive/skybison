@@ -146,6 +146,7 @@ class Runtime;
   V(Remove, "remove")                                                          \
   V(Repr, "repr")                                                              \
   V(Set, "set")                                                                \
+  V(Setattr, "setattr")                                                        \
   V(Setter, "setter")                                                          \
   V(Size, "size")                                                              \
   V(Slice, "slice")                                                            \
