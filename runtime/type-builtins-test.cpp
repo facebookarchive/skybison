@@ -114,7 +114,7 @@ c = C()
   ASSERT_EQ(SmallInt::cast(attr)->value(), 42);
 }
 
-TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsString) {
+TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
@@ -124,7 +124,7 @@ TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsString) {
   EXPECT_PYSTRING_EQ(Str::cast(result), "<class 'object'>");
 }
 
-TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsString) {
+TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsStr) {
   Runtime runtime;
   runtime.runFromCStr(R"(
 class Foo:

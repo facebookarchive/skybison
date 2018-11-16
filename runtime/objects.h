@@ -40,7 +40,7 @@ namespace python {
   V(Slice)                                                                     \
   V(StaticMethod)                                                              \
   V(StopIteration)                                                             \
-  V(String)                                                                    \
+  V(Str)                                                                       \
   V(SystemExit)                                                                \
   V(Type)                                                                      \
   V(TypeError)                                                                 \
@@ -116,7 +116,7 @@ enum class LayoutId : word {
   kSlice,
   kStaticMethod,
   kStopIteration,
-  kString,
+  kStr,
   kSystemExit,
   kSuper,
   kTupleIterator,

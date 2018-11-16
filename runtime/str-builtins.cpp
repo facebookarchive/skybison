@@ -303,7 +303,7 @@ Object* builtinStrNew(Thread* thread, Frame* frame, word nargs) {
         "str.__new__(X): X is not a subtype of str");
   }
   Handle<Layout> layout(&scope, Type::cast(*type)->instanceLayout());
-  if (layout->id() != LayoutId::kString) {
+  if (layout->id() != LayoutId::kStr) {
     // TODO: Implement __new__ with subtypes of str.
     UNIMPLEMENTED("str.__new__(<subtype of str>, ...)");
   }

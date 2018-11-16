@@ -992,7 +992,7 @@ void Runtime::initializeHeapClasses() {
   initializeFloatClass();
   initializeFunctionClass();
   addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeStr,
-                       LayoutId::kString);
+                       LayoutId::kStr);
   addEmptyBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
   ListBuiltins::initialize(this);
   ListIteratorBuiltins::initialize(this);
@@ -1076,9 +1076,8 @@ void Runtime::initializeFunctionClass() {
 
 void Runtime::initializeStrClass() {
   HandleScope scope;
-  Handle<Type> type(&scope,
-                    addEmptyBuiltinClass(SymbolId::kStr, LayoutId::kString,
-                                         LayoutId::kObject));
+  Handle<Type> type(&scope, addEmptyBuiltinClass(SymbolId::kStr, LayoutId::kStr,
+                                                 LayoutId::kObject));
   type->setFlag(Type::Flag::kStrSubclass);
 
   classAddBuiltinFunction(type, SymbolId::kDunderAdd,
@@ -1159,7 +1158,7 @@ void Runtime::initializeImmediateClasses() {
   BoolBuiltins::initialize(this);
   NoneBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallStr,
-                       LayoutId::kString);
+                       LayoutId::kStr);
   SmallIntBuiltins::initialize(this);
 }
 
@@ -1637,7 +1636,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kSet, LayoutId::kSet);
   moduleAddBuiltinType(module, SymbolId::kStopIteration,
                        LayoutId::kStopIteration);
-  moduleAddBuiltinType(module, SymbolId::kStr, LayoutId::kString);
+  moduleAddBuiltinType(module, SymbolId::kStr, LayoutId::kStr);
   moduleAddBuiltinType(module, SymbolId::kSystemExit, LayoutId::kSystemExit);
   moduleAddBuiltinType(module, SymbolId::kSuper, LayoutId::kSuper);
   moduleAddBuiltinType(module, SymbolId::kTuple, LayoutId::kObjectArray);

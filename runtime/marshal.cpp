@@ -277,7 +277,7 @@ Object* Marshal::Reader::readTypeAscii() {
     return Thread::currentThread()->throwValueErrorFromCStr(
         "bad marshal data (string size out of range)");
   }
-  return readString(length);
+  return readStr(length);
 }
 
 Object* Marshal::Reader::readTypeAsciiInterned() {
@@ -286,20 +286,20 @@ Object* Marshal::Reader::readTypeAsciiInterned() {
     return Thread::currentThread()->throwValueErrorFromCStr(
         "bad marshal data (string size out of range)");
   }
-  return readAndInternString(length);
+  return readAndInternStr(length);
 }
 
 Object* Marshal::Reader::readTypeShortAscii() {
   word length = readByte();
-  return readString(length);
+  return readStr(length);
 }
 
 Object* Marshal::Reader::readTypeShortAsciiInterned() {
   word length = readByte();
-  return readAndInternString(length);
+  return readAndInternStr(length);
 }
 
-Object* Marshal::Reader::readString(word length) {
+Object* Marshal::Reader::readStr(word length) {
   const byte* data = readBytes(length);
   Object* result = runtime_->newStrWithAll(View<byte>(data, length));
   if (isRef_) {
@@ -308,7 +308,7 @@ Object* Marshal::Reader::readString(word length) {
   return result;
 }
 
-Object* Marshal::Reader::readAndInternString(word length) {
+Object* Marshal::Reader::readAndInternStr(word length) {
   const byte* data = readBytes(length);
   HandleScope scope;
   // TODO(T25820368): Intern strings iff the string isn't already part of the

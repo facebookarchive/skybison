@@ -46,8 +46,8 @@ class Marshal {
     word numRefs();
 
    private:
-    Object* readString(word length);
-    Object* readAndInternString(word length);
+    Object* readStr(word length);
+    Object* readAndInternStr(word length);
     Object* readLongObject();
 
     Runtime* runtime_;

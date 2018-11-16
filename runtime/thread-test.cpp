@@ -2661,7 +2661,7 @@ from time import foobarbaz
   EXPECT_DEATH(runtime.runFromCStr(src), "cannot import name\n");
 }
 
-TEST(ThreadTest, StringFormatEmpty) {
+TEST(ThreadTest, StrFormatEmpty) {
   const char* src = R"(
 print("" % ("hi"))
 )";
@@ -2671,7 +2671,7 @@ print("" % ("hi"))
   EXPECT_EQ(output, "\n");
 }
 
-TEST(ThreadTest, StringFormatNone) {
+TEST(ThreadTest, StrFormatNone) {
   const char* src = R"(
 h = "hello"
 p = "pyro pystone"
@@ -2683,7 +2683,7 @@ print("hello world" % (h, p))
   EXPECT_EQ(output, "hello world\n");
 }
 
-TEST(ThreadTest, StringFormatMod) {
+TEST(ThreadTest, StrFormatMod) {
   const char* src = R"(
 print("%%%s" % (""))
 )";
@@ -2693,7 +2693,7 @@ print("%%%s" % (""))
   EXPECT_EQ(output, "%\n");
 }
 
-TEST(ThreadDeathTest, StringFormatNeg1) {
+TEST(ThreadDeathTest, StrFormatNeg1) {
   const char* src = R"(
 h = "hi"
 print("%" % (h, "world"))
@@ -2703,7 +2703,7 @@ print("%" % (h, "world"))
   ASSERT_DEATH(compileAndRunToString(&runtime, src), "");
 }
 
-TEST(ThreadTest, StringFormatStr) {
+TEST(ThreadTest, StrFormatStr) {
   const char* src = R"(
 h = "hello pyro"
 print("%s" % (h))
@@ -2714,7 +2714,7 @@ print("%s" % (h))
   EXPECT_EQ(output, "hello pyro\n");
 }
 
-TEST(ThreadTest, StringFormatStr2) {
+TEST(ThreadTest, StrFormatStr2) {
   const char* src = R"(
 h = "hello"
 p = "pyro"
@@ -2726,7 +2726,7 @@ print("%s%s" % (h, p))
   EXPECT_EQ(output, "hellopyro\n");
 }
 
-TEST(ThreadTest, StringFormatFloat) {
+TEST(ThreadTest, StrFormatFloat) {
   const char* src = R"(
 d = 67.89
 print("There are %g pystones" % (d))
@@ -2737,7 +2737,7 @@ print("There are %g pystones" % (d))
   EXPECT_EQ(output, "There are 67.89 pystones\n");
 }
 
-TEST(ThreadTest, StringFormatMixed) {
+TEST(ThreadTest, StrFormatMixed) {
   const char* src = R"(
 a = 123
 d = 67.89
@@ -2749,7 +2749,7 @@ print("There are %d pystones %g" % (a, d))
   EXPECT_EQ(output, "There are 123 pystones 67.89\n");
 }
 
-TEST(ThreadTest, StringFormatMixed2) {
+TEST(ThreadTest, StrFormatMixed2) {
   const char* src = R"(
 a = 123
 d = 67.89
@@ -2762,7 +2762,7 @@ print("There are %d pystones %g %s" % (a, d, c))
   EXPECT_EQ(output, "There are 123 pystones 67.89 now\n");
 }
 
-TEST(ThreadTest, StringFormatMixed3) {
+TEST(ThreadTest, StrFormatMixed3) {
   const char* src = R"(
 a = 123
 d = 67.89
