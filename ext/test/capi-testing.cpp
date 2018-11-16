@@ -1,6 +1,7 @@
 #include "capi-testing.h"
-
 #include "test-utils.h"
+
+#include "Python.h"
 
 namespace python {
 namespace testing {
@@ -22,12 +23,11 @@ namespace testing {
 }
 
 PyObject* moduleGet(const char* module, const char* name) {
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Handle<Module> mod(&scope, findModule(runtime, module));
-  Handle<Object> var(&scope, moduleAt(runtime, mod, name));
-  return ApiHandle::fromObject(*var);
+  PyObject* mods = PyImport_GetModuleDict();
+  PyObject* module_name = PyUnicode_FromString(module);
+  PyObject* mod = PyDict_GetItem(mods, module_name);
+  Py_DECREF(module_name);
+  return PyObject_GetAttrString(mod, name);
 }
 
 bool isBorrowed(PyObject* pyobj) {

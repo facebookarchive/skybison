@@ -15,6 +15,10 @@ PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
   ApiHandle::fromPyObject(obj)->dispose();
 }
 
+PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
+  if (--obj->ob_refcnt == 0) _Py_Dealloc_Func(obj);
+}
+
 PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
                                       PyObject* value) {
   Thread* thread = Thread::currentThread();
@@ -93,13 +97,29 @@ PY_EXPORT int PyObject_GenericSetDict(PyObject* /* j */, PyObject* /* e */,
   UNIMPLEMENTED("PyObject_GenericSetDict");
 }
 
-PY_EXPORT PyObject* PyObject_GetAttr(PyObject* /* v */, PyObject* /* e */) {
-  UNIMPLEMENTED("PyObject_GetAttr");
+
+PY_EXPORT PyObject* PyObject_GetAttr(PyObject* v, PyObject* name) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Handle<Object> object(&scope, ApiHandle::fromPyObject(v)->asObject());
+  Handle<Object> name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Handle<Object> result(&scope, runtime->attributeAt(thread, object, name_obj));
+
+  if (thread->hasPendingException() || result->isError()) {
+    return nullptr;
+  }
+  return ApiHandle::fromObject(*result);
 }
 
-PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* /* v */,
-                                           const char* /* e */) {
-  UNIMPLEMENTED("PyObject_GetAttrString");
+PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* v, const char* name) {
+  PyObject* str = PyUnicode_FromString(name);
+  if (str == nullptr) return nullptr;
+
+  PyObject* attr = PyObject_GetAttr(v, str);
+  Py_DECREF(str);
+  return attr;
 }
 
 PY_EXPORT int PyObject_HasAttr(PyObject* /* v */, PyObject* /* e */) {

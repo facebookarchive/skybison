@@ -106,6 +106,8 @@ PyAPI_FUNC(char *) PyUnicode_AsUTF8AndSize(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
 PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_GetAttrString(PyObject *, const char *);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *, const char *, PyObject *);
 
@@ -156,6 +158,8 @@ PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
 
 PyAPI_FUNC(char *) PyByteArray_AS_STRING_Func(PyObject *);
 
+PyAPI_FUNC(void) Py_DECREF_Func(PyObject *);
+
 /* Macros */
 /* Multiline macros should retain their structure to get properly substituted */
 /* clang-format off */
@@ -194,6 +198,9 @@ PyAPI_FUNC(char *) PyByteArray_AS_STRING_Func(PyObject *);
 
 #define PyUnicode_READY(op) \
   0
+
+#define Py_DECREF(op)                                   \
+    Py_DECREF_Func((PyObject*)op)
 
 /* clang-format on */
 

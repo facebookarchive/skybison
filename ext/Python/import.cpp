@@ -2,8 +2,9 @@
 
 namespace python {
 
-PY_EXPORT PyObject* PyImport_GetModuleDict() {
-  UNIMPLEMENTED("PyImport_GetModuleDict");
+PY_EXPORT PyObject* PyImport_GetModuleDict(void) {
+  Runtime* runtime = Thread::currentThread()->runtime();
+  return ApiHandle::fromBorrowedObject(runtime->modules());
 }
 
 PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* /* e */,
