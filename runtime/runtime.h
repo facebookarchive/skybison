@@ -487,19 +487,23 @@ class Runtime {
 
   Object* computeBuiltinBaseClass(const Handle<Class>& klass);
 
-  // Helper functions to add builtin functions to classes
-
+  // Adds a builtin function with a positional entry point definition
+  // using the default keyword and splatting entry points.
   void classAddBuiltinFunction(
       const Handle<Class>& klass,
       Object* name,
       Function::Entry entry);
 
+  // Adds a builtin function with positional and keyword entry point
+  // definitions, using the default splatting entry point.
   void classAddBuiltinFunctionKw(
       const Handle<Class>& klass,
       Object* name,
       Function::Entry entry,
       Function::Entry entry_kw);
 
+  // Adds a builtin function with positional, keyword & splatting entry point
+  // definitions
   void classAddBuiltinFunctionKwEx(
       const Handle<Class>& klass,
       Object* name,
