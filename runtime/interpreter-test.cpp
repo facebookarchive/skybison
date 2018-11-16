@@ -2106,4 +2106,44 @@ for i in yield_from_func():
   ASSERT_DEATH(runtime.runFromCStr(src), "object is not iterable");
 }
 
+TEST(InterpreterTest, MakeFunctionSetsDunderModule) {
+  Runtime runtime;
+  HandleScope scope;
+  Object module_name(&scope, runtime.newStrFromCStr("foo"));
+  std::unique_ptr<char[]> buffer(Runtime::compile(R"(
+def bar(): pass
+)"));
+  runtime.importModuleFromBuffer(buffer.get(), module_name);
+  runtime.runFromCStr(R"(
+import foo
+def baz(): pass
+a = getattr(foo.bar, '__module__')
+b = getattr(baz, '__module__')
+)");
+  Object a(&scope, testing::moduleAt(&runtime, "__main__", "a"));
+  ASSERT_TRUE(a->isStr());
+  EXPECT_TRUE(Str::cast(a)->equalsCStr("foo"));
+  Object b(&scope, testing::moduleAt(&runtime, "__main__", "b"));
+  ASSERT_TRUE(b->isStr());
+  EXPECT_TRUE(Str::cast(b)->equalsCStr("__main__"));
+}
+
+TEST(InterpreterTest, MakeFunctionSetsDunderQualname) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+class Foo():
+    def bar(): pass
+def baz(): pass
+a = getattr(Foo.bar, '__qualname__')
+b = getattr(baz, '__qualname__')
+)");
+  HandleScope scope;
+  Object a(&scope, testing::moduleAt(&runtime, "__main__", "a"));
+  ASSERT_TRUE(a->isStr());
+  EXPECT_TRUE(Str::cast(a)->equalsCStr("Foo.bar"));
+  Object b(&scope, testing::moduleAt(&runtime, "__main__", "b"));
+  ASSERT_TRUE(b->isStr());
+  EXPECT_TRUE(Str::cast(b)->equalsCStr("baz"));
+}
+
 }  // namespace python

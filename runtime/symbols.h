@@ -65,6 +65,7 @@ class Runtime;
   V(DunderMain, "__main__")                                                    \
   V(DunderMatmul, "__matmul__")                                                \
   V(DunderMod, "__mod__")                                                      \
+  V(DunderModule, "__module__")                                                \
   V(DunderMul, "__mul__")                                                      \
   V(DunderName, "__name__")                                                    \
   V(DunderNe, "__ne__")                                                        \
@@ -74,6 +75,7 @@ class Runtime;
   V(DunderOr, "__or__")                                                        \
   V(DunderPos, "__pos__")                                                      \
   V(DunderPow, "__pow__")                                                      \
+  V(DunderQualname, "__qualname__")                                            \
   V(DunderRadd, "__radd__")                                                    \
   V(DunderRand, "__rand__")                                                    \
   V(DunderRdivmod, "__rdivmod__")                                              \

@@ -1649,15 +1649,23 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   HandleScope scope;
-  Function function(&scope, thread->runtime()->newFunction());
-  function->setName(frame->popValue());
+  Runtime* runtime = thread->runtime();
+  Function function(&scope, runtime->newFunction());
+  function->setQualname(frame->popValue());
   function->setCode(frame->popValue());
-  function->setGlobals(frame->globals());
+  function->setName(RawCode::cast(function->code())->name());
   Dict globals(&scope, frame->globals());
+  function->setGlobals(globals);
+  Object name_key(&scope, runtime->symbols()->at(SymbolId::kDunderName));
+  Object value_cell(&scope, runtime->dictAt(globals, name_key));
+  if (value_cell->isValueCell()) {
+    DCHECK(!RawValueCell::cast(value_cell)->isUnbound(), "unbound globals");
+    function->setModule(RawValueCell::cast(value_cell)->value());
+  }
   Dict builtins(&scope, frame->builtins());
   Code code(&scope, function->code());
   function->setFastGlobals(
-      thread->runtime()->computeFastGlobals(code, globals, builtins));
+      runtime->computeFastGlobals(code, globals, builtins));
   function->setEntry(interpreterTrampoline);
   function->setEntryKw(interpreterTrampolineKw);
   function->setEntryEx(interpreterTrampolineEx);

@@ -626,7 +626,6 @@ class Runtime {
   void initializeSymbols();
 
   void initializeClassMethodClass();
-  void initializeFunctionClass();
   void initializeObjectClass();
   void initializePropertyClass();
   void initializeRefClass();

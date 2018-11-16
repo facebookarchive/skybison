@@ -1040,7 +1040,7 @@ TEST(ThreadTest, MakeFunction) {
 
   Function function(&scope, RawValueCell::cast(*value)->value());
   EXPECT_EQ(function->code(), consts->at(0));
-  EXPECT_EQ(function->name(), consts->at(1));
+  EXPECT_EQ(function->qualname(), consts->at(1));
   EXPECT_EQ(function->entry(), &interpreterTrampoline);
 }
 

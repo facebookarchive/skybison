@@ -5,10 +5,29 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
-RawObject builtinFunctionGet(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod FunctionBuiltins::kMethods[] = {
+    {SymbolId::kDunderGet, nativeTrampoline<dunderGet>},
+};
+
+const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
+    {SymbolId::kDunderModule, RawFunction::kModuleOffset},
+    {SymbolId::kDunderName, RawFunction::kNameOffset},
+    {SymbolId::kDunderQualname, RawFunction::kQualnameOffset},
+};
+
+void FunctionBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Type function(&scope, runtime->addBuiltinClass(
+                            SymbolId::kFunction, LayoutId::kFunction,
+                            LayoutId::kObject, kAttributes, kMethods));
+}
+
+RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
+                                      word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr("__get__ needs 3 arguments");
   }

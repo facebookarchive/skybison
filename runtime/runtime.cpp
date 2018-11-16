@@ -1014,7 +1014,7 @@ void Runtime::initializeHeapClasses() {
   FloatBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kFrame, LayoutId::kHeapFrame,
                        LayoutId::kObject);
-  initializeFunctionClass();
+  FunctionBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeStr,
                        LayoutId::kStr);
   addEmptyBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
@@ -1215,16 +1215,6 @@ void Runtime::initializeRefClass() {
 
   classAddBuiltinFunction(ref, SymbolId::kDunderNew,
                           nativeTrampoline<builtinRefNew>);
-}
-
-void Runtime::initializeFunctionClass() {
-  HandleScope scope;
-  Type function(&scope,
-                addEmptyBuiltinClass(SymbolId::kFunction, LayoutId::kFunction,
-                                     LayoutId::kObject));
-
-  classAddBuiltinFunction(function, SymbolId::kDunderGet,
-                          nativeTrampoline<builtinFunctionGet>);
 }
 
 void Runtime::initializeClassMethodClass() {
