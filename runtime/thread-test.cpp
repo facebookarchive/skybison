@@ -2945,4 +2945,37 @@ x = foo(1, 2, 3)
   EXPECT_EQ(*x, SmallInt::fromWord(2));
 }
 
+TEST(ThreadTest, ConstructInstanceWithKwargs) {
+  const char* src = R"(
+result_a = None
+result_b = None
+result_c = None
+
+class Foo:
+  def __init__(self, a, b=None, c=None):
+    global result_a, result_b, result_c
+    result_a = a
+    result_b = b
+    result_c = c
+
+foo = Foo(1111, b=2222, c=3333)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<Object> result_a(&scope, moduleAt(&runtime, main, "result_a"));
+  ASSERT_TRUE(result_a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_a)->value(), 1111);
+
+  Handle<Object> result_b(&scope, moduleAt(&runtime, main, "result_b"));
+  ASSERT_TRUE(result_b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_b)->value(), 2222);
+
+  Handle<Object> result_c(&scope, moduleAt(&runtime, main, "result_c"));
+  ASSERT_TRUE(result_c->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_c)->value(), 3333);
+}
+
 }  // namespace python

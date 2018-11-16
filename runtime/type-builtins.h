@@ -8,6 +8,7 @@
 namespace python {
 
 Object* builtinTypeCall(Thread* thread, Frame* caller, word nargs);
+Object* builtinTypeCallKw(Thread* thread, Frame* caller, word nargs);
 Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinTypeInit(Thread* thread, Frame* frame, word nargs);
 Object* builtinTypeRepr(Thread* thread, Frame* frame, word nargs);

@@ -12,8 +12,8 @@ class ObjectBuiltins {
   static Object* dunderHash(Thread*, Frame*, word);
   static Object* dunderInit(Thread*, Frame*, word);
   static Object* dunderNew(Thread*, Frame*, word);
+  static Object* dunderNewKw(Thread*, Frame*, word);
   static Object* dunderRepr(Thread*, Frame*, word);
-  static Object* dunderStr(Thread*, Frame*, word);
 
  private:
   static const BuiltinMethod kMethods[];

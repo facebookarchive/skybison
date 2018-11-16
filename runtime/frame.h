@@ -190,6 +190,9 @@ class Frame {
 
   Object** valueStackBase();
 
+  // Returns the number of items on the value stack
+  word valueStackSize();
+
   // Push value on the stack.
   void pushValue(Object* value);
   // Insert value at offset on the stack.
@@ -208,6 +211,9 @@ class Frame {
   // Return the object at offset from the top of the value stack (e.g. peek(0)
   // returns the top of the stack)
   Object* peek(word offset);
+
+  // Push locals at [offset, offset + count) onto the stack
+  void pushLocals(word count, word offset);
 
   // A function lives immediately below the arguments on the value stack
   Function* function(word argc);
@@ -393,6 +399,10 @@ inline void Frame::setValueStackTop(Object** top) {
   atPut(kValueStackTopOffset, SmallInt::fromWord(reinterpret_cast<uword>(top)));
 }
 
+inline word Frame::valueStackSize() {
+  return valueStackBase() - valueStackTop();
+}
+
 inline void Frame::pushValue(Object* value) {
   Object** top = valueStackTop();
   *--top = value;
@@ -432,6 +442,13 @@ inline void Frame::dropValues(word count) {
 inline Object* Frame::topValue() { return peek(0); }
 
 inline void Frame::setTopValue(Object* value) { *valueStackTop() = value; }
+
+inline void Frame::pushLocals(word count, word offset) {
+  DCHECK(offset + count <= numLocals(), "locals overflow");
+  for (word i = offset; i < offset + count; i++) {
+    pushValue(getLocal(i));
+  }
+}
 
 inline Object* Frame::peek(word offset) {
   DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",

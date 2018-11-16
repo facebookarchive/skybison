@@ -33,6 +33,9 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
     runtime->classAddBuiltinFunction(object_type, kMethods[i].name,
                                      kMethods[i].address);
   }
+  runtime->classAddBuiltinFunctionKw(object_type, SymbolId::kDunderNew,
+                                     nativeTrampoline<dunderNew>,
+                                     nativeTrampolineKw<dunderNewKw>);
 }
 
 Object* ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
@@ -82,6 +85,15 @@ Object* ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Handle<Type> type(&scope, args.get(0));
   Handle<Layout> layout(&scope, type->instanceLayout());
   return thread->runtime()->newInstance(layout);
+}
+
+Object* ObjectBuiltins::dunderNewKw(Thread* thread, Frame* frame, word nargs) {
+  // This should really raise an error if __init__ is not overridden (see
+  // https://hlrz.com/source/xref/cpython-3.6/Objects/typeobject.c#3428)
+  // However, object.__new__ should also do that as well. For now, just forward
+  // to __new__.
+  KwArguments args(frame, nargs);
+  return dunderNew(thread, frame, nargs - args.numKeywords() - 1);
 }
 
 Object* ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {

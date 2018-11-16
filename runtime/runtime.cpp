@@ -1110,8 +1110,9 @@ void Runtime::initializeTypeClass() {
                                          LayoutId::kObject));
   type->setFlag(Type::Flag::kTypeSubclass);
 
-  classAddBuiltinFunction(type, SymbolId::kDunderCall,
-                          nativeTrampoline<builtinTypeCall>);
+  classAddBuiltinFunctionKw(type, SymbolId::kDunderCall,
+                            nativeTrampoline<builtinTypeCall>,
+                            nativeTrampolineKw<builtinTypeCallKw>);
 
   classAddBuiltinFunction(type, SymbolId::kDunderInit,
                           nativeTrampoline<builtinTypeInit>);

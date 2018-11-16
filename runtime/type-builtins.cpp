@@ -49,6 +49,38 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
+Object* builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+
+  // First, call __new__ to allocate a new instance.
+  if (!runtime->isInstanceOfClass(args.get(0))) {
+    return thread->throwTypeErrorFromCString(
+        "'__new__' requires a 'class' object");
+  }
+  Handle<Type> type(&scope, args.get(0));
+  Handle<Object> dunder_new(
+      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderNew));
+  frame->pushValue(*dunder_new);
+  // Copy down the args, kwargs, and kwarg tuple that __call__ was called with
+  frame->pushLocals(nargs, 0);
+  Handle<Object> result(&scope, Interpreter::callKw(thread, frame, nargs - 1));
+
+  // Second, call __init__ to initialize the instance.
+  Handle<Object> dunder_init(
+      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderInit));
+  frame->pushValue(*dunder_init);
+  frame->pushValue(*result);
+  // Copy down everything that __call_ was called with, except for the first
+  // argument (the type)
+  frame->pushLocals(nargs - 1, 1);
+  // TODO: throw a type error if the __init__ method does not return None.
+  Interpreter::callKw(thread, frame, nargs - 1);
+
+  return *result;
+}
+
 Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2) {
     return thread->throwTypeErrorFromCString("type() takes 1 or 3 arguments");
