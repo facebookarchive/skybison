@@ -20,6 +20,7 @@ class IntBuiltins {
   static RawObject dunderInt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderOr(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderPos(Thread* thread, Frame* frame, word nargs);
   static RawObject intFromString(Thread* thread, RawObject str, int base);
   static RawObject intFromBool(RawObject bool_obj);

@@ -556,6 +556,9 @@ class Runtime {
   // Import all the public module's symbols to the given dict
   void moduleImportAllFrom(const Dict& dict, const Module& module);
 
+  // Returns the result of bitwise logical OR of the arguments
+  RawObject intBinaryOr(Thread* thread, const Int& left, const Int& right);
+
  private:
   void initializeThreads();
   void initializeClasses();

@@ -3059,6 +3059,51 @@ TEST(RuntimeIntTest, NewLargeIntWithDigits) {
   EXPECT_EQ(positive_largeint->asWord(), positive_large_int);
 }
 
+TEST(RuntimeIntTest, BinaryOrWithPositiveInts) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, SmallInt::fromWord(0b101010));
+  Int right(&scope, SmallInt::fromWord(0b10101));
+  Object result(&scope,
+                runtime.intBinaryOr(Thread::currentThread(), left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 0b111111);
+}
+
+TEST(RuntimeIntTest, BinaryOrWithPositiveAndNegativeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, SmallInt::fromWord(-8));
+  Int right(&scope, SmallInt::fromWord(2));
+  Object result(&scope,
+                runtime.intBinaryOr(Thread::currentThread(), left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result)->value(), -6);
+}
+
+TEST(RuntimeIntTest, BinaryOrWithNegativeInts) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, SmallInt::fromWord(-4));
+  Int right(&scope, SmallInt::fromWord(-7));
+  Object result(&scope,
+                runtime.intBinaryOr(Thread::currentThread(), left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result)->value(), -3);
+}
+
+TEST(RuntimeIntTest, BinaryOrWithLargeInts) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, testing::newIntWithDigits(&runtime, {8, 8}));
+  Int right(&scope, testing::newIntWithDigits(&runtime, {7, 7, 7}));
+  Object result(&scope,
+                runtime.intBinaryOr(Thread::currentThread(), left, right));
+  Int expected(&scope, testing::newIntWithDigits(&runtime, {15, 15, 7}));
+  ASSERT_TRUE(result->isLargeInt());
+  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+}
+
 TEST(InstanceDelTest, DeleteUnknownAttribute) {
   const char* src = R"(
 class Foo:

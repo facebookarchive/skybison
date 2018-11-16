@@ -3766,4 +3766,25 @@ RawObject Runtime::strStrip(const Str& src, const Str& str,
   return strSubstr(src, first, length - first - last);
 }
 
+RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
+                               const Int& right) {
+  word left_digits = left->numDigits();
+  word right_digits = right->numDigits();
+  if (left_digits <= 1 && right_digits <= 1) {
+    return newInt(left->asWord() | right->asWord());
+  }
+
+  HandleScope scope(thread);
+  Int longer(&scope, left_digits > right_digits ? left : right);
+  Int shorter(&scope, left_digits <= right_digits ? left : right);
+  LargeInt result(&scope, heap()->createLargeInt(longer->numDigits()));
+  for (word i = 0; i < shorter->numDigits(); i++) {
+    result->digitAtPut(i, longer->digitAt(i) | shorter->digitAt(i));
+  }
+  for (word i = shorter->numDigits(); i < longer->numDigits(); i++) {
+    result->digitAtPut(i, longer->digitAt(i));
+  }
+  return result;
+}
+
 }  // namespace python

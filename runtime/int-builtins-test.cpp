@@ -499,6 +499,34 @@ a ^= 0x03
   EXPECT_EQ(RawSmallInt::cast(*b)->value(), 0xFE);
 }
 
+TEST(IntBuiltinsDeathTest, DunderOr) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+a = 0b010101
+b = 0b111000
+c = a | b
+)");
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  ASSERT_TRUE(c->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*c)->value(), 0b111101);
+}
+
+TEST(IntBuiltinsDeathTest, DunderOrWithNonIntReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr("a = int.__or__(10, '')");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(a->isNotImplemented());
+}
+
+TEST(IntBuiltinsDeathTest, DunderOrWithInvalidArgumentThrowsException) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr("a = 10 | ''"), "Cannot do binary op");
+  EXPECT_DEATH(runtime.runFromCStr("a = int.__or__('', 3)"),
+               "descriptor '__or__' requires a 'int' object");
+}
+
 TEST(IntBuiltinsTest, BinaryAddSmallInt) {
   Runtime runtime;
   HandleScope scope;

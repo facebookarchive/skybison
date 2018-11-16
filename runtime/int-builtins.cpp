@@ -28,6 +28,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
     {SymbolId::kDunderNeg, nativeTrampoline<dunderNeg>},
+    {SymbolId::kDunderOr, nativeTrampoline<dunderOr>},
     {SymbolId::kDunderPos, nativeTrampoline<dunderPos>},
 };
 
@@ -613,6 +614,28 @@ RawObject IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
 
 inline RawObject IntBuiltins::intFromBool(RawObject bool_obj) {
   return SmallInt::fromWord(bool_obj == Bool::trueObj() ? 1 : 0);
+}
+
+RawObject IntBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  if (!self->isInt()) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__or__' requires a 'int' object");
+  }
+  if (other->isInt()) {
+    Int self_int(&scope, self);
+    Int other_int(&scope, other);
+    return runtime->intBinaryOr(thread, self_int, other_int);
+  }
+  // signal to binary dispatch to try another method
+  return thread->runtime()->notImplemented();
 }
 
 RawObject SmallIntBuiltins::dunderAdd(Thread* thread, Frame* caller,
