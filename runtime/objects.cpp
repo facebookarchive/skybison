@@ -8,7 +8,7 @@ namespace python {
 
 Object* SmallString::fromCString(const char* value) {
   word len = strlen(value);
-  return fromBytes(view(reinterpret_cast<const byte*>(value), len));
+  return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));
 }
 
 Object* SmallString::fromBytes(View<byte> data) {

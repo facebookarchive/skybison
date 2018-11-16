@@ -160,7 +160,7 @@ TEST(DictionaryTest, GrowWhenFull) {
 
   auto makeKey = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
-    return runtime.newStringWithAll(view(text + i % 10, 10));
+    return runtime.newStringWithAll(View<byte>(text + i % 10, 10));
   };
   auto makeValue = [](int i) { return SmallInteger::fromWord(i); };
 
@@ -838,7 +838,7 @@ TEST(SetTest, Grow) {
 
   auto makeKey = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
-    return runtime.newStringWithAll(view(text + i % 10, 10));
+    return runtime.newStringWithAll(View<byte>(text + i % 10, 10));
   };
 
   // Fill in one fewer keys than would require growing the underlying object

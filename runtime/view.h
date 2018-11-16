@@ -31,9 +31,4 @@ class View {
   word length_;
 };
 
-template <typename T>
-View<T> view(const T* data, word length) {
-  return View<T>(data, length);
-}
-
 } // namespace python
