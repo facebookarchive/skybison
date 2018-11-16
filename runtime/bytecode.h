@@ -147,7 +147,7 @@ namespace python {
   V(LOAD_CLOSURE, 135, doLoadClosure)                                          \
   V(LOAD_DEREF, 136, doLoadDeref)                                              \
   V(STORE_DEREF, 137, doStoreDeref)                                            \
-  V(DELETE_DEREF, 138, doNotImplemented)                                       \
+  V(DELETE_DEREF, 138, doDeleteDeref)                                          \
   V(UNUSED_BYTECODE_139, 139, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_140, 140, doInvalidBytecode)                               \
   V(CALL_FUNCTION_KW, 141, doCallFunctionKw)                                   \

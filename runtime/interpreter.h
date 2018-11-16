@@ -201,6 +201,7 @@ class Interpreter {
   static void doLoadClosure(Context* ctx, word arg);
   static void doLoadDeref(Context* ctx, word arg);
   static void doStoreDeref(Context* ctx, word arg);
+  static void doDeleteDeref(Context* ctx, word arg);
   static void doCallFunctionKw(Context* ctx, word arg);
   static void doCallFunctionEx(Context* ctx, word arg);
   static void doSetupWith(Context* ctx, word arg);

@@ -1717,9 +1717,14 @@ void Interpreter::doLoadClosure(Context* ctx, word arg) {
 
 // opcode 136
 void Interpreter::doLoadDeref(Context* ctx, word arg) {
+  HandleScope scope(ctx->thread);
   Code* code = Code::cast(ctx->frame->code());
-  ctx->frame->pushValue(
-      ValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))->value());
+  Handle<ValueCell> value(&scope, ctx->frame->getLocal(code->nlocals() + arg));
+  if (value->isUnbound()) {
+    UNIMPLEMENTED(
+        "UnboundLocalError: local variable referenced before assignment");
+  }
+  ctx->frame->pushValue(value->value());
 }
 
 // opcode 137
@@ -1727,6 +1732,12 @@ void Interpreter::doStoreDeref(Context* ctx, word arg) {
   Code* code = Code::cast(ctx->frame->code());
   ValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))
       ->setValue(ctx->frame->popValue());
+}
+
+// opcode 138
+void Interpreter::doDeleteDeref(Context* ctx, word arg) {
+  Code* code = Code::cast(ctx->frame->code());
+  ValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))->makeUnbound();
 }
 
 // opcode 141

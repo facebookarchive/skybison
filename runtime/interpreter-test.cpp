@@ -732,8 +732,7 @@ class Foo:
 a, b = Foo()
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(src),
-               R"(iter\(\) returned non-iterator)");
+  ASSERT_DEATH(runtime.runFromCStr(src), R"(iter\(\) returned non-iterator)");
 }
 
 TEST(InterpreterTest, UnpackSequence) {
@@ -1230,6 +1229,46 @@ t = foo(*(1,2), *(3, 4))
   EXPECT_EQ(SmallInt::cast(tuple->at(1))->value(), 2);
   EXPECT_EQ(SmallInt::cast(tuple->at(2))->value(), 3);
   EXPECT_EQ(SmallInt::cast(tuple->at(3))->value(), 4);
+}
+
+TEST(InterpreterTest, FunctionDerefsVariable) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+def outer():
+    var = 1
+    def inner():
+        return var
+    del var
+    return 0
+
+v = outer()
+	)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> v(&scope, testing::moduleAt(&runtime, main, "v"));
+  ASSERT_TRUE(v->isInt());
+  Handle<Int> result(&scope, *v);
+  EXPECT_EQ(result->asWord(), 0);
+}
+
+TEST(InterpreterDeathTest, FunctionAccessesUnboundVariable) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+def outer():
+    var = 1
+    def inner():
+        return var
+    del var
+    return var
+
+v = outer()
+  )";
+
+  ASSERT_DEATH(
+      runtime.runFromCStr(src),
+      "UnboundLocalError: local variable referenced before assignment");
 }
 
 }  // namespace python
