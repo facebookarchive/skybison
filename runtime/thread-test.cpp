@@ -1883,4 +1883,20 @@ test()
   EXPECT_EQ(output, "1 2 3\n");
 }
 
+TEST(ThreadTest, BuildConstKeyMap) {
+  const char* src = R"(
+a = {"1": 2, 2: 3}
+print(a["1"])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "2\n");
+
+  const char* src1 = R"(
+a = {"1": 2, 2: 3}
+print(a[1])
+)";
+  EXPECT_DEATH(compileAndRunToString(&runtime, src1), "KeyError");
+}
+
 } // namespace python

@@ -432,9 +432,23 @@ Result BINARY_XOR(Context* ctx, word) {
 Result BINARY_SUBSCR(Context* ctx, word) {
   // TODO: The implementation of the {BINARY,STORE}_SUBSCR opcodes are
   // enough to get richards working.
-  word idx = SmallInteger::cast(*ctx->sp++)->value();
-  auto list = List::cast(*ctx->sp);
-  *ctx->sp = list->at(idx);
+  Object**& sp = ctx->sp;
+  HandleScope scope;
+  Handle<Object> key(&scope, *sp++);
+  Handle<Object> container(&scope, *sp++);
+  if (container->isList()) {
+    word idx = SmallInteger::cast(*key)->value();
+    *--sp = List::cast(*container)->at(idx);
+  } else if (container->isDictionary()) {
+    Handle<Dictionary> dict(&scope, *container);
+    Handle<Object> value(&scope, None::object());
+    CHECK(
+        ctx->thread->runtime()->dictionaryAt(dict, key, value.pointer()),
+        "KeyError");
+    *--sp = *value;
+  } else {
+    UNIMPLEMENTED("Custom Subscription");
+  }
   return Result::CONTINUE;
 }
 Result STORE_SUBSCR(Context* ctx, word) {
@@ -487,6 +501,20 @@ Result IMPORT_NAME(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   *ctx->sp = runtime->importModule(name);
   thread->abortOnPendingException();
+  return Result::CONTINUE;
+}
+Result BUILD_CONST_KEY_MAP(Context* ctx, word arg) {
+  Object**& sp = ctx->sp;
+  Thread* thread = ctx->thread;
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, thread->runtime()->newDictionary());
+  Handle<ObjectArray> keys(&scope, *sp++);
+  for (int i = arg - 1; i >= 0; i--) {
+    Handle<Object> key(&scope, keys->at(i));
+    Handle<Object> value(&scope, *sp++);
+    thread->runtime()->dictionaryAtPut(dict, key, value);
+  }
+  *--sp = *dict;
   return Result::CONTINUE;
 }
 
@@ -546,6 +574,7 @@ void Interpreter::initOpTable() {
   opTable[Bytecode::COMPARE_OP] = interpreter::COMPARE_OP;
   opTable[Bytecode::IMPORT_NAME] = interpreter::IMPORT_NAME;
   opTable[Bytecode::DELETE_GLOBAL] = interpreter::DELETE_GLOBAL;
+  opTable[Bytecode::BUILD_CONST_KEY_MAP] = interpreter::BUILD_CONST_KEY_MAP;
 }
 
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
