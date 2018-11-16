@@ -38,6 +38,7 @@ PyAPI_FUNC(PyObject *) PyModule_Create2(struct PyModuleDef *, int);
 PyAPI_FUNC(PyModuleDef *) PyModule_GetDef(PyObject *);
 PyAPI_FUNC(PyObject *) PyModule_GetDict(PyObject *);
 PyAPI_FUNC(PyObject *) PyLong_FromLong(long);
+PyAPI_FUNC(long) PyLong_AsLong(PyObject *);
 PyAPI_FUNC(void) _Py_Dealloc_Func(PyObject *);
 PyAPI_FUNC(PyObject *) PyTuple_New(Py_ssize_t);
 PyAPI_FUNC(Py_ssize_t) PyTuple_Size(PyObject *);

@@ -51,7 +51,25 @@ extern "C" PyObject* PyLong_FromSsize_t(Py_ssize_t) {
   UNIMPLEMENTED("PyLong_FromSsize_t");
 }
 
-extern "C" long PyLong_AsLong(PyObject*) { UNIMPLEMENTED("PyLong_AsLong"); }
+extern "C" long PyLong_AsLong(PyObject* pylong) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  if (pylong == nullptr) {
+    thread->throwSystemErrorFromCString("bad argument to internal function");
+    return -1;
+  }
+
+  Handle<Object> longobj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
+  if (!longobj->isInt()) {
+    // TODO: Handle calling __int__ on pylong
+    return -1;
+  }
+  Handle<Int> integer(&scope, *longobj);
+
+  // TODO: Handle overflows
+  return integer->asWord();
+}
 
 extern "C" long long PyLong_AsLongLong(PyObject*) {
   UNIMPLEMENTED("PYLong_AsLongLong");

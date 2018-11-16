@@ -265,9 +265,10 @@ add_library(
   extension-tests
   STATIC
   ext/Objects/boolobject-test.cpp
-  ext/Objects/floatobject-test.cpp
   ext/Objects/dictobject-test.cpp
+  ext/Objects/floatobject-test.cpp
   ext/Objects/listobject-test.cpp
+  ext/Objects/longobject-test.cpp
   ext/Objects/moduleobject-test.cpp
   ext/Objects/object-test.cpp
   ext/Objects/tupleobject-test.cpp
