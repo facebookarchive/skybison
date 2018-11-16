@@ -466,4 +466,46 @@ a ^= 0x03
   EXPECT_EQ(SmallInteger::cast(*b)->value(), 0xFE);
 }
 
+TEST(IntBuiltinsTest, BitLength) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+
+  // (0).bit_length() == 0
+  frame->setLocal(0, SmallInteger::fromWord(0));
+  Handle<Object> bit_length(
+      &scope, builtinSmallIntegerBitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*bit_length)->value(), 0);
+
+  // (1).bit_length() == 1
+  frame->setLocal(0, SmallInteger::fromWord(1));
+  Handle<Object> bit_length1(
+      &scope, builtinSmallIntegerBitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length1->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*bit_length1)->value(), 1);
+
+  // (-1).bit_length() == 1
+  frame->setLocal(0, SmallInteger::fromWord(1));
+  Handle<Object> bit_length2(
+      &scope, builtinSmallIntegerBitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length2->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*bit_length2)->value(), 1);
+
+  // (SmallInteger::kMaxValue).bit_length() == 62
+  frame->setLocal(0, SmallInteger::fromWord(SmallInteger::kMaxValue));
+  Handle<Object> bit_length3(
+      &scope, builtinSmallIntegerBitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length3->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*bit_length3)->value(), 62);
+
+  // (SmallInteger::kMinValue).bit_length() == 63
+  frame->setLocal(0, SmallInteger::fromWord(SmallInteger::kMinValue));
+  Handle<Object> bit_length4(
+      &scope, builtinSmallIntegerBitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length4->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*bit_length4)->value(), 63);
+}
+
 } // namespace python

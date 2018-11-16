@@ -1035,6 +1035,11 @@ void Runtime::initializeSmallIntClass() {
 
   classAddBuiltinFunction(
       small_integer,
+      symbols()->BitLength(),
+      nativeTrampoline<builtinSmallIntegerBitLength>);
+
+  classAddBuiltinFunction(
+      small_integer,
       symbols()->DunderBool(),
       nativeTrampoline<builtinSmallIntegerBool>);
 

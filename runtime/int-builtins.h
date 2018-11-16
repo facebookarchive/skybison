@@ -7,6 +7,7 @@
 
 namespace python {
 
+Object* builtinSmallIntegerBitLength(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerAdd(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerBool(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerEq(Thread* thread, Frame* frame, word nargs);

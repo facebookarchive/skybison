@@ -127,6 +127,10 @@ class Utils {
     return x < y ? x : y;
   }
 
+  static int highestBit(uword x) {
+    return x == 0 ? 0 : kBitsPerWord - __builtin_clzl(x);
+  }
+
   // Prints a python level stack trace to stderr
   static void printTraceback();
 

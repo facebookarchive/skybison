@@ -78,6 +78,7 @@ class Runtime;
   V(Add, "add")                          \
   V(Append, "append")                    \
   V(Argv, "argv")                        \
+  V(BitLength, "bit_length")             \
   V(Builtins, "builtins")                \
   V(Chr, "chr")                          \
   V(Classmethod, "classmethod")          \

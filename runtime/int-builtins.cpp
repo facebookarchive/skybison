@@ -8,6 +8,21 @@
 
 namespace python {
 
+Object* builtinSmallIntegerBitLength(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  Object* self = args.get(0);
+  if (!self->isSmallInteger()) {
+    return thread->throwTypeErrorFromCString(
+        "bit_length() must be called with int instance as first argument");
+  }
+  uword number =
+      static_cast<uword>(std::abs(SmallInteger::cast(self)->value()));
+  return SmallInteger::fromWord(Utils::highestBit(number));
+}
+
 Object* builtinSmallIntegerBool(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("not enough arguments");
