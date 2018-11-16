@@ -2756,15 +2756,48 @@ print(c, len(b), len(b1), b11, b12, b13)
   EXPECT_EQ(output, "False 2 3 1 2 3\n");
 }
 
-TEST(BuildSlice, pystone) { // pystone src
+TEST(ThreadTest, SliceNoneCopyListCompPrint) { // based on pystone.py
   const char* src = R"(
-Array1Glob = [0]*51
-Array2Glob = [x[:] for x in [Array1Glob]*51]
-print(len(Array1Glob), len(Array2Glob), len(Array2Glob[0]))
+Array1Glob = [0]*5
+Array2Glob = [x[:] for x in [Array1Glob]*5]
+print(len(Array1Glob), len(Array2Glob), len(Array2Glob[0]), Array1Glob, Array2Glob[0])
 )";
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "51 51 51\n");
+  EXPECT_EQ(output, "5 5 5 [0, 0, 0, 0, 0] [0, 0, 0, 0, 0]\n");
+}
+
+TEST(ThreadTest, Array2D) { // pystone
+  const char* src = R"(
+a1 = [0]*3
+a2 = [x[:] for x in [a1]*3]
+a1[0] = 1
+a1[2] = 3
+a2[0][0] = 1
+a2[1][1] = 2
+a2[2][2] = 3
+print(a1, a2[0], a2[1], a2[2])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "[1, 0, 3] [1, 0, 0] [0, 2, 0] [0, 0, 3]\n");
+}
+
+TEST(ThreadTest, Array2D1) { // pystone
+  const char* src = R"(
+a1 = [0]*3
+a2 = [x[:] for x in [a1]*3]
+a1[0] = 1
+a1[1] = a1[0]
+a1[2] = a1[0] + a1[1]
+a2[0][0] = a1[0]
+a2[1][1] = a2[0][0] + 10
+a2[2][2] = a2[1][1] + 100
+print(a1, a2[0], a2[1], a2[2])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "[1, 1, 2] [1, 0, 0] [0, 11, 0] [0, 0, 111]\n");
 }
 
 TEST(ThreadTest, BreakLoopWhileLoop) {

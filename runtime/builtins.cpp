@@ -210,6 +210,26 @@ static void printString(String* str) {
   }
 }
 
+static void printScalarTypes(Object* arg, std::ostream* ostream) {
+  if (arg->isBoolean()) {
+    *ostream << (Boolean::cast(arg)->value() ? "True" : "False");
+  } else if (arg->isDouble()) {
+    *ostream << Double::cast(arg)->value();
+  } else if (arg->isSmallInteger()) {
+    *ostream << SmallInteger::cast(arg)->value();
+  } else if (arg->isString()) {
+    printString(String::cast(arg));
+  } else {
+    UNIMPLEMENTED("Custom print unsupported");
+  }
+}
+
+static bool supportedScalarType(Object* arg) {
+  return (
+      arg->isBoolean() || arg->isDouble() || arg->isSmallInteger() ||
+      arg->isString());
+}
+
 // NB: The print functions do not represent the final state of builtin functions
 // and should not be emulated when creating new builtins. They are minimal
 // implementations intended to get the Richards & Pystone benchmark working.
@@ -222,16 +242,25 @@ static Object* doBuiltinPrint(
 
   for (word i = 0; i < nargs; i++) {
     Object* arg = args.get(i);
-    if (arg->isString()) {
-      printString(String::cast(arg));
-    } else if (arg->isSmallInteger()) {
-      *ostream << SmallInteger::cast(arg)->value();
-    } else if (arg->isBoolean()) {
-      *ostream << (Boolean::cast(arg)->value() ? "True" : "False");
-    } else if (arg->isDouble()) {
-      *ostream << Double::cast(arg)->value();
+    if (supportedScalarType(arg)) {
+      printScalarTypes(arg, ostream);
+    } else if (arg->isList()) {
+      *ostream << "[";
+      HandleScope scope;
+      Handle<List> list(&scope, arg);
+      for (word i = 0; i < list->allocated(); i++) {
+        if (supportedScalarType(list->at(i))) {
+          printScalarTypes(list->at(i), ostream);
+        } else {
+          UNIMPLEMENTED("Custom print unsupported");
+        }
+        if (i != list->allocated() - 1) {
+          *ostream << ", ";
+        }
+      }
+      *ostream << "]";
     } else {
-      UNIMPLEMENTED("Custom print unsupported.");
+      UNIMPLEMENTED("Custom print unsupported");
     }
     if ((i + 1) != nargs) {
       *ostream << separator;
