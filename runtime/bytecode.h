@@ -119,7 +119,7 @@ namespace python {
   V(LOAD_ATTR, 106, interpreter::LOAD_ATTR)                          \
   V(COMPARE_OP, 107, interpreter::COMPARE_OP)                        \
   V(IMPORT_NAME, 108, interpreter::IMPORT_NAME)                      \
-  V(IMPORT_FROM, 109, interpreter::NOT_IMPLEMENTED)                  \
+  V(IMPORT_FROM, 109, interpreter::IMPORT_FROM)                      \
   V(JUMP_FORWARD, 110, interpreter::JUMP_FORWARD)                    \
   V(JUMP_IF_FALSE_OR_POP, 111, interpreter::JUMP_IF_FALSE_OR_POP)    \
   V(JUMP_IF_TRUE_OR_POP, 112, interpreter::JUMP_IF_TRUE_OR_POP)      \

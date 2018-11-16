@@ -3033,4 +3033,25 @@ print(t1 > t, t > t1, t == t1)
   EXPECT_EQ(output, "0\n1\n2\nTrue False False\n");
 }
 
+TEST(ThreadTest, TimeTimeFromImport) { // pystone dependency
+  const char* src = R"(
+from time import time
+t = time()
+print(t.__class__ is float)
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "True\n");
+}
+
+TEST(ThreadTest, ImportFromNeg) {
+  const char* src = R"(
+from time import foobarbaz
+)";
+
+  Runtime runtime;
+  EXPECT_DEATH(compileAndRunToString(&runtime, src);, "cannot import name\n");
+}
+
 } // namespace python

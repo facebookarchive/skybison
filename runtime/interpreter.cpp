@@ -670,6 +670,20 @@ void IMPORT_NAME(Context* ctx, word arg) {
   thread->abortOnPendingException();
 }
 
+void IMPORT_FROM(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Code> code(&scope, ctx->frame->code());
+  Handle<Object> name(&scope, ObjectArray::cast(code->names())->at(arg));
+  CHECK(name->isString(), "name not found");
+  Handle<Module> module(&scope, *ctx->sp);
+  Runtime* runtime = thread->runtime();
+  CHECK(module->isModule(), "Unexpected type to import from");
+  Object* value = runtime->moduleAt(module, name);
+  CHECK(!value->isError(), "cannot import name");
+  *--ctx->sp = value;
+}
+
 void BUILD_CONST_KEY_MAP(Context* ctx, word arg) {
   Object**& sp = ctx->sp;
   Thread* thread = ctx->thread;
