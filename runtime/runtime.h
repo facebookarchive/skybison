@@ -668,6 +668,14 @@ class Runtime {
   // parent and contains no outgoing edges.
   Object* layoutCreateChild(Thread* thread, const Handle<Layout>& parent);
 
+  // Generic version of dictUpdate, used by both dictUpdate and dictMerge
+  // if merge is true, checks that keys are strings and are not repeated.
+  // in the merge case, if either of the checks fail, returns by throwing a
+  // python TypeError exception.
+  template <bool merge>
+  Object* dictUpdate(Thread* thread, const Handle<Dict>& dict,
+                     const Handle<Object>& mapping);
+
   // The size listEnsureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
 

@@ -2372,6 +2372,17 @@ Object* Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
 
 Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
                             const Handle<Object>& mapping) {
+  return dictUpdate<false>(thread, dict, mapping);
+}
+
+Object* Runtime::dictMerge(Thread* thread, const Handle<Dict>& dict,
+                           const Handle<Object>& mapping) {
+  return dictUpdate<true>(thread, dict, mapping);
+}
+
+template <bool merge>
+inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
+                                   const Handle<Object>& mapping) {
   HandleScope scope;
   Handle<Object> key(&scope, None::object());
   Handle<Object> value(&scope, None::object());
@@ -2383,6 +2394,15 @@ Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       if (Dict::Bucket::isFilled(*data, i)) {
         key = Dict::Bucket::key(*data, i);
         value = Dict::Bucket::value(*data, i);
+        if (merge) {
+          if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
+            return thread->throwTypeErrorFromCStr("keywords must be strings");
+          }
+          if (dictIncludes(dict, key)) {
+            return thread->throwTypeErrorFromCStr(
+                "got multiple values for keyword argument");
+          }
+        }
         dictAtPut(dict, key, value);
       }
     }
@@ -2410,80 +2430,7 @@ Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
     Handle<List> keys_list(&scope, *keys);
     for (word i = 0; i < keys_list->allocated(); ++i) {
       key = keys_list->at(i);
-      value =
-          Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
-      if (value->isError()) {
-        return *value;
-      }
-      dictAtPut(dict, key, value);
-    }
-    return *dict;
-  }
-
-  if (keys->isObjectArray()) {
-    Handle<ObjectArray> keys_tuple(&scope, *keys);
-    for (word i = 0; i < keys_tuple->length(); ++i) {
-      key = keys_tuple->at(i);
-      value =
-          Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
-      if (value->isError()) {
-        return *value;
-      }
-      dictAtPut(dict, key, value);
-    }
-    return *dict;
-  }
-
-  // keys is probably an iterator
-  Handle<Object> iter_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), keys,
-                                        SymbolId::kDunderIter));
-  if (iter_method->isError()) {
-    return thread->throwTypeErrorFromCStr("o.keys() are not iterable");
-  }
-
-  Handle<Object> iterator(
-      &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
-                                       iter_method, keys));
-  if (iterator->isError()) {
-    return thread->throwTypeErrorFromCStr("o.keys() are not iterable");
-  }
-  Handle<Object> next_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterator, SymbolId::kDunderNext));
-  if (next_method->isError()) {
-    thread->throwTypeErrorFromCStr("o.keys() are not iterable");
-    thread->abortOnPendingException();
-  }
-  while (!isIteratorExhausted(thread, iterator)) {
-    key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
-                                   iterator);
-    if (key->isError()) {
-      return *key;
-    }
-    value =
-        Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
-    if (value->isError()) {
-      return *value;
-    }
-    dictAtPut(dict, key, value);
-  }
-  return *dict;
-}
-
-Object* Runtime::dictMerge(Thread* thread, const Handle<Dict>& dict,
-                           const Handle<Object>& mapping) {
-  HandleScope scope;
-  Handle<Object> key(&scope, None::object());
-  Handle<Object> value(&scope, None::object());
-  if (mapping->isDict()) {
-    DCHECK(*mapping != *dict, "Cannot update dict with itself");
-    Handle<Dict> other(&scope, *mapping);
-    Handle<ObjectArray> data(&scope, other->data());
-    for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
-      if (Dict::Bucket::isFilled(*data, i)) {
-        key = Dict::Bucket::key(*data, i);
-        value = Dict::Bucket::value(*data, i);
+      if (merge) {
         if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
           return thread->throwTypeErrorFromCStr("keywords must be strings");
         }
@@ -2491,39 +2438,6 @@ Object* Runtime::dictMerge(Thread* thread, const Handle<Dict>& dict,
           return thread->throwTypeErrorFromCStr(
               "got multiple values for keyword argument");
         }
-        dictAtPut(dict, key, value);
-      }
-    }
-    return *dict;
-  }
-  Frame* frame = thread->currentFrame();
-  Handle<Object> keys_method(
-      &scope,
-      Interpreter::lookupMethod(thread, frame, mapping, SymbolId::kKeys));
-
-  if (keys_method->isError()) {
-    return thread->throwTypeErrorFromCStr("object is not a mapping");
-  }
-
-  // Generic mapping, use keys() and __getitem__()
-  Handle<Object> subscr_method(
-      &scope, Interpreter::lookupMethod(thread, frame, mapping,
-                                        SymbolId::kDunderGetItem));
-  if (subscr_method->isError()) {
-    return thread->throwTypeErrorFromCStr("object is not subscriptable");
-  }
-  Handle<Object> keys(
-      &scope, Interpreter::callMethod1(thread, frame, keys_method, mapping));
-  if (keys->isList()) {
-    Handle<List> keys_list(&scope, *keys);
-    for (word i = 0; i < keys_list->allocated(); ++i) {
-      key = keys_list->at(i);
-      if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
-        return thread->throwTypeErrorFromCStr("keywords must be strings");
-      }
-      if (dictIncludes(dict, key)) {
-        return thread->throwTypeErrorFromCStr(
-            "got multiple values for keyword argument");
       }
       value =
           Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
@@ -2539,12 +2453,14 @@ Object* Runtime::dictMerge(Thread* thread, const Handle<Dict>& dict,
     Handle<ObjectArray> keys_tuple(&scope, *keys);
     for (word i = 0; i < keys_tuple->length(); ++i) {
       key = keys_tuple->at(i);
-      if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
-        return thread->throwTypeErrorFromCStr("keywords must be strings");
-      }
-      if (dictIncludes(dict, key)) {
-        return thread->throwTypeErrorFromCStr(
-            "got multiple values for keyword argument");
+      if (merge) {
+        if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
+          return thread->throwTypeErrorFromCStr("keywords must be strings");
+        }
+        if (dictIncludes(dict, key)) {
+          return thread->throwTypeErrorFromCStr(
+              "got multiple values for keyword argument");
+        }
       }
       value =
           Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
@@ -2583,12 +2499,14 @@ Object* Runtime::dictMerge(Thread* thread, const Handle<Dict>& dict,
     if (key->isError()) {
       return *key;
     }
-    if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
-      return thread->throwTypeErrorFromCStr("keywords must be strings");
-    }
-    if (dictIncludes(dict, key)) {
-      return thread->throwTypeErrorFromCStr(
-          "got multiple values for keyword argument");
+    if (merge) {
+      if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
+        return thread->throwTypeErrorFromCStr("keywords must be strings");
+      }
+      if (dictIncludes(dict, key)) {
+        return thread->throwTypeErrorFromCStr(
+            "got multiple values for keyword argument");
+      }
     }
     value =
         Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
