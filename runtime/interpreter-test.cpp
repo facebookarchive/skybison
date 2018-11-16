@@ -755,7 +755,7 @@ a, b, c = l
   EXPECT_EQ(SmallInt::cast(*c)->value(), 3);
 }
 
-TEST(InterpreterDeathTest, UnpackSequenceTooFewElements) {
+TEST(InterpreterDeathTest, UnpackSequenceTooFewObjects) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
@@ -765,7 +765,7 @@ a, b, c = l
   ASSERT_DEATH(runtime.runFromCStr(src), "not enough values to unpack");
 }
 
-TEST(InterpreterDeathTest, UnpackSequenceTooManyElements) {
+TEST(InterpreterDeathTest, UnpackSequenceTooManyObjects) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
@@ -875,6 +875,107 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
   code->setCode(runtime.newByteArrayWithAll(bc));
   Object* result = Thread::currentThread()->run(*code);
   EXPECT_EQ(result, SmallInt::fromWord(42));
-}  // namespace python
+}
+
+TEST(InterpreterDeathTest, UnpackSequenceExWithTooFewObjectsBefore) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+l = [1, 2]
+a, b, c, *d  = l
+)";
+  ASSERT_DEATH(runtime.runFromCStr(src), "not enough values to unpack");
+}
+
+TEST(InterpreterDeathTest, UnpackSequenceExWithTooFewObjectsAfter) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+l = [1, 2]
+*a, b, c, d = l
+)";
+  ASSERT_DEATH(runtime.runFromCStr(src), "not enough values to unpack");
+}
+
+TEST(InterpreterTest, UnpackSequenceEx) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+l = [1, 2, 3, 4, 5, 6, 7]
+a, b, c, *d, e, f, g  = l
+)");
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 1);
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 2);
+  ASSERT_TRUE(c->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*c)->value(), 3);
+
+  Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
+  ASSERT_TRUE(d->isList());
+  Handle<List> list(&scope, *d);
+  EXPECT_EQ(list->allocated(), 1);
+  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 4);
+
+  Handle<Object> e(&scope, testing::moduleAt(&runtime, main, "e"));
+  Handle<Object> f(&scope, testing::moduleAt(&runtime, main, "f"));
+  Handle<Object> g(&scope, testing::moduleAt(&runtime, main, "g"));
+  ASSERT_TRUE(e->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*e)->value(), 5);
+  ASSERT_TRUE(f->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*f)->value(), 6);
+  ASSERT_TRUE(g->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*g)->value(), 7);
+}
+
+TEST(InterpreterTest, UnpackSequenceExWithNoElementsAfter) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+l = [1, 2, 3, 4]
+a, b, *c = l
+)");
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 1);
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 2);
+
+  ASSERT_TRUE(c->isList());
+  Handle<List> list(&scope, *c);
+  ASSERT_EQ(list->allocated(), 2);
+  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 3);
+  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 4);
+}
+
+TEST(InterpreterTest, UnpackSequenceExWithNoElementsBefore) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+l = [1, 2, 3, 4]
+*a, b, c = l
+)");
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(a->isList());
+  Handle<List> list(&scope, *a);
+  ASSERT_EQ(list->allocated(), 2);
+  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 2);
+
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 3);
+  ASSERT_TRUE(c->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*c)->value(), 4);
+}
 
 }  // namespace python

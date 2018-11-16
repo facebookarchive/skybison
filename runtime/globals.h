@@ -28,6 +28,8 @@ const int64 kMaxInt64 = 0x7FFFFFFFFFFFFFFFLL;
 const int64 kMinInt64 = -kMaxInt64 - 1;
 const uint64 kMaxUint64 = 0xFFFFFFFFFFFFFFFFULL;
 
+const byte kMaxByte = 0xFF;
+
 const word kMinWord = INTPTR_MIN;
 const word kMaxWord = INTPTR_MAX;
 const uword kMaxUword = UINTPTR_MAX;

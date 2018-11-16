@@ -165,6 +165,7 @@ class Interpreter {
   static void doDeleteName(Context* ctx, word arg);
   static void doUnpackSequence(Context* ctx, word arg);
   static void doForIter(Context* ctx, word arg);
+  static void doUnpackEx(Context* ctx, word arg);
   static void doStoreAttr(Context* ctx, word arg);
   static void doStoreGlobal(Context* ctx, word arg);
   static void doDeleteGlobal(Context* ctx, word arg);

@@ -1156,6 +1156,93 @@ void Interpreter::doForIter(Context* ctx, word arg) {
   ctx->thread->abortOnPendingException();
 }
 
+// opcode 94
+void Interpreter::doUnpackEx(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Handle<Object> iterable(&scope, frame->topValue());
+  Handle<Object> iter_method(
+      &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
+  if (iter_method->isError()) {
+    thread->throwTypeErrorFromCStr("object is not iterable");
+    thread->abortOnPendingException();
+  }
+  Handle<Object> iterator(&scope,
+                          callMethod1(thread, frame, iter_method, iterable));
+  thread->abortOnPendingException();
+  Handle<Object> next_method(
+      &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
+  if (next_method->isError()) {
+    thread->throwTypeErrorFromCStr("iter() returned non-iterator");
+    thread->abortOnPendingException();
+  }
+
+  word before = arg & kMaxByte;
+  word after = (arg >> kBitsPerByte) & kMaxByte;
+  word num_pushed = 0;
+
+  for (; num_pushed < before &&
+         !thread->runtime()->isIteratorExhausted(thread, iterator);
+       ++num_pushed) {
+    Handle<Object> value(&scope,
+                         callMethod1(thread, frame, next_method, iterator));
+    if (value->isError()) {
+      frame->dropValues(num_pushed);
+      thread->abortOnPendingException();
+      break;
+    }
+    frame->pushValue(*value);
+  }
+
+  if (num_pushed < before) {
+    frame->dropValues(num_pushed);
+    thread->throwValueErrorFromCStr("not enough values to unpack");
+    thread->abortOnPendingException();
+  }
+
+  Handle<List> list(&scope, runtime->newList());
+  Handle<Object> value(&scope, None::object());
+  while (!runtime->isIteratorExhausted(thread, iterator)) {
+    value = Interpreter::callMethod1(thread, frame, next_method, iterator);
+    if (value->isError()) {
+      frame->dropValues(num_pushed);
+      thread->abortOnPendingException();
+      break;
+    }
+    runtime->listAdd(list, value);
+  }
+
+  frame->pushValue(*list);
+  num_pushed++;
+
+  if (list->allocated() < after) {
+    frame->dropValues(num_pushed);
+    thread->throwValueErrorFromCStr("not enough values to unpack");
+    thread->abortOnPendingException();
+  }
+
+  if (after > 0) {
+    // Pop elements off the list and set them on the stack
+    for (word i = list->allocated() - after, j = list->allocated(); i < j;
+         ++i, ++num_pushed) {
+      frame->pushValue(list->at(i));
+      list->atPut(i, None::object());
+    }
+    list->setAllocated(list->allocated() - after);
+  }
+
+  // swap values on the stack
+  Handle<Object> tmp(&scope, None::object());
+  for (word i = 0, j = num_pushed - 1, half = num_pushed / 2; i < half;
+       ++i, --j) {
+    tmp = frame->peek(i);
+    frame->setValueAt(frame->peek(j), i);
+    frame->setValueAt(*tmp, j);
+  }
+}
+
 // opcode 95
 void Interpreter::doStoreAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
