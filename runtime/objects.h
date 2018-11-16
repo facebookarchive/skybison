@@ -192,8 +192,6 @@ class Object {
 
   // Casting.
   static inline Object* cast(Object* object);
-  template <typename T>
-  inline T* cast();
 
   // Constants
 
@@ -1689,11 +1687,6 @@ bool Object::equals(Object* lhs, Object* rhs) {
 
 Object* Object::cast(Object* object) {
   return object;
-}
-
-template <typename T>
-T* Object::cast() {
-  return T::cast(this);
 }
 
 // Integer
