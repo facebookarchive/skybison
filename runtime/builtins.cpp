@@ -268,6 +268,20 @@ Object* builtinChr(Thread* thread, Frame* callerFrame, word nargs) {
   return SmallString::fromCString(s);
 }
 
+Object* builtinLen(Thread* thread, Frame* callerFrame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString(
+        "len() takes exactly one argument");
+  }
+  Object* arg = callerFrame->valueStackTop()[0];
+  if (!arg->isList()) {
+    // TODO(T27377670): Support calling __len__
+    return thread->throwTypeErrorFromCString(
+        "Unsupported type in builtin 'len'");
+  }
+  return SmallInteger::fromWord(List::cast(arg)->allocated());
+}
+
 // List
 Object* builtinListNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newList();

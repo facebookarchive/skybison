@@ -912,6 +912,11 @@ void Runtime::createBuiltinsModule() {
       "isinstance",
       nativeTrampoline<builtinIsinstance>,
       nativeTrampoline<unimplementedTrampoline>);
+  moduleAddBuiltinFunction(
+      module,
+      "len",
+      nativeTrampoline<builtinLen>,
+      nativeTrampoline<unimplementedTrampoline>);
 
   // Add 'object'
   Handle<Object> object_name(&scope, symbols()->ObjectClassname());

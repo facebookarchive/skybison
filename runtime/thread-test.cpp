@@ -1612,6 +1612,22 @@ TEST(ThreadTest, BuiltinChr) {
       "aborting due to pending exception: Unsupported type in builtin 'chr'");
 }
 
+TEST(ThreadTest, BuiltinLen) {
+  Runtime runtime;
+  std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");
+  EXPECT_EQ(result, "3\n");
+  std::unique_ptr<char[]> buffer1(Runtime::compile("print(len(1,2))"));
+  ASSERT_DEATH(
+      runtime.run(buffer1.get()),
+      "aborting due to pending exception: "
+      "len\\(\\) takes exactly one argument");
+  std::unique_ptr<char[]> buffer2(Runtime::compile("print(len(1))"));
+  ASSERT_DEATH(
+      runtime.run(buffer2.get()),
+      "aborting due to pending exception: "
+      "Unsupported type in builtin 'len'");
+}
+
 TEST(ThreadTest, BuiltinOrd) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(ord('A'))");
