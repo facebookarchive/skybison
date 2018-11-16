@@ -600,24 +600,22 @@ Object* Runtime::newCoro() { return heap()->createCoro(); }
 Object* Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
                                     Function::Entry entry_kw,
                                     Function::Entry entry_ex) {
-  Object* result = heap()->createFunction();
-  DCHECK(result != Error::object(), "failed to createFunction");
-  auto function = Function::cast(result);
-  function->setName(symbols()->at(name));
-  function->setEntry(entry);
-  function->setEntryKw(entry_kw);
-  function->setEntryEx(entry_ex);
-  return result;
+  HandleScope scope;
+  Handle<Function> result(&scope, heap()->createFunction());
+  result->setName(symbols()->at(name));
+  result->setEntry(entry);
+  result->setEntryKw(entry_kw);
+  result->setEntryEx(entry_ex);
+  return *result;
 }
 
 Object* Runtime::newFunction() {
-  Object* object = heap()->createFunction();
-  DCHECK(object != nullptr, "failed to createFunction");
-  auto function = Function::cast(object);
-  function->setEntry(unimplementedTrampoline);
-  function->setEntryKw(unimplementedTrampoline);
-  function->setEntryEx(unimplementedTrampoline);
-  return function;
+  HandleScope scope;
+  Handle<Function> result(&scope, heap()->createFunction());
+  result->setEntry(unimplementedTrampoline);
+  result->setEntryKw(unimplementedTrampoline);
+  result->setEntryEx(unimplementedTrampoline);
+  return *result;
 }
 
 Object* Runtime::newGen() { return heap()->createGen(); }
