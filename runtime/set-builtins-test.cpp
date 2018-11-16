@@ -197,19 +197,6 @@ TEST(SetBuiltinsTest, DunderIandWithNonSet) {
   ASSERT_TRUE(result->isNotImplemented());
 }
 
-// Equivalent to evaluating "set(range(start, stop))" in Python
-static RawObject setFromRange(word start, word stop) {
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-  Set result(&scope, thread->runtime()->newSet());
-  Object value(&scope, NoneType::object());
-  for (word i = start; i < stop; i++) {
-    value = SmallInt::fromWord(i);
-    thread->runtime()->setAdd(result, value);
-  }
-  return *result;
-}
-
 TEST(SetBuiltinsTest, SetIntersectionWithNoArgsReturnsCopy) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
@@ -562,6 +549,741 @@ TEST(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
   EXPECT_EQ(*result3, Bool::trueObj());
 
   thread->popFrame();
+}
+
+TEST(SetBuiltinsTest, DunderEqWithSetSubclass) {
+  const char* src = R"(
+class Bar(set): pass
+
+a = set()
+a1 = {1}
+b = Bar()
+cmp = (a == b)
+cmp1 = (a1 == b)
+cmp2 = (b == a)
+cmp3 = (b == a1)
+cmp4 = (b == b)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object cmp(&scope, moduleAt(&runtime, main, "cmp"));
+  Object cmp1(&scope, moduleAt(&runtime, main, "cmp1"));
+  Object cmp2(&scope, moduleAt(&runtime, main, "cmp2"));
+  Object cmp3(&scope, moduleAt(&runtime, main, "cmp3"));
+  Object cmp4(&scope, moduleAt(&runtime, main, "cmp4"));
+  EXPECT_EQ(*cmp, Bool::trueObj());
+  EXPECT_EQ(*cmp1, Bool::falseObj());
+  EXPECT_EQ(*cmp2, Bool::trueObj());
+  EXPECT_EQ(*cmp3, Bool::falseObj());
+  EXPECT_EQ(*cmp4, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderNeWithSetSubclass) {
+  const char* src = R"(
+class Bar(set): pass
+
+a = set()
+a1 = {1}
+b = Bar()
+cmp = (a != b)
+cmp1 = (a1 != b)
+cmp2 = (b != a)
+cmp3 = (b != a1)
+cmp4 = (b != b)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object cmp(&scope, moduleAt(&runtime, main, "cmp"));
+  Object cmp1(&scope, moduleAt(&runtime, main, "cmp1"));
+  Object cmp2(&scope, moduleAt(&runtime, main, "cmp2"));
+  Object cmp3(&scope, moduleAt(&runtime, main, "cmp3"));
+  Object cmp4(&scope, moduleAt(&runtime, main, "cmp4"));
+  EXPECT_EQ(*cmp, Bool::falseObj());
+  EXPECT_EQ(*cmp1, Bool::trueObj());
+  EXPECT_EQ(*cmp2, Bool::falseObj());
+  EXPECT_EQ(*cmp3, Bool::trueObj());
+  EXPECT_EQ(*cmp4, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderGeWithSetSubclass) {
+  const char* src = R"(
+class Bar(set): pass
+
+a = set()
+a1 = {1}
+b = Bar()
+cmp = (a >= b)
+cmp1 = (a1 >= b)
+cmp2 = (b >= a)
+cmp3 = (b >= a1)
+cmp4 = (b >= b)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object cmp(&scope, moduleAt(&runtime, main, "cmp"));
+  Object cmp1(&scope, moduleAt(&runtime, main, "cmp1"));
+  Object cmp2(&scope, moduleAt(&runtime, main, "cmp2"));
+  Object cmp3(&scope, moduleAt(&runtime, main, "cmp3"));
+  Object cmp4(&scope, moduleAt(&runtime, main, "cmp4"));
+  EXPECT_EQ(*cmp, Bool::trueObj());
+  EXPECT_EQ(*cmp1, Bool::trueObj());
+  EXPECT_EQ(*cmp2, Bool::trueObj());
+  EXPECT_EQ(*cmp3, Bool::falseObj());
+  EXPECT_EQ(*cmp4, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderGtWithSetSubclass) {
+  const char* src = R"(
+class Bar(set): pass
+
+a = set()
+a1 = {1}
+b = Bar()
+cmp = (a > b)
+cmp1 = (a1 > b)
+cmp2 = (b > a)
+cmp3 = (b > a1)
+cmp4 = (b > b)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object cmp(&scope, moduleAt(&runtime, main, "cmp"));
+  Object cmp1(&scope, moduleAt(&runtime, main, "cmp1"));
+  Object cmp2(&scope, moduleAt(&runtime, main, "cmp2"));
+  Object cmp3(&scope, moduleAt(&runtime, main, "cmp3"));
+  Object cmp4(&scope, moduleAt(&runtime, main, "cmp4"));
+  EXPECT_EQ(*cmp, Bool::falseObj());
+  EXPECT_EQ(*cmp1, Bool::trueObj());
+  EXPECT_EQ(*cmp2, Bool::falseObj());
+  EXPECT_EQ(*cmp3, Bool::falseObj());
+  EXPECT_EQ(*cmp4, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderLeWithSetSubclass) {
+  const char* src = R"(
+class Bar(set): pass
+
+a = set()
+a1 = {1}
+b = Bar()
+cmp = (a <= b)
+cmp1 = (a1 <= b)
+cmp2 = (b <= a)
+cmp3 = (b <= a1)
+cmp4 = (b <= b)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object cmp(&scope, moduleAt(&runtime, main, "cmp"));
+  Object cmp1(&scope, moduleAt(&runtime, main, "cmp1"));
+  Object cmp2(&scope, moduleAt(&runtime, main, "cmp2"));
+  Object cmp3(&scope, moduleAt(&runtime, main, "cmp3"));
+  Object cmp4(&scope, moduleAt(&runtime, main, "cmp4"));
+  EXPECT_EQ(*cmp, Bool::trueObj());
+  EXPECT_EQ(*cmp1, Bool::falseObj());
+  EXPECT_EQ(*cmp2, Bool::trueObj());
+  EXPECT_EQ(*cmp3, Bool::trueObj());
+  EXPECT_EQ(*cmp4, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderLtWithSetSubclass) {
+  const char* src = R"(
+class Bar(set): pass
+
+a = set()
+a1 = {1}
+b = Bar()
+cmp = (a < b)
+cmp1 = (a1 < b)
+cmp2 = (b < a)
+cmp3 = (b < a1)
+cmp4 = (b < b)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object cmp(&scope, moduleAt(&runtime, main, "cmp"));
+  Object cmp1(&scope, moduleAt(&runtime, main, "cmp1"));
+  Object cmp2(&scope, moduleAt(&runtime, main, "cmp2"));
+  Object cmp3(&scope, moduleAt(&runtime, main, "cmp3"));
+  Object cmp4(&scope, moduleAt(&runtime, main, "cmp4"));
+  EXPECT_EQ(*cmp, Bool::falseObj());
+  EXPECT_EQ(*cmp1, Bool::falseObj());
+  EXPECT_EQ(*cmp2, Bool::falseObj());
+  EXPECT_EQ(*cmp3, Bool::trueObj());
+  EXPECT_EQ(*cmp4, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderEqWithEmptySetsReturnsTrue) {
+  // (set() == set()) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, runtime.newSet());
+  Set set1(&scope, runtime.newSet());
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderEq(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderEqWithSameSetReturnsTrue) {
+  // s = {0, 1, 2}; (s == s) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set);
+  Object result(&scope, SetBuiltins::dunderEq(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderEqWithEqualSetsReturnsTrue) {
+  // ({0, 1, 2) == {0, 1, 2}) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set);
+  Object result(&scope, SetBuiltins::dunderEq(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderEqWithUnequalSetsReturnsFalse) {
+  // ({0, 1, 2} == {1, 2, 3}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(1, 4));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set);
+  Object result(&scope, SetBuiltins::dunderEq(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderNeWithEmptySetsReturnsFalse) {
+  // (set() != set()) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, runtime.newSet());
+  Set set1(&scope, runtime.newSet());
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderNe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderNeWithSameSetReturnsFalse) {
+  // s = {0, 1, 2}; (s != s) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set);
+  Object result(&scope, SetBuiltins::dunderNe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderNeWithEqualSetsReturnsFalse) {
+  // ({0, 1, 2} != {0, 1, 2}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderNe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderNeWithUnequalSetsReturnsTrue) {
+  // ({0, 1, 2} != {1, 2, 3}) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(1, 4));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderNe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderGeWithSameSetReturnsTrue) {
+  // s = {0, 1, 2}; (s >= s) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set);
+  Object result(&scope, SetBuiltins::dunderGe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderGeWithEqualSetsReturnsTrue) {
+  // ({0, 1, 2} >= {0, 1, 2}) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderGe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderGeWithSupersetReturnsFalse) {
+  // ({0, 1, 2} >= {0, 1, 2, 3}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(0, 4));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderGe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderGeWithEmptySetReturnsTrue) {
+  // ({0, 1, 2} >= set()) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, runtime.newSet());
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderGe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderLeWithEmptySetReturnsTrue) {
+  // s = {0, 1, 2}; (s <= s) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, runtime.newSet());
+  Set set1(&scope, runtime.newSet());
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderLe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderLeWithEqualSetsReturnsTrue) {
+  // ({0, 1, 2} <= {0, 1, 2}) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderLe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderLeWithSubsetReturnsFalse) {
+  // ({0, 1, 2, 3} <= {0, 1, 2}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 4));
+  Set set1(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderLe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderLeWithEmptySetReturnsFalse) {
+  // ({0, 1, 2} <= set()) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, runtime.newSet());
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderLe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderGtWithEqualSetsReturnsFalse) {
+  // ({0, 1, 2} > {0, 1, 2}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderGt(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderGtWithSubsetReturnsTrue) {
+  // ({0, 1, 2, 3} > {0, 1, 2}) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 4));
+  Set set1(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderGt(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderGtWithSupersetReturnsFalse) {
+  // ({0, 1, 2} > {0, 1, 2, 3}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(0, 4));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderGt(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderLtWithEqualSetsReturnsFalse) {
+  // ({0, 1, 2} < {0, 1, 2}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderLt(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderLtWithSupersetReturnsTrue) {
+  // ({0, 1, 2} < {0, 1, 2, 3})  is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(0, 4));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderLt(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::trueObj());
+}
+
+TEST(SetBuiltinsTest, DunderLtWithSubsetReturnsFalse) {
+  // ({0, 1, 2, 3} < {0, 1, 2}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 4));
+  Set set1(&scope, setFromRange(0, 3));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *set);
+  frame->setLocal(1, *set1);
+  Object result(&scope, SetBuiltins::dunderLt(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, Bool::falseObj());
+}
+
+TEST(SetBuiltinsTest, DunderEqWithNonSetSecondArgReturnsNotImplemented) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  Set set(&scope, runtime.newSet());
+  frame->setLocal(0, *set);
+  frame->setLocal(1, NoneType::object());
+  Object result(&scope, SetBuiltins::dunderEq(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, runtime.notImplemented());
+}
+
+TEST(SetBuiltinsTest, DunderNeWithNonSetSecondArgReturnsNotImplemented) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  Set set(&scope, runtime.newSet());
+  frame->setLocal(0, *set);
+  frame->setLocal(1, NoneType::object());
+  Object result(&scope, SetBuiltins::dunderNe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, runtime.notImplemented());
+}
+
+TEST(SetBuiltinsTest, DunderGeWithNonSetSecondArgReturnsNotImplemented) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  Set set(&scope, runtime.newSet());
+  frame->setLocal(0, *set);
+  frame->setLocal(1, NoneType::object());
+  Object result(&scope, SetBuiltins::dunderGe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, runtime.notImplemented());
+}
+
+TEST(SetBuiltinsTest, DunderGtWithNonSetSecondArgReturnsNotImplemented) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  Set set(&scope, runtime.newSet());
+  frame->setLocal(0, *set);
+  frame->setLocal(1, NoneType::object());
+  Object result(&scope, SetBuiltins::dunderGt(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, runtime.notImplemented());
+}
+
+TEST(SetBuiltinsTest, DunderLeWithNonSetSecondArgReturnsNotImplemented) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  Set set(&scope, runtime.newSet());
+  frame->setLocal(0, *set);
+  frame->setLocal(1, NoneType::object());
+  Object result(&scope, SetBuiltins::dunderLe(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, runtime.notImplemented());
+}
+
+TEST(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  Set set(&scope, runtime.newSet());
+  frame->setLocal(0, *set);
+  frame->setLocal(1, NoneType::object());
+  Object result(&scope, SetBuiltins::dunderLt(thread, frame, 2));
+  thread->popFrame();
+  ASSERT_EQ(*result, runtime.notImplemented());
+}
+
+TEST(SetBuiltinsDeathTest, DunderEqWithTooFewArgsThrowsTypeError) {
+  const char* src = R"(
+set.__eq__()
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__eq__' of 'set' object needs an argument");
+}
+
+TEST(SetBuiltinsDeathTest, DunderNeWithTooFewArgsThrowsTypeError) {
+  const char* src = R"(
+set.__ne__()
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__ne__' of 'set' object needs an argument");
+}
+
+TEST(SetBuiltinsDeathTest, DunderGeWithTooFewArgsThrowsTypeError) {
+  const char* src = R"(
+set.__ge__()
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__ge__' of 'set' object needs an argument");
+}
+
+TEST(SetBuiltinsDeathTest, DunderGtWithTooFewArgsThrowsTypeError) {
+  const char* src = R"(
+set.__gt__()
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__gt__' of 'set' object needs an argument");
+}
+
+TEST(SetBuiltinsDeathTest, DunderLeWithTooFewArgsThrowsTypeError) {
+  const char* src = R"(
+set.__le__()
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__le__' of 'set' object needs an argument");
+}
+
+TEST(SetBuiltinsDeathTest, DunderLtWithTooFewArgsThrowsTypeError) {
+  const char* src = R"(
+set.__lt__()
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__lt__' of 'set' object needs an argument");
+}
+
+TEST(SetBuiltinsDeathTest, DunderEqWithNonSetFirstArgThrowsTypeError) {
+  const char* src = R"(
+set.__eq__(None, set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__eq__' requires a 'set' object");
+}
+
+TEST(SetBuiltinsDeathTest, DunderNeWithNonSetFirstArgThrowsTypeError) {
+  const char* src = R"(
+set.__ne__(None, set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__ne__' requires a 'set' object");
+}
+
+TEST(SetBuiltinsDeathTest, DunderGeWithNonSetFirstArgThrowsTypeError) {
+  const char* src = R"(
+set.__ge__(None, set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__ge__' requires a 'set' object");
+}
+
+TEST(SetBuiltinsDeathTest, DunderGtWithNonSetFirstArgThrowsTypeError) {
+  const char* src = R"(
+set.__gt__(None, set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__gt__' requires a 'set' object");
+}
+
+TEST(SetBuiltinsDeathTest, DunderLeWithNonSetFirstArgThrowsTypeError) {
+  const char* src = R"(
+set.__le__(None, set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__le__' requires a 'set' object");
+}
+
+TEST(SetBuiltinsDeathTest, DunderLtWithNonSetFirstArgThrowsTypeError) {
+  const char* src = R"(
+set.__lt__(None, set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src),
+               "descriptor '__lt__' requires a 'set' object");
+}
+
+TEST(SetBuiltinsDeathTest, DunderEqWithTooManyArgsThrowsTypeError) {
+  const char* src = R"(
+set.__eq__(set(), set(), set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 1 arguments, got 2");
+}
+
+TEST(SetBuiltinsDeathTest, DunderNeWithTooManyArgsThrowsTypeError) {
+  const char* src = R"(
+set.__ne__(set(), set(), set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 1 arguments, got 2");
+}
+
+TEST(SetBuiltinsDeathTest, DunderGeWithTooManyArgsThrowsTypeError) {
+  const char* src = R"(
+set.__ge__(set(), set(), set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 1 arguments, got 2");
+}
+
+TEST(SetBuiltinsDeathTest, DunderGtWithTooManyArgsThrowsTypeError) {
+  const char* src = R"(
+set.__gt__(set(), set(), set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 1 arguments, got 2");
+}
+
+TEST(SetBuiltinsDeathTest, DunderLeWithTooManyArgsThrowsTypeError) {
+  const char* src = R"(
+set.__le__(set(), set(), set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 1 arguments, got 2");
+}
+
+TEST(SetBuiltinsDeathTest, DunderLtWithTooManyArgsThrowsTypeError) {
+  const char* src = R"(
+set.__lt__(set(), set(), set())
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "expected 1 arguments, got 2");
 }
 
 }  // namespace python

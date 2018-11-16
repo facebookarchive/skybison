@@ -147,5 +147,9 @@ std::string typeName(Runtime* runtime, RawObject obj);
 // newIntFromDigits(runtime, {-1, 1})
 RawObject newIntWithDigits(Runtime* runtime, const std::vector<word>& digits);
 
+// Helper to create set objects.
+// Equivalent to evaluating "set(range(start, stop))" in Python.
+RawObject setFromRange(word start, word stop);
+
 }  // namespace testing
 }  // namespace python

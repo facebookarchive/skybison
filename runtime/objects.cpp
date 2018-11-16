@@ -439,4 +439,11 @@ RawFloat RawFloat::cast(RawObject object) {
   return bit_cast<RawFloat>(object);
 }
 
+RawSet RawSet::cast(RawObject object) {
+  DCHECK(object->isSet() ||
+             Thread::currentThread()->runtime()->isInstanceOfSet(object),
+         "invalid cast, expected set");
+  return bit_cast<RawSet>(object);
+}
+
 }  // namespace python

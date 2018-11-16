@@ -286,5 +286,17 @@ RawObject newIntWithDigits(Runtime* runtime, const std::vector<word>& digits) {
   return runtime->newIntWithDigits(View<word>(digits.data(), digits.size()));
 }
 
+RawObject setFromRange(word start, word stop) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set result(&scope, thread->runtime()->newSet());
+  Object value(&scope, NoneType::object());
+  for (word i = start; i < stop; i++) {
+    value = SmallInt::fromWord(i);
+    thread->runtime()->setAdd(result, value);
+  }
+  return *result;
+}
+
 }  // namespace testing
 }  // namespace python

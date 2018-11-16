@@ -317,6 +317,9 @@ class Runtime {
   // Return a shallow copy of a set
   RawObject setCopy(const Set& set);
 
+  // Returns true if set and other contain the same set of values
+  bool setEquals(Thread* thread, const Set& set, const Set& other);
+
   // Returns true if the set contains the specified value.
   bool setIncludes(const Set& set, const Object& value);
 
@@ -324,6 +327,15 @@ class Runtime {
   // Returns either a new set with the intersection or an Error object.
   RawObject setIntersection(Thread* thread, const Set& set,
                             const Object& iterable);
+
+  // Returns true if every element of set is in other
+  // and the elements in set and other are not the same.
+  // This is analogous to the < operator on Python sets.
+  bool setIsProperSubset(Thread* thread, const Set& set, const Set& other);
+
+  // Returns true if every element of set is in other.
+  // This is analogous to the <= operator on Python sets.
+  bool setIsSubset(Thread* thread, const Set& set, const Set& other);
 
   // Delete a key from the set, returns true if the key existed.
   bool setRemove(const Set& set, const Object& value);
@@ -511,6 +523,13 @@ class Runtime {
       return true;
     }
     return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kFloatSubclass);
+  }
+
+  bool isInstanceOfSet(RawObject instance) {
+    if (instance->isSet()) {
+      return true;
+    }
+    return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kSetSubclass);
   }
 
   // Return true if obj is an instance of a subclass of klass

@@ -2563,6 +2563,42 @@ RawObject Runtime::setCopy(const Set& set) {
   return *new_set;
 }
 
+bool Runtime::setIsSubset(Thread* thread, const Set& set, const Set& other) {
+  HandleScope scope(thread);
+  ObjectArray data(&scope, set->data());
+  ObjectArray other_data(&scope, other->data());
+  Object key(&scope, NoneType::object());
+  Object key_hash(&scope, NoneType::object());
+  for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
+    if (RawSet::Bucket::isFilled(*data, i)) {
+      key = RawSet::Bucket::key(*data, i);
+      key_hash = RawSet::Bucket::hash(*data, i);
+      if (setLookup<SetLookupType::Lookup>(other_data, key, key_hash) == -1) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool Runtime::setIsProperSubset(Thread* thread, const Set& set,
+                                const Set& other) {
+  if (set->numItems() == other->numItems()) {
+    return false;
+  }
+  return setIsSubset(thread, set, other);
+}
+
+bool Runtime::setEquals(Thread* thread, const Set& set, const Set& other) {
+  if (set->numItems() != other->numItems()) {
+    return false;
+  }
+  if (*set == *other) {
+    return true;
+  }
+  return setIsSubset(thread, set, other);
+}
+
 bool Runtime::setIncludes(const Set& set, const Object& value) {
   HandleScope scope;
   ObjectArray data(&scope, set->data());
@@ -3786,7 +3822,7 @@ RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
   for (word i = shorter->numDigits(); i < longer->numDigits(); i++) {
     result->digitAtPut(i, longer->digitAt(i));
   }
-  return result;
+  return *result;
 }
 
 }  // namespace python

@@ -9,14 +9,25 @@
 
 namespace python {
 
+const BuiltinAttribute SetBuiltins::kAttributes[] = {
+    {SymbolId::kItems, Set::kDataOffset},
+    {SymbolId::kAllocated, Set::kNumItemsOffset},
+};
+
 const BuiltinMethod SetBuiltins::kMethods[] = {
     {SymbolId::kAdd, nativeTrampoline<add>},
     {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
     {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
+    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
+    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
+    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
     {SymbolId::kDunderIand, nativeTrampoline<dunderIand>},
     {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
+    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
+    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
     {SymbolId::kIntersection, nativeTrampoline<intersection>},
@@ -26,8 +37,8 @@ void SetBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
   Type set(&scope,
-           runtime->addBuiltinClassWithMethods(SymbolId::kSet, LayoutId::kSet,
-                                               LayoutId::kObject, kMethods));
+           runtime->addBuiltinClass(SymbolId::kSet, LayoutId::kSet,
+                                    LayoutId::kObject, kAttributes, kMethods));
   set->setFlag(Type::Flag::kSetSubclass);
 }
 
@@ -118,8 +129,24 @@ RawObject SetBuiltins::dunderInit(Thread* thread, Frame*, word nargs) {
   return NoneType::object();
 }
 
-RawObject SetBuiltins::dunderNew(Thread* thread, Frame*, word) {
-  return thread->runtime()->newSet();
+RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1) {
+    return thread->raiseTypeErrorWithCStr("not enough arguments");
+  }
+  Arguments args(frame, nargs);
+  if (!args.get(0)->isType()) {
+    return thread->raiseTypeErrorWithCStr("not a type object");
+  }
+  HandleScope scope(thread);
+  Type type(&scope, args.get(0));
+  if (!type->hasFlag(Type::Flag::kSetSubclass)) {
+    return thread->raiseTypeErrorWithCStr("not a subtype of set");
+  }
+  Layout layout(&scope, type->instanceLayout());
+  Set result(&scope, thread->runtime()->newInstance(layout));
+  result->setNumItems(0);
+  result->setData(thread->runtime()->newObjectArray(0));
+  return *result;
 }
 
 RawObject SetBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
@@ -298,6 +325,162 @@ RawObject SetBuiltins::intersection(Thread* thread, Frame* frame, word nargs) {
   // TODO(jeethu): handle user-defined subtypes of set.
   return thread->raiseTypeErrorWithCStr(
       "descriptor 'intersection' requires a 'set' object");
+}
+
+RawObject SetBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__eq__' of 'set' object needs an argument");
+  }
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 arguments, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__eq__' requires a 'set' object");
+  }
+  if (!runtime->isInstanceOfSet(*other)) {
+    return runtime->notImplemented();
+  }
+  Set set(&scope, *self);
+  Set other_set(&scope, *other);
+  return Bool::fromBool(runtime->setEquals(thread, set, other_set));
+}
+
+RawObject SetBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__ne__' of 'set' object needs an argument");
+  }
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 arguments, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__ne__' requires a 'set' object");
+  }
+  if (!runtime->isInstanceOfSet(*other)) {
+    return runtime->notImplemented();
+  }
+  Set set(&scope, *self);
+  Set other_set(&scope, *other);
+  return Bool::fromBool(!runtime->setEquals(thread, set, other_set));
+}
+
+RawObject SetBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__le__' of 'set' object needs an argument");
+  }
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 arguments, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__le__' requires a 'set' object");
+  }
+  if (!runtime->isInstanceOfSet(*other)) {
+    return runtime->notImplemented();
+  }
+  Set set(&scope, *self);
+  Set other_set(&scope, *other);
+  return Bool::fromBool(runtime->setIsSubset(thread, set, other_set));
+}
+
+RawObject SetBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__lt__' of 'set' object needs an argument");
+  }
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 arguments, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__lt__' requires a 'set' object");
+  }
+  if (!runtime->isInstanceOfSet(*other)) {
+    return runtime->notImplemented();
+  }
+  Set set(&scope, *self);
+  Set other_set(&scope, *other);
+  return Bool::fromBool(runtime->setIsProperSubset(thread, set, other_set));
+}
+
+RawObject SetBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__ge__' of 'set' object needs an argument");
+  }
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 arguments, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__ge__' requires a 'set' object");
+  }
+  if (!runtime->isInstanceOfSet(*other)) {
+    return runtime->notImplemented();
+  }
+  Set set(&scope, *self);
+  Set other_set(&scope, *other);
+  return Bool::fromBool(runtime->setIsSubset(thread, other_set, set));
+}
+
+RawObject SetBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__gt__' of 'set' object needs an argument");
+  }
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 arguments, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__gt__' requires a 'set' object");
+  }
+  if (!runtime->isInstanceOfSet(*other)) {
+    return runtime->notImplemented();
+  }
+  Set set(&scope, *self);
+  Set other_set(&scope, *other);
+  return Bool::fromBool(runtime->setIsProperSubset(thread, other_set, set));
 }
 
 const BuiltinMethod SetIteratorBuiltins::kMethods[] = {

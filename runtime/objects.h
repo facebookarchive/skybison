@@ -1555,12 +1555,15 @@ class RawSet : public RawHeapObject {
   word numItems();
   void setNumItems(word num_items);
 
+  // Casting.
+  static RawSet cast(RawObject object);
+
   // RawLayout.
   static const int kNumItemsOffset = RawHeapObject::kSize;
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kDataOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Set);
+  RAW_OBJECT_COMMON_NO_CAST(Set);
 };
 
 // Helper class for manipulating buckets in the RawObjectArray that backs the
