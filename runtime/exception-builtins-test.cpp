@@ -15,8 +15,7 @@ TEST(ExceptionBuiltinsTest, BaseExceptionNoArguments) {
 exc = BaseException()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc->isBaseException());
   BaseException base_exception(&scope, *exc);
 
@@ -33,8 +32,7 @@ TEST(ExceptionBuiltinsTest, BaseExceptionManyArguments) {
 exc = BaseException(1,2,3)
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc->isBaseException());
   BaseException base_exception(&scope, *exc);
 
@@ -54,8 +52,7 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionNoArgs) {
 a = BaseException().__str__()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Str a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_PYSTRING_EQ(*a, "");
 }
 
@@ -67,8 +64,7 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionOneArg) {
 a = BaseException("hello").__str__()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Str a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_PYSTRING_EQ(*a, "hello");
 }
 
@@ -80,8 +76,7 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionManyArgs) {
 a = BaseException("hello", "world").__str__()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Str a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_PYSTRING_EQ(*a, "('hello', 'world')");
 }
 
@@ -93,8 +88,7 @@ TEST(ExceptionBuiltinsTest, ExceptionManyArguments) {
 exc = Exception(1,2,3)
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc->isException());
   Exception exception(&scope, *exc);
 
@@ -117,15 +111,14 @@ value_error = ValueError()
 rt_error = RuntimeError()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
   UncheckedHandle<RawException> attr_error(
-      &scope, testing::moduleAt(&runtime, main, "attr_error"));
+      &scope, moduleAt(&runtime, "__main__", "attr_error"));
   UncheckedHandle<RawException> name_error(
-      &scope, testing::moduleAt(&runtime, main, "name_error"));
+      &scope, moduleAt(&runtime, "__main__", "name_error"));
   UncheckedHandle<RawException> value_error(
-      &scope, testing::moduleAt(&runtime, main, "value_error"));
+      &scope, moduleAt(&runtime, "__main__", "value_error"));
   UncheckedHandle<RawException> rt_error(
-      &scope, testing::moduleAt(&runtime, main, "rt_error"));
+      &scope, moduleAt(&runtime, "__main__", "rt_error"));
 
   EXPECT_TRUE(
       runtime.hasSubClassFlag(*attr_error, Type::Flag::kBaseExceptionSubclass));
@@ -151,13 +144,10 @@ index_is_lookup = issubclass(IndexError, LookupError)
 key_is_lookup = issubclass(KeyError, LookupError)
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Bool lookup_is_exc(&scope,
-                     testing::moduleAt(&runtime, main, "lookup_is_exc"));
+  Bool lookup_is_exc(&scope, moduleAt(&runtime, "__main__", "lookup_is_exc"));
   Bool index_is_lookup(&scope,
-                       testing::moduleAt(&runtime, main, "index_is_lookup"));
-  Bool key_is_lookup(&scope,
-                     testing::moduleAt(&runtime, main, "key_is_lookup"));
+                       moduleAt(&runtime, "__main__", "index_is_lookup"));
+  Bool key_is_lookup(&scope, moduleAt(&runtime, "__main__", "key_is_lookup"));
 
   EXPECT_TRUE(lookup_is_exc->value());
   EXPECT_TRUE(index_is_lookup->value());
@@ -174,10 +164,9 @@ i = IndexError()
 k = KeyError()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  LookupError l(&scope, testing::moduleAt(&runtime, main, "l"));
-  IndexError i(&scope, testing::moduleAt(&runtime, main, "i"));
-  KeyError k(&scope, testing::moduleAt(&runtime, main, "k"));
+  LookupError l(&scope, moduleAt(&runtime, "__main__", "l"));
+  IndexError i(&scope, moduleAt(&runtime, "__main__", "i"));
+  KeyError k(&scope, moduleAt(&runtime, "__main__", "k"));
 
   EXPECT_TRUE(runtime.hasSubClassFlag(*l, Type::Flag::kBaseExceptionSubclass));
   EXPECT_TRUE(runtime.hasSubClassFlag(*i, Type::Flag::kBaseExceptionSubclass));
@@ -192,8 +181,7 @@ TEST(ExceptionBuiltinsTest, KeyErrorStrPrintsMissingKey) {
 s = KeyError("key").__str__()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Str s(&scope, testing::moduleAt(&runtime, main, "s"));
+  Str s(&scope, moduleAt(&runtime, "__main__", "s"));
   EXPECT_PYSTRING_EQ(*s, "'key'");
 }
 
@@ -207,9 +195,8 @@ s = KeyError("key", "key2").__str__()
 b = BaseException("key", "key2").__str__()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Str s(&scope, testing::moduleAt(&runtime, main, "s"));
-  Str b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Str s(&scope, moduleAt(&runtime, "__main__", "s"));
+  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_PYSTRING_EQ(*s, *b);
 }
 
@@ -221,8 +208,7 @@ TEST(ExceptionBuiltinsTest, TypeErrorReturnsTypeError) {
 exc = TypeError()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   UncheckedHandle<RawException> exception(&scope, *exc);
 
   // The args attribute contains a tuple of the constructor arguments.
@@ -239,8 +225,7 @@ TEST(ExceptionBuiltinsTest, StopIterationNoArguments) {
 exc = StopIteration()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc->isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
@@ -261,8 +246,7 @@ TEST(ExceptionBuiltinsTest, StopIterationOneArgument) {
 exc = StopIteration(1)
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc->isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
@@ -284,8 +268,7 @@ TEST(ExceptionBuiltinsTest, StopIterationManyArguments) {
 exc = StopIteration(4, 5, 6)
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc->isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
@@ -310,10 +293,9 @@ exc = NotImplementedError()
 exc_is_rt_error = issubclass(NotImplementedError, RuntimeError)
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  NotImplementedError exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  NotImplementedError exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   Bool exc_is_rt_error(&scope,
-                       testing::moduleAt(&runtime, main, "exc_is_rt_error"));
+                       moduleAt(&runtime, "__main__", "exc_is_rt_error"));
 
   EXPECT_TRUE(
       runtime.hasSubClassFlag(*exc, Type::Flag::kBaseExceptionSubclass));
@@ -329,8 +311,7 @@ TEST(ExceptionBuiltinsTest, SystemExitNoArguments) {
 exc = SystemExit()
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc->isSystemExit());
   SystemExit system_exit(&scope, *exc);
   ASSERT_TRUE(system_exit->args()->isObjectArray());
@@ -351,8 +332,7 @@ TEST(ExceptionBuiltinsTest, SystemExitOneArgument) {
 exc = SystemExit(1)
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc->isSystemExit());
   SystemExit system_exit(&scope, *exc);
   ASSERT_TRUE(system_exit->args()->isObjectArray());
@@ -374,8 +354,7 @@ TEST(ExceptionBuiltinsTest, SystemExitManyArguments) {
 exc = SystemExit(4, 5, 6)
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc->isSystemExit());
   SystemExit system_exit(&scope, *exc);
 
@@ -400,22 +379,17 @@ exc = SystemExit(1111)
 result = exc.value
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
   // The value attribute should contain the first constructor argument.
-  Object result(&scope, testing::moduleAt(&runtime, main, "result"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1111);
 }
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
-  const char* src = R"(
-x = ImportError()
-)";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object data(&scope, moduleAt(&runtime, main, "x"));
+  runtime.runFromCStr("x = ImportError()");
+  Object data(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(data->isImportError());
 
   ImportError err(&scope, *data);
@@ -437,14 +411,10 @@ x = ImportError()
 }
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
-  const char* src = R"(
-x = ImportError(1111)
-)";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object data(&scope, moduleAt(&runtime, main, "x"));
+  runtime.runFromCStr("x = ImportError(1111)");
+  Object data(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(data->isImportError());
 
   ImportError err(&scope, *data);
@@ -455,14 +425,10 @@ x = ImportError(1111)
 }
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
-  const char* src = R"(
-x = ImportError(1111, name=2222, path=3333)
-)";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object data(&scope, moduleAt(&runtime, main, "x"));
+  runtime.runFromCStr("x = ImportError(1111, name=2222, path=3333)");
+  Object data(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(data->isImportError());
 
   ImportError err(&scope, *data);
@@ -475,12 +441,10 @@ x = ImportError(1111, name=2222, path=3333)
 }
 
 TEST(ExceptionBuiltinsDeathTest, ImportErrorConstructWithInvalidKwargs) {
-  const char* src = R"(
-x = ImportError(foo=123)
-)";
   Runtime runtime;
   HandleScope scope;
-  EXPECT_DEATH(runtime.runFromCStr(src), "RAISE_VARARGS");
+  EXPECT_DEATH(runtime.runFromCStr("x = ImportError(foo=123)"),
+               "RAISE_VARARGS");
 }
 
 TEST(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {
@@ -491,8 +455,7 @@ TEST(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {
 exc = ModuleNotFoundError(1111, name=2222, path=3333)
 )");
 
-  Module main(&scope, testing::findModule(&runtime, "__main__"));
-  Object data(&scope, testing::moduleAt(&runtime, main, "exc"));
+  Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(data->isModuleNotFoundError());
 
   ModuleNotFoundError err(&scope, *data);

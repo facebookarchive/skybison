@@ -18,18 +18,18 @@ weak = ref(a)
   Runtime runtime;
   HandleScope scope;
   compileAndRunToString(&runtime, src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  RawObject a = moduleAt(&runtime, main, "a");
-  RawObject weak = moduleAt(&runtime, main, "weak");
+  RawObject a = moduleAt(&runtime, "__main__", "a");
+  RawObject weak = moduleAt(&runtime, "__main__", "weak");
   EXPECT_EQ(RawWeakRef::cast(weak)->referent(), a);
   EXPECT_EQ(RawWeakRef::cast(weak)->callback(), NoneType::object());
 
+  Module main(&scope, findModule(&runtime, "__main__"));
   Dict globals(&scope, main->dict());
   Object key(&scope, runtime.newStrFromCStr("a"));
   runtime.dictRemove(globals, key);
 
   runtime.collectGarbage();
-  weak = moduleAt(&runtime, main, "weak");
+  weak = moduleAt(&runtime, "__main__", "weak");
   EXPECT_EQ(RawWeakRef::cast(weak)->referent(), NoneType::object());
 }
 
@@ -47,20 +47,20 @@ weak = ref(a, f)
   Runtime runtime;
   HandleScope scope;
   compileAndRunToString(&runtime, src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  RawObject a = moduleAt(&runtime, main, "a");
-  RawObject b = moduleAt(&runtime, main, "b");
-  RawObject weak = moduleAt(&runtime, main, "weak");
+  RawObject a = moduleAt(&runtime, "__main__", "a");
+  RawObject b = moduleAt(&runtime, "__main__", "b");
+  RawObject weak = moduleAt(&runtime, "__main__", "weak");
   EXPECT_EQ(RawWeakRef::cast(weak)->referent(), a);
   EXPECT_EQ(RawSmallInt::cast(b)->value(), 1);
 
+  Module main(&scope, findModule(&runtime, "__main__"));
   Dict globals(&scope, main->dict());
   Object key(&scope, runtime.newStrFromCStr("a"));
   runtime.dictRemove(globals, key);
 
   runtime.collectGarbage();
-  weak = moduleAt(&runtime, main, "weak");
-  b = moduleAt(&runtime, main, "b");
+  weak = moduleAt(&runtime, "__main__", "weak");
+  b = moduleAt(&runtime, "__main__", "b");
   EXPECT_EQ(RawSmallInt::cast(b)->value(), 2);
   EXPECT_EQ(RawWeakRef::cast(weak)->referent(), NoneType::object());
   EXPECT_EQ(RawWeakRef::cast(weak)->callback(), NoneType::object());

@@ -14,17 +14,14 @@ TEST(TypeBuiltinsTest, DunderCallClass) {
   Runtime runtime;
   HandleScope scope;
 
-  const char* src = R"(
+  runtime.runFromCStr(R"(
 class C: pass
 c = C()
-)";
+)");
 
-  runtime.runFromCStr(src);
-
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Type type(&scope, moduleAt(&runtime, main, "C"));
+  Type type(&scope, moduleAt(&runtime, "__main__", "C"));
   ASSERT_FALSE(type->isError());
-  Object instance(&scope, moduleAt(&runtime, main, "c"));
+  Object instance(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_FALSE(instance->isError());
   Object instance_type(&scope, runtime.typeOf(*instance));
   ASSERT_FALSE(instance_type->isError());
@@ -36,7 +33,7 @@ TEST(TypeBuiltinsTest, DunderCallClassWithInit) {
   Runtime runtime;
   HandleScope scope;
 
-  const char* src = R"(
+  runtime.runFromCStr(R"(
 class C:
   def __init__(self):
     global g
@@ -44,12 +41,9 @@ class C:
 
 g = 1
 C()
-)";
+)");
 
-  runtime.runFromCStr(src);
-
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object global(&scope, moduleAt(&runtime, main, "g"));
+  Object global(&scope, moduleAt(&runtime, "__main__", "g"));
   ASSERT_FALSE(global->isError());
   ASSERT_TRUE(global->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*global)->value(), 2);
@@ -59,7 +53,7 @@ TEST(TypeBuiltinsTest, DunderCallClassWithInitAndArgs) {
   Runtime runtime;
   HandleScope scope;
 
-  const char* src = R"(
+  runtime.runFromCStr(R"(
 class C:
   def __init__(self, x):
     global g
@@ -67,12 +61,9 @@ class C:
 
 g = 1
 C(9)
-)";
+)");
 
-  runtime.runFromCStr(src);
-
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object global(&scope, moduleAt(&runtime, main, "g"));
+  Object global(&scope, moduleAt(&runtime, "__main__", "g"));
   ASSERT_FALSE(global->isError());
   ASSERT_TRUE(global->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*global)->value(), 9);
@@ -94,17 +85,15 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
 TEST(TypeBuiltinTest, BuiltinTypeCallInvokeDunderInitAsCallable) {
   Runtime runtime;
   HandleScope scope;
-  const char* src = R"(
+  runtime.runFromCStr(R"(
 class Callable:
   def __call__(self, obj):
     obj.x = 42
 class C:
   __init__ = Callable()
 c = C()
-)";
-  runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object c(&scope, moduleAt(&runtime, main, "c"));
+)");
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   Thread* thread = Thread::currentThread();
   Object x(&scope, runtime.newStrFromCStr("x"));
   RawObject attr = runtime.attributeAt(thread, c, x);
@@ -115,12 +104,11 @@ c = C()
 
 TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
-  frame->setLocal(0, runtime.typeAt(LayoutId::kObject));
-  RawObject result = builtinTypeRepr(thread, frame, 1);
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kObject));
+  Object result(&scope, runBuiltin(builtinTypeRepr, type));
   ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(result), "<class 'object'>");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "<class 'object'>");
 }
 
 TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsStr) {
@@ -129,18 +117,14 @@ TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsStr) {
 class Foo:
   pass
 )");
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object type(&scope, moduleAt(&runtime, main, "Foo"));
+  HandleScope scope;
+  Object type(&scope, moduleAt(&runtime, "__main__", "Foo"));
 
-  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
-  frame->setLocal(0, *type);
-  RawObject result = builtinTypeRepr(thread, frame, 1);
+  Object result(&scope, runBuiltin(builtinTypeRepr, type));
   ASSERT_TRUE(result->isStr());
   // TODO(T32810595): Once module names are supported, this should become
   // "<class '__main__.Foo'>".
-  EXPECT_PYSTRING_EQ(RawStr::cast(result), "<class 'Foo'>");
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "<class 'Foo'>");
 }
 
 TEST(TypeBuiltinTest, DunderNewWithOneArgReturnsTypeOfArg) {
@@ -150,9 +134,8 @@ TEST(TypeBuiltinTest, DunderNewWithOneArgReturnsTypeOfArg) {
 a = type.__new__(type, 1);
 b = type.__new__(type, "hello");
 )");
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Type a(&scope, moduleAt(&runtime, main, "a"));
-  Type b(&scope, moduleAt(&runtime, main, "b"));
+  Type a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Type b(&scope, moduleAt(&runtime, "__main__", "b"));
 
   EXPECT_EQ(RawLayout::cast(a->instanceLayout())->id(), LayoutId::kSmallInt);
   EXPECT_EQ(RawLayout::cast(b->instanceLayout())->id(), LayoutId::kSmallStr);
@@ -166,8 +149,7 @@ class Foo(type):
   pass
 a = type.__new__(type, Foo);
 )");
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Type a(&scope, moduleAt(&runtime, main, "a"));
+  Type a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_EQ(RawLayout::cast(a->instanceLayout())->id(), LayoutId::kType);
 }
 

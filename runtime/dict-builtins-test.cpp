@@ -39,8 +39,7 @@ d = {"foo": 1}
 foo_in_d = "foo" in d
 )");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Bool foo_in_d(&scope, moduleAt(&runtime, main, "foo_in_d"));
+  Bool foo_in_d(&scope, moduleAt(&runtime, "__main__", "foo_in_d"));
 
   EXPECT_TRUE(foo_in_d->value());
 }
@@ -52,8 +51,7 @@ d = {}
 foo_in_d = "foo" in d
 )");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Bool foo_in_d(&scope, moduleAt(&runtime, main, "foo_in_d"));
+  Bool foo_in_d(&scope, moduleAt(&runtime, "__main__", "foo_in_d"));
 
   EXPECT_FALSE(foo_in_d->value());
 }
@@ -91,8 +89,7 @@ d = {"foo": 1}
 del d["foo"]
 )");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Dict d(&scope, moduleAt(&runtime, main, "d"));
+  Dict d(&scope, moduleAt(&runtime, "__main__", "d"));
   Object foo(&scope, runtime.newStrFromCStr("foo"));
 
   EXPECT_FALSE(runtime.dictIncludes(d, foo));

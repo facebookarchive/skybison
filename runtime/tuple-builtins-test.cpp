@@ -10,13 +10,12 @@ namespace python {
 using namespace testing;
 
 TEST(TupleBuiltinsTest, SubscriptTuple) {
-  const char* src = R"(
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, R"(
 a = 1
 b = (a, 2)
 print(b[0])
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+)");
   EXPECT_EQ(output, "1\n");
 }
 
@@ -30,8 +29,7 @@ t = (a, 2, 3, 4, 5)
 slice = t[1:3]
 )");
 
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object slice(&scope, moduleAt(&runtime, main, "slice"));
+  Object slice(&scope, moduleAt(&runtime, "__main__", "slice"));
   ASSERT_TRUE(slice->isObjectArray());
 
   ObjectArray tuple(&scope, *slice);
@@ -53,11 +51,10 @@ b_len = tuple.__len__(b)
 b_len_implicit = b.__len__()
 )");
 
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Int a_len(&scope, moduleAt(&runtime, main, "a_len"));
-  Int a_len_implicit(&scope, moduleAt(&runtime, main, "a_len_implicit"));
-  Int b_len(&scope, moduleAt(&runtime, main, "b_len"));
-  Int b_len_implicit(&scope, moduleAt(&runtime, main, "b_len_implicit"));
+  Int a_len(&scope, moduleAt(&runtime, "__main__", "a_len"));
+  Int a_len_implicit(&scope, moduleAt(&runtime, "__main__", "a_len_implicit"));
+  Int b_len(&scope, moduleAt(&runtime, "__main__", "b_len"));
+  Int b_len_implicit(&scope, moduleAt(&runtime, "__main__", "b_len_implicit"));
 
   EXPECT_EQ(a_len->asWord(), 3);
   EXPECT_EQ(a_len->asWord(), a_len_implicit->asWord());
@@ -247,12 +244,9 @@ TEST(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
 
 TEST(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-
-  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
-  frame->setLocal(0, runtime.typeAt(LayoutId::kObjectArray));
-  ObjectArray ret(&scope, TupleBuiltins::dunderNew(thread, frame, 1));
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kObjectArray));
+  ObjectArray ret(&scope, runBuiltin(TupleBuiltins::dunderNew, type));
   EXPECT_EQ(ret->length(), 0);
 }
 
@@ -262,8 +256,7 @@ TEST(TupleBuiltinsTest, DunderNewWithIterableReturnsTuple) {
   runtime.runFromCStr(R"(
 a = tuple.__new__(tuple, [1, 2, 3])
 )");
-  Module main(&scope, findModule(&runtime, "__main__"));
-  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
+  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   ASSERT_EQ(a->length(), 3);
   EXPECT_EQ(RawSmallInt::cast(a->at(0))->value(), 1);
@@ -278,9 +271,8 @@ a = (1, 2, 3).__repr__()
 b = ("hello", 2, "world", 4).__repr__()
 )");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Str a(&scope, moduleAt(&runtime, main, "a"));
-  Str b(&scope, moduleAt(&runtime, main, "b"));
+  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
 
   EXPECT_PYSTRING_EQ(*a, "(1, 2, 3)");
   EXPECT_PYSTRING_EQ(*b, "('hello', 2, 'world', 4)");
@@ -293,9 +285,8 @@ a = (1,).__repr__()
 b = ("foo",).__repr__()
 )");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Str a(&scope, moduleAt(&runtime, main, "a"));
-  Str b(&scope, moduleAt(&runtime, main, "b"));
+  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
 
   EXPECT_PYSTRING_EQ(*a, "(1,)");
   EXPECT_PYSTRING_EQ(*b, "('foo',)");
@@ -303,24 +294,18 @@ b = ("foo",).__repr__()
 
 TEST(TupleBuiltinsTest, DunderReprWithNoElements) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
-a = ().__repr__()
-)");
+  runtime.runFromCStr("a = ().__repr__()");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Str a(&scope, moduleAt(&runtime, main, "a"));
+  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   EXPECT_PYSTRING_EQ(*a, "()");
 }
 
 TEST(TupleBuiltinsTest, DunderMulWithOneElement) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
-a = (1,) * 4
-)");
+  runtime.runFromCStr("a = (1,) * 4");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
+  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   ASSERT_EQ(a->length(), 4);
   EXPECT_EQ(RawSmallInt::cast(a->at(0))->value(), 1);
@@ -331,12 +316,9 @@ a = (1,) * 4
 
 TEST(TupleBuiltinsTest, DunderMulWithManyElements) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
-a = (1,2,3) * 2
-)");
+  runtime.runFromCStr("a = (1,2,3) * 2");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
+  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   ASSERT_EQ(a->length(), 6);
   EXPECT_EQ(RawSmallInt::cast(a->at(0))->value(), 1);
@@ -349,148 +331,89 @@ a = (1,2,3) * 2
 
 TEST(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
-a = () * 5
-)");
+  runtime.runFromCStr("a = () * 5");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
+  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   EXPECT_EQ(a->length(), 0);
 }
 
 TEST(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
-a = (1,2,3) * -2
-)");
+  runtime.runFromCStr("a = (1,2,3) * -2");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  ObjectArray a(&scope, moduleAt(&runtime, main, "a"));
+  ObjectArray a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   EXPECT_EQ(a->length(), 0);
 }
 
 TEST(TupleBuiltinsTest, DunderIterReturnsTupleIter) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
-
-  HandleScope scope(thread);
+  HandleScope scope;
   ObjectArray empty_tuple(&scope, tupleFromRange(0, 0));
-
-  frame->setLocal(0, *empty_tuple);
-  Object iter(&scope, TupleBuiltins::dunderIter(thread, frame, 1));
+  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, empty_tuple));
   ASSERT_TRUE(iter->isTupleIterator());
 }
 
 TEST(TupleIteratorBuiltinsTest, CallDunderNext) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
-
-  HandleScope scope(thread);
+  HandleScope scope;
   ObjectArray tuple(&scope, tupleFromRange(0, 2));
-
-  frame->setLocal(0, *tuple);
-  Object iter(&scope, TupleBuiltins::dunderIter(thread, frame, 1));
+  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, tuple));
   ASSERT_TRUE(iter->isTupleIterator());
 
-  Object next_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
-                                        SymbolId::kDunderNext));
-  ASSERT_FALSE(next_method->isError());
-
-  Object item1(&scope,
-               Interpreter::callMethod1(thread, frame, next_method, iter));
+  Object item1(&scope, runBuiltin(TupleIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item1->isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
 
-  Object item2(&scope,
-               Interpreter::callMethod1(thread, frame, next_method, iter));
+  Object item2(&scope, runBuiltin(TupleIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item2->isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*item2)->value(), 1);
 }
 
 TEST(TupleIteratorBuiltinsTest, DunderIterReturnsSelf) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
-
-  HandleScope scope(thread);
+  HandleScope scope;
   ObjectArray empty_tuple(&scope, tupleFromRange(0, 0));
-
-  frame->setLocal(0, *empty_tuple);
-  Object iter(&scope, TupleBuiltins::dunderIter(thread, frame, 1));
+  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, empty_tuple));
   ASSERT_TRUE(iter->isTupleIterator());
 
   // Now call __iter__ on the iterator object
-  Object iter_iter(&scope, Interpreter::lookupMethod(thread, frame, iter,
-                                                     SymbolId::kDunderIter));
-  ASSERT_FALSE(iter_iter->isError());
-  Object result(&scope,
-                Interpreter::callMethod1(thread, frame, iter_iter, iter));
+  Object result(&scope, runBuiltin(TupleIteratorBuiltins::dunderIter, iter));
   ASSERT_EQ(*result, *iter);
 }
 
 TEST(TupleIteratorBuiltinsTest,
      DunderLengthHintOnEmptyTupleIteratorReturnsZero) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
-
-  HandleScope scope(thread);
+  HandleScope scope;
   ObjectArray empty_tuple(&scope, tupleFromRange(0, 0));
+  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, empty_tuple));
 
-  frame->setLocal(0, *empty_tuple);
-  Object iter(&scope, TupleBuiltins::dunderIter(thread, frame, 1));
-  ASSERT_TRUE(iter->isTupleIterator());
-
-  Object length_hint_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
-                                        SymbolId::kDunderLengthHint));
-  ASSERT_FALSE(length_hint_method->isError());
-
-  Object length_hint(&scope, Interpreter::callMethod1(
-                                 thread, frame, length_hint_method, iter));
+  Object length_hint(&scope,
+                     runBuiltin(TupleIteratorBuiltins::dunderLengthHint, iter));
   ASSERT_TRUE(length_hint->isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
 }
 
 TEST(TupleIteratorBuiltinsTest, DunderLengthHintOnConsumedTupleIterator) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
-
-  HandleScope scope(thread);
+  HandleScope scope;
   ObjectArray tuple(&scope, tupleFromRange(0, 1));
+  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, tuple));
 
-  frame->setLocal(0, *tuple);
-  Object iter(&scope, TupleBuiltins::dunderIter(thread, frame, 1));
-  ASSERT_TRUE(iter->isTupleIterator());
-
-  Object length_hint_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
-                                        SymbolId::kDunderLengthHint));
-  ASSERT_FALSE(length_hint_method->isError());
-
-  Object length_hint1(&scope, Interpreter::callMethod1(
-                                  thread, frame, length_hint_method, iter));
+  Object length_hint1(
+      &scope, runBuiltin(TupleIteratorBuiltins::dunderLengthHint, iter));
   ASSERT_TRUE(length_hint1->isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint1)->value(), 1);
 
   // Consume the iterator
-  Object next_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
-                                        SymbolId::kDunderNext));
-  ASSERT_FALSE(next_method->isError());
-  Object item1(&scope,
-               Interpreter::callMethod1(thread, frame, next_method, iter));
+  Object item1(&scope, runBuiltin(TupleIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item1->isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
 
-  Object length_hint2(&scope, Interpreter::callMethod1(
-                                  thread, frame, length_hint_method, iter));
+  Object length_hint2(
+      &scope, runBuiltin(TupleIteratorBuiltins::dunderLengthHint, iter));
   ASSERT_TRUE(length_hint1->isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 0);
 }

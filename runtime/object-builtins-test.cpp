@@ -18,8 +18,7 @@ class Foo:
 a = object.__repr__(Foo())
 )");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Str a(&scope, moduleAt(&runtime, main, "a"));
+  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   // Storage for the class name. It must be shorter than the length of the whole
   // string.
   char* c_str = a->toCStr();
@@ -46,9 +45,8 @@ a = object.__str__(f)
 b = object.__repr__(f)
 )");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Str a(&scope, moduleAt(&runtime, main, "a"));
-  Str b(&scope, moduleAt(&runtime, main, "b"));
+  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_PYSTRING_EQ(*a, *b);
 }
 
@@ -63,9 +61,8 @@ a = object.__str__(f)
 b = f.__str__()
 )");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Str a(&scope, moduleAt(&runtime, main, "a"));
-  Str b(&scope, moduleAt(&runtime, main, "b"));
+  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_PYSTRING_EQ(*a, *b);
 }
 
@@ -93,57 +90,53 @@ object.__init__(object)
 
 TEST(ObjectBuiltinsDeathTest, DunderInitWithNoArgsThrowsTypeError) {
   Runtime runtime;
-  const char* src = R"(
-object.__init__()
-)";
   // Passing no args to object.__init__ should throw a type error.
-  EXPECT_DEATH(runtime.runFromCStr(src), "aborting due to pending exception");
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+object.__init__()
+)"), "aborting due to pending exception");
 }
 
 TEST(ObjectBuiltinsDeathTest, DunderInitWithArgsThrowsTypeError) {
   Runtime runtime;
   // Passing extra args to object.__init__, without overwriting __new__,
   // should throw a type error.
-  const char* src = R"(
+  EXPECT_DEATH(runtime.runFromCStr(R"(
 class Foo:
   pass
 
 Foo.__init__(Foo(), 1)
-)";
-  EXPECT_DEATH(runtime.runFromCStr(src), "aborting due to pending exception");
+)"), "aborting due to pending exception");
 }
 
 TEST(ObjectBuiltinsDeathTest, DunderInitWithNewAndInitThrowsTypeError) {
   Runtime runtime;
   // Passing extra args to object.__init__, and overwriting only __init__,
   // should throw a type error.
-  const char* src = R"(
+  EXPECT_DEATH(runtime.runFromCStr(R"(
 class Foo:
   def __init__(self):
     object.__init__(self, 1)
 
 Foo()
-)";
-  EXPECT_DEATH(runtime.runFromCStr(src), "aborting due to pending exception");
+)"), "aborting due to pending exception");
 }
 
 TEST(NoneBuiltinsTest, NewReturnsNone) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
-  frame->setLocal(0, runtime.typeAt(LayoutId::kNoneType));
-  EXPECT_TRUE(NoneBuiltins::dunderNew(thread, frame, 1)->isNoneType());
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kNoneType));
+  EXPECT_TRUE(runBuiltin(NoneBuiltins::dunderNew, type)->isNoneType());
 }
 
 TEST(NoneBuiltinsTest, NewWithExtraArgsThrows) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(0, 4, 0);
-  frame->setLocal(0, runtime.typeAt(LayoutId::kNoneType));
-  frame->setLocal(1, runtime.newInt(1));
-  frame->setLocal(2, runtime.newInt(2));
-  frame->setLocal(3, runtime.newInt(3));
-  EXPECT_TRUE(NoneBuiltins::dunderNew(thread, frame, 4)->isError());
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kNoneType));
+  Int num1(&scope, runtime.newInt(1));
+  Int num2(&scope, runtime.newInt(2));
+  Int num3(&scope, runtime.newInt(3));
+  EXPECT_TRUE(
+      runBuiltin(NoneBuiltins::dunderNew, type, num1, num2, num3)->isError());
 }
 
 }  // namespace python

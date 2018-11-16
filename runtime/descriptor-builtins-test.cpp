@@ -66,8 +66,7 @@ x = property()
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object x(&scope, moduleAt(&runtime, main, "x"));
+  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isProperty());
   Property prop(&scope, *x);
   ASSERT_TRUE(prop->getter()->isNoneType());
@@ -86,8 +85,7 @@ x = property(get_foo, set_foo)
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object x(&scope, moduleAt(&runtime, main, "x"));
+  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isProperty());
   Property prop(&scope, *x);
   ASSERT_TRUE(prop->getter()->isFunction());
@@ -107,15 +105,14 @@ y = x.getter(get_foo)
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object x(&scope, moduleAt(&runtime, main, "x"));
+  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isProperty());
   Property x_prop(&scope, *x);
   ASSERT_TRUE(x_prop->getter()->isNoneType());
   ASSERT_TRUE(x_prop->setter()->isFunction());
   ASSERT_TRUE(x_prop->deleter()->isNoneType());
 
-  Object y(&scope, moduleAt(&runtime, main, "y"));
+  Object y(&scope, moduleAt(&runtime, "__main__", "y"));
   ASSERT_TRUE(y->isProperty());
   Property y_prop(&scope, *y);
   ASSERT_TRUE(y_prop->getter()->isFunction());
@@ -135,15 +132,14 @@ y = x.setter(set_foo)
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object x(&scope, moduleAt(&runtime, main, "x"));
+  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isProperty());
   Property x_prop(&scope, *x);
   ASSERT_TRUE(x_prop->getter()->isFunction());
   ASSERT_TRUE(x_prop->setter()->isNoneType());
   ASSERT_TRUE(x_prop->deleter()->isNoneType());
 
-  Object y(&scope, moduleAt(&runtime, main, "y"));
+  Object y(&scope, moduleAt(&runtime, "__main__", "y"));
   ASSERT_TRUE(y->isProperty());
   Property y_prop(&scope, *y);
   ASSERT_TRUE(y_prop->getter()->isFunction());
@@ -229,8 +225,7 @@ x = C.x
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object x(&scope, moduleAt(&runtime, main, "x"));
+  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isProperty());
 }
 
@@ -257,11 +252,10 @@ x2 = c1.x
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object x1(&scope, moduleAt(&runtime, main, "x1"));
+  Object x1(&scope, moduleAt(&runtime, "__main__", "x1"));
   ASSERT_TRUE(x1->isInt());
   EXPECT_EQ(RawSmallInt::cast(*x1)->value(), 24);
-  Object x2(&scope, moduleAt(&runtime, main, "x2"));
+  Object x2(&scope, moduleAt(&runtime, "__main__", "x2"));
   ASSERT_TRUE(x2->isInt());
   EXPECT_EQ(RawSmallInt::cast(*x2)->value(), 42);
 }
@@ -288,8 +282,7 @@ x = c1.x
   Runtime runtime;
   HandleScope scope;
   runtime.runFromCStr(src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object x(&scope, moduleAt(&runtime, main, "x"));
+  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isInt());
   EXPECT_EQ(RawSmallInt::cast(*x)->value(), 42);
 }
