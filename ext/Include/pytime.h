@@ -2,7 +2,7 @@
 #ifndef Py_PYTIME_H
 #define Py_PYTIME_H
 
-#include "pyconfig.h" /* include for defines */
+#include "ext/config/pyconfig.h" /* include for defines */
 #include "object.h"
 
 /**************************************************************************

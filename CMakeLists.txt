@@ -17,6 +17,14 @@ add_subdirectory(third-party/benchmark-1.3.0)
 add_subdirectory(third-party/googletest-1.8.0)
 add_subdirectory(third-party/siphash-20170224)
 
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+  set(OS_DEFINE "-DOS_OSX")
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  set(OS_DEFINE "-DOS_LINUX")
+else()
+  message("Unknown CMAKE_SYSTEM_NAME " ${CMAKE_SYSTEM_NAME})
+endif()
+
 set(
   PYRO_PROPERTIES
   CXX_EXTENSIONS NO
@@ -24,6 +32,7 @@ set(
   CXX_STANDARD_REQUIRED YES)
 set(
   PYRO_COMPILE_OPTIONS
+  ${OS_DEFINE}
   -Wall
   -Werror
   -Wextra
