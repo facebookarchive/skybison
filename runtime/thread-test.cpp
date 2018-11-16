@@ -12,7 +12,7 @@
 #include "marshal.h"
 #include "runtime.h"
 #include "thread.h"
-#include "trampolines.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
@@ -195,8 +195,8 @@ TEST(ThreadTest, ManipulateValueStack) {
   word values[] = {3333, 2222, 1111};
   for (int i = 0; i < 3; i++) {
     Object* object = frame->peek(i);
-    ASSERT_TRUE(object->isSmallInteger())
-        << "Value at stack depth " << i << " is not an integer";
+    ASSERT_TRUE(object->isSmallInteger()) << "Value at stack depth " << i
+                                          << " is not an integer";
     EXPECT_EQ(SmallInteger::cast(object)->value(), values[i])
         << "Incorrect value at stack depth " << i;
   }
@@ -1037,6 +1037,39 @@ TEST(ThreadTest, LoadBuildClassClassWithInit) {
   runtime.dictionaryAt(cls_dict, meth_name, value.pointer());
   ASSERT_TRUE(value->isValueCell());
   ASSERT_TRUE(ValueCell::cast(*value)->value()->isFunction());
+}
+
+static Object* nativeExceptionTest(Thread* thread, Frame*, word) {
+  HandleScope scope;
+  Handle<String> msg(
+      &scope,
+      String::cast(thread->runtime()->newStringFromCString("test exception")));
+  thread->throwRuntimeError(*msg);
+  return Error::object();
+}
+
+TEST(ThreadTest, NativeExceptions) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Function> fn(
+      &scope,
+      runtime.newBuiltinFunction(nativeTrampoline<nativeExceptionTest>));
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, *fn);
+  code->setConsts(*consts);
+
+  // Call the native function and assert that it causes program termination due
+  // to throwing an exception.
+  const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode, ARRAYSIZE(bytecode)));
+  code->setStacksize(1);
+
+  ASSERT_DEATH(
+      Thread::currentThread()->run(*code),
+      "aborting due to pending exception: test exception");
 }
 
 } // namespace python

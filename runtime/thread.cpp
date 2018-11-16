@@ -1,5 +1,6 @@
 #include "thread.h"
 
+#include <cstdio>
 #include <cstring>
 
 #include "frame.h"
@@ -7,6 +8,7 @@
 #include "handles.h"
 #include "interpreter.h"
 #include "objects.h"
+#include "visitor.h"
 
 namespace python {
 
@@ -16,7 +18,8 @@ Thread::Thread(word size)
     : handles_(new Handles()),
       size_(Utils::roundUp(size, kPointerSize)),
       next_(nullptr),
-      runtime_(nullptr) {
+      runtime_(nullptr),
+      pending_exception_(None::object()) {
   start_ = new byte[size];
   // Stack growns down in order to match machine convention
   end_ = ptr_ = start_ + size;
@@ -26,6 +29,11 @@ Thread::Thread(word size)
 Thread::~Thread() {
   delete handles_;
   delete[] start_;
+}
+
+void Thread::visitRoots(PointerVisitor* visitor) {
+  handles()->visitPointers(visitor);
+  visitor->visitPointer(&pending_exception_);
 }
 
 Thread* Thread::currentThread() {
@@ -127,6 +135,23 @@ Object*
 Thread::runClassFunction(Object* function, Object* dictionary, Frame* caller) {
   Frame* frame = pushClassFunctionFrame(function, dictionary, caller);
   return Interpreter::execute(this, frame);
+}
+
+// Convenience method for throwing a RuntimeError exception with an error
+// message.
+void Thread::throwRuntimeError(String* message) {
+  // TODO: instantiate RuntimeError object.
+  pending_exception_ = message;
+}
+
+// Convenience method for throwing a TypeError exception with an error message.
+void Thread::throwTypeError(String* message) {
+  // TODO: instantiate TypeError object.
+  pending_exception_ = message;
+}
+
+Object* Thread::pendingException() {
+  return pending_exception_;
 }
 
 } // namespace python

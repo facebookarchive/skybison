@@ -13,7 +13,7 @@
 #include "os.h"
 #include "siphash.h"
 #include "thread.h"
-#include "trampolines.h"
+#include "trampolines-inl.h"
 #include "visitor.h"
 
 namespace python {
@@ -431,7 +431,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
 void Runtime::visitThreadRoots(PointerVisitor* visitor) {
   for (Thread* thread = threads_; thread != nullptr; thread = thread->next()) {
-    thread->handles()->visitPointers(visitor);
+    thread->visitRoots(visitor);
   }
 }
 
@@ -501,9 +501,9 @@ void Runtime::createBuiltinsModule() {
   Handle<Module> module(&scope, newModule(name));
 
   // Fill in builtins...
-  build_class_ =
-      moduleAddBuiltinFunction(module, "__build_class__", builtinBuildClass);
-  moduleAddBuiltinFunction(module, "print", builtinPrint);
+  build_class_ = moduleAddBuiltinFunction(
+      module, "__build_class__", nativeTrampoline<builtinBuildClass>);
+  moduleAddBuiltinFunction(module, "print", nativeTrampoline<builtinPrint>);
   addModule(module);
 }
 
@@ -522,7 +522,7 @@ Object* Runtime::createMainModule() {
   Handle<Module> module(&scope, newModule(name));
 
   // Fill in __main__...
-  moduleAddBuiltinFunction(module, "print", &builtinPrint);
+  moduleAddBuiltinFunction(module, "print", nativeTrampoline<builtinPrint>);
   addModule(module);
 
   return *module;

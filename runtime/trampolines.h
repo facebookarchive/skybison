@@ -22,4 +22,8 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* previousFrame, word argc)
 Object* unimplementedTrampoline(Thread* thread, Frame* previousFrame, word argc)
     __attribute__((aligned(16)));
 
+template <Object* (*Fn)(Thread*, Frame*, word)>
+Object* nativeTrampoline(Thread* thread, Frame* previousFrame, word argc)
+    __attribute__((aligned(16)));
+
 } // namespace python
