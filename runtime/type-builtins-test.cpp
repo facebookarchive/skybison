@@ -4,6 +4,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "test-utils.h"
+#include "type-builtins.h"
 
 namespace python {
 
@@ -75,6 +76,20 @@ C(9)
   ASSERT_FALSE(global->isError());
   ASSERT_TRUE(global->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(*global)->value(), 9);
+}
+
+TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setArgcount(1);
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code);
+  frame->pushValue(runtime.newStringFromCString("not_a_cls"));
+  Object* result = builtinTypeCall(thread, frame, 1);
+  ASSERT_TRUE(result->isError());
+  // TODO(rkng): validate TypeError is thrown
+  ASSERT_FALSE(thread->pendingException()->isNone());
 }
 
 }  // namespace python

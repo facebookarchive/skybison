@@ -18,6 +18,10 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
 
   // First, call __new__ to allocate a new instance.
 
+  if (!args.get(0)->isClass()) {
+    return thread->throwTypeErrorFromCString(
+        "'__new__' requires a 'class' object");
+  }
   Handle<Class> type(&scope, args.get(0));
   Handle<Function> dunder_new(&scope,
                               runtime->lookupNameInMro(thread, type, name));
