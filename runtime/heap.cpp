@@ -37,8 +37,8 @@ RawObject Heap::allocate(word size, word offset) {
   return Error::object();
 }
 
-bool Heap::contains(void* address) {
-  return space_->contains(reinterpret_cast<uword>(address));
+bool Heap::contains(RawObject address) {
+  return space_->contains(address.raw());
 }
 
 bool Heap::verify() {
@@ -88,7 +88,7 @@ RawObject Heap::createBytes(word length) {
   word size = Bytes::allocationSize(length);
   RawObject raw = allocate(size, Bytes::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawBytes>(raw);
+  auto result = bit_cast<RawBytes>(raw);
   result->setHeaderAndOverflow(length, 0, LayoutId::kBytes,
                                ObjectFormat::kDataArray8);
   return Bytes::cast(result);
@@ -97,7 +97,7 @@ RawObject Heap::createBytes(word length) {
 RawObject Heap::createClass(LayoutId metaclass_id) {
   RawObject raw = allocate(allocationSize<Type>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawType>(raw);
+  auto result = bit_cast<RawType>(raw);
   result->setHeader(Header::from(Type::kSize / kPointerSize, 0, metaclass_id,
                                  ObjectFormat::kObjectInstance));
   result->initialize(Type::kSize, NoneType::object());
@@ -107,7 +107,7 @@ RawObject Heap::createClass(LayoutId metaclass_id) {
 RawObject Heap::createComplex(double real, double imag) {
   RawObject raw = allocate(allocationSize<Complex>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawComplex>(raw);
+  auto result = bit_cast<RawComplex>(raw);
   result->setHeader(Header::from(Complex::kSize / kPointerSize, 0,
                                  LayoutId::kComplex,
                                  ObjectFormat::kDataInstance));
@@ -118,7 +118,7 @@ RawObject Heap::createComplex(double real, double imag) {
 RawObject Heap::createFloat(double value) {
   RawObject raw = allocate(allocationSize<Float>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawFloat>(raw);
+  auto result = bit_cast<RawFloat>(raw);
   result->setHeader(Header::from(Float::kSize / kPointerSize, 0,
                                  LayoutId::kFloat,
                                  ObjectFormat::kDataInstance));
@@ -129,7 +129,7 @@ RawObject Heap::createFloat(double value) {
 RawObject Heap::createEllipsis() {
   RawObject raw = allocate(allocationSize<Ellipsis>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawEllipsis>(raw);
+  auto result = bit_cast<RawEllipsis>(raw);
   result->setHeader(Header::from(Ellipsis::kSize / kPointerSize, 0,
                                  LayoutId::kEllipsis,
                                  ObjectFormat::kDataInstance));
@@ -140,7 +140,7 @@ RawObject Heap::createInstance(LayoutId layout_id, word num_attributes) {
   word size = Instance::allocationSize(num_attributes);
   RawObject raw = allocate(size, HeapObject::headerSize(num_attributes));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawInstance>(raw);
+  auto result = bit_cast<RawInstance>(raw);
   result->setHeader(Header::from(num_attributes, 0, layout_id,
                                  ObjectFormat::kObjectInstance));
   result->initialize(num_attributes * kPointerSize, NoneType::object());
@@ -152,7 +152,7 @@ RawObject Heap::createLargeInt(word num_digits) {
   word size = LargeInt::allocationSize(num_digits);
   RawObject raw = allocate(size, LargeInt::headerSize(num_digits));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawLargeInt>(raw);
+  auto result = bit_cast<RawLargeInt>(raw);
   result->setHeader(Header::from(num_digits, 0, LayoutId::kLargeInt,
                                  ObjectFormat::kDataArray64));
   return LargeInt::cast(result);
@@ -164,7 +164,7 @@ RawObject Heap::createLargeStr(word length) {
   word size = LargeStr::allocationSize(length);
   RawObject raw = allocate(size, LargeStr::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawLargeStr>(raw);
+  auto result = bit_cast<RawLargeStr>(raw);
   result->setHeaderAndOverflow(length, 0, LayoutId::kLargeStr,
                                ObjectFormat::kDataArray8);
   return LargeStr::cast(result);
@@ -173,7 +173,7 @@ RawObject Heap::createLargeStr(word length) {
 RawObject Heap::createLayout(LayoutId layout_id) {
   RawObject raw = allocate(allocationSize<Layout>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawLayout>(raw);
+  auto result = bit_cast<RawLayout>(raw);
   result->setHeader(
       Header::from(Layout::kSize / kPointerSize, static_cast<word>(layout_id),
                    LayoutId::kLayout, ObjectFormat::kObjectInstance));
@@ -186,7 +186,7 @@ RawObject Heap::createObjectArray(word length, RawObject value) {
   word size = ObjectArray::allocationSize(length);
   RawObject raw = allocate(size, HeapObject::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawObjectArray>(raw);
+  auto result = bit_cast<RawObjectArray>(raw);
   result->setHeaderAndOverflow(length, 0, LayoutId::kObjectArray,
                                ObjectFormat::kObjectArray);
   result->initialize(size, value);
@@ -196,7 +196,7 @@ RawObject Heap::createObjectArray(word length, RawObject value) {
 RawObject Heap::createRange() {
   RawObject raw = allocate(allocationSize<Range>(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<RawRange>(raw);
+  auto result = bit_cast<RawRange>(raw);
   result->setHeader(Header::from(Range::kSize / kPointerSize, 0,
                                  LayoutId::kRange,
                                  ObjectFormat::kDataInstance));

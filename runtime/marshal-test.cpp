@@ -444,7 +444,7 @@ TEST(MarshalReaderTest, ReadObjectNull) {
   Runtime runtime;
   HandleScope scope;
   RawObject a = Marshal::Reader(&scope, &runtime, "0").readObject();
-  ASSERT_EQ(a, nullptr);
+  ASSERT_EQ(a, Object{0});
 }
 
 TEST(MarshalReaderTest, ReadObjectCode) {

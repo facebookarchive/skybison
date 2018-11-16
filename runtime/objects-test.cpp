@@ -387,7 +387,7 @@ TEST(LargeStrTest, CopyTo) {
 TEST(SmallStrTest, Tests) {
   RawObject obj0 = SmallStr::fromCStr("AB");
   ASSERT_TRUE(obj0->isSmallStr());
-  auto* str0 = Str::cast(obj0);
+  auto str0 = Str::cast(obj0);
   EXPECT_EQ(str0->length(), 2);
   EXPECT_EQ(str0->charAt(0), 'A');
   EXPECT_EQ(str0->charAt(1), 'B');

@@ -892,10 +892,9 @@ RawObject Runtime::immediateHash(RawObject object) {
     return SmallInt::fromWord(Bool::cast(object)->value() ? 1 : 0);
   }
   if (object->isSmallStr()) {
-    return SmallInt::fromWord(reinterpret_cast<uword>(object) >>
-                              SmallStr::kTagSize);
+    return SmallInt::fromWord(object.raw() >> SmallStr::kTagSize);
   }
-  return SmallInt::fromWord(reinterpret_cast<uword>(object));
+  return SmallInt::fromWord(object.raw());
 }
 
 // Xoroshiro128+

@@ -501,10 +501,10 @@ class Runtime {
     if (instance->isType()) {
       return true;
     }
-    // The reinterpret_cast here is needed to avoid self-recursion when this is
-    // called by Type::cast(). It is safe, as typeOf() is guaranteed to return
-    // a RawType.
-    return static_cast<RawType>(typeOf(instance))
+    // The bit_cast here is needed to avoid self-recursion when this is called
+    // by Type::cast(). It is safe, as typeOf() is guaranteed to return a
+    // RawType.
+    return bit_cast<RawType>(typeOf(instance))
         ->hasFlag(Type::Flag::kTypeSubclass);
   }
 

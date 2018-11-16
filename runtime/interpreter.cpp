@@ -1257,7 +1257,7 @@ void Interpreter::doStoreAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<Object> receiver(&scope, ctx->frame->popValue());
-  auto* names = Code::cast(ctx->frame->code())->names();
+  auto names = Code::cast(ctx->frame->code())->names();
   Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
   Handle<Object> value(&scope, ctx->frame->popValue());
   thread->runtime()->attributeAtPut(thread, receiver, name, value);
@@ -1270,7 +1270,7 @@ void Interpreter::doDeleteAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<Object> receiver(&scope, ctx->frame->popValue());
-  auto* names = Code::cast(ctx->frame->code())->names();
+  auto names = Code::cast(ctx->frame->code())->names();
   Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
   thread->runtime()->attributeDel(ctx->thread, receiver, name);
   // TODO(T31788973): propagate an exception
@@ -1424,7 +1424,7 @@ void Interpreter::doLoadAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<Object> receiver(&scope, ctx->frame->topValue());
-  auto* names = Code::cast(ctx->frame->code())->names();
+  auto names = Code::cast(ctx->frame->code())->names();
   Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
   RawObject result = thread->runtime()->attributeAt(thread, receiver, name);
   // TODO(T31788973): propagate an exception

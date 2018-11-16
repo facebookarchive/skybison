@@ -9,7 +9,7 @@ ApiHandle* ApiHandle::create(RawObject reference, long refcnt) {
   Runtime* runtime = thread->runtime();
 
   ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
-  handle->reference_ = reference;
+  handle->reference_ = reinterpret_cast<void*>(reference.raw());
   handle->ob_refcnt = refcnt;
   RawObject reftype = runtime->typeOf(reference);
   if (reference == reftype) {
@@ -115,7 +115,7 @@ RawObject ApiHandle::asObject() {
   // Fast path: All builtin objects except Types
   // TODO(T32474474): Handle the special case of Int values
   if (reference_ != nullptr) {
-    return static_cast<RawObject>(reference_);
+    return Object{reinterpret_cast<uword>(reference_)};
   }
 
   DCHECK(type(), "ApiHandles must contain a type pointer");

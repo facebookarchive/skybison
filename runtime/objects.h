@@ -261,18 +261,23 @@ struct ObjectLayoutId;
 INTRINSIC_CLASS_NAMES(CASE)
 #undef CASE
 
-// Add functionality common to all Object subclasses. This only contains cast()
-// for now, but we have plans to add more in the future, hence the more generic
-// name.
+// Add functionality common to all Object subclasses, split into two parts since
+// some types manually define cast() but want everything else.
+#define RAW_OBJECT_COMMON_NO_CAST(ty)                                          \
+  /* TODO(T34683229) The const_cast here is temporary for a migration */       \
+  Raw##ty* operator->() const { return const_cast<Raw##ty*>(this); }           \
+  DISALLOW_HEAP_ALLOCATION();
+
 #define RAW_OBJECT_COMMON(ty)                                                  \
-  static ty* cast(RawObject object) {                                          \
-    DCHECK(object->is##ty(), "invalid cast, expected " #ty);                   \
-    return reinterpret_cast<ty*>(object);                                      \
+  RAW_OBJECT_COMMON_NO_CAST(ty)                                                \
+  static Raw##ty cast(RawObject object) {                                      \
+    DCHECK(object.is##ty(), "invalid cast, expected " #ty);                    \
+    return bit_cast<Raw##ty>(object);                                          \
   }
 
 // TODO(T34683229): These typedefs are temporary as part of an in-progress
 // migration.
-#define RAW_ALIAS(ty) using Raw##ty = class ty*
+#define RAW_ALIAS(ty) using Raw##ty = class ty
 RAW_ALIAS(Object);
 RAW_ALIAS(Int);
 RAW_ALIAS(SmallInt);
@@ -333,7 +338,16 @@ RAW_ALIAS(HeapFrame);
 
 class Object {
  public:
+  // TODO(bsimmers): Delete this. The default constructor gives you a
+  // zero-initialized Object, which is equivalent to SmallInt::fromWord(0). This
+  // behavior can be confusing and surprising, so we should just require all
+  // Objects to be explicitly initialized.
+  Object() = default;
+
+  explicit Object(uword raw);
+
   // Getters and setters.
+  uword raw() const;
   bool isObject();
   LayoutId layoutId();
 
@@ -400,6 +414,9 @@ class Object {
 
   static bool equals(RawObject lhs, RawObject rhs);
 
+  bool operator==(const RawObject& other) const;
+  bool operator!=(const RawObject& other) const;
+
   // Constants
 
   // The bottom five bits of immediate objects are used as the class id when
@@ -409,7 +426,8 @@ class Object {
   RAW_OBJECT_COMMON(Object)
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
+  // Zero-initializing raw_ gives SmallInt::fromWord(0).
+  uword raw_{};
 };
 
 // CastError and OptInt<T> represent the result of a call to Int::asInt<T>(): If
@@ -460,9 +478,6 @@ class Int : public Object {
 
   // Number of digits
   word numDigits();
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(Int);
 };
 
 // Immediate objects
@@ -498,9 +513,6 @@ class SmallInt : public Object {
   static const word kMaxValue = (1L << (kBitsPerPointer - (kTagSize + 1))) - 1;
 
   RAW_OBJECT_COMMON(SmallInt)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallInt);
 };
 
 enum class ObjectFormat {
@@ -584,9 +596,6 @@ class Header : public Object {
   static const word kMaxLayoutId = (1L << (kLayoutIdSize + 1)) - 1;
 
   RAW_OBJECT_COMMON(Header)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Header);
 };
 
 class Bool : public Object {
@@ -608,9 +617,6 @@ class Bool : public Object {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   RAW_OBJECT_COMMON(Bool)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Bool);
 };
 
 class NoneType : public Object {
@@ -624,9 +630,6 @@ class NoneType : public Object {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   RAW_OBJECT_COMMON(NoneType)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(NoneType);
 };
 
 // Error is a special object type, internal to the runtime. It is used to signal
@@ -643,9 +646,6 @@ class Error : public Object {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   RAW_OBJECT_COMMON(Error)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Error);
 };
 
 // Super class of common string functionality
@@ -666,9 +666,6 @@ class Str : public Object {
   char* toCStr();
 
   RAW_OBJECT_COMMON(Str)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Str);
 };
 
 class SmallStr : public Object {
@@ -703,8 +700,6 @@ class SmallStr : public Object {
   friend class Object;
   friend class Runtime;
   friend class Str;
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallStr);
 };
 
 // Heap objects
@@ -757,8 +752,6 @@ class HeapObject : public Object {
   void instanceVariableAtPut(word offset, RawObject value);
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(HeapObject);
-
   friend class Runtime;
 };
 
@@ -784,17 +777,11 @@ class BaseException : public HeapObject {
   static const int kSize = kContextOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(BaseException)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(BaseException);
 };
 
 class Exception : public BaseException {
  public:
   RAW_OBJECT_COMMON(Exception)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Exception);
 };
 
 class StopIteration : public BaseException {
@@ -807,9 +794,6 @@ class StopIteration : public BaseException {
   static const int kSize = kValueOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(StopIteration)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(StopIteration);
 };
 
 class SystemExit : public BaseException {
@@ -821,25 +805,16 @@ class SystemExit : public BaseException {
   static const int kSize = kCodeOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(SystemExit)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExit);
 };
 
 class RuntimeError : public Exception {
  public:
   RAW_OBJECT_COMMON(RuntimeError)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RuntimeError);
 };
 
 class NotImplementedError : public RuntimeError {
  public:
   RAW_OBJECT_COMMON(NotImplementedError)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(NotImplementedError);
 };
 
 class ImportError : public Exception {
@@ -860,41 +835,26 @@ class ImportError : public Exception {
   static const int kSize = kPathOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(ImportError)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ImportError);
 };
 
 class ModuleNotFoundError : public ImportError {
  public:
   RAW_OBJECT_COMMON(ModuleNotFoundError)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleNotFoundError);
 };
 
 class LookupError : public Exception {
  public:
   RAW_OBJECT_COMMON(LookupError)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(LookupError);
 };
 
 class IndexError : public LookupError {
  public:
   RAW_OBJECT_COMMON(IndexError)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(IndexError);
 };
 
 class KeyError : public LookupError {
  public:
   RAW_OBJECT_COMMON(KeyError)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(KeyError);
 };
 
 class Type : public HeapObject {
@@ -960,16 +920,14 @@ class Type : public HeapObject {
       kBuiltinBaseClassOffset + kPointerSize;
   static const int kSize = kExtensionTypeOffset + kPointerSize;
 
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Type);
+  RAW_OBJECT_COMMON_NO_CAST(Type)
 };
 
 class Array : public HeapObject {
  public:
   word length();
 
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Array);
+  RAW_OBJECT_COMMON_NO_CAST(Array)
 };
 
 class Bytes : public Array {
@@ -982,9 +940,6 @@ class Bytes : public Array {
   static word allocationSize(word length);
 
   RAW_OBJECT_COMMON(Bytes)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Bytes);
 };
 
 class ObjectArray : public Array {
@@ -1003,9 +958,6 @@ class ObjectArray : public Array {
   bool contains(RawObject object);
 
   RAW_OBJECT_COMMON(ObjectArray)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectArray);
 };
 
 class LargeStr : public Array {
@@ -1036,8 +988,6 @@ class LargeStr : public Array {
   friend class Object;
   friend class Runtime;
   friend class Str;
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(LargeStr);
 };
 
 // Arbitrary precision signed integer, with 64 bit digits in two's complement
@@ -1087,8 +1037,6 @@ class LargeInt : public HeapObject {
  private:
   friend class Int;
   friend class Runtime;
-
-  DISALLOW_COPY_AND_ASSIGN(LargeInt);
 };
 
 class Float : public HeapObject {
@@ -1104,9 +1052,6 @@ class Float : public HeapObject {
   static const int kSize = kValueOffset + kDoubleSize;
 
   RAW_OBJECT_COMMON(Float)
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(Float);
 };
 
 class Complex : public HeapObject {
@@ -1124,9 +1069,6 @@ class Complex : public HeapObject {
   static const int kSize = kImagOffset + kDoubleSize;
 
   RAW_OBJECT_COMMON(Complex)
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(Complex);
 };
 
 class Property : public HeapObject {
@@ -1148,9 +1090,6 @@ class Property : public HeapObject {
   static const int kSize = kDeleterOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Property)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Property);
 };
 
 class Range : public HeapObject {
@@ -1172,9 +1111,6 @@ class Range : public HeapObject {
   static const int kSize = kStepOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Range)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Range);
 };
 
 class RangeIterator : public HeapObject {
@@ -1200,8 +1136,6 @@ class RangeIterator : public HeapObject {
 
  private:
   static bool isOutOfRange(word cur, word stop, word step);
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIterator);
 };
 
 class Slice : public HeapObject {
@@ -1230,9 +1164,6 @@ class Slice : public HeapObject {
   static const int kSize = kStepOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Slice)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Slice);
 };
 
 class StaticMethod : public HeapObject {
@@ -1246,9 +1177,6 @@ class StaticMethod : public HeapObject {
   static const int kSize = kFunctionOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(StaticMethod)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(StaticMethod);
 };
 
 class ListIterator : public HeapObject {
@@ -1269,9 +1197,6 @@ class ListIterator : public HeapObject {
   static const int kSize = kIndexOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(ListIterator)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ListIterator);
 };
 
 class SetIterator : public HeapObject {
@@ -1299,9 +1224,6 @@ class SetIterator : public HeapObject {
   static const int kSize = kConsumedCountOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(SetIterator)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SetIterator);
 };
 
 class TupleIterator : public HeapObject {
@@ -1324,9 +1246,6 @@ class TupleIterator : public HeapObject {
   static const int kSize = kIndexOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(TupleIterator)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(TupleIterator);
 };
 
 class Code : public HeapObject {
@@ -1422,9 +1341,6 @@ class Code : public HeapObject {
   static const int kSize = kLnotabOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Code)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Code);
 };
 
 class Frame;
@@ -1534,9 +1450,6 @@ class Function : public HeapObject {
   static const int kSize = kFastGlobalsOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Function)
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(Function);
 };
 
 class Instance : public HeapObject {
@@ -1545,9 +1458,6 @@ class Instance : public HeapObject {
   static word allocationSize(word num_attributes);
 
   RAW_OBJECT_COMMON(Instance)
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(Instance);
 };
 
 class Module : public HeapObject {
@@ -1571,9 +1481,6 @@ class Module : public HeapObject {
   static const int kSize = kDefOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Module)
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(Module);
 };
 
 class NotImplemented : public HeapObject {
@@ -1585,9 +1492,6 @@ class NotImplemented : public HeapObject {
   static const int kSize = kPaddingOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(NotImplemented)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(NotImplemented);
 };
 
 /**
@@ -1624,9 +1528,6 @@ class Dict : public HeapObject {
   static const int kSize = kDataOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Dict)
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(Dict);
 };
 
 // Helper class for manipulating buckets in the ObjectArray that backs the
@@ -1688,7 +1589,6 @@ class Dict::Bucket {
   static const word kNumPointers = kValueOffset + 1;
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Bucket);
   DISALLOW_HEAP_ALLOCATION();
 };
 
@@ -1714,9 +1614,6 @@ class Set : public HeapObject {
   static const int kSize = kDataOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Set)
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(Set);
 };
 
 // Helper class for manipulating buckets in the ObjectArray that backs the
@@ -1768,7 +1665,6 @@ class Set::Bucket {
   static const word kNumPointers = kKeyOffset + 1;
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Bucket);
   DISALLOW_HEAP_ALLOCATION();
 };
 
@@ -1803,8 +1699,7 @@ class List : public HeapObject {
   static const int kAllocatedOffset = kItemsOffset + kPointerSize;
   static const int kSize = kAllocatedOffset + kPointerSize;
 
- private:
-  DISALLOW_COPY_AND_ASSIGN(List);
+  RAW_OBJECT_COMMON_NO_CAST(List)
 };
 
 class ValueCell : public HeapObject {
@@ -1821,9 +1716,6 @@ class ValueCell : public HeapObject {
   static const int kSize = kValueOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(ValueCell)
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(ValueCell);
 };
 
 class Ellipsis : public HeapObject {
@@ -1835,9 +1727,6 @@ class Ellipsis : public HeapObject {
   static const int kSize = kPaddingOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Ellipsis)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Ellipsis);
 };
 
 class WeakRef : public HeapObject {
@@ -1871,9 +1760,6 @@ class WeakRef : public HeapObject {
   static const int kSize = kLinkOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(WeakRef)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(WeakRef);
 };
 
 /**
@@ -1917,9 +1803,6 @@ class BoundMethod : public HeapObject {
   static const int kSize = kSelfOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(BoundMethod)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(BoundMethod);
 };
 
 class ClassMethod : public HeapObject {
@@ -1933,9 +1816,6 @@ class ClassMethod : public HeapObject {
   static const int kSize = kFunctionOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(ClassMethod)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ClassMethod);
 };
 
 /**
@@ -2061,8 +1941,6 @@ class Layout : public HeapObject {
 
  private:
   void setOverflowOffset(word offset);
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Layout);
 };
 
 class Super : public HeapObject {
@@ -2082,9 +1960,6 @@ class Super : public HeapObject {
   static const int kSize = kObjectTypeOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Super)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Super);
 };
 
 /**
@@ -2104,9 +1979,6 @@ class GeneratorBase : public HeapObject {
   static const int kSize = kCodeOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(GeneratorBase)
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(GeneratorBase);
 };
 
 class Generator : public GeneratorBase {
@@ -2129,17 +2001,20 @@ class Coroutine : public GeneratorBase {
 
 // Object
 
+inline Object::Object(uword raw) : raw_{raw} {}
+
+inline uword Object::raw() const { return raw_; }
+
 inline bool Object::isObject() { return true; }
 
 inline LayoutId Object::layoutId() {
   if (isHeapObject()) {
-    return HeapObject::cast(this)->header()->layoutId();
+    return HeapObject::cast(*this)->header()->layoutId();
   }
   if (isSmallInt()) {
     return LayoutId::kSmallInt;
   }
-  return static_cast<LayoutId>(reinterpret_cast<uword>(this) &
-                               kImmediateClassTableIndexMask);
+  return static_cast<LayoutId>(raw() & kImmediateClassTableIndexMask);
 }
 
 inline bool Object::isType() { return isHeapObjectWithLayout(LayoutId::kType); }
@@ -2149,45 +2024,36 @@ inline bool Object::isClassMethod() {
 }
 
 inline bool Object::isSmallInt() {
-  uword tag = reinterpret_cast<uword>(this) & SmallInt::kTagMask;
-  return tag == SmallInt::kTag;
+  return (raw() & SmallInt::kTagMask) == SmallInt::kTag;
 }
 
 inline bool Object::isSmallStr() {
-  uword tag = reinterpret_cast<uword>(this) & SmallStr::kTagMask;
-  return tag == SmallStr::kTag;
+  return (raw() & SmallStr::kTagMask) == SmallStr::kTag;
 }
 
 inline bool Object::isHeader() {
-  uword tag = reinterpret_cast<uword>(this) & Header::kTagMask;
-  return tag == Header::kTag;
+  return (raw() & Header::kTagMask) == Header::kTag;
 }
 
-inline bool Object::isBool() {
-  uword tag = reinterpret_cast<uword>(this) & Bool::kTagMask;
-  return tag == Bool::kTag;
-}
+inline bool Object::isBool() { return (raw() & Bool::kTagMask) == Bool::kTag; }
 
 inline bool Object::isNoneType() {
-  uword tag = reinterpret_cast<uword>(this) & NoneType::kTagMask;
-  return tag == NoneType::kTag;
+  return (raw() & NoneType::kTagMask) == NoneType::kTag;
 }
 
 inline bool Object::isError() {
-  uword tag = reinterpret_cast<uword>(this) & NoneType::kTagMask;
-  return tag == Error::kTag;
+  return (raw() & Error::kTagMask) == Error::kTag;
 }
 
 inline bool Object::isHeapObject() {
-  uword tag = reinterpret_cast<uword>(this) & HeapObject::kTagMask;
-  return tag == HeapObject::kTag;
+  return (raw() & HeapObject::kTagMask) == HeapObject::kTag;
 }
 
 inline bool Object::isHeapObjectWithLayout(LayoutId layout_id) {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() == layout_id;
+  return HeapObject::cast(*this)->header()->layoutId() == layout_id;
 }
 
 inline bool Object::isLayout() {
@@ -2236,7 +2102,7 @@ inline bool Object::isInstance() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() >
+  return HeapObject::cast(*this)->header()->layoutId() >
          LayoutId::kLastBuiltinId;
 }
 
@@ -2365,26 +2231,34 @@ inline bool Object::equals(RawObject lhs, RawObject rhs) {
          (lhs->isLargeStr() && LargeStr::cast(lhs)->equals(rhs));
 }
 
+inline bool Object::operator==(const Object& other) const {
+  return raw() == other.raw();
+}
+
+inline bool Object::operator!=(const Object& other) const {
+  return !operator==(other);
+}
+
 // Int
 
 inline word Int::asWord() {
   if (isSmallInt()) {
-    return SmallInt::cast(this)->value();
+    return SmallInt::cast(*this)->value();
   }
-  return LargeInt::cast(this)->asWord();
+  return LargeInt::cast(*this)->asWord();
 }
 
 inline void* Int::asCPtr() {
   if (isSmallInt()) {
-    return SmallInt::cast(this)->asCPtr();
+    return SmallInt::cast(*this)->asCPtr();
   }
-  return LargeInt::cast(this)->asCPtr();
+  return LargeInt::cast(*this)->asCPtr();
 }
 
 template <typename T>
 OptInt<T> Int::asInt() {
-  if (isSmallInt()) return SmallInt::cast(this)->asInt<T>();
-  return LargeInt::cast(this)->asInt<T>();
+  if (isSmallInt()) return SmallInt::cast(*this)->asInt<T>();
+  return LargeInt::cast(*this)->asInt<T>();
 }
 
 inline word Int::compare(RawInt that) {
@@ -2421,9 +2295,9 @@ inline double Int::floatValue() {
     return static_cast<double>(asWord());
   }
   if (isBool()) {
-    return Bool::cast(this) == Bool::trueObj() ? 1.0 : 0.0;
+    return Bool::cast(*this) == Bool::trueObj() ? 1.0 : 0.0;
   }
-  RawLargeInt large_int = LargeInt::cast(this);
+  RawLargeInt large_int = LargeInt::cast(*this);
   if (large_int->numDigits() == 1) {
     return static_cast<double>(asWord());
   }
@@ -2433,41 +2307,41 @@ inline double Int::floatValue() {
 
 inline word Int::bitLength() {
   if (isSmallInt()) {
-    uword self = static_cast<uword>(std::abs(SmallInt::cast(this)->value()));
+    uword self = static_cast<uword>(std::abs(SmallInt::cast(*this)->value()));
     return Utils::highestBit(self);
   }
   if (isBool()) {
-    return Bool::cast(this) == Bool::trueObj() ? 1 : 0;
+    return Bool::cast(*this) == Bool::trueObj() ? 1 : 0;
   }
-  return LargeInt::cast(this)->bitLength();
+  return LargeInt::cast(*this)->bitLength();
 }
 
 inline bool Int::isPositive() {
   if (isSmallInt()) {
-    return SmallInt::cast(this)->value() > 0;
+    return SmallInt::cast(*this)->value() > 0;
   }
   if (isBool()) {
-    return Bool::cast(this) == Bool::trueObj();
+    return Bool::cast(*this) == Bool::trueObj();
   }
-  return LargeInt::cast(this)->isPositive();
+  return LargeInt::cast(*this)->isPositive();
 }
 
 inline bool Int::isNegative() {
   if (isSmallInt()) {
-    return SmallInt::cast(this)->value() < 0;
+    return SmallInt::cast(*this)->value() < 0;
   }
   if (isBool()) {
     return false;
   }
-  return LargeInt::cast(this)->isNegative();
+  return LargeInt::cast(*this)->isNegative();
 }
 
 inline bool Int::isZero() {
   if (isSmallInt()) {
-    return SmallInt::cast(this)->value() == 0;
+    return SmallInt::cast(*this)->value() == 0;
   }
   if (isBool()) {
-    return Bool::cast(this) == Bool::falseObj();
+    return Bool::cast(*this) == Bool::falseObj();
   }
   // A LargeInt can never be zero
   DCHECK(isLargeInt(), "Object must be a LargeInt");
@@ -2478,26 +2352,24 @@ inline word Int::numDigits() {
   if (isSmallInt() || isBool()) {
     return 1;
   }
-  return LargeInt::cast(this)->numDigits();
+  return LargeInt::cast(*this)->numDigits();
 }
 
 inline word Int::digitAt(word index) {
   if (isSmallInt()) {
     DCHECK(index == 0, "SmallInt digit index out of bounds");
-    return SmallInt::cast(this)->value();
+    return SmallInt::cast(*this)->value();
   }
   if (isBool()) {
     DCHECK(index == 0, "Bool digit index out of bounds");
-    return Bool::cast(this) == Bool::trueObj() ? 1 : 0;
+    return Bool::cast(*this) == Bool::trueObj() ? 1 : 0;
   }
-  return LargeInt::cast(this)->digitAt(index);
+  return LargeInt::cast(*this)->digitAt(index);
 }
 
 // SmallInt
 
-inline word SmallInt::value() {
-  return reinterpret_cast<word>(this) >> kTagSize;
-}
+inline word SmallInt::value() { return static_cast<word>(raw()) >> kTagSize; }
 
 inline void* SmallInt::asCPtr() { return reinterpret_cast<void*>(value()); }
 
@@ -2526,26 +2398,23 @@ if_unsigned_t<T, OptInt<T>> SmallInt::asInt() {
 
 inline RawSmallInt SmallInt::fromWord(word value) {
   DCHECK(SmallInt::isValid(value), "invalid cast");
-  return reinterpret_cast<RawSmallInt>(value << kTagSize);
+  return cast(RawObject{static_cast<uword>(value) << kTagSize});
 }
 
 template <typename T>
 inline RawSmallInt SmallInt::fromFunctionPointer(T pointer) {
   // The bit pattern for a function pointer object must be indistinguishable
   // from that of a small integer object.
-  auto object = reinterpret_cast<RawObject>(reinterpret_cast<uword>(pointer));
-  return SmallInt::cast(object);
+  return cast(RawObject{reinterpret_cast<uword>(pointer)});
 }
 
 // SmallStr
 
-inline word SmallStr::length() {
-  return (reinterpret_cast<word>(this) >> kTagSize) & kMaxLength;
-}
+inline word SmallStr::length() { return (raw() >> kTagSize) & kMaxLength; }
 
 inline byte SmallStr::charAt(word index) {
   DCHECK_INDEX(index, length());
-  return reinterpret_cast<word>(this) >> (kBitsPerByte * (index + 1));
+  return raw() >> (kBitsPerByte * (index + 1));
 }
 
 inline void SmallStr::copyTo(byte* dst, word length) {
@@ -2558,40 +2427,36 @@ inline void SmallStr::copyTo(byte* dst, word length) {
 // Header
 
 inline word Header::count() {
-  auto header = reinterpret_cast<uword>(this);
-  return (header >> kCountOffset) & kCountMask;
+  return static_cast<word>((raw() >> kCountOffset) & kCountMask);
 }
 
 inline bool Header::hasOverflow() { return count() == kCountOverflowFlag; }
 
 inline word Header::hashCode() {
-  auto header = reinterpret_cast<uword>(this);
-  return (header >> kHashCodeOffset) & kHashCodeMask;
+  return static_cast<word>((raw() >> kHashCodeOffset) & kHashCodeMask);
 }
 
 inline RawHeader Header::withHashCode(word value) {
-  auto header = reinterpret_cast<uword>(this);
+  auto header = raw();
   header &= ~(kHashCodeMask << kHashCodeOffset);
   header |= (value & kHashCodeMask) << kHashCodeOffset;
-  return reinterpret_cast<RawHeader>(header);
+  return cast(RawObject{header});
 }
 
 inline LayoutId Header::layoutId() {
-  auto header = reinterpret_cast<uword>(this);
-  return static_cast<LayoutId>((header >> kLayoutIdOffset) & kLayoutIdMask);
+  return static_cast<LayoutId>((raw() >> kLayoutIdOffset) & kLayoutIdMask);
 }
 
 inline RawHeader Header::withLayoutId(LayoutId layout_id) {
   DCHECK_BOUND(static_cast<word>(layout_id), kMaxLayoutId);
-  auto header = reinterpret_cast<uword>(this);
+  auto header = raw();
   header &= ~(kLayoutIdMask << kLayoutIdOffset);
   header |= (static_cast<word>(layout_id) & kLayoutIdMask) << kLayoutIdOffset;
-  return reinterpret_cast<RawHeader>(header);
+  return cast(RawObject{header});
 }
 
 inline ObjectFormat Header::format() {
-  auto header = reinterpret_cast<uword>(this);
-  return static_cast<ObjectFormat>((header >> kFormatOffset) & kFormatMask);
+  return static_cast<ObjectFormat>((raw() >> kFormatOffset) & kFormatMask);
 }
 
 inline RawHeader Header::from(word count, word hash, LayoutId id,
@@ -2604,18 +2469,20 @@ inline RawHeader Header::from(word count, word hash, LayoutId id,
   result |= hash << kHashCodeOffset;
   result |= static_cast<uword>(id) << kLayoutIdOffset;
   result |= static_cast<uword>(format) << kFormatOffset;
-  return reinterpret_cast<RawHeader>(result);
+  return cast(RawObject{result});
 }
 
 // None
 
 inline RawNoneType NoneType::object() {
-  return reinterpret_cast<RawNoneType>(kTag);
+  return bit_cast<RawNoneType>(static_cast<uword>(kTag));
 }
 
 // Error
 
-inline RawError Error::object() { return reinterpret_cast<RawError>(kTag); }
+inline RawError Error::object() {
+  return bit_cast<RawError>(static_cast<uword>(kTag));
+}
 
 // Bool
 
@@ -2629,19 +2496,14 @@ inline RawBool Bool::negate(RawObject value) {
 }
 
 inline RawBool Bool::fromBool(bool value) {
-  return reinterpret_cast<RawBool>((static_cast<uword>(value) << kTagSize) |
-                                   kTag);
+  return cast(RawObject{(static_cast<uword>(value) << kTagSize) | kTag});
 }
 
-inline bool Bool::value() {
-  return (reinterpret_cast<uword>(this) >> kTagSize) ? true : false;
-}
+inline bool Bool::value() { return (raw() >> kTagSize) ? true : false; }
 
 // HeapObject
 
-inline uword HeapObject::address() {
-  return reinterpret_cast<uword>(this) - HeapObject::kTag;
-}
+inline uword HeapObject::address() { return raw() - HeapObject::kTag; }
 
 inline uword HeapObject::baseAddress() {
   uword result = address() - Header::kSize;
@@ -2675,7 +2537,7 @@ inline void HeapObject::setHeaderAndOverflow(word count, word hash, LayoutId id,
 
 inline RawHeapObject HeapObject::fromAddress(uword address) {
   DCHECK((address & kTagMask) == 0, "invalid cast, expected heap address");
-  return reinterpret_cast<RawHeapObject>(address + kTag);
+  return cast(RawObject{address + kTag});
 }
 
 inline word HeapObject::headerCountOrOverflow() {
@@ -3599,18 +3461,18 @@ inline bool Str::equalsCStr(const char* c_str) {
 
 inline byte Str::charAt(word index) {
   if (isSmallStr()) {
-    return SmallStr::cast(this)->charAt(index);
+    return SmallStr::cast(*this)->charAt(index);
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return LargeStr::cast(this)->charAt(index);
+  return LargeStr::cast(*this)->charAt(index);
 }
 
 inline word Str::length() {
   if (isSmallStr()) {
-    return SmallStr::cast(this)->length();
+    return SmallStr::cast(*this)->length();
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return LargeStr::cast(this)->length();
+  return LargeStr::cast(*this)->length();
 }
 
 inline word Str::compare(RawObject string) {
@@ -3628,27 +3490,27 @@ inline word Str::compare(RawObject string) {
 
 inline bool Str::equals(RawObject that) {
   if (isSmallStr()) {
-    return this == that;
+    return *this == that;
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return LargeStr::cast(this)->equals(that);
+  return LargeStr::cast(*this)->equals(that);
 }
 
 inline void Str::copyTo(byte* dst, word length) {
   if (isSmallStr()) {
-    SmallStr::cast(this)->copyTo(dst, length);
+    SmallStr::cast(*this)->copyTo(dst, length);
     return;
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return LargeStr::cast(this)->copyTo(dst, length);
+  return LargeStr::cast(*this)->copyTo(dst, length);
 }
 
 inline char* Str::toCStr() {
   if (isSmallStr()) {
-    return SmallStr::cast(this)->toCStr();
+    return SmallStr::cast(*this)->toCStr();
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return LargeStr::cast(this)->toCStr();
+  return LargeStr::cast(*this)->toCStr();
 }
 
 // LargeStr
@@ -3672,9 +3534,9 @@ inline void ValueCell::setValue(RawObject object) {
   instanceVariableAtPut(kValueOffset, object);
 }
 
-inline bool ValueCell::isUnbound() { return this == value(); }
+inline bool ValueCell::isUnbound() { return *this == value(); }
 
-inline void ValueCell::makeUnbound() { setValue(this); }
+inline void ValueCell::makeUnbound() { setValue(*this); }
 
 // Set
 

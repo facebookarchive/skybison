@@ -13,12 +13,12 @@ TEST(HeapTest, AllocateObjects) {
 
   // Allocate the first half of the heap.
   RawObject raw1 = heap.allocate(size / 2, 0);
-  ASSERT_NE(raw1, nullptr);
+  ASSERT_NE(raw1, Error::object());
   EXPECT_TRUE(heap.contains(raw1));
 
   // Allocate the second half of the heap.
   RawObject raw2 = heap.allocate(size / 2, 0);
-  ASSERT_NE(raw2, nullptr);
+  ASSERT_NE(raw2, Error::object());
   EXPECT_TRUE(heap.contains(raw2));
 }
 

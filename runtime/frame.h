@@ -24,7 +24,7 @@ class TryBlock {
  public:
   explicit TryBlock(RawObject value) {
     DCHECK(value->isSmallInt(), "expected small integer");
-    value_ = reinterpret_cast<uword>(value);
+    value_ = value.raw();
   }
 
   TryBlock(word kind, word handler, word level) : value_(0) {
@@ -346,9 +346,10 @@ class Arguments {
 
 class KwArguments : public Arguments {
  public:
-  KwArguments(Frame* frame, word nargs) : Arguments(frame, nargs) {
-    kwnames_ = ObjectArray::cast(frame->getLocal(nargs - 1));
-    num_keywords_ = kwnames_->length();
+  KwArguments(Frame* frame, word nargs)
+      : Arguments(frame, nargs),
+        kwnames_(ObjectArray::cast(frame->getLocal(nargs - 1))),
+        num_keywords_(kwnames_->length()) {
     num_args_ = nargs - num_keywords_ - 1;
   }
 
@@ -364,8 +365,8 @@ class KwArguments : public Arguments {
   word numKeywords() const { return num_keywords_; }
 
  private:
-  word num_keywords_;
   RawObjectArray kwnames_;
+  word num_keywords_;
 };
 
 inline uword Frame::address() { return reinterpret_cast<uword>(this); }
@@ -419,7 +420,7 @@ inline RawObject Frame::code() { return at(kCodeOffset); }
 inline void Frame::setCode(RawObject code) { atPut(kCodeOffset, code); }
 
 inline RawObject* Frame::locals() {
-  return reinterpret_cast<RawObject*>(at(kLocalsOffset));
+  return reinterpret_cast<RawObject*>(at(kLocalsOffset).raw());
 }
 
 inline RawObject Frame::getLocal(word idx) {
@@ -439,8 +440,8 @@ inline void Frame::setNumLocals(word num_locals) {
 
 inline void Frame::resetLocals(word num_locals) {
   // Bias locals by 1 word to avoid doing so during {get,set}Local
-  RawObject locals = reinterpret_cast<RawObject>(
-      address() + Frame::kSize + ((num_locals - 1) * kPointerSize));
+  RawObject locals{address() + Frame::kSize +
+                   ((num_locals - 1) * kPointerSize)};
   DCHECK(locals->isSmallInt(), "expected small integer");
   atPut(kLocalsOffset, locals);
 }
@@ -601,7 +602,7 @@ inline word HeapFrame::numAttributes(word extra_words) {
 }
 
 inline RawObject TryBlock::asSmallInt() const {
-  auto obj = reinterpret_cast<RawObject>(value_);
+  Object obj{value_};
   DCHECK(obj->isSmallInt(), "expected small integer");
   return obj;
 }

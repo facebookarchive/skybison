@@ -13,7 +13,7 @@ class Heap {
 
   RawObject allocate(word size, word offset);
 
-  bool contains(void* address);
+  bool contains(RawObject address);
   bool verify();
 
   Space* space() { return space_; }

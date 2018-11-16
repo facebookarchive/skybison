@@ -122,15 +122,17 @@ class ObjectHandle {
 template <typename T>
 class Handle : public ObjectHandle {
  public:
-  T* operator->() const { return static_cast<T*>(pointer_); }
+  T* operator->() const {
+    return static_cast<T*>(const_cast<Object*>(&pointer_));
+  }
 
-  T* operator*() const { return static_cast<T*>(pointer_); }
+  T operator*() const { return *operator->(); }
 
   // Note that Handle<T>::operator= takes a raw pointer, not a handle, so
   // to assign handles, one writes: `lhandle = *rhandle;`. (This is to avoid
   // confusion about which HandleScope tracks lhandle after the assignment.)
   template <typename S>
-  Handle<T>& operator=(S* other) {
+  Handle<T>& operator=(S other) {
     static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
                   "Only up- and down-casts are permitted.");
     pointer_ = T::cast(other);
@@ -170,9 +172,11 @@ class Handle : public ObjectHandle {
 template <typename T>
 class UncheckedHandle : public ObjectHandle {
  public:
-  T* operator->() const { return reinterpret_cast<T*>(pointer_); }
+  T* operator->() const {
+    return static_cast<T*>(const_cast<Object*>(&pointer_));
+  }
 
-  T* operator*() const { return reinterpret_cast<T*>(pointer_); }
+  T operator*() const { return *operator->(); }
 
   UncheckedHandle(HandleScope* scope, RawObject pointer)
       : ObjectHandle(scope, pointer) {

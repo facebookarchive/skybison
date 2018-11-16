@@ -10,7 +10,7 @@ class AttributeInfo {
  public:
   explicit AttributeInfo(RawObject value) {
     DCHECK(value->isSmallInt(), "expected small integer");
-    value_ = reinterpret_cast<word>(value);
+    value_ = value.raw();
   }
 
   AttributeInfo() : value_(SmallInt::kTag) {}
@@ -98,9 +98,7 @@ inline bool AttributeInfo::testFlag(Flag flag) {
 }
 
 inline RawSmallInt AttributeInfo::asSmallInt() {
-  auto smi = reinterpret_cast<RawSmallInt>(value_);
-  DCHECK(smi->isSmallInt(), "expected small integer");
-  return smi;
+  return SmallInt::cast(Object{value_});
 }
 
 }  // namespace python

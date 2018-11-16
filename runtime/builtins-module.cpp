@@ -258,7 +258,7 @@ RawObject builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
   if (!arg->isStr()) {
     return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'ord'");
   }
-  auto* str = Str::cast(arg);
+  auto str = Str::cast(arg);
   if (str->length() != 1) {
     return thread->raiseTypeErrorWithCStr(
         "Builtin 'ord' expects string of length 1");

@@ -1,5 +1,7 @@
 #include "object-builtins.h"
 
+#include <cinttypes>
+
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
@@ -112,8 +114,9 @@ RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   Handle<Type> type(&scope, runtime->typeOf(*self));
   Handle<Str> type_name(&scope, type->name());
   char* c_string = type_name->toCStr();
+  // TODO(bsimmers): Move this into Python once we can get an object's address.
   RawObject str = thread->runtime()->newStrFromFormat(
-      "<%s object at %p>", c_string, static_cast<void*>(*self));
+      "<%s object at 0x%" PRIxPTR ">", c_string, self->raw());
   free(c_string);
   return str;
 }

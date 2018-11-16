@@ -905,11 +905,11 @@ TEST(RuntimeTest, HashSingletonImmediates) {
   Runtime runtime;
 
   // In CPython, these objects hash to arbitrary values.
-  word none_value = reinterpret_cast<word>(NoneType::object());
+  word none_value = NoneType::object().raw();
   RawSmallInt hash_none = SmallInt::cast(runtime.hash(NoneType::object()));
   EXPECT_EQ(hash_none->value(), none_value);
 
-  word error_value = reinterpret_cast<word>(Error::object());
+  word error_value = Error::object().raw();
   RawSmallInt hash_error = SmallInt::cast(runtime.hash(Error::object()));
   EXPECT_EQ(hash_error->value(), error_value);
 }

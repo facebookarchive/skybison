@@ -16,13 +16,13 @@ RawObject SmallStr::fromCStr(const char* value) {
 RawObject SmallStr::fromBytes(View<byte> data) {
   word length = data.length();
   DCHECK_BOUND(length, kMaxLength);
-  word result = 0;
+  uword result = 0;
   for (word i = length; i > 0;) {
     i -= 1;
     result = (result << kBitsPerByte) | data.get(i);
   }
   result = (result << kBitsPerByte) | (length << kTagSize) | kTag;
-  return reinterpret_cast<RawSmallStr>(result);
+  return cast(Object{result});
 }
 
 char* SmallStr::toCStr() {
@@ -42,13 +42,13 @@ const word SmallInt::kMaxValue;
 // LargeStr
 
 bool LargeStr::equals(RawObject that) {
-  if (this == that) {
+  if (*this == that) {
     return true;
   }
   if (!that->isLargeStr()) {
     return false;
   }
-  auto* that_str = LargeStr::cast(that);
+  auto that_str = LargeStr::cast(that);
   if (length() != that_str->length()) {
     return false;
   }

@@ -100,7 +100,7 @@ PY_EXPORT int PyType_Ready(PyTypeObject* type) {
 
   // Add the runtime class object reference to PyTypeObject
   // TODO(eelizondo): Handled this automatically in PyType_FromSpec
-  pyobj->reference_ = *type_class;
+  pyobj->reference_ = reinterpret_cast<void*>(type_class->raw());
 
   // All done -- set the ready flag
   type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;

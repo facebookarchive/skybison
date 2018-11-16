@@ -111,7 +111,7 @@ class ScopedCounter {
 
 RawObject Marshal::Reader::readObject() {
   ScopedCounter<int> counter(&depth_);
-  RawObject result = nullptr;
+  RawObject result;
   byte code = readByte();
   byte flag = code & FLAG_REF;
   byte type = code & ~FLAG_REF;

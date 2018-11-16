@@ -30,7 +30,7 @@ static RawObject initializeExtensionType(PyTypeObject* extension_type) {
   layout->setDescribedClass(*type_class);
   type_class->setInstanceLayout(*layout);
 
-  pyobj->reference_ = *type_class;
+  pyobj->reference_ = reinterpret_cast<void*>(type_class->raw());
   return *type_class;
 }
 
