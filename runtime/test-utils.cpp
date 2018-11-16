@@ -25,17 +25,6 @@ std::string compileAndRunToString(Runtime* runtime, const char* src) {
   return tmp_stdout.str();
 }
 
-// helper function to return an object from running a module
-Object* compileAndRunToObject(
-    Runtime* runtime,
-    HandleScope& scope,
-    const char* src,
-    const char* obj_name) {
-  runtime->runFromCString(src);
-  Handle<Module> main(&scope, findModule(runtime, "__main__"));
-  return moduleAt(runtime, main, obj_name);
-}
-
 Object*
 findInModule(Runtime* runtime, const Handle<Module>& module, const char* name) {
   HandleScope scope;

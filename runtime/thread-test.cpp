@@ -2587,7 +2587,9 @@ b = {x for x in a}
 )";
   Runtime runtime;
   HandleScope scope;
-  Handle<Object> b(&scope, compileAndRunToObject(&runtime, scope, src, "b"));
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
   EXPECT_EQ(b->isSet(), true);
   Handle<Set> set_b(&scope, *b);
   EXPECT_EQ(set_b->numItems(), 3);
@@ -2600,7 +2602,9 @@ b = {x:x for x in a}
 )";
   Runtime runtime;
   HandleScope scope;
-  Handle<Object> b(&scope, compileAndRunToObject(&runtime, scope, src, "b"));
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
   EXPECT_EQ(b->isDictionary(), true);
   Handle<Dictionary> dict_b(&scope, *b);
   EXPECT_EQ(dict_b->numItems(), 3);

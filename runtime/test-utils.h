@@ -29,14 +29,6 @@ namespace testing {
 // Compile the supplied python snippet, run it, and return stdout.
 std::string compileAndRunToString(Runtime* runtime, const char* src);
 
-// Compile the supplied python snippet, run it, and return
-// an object from its module scope.
-Object* compileAndRunToObject(
-    Runtime* runtime,
-    HandleScope& scope,
-    const char* src,
-    const char* obj_name);
-
 // A predicate-formatter for checking if a python::String* has the same contents
 // as a std::string
 inline ::testing::AssertionResult AssertPyStringEqual(
