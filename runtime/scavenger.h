@@ -30,7 +30,7 @@ class Scavenger {
     return &visitor_;
   }
 
-  void scavenge();
+  Object* scavenge();
 
   void scavengePointer(Object** pointer);
 
@@ -38,8 +38,6 @@ class Scavenger {
   Object* transport(Object* old_object);
 
   bool hasWhiteReferent(Object* reference);
-
-  void delayReference(Object* reference);
 
   void processDelayedReferences();
 
@@ -52,6 +50,7 @@ class Scavenger {
   Space* from_;
   Space* to_;
   Object* delayed_references_;
+  Object* delayed_callbacks_;
 
   DISALLOW_COPY_AND_ASSIGN(Scavenger);
 };

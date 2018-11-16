@@ -140,6 +140,8 @@ class Runtime {
 
   Object* newSuper();
 
+  void processCallbacks();
+
   Object* stringConcat(const Handle<String>& a, const Handle<String>& b);
 
   // Rudimentary support for '%' operator
@@ -680,6 +682,9 @@ class Runtime {
 
   // Extension Types
   Object* extension_types_;
+
+  // Weak reference callback list
+  Object* callbacks_;
 
   Thread* threads_;
 

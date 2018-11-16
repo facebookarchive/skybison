@@ -12,6 +12,7 @@
 #include "builtins.h"
 #include "bytecode.h"
 #include "callback.h"
+#include "frame.h"
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
@@ -943,7 +944,28 @@ void Runtime::initializeStaticMethodClass() {
 }
 
 void Runtime::collectGarbage() {
-  Scavenger(this).scavenge();
+  bool run_callback = callbacks_ == None::object();
+  Object* cb = Scavenger(this).scavenge();
+  callbacks_ = WeakRef::spliceQueue(callbacks_, cb);
+  if (run_callback) {
+    processCallbacks();
+  }
+}
+
+void Runtime::processCallbacks() {
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+  Object** sp = frame->valueStackTop();
+  HandleScope scope(thread);
+  while (callbacks_ != None::object()) {
+    Handle<WeakRef> weak(
+        &scope, WeakRef::cast(WeakRef::dequeueReference(&callbacks_)));
+    *--sp = weak->callback();
+    *--sp = Object::cast(*weak);
+    Interpreter::call(thread, frame, sp, 1);
+    *sp += 2;
+    weak->setCallback(None::object());
+  }
 }
 
 Object* Runtime::run(const char* buffer) {
@@ -1032,6 +1054,7 @@ void Runtime::initializePrimitiveInstances() {
   empty_byte_array_ = heap()->createByteArray(0);
   ellipsis_ = heap()->createEllipsis();
   not_implemented_ = heap()->createNotImplemented();
+  callbacks_ = None::object();
 }
 
 void Runtime::initializeInterned() {
@@ -1088,6 +1111,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
   // Visit symbols
   symbols_->visit(visitor);
+
+  // Visit GC callbacks
+  visitor->visitPointer(&callbacks_);
 }
 
 void Runtime::visitThreadRoots(PointerVisitor* visitor) {

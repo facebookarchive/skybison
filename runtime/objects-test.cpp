@@ -1045,4 +1045,62 @@ TEST(StringTest, CompareSmallStr) {
   EXPECT_FALSE(small->equalsCString("123456789"));
 }
 
+TEST(WeakRefTest, EnqueueAndDequeue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object* list = None::object();
+  for (int i = 0; i < 3; i++) {
+    Handle<WeakRef> weak(&scope, runtime.newWeakRef());
+    weak->setReferent(SmallInteger::fromWord(i));
+    WeakRef::enqueueReference(*weak, &list);
+  }
+  Handle<WeakRef> weak(&scope, WeakRef::dequeueReference(&list));
+  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 0);
+
+  weak = WeakRef::dequeueReference(&list);
+  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 1);
+
+  weak = WeakRef::dequeueReference(&list);
+  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 2);
+
+  EXPECT_EQ(list, None::object());
+}
+
+TEST(WeakRefTest, SpliceQueue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object* list1 = None::object();
+  Object* list2 = None::object();
+  EXPECT_EQ(WeakRef::spliceQueue(list1, list2), None::object());
+
+  Object* list3 = runtime.newWeakRef();
+  WeakRef::cast(list3)->setLink(list3);
+  EXPECT_EQ(WeakRef::spliceQueue(list1, list3), list3);
+  EXPECT_EQ(WeakRef::spliceQueue(list3, list2), list3);
+
+  for (int i = 0; i < 2; i++) {
+    Handle<WeakRef> weak1(&scope, runtime.newWeakRef());
+    weak1->setReferent(SmallInteger::fromWord(i));
+    WeakRef::enqueueReference(*weak1, &list1);
+
+    Handle<WeakRef> weak2(&scope, runtime.newWeakRef());
+    weak2->setReferent(SmallInteger::fromWord(i + 2));
+    WeakRef::enqueueReference(*weak2, &list2);
+  }
+  Object* list = WeakRef::spliceQueue(list1, list2);
+  Handle<WeakRef> weak(&scope, WeakRef::dequeueReference(&list));
+  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 0);
+
+  weak = WeakRef::dequeueReference(&list);
+  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 1);
+
+  weak = WeakRef::dequeueReference(&list);
+  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 2);
+
+  weak = WeakRef::dequeueReference(&list);
+  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 3);
+
+  EXPECT_EQ(list, None::object());
+}
+
 } // namespace python

@@ -130,4 +130,47 @@ word Slice::adjustIndices(word length, word* start, word* stop, word step) {
   return 0;
 }
 
+void WeakRef::enqueueReference(Object* reference, Object** tail) {
+  if (*tail == None::object()) {
+    WeakRef::cast(reference)->setLink(reference);
+  } else {
+    Object* head = WeakRef::cast(*tail)->link();
+    WeakRef::cast(*tail)->setLink(reference);
+    WeakRef::cast(reference)->setLink(head);
+  }
+  *tail = reference;
+}
+
+Object* WeakRef::dequeueReference(Object** tail) {
+  DCHECK(*tail != None::object(), "empty queue");
+  Object* head = WeakRef::cast(*tail)->link();
+  if (head == *tail) {
+    *tail = None::object();
+  } else {
+    Object* next = WeakRef::cast(head)->link();
+    WeakRef::cast(*tail)->setLink(next);
+  }
+  WeakRef::cast(head)->setLink(None::object());
+  return head;
+}
+
+// Append tail2 to tail1 and return the new tail.
+Object* WeakRef::spliceQueue(Object* tail1, Object* tail2) {
+  if (tail1 == None::object() && tail2 == None::object()) {
+    return None::object();
+  }
+  if (tail1 == None::object()) {
+    return tail2;
+  }
+  if (tail2 == None::object()) {
+    return tail1;
+  }
+  // merge two list, tail1 -> head2 -> ... -> tail2 -> head1
+  Object* head1 = WeakRef::cast(tail1)->link();
+  Object* head2 = WeakRef::cast(tail2)->link();
+  WeakRef::cast(tail1)->setLink(head2);
+  WeakRef::cast(tail2)->setLink(head1);
+  return tail2;
+}
+
 } // namespace python

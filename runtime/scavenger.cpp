@@ -2,7 +2,10 @@
 
 #include <cstring>
 
+#include "frame.h"
+#include "interpreter.h"
 #include "runtime.h"
+#include "thread.h"
 
 namespace python {
 
@@ -15,17 +18,19 @@ Scavenger::Scavenger(Runtime* runtime)
       runtime_(runtime),
       from_(runtime->heap()->space()),
       to_(nullptr),
-      delayed_references_(None::object()) {}
+      delayed_references_(None::object()),
+      delayed_callbacks_(None::object()) {}
 
 Scavenger::~Scavenger() {}
 
-void Scavenger::scavenge() {
+Object* Scavenger::scavenge() {
   to_ = new Space(from_->size());
   processRoots();
   processGrayObjects();
   processDelayedReferences();
   runtime_->heap()->setSpace(to_);
   delete from_;
+  return delayed_callbacks_;
 }
 
 void Scavenger::scavengePointer(Object** pointer) {
@@ -54,12 +59,6 @@ bool Scavenger::hasWhiteReferent(Object* reference) {
   return !HeapObject::cast(weak->referent())->isForwarding();
 }
 
-void Scavenger::delayReference(Object* reference) {
-  DCHECK(hasWhiteReferent(reference), "referent is not white");
-  WeakRef::cast(reference)->setLink(delayed_references_);
-  delayed_references_ = reference;
-}
-
 void Scavenger::processGrayObjects() {
   uword scan = to_->start();
   while (scan < to_->fill()) {
@@ -77,7 +76,7 @@ void Scavenger::processGrayObjects() {
       scan += Header::kSize;
       if (object->isWeakRef() && hasWhiteReferent(object)) {
         // Delay the reference object for later processing.
-        delayReference(object);
+        WeakRef::enqueueReference(object, &delayed_references_);
         // Skip over the referent field and continue scavenging.
         scan += kPointerSize;
       }
@@ -90,9 +89,8 @@ void Scavenger::processGrayObjects() {
 
 void Scavenger::processDelayedReferences() {
   while (delayed_references_ != None::object()) {
-    WeakRef* weak = WeakRef::cast(delayed_references_);
-    delayed_references_ = weak->link();
-    weak->setLink(None::object());
+    WeakRef* weak =
+        WeakRef::cast(WeakRef::dequeueReference(&delayed_references_));
     if (!weak->referent()->isHeapObject()) {
       continue;
     }
@@ -101,9 +99,8 @@ void Scavenger::processDelayedReferences() {
       weak->setReferent(referent->forward());
     } else {
       weak->setReferent(None::object());
-      // TODO: queue the object for invocation of its callback
       if (!weak->callback()->isNone()) {
-        UNIMPLEMENTED("weak reference callbacks");
+        WeakRef::enqueueReference(weak, &delayed_callbacks_);
       }
     }
   }

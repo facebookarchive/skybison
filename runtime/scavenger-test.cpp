@@ -1,8 +1,11 @@
 #include "gtest/gtest.h"
 
 #include "scavenger.h"
+#include "test-utils.h"
+#include "trampolines.h"
 
 namespace python {
+using namespace testing;
 
 TEST(ScavengerTest, PreserveWeakReferenceHeapReferent) {
   Runtime runtime;
@@ -10,7 +13,7 @@ TEST(ScavengerTest, PreserveWeakReferenceHeapReferent) {
   Handle<WeakRef> ref(&scope, runtime.newWeakRef());
   Handle<ObjectArray> array(&scope, runtime.newObjectArray(10));
   ref->setReferent(*array);
-  Scavenger(&runtime).scavenge();
+  runtime.collectGarbage();
   EXPECT_EQ(ref->referent(), *array);
 }
 
@@ -19,7 +22,7 @@ TEST(ScavengerTest, PreserveWeakReferenceImmediateReferent) {
   HandleScope scope;
   Handle<WeakRef> ref(&scope, runtime.newWeakRef());
   ref->setReferent(SmallInteger::fromWord(1234));
-  Scavenger(&runtime).scavenge();
+  runtime.collectGarbage();
   EXPECT_EQ(ref->referent(), SmallInteger::fromWord(1234));
 }
 
@@ -30,10 +33,10 @@ TEST(ScavengerTest, ClearWeakReference) {
   {
     Handle<ObjectArray> array(&scope, runtime.newObjectArray(10));
     ref->setReferent(*array);
-    Scavenger(&runtime).scavenge();
+    runtime.collectGarbage();
     EXPECT_EQ(ref->referent(), *array);
   }
-  Scavenger(&runtime).scavenge();
+  runtime.collectGarbage();
   EXPECT_EQ(ref->referent(), None::object());
 }
 
@@ -64,7 +67,7 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   EXPECT_EQ(strongrefs->at(3), WeakRef::cast(weakrefs->at(3))->referent());
 
   // Now do a garbage collection.
-  Scavenger(&runtime).scavenge();
+  runtime.collectGarbage();
 
   // Make sure that the weak references still point to the expected referents.
   EXPECT_EQ(strongrefs->at(0), WeakRef::cast(weakrefs->at(0))->referent());
@@ -75,10 +78,10 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   // Clear the odd indexed strong references.
   strongrefs->atPut(1, None::object());
   strongrefs->atPut(3, None::object());
+  runtime.collectGarbage();
 
   // Now do another garbage collection.  This one should clear just the weak
   // references that point to objects that are no longer strongly referenced.
-  Scavenger(&runtime).scavenge();
 
   // Check that the strongly referenced referents are preserved and the weakly
   // referenced referents are now cleared.
@@ -93,13 +96,160 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
 
   // Do a final garbage collection.  There are no more strongly referenced
   // objects so all of the weak references should be cleared.
-  Scavenger(&runtime).scavenge();
+  runtime.collectGarbage();
 
   // Check that all of the referents are cleared.
   EXPECT_EQ(None::object(), WeakRef::cast(weakrefs->at(0))->referent());
   EXPECT_EQ(None::object(), WeakRef::cast(weakrefs->at(1))->referent());
   EXPECT_EQ(None::object(), WeakRef::cast(weakrefs->at(2))->referent());
   EXPECT_EQ(None::object(), WeakRef::cast(weakrefs->at(3))->referent());
+}
+
+TEST(ScavengerTest, BaseCallback) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+a = 1
+b = 2
+def f(ref):
+  global a
+  a = 3
+def g(ref, c=4):
+  global b
+  b = c
+)";
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<WeakRef> ref1(&scope, runtime.newWeakRef());
+  Handle<WeakRef> ref2(&scope, runtime.newWeakRef());
+  {
+    Handle<ObjectArray> array1(&scope, runtime.newObjectArray(10));
+    Handle<Function> func_f(&scope, moduleAt(&runtime, main, "f"));
+    ref1->setReferent(*array1);
+    ref1->setCallback(*func_f);
+
+    Handle<ObjectArray> array2(&scope, runtime.newObjectArray(10));
+    Handle<Function> func_g(&scope, moduleAt(&runtime, main, "g"));
+    ref2->setReferent(*array2);
+    ref2->setCallback(*func_g);
+
+    runtime.collectGarbage();
+
+    EXPECT_EQ(ref1->referent(), *array1);
+    EXPECT_EQ(ref2->referent(), *array2);
+    Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
+    Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+    EXPECT_EQ(a->value(), 1);
+    EXPECT_EQ(b->value(), 2);
+  }
+  runtime.collectGarbage();
+
+  EXPECT_EQ(ref1->referent(), None::object());
+  EXPECT_EQ(ref1->callback(), None::object());
+  EXPECT_EQ(ref2->referent(), None::object());
+  EXPECT_EQ(ref2->callback(), None::object());
+  Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_EQ(a->value(), 3);
+  EXPECT_EQ(b->value(), 4);
+}
+
+TEST(ScavengerTest, MixCallback) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+a = 1
+b = 2
+def f(ref):
+  global a
+  a = 3
+def g(ref, c=4):
+  global b
+  b = c
+)";
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+
+  Handle<WeakRef> ref1(&scope, runtime.newWeakRef());
+  Handle<WeakRef> ref2(&scope, runtime.newWeakRef());
+  Handle<ObjectArray> array1(&scope, runtime.newObjectArray(10));
+  Handle<Function> func_f(&scope, moduleAt(&runtime, main, "f"));
+  ref1->setReferent(*array1);
+  ref1->setCallback(*func_f);
+  {
+    Handle<ObjectArray> array2(&scope, runtime.newObjectArray(10));
+    Handle<Function> func_g(&scope, moduleAt(&runtime, main, "g"));
+    ref2->setReferent(*array2);
+    ref2->setCallback(*func_g);
+
+    runtime.collectGarbage();
+
+    EXPECT_EQ(ref1->referent(), *array1);
+    EXPECT_EQ(ref2->referent(), *array2);
+    Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
+    Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+    EXPECT_EQ(a->value(), 1);
+    EXPECT_EQ(b->value(), 2);
+  }
+  runtime.collectGarbage();
+
+  EXPECT_EQ(ref1->referent(), *array1);
+  EXPECT_EQ(ref1->callback(), *func_f);
+  EXPECT_EQ(ref2->referent(), None::object());
+  EXPECT_EQ(ref2->callback(), None::object());
+  Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_EQ(a->value(), 1);
+  EXPECT_EQ(b->value(), 4);
+}
+
+TEST(ScavengerTest, CallbackInvokeGC) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+a = 1
+def g(ref, b=2):
+  global a
+  a = b
+)";
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<WeakRef> ref1(&scope, runtime.newWeakRef());
+  Handle<WeakRef> ref2(&scope, runtime.newWeakRef());
+  {
+    Handle<ObjectArray> array1(&scope, runtime.newObjectArray(10));
+    Handle<Function> collect(
+        &scope,
+        runtime.newBuiltinFunction(
+            [](Thread* thread, Frame*, word) -> Object* {
+              thread->runtime()->collectGarbage();
+              return None::object();
+            },
+            unimplementedTrampoline,
+            unimplementedTrampoline));
+    ref1->setReferent(*array1);
+    ref1->setCallback(*collect);
+
+    Handle<ObjectArray> array2(&scope, runtime.newObjectArray(10));
+    Handle<Function> func_g(&scope, moduleAt(&runtime, main, "g"));
+    ref2->setReferent(*array2);
+    ref2->setCallback(*func_g);
+
+    runtime.collectGarbage();
+
+    EXPECT_EQ(ref1->referent(), *array1);
+    EXPECT_EQ(ref2->referent(), *array2);
+    Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
+    EXPECT_EQ(a->value(), 1);
+  }
+  runtime.collectGarbage();
+
+  EXPECT_EQ(ref1->referent(), None::object());
+  EXPECT_EQ(ref1->callback(), None::object());
+  EXPECT_EQ(ref2->referent(), None::object());
+  EXPECT_EQ(ref2->callback(), None::object());
+  Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_EQ(a->value(), 2);
 }
 
 } // namespace python

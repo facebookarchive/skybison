@@ -1322,6 +1322,10 @@ class WeakRef : public HeapObject {
   Object* link();
   void setLink(Object* reference);
 
+  static void enqueueReference(Object* reference, Object** list);
+  static Object* dequeueReference(Object** list);
+  static Object* spliceQueue(Object* tail1, Object* tail2);
+
   // Casting.
   static WeakRef* cast(Object* object);
 
