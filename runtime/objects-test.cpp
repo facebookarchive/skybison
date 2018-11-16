@@ -435,6 +435,115 @@ TEST(ListTest, PopListOutOfBounds) {
       "Throw an IndexError for an out of range list index.");
 }
 
+TEST(SliceTest, adjustIndices) {
+  // Test: 0:10:1 on len: 10
+  word length = 10;
+  word start = 0;
+  word stop = 10;
+  word step = 1;
+  word new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 10);
+  ASSERT_EQ(start, 0);
+  ASSERT_EQ(stop, 10);
+
+  // Test: 2:10:1 on len: 10
+  start = 2;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 8);
+  ASSERT_EQ(start, 2);
+  ASSERT_EQ(stop, 10);
+
+  // Test: -4:10:1 on len: 10
+  start = -4;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 4);
+  ASSERT_EQ(start, 6);
+  ASSERT_EQ(stop, 10);
+
+  // Test: 0:2:1 on len: 10
+  start = 0;
+  stop = 2;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 2);
+  ASSERT_EQ(start, 0);
+  ASSERT_EQ(stop, 2);
+
+  // Test: 0:-2:1 on len: 10
+  start = 0;
+  stop = -2;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 8);
+  ASSERT_EQ(start, 0);
+  ASSERT_EQ(stop, 8);
+
+  // Test: 0:10:2 on len: 10
+  start = 0;
+  stop = 10;
+  step = 2;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 5);
+  ASSERT_EQ(start, 0);
+  ASSERT_EQ(stop, 10);
+
+  // Test: 0:10:-2 on len: 10
+  start = 0;
+  stop = 10;
+  step = -2;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 0);
+  ASSERT_EQ(start, 0);
+  ASSERT_EQ(stop, 9);
+}
+
+TEST(SliceTest, adjustIndicesOutOfBounds) {
+  // Test: 10:5:1 on len: 5
+  word length = 5;
+  word start = 10;
+  word stop = 5;
+  word step = 1;
+  word new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 0);
+  ASSERT_EQ(start, 5);
+  ASSERT_EQ(stop, 5);
+
+  // Test: -10:5:1 on len: 5
+  start = -10;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 5);
+  ASSERT_EQ(start, 0);
+  ASSERT_EQ(stop, 5);
+
+  // Test: 0:10:1 on len: 5
+  start = 0;
+  stop = 10;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 5);
+  ASSERT_EQ(start, 0);
+  ASSERT_EQ(stop, 5);
+
+  // Test: 0:-10:1 on len: 5
+  stop = -10;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 0);
+  ASSERT_EQ(start, 0);
+  ASSERT_EQ(stop, 0);
+
+  // Test: 0:5:10 on len: 5
+  stop = 5;
+  step = 10;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 1);
+  ASSERT_EQ(start, 0);
+  ASSERT_EQ(stop, 5);
+
+  // Test: 0:5:-10 on len: 5
+  step = -10;
+  new_length = Slice::adjustIndices(length, &start, &stop, step);
+  ASSERT_EQ(new_length, 0);
+  ASSERT_EQ(start, 0);
+  ASSERT_EQ(stop, 4);
+}
+
 TEST(ModulesTest, TestCreate) {
   Runtime runtime;
   HandleScope scope;

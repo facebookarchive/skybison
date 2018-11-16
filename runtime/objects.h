@@ -754,6 +754,10 @@ class Slice : public HeapObject {
   inline Object* step();
   inline void setStep(Object* value);
 
+  // Takes in the length of a list and the start, stop, and step values
+  // Returns the length of the new list and the corrected start and stop values
+  static word adjustIndices(word length, word* start, word* stop, word step);
+
   // Casting.
   static inline Slice* cast(Object* object);
 

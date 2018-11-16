@@ -68,4 +68,37 @@ char* LargeString::toCString() {
   return reinterpret_cast<char*>(result);
 }
 
+word Slice::adjustIndices(word length, word* start, word* stop, word step) {
+  CHECK(step != 0, "Step should be non zero");
+
+  if (*start < 0) {
+    *start += length;
+    if (*start < 0) {
+      *start = (step < 0) ? -1 : 0;
+    }
+  } else if (*start >= length) {
+    *start = (step < 0) ? length - 1 : length;
+  }
+
+  if (*stop < 0) {
+    *stop += length;
+    if (*stop < 0) {
+      *stop = (step < 0) ? -1 : 0;
+    }
+  } else if (*stop >= length) {
+    *stop = (step < 0) ? length - 1 : length;
+  }
+
+  if (step < 0) {
+    if (*stop < *start) {
+      return (*start - *stop - 1) / (-step) + 1;
+    }
+  } else {
+    if (*start < *stop) {
+      return (*stop - *start - 1) / step + 1;
+    }
+  }
+  return 0;
+}
+
 } // namespace python
