@@ -115,6 +115,7 @@ class Runtime;
   V(Function, "function")                                                      \
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
+  V(Hasattr, "hasattr")                                                        \
   V(Insert, "insert")                                                          \
   V(Int, "int")                                                                \
   V(IsInstance, "isinstance")                                                  \

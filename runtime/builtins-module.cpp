@@ -448,4 +448,26 @@ Object* builtinGetattr(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
+Object* builtinHasattr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("hasattr expected 2 arguments.");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> name(&scope, args.get(1));
+  if (!name->isString()) {
+    return thread->throwTypeErrorFromCString(
+        "hasattr(): attribute name must be string.");
+  }
+  Handle<Object> result(&scope,
+                        thread->runtime()->attributeAt(thread, self, name));
+  if (result->isError()) {
+    // TODO(T32775277) Implement PyErr_ExceptionMatches
+    thread->clearPendingException();
+    return Bool::falseObj();
+  }
+  return Bool::trueObj();
+}
+
 }  // namespace python

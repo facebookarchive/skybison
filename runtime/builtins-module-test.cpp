@@ -272,4 +272,21 @@ getattr(Foo, 'foo')
   EXPECT_DEATH(runtime.runFromCString(src), "missing attribute");
 }
 
+TEST(BuiltinsModuleTest, BuiltInHasAttr) {
+  const char* src = R"(
+class Foo:
+  bar = 1
+a = hasattr(Foo, 'foo')
+b = hasattr(Foo, 'bar')
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_EQ(*a, Bool::falseObj());
+  EXPECT_EQ(*b, Bool::trueObj());
+}
+
 }  // namespace python
