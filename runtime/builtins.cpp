@@ -5,6 +5,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
+#include "mro.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
@@ -68,15 +69,14 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   result->setName(*name);
   result->setDictionary(*dictionary);
 
-  // TODO: actually compute the class hierarchy.  Until we do, nargs should be
-  // equal to the number of classes we need in the MRO.  This MRO should also
-  // be correct if all of the classes inherit directly from object.
-  Handle<ObjectArray> mro(&scope, runtime->newObjectArray(nargs));
-  mro->atPut(0, *result);
-  for (word i = 1, j = 2; j < nargs; i++, j++) {
-    mro->atPut(i, args.get(j));
+  Handle<ObjectArray> parents(&scope, runtime->newObjectArray(nargs - 2));
+  for (word i = 0, j = 2; j < nargs; i++, j++) {
+    parents->atPut(i, args.get(j));
   }
-  mro->atPut(mro->length() - 1, runtime->classAt(ClassId::kObject));
+  Handle<Object> mro(&scope, computeMro(thread, result, parents));
+  if (mro->isError()) {
+    return *mro;
+  }
   result->setMro(*mro);
   result->setInstanceSize(runtime->computeInstanceSize(result));
 

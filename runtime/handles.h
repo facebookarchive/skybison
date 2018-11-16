@@ -127,6 +127,18 @@ class Handle : public ObjectHandle {
     return reinterpret_cast<T*>(pointer_);
   }
 
+  // Note that Handle<T>::operator= takes a raw pointer, not a handle, so
+  // to assign handles, one writes: `lhandle = *rhandle;`. (This is to avoid
+  // confusion about which HandleScope tracks lhandle after the assignment.)
+  template <typename S>
+  Handle<T>& operator=(S* other) {
+    static_assert(
+        std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
+        "Only up- and down-casts are permitted.");
+    pointer_ = T::cast(other);
+    return *this;
+  }
+
   template <typename S>
   Handle(const Handle<S>& other) : ObjectHandle(scope(other), T::cast(*other)) {
     static_assert(

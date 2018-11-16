@@ -47,6 +47,8 @@ add_library(
   runtime/interpreter.h
   runtime/marshal.cpp
   runtime/marshal.h
+  runtime/mro.cpp
+  runtime/mro.h
   runtime/objects.cpp
   runtime/objects.h
   runtime/os.cpp

@@ -206,8 +206,8 @@ TEST(ThreadTest, ManipulateValueStack) {
   word values[] = {3333, 2222, 1111};
   for (int i = 0; i < 3; i++) {
     Object* object = frame->peek(i);
-    ASSERT_TRUE(object->isSmallInteger())
-        << "Value at stack depth " << i << " is not an integer";
+    ASSERT_TRUE(object->isSmallInteger()) << "Value at stack depth " << i
+                                          << " is not an integer";
     EXPECT_EQ(SmallInteger::cast(object)->value(), values[i])
         << "Incorrect value at stack depth " << i;
   }
@@ -903,6 +903,16 @@ TEST(ThreadTest, UnaryNot) {
   EXPECT_TRUE(Boolean::cast(result)->value());
 }
 
+static Dictionary* getMainModuleDict(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Module> mod(&scope, runtime->findModule("__main__"));
+  EXPECT_TRUE(mod->isModule());
+
+  Handle<Dictionary> dict(&scope, mod->dictionary());
+  EXPECT_TRUE(dict->isDictionary());
+  return *dict;
+}
+
 TEST(ThreadTest, LoadBuildClassEmptyClass) {
   Runtime runtime;
   HandleScope scope;
@@ -928,11 +938,7 @@ TEST(ThreadTest, LoadBuildClassEmptyClass) {
   Object* result = runtime.run(buffer);
   ASSERT_EQ(result, None::object()); // returns None
 
-  Handle<Module> mod(&scope, runtime.findModule("__main__"));
-  ASSERT_TRUE(mod->isModule());
-
-  Handle<Dictionary> dict(&scope, mod->dictionary());
-  ASSERT_TRUE(dict->isDictionary());
+  Handle<Dictionary> dict(&scope, getMainModuleDict(&runtime));
 
   Handle<Object> key(&scope, runtime.newStringFromCString("C"));
   Handle<Object> value(&scope, None::object());
@@ -1052,6 +1058,123 @@ TEST(ThreadTest, NativeExceptions) {
   ASSERT_DEATH(
       Thread::currentThread()->run(*code),
       "aborting due to pending exception: test exception");
+}
+
+// MRO tests
+
+static String* className(Object* obj) {
+  HandleScope scope;
+  Handle<Class> cls(&scope, Class::cast(obj));
+  Handle<String> name(&scope, String::cast(cls->name()));
+  return *name;
+}
+
+static Object*
+getMro(Runtime* runtime, const char* src, const char* desired_class) {
+  HandleScope scope;
+
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  Handle<Object> result(&scope, runtime->run(buffer.get()));
+
+  Handle<Dictionary> mod_dict(&scope, getMainModuleDict(runtime));
+  Handle<Object> class_name(
+      &scope, runtime->newStringFromCString(desired_class));
+
+  Handle<Object> value(&scope, None::object());
+  runtime->dictionaryAt(mod_dict, class_name, value.pointer());
+  Handle<Class> cls(&scope, ValueCell::cast(*value)->value());
+
+  return cls->mro();
+}
+
+TEST(ThreadTest, LoadBuildClassVerifyMro) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class A: pass
+class B: pass
+class C(A,B): pass
+)";
+
+  Handle<ObjectArray> mro(&scope, getMro(&runtime, src, "C"));
+  EXPECT_EQ(mro->length(), 4);
+  EXPECT_PYSTRING_EQ(className(mro->at(0)), "C");
+  EXPECT_PYSTRING_EQ(className(mro->at(1)), "A");
+  EXPECT_PYSTRING_EQ(className(mro->at(2)), "B");
+  EXPECT_PYSTRING_EQ(className(mro->at(3)), "object");
+}
+
+TEST(ThreadTest, LoadBuildClassVerifyMroInheritance) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class A: pass
+class B(A): pass
+class C(B): pass
+)";
+
+  Handle<ObjectArray> mro(&scope, getMro(&runtime, src, "C"));
+  EXPECT_EQ(mro->length(), 4);
+  EXPECT_PYSTRING_EQ(className(mro->at(0)), "C");
+  EXPECT_PYSTRING_EQ(className(mro->at(1)), "B");
+  EXPECT_PYSTRING_EQ(className(mro->at(2)), "A");
+  EXPECT_PYSTRING_EQ(className(mro->at(3)), "object");
+}
+
+TEST(ThreadTest, LoadBuildClassVerifyMroMultiInheritance) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class A: pass
+class B(A): pass
+class C: pass
+class D(B,C): pass
+)";
+
+  Handle<ObjectArray> mro(&scope, getMro(&runtime, src, "D"));
+  EXPECT_EQ(mro->length(), 5);
+  EXPECT_PYSTRING_EQ(className(mro->at(0)), "D");
+  EXPECT_PYSTRING_EQ(className(mro->at(1)), "B");
+  EXPECT_PYSTRING_EQ(className(mro->at(2)), "A");
+  EXPECT_PYSTRING_EQ(className(mro->at(3)), "C");
+  EXPECT_PYSTRING_EQ(className(mro->at(4)), "object");
+}
+
+TEST(ThreadTest, LoadBuildClassVerifyMroDiamond) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class A: pass
+class B(A): pass
+class C(A): pass
+class D(B,C): pass
+)";
+
+  Handle<ObjectArray> mro(&scope, getMro(&runtime, src, "D"));
+  EXPECT_EQ(mro->length(), 5);
+  EXPECT_PYSTRING_EQ(className(mro->at(0)), "D");
+  EXPECT_PYSTRING_EQ(className(mro->at(1)), "B");
+  EXPECT_PYSTRING_EQ(className(mro->at(2)), "C");
+  EXPECT_PYSTRING_EQ(className(mro->at(3)), "A");
+  EXPECT_PYSTRING_EQ(className(mro->at(4)), "object");
+}
+
+TEST(ThreadTest, LoadBuildClassVerifyMroError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+class A: pass
+class B(A): pass
+class C(A, B): pass
+)";
+
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  EXPECT_DEATH(runtime.run(buffer.get()), "consistent method resolution order");
 }
 
 } // namespace python
