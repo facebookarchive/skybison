@@ -49,11 +49,6 @@ class HandleScope {
     handles_->push(this);
   }
 
-  // TODO: only for tests.
-  explicit HandleScope(Handles* handles) : list_(nullptr), handles_(handles) {
-    handles_->push(this);
-  }
-
   explicit HandleScope(Thread* thread)
       : list_(nullptr), handles_(thread->handles()) {
     handles_->push(this);
@@ -72,6 +67,10 @@ class HandleScope {
   }
 
  private:
+  explicit HandleScope(Handles* handles) : list_(nullptr), handles_(handles) {
+    handles_->push(this);
+  }
+
   ObjectHandle* list() { return list_; }
 
   ObjectHandle* list_;
@@ -79,6 +78,16 @@ class HandleScope {
 
   friend class Handles;
   friend class ObjectHandle;
+
+  // TODO(jeethu): use FRIEND_TEST
+  friend class HandlesTest_UpCastTest_Test;
+  friend class HandlesTest_DownCastTest_Test;
+  friend class HandlesTest_IllegalCastRunTimeTest_Test;
+  friend class HandlesTest_VisitEmptyScope_Test;
+  friend class HandlesTest_VisitOneHandle_Test;
+  friend class HandlesTest_VisitTwoHandles_Test;
+  friend class HandlesTest_VisitObjectInNestedScope_Test;
+  friend class HandlesTest_NestedScopes_Test;
 
   DISALLOW_COPY_AND_ASSIGN(HandleScope);
 };

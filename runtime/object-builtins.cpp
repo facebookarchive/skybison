@@ -22,7 +22,7 @@ Object* builtinObjectNew(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString(
         "object.__new__() takes no arguments");
   }
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Class> klass(&scope, args.get(0));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   return thread->runtime()->newInstance(layout);

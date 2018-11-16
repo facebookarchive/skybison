@@ -2491,7 +2491,7 @@ void Runtime::setInstanceDelegate(const Handle<Object>& instance,
 
 Object* Runtime::instanceAt(Thread* thread, const Handle<HeapObject>& instance,
                             const Handle<Object>& name) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   // Figure out where the attribute lives in the instance
   Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
@@ -2517,7 +2517,7 @@ Object* Runtime::instanceAtPut(Thread* thread,
                                const Handle<HeapObject>& instance,
                                const Handle<Object>& name,
                                const Handle<Object>& value) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   // If the attribute doesn't exist we'll need to transition the layout
   bool has_new_layout_id = false;
@@ -2577,7 +2577,7 @@ void Runtime::layoutAddEdge(const Handle<List>& edges,
 bool Runtime::layoutFindAttribute(Thread* thread, const Handle<Layout>& layout,
                                   const Handle<Object>& name,
                                   AttributeInfo* info) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> iname(&scope, internString(name));
 
   // Check in-object attributes
@@ -2605,7 +2605,7 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Handle<Layout>& layout,
 
 Object* Runtime::layoutCreateChild(Thread* thread,
                                    const Handle<Layout>& layout) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Layout> new_layout(&scope, newLayout());
   std::memcpy(reinterpret_cast<byte*>(new_layout->address()),
               reinterpret_cast<byte*>(layout->address()), Layout::kSize);
@@ -2632,7 +2632,7 @@ Object* Runtime::layoutAddAttributeEntry(Thread* thread,
 Object* Runtime::layoutAddAttribute(Thread* thread,
                                     const Handle<Layout>& layout,
                                     const Handle<Object>& name, word flags) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> iname(&scope, internString(name));
 
   // Check if a edge for the attribute addition already exists
@@ -2667,7 +2667,7 @@ Object* Runtime::layoutAddAttribute(Thread* thread,
 Object* Runtime::layoutDeleteAttribute(Thread* thread,
                                        const Handle<Layout>& layout,
                                        const Handle<Object>& name) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   // See if the attribute exists
   AttributeInfo info;
@@ -2786,7 +2786,7 @@ Object* Runtime::superGetAttr(Thread* thread, const Handle<Object>& receiver,
 
 Object* Runtime::newExtensionInstance(ApiHandle* handle) {
   Thread* thread = Thread::currentThread();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   // Get type class
   Handle<Dictionary> extensions_dict(&scope, extensionTypes());

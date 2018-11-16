@@ -108,7 +108,7 @@ Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
     return SmallString::fromBytes(View<byte>(buffer, new_len));
   }
 
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<LargeString> result(
       &scope, thread->runtime()->heap()->createLargeString(new_len));
   word offset = LargeString::kDataOffset;
@@ -125,7 +125,7 @@ Object* Interpreter::callDescriptorGet(Thread* thread, Frame* caller,
                                        const Handle<Object>& descriptor,
                                        const Handle<Object>& receiver,
                                        const Handle<Object>& receiver_type) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Object> selector(&scope, runtime->symbols()->DunderGet());
   Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
@@ -140,7 +140,7 @@ Object* Interpreter::callDescriptorSet(python::Thread* thread, Frame* caller,
                                        const Handle<Object>& descriptor,
                                        const Handle<Object>& receiver,
                                        const Handle<Object>& value) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Object> selector(&scope, runtime->symbols()->DunderSet());
   Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
@@ -153,7 +153,7 @@ Object* Interpreter::callDescriptorSet(python::Thread* thread, Frame* caller,
 Object* Interpreter::lookupMethod(Thread* thread, Frame* caller,
                                   const Handle<Object>& receiver,
                                   SymbolId selector) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Class> type(&scope, runtime->classOf(*receiver));
   Handle<Object> symbol(&scope, runtime->symbols()->at(selector));
@@ -234,7 +234,7 @@ Object* Interpreter::callMethod4(Thread* thread, Frame* caller,
 Object* Interpreter::unaryOperation(Thread* thread, Frame* caller,
                                     const Handle<Object>& self,
                                     SymbolId selector) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
   CHECK(!method->isError(), "unknown unary operation");
   return callMethod1(thread, caller, method, self);
@@ -243,7 +243,7 @@ Object* Interpreter::unaryOperation(Thread* thread, Frame* caller,
 Object* Interpreter::binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
                                      const Handle<Object>& self,
                                      const Handle<Object>& other) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
   Handle<Class> self_type(&scope, runtime->classOf(*self));
@@ -295,7 +295,7 @@ Object* Interpreter::binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
 Object* Interpreter::inplaceOperation(Thread* thread, Frame* caller,
                                       BinaryOp op, const Handle<Object>& self,
                                       const Handle<Object>& other) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   SymbolId selector = runtime->inplaceOperationSelector(op);
   Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
@@ -311,7 +311,7 @@ Object* Interpreter::inplaceOperation(Thread* thread, Frame* caller,
 Object* Interpreter::compareOperation(Thread* thread, Frame* caller,
                                       CompareOp op, const Handle<Object>& left,
                                       const Handle<Object>& right) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
   Handle<Class> left_type(&scope, runtime->classOf(*left));
@@ -378,7 +378,7 @@ Object* Interpreter::sequenceContains(Thread* thread, Frame* caller,
 }
 
 Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> self(&scope, caller->topValue());
   Handle<Object> method(
       &scope, lookupMethod(thread, caller, self, SymbolId::kDunderBool));
@@ -470,7 +470,7 @@ void Interpreter::doNop(Context*, word) {}
 // opcode 10
 void Interpreter::doUnaryPositive(Context* ctx, word) {
   Thread* thread = ctx->thread;
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> receiver(&scope, ctx->frame->topValue());
   Object* result =
       unaryOperation(thread, ctx->frame, receiver, SymbolId::kDunderPos);
@@ -480,7 +480,7 @@ void Interpreter::doUnaryPositive(Context* ctx, word) {
 // opcode 11
 void Interpreter::doUnaryNegative(Context* ctx, word) {
   Thread* thread = ctx->thread;
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> receiver(&scope, ctx->frame->topValue());
   Object* result =
       unaryOperation(thread, ctx->frame, receiver, SymbolId::kDunderNeg);
@@ -499,7 +499,7 @@ void Interpreter::doUnaryNot(Context* ctx, word) {
 // opcode 15
 void Interpreter::doUnaryInvert(Context* ctx, word) {
   Thread* thread = ctx->thread;
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> receiver(&scope, ctx->frame->topValue());
   Object* result =
       unaryOperation(thread, ctx->frame, receiver, SymbolId::kDunderInvert);
@@ -559,7 +559,7 @@ void Interpreter::doBinaryModulo(Context* ctx, word) {
 // opcode 23
 void Interpreter::doBinaryAdd(Context* ctx, word) {
   Thread* thread = ctx->thread;
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> other(&scope, ctx->frame->popValue());
   Handle<Object> self(&scope, ctx->frame->popValue());
   Object* result =
@@ -570,7 +570,7 @@ void Interpreter::doBinaryAdd(Context* ctx, word) {
 // opcode 24
 void Interpreter::doBinarySubtract(Context* ctx, word) {
   Thread* thread = ctx->thread;
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> other(&scope, ctx->frame->popValue());
   Handle<Object> self(&scope, ctx->frame->popValue());
   Object* result =
@@ -661,7 +661,7 @@ void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
 // opcode 56
 void Interpreter::doInplaceSubtract(Context* ctx, word) {
   Thread* thread = ctx->thread;
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> other(&scope, ctx->frame->popValue());
   Handle<Object> self(&scope, ctx->frame->popValue());
   Object* result =
@@ -695,7 +695,7 @@ void Interpreter::doBinaryXor(Context* ctx, word) {
 // opcode 68
 void Interpreter::doGetIter(Context* ctx, word) {
   Thread* thread = ctx->thread;
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> iterable(&scope, ctx->frame->topValue());
   ctx->frame->setTopValue(thread->runtime()->getIter(iterable));
 }

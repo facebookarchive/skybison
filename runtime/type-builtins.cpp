@@ -10,7 +10,7 @@
 namespace python {
 
 Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Arguments args(frame, nargs);
 
   Runtime* runtime = thread->runtime();

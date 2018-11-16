@@ -5,6 +5,7 @@
 
 #include "handles.h"
 #include "objects.h"
+#include "runtime.h"
 #include "visitor.h"
 
 namespace python {
@@ -221,10 +222,19 @@ TEST(HandlesTest, NestedScopes) {
 }
 
 // Benchmarks
+class HandleBenchmark : public benchmark::Fixture {
+ public:
+  void SetUp(benchmark::State&) { runtime_ = new Runtime; }
 
-static void BM_HandleCreationDestruction(benchmark::State& state) {
+  void TearDown(benchmark::State&) { delete runtime_; }
+
+ private:
+  Runtime* runtime_;
+};
+
+BENCHMARK_F(HandleBenchmark, CreationDestruction)(benchmark::State& state) {
   Handles handles;
-  HandleScope scope(&handles);
+  HandleScope scope(Thread::currentThread());
 
   auto o1 = reinterpret_cast<Object*>(0xFEEDFACE);
 
@@ -232,7 +242,6 @@ static void BM_HandleCreationDestruction(benchmark::State& state) {
     Handle<Object> h1(&scope, o1);
   }
 }
-BENCHMARK(BM_HandleCreationDestruction);
 
 class NothingVisitor : public PointerVisitor {
  public:
@@ -241,9 +250,9 @@ class NothingVisitor : public PointerVisitor {
   int visit_count = 0;
 };
 
-static void BM_Visit(benchmark::State& state) {
+BENCHMARK_F(HandleBenchmark, Visit)(benchmark::State& state) {
   Handles handles;
-  HandleScope scope(&handles);
+  HandleScope scope(Thread::currentThread());
 
   Handle<Object> h1(&scope, reinterpret_cast<Object*>(0xFEEDFACE));
   Handle<Object> h2(&scope, reinterpret_cast<Object*>(0xFEEDFACF));
@@ -260,6 +269,5 @@ static void BM_Visit(benchmark::State& state) {
     handles.visitPointers(&visitor);
   }
 }
-BENCHMARK(BM_Visit);
 
 }  // namespace python

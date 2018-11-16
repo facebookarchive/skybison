@@ -190,7 +190,7 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
 
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   // Create a new class for the PyTypeObject
   Handle<Class> type_class(&scope, runtime->newClass());

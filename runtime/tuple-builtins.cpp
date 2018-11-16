@@ -15,7 +15,7 @@ Object* builtinTupleEq(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   if (args.get(0)->isObjectArray() && args.get(1)->isObjectArray()) {
-    HandleScope scope(thread->handles());
+    HandleScope scope(thread);
     Handle<ObjectArray> self(&scope, args.get(0));
     Handle<ObjectArray> other(&scope, args.get(1));
     if (self->length() != other->length()) {

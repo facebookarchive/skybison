@@ -81,7 +81,7 @@ extern "C" PyObject* PyList_New(Py_ssize_t size) {
 
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   Handle<List> list(&scope, runtime->newList());
   Handle<ObjectArray> items(&scope, runtime->newObjectArray(size));

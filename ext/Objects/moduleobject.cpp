@@ -77,7 +77,7 @@ extern "C" PyTypeObject* PyModule_Type_Ptr() {
 extern "C" PyObject* PyModule_Create2(struct PyModuleDef* pymodule, int) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   const char* c_name = pymodule->m_name;
   Handle<Object> name(&scope, runtime->newStringFromCString(c_name));
@@ -96,7 +96,7 @@ extern "C" PyObject* PyModule_Create2(struct PyModuleDef* pymodule, int) {
 extern "C" PyObject* PyModule_GetDict(PyObject* pymodule) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   Handle<Module> module(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
   return runtime->asApiHandle(module->dictionary())->asPyObject();

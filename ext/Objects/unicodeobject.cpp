@@ -77,7 +77,7 @@ extern "C" PyTypeObject* PyUnicode_Type_Ptr() {
 extern "C" PyObject* PyUnicode_FromString(const char* c_string) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   Handle<Object> value(&scope, runtime->newStringFromCString(c_string));
   return runtime->asApiHandle(*value)->asPyObject();
@@ -86,7 +86,7 @@ extern "C" PyObject* PyUnicode_FromString(const char* c_string) {
 extern "C" PyObject* _PyUnicode_FromId(_Py_Identifier* id) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   Handle<Object> result(&scope, runtime->internStringFromCString(id->string));
   return runtime->asApiHandle(*result)->asPyObject();
@@ -95,7 +95,7 @@ extern "C" PyObject* _PyUnicode_FromId(_Py_Identifier* id) {
 extern "C" char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,
                                          Py_ssize_t* size) {
   Thread* thread = Thread::currentThread();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   if (pyunicode == nullptr) {
     PyErr_BadArgument();

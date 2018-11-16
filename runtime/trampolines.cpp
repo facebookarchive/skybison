@@ -76,7 +76,7 @@ static inline Object* callCheckFreeCell(Thread* thread, Function* function,
 // CALL_FUNCTION - correct number of arguments passed by position with no
 // cell or free vars. If not, we bail out to a more general routine.
 Object* interpreterTrampoline(Thread* thread, Frame* caller_frame, word argc) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Function> function(&scope, caller_frame->function(argc));
   Handle<Code> code(&scope, function->code());
   // Are we one of the less common cases?
@@ -96,7 +96,7 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
                                       Code* code, Frame* caller_frame,
                                       word argc) {
   uword flags = code->flags();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> tmp_varargs(&scope, None::object());
   if (argc < code->argcount() && function->hasDefaults()) {
     // Add default positional args
@@ -284,7 +284,7 @@ Object* checkArgs(Function* function, Object** kw_arg_base,
 // values in left-to-right order.
 Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
                                 word argc) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   // Destructively pop the tuple of kwarg names
   Handle<ObjectArray> keywords(&scope, caller_frame->topValue());
   caller_frame->popValue();
@@ -411,7 +411,7 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
 }
 
 Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word arg) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> kw_dict(&scope, None::object());
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
     kw_dict = caller_frame->topValue();
@@ -443,7 +443,7 @@ typedef PyObject* (*PyCFunction)(PyObject*, PyObject*, PyObject*);
 
 Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   // Set the address pointer to the function pointer
   Handle<Function> function(&scope, caller_frame->function(argc));

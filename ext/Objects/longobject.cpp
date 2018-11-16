@@ -77,7 +77,7 @@ extern "C" PyTypeObject* PyLong_Type_Ptr() {
 extern "C" PyObject* PyLong_FromLong(long ival) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   word val = reinterpret_cast<word>(ival);
   Handle<Object> value(&scope, runtime->newInteger(val));

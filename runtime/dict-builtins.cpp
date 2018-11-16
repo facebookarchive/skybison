@@ -15,7 +15,7 @@ Object* builtinDictionaryEq(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   if (args.get(0)->isDictionary() && args.get(1)->isDictionary()) {
-    HandleScope scope(thread->handles());
+    HandleScope scope(thread);
     Runtime* runtime = thread->runtime();
 
     Handle<Dictionary> self(&scope, args.get(0));

@@ -78,7 +78,7 @@ extern "C" int PyDict_SetItem(PyObject* pydict, PyObject* key,
                               PyObject* value) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   Handle<Object> dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   if (!dictobj->isDictionary()) {
@@ -98,7 +98,7 @@ extern "C" int PyDict_SetItemString(PyObject* pydict, const char* key,
                                     PyObject* value) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   Handle<Object> keyobj(&scope, runtime->newStringFromCString(key));
   return PyDict_SetItem(pydict, runtime->asApiHandle(*keyobj)->asPyObject(),
@@ -108,7 +108,7 @@ extern "C" int PyDict_SetItemString(PyObject* pydict, const char* key,
 extern "C" PyObject* PyDict_New(void) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   Handle<Object> value(&scope, runtime->newDictionary());
   return runtime->asApiHandle(*value)->asPyObject();
@@ -117,7 +117,7 @@ extern "C" PyObject* PyDict_New(void) {
 extern "C" PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   Handle<Object> dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   if (!dictobj->isDictionary()) {

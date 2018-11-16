@@ -16,7 +16,7 @@ Object* builtinListNew(Thread* thread, Frame* frame, word nargs) {
   if (!args.get(0)->isClass()) {
     return thread->throwTypeErrorFromCString("not a type object");
   }
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Class> type(&scope, args.get(0));
   Handle<Layout> layout(&scope, type->instanceLayout());
   if (layout->id() == LayoutId::kList) {
