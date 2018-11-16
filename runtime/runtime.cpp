@@ -1086,6 +1086,9 @@ void Runtime::initializeStrClass() {
   classAddBuiltinFunction(type, SymbolId::kDunderLe,
                           nativeTrampoline<builtinStringLe>);
 
+  classAddBuiltinFunction(type, SymbolId::kDunderLen,
+                          nativeTrampoline<builtinStringLen>);
+
   classAddBuiltinFunction(type, SymbolId::kDunderLt,
                           nativeTrampoline<builtinStringLt>);
 

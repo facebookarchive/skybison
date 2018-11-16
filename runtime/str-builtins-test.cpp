@@ -196,6 +196,51 @@ d = a.__add__(b)
   EXPECT_PYSTRING_EQ(*d, "helloworld");
 }
 
+TEST(StrBuiltinsTest, StringLen) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+l1 = len("aloha")
+l2 = str.__len__("aloha")
+l3 = "aloha".__len__()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<SmallInt> l1(&scope, moduleAt(&runtime, main, "l1"));
+  EXPECT_EQ(5, l1->value());
+  Handle<SmallInt> l2(&scope, moduleAt(&runtime, main, "l2"));
+  EXPECT_EQ(5, l2->value());
+  Handle<SmallInt> l3(&scope, moduleAt(&runtime, main, "l3"));
+  EXPECT_EQ(5, l3->value());
+}
+
+TEST(StrBuiltinsTest, StringLenWithEmptyString) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+l = len("")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<SmallInt> l(&scope, moduleAt(&runtime, main, "l"));
+  EXPECT_EQ(0, l->value());
+}
+
+TEST(StrBuiltinsDeathTest, StringLenWithInt) {
+  Runtime runtime;
+  const char* code = R"(
+l = str.__len__(3)
+)";
+  EXPECT_DEATH(runtime.runFromCString(code),
+               "descriptor '__len__' requires a 'str' object");
+}
+
+TEST(StrBuiltinsDeathTest, StringLenWithExtraArgument) {
+  Runtime runtime;
+  const char* code = R"(
+l = "aloha".__len__("arg")
+)";
+  EXPECT_DEATH(runtime.runFromCString(code), "expected 0 arguments");
+}
+
 TEST(StrBuiltinsTest, StringFormat) {
   Runtime runtime;
   HandleScope scope;

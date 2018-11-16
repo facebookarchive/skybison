@@ -95,6 +95,22 @@ Object* builtinStringLe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinStringLen(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("expected 0 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (self->isString()) {
+    // TODO(T33085486): __len__ for unicode should return number of code points,
+    // not bytes
+    return SmallInt::fromWord(String::cast(*self)->length());
+  }
+  return thread->throwTypeErrorFromCString(
+      "descriptor '__len__' requires a 'str' object");
+}
+
 Object* builtinStringLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
