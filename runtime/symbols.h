@@ -24,6 +24,7 @@ class Runtime;
   V(Chr, "chr")                          \
   V(Classmethod, "classmethod")          \
   V(Insert, "insert")                    \
+  V(Int, "int")                          \
   V(Dict, "dict")                        \
   V(Exit, "exit")                        \
   V(IsInstance, "isinstance")            \

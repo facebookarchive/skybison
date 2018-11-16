@@ -87,6 +87,9 @@ class Runtime {
 
   Object* stringConcat(const Handle<String>& a, const Handle<String>& b);
 
+  // For built-in int() impl, but can be used when the need to convert arise
+  Object* stringToInt(Thread* thread, const Handle<Object>& str);
+
   Object* newValueCell();
 
   Object* newWeakRef();

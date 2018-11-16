@@ -672,6 +672,38 @@ TEST(RuntimeTest, StringConcat) {
   EXPECT_TRUE(concat31->isLargeString());
 }
 
+TEST(RuntimeTest, StringToIntDPos) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<Object> strD0(&scope, runtime.newStringFromCString("0"));
+  Handle<SmallInteger> intD0(&scope, runtime.stringToInt(thread, strD0));
+  EXPECT_EQ(intD0->value(), 0);
+
+  Handle<Object> strD123(&scope, runtime.newStringFromCString("123"));
+  Handle<SmallInteger> intD123(&scope, runtime.stringToInt(thread, strD123));
+  EXPECT_EQ(intD123->value(), 123);
+
+  Handle<Object> strD987n(&scope, runtime.newStringFromCString("-987"));
+  Handle<SmallInteger> intD987n(&scope, runtime.stringToInt(thread, strD987n));
+  EXPECT_EQ(intD987n->value(), -987);
+}
+
+TEST(RuntimeTest, StringToIntDNeg) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  Handle<Object> str1(&scope, runtime.newStringFromCString(""));
+  Handle<Object> res1(&scope, runtime.stringToInt(thread, str1));
+  EXPECT_TRUE(res1->isError());
+
+  Handle<Object> str2(&scope, runtime.newStringFromCString("12ab"));
+  Handle<Object> res2(&scope, runtime.stringToInt(thread, str2));
+  EXPECT_TRUE(res2->isError());
+}
+
 struct LookupNameInMroData {
   const char* test_name;
   const char* name;

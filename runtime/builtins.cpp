@@ -1,6 +1,5 @@
 #include "builtins.h"
 
-#include <cstdlib>
 #include <iostream>
 
 #include "frame.h"
@@ -286,6 +285,16 @@ Object* builtinChr(Thread* thread, Frame* callerFrame, word nargs) {
   word w = SmallInteger::cast(arg)->value();
   const char s[2]{static_cast<char>(w), 0};
   return SmallString::fromCString(s);
+}
+
+Object* builtinInt(Thread* thread, Frame* callerFrame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString(
+        "int() takes exactly 1 argument"); // TODO(rkng): base (kw/optional)
+  }
+  HandleScope scope(thread);
+  Handle<Object> arg(&scope, *callerFrame->valueStackTop());
+  return thread->runtime()->stringToInt(thread, arg);
 }
 
 Object* builtinLen(Thread* thread, Frame* callerFrame, word nargs) {

@@ -23,6 +23,7 @@ Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs);
 Object* builtinPrint(Thread* thread, Frame* frame, word nargs);
 Object* builtinOrd(Thread* thread, Frame* frame, word nargs);
 Object* builtinChr(Thread* thread, Frame* frame, word nargs);
+Object* builtinInt(Thread* thread, Frame* frame, word nargs);
 Object* builtinLen(Thread* thread, Frame* frame, word nargs);
 
 // CALL_FUNCTION_KW entry pointer for print()
