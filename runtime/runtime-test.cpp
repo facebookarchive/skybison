@@ -40,6 +40,24 @@ TEST(RuntimeTest, BuiltinsModuleExists) {
   ASSERT_TRUE(runtime.dictAt(modules, name)->isModule());
 }
 
+// Return the raw name of a builtin LayoutId, or "<invalid>" for user-defined or
+// invalid LayoutIds.
+static const char* layoutIdName(LayoutId id) {
+  switch (id) {
+    case LayoutId::kError:
+      // Special-case the one type that isn't really a class so we don't have to
+      // have it in INTRINSIC_CLASS_NAMES.
+      return "Error";
+
+#define CASE(name)                                                             \
+  case LayoutId::k##name:                                                      \
+    return #name;
+      INTRINSIC_CLASS_NAMES(CASE)
+#undef CASE
+  }
+  return "<invalid>";
+}
+
 class BuiltinClassIdsTest : public ::testing::TestWithParam<LayoutId> {};
 
 // Make sure that each built-in class has a class object.  Check that its class
@@ -48,7 +66,10 @@ TEST_P(BuiltinClassIdsTest, HasClassObject) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Object> elt(&scope, runtime.typeAt(GetParam()));
+  LayoutId id = GetParam();
+  ASSERT_EQ(runtime.layoutAt(id)->layoutId(), LayoutId::kLayout)
+      << "Bad Layout for " << layoutIdName(id);
+  Handle<Object> elt(&scope, runtime.typeAt(id));
   ASSERT_TRUE(elt->isType());
   Handle<Type> cls(&scope, *elt);
   Handle<Layout> layout(&scope, cls->instanceLayout());

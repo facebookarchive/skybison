@@ -1001,6 +1001,9 @@ void Runtime::initializeHeapClasses() {
   initializeRefClass();
   SetBuiltins::initialize(this);
   SetIteratorBuiltins::initialize(this);
+  addEmptyBuiltinClass(SymbolId::kGenerator, LayoutId::kGen, LayoutId::kObject);
+  addEmptyBuiltinClass(SymbolId::kCoroutine, LayoutId::kCoro,
+                       LayoutId::kObject);
   addEmptyBuiltinClass(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
   initializeStaticMethodClass();
   initializeSuperClass();

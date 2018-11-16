@@ -14,37 +14,53 @@ namespace python {
 
 #define INTRINSIC_HEAP_CLASS_NAMES(V)                                          \
   V(Object)                                                                    \
+  V(AttributeError)                                                            \
   V(BaseException)                                                             \
   V(BoundMethod)                                                               \
   V(ByteArray)                                                                 \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
+  V(Complex)                                                                   \
+  V(Coro)                                                                      \
   V(Dict)                                                                      \
-  V(Float)                                                                     \
   V(Ellipsis)                                                                  \
   V(Exception)                                                                 \
+  V(Float)                                                                     \
   V(Function)                                                                  \
+  V(Gen)                                                                       \
   V(ImportError)                                                               \
+  V(IndexError)                                                                \
   V(Int)                                                                       \
+  V(KeyError)                                                                  \
   V(LargeInt)                                                                  \
   V(LargeStr)                                                                  \
   V(Layout)                                                                    \
   V(List)                                                                      \
   V(ListIterator)                                                              \
+  V(LookupError)                                                               \
   V(Module)                                                                    \
+  V(ModuleNotFoundError)                                                       \
+  V(NameError)                                                                 \
+  V(NotImplemented)                                                            \
+  V(NotImplementedError)                                                       \
   V(ObjectArray)                                                               \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
+  V(RuntimeError)                                                              \
   V(Set)                                                                       \
+  V(SetIterator)                                                               \
   V(Slice)                                                                     \
   V(StaticMethod)                                                              \
   V(StopIteration)                                                             \
   V(Str)                                                                       \
+  V(Super)                                                                     \
   V(SystemExit)                                                                \
+  V(TupleIterator)                                                             \
   V(Type)                                                                      \
   V(TypeError)                                                                 \
   V(ValueCell)                                                                 \
+  V(ValueError)                                                                \
   V(WeakRef)
 
 #define INTRINSIC_CLASS_NAMES(V)                                               \

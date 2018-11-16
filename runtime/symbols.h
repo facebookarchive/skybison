@@ -114,6 +114,7 @@ class Runtime;
   V(Classmethod, "classmethod")                                                \
   V(Code, "code")                                                              \
   V(Complex, "complex")                                                        \
+  V(Coroutine, "coroutine")                                                    \
   V(Deleter, "deleter")                                                        \
   V(Dict, "dict")                                                              \
   V(Displayhook, "displayhook")                                                \
@@ -126,6 +127,7 @@ class Runtime;
   V(File, "file")                                                              \
   V(Float, "float")                                                            \
   V(Function, "function")                                                      \
+  V(Generator, "generator")                                                    \
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
   V(Hasattr, "hasattr")                                                        \
