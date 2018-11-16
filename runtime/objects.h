@@ -98,6 +98,7 @@ class Object {
   inline bool isList();
 
   static inline bool equals(Object* lhs, Object* rhs);
+  inline Object* hash();
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
@@ -117,6 +118,7 @@ class SmallInteger : public Object {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   inline word value();
+  inline Object* hash();
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallInteger);
@@ -147,6 +149,7 @@ class Boolean : public Object {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   inline bool value();
+  inline Object* hash();
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Boolean);
@@ -161,6 +164,7 @@ class None : public Object {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   inline static None* object();
+  inline Object* hash();
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(None);
@@ -175,6 +179,7 @@ class Ellipsis : public Object {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   inline static Ellipsis* object();
+  inline Object* hash();
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Ellipsis);
@@ -299,6 +304,7 @@ class String : public Array {
   inline byte charAt(int index);
   inline void setCharAt(int index, byte value);
   inline bool equals(Object* that);
+  Object* hash();
 
   static const int kElementSize = 1;
 
@@ -389,9 +395,11 @@ class Function : public HeapObject {
 class Module : public HeapObject {
  public:
   inline static Module* cast(Object* object);
-  inline Object* name();
   inline static int allocationSize();
-  inline void initialize();
+  inline void initialize(Object* name, Object* dict);
+
+  inline Object* name();
+  inline Object* dictionary();
 
   static const int kNameOffset = HeapObject::kSize;
   static const int kDictionaryOffset = kNameOffset + kPointerSize;
@@ -435,7 +443,7 @@ class Dictionary : public HeapObject {
   //
   // Returns true if the key was found and sets the associated value in value.
   // Returns false otherwise.
-  static bool itemAt(Object* dict, Object* key, word hash, Object** value);
+  static bool itemAt(Object* dict, Object* key, Object* hash, Object** value);
 
   // Associate a value with the supplied key.
   //
@@ -443,7 +451,7 @@ class Dictionary : public HeapObject {
   static void itemAtPut(
       Object* dict,
       Object* key,
-      word hash,
+      Object* hash,
       Object* value,
       Runtime* runtime);
 
@@ -452,7 +460,7 @@ class Dictionary : public HeapObject {
   // Returns true if the key existed and sets the previous value in value.
   // Returns false otherwise.
   static bool
-  itemAtRemove(Object* dict, Object* key, word hash, Object** value);
+  itemAtRemove(Object* dict, Object* key, Object* hash, Object** value);
 
   static const int kBucketHashOffset = 0;
   static const int kBucketKeyOffset = kBucketHashOffset + 1;
@@ -479,7 +487,7 @@ class Dictionary : public HeapObject {
   // index of the bucket that contains the value. If the key is not found, this
   // function returns false and sets bucket to the location where the key would
   // be inserted. If the dictionary is full, it sets bucket to -1.
-  static bool lookup(Dictionary* dict, Object* key, word hash, int* bucket);
+  static bool lookup(Dictionary* dict, Object* key, Object* hash, int* bucket);
   static void grow(Dictionary* dict, Runtime* runtime);
 
   DISALLOW_COPY_AND_ASSIGN(Dictionary);
@@ -620,6 +628,27 @@ bool Object::equals(Object* lhs, Object* rhs) {
   return (lhs == rhs) || (lhs->isString() && String::cast(lhs)->equals(rhs));
 }
 
+Object* Object::hash() {
+  // Until we have proper support for classes and methods so we can dispatch on
+  // __hash__, this is the "dumping ground" for hash related functionality.
+  //
+  // TODO: Need to support hashing of arbitrary objects using their identity
+  // hash code.
+  if (isString()) {
+    return String::cast(this)->hash();
+  } else if (isSmallInteger()) {
+    return SmallInteger::cast(this)->hash();
+  } else if (isBoolean()) {
+    return Boolean::cast(this)->hash();
+  } else if (isNone()) {
+    return None::cast(this)->hash();
+  } else if (isEllipsis()) {
+    return Ellipsis::cast(this)->hash();
+  }
+  assert(0);
+  return None::object();
+}
+
 // SmallInteger
 
 SmallInteger* SmallInteger::cast(Object* object) {
@@ -633,6 +662,10 @@ word SmallInteger::value() {
 
 SmallInteger* SmallInteger::fromWord(word value) {
   return reinterpret_cast<SmallInteger*>(value << kTagSize);
+}
+
+Object* SmallInteger::hash() {
+  return this;
 }
 
 // Header
@@ -662,6 +695,10 @@ None* None::cast(Object* object) {
   return reinterpret_cast<None*>(object);
 }
 
+Object* None::hash() {
+  return SmallInteger::fromWord(reinterpret_cast<word>(this));
+}
+
 // Ellipsis
 
 Ellipsis* Ellipsis::object() {
@@ -671,6 +708,10 @@ Ellipsis* Ellipsis::object() {
 Ellipsis* Ellipsis::cast(Object* object) {
   assert(object->isEllipsis());
   return reinterpret_cast<Ellipsis*>(object);
+}
+
+Object* Ellipsis::hash() {
+  return SmallInteger::fromWord(reinterpret_cast<word>(this));
 }
 
 // Boolean
@@ -687,6 +728,10 @@ Boolean* Boolean::cast(Object* object) {
 
 bool Boolean::value() {
   return (reinterpret_cast<uword>(this) >> kTagSize) ? true : false;
+}
+
+Object* Boolean::hash() {
+  return SmallInteger::fromWord(value());
 }
 
 // HeapObject
@@ -955,12 +1000,17 @@ Module* Module::cast(Object* object) {
   return reinterpret_cast<Module*>(object);
 }
 
-Object* Module::name() {
-  return at(Module::kNameOffset);
+void Module::initialize(Object* name, Object* dict) {
+  atPut(kNameOffset, name);
+  atPut(kDictionaryOffset, dict);
 }
 
-void Module::initialize() {
-  // ???
+Object* Module::name() {
+  return at(kNameOffset);
+}
+
+Object* Module::dictionary() {
+  return at(kDictionaryOffset);
 }
 
 // String

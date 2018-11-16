@@ -11,4 +11,16 @@ TEST(RuntimeTest, CollectGarbage) {
   ASSERT_TRUE(runtime.heap()->verify());
 }
 
+TEST(RuntimeTest, BuiltinsModuleExists) {
+  Runtime runtime;
+  Object* name = runtime.createStringFromCString("builtins");
+  ASSERT_NE(name, nullptr);
+  Object* modules = runtime.modules();
+  ASSERT_TRUE(modules->isDictionary());
+  Object* builtins;
+  bool found = Dictionary::itemAt(modules, name, name->hash(), &builtins);
+  ASSERT_TRUE(found);
+  ASSERT_TRUE(builtins->isModule());
+}
+
 } // namespace python

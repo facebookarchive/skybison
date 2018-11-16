@@ -217,6 +217,16 @@ Object* Heap::createList(Object* list_class, Object* elements) {
   return List::cast(result);
 }
 
+Object* Heap::createModule(Object* module_class, Object* name, Object* dict) {
+  int size = Module::allocationSize();
+  Object* raw = allocate(size);
+  assert(raw != nullptr);
+  Module* result = reinterpret_cast<Module*>(raw);
+  result->setClass(Class::cast(module_class));
+  result->initialize(name, dict);
+  return Module::cast(result);
+}
+
 Object* Heap::createObjectArray(
     Object* object_array_class,
     intptr_t length,

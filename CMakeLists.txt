@@ -50,6 +50,7 @@ add_executable(
   runtime/heap-test.cpp
   runtime/list-test.cpp
   runtime/marshal-test.cpp
+  runtime/objects-test.cpp
   runtime/os-test.cpp
   runtime/runtime-test.cpp
   runtime/space-test.cpp

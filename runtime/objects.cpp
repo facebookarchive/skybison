@@ -2,6 +2,7 @@
 #include "runtime.h"
 
 #include <cassert>
+#include <string>
 
 namespace python {
 
@@ -140,7 +141,7 @@ void Dictionary::setItems(ObjectArray* items) {
 bool Dictionary::itemAt(
     Object* dictObj,
     Object* key,
-    word hash,
+    Object* hash,
     Object** value) {
   Dictionary* dict = Dictionary::cast(dictObj);
   int bucket = -1;
@@ -156,7 +157,7 @@ bool Dictionary::itemAt(
 void Dictionary::itemAtPut(
     Object* dictObj,
     Object* key,
-    word hash,
+    Object* hash,
     Object* value,
     Runtime* runtime) {
   Dictionary* dict = Dictionary::cast(dictObj);
@@ -169,7 +170,7 @@ void Dictionary::itemAtPut(
     assert(bucket != -1);
   }
   DictItem item(dict->items(), bucket);
-  item.set(SmallInteger::fromWord(hash), key, value);
+  item.set(hash, key, value);
   if (!found) {
     dict->setNumItems(dict->numItems() + 1);
   }
@@ -178,7 +179,7 @@ void Dictionary::itemAtPut(
 bool Dictionary::itemAtRemove(
     Object* dictObj,
     Object* key,
-    word hash,
+    Object* hash,
     Object** value) {
   Dictionary* dict = Dictionary::cast(dictObj);
   int bucket = -1;
@@ -192,8 +193,13 @@ bool Dictionary::itemAtRemove(
   return found;
 }
 
-bool Dictionary::lookup(Dictionary* dict, Object* key, word hash, int* bucket) {
-  int startIdx = kPointersPerBucket * (hash & (dict->capacity() - 1));
+bool Dictionary::lookup(
+    Dictionary* dict,
+    Object* key,
+    Object* hash,
+    int* bucket) {
+  word hashVal = SmallInteger::cast(hash)->value();
+  int startIdx = kPointersPerBucket * (hashVal & (dict->capacity() - 1));
   int idx = startIdx;
   int nextFreeBucket = -1;
   ObjectArray* items = dict->items();
@@ -238,12 +244,21 @@ void Dictionary::grow(Dictionary* dict, Runtime* runtime) {
       continue;
     }
     int bucket = -1;
-    word hash = SmallInteger::cast(oldHash)->value();
-    lookup(dict, oldItem.key(), hash, &bucket);
+    lookup(dict, oldItem.key(), oldHash, &bucket);
     assert(bucket != -1);
     DictItem newItem(newItems, bucket);
     newItem.set(oldItem.key(), oldHash, oldItem.value());
   }
+}
+
+// String
+
+Object* String::hash() {
+  // TODO(mpage) - Take the hash algorithm from CPython
+  auto rawStr = reinterpret_cast<char*>(address() + String::kSize);
+  std::string str(reinterpret_cast<char*>(rawStr), length());
+  std::hash<std::string> hashFunc;
+  return SmallInteger::fromWord(hashFunc(str));
 }
 
 } // namespace python

@@ -20,7 +20,7 @@ TEST(DictionaryTest, GetSet) {
   ASSERT_NE(obj, nullptr);
   Dictionary* dict = Dictionary::cast(obj);
   SmallInteger* key = SmallInteger::fromWord(12345);
-  word hash = 12345;
+  SmallInteger* hash = SmallInteger::fromWord(12345);
   Object* retrieved;
 
   // Looking up a key that doesn't exist should fail
@@ -53,7 +53,7 @@ TEST(DictionaryTest, Remove) {
   Dictionary* dict = Dictionary::cast(obj);
   SmallInteger* key = SmallInteger::fromWord(12345);
   Object* retrieved;
-  word hash = 12345;
+  SmallInteger* hash = SmallInteger::fromWord(12345);
 
   // Removing a key that doesn't exist should fail
   bool found = Dictionary::itemAtRemove(dict, key, hash, &retrieved);
@@ -81,7 +81,7 @@ TEST(DictionaryTest, Length) {
   // Add 10 items and make sure length reflects it
   for (int i = 0; i < 10; i++) {
     SmallInteger* key = SmallInteger::fromWord(i);
-    Dictionary::itemAtPut(dict, key, i, key, &runtime);
+    Dictionary::itemAtPut(dict, key, key, key, &runtime);
   }
   EXPECT_EQ(dict->numItems(), 10);
 
@@ -89,7 +89,7 @@ TEST(DictionaryTest, Length) {
   for (int i = 0; i < 5; i++) {
     SmallInteger* key = SmallInteger::fromWord(i);
     Object* retrieved;
-    bool found = Dictionary::itemAtRemove(dict, key, i, &retrieved);
+    bool found = Dictionary::itemAtRemove(dict, key, key, &retrieved);
     ASSERT_TRUE(found);
   }
   EXPECT_EQ(dict->numItems(), 5);
@@ -105,20 +105,20 @@ TEST(DictionaryTest, GrowWhenFull) {
   word initCap = dict->capacity();
   for (int i = 0; i < initCap; i++) {
     SmallInteger* key = SmallInteger::fromWord(i);
-    Dictionary::itemAtPut(dict, key, i, key, &runtime);
+    Dictionary::itemAtPut(dict, key, key, key, &runtime);
   }
   ASSERT_EQ(dict->capacity(), initCap);
 
   // Add another key which should force us to grow the underlying object array
   SmallInteger* straw = SmallInteger::fromWord(initCap);
-  Dictionary::itemAtPut(dict, straw, initCap, straw, &runtime);
+  Dictionary::itemAtPut(dict, straw, straw, straw, &runtime);
   ASSERT_GT(dict->capacity(), initCap);
 
   // Make sure we can still read all the stored keys/values
   for (int i = 0; i < initCap + 1; i++) {
     SmallInteger* key = SmallInteger::fromWord(i);
     Object* value;
-    bool found = Dictionary::itemAt(dict, key, i, &value);
+    bool found = Dictionary::itemAt(dict, key, key, &value);
     ASSERT_TRUE(found);
     EXPECT_EQ(SmallInteger::cast(value)->value(), i);
   }
@@ -131,8 +131,8 @@ TEST(DictionaryTest, CollidingKeys) {
   Dictionary* dict = Dictionary::cast(obj);
 
   // Add two different keys with different values using the same hash
-  word hash = 100;
   SmallInteger* key1 = SmallInteger::fromWord(100);
+  SmallInteger* hash = key1;
   Dictionary::itemAtPut(dict, key1, hash, key1, &runtime);
 
   SmallInteger* key2 = SmallInteger::fromWord(200);
@@ -156,11 +156,11 @@ TEST(DictionaryTest, MixedKeys) {
   Dictionary* dict = Dictionary::cast(obj);
 
   // Add keys of different type
-  word intHash = 100;
   SmallInteger* intKey = SmallInteger::fromWord(100);
+  SmallInteger* intHash = intKey;
   Dictionary::itemAtPut(dict, intKey, intHash, intKey, &runtime);
 
-  word strHash = 200;
+  SmallInteger* strHash = SmallInteger::fromWord(200);
   String* strKey = String::cast(runtime.createStringFromCString("testing 123"));
   Dictionary::itemAtPut(dict, strKey, strHash, strKey, &runtime);
 

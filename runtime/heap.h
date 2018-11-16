@@ -55,6 +55,8 @@ class Heap {
 
   Object* createList(Object* list_class, Object* elements);
 
+  Object* createModule(Object* module_class, Object* name, Object* dict);
+
   Object*
   createObjectArray(Object* object_array_class, intptr_t length, Object* value);
 

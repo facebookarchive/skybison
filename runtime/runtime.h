@@ -37,6 +37,8 @@ class Runtime {
 
   Object* createList();
 
+  Object* createModule(Object* name);
+
   Object* createObjectArray(intptr_t length);
 
   Object* createString(intptr_t length);
@@ -50,6 +52,8 @@ class Runtime {
 
   void visitRoots(PointerVisitor* visitor);
 
+  void addModule(Object* module);
+
   Object* modules() {
     return modules_;
   };
@@ -59,6 +63,8 @@ class Runtime {
   void initializeClasses();
   void initializeInstances();
   void initializeModules();
+
+  void createBuiltinsModule();
 
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);

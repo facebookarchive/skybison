@@ -78,6 +78,12 @@ Object* Runtime::createList() {
   return heap()->createList(list_class_, empty_object_array_);
 }
 
+Object* Runtime::createModule(Object* name) {
+  Object* dict = createDictionary();
+  assert(dict != nullptr);
+  return heap()->createModule(module_class_, name, dict);
+}
+
 Object* Runtime::createObjectArray(intptr_t length) {
   if (length == 0) {
     return empty_object_array_;
@@ -190,10 +196,6 @@ void Runtime::initializeInstances() {
       heap()->createObjectArray(object_array_class_, 0, None::object());
 }
 
-void Runtime::initializeModules() {
-  modules_ = createList();
-}
-
 void Runtime::visitRoots(PointerVisitor* visitor) {
   visitRuntimeRoots(visitor);
   visitThreadRoots(visitor);
@@ -223,6 +225,25 @@ void Runtime::visitThreadRoots(PointerVisitor* visitor) {
   for (Thread* thread = threads_; thread != nullptr; thread = thread->next()) {
     thread->handles()->visitPointers(visitor);
   }
+}
+
+void Runtime::addModule(Object* module) {
+  Object* name = Module::cast(module)->name();
+  Dictionary::itemAtPut(modules(), name, name->hash(), module, this);
+}
+
+void Runtime::initializeModules() {
+  modules_ = createDictionary();
+  createBuiltinsModule();
+}
+
+void Runtime::createBuiltinsModule() {
+  Object* name = createStringFromCString("builtins");
+  assert(name != nullptr);
+  Object* builtins = createModule(name);
+  assert(builtins != nullptr);
+  // Fill in builtins...
+  addModule(builtins);
 }
 
 } // namespace python
