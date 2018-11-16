@@ -265,4 +265,42 @@ TEST(ThreadTest, ExecuteRotTwo) {
   EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
 }
 
+TEST(ThreadTest, ExecuteJumpAbsolute) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  consts->atPut(0, SmallInteger::fromWord(1111));
+  consts->atPut(1, SmallInteger::fromWord(2222));
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setStacksize(2);
+  code->setConsts(*consts);
+  const char bytecode[] = {
+      JUMP_ABSOLUTE, 4, LOAD_CONST, 0, LOAD_CONST, 1, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 2222);
+}
+
+TEST(ThreadTest, ExecuteJumpForward) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  consts->atPut(0, SmallInteger::fromWord(1111));
+  consts->atPut(1, SmallInteger::fromWord(2222));
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setStacksize(2);
+  code->setConsts(*consts);
+  const char bytecode[] = {
+      JUMP_FORWARD, 2, LOAD_CONST, 0, LOAD_CONST, 1, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 2222);
+}
+
 } // namespace python

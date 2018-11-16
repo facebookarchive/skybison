@@ -58,6 +58,16 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         *sp = result;
         break;
       }
+      case Bytecode::JUMP_ABSOLUTE: {
+        assert(arg < byteArray->length());
+        pc = arg;
+        break;
+      }
+      case Bytecode::JUMP_FORWARD: {
+        assert(pc + arg < byteArray->length());
+        pc += arg;
+        break;
+      }
 
       default:
         abort();
