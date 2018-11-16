@@ -330,6 +330,260 @@ c = a[1:5:3]
   EXPECT_PYSTRING_EQ(*c, "eo");
 }
 
+TEST(StrBuiltinsTest, StartsWithEmptyStringReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".startswith("")
+b = "".startswith("")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+}
+
+TEST(StrBuiltinsTest, StartsWithStringReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".startswith("h")
+b = "hello".startswith("he")
+c = "hello".startswith("hel")
+d = "hello".startswith("hell")
+e = "hello".startswith("hello")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
+  Handle<Bool> e(&scope, moduleAt(&runtime, main, "e"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(c->value());
+  EXPECT_TRUE(d->value());
+  EXPECT_TRUE(e->value());
+}
+
+TEST(StrBuiltinsTest, StartsWithTooLongPrefixReturnsFalse) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".startswith("hihello")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_FALSE(a->value());
+}
+
+TEST(StrBuiltinsTest, StartsWithUnrelatedPrefixReturnsFalse) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".startswith("bob")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_FALSE(a->value());
+}
+
+TEST(StrBuiltinsTest, StartsWithStart) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".startswith("e", 1)
+b = "hello".startswith("o", 5)
+c = "hello".startswith("ell", 1)
+d = "hello".startswith("llo", 3)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
+  EXPECT_TRUE(a->value());
+  EXPECT_FALSE(b->value());
+  EXPECT_TRUE(c->value());
+  EXPECT_FALSE(d->value());
+}
+
+TEST(StrBuiltinsTest, StartsWithStartAndEnd) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".startswith("e", 1, 3)
+b = "hello".startswith("el", 1, 4)
+c = "hello".startswith("ll", 2, 5)
+d = "hello".startswith("ll", 1, 4)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(c->value());
+  EXPECT_FALSE(d->value());
+}
+
+TEST(StrBuiltinsTest, StartsWithStartAndEndNegatives) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".startswith("h", 0, -1)
+b = "hello".startswith("ll", -3)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+}
+
+TEST(StrBuiltinsTest, StartsWithTupleOfPrefixes) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".startswith(("h", "lo"))
+b = "hello".startswith(("asdf", "foo", "bar"))
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_TRUE(a->value());
+  EXPECT_FALSE(b->value());
+}
+
+TEST(StrBuiltinsTest, EndsWithEmptyStringReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".endswith("")
+b = "".endswith("")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+}
+
+TEST(StrBuiltinsTest, EndsWithStringReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".endswith("o")
+b = "hello".endswith("lo")
+c = "hello".endswith("llo")
+d = "hello".endswith("ello")
+e = "hello".endswith("hello")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
+  Handle<Bool> e(&scope, moduleAt(&runtime, main, "e"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(c->value());
+  EXPECT_TRUE(d->value());
+  EXPECT_TRUE(e->value());
+}
+
+TEST(StrBuiltinsTest, EndsWithTooLongSuffixReturnsFalse) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".endswith("hihello")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_FALSE(a->value());
+}
+
+TEST(StrBuiltinsTest, EndsWithUnrelatedSuffixReturnsFalse) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".endswith("bob")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_FALSE(a->value());
+}
+
+TEST(StrBuiltinsTest, EndsWithStart) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".endswith("o", 1)
+b = "hello".endswith("o", 5)
+c = "hello".endswith("llo", 1)
+d = "hello".endswith("llo", 3)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
+  EXPECT_TRUE(a->value());
+  EXPECT_FALSE(b->value());
+  EXPECT_TRUE(c->value());
+  EXPECT_FALSE(d->value());
+}
+
+TEST(StrBuiltinsTest, EndsWithStartAndEnd) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".endswith("l", 1, 3)
+b = "hello".endswith("ll", 1, 4)
+c = "hello".endswith("lo", 2, 5)
+d = "hello".endswith("llo", 1, 4)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  Handle<Bool> d(&scope, moduleAt(&runtime, main, "d"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(c->value());
+  EXPECT_FALSE(d->value());
+}
+
+TEST(StrBuiltinsTest, EndsWithStartAndEndNegatives) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".endswith("l", 0, -1)
+b = "hello".endswith("o", -1)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(b->value());
+}
+
+TEST(StrBuiltinsTest, EndsWithTupleOfSuffixes) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "hello".endswith(("o", "llo"))
+b = "hello".endswith(("asdf", "foo", "bar"))
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Bool> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Bool> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_TRUE(a->value());
+  EXPECT_FALSE(b->value());
+}
+
 TEST(StrBuiltinsTest, StringFormat) {
   Runtime runtime;
   runtime.runFromCStr(R"(

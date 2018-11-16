@@ -131,3 +131,95 @@ class str(bootstrap=True):
                 i += 1
         parts.append(self[last_match:])
         return parts
+
+    def startswith(self, prefix, start=0, end=None):
+        def real_bounds_from_slice_bounds(start, end, length):
+            if start < 0:
+                start = length + start
+            if start < 0:
+                start = 0
+            if start > length:
+                start = length
+
+            if end is None or end > length:
+                end = length
+            if end < 0:
+                end = length + end
+            if end < 0:
+                end = 0
+            return start, end
+
+        def prefix_match(cmp, prefix, start, end):
+            if not isinstance(prefix, str):
+                raise TypeError("startswith prefix must be a str")
+            prefix_len = len(prefix)
+            # If the prefix is longer than the string its comparing against, it
+            # can't be a match.
+            if end - start < prefix_len:
+                return False
+            end = start + prefix_len
+
+            # Iterate through cmp from [start, end), checking against
+            # the characters in the suffix.
+            i = 0
+            while i < prefix_len:
+                if cmp[start + i] != prefix[i]:
+                    return False
+                i += 1
+            return True
+
+        str_len = len(self)
+        start, end = real_bounds_from_slice_bounds(start, end, str_len)
+        if not isinstance(prefix, tuple):
+            return prefix_match(self, prefix, start, end)
+
+        for pref in prefix:
+            if prefix_match(self, pref, start, end):
+                return True
+        return False
+
+    def endswith(self, suffix, start=0, end=None):
+        def real_bounds_from_slice_bounds(start, end, length):
+            if start < 0:
+                start = length + start
+            if start < 0:
+                start = 0
+            if start > length:
+                start = length
+
+            if end is None or end > length:
+                end = length
+            if end < 0:
+                end = length + end
+            if end < 0:
+                end = 0
+            return start, end
+
+        def suffix_match(cmp, sfx, start, end):
+            if not isinstance(sfx, str):
+                raise TypeError("endswith suffix must be a str")
+            sfx_len = len(sfx)
+            # If the suffix is longer than the string its comparing against, it
+            # can't be a match.
+            if end - start < sfx_len:
+                return False
+            start = end - sfx_len
+
+            # Iterate through cmp from [end - sfx_len, end), checking against
+            # the characters in the suffix.
+            i = 0
+            while i < sfx_len:
+                if cmp[start + i] != sfx[i]:
+                    return False
+                i += 1
+            return True
+
+        str_len = len(self)
+        start, end = real_bounds_from_slice_bounds(start, end, str_len)
+        if not isinstance(suffix, tuple):
+            return suffix_match(self, suffix, start, end)
+
+        for suf in suffix:
+            if suffix_match(self, suf, start, end):
+                return True
+        return False
