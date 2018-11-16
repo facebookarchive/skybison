@@ -314,4 +314,37 @@ TEST(SmallInteger, IsValid) {
   EXPECT_TRUE(SmallInteger::isValid(SmallInteger::kMinValue + 1));
 }
 
+TEST(LargeString, CopyTo) {
+  Runtime runtime;
+
+  Object* obj = runtime.newStringFromCString("hello");
+  ASSERT_TRUE(obj->isLargeString());
+  LargeString* str = LargeString::cast(obj);
+
+  byte array[5];
+  memset(array, 'a', ARRAYSIZE(array));
+  str->copyTo(array, 0);
+  EXPECT_EQ(array[0], 'a');
+  EXPECT_EQ(array[1], 'a');
+  EXPECT_EQ(array[2], 'a');
+  EXPECT_EQ(array[3], 'a');
+  EXPECT_EQ(array[4], 'a');
+
+  memset(array, 'b', ARRAYSIZE(array));
+  str->copyTo(array, 1);
+  EXPECT_EQ(array[0], 'h');
+  EXPECT_EQ(array[1], 'b');
+  EXPECT_EQ(array[2], 'b');
+  EXPECT_EQ(array[3], 'b');
+  EXPECT_EQ(array[4], 'b');
+
+  memset(array, 'c', ARRAYSIZE(array));
+  str->copyTo(array, 5);
+  EXPECT_EQ(array[0], 'h');
+  EXPECT_EQ(array[1], 'e');
+  EXPECT_EQ(array[2], 'l');
+  EXPECT_EQ(array[3], 'l');
+  EXPECT_EQ(array[4], 'o');
+}
+
 } // namespace python

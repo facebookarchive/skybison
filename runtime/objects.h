@@ -294,7 +294,6 @@ class String : public Object {
  public:
   // Getters and setters.
   inline byte charAt(word index);
-  inline void charAtPut(word index, byte value);
   inline word length();
 
   // Equality checks.
@@ -454,7 +453,7 @@ class LargeString : public Array {
  public:
   // Getters and setters.
   inline byte charAt(word index);
-  inline void charAtPut(word index, byte value);
+  void copyTo(byte* dst, word length);
 
   // Equality checks.
   bool equals(Object* that);
@@ -1703,11 +1702,6 @@ byte String::charAt(word index) {
   return LargeString::cast(this)->charAt(index);
 }
 
-void String::charAtPut(word index, byte value) {
-  assert(isLargeString());
-  LargeString::cast(this)->charAtPut(index, value);
-}
-
 word String::length() {
   assert(isLargeString());
   return LargeString::cast(this)->length();
@@ -1740,12 +1734,6 @@ byte LargeString::charAt(word index) {
   assert(index >= 0);
   assert(index < length());
   return *reinterpret_cast<byte*>(address() + index);
-}
-
-void LargeString::charAtPut(word index, byte value) {
-  assert(index >= 0);
-  assert(index < length());
-  *reinterpret_cast<byte*>(address() + index) = value;
 }
 
 // ValueCell

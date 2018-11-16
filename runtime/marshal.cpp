@@ -251,12 +251,9 @@ Object* Marshal::Reader::readTypeString() {
 Object* Marshal::Reader::readTypeShortAscii() {
   int length = readByte();
   const byte* data = readString(length);
-  Object* result = runtime_->newString(length);
+  Object* result = runtime_->newStringWithAll(View<byte>(data, length));
   if (isRef_) {
     addRef(result);
-  }
-  for (int i = 0; i < length; i++) {
-    String::cast(result)->charAtPut(i, data[i]);
   }
   return result;
 }

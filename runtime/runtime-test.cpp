@@ -136,6 +136,26 @@ TEST(RuntimeTest, NewString) {
   ASSERT_EQ(s300->length(), 300);
 }
 
+TEST(RuntimeTest, NewStringWithAll) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<String> string0(
+      &scope, runtime.newStringWithAll(View<byte>(nullptr, 0)));
+  EXPECT_EQ(string0->length(), 0);
+  EXPECT_TRUE(string0->equalsCString(""));
+
+  const byte bytes3[] = {'A', 'B', 'C'};
+  Handle<String> string3(&scope, runtime.newStringWithAll(bytes3));
+  EXPECT_EQ(string3->length(), 3);
+  EXPECT_TRUE(string3->equalsCString("ABC"));
+
+  const byte bytes10[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
+  Handle<String> string10(&scope, runtime.newStringWithAll(bytes10));
+  EXPECT_EQ(string10->length(), 10);
+  EXPECT_TRUE(string10->equalsCString("ABCDEFGHIJ"));
+}
+
 TEST(RuntimeTest, HashBooleans) {
   Runtime runtime;
 

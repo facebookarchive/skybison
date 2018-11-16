@@ -9,10 +9,10 @@ namespace python {
 template <typename T>
 class View {
  public:
-  View(T* const data, word length) : data_(data), length_(length) {}
+  View(const T* data, word length) : data_(data), length_(length) {}
 
   template <word N>
-  View(T const (&data)[N]) : data_(data), length_(N) {}
+  View(const T (&data)[N]) : data_(data), length_(N) {}
 
   T get(word i) {
     assert(i >= 0);

@@ -35,4 +35,10 @@ bool LargeString::equalsCString(const char* c_string) {
   return *cp == '\0';
 }
 
+void LargeString::copyTo(byte* dst, word length) {
+  assert(length >= 0);
+  assert(length <= this->length());
+  std::memcpy(dst, reinterpret_cast<byte*>(address()), length);
+}
+
 } // namespace python

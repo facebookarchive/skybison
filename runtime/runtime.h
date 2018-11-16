@@ -48,6 +48,7 @@ class Runtime {
 
   Object* newString(word length);
   Object* newStringFromCString(const char* c_string);
+  Object* newStringWithAll(View<byte> code_units);
 
   Object* newValueCell();
 

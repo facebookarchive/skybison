@@ -129,15 +129,20 @@ Object* Runtime::newString(word length) {
 
 Object* Runtime::newStringFromCString(const char* c_string) {
   word length = std::strlen(c_string);
-  if (length == 0) {
+  auto data = reinterpret_cast<const byte*>(c_string);
+  return newStringWithAll(View<byte>(data, length));
+}
+
+Object* Runtime::newStringWithAll(View<byte> code_units) {
+  word length = code_units.length();
+  if (code_units.length() == 0) {
     return empty_string_;
   }
   Object* result = newString(length);
   assert(result != nullptr);
-  for (word i = 0; i < length; i++) {
-    LargeString::cast(result)->charAtPut(
-        i, *reinterpret_cast<const byte*>(c_string + i));
-  }
+  byte* dst = reinterpret_cast<byte*>(LargeString::cast(result)->address());
+  const byte* src = code_units.data();
+  memcpy(dst, src, length);
   return result;
 }
 
