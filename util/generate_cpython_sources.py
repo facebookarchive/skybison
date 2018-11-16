@@ -14,7 +14,12 @@ SymbolRegex = collections.namedtuple("SymbolRegex", ["regex", "pos"])
 # For sources where only the symbol is required
 HEADER_SYMBOL_REGEX = {
     "typedef": [
-        SymbolRegex(regex=re.compile("^typedef.*;", re.MULTILINE), pos=2),
+        SymbolRegex(
+            regex=re.compile("^typedef struct.*;", re.MULTILINE), pos=3
+        ),
+        SymbolRegex(
+            regex=re.compile("^typedef(?! struct).*;", re.MULTILINE), pos=2
+        ),
         SymbolRegex(regex=re.compile("^} .*;", re.MULTILINE), pos=-1),
     ],
     "struct": [
@@ -53,7 +58,9 @@ SOURCE_SYMBOL_REGEX = {
 # For sources where the entire definition match is required
 HEADER_DEFINITIONS_REGEX = {
     "typedef": [
-        SymbolRegex(regex=re.compile("^typedef.*;.*\n", re.MULTILINE), pos=2),
+        SymbolRegex(
+            regex=re.compile("^typedef(?! struct).*;.*\n", re.MULTILINE), pos=2
+        ),
         SymbolRegex(
             regex=re.compile("^typedef.*{(.|\n)*?}.*;.*\n", re.MULTILINE),
             pos=-1,

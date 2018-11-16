@@ -15,11 +15,13 @@ typedef struct newtype {
   int foo_bar;
 } Foo_Bar;
 
+typedef struct Hello World;
+
 typedef foo_bar Baz;
 """
         symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
         res = symbols_dict["typedef"]
-        self.assertListEqual(res, ["Foo", "Bar", "Baz", "Foo_Bar"])
+        self.assertListEqual(res, ["World", "Foo", "Bar", "Baz", "Foo_Bar"])
 
     def test_struct_regex_returns_multiple_symbols(self):
         lines = """
@@ -143,6 +145,8 @@ typedef struct newtype {
 } Foo_Bar;
 
 typedef foo_bar Baz;
+
+typedef struct Foo FooAlias;
 """
         expected_lines = """
 
@@ -151,6 +155,8 @@ typedef struct newtype {
   int foo_bar;
 } Foo_Bar;
 
+
+typedef struct Foo FooAlias;
 """
         symbols_to_replace = {"typedef": ["Foo", "Bar", "Baz"]}
         res = gcs.modify_file(
