@@ -363,9 +363,11 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
     for (i = 0; i < len; i++) {
         if (*format == '|')
             format++;
-        msg = convertitem(PyTuple_GET_ITEM(args, i), &format, p_va,
+        // facebook begin - D9835681
+        msg = convertitem(PyTuple_GetItem(args, i), &format, p_va,
                           flags, levels, msgbuf,
                           sizeof(msgbuf), &freelist);
+        // facebook end - D9835681
         if (msg) {
             seterror(i+1, msg, levels, fname, message);
             return cleanreturn(0, &freelist);
@@ -1733,7 +1735,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
                 }
             }
             else if (i < nargs)
-                current_arg = PyTuple_GET_ITEM(args, i);
+                current_arg = PyTuple_GetItem(args, i); // facebook - D9835681
 
             if (current_arg) {
                 msg = convertitem(current_arg, &format, p_va, flags,
@@ -1963,7 +1965,7 @@ find_keyword(PyObject *kwnames, PyObject **kwstack, PyObject *key)
 
     nkwargs = PyTuple_GET_SIZE(kwnames);
     for (i=0; i < nkwargs; i++) {
-        PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
+        PyObject *kwname = PyTuple_GetItem(kwnames, i); // facebook - D9835681
 
         /* ptr==ptr should match in most cases since keyword keys
            should be interned strings */
@@ -2396,7 +2398,7 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
 #endif
     for (i = 0; i < l; i++) {
         o = va_arg(vargs, PyObject **);
-        *o = PyTuple_GET_ITEM(args, i);
+        *o = PyTuple_GetItem(args, i); // facebook - D9835681
     }
     va_end(vargs);
     return 1;
