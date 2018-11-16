@@ -1,0 +1,82 @@
+#include "gtest/gtest.h"
+
+#include "Globals.h"
+#include "Marshal.h"
+#include "Runtime.h"
+
+namespace python {
+
+class RuntimeTest : public ::testing::Test {
+ protected:
+  virtual void SetUp() {
+   Runtime::initialize();
+  }
+};
+
+TEST(MarshalReaderTest, ReadString) {
+  Marshal::Reader reader("hello, world");
+
+  const byte* s1 = reader.ReadString(1);
+  ASSERT_NE(s1, nullptr);
+  EXPECT_EQ(*s1, 'h');
+
+  const byte* s2 = reader.ReadString(2);
+  ASSERT_NE(s2, nullptr);
+  EXPECT_EQ(s2[0], 'e');
+  EXPECT_EQ(s2[1], 'l');
+}
+
+TEST(MarshalReaderTest, ReadLong) {
+  int32 a = Marshal::Reader("\x01\x00\x00\x00").ReadLong();
+  EXPECT_EQ(a, 1);
+
+  int32 b = Marshal::Reader("\x01\x02\x00\x00").ReadLong();
+  ASSERT_EQ(b, 0x0201);
+
+  int32 c = Marshal::Reader("\x01\x02\x03\x00").ReadLong();
+  ASSERT_EQ(c, 0x030201);
+
+  int32 d = Marshal::Reader("\x01\x02\x03\x04").ReadLong();
+  ASSERT_EQ(d, 0x04030201);
+
+  int32 e = Marshal::Reader("\x00\x00\x00\x80").ReadLong();
+  ASSERT_EQ(e, -2147483648);  // INT32_MIN
+}
+
+TEST(MarshalReaderTest, ReadShort) {
+  int16 a = Marshal::Reader("\x01\x00").ReadShort();
+  EXPECT_EQ(a, 1);
+
+  int16 b = Marshal::Reader("\x01\x02").ReadShort();
+  ASSERT_EQ(b, 0x0201);
+
+  int16 c = Marshal::Reader("\x00\x80").ReadShort();
+  ASSERT_EQ(c, -32768);  // INT16_MIN
+}
+
+TEST(MarshalReaderTest, ReadObjectNull) {
+  Object* a = Marshal::Reader("0").ReadObject();
+  ASSERT_EQ(a, nullptr);
+}
+
+TEST_F(RuntimeTest, ReadObjectCode) {
+  const char* buffer = "\x33\x0D\x0D\x0A\x3B\x5B\xB8\x59\x05\x00\x00\x00\xE3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x40\x00\x00\x00\x73\x04\x00\x00\x00\x64\x00\x53\x00\x29\x01\x4E\xA9\x00\x72\x01\x00\x00\x00\x72\x01\x00\x00\x00\x72\x01\x00\x00\x00\xFA\x07\x70\x61\x73\x73\x2E\x70\x79\xDA\x08\x3C\x6D\x6F\x64\x75\x6C\x65\x3E\x01\x00\x00\x00\x73\x00\x00\x00\x00";
+  Marshal::Reader reader(buffer);
+
+  int32 magic = reader.ReadLong();
+  EXPECT_EQ(magic, 0x0A0D0D33);
+  int32 mtime = reader.ReadLong();
+  EXPECT_EQ(mtime, 0x59B85B3B);
+  int32 size = reader.ReadLong();
+  EXPECT_EQ(size, 0x05);
+
+  Object* code = reader.ReadObject();
+  ASSERT_TRUE(code->IsCode());
+  EXPECT_EQ(Code::cast(code)->argcount(), 0);
+}
+
+TEST(MarshalTest, Good) {
+  ASSERT_EQ(0, 0);
+}
+
+}  // namespace python
