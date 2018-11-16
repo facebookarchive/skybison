@@ -6,12 +6,7 @@
 #include "symbols.h"
 #include "view.h"
 
-// An isomorphic structure to CPython's PyObject
-struct ApiHandle {
-  void* reference;
-  long ob_refcnt;
-  void* ob_type;
-};
+typedef struct _object PyObject;
 
 namespace python {
 
@@ -21,6 +16,22 @@ class Object;
 class ObjectArray;
 class PointerVisitor;
 class Thread;
+
+// An isomorphic structure to CPython's PyObject
+class ApiHandle {
+ public:
+  Object* asObject() {
+    return static_cast<Object*>(reference);
+  }
+
+  PyObject* asPyObject() {
+    return reinterpret_cast<PyObject*>(this);
+  }
+
+  void* reference;
+  long ob_refcnt;
+  void* ob_type;
+};
 
 class Runtime {
  public:
@@ -419,8 +430,11 @@ class Runtime {
   // Create a new ApiHandle if there is not a pre-existing one
   ApiHandle* asApiHandle(Object* obj);
 
+  // Convenience function to call asApiHandle and return a casted PyObject
+  PyObject* asPyObject(Object* obj);
+
   // Accessor for Objects that have crossed the CPython boundary
-  Object* asObject(ApiHandle* py_obj);
+  Object* asObject(PyObject* py_obj);
 
   // Runtime allocation of a Handle
   Object* allocateApiHandle(Object* obj);

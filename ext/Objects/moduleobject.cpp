@@ -24,7 +24,7 @@ PyObject* PyModule_Create2(struct PyModuleDef* pymodule, int) {
   // TODO: Add methods
   // TODO: Add m_doc
 
-  return Py_AsPyObject(runtime->asApiHandle(*module));
+  return runtime->asPyObject(*module);
 }
 
 PyObject* PyModule_GetDict(PyObject* pymodule) {
@@ -32,7 +32,6 @@ PyObject* PyModule_GetDict(PyObject* pymodule) {
   py::Runtime* runtime = thread->runtime();
   py::HandleScope scope(thread->handles());
 
-  py::Handle<py::Module> module(
-      &scope, runtime->asObject(Py_AsApiHandle(pymodule)));
-  return Py_AsPyObject(runtime->asApiHandle(module->dictionary()));
+  py::Handle<py::Module> module(&scope, runtime->asObject(pymodule));
+  return runtime->asPyObject(module->dictionary());
 }

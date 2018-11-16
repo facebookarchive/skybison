@@ -2719,8 +2719,12 @@ ApiHandle* Runtime::asApiHandle(Object* obj) {
   return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
 }
 
-Object* Runtime::asObject(ApiHandle* handle) {
-  return static_cast<Object*>(reinterpret_cast<ApiHandle*>(handle)->reference);
+PyObject* Runtime::asPyObject(Object* obj) {
+  return asApiHandle(obj)->asPyObject();
+}
+
+Object* Runtime::asObject(PyObject* py_obj) {
+  return reinterpret_cast<ApiHandle*>(py_obj)->asObject();
 }
 
 Object* Runtime::allocateApiHandle(Object* obj) {

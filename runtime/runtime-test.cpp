@@ -1049,7 +1049,8 @@ TEST(RuntimeTest, creatingApiHandles) {
   ApiHandle* integer_handle2 = runtime.asApiHandle(*obj);
   EXPECT_EQ(integer_handle, integer_handle2);
 
-  Handle<Integer> integer(&scope, runtime.asObject(integer_handle));
+  Handle<Integer> integer(
+      &scope, static_cast<Object*>(integer_handle->reference));
   EXPECT_EQ(integer->asWord(), 15);
 }
 
