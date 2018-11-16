@@ -100,7 +100,7 @@ namespace python {
   V(END_FINALLY, 88, doEndFinally)                                             \
   V(POP_EXCEPT, 89, doNotImplemented)                                          \
   V(STORE_NAME, 90, doStoreName)                                               \
-  V(DELETE_NAME, 91, doNotImplemented)                                         \
+  V(DELETE_NAME, 91, doDeleteName)                                             \
   V(UNPACK_SEQUENCE, 92, doUnpackSequence)                                     \
   V(FOR_ITER, 93, doForIter)                                                   \
   V(UNPACK_EX, 94, doNotImplemented)                                           \

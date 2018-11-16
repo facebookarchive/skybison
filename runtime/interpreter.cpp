@@ -908,6 +908,21 @@ void Interpreter::doStoreName(Context* ctx, word arg) {
   thread->runtime()->dictionaryAtPutInValueCell(implicit_globals, key, value);
 }
 
+// opcode 91
+void Interpreter::doDeleteName(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  Thread* thread = ctx->thread;
+  DCHECK(frame->implicitGlobals()->isDictionary(), "expected dictionary");
+  HandleScope scope;
+  Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
+  Object* names = Code::cast(frame->code())->names();
+  Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
+  Object* value;
+  if (!thread->runtime()->dictionaryRemove(implicit_globals, key, &value)) {
+    UNIMPLEMENTED("item not found in delete name");
+  }
+}
+
 // opcode 92
 void Interpreter::doUnpackSequence(Context* ctx, word arg) {
   Object* seq = ctx->frame->popValue();

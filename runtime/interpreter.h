@@ -157,6 +157,7 @@ class Interpreter {
   static void doPopBlock(Context* ctx, word arg);
   static void doEndFinally(Context* ctx, word arg);
   static void doStoreName(Context* ctx, word arg);
+  static void doDeleteName(Context* ctx, word arg);
   static void doUnpackSequence(Context* ctx, word arg);
   static void doForIter(Context* ctx, word arg);
   static void doStoreAttr(Context* ctx, word arg);

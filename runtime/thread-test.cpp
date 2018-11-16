@@ -2747,4 +2747,17 @@ class C:
   EXPECT_EQ(SmallInteger::cast(*two)->value(), 2);
 }
 
+TEST(ThreadTest, ExecuteDeleteName) {
+  const char* src = R"(
+var = 1
+del var
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> var(&scope, moduleAt(&runtime, main, "var"));
+  EXPECT_TRUE(var->isError());
+}
+
 }  // namespace python
