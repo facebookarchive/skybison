@@ -1,24 +1,10 @@
-#include "gtest/gtest.h"
-
-#include "Python.h"
-#include "runtime.h"
-#include "test-utils.h"
+#include "capi-fixture.h"
 
 namespace python {
 
-TEST(Object, PyNoneReturnsRuntimeNone) {
-  Runtime runtime;
-  HandleScope scope;
+using ObjectExtensionApiTest = ExtensionApi;
 
-  // Test None
-  PyObject* none = Py_None;
-  Handle<Object> none_object(&scope, ApiHandle::fromPyObject(none)->asObject());
-  EXPECT_TRUE(none_object->isNone());
-}
-
-TEST(Object, PyNoneIdentityIsEqual) {
-  Runtime runtime;
-
+TEST_F(ObjectExtensionApiTest, PyNoneIdentityIsEqual) {
   // Test Identitiy
   PyObject* none1 = Py_None;
   PyObject* none2 = Py_None;
