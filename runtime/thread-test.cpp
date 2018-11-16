@@ -206,8 +206,8 @@ TEST(ThreadTest, ManipulateValueStack) {
   word values[] = {3333, 2222, 1111};
   for (int i = 0; i < 3; i++) {
     Object* object = frame->peek(i);
-    ASSERT_TRUE(object->isSmallInteger())
-        << "Value at stack depth " << i << " is not an integer";
+    ASSERT_TRUE(object->isSmallInteger()) << "Value at stack depth " << i
+                                          << " is not an integer";
     EXPECT_EQ(SmallInteger::cast(object)->value(), values[i])
         << "Incorrect value at stack depth " << i;
   }
@@ -1170,6 +1170,47 @@ for i in range(42,100,-1):
 
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "0\n1\n2\n3\n4\n5\n6\n8\n10\n6\n5\n4\n");
+}
+
+TEST(ThreadTest, BinaryOps) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* src = R"(
+a = 2
+b = 3
+c = 6
+d = 7
+print('a & b ==', a & b)
+print('a ^ b ==', a ^ b)
+print('a + b ==', a + b)
+
+print('c // b ==', c // b)
+print('d // b ==', d // b)
+
+print('d % a ==', d % a)
+print('d % b ==', d % b)
+
+print('d * b ==', d * b)
+print('c * b ==', c * b)
+
+print('c - b ==', c - b)
+print('b - c ==', b - c)
+)";
+
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, R"(a & b == 2
+a ^ b == 1
+a + b == 5
+c // b == 2
+d // b == 2
+d % a == 1
+d % b == 1
+d * b == 21
+c * b == 18
+c - b == 3
+b - c == -3
+)");
 }
 
 struct LocalsTestData {

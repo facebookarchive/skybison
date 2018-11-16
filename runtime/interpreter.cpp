@@ -241,6 +241,64 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
 
+      // TODO: arithmetic operations are currently implemented only for
+      // SmallIntegers,
+      // for the purposes of running Richards.
+      case Bytecode::BINARY_AND: {
+        word right = SmallInteger::cast(*sp++)->value();
+        word left = SmallInteger::cast(*sp)->value();
+        *sp = SmallInteger::fromWord(left & right);
+        break;
+      }
+
+      case Bytecode::BINARY_ADD: {
+        word right = SmallInteger::cast(*sp++)->value();
+        word left = SmallInteger::cast(*sp)->value();
+        *sp = SmallInteger::fromWord(left + right);
+        break;
+      }
+
+      case Bytecode::BINARY_FLOOR_DIVIDE: {
+        word divisor = SmallInteger::cast(*sp++)->value();
+        word dividend = SmallInteger::cast(*sp)->value();
+        // TODO: Throw:
+        //   ZeroDivisionError: integer division or modulo by zero
+        assert(divisor != 0);
+        *sp = SmallInteger::fromWord(dividend / divisor);
+        break;
+      }
+
+      case Bytecode::BINARY_MODULO: {
+        word divisor = SmallInteger::cast(*sp++)->value();
+        word dividend = SmallInteger::cast(*sp)->value();
+        // TODO: Throw:
+        //   ZeroDivisionError: integer division or modulo by zero
+        assert(divisor != 0);
+        *sp = SmallInteger::fromWord(dividend % divisor);
+        break;
+      }
+
+      case Bytecode::BINARY_MULTIPLY: {
+        word right = SmallInteger::cast(*sp++)->value();
+        word left = SmallInteger::cast(*sp)->value();
+        *sp = SmallInteger::fromWord(left * right);
+        break;
+      }
+
+      case Bytecode::BINARY_SUBTRACT: {
+        word right = SmallInteger::cast(*sp++)->value();
+        word left = SmallInteger::cast(*sp)->value();
+        *sp = SmallInteger::fromWord(left - right);
+        break;
+      }
+
+      case Bytecode::BINARY_XOR: {
+        word right = SmallInteger::cast(*sp++)->value();
+        word left = SmallInteger::cast(*sp)->value();
+        *sp = SmallInteger::fromWord(left ^ right);
+        break;
+      }
+
       default:
         abort();
     }
