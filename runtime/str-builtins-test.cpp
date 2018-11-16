@@ -949,12 +949,12 @@ b = "hello".split("l")
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_EQ(a->allocated(), 2);
+  ASSERT_EQ(a->numItems(), 2);
   EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "h");
   EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "llo");
 
   Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_EQ(b->allocated(), 3);
+  ASSERT_EQ(b->numItems(), 3);
   EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "he");
   EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "");
   EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "o");
@@ -968,7 +968,7 @@ a = "".split("a")
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_EQ(a->allocated(), 1);
+  ASSERT_EQ(a->numItems(), 1);
   EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "");
 }
 
@@ -984,22 +984,22 @@ d = "hellllo".split("ll")
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_EQ(a->allocated(), 2);
+  ASSERT_EQ(a->numItems(), 2);
   EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "h");
   EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "lo");
 
   Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_EQ(b->allocated(), 2);
+  ASSERT_EQ(b->numItems(), 2);
   EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "he");
   EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "o");
 
   Handle<List> c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_EQ(c->allocated(), 2);
+  ASSERT_EQ(c->numItems(), 2);
   EXPECT_PYSTRING_EQ(Str::cast(c->at(0)), "");
   EXPECT_PYSTRING_EQ(Str::cast(c->at(1)), "");
 
   Handle<List> d(&scope, moduleAt(&runtime, main, "d"));
-  ASSERT_EQ(d->allocated(), 3);
+  ASSERT_EQ(d->numItems(), 3);
   EXPECT_PYSTRING_EQ(Str::cast(d->at(0)), "he");
   EXPECT_PYSTRING_EQ(Str::cast(d->at(1)), "");
   EXPECT_PYSTRING_EQ(Str::cast(d->at(2)), "o");
@@ -1015,12 +1015,12 @@ b = "1,2,3,4".split(",", 2)
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_EQ(a->allocated(), 2);
+  ASSERT_EQ(a->numItems(), 2);
   EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "he");
   EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "lo");
 
   Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_EQ(b->allocated(), 3);
+  ASSERT_EQ(b->numItems(), 3);
   EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "1");
   EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "2");
   EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "3,4");
@@ -1036,13 +1036,13 @@ b = "1,2,3,4".split(",", 5)
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<List> a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_EQ(a->allocated(), 3);
+  ASSERT_EQ(a->numItems(), 3);
   EXPECT_PYSTRING_EQ(Str::cast(a->at(0)), "he");
   EXPECT_PYSTRING_EQ(Str::cast(a->at(1)), "");
   EXPECT_PYSTRING_EQ(Str::cast(a->at(2)), "o");
 
   Handle<List> b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_EQ(b->allocated(), 4);
+  ASSERT_EQ(b->numItems(), 4);
   EXPECT_PYSTRING_EQ(Str::cast(b->at(0)), "1");
   EXPECT_PYSTRING_EQ(Str::cast(b->at(1)), "2");
   EXPECT_PYSTRING_EQ(Str::cast(b->at(2)), "3");

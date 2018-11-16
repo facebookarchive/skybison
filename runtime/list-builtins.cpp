@@ -53,7 +53,7 @@ RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
   Handle<Layout> layout(&scope, type->instanceLayout());
   Handle<List> result(&scope, thread->runtime()->newInstance(layout));
-  result->setAllocated(0);
+  result->setNumItems(0);
   result->setItems(thread->runtime()->newObjectArray(0));
   return *result;
 }
@@ -75,7 +75,7 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> other(&scope, args.get(1));
   if (other->isList()) {
     word new_capacity =
-        List::cast(*self)->allocated() + List::cast(*other)->allocated();
+        List::cast(*self)->numItems() + List::cast(*other)->numItems();
     Handle<List> new_list(&scope, runtime->newList());
     runtime->listEnsureCapacity(new_list, new_capacity);
     new_list = runtime->listExtend(thread, new_list, self);
@@ -138,7 +138,7 @@ RawObject ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
         "__len__() only support list or its subclasses");
   }
   Handle<List> list(&scope, *self);
-  return SmallInt::fromWord(list->allocated());
+  return SmallInt::fromWord(list->numItems());
 }
 
 RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
@@ -202,7 +202,7 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
         "descriptor 'pop' requires a 'list' object");
   }
   Handle<List> list(&scope, *self);
-  word index = list->allocated() - 1;
+  word index = list->numItems() - 1;
   if (nargs == 2) {
     word last_index = index;
     index = SmallInt::cast(args.get(1))->value();
@@ -236,7 +236,7 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
         "descriptor 'remove' requires a 'list' object");
   }
   Handle<List> list(&scope, *self);
-  for (word i = 0; i < list->allocated(); i++) {
+  for (word i = 0; i < list->numItems(); i++) {
     Handle<Object> item(&scope, list->at(i));
     if (Bool::cast(Interpreter::compareOperation(thread, frame, CompareOp::EQ,
                                                  item, value))
@@ -251,7 +251,7 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
 RawObject ListBuiltins::slice(Thread* thread, RawList list, RawSlice slice) {
   word start, stop, step;
   slice->unpack(&start, &stop, &step);
-  word length = Slice::adjustIndices(list->allocated(), &start, &stop, step);
+  word length = Slice::adjustIndices(list->numItems(), &start, &stop, step);
 
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -262,7 +262,7 @@ RawObject ListBuiltins::slice(Thread* thread, RawList list, RawSlice slice) {
 
   Handle<List> result(&scope, runtime->newList());
   result->setItems(*items);
-  result->setAllocated(items->length());
+  result->setNumItems(items->length());
   return *result;
 }
 
@@ -286,9 +286,9 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   if (index->isSmallInt()) {
     word idx = SmallInt::cast(index)->value();
     if (idx < 0) {
-      idx = list->allocated() - idx;
+      idx = list->numItems() - idx;
     }
-    if (idx < 0 || idx >= list->allocated()) {
+    if (idx < 0 || idx >= list->numItems()) {
       return thread->raiseIndexErrorWithCStr("list index out of range");
     }
     return list->at(idx);
@@ -380,7 +380,7 @@ RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   }
   Handle<ListIterator> list_iterator(&scope, *self);
   Handle<List> list(&scope, list_iterator->list());
-  return SmallInt::fromWord(list->allocated() - list_iterator->index());
+  return SmallInt::fromWord(list->numItems() - list_iterator->index());
 }
 
 RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
@@ -403,9 +403,9 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   if (index->isSmallInt()) {
     word idx = SmallInt::cast(index)->value();
     if (idx < 0) {
-      idx = list->allocated() + idx;
+      idx = list->numItems() + idx;
     }
-    if (idx < 0 || idx >= list->allocated()) {
+    if (idx < 0 || idx >= list->numItems()) {
       return thread->raiseIndexErrorWithCStr(
           "list assignment index out of range");
     }
@@ -437,8 +437,8 @@ RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   RawObject index = args.get(1);
   if (index->isSmallInt()) {
     word idx = SmallInt::cast(index)->value();
-    idx = idx < 0 ? list->allocated() + idx : idx;
-    if (idx < 0 || idx >= list->allocated()) {
+    idx = idx < 0 ? list->numItems() + idx : idx;
+    if (idx < 0 || idx >= list->numItems()) {
       return thread->raiseIndexErrorWithCStr(
           "list assignment index out of range");
     }

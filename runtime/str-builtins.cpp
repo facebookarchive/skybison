@@ -130,13 +130,13 @@ RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   if (iterable->isList()) {
     Handle<List> list(&scope, *iterable);
     Handle<ObjectArray> tuple(&scope, list->items());
-    return thread->runtime()->strJoin(thread, sep, tuple, list->allocated());
+    return thread->runtime()->strJoin(thread, sep, tuple, list->numItems());
   }
   // Iterators of strings
   Handle<List> list(&scope, runtime->newList());
   runtime->listExtend(thread, list, iterable);
   Handle<ObjectArray> tuple(&scope, list->items());
-  return thread->runtime()->strJoin(thread, sep, tuple, list->allocated());
+  return thread->runtime()->strJoin(thread, sep, tuple, list->numItems());
 }
 
 RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {

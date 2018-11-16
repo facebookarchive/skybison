@@ -250,7 +250,7 @@ RawObject Marshal::Reader::readObject() {
 word Marshal::Reader::addRef(RawObject value) {
   HandleScope scope;
   Handle<Object> value_handle(&scope, value);
-  word result = refs_->allocated();
+  word result = refs_->numItems();
   runtime_->listAdd(refs_, value_handle);
   return result;
 }
@@ -261,7 +261,7 @@ void Marshal::Reader::setRef(word index, RawObject value) {
 
 RawObject Marshal::Reader::getRef(word index) { return refs_->at(index); }
 
-word Marshal::Reader::numRefs() { return refs_->allocated(); }
+word Marshal::Reader::numRefs() { return refs_->numItems(); }
 
 RawObject Marshal::Reader::readTypeString() {
   int32 length = readLong();

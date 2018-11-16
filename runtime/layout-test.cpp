@@ -279,9 +279,9 @@ TEST(LayoutTest, VerifyChildLayout) {
   // Child should have an additional overflow attribute
   EXPECT_NE(child->overflowAttributes(), parent->overflowAttributes());
   EXPECT_NE(child->additions(), parent->additions());
-  EXPECT_EQ(List::cast(child->additions())->allocated(), 0);
+  EXPECT_EQ(List::cast(child->additions())->numItems(), 0);
   EXPECT_NE(child->deletions(), parent->deletions());
-  EXPECT_EQ(List::cast(child->deletions())->allocated(), 0);
+  EXPECT_EQ(List::cast(child->deletions())->numItems(), 0);
   EXPECT_EQ(child->describedClass(), parent->describedClass());
   EXPECT_EQ(child->instanceSize(), parent->instanceSize());
 }

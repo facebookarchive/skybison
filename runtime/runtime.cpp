@@ -696,7 +696,7 @@ void Runtime::classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
 RawObject Runtime::newList() {
   HandleScope scope;
   Handle<List> result(&scope, heap()->create<List>());
-  result->setAllocated(0);
+  result->setNumItems(0);
   result->setItems(empty_object_array_);
   return *result;
 }
@@ -971,7 +971,7 @@ void Runtime::initializeLayouts() {
   list->setItems(*array);
   const word allocated = static_cast<word>(LayoutId::kLastBuiltinId) + 1;
   CHECK(allocated < array->length(), "bad allocation %ld", allocated);
-  list->setAllocated(allocated);
+  list->setNumItems(allocated);
   layouts_ = *list;
 }
 
@@ -1555,7 +1555,7 @@ LayoutId Runtime::reserveLayoutId() {
   HandleScope scope;
   Handle<List> list(&scope, layouts_);
   Handle<Object> value(&scope, NoneType::object());
-  word result = list->allocated();
+  word result = list->numItems();
   DCHECK(result <= Header::kMaxLayoutId,
          "exceeded layout id space in header word");
   listAdd(list, value);
@@ -1942,9 +1942,9 @@ void Runtime::listEnsureCapacity(const Handle<List>& list, word index) {
 
 void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   HandleScope scope;
-  word index = list->allocated();
+  word index = list->numItems();
   listEnsureCapacity(list, index);
-  list->setAllocated(index + 1);
+  list->setNumItems(index + 1);
   list->atPut(index, *value);
 }
 
@@ -1952,15 +1952,15 @@ RawObject Runtime::listExtend(Thread* thread, const Handle<List>& dst,
                               const Handle<Object>& iterable) {
   HandleScope scope(thread);
   Handle<Object> elt(&scope, NoneType::object());
-  word index = dst->allocated();
+  word index = dst->numItems();
   // Special case for lists
   if (iterable->isList()) {
     Handle<List> src(&scope, *iterable);
-    if (src->allocated() > 0) {
-      word new_capacity = index + src->allocated();
+    if (src->numItems() > 0) {
+      word new_capacity = index + src->numItems();
       listEnsureCapacity(dst, new_capacity);
-      dst->setAllocated(new_capacity);
-      for (word i = 0; i < src->allocated(); i++) {
+      dst->setNumItems(new_capacity);
+      for (word i = 0; i < src->numItems(); i++) {
         dst->atPut(index++, src->at(i));
       }
     }
@@ -1970,10 +1970,10 @@ RawObject Runtime::listExtend(Thread* thread, const Handle<List>& dst,
   if (iterable->isListIterator()) {
     Handle<ListIterator> list_iter(&scope, *iterable);
     Handle<List> src(&scope, list_iter->list());
-    word new_capacity = index + src->allocated();
+    word new_capacity = index + src->numItems();
     listEnsureCapacity(dst, new_capacity);
-    dst->setAllocated(new_capacity);
-    for (word i = 0; i < src->allocated(); i++) {
+    dst->setNumItems(new_capacity);
+    for (word i = 0; i < src->numItems(); i++) {
       elt = list_iter->next();
       if (elt->isError()) {
         break;
@@ -1988,7 +1988,7 @@ RawObject Runtime::listExtend(Thread* thread, const Handle<List>& dst,
     if (tuple->length() > 0) {
       word new_capacity = index + tuple->length();
       listEnsureCapacity(dst, new_capacity);
-      dst->setAllocated(new_capacity);
+      dst->setNumItems(new_capacity);
       for (word i = 0; i < tuple->length(); i++) {
         dst->atPut(index++, tuple->at(i));
       }
@@ -2002,7 +2002,7 @@ RawObject Runtime::listExtend(Thread* thread, const Handle<List>& dst,
       Handle<ObjectArray> data(&scope, set->data());
       word new_capacity = index + set->numItems();
       listEnsureCapacity(dst, new_capacity);
-      dst->setAllocated(new_capacity);
+      dst->setNumItems(new_capacity);
       for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
         if (Set::Bucket::isEmpty(*data, i) ||
             Set::Bucket::isTombstone(*data, i)) {
@@ -2020,7 +2020,7 @@ RawObject Runtime::listExtend(Thread* thread, const Handle<List>& dst,
       Handle<ObjectArray> keys(&scope, dictKeys(dict));
       word new_capacity = index + dict->numItems();
       listEnsureCapacity(dst, new_capacity);
-      dst->setAllocated(new_capacity);
+      dst->setNumItems(new_capacity);
       for (word i = 0; i < keys->length(); i++) {
         dst->atPut(index++, keys->at(i));
       }
@@ -2061,7 +2061,7 @@ RawObject Runtime::listExtend(Thread* thread, const Handle<List>& dst,
 void Runtime::listInsert(const Handle<List>& list, const Handle<Object>& value,
                          word index) {
   listAdd(list, value);
-  word last_index = list->allocated() - 1;
+  word last_index = list->numItems() - 1;
   if (index < 0) {
     index = last_index + index;
   }
@@ -2077,18 +2077,18 @@ RawObject Runtime::listPop(const Handle<List>& list, word index) {
   HandleScope scope;
   Handle<Object> popped(&scope, list->at(index));
   list->atPut(index, NoneType::object());
-  word last_index = list->allocated() - 1;
+  word last_index = list->numItems() - 1;
   for (word i = index; i < last_index; i++) {
     list->atPut(i, list->at(i + 1));
   }
-  list->setAllocated(list->allocated() - 1);
+  list->setNumItems(list->numItems() - 1);
   return *popped;
 }
 
 RawObject Runtime::listReplicate(Thread* thread, const Handle<List>& list,
                                  word ntimes) {
   HandleScope scope(thread);
-  word len = list->allocated();
+  word len = list->numItems();
   Handle<ObjectArray> items(&scope, newObjectArray(ntimes * len));
   for (word i = 0; i < ntimes; i++) {
     for (word j = 0; j < len; j++) {
@@ -2097,7 +2097,7 @@ RawObject Runtime::listReplicate(Thread* thread, const Handle<List>& list,
   }
   Handle<List> result(&scope, newList());
   result->setItems(*items);
-  result->setAllocated(items->length());
+  result->setNumItems(items->length());
   return *result;
 }
 
@@ -2608,7 +2608,7 @@ RawObject Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
   // Special case for lists
   if (iterable->isList()) {
     Handle<List> src(&scope, *iterable);
-    for (word i = 0; i < src->allocated(); i++) {
+    for (word i = 0; i < src->numItems(); i++) {
       elt = src->at(i);
       setAdd(dst, elt);
     }
@@ -2618,7 +2618,7 @@ RawObject Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
   if (iterable->isListIterator()) {
     Handle<ListIterator> list_iter(&scope, *iterable);
     Handle<List> src(&scope, list_iter->list());
-    for (word i = 0; i < src->allocated(); i++) {
+    for (word i = 0; i < src->numItems(); i++) {
       elt = src->at(i);
       setAdd(dst, elt);
     }
@@ -2752,7 +2752,7 @@ inline RawObject Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       &scope, Interpreter::callMethod1(thread, frame, keys_method, mapping));
   if (keys->isList()) {
     Handle<List> keys_list(&scope, *keys);
-    for (word i = 0; i < keys_list->allocated(); ++i) {
+    for (word i = 0; i < keys_list->numItems(); ++i) {
       key = keys_list->at(i);
       if (type == DictUpdateType::Merge) {
         if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
@@ -3317,9 +3317,9 @@ RawObject Runtime::instanceDel(Thread* thread,
 
 RawObject Runtime::layoutFollowEdge(const Handle<List>& edges,
                                     const Handle<Object>& label) {
-  DCHECK(edges->allocated() % 2 == 0,
+  DCHECK(edges->numItems() % 2 == 0,
          "edges must contain an even number of elements");
-  for (word i = 0; i < edges->allocated(); i++) {
+  for (word i = 0; i < edges->numItems(); i++) {
     if (edges->at(i) == *label) {
       return edges->at(i + 1);
     }
@@ -3330,7 +3330,7 @@ RawObject Runtime::layoutFollowEdge(const Handle<List>& edges,
 void Runtime::layoutAddEdge(const Handle<List>& edges,
                             const Handle<Object>& label,
                             const Handle<Object>& layout) {
-  DCHECK(edges->allocated() % 2 == 0,
+  DCHECK(edges->numItems() % 2 == 0,
          "edges must contain an even number of elements");
   listAdd(edges, label);
   listAdd(edges, layout);

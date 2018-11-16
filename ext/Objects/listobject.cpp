@@ -17,7 +17,7 @@ PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
 
   Handle<List> list(&scope, runtime->newList());
   Handle<ObjectArray> items(&scope, runtime->newObjectArray(size));
-  list->setAllocated(size);
+  list->setNumItems(size);
   list->setItems(*items);
 
   return ApiHandle::fromObject(*list);

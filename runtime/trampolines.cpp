@@ -393,7 +393,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
       // keywords name list.
       caller_frame->dropValues(
           num_keyword_args);  // Pop all of the old keyword values
-      num_keyword_args = saved_keyword_list->allocated();
+      num_keyword_args = saved_keyword_list->numItems();
       // Replace the old keywords list with a new one.
       keywords = runtime->newObjectArray(num_keyword_args);
       for (word i = 0; i < num_keyword_args; i++) {

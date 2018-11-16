@@ -1226,7 +1226,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
   frame->pushValue(*list);
   num_pushed++;
 
-  if (list->allocated() < after) {
+  if (list->numItems() < after) {
     frame->dropValues(num_pushed);
     thread->raiseValueErrorWithCStr("not enough values to unpack");
     thread->abortOnPendingException();
@@ -1234,12 +1234,12 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
 
   if (after > 0) {
     // Pop elements off the list and set them on the stack
-    for (word i = list->allocated() - after, j = list->allocated(); i < j;
+    for (word i = list->numItems() - after, j = list->numItems(); i < j;
          ++i, ++num_pushed) {
       frame->pushValue(list->at(i));
       list->atPut(i, NoneType::object());
     }
-    list->setAllocated(list->allocated() - after);
+    list->setNumItems(list->numItems() - after);
   }
 
   // swap values on the stack
@@ -1389,7 +1389,7 @@ void Interpreter::doBuildList(Context* ctx, word arg) {
   }
   RawList list = List::cast(thread->runtime()->newList());
   list->setItems(*array);
-  list->setAllocated(array->length());
+  list->setNumItems(array->length());
   ctx->frame->pushValue(list);
 }
 
@@ -1877,8 +1877,8 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
       thread->abortOnPendingException();
     }
   }
-  Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(list->allocated()));
-  for (word i = 0; i < list->allocated(); i++) {
+  Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(list->numItems()));
+  for (word i = 0; i < list->numItems(); i++) {
     tuple->atPut(i, list->at(i));
   }
   frame->dropValues(arg - 1);

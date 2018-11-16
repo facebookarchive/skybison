@@ -2016,7 +2016,7 @@ l = [*[0], *[1, 2], *[], *[3, 4, 5]]
   Handle<Object> l(&scope, moduleAt(&runtime, main, "l"));
   EXPECT_TRUE(l->isList());
   Handle<List> list_l(&scope, *l);
-  EXPECT_EQ(list_l->allocated(), 6);
+  EXPECT_EQ(list_l->numItems(), 6);
   EXPECT_EQ(SmallInt::cast(list_l->at(0))->value(), 0);
   EXPECT_EQ(SmallInt::cast(list_l->at(1))->value(), 1);
   EXPECT_EQ(SmallInt::cast(list_l->at(2))->value(), 2);
@@ -2291,7 +2291,7 @@ for el in l:
   ASSERT_NE(SmallInt::cast(*b)->value(), 12);
 
   Handle<List> list_l(&scope, *l);
-  ASSERT_EQ(list_l->allocated(), 16);
+  ASSERT_EQ(list_l->numItems(), 16);
   ASSERT_EQ(SmallInt::cast(list_l->at(2))->value(), 2);
   ASSERT_EQ(SmallInt::cast(list_l->at(12))->value(), 12);
 
@@ -2333,7 +2333,7 @@ l.insert(-1, 3)
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> l(&scope, moduleAt(&runtime, main, "l"));
   Handle<List> list_l(&scope, *l);
-  ASSERT_EQ(list_l->allocated(), 5);
+  ASSERT_EQ(list_l->numItems(), 5);
   EXPECT_EQ(SmallInt::cast(list_l->at(0))->value(), 0);
   EXPECT_EQ(SmallInt::cast(list_l->at(1))->value(), 1);
   EXPECT_EQ(SmallInt::cast(list_l->at(2))->value(), 2);
@@ -2532,7 +2532,7 @@ for x in range(4):
   Handle<Object> l(&scope, moduleAt(&runtime, main, "l"));
   EXPECT_TRUE(l->isList());
   Handle<List> list_l(&scope, *l);
-  ASSERT_GE(list_l->allocated(), 3);
+  ASSERT_GE(list_l->numItems(), 3);
   EXPECT_EQ(list_l->at(0), SmallInt::fromWord(0));
   EXPECT_EQ(list_l->at(1), SmallInt::fromWord(1));
   EXPECT_EQ(list_l->at(2), SmallInt::fromWord(2));

@@ -359,7 +359,7 @@ TEST(RuntimeListTest, EmptyListInvariants) {
   Runtime runtime;
   RawList list = List::cast(runtime.newList());
   ASSERT_EQ(list->capacity(), 0);
-  ASSERT_EQ(list->allocated(), 0);
+  ASSERT_EQ(list->numItems(), 0);
 }
 
 TEST(RuntimeListTest, AppendToList) {
@@ -374,7 +374,7 @@ TEST(RuntimeListTest, AppendToList) {
     Handle<Object> value(&scope, SmallInt::fromWord(i));
     runtime.listAdd(list, value);
     ASSERT_EQ(list->capacity(), expected_capacity[i]);
-    ASSERT_EQ(list->allocated(), i + 1);
+    ASSERT_EQ(list->numItems(), i + 1);
   }
 
   // Sanity check list contents
@@ -423,21 +423,21 @@ TEST(RuntimeListTest, InsertToListBounds) {
     Handle<Object> value(&scope, SmallInt::fromWord(i));
     runtime.listAdd(list, value);
   }
-  ASSERT_EQ(list->allocated(), 10);
+  ASSERT_EQ(list->numItems(), 10);
 
   Handle<Object> value100(&scope, SmallInt::fromWord(100));
   runtime.listInsert(list, value100, 100);
-  ASSERT_EQ(list->allocated(), 11);
+  ASSERT_EQ(list->numItems(), 11);
   ASSERT_EQ(SmallInt::cast(list->at(10))->value(), 100);
 
   Handle<Object> value0(&scope, SmallInt::fromWord(400));
   runtime.listInsert(list, value0, 0);
-  ASSERT_EQ(list->allocated(), 12);
+  ASSERT_EQ(list->numItems(), 12);
   ASSERT_EQ(SmallInt::cast(list->at(0))->value(), 400);
 
   Handle<Object> value_n(&scope, SmallInt::fromWord(-10));
   runtime.listInsert(list, value_n, -10);
-  ASSERT_EQ(list->allocated(), 13);
+  ASSERT_EQ(list->numItems(), 13);
   ASSERT_EQ(SmallInt::cast(list->at(2))->value(), -10);
 }
 
@@ -449,11 +449,11 @@ TEST(RuntimeListTest, PopList) {
     Handle<Object> value(&scope, SmallInt::fromWord(i));
     runtime.listAdd(list, value);
   }
-  ASSERT_EQ(list->allocated(), 16);
+  ASSERT_EQ(list->numItems(), 16);
 
   // Pop from the end
   RawObject res1 = runtime.listPop(list, 15);
-  ASSERT_EQ(list->allocated(), 15);
+  ASSERT_EQ(list->numItems(), 15);
   ASSERT_EQ(SmallInt::cast(list->at(14))->value(), 14);
   ASSERT_EQ(SmallInt::cast(res1)->value(), 15);
 
@@ -462,7 +462,7 @@ TEST(RuntimeListTest, PopList) {
     RawObject res5 = runtime.listPop(list, 5);
     ASSERT_EQ(SmallInt::cast(res5)->value(), i + 5);
   }
-  ASSERT_EQ(list->allocated(), 10);
+  ASSERT_EQ(list->numItems(), 10);
   for (int i = 0; i < 5; i++) {
     RawSmallInt elem = SmallInt::cast(list->at(i));
     ASSERT_EQ(elem->value(), i);
@@ -474,7 +474,7 @@ TEST(RuntimeListTest, PopList) {
 
   // Pop element 0
   RawObject res0 = runtime.listPop(list, 0);
-  ASSERT_EQ(list->allocated(), 9);
+  ASSERT_EQ(list->numItems(), 9);
   ASSERT_EQ(SmallInt::cast(list->at(0))->value(), 1);
   ASSERT_EQ(SmallInt::cast(res0)->value(), 0);
 }
@@ -490,10 +490,10 @@ TEST(RuntimeListTest, ListExtendList) {
     runtime.listAdd(list, value);
     runtime.listAdd(list1, value1);
   }
-  EXPECT_EQ(list->allocated(), 4);
+  EXPECT_EQ(list->numItems(), 4);
   Handle<Object> list1_handle(&scope, *list1);
   runtime.listExtend(Thread::currentThread(), list, list1_handle);
-  ASSERT_EQ(list->allocated(), 8);
+  ASSERT_EQ(list->numItems(), 8);
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 0);
   EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 1);
   EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 2);
@@ -515,11 +515,11 @@ TEST(RuntimeListTest, ListExtendListIterator) {
     runtime.listAdd(list, value);
     runtime.listAdd(list1, value1);
   }
-  EXPECT_EQ(list->allocated(), 4);
+  EXPECT_EQ(list->numItems(), 4);
   Handle<Object> list1_handle(&scope, *list1);
   Handle<Object> list1_iterator(&scope, runtime.newListIterator(list1_handle));
   runtime.listExtend(Thread::currentThread(), list, list1_iterator);
-  ASSERT_EQ(list->allocated(), 8);
+  ASSERT_EQ(list->numItems(), 8);
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 0);
   EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 1);
   EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 2);
@@ -543,12 +543,12 @@ TEST(RuntimeListTest, ListExtendObjectArray) {
     runtime.listAdd(list, value);
   }
   runtime.listExtend(Thread::currentThread(), list, object_array0);
-  EXPECT_EQ(list->allocated(), 4);
+  EXPECT_EQ(list->numItems(), 4);
 
   Handle<Object> object_array1_handle(&scope, *object_array1);
   object_array1->atPut(0, NoneType::object());
   runtime.listExtend(Thread::currentThread(), list, object_array1_handle);
-  ASSERT_GE(list->allocated(), 5);
+  ASSERT_GE(list->numItems(), 5);
   ASSERT_TRUE(list->at(4)->isNoneType());
 
   for (word i = 0; i < 4; i++) {
@@ -557,7 +557,7 @@ TEST(RuntimeListTest, ListExtendObjectArray) {
 
   Handle<Object> object_array2_handle(&scope, *object_array16);
   runtime.listExtend(Thread::currentThread(), list, object_array2_handle);
-  ASSERT_GE(list->allocated(), 4 + 1 + 4);
+  ASSERT_GE(list->numItems(), 4 + 1 + 4);
   EXPECT_EQ(list->at(5), SmallInt::fromWord(0));
   EXPECT_EQ(list->at(6), SmallInt::fromWord(1));
   EXPECT_EQ(list->at(7), SmallInt::fromWord(2));
@@ -581,7 +581,7 @@ TEST(RuntimeListTest, ListExtendSet) {
   Handle<Object> set_obj(&scope, *set);
   runtime.listExtend(Thread::currentThread(), list,
                      Handle<Object>(&scope, *set_obj));
-  EXPECT_EQ(list->allocated(), 16);
+  EXPECT_EQ(list->numItems(), 16);
 
   for (word i = 0; i < 16; i++) {
     sum -= SmallInt::cast(list->at(i))->value();
@@ -606,7 +606,7 @@ TEST(RuntimeListTest, ListExtendDict) {
   Handle<Object> dict_obj(&scope, *dict);
   runtime.listExtend(Thread::currentThread(), list,
                      Handle<Object>(&scope, *dict_obj));
-  EXPECT_EQ(list->allocated(), 16);
+  EXPECT_EQ(list->numItems(), 16);
 
   for (word i = 0; i < 16; i++) {
     sum -= SmallInt::cast(list->at(i))->value();
@@ -674,7 +674,7 @@ TEST(RuntimeListTest, ListExtendIterator) {
   Handle<Object> iterator(&scope, iterableWithLengthHint(&runtime));
   runtime.listExtend(Thread::currentThread(), list, iterator);
 
-  EXPECT_EQ(list->allocated(), 3);
+  EXPECT_EQ(list->numItems(), 3);
 
   ASSERT_TRUE(list->at(0)->isSmallInt());
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 1);
@@ -694,7 +694,7 @@ TEST(RuntimeListTest, ListExtendIteratorWithoutDunderLengthHint) {
   runtime.listExtend(Thread::currentThread(), list, iterator);
 
   // An iterator with no __length_hint__ should not be consumed
-  ASSERT_EQ(list->allocated(), 0);
+  ASSERT_EQ(list->numItems(), 0);
 }
 
 TEST(RuntimeTest, NewBytes) {

@@ -324,13 +324,13 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
       *ostream << "[";
       HandleScope scope;
       Handle<List> list(&scope, arg);
-      for (word i = 0; i < list->allocated(); i++) {
+      for (word i = 0; i < list->numItems(); i++) {
         if (supportedScalarType(list->at(i))) {
           printQuotedScalarTypes(list->at(i), ostream);
         } else {
           UNIMPLEMENTED("Custom print unsupported");
         }
-        if (i != list->allocated() - 1) {
+        if (i != list->numItems() - 1) {
           *ostream << ", ";
         }
       }

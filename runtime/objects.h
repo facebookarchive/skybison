@@ -1684,8 +1684,8 @@ class List : public HeapObject {
   void atPut(word index, RawObject value);
   RawObject items();
   void setItems(RawObject new_items);
-  word allocated();
-  void setAllocated(word new_allocated);
+  word numItems();
+  void setNumItems(word num_items);
 
   // Return the total number of elements that may be held without growing the
   // list
@@ -3133,7 +3133,7 @@ inline void ListIterator::setList(RawObject list) {
 inline RawObject ListIterator::next() {
   word idx = index();
   auto underlying = List::cast(list());
-  if (idx >= underlying->allocated()) {
+  if (idx >= underlying->numItems()) {
     return Error::object();
   }
 
@@ -3406,22 +3406,22 @@ inline void List::setItems(RawObject new_items) {
 
 inline word List::capacity() { return ObjectArray::cast(items())->length(); }
 
-inline word List::allocated() {
+inline word List::numItems() {
   return SmallInt::cast(instanceVariableAt(kAllocatedOffset))->value();
 }
 
-inline void List::setAllocated(word new_allocated) {
-  instanceVariableAtPut(kAllocatedOffset, SmallInt::fromWord(new_allocated));
+inline void List::setNumItems(word num_items) {
+  instanceVariableAtPut(kAllocatedOffset, SmallInt::fromWord(num_items));
 }
 
 inline void List::atPut(word index, RawObject value) {
-  DCHECK_INDEX(index, allocated());
+  DCHECK_INDEX(index, numItems());
   RawObject items = instanceVariableAt(kItemsOffset);
   ObjectArray::cast(items)->atPut(index, value);
 }
 
 inline RawObject List::at(word index) {
-  DCHECK_INDEX(index, allocated());
+  DCHECK_INDEX(index, numItems());
   return ObjectArray::cast(items())->at(index);
 }
 

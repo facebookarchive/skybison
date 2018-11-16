@@ -1034,7 +1034,7 @@ a, b, c, *d, e, f, g  = l
   Handle<Object> d(&scope, testing::moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d->isList());
   Handle<List> list(&scope, *d);
-  EXPECT_EQ(list->allocated(), 1);
+  EXPECT_EQ(list->numItems(), 1);
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 4);
 
   Handle<Object> e(&scope, testing::moduleAt(&runtime, main, "e"));
@@ -1066,7 +1066,7 @@ a, b, *c = l
 
   ASSERT_TRUE(c->isList());
   Handle<List> list(&scope, *c);
-  ASSERT_EQ(list->allocated(), 2);
+  ASSERT_EQ(list->numItems(), 2);
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 3);
   EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 4);
 }
@@ -1084,7 +1084,7 @@ l = [1, 2, 3, 4]
   Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(a->isList());
   Handle<List> list(&scope, *a);
-  ASSERT_EQ(list->allocated(), 2);
+  ASSERT_EQ(list->numItems(), 2);
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 1);
   EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 2);
 
