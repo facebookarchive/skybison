@@ -27,7 +27,7 @@ def test(callable):
   Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
 
-  Handle<Object> self(&scope, SmallInteger::fromWord(1111));
+  Handle<Object> self(&scope, SmallInt::fromWord(1111));
   Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
 
   Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
@@ -58,7 +58,7 @@ def test(callable):
   Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
 
-  Handle<Object> self(&scope, SmallInteger::fromWord(1111));
+  Handle<Object> self(&scope, SmallInt::fromWord(1111));
   Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
 
   Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
@@ -464,7 +464,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
   consts->atPut(0, *callee);
-  consts->atPut(1, SmallInteger::fromWord(1111));
+  consts->atPut(1, SmallInt::fromWord(1111));
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
@@ -473,8 +473,8 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
 
   // Execute the code and make sure we get back the result we expect
   Object* result = Thread::currentThread()->run(*code);
-  ASSERT_TRUE(result->isSmallInteger());
-  ASSERT_EQ(SmallInteger::cast(result)->value(), 1111);
+  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(result)->value(), 1111);
 }
 
 // test "builtin-kw" func that returns a list of first position arg
@@ -506,7 +506,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(4));
   consts->atPut(0, *callee);
-  consts->atPut(1, SmallInteger::fromWord(1234));
+  consts->atPut(1, SmallInt::fromWord(1234));
   consts->atPut(2, runtime.newStringFromCString("bar"));
   Handle<ObjectArray> kw_tuple(&scope, runtime.newObjectArray(1));
   kw_tuple->atPut(0, runtime.newStringFromCString("foo"));
@@ -524,7 +524,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   ASSERT_TRUE(result->isObjectArray());
   Handle<ObjectArray> tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 2);
-  EXPECT_EQ(SmallInteger::cast(tuple->at(0))->value(), 1234);
+  EXPECT_EQ(SmallInt::cast(tuple->at(0))->value(), 1234);
   EXPECT_TRUE(String::cast(tuple->at(1))->equalsCString("bar"));
 }
 
@@ -561,7 +561,7 @@ TEST(TrampolineTest,
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(5));
   consts->atPut(0, *callee);
-  consts->atPut(1, SmallInteger::fromWord(1234));
+  consts->atPut(1, SmallInt::fromWord(1234));
   consts->atPut(2, runtime.newStringFromCString("foo_val"));
   consts->atPut(3, runtime.newStringFromCString("bar_val"));
   Handle<ObjectArray> kw_tuple(&scope, runtime.newObjectArray(2));
@@ -583,7 +583,7 @@ TEST(TrampolineTest,
   Handle<ObjectArray> tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 3);
   ASSERT_TRUE(tuple->at(0)->isInteger());
-  EXPECT_EQ(SmallInteger::cast(tuple->at(0))->value(), 1234);
+  EXPECT_EQ(SmallInt::cast(tuple->at(0))->value(), 1234);
   ASSERT_TRUE(tuple->at(1)->isString());
   EXPECT_TRUE(String::cast(tuple->at(1))->equalsCString("foo_val"));
   ASSERT_TRUE(tuple->at(2)->isString());

@@ -22,11 +22,11 @@ c = a + b
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isList());
   Handle<List> list(&scope, List::cast(*c));
-  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 1);
-  EXPECT_EQ(SmallInteger::cast(list->at(1))->value(), 2);
-  EXPECT_EQ(SmallInteger::cast(list->at(2))->value(), 3);
-  EXPECT_EQ(SmallInteger::cast(list->at(3))->value(), 4);
-  EXPECT_EQ(SmallInteger::cast(list->at(4))->value(), 5);
+  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 2);
+  EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 3);
+  EXPECT_EQ(SmallInt::cast(list->at(3))->value(), 4);
+  EXPECT_EQ(SmallInt::cast(list->at(4))->value(), 5);
 }
 
 TEST(ListBuiltinsTest, AddToEmptyList) {
@@ -42,9 +42,9 @@ c = a + b
   Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(c->isList());
   Handle<List> list(&scope, List::cast(*c));
-  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 1);
-  EXPECT_EQ(SmallInteger::cast(list->at(1))->value(), 2);
-  EXPECT_EQ(SmallInteger::cast(list->at(2))->value(), 3);
+  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 2);
+  EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 3);
 }
 
 TEST(ListBuiltinsDeathTest, AddWithNonListSelfThrows) {
@@ -238,7 +238,7 @@ static Object* listFromRange(word start, word stop) {
   HandleScope scope(thread);
   Handle<List> result(&scope, thread->runtime()->newList());
   for (word i = start; i < stop; i++) {
-    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    Handle<Object> value(&scope, SmallInt::fromWord(i));
     thread->runtime()->listAdd(result, value);
   }
   return *result;
@@ -251,15 +251,15 @@ TEST(ListBuiltinsTest, SlicePositiveStartIndex) {
   Handle<List> list1(&scope, listFromRange(1, 6));
 
   // Test [2:]
-  Handle<Object> start(&scope, SmallInteger::fromWord(2));
+  Handle<Object> start(&scope, SmallInt::fromWord(2));
   Handle<Object> stop(&scope, None::object());
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 3);
-  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 3);
-  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 4);
-  EXPECT_EQ(SmallInteger::cast(test->at(2))->value(), 5);
+  EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 3);
+  EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 4);
+  EXPECT_EQ(SmallInt::cast(test->at(2))->value(), 5);
 }
 
 TEST(ListBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
@@ -269,14 +269,14 @@ TEST(ListBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
   Handle<List> list1(&scope, listFromRange(1, 6));
 
   // Test [-2:]
-  Handle<Object> start(&scope, SmallInteger::fromWord(-2));
+  Handle<Object> start(&scope, SmallInt::fromWord(-2));
   Handle<Object> stop(&scope, None::object());
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 2);
-  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 4);
-  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 5);
+  EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 4);
+  EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 5);
 }
 
 TEST(ListBuiltinsTest, SlicePositiveStopIndex) {
@@ -287,13 +287,13 @@ TEST(ListBuiltinsTest, SlicePositiveStopIndex) {
 
   // Test [:2]
   Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, SmallInteger::fromWord(2));
+  Handle<Object> stop(&scope, SmallInt::fromWord(2));
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 2);
-  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
-  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 2);
+  EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 2);
 }
 
 TEST(ListBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
@@ -304,14 +304,14 @@ TEST(ListBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
 
   // Test [:-2]
   Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, SmallInteger::fromWord(-2));
+  Handle<Object> stop(&scope, SmallInt::fromWord(-2));
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 3);
-  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
-  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 2);
-  EXPECT_EQ(SmallInteger::cast(test->at(2))->value(), 3);
+  EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 2);
+  EXPECT_EQ(SmallInt::cast(test->at(2))->value(), 3);
 }
 
 TEST(ListBuiltinsTest, SlicePositiveStep) {
@@ -323,13 +323,13 @@ TEST(ListBuiltinsTest, SlicePositiveStep) {
   // Test [::2]
   Handle<Object> start(&scope, None::object());
   Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, SmallInteger::fromWord(2));
+  Handle<Object> step(&scope, SmallInt::fromWord(2));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 3);
-  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
-  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 3);
-  EXPECT_EQ(SmallInteger::cast(test->at(2))->value(), 5);
+  EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 3);
+  EXPECT_EQ(SmallInt::cast(test->at(2))->value(), 5);
 }
 
 TEST(ListBuiltinsTest, SliceNegativeStepReversesOrder) {
@@ -341,13 +341,13 @@ TEST(ListBuiltinsTest, SliceNegativeStepReversesOrder) {
   // Test [::-2]
   Handle<Object> start(&scope, None::object());
   Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, SmallInteger::fromWord(-2));
+  Handle<Object> step(&scope, SmallInt::fromWord(-2));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 3);
-  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 5);
-  EXPECT_EQ(SmallInteger::cast(test->at(1))->value(), 3);
-  EXPECT_EQ(SmallInteger::cast(test->at(2))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 5);
+  EXPECT_EQ(SmallInt::cast(test->at(1))->value(), 3);
+  EXPECT_EQ(SmallInt::cast(test->at(2))->value(), 1);
 }
 
 TEST(ListBuiltinsTest, SliceStartOutOfBounds) {
@@ -357,7 +357,7 @@ TEST(ListBuiltinsTest, SliceStartOutOfBounds) {
   Handle<List> list1(&scope, listFromRange(1, 6));
 
   // Test [10::]
-  Handle<Object> start(&scope, SmallInteger::fromWord(10));
+  Handle<Object> start(&scope, SmallInt::fromWord(10));
   Handle<Object> stop(&scope, None::object());
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
@@ -373,13 +373,13 @@ TEST(ListBuiltinsTest, SliceStopOutOfBounds) {
 
   // Test [:10]
   Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, SmallInteger::fromWord(10));
+  Handle<Object> stop(&scope, SmallInt::fromWord(10));
   Handle<Object> step(&scope, None::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 5);
-  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
-  EXPECT_EQ(SmallInteger::cast(test->at(4))->value(), 5);
+  EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(test->at(4))->value(), 5);
 }
 
 TEST(ListBuiltinsTest, SliceStepOutOfBounds) {
@@ -391,11 +391,11 @@ TEST(ListBuiltinsTest, SliceStepOutOfBounds) {
   // Test [::10]
   Handle<Object> start(&scope, None::object());
   Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, SmallInteger::fromWord(10));
+  Handle<Object> step(&scope, SmallInt::fromWord(10));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 1);
-  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
 }
 
 TEST(ListBuiltinsTest, IdenticalSliceIsCopy) {
@@ -411,8 +411,8 @@ TEST(ListBuiltinsTest, IdenticalSliceIsCopy) {
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 5);
-  EXPECT_EQ(SmallInteger::cast(test->at(0))->value(), 1);
-  EXPECT_EQ(SmallInteger::cast(test->at(4))->value(), 5);
+  EXPECT_EQ(SmallInt::cast(test->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(test->at(4))->value(), 5);
   ASSERT_NE(*test, *list1);
 }
 
@@ -424,20 +424,20 @@ TEST(ListBuiltinsTest, SetItem) {
   Handle<List> list(&scope, listFromRange(1, 5));
 
   frame->setLocal(0, Object::cast(*list));
-  frame->setLocal(1, SmallInteger::fromWord(0));
-  frame->setLocal(2, SmallInteger::fromWord(2));
+  frame->setLocal(1, SmallInt::fromWord(0));
+  frame->setLocal(2, SmallInt::fromWord(2));
 
-  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 1);
+  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 1);
   Handle<Object> result(&scope, ListBuiltins::dunderSetItem(thread, frame, 3));
   EXPECT_TRUE(result->isNone());
-  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 2);
+  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 2);
 
   // Negative index
-  frame->setLocal(1, SmallInteger::fromWord(-1));
-  EXPECT_EQ(SmallInteger::cast(list->at(3))->value(), 4);
+  frame->setLocal(1, SmallInt::fromWord(-1));
+  EXPECT_EQ(SmallInt::cast(list->at(3))->value(), 4);
   Handle<Object> result1(&scope, ListBuiltins::dunderSetItem(thread, frame, 3));
   EXPECT_TRUE(result1->isNone());
-  EXPECT_EQ(SmallInteger::cast(list->at(3))->value(), 2);
+  EXPECT_EQ(SmallInt::cast(list->at(3))->value(), 2);
 }
 
 TEST(ListBuiltinsDeathTest, SetItemWithFewerArgumentsThrows) {
@@ -500,12 +500,12 @@ test6 = len(a)
   Handle<Object> test4(&scope, findInModule(&runtime, main, "test4"));
   Handle<Object> test5(&scope, findInModule(&runtime, main, "test5"));
   Handle<Object> test6(&scope, findInModule(&runtime, main, "test6"));
-  EXPECT_EQ(*test1, SmallInteger::fromWord(1));
+  EXPECT_EQ(*test1, SmallInt::fromWord(1));
   EXPECT_EQ(*test2, SmallString::fromCString("a"));
-  EXPECT_EQ(*test3, SmallInteger::fromWord(2));
-  EXPECT_EQ(*test4, SmallInteger::fromWord(1));
-  EXPECT_EQ(*test5, SmallInteger::fromWord(2));
-  EXPECT_EQ(*test6, SmallInteger::fromWord(0));
+  EXPECT_EQ(*test3, SmallInt::fromWord(2));
+  EXPECT_EQ(*test4, SmallInt::fromWord(1));
+  EXPECT_EQ(*test5, SmallInt::fromWord(2));
+  EXPECT_EQ(*test6, SmallInt::fromWord(0));
 }
 
 TEST(ListBuiltinsTest, DelItem) {
@@ -522,7 +522,7 @@ e = a[0]
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> len(&scope, findInModule(&runtime, main, "l"));
   Handle<Object> element(&scope, findInModule(&runtime, main, "e"));
-  EXPECT_EQ(*len, SmallInteger::fromWord(1));
+  EXPECT_EQ(*len, SmallInt::fromWord(1));
   EXPECT_EQ(*element, SmallString::fromCString("foo"));
 }
 

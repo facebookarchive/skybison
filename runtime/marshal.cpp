@@ -139,14 +139,14 @@ Object* Marshal::Reader::readObject() {
       break;
 
     case TYPE_INT: {
-      // NB: this will continue to work as long as SmallInteger can contain the
+      // NB: this will continue to work as long as SmallInt can contain the
       // full range of 32 bit signed integer values. Notably, this will break if
       // we need to support 32 bit machines.
       word n = readLong();
-      if (!SmallInteger::isValid(n)) {
-        UNIMPLEMENTED("value '%ld' outside range supported by SmallInteger", n);
+      if (!SmallInt::isValid(n)) {
+        UNIMPLEMENTED("value '%ld' outside range supported by SmallInt", n);
       }
-      result = SmallInteger::fromWord(n);
+      result = SmallInt::fromWord(n);
       if (isRef_) {
         addRef(result);
       }
@@ -381,7 +381,7 @@ Object* Marshal::Reader::readTypeRef() {
 Object* Marshal::Reader::readLongObject() {
   int32 n = readLong();
   if (n == 0) {
-    Object* zero = SmallInteger::fromWord(0);
+    Object* zero = SmallInt::fromWord(0);
     if (isRef_) {
       addRef(zero);
     }

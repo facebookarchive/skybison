@@ -51,8 +51,8 @@ C()
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
   ASSERT_FALSE(global->isError());
-  ASSERT_TRUE(global->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*global)->value(), 2);
+  ASSERT_TRUE(global->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*global)->value(), 2);
 }
 
 TEST(TypeBuiltinsTest, DunderCallClassWithInitAndArgs) {
@@ -74,8 +74,8 @@ C(9)
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
   ASSERT_FALSE(global->isError());
-  ASSERT_TRUE(global->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*global)->value(), 9);
+  ASSERT_TRUE(global->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*global)->value(), 9);
 }
 
 TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
@@ -111,7 +111,7 @@ c = C()
   Object* attr = runtime.attributeAt(thread, c, x);
   ASSERT_FALSE(attr->isNone());
   ASSERT_TRUE(attr->isInteger());
-  ASSERT_EQ(SmallInteger::cast(attr)->value(), 42);
+  ASSERT_EQ(SmallInt::cast(attr)->value(), 42);
 }
 
 }  // namespace python

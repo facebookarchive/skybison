@@ -7,7 +7,7 @@
 namespace python {
 
 #define INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                     \
-  V(SmallInteger)                                                              \
+  V(SmallInt)                                                                  \
   V(SmallString)                                                               \
   V(Boolean)                                                                   \
   V(NoneType)
@@ -63,11 +63,11 @@ namespace python {
 // NB: If you add something here make sure you add it to the appropriate macro
 // above
 enum class LayoutId : word {
-  // Immediate objects - note that the SmallInteger class is also aliased to
+  // Immediate objects - note that the SmallInt class is also aliased to
   // all even integers less than 32, so that classes of immediate objects can
   // be looked up simply by using the low 5 bits of the immediate value. This
   // implies that all other immediate class ids must be odd.
-  kSmallInteger = 0,
+  kSmallInt = 0,
   kBoolean = 7,
   kNoneType = 15,
   // there is no class associated with the Error object type, this is here as a
@@ -125,7 +125,7 @@ class Object {
   bool isError();
   bool isHeader();
   bool isNone();
-  bool isSmallInteger();
+  bool isSmallInt();
   bool isSmallString();
 
   // Heap objects
@@ -182,7 +182,7 @@ class Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
 };
 
-// Generic wrapper around SmallInteger/LargeInteger.
+// Generic wrapper around SmallInt/LargeInteger.
 class Integer : public Object {
  public:
   // Getters and setters.
@@ -209,26 +209,26 @@ class Integer : public Object {
 
 // Immediate objects
 
-class SmallInteger : public Object {
+class SmallInt : public Object {
  public:
   // Getters and setters.
   word value();
   void* asCPointer();
 
   // Conversion.
-  static SmallInteger* fromWord(word value);
+  static SmallInt* fromWord(word value);
   static constexpr bool isValid(word value) {
     return (value >= kMinValue) && (value <= kMaxValue);
   }
 
   template <typename T>
-  static SmallInteger* fromFunctionPointer(T pointer);
+  static SmallInt* fromFunctionPointer(T pointer);
 
   template <typename T>
   T asFunctionPointer();
 
   // Casting.
-  static SmallInteger* cast(Object* object);
+  static SmallInt* cast(Object* object);
 
   // Tags.
   static const int kTag = 0;
@@ -240,7 +240,7 @@ class SmallInteger : public Object {
   static const word kMaxValue = (1L << (kBitsPerPointer - (kTagSize + 1))) - 1;
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallInteger);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallInt);
 };
 
 enum class ObjectFormat {
@@ -596,8 +596,8 @@ class Type : public HeapObject {
     kClassSubclass = 1 << 10,
     kLast = kClassSubclass,
   };
-  static_assert(Flag::kLast < SmallInteger::kMaxValue,
-                "Flags must be encodable in a SmallInteger");
+  static_assert(Flag::kLast < SmallInt::kMaxValue,
+                "Flags must be encodable in a SmallInt");
 
   // Getters and setters.
   Object* instanceLayout();
@@ -1302,7 +1302,7 @@ class Dict::Bucket {
   static word getIndex(ObjectArray* data, Object* hash) {
     word nbuckets = data->length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
-    word value = SmallInteger::cast(hash)->value();
+    word value = SmallInt::cast(hash)->value();
     return (value & (nbuckets - 1)) * kNumPointers;
   }
 
@@ -1395,7 +1395,7 @@ class Set::Bucket {
   static word getIndex(ObjectArray* data, Object* hash) {
     word nbuckets = data->length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
-    word value = SmallInteger::cast(hash)->value();
+    word value = SmallInt::cast(hash)->value();
     return (value & (nbuckets - 1)) * kNumPointers;
   }
 
@@ -1793,8 +1793,8 @@ inline LayoutId Object::layoutId() {
   if (isHeapObject()) {
     return HeapObject::cast(this)->header()->layoutId();
   }
-  if (isSmallInteger()) {
-    return LayoutId::kSmallInteger;
+  if (isSmallInt()) {
+    return LayoutId::kSmallInt;
   }
   return static_cast<LayoutId>(reinterpret_cast<uword>(this) &
                                kImmediateClassTableIndexMask);
@@ -1814,9 +1814,9 @@ inline bool Object::isClassMethod() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kClassMethod;
 }
 
-inline bool Object::isSmallInteger() {
-  uword tag = reinterpret_cast<uword>(this) & SmallInteger::kTagMask;
-  return tag == SmallInteger::kTag;
+inline bool Object::isSmallInt() {
+  uword tag = reinterpret_cast<uword>(this) & SmallInt::kTagMask;
+  return tag == SmallInt::kTag;
 }
 
 inline bool Object::isSmallString() {
@@ -2000,7 +2000,7 @@ inline bool Object::isLargeInteger() {
          LayoutId::kLargeInteger;
 }
 
-inline bool Object::isInteger() { return isSmallInteger() || isLargeInteger(); }
+inline bool Object::isInteger() { return isSmallInt() || isLargeInteger(); }
 
 inline bool Object::isNotImplemented() {
   if (!isHeapObject()) {
@@ -2086,21 +2086,21 @@ inline Integer* Integer::cast(Object* object) {
 }
 
 inline word Integer::asWord() {
-  if (isSmallInteger()) {
-    return SmallInteger::cast(this)->value();
+  if (isSmallInt()) {
+    return SmallInt::cast(this)->value();
   }
   return LargeInteger::cast(this)->asWord();
 }
 
 inline void* Integer::asCPointer() {
-  if (isSmallInteger()) {
-    return SmallInteger::cast(this)->asCPointer();
+  if (isSmallInt()) {
+    return SmallInt::cast(this)->asCPointer();
   }
   return LargeInteger::cast(this)->asCPointer();
 }
 
 inline word Integer::compare(Integer* that) {
-  if (this->isSmallInteger() && that->isSmallInteger()) {
+  if (this->isSmallInt() && that->isSmallInt()) {
     return this->asWord() - that->asWord();
   }
   if (this->isNegative() != that->isNegative()) {
@@ -2109,14 +2109,14 @@ inline word Integer::compare(Integer* that) {
 
   uword digit;
   View<uword> lhs(&digit, 1);
-  if (this->isSmallInteger()) {
+  if (this->isSmallInt()) {
     digit = this->asWord();
   } else {
     lhs = LargeInteger::cast(this)->digits();
   }
 
   View<uword> rhs(&digit, 1);
-  if (that->isSmallInteger()) {
+  if (that->isSmallInt()) {
     digit = that->asWord();
   } else {
     rhs = LargeInteger::cast(that)->digits();
@@ -2143,7 +2143,7 @@ inline word Integer::compareDigits(View<uword> lhs, View<uword> rhs) {
 }
 
 inline double Integer::floatValue() {
-  if (isSmallInteger()) {
+  if (isSmallInt()) {
     return static_cast<double>(asWord());
   }
   LargeInteger* large_int = LargeInteger::cast(this);
@@ -2155,66 +2155,63 @@ inline double Integer::floatValue() {
 }
 
 inline word Integer::highestBit() {
-  if (isSmallInteger()) {
-    uword self =
-        static_cast<uword>(std::abs(SmallInteger::cast(this)->value()));
+  if (isSmallInt()) {
+    uword self = static_cast<uword>(std::abs(SmallInt::cast(this)->value()));
     return Utils::highestBit(self);
   }
   return LargeInteger::cast(this)->highestBit();
 }
 
 inline bool Integer::isPositive() {
-  if (isSmallInteger()) {
-    return SmallInteger::cast(this)->value() > 0;
+  if (isSmallInt()) {
+    return SmallInt::cast(this)->value() > 0;
   }
   return LargeInteger::cast(this)->isPositive();
 }
 
 inline bool Integer::isNegative() {
-  if (isSmallInteger()) {
-    return SmallInteger::cast(this)->value() < 0;
+  if (isSmallInt()) {
+    return SmallInt::cast(this)->value() < 0;
   }
   return LargeInteger::cast(this)->isNegative();
 }
 
 inline bool Integer::isZero() {
-  if (isSmallInteger()) {
-    return SmallInteger::cast(this)->value() == 0;
+  if (isSmallInt()) {
+    return SmallInt::cast(this)->value() == 0;
   }
   // A LargeInteger can never be zero
   return false;
 }
 
-// SmallInteger
+// SmallInt
 
-inline SmallInteger* SmallInteger::cast(Object* object) {
-  DCHECK(object->isSmallInteger(), "invalid cast");
-  return reinterpret_cast<SmallInteger*>(object);
+inline SmallInt* SmallInt::cast(Object* object) {
+  DCHECK(object->isSmallInt(), "invalid cast");
+  return reinterpret_cast<SmallInt*>(object);
 }
 
-inline word SmallInteger::value() {
+inline word SmallInt::value() {
   return reinterpret_cast<word>(this) >> kTagSize;
 }
 
-inline void* SmallInteger::asCPointer() {
-  return reinterpret_cast<void*>(value());
-}
+inline void* SmallInt::asCPointer() { return reinterpret_cast<void*>(value()); }
 
-inline SmallInteger* SmallInteger::fromWord(word value) {
-  DCHECK(SmallInteger::isValid(value), "invalid cast");
-  return reinterpret_cast<SmallInteger*>(value << kTagSize);
+inline SmallInt* SmallInt::fromWord(word value) {
+  DCHECK(SmallInt::isValid(value), "invalid cast");
+  return reinterpret_cast<SmallInt*>(value << kTagSize);
 }
 
 template <typename T>
-inline SmallInteger* SmallInteger::fromFunctionPointer(T pointer) {
+inline SmallInt* SmallInt::fromFunctionPointer(T pointer) {
   // The bit pattern for a function pointer object must be indistinguishable
   // from that of a small integer object.
   auto object = reinterpret_cast<Object*>(reinterpret_cast<uword>(pointer));
-  return SmallInteger::cast(object);
+  return SmallInt::cast(object);
 }
 
 template <typename T>
-inline T SmallInteger::asFunctionPointer() {
+inline T SmallInt::asFunctionPointer() {
   return reinterpret_cast<T>(reinterpret_cast<uword>(this));
 }
 
@@ -2365,13 +2362,13 @@ inline void HeapObject::setHeader(Header* header) {
 
 inline word HeapObject::headerOverflow() {
   DCHECK(header()->hasOverflow(), "expected Overflow");
-  return SmallInteger::cast(instanceVariableAt(kHeaderOverflowOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kHeaderOverflowOffset))->value();
 }
 
 inline void HeapObject::setHeaderAndOverflow(word count, word hash, LayoutId id,
                                              ObjectFormat format) {
   if (count > Header::kCountMax) {
-    instanceVariableAtPut(kHeaderOverflowOffset, SmallInteger::fromWord(count));
+    instanceVariableAtPut(kHeaderOverflowOffset, SmallInt::fromWord(count));
     count = Header::kCountOverflowFlag;
   }
   setHeader(Header::from(count, hash, id, format));
@@ -2570,13 +2567,13 @@ inline void Type::setFlags(Object* value) {
 }
 
 inline void Type::setFlag(Type::Flag bit) {
-  word f = SmallInteger::cast(flags())->value();
-  Object* new_flag = SmallInteger::fromWord(f | bit);
+  word f = SmallInt::cast(flags())->value();
+  Object* new_flag = SmallInt::fromWord(f | bit);
   instanceVariableAtPut(kFlagsOffset, new_flag);
 }
 
 inline bool Type::hasFlag(Type::Flag bit) {
-  word f = SmallInteger::cast(flags())->value();
+  word f = SmallInt::cast(flags())->value();
   return (f & bit) != 0;
 }
 
@@ -2680,15 +2677,15 @@ inline Code* Code::cast(Object* obj) {
 inline word Code::allocationSize() { return Header::kSize + Code::kSize; }
 
 inline word Code::argcount() {
-  return SmallInteger::cast(instanceVariableAt(kArgcountOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kArgcountOffset))->value();
 }
 
 inline void Code::setArgcount(word value) {
-  instanceVariableAtPut(kArgcountOffset, SmallInteger::fromWord(value));
+  instanceVariableAtPut(kArgcountOffset, SmallInt::fromWord(value));
 }
 
 inline word Code::cell2arg() {
-  return SmallInteger::cast(instanceVariableAt(kCell2argOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kCell2argOffset))->value();
 }
 
 inline word Code::totalArgs() {
@@ -2704,7 +2701,7 @@ inline word Code::totalArgs() {
 }
 
 inline void Code::setCell2arg(word value) {
-  instanceVariableAtPut(kCell2argOffset, SmallInteger::fromWord(value));
+  instanceVariableAtPut(kCell2argOffset, SmallInt::fromWord(value));
 }
 
 inline Object* Code::cellvars() { return instanceVariableAt(kCellvarsOffset); }
@@ -2741,15 +2738,15 @@ inline void Code::setFilename(Object* value) {
 }
 
 inline word Code::firstlineno() {
-  return SmallInteger::cast(instanceVariableAt(kFirstlinenoOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kFirstlinenoOffset))->value();
 }
 
 inline void Code::setFirstlineno(word value) {
-  instanceVariableAtPut(kFirstlinenoOffset, SmallInteger::fromWord(value));
+  instanceVariableAtPut(kFirstlinenoOffset, SmallInt::fromWord(value));
 }
 
 inline word Code::flags() {
-  return SmallInteger::cast(instanceVariableAt(kFlagsOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kFlagsOffset))->value();
 }
 
 inline void Code::setFlags(word value) {
@@ -2759,7 +2756,7 @@ inline void Code::setFlags(word value) {
     // TODO: move into equivalent of CPython's codeobject.c:PyCode_New()
     value |= SIMPLE_CALL;
   }
-  instanceVariableAtPut(kFlagsOffset, SmallInteger::fromWord(value));
+  instanceVariableAtPut(kFlagsOffset, SmallInt::fromWord(value));
 }
 
 inline Object* Code::freevars() { return instanceVariableAt(kFreevarsOffset); }
@@ -2778,11 +2775,11 @@ inline word Code::numFreevars() {
 }
 
 inline word Code::kwonlyargcount() {
-  return SmallInteger::cast(instanceVariableAt(kKwonlyargcountOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kKwonlyargcountOffset))->value();
 }
 
 inline void Code::setKwonlyargcount(word value) {
-  instanceVariableAtPut(kKwonlyargcountOffset, SmallInteger::fromWord(value));
+  instanceVariableAtPut(kKwonlyargcountOffset, SmallInt::fromWord(value));
 }
 
 inline Object* Code::lnotab() { return instanceVariableAt(kLnotabOffset); }
@@ -2804,19 +2801,19 @@ inline void Code::setNames(Object* value) {
 }
 
 inline word Code::nlocals() {
-  return SmallInteger::cast(instanceVariableAt(kNlocalsOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kNlocalsOffset))->value();
 }
 
 inline void Code::setNlocals(word value) {
-  instanceVariableAtPut(kNlocalsOffset, SmallInteger::fromWord(value));
+  instanceVariableAtPut(kNlocalsOffset, SmallInt::fromWord(value));
 }
 
 inline word Code::stacksize() {
-  return SmallInteger::cast(instanceVariableAt(kStacksizeOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kStacksizeOffset))->value();
 }
 
 inline void Code::setStacksize(word value) {
-  instanceVariableAtPut(kStacksizeOffset, SmallInteger::fromWord(value));
+  instanceVariableAtPut(kStacksizeOffset, SmallInt::fromWord(value));
 }
 
 inline Object* Code::varnames() { return instanceVariableAt(kVarnamesOffset); }
@@ -2926,27 +2923,27 @@ inline void Complex::initialize(double real, double imag) {
 // Range
 
 inline word Range::start() {
-  return SmallInteger::cast(instanceVariableAt(kStartOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kStartOffset))->value();
 }
 
 inline void Range::setStart(word value) {
-  instanceVariableAtPut(kStartOffset, SmallInteger::fromWord(value));
+  instanceVariableAtPut(kStartOffset, SmallInt::fromWord(value));
 }
 
 inline word Range::stop() {
-  return SmallInteger::cast(instanceVariableAt(kStopOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kStopOffset))->value();
 }
 
 inline void Range::setStop(word value) {
-  instanceVariableAtPut(kStopOffset, SmallInteger::fromWord(value));
+  instanceVariableAtPut(kStopOffset, SmallInt::fromWord(value));
 }
 
 inline word Range::step() {
-  return SmallInteger::cast(instanceVariableAt(kStepOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kStepOffset))->value();
 }
 
 inline void Range::setStep(word value) {
-  instanceVariableAtPut(kStepOffset, SmallInteger::fromWord(value));
+  instanceVariableAtPut(kStepOffset, SmallInt::fromWord(value));
 }
 
 inline word Range::allocationSize() { return Header::kSize + Range::kSize; }
@@ -2959,11 +2956,11 @@ inline Range* Range::cast(Object* object) {
 // ListIterator
 
 inline word ListIterator::index() {
-  return SmallInteger::cast(instanceVariableAt(kIndexOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kIndexOffset))->value();
 }
 
 inline void ListIterator::setIndex(word index) {
-  instanceVariableAtPut(kIndexOffset, SmallInteger::fromWord(index));
+  instanceVariableAtPut(kIndexOffset, SmallInt::fromWord(index));
 }
 
 inline Object* ListIterator::list() { return instanceVariableAt(kListOffset); }
@@ -3029,7 +3026,7 @@ inline word Property::allocationSize() {
 inline void RangeIterator::setRange(Object* range) {
   auto r = Range::cast(range);
   instanceVariableAtPut(kRangeOffset, r);
-  instanceVariableAtPut(kCurValueOffset, SmallInteger::fromWord(r->start()));
+  instanceVariableAtPut(kCurValueOffset, SmallInt::fromWord(r->start()));
 }
 
 inline bool RangeIterator::isOutOfRange(word cur, word stop, word step) {
@@ -3049,7 +3046,7 @@ inline bool RangeIterator::isOutOfRange(word cur, word stop, word step) {
 }
 
 inline Object* RangeIterator::next() {
-  auto ret = SmallInteger::cast(instanceVariableAt(kCurValueOffset));
+  auto ret = SmallInt::cast(instanceVariableAt(kCurValueOffset));
   auto cur = ret->value();
 
   auto range = Range::cast(instanceVariableAt(kRangeOffset));
@@ -3064,7 +3061,7 @@ inline Object* RangeIterator::next() {
     return Error::object();
   }
 
-  instanceVariableAtPut(kCurValueOffset, SmallInteger::fromWord(cur + step));
+  instanceVariableAtPut(kCurValueOffset, SmallInt::fromWord(cur + step));
   return ret;
 }
 
@@ -3133,11 +3130,11 @@ inline Dict* Dict::cast(Object* object) {
 }
 
 inline word Dict::numItems() {
-  return SmallInteger::cast(instanceVariableAt(kNumItemsOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kNumItemsOffset))->value();
 }
 
 inline void Dict::setNumItems(word num_items) {
-  instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(num_items));
+  instanceVariableAtPut(kNumItemsOffset, SmallInt::fromWord(num_items));
 }
 
 inline Object* Dict::data() { return instanceVariableAt(kDataOffset); }
@@ -3188,21 +3185,21 @@ inline void Function::setDoc(Object* doc) {
 
 inline Function::Entry Function::entry() {
   Object* object = instanceVariableAt(kEntryOffset);
-  return SmallInteger::cast(object)->asFunctionPointer<Function::Entry>();
+  return SmallInt::cast(object)->asFunctionPointer<Function::Entry>();
 }
 
 inline void Function::setEntry(Function::Entry entry) {
-  auto object = SmallInteger::fromFunctionPointer(entry);
+  auto object = SmallInt::fromFunctionPointer(entry);
   instanceVariableAtPut(kEntryOffset, object);
 }
 
 inline Function::Entry Function::entryKw() {
   Object* object = instanceVariableAt(kEntryKwOffset);
-  return SmallInteger::cast(object)->asFunctionPointer<Function::Entry>();
+  return SmallInt::cast(object)->asFunctionPointer<Function::Entry>();
 }
 
 inline void Function::setEntryKw(Function::Entry entry_kw) {
-  auto object = SmallInteger::fromFunctionPointer(entry_kw);
+  auto object = SmallInt::fromFunctionPointer(entry_kw);
   instanceVariableAtPut(kEntryKwOffset, object);
 }
 
@@ -3212,11 +3209,11 @@ inline Object* Function::globals() {
 
 Function::Entry Function::entryEx() {
   Object* object = instanceVariableAt(kEntryExOffset);
-  return SmallInteger::cast(object)->asFunctionPointer<Function::Entry>();
+  return SmallInt::cast(object)->asFunctionPointer<Function::Entry>();
 }
 
 void Function::setEntryEx(Function::Entry entry_ex) {
-  auto object = SmallInteger::fromFunctionPointer(entry_ex);
+  auto object = SmallInt::fromFunctionPointer(entry_ex);
   instanceVariableAtPut(kEntryExOffset, object);
 }
 
@@ -3295,12 +3292,11 @@ inline void List::setItems(Object* new_items) {
 inline word List::capacity() { return ObjectArray::cast(items())->length(); }
 
 inline word List::allocated() {
-  return SmallInteger::cast(instanceVariableAt(kAllocatedOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kAllocatedOffset))->value();
 }
 
 inline void List::setAllocated(word new_allocated) {
-  instanceVariableAtPut(kAllocatedOffset,
-                        SmallInteger::fromWord(new_allocated));
+  instanceVariableAtPut(kAllocatedOffset, SmallInt::fromWord(new_allocated));
 }
 
 inline void List::atPut(word index, Object* value) {
@@ -3486,11 +3482,11 @@ inline Set* Set::cast(Object* object) {
 }
 
 inline word Set::numItems() {
-  return SmallInteger::cast(instanceVariableAt(kNumItemsOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kNumItemsOffset))->value();
 }
 
 inline void Set::setNumItems(word num_items) {
-  instanceVariableAtPut(kNumItemsOffset, SmallInteger::fromWord(num_items));
+  instanceVariableAtPut(kNumItemsOffset, SmallInt::fromWord(num_items));
 }
 
 inline Object* Set::data() { return instanceVariableAt(kDataOffset); }
@@ -3605,11 +3601,11 @@ inline void Layout::setOverflowAttributes(Object* attributes) {
 }
 
 inline word Layout::instanceSize() {
-  return SmallInteger::cast(instanceVariableAt(kInstanceSizeOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kInstanceSizeOffset))->value();
 }
 
 inline void Layout::setInstanceSize(word size) {
-  instanceVariableAtPut(kInstanceSizeOffset, SmallInteger::fromWord(size));
+  instanceVariableAtPut(kInstanceSizeOffset, SmallInt::fromWord(size));
 }
 
 inline Object* Layout::overflowAttributes() {
@@ -3640,21 +3636,21 @@ inline Layout* Layout::cast(Object* object) {
 }
 
 inline word Layout::overflowOffset() {
-  return SmallInteger::cast(instanceVariableAt(kOverflowOffsetOffset))->value();
+  return SmallInt::cast(instanceVariableAt(kOverflowOffsetOffset))->value();
 }
 
 inline void Layout::setOverflowOffset(word offset) {
-  instanceVariableAtPut(kOverflowOffsetOffset, SmallInteger::fromWord(offset));
+  instanceVariableAtPut(kOverflowOffsetOffset, SmallInt::fromWord(offset));
 }
 
 inline word Layout::numInObjectAttributes() {
-  return SmallInteger::cast(instanceVariableAt(kNumInObjectAttributesOffset))
+  return SmallInt::cast(instanceVariableAt(kNumInObjectAttributesOffset))
       ->value();
 }
 
 inline void Layout::setNumInObjectAttributes(word count) {
   instanceVariableAtPut(kNumInObjectAttributesOffset,
-                        SmallInteger::fromWord(count));
+                        SmallInt::fromWord(count));
   setOverflowOffset(count * kPointerSize);
   setInstanceSize(numInObjectAttributes() + 1);
 }

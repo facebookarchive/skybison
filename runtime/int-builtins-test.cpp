@@ -44,7 +44,7 @@ d = int("0xabc", 0)
   EXPECT_EQ(d->asWord(), 2748);
 }
 
-TEST(IntBuiltinsTest, CompareSmallIntegerEq) {
+TEST(IntBuiltinsTest, CompareSmallIntEq) {
   Runtime runtime;
   HandleScope scope;
 
@@ -65,7 +65,7 @@ b_eq_b = b == b
   EXPECT_EQ(*b_eq_b, Boolean::trueObj());
 }
 
-TEST(IntBuiltinsTest, CompareSmallIntegerGe) {
+TEST(IntBuiltinsTest, CompareSmallIntGe) {
   Runtime runtime;
   HandleScope scope;
 
@@ -89,7 +89,7 @@ b_ge_b = b >= b
   EXPECT_EQ(*b_ge_b, Boolean::trueObj());
 }
 
-TEST(IntBuiltinsTest, CompareSmallIntegerGt) {
+TEST(IntBuiltinsTest, CompareSmallIntGt) {
   Runtime runtime;
   HandleScope scope;
 
@@ -113,7 +113,7 @@ b_gt_b = b > b
   EXPECT_EQ(*b_gt_b, Boolean::falseObj());
 }
 
-TEST(IntBuiltinsTest, CompareSmallIntegerLe) {
+TEST(IntBuiltinsTest, CompareSmallIntLe) {
   Runtime runtime;
   HandleScope scope;
 
@@ -137,7 +137,7 @@ b_le_b = b <= b
   EXPECT_EQ(*b_le_b, Boolean::trueObj());
 }
 
-TEST(IntBuiltinsTest, CompareSmallIntegerLt) {
+TEST(IntBuiltinsTest, CompareSmallIntLt) {
   Runtime runtime;
   HandleScope scope;
 
@@ -161,7 +161,7 @@ b_lt_b = b < b
   EXPECT_EQ(*b_lt_b, Boolean::falseObj());
 }
 
-TEST(IntBuiltinsTest, CompareSmallIntegerNe) {
+TEST(IntBuiltinsTest, CompareSmallIntNe) {
   Runtime runtime;
   HandleScope scope;
 
@@ -182,7 +182,7 @@ b_ne_b = b != b
   EXPECT_EQ(*b_ne_b, Boolean::falseObj());
 }
 
-TEST(IntBuiltinsTest, CompareOpSmallInteger) {
+TEST(IntBuiltinsTest, CompareOpSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
@@ -216,7 +216,7 @@ a_is_not_c = a is not c
   EXPECT_EQ(*a_is_not_c, Boolean::falseObj());
 }
 
-TEST(IntBuiltinsTest, UnaryInvertSmallInteger) {
+TEST(IntBuiltinsTest, UnaryInvertSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
@@ -232,15 +232,15 @@ invert_neg = ~neg
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> invert_pos(&scope, moduleAt(&runtime, main, "invert_pos"));
-  ASSERT_TRUE(invert_pos->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*invert_pos)->value(), -124);
+  ASSERT_TRUE(invert_pos->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*invert_pos)->value(), -124);
 
   Handle<Object> invert_neg(&scope, moduleAt(&runtime, main, "invert_neg"));
-  ASSERT_TRUE(invert_neg->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*invert_neg)->value(), 455);
+  ASSERT_TRUE(invert_neg->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*invert_neg)->value(), 455);
 }
 
-TEST(IntBuiltinsTest, UnaryPositiveSmallInteger) {
+TEST(IntBuiltinsTest, UnaryPositiveSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
@@ -256,15 +256,15 @@ plus_neg = +neg
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> plus_pos(&scope, moduleAt(&runtime, main, "plus_pos"));
-  ASSERT_TRUE(plus_pos->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*plus_pos)->value(), 123);
+  ASSERT_TRUE(plus_pos->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*plus_pos)->value(), 123);
 
   Handle<Object> plus_neg(&scope, moduleAt(&runtime, main, "plus_neg"));
-  ASSERT_TRUE(plus_neg->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*plus_neg)->value(), -123);
+  ASSERT_TRUE(plus_neg->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*plus_neg)->value(), -123);
 }
 
-TEST(IntBuiltinsTest, UnaryNegateSmallInteger) {
+TEST(IntBuiltinsTest, UnaryNegateSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
@@ -280,12 +280,12 @@ minus_neg = -neg
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> minus_pos(&scope, moduleAt(&runtime, main, "minus_pos"));
-  ASSERT_TRUE(minus_pos->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*minus_pos)->value(), -123);
+  ASSERT_TRUE(minus_pos->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*minus_pos)->value(), -123);
 
   Handle<Object> minus_neg(&scope, moduleAt(&runtime, main, "minus_neg"));
-  ASSERT_TRUE(minus_neg->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*minus_neg)->value(), 123);
+  ASSERT_TRUE(minus_neg->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*minus_neg)->value(), 123);
 }
 
 TEST(IntBuiltinsTest, TruthyIntPos) {
@@ -375,12 +375,11 @@ TEST(IntBuiltinsTest, BinaryAddOverflowCheck) {
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
-  frame->setLocal(0, SmallInteger::fromWord(SmallInteger::kMaxValue));
-  frame->setLocal(1, SmallInteger::fromWord(SmallInteger::kMaxValue));
-  Handle<Object> result(&scope,
-                        SmallIntegerBuiltins::dunderAdd(thread, frame, 2));
+  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMaxValue));
+  frame->setLocal(1, SmallInt::fromWord(SmallInt::kMaxValue));
+  Handle<Object> result(&scope, SmallIntBuiltins::dunderAdd(thread, frame, 2));
   ASSERT_TRUE(result->isLargeInteger());
-  EXPECT_EQ(LargeInteger::cast(*result)->asWord(), SmallInteger::kMaxValue * 2);
+  EXPECT_EQ(LargeInteger::cast(*result)->asWord(), SmallInt::kMaxValue * 2);
 }
 
 TEST(IntBuiltinsTest, InplaceAdd) {
@@ -396,10 +395,10 @@ a += 2
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_TRUE(a->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a)->value(), 3);
-  ASSERT_TRUE(b->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*b)->value(), 1);
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 3);
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 1);
 }
 
 TEST(IntBuiltinsTest, InplaceMultiply) {
@@ -415,10 +414,10 @@ a *= 2
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_TRUE(a->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a)->value(), 10);
-  ASSERT_TRUE(b->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*b)->value(), 5);
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 10);
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 5);
 }
 
 TEST(IntBuiltinsTest, InplaceFloorDiv) {
@@ -434,10 +433,10 @@ a //= 2
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_TRUE(a->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a)->value(), 2);
-  ASSERT_TRUE(b->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*b)->value(), 5);
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 2);
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 5);
 }
 
 TEST(IntBuiltinsTest, InplaceModulo) {
@@ -453,10 +452,10 @@ a %= 2
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_TRUE(a->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a)->value(), 1);
-  ASSERT_TRUE(b->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*b)->value(), 3);
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 1);
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 3);
 }
 
 TEST(IntBuiltinsTest, InplaceSub) {
@@ -472,10 +471,10 @@ a -= 7
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_TRUE(a->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a)->value(), 3);
-  ASSERT_TRUE(b->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*b)->value(), 10);
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 3);
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 10);
 }
 
 TEST(IntBuiltinsTest, InplaceXor) {
@@ -491,10 +490,10 @@ a ^= 0x03
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_TRUE(a->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*a)->value(), 0xFD);
-  ASSERT_TRUE(b->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*b)->value(), 0xFE);
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 0xFD);
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 0xFE);
 }
 
 TEST(IntBuiltinsTest, BitLength) {
@@ -504,39 +503,39 @@ TEST(IntBuiltinsTest, BitLength) {
   Frame* frame = thread->openAndLinkFrame(0, 1, 0);
 
   // (0).bit_length() == 0
-  frame->setLocal(0, SmallInteger::fromWord(0));
+  frame->setLocal(0, SmallInt::fromWord(0));
   Handle<Object> bit_length(&scope,
-                            SmallIntegerBuiltins::bitLength(thread, frame, 1));
-  ASSERT_TRUE(bit_length->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*bit_length)->value(), 0);
+                            SmallIntBuiltins::bitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*bit_length)->value(), 0);
 
   // (1).bit_length() == 1
-  frame->setLocal(0, SmallInteger::fromWord(1));
+  frame->setLocal(0, SmallInt::fromWord(1));
   Handle<Object> bit_length1(&scope,
-                             SmallIntegerBuiltins::bitLength(thread, frame, 1));
-  ASSERT_TRUE(bit_length1->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*bit_length1)->value(), 1);
+                             SmallIntBuiltins::bitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length1->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*bit_length1)->value(), 1);
 
   // (-1).bit_length() == 1
-  frame->setLocal(0, SmallInteger::fromWord(1));
+  frame->setLocal(0, SmallInt::fromWord(1));
   Handle<Object> bit_length2(&scope,
-                             SmallIntegerBuiltins::bitLength(thread, frame, 1));
-  ASSERT_TRUE(bit_length2->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*bit_length2)->value(), 1);
+                             SmallIntBuiltins::bitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length2->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*bit_length2)->value(), 1);
 
-  // (SmallInteger::kMaxValue).bit_length() == 62
-  frame->setLocal(0, SmallInteger::fromWord(SmallInteger::kMaxValue));
+  // (SmallInt::kMaxValue).bit_length() == 62
+  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMaxValue));
   Handle<Object> bit_length3(&scope,
-                             SmallIntegerBuiltins::bitLength(thread, frame, 1));
-  ASSERT_TRUE(bit_length3->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*bit_length3)->value(), 62);
+                             SmallIntBuiltins::bitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length3->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*bit_length3)->value(), 62);
 
-  // (SmallInteger::kMinValue).bit_length() == 63
-  frame->setLocal(0, SmallInteger::fromWord(SmallInteger::kMinValue));
+  // (SmallInt::kMinValue).bit_length() == 63
+  frame->setLocal(0, SmallInt::fromWord(SmallInt::kMinValue));
   Handle<Object> bit_length4(&scope,
-                             SmallIntegerBuiltins::bitLength(thread, frame, 1));
-  ASSERT_TRUE(bit_length4->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*bit_length4)->value(), 63);
+                             SmallIntBuiltins::bitLength(thread, frame, 1));
+  ASSERT_TRUE(bit_length4->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*bit_length4)->value(), 63);
 }
 
 TEST(IntBuiltinsTest, StringToIntDPos) {
@@ -545,17 +544,17 @@ TEST(IntBuiltinsTest, StringToIntDPos) {
   Thread* thread = Thread::currentThread();
 
   Handle<Object> str_d0(&scope, runtime.newStringFromCString("0"));
-  Handle<SmallInteger> int_d0(
-      &scope, IntegerBuiltins::intFromString(thread, *str_d0, 10));
+  Handle<SmallInt> int_d0(&scope,
+                          IntegerBuiltins::intFromString(thread, *str_d0, 10));
   EXPECT_EQ(int_d0->value(), 0);
 
   Handle<Object> str_d123(&scope, runtime.newStringFromCString("123"));
-  Handle<SmallInteger> int_d123(
+  Handle<SmallInt> int_d123(
       &scope, IntegerBuiltins::intFromString(thread, *str_d123, 10));
   EXPECT_EQ(int_d123->value(), 123);
 
   Handle<Object> str_d987n(&scope, runtime.newStringFromCString("-987"));
-  Handle<SmallInteger> int_d987n(
+  Handle<SmallInt> int_d987n(
       &scope, IntegerBuiltins::intFromString(thread, *str_d987n, 10));
   EXPECT_EQ(int_d987n->value(), -987);
 }

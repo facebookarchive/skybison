@@ -260,10 +260,10 @@ x2 = c1.x
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x1(&scope, moduleAt(&runtime, main, "x1"));
   ASSERT_TRUE(x1->isInteger());
-  EXPECT_EQ(SmallInteger::cast(*x1)->value(), 24);
+  EXPECT_EQ(SmallInt::cast(*x1)->value(), 24);
   Handle<Object> x2(&scope, moduleAt(&runtime, main, "x2"));
   ASSERT_TRUE(x2->isInteger());
-  EXPECT_EQ(SmallInteger::cast(*x2)->value(), 42);
+  EXPECT_EQ(SmallInt::cast(*x2)->value(), 42);
 }
 
 TEST(DescriptorBuiltinsTest, PropertyAddedViaDecoratorSanityCheck) {
@@ -291,7 +291,7 @@ x = c1.x
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
   ASSERT_TRUE(x->isInteger());
-  EXPECT_EQ(SmallInteger::cast(*x)->value(), 42);
+  EXPECT_EQ(SmallInt::cast(*x)->value(), 42);
 }
 
 }  // namespace python

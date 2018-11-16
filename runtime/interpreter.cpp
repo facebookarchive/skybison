@@ -623,15 +623,15 @@ void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
   double dividend, divisor;
   Handle<Object> right(&scope, ctx->frame->popValue());
   Handle<Object> left(&scope, ctx->frame->popValue());
-  if (right->isSmallInteger()) {
-    dividend = SmallInteger::cast(*right)->value();
+  if (right->isSmallInt()) {
+    dividend = SmallInt::cast(*right)->value();
   } else if (right->isFloat()) {
     dividend = Float::cast(*right)->value();
   } else {
     UNIMPLEMENTED("Arbitrary object binary true divide not supported.");
   }
-  if (left->isSmallInteger()) {
-    divisor = SmallInteger::cast(*left)->value();
+  if (left->isSmallInt()) {
+    divisor = SmallInt::cast(*left)->value();
   } else if (left->isFloat()) {
     divisor = Float::cast(*left)->value();
   } else {
@@ -766,9 +766,9 @@ void Interpreter::doBinaryRshift(Context* ctx, word) {
 
 // opcode 64
 void Interpreter::doBinaryAnd(Context* ctx, word) {
-  word right = SmallInteger::cast(ctx->frame->popValue())->value();
-  word left = SmallInteger::cast(ctx->frame->topValue())->value();
-  ctx->frame->setTopValue(SmallInteger::fromWord(left & right));
+  word right = SmallInt::cast(ctx->frame->popValue())->value();
+  word left = SmallInt::cast(ctx->frame->topValue())->value();
+  ctx->frame->setTopValue(SmallInt::fromWord(left & right));
 }
 
 // opcode 65

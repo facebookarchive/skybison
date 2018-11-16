@@ -65,8 +65,8 @@ Object* builtinTupleGetItem(Thread* thread, Frame* frame, word nargs) {
   if (self->isObjectArray()) {
     Handle<ObjectArray> tuple(&scope, *self);
     Object* index = args.get(1);
-    if (index->isSmallInteger()) {
-      word idx = SmallInteger::cast(index)->value();
+    if (index->isSmallInt()) {
+      word idx = SmallInt::cast(index)->value();
       if (idx < 0) {
         idx = tuple->length() - idx;
       }

@@ -59,11 +59,11 @@ TEST(IntegerTest, IsPositive) {
   EXPECT_FALSE(neg_one->isPositive());
 
   Handle<Integer> max_small_int(&scope,
-                                runtime.newInteger(SmallInteger::kMaxValue));
+                                runtime.newInteger(SmallInt::kMaxValue));
   EXPECT_TRUE(max_small_int->isPositive());
 
   Handle<Integer> min_small_int(&scope,
-                                runtime.newInteger(SmallInteger::kMinValue));
+                                runtime.newInteger(SmallInt::kMinValue));
   EXPECT_FALSE(min_small_int->isPositive());
 
   Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
@@ -87,11 +87,11 @@ TEST(IntegerTest, IsNegative) {
   EXPECT_TRUE(neg_one->isNegative());
 
   Handle<Integer> max_small_int(&scope,
-                                runtime.newInteger(SmallInteger::kMaxValue));
+                                runtime.newInteger(SmallInt::kMaxValue));
   EXPECT_FALSE(max_small_int->isNegative());
 
   Handle<Integer> min_small_int(&scope,
-                                runtime.newInteger(SmallInteger::kMinValue));
+                                runtime.newInteger(SmallInt::kMinValue));
   EXPECT_TRUE(min_small_int->isNegative());
 
   Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
@@ -115,11 +115,11 @@ TEST(IntegerTest, IsZero) {
   EXPECT_FALSE(neg_one->isZero());
 
   Handle<Integer> max_small_int(&scope,
-                                runtime.newInteger(SmallInteger::kMaxValue));
+                                runtime.newInteger(SmallInt::kMaxValue));
   EXPECT_FALSE(max_small_int->isZero());
 
   Handle<Integer> min_small_int(&scope,
-                                runtime.newInteger(SmallInteger::kMinValue));
+                                runtime.newInteger(SmallInt::kMinValue));
   EXPECT_FALSE(min_small_int->isZero());
 
   Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
@@ -142,9 +142,9 @@ TEST(IntegerTest, Compare) {
   EXPECT_LE(neg_one->compare(*one), -1);
 
   Handle<Integer> min_small_int(&scope,
-                                runtime.newInteger(SmallInteger::kMinValue));
+                                runtime.newInteger(SmallInt::kMinValue));
   Handle<Integer> max_small_int(&scope,
-                                runtime.newInteger(SmallInteger::kMaxValue));
+                                runtime.newInteger(SmallInt::kMaxValue));
 
   EXPECT_GE(max_small_int->compare(*min_small_int), 1);
   EXPECT_LE(min_small_int->compare(*max_small_int), -1);
@@ -383,17 +383,17 @@ TEST(WeakRefTest, EnqueueAndDequeue) {
   Object* list = None::object();
   for (int i = 0; i < 3; i++) {
     Handle<WeakRef> weak(&scope, runtime.newWeakRef());
-    weak->setReferent(SmallInteger::fromWord(i));
+    weak->setReferent(SmallInt::fromWord(i));
     WeakRef::enqueueReference(*weak, &list);
   }
   Handle<WeakRef> weak(&scope, WeakRef::dequeueReference(&list));
-  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 0);
+  EXPECT_EQ(SmallInt::cast(weak->referent())->value(), 0);
 
   weak = WeakRef::dequeueReference(&list);
-  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 1);
+  EXPECT_EQ(SmallInt::cast(weak->referent())->value(), 1);
 
   weak = WeakRef::dequeueReference(&list);
-  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 2);
+  EXPECT_EQ(SmallInt::cast(weak->referent())->value(), 2);
 
   EXPECT_EQ(list, None::object());
 }
@@ -412,25 +412,25 @@ TEST(WeakRefTest, SpliceQueue) {
 
   for (int i = 0; i < 2; i++) {
     Handle<WeakRef> weak1(&scope, runtime.newWeakRef());
-    weak1->setReferent(SmallInteger::fromWord(i));
+    weak1->setReferent(SmallInt::fromWord(i));
     WeakRef::enqueueReference(*weak1, &list1);
 
     Handle<WeakRef> weak2(&scope, runtime.newWeakRef());
-    weak2->setReferent(SmallInteger::fromWord(i + 2));
+    weak2->setReferent(SmallInt::fromWord(i + 2));
     WeakRef::enqueueReference(*weak2, &list2);
   }
   Object* list = WeakRef::spliceQueue(list1, list2);
   Handle<WeakRef> weak(&scope, WeakRef::dequeueReference(&list));
-  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 0);
+  EXPECT_EQ(SmallInt::cast(weak->referent())->value(), 0);
 
   weak = WeakRef::dequeueReference(&list);
-  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 1);
+  EXPECT_EQ(SmallInt::cast(weak->referent())->value(), 1);
 
   weak = WeakRef::dequeueReference(&list);
-  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 2);
+  EXPECT_EQ(SmallInt::cast(weak->referent())->value(), 2);
 
   weak = WeakRef::dequeueReference(&list);
-  EXPECT_EQ(SmallInteger::cast(weak->referent())->value(), 3);
+  EXPECT_EQ(SmallInt::cast(weak->referent())->value(), 3);
 
   EXPECT_EQ(list, None::object());
 }
@@ -443,7 +443,7 @@ TEST(ClassTest, SetFlagThenHasFlagReturnsTrue) {
   type->setFlag(Type::Flag::kListSubclass);
   EXPECT_TRUE(type->hasFlag(Type::Flag::kDictSubclass));
   EXPECT_TRUE(type->hasFlag(Type::Flag::kListSubclass));
-  EXPECT_EQ(SmallInteger::cast(type->flags())->value(),
+  EXPECT_EQ(SmallInt::cast(type->flags())->value(),
             Type::Flag::kDictSubclass | Type::Flag::kListSubclass);
 }
 

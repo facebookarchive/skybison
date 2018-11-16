@@ -92,9 +92,9 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   word flags = 0;
   for (word i = 1; i < mro->length(); i++) {
     Handle<Type> cur(&scope, mro->at(i));
-    flags |= SmallInteger::cast(cur->flags())->value();
+    flags |= SmallInt::cast(cur->flags())->value();
   }
-  result->setFlags(SmallInteger::fromWord(flags));
+  result->setFlags(SmallInt::fromWord(flags));
 
   return *result;
 }

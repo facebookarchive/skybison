@@ -37,8 +37,8 @@ x = mymodule.myglobal
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
-  ASSERT_TRUE(x->isSmallInteger());
-  ASSERT_EQ(SmallInteger::cast(*x)->value(), 123);
+  ASSERT_TRUE(x->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*x)->value(), 123);
 }
 
 TEST(ModSupport, AddIntConstantWithNullNameFails) {
@@ -96,8 +96,8 @@ x = mymodule.myglobal
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
-  ASSERT_TRUE(x->isSmallInteger());
-  ASSERT_EQ(SmallInteger::cast(*x)->value(), 456);
+  ASSERT_TRUE(x->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*x)->value(), 456);
 }
 
 }  // namespace python

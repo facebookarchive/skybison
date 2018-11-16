@@ -115,11 +115,11 @@ Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
   }
   Arguments args(frame_frame, nargs);
   Object* arg = args.get(0);
-  if (!arg->isSmallInteger()) {
+  if (!arg->isSmallInt()) {
     return thread->throwTypeErrorFromCString(
         "Unsupported type in builtin 'chr'");
   }
-  word w = SmallInteger::cast(arg)->value();
+  word w = SmallInt::cast(arg)->value();
   const char s[2]{static_cast<char>(w), 0};
   return SmallString::fromCString(s);
 }
@@ -177,7 +177,7 @@ Object* builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
     return thread->throwTypeErrorFromCString(
         "Builtin 'ord' expects string of length 1");
   }
-  return SmallInteger::fromWord(str->charAt(0));
+  return SmallInt::fromWord(str->charAt(0));
 }
 
 static void printString(String* str) {
@@ -199,8 +199,8 @@ static void printScalarTypes(Object* arg, std::ostream* ostream) {
     *ostream << (Boolean::cast(arg)->value() ? "True" : "False");
   } else if (arg->isFloat()) {
     *ostream << Float::cast(arg)->value();
-  } else if (arg->isSmallInteger()) {
-    *ostream << SmallInteger::cast(arg)->value();
+  } else if (arg->isSmallInt()) {
+    *ostream << SmallInt::cast(arg)->value();
   } else if (arg->isString()) {
     printString(String::cast(arg));
   } else {
@@ -209,7 +209,7 @@ static void printScalarTypes(Object* arg, std::ostream* ostream) {
 }
 
 static bool supportedScalarType(Object* arg) {
-  return (arg->isBoolean() || arg->isFloat() || arg->isSmallInteger() ||
+  return (arg->isBoolean() || arg->isFloat() || arg->isSmallInt() ||
           arg->isString());
 }
 
@@ -328,8 +328,8 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
 
   Handle<Object> file_arg(&scope, kw_args.getKw(runtime->symbols()->File()));
   if (!file_arg->isError()) {
-    if (file_arg->isSmallInteger()) {
-      word stream_val = SmallInteger::cast(*file_arg)->value();
+    if (file_arg->isSmallInt()) {
+      word stream_val = SmallInt::cast(*file_arg)->value();
       switch (stream_val) {
         case STDOUT_FILENO:
           ostream = builtInStdout;
@@ -373,7 +373,7 @@ Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
 
   for (word i = 0; i < nargs; i++) {
-    if (!args.get(i)->isSmallInteger()) {
+    if (!args.get(i)->isSmallInt()) {
       return thread->throwTypeErrorFromCString(
           "Arguments to range() must be an integers.");
     }
@@ -384,14 +384,14 @@ Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
   word step = 1;
 
   if (nargs == 1) {
-    stop = SmallInteger::cast(args.get(0))->value();
+    stop = SmallInt::cast(args.get(0))->value();
   } else if (nargs == 2) {
-    start = SmallInteger::cast(args.get(0))->value();
-    stop = SmallInteger::cast(args.get(1))->value();
+    start = SmallInt::cast(args.get(0))->value();
+    stop = SmallInt::cast(args.get(1))->value();
   } else if (nargs == 3) {
-    start = SmallInteger::cast(args.get(0))->value();
-    stop = SmallInteger::cast(args.get(1))->value();
-    step = SmallInteger::cast(args.get(2))->value();
+    start = SmallInt::cast(args.get(0))->value();
+    stop = SmallInt::cast(args.get(1))->value();
+    step = SmallInt::cast(args.get(2))->value();
   }
 
   if (step == 0) {

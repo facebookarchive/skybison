@@ -429,9 +429,9 @@ with Foo():
   runtime.runFromCString(src);
   Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
-  EXPECT_EQ(SmallInteger::cast(*a)->value(), 3);
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 3);
   Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
-  EXPECT_EQ(SmallInteger::cast(*b)->value(), 2);
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 2);
 }
 
 }  // namespace python

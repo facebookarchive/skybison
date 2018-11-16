@@ -71,16 +71,16 @@ Object* ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // TODO(T32518507): Implement the rest of the conversions.
   // For now, it will only work with small integers and floats.
   double real = 0.0;
-  if (real_arg->isSmallInteger()) {
-    real = SmallInteger::cast(*real_arg)->value();
+  if (real_arg->isSmallInt()) {
+    real = SmallInt::cast(*real_arg)->value();
   } else if (real_arg->isFloat()) {
     real = Float::cast(*real_arg)->value();
   } else {
     UNIMPLEMENTED("Convert non-numeric to numeric");
   }
   double imag = 0.0;
-  if (imag_arg->isSmallInteger()) {
-    imag = SmallInteger::cast(*imag_arg)->value();
+  if (imag_arg->isSmallInt()) {
+    imag = SmallInt::cast(*imag_arg)->value();
   } else if (imag_arg->isFloat()) {
     imag = Float::cast(*imag_arg)->value();
   } else {

@@ -19,11 +19,11 @@ Object* builtinSysExit(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 1) {
     Arguments args(frame, nargs);
     Object* arg = args.get(0);
-    if (!arg->isSmallInteger()) {
+    if (!arg->isSmallInt()) {
       return thread->throwTypeErrorFromCString(
           "exit() expects numeric argument");
     }
-    code = SmallInteger::cast(arg)->value();
+    code = SmallInt::cast(arg)->value();
   }
 
   std::exit(code);

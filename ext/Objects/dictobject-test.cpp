@@ -24,7 +24,7 @@ TEST(DictObject, GetItemNonExistingKeyReturnsNull) {
   HandleScope scope;
 
   Handle<Dict> dict(&scope, runtime.newDict());
-  Handle<Object> nonkey(&scope, SmallInteger::fromWord(30));
+  Handle<Object> nonkey(&scope, SmallInt::fromWord(30));
 
   // Pass a non existing key
   PyObject* result =

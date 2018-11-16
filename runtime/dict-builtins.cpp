@@ -55,7 +55,7 @@ Object* builtinDictLen(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (self->isDict()) {
-    return SmallInteger::fromWord(Dict::cast(*self)->numItems());
+    return SmallInt::fromWord(Dict::cast(*self)->numItems());
   }
   // TODO(cshapiro): handle user-defined subtypes of dict.
   return thread->throwTypeErrorFromCString(

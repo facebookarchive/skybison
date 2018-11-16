@@ -64,7 +64,7 @@ def test(a, b):
 
   // isinstance(1, D) should be false
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(2));
-  args->atPut(0, SmallInteger::fromWord(100));
+  args->atPut(0, SmallInt::fromWord(100));
   args->atPut(1, *type_d);
   EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");
 
@@ -121,11 +121,11 @@ len5 = len({'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5})
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> len0(&scope, moduleAt(&runtime, main, "len0"));
-  EXPECT_EQ(*len0, SmallInteger::fromWord(0));
+  EXPECT_EQ(*len0, SmallInt::fromWord(0));
   Handle<Object> len1(&scope, moduleAt(&runtime, main, "len1"));
-  EXPECT_EQ(*len1, SmallInteger::fromWord(1));
+  EXPECT_EQ(*len1, SmallInt::fromWord(1));
   Handle<Object> len5(&scope, moduleAt(&runtime, main, "len5"));
-  EXPECT_EQ(*len5, SmallInteger::fromWord(5));
+  EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
 TEST(ThreadTest, BuiltinLenGetLenFromList) {
@@ -140,11 +140,11 @@ len5 = len([1,2,3,4,5])
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> len0(&scope, moduleAt(&runtime, main, "len0"));
-  EXPECT_EQ(*len0, SmallInteger::fromWord(0));
+  EXPECT_EQ(*len0, SmallInt::fromWord(0));
   Handle<Object> len1(&scope, moduleAt(&runtime, main, "len1"));
-  EXPECT_EQ(*len1, SmallInteger::fromWord(1));
+  EXPECT_EQ(*len1, SmallInt::fromWord(1));
   Handle<Object> len5(&scope, moduleAt(&runtime, main, "len5"));
-  EXPECT_EQ(*len5, SmallInteger::fromWord(5));
+  EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
 TEST(ThreadTest, BuiltinLenGetLenFromSet) {
@@ -159,9 +159,9 @@ len5 = len({1,2,3,4,5})
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   // TODO(cshapiro): test the empty set when we have builtins.set defined.
   Handle<Object> len1(&scope, moduleAt(&runtime, main, "len1"));
-  EXPECT_EQ(*len1, SmallInteger::fromWord(1));
+  EXPECT_EQ(*len1, SmallInt::fromWord(1));
   Handle<Object> len5(&scope, moduleAt(&runtime, main, "len5"));
-  EXPECT_EQ(*len5, SmallInteger::fromWord(5));
+  EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
 TEST(BuiltinsModuleDeathTest, BuiltinOrd) {

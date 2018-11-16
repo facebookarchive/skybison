@@ -21,7 +21,7 @@ class IntegerBuiltins {
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntegerBuiltins);
 };
 
-class SmallIntegerBuiltins {
+class SmallIntBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
@@ -46,7 +46,7 @@ class SmallIntegerBuiltins {
  private:
   static const BuiltinMethod kMethods[];
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallIntegerBuiltins);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallIntBuiltins);
 };
 
 }  // namespace python

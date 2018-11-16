@@ -33,7 +33,7 @@ TEST(LayoutTest, FindAttribute) {
   Handle<ObjectArray> entry(&scope, runtime.newObjectArray(2));
   entry->atPut(0, *attr);
   entry->atPut(
-      1, AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInteger());
+      1, AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
   Handle<ObjectArray> array(&scope, runtime.newObjectArray(1));
   array->atPut(0, *entry);
   Layout::cast(*layout)->setInObjectAttributes(*array);
@@ -130,7 +130,7 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
   Handle<ObjectArray> entry(&scope, runtime.newObjectArray(2));
   entry->atPut(0, *attr);
   entry->atPut(
-      1, AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInteger());
+      1, AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
   Handle<ObjectArray> array(&scope, runtime.newObjectArray(1));
   array->atPut(0, *entry);
   Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
@@ -149,7 +149,7 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
   ASSERT_TRUE(inobject->at(0)->isObjectArray());
   entry = inobject->at(0);
   EXPECT_EQ(entry->at(0), None::object());
-  ASSERT_TRUE(entry->at(1)->isSmallInteger());
+  ASSERT_TRUE(entry->at(1)->isSmallInt());
   EXPECT_EQ(AttributeInfo(entry->at(1)).flags(), 2);
 
   // Performing the same deletion should follow the edge created by the
@@ -174,7 +174,7 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   for (word i = 0; i < attrs->length(); i++) {
     Handle<ObjectArray> entry(&scope, runtime.newObjectArray(2));
     entry->atPut(0, **names[i]);
-    entry->atPut(1, AttributeInfo(i, 0).asSmallInteger());
+    entry->atPut(1, AttributeInfo(i, 0).asSmallInt());
     attrs->atPut(i, *entry);
   }
   Handle<Layout> layout(&scope, runtime.layoutCreateEmpty(thread));
@@ -235,7 +235,7 @@ TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
     HandleScope scope;
     Handle<ObjectArray> entry(&scope, runtime.newObjectArray(2));
     entry->atPut(0, *name);
-    entry->atPut(1, AttributeInfo(0, flags).asSmallInteger());
+    entry->atPut(1, AttributeInfo(0, flags).asSmallInt());
     Handle<ObjectArray> result(&scope, runtime.newObjectArray(1));
     result->atPut(0, *entry);
     return *result;

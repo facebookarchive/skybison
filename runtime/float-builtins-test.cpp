@@ -165,7 +165,7 @@ c = a + b
   EXPECT_EQ(Float::cast(*c)->value(), 3.5);
 }
 
-TEST(FloatBuiltinsTest, BinaryAddSmallInteger) {
+TEST(FloatBuiltinsTest, BinaryAddSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
@@ -214,7 +214,7 @@ c = a - b
   EXPECT_EQ(Float::cast(*c)->value(), 0.5);
 }
 
-TEST(FloatBuiltinsTest, BinarySubtractSmallInteger) {
+TEST(FloatBuiltinsTest, BinarySubtractSmallInt) {
   Runtime runtime;
   HandleScope scope;
 

@@ -12,7 +12,7 @@ class Object;
  * TryBlock contains the unmarshaled block stack information.
  *
  * Block stack entries are encoded and stored on the stack as a single
- * SmallInteger using the following format:
+ * SmallInt using the following format:
  *
  * Name    Size    Description
  * ----------------------------------------------------
@@ -24,7 +24,7 @@ class Object;
 class TryBlock {
  public:
   explicit TryBlock(Object* value) {
-    DCHECK(value->isSmallInteger(), "expected small integer");
+    DCHECK(value->isSmallInt(), "expected small integer");
     value_ = reinterpret_cast<uword>(value);
   }
 
@@ -34,7 +34,7 @@ class TryBlock {
     setLevel(level);
   }
 
-  Object* asSmallInteger() const;
+  Object* asSmallInt() const;
 
   word kind() const;
   void setKind(word kind);
@@ -51,7 +51,7 @@ class TryBlock {
 
   uword value_;
 
-  static const int kKindOffset = SmallInteger::kTagSize;
+  static const int kKindOffset = SmallInt::kTagSize;
   static const int kKindSize = 8;
   static const uword kKindMask = (1 << kKindSize) - 1;
 
@@ -308,11 +308,11 @@ inline BlockStack* Frame::blockStack() {
 }
 
 inline word Frame::virtualPC() {
-  return SmallInteger::cast(at(kVirtualPCOffset))->value();
+  return SmallInt::cast(at(kVirtualPCOffset))->value();
 }
 
 inline void Frame::setVirtualPC(word pc) {
-  atPut(kVirtualPCOffset, SmallInteger::fromWord(pc));
+  atPut(kVirtualPCOffset, SmallInt::fromWord(pc));
 }
 
 inline Object* Frame::builtins() { return at(kBuiltinsOffset); }
@@ -358,26 +358,26 @@ inline void Frame::setLocal(word idx, Object* object) {
 }
 
 inline void Frame::setNumLocals(word num_locals) {
-  atPut(kNumLocalsOffset, SmallInteger::fromWord(num_locals));
+  atPut(kNumLocalsOffset, SmallInt::fromWord(num_locals));
   // Bias locals by 1 word to avoid doing so during {get,set}Local
   Object* locals = reinterpret_cast<Object*>(address() + Frame::kSize +
                                              ((num_locals - 1) * kPointerSize));
-  DCHECK(locals->isSmallInteger(), "expected small integer");
+  DCHECK(locals->isSmallInt(), "expected small integer");
   atPut(kLocalsOffset, locals);
 }
 
 inline word Frame::numLocals() {
-  return SmallInteger::cast(at(kNumLocalsOffset))->value();
+  return SmallInt::cast(at(kNumLocalsOffset))->value();
 }
 
 inline Frame* Frame::previousFrame() {
   Object* frame = at(kPreviousFrameOffset);
-  return reinterpret_cast<Frame*>(SmallInteger::cast(frame)->value());
+  return reinterpret_cast<Frame*>(SmallInt::cast(frame)->value());
 }
 
 inline void Frame::setPreviousFrame(Frame* frame) {
   atPut(kPreviousFrameOffset,
-        SmallInteger::fromWord(reinterpret_cast<uword>(frame)));
+        SmallInt::fromWord(reinterpret_cast<uword>(frame)));
 }
 
 inline Object** Frame::valueStackBase() {
@@ -386,12 +386,11 @@ inline Object** Frame::valueStackBase() {
 
 inline Object** Frame::valueStackTop() {
   Object* top = at(kValueStackTopOffset);
-  return reinterpret_cast<Object**>(SmallInteger::cast(top)->value());
+  return reinterpret_cast<Object**>(SmallInt::cast(top)->value());
 }
 
 inline void Frame::setValueStackTop(Object** top) {
-  atPut(kValueStackTopOffset,
-        SmallInteger::fromWord(reinterpret_cast<uword>(top)));
+  atPut(kValueStackTopOffset, SmallInt::fromWord(reinterpret_cast<uword>(top)));
 }
 
 inline void Frame::pushValue(Object* value) {
@@ -458,9 +457,9 @@ inline void Frame::makeNativeFrame(Object* fn_pointer_as_int) {
   setCode(fn_pointer_as_int);
 }
 
-inline Object* TryBlock::asSmallInteger() const {
+inline Object* TryBlock::asSmallInt() const {
   auto obj = reinterpret_cast<Object*>(value_);
-  DCHECK(obj->isSmallInteger(), "expected small integer");
+  DCHECK(obj->isSmallInt(), "expected small integer");
   return obj;
 }
 
@@ -505,12 +504,12 @@ inline void BlockStack::atPut(int offset, Object* value) {
 }
 
 inline word BlockStack::top() {
-  return SmallInteger::cast(at(kTopOffset))->value();
+  return SmallInt::cast(at(kTopOffset))->value();
 }
 
 inline void BlockStack::setTop(word new_top) {
   DCHECK_INDEX(new_top, kMaxBlockStackDepth);
-  atPut(kTopOffset, SmallInteger::fromWord(new_top));
+  atPut(kTopOffset, SmallInt::fromWord(new_top));
 }
 
 inline TryBlock BlockStack::peek() {
@@ -522,7 +521,7 @@ inline TryBlock BlockStack::peek() {
 
 inline void BlockStack::push(const TryBlock& block) {
   word stack_top = top();
-  atPut(kStackOffset + stack_top * kPointerSize, block.asSmallInteger());
+  atPut(kStackOffset + stack_top * kPointerSize, block.asSmallInt());
   setTop(stack_top + 1);
 }
 

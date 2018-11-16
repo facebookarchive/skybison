@@ -32,8 +32,8 @@ b = len(s)
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, findInModule(&runtime, main, "a"));
   Handle<Object> b(&scope, findInModule(&runtime, main, "b"));
-  EXPECT_EQ(SmallInteger::cast(*a)->value(), 1);
-  EXPECT_EQ(SmallInteger::cast(*b)->value(), 0);
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 1);
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 0);
 }
 
 TEST(SetBuiltinsTest, InitializeByTypeCall) {

@@ -180,8 +180,8 @@ Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs) {
   if (self->isString()) {
     Handle<String> string(&scope, *self);
     Object* index = args.get(1);
-    if (index->isSmallInteger()) {
-      word idx = SmallInteger::cast(index)->value();
+    if (index->isSmallInt()) {
+      word idx = SmallInt::cast(index)->value();
       if (idx < 0) {
         idx = string->length() - idx;
       }

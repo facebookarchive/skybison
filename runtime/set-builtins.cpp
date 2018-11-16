@@ -34,7 +34,7 @@ Object* builtinSetLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Handle<Object> self(&scope, args.get(0));
   if (self->isSet()) {
-    return SmallInteger::fromWord(Set::cast(*self)->numItems());
+    return SmallInt::fromWord(Set::cast(*self)->numItems());
   }
   // TODO(cshapiro): handle user-defined subtypes of set.
   return thread->throwTypeErrorFromCString("'__len__' requires a 'set' object");

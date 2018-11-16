@@ -23,9 +23,9 @@ TEST(ScavengerTest, PreserveWeakReferenceImmediateReferent) {
   Runtime runtime;
   HandleScope scope;
   Handle<WeakRef> ref(&scope, runtime.newWeakRef());
-  ref->setReferent(SmallInteger::fromWord(1234));
+  ref->setReferent(SmallInt::fromWord(1234));
   runtime.collectGarbage();
-  EXPECT_EQ(ref->referent(), SmallInteger::fromWord(1234));
+  EXPECT_EQ(ref->referent(), SmallInt::fromWord(1234));
 }
 
 TEST(ScavengerTest, ClearWeakReference) {
@@ -139,8 +139,8 @@ def g(ref, c=4):
 
     EXPECT_EQ(ref1->referent(), *array1);
     EXPECT_EQ(ref2->referent(), *array2);
-    Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
-    Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+    Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
+    Handle<SmallInt> b(&scope, moduleAt(&runtime, main, "b"));
     EXPECT_EQ(a->value(), 1);
     EXPECT_EQ(b->value(), 2);
   }
@@ -150,8 +150,8 @@ def g(ref, c=4):
   EXPECT_EQ(ref1->callback(), None::object());
   EXPECT_EQ(ref2->referent(), None::object());
   EXPECT_EQ(ref2->callback(), None::object());
-  Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<SmallInt> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a->value(), 3);
   EXPECT_EQ(b->value(), 4);
 }
@@ -188,8 +188,8 @@ def g(ref, c=4):
 
     EXPECT_EQ(ref1->referent(), *array1);
     EXPECT_EQ(ref2->referent(), *array2);
-    Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
-    Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+    Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
+    Handle<SmallInt> b(&scope, moduleAt(&runtime, main, "b"));
     EXPECT_EQ(a->value(), 1);
     EXPECT_EQ(b->value(), 2);
   }
@@ -199,8 +199,8 @@ def g(ref, c=4):
   EXPECT_EQ(ref1->callback(), *func_f);
   EXPECT_EQ(ref2->referent(), None::object());
   EXPECT_EQ(ref2->callback(), None::object());
-  Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<SmallInt> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a->value(), 1);
   EXPECT_EQ(b->value(), 4);
 }
@@ -240,7 +240,7 @@ def g(ref, b=2):
 
     EXPECT_EQ(ref1->referent(), *array1);
     EXPECT_EQ(ref2->referent(), *array2);
-    Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
+    Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
     EXPECT_EQ(a->value(), 1);
   }
   runtime.collectGarbage();
@@ -249,7 +249,7 @@ def g(ref, b=2):
   EXPECT_EQ(ref1->callback(), None::object());
   EXPECT_EQ(ref2->referent(), None::object());
   EXPECT_EQ(ref2->callback(), None::object());
-  Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_EQ(a->value(), 2);
 }
 
@@ -285,8 +285,8 @@ def g(ref, c=4):
 
     EXPECT_EQ(ref1->referent(), *array1);
     EXPECT_EQ(ref2->referent(), *array2);
-    Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
-    Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+    Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
+    Handle<SmallInt> b(&scope, moduleAt(&runtime, main, "b"));
     EXPECT_EQ(a->value(), 1);
     EXPECT_EQ(b->value(), 2);
   }
@@ -304,8 +304,8 @@ def g(ref, c=4):
   EXPECT_EQ(ref1->callback(), None::object());
   EXPECT_EQ(ref2->referent(), None::object());
   EXPECT_EQ(ref2->callback(), None::object());
-  Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<SmallInt> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a->value(), 1);
   EXPECT_EQ(b->value(), 4);
 }

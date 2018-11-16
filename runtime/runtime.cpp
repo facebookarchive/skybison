@@ -190,7 +190,7 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
         AttributeInfo::Flag::kInObject | AttributeInfo::Flag::kFixedOffset);
     entry = newObjectArray(2);
     entry->atPut(0, symbols()->at(attributes.get(i).name));
-    entry->atPut(1, info.asSmallInteger());
+    entry->atPut(1, info.asSmallInt());
     dst->atPut(i, *entry);
   }
 }
@@ -258,7 +258,7 @@ Object* Runtime::newClassWithMetaclass(LayoutId metaclass_id) {
   HandleScope scope;
   Handle<Type> result(&scope, heap()->createClass(metaclass_id));
   Handle<Dict> dict(&scope, newDict());
-  result->setFlags(SmallInteger::fromWord(0));
+  result->setFlags(SmallInt::fromWord(0));
   result->setDict(*dict);
   return *result;
 }
@@ -725,8 +725,8 @@ Object* Runtime::newObjectArray(word length) {
 }
 
 Object* Runtime::newInteger(word value) {
-  if (SmallInteger::isValid(value)) {
-    return SmallInteger::fromWord(value);
+  if (SmallInt::isValid(value)) {
+    return SmallInt::fromWord(value);
   }
   return newIntegerWithDigits(View<uword>(reinterpret_cast<uword*>(&value), 1));
 }
@@ -741,13 +741,13 @@ Object* Runtime::newComplex(double real, double imag) {
 
 Object* Runtime::newIntegerWithDigits(View<uword> digits) {
   if (digits.length() == 0) {
-    return SmallInteger::fromWord(0);
+    return SmallInt::fromWord(0);
   }
   if (digits.length() == 1) {
     uword u_digit = digits.get(0);
     word digit = *reinterpret_cast<word*>(&u_digit);
-    if (SmallInteger::isValid(digit)) {
-      return SmallInteger::fromWord(digit);
+    if (SmallInt::isValid(digit)) {
+      return SmallInt::fromWord(digit);
     }
   }
   HandleScope scope;
@@ -861,17 +861,17 @@ Object* Runtime::hash(Object* object) {
 }
 
 Object* Runtime::immediateHash(Object* object) {
-  if (object->isSmallInteger()) {
+  if (object->isSmallInt()) {
     return object;
   }
   if (object->isBoolean()) {
-    return SmallInteger::fromWord(Boolean::cast(object)->value() ? 1 : 0);
+    return SmallInt::fromWord(Boolean::cast(object)->value() ? 1 : 0);
   }
   if (object->isSmallString()) {
-    return SmallInteger::fromWord(reinterpret_cast<uword>(object) >>
-                                  SmallString::kTagSize);
+    return SmallInt::fromWord(reinterpret_cast<uword>(object) >>
+                              SmallString::kTagSize);
   }
-  return SmallInteger::fromWord(reinterpret_cast<uword>(object));
+  return SmallInt::fromWord(reinterpret_cast<uword>(object));
 }
 
 // Xoroshiro128+
@@ -909,7 +909,7 @@ Object* Runtime::identityHash(Object* object) {
     code = (code == 0) ? 1 : code;
     src->setHeader(src->header()->withHashCode(code));
   }
-  return SmallInteger::fromWord(code);
+  return SmallInt::fromWord(code);
 }
 
 word Runtime::siphash24(View<byte> array) {
@@ -932,7 +932,7 @@ Object* Runtime::valueHash(Object* object) {
     src->setHeader(header->withHashCode(code));
     DCHECK(code == src->header()->hashCode(), "hash failure");
   }
-  return SmallInteger::fromWord(code);
+  return SmallInt::fromWord(code);
 }
 
 void Runtime::initializeClasses() {
@@ -1151,7 +1151,7 @@ void Runtime::initializeImmediateClasses() {
   NoneBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallString,
                        LayoutId::kString);
-  SmallIntegerBuiltins::initialize(this);
+  SmallIntBuiltins::initialize(this);
 }
 
 void Runtime::initializeBooleanClass() {
@@ -1675,10 +1675,10 @@ void Runtime::createSysModule() {
                            nativeTrampoline<builtinSysExit>,
                            unimplementedTrampoline, unimplementedTrampoline);
 
-  Handle<Object> stdout_val(&scope, SmallInteger::fromWord(STDOUT_FILENO));
+  Handle<Object> stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
   moduleAddGlobal(module, SymbolId::kStdout, stdout_val);
 
-  Handle<Object> stderr_val(&scope, SmallInteger::fromWord(STDERR_FILENO));
+  Handle<Object> stderr_val(&scope, SmallInt::fromWord(STDERR_FILENO));
   moduleAddGlobal(module, SymbolId::kStderr, stderr_val);
   addModule(module);
 }
@@ -2850,7 +2850,7 @@ Object* Runtime::layoutAddAttributeEntry(Thread* thread,
 
   Handle<ObjectArray> entry(&scope, newObjectArray(2));
   entry->atPut(0, *name);
-  entry->atPut(1, info.asSmallInteger());
+  entry->atPut(1, info.asSmallInt());
   new_entries->atPut(entries->length(), *entry);
 
   return *new_entries;
@@ -2924,8 +2924,7 @@ Object* Runtime::layoutDeleteAttribute(Thread* thread,
         entry = newObjectArray(2);
         entry->atPut(0, None::object());
         entry->atPut(
-            1,
-            AttributeInfo(0, AttributeInfo::Flag::kDeleted).asSmallInteger());
+            1, AttributeInfo(0, AttributeInfo::Flag::kDeleted).asSmallInt());
       }
       new_inobject->atPut(i, *entry);
     }
@@ -2947,7 +2946,7 @@ Object* Runtime::layoutDeleteAttribute(Thread* thread,
         // Need to shift everything down by 1 once we've deleted the attribute
         entry = newObjectArray(2);
         entry->atPut(0, ObjectArray::cast(old_overflow->at(i))->at(0));
-        entry->atPut(1, AttributeInfo(j, info.flags()).asSmallInteger());
+        entry->atPut(1, AttributeInfo(j, info.flags()).asSmallInt());
       }
       new_overflow->atPut(j, *entry);
       j++;

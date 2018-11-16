@@ -5,17 +5,17 @@
 
 namespace python {
 
-// AttributeInfo packs attribute metadata into a SmallInteger.
+// AttributeInfo packs attribute metadata into a SmallInt.
 class AttributeInfo {
  public:
   explicit AttributeInfo(Object* value) {
-    DCHECK(value->isSmallInteger(), "expected small integer");
+    DCHECK(value->isSmallInt(), "expected small integer");
     value_ = reinterpret_cast<word>(value);
   }
 
-  AttributeInfo() : value_(SmallInteger::kTag) {}
+  AttributeInfo() : value_(SmallInt::kTag) {}
 
-  AttributeInfo(word offset, word flags) : value_(SmallInteger::kTag) {
+  AttributeInfo(word offset, word flags) : value_(SmallInt::kTag) {
     DCHECK(isValidOffset(offset), "offset %ld too large (max is %ld)", offset,
            kMaxOffset);
     value_ |= (offset << kOffsetOffset);
@@ -63,20 +63,20 @@ class AttributeInfo {
   bool isFixedOffset() { return testFlag(Flag::kFixedOffset); }
 
   // Casting.
-  SmallInteger* asSmallInteger();
+  SmallInt* asSmallInt();
 
   // Tags.
   static const int kOffsetSize = 30;
-  static const int kOffsetOffset = SmallInteger::kTagSize;
+  static const int kOffsetOffset = SmallInt::kTagSize;
   static const uword kOffsetMask = (1 << kOffsetSize) - 1;
 
   static const int kFlagsSize = 33;
   static const int kFlagsOffset = kOffsetOffset + kOffsetSize;
   static const uword kFlagsMask = (1UL << kFlagsSize) - 1;
 
-  static_assert(
-      SmallInteger::kTagSize + kOffsetSize + kFlagsSize == kBitsPerPointer,
-      "Number of bits used by AttributeInfo must fit in a SmallInteger");
+  static_assert(SmallInt::kTagSize + kOffsetSize + kFlagsSize ==
+                    kBitsPerPointer,
+                "Number of bits used by AttributeInfo must fit in a SmallInt");
 
   // Constants
   static const word kMaxOffset = (1L << (kOffsetSize + 1)) - 1;
@@ -97,9 +97,9 @@ inline bool AttributeInfo::testFlag(Flag flag) {
   return value_ & (static_cast<uword>(flag) << kFlagsOffset);
 }
 
-inline SmallInteger* AttributeInfo::asSmallInteger() {
-  auto smi = reinterpret_cast<SmallInteger*>(value_);
-  DCHECK(smi->isSmallInteger(), "expected small integer");
+inline SmallInt* AttributeInfo::asSmallInt() {
+  auto smi = reinterpret_cast<SmallInt*>(value_);
+  DCHECK(smi->isSmallInt(), "expected small integer");
   return smi;
 }
 

@@ -134,7 +134,7 @@ Object* ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
         "__len__() only support list or its subclasses");
   }
   Handle<List> list(&scope, *self);
-  return SmallInteger::fromWord(list->allocated());
+  return SmallInt::fromWord(list->allocated());
 }
 
 Object* ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
@@ -155,7 +155,7 @@ Object* ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
         "descriptor 'insert' requires a 'list' object");
   }
   Handle<List> list(&scope, *self);
-  word index = SmallInteger::cast(args.get(1))->value();
+  word index = SmallInt::cast(args.get(1))->value();
   Handle<Object> value(&scope, args.get(2));
   thread->runtime()->listInsert(list, value, index);
   return None::object();
@@ -173,8 +173,8 @@ Object* ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString(
         "__mul__() must be called with list instance as first argument");
   }
-  if (other->isSmallInteger()) {
-    word ntimes = SmallInteger::cast(other)->value();
+  if (other->isSmallInt()) {
+    word ntimes = SmallInt::cast(other)->value();
     Handle<List> list(&scope, *self);
     return thread->runtime()->listReplicate(thread, list, ntimes);
   }
@@ -186,7 +186,7 @@ Object* ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString("pop() takes at most 1 argument");
   }
   Arguments args(frame, nargs);
-  if (nargs == 2 && !args.get(1)->isSmallInteger()) {
+  if (nargs == 2 && !args.get(1)->isSmallInt()) {
     return thread->throwTypeErrorFromCString(
         "index object cannot be interpreted as an integer");
   }
@@ -201,7 +201,7 @@ Object* ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   word index = list->allocated() - 1;
   if (nargs == 2) {
     word last_index = index;
-    index = SmallInteger::cast(args.get(1))->value();
+    index = SmallInt::cast(args.get(1))->value();
     index = index < 0 ? last_index + index : index;
     // Pop out of bounds
     if (index > last_index) {
@@ -278,8 +278,8 @@ Object* ListBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
 
   Handle<List> list(&scope, *self);
   Object* index = args.get(1);
-  if (index->isSmallInteger()) {
-    word idx = SmallInteger::cast(index)->value();
+  if (index->isSmallInt()) {
+    word idx = SmallInt::cast(index)->value();
     if (idx < 0) {
       idx = list->allocated() - idx;
     }
@@ -312,8 +312,8 @@ Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
 
   Handle<List> list(&scope, *self);
   Object* index = args.get(1);
-  if (index->isSmallInteger()) {
-    word idx = SmallInteger::cast(index)->value();
+  if (index->isSmallInt()) {
+    word idx = SmallInt::cast(index)->value();
     if (idx < 0) {
       idx = list->allocated() + idx;
     }
@@ -346,8 +346,8 @@ Object* ListBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
 
   Handle<List> list(&scope, *self);
   Object* index = args.get(1);
-  if (index->isSmallInteger()) {
-    word idx = SmallInteger::cast(index)->value();
+  if (index->isSmallInt()) {
+    word idx = SmallInt::cast(index)->value();
     idx = idx < 0 ? list->allocated() + idx : idx;
     if (idx < 0 || idx >= list->allocated()) {
       return thread->throwIndexErrorFromCString(

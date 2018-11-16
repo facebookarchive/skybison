@@ -40,9 +40,9 @@ exc = BaseException(1,2,3)
   // The args attribute contains a tuple of the constructor arguments.
   ASSERT_TRUE(base_exception->args()->isObjectArray());
   Handle<ObjectArray> args(&scope, base_exception->args());
-  EXPECT_EQ(args->at(0), SmallInteger::fromWord(1));
-  EXPECT_EQ(args->at(1), SmallInteger::fromWord(2));
-  EXPECT_EQ(args->at(2), SmallInteger::fromWord(3));
+  EXPECT_EQ(args->at(0), SmallInt::fromWord(1));
+  EXPECT_EQ(args->at(1), SmallInt::fromWord(2));
+  EXPECT_EQ(args->at(2), SmallInt::fromWord(3));
 }
 
 TEST(ExceptionBuiltinsTest, ExceptionManyArguments) {
@@ -61,9 +61,9 @@ exc = Exception(1,2,3)
   // The args attribute contains a tuple of the constructor arguments.
   ASSERT_TRUE(exception->args()->isObjectArray());
   Handle<ObjectArray> args(&scope, exception->args());
-  EXPECT_EQ(args->at(0), SmallInteger::fromWord(1));
-  EXPECT_EQ(args->at(1), SmallInteger::fromWord(2));
-  EXPECT_EQ(args->at(2), SmallInteger::fromWord(3));
+  EXPECT_EQ(args->at(0), SmallInt::fromWord(1));
+  EXPECT_EQ(args->at(1), SmallInt::fromWord(2));
+  EXPECT_EQ(args->at(2), SmallInt::fromWord(3));
 }
 
 TEST(ExceptionBuiltinsTest, StopIterationNoArguments) {
@@ -102,13 +102,13 @@ exc = StopIteration(1)
   Handle<StopIteration> stop_iteration(&scope, *exc);
 
   // The value attribute should contain the first constructor argument.
-  EXPECT_EQ(stop_iteration->value(), SmallInteger::fromWord(1));
+  EXPECT_EQ(stop_iteration->value(), SmallInt::fromWord(1));
 
   // The args attribute contains a tuple of the constructor arguments.
   ASSERT_TRUE(stop_iteration->args()->isObjectArray());
   Handle<ObjectArray> args(&scope, stop_iteration->args());
   ASSERT_EQ(args->length(), 1);
-  EXPECT_EQ(args->at(0), SmallInteger::fromWord(1));
+  EXPECT_EQ(args->at(0), SmallInt::fromWord(1));
 }
 
 TEST(ExceptionBuiltinsTest, StopIterationManyArguments) {
@@ -125,15 +125,15 @@ exc = StopIteration(4, 5, 6)
   Handle<StopIteration> stop_iteration(&scope, *exc);
 
   // The value attribute should contain the first constructor argument.
-  EXPECT_EQ(stop_iteration->value(), SmallInteger::fromWord(4));
+  EXPECT_EQ(stop_iteration->value(), SmallInt::fromWord(4));
 
   // The args attribute contains a tuple of the constructor arguments.
   ASSERT_TRUE(stop_iteration->args()->isObjectArray());
   Handle<ObjectArray> args(&scope, stop_iteration->args());
   ASSERT_EQ(args->length(), 3);
-  EXPECT_EQ(args->at(0), SmallInteger::fromWord(4));
-  EXPECT_EQ(args->at(1), SmallInteger::fromWord(5));
-  EXPECT_EQ(args->at(2), SmallInteger::fromWord(6));
+  EXPECT_EQ(args->at(0), SmallInt::fromWord(4));
+  EXPECT_EQ(args->at(1), SmallInt::fromWord(5));
+  EXPECT_EQ(args->at(2), SmallInt::fromWord(6));
 }
 
 TEST(ExceptionBuiltinsTest, SystemExitNoArguments) {
@@ -173,12 +173,12 @@ exc = SystemExit(1)
   ASSERT_TRUE(system_exit->args()->isObjectArray());
 
   // The code attribute should contain the first constructor argument.
-  EXPECT_EQ(system_exit->code(), SmallInteger::fromWord(1));
+  EXPECT_EQ(system_exit->code(), SmallInt::fromWord(1));
 
   // The args attribute contains a tuple of the constructor arguments.
   Handle<ObjectArray> args(&scope, system_exit->args());
   ASSERT_EQ(args->length(), 1);
-  EXPECT_EQ(args->at(0), SmallInteger::fromWord(1));
+  EXPECT_EQ(args->at(0), SmallInt::fromWord(1));
 }
 
 TEST(ExceptionBuiltinsTest, SystemExitManyArguments) {
@@ -195,15 +195,15 @@ exc = SystemExit(4, 5, 6)
   Handle<SystemExit> system_exit(&scope, *exc);
 
   // The code attribute should contain the first constructor argument.
-  EXPECT_EQ(system_exit->code(), SmallInteger::fromWord(4));
+  EXPECT_EQ(system_exit->code(), SmallInt::fromWord(4));
 
   // The args attribute contains a tuple of the constructor arguments.
   ASSERT_TRUE(system_exit->args()->isObjectArray());
   Handle<ObjectArray> args(&scope, system_exit->args());
   ASSERT_EQ(args->length(), 3);
-  EXPECT_EQ(args->at(0), SmallInteger::fromWord(4));
-  EXPECT_EQ(args->at(1), SmallInteger::fromWord(5));
-  EXPECT_EQ(args->at(2), SmallInteger::fromWord(6));
+  EXPECT_EQ(args->at(0), SmallInt::fromWord(4));
+  EXPECT_EQ(args->at(1), SmallInt::fromWord(5));
+  EXPECT_EQ(args->at(2), SmallInt::fromWord(6));
 }
 
 }  // namespace python
