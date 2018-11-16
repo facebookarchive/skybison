@@ -6,6 +6,8 @@
 
 namespace python {
 
+using namespace testing;
+
 using TypeExtensionApiTest = ExtensionApi;
 
 TEST_F(TypeExtensionApiTest, PyTypeCheckOnInt) {
@@ -139,6 +141,26 @@ TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
   PyObject* result = PyType_GenericAlloc(&custom_type, 0);
   EXPECT_EQ(1, Py_REFCNT(result));
   Py_DECREF(result);
+}
+
+TEST_F(TypeExtensionApiTest, IsSubtypeWithSameTypeReturnsTrue) {
+  PyObjectPtr pylong(PyLong_FromLong(10));
+  EXPECT_TRUE(PyType_IsSubtype(Py_TYPE(pylong), Py_TYPE(pylong)));
+}
+
+TEST_F(TypeExtensionApiTest, IsSubtypeWithSubtypeReturnsTrue) {
+  EXPECT_EQ(PyRun_SimpleString("class MyFloat(float): pass"), 0);
+  PyObjectPtr pyfloat(PyFloat_FromDouble(1.23));
+  PyTypeObject* myfloat_type =
+      reinterpret_cast<PyTypeObject*>(moduleGet("__main__", "MyFloat"));
+  EXPECT_TRUE(PyType_IsSubtype(myfloat_type, Py_TYPE(pyfloat)));
+  Py_DECREF(myfloat_type);
+}
+
+TEST_F(TypeExtensionApiTest, IsSubtypeWithDifferentTypesReturnsFalse) {
+  PyObjectPtr pylong(PyLong_FromLong(10));
+  PyObjectPtr pyuni(PyUnicode_FromString("string"));
+  EXPECT_FALSE(PyType_IsSubtype(Py_TYPE(pylong), Py_TYPE(pyuni)));
 }
 
 }  // namespace python

@@ -140,8 +140,17 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* /* e */, int /* t */) {
   UNIMPLEMENTED("PyType_GetSlot");
 }
 
-PY_EXPORT int PyType_IsSubtype(PyTypeObject* /* a */, PyTypeObject* /* b */) {
-  UNIMPLEMENTED("PyType_IsSubtype");
+PY_EXPORT int PyType_IsSubtype(PyTypeObject* a, PyTypeObject* b) {
+  if (a == b) return 1;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Type a_obj(
+      &scope,
+      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(a))->asObject());
+  Type b_obj(
+      &scope,
+      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(b))->asObject());
+  return thread->runtime()->isSubClass(a_obj, b_obj) == Bool::trueObj() ? 1 : 0;
 }
 
 PY_EXPORT void PyType_Modified(PyTypeObject* /* e */) {
