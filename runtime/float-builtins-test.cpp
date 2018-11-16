@@ -2,6 +2,8 @@
 
 #include <limits>
 
+#include "float-builtins.h"
+#include "frame.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
@@ -407,6 +409,23 @@ TEST(FloatBuiltinsDeathTest, SubWithNonFloatOtherThrows) {
 )";
   Runtime runtime;
   ASSERT_DEATH(runtime.runFromCStr(src), "unimplemented");
+}
+
+TEST(FloatBuiltins, NanIsNeqNan) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+nan = float("nan")
+)");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Float nan(&scope, moduleAt(&runtime, main, "nan"));
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, *nan);
+  frame->setLocal(1, *nan);
+  Object result(&scope, FloatBuiltins::dunderEq(thread, frame, 2));
+  thread->popFrame();
+  EXPECT_EQ(*result, RawBool::falseObj());
 }
 
 }  // namespace python
