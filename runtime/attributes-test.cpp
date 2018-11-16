@@ -137,9 +137,9 @@ TEST_P(IntrinsicClassSetAttrTest, SetAttr) {
 
   EXPECT_TRUE(result->isError());
   ASSERT_TRUE(thread->pendingException()->isString());
-  EXPECT_TRUE(
-      String::cast(thread->pendingException())
-          ->equalsCString("can't set attributes of built-in/extension type"));
+  EXPECT_PYSTRING_EQ(
+      String::cast(thread->pendingException()),
+      "can't set attributes of built-in/extension type");
 }
 
 INSTANTIATE_TEST_CASE_P(

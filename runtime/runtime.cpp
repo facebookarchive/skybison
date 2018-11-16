@@ -400,6 +400,18 @@ Object* Runtime::newObjectArray(word length) {
   return heap()->createObjectArray(length, None::object());
 }
 
+Object* Runtime::newInteger(word value) {
+  auto i = Integer::cast(heap()->createInteger());
+  i->setValue(value);
+  return i;
+}
+
+Object* Runtime::newDouble(double value) {
+  auto d = Double::cast(heap()->createDouble());
+  d->setValue(value);
+  return d;
+}
+
 Object* Runtime::newRange(word start, word stop, word step) {
   auto range = Range::cast(heap()->createRange());
   range->setStart(start);
@@ -577,6 +589,11 @@ void Runtime::initializeHeapClasses() {
   dictionary->setName(newStringFromCString("dictionary"));
   const ClassId dictionary_mro[] = {ClassId::kDictionary, ClassId::kObject};
   dictionary->setMro(createMro(dictionary_mro, ARRAYSIZE(dictionary_mro)));
+
+  Handle<Class> dbl(&scope, newClassWithId(ClassId::kDouble));
+  dbl->setName(newStringFromCString("double"));
+  const ClassId double_mro[] = {ClassId::kDouble, ClassId::kObject};
+  dbl->setMro(createMro(double_mro, ARRAYSIZE(double_mro)));
 
   Handle<Class> function(&scope, newClassWithId(ClassId::kFunction));
   function->setName(newStringFromCString("function"));

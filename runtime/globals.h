@@ -11,6 +11,7 @@ typedef uintptr_t uword;
 
 const int kWordSize = sizeof(word);
 const int kPointerSize = sizeof(void*);
+const int kDoubleSize = sizeof(double);
 
 const int kBitsPerByte = 8;
 const int kBitsPerPointer = kBitsPerByte * kWordSize;

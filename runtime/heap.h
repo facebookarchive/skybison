@@ -48,6 +48,10 @@ class Heap {
 
   Object* createEllipsis();
 
+  Object* createInteger();
+
+  Object* createDouble();
+
   Object* createRange();
 
   Object* createRangeIterator();

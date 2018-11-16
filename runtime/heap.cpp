@@ -296,6 +296,32 @@ Object* Heap::createEllipsis() {
   return Ellipsis::cast(result);
 }
 
+Object* Heap::createInteger() {
+  word size = Integer::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<Integer*>(raw);
+  result->setHeader(Header::from(
+      Integer::kSize / kPointerSize,
+      0,
+      ClassId::kInteger,
+      ObjectFormat::kDataInstance));
+  return Integer::cast(result);
+}
+
+Object* Heap::createDouble() {
+  word size = Double::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<Double*>(raw);
+  result->setHeader(Header::from(
+      Double::kSize / kPointerSize,
+      0,
+      ClassId::kDouble,
+      ObjectFormat::kDataInstance));
+  return Double::cast(result);
+}
+
 Object* Heap::createRange() {
   word size = Range::allocationSize();
   Object* raw = allocate(size, Header::kSize);

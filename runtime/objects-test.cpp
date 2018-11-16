@@ -271,6 +271,33 @@ TEST(DictionaryTest, GetKeys) {
   }
 }
 
+TEST(DoubleTest, DoubleTest) {
+  Runtime runtime;
+  Object* o = runtime.newDouble(3.14);
+  EXPECT_TRUE(o->isDouble());
+  Double* d = Double::cast(o);
+  EXPECT_EQ(d->value(), 3.14);
+
+  d->setValue(2.718);
+  EXPECT_EQ(d->value(), 2.718);
+}
+
+TEST(IntegerTest, IntegerTest) {
+  Runtime runtime;
+  Object* o = runtime.newInteger(42);
+  EXPECT_TRUE(o->isInteger());
+  Integer* i = Integer::cast(o);
+  EXPECT_EQ(i->value(), 42);
+
+  i->setValue(9223372036854775807L);
+  EXPECT_EQ(i->value(), 9223372036854775807L);
+
+  int stack_val = 123;
+
+  i->setAsVoidPtr(&stack_val);
+  EXPECT_EQ(*reinterpret_cast<int*>(i->asVoidPtr()), 123);
+}
+
 TEST(ListTest, EmptyListInvariants) {
   Runtime runtime;
   List* list = List::cast(runtime.newList());
