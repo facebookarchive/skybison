@@ -21,10 +21,8 @@ TEST_F(ModSupportExtensionApiTest, AddObjectAddsToModule) {
   int myobj = PyModule_AddObject(module, "myobj", obj);
   ASSERT_NE(myobj, -1);
 
-  PyRun_SimpleString(R"(
-import mymodule
-x = mymodule.myobj
-)");
+  ASSERT_EQ(testing::moduleSet("__main__", "mymodule", module), 0);
+  PyRun_SimpleString("x = mymodule.myobj");
 
   PyObject* x = testing::moduleGet("__main__", "x");
   ASSERT_TRUE(PyList_CheckExact(x));
@@ -47,10 +45,8 @@ TEST_F(ModSupportExtensionApiTest, RepeatedAddObjectOverwritesValue) {
   myobj = PyModule_AddObject(module, "myobj", tupleobj);
   ASSERT_NE(myobj, -1);
 
-  PyRun_SimpleString(R"(
-import mymodule
-x = mymodule.myobj
-)");
+  ASSERT_EQ(testing::moduleSet("__main__", "mymodule", module), 0);
+  PyRun_SimpleString("x = mymodule.myobj");
 
   PyObject* x = testing::moduleGet("__main__", "x");
   ASSERT_FALSE(PyList_CheckExact(x));

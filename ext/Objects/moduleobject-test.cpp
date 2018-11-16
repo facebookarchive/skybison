@@ -27,12 +27,10 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
     PyObject* v = PyLong_FromLong(val);
     PyModule_AddIntConstant(m, c, val);
     PyDict_SetItem(de, v, u);
+    ASSERT_EQ(testing::moduleSet("__main__", "spam", m), 0);
   }
 
-  PyRun_SimpleString(R"(
-import spam
-x = spam.CONST
-)");
+  PyRun_SimpleString("x = spam.CONST");
 
   PyObject* x = testing::moduleGet("__main__", "x");
   int result = PyLong_AsLong(x);

@@ -110,6 +110,8 @@ PyAPI_FUNC(PyObject*) PyObject_GenericGetAttr(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyObject_GetAttr(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyObject_GetAttrString(PyObject*, const char*);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject*, PyObject*, PyObject*);
+PyAPI_FUNC(int) PyObject_SetAttr(PyObject*, PyObject*, PyObject*);
+PyAPI_FUNC(int) PyObject_SetAttrString(PyObject*, const char*, PyObject*);
 PyAPI_FUNC(int) PyModule_AddObject(PyObject*, const char*, PyObject*);
 PyAPI_FUNC(PyObject*) PyImport_GetModuleDict(void);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject* args, const char* format, ...);

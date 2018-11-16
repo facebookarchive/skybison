@@ -107,18 +107,9 @@ PY_EXPORT int PyObject_GenericSetDict(PyObject* /* j */, PyObject* /* e */,
 }
 
 PY_EXPORT PyObject* PyObject_GetAttr(PyObject* v, PyObject* name) {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Object object(&scope, ApiHandle::fromPyObject(v)->asObject());
-  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Object result(&scope, runtime->attributeAt(thread, object, name_obj));
-
-  if (thread->hasPendingException() || result->isError()) {
-    return nullptr;
-  }
-  return ApiHandle::fromObject(*result);
+  // TODO(miro): This does not support custom attribute getter set by
+  // __getattr__ or tp_getattro slot
+  return PyObject_GenericGetAttr(v, name);
 }
 
 PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* v, const char* name) {
@@ -128,6 +119,22 @@ PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* v, const char* name) {
   PyObject* attr = PyObject_GetAttr(v, str);
   Py_DECREF(str);
   return attr;
+}
+
+PY_EXPORT int PyObject_SetAttr(PyObject* v, PyObject* name, PyObject* w) {
+  // TODO(miro): This does not support custom attribute setter set by
+  // __setattr__ or tp_setattro slot
+  return PyObject_GenericSetAttr(v, name, w);
+}
+
+PY_EXPORT int PyObject_SetAttrString(PyObject* v, const char* name,
+                                     PyObject* w) {
+  PyObject* str = PyUnicode_FromString(name);
+  if (str == nullptr) return -1;
+
+  int result = PyObject_SetAttr(v, str, w);
+  Py_DECREF(str);
+  return result;
 }
 
 PY_EXPORT int PyObject_HasAttr(PyObject* /* v */, PyObject* /* e */) {
@@ -168,16 +175,6 @@ PY_EXPORT int PyObject_RichCompareBool(PyObject* /* v */, PyObject* /* w */,
 
 PY_EXPORT PyObject* PyObject_SelfIter(PyObject* /* j */) {
   UNIMPLEMENTED("PyObject_SelfIter");
-}
-
-PY_EXPORT int PyObject_SetAttr(PyObject* /* v */, PyObject* /* e */,
-                               PyObject* /* e */) {
-  UNIMPLEMENTED("PyObject_SetAttr");
-}
-
-PY_EXPORT int PyObject_SetAttrString(PyObject* /* v */, const char* /* e */,
-                                     PyObject* /* w */) {
-  UNIMPLEMENTED("PyObject_SetAttrString");
 }
 
 PY_EXPORT PyObject* PyObject_Str(PyObject* /* v */) {
