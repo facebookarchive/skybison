@@ -105,6 +105,7 @@ add_custom_command(
     -modified ${CPYTHON_MODIFIED_SOURCES}
     -output_dir ${CMAKE_BINARY_DIR}/gen
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  DEPENDS ${CPYTHON_SOURCES} ${CPYTHON_MODIFIED_SOURCES}
   COMMENT "Generating CPython source files")
 
 add_library(cpython INTERFACE)
