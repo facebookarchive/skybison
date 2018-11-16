@@ -9,16 +9,27 @@
 #include <sstream>
 #include <vector>
 
+#include <dlfcn.h>
+
 namespace python {
 
 class TracebackPrinter : public FrameVisitor {
  public:
   void visit(Frame* frame) {
+    std::stringstream line;
+
     if (frame->code()->isInteger()) {
-      char buf[128] = {};
-      auto ptr = Integer::cast(frame->code())->asCPointer();
-      snprintf(buf, 127, "  <native function at %p>", ptr);
-      lines_.emplace_back(buf);
+      void* ptr = Integer::cast(frame->code())->asCPointer();
+      line << "  <native function at " << ptr << " (";
+
+      Dl_info info = Dl_info();
+      if (dladdr(ptr, &info) && info.dli_sname != nullptr) {
+        line << info.dli_sname;
+      } else {
+        line << "no symbol found";
+      }
+      line << ")>";
+      lines_.emplace_back(line.str());
       return;
     }
     if (!frame->code()->isCode()) {
@@ -29,7 +40,6 @@ class TracebackPrinter : public FrameVisitor {
     Thread* thread = Thread::currentThread();
     HandleScope scope(thread);
     Handle<Code> code(&scope, frame->code());
-    std::stringstream line;
 
     // Extract filename
     if (code->filename()->isString()) {

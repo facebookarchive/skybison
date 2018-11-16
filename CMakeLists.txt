@@ -93,6 +93,7 @@ target_compile_options(
   ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   runtime
+  dl
   siphash)
 
 add_executable(
