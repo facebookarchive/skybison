@@ -13,6 +13,7 @@ class IntBuiltins {
   static void initialize(Runtime* runtime);
 
   static Object* dunderNew(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderInt(Thread* thread, Frame* frame, word nargs);
   static Object* intFromString(Thread* thread, Object* str, int base);
 
  private:

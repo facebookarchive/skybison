@@ -13,6 +13,10 @@ namespace python {
 
 const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    // For ints, __index__ and __int__ have the same behavior so they are mapped
+    // to the same function
+    {SymbolId::kDunderIndex, nativeTrampoline<dunderInt>},
+    {SymbolId::kDunderInt, nativeTrampoline<dunderInt>},
 };
 
 void IntBuiltins::initialize(Runtime* runtime) {
@@ -110,6 +114,27 @@ Object* IntBuiltins::intFromString(Thread* thread, Object* arg_raw, int base) {
     return thread->throwValueErrorFromCString("unsupported type");
   }
   return SmallInt::fromWord(res);
+}
+
+Object* IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1) {
+    return thread->throwTypeErrorFromCString("not enough arguments");
+  }
+  if (nargs > 1) {
+    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+        "expected 0 arguments, %ld given", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> arg(&scope, args.get(0));
+  if (arg->isInt()) {
+    return *arg;
+  }
+  if (thread->runtime()->hasSubClassFlag(*arg, Type::Flag::kIntSubclass)) {
+    UNIMPLEMENTED("Strict subclass of int");
+  }
+  return thread->throwTypeErrorFromCString(
+      "object cannot be interpreted as an integer");
 }
 
 const BuiltinMethod SmallIntBuiltins::kMethods[] = {

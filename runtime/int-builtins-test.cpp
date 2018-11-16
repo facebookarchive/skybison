@@ -573,4 +573,46 @@ TEST(IntBuiltinsTest, StringToIntDNeg) {
   EXPECT_TRUE(res2->isError());
 }
 
+TEST(IntBuiltinsTest, DunderIndexReturnsSameValue) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  runtime.runFromCString(R"(
+a = (7).__index__()
+b = int.__index__(7)
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_TRUE(a->isSmallInt());
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(7, SmallInt::cast(*a)->value());
+  EXPECT_EQ(7, SmallInt::cast(*b)->value());
+}
+
+TEST(IntBuiltinsTest, DunderIntReturnsSameValue) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  runtime.runFromCString(R"(
+a = (7).__int__()
+b = int.__int__(7)
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  ASSERT_TRUE(a->isSmallInt());
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(7, SmallInt::cast(*a)->value());
+  EXPECT_EQ(7, SmallInt::cast(*b)->value());
+
+  Frame* frame = thread->openAndLinkFrame(0, 1, 0);
+  frame->setLocal(0, runtime.newStringFromCString("python"));
+  Handle<Object> res(&scope, IntBuiltins::dunderInt(thread, frame, 1));
+  EXPECT_TRUE(res->isError());
+}
+
 }  // namespace python

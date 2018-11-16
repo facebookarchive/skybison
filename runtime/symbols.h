@@ -40,7 +40,9 @@ class Runtime;
   V(DunderImatmul, "__imatmul__")                                              \
   V(DunderImod, "__imod__")                                                    \
   V(DunderImul, "__imul__")                                                    \
+  V(DunderIndex, "__index__")                                                  \
   V(DunderInit, "__init__")                                                    \
+  V(DunderInt, "__int__")                                                      \
   V(DunderInvert, "__invert__")                                                \
   V(DunderIor, "__ior__")                                                      \
   V(DunderIpow, "__ipow__")                                                    \
