@@ -885,13 +885,6 @@ void Runtime::initializeListClass() {
 
   classAddBuiltinFunction(
       list,
-      symbols()->Insert(),
-      nativeTrampoline<builtinListInsert>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-
-  classAddBuiltinFunction(
-      list,
       symbols()->DunderLen(),
       nativeTrampoline<builtinListLen>,
       unimplementedTrampoline,
@@ -899,8 +892,8 @@ void Runtime::initializeListClass() {
 
   classAddBuiltinFunction(
       list,
-      symbols()->Pop(),
-      nativeTrampoline<builtinListPop>,
+      symbols()->Insert(),
+      nativeTrampoline<builtinListInsert>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
@@ -908,6 +901,13 @@ void Runtime::initializeListClass() {
       list,
       symbols()->DunderNew(),
       nativeTrampoline<builtinListNew>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      list,
+      symbols()->Pop(),
+      nativeTrampoline<builtinListPop>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
@@ -929,6 +929,13 @@ void Runtime::initializeClassMethodClass() {
 
   classAddBuiltinFunction(
       classmethod,
+      symbols()->DunderGet(),
+      nativeTrampoline<classmethodDescriptorGet>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      classmethod,
       symbols()->DunderInit(),
       nativeTrampoline<builtinClassMethodInit>,
       unimplementedTrampoline,
@@ -938,13 +945,6 @@ void Runtime::initializeClassMethodClass() {
       classmethod,
       symbols()->DunderNew(),
       nativeTrampoline<builtinClassMethodNew>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-
-  classAddBuiltinFunction(
-      classmethod,
-      symbols()->DunderGet(),
-      nativeTrampoline<classmethodDescriptorGet>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 }
@@ -963,15 +963,15 @@ void Runtime::initializeTypeClass() {
 
   classAddBuiltinFunction(
       type,
-      symbols()->DunderNew(),
-      nativeTrampoline<builtinTypeNew>,
+      symbols()->DunderInit(),
+      nativeTrampoline<builtinTypeInit>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
   classAddBuiltinFunction(
       type,
-      symbols()->DunderInit(),
-      nativeTrampoline<builtinTypeInit>,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinTypeNew>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 }
@@ -1090,34 +1090,6 @@ void Runtime::initializeSmallIntClass() {
 
   classAddBuiltinFunction(
       small_integer,
-      symbols()->DunderInvert(),
-      nativeTrampoline<builtinSmallIntegerInvert>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderNeg(),
-      nativeTrampoline<builtinSmallIntegerNeg>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderPos(),
-      nativeTrampoline<builtinSmallIntegerPos>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderSub(),
-      nativeTrampoline<builtinSmallIntegerSub>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-
-  classAddBuiltinFunction(
-      small_integer,
       symbols()->DunderEq(),
       nativeTrampoline<builtinSmallIntegerEq>,
       unimplementedTrampoline,
@@ -1134,6 +1106,13 @@ void Runtime::initializeSmallIntClass() {
       small_integer,
       symbols()->DunderGt(),
       nativeTrampoline<builtinSmallIntegerGt>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderInvert(),
+      nativeTrampoline<builtinSmallIntegerInvert>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
@@ -1158,6 +1137,27 @@ void Runtime::initializeSmallIntClass() {
       unimplementedTrampoline,
       unimplementedTrampoline);
 
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderNeg(),
+      nativeTrampoline<builtinSmallIntegerNeg>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderPos(),
+      nativeTrampoline<builtinSmallIntegerPos>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderSub(),
+      nativeTrampoline<builtinSmallIntegerSub>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
   // SmallInteger to all locations that decode to a SmallInteger tag.
@@ -1176,8 +1176,8 @@ void Runtime::initializeStaticMethodClass() {
 
   classAddBuiltinFunction(
       staticmethod,
-      symbols()->DunderNew(),
-      nativeTrampoline<builtinStaticMethodNew>,
+      symbols()->DunderGet(),
+      nativeTrampoline<staticmethodDescriptorGet>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
@@ -1190,8 +1190,8 @@ void Runtime::initializeStaticMethodClass() {
 
   classAddBuiltinFunction(
       staticmethod,
-      symbols()->DunderGet(),
-      nativeTrampoline<staticmethodDescriptorGet>,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinStaticMethodNew>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 }
@@ -3099,15 +3099,15 @@ void Runtime::initializeSuperClass() {
 
   classAddBuiltinFunction(
       super,
-      symbols()->DunderNew(),
-      nativeTrampoline<builtinSuperNew>,
+      symbols()->DunderInit(),
+      nativeTrampoline<builtinSuperInit>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
   classAddBuiltinFunction(
       super,
-      symbols()->DunderInit(),
-      nativeTrampoline<builtinSuperInit>,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinSuperNew>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 }
