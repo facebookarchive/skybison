@@ -18,23 +18,23 @@ Object* Runtime::dictionaryClass_ = nullptr;
 
 void Runtime::allocateClasses() {
   // Create the class Class by hand to accommodate circularity.
-  Object* raw = Heap::Allocate(Class::allocationSize());
+  Object* raw = Heap::allocate(Class::allocationSize());
   assert(raw != nullptr);
   Class* result = reinterpret_cast<Class*>(raw);
   result->setClass(result);
   result->setLayout(Layout::CLASS);
   classClass_ = result;
 
-  byteArrayClass_ = Heap::CreateClass(Layout::BYTE_ARRAY);
-  objectArrayClass_ = Heap::CreateClass(Layout::OBJECT_ARRAY);
-  codeClass_ = Heap::CreateClass(Layout::CODE);
-  stringClass_ = Heap::CreateClass(Layout::STRING);
-  functionClass_ = Heap::CreateClass(Layout::FUNCTION);
+  byteArrayClass_ = Heap::createClass(Layout::BYTE_ARRAY);
+  objectArrayClass_ = Heap::createClass(Layout::OBJECT_ARRAY);
+  codeClass_ = Heap::createClass(Layout::CODE);
+  stringClass_ = Heap::createClass(Layout::STRING);
+  functionClass_ = Heap::createClass(Layout::FUNCTION);
 }
 
 void Runtime::initialize() {
-  Handles::Initialize();
-  Heap::Initialize(100 * MiB);
+  Handles::initialize();
+  Heap::initialize(100 * MiB);
   allocateClasses();
 }
 

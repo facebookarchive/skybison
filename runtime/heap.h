@@ -7,11 +7,11 @@ namespace python {
 
 class Heap {
 public:
-  static void Initialize(intptr_t size);
+  static void initialize(intptr_t size);
 
-  static Object* Allocate(intptr_t size);
+  static Object* allocate(intptr_t size);
 
-  static Object* CreateCode(
+  static Object* createCode(
       int argcount,
       int kwonlyargcount,
       int nlocals,
@@ -27,12 +27,12 @@ public:
       Object* name,
       int firstlineno,
       Object* lnotab);
-  static Object* CreateByteArray(int length);
-  static Object* CreateObjectArray(int length);
-  static Object* CreateClass(Layout layout);
-  static Object* CreateString(int length);
-  static Object* CreateFunction();
-  static Object* CreateDictionary();
+  static Object* createByteArray(int length);
+  static Object* createObjectArray(int length);
+  static Object* createClass(Layout layout);
+  static Object* createString(int length);
+  static Object* createFunction();
+  static Object* createDictionary();
 
 private:
   static char* start_;

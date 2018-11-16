@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "runtime/Runtime.h"
+#include "runtime/runtime.h"
 
 int main() {
   python::Runtime::initialize();

@@ -10,7 +10,7 @@ class Frame;
 
 class Thread {
  public:
-  explicit Thread(int size) : size_(Utils::RoundUp(size, kPointerSize)) {
+  explicit Thread(int size) : size_(Utils::roundUp(size, kPointerSize)) {
     start_ = ptr_ = new byte[size];
     end_ = start_ + size;
   }

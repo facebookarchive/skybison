@@ -7,12 +7,12 @@ namespace python {
 
 class Handles {
  public:
-  static void Initialize();
-  static void Visit(void callback(Object**));
+  static void initialize();
+  static void visit(void callback(Object**));
 
  private:
-  static void Grow();
-  static intptr_t Push(Object* object);
+  static void grow();
+  static intptr_t push(Object* object);
 
   static Object** stack_;
   static intptr_t top_;
@@ -30,7 +30,7 @@ class HandleScope {
 class Handle {
 public:
   Handle(Object* object) {
-    index_ = Handles::Push(object);
+    index_ = Handles::push(object);
   }
 
   template<typename T>

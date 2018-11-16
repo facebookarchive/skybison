@@ -12,28 +12,28 @@ public:
    public:
     Reader(const char* buffer);
 
-    byte ReadByte();
+    byte readByte();
 
-    int32 ReadLong();
+    int32 readLong();
 
-    Object* ReadObject();
+    Object* readObject();
 
-    int16 ReadShort();
+    int16 readShort();
 
-    const byte* ReadString(int length);
+    const byte* readString(int length);
 
-    Object* ReadTypeString();
-    Object* ReadTypeShortAscii();
-    Object* ReadTypeSmallTuple();
-    Object* ReadTypeTuple();
-    Object* ReadTypeCode();
-    Object* ReadTypeRef();
+    Object* readTypeString();
+    Object* readTypeShortAscii();
+    Object* readTypeSmallTuple();
+    Object* readTypeTuple();
+    Object* readTypeCode();
+    Object* readTypeRef();
 
-    Object* DoTupleElements(int length);
+    Object* doTupleElements(int length);
 
-    int AddRef(Object* value);
-    void SetRef(int index, Object* value);
-    Object* GetRef(int index);
+    int addRef(Object* value);
+    void setRef(int index, Object* value);
+    Object* getRef(int index);
 
    private:
 

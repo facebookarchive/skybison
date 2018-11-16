@@ -69,21 +69,21 @@ enum Layout {
 class Object {
 public:
   // Immediate
-  inline bool IsSmallInteger();
-  inline bool IsNone();
-  inline bool IsEllipsis();
-  inline bool IsBoolean();
+  inline bool isSmallInteger();
+  inline bool isNone();
+  inline bool isEllipsis();
+  inline bool isBoolean();
 
   // Indirect
-  inline bool IsHeapObject();
-  inline bool IsClass();
-  inline bool IsCode();
-  inline bool IsByteArray();
-  inline bool IsObjectArray();
-  inline bool IsString();
-  inline bool IsFunction();
-  inline bool IsModule();
-  inline bool IsDictionary();
+  inline bool isHeapObject();
+  inline bool isClass();
+  inline bool isCode();
+  inline bool isByteArray();
+  inline bool isObjectArray();
+  inline bool isString();
+  inline bool isFunction();
+  inline bool isModule();
+  inline bool isDictionary();
 
 private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
@@ -252,7 +252,7 @@ public:
   inline static Code* cast(Object* obj);
 
   static int allocationSize() {
-    return Utils::RoundUp(kSize, kPointerSize);
+    return Utils::roundUp(kSize, kPointerSize);
   }
 
   // Does this really need to take so many arguments?
@@ -367,84 +367,84 @@ class Dictionary : public HeapObject {
 
 // Object
 
-bool Object::IsClass() {
-  if (!IsHeapObject()) {
+bool Object::isClass() {
+  if (!isHeapObject()) {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::CLASS;
 }
 
-bool Object::IsBoolean() {
+bool Object::isBoolean() {
   int tag = reinterpret_cast<uword>(this) & Boolean::kTagMask;
   return tag == Boolean::kTag;
 }
 
-bool Object::IsNone() {
+bool Object::isNone() {
   int tag = reinterpret_cast<uword>(this) & None::kTagMask;
   return tag == None::kTag;
 }
 
-bool Object::IsEllipsis() {
+bool Object::isEllipsis() {
   int tag = reinterpret_cast<uword>(this) & None::kTagMask;
   return tag == None::kTag;
 }
 
-bool Object::IsSmallInteger() {
+bool Object::isSmallInteger() {
   int tag = reinterpret_cast<uword>(this) & SmallInteger::kTagMask;
   return tag == SmallInteger::kTag;
 }
 
-bool Object::IsHeapObject() {
+bool Object::isHeapObject() {
   int tag = reinterpret_cast<uword>(this) & HeapObject::kTagMask;
   return tag == HeapObject::kTag;
 }
 
-bool Object::IsByteArray() {
-  if (!IsHeapObject()) {
+bool Object::isByteArray() {
+  if (!isHeapObject()) {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::BYTE_ARRAY;
 }
 
-bool Object::IsObjectArray() {
-  if (!IsHeapObject()) {
+bool Object::isObjectArray() {
+  if (!isHeapObject()) {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::OBJECT_ARRAY;
 }
 
-bool Object::IsCode() {
-  if (!IsHeapObject()) {
+bool Object::isCode() {
+  if (!isHeapObject()) {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::CODE;
 }
 
 
-bool Object::IsString() {
-  if (!IsHeapObject()) {
+bool Object::isString() {
+  if (!isHeapObject()) {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::STRING;
 }
 
 
-bool Object::IsFunction() {
-  if (!IsHeapObject()) {
+bool Object::isFunction() {
+  if (!isHeapObject()) {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::FUNCTION;
 }
 
-bool Object::IsDictionary() {
-  if (!IsHeapObject()) {
+bool Object::isDictionary() {
+  if (!isHeapObject()) {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::DICTIONARY;
 }
 
-bool Object::IsModule(){
-  if (!IsHeapObject()) {
+bool Object::isModule(){
+  if (!isHeapObject()) {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::MODULE;
@@ -457,7 +457,7 @@ None* None::object() {
 }
 
 None* None::cast(Object* object) {
-  assert(object->IsNone());
+  assert(object->isNone());
   return reinterpret_cast<None*>(object);
 }
 
@@ -468,7 +468,7 @@ Ellipsis* Ellipsis::object() {
 }
 
 Ellipsis* Ellipsis::cast(Object* object) {
-  assert(object->IsEllipsis());
+  assert(object->isEllipsis());
   return reinterpret_cast<Ellipsis*>(object);
 }
 
@@ -479,14 +479,14 @@ Boolean* Boolean::fromBool(bool value) {
 }
 
 Boolean* Boolean::cast(Object* object) {
-  assert(object->IsBoolean());
+  assert(object->isBoolean());
   return reinterpret_cast<Boolean*>(object);
 }
 
 // SmallInteger
 
 SmallInteger* SmallInteger::cast(Object* object) {
-  assert(object->IsSmallInteger());
+  assert(object->isSmallInteger());
   return reinterpret_cast<SmallInteger*>(object);
 }
 
@@ -510,7 +510,7 @@ HeapObject* HeapObject::fromAddress(uword address) {
 }
 
 HeapObject* HeapObject::cast(Object* obj) {
-  assert(obj->IsHeapObject());
+  assert(obj->isHeapObject());
   return reinterpret_cast<HeapObject*>(obj);
 }
 
@@ -547,7 +547,7 @@ void Class::setLayout(Layout layout) {
 }
 
 Class* Class::cast(Object* object) {
-  assert(object->IsClass());
+  assert(object->isClass());
   return reinterpret_cast<Class*>(object);
 }
 // Array
@@ -563,7 +563,7 @@ void Array::setLength(word length) {
 // ByteArray
 
 int ByteArray::allocationSize(int length) {
-  return Utils::RoundUp(length + Array::kSize, kPointerSize);
+  return Utils::roundUp(length + Array::kSize, kPointerSize);
 }
 
 void ByteArray::initialize(int length) {
@@ -584,14 +584,14 @@ void ByteArray::setByteAt(int index, byte value) {
 }
 
 ByteArray* ByteArray::cast(Object* object) {
-  assert(object->IsByteArray());
+  assert(object->isByteArray());
   return reinterpret_cast<ByteArray *>(object);
 }
 
 // ObjectArray
 
 int ObjectArray::allocationSize(int length) {
-  return Utils::RoundUp(length * kPointerSize + Array::kSize, kPointerSize);
+  return Utils::roundUp(length * kPointerSize + Array::kSize, kPointerSize);
 }
 
 void ObjectArray::initialize(int length, int size, Object* value) {
@@ -602,7 +602,7 @@ void ObjectArray::initialize(int length, int size, Object* value) {
 }
 
 ObjectArray* ObjectArray::cast(Object* object) {
-  assert(object->IsObjectArray());
+  assert(object->isObjectArray());
   return reinterpret_cast<ObjectArray*>(object);
 }
 
@@ -621,7 +621,7 @@ void ObjectArray::set(int index, Object* value) {
 // Code
 
 Code* Code::cast(Object* obj) {
-  assert(obj->IsCode());
+  assert(obj->isCode());
   return reinterpret_cast<Code*>(obj);
 }
 
@@ -689,11 +689,11 @@ Object* Code::consts() {
 // Function
 
 int Function::allocationSize() {
-  return Utils::RoundUp(Function::kSize, kPointerSize);
+  return Utils::roundUp(Function::kSize, kPointerSize);
 }
 
 Function* Function::cast(Object* object) {
-  assert(object->IsFunction());
+  assert(object->isFunction());
   return reinterpret_cast<Function*>(object);
 }
 
@@ -713,11 +713,11 @@ void Function::initialize() {
 // Module
 
 int Module::allocationSize() {
-  return Utils::RoundUp(Module::kSize, kPointerSize);
+  return Utils::roundUp(Module::kSize, kPointerSize);
 }
 
 Module* Module::cast(Object* object) {
-  assert(object->IsModule());
+  assert(object->isModule());
   return reinterpret_cast<Module*>(object);
 }
 
@@ -728,11 +728,11 @@ void Module::initialize() {
 // Dictionary
 
 int Dictionary::allocationSize() {
-  return Utils::RoundUp(Module::kSize, kPointerSize);
+  return Utils::roundUp(Module::kSize, kPointerSize);
 }
 
 Dictionary* Dictionary::cast(Object* object) {
-  assert(object->IsDictionary());
+  assert(object->isDictionary());
   return reinterpret_cast<Dictionary*>(object);
 }
 
@@ -743,12 +743,12 @@ void Dictionary::initialize() {
 // String
 
 String* String::cast(Object* object) {
-  assert(object->IsString());
+  assert(object->isString());
   return reinterpret_cast<String*>(object);
 }
 
 int String::allocationSize(int length) {
-  return Utils::RoundUp(Array::kSize + length, kPointerSize);
+  return Utils::roundUp(Array::kSize + length, kPointerSize);
 }
 
 byte String::charAt(int index) {

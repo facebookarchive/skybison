@@ -49,16 +49,16 @@ Marshal::Reader::Reader(const char* buffer)
   end_ = start_ + length_;
 }
 
-const byte* Marshal::Reader::ReadString(int length) {
+const byte* Marshal::Reader::readString(int length) {
   const byte* result = &start_[pos_];
   pos_ += length;
   return result;
 }
 
 
-byte Marshal::Reader::ReadByte() {
+byte Marshal::Reader::readByte() {
   byte result = -1;
-  const byte* buffer = ReadString(1);
+  const byte* buffer = readString(1);
   if (buffer != nullptr) {
     result = buffer[0];
   }
@@ -66,9 +66,9 @@ byte Marshal::Reader::ReadByte() {
 }
 
 
-int16 Marshal::Reader::ReadShort() {
+int16 Marshal::Reader::readShort() {
   int16 result = -1;
-  const byte* buffer = ReadString(sizeof(result));
+  const byte* buffer = readString(sizeof(result));
   if (buffer != nullptr) {
     result = buffer[0];
     result |= buffer[1] <<  8;
@@ -77,9 +77,9 @@ int16 Marshal::Reader::ReadShort() {
 }
 
 
-int32 Marshal::Reader::ReadLong() {
+int32 Marshal::Reader::readLong() {
   int32 result = -1;
-  const byte* buffer = ReadString(4);
+  const byte* buffer = readString(4);
   if (buffer != nullptr) {
     result = buffer[0];
     result |= buffer[1] <<  8;
@@ -105,10 +105,10 @@ class ScopedCounter {
 };
 
 
-Object* Marshal::Reader::ReadObject() {
+Object* Marshal::Reader::readObject() {
   ScopedCounter<int> counter(&depth_);
   Object* result = nullptr;
-  byte code = ReadByte();
+  byte code = readByte();
   byte flag = code & FLAG_REF;
   byte type = code & ~FLAG_REF;
   isRef_ = flag;
@@ -157,7 +157,7 @@ Object* Marshal::Reader::ReadObject() {
       break;
 
     case TYPE_STRING:  // Misnomer, should be TYPE_BYTES
-      result = ReadTypeString();
+      result = readTypeString();
       break;
 
     case TYPE_ASCII_INTERNED:
@@ -165,11 +165,11 @@ Object* Marshal::Reader::ReadObject() {
       break;
 
     case TYPE_SHORT_ASCII_INTERNED:
-      result = ReadTypeShortAscii();
+      result = readTypeShortAscii();
       break;
 
     case TYPE_SHORT_ASCII:
-      result = ReadTypeShortAscii();
+      result = readTypeShortAscii();
       break;
 
     case TYPE_INTERNED:
@@ -181,11 +181,11 @@ Object* Marshal::Reader::ReadObject() {
       break;
 
     case TYPE_SMALL_TUPLE:
-      result = ReadTypeSmallTuple();
+      result = readTypeSmallTuple();
       break;
 
     case TYPE_TUPLE:
-      result = ReadTypeTuple();
+      result = readTypeTuple();
       break;
 
     case TYPE_LIST:
@@ -205,11 +205,11 @@ Object* Marshal::Reader::ReadObject() {
       break;
 
     case TYPE_CODE:
-      result = ReadTypeCode();
+      result = readTypeCode();
       break;
 
     case TYPE_REF:
-      result = ReadTypeRef();
+      result = readTypeRef();
       break;
 
     default:
@@ -218,16 +218,16 @@ Object* Marshal::Reader::ReadObject() {
   return result;
 }
 
-int Marshal::Reader::AddRef(Object* value) {
+int Marshal::Reader::addRef(Object* value) {
   if (refs_ == nullptr) {
     // Lazily create a new refs array.
-    refs_ = Heap::CreateObjectArray(1);
+    refs_ = Heap::createObjectArray(1);
     ObjectArray::cast(refs_)->set(0, value);
     return 0;
   } else {
     // Grow the refs array
     int length = ObjectArray::cast(refs_)->length();
-    Object* new_array = Heap::CreateObjectArray(length + 1);
+    Object* new_array = Heap::createObjectArray(length + 1);
     for (int i = 0; i < length; i++) {
       Object* value = ObjectArray::cast(refs_)->get(i);
       ObjectArray::cast(new_array)->set(i, value);
@@ -238,20 +238,20 @@ int Marshal::Reader::AddRef(Object* value) {
   }
 }
 
-void Marshal::Reader::SetRef(int index, Object* value) {
+void Marshal::Reader::setRef(int index, Object* value) {
    ObjectArray::cast(refs_)->set(index, value);
  }
 
-Object* Marshal::Reader::GetRef(int index) {
+Object* Marshal::Reader::getRef(int index) {
   return ObjectArray::cast(refs_)->get(index);
 }
 
-Object* Marshal::Reader::ReadTypeString() {
-  int length = ReadLong();
-  const byte* data = ReadString(length);
-  Object* result = Heap::CreateByteArray(length);
+Object* Marshal::Reader::readTypeString() {
+  int length = readLong();
+  const byte* data = readString(length);
+  Object* result = Heap::createByteArray(length);
   if (isRef_) {
-    AddRef(result);
+    addRef(result);
   }
   for (int i = 0; i < length; i++) {
     ByteArray::cast(result)->setByteAt(i, data[i]);
@@ -259,12 +259,12 @@ Object* Marshal::Reader::ReadTypeString() {
   return result;
 }
 
-Object* Marshal::Reader::ReadTypeShortAscii() {
-  int length = ReadByte();
-  const byte* data = ReadString(length);
-  Object* result = Heap::CreateString(length);
+Object* Marshal::Reader::readTypeShortAscii() {
+  int length = readByte();
+  const byte* data = readString(length);
+  Object* result = Heap::createString(length);
   if (isRef_) {
-    AddRef(result);
+    addRef(result);
   }
   for (int i = 0; i < length; i++) {
     String::cast(result)->setCharAt(i, data[i]);
@@ -272,49 +272,49 @@ Object* Marshal::Reader::ReadTypeShortAscii() {
   return result;
 }
 
-Object* Marshal::Reader::ReadTypeSmallTuple() {
-  int32 n = ReadByte();
-  return DoTupleElements(n);
+Object* Marshal::Reader::readTypeSmallTuple() {
+  int32 n = readByte();
+  return doTupleElements(n);
 }
 
-Object* Marshal::Reader::ReadTypeTuple() {
-  int n = ReadLong();
-  return DoTupleElements(n);
+Object* Marshal::Reader::readTypeTuple() {
+  int n = readLong();
+  return doTupleElements(n);
 }
 
-Object* Marshal::Reader::DoTupleElements(int32 length) {
-  Object* result = Heap::CreateObjectArray(length);
+Object* Marshal::Reader::doTupleElements(int32 length) {
+  Object* result = Heap::createObjectArray(length);
   if (isRef_) {
-    AddRef(result);
+    addRef(result);
   }
   for (int i = 0; i < length; i++) {
-    Object* value = ReadObject();
+    Object* value = readObject();
     ObjectArray::cast(result)->set(i, value);
   }
   return result;
 }
 
-Object* Marshal::Reader::ReadTypeCode() {
+Object* Marshal::Reader::readTypeCode() {
   int index = -1;
   if (isRef_) {
-    index = AddRef(None::object());
+    index = addRef(None::object());
   }
-  int argcount = ReadLong();
-  int kwonlyargcount = ReadLong();
-  int nlocals = ReadLong();
-  int stacksize = ReadLong();
-  int flags = ReadLong();
-  Object* code = ReadObject();
-  Object* consts = ReadObject();
-  Object* names = ReadObject();
-  Object* varnames = ReadObject();
-  Object* freevars = ReadObject();
-  Object* cellvars = ReadObject();
-  Object* filename = ReadObject();
-  Object* name = ReadObject();
-  int firstlineno = ReadLong();
-  Object* lnotab = ReadObject();
-  Object* result = Heap::CreateCode(
+  int argcount = readLong();
+  int kwonlyargcount = readLong();
+  int nlocals = readLong();
+  int stacksize = readLong();
+  int flags = readLong();
+  Object* code = readObject();
+  Object* consts = readObject();
+  Object* names = readObject();
+  Object* varnames = readObject();
+  Object* freevars = readObject();
+  Object* cellvars = readObject();
+  Object* filename = readObject();
+  Object* name = readObject();
+  int firstlineno = readLong();
+  Object* lnotab = readObject();
+  Object* result = Heap::createCode(
       argcount,
       kwonlyargcount,
       nlocals,
@@ -331,14 +331,14 @@ Object* Marshal::Reader::ReadTypeCode() {
       firstlineno,
       lnotab);
   if (index != -1) {
-    SetRef(index, result);
+    setRef(index, result);
   }
   return result;
 }
 
-Object* Marshal::Reader::ReadTypeRef() {
-  int32 n = ReadLong();
-  return GetRef(n);
+Object* Marshal::Reader::readTypeRef() {
+  int32 n = readLong();
+  return getRef(n);
 }
 
 }  // namespace python

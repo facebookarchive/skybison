@@ -7,19 +7,19 @@
 class Utils {
  public:
   template <typename T>
-  static inline bool IsPowerOfTwo(T x) {
+  static inline bool isPowerOfTwo(T x) {
     return (x & (x - 1)) == 0;
   }
 
   template <typename T>
-  static inline T RoundDown(T x, int n) {
-    assert(IsPowerOfTwo(n));
+  static inline T roundDown(T x, int n) {
+    assert(isPowerOfTwo(n));
     return (x & -n);
   }
 
   template <typename T>
-  static inline T RoundUp(T x, int n) {
-    return RoundDown(x + n - 1, n);
+  static inline T roundUp(T x, int n) {
+    return roundDown(x + n - 1, n);
   }
 
  private:

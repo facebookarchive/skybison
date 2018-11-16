@@ -10,20 +10,20 @@ char* Heap::end_ = nullptr;
 char* Heap::ptr_ = nullptr;
 intptr_t Heap::size_ = 0;
 
-void Heap::Initialize(intptr_t size) {
+void Heap::initialize(intptr_t size) {
   Heap::size_ = size;
   Heap::start_ = Heap::ptr_ = new char[size];
   Heap::end_ = &start_[size];
 }
 
-Object* Heap::Allocate(intptr_t size) {
+Object* Heap::allocate(intptr_t size) {
   char* result = Heap::ptr_;
   Heap::ptr_+= size;
   return HeapObject::fromAddress(reinterpret_cast<uword>(result));
 }
 
-Object* Heap::CreateClass(Layout layout) {
-  Object* raw = Allocate(Class::allocationSize());
+Object* Heap::createClass(Layout layout) {
+  Object* raw = allocate(Class::allocationSize());
   assert(raw != nullptr);
   Class* result = reinterpret_cast<Class*>(raw);
   result->setClass(Runtime::classClass());
@@ -31,7 +31,7 @@ Object* Heap::CreateClass(Layout layout) {
   return Class::cast(result);
 }
 
-Object* Heap::CreateCode(
+Object* Heap::createCode(
     int argcount,
     int kwonlyargcount,
     int nlocals,
@@ -47,7 +47,7 @@ Object* Heap::CreateCode(
     Object *name,
     int firstlineno,
     Object *lnotab) {
-  Object* raw = Allocate(Code::allocationSize());
+  Object* raw = allocate(Code::allocationSize());
   assert(raw != nullptr);  // TODO
   Code* result = reinterpret_cast<Code*>(raw);
   result->setClass(Runtime::codeClass());
@@ -70,9 +70,9 @@ Object* Heap::CreateCode(
   return Code::cast(result);
 }
 
-Object* Heap::CreateByteArray(int length) {
+Object* Heap::createByteArray(int length) {
   int size = String::allocationSize(length);
-  Object *raw = Allocate(size);
+  Object *raw = allocate(size);
   assert(raw != nullptr);
   ByteArray *result = reinterpret_cast<ByteArray*>(raw);
   result->setClass(Runtime::byteArrayClass());
@@ -80,9 +80,9 @@ Object* Heap::CreateByteArray(int length) {
   return ByteArray::cast(result);
 }
 
-Object* Heap::CreateObjectArray(int length) {
+Object* Heap::createObjectArray(int length) {
   int size = ObjectArray::allocationSize(length);
-  Object* raw = Allocate(size);
+  Object* raw = allocate(size);
   assert(raw != nullptr);  // TODO
   ObjectArray* result = reinterpret_cast<ObjectArray*>(raw);
   result->setClass(Runtime::objectArrayClass());
@@ -90,9 +90,9 @@ Object* Heap::CreateObjectArray(int length) {
   return ObjectArray::cast(result);
 }
 
-Object* Heap::CreateString(int length) {
+Object* Heap::createString(int length) {
   int size = String::allocationSize(length);
-  Object* raw = Allocate(size);
+  Object* raw = allocate(size);
   assert(raw != nullptr);
   String* result = reinterpret_cast<String*>(raw);
   result->setClass(Runtime::stringClass());
@@ -100,9 +100,9 @@ Object* Heap::CreateString(int length) {
   return String::cast(result);
 }
 
-Object* Heap::CreateFunction() {
+Object* Heap::createFunction() {
   int size = Function::allocationSize();
-  Object* raw = Allocate(size);
+  Object* raw = allocate(size);
   assert(raw != nullptr);
   Function* result = reinterpret_cast<Function*>(raw);
   result->setClass(Runtime::functionClass());
@@ -110,7 +110,7 @@ Object* Heap::CreateFunction() {
   return Function::cast(result);
 }
 
-Object* Heap::CreateDictionary() {
+Object* Heap::createDictionary() {
     return nullptr;
 }
 
