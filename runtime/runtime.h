@@ -268,6 +268,14 @@ class Runtime {
   word
   codeOffsetToLineNum(Thread* thread, const Handle<Code>& code, word offset);
 
+  // Return true if subclass is a subclass of superclass
+  Object* isSubClass(
+      const Handle<Class>& subclass,
+      const Handle<Class>& superclass);
+
+  // Return true if obj is an instance of a subclass of klass
+  Object* isInstance(const Handle<Object>& obj, const Handle<Class>& klass);
+
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
   // dictobject.c this accommodates the majority of dictionaries without needing

@@ -1800,4 +1800,25 @@ word Runtime::codeOffsetToLineNum(
   return line;
 }
 
+Object* Runtime::isSubClass(
+    const Handle<Class>& subclass,
+    const Handle<Class>& superclass) {
+  HandleScope scope;
+  Handle<ObjectArray> mro(&scope, subclass->mro());
+  for (word i = 0; i < mro->length(); i++) {
+    if (mro->at(i) == *superclass) {
+      return Boolean::fromBool(true);
+    }
+  }
+  return Boolean::fromBool(false);
+}
+
+Object* Runtime::isInstance(
+    const Handle<Object>& obj,
+    const Handle<Class>& klass) {
+  HandleScope scope;
+  Handle<Class> obj_class(&scope, classOf(*obj));
+  return isSubClass(obj_class, klass);
+}
+
 } // namespace python

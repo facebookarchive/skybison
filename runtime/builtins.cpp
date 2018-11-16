@@ -50,15 +50,9 @@ Object* builtinIsinstance(Thread* thread, Frame* caller, word nargs) {
 
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread->handles());
-  Handle<Class> that(&scope, args.get(1));
-  Handle<Class> klass(&scope, runtime->classOf(args.get(0)));
-  Handle<ObjectArray> mro(&scope, klass->mro());
-  for (word i = 0; i < mro->length(); i++) {
-    if (mro->at(i) == *that) {
-      return Boolean::fromBool(true);
-    }
-  }
-  return Boolean::fromBool(false);
+  Handle<Object> obj(&scope, args.get(0));
+  Handle<Class> klass(&scope, args.get(1));
+  return runtime->isInstance(obj, klass);
 }
 
 Object* builtinGenericNew(Thread* thread, Frame* frame, word nargs) {
