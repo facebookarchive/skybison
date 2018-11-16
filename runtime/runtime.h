@@ -3,6 +3,7 @@
 #include "callback.h"
 #include "handles.h"
 #include "heap.h"
+#include "symbols.h"
 #include "view.h"
 
 namespace python {
@@ -103,6 +104,10 @@ class Runtime {
     return modules_;
   }
 
+  Symbols* symbols() {
+    return symbols_;
+  }
+
   // Ensures that array has enough space for an atPut at index. If so, returns
   // array. If not, allocates and returns a new array with sufficient capacity
   // and identical contents.
@@ -185,6 +190,7 @@ class Runtime {
   void initializeInterned();
   void initializeModules();
   void initializeRandom();
+  void initializeSymbols();
 
   void createBuiltinsModule();
   void createSysModule();
@@ -243,6 +249,8 @@ class Runtime {
   uword hash_secret_[2];
 
   NewValueCellCallback new_value_cell_callback_;
+
+  Symbols* symbols_;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

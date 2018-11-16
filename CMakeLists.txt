@@ -55,6 +55,8 @@ add_library(
   runtime/runtime.h
   runtime/space.cpp
   runtime/space.h
+  runtime/symbols.cpp
+  runtime/symbols.h
   runtime/thread.cpp
   runtime/thread.h
   runtime/trampolines.cpp

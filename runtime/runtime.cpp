@@ -28,6 +28,7 @@ Runtime::Runtime() : heap_(64 * MiB), new_value_cell_callback_(this) {
   initializeClasses();
   initializeInterned();
   initializeModules();
+  initializeSymbols();
 }
 
 Runtime::~Runtime() {
@@ -41,6 +42,7 @@ Runtime::~Runtime() {
     thread = thread->next();
     delete prev;
   }
+  delete symbols_;
 }
 
 Object* Runtime::newByteArray(word length) {
@@ -422,6 +424,16 @@ void Runtime::initializeRandom() {
       reinterpret_cast<byte*>(&hash_secret_), sizeof(hash_secret_));
 }
 
+void Runtime::initializeSymbols() {
+  HandleScope scope;
+  symbols_ = new Symbols(&heap_);
+  for (word i = 0; i < Symbols::kMaxSymbolId; i++) {
+    Handle<Object> symbol(
+        &scope, symbols_->at(static_cast<Symbols::SymbolId>(i)));
+    internString(symbol);
+  }
+}
+
 void Runtime::visitRoots(PointerVisitor* visitor) {
   visitRuntimeRoots(visitor);
   visitThreadRoots(visitor);
@@ -444,6 +456,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
   // Visit modules
   visitor->visitPointer(&modules_);
+
+  // Visit symbols
+  symbols_->visit(visitor);
 }
 
 void Runtime::visitThreadRoots(PointerVisitor* visitor) {
@@ -875,8 +890,7 @@ void Runtime::collectAttributes(
 Object* Runtime::classConstructor(const Handle<Class>& klass) {
   HandleScope scope;
   Handle<Dictionary> klass_dict(&scope, klass->dictionary());
-  // TODO(mpage): Symbol table
-  Handle<Object> init(&scope, newStringFromCString("__init__"));
+  Handle<Object> init(&scope, symbols()->DunderInit());
   Object* value;
   if (!dictionaryAt(klass_dict, init, &value)) {
     return None::object();

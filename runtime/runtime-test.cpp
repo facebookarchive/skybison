@@ -2,6 +2,7 @@
 
 #include "bytecode.h"
 #include "runtime.h"
+#include "symbols.h"
 
 namespace python {
 
@@ -572,6 +573,19 @@ TEST(RuntimeTest, ComputeInstanceSize) {
   klass_c->setMro(*mro);
   // Both A and B have "attr0" which should only be counted once
   EXPECT_EQ(runtime.computeInstanceSize(klass_c), 5);
+}
+
+TEST(RuntimeTest, VerifySymbols) {
+  Runtime runtime;
+  Symbols* symbols = runtime.symbols();
+  for (word i = 0; i < Symbols::kMaxSymbolId; i++) {
+    Symbols::SymbolId id = static_cast<Symbols::SymbolId>(i);
+    Object* value = symbols->at(id);
+    ASSERT_TRUE(value->isString());
+    const char* expected = symbols->literalAt(id);
+    EXPECT_TRUE(String::cast(value)->equalsCString(expected))
+        << "Incorrect symbol value for " << expected;
+  }
 }
 
 } // namespace python
