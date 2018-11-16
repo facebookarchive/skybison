@@ -25,7 +25,7 @@ namespace python {
   V(Exception)                                                                 \
   V(Function)                                                                  \
   V(Integer)                                                                   \
-  V(LargeInteger)                                                              \
+  V(LargeInt)                                                                  \
   V(LargeString)                                                               \
   V(Layout)                                                                    \
   V(List)                                                                      \
@@ -89,7 +89,7 @@ enum class LayoutId : word {
   kException,
   kFunction,
   kInteger,
-  kLargeInteger,
+  kLargeInt,
   kLargeString,
   kLayout,
   kList,
@@ -143,7 +143,7 @@ class Object {
   bool isFunction();
   bool isHeapObject();
   bool isInstance();
-  bool isLargeInteger();
+  bool isLargeInt();
   bool isLargeString();
   bool isLayout();
   bool isList();
@@ -182,7 +182,7 @@ class Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
 };
 
-// Generic wrapper around SmallInt/LargeInteger.
+// Generic wrapper around SmallInt/LargeInt.
 class Integer : public Object {
  public:
   // Getters and setters.
@@ -726,19 +726,19 @@ class LargeString : public Array {
 
 // Arbitrary precision signed integer, with 64 bit digits in two's complement
 // representation
-class LargeInteger : public HeapObject {
+class LargeInt : public HeapObject {
  public:
   // Getters and setters.
   word asWord();
 
-  // LargeInteger is also used for storing native pointers.
+  // LargeInt is also used for storing native pointers.
   void* asCPointer();
 
   // Sizing.
   static word allocationSize(word num_digits);
 
   // Casting.
-  static LargeInteger* cast(Object* object);
+  static LargeInt* cast(Object* object);
 
   // Indexing into digits
   uword digitAt(word index);
@@ -763,7 +763,7 @@ class LargeInteger : public HeapObject {
   friend class Integer;
   friend class Runtime;
 
-  DISALLOW_COPY_AND_ASSIGN(LargeInteger);
+  DISALLOW_COPY_AND_ASSIGN(LargeInt);
 };
 
 class Float : public HeapObject {
@@ -1992,15 +1992,14 @@ inline bool Object::isEllipsis() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kEllipsis;
 }
 
-inline bool Object::isLargeInteger() {
+inline bool Object::isLargeInt() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kLargeInteger;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLargeInt;
 }
 
-inline bool Object::isInteger() { return isSmallInt() || isLargeInteger(); }
+inline bool Object::isInteger() { return isSmallInt() || isLargeInt(); }
 
 inline bool Object::isNotImplemented() {
   if (!isHeapObject()) {
@@ -2089,14 +2088,14 @@ inline word Integer::asWord() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value();
   }
-  return LargeInteger::cast(this)->asWord();
+  return LargeInt::cast(this)->asWord();
 }
 
 inline void* Integer::asCPointer() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->asCPointer();
   }
-  return LargeInteger::cast(this)->asCPointer();
+  return LargeInt::cast(this)->asCPointer();
 }
 
 inline word Integer::compare(Integer* that) {
@@ -2112,14 +2111,14 @@ inline word Integer::compare(Integer* that) {
   if (this->isSmallInt()) {
     digit = this->asWord();
   } else {
-    lhs = LargeInteger::cast(this)->digits();
+    lhs = LargeInt::cast(this)->digits();
   }
 
   View<uword> rhs(&digit, 1);
   if (that->isSmallInt()) {
     digit = that->asWord();
   } else {
-    rhs = LargeInteger::cast(that)->digits();
+    rhs = LargeInt::cast(that)->digits();
   }
   return compareDigits(lhs, rhs);
 }
@@ -2146,12 +2145,12 @@ inline double Integer::floatValue() {
   if (isSmallInt()) {
     return static_cast<double>(asWord());
   }
-  LargeInteger* large_int = LargeInteger::cast(this);
+  LargeInt* large_int = LargeInt::cast(this);
   if (large_int->numDigits() == 1) {
     return static_cast<double>(asWord());
   }
-  // TODO(T30610701): Handle arbitrary precision LargeIntegers
-  UNIMPLEMENTED("LargeIntegers with > 1 digit");
+  // TODO(T30610701): Handle arbitrary precision LargeInts
+  UNIMPLEMENTED("LargeInts with > 1 digit");
 }
 
 inline word Integer::highestBit() {
@@ -2159,28 +2158,28 @@ inline word Integer::highestBit() {
     uword self = static_cast<uword>(std::abs(SmallInt::cast(this)->value()));
     return Utils::highestBit(self);
   }
-  return LargeInteger::cast(this)->highestBit();
+  return LargeInt::cast(this)->highestBit();
 }
 
 inline bool Integer::isPositive() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value() > 0;
   }
-  return LargeInteger::cast(this)->isPositive();
+  return LargeInt::cast(this)->isPositive();
 }
 
 inline bool Integer::isNegative() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value() < 0;
   }
-  return LargeInteger::cast(this)->isNegative();
+  return LargeInt::cast(this)->isNegative();
 }
 
 inline bool Integer::isZero() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value() == 0;
   }
-  // A LargeInteger can never be zero
+  // A LargeInt can never be zero
   return false;
 }
 
@@ -2822,40 +2821,40 @@ inline void Code::setVarnames(Object* value) {
   instanceVariableAtPut(kVarnamesOffset, value);
 }
 
-// LargeInteger
+// LargeInt
 
-inline word LargeInteger::asWord() {
-  DCHECK(numDigits() == 1, "LargeInteger cannot fit in a word");
+inline word LargeInt::asWord() {
+  DCHECK(numDigits() == 1, "LargeInt cannot fit in a word");
   return static_cast<word>(digitAt(0));
 }
 
-inline void* LargeInteger::asCPointer() {
+inline void* LargeInt::asCPointer() {
   DCHECK(numDigits() == 1, "Large integer cannot fit in a pointer");
   DCHECK(isPositive(), "Cannot cast a negative value to a C pointer");
   return reinterpret_cast<void*>(asWord());
 }
 
-inline bool LargeInteger::isNegative() {
+inline bool LargeInt::isNegative() {
   uword highest_digit = digitAt(numDigits() - 1);
   return static_cast<word>(highest_digit) < 0;
 }
 
-inline bool LargeInteger::isPositive() {
+inline bool LargeInt::isPositive() {
   uword highest_digit = digitAt(numDigits() - 1);
   return static_cast<word>(highest_digit) >= 0;
 }
 
-inline uword LargeInteger::digitAt(word index) {
+inline uword LargeInt::digitAt(word index) {
   DCHECK_INDEX(index, numDigits());
   return reinterpret_cast<uword*>(address() + kValueOffset)[index];
 }
 
-inline void LargeInteger::digitAtPut(word index, uword digit) {
+inline void LargeInt::digitAtPut(word index, uword digit) {
   DCHECK_INDEX(index, numDigits());
   reinterpret_cast<uword*>(address() + kValueOffset)[index] = digit;
 }
 
-inline word LargeInteger::highestBit() {
+inline word LargeInt::highestBit() {
   word num_digits = numDigits();
   uword high_word = digitAt(num_digits - 1);
   if (isNegative()) {
@@ -2865,19 +2864,19 @@ inline word LargeInteger::highestBit() {
   return highest_bit + ((num_digits - 1) * kBitsPerPointer);
 }
 
-inline word LargeInteger::numDigits() { return headerCountOrOverflow(); }
+inline word LargeInt::numDigits() { return headerCountOrOverflow(); }
 
-inline word LargeInteger::allocationSize(word num_digits) {
+inline word LargeInt::allocationSize(word num_digits) {
   word size = headerSize(num_digits) + num_digits * kPointerSize;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-inline LargeInteger* LargeInteger::cast(Object* object) {
-  DCHECK(object->isLargeInteger(), "not a large integer");
-  return reinterpret_cast<LargeInteger*>(object);
+inline LargeInt* LargeInt::cast(Object* object) {
+  DCHECK(object->isLargeInt(), "not a large integer");
+  return reinterpret_cast<LargeInt*>(object);
 }
 
-inline View<uword> LargeInteger::digits() {
+inline View<uword> LargeInt::digits() {
   return View<uword>(reinterpret_cast<uword*>(address() + kValueOffset),
                      headerCountOrOverflow());
 }

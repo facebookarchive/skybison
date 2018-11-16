@@ -198,14 +198,14 @@ Object* Heap::createInstance(LayoutId layout_id, word num_attributes) {
   return result;
 }
 
-Object* Heap::createLargeInteger(word num_digits) {
-  word size = LargeInteger::allocationSize(num_digits);
-  Object* raw = allocate(size, LargeInteger::headerSize(num_digits));
+Object* Heap::createLargeInt(word num_digits) {
+  word size = LargeInt::allocationSize(num_digits);
+  Object* raw = allocate(size, LargeInt::headerSize(num_digits));
   CHECK(raw != Error::object(), "out of memory");
-  auto result = reinterpret_cast<LargeInteger*>(raw);
-  result->setHeader(Header::from(num_digits, 0, LayoutId::kLargeInteger,
+  auto result = reinterpret_cast<LargeInt*>(raw);
+  result->setHeader(Header::from(num_digits, 0, LayoutId::kLargeInt,
                                  ObjectFormat::kDataArray64));
-  return LargeInteger::cast(result);
+  return LargeInt::cast(result);
 }
 
 Object* Heap::createLargeString(word length) {

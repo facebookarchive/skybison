@@ -42,7 +42,7 @@ class Heap {
 
   Object* createInstance(LayoutId layout_id, word num_attributes);
 
-  Object* createLargeInteger(word num_digits);
+  Object* createLargeInt(word num_digits);
 
   Object* createLargeString(word length);
 

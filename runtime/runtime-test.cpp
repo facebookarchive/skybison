@@ -2665,7 +2665,7 @@ TEST(RuntimeIntegerTest, NewSmallIntWithDigits) {
   EXPECT_EQ(max_smallint->asWord(), max_small_int);
 }
 
-TEST(RuntimeIntegerTest, NewLargeIntegerWithDigits) {
+TEST(RuntimeIntegerTest, NewLargeIntWithDigits) {
   Runtime runtime;
   HandleScope scope;
 
@@ -2673,14 +2673,14 @@ TEST(RuntimeIntegerTest, NewLargeIntegerWithDigits) {
   uword digit = static_cast<uword>(negative_large_int);
   Handle<Integer> negative_largeint(
       &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
-  ASSERT_TRUE(negative_largeint->isLargeInteger());
+  ASSERT_TRUE(negative_largeint->isLargeInt());
   EXPECT_EQ(negative_largeint->asWord(), negative_large_int);
 
   word positive_large_int = SmallInt::kMaxValue + 1;
   digit = static_cast<uword>(positive_large_int);
   Handle<Integer> positive_largeint(
       &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
-  ASSERT_TRUE(positive_largeint->isLargeInteger());
+  ASSERT_TRUE(positive_largeint->isLargeInt());
   EXPECT_EQ(positive_largeint->asWord(), positive_large_int);
 }
 

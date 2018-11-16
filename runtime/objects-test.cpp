@@ -30,12 +30,12 @@ TEST(ComplexTest, ComplexTest) {
 TEST(IntegerTest, IntegerTest) {
   Runtime runtime;
   Object* o1 = runtime.newInteger(42);
-  EXPECT_FALSE(o1->isLargeInteger());
+  EXPECT_FALSE(o1->isLargeInt());
   Integer* i1 = Integer::cast(o1);
   EXPECT_EQ(i1->asWord(), 42);
 
   Object* o2 = runtime.newInteger(9223372036854775807L);
-  EXPECT_TRUE(o2->isLargeInteger());
+  EXPECT_TRUE(o2->isLargeInt());
   Integer* i2 = Integer::cast(o2);
   EXPECT_EQ(i2->asWord(), 9223372036854775807L);
 

@@ -378,8 +378,8 @@ TEST(IntBuiltinsTest, BinaryAddOverflowCheck) {
   frame->setLocal(0, SmallInt::fromWord(SmallInt::kMaxValue));
   frame->setLocal(1, SmallInt::fromWord(SmallInt::kMaxValue));
   Handle<Object> result(&scope, SmallIntBuiltins::dunderAdd(thread, frame, 2));
-  ASSERT_TRUE(result->isLargeInteger());
-  EXPECT_EQ(LargeInteger::cast(*result)->asWord(), SmallInt::kMaxValue * 2);
+  ASSERT_TRUE(result->isLargeInt());
+  EXPECT_EQ(LargeInt::cast(*result)->asWord(), SmallInt::kMaxValue * 2);
 }
 
 TEST(IntBuiltinsTest, InplaceAdd) {

@@ -751,8 +751,7 @@ Object* Runtime::newIntegerWithDigits(View<uword> digits) {
     }
   }
   HandleScope scope;
-  Handle<LargeInteger> result(&scope,
-                              heap()->createLargeInteger(digits.length()));
+  Handle<LargeInt> result(&scope, heap()->createLargeInt(digits.length()));
   for (word i = 0; i < digits.length(); i++) {
     result->digitAtPut(i, digits.get(i));
   }
@@ -989,7 +988,7 @@ void Runtime::initializeHeapClasses() {
                        LayoutId::kObject);
   initializeFloatClass();
   initializeFunctionClass();
-  addEmptyBuiltinClass(SymbolId::kLargeInt, LayoutId::kLargeInteger,
+  addEmptyBuiltinClass(SymbolId::kLargeInt, LayoutId::kLargeInt,
                        LayoutId::kInteger);
   addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeString,
                        LayoutId::kString);
