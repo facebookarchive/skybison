@@ -2008,8 +2008,7 @@ RawObject Runtime::listExtend(Thread* thread, const Handle<List>& dst,
       listEnsureCapacity(dst, new_capacity);
       dst->setNumItems(new_capacity);
       for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-        if (Set::Bucket::isEmpty(*data, i) ||
-            Set::Bucket::isTombstone(*data, i)) {
+        if (!Set::Bucket::isFilled(data, i)) {
           continue;
         }
         dst->atPut(index++, Set::Bucket::key(*data, i));
@@ -2224,8 +2223,7 @@ RawObjectArray Runtime::dictGrow(const Handle<ObjectArray>& data) {
   Handle<ObjectArray> new_data(&scope, newObjectArray(new_length));
   // Re-insert items
   for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
-    if (Dict::Bucket::isEmpty(*data, i) ||
-        Dict::Bucket::isTombstone(*data, i)) {
+    if (!Dict::Bucket::isFilled(*data, i)) {
       continue;
     }
     Handle<Object> key(&scope, Dict::Bucket::key(*data, i));
@@ -2441,7 +2439,7 @@ RawObjectArray Runtime::setGrow(const Handle<ObjectArray>& data) {
   Handle<ObjectArray> new_data(&scope, newObjectArray(new_length));
   // Re-insert items
   for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-    if (Set::Bucket::isEmpty(*data, i) || Set::Bucket::isTombstone(*data, i)) {
+    if (!Set::Bucket::isFilled(*data, i)) {
       continue;
     }
     Handle<Object> key(&scope, Set::Bucket::key(*data, i));
@@ -2494,7 +2492,7 @@ RawObject Runtime::setCopy(const Handle<Set>& set) {
   Handle<Object> key_hash(&scope, NoneType::object());
   for (word i = 0, data_len = data->length(); i < data_len;
        i += Set::Bucket::kNumPointers) {
-    if (Set::Bucket::isEmpty(*data, i) || Set::Bucket::isTombstone(*data, i)) {
+    if (!Set::Bucket::isFilled(*data, i)) {
       continue;
     }
     key = Set::Bucket::key(*data, i);
@@ -2533,8 +2531,7 @@ RawObject Runtime::setIntersection(Thread* thread, const Handle<Set>& set,
     Handle<ObjectArray> data(&scope, self->data());
     Handle<ObjectArray> other_data(&scope, other->data());
     for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-      if (Set::Bucket::isTombstone(*data, i) ||
-          Set::Bucket::isEmpty(*data, i)) {
+      if (!Set::Bucket::isFilled(*data, i)) {
         continue;
       }
       key = Set::Bucket::key(*data, i);
@@ -2634,8 +2631,7 @@ RawObject Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
     Handle<ObjectArray> data(&scope, src->data());
     if (src->numItems() > 0) {
       for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-        if (Set::Bucket::isTombstone(*data, i) ||
-            Set::Bucket::isEmpty(*data, i)) {
+        if (!Set::Bucket::isFilled(*data, i)) {
           continue;
         }
         elt = Set::Bucket::key(*data, i);

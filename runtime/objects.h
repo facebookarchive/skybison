@@ -1555,12 +1555,12 @@ class Dict::Bucket {
     return hash(data, index)->isNoneType() && key(data, index)->isNoneType();
   }
 
-  static bool isFilled(RawObjectArray data, word index) {
-    return !(isEmpty(data, index) || isTombstone(data, index));
-  }
-
   static bool isTombstone(RawObjectArray data, word index) {
     return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
+  }
+
+  static bool isFilled(RawObjectArray data, word index) {
+    return !hash(data, index)->isNoneType();
   }
 
   static RawObject key(RawObjectArray data, word index) {
@@ -1643,6 +1643,10 @@ class Set::Bucket {
 
   static bool isTombstone(RawObjectArray data, word index) {
     return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
+  }
+
+  static bool isFilled(RawObjectArray data, word index) {
+    return !hash(data, index)->isNoneType();
   }
 
   static RawObject key(RawObjectArray data, word index) {
@@ -3714,8 +3718,7 @@ inline RawObject SetIterator::next() {
   RawObjectArray data = ObjectArray::cast(underlying->data());
   word length = data->length();
   // Find the next non empty bucket
-  while (idx < length && (Set::Bucket::isTombstone(data, idx) ||
-                          Set::Bucket::isEmpty(data, idx))) {
+  while (idx < length && !Set::Bucket::isFilled(data, idx)) {
     idx += Set::Bucket::kNumPointers;
   }
   if (idx >= length) {
