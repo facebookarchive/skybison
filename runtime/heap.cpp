@@ -92,6 +92,7 @@ Object* Heap::createClass(ClassId class_id) {
       static_cast<uword>(class_id),
       ClassId::kType,
       ObjectFormat::kObjectInstance));
+  result->initialize(Class::kSize, None::object());
   return Class::cast(result);
 }
 
@@ -107,7 +108,7 @@ Object* Heap::createClassMethod() {
   return ClassMethod::cast(result);
 }
 
-Object* Heap::createCode(Object* empty_object_array) {
+Object* Heap::createCode() {
   Object* raw = allocate(Code::allocationSize(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Code*>(raw);
@@ -116,7 +117,7 @@ Object* Heap::createCode(Object* empty_object_array) {
       0,
       ClassId::kCode,
       ObjectFormat::kObjectInstance));
-  result->initialize(empty_object_array);
+  result->initialize(Code::kSize, None::object());
   return Code::cast(result);
 }
 
@@ -130,7 +131,7 @@ Object* Heap::createByteArray(word length) {
   return ByteArray::cast(result);
 }
 
-Object* Heap::createDictionary(Object* data) {
+Object* Heap::createDictionary() {
   word size = Dictionary::allocationSize();
   Object* raw = allocate(size, Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
@@ -140,7 +141,7 @@ Object* Heap::createDictionary(Object* data) {
       0,
       ClassId::kDictionary,
       ObjectFormat::kObjectInstance));
-  result->initialize(data);
+  result->initialize(Dictionary::kSize, None::object());
   return Dictionary::cast(result);
 }
 
@@ -158,7 +159,7 @@ Object* Heap::createDouble(double value) {
   return Double::cast(result);
 }
 
-Object* Heap::createSet(Object* data) {
+Object* Heap::createSet() {
   word size = Set::allocationSize();
   Object* raw = allocate(size, Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
@@ -168,7 +169,7 @@ Object* Heap::createSet(Object* data) {
       0,
       ClassId::kSet,
       ObjectFormat::kObjectInstance));
-  result->initialize(data);
+  result->initialize(Set::kSize, None::object());
   return Set::cast(result);
 }
 
@@ -182,7 +183,7 @@ Object* Heap::createFunction() {
       0,
       ClassId::kFunction,
       ObjectFormat::kObjectInstance));
-  result->initialize();
+  result->initialize(Function::kSize, None::object());
   return Function::cast(result);
 }
 
@@ -211,7 +212,7 @@ Object* Heap::createLargeInteger(word value) {
   return LargeInteger::cast(result);
 }
 
-Object* Heap::createList(Object* elements) {
+Object* Heap::createList() {
   word size = List::allocationSize();
   Object* raw = allocate(size, Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
@@ -221,7 +222,7 @@ Object* Heap::createList(Object* elements) {
       0,
       ClassId::kList,
       ObjectFormat::kObjectInstance));
-  result->initialize(elements);
+  result->initialize(List::kSize, None::object());
   return List::cast(result);
 }
 
@@ -239,7 +240,7 @@ Object* Heap::createListIterator() {
   return result;
 }
 
-Object* Heap::createModule(Object* name, Object* dictionary) {
+Object* Heap::createModule() {
   word size = Module::allocationSize();
   Object* raw = allocate(size, Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
@@ -249,11 +250,12 @@ Object* Heap::createModule(Object* name, Object* dictionary) {
       0,
       ClassId::kModule,
       ObjectFormat::kObjectInstance));
-  result->initialize(name, dictionary);
+  result->initialize(Module::kSize, None::object());
   return Module::cast(result);
 }
 
 Object* Heap::createObjectArray(word length, Object* value) {
+  CHECK(!value->isHeapObject(), "value must be an immediate object");
   word size = ObjectArray::allocationSize(length);
   Object* raw = allocate(size, HeapObject::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");

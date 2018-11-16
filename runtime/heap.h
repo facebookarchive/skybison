@@ -32,13 +32,13 @@ class Heap {
 
   Object* createClassMethod();
 
-  Object* createCode(Object* empty_object_array);
+  Object* createCode();
 
-  Object* createDictionary(Object* items);
+  Object* createDictionary();
 
   Object* createDouble(double value);
 
-  Object* createSet(Object* items);
+  Object* createSet();
 
   Object* createFunction();
 
@@ -46,11 +46,11 @@ class Heap {
 
   Object* createLargeInteger(word value);
 
-  Object* createList(Object* elements);
+  Object* createList();
 
   Object* createListIterator();
 
-  Object* createModule(Object* name, Object* dictionary);
+  Object* createModule();
 
   Object* createObjectArray(word length, Object* value);
 

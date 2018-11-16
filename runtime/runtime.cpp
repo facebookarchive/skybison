@@ -350,14 +350,29 @@ Object* Runtime::newClassWithId(ClassId class_id) {
       class_id == ClassId::kSmallInteger || (index & 1) == 1);
   assert(index < List::cast(class_table_)->allocated());
   HandleScope scope;
-  Handle<Class> klass(&scope, heap()->createClass(class_id));
-  List::cast(class_table_)->atPut(index, *klass);
-  klass->initialize(newDictionary(), empty_object_array_);
-  return *klass;
+  Handle<Class> result(&scope, heap()->createClass(class_id));
+  Handle<Dictionary> dict(&scope, newDictionary());
+  result->setFlags(SmallInteger::fromWord(0));
+  result->setDictionary(*dict);
+  result->setInstanceAttributeMap(empty_object_array_);
+  result->setInstanceSize(0);
+  List::cast(class_table_)->atPut(index, *result);
+  return *result;
 }
 
 Object* Runtime::newCode() {
-  return heap()->createCode(empty_object_array_);
+  HandleScope scope;
+  Handle<Code> result(&scope, heap()->createCode());
+  result->setArgcount(0);
+  result->setKwonlyargcount(0);
+  result->setCell2arg(0);
+  result->setNlocals(0);
+  result->setStacksize(0);
+  result->setFlags(0);
+  result->setFreevars(empty_object_array_);
+  result->setCellvars(empty_object_array_);
+  result->setFirstlineno(0);
+  return *result;
 }
 
 Object* Runtime::newBuiltinFunction(
@@ -453,7 +468,11 @@ void Runtime::classAddBuiltinFunction(
 }
 
 Object* Runtime::newList() {
-  return heap()->createList(empty_object_array_);
+  HandleScope scope;
+  Handle<List> result(&scope, heap()->createList());
+  result->setAllocated(0);
+  result->setItems(empty_object_array_);
+  return *result;
 }
 
 Object* Runtime::newListIterator(const Handle<Object>& list) {
@@ -466,10 +485,13 @@ Object* Runtime::newListIterator(const Handle<Object>& list) {
 
 Object* Runtime::newModule(const Handle<Object>& name) {
   HandleScope scope;
+  Handle<Module> result(&scope, heap()->createModule());
   Handle<Dictionary> dictionary(&scope, newDictionary());
+  result->setDictionary(*dictionary);
+  result->setName(*name);
   Handle<Object> key(&scope, symbols()->DunderName());
   dictionaryAtPutInValueCell(dictionary, key, name);
-  return heap()->createModule(*name, *dictionary);
+  return *result;
 }
 
 Object* Runtime::newIntegerFromCPointer(void* ptr) {
@@ -1277,20 +1299,26 @@ class SetBucket {
 };
 
 Object* Runtime::newDictionary() {
-  return heap()->createDictionary(empty_object_array_);
+  HandleScope scope;
+  Handle<Dictionary> result(&scope, heap()->createDictionary());
+  result->setNumItems(0);
+  result->setData(empty_object_array_);
+  return *result;
 }
 
 Object* Runtime::newDictionary(word initialSize) {
   HandleScope scope;
   // TODO: initialSize should be scaled up by a load factor.
-  auto initialCapacity = Utils::nextPowerOfTwo(initialSize);
+  word initialCapacity = Utils::nextPowerOfTwo(initialSize);
   Handle<ObjectArray> array(
       &scope,
       newObjectArray(
           Utils::maximum(
               static_cast<word>(kInitialDictionaryCapacity), initialCapacity) *
           Bucket::kNumPointers));
-  return heap()->createDictionary(*array);
+  Handle<Dictionary> result(&scope, newDictionary());
+  result->setData(*array);
+  return *result;
 }
 
 void Runtime::dictionaryAtPut(
@@ -1481,7 +1509,11 @@ ObjectArray* Runtime::dictionaryKeys(const Handle<Dictionary>& dict) {
 }
 
 Object* Runtime::newSet() {
-  return heap()->createSet(empty_object_array_);
+  HandleScope scope;
+  Handle<Set> result(&scope, heap()->createSet());
+  result->setNumItems(0);
+  result->setData(empty_object_array_);
+  return *result;
 }
 
 bool Runtime::setLookup(
