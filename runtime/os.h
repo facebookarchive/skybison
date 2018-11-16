@@ -31,6 +31,8 @@ class OS {
 
   static bool fileExists(const char* file);
 
+  static double currentTime();
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(OS);
 };

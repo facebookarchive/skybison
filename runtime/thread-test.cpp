@@ -3006,4 +3006,31 @@ print(a == 123, b == -987, a > b, a, b)
   EXPECT_EQ(output, "True True True 123 -987\n");
 }
 
+TEST(ThreadTest, TimeTime) { // pystone dependency
+  const char* src = R"(
+import time
+t = time.time()
+print(t.__class__ is float)
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "True\n");
+}
+
+TEST(ThreadTest, TimeTimeComp) { // pystone dependency
+  const char* src = R"(
+import time
+t = time.time()
+for i in range(3):
+  print(i)
+t1 = time.time()
+print(t1 > t, t > t1, t == t1)
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "0\n1\n2\nTrue False False\n");
+}
+
 } // namespace python

@@ -861,6 +861,26 @@ Object* Interpreter::compare(
   return Boolean::fromBool(res);
 }
 
+template <typename T>
+static bool compareUsingDifference(CompareOp op, T cmp) {
+  switch (op) {
+    case EQ:
+      return (cmp == 0);
+    case NE:
+      return (cmp != 0);
+    case LT:
+      return (cmp < 0);
+    case LE:
+      return (cmp <= 0);
+    case GT:
+      return (cmp > 0);
+    case GE:
+      return (cmp >= 0);
+    default:
+      UNREACHABLE("rich comparison with op %x", op);
+  }
+}
+
 Object* Interpreter::richCompare(
     CompareOp op,
     const Handle<Object>& left,
@@ -868,61 +888,14 @@ Object* Interpreter::richCompare(
   bool res = false;
   // TODO: call rich comparison method
   if (left->isSmallInteger() && right->isSmallInteger()) {
-    word sign = SmallInteger::cast(*left)->value() -
+    word cmp = SmallInteger::cast(*left)->value() -
         SmallInteger::cast(*right)->value();
-    switch (op) {
-      case LT: {
-        res = (sign < 0);
-        break;
-      }
-      case LE: {
-        res = (sign <= 0);
-        break;
-      }
-      case EQ: {
-        res = (sign == 0);
-        break;
-      }
-      case NE: {
-        res = (sign != 0);
-        break;
-      }
-      case GT: {
-        res = (sign > 0);
-        break;
-      }
-      case GE: {
-        res = (sign >= 0);
-        break;
-      }
-      default:
-        UNREACHABLE("rich comparison with op %x", op);
-    }
+    res = compareUsingDifference(op, cmp);
+  } else if (left->isDouble() && right->isDouble()) {
+    double cmp = Double::cast(*left)->value() - Double::cast(*right)->value();
+    res = compareUsingDifference(op, cmp);
   } else if (left->isString() && right->isString()) {
-    word cmp = String::cast(*left)->compare(*right);
-    switch (op) {
-      case EQ:
-        res = (cmp == 0);
-        break;
-      case NE:
-        res = (cmp != 0);
-        break;
-      case LE:
-        res = (cmp <= 0);
-        break;
-      case LT:
-        res = (cmp < 0);
-        break;
-      case GE:
-        res = (cmp >= 0);
-        break;
-      case GT:
-        res = (cmp > 0);
-        break;
-      default:
-        UNIMPLEMENTED("string comparison with op %x", op);
-        break;
-    }
+    res = compareUsingDifference(op, String::cast(*left)->compare(*right));
   } else if (op == EQ && left->isClass() && right->isClass()) {
     res = (*left == *right);
   } else if (op == EQ && left->isInstance() && right->isInstance()) {

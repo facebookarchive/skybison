@@ -7,6 +7,7 @@
 #include "interpreter.h"
 #include "mro.h"
 #include "objects.h"
+#include "os.h"
 #include "runtime.h"
 #include "thread.h"
 #include "trampolines-inl.h"
@@ -562,6 +563,12 @@ Object* builtinSysExit(Thread* thread, Frame* frame, word nargs) {
   }
 
   std::exit(code);
+}
+
+// "time" module
+
+Object* builtinTime(Thread* thread, Frame*, word) {
+  return thread->runtime()->newDouble(OS::currentTime());
 }
 
 } // namespace python

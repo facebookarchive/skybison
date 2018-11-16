@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <cerrno>
@@ -10,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "globals.h"
 #include "utils.h"
 
 namespace python {
@@ -156,6 +158,22 @@ bool OS::fileExists(const char* file) {
     }
     return false;
   }
+}
+
+double OS::currentTime() {
+  timespec ts;
+  int err = clock_gettime(CLOCK_REALTIME, &ts);
+  CHECK(!err, "clock_gettime failure");
+
+  if (ts.tv_nsec == 0) {
+    return static_cast<double>(ts.tv_sec);
+  }
+
+  int64_t nanoseconds = ts.tv_sec * kNanosecondsPerSecond;
+  nanoseconds += ts.tv_nsec;
+  double result = static_cast<double>(nanoseconds);
+  result /= kNanosecondsPerSecond;
+  return result;
 }
 
 } // namespace python

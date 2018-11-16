@@ -68,4 +68,5 @@ Object* builtinObjectInit(Thread*, Frame*, word);
 // "sys" module
 Object* builtinSysExit(Thread* thread, Frame* frame, word nargs);
 
+Object* builtinTime(Thread* thread, Frame* frame, word nargs);
 } // namespace python

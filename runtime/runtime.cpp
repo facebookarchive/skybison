@@ -960,6 +960,7 @@ void Runtime::initializeModules() {
   modules_ = newDictionary();
   createBuiltinsModule();
   createSysModule();
+  createTimeModule();
 }
 
 Object* Runtime::classOf(Object* object) {
@@ -1068,6 +1069,7 @@ void Runtime::createBuiltinsModule() {
       nativeTrampoline<unimplementedTrampoline>);
 
   // Add builtin types
+  moduleAddBuiltinType(module, IntrinsicLayoutId::kDouble, symbols()->Float());
   moduleAddBuiltinType(
       module, IntrinsicLayoutId::kObject, symbols()->ObjectClassname());
   moduleAddBuiltinType(module, IntrinsicLayoutId::kList, symbols()->List());
@@ -1108,6 +1110,22 @@ void Runtime::createSysModule() {
       module,
       symbols()->Exit(),
       nativeTrampoline<builtinSysExit>,
+      nativeTrampoline<unimplementedTrampoline>);
+
+  addModule(module);
+}
+
+void Runtime::createTimeModule() {
+  HandleScope scope;
+  Handle<Object> name(&scope, symbols()->Time());
+  Handle<Module> module(&scope, newModule(name));
+
+  // time.time
+  Handle<Object> time(&scope, newStringFromCString("time"));
+  moduleAddBuiltinFunction(
+      module,
+      *time,
+      nativeTrampoline<builtinTime>,
       nativeTrampoline<unimplementedTrampoline>);
 
   addModule(module);

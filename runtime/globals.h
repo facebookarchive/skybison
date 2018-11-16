@@ -21,6 +21,14 @@ const int KiB = 1024;
 const int MiB = KiB * KiB;
 const int GiB = KiB * KiB * KiB;
 
+const int kMillisecondsPerSecond = 1000;
+const int kMillsecondsPerMicrosecond = 1000;
+const int kMicrosecondsPerSecond =
+    kMillisecondsPerSecond * kMillsecondsPerMicrosecond;
+const int kNanosecondsPerMicrosecond = 1000;
+const int kNanosecondsPerSecond =
+    kMicrosecondsPerSecond * kNanosecondsPerMicrosecond;
+
 #define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \

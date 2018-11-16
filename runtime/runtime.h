@@ -432,6 +432,7 @@ class Runtime {
 
   void createBuiltinsModule();
   void createSysModule();
+  void createTimeModule();
   Object* createMainModule();
 
   Object* executeModule(const char* buffer, const Handle<Module>& module);
