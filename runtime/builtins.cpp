@@ -82,14 +82,13 @@ static void printString(String* str) {
   }
 }
 
-Object* builtinPrint(Thread*, Frame* callerFrame, word nargs) {
-  const char* separator = " ";
-  const char* terminator = "\n";
-  Object** argv = callerFrame->valueStackTop();
+Object* builtinPrint(Thread*, Frame* caller, word nargs) {
+  const char separator = ' ';
+  const char terminator = '\n';
 
-  // Args come in in reverse order
-  for (word i = nargs - 1; i >= 0; i--) {
-    Object* arg = argv[i];
+  Arguments args(caller, nargs);
+  for (word i = 0; i < nargs; i++) {
+    Object* arg = args.get(i);
     if (arg->isString()) {
       printString(String::cast(arg));
     } else if (arg->isSmallInteger()) {
@@ -99,7 +98,7 @@ Object* builtinPrint(Thread*, Frame* callerFrame, word nargs) {
     } else {
       std::abort();
     }
-    if (i > 0) {
+    if ((i + 1) != nargs) {
       *builtinPrintStream << separator;
     }
   }
