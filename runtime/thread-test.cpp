@@ -94,6 +94,55 @@ g = c(3)
   EXPECT_EQ(SmallInt::cast(*global)->value(), 36);
 }
 
+TEST(ThreadTest, DunderCallInstanceWithDescriptor) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+result = None
+
+def stage2(self, x):
+    global result
+    result = x
+
+class Stage1:
+  def __get__(self, instance, owner):
+    return stage2
+
+class Stage0:
+  __call__ = Stage1()
+
+c = Stage0()
+c(1111)
+)";
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> result(&scope, moduleAt(&runtime, main, "result"));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 1111);
+}
+
+TEST(ThreadTest, DunderCallInstanceKw) {
+  const char* src = R"(
+class C:
+  def __init__(self):
+    self.value = None
+
+  def __call__(self, y):
+    return y
+
+c = C()
+result = c(y=3)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> result(&scope, moduleAt(&runtime, main, "result"));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 3);
+}
+
 TEST(ThreadTest, OverlappingFrames) {
   Runtime runtime;
   HandleScope scope;

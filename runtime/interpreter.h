@@ -211,9 +211,17 @@ class Interpreter {
   static void doDeleteAttr(Context* ctx, word arg);
 
  private:
-  static Object* callBoundMethod(Thread* thread, Frame* frame, word nargs);
-
-  static Object* callCallable(Thread* thread, Frame* frame, word nargs);
+  // Re-arrange the stack so that it is in "normal" form.
+  //
+  // This is used when the target of a call or keyword call is not a concrete
+  // Function object. It extracts the concrete function object from the
+  // callable and re-arranges the stack so that the function is followed by its
+  // arguments.
+  //
+  // Returns the concrete function that should be called. Updates nargs with the
+  // number of items added to the stack.
+  static Object* prepareCallableCall(Thread* thread, Frame* frame,
+                                     word callable_idx, word* nargs);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };

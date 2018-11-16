@@ -11,45 +11,73 @@
 
 namespace python {
 
+Object* Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
+                                         word callable_idx, word* nargs) {
+  HandleScope scope(thread);
+  Handle<Object> callable(&scope, frame->peek(callable_idx));
+  Handle<Object> target(&scope, None::object());
+  DCHECK(!callable->isFunction(),
+         "prepareCallableCall should only be called on non-function types");
+  if (callable->isBoundMethod()) {
+    // Shift all arguments on the stack down by 1 and unpack the BoundMethod.
+    //
+    // We don't need to worry too much about the performance overhead for method
+    // calls here.
+    //
+    // Python 3.7 introduces two new opcodes, LOAD_METHOD and CALL_METHOD, that
+    // eliminate the need to create a temporary BoundMethod object when
+    // performing a method call.
+    //
+    // The other pattern of bound method usage occurs when someone passes around
+    // a reference to a method e.g.:
+    //
+    //   m = foo.method
+    //   m()
+    //
+    // Our contention is that uses of this pattern are not performance
+    // sensitive.
+    Handle<BoundMethod> method(&scope, *callable);
+    frame->insertValueAt(method->self(), callable_idx);
+    frame->setValueAt(method->function(), callable_idx + 1);
+    target = method->function();
+  } else {
+    target = lookupMethod(thread, frame, callable, SymbolId::kDunderCall);
+    CHECK(!target->isError(), "object has no __call__ attribute");
+    CHECK(target->isFunction(),
+          "resolved __call__ attribute is not a function");
+    frame->insertValueAt(*target, callable_idx + 1);
+  }
+  *nargs += 1;
+  return *target;
+}
+
 Object* Interpreter::call(Thread* thread, Frame* frame, word nargs) {
-  Object* callable = frame->peek(nargs);
   Object** sp = frame->valueStackTop() + nargs + 1;
   Object* result;
-  switch (callable->layoutId()) {
-    case LayoutId::kFunction: {
-      result = Function::cast(callable)->entry()(thread, frame, nargs);
-      break;
-    }
-    case LayoutId::kBoundMethod: {
-      result = callBoundMethod(thread, frame, nargs);
-      break;
-    }
-    default: { result = callCallable(thread, frame, nargs); }
+  Object* callable = frame->peek(nargs);
+  if (callable->isFunction()) {
+    result = Function::cast(callable)->entry()(thread, frame, nargs);
+  } else {
+    callable = prepareCallableCall(thread, frame, nargs, &nargs);
+    result = Function::cast(callable)->entry()(thread, frame, nargs);
   }
   // Clear the stack of the function object.
   frame->setValueStackTop(sp);
   return result;
 }
 
-Object* Interpreter::callCallable(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Handle<Object> callable(&scope, frame->peek(nargs));
-  Handle<Type> type(&scope, runtime->typeOf(*callable));
-  callable = runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderCall);
-  CHECK(!callable->isError(), "object has no __call__ attribute");
-  CHECK(callable->isFunction(), "__call__ attribute is not a function");
-  frame->insertValueAt(*callable, nargs + 1);
-  nargs += 1;
-  return Function::cast(*callable)->entry()(thread, frame, nargs);
-}
-
 Object* Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
   // Top of stack is a tuple of keyword argument names in the order they
   // appear on the stack.
-  Function* function = Function::cast(frame->peek(nargs + 1));
   Object** sp = frame->valueStackTop() + nargs + 2;
-  Object* result = function->entryKw()(thread, frame, nargs);
+  Object* result;
+  Object* callable = frame->peek(nargs + 1);
+  if (callable->isFunction()) {
+    result = Function::cast(callable)->entryKw()(thread, frame, nargs);
+  } else {
+    callable = prepareCallableCall(thread, frame, nargs + 1, &nargs);
+    result = Function::cast(callable)->entryKw()(thread, frame, nargs);
+  }
   frame->setValueStackTop(sp);
   return result;
 }
@@ -64,32 +92,6 @@ Object* Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
   Object* result = function->entryEx()(thread, frame, flags);
   frame->setValueStackTop(sp);
   return result;
-}
-
-Object* Interpreter::callBoundMethod(Thread* thread, Frame* frame, word nargs) {
-  // Shift all arguments on the stack down by 1 and unpack the BoundMethod.
-  //
-  // We don't need to worry too much about the performance overhead for method
-  // calls here.
-  //
-  // Python 3.7 introduces two new opcodes, LOAD_METHOD and CALL_METHOD, that
-  // eliminate the need to create a temporary BoundMethod object when performing
-  // a method call.
-  //
-  // The other pattern of bound method usage occurs when someone passes around a
-  // reference to a method e.g.:
-  //
-  //   m = foo.method
-  //   m()
-  //
-  // Our contention is that uses of this pattern are not performance sensitive.
-  Object* callable = frame->peek(nargs);
-  Object* self = BoundMethod::cast(callable)->self();
-  callable = BoundMethod::cast(callable)->function();
-  frame->insertValueAt(self, nargs);
-  frame->setValueAt(callable, nargs + 1);
-  nargs += 1;
-  return Function::cast(callable)->entry()(thread, frame, nargs);
 }
 
 Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
