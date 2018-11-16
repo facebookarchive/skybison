@@ -408,6 +408,7 @@ class String : public Object {
   inline void copyTo(byte* dst, word length);
 
   // Equality checks.
+  inline word compare(Object* string);
   inline bool equals(Object* that);
   inline bool equalsCString(const char* c_string);
 
@@ -2756,6 +2757,19 @@ word String::length() {
   }
   assert(isLargeString());
   return LargeString::cast(this)->length();
+}
+
+word String::compare(Object* string) {
+  String* that = String::cast(string);
+  word length = Utils::minimum(this->length(), that->length());
+  for (word i = 0; i < length; i++) {
+    word diff = this->charAt(i) - that->charAt(i);
+    if (diff != 0) {
+      return (diff > 0) ? 1 : -1;
+    }
+  }
+  word diff = this->length() - that->length();
+  return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
 bool String::equals(Object* that) {

@@ -1791,9 +1791,10 @@ Object* Runtime::attributeAtPut(
 bool Runtime::isTruthy(Object* object) {
   if (object->isBoolean()) {
     return Boolean::cast(object)->value();
+  } else if (object->isInteger()) {
+    return Integer::cast(object)->asWord() > 0;
   }
-  // TODO(mpage): Raise an exception
-  std::abort();
+  UNIMPLEMENTED("Unsupported type");
 }
 
 Object* Runtime::stringConcat(

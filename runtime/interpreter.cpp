@@ -28,7 +28,7 @@ Interpreter::call(Thread* thread, Frame* frame, Object** sp, word nargs) {
     }
     default: {
       // TODO(T25382628): Handle __call__
-      std::abort();
+      UNIMPLEMENTED("Callable type");
     }
   }
 }
@@ -839,21 +839,12 @@ Object* Interpreter::compare(
       res = (*left != *right);
       break;
     }
-    case IN: {
-      // TODO: fill abstract sequence contains
-      abort();
-      break;
-    }
-    case NOT_IN: {
-      // TODO: fill abstract sequence contains
-      abort();
-      break;
-    }
-    case EXC_MATCH: {
-      // TODO: fill execption compare
-      abort();
-      break;
-    }
+    case IN:
+      UNIMPLEMENTED("IN comparison op");
+    case NOT_IN:
+      UNIMPLEMENTED("NOT_IN comparison op");
+    case EXC_MATCH:
+      UNIMPLEMENTED("EXC_MATCH comparison op");
     default:
       return richCompare(op, left, right);
   }
@@ -895,9 +886,35 @@ Object* Interpreter::richCompare(
         break;
       }
       default:
-        // PyErr_BadArgument - other cases should not go in here
-        abort();
+        UNREACHABLE("rich comparison with op %x", op);
     }
+  } else if (left->isString() && right->isString()) {
+    word cmp = String::cast(*left)->compare(*right);
+    switch (op) {
+      case EQ:
+        res = (cmp == 0);
+        break;
+      case NE:
+        res = (cmp != 0);
+        break;
+      case LE:
+        res = (cmp <= 0);
+        break;
+      case LT:
+        res = (cmp < 0);
+        break;
+      case GE:
+        res = (cmp >= 0);
+        break;
+      case GT:
+        res = (cmp > 0);
+        break;
+      default:
+        UNIMPLEMENTED("string comparison with op %x", op);
+        break;
+    }
+  } else {
+    UNIMPLEMENTED("Custom compare");
   }
   return Boolean::fromBool(res);
 }

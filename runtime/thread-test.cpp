@@ -2551,4 +2551,68 @@ print(f2())
   EXPECT_EQ(output, "3\n");
 }
 
+TEST(ThreadTest, TruthyIntPos) {
+  const char* src = R"(
+if 1:
+  print("foo")
+else:
+  print("bar")
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "foo\n");
+}
+
+TEST(ThreadTest, TruthyIntNeg) {
+  const char* src = R"(
+if 0:
+  print("foo")
+else:
+  print("bar")
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "bar\n");
+}
+
+TEST(ThreadTest, RichCompareStringEQ) { // pystone dependency
+  const char* src = R"(
+a = "__main__"
+if (a == "__main__"):
+  print("foo")
+else:
+  print("bar")
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "foo\n");
+}
+
+TEST(ThreadTest, RichCompareStringNE) { // pystone dependency
+  const char* src = R"(
+a = "__main__"
+if (a != "__main__"):
+  print("foo")
+else:
+  print("bar")
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "bar\n");
+}
+
+TEST(ThreadTest, RichCompareSingleCharLE) { // pystone dependency
+  const char* src = R"(
+a = ['h','e','l','l','o']
+for x in a:
+  if x <= 'i':
+    print("L")
+  else:
+    print("x")
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "L\nL\nx\nx\nx\n");
+}
+
 } // namespace python

@@ -17,9 +17,7 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
   HandleScope scope;
   Handle<Function> function(&scope, previousFrame->function(argc));
   Handle<Code> code(&scope, function->code());
-
-  // TODO: Raise an exception here instead of asserting
-  assert(argc == code->argcount());
+  CHECK(argc == code->argcount(), "argc != argcount");
 
   // Set up the frame
   auto frame = thread->pushFrame(*code);
