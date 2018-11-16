@@ -4,8 +4,6 @@
 #include "handles.h"
 #include "heap.h"
 
-#include <memory>
-
 namespace python {
 
 class Heap;
@@ -152,7 +150,7 @@ class Runtime {
     return &new_value_cell_callback_;
   }
 
-  static std::unique_ptr<char[]> compile(const char* src);
+  static char* compile(const char* src);
 
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.

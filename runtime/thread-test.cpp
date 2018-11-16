@@ -84,7 +84,7 @@ def hello():
 hello()
 )";
 
-  std::unique_ptr<char[]> buffer = Runtime::compile(src);
+  std::unique_ptr<char[]> buffer(Runtime::compile(src));
 
   std::stringstream stream;
   std::ostream* oldStream = builtinPrintStream;

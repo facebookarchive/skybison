@@ -2,8 +2,6 @@
 
 #include "globals.h"
 
-#include <memory>
-
 namespace python {
 
 class OS {
@@ -20,9 +18,9 @@ class OS {
 
   static bool secureRandom(byte* ptr, word size);
 
-  static std::unique_ptr<char[]> readFile(const char* filename);
+  static char* readFile(const char* filename);
 
-  static std::unique_ptr<char[]> temporaryDirectory(const char* prefix);
+  static char* temporaryDirectory(const char* prefix);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(OS);
