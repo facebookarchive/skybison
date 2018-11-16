@@ -1588,6 +1588,23 @@ SymbolId Runtime::swappedComparisonSelector(CompareOp op) {
   return comparisonSelector(swapped_op);
 }
 
+bool Runtime::isMethodOverloaded(Thread* thread, const Handle<Class>& klass,
+                                 SymbolId selector) {
+  HandleScope scope(thread);
+  Handle<ObjectArray> mro(&scope, klass->mro());
+  Handle<Object> key(&scope, symbols()->at(selector));
+  DCHECK(mro->length() > 0, "empty MRO");
+  for (word i = 0; i < mro->length() - 1; i++) {
+    Handle<Class> mro_klass(&scope, mro->at(i));
+    Handle<Dictionary> dict(&scope, mro_klass->dictionary());
+    Handle<Object> value_cell(&scope, dictionaryAt(dict, key));
+    if (!value_cell->isError()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 Object* Runtime::moduleAddGlobal(const Handle<Module>& module, SymbolId name,
                                  const Handle<Object>& value) {
   HandleScope scope;

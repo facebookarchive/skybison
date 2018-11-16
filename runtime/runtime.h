@@ -187,6 +187,10 @@ class Runtime {
   SymbolId comparisonSelector(CompareOp op);
   SymbolId swappedComparisonSelector(CompareOp op);
 
+  // Return true if the selector does not appear in the MRO object below object.
+  bool isMethodOverloaded(Thread* thread, const Handle<Class>& type,
+                          SymbolId selector);
+
   Object* buildClass() { return build_class_; }
 
   Object* interned() { return interned_; }

@@ -1,4 +1,4 @@
-#include "function-builtins.h"
+#include "object-builtins.h"
 
 #include "frame.h"
 #include "globals.h"
@@ -8,11 +8,31 @@
 
 namespace python {
 
-Object* builtinObjectInit(Thread* thread, Frame*, word nargs) {
-  if (nargs != 1) {
-    return thread->throwTypeErrorFromCString(
-        "object.__init__() takes no arguments");
+Object* builtinObjectInit(Thread* thread, Frame* frame, word nargs) {
+  // object.__init__ doesn't do anything except throw a TypeError if the wrong
+  // number of arguments are given. It only throws if __new__ is not overloaded
+  // or __init__ was overloaded, else it allows the excess arguments.
+  if (nargs == 0) {
+    return thread->throwTypeErrorFromCString("__init__ needs an argument");
   }
+  if (nargs == 1) {
+    return None::object();
+  }
+  // Too many arguments were given. Determine if the __new__ was not overwritten
+  // or the __init__ was to throw a TypeError.
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Class> type(&scope, runtime->classOf(*self));
+  if (!runtime->isMethodOverloaded(thread, type, SymbolId::kDunderNew) ||
+      runtime->isMethodOverloaded(thread, type, SymbolId::kDunderInit)) {
+    // Throw a TypeError if extra arguments were passed, and __new__ was not
+    // overwritten by self, or __init__ was overloaded by self.
+    return thread->throwTypeErrorFromCString(
+        "object.__init__() takes no parameters");
+  }
+  // Else it's alright to have extra arguments.
   return None::object();
 }
 
