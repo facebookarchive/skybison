@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <limits>
+
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
@@ -256,6 +258,51 @@ a = float.__new__(float, 1.0)
   EXPECT_EQ(Float::cast(*a)->value(), 1.0);
 }
 
+TEST(FloatBuiltinsTest, DunderNewWithUserDefinedTypeReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+class Foo:
+  def __float__(self):
+    return 1.0
+a = float.__new__(float, Foo())
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Float> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_EQ(a->value(), 1.0);
+}
+
+TEST(FloatBuiltinsTest, DunderNewWithStringReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = float.__new__(float, "1.5")
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Float> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_EQ(a->value(), 1.5);
+}
+
+TEST(FloatBuiltinsTest, DunderNewWithStringOfHugeNumberReturnsInf) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = float.__new__(float, "1.18973e+4932")
+b = float.__new__(float, "-1.18973e+4932")
+
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Float> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Float> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_EQ(a->value(), std::numeric_limits<double>::infinity());
+  EXPECT_EQ(b->value(), -std::numeric_limits<double>::infinity());
+}
+
 TEST(FloatBuiltinsDeathTest, SubWithNonFloatSelfThrows) {
   const char* src = R"(
 float.__sub__(None, 1.0)
@@ -263,6 +310,28 @@ float.__sub__(None, 1.0)
   Runtime runtime;
   ASSERT_DEATH(runtime.runFromCString(src),
                "must be called with float instance as first argument");
+}
+
+TEST(FloatBuiltinsDeathTest, FloatNewWithDunderFloatReturnsStringThrows) {
+  const char* src = R"(
+class Foo:
+  def __float__(self):
+    return "non-float"
+a = float.__new__(Foo)
+)";
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCString(src),
+               "aborting due to pending exception");
+}
+
+TEST(FloatBuiltinsDeathTest, DunderNewWithInvalidStringThrows) {
+  Runtime runtime;
+  HandleScope scope;
+
+  EXPECT_DEATH(runtime.runFromCString(R"(
+a = float.__new__(float, "abc")
+)"),
+               "aborting due to pending exception");
 }
 
 TEST(FloatBuiltinsDeathTest, SubWithNonFloatOtherThrows) {
