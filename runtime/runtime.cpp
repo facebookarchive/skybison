@@ -715,7 +715,18 @@ RawObject Runtime::newModule(const Object& name) {
   result->setName(*name);
   result->setDef(newIntFromCPtr(nullptr));
   Object key(&scope, symbols()->DunderName());
-  dictAtPutInValueCell(dict, key, name);
+  moduleAtPut(result, key, name);
+
+  Object none(&scope, NoneType::object());
+  Object doc_key(&scope, symbols()->DunderDoc());
+  moduleAtPut(result, doc_key, none);
+  Object package_key(&scope, symbols()->DunderPackage());
+  moduleAtPut(result, package_key, none);
+  Object loader_key(&scope, symbols()->DunderLoader());
+  moduleAtPut(result, loader_key, none);
+  Object spec_key(&scope, symbols()->DunderSpec());
+  moduleAtPut(result, spec_key, none);
+
   return *result;
 }
 

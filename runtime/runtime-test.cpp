@@ -3709,4 +3709,20 @@ TEST(ModuleImportTest, ImportModuleFromInitTab) {
   EXPECT_TRUE(mod->isModule());
 }
 
+TEST(ModuleTest, NewModuleSetsDictValues) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Create Module
+  Object name(&scope, runtime.newStrFromCStr("mymodule"));
+  Module module(&scope, runtime.newModule(name));
+
+  Str mod_name(&scope, moduleAt(&runtime, module, "__name__"));
+  EXPECT_TRUE(mod_name->equalsCStr("mymodule"));
+  EXPECT_EQ(moduleAt(&runtime, module, "__doc__"), NoneType::object());
+  EXPECT_EQ(moduleAt(&runtime, module, "__package__"), NoneType::object());
+  EXPECT_EQ(moduleAt(&runtime, module, "__loader__"), NoneType::object());
+  EXPECT_EQ(moduleAt(&runtime, module, "__spec__"), NoneType::object());
+}
+
 }  // namespace python

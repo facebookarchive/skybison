@@ -62,6 +62,7 @@ class Runtime;
   V(DunderLe, "__le__")                                                        \
   V(DunderLen, "__len__")                                                      \
   V(DunderLengthHint, "__length_hint__")                                       \
+  V(DunderLoader, "__loader__")                                                \
   V(DunderLshift, "__lshift__")                                                \
   V(DunderLt, "__lt__")                                                        \
   V(DunderMain, "__main__")                                                    \
@@ -75,6 +76,7 @@ class Runtime;
   V(DunderNew, "__new__")                                                      \
   V(DunderNext, "__next__")                                                    \
   V(DunderOr, "__or__")                                                        \
+  V(DunderPackage, "__package__")                                              \
   V(DunderPos, "__pos__")                                                      \
   V(DunderPow, "__pow__")                                                      \
   V(DunderQualname, "__qualname__")                                            \
@@ -96,6 +98,7 @@ class Runtime;
   V(DunderRxor, "__rxor__")                                                    \
   V(DunderSet, "__set__")                                                      \
   V(DunderSetItem, "__setitem__")                                              \
+  V(DunderSpec, "__spec__")                                                    \
   V(DunderStr, "__str__")                                                      \
   V(DunderSub, "__sub__")                                                      \
   V(DunderTruediv, "__truediv__")                                              \

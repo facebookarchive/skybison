@@ -142,8 +142,17 @@ PY_EXPORT PyObject* PyModule_New(const char* /* e */) {
   UNIMPLEMENTED("PyModule_New");
 }
 
-PY_EXPORT PyObject* PyModule_NewObject(PyObject* /* e */) {
-  UNIMPLEMENTED("PyModule_NewObject");
+PY_EXPORT PyObject* PyModule_NewObject(PyObject* name) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Module module(&scope, runtime->newModule(name_obj));
+  ApiHandle* handle = ApiHandle::fromObject(module);
+  // Module's state is represented by the handle's cache
+  handle->setCache(nullptr);
+  return handle;
 }
 
 PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
