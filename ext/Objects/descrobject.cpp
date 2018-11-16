@@ -68,9 +68,8 @@ void PyMethodDescr_Type_Init(void) {
 extern "C" PyTypeObject* PyMethodDescr_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  PyTypeObject* pymethoddescr_type =
-      static_cast<PyTypeObject*>(runtime->builtinExtensionTypes(
-          static_cast<int>(ExtensionTypes::kMethodDescr)));
+  PyTypeObject* pymethoddescr_type = static_cast<PyTypeObject*>(
+      runtime->builtinExtensionTypes(ExtensionTypes::kMethodDescr));
   PyType_Ready(pymethoddescr_type);
   return pymethoddescr_type;
 }
@@ -136,9 +135,8 @@ void PyMemberDescr_Type_Init(void) {
 extern "C" PyTypeObject* PyMemberDescr_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  PyTypeObject* pymemberdescr_type =
-      static_cast<PyTypeObject*>(runtime->builtinExtensionTypes(
-          static_cast<int>(ExtensionTypes::kMemberDescr)));
+  PyTypeObject* pymemberdescr_type = static_cast<PyTypeObject*>(
+      runtime->builtinExtensionTypes(ExtensionTypes::kMemberDescr));
   PyType_Ready(pymemberdescr_type);
   return pymemberdescr_type;
 }
@@ -204,9 +202,8 @@ void PyGetSetDescr_Type_Init(void) {
 extern "C" PyTypeObject* PyGetSetDescr_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  PyTypeObject* pygetsetdescr_type =
-      static_cast<PyTypeObject*>(runtime->builtinExtensionTypes(
-          static_cast<int>(ExtensionTypes::kGetSetDescr)));
+  PyTypeObject* pygetsetdescr_type = static_cast<PyTypeObject*>(
+      runtime->builtinExtensionTypes(ExtensionTypes::kGetSetDescr));
   PyType_Ready(pygetsetdescr_type);
   return pygetsetdescr_type;
 }

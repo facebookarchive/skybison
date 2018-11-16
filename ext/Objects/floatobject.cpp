@@ -70,7 +70,7 @@ extern "C" PyTypeObject* PyFloat_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(
-      runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kFloat)));
+      runtime->builtinExtensionTypes(ExtensionTypes::kFloat));
 }
 
 extern "C" PyObject* PyFloat_FromDouble(double fval) {

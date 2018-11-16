@@ -69,7 +69,7 @@ extern "C" PyTypeObject* PyBool_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(
-      runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kBool)));
+      runtime->builtinExtensionTypes(ExtensionTypes::kBool));
 }
 
 extern "C" PyObject* PyTrue_Ptr() {

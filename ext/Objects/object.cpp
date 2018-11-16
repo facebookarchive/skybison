@@ -68,7 +68,7 @@ extern "C" PyTypeObject* PyNone_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(
-      runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kNone)));
+      runtime->builtinExtensionTypes(ExtensionTypes::kNone));
 }
 
 extern "C" PyObject* PyNone_Ptr() {

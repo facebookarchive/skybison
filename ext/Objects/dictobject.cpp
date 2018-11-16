@@ -71,7 +71,7 @@ extern "C" PyTypeObject* PyDict_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(
-      runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kDict)));
+      runtime->builtinExtensionTypes(ExtensionTypes::kDict));
 }
 
 extern "C" int PyDict_SetItem(PyObject* pydict, PyObject* key,

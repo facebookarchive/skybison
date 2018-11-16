@@ -74,7 +74,7 @@ extern "C" PyTypeObject* PyType_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(
-      runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kType)));
+      runtime->builtinExtensionTypes(ExtensionTypes::kType));
 }
 
 void PyBaseObject_Type_Init(void) {
@@ -139,8 +139,8 @@ void PyBaseObject_Type_Init(void) {
 extern "C" PyTypeObject* PyBaseObject_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(runtime->builtinExtensionTypes(
-      static_cast<int>(ExtensionTypes::kBaseObject)));
+  return static_cast<PyTypeObject*>(
+      runtime->builtinExtensionTypes(ExtensionTypes::kBaseObject));
 }
 
 extern "C" unsigned long PyType_GetFlags(PyTypeObject* type) {

@@ -187,9 +187,9 @@ TEST(TypeObject, RuntimeInitializesStaticPyTypObjects) {
   Runtime runtime2;
 
   PyTypeObject* pytype1 = static_cast<PyTypeObject*>(
-      runtime.builtinExtensionTypes(static_cast<word>(ExtensionTypes::kType)));
+      runtime.builtinExtensionTypes(ExtensionTypes::kType));
   PyTypeObject* pytype2 = static_cast<PyTypeObject*>(
-      runtime2.builtinExtensionTypes(static_cast<word>(ExtensionTypes::kType)));
+      runtime2.builtinExtensionTypes(ExtensionTypes::kType));
   EXPECT_NE(pytype1, pytype2);
   EXPECT_STREQ(pytype1->tp_name, pytype2->tp_name);
 

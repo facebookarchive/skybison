@@ -71,7 +71,7 @@ extern "C" PyTypeObject* PyList_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(
-      runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kList)));
+      runtime->builtinExtensionTypes(ExtensionTypes::kList));
 }
 
 extern "C" PyObject* PyList_New(Py_ssize_t size) {

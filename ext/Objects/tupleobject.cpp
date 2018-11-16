@@ -70,7 +70,7 @@ extern "C" PyTypeObject* PyTuple_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(
-      runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kTuple)));
+      runtime->builtinExtensionTypes(ExtensionTypes::kTuple));
 }
 
 extern "C" PyObject* PyTuple_New(Py_ssize_t length) {

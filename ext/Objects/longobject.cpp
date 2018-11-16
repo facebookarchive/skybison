@@ -71,7 +71,7 @@ extern "C" PyTypeObject* PyLong_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(
-      runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kLong)));
+      runtime->builtinExtensionTypes(ExtensionTypes::kLong));
 }
 
 extern "C" PyObject* PyLong_FromLong(long ival) {

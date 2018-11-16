@@ -481,8 +481,8 @@ class Runtime {
   bool isDeleteDescriptor(Thread* thread, const Handle<Object>& object);
 
   // Returns a pointer of an initialized PyTypeObject
-  void* builtinExtensionTypes(int type) {
-    return builtin_extension_types_[type];
+  void* builtinExtensionTypes(ExtensionTypes type) {
+    return builtin_extension_types_[static_cast<int>(type)];
   }
 
   // Saves an initialized PyTypeObject

@@ -71,7 +71,7 @@ extern "C" PyTypeObject* PyUnicode_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   return static_cast<PyTypeObject*>(
-      runtime->builtinExtensionTypes(static_cast<int>(ExtensionTypes::kStr)));
+      runtime->builtinExtensionTypes(ExtensionTypes::kStr));
 }
 
 extern "C" PyObject* PyUnicode_FromString(const char* c_string) {

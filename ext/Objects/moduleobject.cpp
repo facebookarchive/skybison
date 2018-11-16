@@ -70,8 +70,8 @@ void PyModule_Type_Init(void) {
 extern "C" PyTypeObject* PyModule_Type_Ptr() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  return static_cast<PyTypeObject*>(runtime->builtinExtensionTypes(
-      static_cast<int>(ExtensionTypes::kModule)));
+  return static_cast<PyTypeObject*>(
+      runtime->builtinExtensionTypes(ExtensionTypes::kModule));
 }
 
 extern "C" PyObject* PyModule_Create2(struct PyModuleDef* pymodule, int) {
