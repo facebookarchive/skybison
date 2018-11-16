@@ -20,8 +20,10 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
   if (argc < code->argcount() && function->hasDefaults()) {
     // Copy default args to stack, left to right
     Object** sp = previousFrame->valueStackTop();
+    Handle<ObjectArray> default_args(&scope, function->defaults());
+    const word positional_only = code->argcount() - default_args->length();
     for (; argc < code->argcount(); argc++) {
-      *--sp = ObjectArray::cast(function->defaults())->at(argc);
+      *--sp = default_args->at(argc - positional_only);
     }
     previousFrame->setValueStackTop(sp);
   }

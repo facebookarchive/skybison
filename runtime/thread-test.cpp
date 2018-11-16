@@ -1774,6 +1774,32 @@ foo(1001, 1002, 1003)
 1001 1002 1003
 )");
 }
+
+TEST(ThreadTest, CallMethodMixPosDefaultArgs) {
+  const char* src = R"(
+def foo(a, b=2):
+  print(a, b)
+foo(1)
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1 2\n");
+}
+
+TEST(ThreadTest, CallBoundMethodMixed) {
+  const char* src = R"(
+class R:
+  def __init__(self, a, b=2):
+    print(a, b)
+a = R(9)
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "9 2\n");
+}
+
 TEST(ThreadTest, RaiseVarargs) {
   Runtime runtime;
   ASSERT_DEATH(
