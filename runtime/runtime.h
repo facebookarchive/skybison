@@ -120,7 +120,7 @@ class Runtime {
   Object* newInteger(word value);
 
   Object* newLayout();
-  Object* newLayoutWithId(word layout_id);
+  Object* newLayoutWithId(LayoutId layout_id);
 
   Object* newList();
 
@@ -219,10 +219,11 @@ class Runtime {
 
   Object* classOf(Object* object);
 
-  Object* classAt(word layout_id);
-  Object* layoutAt(word layout_id);
+  Object* classAt(LayoutId layout_id);
+  Object* layoutAt(LayoutId layout_id);
+  void layoutAtPut(LayoutId layout_id, Object* object);
 
-  word newLayoutId();
+  LayoutId newLayoutId();
 
   Object* binaryOperationSelector(Interpreter::BinaryOp op);
   Object* swappedBinaryOperationSelector(Interpreter::BinaryOp op);
@@ -588,7 +589,7 @@ class Runtime {
   Object* immediateHash(Object* object);
   Object* valueHash(Object* object);
 
-  Object* createMro(View<IntrinsicLayoutId> layout_ids);
+  Object* createMro(View<LayoutId> layout_ids);
 
   ObjectArray* dictionaryGrow(const Handle<ObjectArray>& data);
 
@@ -662,7 +663,7 @@ class Runtime {
   // helper function add builtin types
   void moduleAddBuiltinType(
       const Handle<Module>& module,
-      IntrinsicLayoutId layout_id,
+      LayoutId layout_id,
       Object* symbol);
 
   // Appends the edge to the list of edges.

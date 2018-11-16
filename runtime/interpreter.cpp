@@ -15,11 +15,11 @@ Object*
 Interpreter::call(Thread* thread, Frame* frame, Object** sp, word nargs) {
   Object* callable = sp[nargs];
   switch (callable->layoutId()) {
-    case IntrinsicLayoutId::kFunction: {
+    case LayoutId::kFunction: {
       frame->setValueStackTop(sp);
       return Function::cast(callable)->entry()(thread, frame, nargs);
     }
-    case IntrinsicLayoutId::kBoundMethod: {
+    case LayoutId::kBoundMethod: {
       return callBoundMethod(thread, frame, sp, nargs);
     }
     default: { return callCallable(thread, frame, sp, nargs); }

@@ -39,8 +39,7 @@ TEST(RuntimeTest, BuiltinsModuleExists) {
   ASSERT_TRUE(runtime.dictionaryAt(modules, name)->isModule());
 }
 
-class BuiltinClassIdsTest : public ::testing::TestWithParam<IntrinsicLayoutId> {
-};
+class BuiltinClassIdsTest : public ::testing::TestWithParam<LayoutId> {};
 
 // Make sure that each built-in class has a class object.  Check that its class
 // object points to a layout with the same layout ID as the built-in class.
@@ -55,8 +54,8 @@ TEST_P(BuiltinClassIdsTest, HasClassObject) {
   EXPECT_EQ(layout->id(), GetParam());
 }
 
-static const IntrinsicLayoutId kBuiltinHeapClassIds[] = {
-#define ENUM(x) k##x,
+static const LayoutId kBuiltinHeapClassIds[] = {
+#define ENUM(x) LayoutId::k##x,
     INTRINSIC_HEAP_CLASS_NAMES(ENUM)
 #undef ENUM
 };
@@ -64,8 +63,7 @@ static const IntrinsicLayoutId kBuiltinHeapClassIds[] = {
 INSTANTIATE_TEST_CASE_P(
     BuiltinClassIdsParameters,
     BuiltinClassIdsTest,
-    ::testing::ValuesIn(kBuiltinHeapClassIds),
-    ::testing::PrintToStringParamName());
+    ::testing::ValuesIn(kBuiltinHeapClassIds));
 
 TEST(RuntimeDictionaryTest, EmptyDictionaryInvariants) {
   Runtime runtime;
@@ -1146,7 +1144,8 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
 
   runtime.runFromCString("class MyEmptyClass: pass");
 
-  word layout_id = IntrinsicLayoutId::kLastId + 1;
+  LayoutId layout_id =
+      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastId) + 1);
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
@@ -1171,7 +1170,8 @@ class MyClassWithAttributes():
 )";
   runtime.runFromCString(src);
 
-  word layout_id = IntrinsicLayoutId::kLastId + 1;
+  LayoutId layout_id =
+      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastId) + 1);
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   ASSERT_EQ(layout->instanceSize(), 4);
 
@@ -1450,7 +1450,8 @@ c = MyClassWithNoInitMethod()
 )";
   runtime.runFromCString(src);
 
-  word layout_id = IntrinsicLayoutId::kLastId + 1;
+  LayoutId layout_id =
+      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastId) + 1);
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
@@ -1479,7 +1480,8 @@ c = MyClassWithEmptyInitMethod()
 )";
   runtime.runFromCString(src);
 
-  word layout_id = IntrinsicLayoutId::kLastId + 1;
+  LayoutId layout_id =
+      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastId) + 1);
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
@@ -1508,7 +1510,8 @@ c = MyClassWithAttributes(1)
 )";
   runtime.runFromCString(src);
 
-  word layout_id = IntrinsicLayoutId::kLastId + 1;
+  LayoutId layout_id =
+      static_cast<LayoutId>(static_cast<word>(LayoutId::kLastId) + 1);
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
   ASSERT_EQ(layout->instanceSize(), 2);
 

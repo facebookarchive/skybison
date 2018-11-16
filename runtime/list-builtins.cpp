@@ -19,7 +19,7 @@ Object* builtinListNew(Thread* thread, Frame* caller, word nargs) {
   HandleScope scope(thread->handles());
   Handle<Class> type(&scope, args.get(0));
   Handle<Layout> layout(&scope, type->instanceLayout());
-  if (layout->id() == IntrinsicLayoutId::kList) {
+  if (layout->id() == LayoutId::kList) {
     return thread->runtime()->newList();
   }
   CHECK(layout->hasDelegateSlot(), "must have a delegate slot");

@@ -84,8 +84,7 @@ Object* computeMro(
 
   Handle<Object> object_class(
       &scope,
-      Layout::cast(runtime->layoutAt(IntrinsicLayoutId::kObject))
-          ->describedClass());
+      Layout::cast(runtime->layoutAt(LayoutId::kObject))->describedClass());
 
   // Special case for no explicit ancestors.
   if (parents->length() == 0) {

@@ -1407,7 +1407,7 @@ class C:
   Handle<ObjectArray> mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *cls);
-  EXPECT_EQ(mro->at(1), runtime.classAt(IntrinsicLayoutId::kObject));
+  EXPECT_EQ(mro->at(1), runtime.classAt(LayoutId::kObject));
 }
 
 TEST(ThreadTest, LoadBuildClassClassWithInit) {
@@ -1439,7 +1439,7 @@ class C:
   Handle<ObjectArray> mro(&scope, cls->mro());
   EXPECT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *cls);
-  EXPECT_EQ(mro->at(1), runtime.classAt(IntrinsicLayoutId::kObject));
+  EXPECT_EQ(mro->at(1), runtime.classAt(LayoutId::kObject));
 
   // Check class name
   ASSERT_TRUE(cls->name()->isSmallString());
@@ -1761,7 +1761,7 @@ class Foo(object):
   Handle<ObjectArray> mro(&scope, klass->mro());
   ASSERT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *klass);
-  EXPECT_EQ(mro->at(1), runtime.classAt(IntrinsicLayoutId::kObject));
+  EXPECT_EQ(mro->at(1), runtime.classAt(LayoutId::kObject));
 }
 
 // imports

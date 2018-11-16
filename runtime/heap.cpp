@@ -90,7 +90,7 @@ Object* Heap::createBoundMethod() {
   result->setHeader(Header::from(
       BoundMethod::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kBoundMethod,
+      LayoutId::kBoundMethod,
       ObjectFormat::kObjectInstance));
   return BoundMethod::cast(result);
 }
@@ -101,7 +101,7 @@ Object* Heap::createByteArray(word length) {
   CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<ByteArray*>(raw);
   result->setHeaderAndOverflow(
-      length, 0, IntrinsicLayoutId::kByteArray, ObjectFormat::kDataArray8);
+      length, 0, LayoutId::kByteArray, ObjectFormat::kDataArray8);
   return ByteArray::cast(result);
 }
 
@@ -112,7 +112,7 @@ Object* Heap::createClass() {
   result->setHeader(Header::from(
       Class::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kType,
+      LayoutId::kType,
       ObjectFormat::kObjectInstance));
   result->initialize(Class::kSize, None::object());
   return Class::cast(result);
@@ -125,7 +125,7 @@ Object* Heap::createClassMethod() {
   result->setHeader(Header::from(
       ClassMethod::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kClassMethod,
+      LayoutId::kClassMethod,
       ObjectFormat::kObjectInstance));
   return ClassMethod::cast(result);
 }
@@ -137,7 +137,7 @@ Object* Heap::createCode() {
   result->setHeader(Header::from(
       Code::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kCode,
+      LayoutId::kCode,
       ObjectFormat::kObjectInstance));
   result->initialize(Code::kSize, None::object());
   return Code::cast(result);
@@ -151,7 +151,7 @@ Object* Heap::createComplex(double real, double imag) {
   result->setHeader(Header::from(
       Complex::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kComplex,
+      LayoutId::kComplex,
       ObjectFormat::kDataInstance));
   result->initialize(real, imag);
   return Complex::cast(result);
@@ -165,7 +165,7 @@ Object* Heap::createDictionary() {
   result->setHeader(Header::from(
       Dictionary::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kDictionary,
+      LayoutId::kDictionary,
       ObjectFormat::kObjectInstance));
   result->initialize(Dictionary::kSize, None::object());
   return Dictionary::cast(result);
@@ -179,7 +179,7 @@ Object* Heap::createDouble(double value) {
   result->setHeader(Header::from(
       Double::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kDouble,
+      LayoutId::kDouble,
       ObjectFormat::kDataInstance));
   result->initialize(value);
   return Double::cast(result);
@@ -193,7 +193,7 @@ Object* Heap::createEllipsis() {
   result->setHeader(Header::from(
       Ellipsis::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kEllipsis,
+      LayoutId::kEllipsis,
       ObjectFormat::kDataInstance));
   return Ellipsis::cast(result);
 }
@@ -206,19 +206,19 @@ Object* Heap::createFunction() {
   result->setHeader(Header::from(
       Function::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kFunction,
+      LayoutId::kFunction,
       ObjectFormat::kObjectInstance));
   result->initialize(Function::kSize, None::object());
   return Function::cast(result);
 }
 
-Object* Heap::createInstance(word class_id, word num_attributes) {
+Object* Heap::createInstance(LayoutId layout_id, word num_attributes) {
   word size = Instance::allocationSize(num_attributes);
   Object* raw = allocate(size, HeapObject::headerSize(num_attributes));
   CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Instance*>(raw);
-  result->setHeader(
-      Header::from(num_attributes, 0, class_id, ObjectFormat::kObjectInstance));
+  result->setHeader(Header::from(
+      num_attributes, 0, layout_id, ObjectFormat::kObjectInstance));
   result->initialize(num_attributes * kPointerSize, None::object());
   return Instance::cast(result);
 }
@@ -231,7 +231,7 @@ Object* Heap::createLargeInteger(word value) {
   result->setHeader(Header::from(
       LargeInteger::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kLargeInteger,
+      LayoutId::kLargeInteger,
       ObjectFormat::kDataInstance));
   result->initialize(value);
   return LargeInteger::cast(result);
@@ -244,18 +244,18 @@ Object* Heap::createLargeString(word length) {
   CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<LargeString*>(raw);
   result->setHeaderAndOverflow(
-      length, 0, IntrinsicLayoutId::kLargeString, ObjectFormat::kDataArray8);
+      length, 0, LayoutId::kLargeString, ObjectFormat::kDataArray8);
   return LargeString::cast(result);
 }
 
-Object* Heap::createLayout(word id) {
+Object* Heap::createLayout(LayoutId layout_id) {
   Object* raw = allocate(Layout::allocationSize(), Header::kSize);
   CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Layout*>(raw);
   result->setHeader(Header::from(
       Layout::kSize / kPointerSize,
-      id,
-      IntrinsicLayoutId::kLayout,
+      static_cast<word>(layout_id),
+      LayoutId::kLayout,
       ObjectFormat::kObjectInstance));
   result->initialize(Layout::kSize, None::object());
   return Layout::cast(result);
@@ -269,7 +269,7 @@ Object* Heap::createList() {
   result->setHeader(Header::from(
       List::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kList,
+      LayoutId::kList,
       ObjectFormat::kObjectInstance));
   result->initialize(List::kSize, None::object());
   return List::cast(result);
@@ -283,7 +283,7 @@ Object* Heap::createListIterator() {
   result->setHeader(Header::from(
       ListIterator::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kListIterator,
+      LayoutId::kListIterator,
       ObjectFormat::kObjectInstance));
   result->initialize(size, None::object());
   return result;
@@ -297,7 +297,7 @@ Object* Heap::createModule() {
   result->setHeader(Header::from(
       Module::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kModule,
+      LayoutId::kModule,
       ObjectFormat::kObjectInstance));
   result->initialize(Module::kSize, None::object());
   return Module::cast(result);
@@ -311,7 +311,7 @@ Object* Heap::createNotImplemented() {
   result->setHeader(Header::from(
       NotImplemented::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kNotImplemented,
+      LayoutId::kNotImplemented,
       ObjectFormat::kDataInstance));
   return NotImplemented::cast(result);
 }
@@ -322,7 +322,7 @@ Object* Heap::createObjectArray(word length, Object* value) {
   CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<ObjectArray*>(raw);
   result->setHeaderAndOverflow(
-      length, 0, IntrinsicLayoutId::kObjectArray, ObjectFormat::kObjectArray);
+      length, 0, LayoutId::kObjectArray, ObjectFormat::kObjectArray);
   result->initialize(size, value);
   return ObjectArray::cast(result);
 }
@@ -335,7 +335,7 @@ Object* Heap::createRange() {
   result->setHeader(Header::from(
       Range::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kRange,
+      LayoutId::kRange,
       ObjectFormat::kDataInstance));
   return Range::cast(result);
 }
@@ -348,7 +348,7 @@ Object* Heap::createRangeIterator() {
   result->setHeader(Header::from(
       RangeIterator::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kRangeIterator,
+      LayoutId::kRangeIterator,
       ObjectFormat::kObjectInstance));
   return RangeIterator::cast(result);
 }
@@ -361,7 +361,7 @@ Object* Heap::createSet() {
   result->setHeader(Header::from(
       Set::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kSet,
+      LayoutId::kSet,
       ObjectFormat::kObjectInstance));
   result->initialize(Set::kSize, None::object());
   return Set::cast(result);
@@ -375,7 +375,7 @@ Object* Heap::createSlice() {
   result->setHeader(Header::from(
       Slice::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kSlice,
+      LayoutId::kSlice,
       ObjectFormat::kObjectInstance));
   result->initialize(Slice::kSize, None::object());
   return Slice::cast(result);
@@ -388,7 +388,7 @@ Object* Heap::createStaticMethod() {
   result->setHeader(Header::from(
       StaticMethod::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kStaticMethod,
+      LayoutId::kStaticMethod,
       ObjectFormat::kObjectInstance));
   return StaticMethod::cast(result);
 }
@@ -401,7 +401,7 @@ Object* Heap::createSuper() {
   result->setHeader(Header::from(
       Super::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kSuper,
+      LayoutId::kSuper,
       ObjectFormat::kObjectInstance));
   return Super::cast(result);
 }
@@ -414,7 +414,7 @@ Object* Heap::createValueCell() {
   result->setHeader(Header::from(
       ValueCell::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kValueCell,
+      LayoutId::kValueCell,
       ObjectFormat::kObjectInstance));
   return ValueCell::cast(result);
 }
@@ -427,7 +427,7 @@ Object* Heap::createWeakRef() {
   result->setHeader(Header::from(
       WeakRef::kSize / kPointerSize,
       0,
-      IntrinsicLayoutId::kWeakRef,
+      LayoutId::kWeakRef,
       ObjectFormat::kObjectInstance));
   result->initialize(WeakRef::kSize, None::object());
   return WeakRef::cast(result);

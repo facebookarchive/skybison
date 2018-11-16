@@ -44,13 +44,13 @@ class Heap {
 
   Object* createFunction();
 
-  Object* createInstance(word layout_id, word num_attributes);
+  Object* createInstance(LayoutId layout_id, word num_attributes);
 
   Object* createLargeInteger(word value);
 
   Object* createLargeString(word length);
 
-  Object* createLayout(word id);
+  Object* createLayout(LayoutId layout_id);
 
   Object* createList();
 

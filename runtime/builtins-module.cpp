@@ -49,7 +49,7 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   thread->runClassFunction(*body, *dictionary);
 
   Object** sp = caller->valueStackTop();
-  Handle<Class> klass(&scope, runtime->classAt(IntrinsicLayoutId::kType));
+  Handle<Class> klass(&scope, runtime->classAt(LayoutId::kType));
   *--sp = *klass;
   *--sp = *name;
   *--sp = *bases;
@@ -320,7 +320,8 @@ static Object* doBuiltinPrint(
   } else if (end->isString()) {
     printString(String::cast(*end));
   } else {
-    UNIMPLEMENTED("Unexpected type for end: %ld", end->layoutId());
+    UNIMPLEMENTED(
+        "Unexpected type for end: %ld", static_cast<word>(end->layoutId()));
   }
 
   return None::object();

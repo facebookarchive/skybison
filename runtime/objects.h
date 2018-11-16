@@ -58,7 +58,7 @@ namespace python {
 //
 // NB: If you add something here make sure you add it to the appropriate macro
 // above
-enum IntrinsicLayoutId {
+enum class LayoutId : word {
   // Immediate objects - note that the SmallInteger class is also aliased to
   // all even integers less than 32, so that classes of immediate objects can
   // be looked up simply by using the low 5 bits of the immediate value. This
@@ -109,7 +109,7 @@ class Object {
  public:
   // Getters and setters.
   bool isObject();
-  word layoutId();
+  LayoutId layoutId();
 
   // Immediate objects
   bool isBoolean();
@@ -263,15 +263,15 @@ class Header : public Object {
 
   ObjectFormat format();
 
-  word layoutId();
-  Header* withLayoutId(word layout_id);
+  LayoutId layoutId();
+  Header* withLayoutId(LayoutId layout_id);
 
   word count();
 
   bool hasOverflow();
 
   static Header*
-  from(word count, word hash, word layout_id, ObjectFormat format);
+  from(word count, word hash, LayoutId layout_id, ObjectFormat format);
 
   // Casting.
   static Header* cast(Object* object);
@@ -442,7 +442,7 @@ class HeapObject : public Object {
   void setHeader(Header* header);
   word headerOverflow();
   void
-  setHeaderAndOverflow(word count, word hash, word id, ObjectFormat format);
+  setHeaderAndOverflow(word count, word hash, LayoutId id, ObjectFormat format);
   word headerCountOrOverflow();
   word size();
 
@@ -1526,7 +1526,7 @@ class ClassMethod : public HeapObject {
 class Layout : public HeapObject {
  public:
   // Getters and setters.
-  word id();
+  LayoutId id();
 
   // Returns the class whose instances are described by this layout
   Object* describedClass();
@@ -1661,30 +1661,29 @@ inline bool Object::isObject() {
   return true;
 }
 
-inline word Object::layoutId() {
+inline LayoutId Object::layoutId() {
   if (isHeapObject()) {
     return HeapObject::cast(this)->header()->layoutId();
   }
   if (isSmallInteger()) {
-    return IntrinsicLayoutId::kSmallInteger;
+    return LayoutId::kSmallInteger;
   }
-  return reinterpret_cast<uword>(this) & kImmediateClassTableIndexMask;
+  return static_cast<LayoutId>(
+      reinterpret_cast<uword>(this) & kImmediateClassTableIndexMask);
 }
 
 inline bool Object::isClass() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kType;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kType;
 }
 
 inline bool Object::isClassMethod() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kClassMethod;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kClassMethod;
 }
 
 inline bool Object::isSmallInteger() {
@@ -1726,120 +1725,105 @@ inline bool Object::isLayout() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kLayout;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLayout;
 }
 
 inline bool Object::isBoundMethod() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kBoundMethod;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kBoundMethod;
 }
 
 inline bool Object::isByteArray() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kByteArray;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kByteArray;
 }
 
 inline bool Object::isObjectArray() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kObjectArray;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kObjectArray;
 }
 
 inline bool Object::isCode() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kCode;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kCode;
 }
 
 inline bool Object::isComplex() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kComplex;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kComplex;
 }
 
 inline bool Object::isLargeString() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kLargeString;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLargeString;
 }
 
 inline bool Object::isFunction() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kFunction;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kFunction;
 }
 
 inline bool Object::isInstance() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() >
-      IntrinsicLayoutId::kLastId;
+  return HeapObject::cast(this)->header()->layoutId() > LayoutId::kLastId;
 }
 
 inline bool Object::isDictionary() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kDictionary;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kDictionary;
 }
 
 inline bool Object::isDouble() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kDouble;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kDouble;
 }
 
 inline bool Object::isSet() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kSet;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSet;
 }
 
 inline bool Object::isSuper() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kSuper;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSuper;
 }
 
 inline bool Object::isModule() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kModule;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kModule;
 }
 
 inline bool Object::isList() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kList;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kList;
 }
 
 inline bool Object::isListIterator() {
@@ -1847,23 +1831,21 @@ inline bool Object::isListIterator() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kListIterator;
+      LayoutId::kListIterator;
 }
 
 inline bool Object::isValueCell() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kValueCell;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kValueCell;
 }
 
 inline bool Object::isEllipsis() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kEllipsis;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kEllipsis;
 }
 
 inline bool Object::isLargeInteger() {
@@ -1871,7 +1853,7 @@ inline bool Object::isLargeInteger() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kLargeInteger;
+      LayoutId::kLargeInteger;
 }
 
 inline bool Object::isInteger() {
@@ -1883,15 +1865,14 @@ inline bool Object::isNotImplemented() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kNotImplemented;
+      LayoutId::kNotImplemented;
 }
 
 inline bool Object::isRange() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kRange;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kRange;
 }
 
 inline bool Object::isRangeIterator() {
@@ -1899,15 +1880,14 @@ inline bool Object::isRangeIterator() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kRangeIterator;
+      LayoutId::kRangeIterator;
 }
 
 inline bool Object::isSlice() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kSlice;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSlice;
 }
 
 inline bool Object::isStaticMethod() {
@@ -1915,7 +1895,7 @@ inline bool Object::isStaticMethod() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kStaticMethod;
+      LayoutId::kStaticMethod;
 }
 
 inline bool Object::isString() {
@@ -1926,8 +1906,7 @@ inline bool Object::isWeakRef() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() ==
-      IntrinsicLayoutId::kWeakRef;
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kWeakRef;
 }
 
 inline bool Object::equals(Object* lhs, Object* rhs) {
@@ -2065,16 +2044,16 @@ inline Header* Header::withHashCode(word value) {
   return reinterpret_cast<Header*>(header);
 }
 
-inline word Header::layoutId() {
+inline LayoutId Header::layoutId() {
   auto header = reinterpret_cast<uword>(this);
-  return (header >> kLayoutIdOffset) & kLayoutIdMask;
+  return static_cast<LayoutId>((header >> kLayoutIdOffset) & kLayoutIdMask);
 }
 
-inline Header* Header::withLayoutId(word layout_id) {
-  DCHECK_BOUND(layout_id, kMaxLayoutId);
+inline Header* Header::withLayoutId(LayoutId layout_id) {
+  DCHECK_BOUND(static_cast<word>(layout_id), kMaxLayoutId);
   auto header = reinterpret_cast<uword>(this);
   header &= ~(kLayoutIdMask << kLayoutIdOffset);
-  header |= (layout_id & kLayoutIdMask) << kLayoutIdOffset;
+  header |= (static_cast<word>(layout_id) & kLayoutIdMask) << kLayoutIdOffset;
   return reinterpret_cast<Header*>(header);
 }
 
@@ -2084,7 +2063,7 @@ inline ObjectFormat Header::format() {
 }
 
 inline Header*
-Header::from(word count, word hash, word id, ObjectFormat format) {
+Header::from(word count, word hash, LayoutId id, ObjectFormat format) {
   DCHECK(
       (count >= 0) && ((count <= kCountMax) || (count == kCountOverflowFlag)),
       "bounds violation, %ld not in 0..%d",
@@ -2174,7 +2153,7 @@ inline word HeapObject::headerOverflow() {
 inline void HeapObject::setHeaderAndOverflow(
     word count,
     word hash,
-    word id,
+    LayoutId id,
     ObjectFormat format) {
   if (count > Header::kCountMax) {
     instanceVariableAtPut(kHeaderOverflowOffset, SmallInteger::fromWord(count));
@@ -2352,7 +2331,7 @@ inline Class* Class::cast(Object* object) {
 }
 
 inline bool Class::isIntrinsicOrExtension() {
-  return Layout::cast(instanceLayout())->id() <= IntrinsicLayoutId::kLastId;
+  return Layout::cast(instanceLayout())->id() <= LayoutId::kLastId;
 }
 
 // Array
@@ -3336,8 +3315,8 @@ inline void WeakRef::setLink(Object* reference) {
 
 // Layout
 
-inline word Layout::id() {
-  return header()->hashCode();
+inline LayoutId Layout::id() {
+  return static_cast<LayoutId>(header()->hashCode());
 }
 
 inline void Layout::setDescribedClass(Object* klass) {

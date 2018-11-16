@@ -101,13 +101,13 @@ TEST(ClassGetAttrTest, ShadowingAttr) {
 }
 
 struct IntrinsicClassSetAttrTestData {
-  word layout_id;
+  LayoutId layout_id;
   const char* name;
 };
 
 IntrinsicClassSetAttrTestData kIntrinsicClassSetAttrTests[] = {
 // clang-format off
-#define DEFINE_TEST(class_name) {IntrinsicLayoutId::k##class_name, #class_name},
+#define DEFINE_TEST(class_name) {LayoutId::k##class_name, #class_name},
   INTRINSIC_CLASS_NAMES(DEFINE_TEST)
 #undef DEFINE_TEST
     // clang-format on
@@ -447,7 +447,7 @@ def test(x):
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<Layout> layout(&scope, klass->instanceLayout());
   Handle<Instance> foo1(&scope, runtime.newInstance(layout));
-  word original_layout_id = layout->id();
+  LayoutId original_layout_id = layout->id();
 
   // Add overflow attributes that should force layout transitions
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));

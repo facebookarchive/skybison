@@ -89,8 +89,7 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   // Initialize builtin base class
   result->setBuiltinBaseClass(runtime->computeBuiltinBaseClass(result));
   Handle<Class> base(&scope, result->builtinBaseClass());
-  Handle<Class> list(
-      &scope, thread->runtime()->classAt(IntrinsicLayoutId::kList));
+  Handle<Class> list(&scope, thread->runtime()->classAt(LayoutId::kList));
   if (Boolean::cast(thread->runtime()->isSubClass(base, list))->value()) {
     result->setFlag(Class::Flag::kListSubclass);
     layout->addDelegateSlot();
