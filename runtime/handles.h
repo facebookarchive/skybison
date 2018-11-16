@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "globals.h"
+#include "thread.h"
 
 namespace python {
 
@@ -54,8 +55,14 @@ class Handles {
 
 class HandleScope {
  public:
+  explicit HandleScope()
+      : handles_(Thread::currentThread()->handles()), list_(nullptr) {
+    handles_->push(this);
+  }
+
+  // TODO: only for tests.
   explicit HandleScope(Handles* handles) : handles_(handles), list_(nullptr) {
-    handles->push(this);
+    handles_->push(this);
   }
 
   ~HandleScope() {

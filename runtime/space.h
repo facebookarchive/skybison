@@ -60,6 +60,8 @@ class Space {
   uword fill_;
 
   byte* raw_;
+
+  DISALLOW_COPY_AND_ASSIGN(Space);
 };
 
-} // python
+} // namespace python

@@ -7,6 +7,7 @@ namespace python {
 class Heap;
 class Object;
 class PointerVisitor;
+class Thread;
 
 class Runtime {
  public:
@@ -51,9 +52,13 @@ class Runtime {
   };
 
  private:
+  void initializeThreads();
   void initializeClasses();
   void initializeInstances();
   void initializeModules();
+
+  void visitRuntimeRoots(PointerVisitor* visitor);
+  void visitThreadRoots(PointerVisitor* visitor);
 
   Heap heap_;
 
@@ -72,6 +77,8 @@ class Runtime {
 
   // the equivalent of sys.modules in python
   Object* modules_;
+
+  Thread* threads_;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

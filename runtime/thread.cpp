@@ -2,10 +2,34 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "handles.h"
 #include "interpreter.h"
 #include "objects.h"
 
 namespace python {
+
+thread_local Thread* current_thread_ = nullptr;
+
+Thread::Thread(int size)
+    : size_(Utils::roundUp(size, kPointerSize)),
+      handles_(new Handles()),
+      next_(nullptr) {
+  start_ = ptr_ = new byte[size];
+  end_ = start_ + size;
+}
+
+Thread::~Thread() {
+  delete handles_;
+  delete[] start_;
+}
+
+Thread* Thread::currentThread() {
+  return current_thread_;
+}
+
+void Thread::setCurrentThread(Thread* thread) {
+  current_thread_ = thread;
+}
 
 Frame* Thread::pushFrame(Object* object) {
   // compute the frame size
@@ -22,7 +46,7 @@ Frame* Thread::pushFrame(Object* object) {
   Frame* frame = reinterpret_cast<Frame*>(ptr_);
   ptr_ += size;
 
-  // intitialize the frame
+  // Initialize the frame.
   memset(frame, 0, size);
 
   frame->f_code = code;

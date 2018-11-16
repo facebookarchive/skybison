@@ -3,17 +3,28 @@
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
+#include "thread.h"
 #include "visitor.h"
 
 namespace python {
 
 Runtime::Runtime() : heap_(64 * MiB) {
+  initializeThreads();
   initializeClasses();
   initializeInstances();
   initializeModules();
 }
 
-Runtime::~Runtime() {}
+Runtime::~Runtime() {
+  for (Thread* thread = threads_; thread != nullptr; thread = thread->next()) {
+    if (thread == Thread::currentThread()) {
+      Thread::setCurrentThread(nullptr);
+    } else {
+      assert(0); // Not implemented.
+    }
+    delete thread;
+  }
+}
 
 Object* Runtime::createByteArray(intptr_t length) {
   if (length == 0) {
@@ -151,6 +162,12 @@ void Runtime::collectGarbage() {
   heap()->scavenge();
 }
 
+void Runtime::initializeThreads() {
+  Thread* main_thread = new Thread(Thread::kDefaultStackSize);
+  threads_ = main_thread;
+  Thread::setCurrentThread(main_thread);
+}
+
 void Runtime::initializeInstances() {
   empty_byte_array_ = heap()->createByteArray(byte_array_class_, 0);
   empty_object_array_ =
@@ -162,6 +179,11 @@ void Runtime::initializeModules() {
 }
 
 void Runtime::visitRoots(PointerVisitor* visitor) {
+  visitRuntimeRoots(visitor);
+  visitThreadRoots(visitor);
+}
+
+void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit classes
   visitor->visitPointer(&byte_array_class_);
   visitor->visitPointer(&class_class_);
@@ -179,6 +201,12 @@ void Runtime::visitRoots(PointerVisitor* visitor) {
 
   // Visit modules
   visitor->visitPointer(&modules_);
+}
+
+void Runtime::visitThreadRoots(PointerVisitor* visitor) {
+  for (Thread* thread = threads_; thread != nullptr; thread = thread->next()) {
+    thread->handles()->visitPointers(visitor);
+  }
 }
 
 } // namespace python

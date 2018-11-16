@@ -1,37 +1,46 @@
 #pragma once
 
 #include "globals.h"
-#include "handles.h"
 #include "objects.h"
 #include "utils.h"
 
 namespace python {
 
 class Frame;
+class Handles;
 
 class Thread {
  public:
-  explicit Thread(int size) : size_(Utils::roundUp(size, kPointerSize)) {
-    start_ = ptr_ = new byte[size];
-    end_ = start_ + size;
-  }
+  static const int kDefaultStackSize = 1 * MiB;
 
-  ~Thread() {
-    delete[] start_;
-  }
+  explicit Thread(int size);
+  ~Thread();
+
+  static Thread* currentThread();
+  static void setCurrentThread(Thread* thread);
 
   Frame* pushFrame(Object* code);
   void popFrame(Frame* frame);
 
   Object* run(Object* object);
 
+  Thread* next() {
+    return next_;
+  }
+
+  Handles* handles() {
+    return handles_;
+  }
+
  private:
-  Handles handles_;
+  Handles* handles_;
 
   int size_;
   byte* start_;
   byte* end_;
   byte* ptr_;
+
+  Thread* next_;
 
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
