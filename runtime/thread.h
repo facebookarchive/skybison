@@ -31,8 +31,15 @@ class Thread {
 
   void popFrame();
 
-  RawObject run(RawObject object);
+  // Runs a code object on the current thread.  Assumes that the initial frame
+  // is at the top of the stack.
+  RawObject run(RawObject code);
+
+  // Runs a module body function on the current thread.  Assumes that the
+  // initial frame is at the top of the stack.
   RawObject runModuleFunction(RawModule module, RawObject object);
+
+  // Runs a class body function on the current thread.
   RawObject runClassFunction(RawObject function, RawObject dict);
 
   Thread* next() { return next_; }

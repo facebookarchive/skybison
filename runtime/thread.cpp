@@ -187,9 +187,9 @@ void Thread::popFrame() {
   currentFrame_ = frame->previousFrame();
 }
 
-RawObject Thread::run(RawObject object) {
+RawObject Thread::run(RawObject code) {
   DCHECK(currentFrame_ == initialFrame_, "thread must be inactive");
-  Frame* frame = pushFrame(object);
+  Frame* frame = pushFrame(code);
   return Interpreter::execute(this, frame);
 }
 
