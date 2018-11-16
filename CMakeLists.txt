@@ -144,8 +144,3 @@ target_link_libraries(
   benchmark
   gtest
   runtime)
-
-add_custom_target(
-  check
-  COMMAND python-tests
-  DEPENDS python-tests python)
