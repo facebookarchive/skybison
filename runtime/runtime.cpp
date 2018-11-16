@@ -861,6 +861,9 @@ void Runtime::initializeListClass() {
   Handle<Class> list(&scope, initializeHeapClass("list", LayoutId::kList));
 
   classAddBuiltinFunction(
+      list, symbols()->DunderAdd(), nativeTrampoline<builtinListAdd>);
+
+  classAddBuiltinFunction(
       list, symbols()->Append(), nativeTrampoline<builtinListAppend>);
 
   classAddBuiltinFunction(
@@ -963,18 +966,24 @@ void Runtime::initializeFloatClass() {
       float_type, symbols()->DunderNe(), nativeTrampoline<builtinDoubleNe>);
 
   classAddBuiltinFunction(
+      float_type, symbols()->DunderAdd(), nativeTrampoline<builtinDoubleAdd>);
+
+  classAddBuiltinFunction(
       float_type, symbols()->DunderSub(), nativeTrampoline<builtinDoubleSub>);
 }
 
 void Runtime::initializeSetClass() {
   HandleScope scope;
   Handle<Class> set_type(&scope, initializeHeapClass("set", LayoutId::kSet));
+
   classAddBuiltinFunction(
       set_type,
       symbols()->DunderContains(),
       nativeTrampoline<builtinSetContains>);
+
   classAddBuiltinFunction(
       set_type, symbols()->DunderLen(), nativeTrampoline<builtinSetLen>);
+
   classAddBuiltinFunction(
       set_type, symbols()->Pop(), nativeTrampoline<builtinSetPop>);
 }
@@ -1061,6 +1070,11 @@ void Runtime::initializeSmallIntClass() {
       small_integer,
       symbols()->DunderPos(),
       nativeTrampoline<builtinSmallIntegerPos>);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderAdd(),
+      nativeTrampoline<builtinSmallIntegerAdd>);
 
   classAddBuiltinFunction(
       small_integer,

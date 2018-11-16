@@ -42,6 +42,31 @@ static Object* listOrDelegate(Thread* thread, const Handle<Object>& instance) {
   return Error::object();
 }
 
+Object* builtinListAdd(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+
+  Arguments args(frame, nargs);
+  Object* other = args.get(1);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
+    return thread->throwTypeErrorFromCString(
+        "descriptor '__add__' requires a 'list' object");
+  }
+
+  if (other->isList()) {
+    Handle<List> new_list(&scope, thread->runtime()->newList());
+    Handle<Object> other_list(&scope, other);
+    thread->runtime()->listExtend(new_list, list_or_error);
+    thread->runtime()->listExtend(new_list, other_list);
+    return *new_list;
+  }
+  return thread->throwTypeErrorFromCString("can only concatenate list to list");
+}
+
 Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString(

@@ -7,6 +7,7 @@
 
 namespace python {
 
+Object* builtinListAdd(Thread* thread, Frame* frame, word nargs);
 Object* builtinListAppend(Thread* thread, Frame* frame, word nargs);
 Object* builtinListExtend(Thread* thread, Frame* frame, word nargs);
 Object* builtinListInsert(Thread* thread, Frame* frame, word nargs);

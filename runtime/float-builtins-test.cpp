@@ -147,6 +147,56 @@ b_ne_b = b != b
   EXPECT_EQ(*b_ne_b, Boolean::falseObj());
 }
 
+TEST(FloatBuiltinsTest, BinaryAddDouble) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 2.0
+b = 1.1
+c = a + b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(c->isDouble());
+  EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 3.1);
+}
+
+TEST(FloatBuiltinsTest, BinaryAddSmallInteger) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = 2.1
+b = 1
+c = a + b
+)");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(c->isDouble());
+  EXPECT_DOUBLE_EQ(Double::cast(*c)->value(), 3.1);
+}
+
+TEST(FloatBuiltinsDeathTest, BinaryAddWithNonFloatArg) {
+  const char* src = R"(
+float.__add__(None, 1.0)
+)";
+  Runtime runtime;
+  ASSERT_DEATH(
+      runtime.runFromCString(src),
+      "descriptor '__add__' requires a 'float' object");
+}
+
+TEST(FloatBuiltinsDeathTest, BinaryAddWithNonFloat2ndArg) {
+  const char* src = R"(
+1.0 + None
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(src), "unimplemented");
+}
+
 TEST(FloatBuiltinsTest, BinarySubtractDouble) {
   Runtime runtime;
   HandleScope scope;

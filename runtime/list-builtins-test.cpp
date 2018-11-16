@@ -1,12 +1,72 @@
 #include "gtest/gtest.h"
 
 #include "list-builtins.h"
+#include "objects.h"
 #include "runtime.h"
 #include "test-utils.h"
 
 namespace python {
 
 using namespace testing;
+
+TEST(ListBuiltinsTest, ListAdd) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = [1, 2]
+b = [3, 4, 5]
+c = a + b
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(c->isList());
+  Handle<List> list(&scope, List::cast(*c));
+  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(list->at(1))->value(), 2);
+  EXPECT_EQ(SmallInteger::cast(list->at(2))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(list->at(3))->value(), 4);
+  EXPECT_EQ(SmallInteger::cast(list->at(4))->value(), 5);
+}
+
+TEST(ListBuiltinsTest, ListAddToEmptyList) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+a = []
+b = [1, 2, 3]
+c = a + b
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(c->isList());
+  Handle<List> list(&scope, List::cast(*c));
+  EXPECT_EQ(SmallInteger::cast(list->at(0))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(list->at(1))->value(), 2);
+  EXPECT_EQ(SmallInteger::cast(list->at(2))->value(), 3);
+}
+
+TEST(ListBuiltinsDeathTest, ListAddWithNonListArg) {
+  const char* src = R"(
+list.__add__(None, [])
+)";
+  Runtime runtime;
+  ASSERT_DEATH(
+      runtime.runFromCString(src),
+      "descriptor '__add__' requires a 'list' object");
+}
+
+TEST(ListBuiltinsDeathTest, ListAddExcept) {
+  const char* src = R"(
+a = [1, 2, 3]
+b = (4, 5, 6)
+c = a + b
+)";
+  Runtime runtime;
+  ASSERT_DEATH(
+      runtime.runFromCString(src), "can only concatenate list to list");
+}
 
 TEST(ListBuiltinsTest, ListAppend) {
   const char* src = R"(

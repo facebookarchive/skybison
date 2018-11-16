@@ -110,6 +110,33 @@ Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinDoubleAdd(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+
+  Arguments args(frame, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (!self->isDouble()) {
+    return thread->throwTypeErrorFromCString(
+        "descriptor '__add__' requires a 'float' object");
+  }
+
+  Double* left = Double::cast(self);
+  if (other->isDouble()) {
+    Double* right = Double::cast(other);
+    return thread->runtime()->newDouble(left->value() + right->value());
+  }
+  if (other->isSmallInteger()) {
+    SmallInteger* right = SmallInteger::cast(other);
+    return thread->runtime()->newDouble(
+        left->value() + static_cast<double>(right->value()));
+  }
+  // TODO(T30610701): Handle LargeIntegers
+  return thread->runtime()->notImplemented();
+}
+
 Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");

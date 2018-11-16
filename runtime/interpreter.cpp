@@ -614,9 +614,13 @@ void Interpreter::doBinaryModulo(Context* ctx, word) {
 
 // opcode 23
 void Interpreter::doBinaryAdd(Context* ctx, word) {
-  word right = SmallInteger::cast(*ctx->sp++)->value();
-  word left = SmallInteger::cast(*ctx->sp)->value();
-  *ctx->sp = SmallInteger::fromWord(left + right);
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread->handles());
+  Handle<Object> other(&scope, *ctx->sp++);
+  Handle<Object> self(&scope, *ctx->sp++);
+  Object* result =
+      binaryOperation(thread, ctx->frame, ctx->sp, BinaryOp::ADD, self, other);
+  *--ctx->sp = result;
 }
 
 // opcode 24

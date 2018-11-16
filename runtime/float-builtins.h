@@ -7,6 +7,7 @@
 
 namespace python {
 
+Object* builtinDoubleAdd(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleEq(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleGe(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleGt(Thread* thread, Frame* frame, word nargs);

@@ -356,32 +356,50 @@ TEST(IntBuiltinsTest, InplaceOps) {
   Runtime runtime;
   HandleScope scope;
 
-  const char* src = R"(
+  runtime.runFromCString(R"(
 a = 2
-print(a)
+a0 = a
 a += 3
-print(a)
+a1 = a
 a *= 5
-print(a)
+a2 = a
 a //= 2
-print(a)
+a3 = a
 a %= 5
-print(a)
+a4 = a
 a -= -6
-print(a)
+a5 = a
 a ^= 9
-print(a)
-)";
-
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, R"(2
-5
-25
-12
-2
-8
-1
 )");
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a0(&scope, moduleAt(&runtime, main, "a0"));
+  ASSERT_TRUE(a0->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a0)->value(), 2);
+
+  Handle<Object> a1(&scope, moduleAt(&runtime, main, "a1"));
+  ASSERT_TRUE(a1->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a1)->value(), 5);
+
+  Handle<Object> a2(&scope, moduleAt(&runtime, main, "a2"));
+  ASSERT_TRUE(a2->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a2)->value(), 25);
+
+  Handle<Object> a3(&scope, moduleAt(&runtime, main, "a3"));
+  ASSERT_TRUE(a3->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a3)->value(), 12);
+
+  Handle<Object> a4(&scope, moduleAt(&runtime, main, "a4"));
+  ASSERT_TRUE(a4->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a4)->value(), 2);
+
+  Handle<Object> a5(&scope, moduleAt(&runtime, main, "a5"));
+  ASSERT_TRUE(a5->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a5)->value(), 8);
+
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  ASSERT_TRUE(a->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(*a)->value(), 1);
 }
 
 } // namespace python
