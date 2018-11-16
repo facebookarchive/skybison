@@ -26,6 +26,7 @@ class Runtime {
   };
 
   Runtime();
+  explicit Runtime(word size);
   ~Runtime();
 
   Object* newBoundMethod(Object* function, Object* self);

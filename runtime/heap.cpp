@@ -1,5 +1,6 @@
 #include "heap.h"
 
+#include <cassert>
 #include <cstring>
 
 #include "objects.h"
@@ -21,11 +22,20 @@ Heap::~Heap() {
 Object* Heap::allocate(word size, word offset) {
   assert(size >= HeapObject::kMinimumSize);
   assert(Utils::isAligned(size, kPointerSize));
-  uword address = to_->allocate(size);
-  if (address == 0) {
-    return nullptr;
+  // Try allocating.  If the allocation fails, invoke the garbage collector and
+  // retry the allocation.
+  for (word attempt = 0; attempt < 2 && size < to_->size(); attempt++) {
+    uword address = to_->allocate(size);
+    if (address != 0) {
+      // Allocation succeeded return the address as an object.
+      return HeapObject::fromAddress(address + offset);
+    }
+    if (attempt == 0) {
+      // Allocation failed, garbage collect and retry the allocation.
+      Thread::currentThread()->runtime()->collectGarbage();
+    }
   }
-  return HeapObject::fromAddress(address + offset);
+  return Error::object();
 }
 
 void Heap::scavengePointer(Object** pointer) {
@@ -134,7 +144,7 @@ bool Heap::verify() {
 
 Object* Heap::createClass(ClassId class_id) {
   Object* raw = allocate(Class::allocationSize(), Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Class*>(raw);
   result->setHeader(Header::from(
       Class::kSize / kPointerSize,
@@ -146,7 +156,7 @@ Object* Heap::createClass(ClassId class_id) {
 
 Object* Heap::createCode(Object* empty_object_array) {
   Object* raw = allocate(Code::allocationSize(), Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Code*>(raw);
   result->setHeader(Header::from(
       Code::kSize / kPointerSize,
@@ -160,7 +170,7 @@ Object* Heap::createCode(Object* empty_object_array) {
 Object* Heap::createByteArray(word length) {
   word size = ByteArray::allocationSize(length);
   Object* raw = allocate(size, ByteArray::headerSize(length));
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<ByteArray*>(raw);
   result->setHeaderAndOverflow(
       length, 0, ClassId::kByteArray, ObjectFormat::kDataArray8);
@@ -170,7 +180,7 @@ Object* Heap::createByteArray(word length) {
 Object* Heap::createDictionary(Object* data) {
   word size = Dictionary::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Dictionary*>(raw);
   result->setHeader(Header::from(
       Dictionary::kSize / kPointerSize,
@@ -198,7 +208,7 @@ Object* Heap::createDouble(double value) {
 Object* Heap::createSet(Object* data) {
   word size = Set::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Set*>(raw);
   result->setHeader(Header::from(
       Set::kSize / kPointerSize,
@@ -212,7 +222,7 @@ Object* Heap::createSet(Object* data) {
 Object* Heap::createFunction() {
   word size = Function::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Function*>(raw);
   result->setHeader(Header::from(
       Function::kSize / kPointerSize,
@@ -226,7 +236,7 @@ Object* Heap::createFunction() {
 Object* Heap::createInstance(ClassId class_id, word num_attributes) {
   word size = Instance::allocationSize(num_attributes);
   Object* raw = allocate(size, HeapObject::headerSize(num_attributes));
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Function*>(raw);
   result->setHeader(
       Header::from(num_attributes, 0, class_id, ObjectFormat::kObjectInstance));
@@ -251,7 +261,7 @@ Object* Heap::createLargeInteger(word value) {
 Object* Heap::createList(Object* elements) {
   word size = List::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<List*>(raw);
   result->setHeader(Header::from(
       List::kSize / kPointerSize,
@@ -265,7 +275,7 @@ Object* Heap::createList(Object* elements) {
 Object* Heap::createModule(Object* name, Object* dictionary) {
   word size = Module::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Module*>(raw);
   result->setHeader(Header::from(
       Module::kSize / kPointerSize,
@@ -279,7 +289,7 @@ Object* Heap::createModule(Object* name, Object* dictionary) {
 Object* Heap::createObjectArray(word length, Object* value) {
   word size = ObjectArray::allocationSize(length);
   Object* raw = allocate(size, HeapObject::headerSize(length));
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<ObjectArray*>(raw);
   result->setHeaderAndOverflow(
       length, 0, ClassId::kObjectArray, ObjectFormat::kObjectArray);
@@ -291,7 +301,7 @@ Object* Heap::createLargeString(word length) {
   assert(length > SmallString::kMaxLength);
   word size = LargeString::allocationSize(length);
   Object* raw = allocate(size, LargeString::headerSize(length));
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<LargeString*>(raw);
   result->setHeaderAndOverflow(
       length, 0, ClassId::kLargeString, ObjectFormat::kDataArray8);
@@ -301,7 +311,7 @@ Object* Heap::createLargeString(word length) {
 Object* Heap::createValueCell() {
   word size = ValueCell::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<ValueCell*>(raw);
   result->setHeader(Header::from(
       ValueCell::kSize / kPointerSize,
@@ -314,7 +324,7 @@ Object* Heap::createValueCell() {
 Object* Heap::createEllipsis() {
   word size = Ellipsis::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Ellipsis*>(raw);
   result->setHeader(Header::from(
       Ellipsis::kSize / kPointerSize,
@@ -327,7 +337,7 @@ Object* Heap::createEllipsis() {
 Object* Heap::createRange() {
   word size = Range::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<Range*>(raw);
   result->setHeader(Header::from(
       Range::kSize / kPointerSize,
@@ -340,7 +350,7 @@ Object* Heap::createRange() {
 Object* Heap::createRangeIterator() {
   word size = RangeIterator::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<RangeIterator*>(raw);
   result->setHeader(Header::from(
       RangeIterator::kSize / kPointerSize,
@@ -353,7 +363,7 @@ Object* Heap::createRangeIterator() {
 Object* Heap::createBoundMethod() {
   word size = BoundMethod::allocationSize();
   Object* raw = allocate(size, Header::kSize);
-  assert(raw != nullptr);
+  CHECK(raw != Error::object(), "out of memory");
   auto result = reinterpret_cast<BoundMethod*>(raw);
   result->setHeader(Header::from(
       BoundMethod::kSize / kPointerSize,

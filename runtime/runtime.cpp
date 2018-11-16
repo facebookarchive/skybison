@@ -20,7 +20,8 @@
 
 namespace python {
 
-Runtime::Runtime() : heap_(64 * MiB), new_value_cell_callback_(this) {
+Runtime::Runtime(word heap_size)
+    : heap_(heap_size), new_value_cell_callback_(this) {
   initializeRandom();
   initializeThreads();
   // This must be called before initializeClasses is called. Methods in
@@ -31,6 +32,8 @@ Runtime::Runtime() : heap_(64 * MiB), new_value_cell_callback_(this) {
   initializeSymbols();
   initializeModules();
 }
+
+Runtime::Runtime() : Runtime(64 * MiB) {}
 
 Runtime::~Runtime() {
   for (Thread* thread = threads_; thread != nullptr;) {

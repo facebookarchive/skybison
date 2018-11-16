@@ -17,6 +17,19 @@ TEST(RuntimeTest, CollectGarbage) {
   ASSERT_TRUE(runtime.heap()->verify());
 }
 
+TEST(RuntimeTest, AllocateAndCollectGarbage) {
+  const word heap_size = 32 * MiB;
+  const word array_length = 1024;
+  const word allocation_size = ByteArray::allocationSize(array_length);
+  const word total_allocation_size = heap_size * 10;
+  Runtime runtime(heap_size);
+  ASSERT_TRUE(runtime.heap()->verify());
+  for (word i = 0; i < total_allocation_size; i += allocation_size) {
+    runtime.newByteArray(array_length, 0);
+  }
+  ASSERT_TRUE(runtime.heap()->verify());
+}
+
 TEST(RuntimeTest, BuiltinsModuleExists) {
   Runtime runtime;
   HandleScope scope;
