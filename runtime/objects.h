@@ -93,7 +93,6 @@ enum ClassId {
 class Object {
  public:
   // Getters and setters.
-
   inline bool isObject();
   inline ClassId classId();
 

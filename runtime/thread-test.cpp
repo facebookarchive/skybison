@@ -1476,4 +1476,81 @@ TEST(ThreadTest, RaiseVarargs) {
       "aborting due to unimplemented bytecode: 130");
 }
 
+TEST(ThreadTest, BuiltinIsinstance) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Only accepts 2 arguments
+  EXPECT_DEATH(
+      compileAndRunToString(&runtime, "print(isinstance(1, 1, 1))"),
+      "aborting due to pending exception: isinstance expected 2 arguments");
+
+  // 2nd argument must be a type
+  EXPECT_DEATH(
+      compileAndRunToString(&runtime, "print(isinstance(1, 1))"),
+      "aborting due to pending exception: isinstance arg 2 must be a type");
+
+  const char* src = R"(
+class A: pass
+class B(A): pass
+class C(A): pass
+class D(C, B): pass
+
+def test(a, b):
+  print(isinstance(a, b))
+)";
+  compileAndRunToString(&runtime, src);
+
+  // We can move these tests into the python code above once we can
+  // call classes.
+  Object* object = runtime.findModule("__main__");
+  ASSERT_TRUE(object->isModule());
+  Handle<Module> main(&scope, object);
+
+  // Create an instance of D
+  Handle<Object> klass_d(&scope, findInModule(&runtime, main, "D"));
+  ASSERT_TRUE(klass_d->isClass());
+  Handle<Object> instance(
+      &scope, runtime.newInstance(Class::cast(*klass_d)->id()));
+
+  // Fetch the test function
+  object = findInModule(&runtime, main, "test");
+  ASSERT_TRUE(object->isFunction());
+  Handle<Function> isinstance(&scope, object);
+
+  // isinstance(1, D) should be false
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(2));
+  args->atPut(0, SmallInteger::fromWord(100));
+  args->atPut(1, *klass_d);
+  EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");
+
+  // isinstance(D, D) should be false
+  args->atPut(0, *klass_d);
+  args->atPut(1, *klass_d);
+  EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");
+
+  // isinstance(D(), D) should be true
+  args->atPut(0, *instance);
+  args->atPut(1, *klass_d);
+  EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
+
+  // isinstance(D(), C) should be true
+  Handle<Object> klass_c(&scope, findInModule(&runtime, main, "C"));
+  ASSERT_TRUE(klass_c->isClass());
+  args->atPut(1, *klass_c);
+  EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
+
+  // isinstance(D(), B) should be true
+  Handle<Object> klass_b(&scope, findInModule(&runtime, main, "B"));
+  ASSERT_TRUE(klass_b->isClass());
+  args->atPut(1, *klass_b);
+  EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
+
+  // isinstance(C(), A) should be true
+  Handle<Object> klass_a(&scope, findInModule(&runtime, main, "A"));
+  ASSERT_TRUE(klass_a->isClass());
+  args->atPut(1, *klass_a);
+  EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
+}
+
 } // namespace python

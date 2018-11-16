@@ -32,6 +32,34 @@ class Arguments {
   word nargs_;
 };
 
+// TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is
+// actually far more complicated than one might expect. This is enough to get
+// richards working.
+Object* builtinIsinstance(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("isinstance expected 2 arguments");
+  }
+
+  Arguments args(caller, nargs);
+  if (!args.get(1)->isClass()) {
+    // TODO(mpage): This error message is misleading. Ultimately, isinstance()
+    // may accept a type or a tuple.
+    return thread->throwTypeErrorFromCString("isinstance arg 2 must be a type");
+  }
+
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread->handles());
+  Handle<Class> that(&scope, args.get(1));
+  Handle<Class> klass(&scope, runtime->classOf(args.get(0)));
+  Handle<ObjectArray> mro(&scope, klass->mro());
+  for (word i = 0; i < mro->length(); i++) {
+    if (mro->at(i) == *that) {
+      return Boolean::fromBool(true);
+    }
+  }
+  return Boolean::fromBool(false);
+}
+
 Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread->handles());

@@ -531,6 +531,10 @@ Object* Runtime::classAt(ClassId class_id) {
   return List::cast(class_table_)->at(static_cast<word>(class_id));
 }
 
+Object* Runtime::classOf(Object* object) {
+  return classAt(object->classId());
+}
+
 ClassId Runtime::newClassId() {
   HandleScope scope;
   Handle<List> list(&scope, class_table_);
@@ -588,6 +592,12 @@ void Runtime::createBuiltinsModule() {
       nativeTrampoline<builtinBuildClass>,
       nativeTrampoline<unimplementedTrampoline>);
   moduleAddBuiltinPrint(module);
+  moduleAddBuiltinFunction(
+      module,
+      "isinstance",
+      nativeTrampoline<builtinIsinstance>,
+      nativeTrampoline<unimplementedTrampoline>);
+  moduleAddBuiltinPrint(module);
 
   addModule(module);
 }
@@ -622,6 +632,11 @@ Object* Runtime::createMainModule() {
       module,
       "range",
       nativeTrampoline<builtinRange>,
+      nativeTrampoline<unimplementedTrampoline>);
+  moduleAddBuiltinFunction(
+      module,
+      "isinstance",
+      nativeTrampoline<builtinIsinstance>,
       nativeTrampoline<unimplementedTrampoline>);
 
   addModule(module);
