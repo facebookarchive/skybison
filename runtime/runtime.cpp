@@ -606,7 +606,8 @@ char* Runtime::compile(const char* src) {
   output << src;
   output.close();
   const std::string command =
-      "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6 -m compileall -b " + py;
+      "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6 -m compileall -q -b " +
+      py;
   system(command.c_str());
   char* result = OS::readFile(pyc.c_str());
   system(cleanup.c_str());
