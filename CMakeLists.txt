@@ -44,10 +44,26 @@ set(
 
 # Define the `cpython` target
 set(
-  CPYTHON_MODIFIED_HEADERS
+  CPYTHON_MODIFIED_SOURCES
   ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
-  ${CMAKE_SOURCE_DIR}/capi/cpython-types.h)
+  ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
+  ${CMAKE_SOURCE_DIR}/ext/Objects/boolobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/dictobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/floatobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/listobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/longobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/moduleobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/object.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/obmalloc.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/tupleobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/typeobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/unicodeobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/_warnings.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/errors.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/modsupport.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/pylifecycle.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/pythonrun.cpp)
 include(CPythonBuild.cmake)
 
 add_library(capi-headers INTERFACE)
@@ -193,23 +209,7 @@ target_link_libraries(
 add_library(
   extension
   STATIC
-  ext/Objects/boolobject.cpp
-  ext/Objects/dictobject.cpp
-  ext/Objects/exceptions.cpp
-  ext/Objects/floatobject.cpp
-  ext/Objects/listobject.cpp
-  ext/Objects/longobject.cpp
-  ext/Objects/moduleobject.cpp
-  ext/Objects/object.cpp
-  ext/Objects/obmalloc.cpp
-  ext/Objects/tupleobject.cpp
-  ext/Objects/typeobject.cpp
-  ext/Objects/unicodeobject.cpp
-  ext/Python/_warnings.cpp
-  ext/Python/errors.cpp
-  ext/Python/modsupport.cpp
-  ext/Python/pylifecycle.cpp
-  ext/Python/pythonrun.cpp)
+  ${CPYTHON_MODIFIED_SOURCES})
 target_compile_options(
   extension
   PUBLIC

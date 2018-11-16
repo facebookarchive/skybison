@@ -25,8 +25,6 @@ extern "C" int PyErr_BadArgument(void) { UNIMPLEMENTED("PyErr_BadArgument"); }
 
 extern "C" PyObject* PyErr_NoMemory(void) { UNIMPLEMENTED("PyErr_NoMemory"); }
 
-extern "C" void Py_FatalError(const char*) { UNIMPLEMENTED("Py_FatalError"); }
-
 extern "C" PyObject* _PyErr_FormatFromCause(PyObject*, const char*, ...) {
   UNIMPLEMENTED("_PyErr_FormatFromCause");
 }

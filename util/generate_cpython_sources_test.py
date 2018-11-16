@@ -388,6 +388,8 @@ static type bar_function(void) {
   // Implementation
 }
 
+static int forward_declare(PyTypeObject *);
+
 Type baz_function(
   type *arg1,
   type arg2,
@@ -415,6 +417,8 @@ Type foobar_function(
 
 /* Function comments*/
 
+
+static int forward_declare(PyTypeObject *);
 
 
 

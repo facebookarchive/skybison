@@ -306,6 +306,11 @@ typedef struct {
   int cf_flags; /* bitmask of CO_xxx flags relevant to future */
 } PyCompilerFlags;
 
+struct _inittab {
+  const char *name;
+  PyObject *(*initfunc)();
+};
+
 #ifdef __cplusplus
 }
 #endif

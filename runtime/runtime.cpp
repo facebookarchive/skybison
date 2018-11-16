@@ -1235,13 +1235,7 @@ Object* Runtime::executeModule(const char* buffer,
   return Thread::currentThread()->runModuleFunction(*module, *code);
 }
 
-// Keep this in sync with ModuleInitializer in ext/Modules/config.cpp
-struct ModuleInitializer {
-  const char* name;
-  void* (*initfunc)();
-};
-
-extern struct ModuleInitializer kModuleInitializers[];
+extern "C" struct _inittab _PyImport_Inittab[];
 
 Object* Runtime::importModule(const Handle<Object>& name) {
   HandleScope scope;
@@ -1249,9 +1243,9 @@ Object* Runtime::importModule(const Handle<Object>& name) {
   if (!cached_module->isNone()) {
     return *cached_module;
   } else {
-    for (int i = 0; kModuleInitializers[i].name != nullptr; i++) {
-      if (Str::cast(*name)->equalsCStr(kModuleInitializers[i].name)) {
-        (*kModuleInitializers[i].initfunc)();
+    for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
+      if (Str::cast(*name)->equalsCStr(_PyImport_Inittab[i].name)) {
+        (*_PyImport_Inittab[i].initfunc)();
         cached_module = findModule(name);
         return *cached_module;
       }
@@ -1651,7 +1645,7 @@ void Runtime::createSysModule() {
 
   // Count the number of modules and create a tuple
   word num_external_modules = 0;
-  while (kModuleInitializers[num_external_modules].name != nullptr) {
+  while (_PyImport_Inittab[num_external_modules].name != nullptr) {
     num_external_modules++;
   }
   word num_modules = ARRAYSIZE(kBuiltinModules) + num_external_modules;
@@ -1664,9 +1658,9 @@ void Runtime::createSysModule() {
   }
 
   // Add all the available extension builtin modules
-  for (int i = 0; kModuleInitializers[i].name != nullptr; i++) {
+  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
     Handle<Object> module_name(&scope,
-                               newStrFromCStr(kModuleInitializers[i].name));
+                               newStrFromCStr(_PyImport_Inittab[i].name));
     builtins_tuple->atPut(ARRAYSIZE(kBuiltinModules) + i, *module_name);
   }
 

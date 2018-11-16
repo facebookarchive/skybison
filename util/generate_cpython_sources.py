@@ -69,10 +69,7 @@ SOURCE_DEFINITIONS_REGEX = {
         pos=1,
     ),
     "pyfunction": SymbolRegex(
-        regex=re.compile(
-            "^[a-zA-Z](.|.\n)*?\((.|\n)*?{(.|\n)*?\n}", re.MULTILINE
-        ),
-        pos=1,
+        regex=re.compile("^[a-zA-Z](.|.\n)*?{(.|\n)*?\n}", re.MULTILINE), pos=1
     ),
 }
 
@@ -118,7 +115,7 @@ def create_source_symbols_dict(modified_source_paths):
         with open(path, "r") as f:
             lines = f.read()
         symbols_dict = find_symbols_in_file(lines, SOURCE_SYMBOL_REGEX)
-        if any(len(x) for x in symbols_dics.values()):
+        if any(len(x) for x in symbols_dict.values()):
             c_path = os.path.basename(path).replace(".cpp", ".c")
             source_dict[c_path] = symbols_dict
     return source_dict

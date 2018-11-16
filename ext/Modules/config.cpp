@@ -1,18 +1,10 @@
-namespace python {
+#include "cpython-types.h"
 
-// Keep this in sync with ModuleInitializer in runtime/runtime.cpp
-struct ModuleInitializer {
-  const char* name;
-  void* (*initfunc)();
-};
+extern "C" PyObject* PyInit__stat();
+extern "C" PyObject* PyInit_errno();
 
-extern "C" void* PyInit__stat();
-extern "C" void* PyInit_errno();
-
-ModuleInitializer kModuleInitializers[] = {
+struct _inittab _PyImport_Inittab[] = {
     {"_stat", PyInit__stat},
     {"errno", PyInit_errno},
     {nullptr, nullptr},
 };
-
-}  // namespace python
