@@ -191,6 +191,10 @@ class Frame {
 
   // Push value on the stack.
   void pushValue(Object* value);
+  // Insert value at offset on the stack.
+  void insertValueAt(Object* value, word offset);
+  // Set value at offset on the stack.
+  void setValueAt(Object* value, word offset);
   // Pop the top value off the stack and return it.
   Object* popValue();
   // Pop n items off the stack.
@@ -413,6 +417,27 @@ inline void Frame::pushValue(Object* value) {
   Object** top = valueStackTop();
   *--top = value;
   setValueStackTop(top);
+}
+
+inline void Frame::insertValueAt(Object* value, word offset) {
+  DCHECK(
+      valueStackTop() + offset <= valueStackBase(),
+      "offset %ld overflows",
+      offset);
+  Object** sp = valueStackTop() - 1;
+  for (word i = 0; i < offset; i++) {
+    sp[i] = sp[i + 1];
+  }
+  sp[offset] = value;
+  setValueStackTop(sp);
+}
+
+inline void Frame::setValueAt(Object* value, word offset) {
+  DCHECK(
+      valueStackTop() + offset < valueStackBase(),
+      "offset %ld overflows",
+      offset);
+  *(valueStackTop() + offset) = value;
 }
 
 inline Object* Frame::popValue() {

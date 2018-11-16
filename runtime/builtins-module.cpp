@@ -49,16 +49,15 @@ Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   thread->runClassFunction(*body, *dictionary);
 
   Handle<Class> klass(&scope, runtime->classAt(LayoutId::kType));
+  Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
+  Handle<Function> dunder_call(
+      &scope, runtime->lookupNameInMro(thread, klass, call_name));
+  frame->pushValue(*dunder_call);
   frame->pushValue(*klass);
   frame->pushValue(*name);
   frame->pushValue(*bases);
   frame->pushValue(*dictionary);
-  Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
-  Handle<Function> dunder_call(
-      &scope, runtime->lookupNameInMro(thread, klass, call_name));
-  Handle<Object> result(&scope, dunder_call->entry()(thread, frame, 4));
-  frame->dropValues(4);
-  return *result;
+  return Interpreter::call(thread, frame, 4);
 }
 
 Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
@@ -94,17 +93,15 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   // caller and the on-stack state for the class body function call.
   thread->runClassFunction(*body, *dictionary);
 
+  Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
+  Handle<Function> dunder_call(
+      &scope, runtime->lookupNameInMro(thread, metaclass, call_name));
+  frame->pushValue(*dunder_call);
   frame->pushValue(*metaclass);
   frame->pushValue(*name);
   frame->pushValue(*bases);
   frame->pushValue(*dictionary);
-  Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
-  Handle<Function> dunder_call(
-      &scope, runtime->lookupNameInMro(thread, metaclass, call_name));
-  Handle<Object> result(&scope, dunder_call->entry()(thread, frame, 4));
-  frame->dropValues(4);
-
-  return *result;
+  return Interpreter::call(thread, frame, 4);
 }
 
 Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {

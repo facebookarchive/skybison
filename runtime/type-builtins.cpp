@@ -27,12 +27,7 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
     frame->pushValue(args.get(i));
   }
 
-  Handle<Object> result(&scope, dunder_new->entry()(thread, frame, nargs));
-
-  // Pop all of the arguments we pushed for the __new__ call.  While we will
-  // push the same number of arguments again for the __init__ call below,
-  // starting over from scratch keeps the addressing arithmetic simple.
-  frame->dropValues(nargs + 1);
+  Handle<Object> result(&scope, Interpreter::call(thread, frame, nargs));
 
   // Second, call __init__ to initialize the instance.
 
@@ -47,10 +42,9 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
     frame->pushValue(args.get(i));
   }
 
-  dunder_init->entry()(thread, frame, nargs);
-  frame->dropValues(nargs + 1);
-
   // TODO: throw a type error if the __init__ method does not return None.
+  Interpreter::call(thread, frame, nargs);
+
   return *result;
 }
 

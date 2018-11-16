@@ -14,7 +14,7 @@ namespace python {
 Object* Interpreter::call(Thread* thread, Frame* frame, word nargs) {
   Object* callable = frame->peek(nargs);
   Object** sp = frame->valueStackTop() + nargs + 1;
-  Object* result = None::object();
+  Object* result;
   switch (callable->layoutId()) {
     case LayoutId::kFunction: {
       result = Function::cast(callable)->entry()(thread, frame, nargs);
@@ -32,33 +32,17 @@ Object* Interpreter::call(Thread* thread, Frame* frame, word nargs) {
 }
 
 Object* Interpreter::callCallable(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread->handles());
-  Handle<Object> receiver(&scope, frame->peek(nargs));
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-
+  Handle<Object> callable(&scope, frame->peek(nargs));
   Handle<Object> name(&scope, runtime->symbols()->DunderCall());
-  Handle<Class> type(&scope, runtime->classOf(*receiver));
-  Handle<Object> dunder_call(
-      &scope, runtime->lookupNameInMro(thread, type, name));
-  CHECK(!dunder_call->isError(), "object has no __call__ attribute");
-  CHECK(dunder_call->isFunction(), "__call__ attribute is not a function");
-
-  Handle<Function> function(&scope, *dunder_call);
-
-  // rewrite the stack into the method call form.  the function implementing
-  // the method goes at the bottom of the stack, followed by the receiver,
-  // followed by zero or more arguments.
-
-  Object** sp = frame->valueStackTop();
-  sp -= 1;
-  for (word i = 0; i <= nargs; i++) {
-    sp[i] = sp[i + 1];
-  }
-  sp[nargs + 1] = *function;
-  frame->setValueStackTop(sp);
-
-  // now call the function
-  return function->entry()(thread, frame, nargs + 1);
+  Handle<Class> type(&scope, runtime->classOf(*callable));
+  callable = runtime->lookupNameInMro(thread, type, name);
+  CHECK(!callable->isError(), "object has no __call__ attribute");
+  CHECK(callable->isFunction(), "__call__ attribute is not a function");
+  frame->insertValueAt(*callable, nargs + 1);
+  nargs += 1;
+  return Function::cast(*callable)->entry()(thread, frame, nargs);
 }
 
 Object* Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
@@ -94,18 +78,13 @@ Object* Interpreter::callBoundMethod(Thread* thread, Frame* frame, word nargs) {
   //   m()
   //
   // Our contention is that uses of this pattern are not performance sensitive.
-  Object** sp = frame->valueStackTop();
-  sp -= 1;
-  for (word i = 0; i < nargs; i++) {
-    sp[i] = sp[i + 1];
-  }
-  sp[nargs] = BoundMethod::cast(sp[nargs + 1])->self();
-  sp[nargs + 1] = BoundMethod::cast(sp[nargs + 1])->function();
-  frame->setValueStackTop(sp);
-
-  // Call the bound function
-  Function* function = Function::cast(frame->peek(nargs + 1));
-  return function->entry()(thread, frame, nargs + 1);
+  Object* callable = frame->peek(nargs);
+  Object* self = BoundMethod::cast(callable)->self();
+  callable = BoundMethod::cast(callable)->function();
+  frame->insertValueAt(self, nargs);
+  frame->setValueAt(callable, nargs + 1);
+  nargs += 1;
+  return Function::cast(callable)->entry()(thread, frame, nargs);
 }
 
 Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
@@ -187,16 +166,13 @@ Object* Interpreter::callMethod1(
     Frame* caller,
     const Handle<Object>& method,
     const Handle<Object>& self) {
-  Object* result;
+  word nargs = 0;
+  caller->pushValue(*method);
   if (method->isFunction()) {
-    caller->pushValue(*method);
     caller->pushValue(*self);
-    result = call(thread, caller, 1);
-  } else {
-    caller->pushValue(*method);
-    result = call(thread, caller, 0);
+    nargs += 1;
   }
-  return result;
+  return call(thread, caller, nargs);
 }
 
 Object* Interpreter::callMethod2(
@@ -205,18 +181,14 @@ Object* Interpreter::callMethod2(
     const Handle<Object>& method,
     const Handle<Object>& self,
     const Handle<Object>& other) {
-  Object* result;
+  word nargs = 1;
+  caller->pushValue(*method);
   if (method->isFunction()) {
-    caller->pushValue(*method);
     caller->pushValue(*self);
-    caller->pushValue(*other);
-    result = call(thread, caller, 2);
-  } else {
-    caller->pushValue(*method);
-    caller->pushValue(*other);
-    result = call(thread, caller, 1);
+    nargs += 1;
   }
-  return result;
+  caller->pushValue(*other);
+  return call(thread, caller, nargs);
 }
 
 Object* Interpreter::callMethod3(
@@ -226,20 +198,15 @@ Object* Interpreter::callMethod3(
     const Handle<Object>& self,
     const Handle<Object>& arg1,
     const Handle<Object>& arg2) {
-  Object* result;
+  word nargs = 2;
+  caller->pushValue(*method);
   if (method->isFunction()) {
-    caller->pushValue(*method);
     caller->pushValue(*self);
-    caller->pushValue(*arg1);
-    caller->pushValue(*arg2);
-    result = call(thread, caller, 3);
-  } else {
-    caller->pushValue(*method);
-    caller->pushValue(*arg1);
-    caller->pushValue(*arg2);
-    result = call(thread, caller, 2);
+    nargs += 1;
   }
-  return result;
+  caller->pushValue(*arg1);
+  caller->pushValue(*arg2);
+  return call(thread, caller, nargs);
 }
 
 Object* Interpreter::callMethod4(
@@ -250,22 +217,16 @@ Object* Interpreter::callMethod4(
     const Handle<Object>& arg1,
     const Handle<Object>& arg2,
     const Handle<Object>& arg3) {
-  Object* result;
+  word nargs = 3;
+  caller->pushValue(*method);
   if (method->isFunction()) {
-    caller->pushValue(*method);
     caller->pushValue(*self);
-    caller->pushValue(*arg1);
-    caller->pushValue(*arg2);
-    caller->pushValue(*arg3);
-    result = call(thread, caller, 4);
-  } else {
-    caller->pushValue(*method);
-    caller->pushValue(*arg1);
-    caller->pushValue(*arg2);
-    caller->pushValue(*arg3);
-    result = call(thread, caller, 3);
+    nargs += 1;
   }
-  return result;
+  caller->pushValue(*arg1);
+  caller->pushValue(*arg2);
+  caller->pushValue(*arg3);
+  return call(thread, caller, nargs);
 }
 
 Object* Interpreter::unaryOperation(
