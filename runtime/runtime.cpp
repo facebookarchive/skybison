@@ -1611,7 +1611,7 @@ Object* Runtime::comparisonSelector(CompareOp op) {
   }
 }
 
-Object* Runtime::swappedComparisonSelector(python::CompareOp op) {
+Object* Runtime::swappedComparisonSelector(CompareOp op) {
   DCHECK(op >= CompareOp::LT, "invalid compare op");
   DCHECK(op <= CompareOp::GE, "invalid compare op");
   CompareOp swapped_op = kSwappedCompareOp[op];
