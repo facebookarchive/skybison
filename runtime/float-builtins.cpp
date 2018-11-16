@@ -105,7 +105,8 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     RawFloat left = RawFloat::cast(self);
     RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() == right->value());
-  } else if (self->isInt() || other->isInt()) {
+  }
+  if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
   return thread->runtime()->notImplemented();
@@ -122,7 +123,8 @@ RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
     RawFloat left = RawFloat::cast(self);
     RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() >= right->value());
-  } else if (self->isInt() || other->isInt()) {
+  }
+  if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
   return thread->runtime()->notImplemented();
@@ -139,7 +141,8 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
     RawFloat left = RawFloat::cast(self);
     RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() > right->value());
-  } else if (self->isInt() || other->isInt()) {
+  }
+  if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
   return thread->runtime()->notImplemented();
@@ -156,7 +159,8 @@ RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
     RawFloat left = RawFloat::cast(self);
     RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() <= right->value());
-  } else if (self->isInt() || other->isInt()) {
+  }
+  if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
   return thread->runtime()->notImplemented();
@@ -173,7 +177,8 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
     RawFloat left = RawFloat::cast(self);
     RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() < right->value());
-  } else if (self->isInt() || other->isInt()) {
+  }
+  if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
   return thread->runtime()->notImplemented();
@@ -190,7 +195,8 @@ RawObject FloatBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
     RawFloat left = RawFloat::cast(self);
     RawFloat right = RawFloat::cast(other);
     return Bool::fromBool(left->value() != right->value());
-  } else if (self->isInt() || other->isInt()) {
+  }
+  if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
   return thread->runtime()->notImplemented();

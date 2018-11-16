@@ -60,10 +60,9 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
             // Descriptors do not return unbound methods.
             is_bound = true;
             break;
-          } else {
-            // Retry the lookup using the object returned by the descriptor.
-            continue;
           }
+          // Retry the lookup using the object returned by the descriptor.
+          continue;
         }
       }
       UNIMPLEMENTED("throw TypeError: object is not callable");
@@ -422,7 +421,8 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
   }
   if (op == CompareOp::EQ) {
     return Bool::fromBool(*left == *right);
-  } else if (op == CompareOp::NE) {
+  }
+  if (op == CompareOp::NE) {
     return Bool::fromBool(*left != *right);
   }
   UNIMPLEMENTED("throw");
@@ -441,9 +441,8 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* caller,
     RawObject is_true = isTrue(thread, caller);
     caller->popValue();
     return is_true;
-  } else {
-    UNIMPLEMENTED("fallback to iter search.");
   }
+  UNIMPLEMENTED("fallback to iter search.");
 }
 
 RawObject Interpreter::isTrue(Thread* thread, Frame* caller) {

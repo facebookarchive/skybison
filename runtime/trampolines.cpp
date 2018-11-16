@@ -404,7 +404,8 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
                            1;  // pointer to first non-positional arg
   if (UNLIKELY(argc > expected_args)) {
     return thread->raiseTypeErrorWithCStr("TypeError: Too many arguments");
-  } else if (UNLIKELY(argc < expected_args)) {
+  }
+  if (UNLIKELY(argc < expected_args)) {
     // Too few args passed.  Can we supply default args to make it work?
     // First, normalize & pad keywords and stack arguments
     word name_tuple_size = expected_args - num_positional_args;
@@ -460,9 +461,8 @@ RawObject interpreterTrampolineEx(Thread* thread, Frame* caller_frame,
     argc += keys->length();
     caller_frame->pushValue(*keys);
     return interpreterTrampolineKw(thread, caller_frame, argc);
-  } else {
-    return interpreterTrampoline(thread, caller_frame, argc);
   }
+  return interpreterTrampoline(thread, caller_frame, argc);
 }
 
 typedef PyObject* (*PyCFunction)(PyObject*, PyObject*, PyObject*);

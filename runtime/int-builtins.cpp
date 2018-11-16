@@ -123,9 +123,11 @@ RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
   free(c_str);
   if (!is_complete || (res == 0 && saved_errno == EINVAL)) {
     return thread->raiseValueErrorWithCStr("invalid literal");
-  } else if ((res == LONG_MAX || res == LONG_MIN) && saved_errno == ERANGE) {
+  }
+  if ((res == LONG_MAX || res == LONG_MIN) && saved_errno == ERANGE) {
     return thread->raiseValueErrorWithCStr("invalid literal (range)");
-  } else if (!SmallInt::isValid(res)) {
+  }
+  if (!SmallInt::isValid(res)) {
     return thread->raiseValueErrorWithCStr("unsupported type");
   }
   return SmallInt::fromWord(res);

@@ -92,7 +92,8 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
         return thread->raiseIndexErrorWithCStr("tuple index out of range");
       }
       return tuple->at(idx);
-    } else if (index->isSlice()) {
+    }
+    if (index->isSlice()) {
       Slice tuple_slice(&scope, RawSlice::cast(index));
       return slice(thread, *tuple, *tuple_slice);
     }

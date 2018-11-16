@@ -135,12 +135,11 @@ bool OS::dirExists(const char* dir) {
   int err = ::stat(dir, &st);
   if (err == 0 && (st.st_mode & S_IFDIR)) {
     return true;
-  } else {
-    if (errno != ENOENT) {
-      fprintf(stderr, "stat error: %s %s\n", dir, std::strerror(errno));
-    }
-    return false;
   }
+  if (errno != ENOENT) {
+    fprintf(stderr, "stat error: %s %s\n", dir, std::strerror(errno));
+  }
+  return false;
 }
 
 bool OS::fileExists(const char* file) {
@@ -148,12 +147,11 @@ bool OS::fileExists(const char* file) {
   int err = ::stat(file, &st);
   if (err == 0) {
     return true;
-  } else {
-    if (errno != ENOENT) {
-      fprintf(stderr, "stat error: %s %s\n", file, std::strerror(errno));
-    }
-    return false;
   }
+  if (errno != ENOENT) {
+    fprintf(stderr, "stat error: %s %s\n", file, std::strerror(errno));
+  }
+  return false;
 }
 
 double OS::currentTime() {

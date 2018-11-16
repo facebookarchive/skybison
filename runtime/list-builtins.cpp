@@ -294,13 +294,13 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
       return thread->raiseIndexErrorWithCStr("list index out of range");
     }
     return list->at(idx);
-  } else if (index->isSlice()) {
+  }
+  if (index->isSlice()) {
     Slice list_slice(&scope, RawSlice::cast(index));
     return slice(thread, *list, *list_slice);
-  } else {
-    return thread->raiseTypeErrorWithCStr(
-        "list indices must be integers or slices");
   }
+  return thread->raiseTypeErrorWithCStr(
+      "list indices must be integers or slices");
 }
 
 RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {

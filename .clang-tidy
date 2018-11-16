@@ -1,4 +1,10 @@
-Checks: '-*,google-readability-casting,readability-braces-around-statements,readability-identifier-naming,modernize-use-nullptr'
+Checks: >
+  -*,
+  google-readability-casting,
+  modernize-use-nullptr,
+  readability-braces-around-statements,
+  readability-else-after-return,
+  readability-identifier-naming,
 FormatStyle: file
 HeaderFilterRegex: runtime/.*
 CheckOptions:

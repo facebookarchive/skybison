@@ -509,11 +509,10 @@ RawObject Runtime::moduleGetAttr(Thread* thread, const Object& receiver,
 
   if (!ret->isError()) {
     return *ret;
-  } else {
-    // TODO(T25140871): Refactor this into something like:
-    //     thread->throwMissingAttributeError(name)
-    return thread->raiseAttributeErrorWithCStr("missing attribute");
   }
+  // TODO(T25140871): Refactor this into something like:
+  //     thread->throwMissingAttributeError(name)
+  return thread->raiseAttributeErrorWithCStr("missing attribute");
 }
 
 RawObject Runtime::moduleSetAttr(Thread* thread, const Object& receiver,
@@ -1359,17 +1358,15 @@ RawObject Runtime::importModule(const Object& name) {
   Object cached_module(&scope, findModule(name));
   if (!cached_module->isNoneType()) {
     return *cached_module;
-  } else {
-    for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-      if (RawStr::cast(*name)->equalsCStr(_PyImport_Inittab[i].name)) {
-        PyObject* module = (*_PyImport_Inittab[i].initfunc)();
-        Module mod(&scope, ApiHandle::fromPyObject(module)->asObject());
-        addModule(mod);
-        return *mod;
-      }
+  }
+  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
+    if (RawStr::cast(*name)->equalsCStr(_PyImport_Inittab[i].name)) {
+      PyObject* module = (*_PyImport_Inittab[i].initfunc)();
+      Module mod(&scope, ApiHandle::fromPyObject(module)->asObject());
+      addModule(mod);
+      return *mod;
     }
   }
-
   return Thread::currentThread()->raiseRuntimeErrorWithCStr(
       "importModule is unimplemented!");
 }
@@ -2403,8 +2400,8 @@ bool Runtime::dictLookup(const Tuple& data, const Object& key,
     if (Dict::Bucket::hasKey(*data, current, *key)) {
       *index = current;
       return true;
-    } else if (next_free_index == -1 &&
-               Dict::Bucket::isTombstone(*data, current)) {
+    }
+    if (next_free_index == -1 && Dict::Bucket::isTombstone(*data, current)) {
       next_free_index = current;
     } else if (Dict::Bucket::isEmpty(*data, current)) {
       if (next_free_index == -1) {
@@ -2506,8 +2503,8 @@ word Runtime::setLookup(const Tuple& data, const Object& key,
   do {
     if (Set::Bucket::hasKey(*data, current, *key)) {
       return current;
-    } else if (next_free_index == -1 &&
-               Set::Bucket::isTombstone(*data, current)) {
+    }
+    if (next_free_index == -1 && Set::Bucket::isTombstone(*data, current)) {
       if (type == SetLookupType::Insertion) {
         return current;
       }
@@ -3726,15 +3723,14 @@ RawObject Runtime::superGetAttr(Thread* thread, const Object& receiver,
     Object value(&scope, RawValueCell::cast(*value_cell)->value());
     if (!isNonDataDescriptor(thread, value)) {
       return *value;
-    } else {
-      Object self(&scope, NoneType::object());
-      if (super->object() != *start_type) {
-        self = super->object();
-      }
-      Object owner(&scope, *start_type);
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            value, self, owner);
     }
+    Object self(&scope, NoneType::object());
+    if (super->object() != *start_type) {
+      self = super->object();
+    }
+    Object owner(&scope, *start_type);
+    return Interpreter::callDescriptorGet(thread, thread->currentFrame(), value,
+                                          self, owner);
   }
   // fallback to normal instance getattr
   return instanceGetAttr(thread, receiver, name);
