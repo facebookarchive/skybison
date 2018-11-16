@@ -8,7 +8,7 @@ namespace python {
 struct _Py_Identifier;
 
 extern "C" PyObject* PyNone_Ptr() {
-  return ApiHandle::fromObject(None::object());
+  return ApiHandle::fromObject(NoneType::object());
 }
 
 extern "C" void _Py_Dealloc_Func(PyObject* obj) {

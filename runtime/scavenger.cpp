@@ -18,8 +18,8 @@ Scavenger::Scavenger(Runtime* runtime)
       runtime_(runtime),
       from_(runtime->heap()->space()),
       to_(nullptr),
-      delayed_references_(None::object()),
-      delayed_callbacks_(None::object()) {}
+      delayed_references_(NoneType::object()),
+      delayed_callbacks_(NoneType::object()) {}
 
 Scavenger::~Scavenger() {}
 
@@ -86,7 +86,7 @@ void Scavenger::processGrayObjects() {
 }
 
 void Scavenger::processDelayedReferences() {
-  while (delayed_references_ != None::object()) {
+  while (delayed_references_ != NoneType::object()) {
     WeakRef* weak =
         WeakRef::cast(WeakRef::dequeueReference(&delayed_references_));
     if (!weak->referent()->isHeapObject()) {
@@ -96,7 +96,7 @@ void Scavenger::processDelayedReferences() {
     if (referent->isForwarding()) {
       weak->setReferent(referent->forward());
     } else {
-      weak->setReferent(None::object());
+      weak->setReferent(NoneType::object());
       if (!weak->callback()->isNone()) {
         WeakRef::enqueueReference(weak, &delayed_callbacks_);
       }

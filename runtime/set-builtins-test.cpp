@@ -254,7 +254,7 @@ TEST(SetBuiltinsTest, SetIsDisjointWithSetArg) {
 
   Handle<Set> set(&scope, runtime.newSet());
   Handle<Set> other(&scope, runtime.newSet());
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> value(&scope, NoneType::object());
 
   // set().isdisjoint(set())
   frame->setLocal(0, *set);
@@ -295,7 +295,7 @@ TEST(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
 
   Handle<Set> set(&scope, runtime.newSet());
   Handle<List> other(&scope, runtime.newList());
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> value(&scope, NoneType::object());
 
   // set().isdisjoint([])
   frame->setLocal(0, *set);

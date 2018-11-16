@@ -174,8 +174,9 @@ void SmallIntBuiltins::initialize(Runtime* runtime) {
   // value as an index into the class table.  Replicate the class object for
   // SmallInt to all locations that decode to a SmallInt tag.
   for (word i = 1; i < 16; i++) {
-    DCHECK(runtime->layoutAt(static_cast<LayoutId>(i << 1)) == None::object(),
-           "list collision");
+    DCHECK(
+        runtime->layoutAt(static_cast<LayoutId>(i << 1)) == NoneType::object(),
+        "list collision");
     runtime->layoutAtPut(static_cast<LayoutId>(i << 1), *type);
   }
 }

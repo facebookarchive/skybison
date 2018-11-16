@@ -60,7 +60,7 @@ TEST(InterpreterTest, IsTrueDunderLen) {
   ASSERT_TRUE(frame->isSentinelFrame());
 
   Handle<List> nonempty_list(&scope, runtime.newList());
-  Handle<Object> elt(&scope, None::object());
+  Handle<Object> elt(&scope, NoneType::object());
   runtime.listAdd(nonempty_list, elt);
 
   Handle<Object> true_value(&scope, *nonempty_list);
@@ -440,7 +440,7 @@ c = C()
   EXPECT_PYSTRING_EQ(*called, "A");
 
   Handle<Str> called_name(&scope, runtime.newStrFromCStr("called"));
-  Handle<Object> none(&scope, None::object());
+  Handle<Object> none(&scope, NoneType::object());
   runtime.moduleAtPut(main, called_name, none);
   Object* b_eq_a =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, b, a);
@@ -877,7 +877,7 @@ sys.displayhook = my_displayhook
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
   consts->atPut(0, *unique);
-  consts->atPut(1, None::object());
+  consts->atPut(1, NoneType::object());
   code->setConsts(*consts);
   code->setNlocals(0);
   const byte bytecode[] = {LOAD_CONST, 0, PRINT_EXPR,   0,
@@ -991,7 +991,7 @@ manager = M()
   EXPECT_EQ(*enter, *manager);
 
   Handle<Object> exit(&scope, testing::moduleAt(&runtime, main, "exit"));
-  EXPECT_EQ(*exit, None::object());
+  EXPECT_EQ(*exit, NoneType::object());
 }
 
 TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
@@ -1001,7 +1001,7 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
   consts->atPut(0, SmallInt::fromWord(42));
-  consts->atPut(1, None::object());
+  consts->atPut(1, NoneType::object());
   code->setConsts(*consts);
   code->setNlocals(0);
   const byte bc[] = {

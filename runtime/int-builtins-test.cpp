@@ -1360,7 +1360,7 @@ TEST(BoolBuiltinsTest, NewFromNoneIsFalse) {
 
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kBool));
-  frame->setLocal(1, None::object());
+  frame->setLocal(1, NoneType::object());
   Object* result = BoolBuiltins::dunderNew(thread, frame, 2);
   EXPECT_FALSE(Bool::cast(result)->value());
   thread->popFrame();

@@ -477,7 +477,7 @@ b = Foo.foo
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
-  EXPECT_EQ(*a, None::object());
+  EXPECT_EQ(*a, NoneType::object());
   EXPECT_EQ(*b, SmallInt::fromWord(2));
 }
 

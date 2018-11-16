@@ -119,7 +119,7 @@ Object* Marshal::Reader::readObject() {
       break;
 
     case TYPE_NONE:
-      result = None::object();
+      result = NoneType::object();
       break;
 
     case TYPE_STOPITER:
@@ -346,7 +346,7 @@ Object* Marshal::Reader::doTupleElements(int32 length) {
 Object* Marshal::Reader::readTypeCode() {
   word index = -1;
   if (isRef_) {
-    index = addRef(None::object());
+    index = addRef(NoneType::object());
   }
   HandleScope scope;
   Handle<Code> result(&scope, runtime_->newCode());

@@ -18,7 +18,7 @@ Object* builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Handle<Object> obj(&scope, args.get(0));
   if (obj->isNone()) {
-    return None::object();
+    return NoneType::object();
   }
   UNIMPLEMENTED("sys.displayhook()");
 }

@@ -57,7 +57,7 @@ Object* DictBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
     if (!thread->runtime()->dictRemove(dict, key, nullptr)) {
       return thread->raiseKeyErrorWithCStr("missing key can't be deleted");
     }
-    return None::object();
+    return NoneType::object();
   }
   // TODO(T32856777): handle user-defined subtypes of dict.
   return thread->raiseTypeErrorWithCStr(
@@ -80,9 +80,9 @@ Object* DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
       return Bool::falseObj();
     }
     Handle<ObjectArray> keys(&scope, runtime->dictKeys(self));
-    Handle<Object> left_key(&scope, None::object());
-    Handle<Object> left(&scope, None::object());
-    Handle<Object> right(&scope, None::object());
+    Handle<Object> left_key(&scope, NoneType::object());
+    Handle<Object> left(&scope, NoneType::object());
+    Handle<Object> right(&scope, NoneType::object());
     word length = keys->length();
     for (word i = 0; i < length; i++) {
       left_key = keys->at(i);
@@ -165,7 +165,7 @@ Object* DictBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
       return *key_hash;
     }
     thread->runtime()->dictAtPutWithHash(dict, key, value, key_hash);
-    return None::object();
+    return NoneType::object();
   }
   return thread->raiseTypeErrorWithCStr(
       "__setitem__() must be called with a dict instance as the first "

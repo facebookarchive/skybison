@@ -502,13 +502,13 @@ class Bool : public Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Bool);
 };
 
-class None : public Object {
+class NoneType : public Object {
  public:
   // Singletons.
-  static None* object();
+  static NoneType* object();
 
   // Casting.
-  static None* cast(Object* object);
+  static NoneType* cast(Object* object);
 
   // Tags.
   static const int kTag = 15;  // 0b01111
@@ -516,7 +516,7 @@ class None : public Object {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(None);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(NoneType);
 };
 
 // Error is a special object type, internal to the runtime. It is used to signal
@@ -1570,8 +1570,8 @@ class NotImplemented : public HeapObject {
  * data.
  *
  * Dict entries are stored in buckets as a triple of (hash, key, value).
- * Empty buckets are stored as (None, None, None).
- * Tombstone buckets are stored as (None, <not None>, <Any>).
+ * Empty buckets are stored as (NoneType, NoneType, NoneType).
+ * Tombstone buckets are stored as (NoneType, <not NoneType>, <Any>).
  *
  */
 class Dict : public HeapObject {
@@ -1646,7 +1646,7 @@ class Dict::Bucket {
   }
 
   static void setTombstone(ObjectArray* data, word index) {
-    set(data, index, None::object(), Error::object(), None::object());
+    set(data, index, NoneType::object(), Error::object(), NoneType::object());
   }
 
   static Object* value(ObjectArray* data, word index) {
@@ -1733,7 +1733,7 @@ class Set::Bucket {
   }
 
   static void setTombstone(ObjectArray* data, word index) {
-    set(data, index, None::object(), Error::object());
+    set(data, index, NoneType::object(), Error::object());
   }
 
   // Layout.
@@ -2180,12 +2180,12 @@ inline bool Object::isBool() {
 }
 
 inline bool Object::isNone() {
-  uword tag = reinterpret_cast<uword>(this) & None::kTagMask;
-  return tag == None::kTag;
+  uword tag = reinterpret_cast<uword>(this) & NoneType::kTagMask;
+  return tag == NoneType::kTag;
 }
 
 inline bool Object::isError() {
-  uword tag = reinterpret_cast<uword>(this) & None::kTagMask;
+  uword tag = reinterpret_cast<uword>(this) & NoneType::kTagMask;
   return tag == Error::kTag;
 }
 
@@ -2597,11 +2597,13 @@ inline Header* Header::from(word count, word hash, LayoutId id,
 
 // None
 
-inline None* None::object() { return reinterpret_cast<None*>(kTag); }
+inline NoneType* NoneType::object() {
+  return reinterpret_cast<NoneType*>(kTag);
+}
 
-inline None* None::cast(Object* object) {
+inline NoneType* NoneType::cast(Object* object) {
   DCHECK(object->isNone(), "invalid cast, expected None");
-  return reinterpret_cast<None*>(object);
+  return reinterpret_cast<NoneType*>(object);
 }
 
 // Error

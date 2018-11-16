@@ -420,9 +420,9 @@ x = ImportError()
   ASSERT_TRUE(data->isImportError());
 
   Handle<ImportError> err(&scope, *data);
-  EXPECT_EQ(err->msg(), None::object());
-  EXPECT_EQ(err->path(), None::object());
-  EXPECT_EQ(err->name(), None::object());
+  EXPECT_EQ(err->msg(), NoneType::object());
+  EXPECT_EQ(err->path(), NoneType::object());
+  EXPECT_EQ(err->name(), NoneType::object());
 
   err->setMsg(SmallInt::fromWord(1111));
   ASSERT_TRUE(err->msg()->isSmallInt());
@@ -451,8 +451,8 @@ x = ImportError(1111)
   Handle<ImportError> err(&scope, *data);
   ASSERT_TRUE(err->msg()->isSmallInt());
   EXPECT_EQ(SmallInt::cast(err->msg())->value(), 1111);
-  EXPECT_EQ(err->path(), None::object());
-  EXPECT_EQ(err->name(), None::object());
+  EXPECT_EQ(err->path(), NoneType::object());
+  EXPECT_EQ(err->name(), NoneType::object());
 }
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {

@@ -33,7 +33,7 @@ static inline void initFrame(Thread* thread, Function* function,
 static inline Object* checkCreateGenerator(Code* raw_code, Thread* thread) {
   word flags = raw_code->flags();
   if ((flags & (Code::GENERATOR | Code::COROUTINE)) == 0) {
-    return None::object();
+    return NoneType::object();
   }
 
   Runtime* runtime = thread->runtime();
@@ -127,7 +127,7 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
                                       word argc) {
   uword flags = code->flags();
   HandleScope scope(thread);
-  Handle<Object> tmp_varargs(&scope, None::object());
+  Handle<Object> tmp_varargs(&scope, NoneType::object());
   if (argc < code->argcount() && function->hasDefaults()) {
     // Add default positional args
     Handle<ObjectArray> default_args(&scope, function->defaults());
@@ -306,7 +306,7 @@ Object* checkArgs(Function* function, Object** kw_arg_base,
     return Thread::currentThread()->raiseTypeErrorWithCStr(
         "TypeError: missing argument");
   }
-  return None::object();
+  return NoneType::object();
 }
 
 // Trampoline for calls in which the caller provided keyword arguments.  On
@@ -327,8 +327,8 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
   Handle<ObjectArray> formal_parm_names(&scope, code->varnames());
   word flags = code->flags();
   Object* res;
-  Handle<Object> tmp_varargs(&scope, None::object());
-  Handle<Object> tmp_dict(&scope, None::object());
+  Handle<Object> tmp_varargs(&scope, NoneType::object());
+  Handle<Object> tmp_dict(&scope, NoneType::object());
 
   // We expect use of keyword argument calls to be uncommon, but when used
   // we anticipate mostly use of simple forms.  General scheme here is to
@@ -442,7 +442,7 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
 
 Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word arg) {
   HandleScope scope(thread);
-  Handle<Object> kw_dict(&scope, None::object());
+  Handle<Object> kw_dict(&scope, NoneType::object());
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
     kw_dict = caller_frame->topValue();
     caller_frame->popValue();
@@ -482,7 +482,7 @@ Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   Handle<Object> object(&scope, caller_frame->topValue());
   Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
   // TODO(eelizondo): Cache the None handle
-  PyObject* none = ApiHandle::fromObject(None::object());
+  PyObject* none = ApiHandle::fromObject(NoneType::object());
 
   if (object->isType()) {
     Handle<Type> type_class(&scope, *object);

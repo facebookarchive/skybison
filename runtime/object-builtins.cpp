@@ -55,7 +55,7 @@ Object* ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("__init__ needs an argument");
   }
   if (nargs == 1) {
-    return None::object();
+    return NoneType::object();
   }
   // Too many arguments were given. Determine if the __new__ was not overwritten
   // or the __init__ was to throw a TypeError.
@@ -72,7 +72,7 @@ Object* ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
         "object.__init__() takes no parameters");
   }
   // Else it's alright to have extra arguments.
-  return None::object();
+  return NoneType::object();
 }
 
 Object* ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
@@ -132,7 +132,7 @@ Object* NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {
   if (nargs > 1) {
     return thread->raiseTypeErrorWithCStr("None.__new__ takes no arguments");
   }
-  return None::object();
+  return NoneType::object();
 }
 
 }  // namespace python

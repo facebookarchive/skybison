@@ -23,8 +23,8 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("requires a super object");
   }
   Handle<Super> super(&scope, args.get(0));
-  Handle<Object> klass_obj(&scope, None::object());
-  Handle<Object> obj(&scope, None::object());
+  Handle<Object> klass_obj(&scope, NoneType::object());
+  Handle<Object> obj(&scope, NoneType::object());
   if (nargs == 1) {
     // frame is for __init__, previous frame is __call__
     // this will break if it's not invoked through __call__
@@ -71,7 +71,7 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   }
   super->setType(*klass_obj);
   super->setObject(*obj);
-  Handle<Object> obj_type(&scope, None::object());
+  Handle<Object> obj_type(&scope, NoneType::object());
   Handle<Type> klass(&scope, *klass_obj);
   if (obj->isType()) {
     Handle<Type> obj_klass(&scope, *obj);

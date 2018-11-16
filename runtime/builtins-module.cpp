@@ -93,8 +93,8 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
     bases->atPut(i, args.get(j));
   }
 
-  Handle<Object> dict_obj(&scope, None::object());
-  Handle<Object> type_obj(&scope, None::object());
+  Handle<Object> dict_obj(&scope, NoneType::object());
+  Handle<Object> type_obj(&scope, NoneType::object());
   if (*bootstrap == Bool::falseObj()) {
     // An ordinary class initialization creates a new class dictionary.
     dict_obj = runtime->newDict();
@@ -395,12 +395,12 @@ static Object* doBuiltinPrint(const Arguments& args, word nargs,
                   static_cast<word>(end->layoutId()));
   }
 
-  return None::object();
+  return NoneType::object();
 }
 
 Object* builtinPrint(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
-  Handle<Object> end(&scope, None::object());
+  Handle<Object> end(&scope, NoneType::object());
   Arguments args(frame, nargs);
   return doBuiltinPrint(args, nargs, end, builtInStdout);
 }
@@ -414,7 +414,7 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   }
 
   Runtime* runtime = thread->runtime();
-  Object* end = None::object();
+  Object* end = NoneType::object();
   std::ostream* ostream = builtInStdout;
 
   Handle<Object> file_arg(&scope, kw_args.getKw(runtime->symbols()->File()));
@@ -578,7 +578,7 @@ Object* builtinSetattr(Thread* thread, Frame* frame, word nargs) {
     // populate the exception
     return *result;
   }
-  return None::object();
+  return NoneType::object();
 }
 
 }  // namespace python

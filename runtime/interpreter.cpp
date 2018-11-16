@@ -122,7 +122,7 @@ Object* Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
     Handle<ObjectArray> args(&scope, frame->peek(args_position));
     Handle<ObjectArray> new_args(
         &scope, thread->runtime()->newObjectArray(args->length() + 1));
-    Handle<Object> target(&scope, None::object());
+    Handle<Object> target(&scope, NoneType::object());
     if (callable->isBoundMethod()) {
       Handle<BoundMethod> method(&scope, *callable);
       new_args->atPut(0, method->self());
@@ -490,7 +490,7 @@ Object* Interpreter::yieldFrom(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
   Handle<Object> value(&scope, frame->popValue());
   Handle<Object> iterator(&scope, frame->topValue());
-  Handle<Object> result(&scope, None::object());
+  Handle<Object> result(&scope, NoneType::object());
   if (value->isNone()) {
     Handle<Object> next_method(
         &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
@@ -1149,7 +1149,7 @@ void Interpreter::doWithCleanupStart(Context* ctx, word) {
   if (exc->isNone()) {
     // This is a bound method.
     Handle<Object> exit(&scope, ctx->frame->topValue());
-    Handle<Object> none(&scope, None::object());
+    Handle<Object> none(&scope, NoneType::object());
     ctx->frame->setTopValue(*exc);
     Handle<Object> result(&scope, callMethod4(ctx->thread, ctx->frame, exit,
                                               none, none, none, none));
@@ -1293,7 +1293,7 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
   }
 
   // swap values on the stack
-  Handle<Object> tmp(&scope, None::object());
+  Handle<Object> tmp(&scope, NoneType::object());
   for (word i = 0, j = num_pushed - 1, half = num_pushed / 2; i < half;
        ++i, --j) {
     tmp = frame->peek(i);
@@ -1374,7 +1374,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
   }
 
   Handle<List> list(&scope, runtime->newList());
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> value(&scope, NoneType::object());
   while (!runtime->isIteratorExhausted(thread, iterator)) {
     value = Interpreter::callMethod1(thread, frame, next_method, iterator);
     if (value->isError()) {
@@ -1399,13 +1399,13 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
     for (word i = list->allocated() - after, j = list->allocated(); i < j;
          ++i, ++num_pushed) {
       frame->pushValue(list->at(i));
-      list->atPut(i, None::object());
+      list->atPut(i, NoneType::object());
     }
     list->setAllocated(list->allocated() - after);
   }
 
   // swap values on the stack
-  Handle<Object> tmp(&scope, None::object());
+  Handle<Object> tmp(&scope, NoneType::object());
   for (word i = 0, j = num_pushed - 1, half = num_pushed / 2; i < half;
        ++i, --j) {
     tmp = frame->peek(i);
@@ -1845,7 +1845,7 @@ void Interpreter::doBuildSlice(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Handle<Object> step(&scope,
-                      (arg == 3) ? ctx->frame->popValue() : None::object());
+                      (arg == 3) ? ctx->frame->popValue() : NoneType::object());
   Handle<Object> stop(&scope, ctx->frame->popValue());
   Handle<Object> start(&scope, ctx->frame->topValue());  // TOP
   Handle<Slice> slice(&scope, thread->runtime()->newSlice(start, stop, step));
@@ -1974,7 +1974,7 @@ void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Handle<List> list(&scope, runtime->newList());
-  Handle<Object> obj(&scope, None::object());
+  Handle<Object> obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
     if (runtime->listExtend(thread, list, obj)->isError()) {
@@ -1993,7 +1993,7 @@ void Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Handle<Dict> dict(&scope, runtime->newDict());
-  Handle<Object> obj(&scope, None::object());
+  Handle<Object> obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
     if (runtime->dictUpdate(thread, dict, obj)->isError()) {
@@ -2012,7 +2012,7 @@ void Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Handle<Dict> dict(&scope, runtime->newDict());
-  Handle<Object> obj(&scope, None::object());
+  Handle<Object> obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
     if (runtime->dictMerge(thread, dict, obj)->isError()) {
@@ -2031,7 +2031,7 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Handle<List> list(&scope, runtime->newList());
-  Handle<Object> obj(&scope, None::object());
+  Handle<Object> obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
     if (runtime->listExtend(thread, list, obj)->isError()) {
@@ -2054,7 +2054,7 @@ void Interpreter::doBuildSetUnpack(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Handle<Set> set(&scope, runtime->newSet());
-  Handle<Object> obj(&scope, None::object());
+  Handle<Object> obj(&scope, NoneType::object());
   for (word i = 0; i < arg; i++) {
     obj = frame->peek(i);
     if (runtime->setUpdate(thread, set, obj)->isError()) {

@@ -39,7 +39,7 @@ TEST(ScavengerTest, ClearWeakReference) {
     EXPECT_EQ(ref->referent(), *array);
   }
   runtime.collectGarbage();
-  EXPECT_EQ(ref->referent(), None::object());
+  EXPECT_EQ(ref->referent(), NoneType::object());
 }
 
 TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
@@ -78,8 +78,8 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   EXPECT_EQ(strongrefs->at(3), WeakRef::cast(weakrefs->at(3))->referent());
 
   // Clear the odd indexed strong references.
-  strongrefs->atPut(1, None::object());
-  strongrefs->atPut(3, None::object());
+  strongrefs->atPut(1, NoneType::object());
+  strongrefs->atPut(3, NoneType::object());
   runtime.collectGarbage();
 
   // Now do another garbage collection.  This one should clear just the weak
@@ -88,23 +88,23 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   // Check that the strongly referenced referents are preserved and the weakly
   // referenced referents are now cleared.
   EXPECT_EQ(strongrefs->at(0), WeakRef::cast(weakrefs->at(0))->referent());
-  EXPECT_EQ(None::object(), WeakRef::cast(weakrefs->at(1))->referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs->at(1))->referent());
   EXPECT_EQ(strongrefs->at(2), WeakRef::cast(weakrefs->at(2))->referent());
-  EXPECT_EQ(None::object(), WeakRef::cast(weakrefs->at(3))->referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs->at(3))->referent());
 
   // Clear the even indexed strong references.
-  strongrefs->atPut(0, None::object());
-  strongrefs->atPut(2, None::object());
+  strongrefs->atPut(0, NoneType::object());
+  strongrefs->atPut(2, NoneType::object());
 
   // Do a final garbage collection.  There are no more strongly referenced
   // objects so all of the weak references should be cleared.
   runtime.collectGarbage();
 
   // Check that all of the referents are cleared.
-  EXPECT_EQ(None::object(), WeakRef::cast(weakrefs->at(0))->referent());
-  EXPECT_EQ(None::object(), WeakRef::cast(weakrefs->at(1))->referent());
-  EXPECT_EQ(None::object(), WeakRef::cast(weakrefs->at(2))->referent());
-  EXPECT_EQ(None::object(), WeakRef::cast(weakrefs->at(3))->referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs->at(0))->referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs->at(1))->referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs->at(2))->referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs->at(3))->referent());
 }
 
 TEST(ScavengerTest, BaseCallback) {
@@ -146,10 +146,10 @@ def g(ref, c=4):
   }
   runtime.collectGarbage();
 
-  EXPECT_EQ(ref1->referent(), None::object());
-  EXPECT_EQ(ref1->callback(), None::object());
-  EXPECT_EQ(ref2->referent(), None::object());
-  EXPECT_EQ(ref2->callback(), None::object());
+  EXPECT_EQ(ref1->referent(), NoneType::object());
+  EXPECT_EQ(ref1->callback(), NoneType::object());
+  EXPECT_EQ(ref2->referent(), NoneType::object());
+  EXPECT_EQ(ref2->callback(), NoneType::object());
   Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<SmallInt> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a->value(), 3);
@@ -197,8 +197,8 @@ def g(ref, c=4):
 
   EXPECT_EQ(ref1->referent(), *array1);
   EXPECT_EQ(ref1->callback(), *func_f);
-  EXPECT_EQ(ref2->referent(), None::object());
-  EXPECT_EQ(ref2->callback(), None::object());
+  EXPECT_EQ(ref2->referent(), NoneType::object());
+  EXPECT_EQ(ref2->callback(), NoneType::object());
   Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<SmallInt> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a->value(), 1);
@@ -207,7 +207,7 @@ def g(ref, c=4):
 
 static Object* doGarbageCollection(Thread* thread, Frame*, word) {
   thread->runtime()->collectGarbage();
-  return None::object();
+  return NoneType::object();
 }
 
 TEST(ScavengerTest, CallbackInvokeGC) {
@@ -245,10 +245,10 @@ def g(ref, b=2):
   }
   runtime.collectGarbage();
 
-  EXPECT_EQ(ref1->referent(), None::object());
-  EXPECT_EQ(ref1->callback(), None::object());
-  EXPECT_EQ(ref2->referent(), None::object());
-  EXPECT_EQ(ref2->callback(), None::object());
+  EXPECT_EQ(ref1->referent(), NoneType::object());
+  EXPECT_EQ(ref1->callback(), NoneType::object());
+  EXPECT_EQ(ref2->referent(), NoneType::object());
+  EXPECT_EQ(ref2->callback(), NoneType::object());
   Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_EQ(a->value(), 2);
 }
@@ -300,10 +300,10 @@ def g(ref, c=4):
   EXPECT_EQ(exception,
             "ignore pending exception: TypeError: too many arguments\n");
 
-  EXPECT_EQ(ref1->referent(), None::object());
-  EXPECT_EQ(ref1->callback(), None::object());
-  EXPECT_EQ(ref2->referent(), None::object());
-  EXPECT_EQ(ref2->callback(), None::object());
+  EXPECT_EQ(ref1->referent(), NoneType::object());
+  EXPECT_EQ(ref1->callback(), NoneType::object());
+  EXPECT_EQ(ref2->referent(), NoneType::object());
+  EXPECT_EQ(ref2->callback(), NoneType::object());
   Handle<SmallInt> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<SmallInt> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a->value(), 1);

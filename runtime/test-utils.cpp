@@ -59,7 +59,7 @@ static std::string compileAndRunImpl(Runtime* runtime, const char* src,
   *ostream = &tmp_ostream;
   Object* result = runtime->runFromCStr(src);
   (void)result;
-  CHECK(result == None::object(), "unexpected result");
+  CHECK(result == NoneType::object(), "unexpected result");
   *ostream = saved_ostream;
   return tmp_ostream.str();
 }

@@ -38,8 +38,8 @@ Object* TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     if (self->length() != other->length()) {
       return Bool::falseObj();
     }
-    Handle<Object> left(&scope, None::object());
-    Handle<Object> right(&scope, None::object());
+    Handle<Object> left(&scope, NoneType::object());
+    Handle<Object> right(&scope, NoneType::object());
     word length = self->length();
     for (word i = 0; i < length; i++) {
       left = self->at(i);
@@ -314,7 +314,7 @@ Object* TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Handle<Object> value(&scope, TupleIterator::cast(*self)->next());
   if (value->isError()) {
-    return thread->raiseStopIteration(None::object());
+    return thread->raiseStopIteration(NoneType::object());
   }
   return *value;
 }

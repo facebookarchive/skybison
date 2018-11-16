@@ -315,7 +315,7 @@ TEST(RuntimeDictTest, GetKeys) {
   keys->atPut(0, SmallInt::fromWord(100));
   keys->atPut(1, runtime.newStrFromCStr("testing 123"));
   keys->atPut(2, Bool::trueObj());
-  keys->atPut(3, None::object());
+  keys->atPut(3, NoneType::object());
 
   // Add keys to dict
   Handle<Dict> dict(&scope, runtime.newDict());
@@ -550,7 +550,7 @@ TEST(RuntimeListTest, ListExtendObjectArray) {
   EXPECT_EQ(list->allocated(), 4);
 
   Handle<Object> object_array1_handle(&scope, *object_array1);
-  object_array1->atPut(0, None::object());
+  object_array1->atPut(0, NoneType::object());
   runtime.listExtend(Thread::currentThread(), list, object_array1_handle);
   ASSERT_GE(list->allocated(), 5);
   ASSERT_TRUE(list->at(4)->isNone());
@@ -573,7 +573,7 @@ TEST(RuntimeListTest, ListExtendSet) {
   HandleScope scope;
   Handle<List> list(&scope, runtime.newList());
   Handle<Set> set(&scope, runtime.newSet());
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> value(&scope, NoneType::object());
   word sum = 0;
 
   for (word i = 0; i < 16; i++) {
@@ -598,7 +598,7 @@ TEST(RuntimeListTest, ListExtendDict) {
   HandleScope scope;
   Handle<List> list(&scope, runtime.newList());
   Handle<Dict> dict(&scope, runtime.newDict());
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> value(&scope, NoneType::object());
   word sum = 0;
 
   for (word i = 0; i < 16; i++) {
@@ -769,7 +769,7 @@ TEST(RuntimeTest, NewObjectArray) {
 
   Handle<ObjectArray> a1(&scope, runtime.newObjectArray(1));
   ASSERT_EQ(a1->length(), 1);
-  EXPECT_EQ(a1->at(0), None::object());
+  EXPECT_EQ(a1->at(0), NoneType::object());
   a1->atPut(0, SmallInt::fromWord(42));
   EXPECT_EQ(a1->at(0), SmallInt::fromWord(42));
 
@@ -899,8 +899,8 @@ TEST(RuntimeTest, HashSingletonImmediates) {
   Runtime runtime;
 
   // In CPython, these objects hash to arbitrary values.
-  word none_value = reinterpret_cast<word>(None::object());
-  SmallInt* hash_none = SmallInt::cast(runtime.hash(None::object()));
+  word none_value = reinterpret_cast<word>(NoneType::object());
+  SmallInt* hash_none = SmallInt::cast(runtime.hash(NoneType::object()));
   EXPECT_EQ(hash_none->value(), none_value);
 
   word error_value = reinterpret_cast<word>(Error::object());
@@ -1086,7 +1086,7 @@ TEST(RuntimeTest, CollectAttributes) {
   consts->atPut(0, SmallInt::fromWord(100));
   consts->atPut(1, SmallInt::fromWord(200));
   consts->atPut(2, SmallInt::fromWord(300));
-  consts->atPut(3, None::object());
+  consts->atPut(3, NoneType::object());
 
   Handle<Code> code(&scope, runtime.newCode());
   code->setNames(*names);
@@ -1151,7 +1151,7 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   names->atPut(1, *bar);
 
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
-  consts->atPut(0, None::object());
+  consts->atPut(0, NoneType::object());
 
   Handle<Code> code(&scope, runtime.newCode());
   code->setNames(*names);
@@ -1186,7 +1186,7 @@ TEST(RuntimeTest, GetClassConstructor) {
   Handle<Dict> klass_dict(&scope, runtime.newDict());
   klass->setDict(*klass_dict);
 
-  EXPECT_EQ(runtime.classConstructor(klass), None::object());
+  EXPECT_EQ(runtime.classConstructor(klass), NoneType::object());
 
   Handle<Object> init(&scope, runtime.symbols()->DunderInit());
   Handle<Object> func(&scope, runtime.newFunction());
@@ -1264,7 +1264,7 @@ TEST(RuntimeTest, ClassIds) {
   HandleScope scope;
 
   EXPECT_PYSTRING_EQ(className(&runtime, Bool::trueObj()), "bool");
-  EXPECT_PYSTRING_EQ(className(&runtime, None::object()), "NoneType");
+  EXPECT_PYSTRING_EQ(className(&runtime, NoneType::object()), "NoneType");
   EXPECT_PYSTRING_EQ(className(&runtime, runtime.newStrFromCStr("abc")),
                      "smallstr");
 
@@ -2050,7 +2050,7 @@ class DataDescriptor:
   Object* result = runtime.attributeAt(Thread::currentThread(), klass, attr);
   ASSERT_EQ(ObjectArray::cast(result)->length(), 3);
   EXPECT_EQ(runtime.typeOf(ObjectArray::cast(result)->at(0)), *descr_klass);
-  EXPECT_EQ(ObjectArray::cast(result)->at(1), None::object());
+  EXPECT_EQ(ObjectArray::cast(result)->at(1), NoneType::object());
   EXPECT_EQ(ObjectArray::cast(result)->at(2), *klass);
 }
 
@@ -2426,7 +2426,7 @@ def test():
   Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(0));
   Handle<Object> result(&scope, callFunction(test, args));
-  EXPECT_EQ(*result, None::object());
+  EXPECT_EQ(*result, NoneType::object());
 }
 
 TEST(InstanceAttributeDeletionTest, DeleteDescriptor) {
@@ -2552,7 +2552,7 @@ def test():
   Handle<Function> test(&scope, moduleAt(&runtime, main, "test"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(0));
   Handle<Object> result(&scope, callFunction(test, args));
-  EXPECT_EQ(*result, None::object());
+  EXPECT_EQ(*result, NoneType::object());
 }
 
 TEST(ClassAttributeDeletionTest, DeleteDescriptorOnMetaclass) {
@@ -2773,7 +2773,7 @@ def new_foo():
 
   // After successful deletion, the instance should have a new layout and should
   // no longer reference the previous value
-  EXPECT_EQ(runtime.instanceDel(thread, instance, attr), None::object());
+  EXPECT_EQ(runtime.instanceDel(thread, instance, attr), NoneType::object());
   Handle<Layout> new_layout(&scope,
                             runtime.layoutAt(instance->header()->layoutId()));
   EXPECT_NE(*layout, *new_layout);
@@ -2811,7 +2811,7 @@ def new_foo():
 
   // After successful deletion, the instance should have a new layout and should
   // no longer reference the previous value
-  EXPECT_EQ(runtime.instanceDel(thread, instance, attr), None::object());
+  EXPECT_EQ(runtime.instanceDel(thread, instance, attr), NoneType::object());
   Handle<Layout> new_layout(&scope,
                             runtime.layoutAt(instance->header()->layoutId()));
   EXPECT_NE(*layout, *new_layout);

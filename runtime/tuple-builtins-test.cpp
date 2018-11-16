@@ -87,8 +87,8 @@ TEST(TupleBuiltinsTest, SlicePositiveStartIndex) {
 
   // Test [2:]
   Handle<Object> start(&scope, SmallInt::fromWord(2));
-  Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> stop(&scope, NoneType::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<ObjectArray> test(&scope,
                            TupleBuiltins::slice(thread, *tuple1, *slice));
@@ -106,8 +106,8 @@ TEST(TupleBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
 
   // Test [-2:]
   Handle<Object> start(&scope, SmallInt::fromWord(-2));
-  Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> stop(&scope, NoneType::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<ObjectArray> test(&scope,
                            TupleBuiltins::slice(thread, *tuple1, *slice));
@@ -123,9 +123,9 @@ TEST(TupleBuiltinsTest, SlicePositiveStopIndex) {
   Handle<ObjectArray> tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [:2]
-  Handle<Object> start(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
   Handle<Object> stop(&scope, SmallInt::fromWord(2));
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<ObjectArray> test(&scope,
                            TupleBuiltins::slice(thread, *tuple1, *slice));
@@ -141,9 +141,9 @@ TEST(TupleBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
   Handle<ObjectArray> tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [:-2]
-  Handle<Object> start(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
   Handle<Object> stop(&scope, SmallInt::fromWord(-2));
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<ObjectArray> test(&scope,
                            TupleBuiltins::slice(thread, *tuple1, *slice));
@@ -160,8 +160,8 @@ TEST(TupleBuiltinsTest, SlicePositiveStep) {
   Handle<ObjectArray> tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [::-2]
-  Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
+  Handle<Object> stop(&scope, NoneType::object());
   Handle<Object> step(&scope, SmallInt::fromWord(2));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<ObjectArray> test(&scope,
@@ -179,8 +179,8 @@ TEST(TupleBuiltinsTest, SliceNegativeStepReversesOrder) {
   Handle<ObjectArray> tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [::-2]
-  Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
+  Handle<Object> stop(&scope, NoneType::object());
   Handle<Object> step(&scope, SmallInt::fromWord(-2));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<ObjectArray> test(&scope,
@@ -199,8 +199,8 @@ TEST(TupleBuiltinsTest, SliceStartIndexOutOfBounds) {
 
   // Test [10:]
   Handle<Object> start(&scope, SmallInt::fromWord(10));
-  Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> stop(&scope, NoneType::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<ObjectArray> test(&scope,
                            TupleBuiltins::slice(thread, *tuple1, *slice));
@@ -214,9 +214,9 @@ TEST(TupleBuiltinsTest, SliceStopIndexOutOfBounds) {
   Handle<ObjectArray> tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [:10]
-  Handle<Object> start(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
   Handle<Object> stop(&scope, SmallInt::fromWord(10));
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<ObjectArray> test(&scope,
                            TupleBuiltins::slice(thread, *tuple1, *slice));
@@ -232,8 +232,8 @@ TEST(TupleBuiltinsTest, SliceStepOutOfBounds) {
   Handle<ObjectArray> tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [::10]
-  Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
+  Handle<Object> stop(&scope, NoneType::object());
   Handle<Object> step(&scope, SmallInt::fromWord(10));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<ObjectArray> test(&scope,
@@ -249,9 +249,9 @@ TEST(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
   Handle<ObjectArray> tuple1(&scope, tupleFromRange(1, 6));
 
   // Test: t[::] is t
-  Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
+  Handle<Object> stop(&scope, NoneType::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<ObjectArray> test1(&scope,
                             TupleBuiltins::slice(thread, *tuple1, *slice));

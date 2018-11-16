@@ -85,7 +85,7 @@ Object* GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
         "argument");
   }
   Handle<Generator> gen(self);
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> value(&scope, NoneType::object());
   return thread->runtime()->genSend(thread, gen, value);
 }
 

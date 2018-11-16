@@ -488,7 +488,7 @@ TEST(MarshalReaderTest, ReadObjectCode) {
 
   ASSERT_TRUE(code->consts()->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(code->consts())->length(), 1);
-  EXPECT_EQ(ObjectArray::cast(code->consts())->at(0), None::object());
+  EXPECT_EQ(ObjectArray::cast(code->consts())->at(0), NoneType::object());
 
   ASSERT_TRUE(code->freevars()->isObjectArray());
   EXPECT_EQ(ObjectArray::cast(code->freevars())->length(), 0);

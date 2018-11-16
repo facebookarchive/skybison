@@ -39,7 +39,7 @@ Object* SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   if (self->isSet()) {
     Handle<Set> set(&scope, *self);
     thread->runtime()->setAdd(set, key);
-    return None::object();
+    return NoneType::object();
   }
   // TODO(zekun): handle subclass of set
   return thread->raiseTypeErrorWithCStr("'add' requires a 'set' object");
@@ -111,7 +111,7 @@ Object* SetBuiltins::dunderInit(Thread* thread, Frame*, word nargs) {
   if (nargs == 2) {
     UNIMPLEMENTED("construct set with iterable");
   }
-  return None::object();
+  return NoneType::object();
 }
 
 Object* SetBuiltins::dunderNew(Thread* thread, Frame*, word) {
@@ -143,7 +143,7 @@ Object* SetBuiltins::isDisjoint(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> other(&scope, args.get(1));
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> value(&scope, NoneType::object());
   if (self->isSet()) {
     Handle<Set> a(&scope, *self);
     if (a->numItems() == 0) {
@@ -252,7 +252,7 @@ Object* SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Handle<Object> value(&scope, SetIterator::cast(*self)->next());
   if (value->isError()) {
-    return thread->raiseStopIteration(None::object());
+    return thread->raiseStopIteration(NoneType::object());
   }
   return *value;
 }

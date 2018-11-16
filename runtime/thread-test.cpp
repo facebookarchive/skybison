@@ -47,7 +47,7 @@ TEST(ThreadTest, RunEmptyFunction) {
 
   Thread thread(1 * kKiB);
   Object* result = thread.run(code);
-  ASSERT_EQ(result, None::object());  // returns None
+  ASSERT_EQ(result, NoneType::object());  // returns None
 }
 
 TEST(ThreadTest, RunHelloWorld) {
@@ -294,7 +294,7 @@ TEST(ThreadTest, PushFrameWithNoCellVars) {
   HandleScope scope;
 
   Handle<Code> code(&scope, runtime.newCode());
-  code->setCellvars(None::object());
+  code->setCellvars(NoneType::object());
   code->setFreevars(runtime.newObjectArray(0));
   auto thread = Thread::currentThread();
   byte* prev_sp = thread->stackPtr();
@@ -308,7 +308,7 @@ TEST(ThreadTest, PushFrameWithNoFreeVars) {
   HandleScope scope;
 
   Handle<Code> code(&scope, runtime.newCode());
-  code->setFreevars(None::object());
+  code->setFreevars(NoneType::object());
   code->setCellvars(runtime.newObjectArray(0));
   auto thread = Thread::currentThread();
   byte* prev_sp = thread->stackPtr();
@@ -1011,7 +1011,7 @@ TEST(ThreadTest, MakeFunction) {
   consts->atPut(0, *code);
   Handle<Object> key(&scope, runtime.newStrFromCStr("hello"));
   consts->atPut(1, *key);
-  consts->atPut(2, None::object());
+  consts->atPut(2, NoneType::object());
   module->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
@@ -1055,7 +1055,7 @@ TEST(ThreadTest, BuildList) {
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
   consts->atPut(0, SmallInt::fromWord(111));
   consts->atPut(1, runtime.newStrFromCStr("qqq"));
-  consts->atPut(2, None::object());
+  consts->atPut(2, NoneType::object());
   code->setConsts(*consts);
 
   const byte bc[] = {LOAD_CONST, 0, LOAD_CONST,   1, LOAD_CONST, 2,
@@ -1073,7 +1073,7 @@ TEST(ThreadTest, BuildList) {
 
   ASSERT_TRUE(list->at(1)->isSmallStr());
   EXPECT_EQ(list->at(1), SmallStr::fromCStr("qqq"));
-  EXPECT_EQ(list->at(2), None::object());
+  EXPECT_EQ(list->at(2), NoneType::object());
 }
 
 TEST(ThreadTest, BuildSetEmpty) {
@@ -1129,7 +1129,7 @@ TEST(ThreadTest, BuildSet) {
   Handle<Object> str(&scope, runtime.newStrFromCStr("qqq"));
   consts->atPut(2, *str);
 
-  Handle<Object> none(&scope, None::object());
+  Handle<Object> none(&scope, NoneType::object());
   consts->atPut(3, *none);
 
   code->setConsts(*consts);
@@ -1368,7 +1368,7 @@ class C:
 )";
 
   Object* result = runtime.runFromCStr(src);
-  ASSERT_EQ(result, None::object());  // returns None
+  ASSERT_EQ(result, NoneType::object());  // returns None
 
   Handle<Dict> dict(&scope, getMainModuleDict(&runtime));
 
@@ -1397,7 +1397,7 @@ class C:
 )";
 
   Object* result = runtime.runFromCStr(src);
-  ASSERT_EQ(result, None::object());  // returns None
+  ASSERT_EQ(result, NoneType::object());  // returns None
 
   Handle<Module> mod(&scope, findModule(&runtime, "__main__"));
   ASSERT_TRUE(mod->isModule());
@@ -2458,7 +2458,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   consts->atPut(0, SmallInt::fromWord(0));
   consts->atPut(1, SmallInt::fromWord(1));
   consts->atPut(2, SmallInt::fromWord(3));
-  consts->atPut(3, None::object());
+  consts->atPut(3, NoneType::object());
   code->setConsts(*consts);
 
   Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
@@ -2548,7 +2548,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   consts->atPut(1, SmallInt::fromWord(4));
   consts->atPut(2, SmallInt::fromWord(1));
   consts->atPut(3, SmallInt::fromWord(3));
-  consts->atPut(4, None::object());
+  consts->atPut(4, NoneType::object());
   code->setConsts(*consts);
   code->setArgcount(0);
   code->setNlocals(2);

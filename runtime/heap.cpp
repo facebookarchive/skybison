@@ -106,7 +106,7 @@ Object* Heap::createClass(LayoutId metaclass_id) {
   auto result = reinterpret_cast<Type*>(raw);
   result->setHeader(Header::from(Type::kSize / kPointerSize, 0, metaclass_id,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(Type::kSize, None::object());
+  result->initialize(Type::kSize, NoneType::object());
   return Type::cast(result);
 }
 
@@ -126,7 +126,7 @@ Object* Heap::createCode() {
   auto result = reinterpret_cast<Code*>(raw);
   result->setHeader(Header::from(Code::kSize / kPointerSize, 0, LayoutId::kCode,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(Code::kSize, None::object());
+  result->initialize(Code::kSize, NoneType::object());
   return Code::cast(result);
 }
 
@@ -153,7 +153,7 @@ Object* Heap::createDict() {
   auto result = reinterpret_cast<Dict*>(raw);
   result->setHeader(Header::from(Dict::kSize / kPointerSize, 0, LayoutId::kDict,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(Dict::kSize, None::object());
+  result->initialize(Dict::kSize, NoneType::object());
   return Dict::cast(result);
 }
 
@@ -188,7 +188,7 @@ Object* Heap::createFunction() {
   result->setHeader(Header::from(Function::kSize / kPointerSize, 0,
                                  LayoutId::kFunction,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(Function::kSize, None::object());
+  result->initialize(Function::kSize, NoneType::object());
   return Function::cast(result);
 }
 
@@ -208,7 +208,7 @@ Object* Heap::createInstance(LayoutId layout_id, word num_attributes) {
   auto result = reinterpret_cast<Instance*>(raw);
   result->setHeader(Header::from(num_attributes, 0, layout_id,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(num_attributes * kPointerSize, None::object());
+  result->initialize(num_attributes * kPointerSize, NoneType::object());
   return result;
 }
 
@@ -242,7 +242,7 @@ Object* Heap::createLayout(LayoutId layout_id) {
   result->setHeader(
       Header::from(Layout::kSize / kPointerSize, static_cast<word>(layout_id),
                    LayoutId::kLayout, ObjectFormat::kObjectInstance));
-  result->initialize(Layout::kSize, None::object());
+  result->initialize(Layout::kSize, NoneType::object());
   return Layout::cast(result);
 }
 
@@ -253,7 +253,7 @@ Object* Heap::createList() {
   auto result = reinterpret_cast<List*>(raw);
   result->setHeader(Header::from(List::kSize / kPointerSize, 0, LayoutId::kList,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(List::kSize, None::object());
+  result->initialize(List::kSize, NoneType::object());
   return List::cast(result);
 }
 
@@ -265,7 +265,7 @@ Object* Heap::createListIterator() {
   result->setHeader(Header::from(ListIterator::kSize / kPointerSize, 0,
                                  LayoutId::kListIterator,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(size, None::object());
+  result->initialize(size, NoneType::object());
   return result;
 }
 
@@ -277,7 +277,7 @@ Object* Heap::createModule() {
   result->setHeader(Header::from(Module::kSize / kPointerSize, 0,
                                  LayoutId::kModule,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(Module::kSize, None::object());
+  result->initialize(Module::kSize, NoneType::object());
   return Module::cast(result);
 }
 
@@ -312,7 +312,7 @@ Object* Heap::createProperty() {
   result->setHeader(Header::from(Property::kSize / kPointerSize, 0,
                                  LayoutId::kProperty,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(size, None::object());
+  result->initialize(size, NoneType::object());
   return Property::cast(result);
 }
 
@@ -345,7 +345,7 @@ Object* Heap::createSet() {
   auto result = reinterpret_cast<Set*>(raw);
   result->setHeader(Header::from(Set::kSize / kPointerSize, 0, LayoutId::kSet,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(Set::kSize, None::object());
+  result->initialize(Set::kSize, NoneType::object());
   return Set::cast(result);
 }
 
@@ -357,7 +357,7 @@ Object* Heap::createSlice() {
   result->setHeader(Header::from(Slice::kSize / kPointerSize, 0,
                                  LayoutId::kSlice,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(Slice::kSize, None::object());
+  result->initialize(Slice::kSize, NoneType::object());
   return Slice::cast(result);
 }
 
@@ -422,7 +422,7 @@ Object* Heap::createWeakRef() {
   result->setHeader(Header::from(WeakRef::kSize / kPointerSize, 0,
                                  LayoutId::kWeakRef,
                                  ObjectFormat::kObjectInstance));
-  result->initialize(WeakRef::kSize, None::object());
+  result->initialize(WeakRef::kSize, NoneType::object());
   return WeakRef::cast(result);
 }
 

@@ -22,7 +22,7 @@ weak = ref(a)
   Object* a = moduleAt(&runtime, main, "a");
   Object* weak = moduleAt(&runtime, main, "weak");
   EXPECT_EQ(WeakRef::cast(weak)->referent(), a);
-  EXPECT_EQ(WeakRef::cast(weak)->callback(), None::object());
+  EXPECT_EQ(WeakRef::cast(weak)->callback(), NoneType::object());
 
   Handle<Dict> globals(&scope, main->dict());
   Handle<Object> key(&scope, runtime.newStrFromCStr("a"));
@@ -30,7 +30,7 @@ weak = ref(a)
 
   runtime.collectGarbage();
   weak = moduleAt(&runtime, main, "weak");
-  EXPECT_EQ(WeakRef::cast(weak)->referent(), None::object());
+  EXPECT_EQ(WeakRef::cast(weak)->referent(), NoneType::object());
 }
 
 TEST(RefTest, CallbackTest) {
@@ -62,8 +62,8 @@ weak = ref(a, f)
   weak = moduleAt(&runtime, main, "weak");
   b = moduleAt(&runtime, main, "b");
   EXPECT_EQ(SmallInt::cast(b)->value(), 2);
-  EXPECT_EQ(WeakRef::cast(weak)->referent(), None::object());
-  EXPECT_EQ(WeakRef::cast(weak)->callback(), None::object());
+  EXPECT_EQ(WeakRef::cast(weak)->referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(weak)->callback(), NoneType::object());
 }
 
 }  // namespace python

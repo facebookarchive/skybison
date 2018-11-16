@@ -145,7 +145,7 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-Object* builtinTypeInit(Thread*, Frame*, word) { return None::object(); }
+Object* builtinTypeInit(Thread*, Frame*, word) { return NoneType::object(); }
 
 Object* builtinTypeRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {

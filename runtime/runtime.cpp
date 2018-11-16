@@ -303,7 +303,7 @@ Object* Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
   Handle<Object> attr(&scope, lookupNameInMro(thread, klass, name));
   if (!attr->isError()) {
     if (isNonDataDescriptor(thread, attr)) {
-      Handle<Object> instance(&scope, None::object());
+      Handle<Object> instance(&scope, NoneType::object());
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
                                             attr, instance, receiver);
     }
@@ -358,7 +358,7 @@ Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
   Handle<Dict> klass_dict(&scope, klass->dict());
   dictAtPutInValueCell(klass_dict, name, value);
 
-  return None::object();
+  return NoneType::object();
 }
 
 Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
@@ -398,7 +398,7 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
     return thread->raiseAttributeErrorWithCStr("missing attribute");
   }
 
-  return None::object();
+  return NoneType::object();
 }
 
 // Generic attribute lookup code used for instance objects
@@ -525,7 +525,7 @@ Object* Runtime::moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
   HandleScope scope(thread);
   Handle<Module> mod(&scope, *receiver);
   moduleAtPut(mod, name, value);
-  return None::object();
+  return NoneType::object();
 }
 
 Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
@@ -556,7 +556,7 @@ Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
     return thread->raiseAttributeErrorWithCStr("missing attribute");
   }
 
-  return None::object();
+  return NoneType::object();
 }
 
 bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
@@ -723,7 +723,7 @@ Object* Runtime::newObjectArray(word length) {
   if (length == 0) {
     return empty_object_array_;
   }
-  return heap()->createObjectArray(length, None::object());
+  return heap()->createObjectArray(length, NoneType::object());
 }
 
 Object* Runtime::newInt(word value) {
@@ -1298,7 +1298,7 @@ void Runtime::initializeStaticMethodClass() {
 }
 
 void Runtime::collectGarbage() {
-  bool run_callback = callbacks_ == None::object();
+  bool run_callback = callbacks_ == NoneType::object();
   Object* cb = Scavenger(this).scavenge();
   callbacks_ = WeakRef::spliceQueue(callbacks_, cb);
   if (run_callback) {
@@ -1310,12 +1310,12 @@ void Runtime::processCallbacks() {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  while (callbacks_ != None::object()) {
+  while (callbacks_ != NoneType::object()) {
     Handle<Object> weak(&scope, WeakRef::dequeueReference(&callbacks_));
     Handle<Object> callback(&scope, WeakRef::cast(*weak)->callback());
     Interpreter::callMethod1(thread, frame, callback, weak);
     thread->ignorePendingException();
-    WeakRef::cast(*weak)->setCallback(None::object());
+    WeakRef::cast(*weak)->setCallback(NoneType::object());
   }
 }
 
@@ -1394,11 +1394,11 @@ void Runtime::initializeThreads() {
 }
 
 void Runtime::initializePrimitiveInstances() {
-  empty_object_array_ = heap()->createObjectArray(0, None::object());
+  empty_object_array_ = heap()->createObjectArray(0, NoneType::object());
   empty_byte_array_ = heap()->createBytes(0);
   ellipsis_ = heap()->createEllipsis();
   not_implemented_ = heap()->createNotImplemented();
-  callbacks_ = None::object();
+  callbacks_ = NoneType::object();
 }
 
 void Runtime::initializeInterned() { interned_ = newSet(); }
@@ -1476,7 +1476,7 @@ Object* Runtime::findModule(const Handle<Object>& name) {
   Handle<Dict> dict(&scope, modules());
   Object* value = dictAt(dict, name);
   if (value->isError()) {
-    return None::object();
+    return NoneType::object();
   }
   return value;
 }
@@ -1540,7 +1540,7 @@ Object* Runtime::typeAt(LayoutId layout_id) {
 LayoutId Runtime::reserveLayoutId() {
   HandleScope scope;
   Handle<List> list(&scope, layouts_);
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> value(&scope, NoneType::object());
   word result = list->allocated();
   DCHECK(result <= Header::kMaxLayoutId,
          "exceeded layout id space in header word");
@@ -1937,7 +1937,7 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
 Object* Runtime::listExtend(Thread* thread, const Handle<List>& dst,
                             const Handle<Object>& iterable) {
   HandleScope scope(thread);
-  Handle<Object> elt(&scope, None::object());
+  Handle<Object> elt(&scope, NoneType::object());
   word index = dst->allocated();
   // Special case for lists
   if (iterable->isList()) {
@@ -2032,7 +2032,7 @@ Object* Runtime::listExtend(Thread* thread, const Handle<List>& dst,
   if (next_method->isError()) {
     return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
   }
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> value(&scope, NoneType::object());
   while (!isIteratorExhausted(thread, iterator)) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
                                      next_method, iterator);
@@ -2062,7 +2062,7 @@ void Runtime::listInsert(const Handle<List>& list, const Handle<Object>& value,
 Object* Runtime::listPop(const Handle<List>& list, word index) {
   HandleScope scope;
   Handle<Object> popped(&scope, list->at(index));
-  list->atPut(index, None::object());
+  list->atPut(index, NoneType::object());
   word last_index = list->allocated() - 1;
   for (word i = index; i < last_index; i++) {
     list->atPut(i, list->at(i + 1));
@@ -2480,7 +2480,7 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
 Object* Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
                            const Handle<Object>& iterable) {
   HandleScope scope;
-  Handle<Object> elt(&scope, None::object());
+  Handle<Object> elt(&scope, NoneType::object());
   // Special case for lists
   if (iterable->isList()) {
     Handle<List> src(&scope, *iterable);
@@ -2531,7 +2531,7 @@ Object* Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
     Handle<Dict> dict(&scope, *iterable);
     if (dict->numItems() > 0) {
       Handle<ObjectArray> keys(&scope, dictKeys(dict));
-      Handle<Object> value(&scope, None::object());
+      Handle<Object> value(&scope, NoneType::object());
       for (word i = 0; i < keys->length(); i++) {
         value = keys->at(i);
         setAdd(dst, value);
@@ -2558,7 +2558,7 @@ Object* Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
   if (next_method->isError()) {
     return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
   }
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> value(&scope, NoneType::object());
   while (!isIteratorExhausted(thread, iterator)) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
                                      next_method, iterator);
@@ -2584,8 +2584,8 @@ template <DictUpdateType type>
 inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
                                    const Handle<Object>& mapping) {
   HandleScope scope;
-  Handle<Object> key(&scope, None::object());
-  Handle<Object> value(&scope, None::object());
+  Handle<Object> key(&scope, NoneType::object());
+  Handle<Object> value(&scope, NoneType::object());
   if (mapping->isDict()) {
     DCHECK(*mapping != *dict, "Cannot update dict with itself");
     Handle<Dict> other(&scope, *mapping);
@@ -2785,7 +2785,7 @@ Object* Runtime::classConstructor(const Handle<Type>& type) {
   Handle<Object> init(&scope, symbols()->DunderInit());
   Object* value = dictAt(type_dict, init);
   if (value->isError()) {
-    return None::object();
+    return NoneType::object();
   }
   return ValueCell::cast(value)->value();
 }
@@ -3154,7 +3154,7 @@ Object* Runtime::instanceAtPut(Thread* thread,
     instance->setHeader(instance->header()->withLayoutId(layout->id()));
   }
 
-  return None::object();
+  return NoneType::object();
 }
 
 Object* Runtime::instanceDel(Thread* thread, const Handle<HeapObject>& instance,
@@ -3176,14 +3176,14 @@ Object* Runtime::instanceDel(Thread* thread, const Handle<HeapObject>& instance,
   bool found = layoutFindAttribute(thread, old_layout, name, &info);
   CHECK(found, "couldn't find attribute");
   if (info.isInObject()) {
-    instance->instanceVariableAtPut(info.offset(), None::object());
+    instance->instanceVariableAtPut(info.offset(), NoneType::object());
   } else {
     Handle<ObjectArray> overflow(
         &scope, instance->instanceVariableAt(old_layout->overflowOffset()));
-    overflow->atPut(info.offset(), None::object());
+    overflow->atPut(info.offset(), NoneType::object());
   }
 
-  return None::object();
+  return NoneType::object();
 }
 
 Object* Runtime::layoutFollowEdge(const Handle<List>& edges,
@@ -3341,7 +3341,7 @@ Object* Runtime::layoutDeleteAttribute(Thread* thread,
       Handle<ObjectArray> entry(&scope, old_inobject->at(i));
       if (entry->at(0) == *iname) {
         entry = newObjectArray(2);
-        entry->atPut(0, None::object());
+        entry->atPut(0, NoneType::object());
         entry->atPut(
             1, AttributeInfo(0, AttributeInfo::Flag::kDeleted).asSmallInt());
       }
@@ -3418,7 +3418,7 @@ Object* Runtime::superGetAttr(Thread* thread, const Handle<Object>& receiver,
     if (!isNonDataDescriptor(thread, value)) {
       return *value;
     } else {
-      Handle<Object> self(&scope, None::object());
+      Handle<Object> self(&scope, NoneType::object());
       if (super->object() != *start_type) {
         self = super->object();
       }

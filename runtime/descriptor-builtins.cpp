@@ -104,7 +104,7 @@ Object* builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
   Handle<Property> property(&scope, args.get(0));
   Handle<Object> obj(&scope, args.get(1));
 
-  if (property->getter() == None::object()) {
+  if (property->getter() == NoneType::object()) {
     return thread->raiseAttributeErrorWithCStr("unreadable attribute");
   }
 
@@ -183,7 +183,7 @@ Object* builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinPropertyNew(Thread* thread, Frame*, word) {
   HandleScope scope(thread);
-  Handle<Object> none(&scope, None::object());
+  Handle<Object> none(&scope, NoneType::object());
   return thread->runtime()->newProperty(none, none, none);
 }
 

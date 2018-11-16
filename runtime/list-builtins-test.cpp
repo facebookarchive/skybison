@@ -280,8 +280,8 @@ TEST(ListBuiltinsTest, SlicePositiveStartIndex) {
 
   // Test [2:]
   Handle<Object> start(&scope, SmallInt::fromWord(2));
-  Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> stop(&scope, NoneType::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 3);
@@ -298,8 +298,8 @@ TEST(ListBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
 
   // Test [-2:]
   Handle<Object> start(&scope, SmallInt::fromWord(-2));
-  Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> stop(&scope, NoneType::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 2);
@@ -314,9 +314,9 @@ TEST(ListBuiltinsTest, SlicePositiveStopIndex) {
   Handle<List> list1(&scope, listFromRange(1, 6));
 
   // Test [:2]
-  Handle<Object> start(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
   Handle<Object> stop(&scope, SmallInt::fromWord(2));
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 2);
@@ -331,9 +331,9 @@ TEST(ListBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
   Handle<List> list1(&scope, listFromRange(1, 6));
 
   // Test [:-2]
-  Handle<Object> start(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
   Handle<Object> stop(&scope, SmallInt::fromWord(-2));
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 3);
@@ -349,8 +349,8 @@ TEST(ListBuiltinsTest, SlicePositiveStep) {
   Handle<List> list1(&scope, listFromRange(1, 6));
 
   // Test [::2]
-  Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
+  Handle<Object> stop(&scope, NoneType::object());
   Handle<Object> step(&scope, SmallInt::fromWord(2));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
@@ -367,8 +367,8 @@ TEST(ListBuiltinsTest, SliceNegativeStepReversesOrder) {
   Handle<List> list1(&scope, listFromRange(1, 6));
 
   // Test [::-2]
-  Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
+  Handle<Object> stop(&scope, NoneType::object());
   Handle<Object> step(&scope, SmallInt::fromWord(-2));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
@@ -386,8 +386,8 @@ TEST(ListBuiltinsTest, SliceStartOutOfBounds) {
 
   // Test [10::]
   Handle<Object> start(&scope, SmallInt::fromWord(10));
-  Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> stop(&scope, NoneType::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 0);
@@ -400,9 +400,9 @@ TEST(ListBuiltinsTest, SliceStopOutOfBounds) {
   Handle<List> list1(&scope, listFromRange(1, 6));
 
   // Test [:10]
-  Handle<Object> start(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
   Handle<Object> stop(&scope, SmallInt::fromWord(10));
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 5);
@@ -417,8 +417,8 @@ TEST(ListBuiltinsTest, SliceStepOutOfBounds) {
   Handle<List> list1(&scope, listFromRange(1, 6));
 
   // Test [::10]
-  Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
+  Handle<Object> stop(&scope, NoneType::object());
   Handle<Object> step(&scope, SmallInt::fromWord(10));
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
@@ -433,9 +433,9 @@ TEST(ListBuiltinsTest, IdenticalSliceIsCopy) {
   Handle<List> list1(&scope, listFromRange(1, 6));
 
   // Test: t[::] is t
-  Handle<Object> start(&scope, None::object());
-  Handle<Object> stop(&scope, None::object());
-  Handle<Object> step(&scope, None::object());
+  Handle<Object> start(&scope, NoneType::object());
+  Handle<Object> stop(&scope, NoneType::object());
+  Handle<Object> step(&scope, NoneType::object());
   Handle<Slice> slice(&scope, runtime.newSlice(start, stop, step));
   Handle<List> test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->allocated(), 5);

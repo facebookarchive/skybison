@@ -47,7 +47,7 @@ Object* BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
     tuple->atPut(i - 1, args.get(i));
   }
   self->setArgs(*tuple);
-  return None::object();
+  return NoneType::object();
 }
 
 const BuiltinAttribute StopIterationBuiltins::kAttributes[] = {
@@ -89,7 +89,7 @@ Object* StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
   if (tuple->length() > 0) {
     self->setValue(tuple->at(0));
   }
-  return None::object();
+  return NoneType::object();
 }
 
 const BuiltinAttribute SystemExitBuiltins::kAttributes[] = {
@@ -131,7 +131,7 @@ Object* SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   if (tuple->length() > 0) {
     self->setCode(tuple->at(0));
   }
-  return None::object();
+  return NoneType::object();
 }
 
 const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {

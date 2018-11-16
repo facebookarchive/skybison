@@ -102,7 +102,7 @@ Object* ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   Handle<List> list(&scope, *self);
   Handle<Object> value(&scope, args.get(1));
   thread->runtime()->listAdd(list, value);
-  return None::object();
+  return NoneType::object();
 }
 
 Object* ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
@@ -123,7 +123,7 @@ Object* ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   if (list->isError()) {
     return *list;
   }
-  return None::object();
+  return NoneType::object();
 }
 
 Object* ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
@@ -162,7 +162,7 @@ Object* ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   word index = SmallInt::cast(args.get(1))->value();
   Handle<Object> value(&scope, args.get(2));
   thread->runtime()->listInsert(list, value, index);
-  return None::object();
+  return NoneType::object();
 }
 
 Object* ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
@@ -242,7 +242,7 @@ Object* ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
                                                  item, value))
             ->value()) {
       thread->runtime()->listPop(list, i);
-      return None::object();
+      return NoneType::object();
     }
   }
   return thread->raiseValueErrorWithCStr("list.remove(x) x not in list");
@@ -358,7 +358,7 @@ Object* ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Handle<Object> value(&scope, ListIterator::cast(*self)->next());
   if (value->isError()) {
-    return thread->raiseStopIteration(None::object());
+    return thread->raiseStopIteration(NoneType::object());
   }
   return *value;
 }
@@ -409,7 +409,7 @@ Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
     }
     Handle<Object> value(&scope, args.get(2));
     list->atPut(idx, *value);
-    return None::object();
+    return NoneType::object();
   }
   // TODO(T31826482): Add support for slices
   return thread->raiseTypeErrorWithCStr(

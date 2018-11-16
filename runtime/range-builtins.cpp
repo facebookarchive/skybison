@@ -75,7 +75,7 @@ Object* RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Handle<Object> value(&scope, RangeIterator::cast(*self)->next());
   if (value->isError()) {
-    return thread->raiseStopIteration(None::object());
+    return thread->raiseStopIteration(NoneType::object());
   }
   return *value;
 }

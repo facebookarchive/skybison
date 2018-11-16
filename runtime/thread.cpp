@@ -23,9 +23,9 @@ Thread::Thread(word size)
       initialFrame_(nullptr),
       next_(nullptr),
       runtime_(nullptr),
-      exception_type_(None::object()),
-      exception_value_(None::object()),
-      exception_traceback_(None::object()) {
+      exception_type_(NoneType::object()),
+      exception_value_(NoneType::object()),
+      exception_traceback_(NoneType::object()) {
   start_ = new byte[size];
   // Stack growns down in order to match machine convention
   end_ = start_ + size;
@@ -336,9 +336,9 @@ void Thread::ignorePendingException() {
 }
 
 void Thread::clearPendingException() {
-  setExceptionType(None::object());
-  setExceptionValue(None::object());
-  setExceptionTraceback(None::object());
+  setExceptionType(NoneType::object());
+  setExceptionValue(NoneType::object());
+  setExceptionTraceback(NoneType::object());
 }
 
 void Thread::abortOnPendingException() {
