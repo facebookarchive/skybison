@@ -14,15 +14,22 @@ TEST_F(ListExtensionApiTest, NewWithBadLengthReturnsNull) {
   EXPECT_EQ(pyresult, nullptr);
 }
 
-TEST_F(ListExtensionApiTest, NewReturnsList) {
+TEST_F(ListExtensionApiTest, NewReturnsEmptyList) {
   Py_ssize_t length = 0;
   PyObject* pyresult = PyList_New(length);
   EXPECT_TRUE(PyList_CheckExact(pyresult));
+  EXPECT_EQ(PyList_Size(pyresult), length);
 
-  // TODO(eelizondo): Check list size once PyList_Size is implemented
-  Py_ssize_t length2 = 5;
-  PyObject* pyresult2 = PyList_New(length2);
-  EXPECT_TRUE(PyList_CheckExact(pyresult2));
+  Py_DECREF_Func(pyresult);
+}
+
+TEST_F(ListExtensionApiTest, NewReturnsList) {
+  Py_ssize_t length = 5;
+  PyObject* pyresult = PyList_New(length);
+  EXPECT_TRUE(PyList_CheckExact(pyresult));
+  EXPECT_EQ(PyList_Size(pyresult), length);
+
+  Py_DECREF_Func(pyresult);
 }
 
 TEST_F(ListExtensionApiTest, AppendToNonListReturnsNegative) {
@@ -56,6 +63,31 @@ TEST_F(ListExtensionApiTest, AppendReturnsZero) {
 
 TEST_F(ListExtensionApiTest, ClearFreeListReturnsZero) {
   EXPECT_EQ(PyList_ClearFreeList(), 0);
+}
+
+TEST_F(ListExtensionApiTest, SizeIncreasesAfterAppend) {
+  Py_ssize_t length = 4;
+  PyObject* list = PyList_New(length);
+  EXPECT_TRUE(PyList_CheckExact(list));
+  EXPECT_EQ(PyList_Size(list), length);
+
+  PyObject* item = PyLong_FromLong(1);
+  EXPECT_EQ(PyList_Append(list, item), 0);
+  EXPECT_EQ(PyList_Size(list), length + 1);
+
+  Py_DECREF_Func(item);
+  Py_DECREF_Func(list);
+}
+
+TEST_F(ListExtensionApiTest, SizeWithNonListReturnsNegative) {
+  PyObject* dict = PyDict_New();
+  EXPECT_EQ(PyList_Size(dict), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+
+  const char* expected_message = "bad argument to internal function";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+
+  Py_DECREF_Func(dict);
 }
 
 }  // namespace python

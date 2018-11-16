@@ -93,8 +93,20 @@ PY_EXPORT int PyList_SetSlice(PyObject* /* a */, Py_ssize_t /* w */,
   UNIMPLEMENTED("PyList_SetSlice");
 }
 
-PY_EXPORT Py_ssize_t PyList_Size(PyObject* /* p */) {
-  UNIMPLEMENTED("PyList_Size");
+PY_EXPORT Py_ssize_t PyList_Size(PyObject* p) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Object list_obj(&scope, ApiHandle::fromPyObject(p)->asObject());
+  if (!runtime->isInstanceOfList(*list_obj)) {
+    // TODO(wmeehan) replace this error with PyErr_BadInternalCall
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return -1;
+  }
+
+  List list(&scope, *list_obj);
+  return list->numItems();
 }
 
 PY_EXPORT int PyList_Sort(PyObject* /* v */) { UNIMPLEMENTED("PyList_Sort"); }
