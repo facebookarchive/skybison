@@ -20,7 +20,7 @@ TEST_F(ListExtensionApiTest, NewReturnsEmptyList) {
   EXPECT_TRUE(PyList_CheckExact(pyresult));
   EXPECT_EQ(PyList_Size(pyresult), length);
 
-  Py_DECREF_Func(pyresult);
+  Py_DECREF(pyresult);
 }
 
 TEST_F(ListExtensionApiTest, NewReturnsList) {
@@ -29,7 +29,7 @@ TEST_F(ListExtensionApiTest, NewReturnsList) {
   EXPECT_TRUE(PyList_CheckExact(pyresult));
   EXPECT_EQ(PyList_Size(pyresult), length);
 
-  Py_DECREF_Func(pyresult);
+  Py_DECREF(pyresult);
 }
 
 TEST_F(ListExtensionApiTest, AppendToNonListReturnsNegative) {
@@ -75,8 +75,8 @@ TEST_F(ListExtensionApiTest, SizeIncreasesAfterAppend) {
   EXPECT_EQ(PyList_Append(list, item), 0);
   EXPECT_EQ(PyList_Size(list), length + 1);
 
-  Py_DECREF_Func(item);
-  Py_DECREF_Func(list);
+  Py_DECREF(item);
+  Py_DECREF(list);
 }
 
 TEST_F(ListExtensionApiTest, SizeWithNonListReturnsNegative) {
@@ -87,7 +87,7 @@ TEST_F(ListExtensionApiTest, SizeWithNonListReturnsNegative) {
   const char* expected_message = "bad argument to internal function";
   EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
 
-  Py_DECREF_Func(dict);
+  Py_DECREF(dict);
 }
 
 }  // namespace python

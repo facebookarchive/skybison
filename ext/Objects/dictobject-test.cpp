@@ -56,13 +56,13 @@ TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {
   const char* expected_message = "bad argument to internal function";
   EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
 
-  Py_DECREF_Func(list);
+  Py_DECREF(list);
 }
 
 TEST_F(DictExtensionApiTest, SizeWithEmptyDictReturnsZero) {
   PyObject* dict = PyDict_New();
   EXPECT_EQ(PyDict_Size(dict), 0);
-  Py_DECREF_Func(dict);
+  Py_DECREF(dict);
 }
 
 TEST_F(DictExtensionApiTest, SizeWithNonEmptyDict) {
@@ -85,12 +85,12 @@ TEST_F(DictExtensionApiTest, SizeWithNonEmptyDict) {
   ASSERT_EQ(PyDict_SetItem(dict, key1, value3), 0);
   EXPECT_EQ(PyDict_Size(dict), 2);
 
-  Py_DECREF_Func(dict);
-  Py_DECREF_Func(key1);
-  Py_DECREF_Func(key2);
-  Py_DECREF_Func(value1);
-  Py_DECREF_Func(value2);
-  Py_DECREF_Func(value3);
+  Py_DECREF(dict);
+  Py_DECREF(key1);
+  Py_DECREF(key2);
+  Py_DECREF(value1);
+  Py_DECREF(value2);
+  Py_DECREF(value3);
 }
 
 }  // namespace python
