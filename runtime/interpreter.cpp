@@ -15,6 +15,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
   Code* code = Code::cast(frame->code());
   ByteArray* byteArray = ByteArray::cast(code->code());
   Object** sp = frame->top();
+  Object** locals = frame->locals() + code->nlocals();
   word pc = 0;
   for (;;) {
     Bytecode bc = static_cast<Bytecode>(byteArray->byteAt(pc++));
@@ -29,6 +30,16 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
       case Bytecode::LOAD_CONST: {
         Object* consts = Code::cast(frame->code())->consts();
         *--sp = ObjectArray::cast(consts)->at(arg);
+        break;
+      }
+      case Bytecode::LOAD_FAST: {
+        // TODO: Need to handle unbound local error
+        *--sp = *(locals - arg);
+        break;
+      }
+      case Bytecode::STORE_FAST: {
+        Object* value = *sp--;
+        *(locals - arg) = value;
         break;
       }
       case Bytecode::LOAD_NAME: {

@@ -303,4 +303,22 @@ TEST(ThreadTest, ExecuteJumpForward) {
   EXPECT_EQ(SmallInteger::cast(result)->value(), 2222);
 }
 
+TEST(ThreadTest, ExecuteStoreLoadFast) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInteger::fromWord(1111));
+  code->setConsts(*consts);
+  code->setNlocals(2);
+  const char bytecode[] = {
+      LOAD_CONST, 0, STORE_FAST, 1, LOAD_FAST, 1, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
+}
+
 } // namespace python
