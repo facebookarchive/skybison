@@ -111,6 +111,35 @@ Object* builtinStringLen(Thread* thread, Frame* frame, word nargs) {
       "descriptor '__len__' requires a 'str' object");
 }
 
+Object* builtinStringLower(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("expected 0 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> obj(&scope, args.get(0));
+  if (!obj->isString()) {
+    return thread->throwTypeErrorFromCString(
+        "str.lower(self): self is not a str");
+  }
+  Handle<String> self(&scope, *obj);
+  byte* buf = new byte[self->length()];
+  for (word i = 0; i < self->length(); i++) {
+    byte c = self->charAt(i);
+    // TODO(dulinr): Handle UTF-8 code points that need to have their case
+    // changed.
+    if (c >= 'A' && c <= 'Z') {
+      buf[i] = c - 'A' + 'a';
+    } else {
+      buf[i] = c;
+    }
+  }
+  Handle<String> result(&scope, thread->runtime()->newStringWithAll(
+                                    View<byte>{buf, self->length()}));
+  delete[] buf;
+  return *result;
+}
+
 Object* builtinStringLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");

@@ -15,6 +15,7 @@ Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringGt(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringLe(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringLen(Thread* thread, Frame* frame, word nargs);
+Object* builtinStringLower(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringLt(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringMod(Thread* thread, Frame* caller, word nargs);
 Object* builtinStringNe(Thread* thread, Frame* frame, word nargs);

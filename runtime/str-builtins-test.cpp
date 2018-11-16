@@ -58,6 +58,45 @@ a_le_a = 'a' <= 'a'
   EXPECT_EQ(*a_le_a, Bool::trueObj());
 }
 
+TEST(StrBuiltinsTest, LowerOnASCIILettersReturnsLowerCaseString) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "HELLO".lower()
+b = "HeLLo".lower()
+c = "hellO".lower()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<String> c(&scope, moduleAt(&runtime, main, "c"));
+  EXPECT_PYSTRING_EQ(*a, "hello");
+  EXPECT_PYSTRING_EQ(*b, "hello");
+  EXPECT_PYSTRING_EQ(*c, "hello");
+}
+
+TEST(StrBuiltinsTest, LowerOnLowercaseASCIILettersReturnsSameString) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello".lower()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "hello");
+}
+
+TEST(StrBuiltinsTest, LowerOnNumbersReturnsSameString) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "foo 123".lower()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "foo 123");
+}
+
 TEST(StrBuiltinsTest, DunderNewCallsDunderStr) {
   Runtime runtime;
   runtime.runFromCString(R"(

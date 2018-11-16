@@ -132,6 +132,7 @@ class Runtime;
   V(Len, "len")                                                                \
   V(List, "list")                                                              \
   V(ListIterator, "list_iterator")                                             \
+  V(Lower, "lower")                                                            \
   V(Metaclass, "metaclass")                                                    \
   V(MetaPath, "meta_path")                                                     \
   V(Method, "method")                                                          \
