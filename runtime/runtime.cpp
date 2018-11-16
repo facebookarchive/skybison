@@ -1689,6 +1689,9 @@ void Runtime::createSysModule() {
   Handle<Object> meta_path(&scope, newList());
   moduleAddGlobal(module, SymbolId::kMetaPath, meta_path);
 
+  Handle<Object> platform(&scope, newStringFromCString(OS::name()));
+  moduleAddGlobal(module, SymbolId::kPlatform, platform);
+
   addModule(module);
 }
 

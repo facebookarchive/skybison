@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <sys/utsname.h>
+
 #include "runtime.h"
 #include "sys-module.h"
 #include "test-utils.h"
@@ -71,6 +73,29 @@ print(sys.stdout, sys.stderr)
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "1 2\n");
+}
+
+TEST(SysModuleTest, Platform) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(R"(
+import sys
+sysname = sys.platform
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> sysname(&scope, moduleAt(&runtime, main, "sysname"));
+  ASSERT_TRUE(sysname->isString());
+  struct utsname name;
+  ASSERT_EQ(uname(&name), 0);
+  bool is_darwin = !strcmp(name.sysname, "Darwin");
+  bool is_linux = !strcmp(name.sysname, "Linux");
+  ASSERT_TRUE(is_darwin || is_linux);
+  if (is_darwin) {
+    EXPECT_TRUE(String::cast(*sysname)->equalsCString("darwin"));
+  }
+  if (is_linux) {
+    EXPECT_TRUE(String::cast(*sysname)->equalsCString("linux"));
+  }
 }
 
 }  // namespace python

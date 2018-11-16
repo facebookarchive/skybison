@@ -92,6 +92,11 @@ target_include_directories(
   INTERFACE
   ${FROZEN_MODULE_OUTPUT_DIR})
 
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+  set(RUNTIME_OS_SOURCES runtime/os-darwin.cpp)
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  set(RUNTIME_OS_SOURCES runtime/os-linux.cpp)
+endif()
 add_library(
   runtime
   STATIC
@@ -170,7 +175,8 @@ add_library(
   runtime/utils.h
   runtime/vector.h
   runtime/view.h
-  runtime/visitor.h)
+  runtime/visitor.h
+  ${RUNTIME_OS_SOURCES})
 target_compile_options(
   runtime
   PRIVATE

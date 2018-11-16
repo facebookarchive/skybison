@@ -153,6 +153,7 @@ class Runtime;
   V(ObjectClassname, "object")                                                 \
   V(Ord, "ord")                                                                \
   V(Path, "path")                                                              \
+  V(Platform, "platform")                                                      \
   V(Pop, "pop")                                                                \
   V(Print, "print")                                                            \
   V(Property, "property")                                                      \

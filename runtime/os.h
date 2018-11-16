@@ -27,6 +27,8 @@ class OS {
 
   static const char* getenv(const char* var);
 
+  static const char* name();
+
   static bool dirExists(const char* dir);
 
   static bool fileExists(const char* file);
