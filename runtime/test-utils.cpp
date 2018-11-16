@@ -7,6 +7,7 @@
 #include "handles.h"
 #include "runtime.h"
 #include "thread.h"
+#include "utils.h"
 
 namespace python {
 namespace testing {
@@ -42,7 +43,9 @@ std::string callFunctionToString(
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Handle<Code> code(&scope, func->code());
-  Frame* frame = thread->openAndLinkFrame(0, 0, code->argcount() + 1);
+  Frame* frame =
+      thread->pushNativeFrame(Utils::castFnPtrToVoid(callFunctionToString));
+
   Object** sp = frame->valueStackTop();
   *--sp = *func;
   for (word i = 0; i < args->length(); i++) {
@@ -53,6 +56,7 @@ std::string callFunctionToString(
   std::ostream* oldStream = builtinPrintStream;
   builtinPrintStream = &stream;
   func->entry()(thread, frame, code->argcount());
+  thread->popFrame();
   builtinPrintStream = oldStream;
   return stream.str();
 }

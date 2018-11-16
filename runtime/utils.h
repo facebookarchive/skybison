@@ -81,6 +81,14 @@ class Utils {
   // Prints a python level stack trace to stderr
   static void printTraceback();
 
+  // You can't portably cast function pointers to void*, but we don't need
+  // to support platforms where code pointers aren't convertible to data
+  // pointers.
+  template <typename T>
+  static void* castFnPtrToVoid(T* fn) {
+    return *reinterpret_cast<void**>(&fn);
+  }
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Utils);
 };

@@ -89,6 +89,18 @@ Frame* Thread::openAndLinkFrame(word numArgs, word numVars, word stackDepth) {
   return frame;
 }
 
+Frame* Thread::pushNativeFrame(void* fn) {
+  // TODO: native frames push arguments onto the stack when calling back into
+  // the interpreter, but we can't statically know how much stack space they
+  // will need. We may want to extend the api for such native calls to include
+  // a declaration of how much space is needed. However, that's of limited use
+  // right now since we can't detect an "overflow" of a frame anyway.
+  auto frame = openAndLinkFrame(0, 0, 0);
+  auto fnInt = runtime()->newIntegerFromCPointer(fn);
+  frame->makeNativeFrame(fnInt);
+  return frame;
+}
+
 Frame* Thread::pushFrame(Object* object) {
   HandleScope scope(this);
   Handle<Code> code(&scope, object);

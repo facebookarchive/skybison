@@ -185,6 +185,10 @@ class Frame {
   inline bool isSentinelFrame();
   void makeSentinel();
 
+  inline bool isNativeFrame();
+  inline void* nativeFunctionPointer();
+  inline void makeNativeFrame(Object* fnPointerAsInt);
+
   // Compute the total space required for a frame object
   static word allocationSize(Object* code);
 
@@ -346,6 +350,20 @@ Function* Frame::function(word argc) {
 
 bool Frame::isSentinelFrame() {
   return previousFrame() == nullptr;
+}
+
+void* Frame::nativeFunctionPointer() {
+  assert(isNativeFrame());
+  return Integer::cast(code())->asCPointer();
+}
+
+bool Frame::isNativeFrame() {
+  return code()->isInteger();
+}
+
+void Frame::makeNativeFrame(Object* fnPointerAsInt) {
+  assert(fnPointerAsInt->isInteger());
+  setCode(fnPointerAsInt);
 }
 
 Object* TryBlock::asSmallInteger() const {

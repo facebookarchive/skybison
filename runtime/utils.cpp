@@ -14,6 +14,13 @@ namespace python {
 class TracebackPrinter : public FrameVisitor {
  public:
   void visit(Frame* frame) {
+    if (frame->code()->isInteger()) {
+      char buf[128] = {};
+      auto ptr = Integer::cast(frame->code())->asCPointer();
+      snprintf(buf, 127, "  <native function at %p>", ptr);
+      lines_.emplace_back(buf);
+      return;
+    }
     if (!frame->code()->isCode()) {
       lines_.emplace_back("  <unknown>");
       return;
