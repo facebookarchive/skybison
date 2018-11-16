@@ -2281,7 +2281,7 @@ void Runtime::dictAtPut(const Dict& dict, const Object& key,
                         const Object& value) {
   HandleScope scope;
   Object key_hash(&scope, hash(*key));
-  return dictAtPutWithHash(dict, key, value, key_hash);
+  dictAtPutWithHash(dict, key, value, key_hash);
 }
 
 RawTuple Runtime::dictGrow(const Tuple& data) {
