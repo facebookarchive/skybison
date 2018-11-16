@@ -31,6 +31,12 @@ endif()
 
 set(CMAKE_C_STANDARD 99)
 
+find_program(CLANG_TIDY_PROGRAM clang-tidy)
+if(CLANG_TIDY_PROGRAM)
+  set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_PROGRAM})
+else()
+  message("Could not find clang-tidy")
+endif()
 set(CMAKE_CXX_EXTENSIONS NO)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
