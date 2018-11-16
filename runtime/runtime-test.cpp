@@ -288,6 +288,29 @@ TEST(RuntimeTest, Random) {
   EXPECT_NE(r3, r4);
 }
 
+TEST(RuntimeTest, HashCodeSizeCheck) {
+  Runtime runtime;
+  Object* code = runtime.newCode();
+  ASSERT_TRUE(code->isHeapObject());
+  EXPECT_EQ(HeapObject::cast(code)->header()->hashCode(), 0);
+  // Verify that large-magnitude random numbers are properly
+  // truncated to somethat which fits in a SmallInteger
+
+  // Conspire based on knoledge of the random number genrated to
+  // create a high-magnitude result from Runtime::random
+  // which is truncated to 0 for storage in the header and
+  // replaced with "1" so no hash code has value 0.
+  uword high = static_cast<uword>(1) << (8 * sizeof(uword) - 1);
+  uword state[2] = {0, high};
+  uword secret[2] = {0, 0};
+  runtime.seedRandom(state, secret);
+  uword first = runtime.random();
+  EXPECT_EQ(first, high);
+  runtime.seedRandom(state, secret);
+  word hash1 = SmallInteger::cast(runtime.hash(code))->value();
+  EXPECT_EQ(hash1, 1);
+}
+
 TEST(RuntimeTest, EnsureCapacity) {
   Runtime runtime;
   HandleScope scope;

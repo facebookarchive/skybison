@@ -506,7 +506,7 @@ Object* Runtime::identityHash(Object* object) {
   HeapObject* src = HeapObject::cast(object);
   word code = src->header()->hashCode();
   if (code == 0) {
-    code = random();
+    code = random() & Header::kHashCodeMask;
     code = (code == 0) ? 1 : code;
     src->setHeader(src->header()->withHashCode(code));
   }
@@ -783,10 +783,12 @@ void Runtime::initializeInterned() {
 }
 
 void Runtime::initializeRandom() {
+  uword random_state[2];
+  uword hash_secret[2];
   OS::secureRandom(
-      reinterpret_cast<byte*>(&random_state_), sizeof(random_state_));
-  OS::secureRandom(
-      reinterpret_cast<byte*>(&hash_secret_), sizeof(hash_secret_));
+      reinterpret_cast<byte*>(&random_state), sizeof(random_state));
+  OS::secureRandom(reinterpret_cast<byte*>(&hash_secret), sizeof(hash_secret));
+  seedRandom(random_state, hash_secret);
 }
 
 void Runtime::initializeSymbols() {
