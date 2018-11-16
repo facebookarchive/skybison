@@ -1,9 +1,11 @@
 #pragma once
 
 #include "globals.h"
+#include "handles.h"
 
 namespace python {
 
+class List;
 class Object;
 class Runtime;
 
@@ -11,7 +13,7 @@ class Marshal {
  public:
   class Reader {
    public:
-    Reader(Runtime* runtime, const char* buffer);
+    Reader(HandleScope* scope, Runtime* runtime, const char* buffer);
 
     byte readByte();
 
@@ -38,9 +40,9 @@ class Marshal {
 
    private:
     Runtime* runtime_;
-
+    HandleScope* scope_;
+    Handle<List> refs_;
     bool isRef_;
-    Object* refs_;
 
     const byte* start_;
     const byte* end_;
@@ -49,6 +51,7 @@ class Marshal {
     int pos_;
 
     DISALLOW_COPY_AND_ASSIGN(Reader);
+    DISALLOW_HEAP_ALLOCATION();
   };
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Marshal);

@@ -20,6 +20,10 @@ const int GiB = KiB * KiB * KiB;
   TypeName(const TypeName&) = delete;      \
   void operator=(const TypeName&) = delete
 
+#define DISALLOW_HEAP_ALLOCATION()          \
+  void* operator new(size_t size) = delete; \
+  void operator delete(void* p) = delete;
+
 #define DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
   TypeName() = delete;                           \
   DISALLOW_COPY_AND_ASSIGN(TypeName)

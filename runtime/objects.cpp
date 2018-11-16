@@ -52,13 +52,15 @@ Object* List::get(int index) {
   return elems()->get(index);
 }
 
-// TODO(mpage) - This needs handlizing
-void List::appendAndGrow(List* list, Object* value, Runtime* runtime) {
+void List::appendAndGrow(
+    const Handle<List>& list,
+    const Handle<Object>& value,
+    Runtime* runtime) {
   word len = list->length();
   word cap = list->capacity();
   if (len < cap) {
     list->setLength(len + 1);
-    list->set(len, value);
+    list->set(len, *value);
     return;
   }
   intptr_t newCap = cap == 0 ? 4 : cap << 1;
@@ -71,7 +73,7 @@ void List::appendAndGrow(List* list, Object* value, Runtime* runtime) {
 
   list->setElems(newElems);
   list->setLength(len + 1);
-  list->set(len, value);
+  list->set(len, *value);
 }
 
 // Dictionary

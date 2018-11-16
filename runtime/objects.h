@@ -1,6 +1,7 @@
 #pragma once
 
 #include "globals.h"
+#include "handles.h"
 #include "utils.h"
 
 namespace python {
@@ -517,7 +518,10 @@ class List : public Array {
   Object* get(int index);
   void set(int index, Object* value);
 
-  static void appendAndGrow(List* list, Object* value, Runtime* runtime);
+  static void appendAndGrow(
+      const Handle<List>& list,
+      const Handle<Object>& value,
+      Runtime* runtime);
 
   ObjectArray* elems();
   void setElems(ObjectArray* elems);

@@ -1,13 +1,13 @@
 #pragma once
 
 #include "globals.h"
-#include "objects.h"
 #include "utils.h"
 
 namespace python {
 
 class Frame;
 class Handles;
+class Object;
 
 class Thread {
  public:

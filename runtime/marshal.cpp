@@ -40,11 +40,15 @@ enum {
   TYPE_SHORT_ASCII_INTERNED = 'Z',
 };
 
-Marshal::Reader::Reader(Runtime* runtime, const char* buffer)
+Marshal::Reader::Reader(
+    HandleScope* scope,
+    Runtime* runtime,
+    const char* buffer)
     : runtime_(runtime),
       start_(reinterpret_cast<const byte*>(buffer)),
       length_(strlen(buffer)),
-      refs_(nullptr),
+      scope_(scope),
+      refs_(scope, runtime->createList()),
       pos_(0),
       depth_(0) {
   end_ = start_ + length_;
@@ -216,20 +220,18 @@ Object* Marshal::Reader::readObject() {
 }
 
 int Marshal::Reader::addRef(Object* value) {
-  if (refs_ == nullptr) {
-    // Lazily create a new refs list.
-    refs_ = runtime_->createList();
-  }
-  List::appendAndGrow(List::cast(refs_), value, runtime_);
+  HandleScope scope;
+  Handle<Object> valueHandle(&scope, value);
+  List::appendAndGrow(refs_, valueHandle, runtime_);
   return 0;
 }
 
 void Marshal::Reader::setRef(int index, Object* value) {
-  List::cast(refs_)->set(index, value);
+  refs_->set(index, value);
 }
 
 Object* Marshal::Reader::getRef(int index) {
-  return List::cast(refs_)->get(index);
+  return refs_->get(index);
 }
 
 Object* Marshal::Reader::readTypeString() {

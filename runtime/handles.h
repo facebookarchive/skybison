@@ -108,8 +108,10 @@ class ObjectHandle {
     return next_;
   }
 
- private:
+ protected:
   Object* pointer_;
+
+ private:
   ObjectHandle* next_;
   HandleScope* scope_;
   DISALLOW_COPY_AND_ASSIGN(ObjectHandle);
@@ -119,7 +121,11 @@ template <typename T>
 class Handle : public ObjectHandle {
  public:
   T* operator->() const {
-    return *pointer();
+    return reinterpret_cast<T*>(pointer_);
+  }
+
+  T* operator*() const {
+    return reinterpret_cast<T*>(pointer_);
   }
 
   Handle(HandleScope* scope, Object* pointer)

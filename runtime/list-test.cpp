@@ -13,15 +13,15 @@ TEST(ListTest, EmptyListInvariants) {
 
 TEST(ListTest, AppendAndGrow) {
   Runtime runtime;
-  Object* obj = runtime.createList();
-  ASSERT_NE(obj, nullptr);
-  List* list = List::cast(obj);
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.createList());
 
   // Check that list capacity grows according to a doubling schedule
   word expectedCapacity[] = {
       4, 4, 4, 4, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16};
   for (int i = 0; i < 16; i++) {
-    List::appendAndGrow(list, SmallInteger::fromWord(i), &runtime);
+    Handle<Object> value(&scope, SmallInteger::fromWord(i));
+    List::appendAndGrow(list, value, &runtime);
     ASSERT_EQ(list->capacity(), expectedCapacity[i]);
     ASSERT_EQ(list->length(), i + 1);
   }
