@@ -94,7 +94,7 @@ namespace python {
   V(WITH_CLEANUP_FINISH, 82, doWithCleanupFinish)                              \
   V(RETURN_VALUE, 83, doInvalidBytecode)                                       \
   V(IMPORT_STAR, 84, doNotImplemented)                                         \
-  V(SETUP_ANNOTATIONS, 85, doNotImplemented)                                   \
+  V(SETUP_ANNOTATIONS, 85, doSetupAnnotations)                                 \
   V(YIELD_VALUE, 86, doNotImplemented)                                         \
   V(POP_BLOCK, 87, doPopBlock)                                                 \
   V(END_FINALLY, 88, doEndFinally)                                             \
@@ -136,7 +136,7 @@ namespace python {
   V(LOAD_FAST, 124, doLoadFast)                                                \
   V(STORE_FAST, 125, doStoreFast)                                              \
   V(DELETE_FAST, 126, doNotImplemented)                                        \
-  V(STORE_ANNOTATION, 127, doNotImplemented)                                   \
+  V(STORE_ANNOTATION, 127, doStoreAnnotation)                                  \
   V(UNUSED_BYTECODE_128, 128, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_129, 129, doInvalidBytecode)                               \
   V(RAISE_VARARGS, 130, doNotImplemented)                                      \

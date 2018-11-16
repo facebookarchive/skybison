@@ -11,6 +11,7 @@ class Runtime;
 #define FOREACH_SYMBOL(V)                                                      \
   V(DunderAdd, "__add__")                                                      \
   V(DunderAnd, "__and__")                                                      \
+  V(DunderAnnotations, "__annotations__")                                      \
   V(DunderBool, "__bool__")                                                    \
   V(DunderBuildClass, "__build_class__")                                       \
   V(DunderCall, "__call__")                                                    \

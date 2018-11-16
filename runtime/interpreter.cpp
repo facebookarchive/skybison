@@ -904,6 +904,21 @@ void Interpreter::doWithCleanupFinish(Context* ctx, word) {
   }
 }
 
+// opcode 85
+void Interpreter::doSetupAnnotations(Context* ctx, word) {
+  HandleScope scope(ctx->thread);
+  Runtime* runtime = ctx->thread->runtime();
+  Handle<Dict> implicit_globals(&scope, ctx->frame->implicitGlobals());
+  Handle<Object> annotations(
+      &scope, runtime->symbols()->at(SymbolId::kDunderAnnotations));
+  Handle<Object> anno_dict(&scope,
+                           runtime->dictAt(implicit_globals, annotations));
+  if (anno_dict->isError()) {
+    Handle<Object> new_dict(&scope, runtime->newDict());
+    runtime->dictAtPutInValueCell(implicit_globals, annotations, new_dict);
+  }
+}
+
 // opcode 87
 void Interpreter::doPopBlock(Context* ctx, word) {
   Frame* frame = ctx->frame;
@@ -1336,6 +1351,23 @@ void Interpreter::doLoadFast(Context* ctx, word arg) {
 void Interpreter::doStoreFast(Context* ctx, word arg) {
   Object* value = ctx->frame->popValue();
   ctx->frame->setLocal(arg, value);
+}
+
+// opcode 127
+void Interpreter::doStoreAnnotation(Context* ctx, word arg) {
+  HandleScope scope(ctx->thread);
+  Runtime* runtime = ctx->thread->runtime();
+  Handle<Object> names(&scope, Code::cast(ctx->frame->code())->names());
+  Handle<Object> value(&scope, ctx->frame->popValue());
+  Handle<Object> key(&scope, ObjectArray::cast(*names)->at(arg));
+
+  Handle<Dict> implicit_globals(&scope, ctx->frame->implicitGlobals());
+  Handle<Object> annotations(
+      &scope, runtime->symbols()->at(SymbolId::kDunderAnnotations));
+  Handle<Object> value_cell(&scope,
+                            runtime->dictAt(implicit_globals, annotations));
+  Handle<Dict> anno_dict(&scope, ValueCell::cast(*value_cell)->value());
+  runtime->dictAtPut(anno_dict, key, value);
 }
 
 // opcode 131

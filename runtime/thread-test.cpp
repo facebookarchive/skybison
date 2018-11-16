@@ -2776,4 +2776,28 @@ finally:
   EXPECT_EQ(*x, SmallInt::fromWord(2));
 }
 
+TEST(ThreadTest, SetupAnnotationsAndStoreAnnotations) {
+  const char* src = R"(
+x: int = 1
+class Foo:
+  bar: int = 2
+class_anno_dict = Foo.__annotations__
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Dict> module_anno_dict(&scope,
+                                moduleAt(&runtime, main, "__annotations__"));
+  Handle<Object> m_key(&scope, runtime.newStringFromCString("x"));
+  Handle<Object> m_value(&scope, runtime.dictAt(module_anno_dict, m_key));
+  EXPECT_EQ(*m_value, runtime.typeAt(LayoutId::kInt));
+
+  Handle<Dict> class_anno_dict(&scope,
+                               moduleAt(&runtime, main, "class_anno_dict"));
+  Handle<Object> c_key(&scope, runtime.newStringFromCString("bar"));
+  Handle<Object> c_value(&scope, runtime.dictAt(class_anno_dict, c_key));
+  EXPECT_EQ(*c_value, runtime.typeAt(LayoutId::kInt));
+}
+
 }  // namespace python
