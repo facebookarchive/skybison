@@ -2988,4 +2988,12 @@ TEST(CoroutineTest, New) {
   EXPECT_TRUE(coroutine->isCoro());
 }
 
+TEST(GeneratorTest, New) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Object> generator(&scope, runtime.newGen());
+  EXPECT_TRUE(generator->isGen());
+}
+
 }  // namespace python

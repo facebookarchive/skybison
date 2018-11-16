@@ -197,6 +197,16 @@ Object* Heap::createFunction() {
   return Function::cast(result);
 }
 
+Object* Heap::createGen() {
+  word size = Gen::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<Gen*>(raw);
+  result->setHeader(Header::from(Gen::kSize / kPointerSize, 0, LayoutId::kGen,
+                                 ObjectFormat::kDataInstance));
+  return Gen::cast(result);
+}
+
 Object* Heap::createInstance(LayoutId layout_id, word num_attributes) {
   word size = Instance::allocationSize(num_attributes);
   Object* raw = allocate(size, HeapObject::headerSize(num_attributes));

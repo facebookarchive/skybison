@@ -88,10 +88,11 @@ enum class LayoutId : word {
   kComplex,
   kCoro,
   kDict,
-  kFloat,
   kEllipsis,
   kException,
+  kFloat,
   kFunction,
+  kGen,
   kImportError,
   kInt,
   kIndexError,
@@ -154,10 +155,11 @@ class Object {
   bool isComplex();
   bool isCoro();
   bool isDict();
-  bool isFloat();
   bool isEllipsis();
   bool isException();
+  bool isFloat();
   bool isFunction();
+  bool isGen();
   bool isHeapObject();
   bool isImportError();
   bool isIndexError();
@@ -1977,6 +1979,25 @@ class Coro : public HeapObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Coro);
 };
 
+class Gen : public HeapObject {
+ public:
+  // Casting.
+  static Gen* cast(Object* object);
+
+  // Sizing.
+  static word allocationSize();
+
+  // Layout
+  static const int kYieldFromOffset = HeapObject::kSize;
+  static const int kFrameOffset = kYieldFromOffset + kPointerSize;
+  static const int kIsRunningOffset = kFrameOffset + kPointerSize;
+  static const int kCodeOffset = kIsRunningOffset + kPointerSize;
+  static const int kSize = kCodeOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Gen);
+};
+
 // Object
 
 inline bool Object::isObject() { return true; }
@@ -2210,6 +2231,13 @@ inline bool Object::isEllipsis() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kEllipsis;
+}
+
+inline bool Object::isGen() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kGen;
 }
 
 inline bool Object::isLargeInt() {
@@ -4150,6 +4178,15 @@ inline word Coro::allocationSize() { return Header::kSize + Coro::kSize; }
 inline Coro* Coro::cast(Object* object) {
   DCHECK(object->isCoro(), "invalid cast, expected Coro");
   return reinterpret_cast<Coro*>(object);
+}
+
+// Gen
+
+inline word Gen::allocationSize() { return Header::kSize + Gen::kSize; }
+
+inline Gen* Gen::cast(Object* object) {
+  DCHECK(object->isGen(), "invalid cast, expected Gen");
+  return reinterpret_cast<Gen*>(object);
 }
 
 }  // namespace python

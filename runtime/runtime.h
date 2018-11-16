@@ -71,6 +71,8 @@ class Runtime {
                              Function::Entry entry_ex);
   Object* newFunction();
 
+  Object* newGen();
+
   Object* newInstance(const Handle<Layout>& layout);
 
   Object* newInt(word value);

@@ -42,6 +42,8 @@ class Heap {
 
   Object* createFunction();
 
+  Object* createGen();
+
   Object* createInstance(LayoutId layout_id, word num_attributes);
 
   Object* createLargeInt(word num_digits);

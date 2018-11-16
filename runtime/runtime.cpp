@@ -630,6 +630,8 @@ Object* Runtime::newFunction() {
   return function;
 }
 
+Object* Runtime::newGen() { return heap()->createGen(); }
+
 Object* Runtime::newInstance(const Handle<Layout>& layout) {
   word num_words = layout->instanceSize();
   Object* object = heap()->createInstance(layout->id(), num_words);
