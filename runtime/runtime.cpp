@@ -565,7 +565,7 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   list->atPut(index, *value);
 }
 
-char* Runtime::compile(const char* src) {
+std::unique_ptr<char[]> Runtime::compile(const char* src) {
   std::unique_ptr<char[]> tmpDir(OS::temporaryDirectory("python-tests"));
   const std::string dir(tmpDir.get());
   const std::string py = dir + "/foo.py";
@@ -577,7 +577,7 @@ char* Runtime::compile(const char* src) {
   const std::string command =
       "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6 -m compileall -b " + py;
   system(command.c_str());
-  char* result = OS::readFile(pyc.c_str());
+  std::unique_ptr<char[]> result = OS::readFile(pyc.c_str());
   system(cleanup.c_str());
   return result;
 }

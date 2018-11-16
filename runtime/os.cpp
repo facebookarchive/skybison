@@ -86,29 +86,30 @@ bool OS::secureRandom(byte* ptr, word size) {
   return size == 0;
 }
 
-char* OS::readFile(const char* filename) {
+std::unique_ptr<char[]> OS::readFile(const char* filename) {
   ScopedFd fd(::open(filename, O_RDONLY));
   assert(fd.get() != -1);
   word length = ::lseek(fd.get(), 0, SEEK_END);
   assert(length != -1);
   ::lseek(fd.get(), 0, SEEK_SET);
-  auto result = new char[length];
-  ::read(fd.get(), result, length);
+  auto result = std::unique_ptr<char[]>(new char[length]);
+  ::read(fd.get(), result.get(), length);
   return result;
 }
 
-char* OS::temporaryDirectory(const char* prefix) {
+std::unique_ptr<char[]> OS::temporaryDirectory(const char* prefix) {
   const char* tmpdir = std::getenv("TMPDIR");
   if (tmpdir == nullptr) {
     tmpdir = "/tmp";
   }
   const char format[] = "%s/%s.XXXXXXXX";
   word length = std::snprintf(nullptr, 0, format, tmpdir, prefix);
-  char* buffer = new char[length];
-  std::snprintf(buffer, length, format, tmpdir, prefix);
-  char* result = ::mkdtemp(buffer);
+  auto buffer = std::unique_ptr<char[]>(new char[length]);
+  std::snprintf(buffer.get(), length, format, tmpdir, prefix);
+  char* result = ::mkdtemp(buffer.get());
+  (void)result; // suppress unused variable warning in release mode
   assert(result != nullptr);
-  return result;
+  return buffer;
 }
 
 } // namespace python
