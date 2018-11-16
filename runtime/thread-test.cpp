@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "bytecode.h"
 #include "frame.h"
 #include "interpreter.h"
 #include "marshal.h"
@@ -226,6 +227,42 @@ TEST(ThreadTest, CallFunction) {
   // Make sure we computed the expected result
   ASSERT_TRUE(result->isSmallInteger());
   EXPECT_EQ(SmallInteger::cast(result)->value(), expectedResult->value());
+}
+
+TEST(ThreadTest, ExecuteDupTop) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, SmallInteger::fromWord(1111));
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setStacksize(2);
+  code->setConsts(*consts);
+  const char bytecode[] = {LOAD_CONST, 0, DUP_TOP, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
+}
+
+TEST(ThreadTest, ExecuteRotTwo) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  consts->atPut(0, SmallInteger::fromWord(1111));
+  consts->atPut(1, SmallInteger::fromWord(2222));
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setStacksize(2);
+  code->setConsts(*consts);
+  const char bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, ROT_TWO, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayFromCString(bytecode, ARRAYSIZE(bytecode)));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
 }
 
 } // namespace python

@@ -38,6 +38,17 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         sp++;
         break;
       }
+      case Bytecode::DUP_TOP: {
+        Object* top = *sp;
+        *--sp = top;
+        break;
+      }
+      case Bytecode::ROT_TWO: {
+        Object* top = *sp;
+        *sp = *(sp + 1);
+        *(sp + 1) = top;
+        break;
+      }
       case Bytecode::CALL_FUNCTION: {
         frame->setTop(sp);
         auto function = Function::cast(*(sp + arg));
