@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "builtins.h"
+#include "bytecode.h"
 #include "callback.h"
 #include "globals.h"
 #include "handles.h"
@@ -21,8 +22,10 @@ namespace python {
 Runtime::Runtime() : heap_(64 * MiB), new_value_cell_callback_(this) {
   initializeRandom();
   initializeThreads();
+  // This must be called before initializeClasses is called. Methods in
+  // initializeClasses rely on instances that are created in this method.
+  initializePrimitiveInstances();
   initializeClasses();
-  initializeInstances();
   initializeInterned();
   initializeModules();
 }
@@ -60,15 +63,20 @@ Object* Runtime::newByteArrayWithAll(const byte* data, word length) {
 
 Object* Runtime::newClass() {
   ClassId class_id = newClassId();
-  return heap()->createClass(class_id);
+  HandleScope scope;
+  Handle<Class> klass(&scope, heap()->createClass(class_id));
+  klass->initialize(newDictionary());
+  return *klass;
 }
 
 Object* Runtime::newClassWithId(ClassId class_id) {
-  Object* result = heap()->createClass(class_id);
   auto index = static_cast<word>(class_id);
   assert(index < List::cast(class_table_)->allocated());
-  List::cast(class_table_)->atPut(index, result);
-  return result;
+  HandleScope scope;
+  Handle<Class> klass(&scope, heap()->createClass(class_id));
+  List::cast(class_table_)->atPut(index, *klass);
+  klass->initialize(newDictionary());
+  return *klass;
 }
 
 Object* Runtime::newCode() {
@@ -318,6 +326,7 @@ void Runtime::initializeImmediateClasses() {
       ClassId::kSmallInteger, ClassId::kInteger, ClassId::kObject};
   small_integer->setMro(
       createMro(small_integer_mro, ARRAYSIZE(small_integer_mro)));
+
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
   // SmallInteger to all locations that decode to a SmallInteger tag.
@@ -388,9 +397,9 @@ void Runtime::initializeThreads() {
   Thread::setCurrentThread(main_thread);
 }
 
-void Runtime::initializeInstances() {
-  empty_byte_array_ = heap()->createByteArray(0);
+void Runtime::initializePrimitiveInstances() {
   empty_object_array_ = heap()->createObjectArray(0, None::object());
+  empty_byte_array_ = heap()->createByteArray(0);
   empty_string_ = heap()->createString(0);
   ellipsis_ = heap()->createEllipsis();
 }
@@ -801,6 +810,70 @@ bool Runtime::dictionaryLookup(
 
 Object* Runtime::newValueCell() {
   return heap()->createValueCell();
+}
+
+void Runtime::collectAttributes(
+    const Handle<Code>& code,
+    const Handle<Dictionary>& attributes) {
+  HandleScope scope;
+  Handle<ByteArray> bc(&scope, code->code());
+  Handle<ObjectArray> names(&scope, code->names());
+
+  word len = bc->length();
+  for (word i = 0; i < len - 3; i += 2) {
+    // If the current instruction is EXTENDED_ARG we must skip it and the next
+    // instruction.
+    if (bc->byteAt(i) == Bytecode::EXTENDED_ARG) {
+      i += 2;
+      continue;
+    }
+    // Check for LOAD_FAST 0 (self)
+    if (bc->byteAt(i) != Bytecode::LOAD_FAST || bc->byteAt(i + 1) != 0) {
+      continue;
+    }
+    // Followed by a STORE_ATTR
+    if (bc->byteAt(i + 2) != Bytecode::STORE_ATTR) {
+      continue;
+    }
+    word name_index = bc->byteAt(i + 3);
+    Handle<Object> name(&scope, names->at(name_index));
+    dictionaryAtPut(attributes, name, name);
+  }
+}
+
+Object* Runtime::classConstructor(const Handle<Class>& klass) {
+  HandleScope scope;
+  Handle<Dictionary> klass_dict(&scope, klass->dictionary());
+  // TODO(mpage): Symbol table
+  Handle<Object> init(&scope, newStringFromCString("__init__"));
+  Object* value;
+  if (!dictionaryAt(klass_dict, init, &value)) {
+    return None::object();
+  }
+  return ValueCell::cast(value)->value();
+}
+
+word Runtime::computeInstanceSize(const Handle<Class>& klass) {
+  HandleScope scope;
+  Handle<ObjectArray> mro(&scope, klass->mro());
+  Handle<Dictionary> attrs(&scope, newDictionary());
+
+  for (word i = 0; i < mro->length(); i++) {
+    Handle<Class> mro_klass(&scope, mro->at(i));
+    Handle<Object> maybe_init(&scope, classConstructor(mro_klass));
+    if (!maybe_init->isFunction()) {
+      continue;
+    }
+    Handle<Function> init(maybe_init);
+    Object* maybe_code = init->code();
+    if (!maybe_code->isCode()) {
+      continue;
+    }
+    Handle<Code> code(&scope, maybe_code);
+    collectAttributes(code, attrs);
+  }
+
+  return attrs->numItems();
 }
 
 bool Runtime::isTruthy(Object* object) {

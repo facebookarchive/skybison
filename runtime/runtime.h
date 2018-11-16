@@ -152,6 +152,20 @@ class Runtime {
 
   static char* compile(const char* src);
 
+  // Performs a simple scan of the bytecode and collects all attributes that
+  // are set via `self.<attribute> =` into attributes.
+  void collectAttributes(
+      const Handle<Code>& code,
+      const Handle<Dictionary>& attributes);
+
+  // Returns the number of attributes that will be stored in instances of
+  // klass. This is computed by scanning the constructors of every klass in
+  // klass's MRO.
+  word computeInstanceSize(const Handle<Class>& klass);
+
+  // Returns klass's __init__ method, or None
+  Object* classConstructor(const Handle<Class>& klass);
+
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
   // dictobject.c this accommodates the majority of dictionaries without needing
@@ -164,7 +178,7 @@ class Runtime {
   void initializeClasses();
   void initializeHeapClasses();
   void initializeImmediateClasses();
-  void initializeInstances();
+  void initializePrimitiveInstances();
   void initializeInterned();
   void initializeModules();
   void initializeRandom();

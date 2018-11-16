@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "bytecode.h"
 #include "runtime.h"
 
 namespace python {
@@ -287,6 +288,269 @@ TEST(RuntimeTest, InternString) {
   Handle<Object> sym3(&scope, runtime.internString(str3));
   EXPECT_NE(*sym3, *str3);
   EXPECT_EQ(*sym3, *sym1);
+}
+
+TEST(RuntimeTest, CollectAttributes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Object> foo(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> bar(&scope, runtime.newStringFromCString("bar"));
+  Handle<Object> baz(&scope, runtime.newStringFromCString("baz"));
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(3));
+  names->atPut(0, *foo);
+  names->atPut(1, *bar);
+  names->atPut(2, *baz);
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(4));
+  consts->atPut(0, SmallInteger::fromWord(100));
+  consts->atPut(1, SmallInteger::fromWord(200));
+  consts->atPut(2, SmallInteger::fromWord(300));
+  consts->atPut(3, None::object());
+
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setNames(*names);
+  // Bytecode for the snippet:
+  //
+  //   def __init__(self):
+  //       self.foo = 100
+  //       self.foo = 200
+  //
+  // The assignment to self.foo is intentionally duplicated to ensure that we
+  // only record a single attribute name.
+  const byte bc[] = {LOAD_CONST,
+                     0,
+                     LOAD_FAST,
+                     0,
+                     STORE_ATTR,
+                     0,
+                     LOAD_CONST,
+                     1,
+                     LOAD_FAST,
+                     0,
+                     STORE_ATTR,
+                     0,
+                     RETURN_VALUE,
+                     0};
+  code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+
+  Handle<Dictionary> attributes(&scope, runtime.newDictionary());
+  runtime.collectAttributes(code, attributes);
+
+  // We should have collected a single attribute: 'foo'
+  EXPECT_EQ(attributes->numItems(), 1);
+
+  // Check that we collected 'foo'
+  Object* result;
+  EXPECT_TRUE(runtime.dictionaryAt(attributes, foo, &result));
+  ASSERT_TRUE(result->isString());
+  EXPECT_TRUE(String::cast(result)->equals(*foo));
+
+  // Bytecode for the snippet:
+  //
+  //   def __init__(self):
+  //       self.bar = 200
+  //       self.baz = 300
+  const byte bc2[] = {LOAD_CONST,
+                      1,
+                      LOAD_FAST,
+                      0,
+                      STORE_ATTR,
+                      1,
+                      LOAD_CONST,
+                      2,
+                      LOAD_FAST,
+                      0,
+                      STORE_ATTR,
+                      2,
+                      RETURN_VALUE,
+                      0};
+  code->setCode(runtime.newByteArrayWithAll(bc2, ARRAYSIZE(bc2)));
+  runtime.collectAttributes(code, attributes);
+
+  // We should have collected a two more attributes: 'bar' and 'baz'
+  EXPECT_EQ(attributes->numItems(), 3);
+
+  // Check that we collected 'bar'
+  EXPECT_TRUE(runtime.dictionaryAt(attributes, bar, &result));
+  ASSERT_TRUE(result->isString());
+  EXPECT_TRUE(String::cast(result)->equals(*bar));
+
+  // Check that we collected 'baz'
+  EXPECT_TRUE(runtime.dictionaryAt(attributes, baz, &result));
+  ASSERT_TRUE(result->isString());
+  EXPECT_TRUE(String::cast(result)->equals(*baz));
+}
+
+TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Object> foo(&scope, runtime.newStringFromCString("foo"));
+  Handle<Object> bar(&scope, runtime.newStringFromCString("bar"));
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(2));
+  names->atPut(0, *foo);
+  names->atPut(1, *bar);
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+  consts->atPut(0, None::object());
+
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setNames(*names);
+  // Bytecode for the snippet:
+  //
+  //   def __init__(self):
+  //       self.foo = None
+  //
+  // There is an additional LOAD_FAST that is preceded by an EXTENDED_ARG
+  // that must be skipped.
+  const byte bc[] = {LOAD_CONST,
+                     0,
+                     EXTENDED_ARG,
+                     10,
+                     LOAD_FAST,
+                     0,
+                     STORE_ATTR,
+                     1,
+                     LOAD_CONST,
+                     0,
+                     LOAD_FAST,
+                     0,
+                     STORE_ATTR,
+                     0,
+                     RETURN_VALUE,
+                     0};
+  code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+
+  Handle<Dictionary> attributes(&scope, runtime.newDictionary());
+  runtime.collectAttributes(code, attributes);
+
+  // We should have collected a single attribute: 'foo'
+  EXPECT_EQ(attributes->numItems(), 1);
+
+  // Check that we collected 'foo'
+  Object* result;
+  EXPECT_TRUE(runtime.dictionaryAt(attributes, foo, &result));
+  ASSERT_TRUE(result->isString());
+  EXPECT_TRUE(String::cast(result)->equals(*foo));
+}
+
+TEST(RuntimeTest, GetClassConstructor) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Class> klass(&scope, runtime.newClass());
+  Handle<Dictionary> klass_dict(&scope, runtime.newDictionary());
+  klass->setDictionary(*klass_dict);
+
+  EXPECT_EQ(runtime.classConstructor(klass), None::object());
+
+  Handle<Object> init(&scope, runtime.newStringFromCString("__init__"));
+  Handle<ValueCell> value_cell(
+      &scope,
+      runtime.dictionaryAtIfAbsentPut(
+          klass_dict, init, runtime.newValueCellCallback()));
+  Handle<Function> func(&scope, runtime.newFunction());
+  value_cell->setValue(*func);
+
+  EXPECT_EQ(runtime.classConstructor(klass), *func);
+}
+
+TEST(RuntimeTest, ComputeInstanceSize) {
+  Runtime runtime;
+  // Template bytecode for:
+  //
+  //   def __init__(self):
+  //       self.<name0> = None
+  //       self.<name1> = None
+  const byte bc[] = {LOAD_CONST,
+                     0,
+                     LOAD_FAST,
+                     0,
+                     STORE_ATTR,
+                     0,
+                     LOAD_CONST,
+                     0,
+                     LOAD_FAST,
+                     0,
+                     STORE_ATTR,
+                     1,
+                     RETURN_VALUE,
+                     0};
+
+  // Creates a new class with a constructor that contains the bytecode
+  // defined above.
+  auto createClass = [&](const char* name0, const char* name1) {
+    HandleScope scope;
+
+    Handle<Object> attr0(&scope, runtime.newStringFromCString(name0));
+    Handle<Object> attr1(&scope, runtime.newStringFromCString(name1));
+
+    Handle<ObjectArray> names(&scope, runtime.newObjectArray(2));
+    names->atPut(0, *attr0);
+    names->atPut(1, *attr1);
+
+    Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
+    consts->atPut(0, None::object());
+
+    Handle<Code> code(&scope, runtime.newCode());
+    code->setNames(*names);
+    code->setConsts(*consts);
+    code->setCode(runtime.newByteArrayWithAll(bc, ARRAYSIZE(bc)));
+
+    Handle<Function> func(&scope, runtime.newFunction());
+    func->setCode(*code);
+
+    Handle<Dictionary> klass_dict(&scope, runtime.newDictionary());
+    Handle<Object> init(&scope, runtime.newStringFromCString("__init__"));
+    Handle<ValueCell> value_cell(
+        &scope,
+        runtime.dictionaryAtIfAbsentPut(
+            klass_dict, init, runtime.newValueCellCallback()));
+    value_cell->setValue(*func);
+
+    Handle<Class> klass(&scope, runtime.newClass());
+    klass->setDictionary(*klass_dict);
+
+    Handle<ObjectArray> mro(&scope, runtime.newObjectArray(1));
+    mro->atPut(0, *klass);
+    klass->setMro(*mro);
+
+    return *klass;
+  };
+
+  // Create the following classes:
+  //
+  // class A:
+  //   def __init__(self):
+  //     self.attr0 = None
+  //     self.attr1 = None
+  //
+  // class B
+  //   def __init__(self):
+  //     self.attr0 = None
+  //     self.attr2 = None
+  //
+  // class C(A, B):
+  //   def __init__(self):
+  //     self.attr3 = None
+  //     self.attr4 = None
+  HandleScope scope;
+  Handle<Class> klass_a(&scope, createClass("attr0", "attr1"));
+  EXPECT_EQ(runtime.computeInstanceSize(klass_a), 2);
+
+  Handle<Class> klass_b(&scope, createClass("attr0", "attr2"));
+  EXPECT_EQ(runtime.computeInstanceSize(klass_b), 2);
+
+  Handle<Class> klass_c(&scope, createClass("attr3", "attr4"));
+  Handle<ObjectArray> mro(&scope, runtime.newObjectArray(3));
+  mro->atPut(0, *klass_c);
+  mro->atPut(1, *klass_a);
+  mro->atPut(2, *klass_b);
+  klass_c->setMro(*mro);
+  // Both A and B have "attr0" which should only be counted once
+  EXPECT_EQ(runtime.computeInstanceSize(klass_c), 5);
 }
 
 } // namespace python

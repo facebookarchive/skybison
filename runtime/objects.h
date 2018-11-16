@@ -359,6 +359,9 @@ class Class : public HeapObject {
   inline void setName(Object* name);
   inline Object* dictionary();
   inline void setDictionary(Object* name);
+  // Number of attributes in instances of this class when allocated
+  inline void setInstanceSize(word instance_size);
+  inline word instanceSize();
 
   // Casting.
   inline static Class* cast(Object* object);
@@ -366,11 +369,15 @@ class Class : public HeapObject {
   // Sizing.
   inline static word allocationSize();
 
+  // Allocation.
+  inline void initialize(Object* dictionary);
+
   // Layout.
   static const int kMroOffset = HeapObject::kSize;
   static const int kNameOffset = kMroOffset + kPointerSize;
   static const int kDictionaryOffset = kNameOffset + kPointerSize;
-  static const int kSize = kDictionaryOffset + kPointerSize;
+  static const int kInstanceSizeOffset = kDictionaryOffset + kPointerSize;
+  static const int kSize = kInstanceSizeOffset + kPointerSize;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Class);
@@ -1141,6 +1148,11 @@ word Class::allocationSize() {
   return Header::kSize + Class::kSize;
 }
 
+void Class::initialize(Object* dictionary) {
+  setInstanceSize(0);
+  setDictionary(dictionary);
+}
+
 ClassId Class::id() {
   return static_cast<ClassId>(header()->hashCode());
 }
@@ -1167,6 +1179,15 @@ Object* Class::dictionary() {
 
 void Class::setDictionary(Object* dictionary) {
   instanceVariableAtPut(kDictionaryOffset, dictionary);
+}
+
+void Class::setInstanceSize(word instance_size) {
+  instanceVariableAtPut(
+      kInstanceSizeOffset, SmallInteger::fromWord(instance_size));
+}
+
+word Class::instanceSize() {
+  return SmallInteger::cast(instanceVariableAt(kInstanceSizeOffset))->value();
 }
 
 Class* Class::cast(Object* object) {

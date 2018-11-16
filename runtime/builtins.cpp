@@ -73,6 +73,8 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   }
   mro->atPut(mro->length() - 1, runtime->classAt(ClassId::kObject));
   result->setMro(*mro);
+  result->setInstanceSize(runtime->computeInstanceSize(result));
+
   return *result;
 }
 
