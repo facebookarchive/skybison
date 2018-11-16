@@ -107,6 +107,7 @@ add_library(
   ext/Objects/exceptions.cpp
   ext/Objects/longobject.cpp
   ext/Objects/moduleobject.cpp
+  ext/Objects/typeobject.cpp
   ext/Objects/unicodeobject.cpp
   ext/Python/errors.cpp)
 target_compile_options(
@@ -204,6 +205,7 @@ add_library(
   STATIC
   ext/Objects/dictobject-test.cpp
   ext/Objects/moduleobject-test.cpp
+  ext/Objects/typeobject-test.cpp
   ext/Objects/unicodeobject-test.cpp)
 target_include_directories(
   extension-tests

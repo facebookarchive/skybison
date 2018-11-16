@@ -1083,6 +1083,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit C-API handles
   visitor->visitPointer(&api_handles_);
 
+  // Visit Extension types
+  visitor->visitPointer(&extension_types_);
+
   // Visit symbols
   symbols_->visit(visitor);
 }
@@ -1143,6 +1146,7 @@ void Runtime::initializeModules() {
 
 void Runtime::initializeApiHandles() {
   api_handles_ = newDictionary();
+  extension_types_ = newDictionary();
 }
 
 Object* Runtime::classOf(Object* object) {

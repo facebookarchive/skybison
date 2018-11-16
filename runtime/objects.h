@@ -566,6 +566,11 @@ class Class : public HeapObject {
   Object* dictionary();
   void setDictionary(Object* name);
 
+  // Integer holding a pointer to a PyTypeObject
+  // Only set on classes that were initialized through PyType_Ready
+  Object* extensionType();
+  void setExtensionType(Object* pytype);
+
   // builtin base related
   Object* builtinBaseClass();
   void setBuiltinBaseClass(Object* base);
@@ -585,7 +590,9 @@ class Class : public HeapObject {
   static const int kFlagsOffset = kNameOffset + kPointerSize;
   static const int kDictionaryOffset = kFlagsOffset + kPointerSize;
   static const int kBuiltinBaseClassOffset = kDictionaryOffset + kPointerSize;
-  static const int kSize = kBuiltinBaseClassOffset + kPointerSize;
+  static const int kExtensionTypeOffset =
+      kBuiltinBaseClassOffset + kPointerSize;
+  static const int kSize = kExtensionTypeOffset + kPointerSize;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Class);
@@ -2251,6 +2258,14 @@ inline void Class::setDictionary(Object* dictionary) {
 
 inline Object* Class::builtinBaseClass() {
   return instanceVariableAt(kBuiltinBaseClassOffset);
+}
+
+inline Object* Class::extensionType() {
+  return instanceVariableAt(kExtensionTypeOffset);
+}
+
+inline void Class::setExtensionType(Object* pytype) {
+  instanceVariableAtPut(kExtensionTypeOffset, pytype);
 }
 
 inline void Class::setBuiltinBaseClass(Object* base) {

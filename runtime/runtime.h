@@ -229,6 +229,10 @@ class Runtime {
     return api_handles_;
   }
 
+  Object* extensionTypes() {
+    return extension_types_;
+  }
+
   Symbols* symbols() {
     return symbols_;
   }
@@ -673,6 +677,9 @@ class Runtime {
 
   // ApiHandles
   Object* api_handles_;
+
+  // Extension Types
+  Object* extension_types_;
 
   Thread* threads_;
 
