@@ -424,7 +424,7 @@ Object* Runtime::newInstance(const Handle<Layout>& layout) {
   return *instance;
 }
 
-void Runtime::classAddBuiltinFunction(
+void Runtime::classAddBuiltinFunctionKwEx(
     const Handle<Class>& klass,
     Object* name,
     Function::Entry entry,
@@ -753,14 +753,14 @@ void Runtime::initializeRefClass() {
   Handle<Class> ref(
       &scope, initializeHeapClass("ref", IntrinsicLayoutId::kWeakRef));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       ref,
       symbols()->DunderInit(),
       nativeTrampoline<builtinRefInit>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       ref,
       symbols()->DunderNew(),
       nativeTrampoline<builtinRefNew>,
@@ -773,7 +773,7 @@ void Runtime::initializeFunctionClass() {
   Handle<Class> function(
       &scope, initializeHeapClass("function", IntrinsicLayoutId::kFunction));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       function,
       symbols()->DunderGet(),
       nativeTrampoline<functionDescriptorGet>,
@@ -785,14 +785,14 @@ void Runtime::initializeObjectClass() {
   HandleScope scope;
   Handle<Class> object(&scope, initializeHeapClass("object"));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       object,
       symbols()->DunderInit(),
       nativeTrampoline<builtinObjectInit>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       object,
       symbols()->DunderNew(),
       nativeTrampoline<builtinObjectNew>,
@@ -805,42 +805,42 @@ void Runtime::initializeStrClass() {
   Handle<Class> type(
       &scope, initializeHeapClass("str", IntrinsicLayoutId::kString));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderEq(),
       nativeTrampoline<builtinStringEq>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderGe(),
       nativeTrampoline<builtinStringGe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderGt(),
       nativeTrampoline<builtinStringGt>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderLe(),
       nativeTrampoline<builtinStringLe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderLt(),
       nativeTrampoline<builtinStringLt>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderNe(),
       nativeTrampoline<builtinStringNe>,
@@ -852,7 +852,7 @@ void Runtime::initializeObjectArrayClass() {
   HandleScope scope;
   Handle<Class> type(
       &scope, initializeHeapClass("tuple", IntrinsicLayoutId::kObjectArray));
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderEq(),
       nativeTrampoline<builtinTupleEq>,
@@ -864,13 +864,13 @@ void Runtime::initializeDictClass() {
   HandleScope scope;
   Handle<Class> dict_type(
       &scope, initializeHeapClass("dict", IntrinsicLayoutId::kDictionary));
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       dict_type,
       symbols()->DunderEq(),
       nativeTrampoline<builtinDictionaryEq>,
       unimplementedTrampoline,
       unimplementedTrampoline);
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       dict_type,
       symbols()->DunderLen(),
       nativeTrampoline<builtinDictionaryLen>,
@@ -883,56 +883,56 @@ void Runtime::initializeListClass() {
   Handle<Class> list(
       &scope, initializeHeapClass("list", IntrinsicLayoutId::kList));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       list,
       symbols()->Append(),
       nativeTrampoline<builtinListAppend>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       list,
       symbols()->DunderLen(),
       nativeTrampoline<builtinListLen>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       list,
       symbols()->Extend(),
       nativeTrampoline<builtinListExtend>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       list,
       symbols()->Insert(),
       nativeTrampoline<builtinListInsert>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       list,
       symbols()->Insert(),
       nativeTrampoline<builtinListInsert>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       list,
       symbols()->DunderNew(),
       nativeTrampoline<builtinListNew>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       list,
       symbols()->Pop(),
       nativeTrampoline<builtinListPop>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       list,
       symbols()->Remove(),
       nativeTrampoline<builtinListRemove>,
@@ -948,21 +948,21 @@ void Runtime::initializeClassMethodClass() {
       &scope,
       initializeHeapClass("classmethod", IntrinsicLayoutId::kClassMethod));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       classmethod,
       symbols()->DunderGet(),
       nativeTrampoline<classmethodDescriptorGet>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       classmethod,
       symbols()->DunderInit(),
       nativeTrampoline<builtinClassMethodInit>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       classmethod,
       symbols()->DunderNew(),
       nativeTrampoline<builtinClassMethodNew>,
@@ -975,21 +975,21 @@ void Runtime::initializeTypeClass() {
   Handle<Class> type(
       &scope, initializeHeapClass("type", IntrinsicLayoutId::kType));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderCall(),
       nativeTrampoline<builtinTypeCall>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderInit(),
       nativeTrampoline<builtinTypeInit>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderNew(),
       nativeTrampoline<builtinTypeNew>,
@@ -1012,7 +1012,7 @@ void Runtime::initializeBooleanClass() {
       initializeHeapClass(
           "bool", IntrinsicLayoutId::kBoolean, IntrinsicLayoutId::kInteger));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       type,
       symbols()->DunderBool(),
       nativeTrampoline<builtinBooleanBool>,
@@ -1025,49 +1025,49 @@ void Runtime::initializeFloatClass() {
   Handle<Class> float_type(
       &scope, initializeHeapClass("float", IntrinsicLayoutId::kDouble));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       float_type,
       symbols()->DunderEq(),
       nativeTrampoline<builtinDoubleEq>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       float_type,
       symbols()->DunderGe(),
       nativeTrampoline<builtinDoubleGe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       float_type,
       symbols()->DunderGt(),
       nativeTrampoline<builtinDoubleGt>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       float_type,
       symbols()->DunderLe(),
       nativeTrampoline<builtinDoubleLe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       float_type,
       symbols()->DunderLt(),
       nativeTrampoline<builtinDoubleLt>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       float_type,
       symbols()->DunderNe(),
       nativeTrampoline<builtinDoubleNe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       float_type,
       symbols()->DunderSub(),
       nativeTrampoline<builtinDoubleSub>,
@@ -1079,13 +1079,13 @@ void Runtime::initializeSetClass() {
   HandleScope scope;
   Handle<Class> set_type(
       &scope, initializeHeapClass("set", IntrinsicLayoutId::kSet));
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       set_type,
       symbols()->DunderLen(),
       nativeTrampoline<builtinSetLen>,
       unimplementedTrampoline,
       unimplementedTrampoline);
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       set_type,
       symbols()->Pop(),
       nativeTrampoline<builtinSetPop>,
@@ -1102,77 +1102,77 @@ void Runtime::initializeSmallIntClass() {
           IntrinsicLayoutId::kSmallInteger,
           IntrinsicLayoutId::kInteger));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderBool(),
       nativeTrampoline<builtinSmallIntegerBool>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderEq(),
       nativeTrampoline<builtinSmallIntegerEq>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderGe(),
       nativeTrampoline<builtinSmallIntegerGe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderGt(),
       nativeTrampoline<builtinSmallIntegerGt>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderInvert(),
       nativeTrampoline<builtinSmallIntegerInvert>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderLe(),
       nativeTrampoline<builtinSmallIntegerLe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderLt(),
       nativeTrampoline<builtinSmallIntegerLt>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderNe(),
       nativeTrampoline<builtinSmallIntegerNe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderNeg(),
       nativeTrampoline<builtinSmallIntegerNeg>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderPos(),
       nativeTrampoline<builtinSmallIntegerPos>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       small_integer,
       symbols()->DunderSub(),
       nativeTrampoline<builtinSmallIntegerSub>,
@@ -1195,21 +1195,21 @@ void Runtime::initializeStaticMethodClass() {
       &scope,
       initializeHeapClass("staticmethod", IntrinsicLayoutId::kStaticMethod));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       staticmethod,
       symbols()->DunderGet(),
       nativeTrampoline<staticmethodDescriptorGet>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       staticmethod,
       symbols()->DunderInit(),
       nativeTrampoline<builtinStaticMethodInit>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       staticmethod,
       symbols()->DunderNew(),
       nativeTrampoline<builtinStaticMethodNew>,
@@ -3079,14 +3079,14 @@ void Runtime::initializeSuperClass() {
   Handle<Class> super(
       &scope, initializeHeapClass("super", IntrinsicLayoutId::kSuper));
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       super,
       symbols()->DunderInit(),
       nativeTrampoline<builtinSuperInit>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
-  classAddBuiltinFunction(
+  classAddBuiltinFunctionKwEx(
       super,
       symbols()->DunderNew(),
       nativeTrampoline<builtinSuperNew>,
