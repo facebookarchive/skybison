@@ -1019,10 +1019,19 @@ void Runtime::initializeExceptionClasses() {
   SystemExitBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kException, LayoutId::kException,
                        LayoutId::kBaseException);
+  addEmptyBuiltinClass(SymbolId::kAttributeError, LayoutId::kAttributeError,
+                       LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kNameError, LayoutId::kNameError,
                        LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kTypeError, LayoutId::kTypeError,
                        LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kValueError, LayoutId::kValueError,
+                       LayoutId::kException);
+
+  // RuntimeError and subclasses.
+  addEmptyBuiltinClass(SymbolId::kRuntimeError, LayoutId::kRuntimeError,
+                       LayoutId::kException);
+
   StopIterationBuiltins::initialize(this);
   ImportErrorBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kModuleNotFoundError,
@@ -1619,6 +1628,8 @@ void Runtime::createBuiltinsModule() {
                            nativeTrampoline<builtinSetattr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   // Add builtin types
+  moduleAddBuiltinType(module, SymbolId::kAttributeError,
+                       LayoutId::kAttributeError);
   moduleAddBuiltinType(module, SymbolId::kBaseException,
                        LayoutId::kBaseException);
   moduleAddBuiltinType(module, SymbolId::kBool, LayoutId::kBool);
@@ -1635,6 +1646,8 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kNameError, LayoutId::kNameError);
   moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
   moduleAddBuiltinType(module, SymbolId::kProperty, LayoutId::kProperty);
+  moduleAddBuiltinType(module, SymbolId::kRuntimeError,
+                       LayoutId::kRuntimeError);
   moduleAddBuiltinType(module, SymbolId::kStaticMethod,
                        LayoutId::kStaticMethod);
   moduleAddBuiltinType(module, SymbolId::kSet, LayoutId::kSet);
@@ -1646,6 +1659,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kTuple, LayoutId::kObjectArray);
   moduleAddBuiltinType(module, SymbolId::kType, LayoutId::kType);
   moduleAddBuiltinType(module, SymbolId::kTypeError, LayoutId::kTypeError);
+  moduleAddBuiltinType(module, SymbolId::kValueError, LayoutId::kValueError);
 
   Handle<Object> not_implemented(&scope, notImplemented());
   moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);

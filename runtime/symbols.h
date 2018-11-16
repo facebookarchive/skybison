@@ -94,6 +94,7 @@ class Runtime;
   V(Append, "append")                                                          \
   V(Args, "args")                                                              \
   V(Argv, "argv")                                                              \
+  V(AttributeError, "AttributeError")                                          \
   V(BaseException, "BaseException")                                            \
   V(BitLength, "bit_length")                                                   \
   V(Bool, "bool")                                                              \
@@ -154,6 +155,7 @@ class Runtime;
   V(Ref, "ref")                                                                \
   V(Remove, "remove")                                                          \
   V(Repr, "repr")                                                              \
+  V(RuntimeError, "RuntimeError")                                              \
   V(Set, "set")                                                                \
   V(Setattr, "setattr")                                                        \
   V(Setter, "setter")                                                          \
@@ -176,6 +178,7 @@ class Runtime;
   V(TypeError, "TypeError")                                                    \
   V(UnderWeakRef, "_weakref")                                                  \
   V(Value, "value")                                                            \
+  V(ValueError, "ValueError")                                                  \
   V(ValueCell, "valuecell")
 
 // clang-format off

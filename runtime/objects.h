@@ -79,6 +79,7 @@ enum class LayoutId : word {
 
   // Heap objects
   kObject = 32,
+  kAttributeError,
   kBaseException,
   kBoundMethod,
   kByteArray,
@@ -105,6 +106,7 @@ enum class LayoutId : word {
   kProperty,
   kRange,
   kRangeIterator,
+  kRuntimeError,
   kSet,
   kSlice,
   kStaticMethod,
@@ -115,6 +117,7 @@ enum class LayoutId : word {
   kType,
   kTypeError,
   kValueCell,
+  kValueError,
   kWeakRef,
 
   kLastBuiltinId = kWeakRef,

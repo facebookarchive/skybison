@@ -67,22 +67,39 @@ exc = Exception(1,2,3)
   EXPECT_EQ(args->at(2), SmallInt::fromWord(3));
 }
 
-TEST(ExceptionBuiltinsTest, NameErrorReturnsNameError) {
+TEST(ExceptionBuiltinsTest, SimpleExceptionTypesCanBeConstructed) {
   Runtime runtime;
   HandleScope scope;
 
   runtime.runFromCString(R"(
-exc = NameError()
+attr_error = AttributeError()
+name_error = NameError()
+value_error = ValueError()
+rt_error = RuntimeError()
 )");
 
   Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
-  Handle<Object> exc(&scope, testing::moduleAt(&runtime, main, "exc"));
-  UncheckedHandle<Exception> exception(&scope, *exc);
+  UncheckedHandle<Exception> attr_error(
+      &scope, testing::moduleAt(&runtime, main, "attr_error"));
+  UncheckedHandle<Exception> name_error(
+      &scope, testing::moduleAt(&runtime, main, "name_error"));
+  UncheckedHandle<Exception> value_error(
+      &scope, testing::moduleAt(&runtime, main, "value_error"));
+  UncheckedHandle<Exception> rt_error(
+      &scope, testing::moduleAt(&runtime, main, "rt_error"));
 
-  // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(exception->args()->isObjectArray());
-  Handle<ObjectArray> args(&scope, exception->args());
-  EXPECT_EQ(args->length(), 0);
+  EXPECT_TRUE(
+      runtime.hasSubClassFlag(*attr_error, Type::Flag::kBaseExceptionSubclass));
+  EXPECT_EQ(attr_error->layoutId(), LayoutId::kAttributeError);
+  EXPECT_TRUE(
+      runtime.hasSubClassFlag(*name_error, Type::Flag::kBaseExceptionSubclass));
+  EXPECT_EQ(name_error->layoutId(), LayoutId::kNameError);
+  EXPECT_TRUE(runtime.hasSubClassFlag(*value_error,
+                                      Type::Flag::kBaseExceptionSubclass));
+  EXPECT_EQ(value_error->layoutId(), LayoutId::kValueError);
+  EXPECT_TRUE(
+      runtime.hasSubClassFlag(*rt_error, Type::Flag::kBaseExceptionSubclass));
+  EXPECT_EQ(rt_error->layoutId(), LayoutId::kRuntimeError);
 }
 
 TEST(ExceptionBuiltinsTest, TypeErrorReturnsTypeError) {
