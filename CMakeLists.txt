@@ -371,12 +371,14 @@ add_library(
   STATIC
   ext/Objects/abstract-test.cpp
   ext/Objects/boolobject-test.cpp
+  ext/Objects/classobject-test.cpp
   ext/Objects/dictobject-test.cpp
   ext/Objects/floatobject-test.cpp
   ext/Objects/listobject-test.cpp
   ext/Objects/longobject-test.cpp
   ext/Objects/moduleobject-test.cpp
   ext/Objects/object-test.cpp
+  ext/Objects/setobject-test.cpp
   ext/Objects/tupleobject-test.cpp
   ext/Objects/typeobject-test.cpp
   ext/Objects/unicodeobject-test.cpp

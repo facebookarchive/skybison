@@ -65,4 +65,8 @@ f = FloatSubclass(1.5)
   EXPECT_EQ(res, 1.5);
 }
 
+TEST_F(FloatExtensionApiTest, ClearFreeListReturnsZero) {
+  EXPECT_EQ(PyFloat_ClearFreeList(), 0);
+}
+
 }  // namespace python

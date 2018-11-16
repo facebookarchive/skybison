@@ -79,6 +79,8 @@ PY_EXPORT void PyDict_Clear(PyObject* /* p */) {
   UNIMPLEMENTED("PyDict_Clear");
 }
 
+PY_EXPORT int PyDict_ClearFreeList() { return 0; }
+
 PY_EXPORT int PyDict_Contains(PyObject* /* p */, PyObject* /* y */) {
   UNIMPLEMENTED("PyDict_Contains");
 }

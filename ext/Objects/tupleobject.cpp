@@ -97,9 +97,7 @@ PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   return ApiHandle::fromObject(*tuple);
 }
 
-PY_EXPORT int PyTuple_ClearFreeList() {
-  UNIMPLEMENTED("PyTuple_ClearFreeList");
-}
+PY_EXPORT int PyTuple_ClearFreeList() { return 0; }
 
 PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* /* p */, Py_ssize_t /* i */,
                                      Py_ssize_t /* j */) {

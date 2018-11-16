@@ -189,9 +189,7 @@ PY_EXPORT PyObject* PyUnicode_BuildEncodingMap(PyObject* /* g */) {
   UNIMPLEMENTED("PyUnicode_BuildEncodingMap");
 }
 
-PY_EXPORT int PyUnicode_ClearFreeList() {
-  UNIMPLEMENTED("PyUnicode_ClearFreeList");
-}
+PY_EXPORT int PyUnicode_ClearFreeList() { return 0; }
 
 PY_EXPORT int PyUnicode_Compare(PyObject* /* t */, PyObject* /* t */) {
   UNIMPLEMENTED("PyUnicode_Compare");

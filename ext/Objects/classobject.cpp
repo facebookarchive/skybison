@@ -6,6 +6,8 @@ PY_EXPORT PyObject* PyInstanceMethod_New(PyObject* /* c */) {
   UNIMPLEMENTED("PyInstanceMethod_New");
 }
 
+PY_EXPORT int PyMethod_ClearFreeList() { return 0; }
+
 PY_EXPORT PyObject* PyMethod_New(PyObject* /* c */, PyObject* /* f */) {
   UNIMPLEMENTED("PyMethod_New");
 }

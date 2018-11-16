@@ -12,6 +12,8 @@ PY_EXPORT int PySet_Add(PyObject* /* t */, PyObject* /* y */) {
 
 PY_EXPORT int PySet_Clear(PyObject* /* t */) { UNIMPLEMENTED("PySet_Clear"); }
 
+PY_EXPORT int PySet_ClearFreeList() { return 0; }
+
 PY_EXPORT int PySet_Contains(PyObject* /* t */, PyObject* /* y */) {
   UNIMPLEMENTED("PySet_Contains");
 }

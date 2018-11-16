@@ -56,6 +56,10 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8ReturnsCString) {
   EXPECT_EQ(cstring2, cstring);
 }
 
+TEST_F(UnicodeExtensionApiTest, ClearFreeListReturnsZero) {
+  EXPECT_EQ(PyUnicode_ClearFreeList(), 0);
+}
+
 TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {
   PyObject* pyunicode = PyUnicode_FromString("some string");
   EXPECT_EQ(0, PyUnicode_READY(pyunicode));

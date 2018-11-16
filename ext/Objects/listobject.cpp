@@ -76,6 +76,8 @@ PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
   return 0;
 }
 
+PY_EXPORT int PyList_ClearFreeList() { return 0; }
+
 PY_EXPORT PyObject* PyList_GetSlice(PyObject* /* a */, Py_ssize_t /* w */,
                                     Py_ssize_t /* h */) {
   UNIMPLEMENTED("PyList_GetSlice");
