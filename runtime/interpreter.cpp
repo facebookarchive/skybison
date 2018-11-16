@@ -22,7 +22,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
       }
       case Bytecode::LOAD_CONST: {
         Object* consts = Code::cast(frame->f_code)->consts();
-        *frame->f_stacktop++ = ObjectArray::cast(consts)->get(arg);
+        *frame->f_stacktop++ = ObjectArray::cast(consts)->at(arg);
         break;
       }
       case Bytecode::LOAD_NAME: {

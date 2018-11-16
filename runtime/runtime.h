@@ -14,9 +14,9 @@ class Runtime {
   Runtime();
   ~Runtime();
 
-  Object* createByteArray(intptr_t length);
+  Object* newByteArray(intptr_t length);
 
-  Object* createCode(
+  Object* newCode(
       int argcount,
       int kwonlyargcount,
       int nlocals,
@@ -33,16 +33,16 @@ class Runtime {
       int firstlineno,
       Object* lnotab);
 
-  Object* createDictionary();
+  Object* newDictionary();
 
-  Object* createList();
+  Object* newList();
 
-  Object* createModule(Object* name);
+  Object* newModule(Object* name);
 
-  Object* createObjectArray(intptr_t length);
+  Object* newObjectArray(intptr_t length);
 
-  Object* createString(intptr_t length);
-  Object* createStringFromCString(const char* c_string);
+  Object* newString(intptr_t length);
+  Object* newStringFromCString(const char* c_string);
 
   void collectGarbage();
 
@@ -83,6 +83,7 @@ class Runtime {
 
   Object* empty_byte_array_;
   Object* empty_object_array_;
+  Object* empty_string_;
 
   // the equivalent of sys.modules in python
   Object* modules_;

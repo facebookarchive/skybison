@@ -26,14 +26,14 @@ Runtime::~Runtime() {
   }
 }
 
-Object* Runtime::createByteArray(intptr_t length) {
+Object* Runtime::newByteArray(intptr_t length) {
   if (length == 0) {
     return empty_byte_array_;
   }
   return heap()->createByteArray(Runtime::byte_array_class_, length);
 }
 
-Object* Runtime::createCode(
+Object* Runtime::newCode(
     int argcount,
     int kwonlyargcount,
     int nlocals,
@@ -68,38 +68,38 @@ Object* Runtime::createCode(
       lnotab);
 }
 
-Object* Runtime::createDictionary() {
-  Object* items = createObjectArray(Dictionary::kInitialItemsSize);
+Object* Runtime::newDictionary() {
+  Object* items = newObjectArray(Dictionary::kInitialItemsSize);
   assert(items != nullptr);
   return heap()->createDictionary(dictionary_class_, items);
 }
 
-Object* Runtime::createList() {
+Object* Runtime::newList() {
   return heap()->createList(list_class_, empty_object_array_);
 }
 
-Object* Runtime::createModule(Object* name) {
-  Object* dict = createDictionary();
+Object* Runtime::newModule(Object* name) {
+  Object* dict = newDictionary();
   assert(dict != nullptr);
   return heap()->createModule(module_class_, name, dict);
 }
 
-Object* Runtime::createObjectArray(intptr_t length) {
+Object* Runtime::newObjectArray(intptr_t length) {
   if (length == 0) {
     return empty_object_array_;
   }
   return heap()->createObjectArray(object_array_class_, length, None::object());
 }
 
-Object* Runtime::createString(intptr_t length) {
+Object* Runtime::newString(intptr_t length) {
   return heap()->createString(string_class_, length);
 }
 
-Object* Runtime::createStringFromCString(const char* c_string) {
+Object* Runtime::newStringFromCString(const char* c_string) {
   intptr_t length = strlen(c_string);
-  Object* result = createString(length);
+  Object* result = newString(length);
   for (intptr_t i = 0; i < length; i++) {
-    String::cast(result)->setCharAt(
+    String::cast(result)->charAtPut(
         i, *reinterpret_cast<const byte*>(c_string + i));
   }
   return result;
@@ -194,6 +194,7 @@ void Runtime::initializeInstances() {
   empty_byte_array_ = heap()->createByteArray(byte_array_class_, 0);
   empty_object_array_ =
       heap()->createObjectArray(object_array_class_, 0, None::object());
+  empty_string_ = heap()->createString(string_class_, 0);
 }
 
 void Runtime::visitRoots(PointerVisitor* visitor) {
@@ -216,6 +217,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit instances
   visitor->visitPointer(&empty_byte_array_);
   visitor->visitPointer(&empty_object_array_);
+  visitor->visitPointer(&empty_string_);
 
   // Visit modules
   visitor->visitPointer(&modules_);
@@ -229,18 +231,18 @@ void Runtime::visitThreadRoots(PointerVisitor* visitor) {
 
 void Runtime::addModule(Object* module) {
   Object* name = Module::cast(module)->name();
-  Dictionary::itemAtPut(modules(), name, name->hash(), module, this);
+  Dictionary::atPut(modules(), name, Object::hash(name), module, this);
 }
 
 void Runtime::initializeModules() {
-  modules_ = createDictionary();
+  modules_ = newDictionary();
   createBuiltinsModule();
 }
 
 void Runtime::createBuiltinsModule() {
-  Object* name = createStringFromCString("builtins");
+  Object* name = newStringFromCString("builtins");
   assert(name != nullptr);
-  Object* builtins = createModule(name);
+  Object* builtins = newModule(name);
   assert(builtins != nullptr);
   // Fill in builtins...
   addModule(builtins);

@@ -48,7 +48,7 @@ Marshal::Reader::Reader(
       start_(reinterpret_cast<const byte*>(buffer)),
       length_(strlen(buffer)),
       scope_(scope),
-      refs_(scope, runtime->createList()),
+      refs_(scope, runtime->newList()),
       pos_(0),
       depth_(0) {
   end_ = start_ + length_;
@@ -227,17 +227,17 @@ int Marshal::Reader::addRef(Object* value) {
 }
 
 void Marshal::Reader::setRef(int index, Object* value) {
-  refs_->set(index, value);
+  refs_->atPut(index, value);
 }
 
 Object* Marshal::Reader::getRef(int index) {
-  return refs_->get(index);
+  return refs_->at(index);
 }
 
 Object* Marshal::Reader::readTypeString() {
   int length = readLong();
   const byte* data = readString(length);
-  Object* result = runtime_->createByteArray(length);
+  Object* result = runtime_->newByteArray(length);
   if (isRef_) {
     addRef(result);
   }
@@ -250,12 +250,12 @@ Object* Marshal::Reader::readTypeString() {
 Object* Marshal::Reader::readTypeShortAscii() {
   int length = readByte();
   const byte* data = readString(length);
-  Object* result = runtime_->createString(length);
+  Object* result = runtime_->newString(length);
   if (isRef_) {
     addRef(result);
   }
   for (int i = 0; i < length; i++) {
-    String::cast(result)->setCharAt(i, data[i]);
+    String::cast(result)->charAtPut(i, data[i]);
   }
   return result;
 }
@@ -271,13 +271,13 @@ Object* Marshal::Reader::readTypeTuple() {
 }
 
 Object* Marshal::Reader::doTupleElements(int32 length) {
-  Object* result = runtime_->createObjectArray(length);
+  Object* result = runtime_->newObjectArray(length);
   if (isRef_) {
     addRef(result);
   }
   for (int i = 0; i < length; i++) {
     Object* value = readObject();
-    ObjectArray::cast(result)->set(i, value);
+    ObjectArray::cast(result)->atPut(i, value);
   }
   return result;
 }
@@ -302,7 +302,7 @@ Object* Marshal::Reader::readTypeCode() {
   Object* name = readObject();
   int firstlineno = readLong();
   Object* lnotab = readObject();
-  Object* result = runtime_->createCode(
+  Object* result = runtime_->newCode(
       argcount,
       kwonlyargcount,
       nlocals,

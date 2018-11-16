@@ -6,94 +6,26 @@
 
 namespace python {
 
-// List
-
-int List::allocationSize() {
-  return Utils::roundUp(List::kSize, kPointerSize);
-}
-
-List* List::cast(Object* obj) {
-  assert(obj->isList());
-  return reinterpret_cast<List*>(obj);
-}
-
-void List::initialize(Object* elements) {
-  atPut(List::kElemsOffset, elements);
-}
-
-ObjectArray* List::elems() {
-  Object* e = at(kElemsOffset);
-  if (e == nullptr) {
-    return nullptr;
-  }
-  return ObjectArray::cast(e);
-}
-
-void List::setElems(ObjectArray* elems) {
-  atPut(kElemsOffset, elems);
-}
-
-word List::capacity() {
-  ObjectArray* es = elems();
-  if (es == nullptr) {
-    return 0;
-  }
-  return es->length();
-}
-
-void List::set(int index, Object* value) {
-  assert(index >= 0);
-  assert(index < length());
-  Object* elems = at(kElemsOffset);
-  ObjectArray::cast(elems)->set(index, value);
-}
-
-Object* List::get(int index) {
-  return elems()->get(index);
-}
-
-void List::appendAndGrow(
-    const Handle<List>& list,
-    const Handle<Object>& value,
-    Runtime* runtime) {
-  word len = list->length();
-  word cap = list->capacity();
-  if (len < cap) {
-    list->setLength(len + 1);
-    list->set(len, *value);
-    return;
-  }
-  intptr_t newCap = cap == 0 ? 4 : cap << 1;
-  Object* rawNewElems = runtime->createObjectArray(newCap);
-  ObjectArray* newElems = ObjectArray::cast(rawNewElems);
-  ObjectArray* curElems = list->elems();
-  if (curElems != nullptr) {
-    curElems->copyTo(newElems);
-  }
-
-  list->setElems(newElems);
-  list->setLength(len + 1);
-  list->set(len, *value);
-}
-
 // Dictionary
+
 // TODO(mpage): Needs handlizing
 
 // Helper class for working with entries in the backing ObjectArray.
 class DictItem {
  public:
-  DictItem(ObjectArray* items, int bucket) : items_(items), bucket_(bucket){};
+  DictItem(Object* items, int bucket)
+      : items_(ObjectArray::cast(items)), bucket_(bucket){};
 
   inline Object* hash() {
-    return items_->get(bucket_ + Dictionary::kBucketHashOffset);
+    return items_->at(bucket_ + Dictionary::kBucketHashOffset);
   }
 
   inline Object* key() {
-    return items_->get(bucket_ + Dictionary::kBucketKeyOffset);
+    return items_->at(bucket_ + Dictionary::kBucketKeyOffset);
   }
 
   inline Object* value() {
-    return items_->get(bucket_ + Dictionary::kBucketValueOffset);
+    return items_->at(bucket_ + Dictionary::kBucketValueOffset);
   }
 
   inline bool matches(Object* that) {
@@ -101,9 +33,9 @@ class DictItem {
   }
 
   inline void set(Object* hash, Object* key, Object* value) {
-    items_->set(bucket_ + Dictionary::kBucketHashOffset, hash);
-    items_->set(bucket_ + Dictionary::kBucketKeyOffset, key);
-    items_->set(bucket_ + Dictionary::kBucketValueOffset, value);
+    items_->atPut(bucket_ + Dictionary::kBucketHashOffset, hash);
+    items_->atPut(bucket_ + Dictionary::kBucketKeyOffset, key);
+    items_->atPut(bucket_ + Dictionary::kBucketValueOffset, value);
   }
 
   inline bool isTombstone() {
@@ -126,21 +58,7 @@ class DictItem {
   int bucket_;
 };
 
-void Dictionary::setNumItems(word numItems) {
-  atPut(kNumItemsOffset, SmallInteger::fromWord(numItems));
-}
-
-ObjectArray* Dictionary::items() {
-  return ObjectArray::cast(at(kItemsOffset));
-}
-
-void Dictionary::setItems(ObjectArray* items) {
-  assert((items->length() % kPointersPerBucket) == 0);
-  assert(Utils::isPowerOfTwo(items->length() / kPointersPerBucket));
-  atPut(kItemsOffset, items);
-}
-
-bool Dictionary::itemAt(
+bool Dictionary::at(
     Object* dictObj,
     Object* key,
     Object* hash,
@@ -156,7 +74,7 @@ bool Dictionary::itemAt(
   return found;
 }
 
-void Dictionary::itemAtPut(
+void Dictionary::atPut(
     Object* dictObj,
     Object* key,
     Object* hash,
@@ -178,7 +96,7 @@ void Dictionary::itemAtPut(
   }
 }
 
-bool Dictionary::itemAtRemove(
+bool Dictionary::remove(
     Object* dictObj,
     Object* key,
     Object* hash,
@@ -204,11 +122,12 @@ bool Dictionary::lookup(
   int startIdx = kPointersPerBucket * (hashVal & (dict->capacity() - 1));
   int idx = startIdx;
   int nextFreeBucket = -1;
-  ObjectArray* items = dict->items();
+  Object* items = dict->items();
 
   assert(bucket != nullptr);
 
   // TODO(mpage) - Quadratic probing?
+  int length = ObjectArray::cast(items)->length();
   do {
     DictItem item(items, idx);
     if (item.matches(key)) {
@@ -222,7 +141,7 @@ bool Dictionary::lookup(
       }
       break;
     }
-    idx = (idx + kPointersPerBucket) % items->length();
+    idx = (idx + kPointersPerBucket) % length;
   } while (idx != startIdx);
 
   *bucket = nextFreeBucket;
@@ -232,12 +151,13 @@ bool Dictionary::lookup(
 
 void Dictionary::grow(Dictionary* dict, Runtime* runtime) {
   // Double the size of the backing store
-  Object* obj = runtime->createObjectArray(dict->items()->length() * 2);
+  word newLength = ObjectArray::cast(dict->items())->length() * 2;
+  Object* obj = runtime->newObjectArray(newLength * 2);
   assert(obj != nullptr);
   ObjectArray* newItems = ObjectArray::cast(obj);
 
   // Re-insert items
-  ObjectArray* oldItems = dict->items();
+  ObjectArray* oldItems = ObjectArray::cast(dict->items());
   dict->setItems(newItems);
   for (int i = 0; i < oldItems->length(); i += kPointersPerBucket) {
     DictItem oldItem(oldItems, i);
@@ -251,6 +171,32 @@ void Dictionary::grow(Dictionary* dict, Runtime* runtime) {
     DictItem newItem(newItems, bucket);
     newItem.set(oldItem.key(), oldHash, oldItem.value());
   }
+}
+
+// List
+
+void List::appendAndGrow(
+    const Handle<List>& list,
+    const Handle<Object>& value,
+    Runtime* runtime) {
+  word len = list->length();
+  word cap = list->capacity();
+  if (len < cap) {
+    list->setLength(len + 1);
+    list->atPut(len, *value);
+    return;
+  }
+  intptr_t newCap = cap == 0 ? 4 : cap << 1;
+  Object* rawNewElems = runtime->newObjectArray(newCap);
+  ObjectArray* newElems = ObjectArray::cast(rawNewElems);
+  ObjectArray* curElems = ObjectArray::cast(list->elems());
+  if (curElems != nullptr) {
+    ObjectArray::cast(curElems)->copyTo(newElems);
+  }
+
+  list->setElems(newElems);
+  list->setLength(len + 1);
+  list->atPut(len, *value);
 }
 
 // String

@@ -181,7 +181,7 @@ Object* Heap::createByteArray(Object* byte_array_class, intptr_t length) {
   int size = ByteArray::allocationSize(length);
   Object* raw = allocate(size);
   assert(raw != nullptr);
-  ByteArray* result = reinterpret_cast<ByteArray*>(raw);
+  auto result = reinterpret_cast<ByteArray*>(raw);
   result->setClass(Class::cast(byte_array_class));
   result->initialize(length);
   return ByteArray::cast(result);
@@ -191,7 +191,7 @@ Object* Heap::createDictionary(Object* dictionary_class, Object* items) {
   int size = Dictionary::allocationSize();
   Object* raw = allocate(size);
   assert(raw != nullptr);
-  Dictionary* result = reinterpret_cast<Dictionary*>(raw);
+  auto result = reinterpret_cast<Dictionary*>(raw);
   result->setClass(Class::cast(dictionary_class));
   result->initialize(items);
   return Dictionary::cast(result);
@@ -201,7 +201,7 @@ Object* Heap::createFunction(Object* function_class) {
   int size = Function::allocationSize();
   Object* raw = allocate(size);
   assert(raw != nullptr);
-  Function* result = reinterpret_cast<Function*>(raw);
+  auto result = reinterpret_cast<Function*>(raw);
   result->setClass(Class::cast(function_class));
   result->initialize();
   return Function::cast(result);
@@ -211,7 +211,7 @@ Object* Heap::createList(Object* list_class, Object* elements) {
   int size = List::allocationSize();
   Object* raw = allocate(size);
   assert(raw != nullptr);
-  List* result = reinterpret_cast<List*>(raw);
+  auto result = reinterpret_cast<List*>(raw);
   result->setClass(Class::cast(list_class));
   result->initialize(elements);
   return List::cast(result);
@@ -221,7 +221,7 @@ Object* Heap::createModule(Object* module_class, Object* name, Object* dict) {
   int size = Module::allocationSize();
   Object* raw = allocate(size);
   assert(raw != nullptr);
-  Module* result = reinterpret_cast<Module*>(raw);
+  auto result = reinterpret_cast<Module*>(raw);
   result->setClass(Class::cast(module_class));
   result->initialize(name, dict);
   return Module::cast(result);
@@ -233,8 +233,8 @@ Object* Heap::createObjectArray(
     Object* value) {
   int size = ObjectArray::allocationSize(length);
   Object* raw = allocate(size);
-  assert(raw != nullptr); // TODO
-  ObjectArray* result = reinterpret_cast<ObjectArray*>(raw);
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<ObjectArray*>(raw);
   result->setClass(Class::cast(object_array_class));
   result->initialize(length, size, value);
   return ObjectArray::cast(result);
@@ -244,7 +244,7 @@ Object* Heap::createString(Object* string_class, intptr_t length) {
   int size = String::allocationSize(length);
   Object* raw = allocate(size);
   assert(raw != nullptr);
-  String* result = reinterpret_cast<String*>(raw);
+  auto result = reinterpret_cast<String*>(raw);
   result->setClass(Class::cast(string_class));
   result->initialize(length);
   return String::cast(result);
