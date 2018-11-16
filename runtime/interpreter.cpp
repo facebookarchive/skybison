@@ -1351,6 +1351,12 @@ void Interpreter::doSetupFinally(Context* ctx, word arg) {
 // opcode 124
 void Interpreter::doLoadFast(Context* ctx, word arg) {
   // TODO: Need to handle unbound local error
+  Object* value = ctx->frame->getLocal(arg);
+  if (value->isError()) {
+    Object* name =
+        ObjectArray::cast(Code::cast(ctx->frame->code())->varnames())->at(arg);
+    UNIMPLEMENTED("unbound local %s", String::cast(name)->toCString());
+  }
   ctx->frame->pushValue(ctx->frame->getLocal(arg));
 }
 
@@ -1358,6 +1364,18 @@ void Interpreter::doLoadFast(Context* ctx, word arg) {
 void Interpreter::doStoreFast(Context* ctx, word arg) {
   Object* value = ctx->frame->popValue();
   ctx->frame->setLocal(arg, value);
+}
+
+// opcode 126
+void Interpreter::doDeleteFast(Context* ctx, word arg) {
+  // TODO(T32821785): use another immediate value than Error to signal unbound
+  // local
+  if (ctx->frame->getLocal(arg) == Error::object()) {
+    Object* name =
+        ObjectArray::cast(Code::cast(ctx->frame->code())->varnames())->at(arg);
+    UNIMPLEMENTED("unbound local %s", String::cast(name)->toCString());
+  }
+  ctx->frame->setLocal(arg, Error::object());
 }
 
 // opcode 127

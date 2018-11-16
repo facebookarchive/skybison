@@ -135,7 +135,7 @@ namespace python {
   V(UNUSED_BYTECODE_123, 123, doInvalidBytecode)                               \
   V(LOAD_FAST, 124, doLoadFast)                                                \
   V(STORE_FAST, 125, doStoreFast)                                              \
-  V(DELETE_FAST, 126, doNotImplemented)                                        \
+  V(DELETE_FAST, 126, doDeleteFast)                                            \
   V(STORE_ANNOTATION, 127, doStoreAnnotation)                                  \
   V(UNUSED_BYTECODE_128, 128, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_129, 129, doInvalidBytecode)                               \

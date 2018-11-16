@@ -2800,4 +2800,31 @@ class_anno_dict = Foo.__annotations__
   EXPECT_EQ(*c_value, runtime.typeAt(LayoutId::kInt));
 }
 
+TEST(ThreadDeathTest, DeleteFastThrow) {
+  const char* src = R"(
+def foo(a, b, c):
+  del a
+  return a
+foo(1, 2, 3)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  EXPECT_DEATH(runtime.runFromCString(src), "unbound local a");
+}
+
+TEST(ThreadTest, DeleteFastThrow) {
+  const char* src = R"(
+def foo(a, b, c):
+  del a
+  return b
+x = foo(1, 2, 3)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
+  EXPECT_EQ(*x, SmallInt::fromWord(2));
+}
+
 }  // namespace python

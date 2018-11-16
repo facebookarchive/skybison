@@ -188,6 +188,7 @@ class Interpreter {
   static void doSetupFinally(Context* ctx, word arg);
   static void doLoadFast(Context* ctx, word arg);
   static void doStoreFast(Context* ctx, word arg);
+  static void doDeleteFast(Context* ctx, word arg);
   static void doStoreAnnotation(Context* ctx, word arg);
   static void doCallFunction(Context* ctx, word arg);
   static void doMakeFunction(Context* ctx, word arg);
