@@ -861,7 +861,16 @@ void Interpreter::doGetIter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Handle<Object> iterable(&scope, ctx->frame->topValue());
-  ctx->frame->setTopValue(thread->runtime()->getIter(iterable));
+  Handle<Object> method(&scope, lookupMethod(thread, thread->currentFrame(),
+                                             iterable, SymbolId::kDunderIter));
+  if (method->isError()) {
+    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->abortOnPendingException();
+  }
+  Handle<Object> iterator(
+      &scope, callMethod1(thread, thread->currentFrame(), method, iterable));
+  thread->abortOnPendingException();
+  ctx->frame->setTopValue(*iterator);
 }
 
 // opcode 71
@@ -1027,45 +1036,81 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
     while (arg--) {
       ctx->frame->pushValue(ObjectArray::cast(seq)->at(arg));
     }
-  } else if (seq->isList()) {
-    DCHECK(List::cast(seq)->allocated() == arg,
-           "Wrong number of items to unpack");
-    while (arg--) {
-      ctx->frame->pushValue(List::cast(seq)->at(arg));
+    return;
+  }
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> iterable(&scope, seq);
+  Handle<Object> iter_method(
+      &scope, lookupMethod(thread, thread->currentFrame(), iterable,
+                           SymbolId::kDunderIter));
+  if (iter_method->isError()) {
+    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->abortOnPendingException();
+  }
+  Handle<Object> iterator(&scope, callMethod1(thread, thread->currentFrame(),
+                                              iter_method, iterable));
+  thread->abortOnPendingException();
+  Handle<Object> next_method(&scope, lookupMethod(thread, ctx->frame, iterator,
+                                                  SymbolId::kDunderNext));
+  if (next_method->isError()) {
+    thread->throwTypeErrorFromCString("iter() returned non-iterator");
+    thread->abortOnPendingException();
+  }
+  for (word i = 0; i < arg; i++) {
+    ctx->frame->pushValue(None::object());
+  }
+  word num_pushed;
+  for (num_pushed = 0; num_pushed < arg; num_pushed++) {
+    if (thread->runtime()->isIteratorExhausted(thread, iterator)) {
+      break;
     }
-  } else if (seq->isRange()) {
-    HandleScope scope(ctx->thread);
-    Handle<Range> range(&scope, seq);
-    word start = range->start();
-    word stop = range->stop();
-    word step = range->step();
-    for (word i = stop; i >= start; i -= step) {
-      ctx->frame->pushValue(ctx->thread->runtime()->newInt(i));
+    Handle<Object> value(
+        &scope, callMethod1(thread, ctx->frame, next_method, iterator));
+    if (value->isError()) {
+      thread->abortOnPendingException();
+      break;
     }
-  } else {
-    UNIMPLEMENTED("Iterable unpack not supported.");
+    ctx->frame->setValueAt(*value, num_pushed);
+  }
+  if (num_pushed < arg) {
+    ctx->frame->dropValues(arg);
+    thread->throwValueErrorFromCString("not enough values to unpack");
+    thread->abortOnPendingException();
+  }
+  if (!thread->runtime()->isIteratorExhausted(thread, iterator)) {
+    ctx->frame->dropValues(arg);
+    thread->throwValueErrorFromCString("too many values to unpack");
+    thread->abortOnPendingException();
   }
 }
 
 // opcode 93
 void Interpreter::doForIter(Context* ctx, word arg) {
-  Object* top = ctx->frame->topValue();
-  Object* next = Error::object();
-  if (top->isRangeIterator()) {
-    next = RangeIterator::cast(top)->next();
-    // TODO: Support StopIteration exceptions.
-  } else if (top->isListIterator()) {
-    next = ListIterator::cast(top)->next();
-  } else {
-    UNIMPLEMENTED("FOR_ITER only support List & Range");
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> iterator(&scope, ctx->frame->topValue());
+  Handle<Object> next_method(&scope, lookupMethod(thread, ctx->frame, iterator,
+                                                  SymbolId::kDunderNext));
+  if (next_method->isError()) {
+    thread->throwValueErrorFromCString("iter() returned non-iterator");
+    thread->abortOnPendingException();
   }
-
-  if (next->isError()) {
+  if (thread->runtime()->isIteratorExhausted(thread, iterator)) {
+    // Break out of the loop
     ctx->frame->popValue();
     ctx->pc += arg;
-  } else {
-    ctx->frame->pushValue(next);
+    return;
   }
+  Handle<Object> value(&scope,
+                       callMethod1(thread, ctx->frame, next_method, iterator));
+  if (!value->isError()) {
+    // Common case of the iterator returning a value
+    ctx->frame->pushValue(*value);
+    return;
+  }
+  // Slow-path for all other exception types
+  ctx->thread->abortOnPendingException();
 }
 
 // opcode 95
@@ -1597,7 +1642,7 @@ void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   Handle<Object> obj(&scope, None::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = ctx->frame->peek(i);
-    runtime->listExtend(list, obj);
+    runtime->listExtend(ctx->thread, list, obj);
   }
   ctx->frame->dropValues(arg - 1);
   ctx->frame->setTopValue(*list);
@@ -1611,7 +1656,7 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   Handle<Object> obj(&scope, None::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = ctx->frame->peek(i);
-    runtime->listExtend(list, obj);
+    runtime->listExtend(ctx->thread, list, obj);
   }
   ObjectArray* tuple =
       ObjectArray::cast(runtime->newObjectArray(list->allocated()));
@@ -1623,14 +1668,14 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
 }
 
 // opcode 153
-void Interpreter::doBuildSetUnpack(Interpreter::Context* ctx, word arg) {
+void Interpreter::doBuildSetUnpack(Context* ctx, word arg) {
   Runtime* runtime = ctx->thread->runtime();
   HandleScope scope(ctx->thread);
   Handle<Set> set(&scope, runtime->newSet());
   Handle<Object> obj(&scope, None::object());
   for (word i = 0; i < arg; i++) {
     obj = ctx->frame->peek(i);
-    runtime->setUpdate(set, obj);
+    runtime->setUpdate(ctx->thread, set, obj);
   }
   ctx->frame->dropValues(arg - 1);
   ctx->frame->setTopValue(*set);

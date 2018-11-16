@@ -184,6 +184,8 @@ class Runtime {
   SymbolId comparisonSelector(CompareOp op);
   SymbolId swappedComparisonSelector(CompareOp op);
 
+  bool isIteratorExhausted(Thread* thread, const Handle<Object>& iterator);
+
   // Return true if the selector does not appear in the MRO object below object.
   bool isMethodOverloaded(Thread* thread, const Handle<Type>& type,
                           SymbolId selector);
@@ -202,8 +204,6 @@ class Runtime {
 
   Symbols* symbols() { return symbols_; }
 
-  Object* getIter(const Handle<Object>& iterable);
-
   // Ensures that array has enough space for an atPut at index. If so, returns
   // array. If not, allocates and returns a new array with sufficient capacity
   // and identical contents.
@@ -213,7 +213,8 @@ class Runtime {
   void listAdd(const Handle<List>& list, const Handle<Object>& value);
 
   // Extends a list from an iterator.
-  void listExtend(const Handle<List>& dest, const Handle<Object>& iterable);
+  void listExtend(Thread* thread, const Handle<List>& dst,
+                  const Handle<Object>& iterable);
 
   // Inserts an element to the specified index of the list.
   // When index >= len(list) it is equivalent to appending to the list.
@@ -283,7 +284,8 @@ class Runtime {
   bool setRemove(const Handle<Set>& set, const Handle<Object>& value);
 
   // Update a set from an iterator.
-  void setUpdate(const Handle<Set>& set, const Handle<Object>& iterable);
+  void setUpdate(Thread* thread, const Handle<Set>& set,
+                 const Handle<Object>& iterable);
 
   NewValueCellCallback* newValueCellCallback() {
     return &new_value_cell_callback_;

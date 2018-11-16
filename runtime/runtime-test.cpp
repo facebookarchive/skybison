@@ -474,7 +474,7 @@ TEST(RuntimeListTest, ListExtendList) {
   }
   EXPECT_EQ(list->allocated(), 4);
   Handle<Object> list1_handle(&scope, *list1);
-  runtime.listExtend(list, list1_handle);
+  runtime.listExtend(Thread::currentThread(), list, list1_handle);
   ASSERT_EQ(list->allocated(), 8);
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 0);
   EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 1);
@@ -500,7 +500,7 @@ TEST(RuntimeListTest, ListExtendListIterator) {
   EXPECT_EQ(list->allocated(), 4);
   Handle<Object> list1_handle(&scope, *list1);
   Handle<Object> list1_iterator(&scope, runtime.newListIterator(list1_handle));
-  runtime.listExtend(list, list1_iterator);
+  runtime.listExtend(Thread::currentThread(), list, list1_iterator);
   ASSERT_EQ(list->allocated(), 8);
   EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 0);
   EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 1);
@@ -524,12 +524,12 @@ TEST(RuntimeListTest, ListExtendObjectArray) {
     Handle<Object> value(&scope, SmallInt::fromWord(i));
     runtime.listAdd(list, value);
   }
-  runtime.listExtend(list, object_array0);
+  runtime.listExtend(Thread::currentThread(), list, object_array0);
   EXPECT_EQ(list->allocated(), 4);
 
   Handle<Object> object_array1_handle(&scope, *object_array1);
   object_array1->atPut(0, None::object());
-  runtime.listExtend(list, object_array1_handle);
+  runtime.listExtend(Thread::currentThread(), list, object_array1_handle);
   ASSERT_GE(list->allocated(), 5);
   ASSERT_TRUE(list->at(4)->isNone());
 
@@ -538,7 +538,7 @@ TEST(RuntimeListTest, ListExtendObjectArray) {
   }
 
   Handle<Object> object_array2_handle(&scope, *object_array16);
-  runtime.listExtend(list, object_array2_handle);
+  runtime.listExtend(Thread::currentThread(), list, object_array2_handle);
   ASSERT_GE(list->allocated(), 4 + 1 + 4);
   EXPECT_EQ(list->at(5), SmallInt::fromWord(0));
   EXPECT_EQ(list->at(6), SmallInt::fromWord(1));
@@ -561,7 +561,8 @@ TEST(RuntimeListTest, ListExtendSet) {
   }
 
   Handle<Object> set_obj(&scope, *set);
-  runtime.listExtend(list, Handle<Object>(&scope, *set_obj));
+  runtime.listExtend(Thread::currentThread(), list,
+                     Handle<Object>(&scope, *set_obj));
   EXPECT_EQ(list->allocated(), 16);
 
   for (word i = 0; i < 16; i++) {
@@ -585,13 +586,87 @@ TEST(RuntimeListTest, ListExtendDict) {
   }
 
   Handle<Object> dict_obj(&scope, *dict);
-  runtime.listExtend(list, Handle<Object>(&scope, *dict_obj));
+  runtime.listExtend(Thread::currentThread(), list,
+                     Handle<Object>(&scope, *dict_obj));
   EXPECT_EQ(list->allocated(), 16);
 
   for (word i = 0; i < 16; i++) {
     sum -= SmallInt::cast(list->at(i))->value();
   }
   ASSERT_EQ(sum, 0);
+}
+
+TEST(RuntimeListTest, ListExtendIterator) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  runtime.runFromCString(R"(
+class Iterator:
+    def __init__(self):
+        self.current = 0
+        self.list = [1, 2, 3]
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current < len(self.list):
+            value = self.list[self.current]
+            self.current += 1
+            return value
+        raise StopIteration()
+
+    def __length_hint__(self):
+        return len(self.list) - self.current
+
+iterator = Iterator()
+)");
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> iterator(&scope,
+                          testing::moduleAt(&runtime, main, "iterator"));
+  runtime.listExtend(Thread::currentThread(), list, iterator);
+
+  EXPECT_EQ(list->allocated(), 3);
+
+  ASSERT_TRUE(list->at(0)->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(list->at(0))->value(), 1);
+
+  ASSERT_TRUE(list->at(1)->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(list->at(1))->value(), 2);
+
+  ASSERT_TRUE(list->at(2)->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(list->at(2))->value(), 3);
+}
+
+TEST(RuntimeListTest, ListExtendIteratorWithoutDunderLengthHint) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<List> list(&scope, runtime.newList());
+  runtime.runFromCString(R"(
+class Iterator:
+    def __init__(self):
+        self.current = 0
+        self.list = [1, 2, 3]
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current < len(self.list):
+            value = self.list[self.current]
+            self.current += 1
+            return value
+        raise StopIteration()
+
+iterator = Iterator()
+)");
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> iterator(&scope,
+                          testing::moduleAt(&runtime, main, "iterator"));
+  runtime.listExtend(Thread::currentThread(), list, iterator);
+
+  // An iterator with no __length_hint__ should not be consumed
+  ASSERT_EQ(list->allocated(), 0);
 }
 
 TEST(RuntimeTest, NewByteArray) {
@@ -1521,15 +1596,15 @@ TEST(RuntimeSetTest, UpdateSet) {
     Handle<Object> value(&scope, SmallInt::fromWord(i));
     runtime.setAdd(set, value);
   }
-  runtime.setUpdate(set, set1_handle);
+  runtime.setUpdate(Thread::currentThread(), set, set1_handle);
   ASSERT_EQ(set->numItems(), 8);
   for (word i = 4; i < 12; i++) {
     Handle<Object> value(&scope, SmallInt::fromWord(i));
     runtime.setAdd(set1, value);
   }
-  runtime.setUpdate(set, set1_handle);
+  runtime.setUpdate(Thread::currentThread(), set, set1_handle);
   ASSERT_EQ(set->numItems(), 12);
-  runtime.setUpdate(set, set1_handle);
+  runtime.setUpdate(Thread::currentThread(), set, set1_handle);
   ASSERT_EQ(set->numItems(), 12);
 }
 
@@ -1548,9 +1623,9 @@ TEST(RuntimeSetTest, UpdateList) {
   }
   ASSERT_EQ(set->numItems(), 8);
   Handle<Object> list_handle(&scope, *list);
-  runtime.setUpdate(set, list_handle);
+  runtime.setUpdate(Thread::currentThread(), set, list_handle);
   ASSERT_EQ(set->numItems(), 12);
-  runtime.setUpdate(set, list_handle);
+  runtime.setUpdate(Thread::currentThread(), set, list_handle);
   ASSERT_EQ(set->numItems(), 12);
 }
 
@@ -1570,7 +1645,7 @@ TEST(RuntimeSetTest, UpdateListIterator) {
   ASSERT_EQ(set->numItems(), 8);
   Handle<Object> list_handle(&scope, *list);
   Handle<Object> list_iterator(&scope, runtime.newListIterator(list_handle));
-  runtime.setUpdate(set, list_iterator);
+  runtime.setUpdate(Thread::currentThread(), set, list_iterator);
   ASSERT_EQ(set->numItems(), 12);
 }
 
@@ -1588,8 +1663,72 @@ TEST(RuntimeSetTest, UpdateObjectArray) {
   }
   ASSERT_EQ(set->numItems(), 8);
   Handle<Object> object_array_handle(&scope, *object_array);
-  runtime.setUpdate(set, object_array_handle);
+  runtime.setUpdate(Thread::currentThread(), set, object_array_handle);
   ASSERT_EQ(set->numItems(), 12);
+}
+
+TEST(RuntimeSetTest, UpdateIterator) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Set> set(&scope, runtime.newSet());
+  runtime.runFromCString(R"(
+class Iterator:
+    def __init__(self):
+        self.current = 0
+        self.list = [1, 2, 3]
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current < len(self.list):
+            value = self.list[self.current]
+            self.current += 1
+            return value
+        raise StopIteration()
+
+    def __length_hint__(self):
+        return len(self.list) - self.current
+
+iterator = Iterator()
+)");
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> iterator(&scope,
+                          testing::moduleAt(&runtime, main, "iterator"));
+  runtime.setUpdate(Thread::currentThread(), set, iterator);
+
+  ASSERT_EQ(set->numItems(), 3);
+}
+
+TEST(RuntimeSetTest, UpdateIteratorWithoutDunderLengthHint) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Set> set(&scope, runtime.newSet());
+  runtime.runFromCString(R"(
+class Iterator:
+    def __init__(self):
+        self.current = 0
+        self.list = [1, 2, 3]
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current < len(self.list):
+            value = self.list[self.current]
+            self.current += 1
+            return value
+        raise StopIteration()
+
+iterator = Iterator()
+)");
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> iterator(&scope,
+                          testing::moduleAt(&runtime, main, "iterator"));
+  runtime.setUpdate(Thread::currentThread(), set, iterator);
+
+  // An iterator with no __length_hint__ should not be consumed
+  ASSERT_EQ(set->numItems(), 0);
 }
 
 // Attribute tests

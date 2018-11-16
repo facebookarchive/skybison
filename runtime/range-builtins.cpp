@@ -31,16 +31,22 @@ Object *RangeBuiltins::dunderIter(Thread *thread, Frame *frame, word nargs) {
   return thread->runtime()->newRangeIterator(self);
 }
 
+const BuiltinMethod RangeIteratorBuiltins::kMethods[] = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
+
 void RangeIteratorBuiltins::initialize(Runtime *runtime) {
   HandleScope scope;
   Handle<Type> range_iter(
       &scope, runtime->addEmptyBuiltinClass(SymbolId::kRangeIterator,
                                             LayoutId::kRangeIterator,
                                             LayoutId::kObject));
-  runtime->classAddBuiltinFunction(range_iter, SymbolId::kDunderIter,
-                                   nativeTrampoline<dunderIter>);
-  runtime->classAddBuiltinFunction(range_iter, SymbolId::kDunderNext,
-                                   nativeTrampoline<dunderNext>);
+
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(range_iter, kMethods[i].name,
+                                     kMethods[i].address);
+  }
 }
 
 Object *RangeIteratorBuiltins::dunderIter(Thread *thread, Frame *frame,
@@ -74,9 +80,27 @@ Object *RangeIteratorBuiltins::dunderNext(Thread *thread, Frame *frame,
   }
   Handle<Object> value(&scope, RangeIterator::cast(*self)->next());
   if (value->isError()) {
-    UNIMPLEMENTED("thow StopIteration");
+    UNIMPLEMENTED("throw StopIteration");
   }
   return *value;
+}
+
+Object *RangeIteratorBuiltins::dunderLengthHint(Thread *thread, Frame *frame,
+                                                word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString(
+        "__length_hint__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (!self->isRangeIterator()) {
+    return thread->throwTypeErrorFromCString(
+        "__length_hint__() must be called with a range iterator instance as "
+        "the first argument");
+  }
+  Handle<RangeIterator> range_iterator(&scope, *self);
+  return SmallInt::fromWord(range_iterator->pendingLength());
 }
 
 }  // namespace python

@@ -21,9 +21,12 @@ class RangeIteratorBuiltins {
   static void initialize(Runtime* runtime);
 
   static Object* dunderIter(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static Object* dunderNext(Thread* thread, Frame* frame, word nargs);
 
  private:
+  static const BuiltinMethod kMethods[];
+
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIteratorBuiltins);
 };
 

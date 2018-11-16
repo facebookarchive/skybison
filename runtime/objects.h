@@ -960,6 +960,9 @@ class RangeIterator : public HeapObject {
   // Iteration.
   Object* next();
 
+  // Number of unconsumed values in the range iterator
+  word pendingLength();
+
   // Sizing.
   static word allocationSize();
 
@@ -3228,6 +3231,17 @@ inline bool RangeIterator::isOutOfRange(word cur, word stop, word step) {
     }
   }
   return false;
+}
+
+inline word RangeIterator::pendingLength() {
+  Range* range = Range::cast(instanceVariableAt(kRangeOffset));
+  word stop = range->stop();
+  word step = range->step();
+  word current = SmallInt::cast(instanceVariableAt(kCurValueOffset))->value();
+  if (isOutOfRange(current, stop, step)) {
+    return 0;
+  }
+  return abs((stop - current) / step);
 }
 
 inline Object* RangeIterator::next() {

@@ -19,6 +19,7 @@ const BuiltinMethod ListBuiltins::kMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderDelItem, nativeTrampoline<dunderDelItem>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
@@ -81,8 +82,8 @@ Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
         List::cast(*self)->allocated() + List::cast(*other)->allocated();
     Handle<List> new_list(&scope, runtime->newList());
     runtime->listEnsureCapacity(new_list, new_capacity);
-    runtime->listExtend(new_list, self);
-    runtime->listExtend(new_list, other);
+    runtime->listExtend(thread, new_list, self);
+    runtime->listExtend(thread, new_list, other);
     return *new_list;
   }
   return thread->throwTypeErrorFromCString("can only concatenate list to list");
@@ -121,7 +122,7 @@ Object* ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   Handle<List> list(&scope, *self);
   Handle<Object> value(&scope, args.get(1));
   // TODO(jeethu): Throw TypeError if value is not iterable.
-  thread->runtime()->listExtend(list, value);
+  thread->runtime()->listExtend(thread, list, value);
   return None::object();
 }
 
@@ -297,6 +298,93 @@ Object* ListBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString(
         "list indices must be integers or slices");
   }
+}
+
+Object* ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfList(*self)) {
+    return thread->throwTypeErrorFromCString(
+        "__iter__() must be called with a list instance as the first argument");
+  }
+  return thread->runtime()->newListIterator(self);
+}
+
+const BuiltinMethod ListIteratorBuiltins::kMethods[] = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
+
+void ListIteratorBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Type> list_iter(
+      &scope,
+      runtime->addEmptyBuiltinClass(
+          SymbolId::kListIterator, LayoutId::kListIterator, LayoutId::kObject));
+
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(list_iter, kMethods[i].name,
+                                     kMethods[i].address);
+  }
+}
+
+Object* ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                         word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (!self->isListIterator()) {
+    return thread->throwTypeErrorFromCString(
+        "__iter__() must be called with a list iterator instance as the first "
+        "argument");
+  }
+  return *self;
+}
+
+Object* ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                         word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("__next__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (!self->isListIterator()) {
+    return thread->throwTypeErrorFromCString(
+        "__next__() must be called with a list iterator instance as the first "
+        "argument");
+  }
+  Handle<Object> value(&scope, ListIterator::cast(*self)->next());
+  if (value->isError()) {
+    UNIMPLEMENTED("throw StopIteration");
+  }
+  return *value;
+}
+
+Object* ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
+                                               word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString(
+        "__length_hint__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (!self->isListIterator()) {
+    return thread->throwTypeErrorFromCString(
+        "__length_hint__() must be called with a list iterator instance as the "
+        "first argument");
+  }
+  Handle<ListIterator> list_iterator(&scope, *self);
+  Handle<List> list(&scope, list_iterator->list());
+  return SmallInt::fromWord(list->allocated() - list_iterator->index());
 }
 
 Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {

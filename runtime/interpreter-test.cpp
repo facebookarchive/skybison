@@ -715,4 +715,64 @@ result = c(42)
   EXPECT_EQ(*result, SmallInt::fromWord(42));
 }
 
+TEST(InterpreterDeathTest, IterateOnNonIterable) {
+  const char* src = R"(
+# Try to iterate on a None object which isn't iterable
+a, b = None
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(src), "object is not iterable");
+}
+
+TEST(InterpreterDeathTest, DunderIterReturnsNonIterable) {
+  const char* src = R"(
+class Foo:
+  def __iter__(self):
+    return 1
+a, b = Foo()
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCString(src),
+               R"(iter\(\) returned non-iterator)");
+}
+
+TEST(InterpreterTest, UnpackSequence) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(R"(
+l = [1, 2, 3]
+a, b, c = l
+)");
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
+  Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 1);
+  ASSERT_TRUE(b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 2);
+  ASSERT_TRUE(c->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*c)->value(), 3);
+}
+
+TEST(InterpreterDeathTest, UnpackSequenceTooFewElements) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+l = [1, 2]
+a, b, c = l
+)";
+  ASSERT_DEATH(runtime.runFromCString(src), "not enough values to unpack");
+}
+
+TEST(InterpreterDeathTest, UnpackSequenceTooManyElements) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+l = [1, 2, 3, 4]
+a, b, c = l
+)";
+  ASSERT_DEATH(runtime.runFromCString(src), "too many values to unpack");
+}
+
 }  // namespace python

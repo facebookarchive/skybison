@@ -990,8 +990,7 @@ void Runtime::initializeHeapClasses() {
                        LayoutId::kString);
   addEmptyBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
   ListBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kListIterator, LayoutId::kListIterator,
-                       LayoutId::kObject);
+  ListIteratorBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kMethod, LayoutId::kBoundMethod,
                        LayoutId::kObject);
   addEmptyBuiltinClass(SymbolId::kModule, LayoutId::kModule, LayoutId::kObject);
@@ -1742,20 +1741,6 @@ Object* Runtime::createMainModule() {
   return *module;
 }
 
-Object* Runtime::getIter(const Handle<Object>& iterable) {
-  // TODO: Support other forms of iteration.
-  if (iterable->isList()) {
-    return newListIterator(iterable);
-  } else if (iterable->isRange()) {
-    return newRangeIterator(iterable);
-  } else {
-    HandleScope scope;
-    Handle<Type> type(&scope, typeOf(*iterable));
-    UNIMPLEMENTED("GET_ITER only supported for List & Range. Got '%s'.",
-                  String::cast(type->name())->toCString());
-  }
-}
-
 // List
 
 void Runtime::listEnsureCapacity(const Handle<List>& list, word index) {
@@ -1783,72 +1768,122 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   list->atPut(index, *value);
 }
 
-void Runtime::listExtend(const Handle<List>& dest,
+void Runtime::listExtend(Thread* thread, const Handle<List>& dst,
                          const Handle<Object>& iterable) {
-  HandleScope scope;
+  HandleScope scope(thread);
   Handle<Object> elt(&scope, None::object());
-  word index = dest->allocated();
+  word index = dst->allocated();
+  // Special case for lists
   if (iterable->isList()) {
     Handle<List> src(&scope, *iterable);
     if (src->allocated() > 0) {
       word new_capacity = index + src->allocated();
-      listEnsureCapacity(dest, new_capacity);
-      dest->setAllocated(new_capacity);
+      listEnsureCapacity(dst, new_capacity);
+      dst->setAllocated(new_capacity);
       for (word i = 0; i < src->allocated(); i++) {
-        dest->atPut(index++, src->at(i));
+        dst->atPut(index++, src->at(i));
       }
     }
-  } else if (iterable->isListIterator()) {
+    return;
+  }
+  // Special case for list iterators
+  if (iterable->isListIterator()) {
     Handle<ListIterator> list_iter(&scope, *iterable);
-    while (true) {
+    Handle<List> src(&scope, list_iter->list());
+    word new_capacity = index + src->allocated();
+    listEnsureCapacity(dst, new_capacity);
+    dst->setAllocated(new_capacity);
+    for (word i = 0; i < src->allocated(); i++) {
       elt = list_iter->next();
       if (elt->isError()) {
         break;
       }
-      listAdd(dest, elt);
+      dst->atPut(index++, src->at(i));
     }
-  } else if (iterable->isObjectArray()) {
+  }
+  // Special case for tuples
+  if (iterable->isObjectArray()) {
     Handle<ObjectArray> tuple(&scope, *iterable);
     if (tuple->length() > 0) {
       word new_capacity = index + tuple->length();
-      listEnsureCapacity(dest, new_capacity);
-      dest->setAllocated(new_capacity);
+      listEnsureCapacity(dst, new_capacity);
+      dst->setAllocated(new_capacity);
       for (word i = 0; i < tuple->length(); i++) {
-        dest->atPut(index++, tuple->at(i));
+        dst->atPut(index++, tuple->at(i));
       }
     }
-  } else if (iterable->isSet()) {
+    return;
+  }
+  // Special case for sets
+  if (iterable->isSet()) {
     Handle<Set> set(&scope, *iterable);
     if (set->numItems() > 0) {
       Handle<ObjectArray> data(&scope, set->data());
       word new_capacity = index + set->numItems();
-      listEnsureCapacity(dest, new_capacity);
-      dest->setAllocated(new_capacity);
+      listEnsureCapacity(dst, new_capacity);
+      dst->setAllocated(new_capacity);
       for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
         if (Set::Bucket::isEmpty(*data, i) ||
             Set::Bucket::isTombstone(*data, i)) {
           continue;
         }
-        dest->atPut(index++, Set::Bucket::key(*data, i));
+        dst->atPut(index++, Set::Bucket::key(*data, i));
       }
     }
-  } else if (iterable->isDict()) {
+    return;
+  }
+  // Special case for dicts
+  if (iterable->isDict()) {
     Handle<Dict> dict(&scope, *iterable);
     if (dict->numItems() > 0) {
       Handle<ObjectArray> keys(&scope, dictKeys(dict));
       word new_capacity = index + dict->numItems();
-      listEnsureCapacity(dest, new_capacity);
-      dest->setAllocated(new_capacity);
+      listEnsureCapacity(dst, new_capacity);
+      dst->setAllocated(new_capacity);
       for (word i = 0; i < keys->length(); i++) {
-        dest->atPut(index++, keys->at(i));
+        dst->atPut(index++, keys->at(i));
       }
     }
-  } else {
-    // TODO(T29780822): Add support for python iterators here.
-    UNIMPLEMENTED(
-        "List.extend only supports extending from "
-        "List, ListIterator & Tuple");
+    return;
   }
+  // Generic case
+  Handle<Object> iter_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterable, SymbolId::kDunderIter));
+  if (iter_method->isError()) {
+    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->abortOnPendingException();
+    return;
+  }
+  Handle<Object> iterator(
+      &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
+                                       iter_method, iterable));
+  if (iterator->isError()) {
+    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->abortOnPendingException();
+    return;
+  }
+  Handle<Object> next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterator, SymbolId::kDunderNext));
+  if (next_method->isError()) {
+    thread->throwTypeErrorFromCString("iter() returned a non-iterator");
+    thread->abortOnPendingException();
+  }
+  Handle<Object> value(&scope, None::object());
+  for (;;) {
+    if (isIteratorExhausted(thread, iterator)) {
+      break;
+    }
+    value = Interpreter::callMethod1(thread, thread->currentFrame(),
+                                     next_method, iterator);
+    if (!value->isError()) {
+      listAdd(dst, value);
+    } else {
+      break;
+    }
+  }
+  thread->abortOnPendingException();
 }
 
 void Runtime::listInsert(const Handle<List>& list, const Handle<Object>& value,
@@ -2280,10 +2315,40 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
   return found;
 }
 
-void Runtime::setUpdate(const Handle<Set>& dst,
+void Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
                         const Handle<Object>& iterable) {
   HandleScope scope;
   Handle<Object> elt(&scope, None::object());
+  // Special case for lists
+  if (iterable->isList()) {
+    Handle<List> src(&scope, *iterable);
+    for (word i = 0; i < src->allocated(); i++) {
+      elt = src->at(i);
+      setAdd(dst, elt);
+    }
+    return;
+  }
+  // Special case for lists iterators
+  if (iterable->isListIterator()) {
+    Handle<ListIterator> list_iter(&scope, *iterable);
+    Handle<List> src(&scope, list_iter->list());
+    for (word i = 0; i < src->allocated(); i++) {
+      elt = src->at(i);
+      setAdd(dst, elt);
+    }
+  }
+  // Special case for tuples
+  if (iterable->isObjectArray()) {
+    Handle<ObjectArray> tuple(&scope, *iterable);
+    if (tuple->length() > 0) {
+      for (word i = 0; i < tuple->length(); i++) {
+        elt = tuple->at(i);
+        setAdd(dst, elt);
+      }
+    }
+    return;
+  }
+  // Special case for sets
   if (iterable->isSet()) {
     Handle<Set> src(&scope, *iterable);
     Handle<ObjectArray> data(&scope, src->data());
@@ -2297,37 +2362,59 @@ void Runtime::setUpdate(const Handle<Set>& dst,
         setAdd(dst, elt);
       }
     }
-  } else if (iterable->isList()) {
-    Handle<List> list(&scope, *iterable);
-    if (list->allocated() > 0) {
-      for (word i = 0; i < list->allocated(); i++) {
-        elt = list->at(i);
-        setAdd(dst, elt);
-      }
-    }
-  } else if (iterable->isListIterator()) {
-    Handle<ListIterator> list_iter(&scope, *iterable);
-    while (true) {
-      elt = list_iter->next();
-      if (elt->isError()) {
-        break;
-      }
-      setAdd(dst, elt);
-    }
-  } else if (iterable->isObjectArray()) {
-    Handle<ObjectArray> tuple(&scope, *iterable);
-    if (tuple->length() > 0) {
-      for (word i = 0; i < tuple->length(); i++) {
-        elt = tuple->at(i);
-        setAdd(dst, elt);
-      }
-    }
-  } else {
-    // TODO(T30211199): Add support for python iterators here.
-    UNIMPLEMENTED(
-        "Set.update only supports extending from"
-        "Set, List, ListIterator & Tuple");
+    return;
   }
+  // Special case for dicts
+  if (iterable->isDict()) {
+    Handle<Dict> dict(&scope, *iterable);
+    if (dict->numItems() > 0) {
+      Handle<ObjectArray> keys(&scope, dictKeys(dict));
+      Handle<Object> value(&scope, None::object());
+      for (word i = 0; i < keys->length(); i++) {
+        value = keys->at(i);
+        setAdd(dst, value);
+      }
+    }
+    return;
+  }
+  // Generic case
+  Handle<Object> iter_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterable, SymbolId::kDunderIter));
+  if (iter_method->isError()) {
+    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->abortOnPendingException();
+    return;
+  }
+  Handle<Object> iterator(
+      &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
+                                       iter_method, iterable));
+  if (iterator->isError()) {
+    thread->throwTypeErrorFromCString("object is not iterable");
+    thread->abortOnPendingException();
+    return;
+  }
+  Handle<Object> next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterator, SymbolId::kDunderNext));
+  if (next_method->isError()) {
+    thread->throwTypeErrorFromCString("iter() returned a non-iterator");
+    thread->abortOnPendingException();
+  }
+  Handle<Object> value(&scope, None::object());
+  for (;;) {
+    if (isIteratorExhausted(thread, iterator)) {
+      break;
+    }
+    value = Interpreter::callMethod1(thread, thread->currentFrame(),
+                                     next_method, iterator);
+    if (!value->isError()) {
+      setAdd(dst, value);
+    } else {
+      break;
+    }
+  }
+  thread->abortOnPendingException();
 }
 
 Object* Runtime::newValueCell() { return heap()->createValueCell(); }
@@ -2986,6 +3073,27 @@ Object* Runtime::lookupSymbolInMro(Thread* thread, const Handle<Type>& type,
     }
   }
   return Error::object();
+}
+
+bool Runtime::isIteratorExhausted(Thread* thread,
+                                  const Handle<Object>& iterator) {
+  HandleScope scope(thread);
+  Handle<Object> length_hint_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterator, SymbolId::kDunderLengthHint));
+  if (length_hint_method->isError()) {
+    return true;
+  }
+  Handle<Object> result(&scope,
+                        Interpreter::callMethod1(thread, thread->currentFrame(),
+                                                 length_hint_method, iterator));
+  if (result->isError()) {
+    return true;
+  }
+  if (!result->isSmallInt()) {
+    return true;
+  }
+  return (SmallInt::cast(*result)->value() == 0);
 }
 
 }  // namespace python

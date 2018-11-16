@@ -53,6 +53,7 @@ class Runtime;
   V(DunderIxor, "__ixor__")                                                    \
   V(DunderLe, "__le__")                                                        \
   V(DunderLen, "__len__")                                                      \
+  V(DunderLengthHint, "__length_hint__")                                       \
   V(DunderLshift, "__lshift__")                                                \
   V(DunderLt, "__lt__")                                                        \
   V(DunderMain, "__main__")                                                    \
