@@ -15,8 +15,8 @@ add_library(
   runtime/bytecode.h
   runtime/frame.h
   runtime/globals.h
-  runtime/handle.cpp
-  runtime/handle.h
+  runtime/handles.cpp
+  runtime/handles.h
   runtime/heap.cpp
   runtime/heap.h
   runtime/interpreter.cpp
@@ -30,7 +30,8 @@ add_library(
   runtime/runtime.h
   runtime/thread.cpp
   runtime/thread.h
-  runtime/utils.h)
+  runtime/utils.h
+  runtime/visitor.h)
 
 add_executable(
   python
@@ -41,6 +42,7 @@ target_link_libraries(
 
 add_executable(
   python-tests
+  runtime/handles-test.cpp
   runtime/heap-test.cpp
   runtime/marshal-test.cpp
   runtime/os-test.cpp

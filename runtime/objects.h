@@ -67,6 +67,10 @@ enum Layout {
 
 class Object {
  public:
+  inline bool isObject() {
+    return true;
+  }
+
   // Immediate
   inline bool isSmallInteger();
   inline bool isNone();

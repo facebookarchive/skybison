@@ -1,13 +1,12 @@
 #include "runtime.h"
 
 #include "globals.h"
-#include "handle.h"
+#include "handles.h"
 #include "heap.h"
 
 namespace python {
 
 Runtime::Runtime() : heap_(64 * MiB) {
-  Handles::initialize();
   allocateClasses();
 }
 

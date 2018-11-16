@@ -1,6 +1,7 @@
 #pragma once
 
 #include "globals.h"
+#include "handles.h"
 #include "objects.h"
 #include "utils.h"
 
@@ -14,6 +15,7 @@ class Thread {
     start_ = ptr_ = new byte[size];
     end_ = start_ + size;
   }
+
   ~Thread() {
     delete[] start_;
   }
@@ -24,6 +26,8 @@ class Thread {
   Object* run(Object* object);
 
  private:
+  Handles handles_;
+
   int size_;
   byte* start_;
   byte* end_;
