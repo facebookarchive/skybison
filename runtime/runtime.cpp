@@ -76,6 +76,7 @@ Object* Runtime::newLayoutWithId(word layout_id) {
   layout->setInObjectAttributes(empty_object_array_);
   layout->setOverflowAttributes(empty_object_array_);
   layout->setAdditions(newList());
+  layout->setDeletions(newList());
   List::cast(layouts_)->atPut(layout_id, *layout);
   return *layout;
 }
@@ -2083,6 +2084,17 @@ Object* Runtime::layoutFindAttribute(
   return Error::object();
 }
 
+Object* Runtime::layoutCreateChild(
+    Thread* thread,
+    const Handle<Layout>& layout) {
+  HandleScope scope(thread->handles());
+  Handle<Layout> new_layout(&scope, newLayout());
+  new_layout->setDescribedClass(layout->describedClass());
+  new_layout->setInObjectAttributes(layout->inObjectAttributes());
+  new_layout->setOverflowAttributes(layout->overflowAttributes());
+  return *new_layout;
+}
+
 Object* Runtime::layoutAddAttribute(
     Thread* thread,
     const Handle<Layout>& layout,
@@ -2114,10 +2126,81 @@ Object* Runtime::layoutAddAttribute(
   new_overflow->atPut(overflow->length(), *entry);
 
   // Create the new layout
-  Handle<Layout> new_layout(&scope, newLayout());
-  new_layout->setDescribedClass(layout->describedClass());
-  new_layout->setInObjectAttributes(layout->inObjectAttributes());
+  Handle<Layout> new_layout(&scope, layoutCreateChild(thread, layout));
   new_layout->setOverflowAttributes(*new_overflow);
+
+  // Add the edge to the existing layout
+  Handle<Object> value(&scope, *new_layout);
+  layoutAddEdge(edges, iname, value);
+
+  return *new_layout;
+}
+
+Object* Runtime::layoutDeleteAttribute(
+    Thread* thread,
+    const Handle<Layout>& layout,
+    const Handle<Object>& name) {
+  HandleScope scope(thread->handles());
+
+  // See if the attribute exists
+  Object* result = layoutFindAttribute(thread, layout, name);
+  if (result->isError()) {
+    return result;
+  }
+
+  // Check if an edge exists for removing the attribute
+  Handle<Object> iname(&scope, internString(name));
+  Handle<List> edges(&scope, layout->deletions());
+  Object* next_layout = layoutFollowEdge(edges, iname);
+  if (!next_layout->isError()) {
+    return next_layout;
+  }
+
+  // No edge was found, create a new layout and add an edge
+  Handle<Layout> new_layout(&scope, layoutCreateChild(thread, layout));
+  AttributeInfo info(result);
+  if (info.isInObject()) {
+    // The attribute to be deleted was an in-object attribute, mark it as
+    // deleted
+    Handle<ObjectArray> old_inobject(&scope, layout->inObjectAttributes());
+    Handle<ObjectArray> new_inobject(
+        &scope, newObjectArray(old_inobject->length()));
+    for (word i = 0; i < old_inobject->length(); i++) {
+      Handle<ObjectArray> entry(&scope, old_inobject->at(i));
+      if (entry->at(0) == *iname) {
+        entry = newObjectArray(2);
+        entry->atPut(0, None::object());
+        entry->atPut(
+            1,
+            AttributeInfo(0, AttributeInfo::Flag::kDeleted).asSmallInteger());
+      }
+      new_inobject->atPut(i, *entry);
+    }
+    new_layout->setInObjectAttributes(*new_inobject);
+  } else {
+    // The attribute to be deleted was an overflow attribute, omit it from the
+    // new overflow array
+    Handle<ObjectArray> old_overflow(&scope, layout->overflowAttributes());
+    Handle<ObjectArray> new_overflow(
+        &scope, newObjectArray(old_overflow->length() - 1));
+    bool is_deleted = false;
+    for (word i = 0, j = 0; i < old_overflow->length(); i++) {
+      Handle<ObjectArray> entry(&scope, old_overflow->at(i));
+      if (entry->at(0) == *iname) {
+        is_deleted = true;
+        continue;
+      }
+      if (is_deleted) {
+        // Need to shift everything down by 1 once we've deleted the attribute
+        entry = newObjectArray(2);
+        entry->atPut(0, ObjectArray::cast(old_overflow->at(i))->at(0));
+        entry->atPut(1, AttributeInfo(j, info.flags()).asSmallInteger());
+      }
+      new_overflow->atPut(j, *entry);
+      j++;
+    }
+    new_layout->setOverflowAttributes(*new_overflow);
+  }
 
   // Add the edge to the existing layout
   Handle<Object> value(&scope, *new_layout);

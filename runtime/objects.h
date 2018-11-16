@@ -1372,6 +1372,15 @@ class Layout : public HeapObject {
   inline Object* additions();
   inline void setAdditions(Object* additions);
 
+  // Returns a flattened list of tuples. Each tuple is composed of the
+  // following elements, in order:
+  //
+  //   1. The attribute name (String)
+  //   2. The layout that would result if an attribute with that name
+  //      was deleted.
+  inline Object* deletions();
+  inline void setDeletions(Object* deletions);
+
   // Returns the number of words in an instance described by this layout,
   // including the overflow array.
   inline word instanceSize();
@@ -1405,7 +1414,8 @@ class Layout : public HeapObject {
   static const int kOverflowAttributesOffset =
       kInObjectAttributesOffset + kPointerSize;
   static const int kAdditionsOffset = kOverflowAttributesOffset + kPointerSize;
-  static const int kInstanceSizeOffset = kAdditionsOffset + kPointerSize;
+  static const int kDeletionsOffset = kAdditionsOffset + kPointerSize;
+  static const int kInstanceSizeOffset = kDeletionsOffset + kPointerSize;
   static const int kOverflowOffsetOffset = kInstanceSizeOffset + kPointerSize;
   static const int kDelegateOffsetOffset = kOverflowOffsetOffset + kPointerSize;
   static const int kSize = kDelegateOffsetOffset + kPointerSize;
@@ -2991,6 +3001,14 @@ void Layout::setAdditions(Object* additions) {
 
 Object* Layout::additions() {
   return instanceVariableAt(kAdditionsOffset);
+}
+
+void Layout::setDeletions(Object* deletions) {
+  instanceVariableAtPut(kDeletionsOffset, deletions);
+}
+
+Object* Layout::deletions() {
+  return instanceVariableAt(kDeletionsOffset);
 }
 
 word Layout::allocationSize() {

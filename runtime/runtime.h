@@ -330,6 +330,17 @@ class Runtime {
       const Handle<Object>& name,
       word flags);
 
+  // Delete the named attribute from the layout.
+  //
+  // If the attribute exists, this returns a new layout by either following
+  // a pre-existing edge or adding one.
+  //
+  // If the attribute doesn't exist, Error::object() is returned.
+  Object* layoutDeleteAttribute(
+      Thread* thread,
+      const Handle<Layout>& layout,
+      const Handle<Object>& name);
+
   // Pre-computes fast_globals for functions.
   Object* computeFastGlobals(
       const Handle<Code>& code,
@@ -518,6 +529,9 @@ class Runtime {
   Object* layoutFollowEdge(
       const Handle<List>& edges,
       const Handle<Object>& label);
+
+  // Creates a new layout that will be a child layout of the supplied parent.
+  Object* layoutCreateChild(Thread* thread, const Handle<Layout>& parent);
 
   // The size ensureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
