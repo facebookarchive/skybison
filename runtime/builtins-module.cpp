@@ -98,7 +98,8 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   thread->runClassFunction(*body, *dict);
 
   Handle<Function> dunder_call(
-      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderCall));
+      &scope,
+      runtime->lookupSymbolInMro(thread, metaclass, SymbolId::kDunderCall));
   frame->pushValue(*dunder_call);
   frame->pushValue(*metaclass);
   frame->pushValue(*name);
