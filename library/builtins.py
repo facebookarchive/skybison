@@ -54,3 +54,30 @@ class tuple(bootstrap=True):
 class list(bootstrap=True):
     def __init__(self, iterable=()):
         self.extend(iterable)
+
+
+class str(bootstrap=True):
+    def partition(self, sep):
+        if not isinstance(self, str):
+            raise TypeError(
+                f"descriptor 'partition' requires a 'str' object but received a {type(self).__name__}"
+            )
+        if not isinstance(sep, str):
+            raise TypeError(f"must be str, not {type(sep).__name__}")
+        sep_len = len(sep)
+        if not sep_len:
+            raise ValueError("empty separator")
+        sep_0 = sep[0]
+        i = 0
+        str_len = len(self)
+        while i < str_len:
+            if self[i] == sep_0:
+                j = 1
+                while j < sep_len:
+                    if i + j >= str_len or self[i + j] != sep[j]:
+                        break
+                    j += 1
+                else:
+                    return (self[:i], sep, self[i + j :])
+            i += 1
+        return (self, "", "")

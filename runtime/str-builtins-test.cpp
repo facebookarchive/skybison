@@ -502,4 +502,108 @@ a = "\n \t \r \\".__repr__()
   EXPECT_PYSTRING_EQ(*a, "'\\n \\t \\r \\\\'");
 }
 
+TEST(StrBuiltinsTest, PartitionOnSingleCharStr) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello".partition("l")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+
+  ASSERT_EQ(a->length(), 3);
+  EXPECT_PYSTRING_EQ(String::cast(a->at(0)), "he");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(1)), "l");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(2)), "lo");
+}
+
+TEST(StrBuiltinsTest, PartitionOnMultiCharStr) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello".partition("ll")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+
+  ASSERT_EQ(a->length(), 3);
+  EXPECT_PYSTRING_EQ(String::cast(a->at(0)), "he");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(1)), "ll");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(2)), "o");
+}
+
+TEST(StrBuiltinsTest, PartitionOnSuffix) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello".partition("lo")
+b = "hello".partition("lop")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<ObjectArray> b(&scope, moduleAt(&runtime, main, "b"));
+
+  ASSERT_EQ(a->length(), 3);
+  EXPECT_PYSTRING_EQ(String::cast(a->at(0)), "hel");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(1)), "lo");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(2)), "");
+
+  ASSERT_EQ(b->length(), 3);
+  EXPECT_PYSTRING_EQ(String::cast(b->at(0)), "hello");
+  EXPECT_PYSTRING_EQ(String::cast(b->at(1)), "");
+  EXPECT_PYSTRING_EQ(String::cast(b->at(2)), "");
+}
+
+TEST(StrBuiltinsTest, PartitionOnPrefix) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello".partition("he")
+b = "hello".partition("hex")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<ObjectArray> b(&scope, moduleAt(&runtime, main, "b"));
+
+  ASSERT_EQ(a->length(), 3);
+  EXPECT_PYSTRING_EQ(String::cast(a->at(0)), "");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(1)), "he");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(2)), "llo");
+
+  ASSERT_EQ(b->length(), 3);
+  EXPECT_PYSTRING_EQ(String::cast(b->at(0)), "hello");
+  EXPECT_PYSTRING_EQ(String::cast(b->at(1)), "");
+  EXPECT_PYSTRING_EQ(String::cast(b->at(2)), "");
+}
+
+TEST(StrBuiltinsTest, PartitionLargerStr) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello".partition("abcdefghijk")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+
+  ASSERT_EQ(a->length(), 3);
+  EXPECT_PYSTRING_EQ(String::cast(a->at(0)), "hello");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(1)), "");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(2)), "");
+}
+
+TEST(StrBuiltinsTest, PartitionEmptyStr) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "".partition("a")
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<ObjectArray> a(&scope, moduleAt(&runtime, main, "a"));
+
+  ASSERT_EQ(a->length(), 3);
+  EXPECT_PYSTRING_EQ(String::cast(a->at(0)), "");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(1)), "");
+  EXPECT_PYSTRING_EQ(String::cast(a->at(2)), "");
+}
+
 }  // namespace python
