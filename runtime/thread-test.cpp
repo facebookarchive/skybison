@@ -284,7 +284,10 @@ TEST(ThreadTest, CallFunction) {
   EXPECT_EQ(SmallInteger::cast(result)->value(), expectedResult->value());
 }
 
-static Object* firstArg(Thread*, Frame* callerFrame, word argc) {
+static Object* firstArg(Thread*, Frame* callerFrame, word argc)
+    __attribute__((aligned(16)));
+
+Object* firstArg(Thread*, Frame* callerFrame, word argc) {
   if (argc == 0) {
     return None::object();
   }
