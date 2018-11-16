@@ -97,12 +97,18 @@ class ObjectHandle {
     return &pointer_;
   }
 
-  ObjectHandle* next() {
+  ObjectHandle* next() const {
     return next_;
   }
 
  protected:
   Object* pointer_;
+
+  // The casting constructor below needs this, but it appears you can't
+  // access your parent's protected fields when they are on a sibling class.
+  static HandleScope* scope(const ObjectHandle& o) {
+    return o.scope_;
+  }
 
  private:
   ObjectHandle* next_;
@@ -119,6 +125,13 @@ class Handle : public ObjectHandle {
 
   T* operator*() const {
     return reinterpret_cast<T*>(pointer_);
+  }
+
+  template <typename S>
+  Handle(const Handle<S>& other) : ObjectHandle(scope(other), T::cast(*other)) {
+    static_assert(
+        std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
+        "Only up- and down-casts are permitted.");
   }
 
   Handle(HandleScope* scope, Object* pointer)

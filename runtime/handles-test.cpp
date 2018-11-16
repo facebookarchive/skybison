@@ -32,6 +32,46 @@ class RememberingVisitor : public PointerVisitor {
   std::vector<Object*> pointers_;
 };
 
+TEST(HandlesTest, UpCastTest) {
+  Handles handles;
+  HandleScope scope(&handles);
+
+  auto i1 = reinterpret_cast<SmallInteger*>(0xFEEDFACE);
+  Handle<SmallInteger> h1(&scope, i1);
+
+  Handle<Object> h2(h1);
+
+  RememberingVisitor visitor;
+  handles.visitPointers(&visitor);
+  EXPECT_EQ(visitor.count(), 2);
+  EXPECT_TRUE(visitor.hasVisited(i1));
+}
+
+TEST(HandlesTest, DownCastTest) {
+  Handles handles;
+  HandleScope scope(&handles);
+
+  auto i1 = reinterpret_cast<SmallInteger*>(0xFEEDFACE);
+  Handle<Object> h1(&scope, i1);
+
+  Handle<SmallInteger> h2(h1);
+
+  RememberingVisitor visitor;
+  handles.visitPointers(&visitor);
+  EXPECT_EQ(visitor.count(), 2);
+  EXPECT_TRUE(visitor.hasVisited(i1));
+}
+
+TEST(HandlesTest, IllegalCastRunTimeTest) {
+  Handles handles;
+  HandleScope scope(&handles);
+
+  auto i1 = reinterpret_cast<SmallInteger*>(0xFEEDFACE);
+  Handle<Object> h1(&scope, i1);
+
+  EXPECT_DEBUG_DEATH(Handle<Dictionary> h2(h1), "isDictionary.*failed");
+}
+
 TEST(HandlesTest, VisitNoScopes) {
   Handles handles;
   RememberingVisitor visitor;
