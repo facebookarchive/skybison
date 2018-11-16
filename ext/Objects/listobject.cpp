@@ -1,5 +1,6 @@
 // listobject.c implementation
 
+#include "cpython-func.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
@@ -52,8 +53,27 @@ PY_EXPORT int PyList_SetItem(PyObject* /* p */, Py_ssize_t /* i */,
   UNIMPLEMENTED("PyList_SetItem");
 }
 
-PY_EXPORT int PyList_Append(PyObject* /* p */, PyObject* /* m */) {
-  UNIMPLEMENTED("PyList_Append");
+PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  if (newitem == nullptr) {
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return -1;
+  }
+  Handle<Object> value(&scope, ApiHandle::fromPyObject(newitem)->asObject());
+
+  Handle<Object> list_obj(&scope, ApiHandle::fromPyObject(op)->asObject());
+  if (!runtime->hasSubClassFlag(*list_obj, Type::Flag::kListSubclass)) {
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return -1;
+  }
+  Handle<List> list(&scope, list_obj);
+
+  runtime->listAdd(list, value);
+  Py_INCREF(newitem);
+  return 0;
 }
 
 PY_EXPORT PyObject* PyList_GetSlice(PyObject* /* a */, Py_ssize_t /* w */,
