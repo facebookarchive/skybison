@@ -29,6 +29,9 @@ class Runtime {
   Object* newByteArray(word length);
   Object* newByteArrayWithAll(const byte* data, word length);
 
+  Object* newClass();
+  Object* newClassWithId(ClassId class_id);
+
   Object* newCode();
 
   Object* newDictionary();
@@ -136,6 +139,8 @@ class Runtime {
  private:
   void initializeThreads();
   void initializeClasses();
+  void initializeHeapClasses();
+  void initializeImmediateClasses();
   void initializeInstances();
   void initializeInterned();
   void initializeModules();
@@ -151,6 +156,8 @@ class Runtime {
   Object* identityHash(Object* object);
   Object* immediateHash(Object* object);
   Object* valueHash(Object* object);
+
+  Object* createMro(const ClassId* superclasses, word length);
 
   ObjectArray* dictionaryGrow(const Handle<ObjectArray>& data);
 
@@ -171,23 +178,18 @@ class Runtime {
 
   Heap heap_;
 
-  Object* byte_array_class_;
-  Object* class_class_;
-  Object* code_class_;
-  Object* dictionary_class_;
-  Object* function_class_;
-  Object* list_class_;
-  Object* module_class_;
-  Object* object_array_class_;
-  Object* string_class_;
+  // Classes
+  Object* class_table_;
 
+  // Cached instances
   Object* empty_byte_array_;
   Object* empty_object_array_;
   Object* empty_string_;
 
+  // Interned strings
   Object* interned_;
 
-  // the equivalent of sys.modules in python
+  // Modules
   Object* modules_;
 
   Thread* threads_;

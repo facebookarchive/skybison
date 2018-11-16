@@ -22,9 +22,7 @@ class Heap {
 
   Object* createByteArray(word length);
 
-  Object* createClass(ClassId class_id, Object* super_class);
-
-  Object* createClassClass();
+  Object* createClass(ClassId class_id);
 
   Object* createCode(Object* empty_object_array);
 

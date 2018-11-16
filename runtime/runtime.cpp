@@ -43,20 +43,32 @@ Object* Runtime::newByteArray(word length) {
   return heap()->createByteArray(length);
 }
 
-Object* Runtime::newCode() {
-  return heap()->createCode(empty_object_array_);
-}
-
 Object* Runtime::newByteArrayWithAll(const byte* data, word length) {
   if (length == 0) {
     return empty_byte_array_;
   }
   Object* result = newByteArray(length);
   for (word i = 0; i < length; i++) {
-    ByteArray::cast(result)->byteAtPut(
-        i, *reinterpret_cast<const byte*>(data + i));
+    ByteArray::cast(result)->byteAtPut(i, *(data + i));
   }
   return result;
+}
+
+Object* Runtime::newClass() {
+  // TODO(cshapiro): allocate and assign a unique class ID.
+  return heap()->createClass(static_cast<ClassId>(0));
+}
+
+Object* Runtime::newClassWithId(ClassId class_id) {
+  Object* result = heap()->createClass(class_id);
+  auto index = static_cast<word>(class_id);
+  assert(index < List::cast(class_table_)->allocated());
+  List::cast(class_table_)->atPut(index, result);
+  return result;
+}
+
+Object* Runtime::newCode() {
+  return heap()->createCode(empty_object_array_);
 }
 
 Object* Runtime::newBuiltinFunction(Function::Entry entry) {
@@ -199,17 +211,134 @@ Object* Runtime::valueHash(Object* object) {
 }
 
 void Runtime::initializeClasses() {
-  class_class_ = heap()->createClassClass();
+  HandleScope scope;
 
-  byte_array_class_ = heap()->createClass(ClassId::kByteArray, class_class_);
-  code_class_ = heap()->createClass(ClassId::kCode, class_class_);
-  dictionary_class_ = heap()->createClass(ClassId::kDictionary, class_class_);
-  function_class_ = heap()->createClass(ClassId::kFunction, class_class_);
-  list_class_ = heap()->createClass(ClassId::kList, class_class_);
-  module_class_ = heap()->createClass(ClassId::kModule, class_class_);
-  object_array_class_ =
-      heap()->createClass(ClassId::kObjectArray, class_class_);
-  string_class_ = heap()->createClass(ClassId::kString, class_class_);
+  Handle<ObjectArray> array(&scope, newObjectArray(256));
+  Handle<List> list(&scope, newList());
+  list->setItems(*array);
+  const word allocated = static_cast<word>(ClassId::kLastId) + 1;
+  assert(allocated < array->length());
+  list->setAllocated(allocated);
+  class_table_ = *list;
+  initializeHeapClasses();
+  initializeImmediateClasses();
+}
+
+Object* Runtime::createMro(const ClassId* superclasses, word length) {
+  HandleScope scope;
+  Handle<ObjectArray> result(&scope, newObjectArray(length));
+  for (word i = 0; i < length; i++) {
+    auto index = static_cast<word>(superclasses[i]);
+    assert(List::cast(class_table_)->at(index) != None::object());
+    result->atPut(i, List::cast(class_table_)->at(index));
+  }
+  return *result;
+}
+
+void Runtime::initializeHeapClasses() {
+  HandleScope scope;
+
+  Handle<Class> object(&scope, newClassWithId(ClassId::kObject));
+  object->setName(newStringFromCString("object"));
+  const ClassId object_mro[] = {ClassId::kObject};
+  object->setMro(createMro(object_mro, ARRAYSIZE(object_mro)));
+
+  Handle<Class> type(&scope, newClassWithId(ClassId::kType));
+  type->setName(newStringFromCString("type"));
+  const ClassId type_mro[] = {ClassId::kType, ClassId::kObject};
+  type->setMro(createMro(type_mro, ARRAYSIZE(type_mro)));
+
+  Handle<Class> byte_array(&scope, newClassWithId(ClassId::kByteArray));
+  byte_array->setName(newStringFromCString("bytearray"));
+  const ClassId byte_array_mro[] = {ClassId::kByteArray, ClassId::kObject};
+  byte_array->setMro(createMro(byte_array_mro, ARRAYSIZE(byte_array_mro)));
+
+  Handle<Class> code(&scope, newClassWithId(ClassId::kCode));
+  code->setName(newStringFromCString("code"));
+  const ClassId code_mro[] = {ClassId::kCode, ClassId::kObject};
+  code->setMro(createMro(code_mro, ARRAYSIZE(code_mro)));
+
+  Handle<Class> dictionary(&scope, newClassWithId(ClassId::kDictionary));
+  dictionary->setName(newStringFromCString("dictionary"));
+  const ClassId dictionary_mro[] = {ClassId::kDictionary, ClassId::kObject};
+  dictionary->setMro(createMro(dictionary_mro, ARRAYSIZE(dictionary_mro)));
+
+  Handle<Class> function(&scope, newClassWithId(ClassId::kFunction));
+  function->setName(newStringFromCString("function"));
+  const ClassId function_mro[] = {ClassId::kFunction, ClassId::kObject};
+  function->setMro(createMro(function_mro, ARRAYSIZE(function_mro)));
+
+  Handle<Class> integer(&scope, newClassWithId(ClassId::kInteger));
+  integer->setName(newStringFromCString("integer"));
+  const ClassId integer_mro[] = {ClassId::kInteger, ClassId::kObject};
+  integer->setMro(createMro(integer_mro, ARRAYSIZE(integer_mro)));
+
+  Handle<Class> list(&scope, newClassWithId(ClassId::kList));
+  list->setName(newStringFromCString("list"));
+  const ClassId list_mro[] = {ClassId::kList, ClassId::kObject};
+  list->setMro(createMro(list_mro, ARRAYSIZE(list_mro)));
+
+  Handle<Class> module(&scope, newClassWithId(ClassId::kModule));
+  module->setName(newStringFromCString("module"));
+  const ClassId module_mro[] = {ClassId::kModule, ClassId::kObject};
+  module->setMro(createMro(module_mro, ARRAYSIZE(module_mro)));
+
+  Handle<Class> object_array(&scope, newClassWithId(ClassId::kObjectArray));
+  object_array->setName(newStringFromCString("objectarray"));
+  const ClassId object_array_mro[] = {ClassId::kObjectArray, ClassId::kObject};
+  object_array->setMro(
+      createMro(object_array_mro, ARRAYSIZE(object_array_mro)));
+
+  Handle<Class> string(&scope, newClassWithId(ClassId::kString));
+  string->setName(newStringFromCString("str"));
+  const ClassId string_mro[] = {ClassId::kString, ClassId::kObject};
+  string->setMro(createMro(string_mro, ARRAYSIZE(string_mro)));
+
+  Handle<Class> value_cell(&scope, newClassWithId(ClassId::kValueCell));
+  value_cell->setName(newStringFromCString("valuecell"));
+  const ClassId value_cell_mro[] = {ClassId::kValueCell, ClassId::kObject};
+  value_cell->setMro(createMro(value_cell_mro, ARRAYSIZE(value_cell_mro)));
+}
+
+void Runtime::initializeImmediateClasses() {
+  HandleScope scope;
+
+  Handle<Class> small_integer(&scope, newClassWithId(ClassId::kSmallInteger));
+  small_integer->setName(newStringFromCString("smallint"));
+  const ClassId small_integer_mro[] = {
+      ClassId::kSmallInteger, ClassId::kInteger, ClassId::kObject};
+  small_integer->setMro(
+      createMro(small_integer_mro, ARRAYSIZE(small_integer_mro)));
+  // We want to lookup the class of an immediate type by using the 5-bit tag
+  // value as an index into the class table.  Replicate the class object for
+  // SmallInteger to all locations that decode to a SmallInteger tag.
+  for (word i = 1; i < 16; i++) {
+    assert(List::cast(class_table_)->at(i << 1) == None::object());
+    List::cast(class_table_)->atPut(i << 1, *small_integer);
+  }
+
+  Handle<Class> small_string(&scope, newClassWithId(ClassId::kSmallString));
+  small_string->setName(newStringFromCString("smallstr"));
+  const ClassId small_string_mro[] = {
+      ClassId::kSmallString, ClassId::kInteger, ClassId::kObject};
+  small_string->setMro(
+      createMro(small_string_mro, ARRAYSIZE(small_string_mro)));
+
+  Handle<Class> boolean(&scope, newClassWithId(ClassId::kBoolean));
+  boolean->setName(newStringFromCString("bool"));
+  const ClassId boolean_mro[] = {
+      ClassId::kBoolean, ClassId::kInteger, ClassId::kObject};
+  boolean->setMro(createMro(boolean_mro, ARRAYSIZE(boolean_mro)));
+
+  Handle<Class> none(&scope, newClassWithId(ClassId::kNone));
+  none->setName(newStringFromCString("NoneType"));
+  const ClassId none_mro[] = {ClassId::kNone, ClassId::kObject};
+  none->setMro(createMro(none_mro, ARRAYSIZE(none_mro)));
+
+  Handle<Class> ellipsis(&scope, newClassWithId(ClassId::kEllipsis));
+  ellipsis->setName(newStringFromCString("ellipsis"));
+  const ClassId ellipsis_mro[] = {ClassId::kEllipsis, ClassId::kObject};
+  ellipsis->setMro(createMro(ellipsis_mro, ARRAYSIZE(ellipsis_mro)));
 }
 
 class ScavengeVisitor : public PointerVisitor {
@@ -279,15 +408,7 @@ void Runtime::visitRoots(PointerVisitor* visitor) {
 
 void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit classes
-  visitor->visitPointer(&byte_array_class_);
-  visitor->visitPointer(&class_class_);
-  visitor->visitPointer(&code_class_);
-  visitor->visitPointer(&dictionary_class_);
-  visitor->visitPointer(&function_class_);
-  visitor->visitPointer(&list_class_);
-  visitor->visitPointer(&module_class_);
-  visitor->visitPointer(&object_array_class_);
-  visitor->visitPointer(&string_class_);
+  visitor->visitPointer(&class_table_);
 
   // Visit instances
   visitor->visitPointer(&empty_byte_array_);

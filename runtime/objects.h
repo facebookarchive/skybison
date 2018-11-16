@@ -55,25 +55,28 @@ class Object;
 // [ elem N ]
 
 enum class ClassId {
-  kObject = 1,
-
-  // Immediate
-  kSmallInteger,
+  // Immediate objects
+  kSmallInteger = 0,
+  kSmallString,
   kBoolean,
   kNone,
   kEllipsis,
 
-  // Heap object
+  // Heap objects
+  kObject = 32,
   kByteArray,
-  kClass,
   kCode,
   kDictionary,
   kFunction,
+  kInteger,
   kList,
   kModule,
   kObjectArray,
   kString,
+  kType,
   kValueCell,
+
+  kLastId = kValueCell,
 };
 
 class Object {
@@ -82,14 +85,14 @@ class Object {
 
   inline bool isObject();
 
-  // Immediate
+  // Immediate objects
   inline bool isSmallInteger();
   inline bool isHeader();
   inline bool isNone();
   inline bool isEllipsis();
   inline bool isBoolean();
 
-  // Indirect
+  // Heap objects
   inline bool isHeapObject();
   inline bool isByteArray();
   inline bool isClass();
@@ -272,6 +275,17 @@ class Ellipsis : public Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Ellipsis);
 };
 
+class SmallString : public Object {
+ public:
+  // Tagging.
+  static const int kTag = 31; // 0b11111
+  static const int kTagSize = 5;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallString);
+};
+
 // Heap objects
 
 class HeapObject : public Object {
@@ -327,7 +341,10 @@ class HeapObject : public Object {
 class Class : public HeapObject {
  public:
   // Getters and setters.
-  inline Object* superClass();
+  inline Object* mro();
+  inline void setMro(Object* object_array);
+  inline Object* name();
+  inline void setName(Object* name);
 
   // Casting.
   inline static Class* cast(Object* object);
@@ -335,12 +352,10 @@ class Class : public HeapObject {
   // Sizing.
   inline static word allocationSize();
 
-  // Allocation.
-  inline void initialize(Object* super_class);
-
   // Layout.
-  static const int kSuperClassOffset = HeapObject::kSize;
-  static const int kSize = kSuperClassOffset + kPointerSize;
+  static const int kMroOffset = HeapObject::kSize;
+  static const int kNameOffset = kMroOffset + kPointerSize;
+  static const int kSize = kNameOffset + kPointerSize;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Class);
@@ -745,7 +760,7 @@ bool Object::isClass() {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->classId() == ClassId::kClass;
+  return HeapObject::cast(this)->header()->classId() == ClassId::kType;
 }
 
 bool Object::isSmallInteger() {
@@ -1085,8 +1100,20 @@ word Class::allocationSize() {
   return Header::kSize + Class::kSize;
 }
 
-void Class::initialize(Object* super_class) {
-  instanceVariableAtPut(kSuperClassOffset, super_class);
+Object* Class::mro() {
+  return instanceVariableAt(kMroOffset);
+}
+
+void Class::setMro(Object* object_array) {
+  instanceVariableAtPut(kMroOffset, object_array);
+}
+
+Object* Class::name() {
+  return instanceVariableAt(kNameOffset);
+}
+
+void Class::setName(Object* name) {
+  instanceVariableAtPut(kNameOffset, name);
 }
 
 Class* Class::cast(Object* object) {

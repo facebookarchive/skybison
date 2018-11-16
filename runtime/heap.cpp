@@ -132,29 +132,15 @@ bool Heap::verify() {
   return true;
 }
 
-Object* Heap::createClass(ClassId class_id, Object* super_class) {
+Object* Heap::createClass(ClassId class_id) {
   Object* raw = allocate(Class::allocationSize(), Header::kSize);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Class*>(raw);
   result->setHeader(Header::from(
       Class::kSize / kPointerSize,
       static_cast<uword>(class_id),
-      ClassId::kClass,
+      ClassId::kType,
       ObjectFormat::kObjectInstance));
-  result->initialize(super_class);
-  return Class::cast(result);
-}
-
-Object* Heap::createClassClass() {
-  Object* raw = allocate(Class::allocationSize(), Header::kSize);
-  assert(raw != nullptr);
-  auto result = reinterpret_cast<Class*>(raw);
-  result->setHeader(Header::from(
-      Class::kSize / kPointerSize,
-      static_cast<uword>(ClassId::kClass),
-      ClassId::kClass,
-      ObjectFormat::kObjectInstance));
-  result->initialize(raw);
   return Class::cast(result);
 }
 
