@@ -34,9 +34,9 @@ class Marshal {
 
     Object* doTupleElements(int length);
 
-    int addRef(Object* value);
-    void setRef(int index, Object* value);
-    Object* getRef(int index);
+    word addRef(Object* value);
+    void setRef(word index, Object* value);
+    Object* getRef(word index);
 
    private:
     Runtime* runtime_;

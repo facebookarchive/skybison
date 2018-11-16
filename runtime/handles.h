@@ -43,8 +43,8 @@ class Handles {
   }
 
   HandleScope** scopes_;
-  intptr_t top_;
-  intptr_t size_;
+  word top_;
+  word size_;
 
   template <typename T>
   friend class Handle;

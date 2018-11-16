@@ -223,7 +223,7 @@ TEST(ListTest, EmptyListInvariants) {
   Runtime runtime;
   List* list = List::cast(runtime.newList());
   ASSERT_EQ(list->capacity(), 0);
-  ASSERT_EQ(list->length(), 0);
+  ASSERT_EQ(list->allocated(), 0);
 }
 
 TEST(ListTest, AppendAndGrow) {
@@ -238,7 +238,7 @@ TEST(ListTest, AppendAndGrow) {
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
     List::appendAndGrow(list, value, &runtime);
     ASSERT_EQ(list->capacity(), expectedCapacity[i]);
-    ASSERT_EQ(list->length(), i + 1);
+    ASSERT_EQ(list->allocated(), i + 1);
   }
 
   // Sanity check list contents
@@ -259,6 +259,30 @@ TEST(ModulesTest, TestCreate) {
   EXPECT_EQ(mod->name(), name);
   obj = mod->dictionary();
   EXPECT_TRUE(obj->isDictionary());
+}
+
+TEST(ObjectArrayTest, Create) {
+  Runtime runtime;
+
+  Object* obj0 = runtime.newObjectArray(0);
+  ASSERT_TRUE(obj0->isObjectArray());
+  ObjectArray* array0 = ObjectArray::cast(obj0);
+  EXPECT_EQ(array0->length(), 0);
+
+  Object* obj1 = runtime.newObjectArray(1);
+  ASSERT_TRUE(obj1->isObjectArray());
+  ObjectArray* array1 = ObjectArray::cast(obj1);
+  EXPECT_EQ(array1->length(), 1);
+
+  Object* obj7 = runtime.newObjectArray(7);
+  ASSERT_TRUE(obj7->isObjectArray());
+  ObjectArray* array7 = ObjectArray::cast(obj7);
+  EXPECT_EQ(array7->length(), 7);
+
+  Object* obj8 = runtime.newObjectArray(8);
+  ASSERT_TRUE(obj8->isObjectArray());
+  ObjectArray* array8 = ObjectArray::cast(obj8);
+  EXPECT_EQ(array8->length(), 8);
 }
 
 } // namespace python

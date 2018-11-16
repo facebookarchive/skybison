@@ -6,7 +6,7 @@
 
 namespace python {
 
-Heap::Heap(intptr_t size) {
+Heap::Heap(word size) {
   from_ = new Space(size);
   to_ = new Space(size);
 }
@@ -16,7 +16,7 @@ Heap::~Heap() {
   delete to_;
 }
 
-Object* Heap::allocate(intptr_t size) {
+Object* Heap::allocate(word size) {
   uword address = to_->allocate(size);
   if (address == 0) {
     return nullptr;
@@ -43,17 +43,11 @@ void Heap::scavenge() {
   while (scan < to_->fill()) {
     // Scan the class pointer embedded in the header word.
     HeapObject* object = HeapObject::fromAddress(scan);
-    if (from_->contains(object->getClass()->address())) {
-      Class* the_class = object->getClass();
-      scavengePointer(reinterpret_cast<Object**>(&the_class));
-      object->setClass(the_class);
-    }
-
     // Scan pointers that follow the header word, if any.
-    intptr_t size = object->size();
-    if (object->getClass()->isRoot()) {
+    word size = object->size();
+    if (object->isRoot()) {
       auto pointer = reinterpret_cast<Object**>(scan + HeapObject::kSize);
-      for (int i = HeapObject::kSize; i < size; i += kPointerSize) {
+      for (word i = HeapObject::kSize; i < size; i += kPointerSize) {
         scavengePointer(pointer++);
       }
     }
@@ -65,7 +59,7 @@ void Heap::scavenge() {
 
 Object* Heap::transport(Object* object) {
   HeapObject* from_object = HeapObject::cast(object);
-  intptr_t size = from_object->size();
+  word size = from_object->size();
   uword address = to_->allocate(size);
   auto dst = reinterpret_cast<void*>(address);
   auto src = reinterpret_cast<void*>(from_object->address());
@@ -90,19 +84,15 @@ bool Heap::verify() {
   uword address = to_->start();
   while (address < to_->fill()) {
     HeapObject* object = HeapObject::fromAddress(address);
-    // Check that the object's class pointer is in to-space.
-    if (!to_->isAllocated(object->getClass()->address())) {
-      return false;
-    }
     // Check that the object is entirely within the heap.
-    intptr_t size = object->size();
+    word size = object->size();
     if (address + size > to_->fill()) {
       return false;
     }
     // If the object has pointers, check that they are valid.
-    if (object->getClass()->isRoot()) {
+    if (object->isRoot()) {
       auto pointer = reinterpret_cast<Object**>(address + HeapObject::kSize);
-      for (int i = HeapObject::kSize; i < size; i += kPointerSize) {
+      for (word i = HeapObject::kSize; i < size; i += kPointerSize) {
         if ((*pointer)->isHeapObject()) {
           if (!to_->isAllocated(HeapObject::cast(*pointer)->address()))
             return false;
@@ -114,17 +104,16 @@ bool Heap::verify() {
   return true;
 }
 
-Object* Heap::createClass(
-    Object* class_class,
-    Layout layout,
-    int size,
-    bool isArray,
-    bool isRoot) {
+Object* Heap::createClass(ClassId class_id, Object* super_class) {
   Object* raw = allocate(Class::allocationSize());
   assert(raw != nullptr);
   auto result = reinterpret_cast<Class*>(raw);
-  result->setClass(Class::cast(class_class));
-  result->initialize(layout, size, isArray, isRoot);
+  result->setHeader(Header::from(
+      Class::bodySize() / kPointerSize,
+      static_cast<uword>(class_id),
+      ClassId::kClass,
+      ObjectFormat::kObjectInstance));
+  result->initialize(super_class);
   return Class::cast(result);
 }
 
@@ -132,18 +121,22 @@ Object* Heap::createClassClass() {
   Object* raw = allocate(Class::allocationSize());
   assert(raw != nullptr);
   auto result = reinterpret_cast<Class*>(raw);
-  result->setClass(result);
-  result->initialize(Layout::CLASS, Class::kSize, false, true);
+  result->setHeader(Header::from(
+      Class::bodySize() / kPointerSize,
+      static_cast<uword>(ClassId::kClass),
+      ClassId::kClass,
+      ObjectFormat::kObjectInstance));
+  result->initialize(raw);
   return Class::cast(result);
 }
 
 Object* Heap::createCode(
     Object* code_class,
-    int argcount,
-    int kwonlyargcount,
-    int nlocals,
-    int stacksize,
-    int flags,
+    int32 argcount,
+    int32 kwonlyargcount,
+    int32 nlocals,
+    int32 stacksize,
+    int32 flags,
     Object* code,
     Object* consts,
     Object* names,
@@ -152,12 +145,16 @@ Object* Heap::createCode(
     Object* cellvars,
     Object* filename,
     Object* name,
-    int firstlineno,
+    int32 firstlineno,
     Object* lnotab) {
   Object* raw = allocate(Code::allocationSize());
-  assert(raw != nullptr); // TODO
-  Code* result = reinterpret_cast<Code*>(raw);
-  result->setClass(Class::cast(code_class));
+  assert(raw != nullptr);
+  auto result = reinterpret_cast<Code*>(raw);
+  result->setHeader(Header::from(
+      Code::bodySize() / kPointerSize,
+      0,
+      ClassId::kCode,
+      ObjectFormat::kObjectInstance));
   result->initialize(
       argcount,
       kwonlyargcount,
@@ -177,75 +174,91 @@ Object* Heap::createCode(
   return Code::cast(result);
 }
 
-Object* Heap::createByteArray(Object* byte_array_class, intptr_t length) {
-  int size = ByteArray::allocationSize(length);
+Object* Heap::createByteArray(word length) {
+  word size = ByteArray::allocationSize(length);
   Object* raw = allocate(size);
   assert(raw != nullptr);
   auto result = reinterpret_cast<ByteArray*>(raw);
-  result->setClass(Class::cast(byte_array_class));
+  result->setHeader(Header::from(
+      length, 0, ClassId::kByteArray, ObjectFormat::kObjectInstance));
   result->initialize(length);
   return ByteArray::cast(result);
 }
 
-Object* Heap::createDictionary(Object* dictionary_class, Object* items) {
-  int size = Dictionary::allocationSize();
+Object* Heap::createDictionary(Object* items) {
+  word size = Dictionary::allocationSize();
   Object* raw = allocate(size);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Dictionary*>(raw);
-  result->setClass(Class::cast(dictionary_class));
+  result->setHeader(Header::from(
+      Dictionary::bodySize() / kPointerSize,
+      0,
+      ClassId::kDictionary,
+      ObjectFormat::kObjectInstance));
   result->initialize(items);
   return Dictionary::cast(result);
 }
 
-Object* Heap::createFunction(Object* function_class) {
-  int size = Function::allocationSize();
+Object* Heap::createFunction() {
+  word size = Function::allocationSize();
   Object* raw = allocate(size);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Function*>(raw);
-  result->setClass(Class::cast(function_class));
+  result->setHeader(Header::from(
+      Function::bodySize() / kPointerSize,
+      0,
+      ClassId::kFunction,
+      ObjectFormat::kObjectInstance));
   result->initialize();
   return Function::cast(result);
 }
 
-Object* Heap::createList(Object* list_class, Object* elements) {
-  int size = List::allocationSize();
+Object* Heap::createList(Object* elements) {
+  word size = List::allocationSize();
   Object* raw = allocate(size);
   assert(raw != nullptr);
   auto result = reinterpret_cast<List*>(raw);
-  result->setClass(Class::cast(list_class));
+  result->setHeader(Header::from(
+      List::bodySize() / kPointerSize,
+      0,
+      ClassId::kList,
+      ObjectFormat::kObjectInstance));
   result->initialize(elements);
   return List::cast(result);
 }
 
-Object* Heap::createModule(Object* module_class, Object* name, Object* dict) {
+Object* Heap::createModule(Object* name, Object* dictionary) {
   int size = Module::allocationSize();
   Object* raw = allocate(size);
   assert(raw != nullptr);
   auto result = reinterpret_cast<Module*>(raw);
-  result->setClass(Class::cast(module_class));
-  result->initialize(name, dict);
+  result->setHeader(Header::from(
+      Module::bodySize() / kPointerSize,
+      0,
+      ClassId::kModule,
+      ObjectFormat::kObjectInstance));
+  result->initialize(name, dictionary);
   return Module::cast(result);
 }
 
-Object* Heap::createObjectArray(
-    Object* object_array_class,
-    intptr_t length,
-    Object* value) {
+Object* Heap::createObjectArray(word length, Object* value) {
   int size = ObjectArray::allocationSize(length);
   Object* raw = allocate(size);
   assert(raw != nullptr);
   auto result = reinterpret_cast<ObjectArray*>(raw);
-  result->setClass(Class::cast(object_array_class));
-  result->initialize(length, size, value);
+  result->setHeader(Header::from(
+      length, 0, ClassId::kObjectArray, ObjectFormat::kObjectArray));
+  result->initialize(size, value);
   return ObjectArray::cast(result);
 }
 
-Object* Heap::createString(Object* string_class, intptr_t length) {
+Object* Heap::createString(word length) {
   int size = String::allocationSize(length);
   Object* raw = allocate(size);
   assert(raw != nullptr);
   auto result = reinterpret_cast<String*>(raw);
-  result->setClass(Class::cast(string_class));
+  result->setHeader(
+      Header::from(length, 0, ClassId::kString, ObjectFormat::kDataArray8));
   result->initialize(length);
   return String::cast(result);
 }

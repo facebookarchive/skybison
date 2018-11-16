@@ -26,19 +26,19 @@ Runtime::~Runtime() {
   }
 }
 
-Object* Runtime::newByteArray(intptr_t length) {
+Object* Runtime::newByteArray(word length) {
   if (length == 0) {
     return empty_byte_array_;
   }
-  return heap()->createByteArray(Runtime::byte_array_class_, length);
+  return heap()->createByteArray(length);
 }
 
 Object* Runtime::newCode(
-    int argcount,
-    int kwonlyargcount,
-    int nlocals,
-    int stacksize,
-    int flags,
+    int32 argcount,
+    int32 kwonlyargcount,
+    int32 nlocals,
+    int32 stacksize,
+    int32 flags,
     Object* code,
     Object* consts,
     Object* names,
@@ -47,7 +47,7 @@ Object* Runtime::newCode(
     Object* cellvars,
     Object* filename,
     Object* name,
-    int firstlineno,
+    int32 firstlineno,
     Object* lnotab) {
   return heap()->createCode(
       code_class_,
@@ -71,34 +71,34 @@ Object* Runtime::newCode(
 Object* Runtime::newDictionary() {
   Object* items = newObjectArray(Dictionary::kInitialItemsSize);
   assert(items != nullptr);
-  return heap()->createDictionary(dictionary_class_, items);
+  return heap()->createDictionary(items);
 }
 
 Object* Runtime::newList() {
-  return heap()->createList(list_class_, empty_object_array_);
+  return heap()->createList(empty_object_array_);
 }
 
 Object* Runtime::newModule(Object* name) {
   Object* dict = newDictionary();
   assert(dict != nullptr);
-  return heap()->createModule(module_class_, name, dict);
+  return heap()->createModule(name, dict);
 }
 
-Object* Runtime::newObjectArray(intptr_t length) {
+Object* Runtime::newObjectArray(word length) {
   if (length == 0) {
     return empty_object_array_;
   }
-  return heap()->createObjectArray(object_array_class_, length, None::object());
+  return heap()->createObjectArray(length, None::object());
 }
 
-Object* Runtime::newString(intptr_t length) {
-  return heap()->createString(string_class_, length);
+Object* Runtime::newString(word length) {
+  return heap()->createString(length);
 }
 
 Object* Runtime::newStringFromCString(const char* c_string) {
-  intptr_t length = strlen(c_string);
+  word length = strlen(c_string);
   Object* result = newString(length);
-  for (intptr_t i = 0; i < length; i++) {
+  for (word i = 0; i < length; i++) {
     String::cast(result)->charAtPut(
         i, *reinterpret_cast<const byte*>(c_string + i));
   }
@@ -108,61 +108,15 @@ Object* Runtime::newStringFromCString(const char* c_string) {
 void Runtime::initializeClasses() {
   class_class_ = heap()->createClassClass();
 
-  byte_array_class_ = heap()->createClass(
-      class_class_,
-      Layout::BYTE_ARRAY,
-      ByteArray::kElementSize,
-      true /* isArray */,
-      false /* isRoot */);
-
-  code_class_ = heap()->createClass(
-      class_class_,
-      Layout::CODE,
-      Code::kSize,
-      false /* isArray */,
-      true /* isRoot */);
-
-  dictionary_class_ = heap()->createClass(
-      class_class_,
-      Layout::DICTIONARY,
-      Dictionary::kSize,
-      false /* isArray */,
-      true /* isRoot */);
-
-  function_class_ = heap()->createClass(
-      class_class_,
-      Layout::FUNCTION,
-      Function::kSize,
-      false /* isArray */,
-      true /* isRoot */);
-
-  list_class_ = heap()->createClass(
-      class_class_,
-      Layout::LIST,
-      List::kSize,
-      false /* isArray */,
-      true /* isRoot */);
-
-  module_class_ = heap()->createClass(
-      class_class_,
-      Layout::MODULE,
-      Module::kSize,
-      false /* isArray */,
-      true /* isRoot */);
-
-  object_array_class_ = heap()->createClass(
-      class_class_,
-      Layout::OBJECT_ARRAY,
-      ObjectArray::kElementSize,
-      true /* isArray */,
-      true /* isRoot */);
-
-  string_class_ = heap()->createClass(
-      class_class_,
-      Layout::STRING,
-      String::kElementSize,
-      true /* isArray */,
-      false /* isRoot */);
+  byte_array_class_ = heap()->createClass(ClassId::kByteArray, class_class_);
+  code_class_ = heap()->createClass(ClassId::kCode, class_class_);
+  dictionary_class_ = heap()->createClass(ClassId::kDictionary, class_class_);
+  function_class_ = heap()->createClass(ClassId::kFunction, class_class_);
+  list_class_ = heap()->createClass(ClassId::kList, class_class_);
+  module_class_ = heap()->createClass(ClassId::kModule, class_class_);
+  object_array_class_ =
+      heap()->createClass(ClassId::kObjectArray, class_class_);
+  string_class_ = heap()->createClass(ClassId::kString, class_class_);
 }
 
 class ScavengeVisitor : public PointerVisitor {
@@ -185,16 +139,15 @@ void Runtime::collectGarbage() {
 }
 
 void Runtime::initializeThreads() {
-  Thread* main_thread = new Thread(Thread::kDefaultStackSize);
+  auto main_thread = new Thread(Thread::kDefaultStackSize);
   threads_ = main_thread;
   Thread::setCurrentThread(main_thread);
 }
 
 void Runtime::initializeInstances() {
-  empty_byte_array_ = heap()->createByteArray(byte_array_class_, 0);
-  empty_object_array_ =
-      heap()->createObjectArray(object_array_class_, 0, None::object());
-  empty_string_ = heap()->createString(string_class_, 0);
+  empty_byte_array_ = heap()->createByteArray(0);
+  empty_object_array_ = heap()->createObjectArray(0, None::object());
+  empty_string_ = heap()->createString(0);
 }
 
 void Runtime::visitRoots(PointerVisitor* visitor) {

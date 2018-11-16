@@ -80,9 +80,46 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   int32 size = reader.readLong();
   EXPECT_EQ(size, 0x05);
 
-  Object* code = reader.readObject();
-  ASSERT_TRUE(code->isCode());
-  EXPECT_EQ(Code::cast(code)->argcount(), 0);
+  Object* raw_object = reader.readObject();
+  ASSERT_TRUE(raw_object->isCode());
+
+  Code* code = Code::cast(raw_object);
+  EXPECT_EQ(code->argcount(), 0);
+  EXPECT_EQ(code->kwonlyargcount(), 0);
+  EXPECT_EQ(code->nlocals(), 0);
+  EXPECT_EQ(code->stacksize(), 1);
+  EXPECT_EQ(code->cell2arg(), 0);
+  EXPECT_EQ(code->flags(), 0x00000040);
+
+  ASSERT_TRUE(code->code()->isByteArray());
+  EXPECT_NE(ByteArray::cast(code->code())->length(), 0);
+
+  ASSERT_TRUE(code->varnames()->isObjectArray());
+  EXPECT_EQ(ObjectArray::cast(code->varnames())->length(), 0);
+
+  ASSERT_TRUE(code->cellvars()->isObjectArray());
+  EXPECT_EQ(ObjectArray::cast(code->cellvars())->length(), 0);
+
+  ASSERT_TRUE(code->consts()->isObjectArray());
+  ASSERT_EQ(ObjectArray::cast(code->consts())->length(), 1);
+  EXPECT_EQ(ObjectArray::cast(code->consts())->at(0), None::object());
+
+  ASSERT_TRUE(code->freevars()->isObjectArray());
+  EXPECT_EQ(ObjectArray::cast(code->freevars())->length(), 0);
+
+  ASSERT_TRUE(code->filename()->isString());
+  EXPECT_TRUE(String::cast(code->filename())->equalsCString("pass.py"));
+
+  ASSERT_TRUE(code->name()->isString());
+  EXPECT_TRUE(String::cast(code->name())->equalsCString("<module>"));
+
+  ASSERT_TRUE(code->names()->isObjectArray());
+  EXPECT_EQ(ObjectArray::cast(code->names())->length(), 0);
+
+  EXPECT_EQ(code->firstlineno(), 1);
+
+  ASSERT_TRUE(code->lnotab()->isByteArray());
+  EXPECT_EQ(ByteArray::cast(code->lnotab())->length(), 0);
 }
 
 } // namespace python

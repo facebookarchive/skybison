@@ -4,8 +4,8 @@
 
 namespace python {
 
-Space::Space(intptr_t size) {
-  intptr_t rounded = Utils::roundUp(size, Os::kPageSize);
+Space::Space(word size) {
+  word rounded = Utils::roundUp(size, Os::kPageSize);
   raw_ = Os::allocateMemory(rounded);
   assert(raw_ != nullptr);
   start_ = fill_ = reinterpret_cast<uword>(raw_);

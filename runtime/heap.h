@@ -8,10 +8,10 @@ namespace python {
 
 class Heap {
  public:
-  explicit Heap(intptr_t size);
+  explicit Heap(word size);
   ~Heap();
 
-  Object* allocate(intptr_t size);
+  Object* allocate(word size);
 
   bool contains(void* address);
   bool verify();
@@ -20,24 +20,19 @@ class Heap {
   void scavengePointer(Object** pointer);
   Object* transport(Object* oldObject);
 
-  Object* createByteArray(Object* byte_array_class, intptr_t length);
+  Object* createByteArray(word length);
 
-  Object* createClass(
-      Object* class_class,
-      Layout layout,
-      int size,
-      bool isArray,
-      bool isRoot);
+  Object* createClass(ClassId class_id, Object* super_class);
 
   Object* createClassClass();
 
   Object* createCode(
       Object* code_class,
-      int argcount,
-      int kwonlyargcount,
-      int nlocals,
-      int stacksize,
-      int flags,
+      int32 argcount,
+      int32 kwonlyargcount,
+      int32 nlocals,
+      int32 stacksize,
+      int32 flags,
       Object* code,
       Object* consts,
       Object* names,
@@ -46,21 +41,20 @@ class Heap {
       Object* cellvars,
       Object* filename,
       Object* name,
-      int firstlineno,
+      int32 firstlineno,
       Object* lnotab);
 
-  Object* createDictionary(Object* dictionary_class, Object* items);
+  Object* createDictionary(Object* items);
 
-  Object* createFunction(Object* function_class);
+  Object* createFunction();
 
-  Object* createList(Object* list_class, Object* elements);
+  Object* createList(Object* elements);
 
-  Object* createModule(Object* module_class, Object* name, Object* dict);
+  Object* createModule(Object* name, Object* dictionary);
 
-  Object*
-  createObjectArray(Object* object_array_class, intptr_t length, Object* value);
+  Object* createObjectArray(word length, Object* value);
 
-  Object* createString(Object* string_class, intptr_t length);
+  Object* createString(word length);
 
  private:
   Space* from_;

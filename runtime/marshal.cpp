@@ -219,30 +219,31 @@ Object* Marshal::Reader::readObject() {
   return result;
 }
 
-int Marshal::Reader::addRef(Object* value) {
+word Marshal::Reader::addRef(Object* value) {
   HandleScope scope;
   Handle<Object> valueHandle(&scope, value);
+  word result = refs_->allocated();
   List::appendAndGrow(refs_, valueHandle, runtime_);
-  return 0;
+  return result;
 }
 
-void Marshal::Reader::setRef(int index, Object* value) {
+void Marshal::Reader::setRef(word index, Object* value) {
   refs_->atPut(index, value);
 }
 
-Object* Marshal::Reader::getRef(int index) {
+Object* Marshal::Reader::getRef(word index) {
   return refs_->at(index);
 }
 
 Object* Marshal::Reader::readTypeString() {
-  int length = readLong();
+  int32 length = readLong();
   const byte* data = readString(length);
   Object* result = runtime_->newByteArray(length);
   if (isRef_) {
     addRef(result);
   }
   for (int i = 0; i < length; i++) {
-    ByteArray::cast(result)->setByteAt(i, data[i]);
+    ByteArray::cast(result)->byteAtPut(i, data[i]);
   }
   return result;
 }
@@ -266,7 +267,7 @@ Object* Marshal::Reader::readTypeSmallTuple() {
 }
 
 Object* Marshal::Reader::readTypeTuple() {
-  int n = readLong();
+  int32 n = readLong();
   return doTupleElements(n);
 }
 
@@ -283,15 +284,15 @@ Object* Marshal::Reader::doTupleElements(int32 length) {
 }
 
 Object* Marshal::Reader::readTypeCode() {
-  int index = -1;
+  word index = -1;
   if (isRef_) {
     index = addRef(None::object());
   }
-  int argcount = readLong();
-  int kwonlyargcount = readLong();
-  int nlocals = readLong();
-  int stacksize = readLong();
-  int flags = readLong();
+  int32 argcount = readLong();
+  int32 kwonlyargcount = readLong();
+  int32 nlocals = readLong();
+  int32 stacksize = readLong();
+  int32 flags = readLong();
   Object* code = readObject();
   Object* consts = readObject();
   Object* names = readObject();
@@ -300,7 +301,7 @@ Object* Marshal::Reader::readTypeCode() {
   Object* cellvars = readObject();
   Object* filename = readObject();
   Object* name = readObject();
-  int firstlineno = readLong();
+  int32 firstlineno = readLong();
   Object* lnotab = readObject();
   Object* result = runtime_->newCode(
       argcount,

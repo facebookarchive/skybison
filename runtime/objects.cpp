@@ -152,14 +152,15 @@ bool Dictionary::lookup(
 void Dictionary::grow(Dictionary* dict, Runtime* runtime) {
   // Double the size of the backing store
   word newLength = ObjectArray::cast(dict->items())->length() * 2;
-  Object* obj = runtime->newObjectArray(newLength * 2);
+  Object* obj = runtime->newObjectArray(newLength);
   assert(obj != nullptr);
   ObjectArray* newItems = ObjectArray::cast(obj);
+  assert(newItems->length() == newLength);
 
   // Re-insert items
   ObjectArray* oldItems = ObjectArray::cast(dict->items());
   dict->setItems(newItems);
-  for (int i = 0; i < oldItems->length(); i += kPointersPerBucket) {
+  for (word i = 0; i < oldItems->length(); i += kPointersPerBucket) {
     DictItem oldItem(oldItems, i);
     Object* oldHash = oldItem.hash();
     if (oldHash->isNone()) {
@@ -179,27 +180,51 @@ void List::appendAndGrow(
     const Handle<List>& list,
     const Handle<Object>& value,
     Runtime* runtime) {
-  word len = list->length();
+  word len = list->allocated();
   word cap = list->capacity();
   if (len < cap) {
-    list->setLength(len + 1);
+    list->setAllocated(len + 1);
     list->atPut(len, *value);
     return;
   }
-  intptr_t newCap = cap == 0 ? 4 : cap << 1;
+  word newCap = cap == 0 ? 4 : cap << 1;
   Object* rawNewElems = runtime->newObjectArray(newCap);
   ObjectArray* newElems = ObjectArray::cast(rawNewElems);
-  ObjectArray* curElems = ObjectArray::cast(list->elems());
+  ObjectArray* curElems = ObjectArray::cast(list->items());
   if (curElems != nullptr) {
     ObjectArray::cast(curElems)->copyTo(newElems);
   }
 
-  list->setElems(newElems);
-  list->setLength(len + 1);
+  list->setItems(newElems);
+  list->setAllocated(len + 1);
   list->atPut(len, *value);
 }
 
 // String
+
+bool String::equals(Object* that) {
+  if (!that->isString()) {
+    return false;
+  }
+  String* thatStr = String::cast(that);
+  if (length() != thatStr->length()) {
+    return false;
+  }
+  auto s1 = reinterpret_cast<void*>(address() + String::kSize);
+  auto s2 = reinterpret_cast<void*>(thatStr->address() + String::kSize);
+  return memcmp(s1, s2, length()) == 0;
+}
+
+bool String::equalsCString(const char* c_string) {
+  const char* cp = c_string;
+  for (word i = 0; i < length(); i++, cp++) {
+    char ch = *cp;
+    if (ch == '\0' || ch != charAt(i)) {
+      return false;
+    }
+  }
+  return *cp == '\0';
+}
 
 Object* String::hash() {
   // TODO(mpage) - Take the hash algorithm from CPython

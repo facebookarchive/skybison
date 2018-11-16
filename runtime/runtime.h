@@ -14,14 +14,14 @@ class Runtime {
   Runtime();
   ~Runtime();
 
-  Object* newByteArray(intptr_t length);
+  Object* newByteArray(word length);
 
   Object* newCode(
-      int argcount,
-      int kwonlyargcount,
-      int nlocals,
-      int stacksize,
-      int flags,
+      int32 argcount,
+      int32 kwonlyargcount,
+      int32 nlocals,
+      int32 stacksize,
+      int32 flags,
       Object* code,
       Object* consts,
       Object* names,
@@ -30,7 +30,7 @@ class Runtime {
       Object* cellvars,
       Object* filename,
       Object* name,
-      int firstlineno,
+      int32 firstlineno,
       Object* lnotab);
 
   Object* newDictionary();
@@ -39,9 +39,9 @@ class Runtime {
 
   Object* newModule(Object* name);
 
-  Object* newObjectArray(intptr_t length);
+  Object* newObjectArray(word length);
 
-  Object* newString(intptr_t length);
+  Object* newString(word length);
   Object* newStringFromCString(const char* c_string);
 
   void collectGarbage();

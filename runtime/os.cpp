@@ -7,7 +7,7 @@
 
 namespace python {
 
-byte* Os::allocateMemory(intptr_t size) {
+byte* Os::allocateMemory(word size) {
   size = Utils::roundUp(size, 4 * KiB);
   int prot = PROT_READ | PROT_WRITE;
   int flags = MAP_PRIVATE | MAP_ANONYMOUS;
@@ -16,7 +16,7 @@ byte* Os::allocateMemory(intptr_t size) {
   return static_cast<byte*>(result);
 }
 
-bool Os::protectMemory(byte* address, intptr_t size, Protection mode) {
+bool Os::protectMemory(byte* address, word size, Protection mode) {
   int prot;
   switch (mode) {
     case kNoAccess:
@@ -33,7 +33,7 @@ bool Os::protectMemory(byte* address, intptr_t size, Protection mode) {
   return result == 0;
 }
 
-bool Os::freeMemory(byte* ptr, intptr_t size) {
+bool Os::freeMemory(byte* ptr, word size) {
   int result = ::munmap(ptr, size);
   assert(result != -1);
   return result == 0;

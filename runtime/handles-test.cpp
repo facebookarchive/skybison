@@ -14,7 +14,7 @@ class RememberingVisitor : public PointerVisitor {
     pointers_.push_back(*pointer);
   }
 
-  intptr_t count() {
+  word count() {
     return pointers_.size();
   }
 

@@ -2,7 +2,6 @@
 
 #include <cstring>
 
-#include "objects.h"
 #include "visitor.h"
 
 namespace python {
@@ -15,7 +14,7 @@ Handles::~Handles() {
 }
 
 void Handles::grow() {
-  intptr_t new_size = size_ * 2;
+  word new_size = size_ * 2;
   auto new_scopes = new HandleScope*[new_size];
   memcpy(new_scopes, scopes_, size_ * sizeof(scopes_[0]));
   delete[] scopes_;
@@ -24,7 +23,7 @@ void Handles::grow() {
 }
 
 void Handles::visitPointers(PointerVisitor* visitor) {
-  for (intptr_t i = top_ - 1; i >= 0; i--) {
+  for (word i = top_ - 1; i >= 0; i--) {
     HandleScope* scope = scopes_[i];
     ObjectHandle* handle = scope->list();
     while (handle != nullptr) {
