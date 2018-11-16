@@ -1685,6 +1685,10 @@ void Runtime::createSysModule() {
 
   Handle<Object> stderr_val(&scope, SmallInt::fromWord(STDERR_FILENO));
   moduleAddGlobal(module, SymbolId::kStderr, stderr_val);
+
+  Handle<Object> meta_path(&scope, newList());
+  moduleAddGlobal(module, SymbolId::kMetaPath, meta_path);
+
   addModule(module);
 }
 

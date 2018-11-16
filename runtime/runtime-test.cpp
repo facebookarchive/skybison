@@ -2896,4 +2896,18 @@ Foo = MyMeta('Foo', (), {})
   EXPECT_TRUE(runtime.isInstanceOfClass(*foo));
 }
 
+TEST(ImportlibTest, SysMetaPathIsList) {
+  const char* src = R"(
+import sys
+
+meta_path = sys.meta_path
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> meta_path(&scope, moduleAt(&runtime, main, "meta_path"));
+  ASSERT_TRUE(meta_path->isList());
+}
+
 }  // namespace python

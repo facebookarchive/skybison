@@ -122,6 +122,7 @@ class Runtime;
   V(List, "list")                                                              \
   V(ListIterator, "list_iterator")                                             \
   V(Metaclass, "metaclass")                                                    \
+  V(MetaPath, "meta_path")                                                     \
   V(Method, "method")                                                          \
   V(Module, "module")                                                          \
   V(Modules, "modules")                                                        \
