@@ -43,6 +43,10 @@ add_library(
   runtime/trampolines.h
   runtime/utils.h
   runtime/visitor.h)
+target_compile_options(
+  runtime
+  PRIVATE
+  -Wall -Werror -Wextra -pedantic)
 target_link_libraries(
   runtime
   siphash)
@@ -50,6 +54,10 @@ target_link_libraries(
 add_executable(
   python
   main.cpp)
+target_compile_options(
+  runtime
+  PRIVATE
+  -Wall -Werror -Wextra -pedantic)
 target_link_libraries(
   python
   runtime)
@@ -65,6 +73,10 @@ add_executable(
   runtime/space-test.cpp
   runtime/thread-test.cpp
   runtime/utils-test.cpp)
+target_compile_options(
+  runtime
+  PRIVATE
+  -Wall -Werror -Wextra -pedantic)
 target_link_libraries(
   python-tests
   gtest

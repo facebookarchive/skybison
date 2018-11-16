@@ -46,12 +46,11 @@ Marshal::Reader::Reader(
     Runtime* runtime,
     const char* buffer)
     : runtime_(runtime),
-      start_(reinterpret_cast<const byte*>(buffer)),
-      length_(std::strlen(buffer)),
-      scope_(scope),
       refs_(scope, runtime->newList()),
-      pos_(0),
-      depth_(0) {
+      start_(reinterpret_cast<const byte*>(buffer)),
+      depth_(0),
+      length_(std::strlen(buffer)),
+      pos_(0) {
   end_ = start_ + length_;
 }
 

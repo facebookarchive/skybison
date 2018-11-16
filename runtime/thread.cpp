@@ -13,8 +13,8 @@ namespace python {
 thread_local Thread* current_thread_ = nullptr;
 
 Thread::Thread(word size)
-    : size_(Utils::roundUp(size, kPointerSize)),
-      handles_(new Handles()),
+    : handles_(new Handles()),
+      size_(Utils::roundUp(size, kPointerSize)),
       next_(nullptr),
       runtime_(nullptr) {
   start_ = new byte[size];

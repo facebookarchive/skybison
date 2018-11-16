@@ -7,7 +7,7 @@
 namespace python {
 
 Handles::Handles()
-    : size_(kInitialSize), scopes_(new HandleScope*[kInitialSize]), top_(0) {}
+    : scopes_(new HandleScope*[kInitialSize]), top_(0), size_(kInitialSize) {}
 
 Handles::~Handles() {
   delete[] scopes_;

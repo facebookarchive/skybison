@@ -208,6 +208,9 @@ class Header : public Object {
   static const int kCountSize = 8;
   static const uword kCountMask = (1 << kCountSize) - 1;
 
+  static const int kCountOverflowFlag = (1 << kCountSize) - 1;
+  static const int kCountMax = kCountOverflowFlag - 1;
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Header);
 };
@@ -900,7 +903,7 @@ ObjectFormat Header::format() {
 
 Header* Header::from(word count, word hash, ClassId id, ObjectFormat format) {
   uword result = Header::kTag;
-  result |= ((count >= kCountMask) ? kCountMask : count) << kCountOffset;
+  result |= ((count > kCountMax) ? kCountOverflowFlag : count) << kCountOffset;
   result |= hash << kHashCodeOffset;
   result |= static_cast<uword>(id) << kClassIdOffset;
   result |= static_cast<uword>(format) << kFormatOffset;
@@ -1304,7 +1307,7 @@ Dictionary* Dictionary::cast(Object* object) {
 
 word Dictionary::numItems() {
   return SmallInteger::cast(instanceVariableAt(kNumItemsOffset))->value();
-};
+}
 
 word Dictionary::capacity() {
   return ObjectArray::cast(items())->length() / kPointersPerBucket;

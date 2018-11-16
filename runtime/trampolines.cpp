@@ -48,13 +48,11 @@ Object* interpreterTrampoline(Thread* thread, Frame* previousFrame, word argc) {
   return Interpreter::execute(thread, frame);
 }
 
-Object*
-interpreterTrampolineKw(Thread* thread, Frame* previousFrame, word argc) {
+Object* interpreterTrampolineKw(Thread*, Frame*, word) {
   assert(false);
 }
 
-Object*
-unimplementedTrampoline(Thread* thread, Frame* previousFrame, word argc) {
+Object* unimplementedTrampoline(Thread*, Frame*, word) {
   std::abort();
 }
 

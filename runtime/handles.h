@@ -56,12 +56,12 @@ class Handles {
 class HandleScope {
  public:
   explicit HandleScope()
-      : handles_(Thread::currentThread()->handles()), list_(nullptr) {
+      : list_(nullptr), handles_(Thread::currentThread()->handles()) {
     handles_->push(this);
   }
 
   // TODO: only for tests.
-  explicit HandleScope(Handles* handles) : handles_(handles), list_(nullptr) {
+  explicit HandleScope(Handles* handles) : list_(nullptr), handles_(handles) {
     handles_->push(this);
   }
 

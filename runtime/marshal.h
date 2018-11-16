@@ -40,7 +40,6 @@ class Marshal {
 
    private:
     Runtime* runtime_;
-    HandleScope* scope_;
     Handle<List> refs_;
     bool isRef_;
 
