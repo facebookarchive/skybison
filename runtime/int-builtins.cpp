@@ -8,6 +8,14 @@
 
 namespace python {
 
+void IntegerBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Class> type(
+      &scope, runtime->addEmptyBuiltinClass(SymbolId::kInt, LayoutId::kInteger,
+                                            LayoutId::kObject));
+  type->setFlag(Class::Flag::kIntSubclass);
+}
+
 const BuiltinMethod SmallIntegerBuiltins::kMethods[] = {
     {SymbolId::kBitLength, nativeTrampoline<bitLength>},
     {SymbolId::kDunderBool, nativeTrampoline<dunderBool>},

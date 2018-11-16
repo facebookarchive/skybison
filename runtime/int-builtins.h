@@ -8,6 +8,14 @@
 
 namespace python {
 
+class IntegerBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(IntegerBuiltins);
+};
+
 class SmallIntegerBuiltins {
  public:
   static void initialize(Runtime* runtime);

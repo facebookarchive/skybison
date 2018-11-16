@@ -976,7 +976,7 @@ void Runtime::initializeHeapClasses() {
 
   // Abstract classes.
   initializeStrClass();
-  addEmptyBuiltinClass(SymbolId::kInt, LayoutId::kInteger, LayoutId::kObject);
+  IntegerBuiltins::initialize(this);
 
   // Exception hierarchy
   initializeExceptionClasses();
