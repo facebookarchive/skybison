@@ -16,6 +16,7 @@ const BuiltinMethod DictBuiltins::kMethods[] = {
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
+    {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
 };
 
 void DictBuiltins::initialize(Runtime* runtime) {
@@ -141,6 +142,33 @@ Object* DictBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   // TODO(T32856777): handle user-defined subtypes of dict.
   return thread->throwTypeErrorFromCStr(
       "__getitem__() must be called with a dict instance as the first "
+      "argument");
+}
+
+Object* DictBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 3) {
+    return thread->throwTypeErrorFromCStr("expected 2 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> key(&scope, args.get(1));
+  Handle<Object> value(&scope, args.get(2));
+  if (self->isDict()) {
+    Handle<Dict> dict(&scope, *self);
+    Handle<Object> dunder_hash(
+        &scope,
+        Interpreter::lookupMethod(thread, frame, key, SymbolId::kDunderHash));
+    Handle<Object> key_hash(
+        &scope, Interpreter::callMethod1(thread, frame, dunder_hash, key));
+    if (key_hash->isError()) {
+      return *key_hash;
+    }
+    thread->runtime()->dictAtPutWithHash(dict, key, value, key_hash);
+    return None::object();
+  }
+  return thread->throwTypeErrorFromCStr(
+      "__setitem__() must be called with a dict instance as the first "
       "argument");
 }
 

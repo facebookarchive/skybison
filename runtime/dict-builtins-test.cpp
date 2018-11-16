@@ -117,4 +117,41 @@ del d["foo"]
                "aborting due to pending exception");
 }
 
+TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 3, 0);
+  Handle<Dict> dict(&scope, runtime.newDict(1));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
+  Handle<Object> val(&scope, runtime.newInt(0));
+  Handle<Object> val2(&scope, runtime.newInt(1));
+  runtime.dictAtPut(dict, key, val);
+  frame->setLocal(0, *dict);
+  frame->setLocal(1, *key);
+  frame->setLocal(2, *val2);
+  Handle<Object> result(&scope, DictBuiltins::dunderSetItem(thread, frame, 3));
+  ASSERT_TRUE(result->isNone());
+  ASSERT_EQ(dict->numItems(), 1);
+  ASSERT_EQ(runtime.dictAt(dict, key), *val2);
+}
+
+TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 3, 0);
+  Handle<Dict> dict(&scope, runtime.newDict(1));
+  Handle<Object> key(&scope, runtime.newStrFromCStr("foo"));
+  Handle<Object> val(&scope, runtime.newInt(0));
+  frame->setLocal(0, *dict);
+  frame->setLocal(1, *key);
+  frame->setLocal(2, *val);
+  ASSERT_EQ(dict->numItems(), 0);
+  Handle<Object> result(&scope, DictBuiltins::dunderSetItem(thread, frame, 3));
+  ASSERT_TRUE(result->isNone());
+  ASSERT_EQ(dict->numItems(), 1);
+  ASSERT_EQ(runtime.dictAt(dict, key), *val);
+}
+
 }  // namespace python

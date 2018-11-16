@@ -17,6 +17,7 @@ class DictBuiltins {
   static Object* dunderEq(Thread* thread, Frame* frame, word nargs);
   static Object* dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static Object* dunderLen(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderSetItem(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinMethod kMethods[];
