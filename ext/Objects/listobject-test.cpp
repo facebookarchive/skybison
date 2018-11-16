@@ -6,13 +6,13 @@
 
 namespace python {
 
-TEST(ExtensionTest, ListObjectInalidNew) {
+TEST(ListObject, NewWithNonListReturnsNull) {
   Py_ssize_t invalid_length = -1;
   PyObject* pyresult = PyList_New(invalid_length);
   EXPECT_EQ(pyresult, nullptr);
 }
 
-TEST(ExtensionTest, ListObjectValidNew) {
+TEST(ListObject, New) {
   Runtime runtime;
   HandleScope scope;
 
@@ -21,11 +21,12 @@ TEST(ExtensionTest, ListObjectValidNew) {
   Handle<Object> result_obj(
       &scope, ApiHandle::fromPyObject(pyresult)->asObject());
   ASSERT_TRUE(result_obj->isList());
+
   Handle<List> result(&scope, *result_obj);
   EXPECT_EQ(length, result->capacity());
 }
 
-TEST(ExtensionTest, ListObjectZeroNew) {
+TEST(ListObject, NewWithZeroLengthReturnsEmptyList) {
   Runtime runtime;
   HandleScope scope;
 
@@ -34,6 +35,7 @@ TEST(ExtensionTest, ListObjectZeroNew) {
   Handle<Object> result_obj(
       &scope, ApiHandle::fromPyObject(pyresult)->asObject());
   ASSERT_TRUE(result_obj->isList());
+
   Handle<List> result(&scope, *result_obj);
   EXPECT_EQ(length, result->capacity());
 }

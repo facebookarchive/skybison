@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
+#include "Python.h"
 #include "runtime/runtime.h"
 #include "runtime/test-utils.h"
-#include "Python.h"
 
 static PyMethodDef SpamMethods[] = {{NULL, NULL, -1, NULL}};
 
@@ -36,7 +36,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(ExtensionTest, SpamModule) {
+TEST(ModuleObject, SpamModule) {
   Runtime runtime;
   HandleScope scope;
 

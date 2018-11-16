@@ -7,7 +7,7 @@
 
 namespace python {
 
-TEST(PyTypeObject, EmptyType) {
+TEST(TypeObject, ReadyInitializesType) {
   Runtime runtime;
   HandleScope scope;
   Handle<Dictionary> extensions_dict(&scope, runtime.extensionTypes());
@@ -30,7 +30,7 @@ TEST(PyTypeObject, EmptyType) {
   EXPECT_TRUE(PyType_GetFlags(&empty_type) & Py_TPFLAGS_READY);
 }
 
-TEST(PyTypeObject, EmptyTypeGetRuntimeClass) {
+TEST(TypeObject, ReadyCreatesRuntimeClass) {
   Runtime runtime;
   HandleScope scope;
   Handle<Dictionary> extensions_dict(&scope, runtime.extensionTypes());
@@ -58,7 +58,7 @@ TEST(PyTypeObject, EmptyTypeGetRuntimeClass) {
   EXPECT_EQ(&empty_type, pytype_addr_obj->asCPointer());
 }
 
-TEST(PyTypeObject, EmptyTypeInstantiateObject) {
+TEST(TypeObject, ReadiedTypeCreatesRuntimeInstance) {
   Runtime runtime;
   HandleScope scope;
   Handle<Dictionary> extensions_dict(&scope, runtime.extensionTypes());
@@ -99,7 +99,7 @@ static void Custom_dealloc(CustomObject* self) {
   Py_TYPE(self)->tp_free(static_cast<void*>(self));
 }
 
-TEST(PyTypeObject, InitializeCustomTypeInstance) {
+TEST(TypeObject, InitializeCustomTypeInstance) {
   Runtime runtime;
   HandleScope scope;
   Thread* thread = Thread::currentThread();
@@ -162,7 +162,7 @@ instance2 = custom.Custom()
   Py_DECREF(custom_obj2);
 }
 
-TEST(PyTypeObject, TestGenericAllocation) {
+TEST(TypeObject, GenericAllocationReturnsMallocMemory) {
   Runtime runtime;
   HandleScope scope;
   Thread* thread = Thread::currentThread();
@@ -182,7 +182,7 @@ TEST(PyTypeObject, TestGenericAllocation) {
   EXPECT_EQ(1, Py_REFCNT(result));
 }
 
-TEST(PyTypeObject, VerifyStaticObjectInitialization) {
+TEST(TypeObject, RuntimeInitializesStaticPyTypObjects) {
   Runtime runtime;
   Runtime runtime2;
 

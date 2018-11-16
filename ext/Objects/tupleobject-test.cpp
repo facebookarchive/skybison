@@ -30,7 +30,7 @@ TEST(TupleObject, Size) {
   EXPECT_EQ(length, pylength);
 }
 
-TEST(TupleObject, GetItemFromNonTupleReturnNull) {
+TEST(TupleObject, GetItemFromNonTupleReturnsNull) {
   Runtime runtime;
   HandleScope scope;
 
@@ -80,7 +80,7 @@ TEST(TupleObject, GetItemReturnsSameItem) {
   ASSERT_TRUE(result_obj->isInteger());
 }
 
-TEST(TupleObject, GetItemVerifyBorrowed) {
+TEST(TupleObject, GetItemReturnsBorrowedReference) {
   Runtime runtime;
   HandleScope scope;
 
@@ -102,7 +102,7 @@ TEST(TupleObject, GetItemVerifyBorrowed) {
   EXPECT_EQ(int_value, result->asWord());
 }
 
-TEST(TupleObject, PackEmpty) {
+TEST(TupleObject, PackZeroReturnsEmptyTuple) {
   Runtime runtime;
   HandleScope scope;
 

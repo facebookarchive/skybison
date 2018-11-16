@@ -6,7 +6,7 @@
 
 namespace python {
 
-TEST(ExtensionTest, _PyUnicode_FromId) {
+TEST(UnicodeObject, FromIdentifierReturnsUnicodeObject) {
   Runtime runtime;
   HandleScope scope;
 
@@ -15,19 +15,25 @@ TEST(ExtensionTest, _PyUnicode_FromId) {
   PyObject* pyunicode = _PyUnicode_FromId(&PyId___name__);
   Handle<Object> string_obj(
       &scope, ApiHandle::fromPyObject(pyunicode)->asObject());
-  EXPECT_TRUE(string_obj->isString());
+  ASSERT_TRUE(string_obj->isString());
   EXPECT_TRUE(String::cast(*string_obj)->equalsCString(str));
 }
 
-TEST(ExtensionTest, PyUnicode_AsUTF8AndSize) {
+TEST(UnicodeObject, AsUTF8FromNonStringReturnsNull) {
   Runtime runtime;
   HandleScope scope;
 
-  // Pass a non string object
   Handle<Object> integer_obj(&scope, runtime.newInteger(15));
   PyObject* pylong = runtime.asApiHandle(*integer_obj)->asPyObject();
-  char* null_cstring2 = PyUnicode_AsUTF8AndSize(pylong, nullptr);
-  EXPECT_EQ(nullptr, null_cstring2);
+
+  // Pass a non string object
+  char* cstring = PyUnicode_AsUTF8AndSize(pylong, nullptr);
+  EXPECT_EQ(nullptr, cstring);
+}
+
+TEST(UnicodeObject, AsUTF8WithNullSizeReturnsCString) {
+  Runtime runtime;
+  HandleScope scope;
 
   const char* str = "Some C String";
   Handle<String> string_obj(&scope, runtime.newStringFromCString(str));
@@ -35,15 +41,26 @@ TEST(ExtensionTest, PyUnicode_AsUTF8AndSize) {
 
   // Pass a nullptr size
   char* cstring = PyUnicode_AsUTF8AndSize(pyunicode, nullptr);
+  ASSERT_NE(nullptr, cstring);
   EXPECT_STREQ(str, cstring);
   std::free(cstring);
+}
+
+TEST(UnicodeObject, AsUTF8WithReferencedSizeReturnsCString) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* str = "Some C String";
+  Handle<String> string_obj(&scope, runtime.newStringFromCString(str));
+  PyObject* pyunicode = runtime.asApiHandle(*string_obj)->asPyObject();
 
   // Pass a size reference
   Py_ssize_t size = 0;
-  char* cstring2 = PyUnicode_AsUTF8AndSize(pyunicode, &size);
-  EXPECT_STREQ(str, cstring2);
+  char* cstring = PyUnicode_AsUTF8AndSize(pyunicode, &size);
+  ASSERT_NE(nullptr, cstring);
+  EXPECT_STREQ(str, cstring);
   EXPECT_EQ(size, strlen(str));
-  std::free(cstring2);
+  std::free(cstring);
 }
 
 } // namespace python

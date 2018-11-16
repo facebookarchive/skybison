@@ -6,7 +6,7 @@
 
 namespace python {
 
-TEST(PyBoolObject, PyBoolFromLong) {
+TEST(BoolObject, ConvertLongToBool) {
   Runtime runtime;
   HandleScope scope;
 
@@ -14,18 +14,18 @@ TEST(PyBoolObject, PyBoolFromLong) {
   PyObject* pybool_true = PyBool_FromLong(1);
   Handle<Object> bool_true(
       &scope, ApiHandle::fromPyObject(pybool_true)->asObject());
-  EXPECT_TRUE(bool_true->isBoolean());
+  ASSERT_TRUE(bool_true->isBoolean());
   EXPECT_TRUE(Boolean::cast(*bool_true)->value());
 
   // Test False
   PyObject* pybool_false = PyBool_FromLong(0);
   Handle<Object> bool_false(
       &scope, ApiHandle::fromPyObject(pybool_false)->asObject());
-  EXPECT_TRUE(bool_false->isBoolean());
+  ASSERT_TRUE(bool_false->isBoolean());
   EXPECT_FALSE(Boolean::cast(*bool_false)->value());
 }
 
-TEST(PyBoolObject, PyBoolIdentity) {
+TEST(BoolObject, CheckBoolIdentity) {
   Runtime runtime;
 
   // Test Identitiy

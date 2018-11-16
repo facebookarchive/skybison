@@ -6,7 +6,7 @@
 
 namespace python {
 
-TEST(Object, NoneValue) {
+TEST(Object, PyNoneReturnsRuntimeNone) {
   Runtime runtime;
   HandleScope scope;
 
@@ -16,7 +16,7 @@ TEST(Object, NoneValue) {
   EXPECT_TRUE(none_object->isNone());
 }
 
-TEST(Object, NoneIdentity) {
+TEST(Object, PyNoneIdentityIsEqual) {
   Runtime runtime;
 
   // Test Identitiy
