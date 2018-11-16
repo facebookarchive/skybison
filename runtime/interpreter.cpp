@@ -247,6 +247,62 @@ Object* Interpreter::unaryOperation(
   return callMethod1(thread, caller, sp, method, self);
 }
 
+Object* Interpreter::binaryOperation(
+    Thread* thread,
+    Frame* caller,
+    Object** sp,
+    BinaryOp op,
+    const Handle<Object>& self,
+    const Handle<Object>& other) {
+  HandleScope scope(thread->handles());
+  Runtime* runtime = thread->runtime();
+
+  Handle<Class> self_type(&scope, runtime->classOf(*self));
+  Handle<Class> other_type(&scope, runtime->classOf(*other));
+  bool is_derived_type = (*self_type != *other_type) &&
+      (runtime->isSubClass(other_type, self_type) == Boolean::trueObj());
+
+  Handle<Object> selector(&scope, runtime->binaryOperationSelector(op));
+  Handle<Object> self_method(
+      &scope, lookupMethod(thread, caller, self, selector));
+  Handle<Object> other_method(
+      &scope, lookupMethod(thread, caller, other, selector));
+
+  Handle<Object> swapped_selector(
+      &scope, runtime->swappedBinaryOperationSelector(op));
+  Handle<Object> self_reflected_method(
+      &scope, lookupMethod(thread, caller, self, swapped_selector));
+  Handle<Object> other_reflected_method(
+      &scope, lookupMethod(thread, caller, other, swapped_selector));
+
+  bool try_other = true;
+  if (!self_method->isError()) {
+    if (is_derived_type && !other_reflected_method->isError() &&
+        *self_reflected_method != *other_reflected_method) {
+      Object* result =
+          callMethod2(thread, caller, sp, other_reflected_method, other, self);
+      if (result != runtime->notImplemented()) {
+        return result;
+      }
+      try_other = false;
+    }
+    Object* result = callMethod2(thread, caller, sp, self_method, self, other);
+    if (result != runtime->notImplemented()) {
+      return result;
+    }
+  }
+  if (try_other) {
+    if (!other_reflected_method->isError()) {
+      Object* result =
+          callMethod2(thread, caller, sp, other_reflected_method, other, self);
+      if (result != runtime->notImplemented()) {
+        return result;
+      }
+    }
+  }
+  UNIMPLEMENTED("throw");
+}
+
 Object* Interpreter::compareOperation(
     Thread* thread,
     Frame* caller,
@@ -264,7 +320,7 @@ Object* Interpreter::compareOperation(
   bool has_different_type = (*left_type != *right_type);
   if (has_different_type && runtime->isSubClass(right_type, left_type)) {
     try_swapped = false;
-    Handle<Object> selector(&scope, runtime->comparisonAttributeSwapped(op));
+    Handle<Object> selector(&scope, runtime->swappedComparisonSelector(op));
     Handle<Object> method(
         &scope, lookupMethod(thread, caller, right, selector));
     if (!method->isError()) {
@@ -274,7 +330,7 @@ Object* Interpreter::compareOperation(
       }
     }
   } else {
-    Handle<Object> selector(&scope, runtime->comparisonAttribute(op));
+    Handle<Object> selector(&scope, runtime->comparisonSelector(op));
     Handle<Object> method(&scope, lookupMethod(thread, caller, left, selector));
     if (!method->isError()) {
       Object* result = callMethod2(thread, caller, sp, method, left, right);
@@ -284,7 +340,7 @@ Object* Interpreter::compareOperation(
     }
   }
   if (has_different_type && try_swapped) {
-    Handle<Object> selector(&scope, runtime->comparisonAttributeSwapped(op));
+    Handle<Object> selector(&scope, runtime->swappedComparisonSelector(op));
     Handle<Object> method(
         &scope, lookupMethod(thread, caller, right, selector));
     if (!method->isError()) {
@@ -495,19 +551,13 @@ void Interpreter::doBinaryAdd(Context* ctx, word) {
 
 // opcode 24
 void Interpreter::doBinarySubtract(Context* ctx, word) {
-  HandleScope scope(ctx->thread);
-  Handle<Object> right(&scope, *ctx->sp++);
-  Handle<Object> left(&scope, *ctx->sp);
-  if (left->isSmallInteger() && right->isSmallInteger()) {
-    *ctx->sp = SmallInteger::fromWord(
-        SmallInteger::cast(*left)->value() -
-        SmallInteger::cast(*right)->value());
-  } else if (left->isDouble() && right->isDouble()) {
-    *ctx->sp = ctx->thread->runtime()->newDouble(
-        Double::cast(*left)->value() - Double::cast(*right)->value());
-  } else {
-    UNIMPLEMENTED("Unsupported types for binary ops");
-  }
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread->handles());
+  Handle<Object> other(&scope, *ctx->sp++);
+  Handle<Object> self(&scope, *ctx->sp++);
+  Object* result =
+      binaryOperation(thread, ctx->frame, ctx->sp, BinaryOp::SUB, self, other);
+  *--ctx->sp = result;
 }
 
 // opcode 25

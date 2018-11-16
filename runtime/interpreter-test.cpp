@@ -77,6 +77,165 @@ TEST(InterpreterTest, IsTrueDunderLen) {
   EXPECT_EQ(Interpreter::isTrue(thread, frame, sp), Boolean::falseObj());
 }
 
+TEST(InterpreterTest, BinaryOpInvokesSelfMethod) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+class C:
+    def __sub__(self, other):
+        return (C, '__sub__', self, other)
+
+left = C()
+right = C()
+)");
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
+
+  Object* result = Interpreter::binaryOperation(
+      thread,
+      frame,
+      frame->valueStackTop(),
+      Interpreter::BinaryOp::SUB,
+      left,
+      right);
+  ASSERT_TRUE(result->isObjectArray());
+  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
+  ASSERT_TRUE(ObjectArray::cast(result)->at(1)->isString());
+  String* name = String::cast(ObjectArray::cast(result)->at(1));
+  EXPECT_TRUE(name->equalsCString("__sub__"));
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
+  EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
+}
+
+TEST(InterpreterTest, BinaryOpInvokesSelfMethodIgnoresReflectedMethod) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+class C:
+    def __sub__(self, other):
+        return (C, '__sub__', self, other)
+    def __rsub__(self, other):
+        return (C, '__rsub__', self, other)
+
+left = C()
+right = C()
+)");
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
+
+  Object* result = Interpreter::binaryOperation(
+      thread,
+      frame,
+      frame->valueStackTop(),
+      Interpreter::BinaryOp::SUB,
+      left,
+      right);
+  ASSERT_TRUE(result->isObjectArray());
+  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
+  ASSERT_TRUE(ObjectArray::cast(result)->at(1)->isString());
+  String* name = String::cast(ObjectArray::cast(result)->at(1));
+  EXPECT_TRUE(name->equalsCString("__sub__"));
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
+  EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
+}
+
+TEST(InterpreterTest, BinaryOperationInvokesSubclassReflectedMethod) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+class C:
+    def __sub__(self, other):
+        return (C, '__sub__', self, other)
+
+class D(C):
+    def __rsub__(self, other):
+        return (D, '__rsub__', self, other)
+
+left = C()
+right = D()
+)");
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Handle<Object> d_class(&scope, testing::moduleAt(&runtime, main, "D"));
+
+  Object* result = Interpreter::binaryOperation(
+      thread,
+      frame,
+      frame->valueStackTop(),
+      Interpreter::BinaryOp::SUB,
+      left,
+      right);
+  ASSERT_TRUE(result->isObjectArray());
+  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(ObjectArray::cast(result)->at(0), *d_class);
+  EXPECT_TRUE(String::cast(ObjectArray::cast(result)->at(1))
+                  ->equalsCString("__rsub__"));
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), *right);
+  EXPECT_EQ(ObjectArray::cast(result)->at(3), *left);
+}
+
+TEST(InterpreterTest, BinaryOperationInvokesOtherReflectedMethod) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+class C:
+    pass
+
+class D:
+    def __rsub__(self, other):
+        return (D, '__rsub__', self, other)
+
+left = C()
+right = D()
+)");
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Handle<Object> d_class(&scope, testing::moduleAt(&runtime, main, "D"));
+
+  Object* result = Interpreter::binaryOperation(
+      thread,
+      frame,
+      frame->valueStackTop(),
+      Interpreter::BinaryOp::SUB,
+      left,
+      right);
+  ASSERT_TRUE(result->isObjectArray());
+  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(ObjectArray::cast(result)->at(0), *d_class);
+  EXPECT_TRUE(String::cast(ObjectArray::cast(result)->at(1))
+                  ->equalsCString("__rsub__"));
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), *right);
+  EXPECT_EQ(ObjectArray::cast(result)->at(3), *left);
+}
+
 // To a rich comparison on two instances of the same type.  In each case, the
 // method on the left side of the comparison should be used.
 TEST(InterpreterTest, CompareOpSameClass) {

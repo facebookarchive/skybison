@@ -315,6 +315,21 @@ Object* builtinDoubleNe(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinDoubleSub(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isDouble() && other->isDouble()) {
+    Double* left = Double::cast(self);
+    Double* right = Double::cast(other);
+    return thread->runtime()->newDouble(left->value() - right->value());
+  }
+  return thread->runtime()->notImplemented();
+}
+
 // List
 
 Object* builtinListNew(Thread* thread, Frame* caller, word nargs) {
@@ -453,9 +468,13 @@ Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
   Handle<List> list(&scope, *list_or_error);
   for (word i = 0; i < list->allocated(); i++) {
     Handle<Object> item(&scope, list->at(i));
-    if (Boolean::cast(
-            Interpreter::compareOperation(
-                thread, frame, frame->valueStackTop(), EQ, item, value))
+    if (Boolean::cast(Interpreter::compareOperation(
+                          thread,
+                          frame,
+                          frame->valueStackTop(),
+                          CompareOp::EQ,
+                          item,
+                          value))
             ->value()) {
       thread->runtime()->listPop(list, i);
       return None::object();
@@ -662,6 +681,22 @@ Object* builtinSmallIntegerPos(Thread* thread, Frame* caller, word nargs) {
     return thread->throwTypeErrorFromCString("not enough arguments");
   }
   return SmallInteger::cast(*caller->valueStackTop());
+}
+
+Object* builtinSmallIntegerSub(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCString("expected 1 argument");
+  }
+  Arguments args(caller, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (self->isSmallInteger() && other->isSmallInteger()) {
+    SmallInteger* left = SmallInteger::cast(self);
+    SmallInteger* right = SmallInteger::cast(other);
+    // TODO(cshapiro): handle overflow
+    return SmallInteger::fromWord(left->value() - right->value());
+  }
+  return thread->runtime()->notImplemented();
 }
 
 // StaticMethod

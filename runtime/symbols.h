@@ -10,11 +10,15 @@ class Runtime;
 // List of predefined symbols, one per line
 // clang-format off
 #define FOREACH_SYMBOL(V)                \
+  V(DunderAdd, "__add__")                \
+  V(DunderAnd, "__and__")                \
   V(DunderBool, "__bool__")              \
   V(DunderBuildClass, "__build_class__") \
   V(DunderCall, "__call__")              \
   V(DunderClass, "__class__")            \
+  V(DunderDivmod, "__divmod__")          \
   V(DunderEq, "__eq__")                  \
+  V(DunderFloordiv, "__floordiv__")      \
   V(DunderGe, "__ge__")                  \
   V(DunderGet, "__get__")                \
   V(DunderGt, "__gt__")                  \
@@ -22,14 +26,38 @@ class Runtime;
   V(DunderInvert, "__invert__")          \
   V(DunderLe, "__le__")                  \
   V(DunderLen, "__len__")                \
+  V(DunderLshift, "__lshift__")          \
   V(DunderLt, "__lt__")                  \
   V(DunderMain, "__main__")              \
+  V(DunderMatmul, "__matmul__")          \
+  V(DunderMod, "__mod__")                \
+  V(DunderMul, "__mul__")                \
   V(DunderName, "__name__")              \
   V(DunderNe, "__ne__")                  \
   V(DunderNeg, "__neg__")                \
   V(DunderNew, "__new__")                \
+  V(DunderOr, "__or__")                  \
   V(DunderPos, "__pos__")                \
+  V(DunderPow, "__pow__")                \
+  V(DunderRadd, "__radd__")              \
+  V(DunderRand, "__rand__")              \
+  V(DunderRdivmod, "__rdivmod__")        \
+  V(DunderRfloordiv, "__rfloordiv__")    \
+  V(DunderRlshift, "__rlshift__")        \
+  V(DunderRmatmul, "__rmatmul__")        \
+  V(DunderRmod, "__rmod__")              \
+  V(DunderRmul, "__rmul__")              \
+  V(DunderRor, "__ror__")                \
+  V(DunderRpow, "__rpow__")              \
+  V(DunderRrshift, "__rrshift__")        \
+  V(DunderRshift, "__rshift__")          \
+  V(DunderRsub, "__rsub__")              \
+  V(DunderRtruediv, "__rtruediv__")      \
+  V(DunderRxor, "__rxor__")              \
   V(DunderSet, "__set__")                \
+  V(DunderSub, "__sub__")                \
+  V(DunderTruediv, "__truediv__")        \
+  V(DunderXor, "__xor__")                \
   V(Append, "append")                    \
   V(Argv, "argv")                        \
   V(Builtins, "builtins")                \

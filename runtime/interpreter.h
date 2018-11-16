@@ -12,6 +12,23 @@ class Thread;
 
 class Interpreter {
  public:
+  enum class BinaryOp {
+    ADD,
+    SUB,
+    MUL,
+    MATMUL,
+    TRUEDIV,
+    FLOORDIV,
+    MOD,
+    DIVMOD,
+    POW,
+    LSHIFT,
+    RSHIFT,
+    AND,
+    XOR,
+    OR
+  };
+
   static Object* execute(Thread* thread, Frame* frame);
 
   static Object* call(Thread* thread, Frame* frame, Object** sp, word nargs);
@@ -57,6 +74,14 @@ class Interpreter {
       Object** sp,
       const Handle<Object>& receiver,
       const Handle<Object>& selector);
+
+  static Object* binaryOperation(
+      Thread* thread,
+      Frame* caller,
+      Object** sp,
+      BinaryOp op,
+      const Handle<Object>& left,
+      const Handle<Object>& right);
 
   static Object* compareOperation(
       Thread* thread,

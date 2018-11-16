@@ -951,48 +951,55 @@ void Runtime::initializeBooleanClass() {
 
 void Runtime::initializeFloatClass() {
   HandleScope scope;
-  Handle<Class> type(
+  Handle<Class> float_type(
       &scope, initializeHeapClass("float", IntrinsicLayoutId::kDouble));
 
   classAddBuiltinFunction(
-      type,
+      float_type,
       symbols()->DunderEq(),
       nativeTrampoline<builtinDoubleEq>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
   classAddBuiltinFunction(
-      type,
+      float_type,
       symbols()->DunderGe(),
       nativeTrampoline<builtinDoubleGe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
   classAddBuiltinFunction(
-      type,
+      float_type,
       symbols()->DunderGt(),
       nativeTrampoline<builtinDoubleGt>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
   classAddBuiltinFunction(
-      type,
+      float_type,
       symbols()->DunderLe(),
       nativeTrampoline<builtinDoubleLe>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
   classAddBuiltinFunction(
-      type,
+      float_type,
       symbols()->DunderLt(),
       nativeTrampoline<builtinDoubleLt>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
   classAddBuiltinFunction(
-      type,
+      float_type,
       symbols()->DunderNe(),
       nativeTrampoline<builtinDoubleNe>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      float_type,
+      symbols()->DunderSub(),
+      nativeTrampoline<builtinDoubleSub>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 }
@@ -1043,6 +1050,13 @@ void Runtime::initializeSmallIntClass() {
       small_integer,
       symbols()->DunderPos(),
       nativeTrampoline<builtinSmallIntegerPos>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      small_integer,
+      symbols()->DunderSub(),
+      nativeTrampoline<builtinSmallIntegerSub>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 
@@ -1384,7 +1398,77 @@ word Runtime::newLayoutId() {
   return result;
 }
 
-Object* Runtime::comparisonAttribute(CompareOp op) {
+Object* Runtime::binaryOperationSelector(Interpreter::BinaryOp op) {
+  switch (op) {
+    case Interpreter::BinaryOp::ADD:
+      return symbols()->DunderAdd();
+    case Interpreter::BinaryOp::SUB:
+      return symbols()->DunderSub();
+    case Interpreter::BinaryOp::MUL:
+      return symbols()->DunderMul();
+    case Interpreter::BinaryOp::MATMUL:
+      return symbols()->DunderMatmul();
+    case Interpreter::BinaryOp::TRUEDIV:
+      return symbols()->DunderTruediv();
+    case Interpreter::BinaryOp::FLOORDIV:
+      return symbols()->DunderFloordiv();
+    case Interpreter::BinaryOp::MOD:
+      return symbols()->DunderMod();
+    case Interpreter::BinaryOp::DIVMOD:
+      return symbols()->DunderDivmod();
+    case Interpreter::BinaryOp::POW:
+      return symbols()->DunderPow();
+    case Interpreter::BinaryOp::LSHIFT:
+      return symbols()->DunderLshift();
+    case Interpreter::BinaryOp::RSHIFT:
+      return symbols()->DunderRshift();
+    case Interpreter::BinaryOp::AND:
+      return symbols()->DunderAnd();
+    case Interpreter::BinaryOp::XOR:
+      return symbols()->DunderXor();
+    case Interpreter::BinaryOp::OR:
+      return symbols()->DunderOr();
+    default:
+      UNREACHABLE("unknown binary operation");
+  }
+}
+
+Object* Runtime::swappedBinaryOperationSelector(Interpreter::BinaryOp op) {
+  switch (op) {
+    case Interpreter::BinaryOp::ADD:
+      return symbols()->DunderRadd();
+    case Interpreter::BinaryOp::SUB:
+      return symbols()->DunderRsub();
+    case Interpreter::BinaryOp::MUL:
+      return symbols()->DunderRmul();
+    case Interpreter::BinaryOp::MATMUL:
+      return symbols()->DunderRmatmul();
+    case Interpreter::BinaryOp::TRUEDIV:
+      return symbols()->DunderRtruediv();
+    case Interpreter::BinaryOp::FLOORDIV:
+      return symbols()->DunderRfloordiv();
+    case Interpreter::BinaryOp::MOD:
+      return symbols()->DunderRmod();
+    case Interpreter::BinaryOp::DIVMOD:
+      return symbols()->DunderRdivmod();
+    case Interpreter::BinaryOp::POW:
+      return symbols()->DunderRpow();
+    case Interpreter::BinaryOp::LSHIFT:
+      return symbols()->DunderRlshift();
+    case Interpreter::BinaryOp::RSHIFT:
+      return symbols()->DunderRrshift();
+    case Interpreter::BinaryOp::AND:
+      return symbols()->DunderRand();
+    case Interpreter::BinaryOp::XOR:
+      return symbols()->DunderRxor();
+    case Interpreter::BinaryOp::OR:
+      return symbols()->DunderRor();
+    default:
+      UNREACHABLE("unknown binary operation");
+  }
+}
+
+Object* Runtime::comparisonSelector(CompareOp op) {
   DCHECK(op >= CompareOp::LT, "invalid compare op");
   DCHECK(op <= CompareOp::GE, "invalid compare op");
   switch (op) {
@@ -1405,11 +1489,11 @@ Object* Runtime::comparisonAttribute(CompareOp op) {
   }
 }
 
-Object* Runtime::comparisonAttributeSwapped(python::CompareOp op) {
+Object* Runtime::swappedComparisonSelector(python::CompareOp op) {
   DCHECK(op >= CompareOp::LT, "invalid compare op");
   DCHECK(op <= CompareOp::GE, "invalid compare op");
   CompareOp swapped_op = kSwappedCompareOp[op];
-  return comparisonAttribute(swapped_op);
+  return comparisonSelector(swapped_op);
 }
 
 void Runtime::moduleAddGlobal(

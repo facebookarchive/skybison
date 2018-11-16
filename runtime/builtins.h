@@ -23,6 +23,7 @@ Object* builtinDoubleGt(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleLe(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleLt(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs);
+Object* builtinDoubleSub(Thread* thread, Frame* caller, word nargs);
 
 // List
 Object* builtinListNew(Thread* thread, Frame* frame, word nargs);
@@ -50,6 +51,7 @@ Object* builtinSmallIntegerLt(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerNe(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerNeg(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerPos(Thread* thread, Frame* frame, word nargs);
+Object* builtinSmallIntegerSub(Thread* thread, Frame* frame, word nargs);
 
 // Descriptor
 Object* functionDescriptorGet(Thread* thread, Frame* frame, word nargs);

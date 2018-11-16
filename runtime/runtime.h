@@ -4,6 +4,7 @@
 #include "callback.h"
 #include "handles.h"
 #include "heap.h"
+#include "interpreter.h"
 #include "symbols.h"
 #include "view.h"
 
@@ -216,8 +217,11 @@ class Runtime {
 
   word newLayoutId();
 
-  Object* comparisonAttribute(CompareOp op);
-  Object* comparisonAttributeSwapped(CompareOp op);
+  Object* binaryOperationSelector(Interpreter::BinaryOp op);
+  Object* swappedBinaryOperationSelector(Interpreter::BinaryOp op);
+
+  Object* comparisonSelector(CompareOp op);
+  Object* swappedComparisonSelector(CompareOp op);
 
   Object* buildClass() {
     return build_class_;
