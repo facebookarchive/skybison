@@ -102,6 +102,8 @@ class Runtime {
 
   Object* run(const char* buffer);
 
+  Object* runFromCString(const char* c_string);
+
   Object* hash(Object* object);
   word siphash24(View<byte> array);
 

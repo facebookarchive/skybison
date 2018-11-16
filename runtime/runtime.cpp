@@ -818,6 +818,13 @@ Object* Runtime::run(const char* buffer) {
   return executeModule(buffer, main);
 }
 
+Object* Runtime::runFromCString(const char* c_string) {
+  const char* buffer = compile(c_string);
+  Object* result = run(buffer);
+  delete[] buffer;
+  return result;
+}
+
 Object* Runtime::executeModule(
     const char* buffer,
     const Handle<Module>& module) {

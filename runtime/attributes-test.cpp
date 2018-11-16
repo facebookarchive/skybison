@@ -210,7 +210,7 @@ class A: pass
 print(A.foo)
 )";
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, src),
+      runtime.runFromCString(src),
       "aborting due to pending exception: missing attribute");
 }
 
@@ -238,7 +238,7 @@ class DataDescriptor:
   def __get__(self, instance, owner):
     pass
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> descr_klass(
@@ -267,7 +267,7 @@ class DataDescriptor:
   def __get__(self, instance, owner):
     pass
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> descr_klass(
@@ -296,7 +296,7 @@ class DataDescriptor:
   def __get__(self, instance, owner):
     pass
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> descr_klass(
@@ -326,7 +326,7 @@ class Foo:
 def test(x):
   print(x.foo)
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
@@ -348,7 +348,7 @@ class Foo:
 def test(x):
   print(x.attr)
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   // Create the instance
   HandleScope scope;
@@ -374,7 +374,7 @@ def test(x):
   Foo.__init__(x)
   print(x.attr)
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   // Create the instance
   HandleScope scope;
@@ -403,7 +403,7 @@ def test(x):
   x.attr = '321 testing'
   print(x.attr)
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   // Create the instance
   HandleScope scope;
@@ -435,7 +435,7 @@ def test(x):
   x.baz = 'ccc'
   print(x.foo, x.bar, x.baz)
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   // Create an instance of Foo
   HandleScope scope;
@@ -476,7 +476,7 @@ def test(x):
   Foo.__init__(x)
   x.doit()
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   // Create the instance
   HandleScope scope;
@@ -504,7 +504,7 @@ class DataDescr:
 class Foo:
   pass
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
@@ -534,7 +534,7 @@ class Descr:
 class Foo:
   pass
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
@@ -571,7 +571,7 @@ def test(x):
   x.baz = 'ccc'
   print(x.foo, x.bar, x.baz)
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   // Create the instance
   HandleScope scope;
@@ -602,7 +602,7 @@ foo = Foo()
 print(foo.bar)
 )";
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, src),
+      runtime.runFromCString(src),
       "aborting due to pending exception: missing attribute");
 }
 

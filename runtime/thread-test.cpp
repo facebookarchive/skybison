@@ -52,18 +52,10 @@ TEST(ThreadTest, RunEmptyFunction) {
 
 TEST(ThreadTest, RunHelloWorld) {
   Runtime runtime;
-  HandleScope scope;
-  const char* buffer =
-      "\x33\x0D\x0D\x0A\x1B\x69\xC1\x59\x16\x00\x00\x00\xE3\x00\x00\x00\x00\x00"
-      "\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x40\x00\x00\x00\x73\x0C\x00"
-      "\x00\x00\x65\x00\x64\x00\x83\x01\x01\x00\x64\x01\x53\x00\x29\x02\x7A\x0C"
-      "\x68\x65\x6C\x6C\x6F\x2C\x20\x77\x6F\x72\x6C\x64\x4E\x29\x01\xDA\x05\x70"
-      "\x72\x69\x6E\x74\xA9\x00\x72\x02\x00\x00\x00\x72\x02\x00\x00\x00\xFA\x0D"
-      "\x68\x65\x6C\x6C\x6F\x77\x6F\x72\x6C\x64\x2E\x70\x79\xDA\x08\x3C\x6D\x6F"
-      "\x64\x75\x6C\x65\x3E\x01\x00\x00\x00\x73\x00\x00\x00\x00";
-
-  // Execute the code and make sure we get back the result we expect
-  std::string result = runToString(&runtime, buffer);
+  const char* src = R"(
+print('hello, world')
+)";
+  std::string result = compileAndRunToString(&runtime, src);
   EXPECT_EQ(result, "hello, world\n");
 }
 
@@ -74,11 +66,8 @@ def hello():
   print('hello, world')
 hello()
 )";
-
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-
   // Execute the code and make sure we get back the result we expect
-  std::string output = runToString(&runtime, buffer.get());
+  std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "hello, world\n");
 }
 
@@ -91,8 +80,7 @@ class C: pass
 c = C()
 )";
 
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  runtime.run(buffer.get());
+  runtime.runFromCString(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> type(&scope, moduleAt(&runtime, main, "C"));
@@ -119,8 +107,7 @@ g = 1
 C()
 )";
 
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  runtime.run(buffer.get());
+  runtime.runFromCString(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
@@ -143,8 +130,7 @@ g = 1
 C(9)
 )";
 
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  runtime.run(buffer.get());
+  runtime.runFromCString(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
@@ -167,8 +153,7 @@ c = C(10, 2)
 g = c(3)
 )";
 
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  runtime.run(buffer.get());
+  runtime.runFromCString(src);
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
@@ -752,8 +737,7 @@ TEST_P(GlobalsTest, FastGlobal) {
   Runtime runtime;
   TestData data = GetParam();
   if (data.death) {
-    EXPECT_DEATH(
-        compileAndRunToString(&runtime, data.src), data.expected_output);
+    EXPECT_DEATH(runtime.runFromCString(data.src), data.expected_output);
   } else {
     std::string output = compileAndRunToString(&runtime, data.src);
     EXPECT_EQ(output, data.expected_output);
@@ -1289,9 +1273,8 @@ TEST(ThreadTest, LoadBuildClassEmptyClass) {
 class C:
   pass
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
 
-  Object* result = runtime.run(buffer.get());
+  Object* result = runtime.runFromCString(src);
   ASSERT_EQ(result, None::object()); // returns None
 
   Handle<Dictionary> dict(&scope, getMainModuleDict(&runtime));
@@ -1320,9 +1303,7 @@ class C:
     pass
 )";
 
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-
-  Object* result = runtime.run(buffer.get());
+  Object* result = runtime.runFromCString(src);
   ASSERT_EQ(result, None::object()); // returns None
 
   Handle<Module> mod(&scope, findModule(&runtime, "__main__"));
@@ -1406,8 +1387,7 @@ static Object*
 getMro(Runtime* runtime, const char* src, const char* desired_class) {
   HandleScope scope;
 
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  Handle<Object> result(&scope, runtime->run(buffer.get()));
+  Handle<Object> result(&scope, runtime->runFromCString(src));
 
   Handle<Dictionary> mod_dict(&scope, getMainModuleDict(runtime));
   Handle<Object> class_name(
@@ -1505,8 +1485,8 @@ class B(A): pass
 class C(A, B): pass
 )";
 
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  EXPECT_DEATH(runtime.run(buffer.get()), "consistent method resolution order");
+  EXPECT_DEATH(
+      runtime.runFromCString(src), "consistent method resolution order");
 }
 
 // iteration
@@ -1546,7 +1526,7 @@ a = a * a * a
 
   // Overflows in the multiplication itself.
   EXPECT_DEBUG_ONLY_DEATH(
-      compileAndRunToString(&runtime, mul_src), "small integer overflow");
+      runtime.runFromCString(mul_src), "small integer overflow");
 
   const char* add_src = R"(
 a = 1048576
@@ -1559,7 +1539,7 @@ a += a
 
   // No overflow per se, but result too large to store in a SmallInteger
   EXPECT_DEBUG_ONLY_DEATH(
-      compileAndRunToString(&runtime, add_src), "SmallInteger::isValid");
+      runtime.runFromCString(add_src), "SmallInteger::isValid");
 }
 
 TEST(ThreadTest, BinaryOps) {
@@ -1744,13 +1724,11 @@ TEST(ThreadTest, BuiltinChr) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(chr(65))");
   EXPECT_EQ(result, "A\n");
-  std::unique_ptr<char[]> buffer1(Runtime::compile("print(chr(1,2))"));
   ASSERT_DEATH(
-      runtime.run(buffer1.get()),
+      runtime.runFromCString("print(chr(1,2))"),
       "aborting due to pending exception: Unexpected 1 argumment in 'chr'");
-  std::unique_ptr<char[]> buffer2(Runtime::compile("print(chr('A'))"));
   ASSERT_DEATH(
-      runtime.run(buffer2.get()),
+      runtime.runFromCString("print(chr('A'))"),
       "aborting due to pending exception: Unsupported type in builtin 'chr'");
 }
 
@@ -1758,14 +1736,12 @@ TEST(ThreadTest, BuiltinLen) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");
   EXPECT_EQ(result, "3\n");
-  std::unique_ptr<char[]> buffer1(Runtime::compile("print(len(1,2))"));
   ASSERT_DEATH(
-      runtime.run(buffer1.get()),
+      runtime.runFromCString("print(len(1,2))"),
       "aborting due to pending exception: "
       "len\\(\\) takes exactly one argument");
-  std::unique_ptr<char[]> buffer2(Runtime::compile("print(len(1))"));
   ASSERT_DEATH(
-      runtime.run(buffer2.get()),
+      runtime.runFromCString("print(len(1))"),
       "aborting due to pending exception: "
       "Unsupported type in builtin 'len'");
 }
@@ -1775,10 +1751,10 @@ TEST(ThreadTest, BuiltinOrd) {
   std::string result = compileAndRunToString(&runtime, "print(ord('A'))");
   EXPECT_EQ(result, "65\n");
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, "print(ord(1,2))"),
+      runtime.runFromCString("print(ord(1,2))"),
       "aborting due to pending exception: Unexpected 1 argumment in 'ord'");
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, "print(ord(1))"),
+      runtime.runFromCString("print(ord(1))"),
       "aborting due to pending exception: Unsupported type in builtin 'ord'");
 }
 
@@ -1792,7 +1768,7 @@ def func(self):
 def test(callable):
   return callable()
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   HandleScope scope;
   Handle<Module> module(&scope, findModule(&runtime, "__main__"));
@@ -1823,7 +1799,7 @@ def func(self, a, b):
 def test(callable):
   return callable(2222, 3333)
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   HandleScope scope;
   Handle<Module> module(&scope, findModule(&runtime, "__main__"));
@@ -1898,7 +1874,7 @@ a = R(9)
 TEST(ThreadTest, RaiseVarargs) {
   Runtime runtime;
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, "raise 1"),
+      runtime.runFromCString("raise 1"),
       "unimplemented: bytecode 'RAISE_VARARGS'");
 }
 
@@ -1908,12 +1884,12 @@ TEST(ThreadTest, BuiltinIsinstance) {
 
   // Only accepts 2 arguments
   EXPECT_DEATH(
-      compileAndRunToString(&runtime, "print(isinstance(1, 1, 1))"),
+      runtime.runFromCString("print(isinstance(1, 1, 1))"),
       "aborting due to pending exception: isinstance expected 2 arguments");
 
   // 2nd argument must be a type
   EXPECT_DEATH(
-      compileAndRunToString(&runtime, "print(isinstance(1, 1))"),
+      runtime.runFromCString("print(isinstance(1, 1))"),
       "aborting due to pending exception: isinstance arg 2 must be a type");
 
   const char* src = R"(
@@ -1925,7 +1901,7 @@ class D(C, B): pass
 def test(a, b):
   print(isinstance(a, b))
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   // We can move these tests into the python code above once we can
   // call classes.
@@ -2022,7 +1998,7 @@ class Foo(object):
   pass
 )";
   Runtime runtime;
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
 
   // Look up the class Foo
   HandleScope scope;
@@ -2076,8 +2052,7 @@ hello.say_hello()
 )";
 
   EXPECT_DEATH(
-      compileAndRunToString(&runtime, main_src),
-      "importModule is unimplemented");
+      runtime.runFromCString(main_src), "importModule is unimplemented");
 }
 
 TEST(ThreadTest, ImportMissingAttributeTest) {
@@ -2099,7 +2074,7 @@ hello.foo()
   Handle<Object> name(&scope, runtime.newStringFromCString("hello"));
   runtime.importModuleFromBuffer(module_buf.get(), name);
 
-  EXPECT_DEATH(compileAndRunToString(&runtime, main_src), "missing attribute");
+  EXPECT_DEATH(runtime.runFromCString(main_src), "missing attribute");
 }
 
 TEST(ThreadTest, ModuleSetAttrTest) {
@@ -2175,7 +2150,7 @@ print(b[11])
 a = {"1": 2, 2: 3}
 print(a[1])
 )";
-  EXPECT_DEATH(compileAndRunToString(&runtime, src1), "KeyError");
+  EXPECT_DEATH(runtime.runFromCString(src1), "KeyError");
 }
 
 TEST(ThreadTest, SubscriptTuple) {
@@ -2224,7 +2199,7 @@ test()
       "  File '.+', line 9, in test\n"
       "  File '.+', line 6, in b\n"
       "  File '.+', line 3, in a\n";
-  EXPECT_DEATH(compileAndRunToString(&runtime, src), re);
+  EXPECT_DEATH(runtime.runFromCString(src), re);
 }
 
 TEST(ThreadTest, Closure) {
@@ -2308,7 +2283,7 @@ a = [1, 2]
 a.insert()
 )";
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, src1),
+      runtime.runFromCString(src1),
       "aborting due to pending exception: "
       "insert\\(\\) takes exactly two arguments");
 
@@ -2316,7 +2291,7 @@ a.insert()
 list.insert(1, 2, 3)
 )";
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, src2),
+      runtime.runFromCString(src2),
       "aborting due to pending exception: "
       "descriptor 'insert' requires a 'list' object");
 
@@ -2325,7 +2300,7 @@ a = [1, 2]
 a.insert("i", "val")
 )";
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, src3),
+      runtime.runFromCString(src3),
       "aborting due to pending exception: "
       "index object cannot be interpreted as an integer");
 }
@@ -2358,7 +2333,7 @@ a = [1, 2]
 a.pop(1, 2, 3, 4)
 )";
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, src1),
+      runtime.runFromCString(src1),
       "aborting due to pending exception: "
       "pop\\(\\) takes at most 1 argument");
 
@@ -2366,7 +2341,7 @@ a.pop(1, 2, 3, 4)
 list.pop(1)
 )";
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, src2),
+      runtime.runFromCString(src2),
       "aborting due to pending exception: "
       "descriptor 'pop' requires a 'list' object");
 
@@ -2375,7 +2350,7 @@ a = [1, 2]
 a.pop("i")
 )";
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, src3),
+      runtime.runFromCString(src3),
       "aborting due to pending exception: "
       "index object cannot be interpreted as an integer");
 
@@ -2385,7 +2360,7 @@ a.pop()
 a.pop()
 )";
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, src4),
+      runtime.runFromCString(src4),
       "unimplemented: "
       "Throw an IndexError for an out of range list");
 
@@ -2394,7 +2369,7 @@ a = [1]
 a.pop(3)
 )";
   ASSERT_DEATH(
-      compileAndRunToString(&runtime, src5),
+      runtime.runFromCString(src5),
       "unimplemented: "
       "Throw an IndexError for an out of range list");
 }
@@ -2677,7 +2652,7 @@ TEST(ThreadTest, BaseClassConflict) {
 class Foo(list, dict): pass
 )";
   Runtime runtime;
-  EXPECT_DEATH(compileAndRunToString(&runtime, src), "lay-out conflict");
+  EXPECT_DEATH(runtime.runFromCString(src), "lay-out conflict");
 }
 
 TEST(BuildSlice, noneSliceCopyList) {
@@ -3076,8 +3051,7 @@ import sys
 sys.exit()
 )";
   Runtime runtime;
-  ASSERT_EXIT(
-      compileAndRunToString(&runtime, src), ::testing::ExitedWithCode(0), "");
+  ASSERT_EXIT(runtime.runFromCString(src), ::testing::ExitedWithCode(0), "");
 }
 
 TEST(ThreadTest, SysExitCode) { // pystone dependency
@@ -3086,8 +3060,7 @@ import sys
 sys.exit(100)
 )";
   Runtime runtime;
-  ASSERT_EXIT(
-      compileAndRunToString(&runtime, src), ::testing::ExitedWithCode(100), "");
+  ASSERT_EXIT(runtime.runFromCString(src), ::testing::ExitedWithCode(100), "");
 }
 
 TEST(ThreadTest, BuiltinInt) { // pystone dependency
@@ -3146,7 +3119,7 @@ from time import foobarbaz
 )";
 
   Runtime runtime;
-  EXPECT_DEATH(compileAndRunToString(&runtime, src);, "cannot import name\n");
+  EXPECT_DEATH(runtime.runFromCString(src), "cannot import name\n");
 }
 
 TEST(ThreadTest, SysStdOutErr) { // pystone dependency

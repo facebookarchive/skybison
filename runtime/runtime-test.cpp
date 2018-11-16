@@ -566,9 +566,7 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
   Runtime runtime;
   HandleScope scope;
 
-  const char* src = "class MyEmptyClass: pass";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  runtime.run(buffer.get());
+  runtime.runFromCString("class MyEmptyClass: pass");
 
   word layout_id = IntrinsicLayoutId::kLastId + 1;
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
@@ -593,8 +591,7 @@ class MyClassWithAttributes():
     self.b = 2
     self.c = 3
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  runtime.run(buffer.get());
+  runtime.runFromCString(src);
 
   word layout_id = IntrinsicLayoutId::kLastId + 1;
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
@@ -766,8 +763,7 @@ class MyClassWithNoInitMethod():
 
 c = MyClassWithNoInitMethod()
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  runtime.run(buffer.get());
+  runtime.runFromCString(src);
 
   word layout_id = IntrinsicLayoutId::kLastId + 1;
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
@@ -796,8 +792,7 @@ class MyClassWithEmptyInitMethod():
 
 c = MyClassWithEmptyInitMethod()
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  runtime.run(buffer.get());
+  runtime.runFromCString(src);
 
   word layout_id = IntrinsicLayoutId::kLastId + 1;
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
@@ -826,8 +821,7 @@ class MyClassWithAttributes():
 
 c = MyClassWithAttributes(1)
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  runtime.run(buffer.get());
+  runtime.runFromCString(src);
 
   word layout_id = IntrinsicLayoutId::kLastId + 1;
   Handle<Layout> layout(&scope, runtime.layoutAt(layout_id));
@@ -857,7 +851,7 @@ def func():
   b = 2
   print(a, b)
 )";
-  compileAndRunToString(&runtime, src);
+  runtime.runFromCString(src);
   HandleScope scope;
   Handle<Object> dunder_main(&scope, runtime.symbols()->DunderMain());
   Handle<Module> main(&scope, runtime.findModule(dunder_main));
