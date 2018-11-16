@@ -51,6 +51,8 @@ class Runtime {
 
   void collectGarbage();
 
+  Object* run(const char* buffer);
+
   Object* hash(Object* object);
   word siphash24(const byte* src, word size);
 
@@ -137,7 +139,7 @@ class Runtime {
 
   void createBuiltinsModule();
   void createSysModule();
-  void createMainModule();
+  Object* createMainModule();
 
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);

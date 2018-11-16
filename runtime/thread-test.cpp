@@ -59,29 +59,18 @@ TEST(ThreadTest, RunHelloWorld) {
       "\x72\x69\x6E\x74\xA9\x00\x72\x02\x00\x00\x00\x72\x02\x00\x00\x00\xFA\x0D"
       "\x68\x65\x6C\x6C\x6F\x77\x6F\x72\x6C\x64\x2E\x70\x79\xDA\x08\x3C\x6D\x6F"
       "\x64\x75\x6C\x65\x3E\x01\x00\x00\x00\x73\x00\x00\x00\x00";
-  Marshal::Reader reader(&scope, &runtime, buffer);
 
-  int32 magic = reader.readLong();
-  EXPECT_EQ(magic, 0x0A0D0D33);
-  int32 mtime = reader.readLong();
-  EXPECT_EQ(mtime, 0x59C1691B);
-  int32 size = reader.readLong();
-  EXPECT_EQ(size, 22);
+  std::stringstream stream;
+  std::ostream* oldStream = builtinPrintStream;
+  builtinPrintStream = &stream;
 
-  auto code = reader.readObject();
-  ASSERT_TRUE(code->isCode());
-  EXPECT_EQ(Code::cast(code)->argcount(), 0);
-
-  // TODO(cshapiro): abstract away retrieving the main module.
-  Handle<Dictionary> modules(&scope, runtime.modules());
-  Handle<Object> key(&scope, runtime.newStringFromCString("__main__"));
-  Handle<Object> value(&scope, None::object());
-  bool is_present = runtime.dictionaryAt(modules, key, value.pointer());
-  ASSERT_TRUE(is_present);
-  Handle<Module> main(&scope, *value);
-
-  Object* result = Thread::currentThread()->runModuleFunction(*main, code);
+  // Execute the code and make sure we get back the result we expect
+  Object* result = runtime.run(buffer);
   ASSERT_EQ(result, None::object()); // returns None
+
+  builtinPrintStream = oldStream;
+
+  EXPECT_STREQ(stream.str().c_str(), "hello, world\n");
 }
 
 TEST(ThreadTest, ModuleBodyCallsHelloWorldFunction) {
@@ -108,29 +97,18 @@ TEST(ThreadTest, ModuleBodyCallsHelloWorldFunction) {
       "\x04\x00\x00\x00\x72\x02\x00\x00\x00\x72\x02\x00\x00\x00\x72\x02\x00\x00"
       "\x00\x72\x03\x00\x00\x00\xDA\x08\x3C\x6D\x6F\x64\x75\x6C\x65\x3E\x02\x00"
       "\x00\x00\x73\x02\x00\x00\x00\x08\x02";
-  Marshal::Reader reader(&scope, &runtime, buffer);
 
-  int32 magic = reader.readLong();
-  EXPECT_EQ(magic, 0x0A0D0D33);
-  int32 mtime = reader.readLong();
-  EXPECT_EQ(mtime, 0x5A1E0520);
-  int32 size = reader.readLong();
-  EXPECT_EQ(size, 80);
+  std::stringstream stream;
+  std::ostream* oldStream = builtinPrintStream;
+  builtinPrintStream = &stream;
 
-  auto code = reader.readObject();
-  ASSERT_TRUE(code->isCode());
-  EXPECT_EQ(Code::cast(code)->argcount(), 0);
-
-  // TODO(cshapiro): abstract away retrieving the main module.
-  Handle<Dictionary> modules(&scope, runtime.modules());
-  Handle<Object> key(&scope, runtime.newStringFromCString("__main__"));
-  Handle<Object> value(&scope, None::object());
-  bool is_present = runtime.dictionaryAt(modules, key, value.pointer());
-  ASSERT_TRUE(is_present);
-  Handle<Module> main(&scope, *value);
-
-  Object* result = Thread::currentThread()->runModuleFunction(*main, code);
+  // Execute the code and make sure we get back the result we expect
+  Object* result = runtime.run(buffer);
   ASSERT_EQ(result, None::object()); // returns None
+
+  builtinPrintStream = oldStream;
+
+  EXPECT_STREQ(stream.str().c_str(), "hello, world\n");
 }
 
 TEST(ThreadTest, OverlappingFrames) {

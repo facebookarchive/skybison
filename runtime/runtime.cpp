@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
+#include "marshal.h"
 #include "os.h"
 #include "siphash.h"
 #include "thread.h"
@@ -230,6 +231,23 @@ void Runtime::collectGarbage() {
   heap()->scavenge();
 }
 
+Object* Runtime::run(const char* buffer) {
+  HandleScope scope;
+
+  Marshal::Reader reader(&scope, this, buffer);
+
+  reader.readLong();
+  reader.readLong();
+  reader.readLong();
+
+  auto code = reader.readObject();
+  assert(code->isCode());
+  assert(python::Code::cast(code)->argcount() == 0);
+
+  Handle<Module> main(&scope, createMainModule());
+  return python::Thread::currentThread()->runModuleFunction(*main, code);
+}
+
 void Runtime::initializeThreads() {
   auto main_thread = new Thread(Thread::kDefaultStackSize);
   threads_ = main_thread;
@@ -301,7 +319,6 @@ void Runtime::initializeModules() {
   modules_ = newDictionary();
   createBuiltinsModule();
   createSysModule();
-  createMainModule();
 }
 
 void Runtime::addModuleGlobal(
@@ -336,17 +353,20 @@ void Runtime::createSysModule() {
   addModule(module);
 }
 
-void Runtime::createMainModule() {
+Object* Runtime::createMainModule() {
   HandleScope scope;
   Handle<Object> name(&scope, newStringFromCString("__main__"));
   Handle<Module> module(&scope, newModule(name));
 
+  // Fill in __main__...
+  // TODO(cshapiro): inherit all symbols present in builtins.
   Handle<Object> key(&scope, newStringFromCString("print"));
   Handle<Object> value(&scope, newBuiltinFunction(&builtinPrint));
   addModuleGlobal(module, key, value);
 
-  // Fill in __main__...
   addModule(module);
+
+  return *module;
 }
 
 // List
