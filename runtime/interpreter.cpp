@@ -802,6 +802,8 @@ void FORMAT_VALUE(Context* ctx, word flags) {
   } // else no-op
 }
 
+void NOP(Context*, word) {}
+
 using Op = void (*)(Context*, word);
 const Op opTable[] = {
 #define HANDLER(name, value, handler) handler,

@@ -19,7 +19,7 @@ namespace python {
   V(UNUSED_BYTECODE_6, 6, interpreter::INVALID_BYTECODE)             \
   V(UNUSED_BYTECODE_7, 7, interpreter::INVALID_BYTECODE)             \
   V(UNUSED_BYTECODE_8, 8, interpreter::INVALID_BYTECODE)             \
-  V(NOP, 9, interpreter::NOT_IMPLEMENTED)                            \
+  V(NOP, 9, interpreter::NOP)                                        \
   V(UNARY_POSITIVE, 10, interpreter::NOT_IMPLEMENTED)                \
   V(UNARY_NEGATIVE, 11, interpreter::NOT_IMPLEMENTED)                \
   V(UNARY_NOT, 12, interpreter::UNARY_NOT)                           \
