@@ -589,22 +589,12 @@ void Interpreter::doNop(Context*, word) {}
 
 // opcode 10
 void Interpreter::doUnaryPositive(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> receiver(&scope, ctx->frame->topValue());
-  Object* result =
-      unaryOperation(thread, ctx->frame, receiver, SymbolId::kDunderPos);
-  ctx->frame->setTopValue(result);
+  doUnaryOperation<SymbolId::kDunderPos>(ctx);
 }
 
 // opcode 11
 void Interpreter::doUnaryNegative(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> receiver(&scope, ctx->frame->topValue());
-  Object* result =
-      unaryOperation(thread, ctx->frame, receiver, SymbolId::kDunderNeg);
-  ctx->frame->setTopValue(result);
+  doUnaryOperation<SymbolId::kDunderNeg>(ctx);
 }
 
 // opcode 12
@@ -618,89 +608,42 @@ void Interpreter::doUnaryNot(Context* ctx, word) {
 
 // opcode 15
 void Interpreter::doUnaryInvert(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> receiver(&scope, ctx->frame->topValue());
-  Object* result =
-      unaryOperation(thread, ctx->frame, receiver, SymbolId::kDunderInvert);
-  ctx->frame->setTopValue(result);
+  doUnaryOperation<SymbolId::kDunderInvert>(ctx);
 }
 
 // opcode 16
 void Interpreter::doBinaryMatrixMultiply(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::MATMUL, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::MATMUL>(ctx);
 }
 
 // opcode 17
 void Interpreter::doInplaceMatrixMultiply(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::MATMUL, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::MATMUL>(ctx);
 }
 
 // opcode 19
 void Interpreter::doBinaryPower(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::POW, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::POW>(ctx);
 }
 
 // opcode 20
 void Interpreter::doBinaryMultiply(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::MUL, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::MUL>(ctx);
 }
 
 // opcode 22
 void Interpreter::doBinaryModulo(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::MOD, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::MOD>(ctx);
 }
 
 // opcode 23
 void Interpreter::doBinaryAdd(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::ADD, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::ADD>(ctx);
 }
 
 // opcode 24
 void Interpreter::doBinarySubtract(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::SUB, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::SUB>(ctx);
 }
 
 // opcode 25
@@ -726,46 +669,22 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
 
 // opcode 26
 void Interpreter::doBinaryFloorDivide(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::FLOORDIV, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::FLOORDIV>(ctx);
 }
 
 // opcode 27
 void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::TRUEDIV, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::TRUEDIV>(ctx);
 }
 
 // opcode 28
 void Interpreter::doInplaceFloorDivide(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::FLOORDIV, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::FLOORDIV>(ctx);
 }
 
 // opcode 29
 void Interpreter::doInplaceTrueDivide(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::TRUEDIV, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::TRUEDIV>(ctx);
 }
 
 // opcode 50
@@ -846,46 +765,22 @@ void Interpreter::doBeforeAsyncWith(Context* ctx, word) {
 
 // opcode 55
 void Interpreter::doInplaceAdd(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::ADD, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::ADD>(ctx);
 }
 
 // opcode 56
 void Interpreter::doInplaceSubtract(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::SUB, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::SUB>(ctx);
 }
 
 // opcode 57
 void Interpreter::doInplaceMultiply(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::MUL, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::MUL>(ctx);
 }
 
 // opcode 59
 void Interpreter::doInplaceModulo(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::MOD, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::MOD>(ctx);
 }
 
 // opcode 60
@@ -926,24 +821,12 @@ void Interpreter::doDeleteSubscr(Context* ctx, word) {
 
 // opcode 62
 void Interpreter::doBinaryLshift(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::LSHIFT, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::LSHIFT>(ctx);
 }
 
 // opcode 63
 void Interpreter::doBinaryRshift(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::RSHIFT, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::RSHIFT>(ctx);
 }
 
 // opcode 64
@@ -955,35 +838,17 @@ void Interpreter::doBinaryAnd(Context* ctx, word) {
 
 // opcode 65
 void Interpreter::doBinaryXor(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::XOR, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::XOR>(ctx);
 }
 
 // opcode 66
 void Interpreter::doBinaryOr(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      binaryOperation(thread, ctx->frame, BinaryOp::OR, self, other);
-  ctx->frame->pushValue(result);
+  doBinaryOperation<BinaryOp::OR>(ctx);
 }
 
 // opcode 67
 void Interpreter::doInplacePower(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::POW, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::POW>(ctx);
 }
 
 // opcode 68
@@ -1082,57 +947,27 @@ void Interpreter::doGetAwaitable(Context* ctx, word) {
 
 // opcode 75
 void Interpreter::doInplaceLshift(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::LSHIFT, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::LSHIFT>(ctx);
 }
 
 // opcode 76
 void Interpreter::doInplaceRshift(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::RSHIFT, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::RSHIFT>(ctx);
 }
 
 // opcode 77
 void Interpreter::doInplaceAnd(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::AND, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::AND>(ctx);
 }
 
 // opcode 78
 void Interpreter::doInplaceXor(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::XOR, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::XOR>(ctx);
 }
 
 // opcode 79
 void Interpreter::doInplaceOr(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Handle<Object> other(&scope, ctx->frame->popValue());
-  Handle<Object> self(&scope, ctx->frame->popValue());
-  Object* result =
-      inplaceOperation(thread, ctx->frame, BinaryOp::OR, self, other);
-  ctx->frame->pushValue(result);
+  doInplaceOperation<BinaryOp::OR>(ctx);
 }
 
 // opcode 80
@@ -2189,6 +2024,36 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         kOpTable[bc](&ctx, arg);
     }
   }
+}
+
+template <Interpreter::BinaryOp op>
+inline void Interpreter::doBinaryOperation(Context* ctx) {
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, frame->popValue());
+  Handle<Object> self(&scope, frame->popValue());
+  Object* result = binaryOperation(thread, frame, op, self, other);
+  ctx->frame->pushValue(result);
+}
+
+template <Interpreter::BinaryOp op>
+inline void Interpreter::doInplaceOperation(Context* ctx) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result = inplaceOperation(thread, ctx->frame, op, self, other);
+  ctx->frame->pushValue(result);
+}
+
+template <SymbolId selector>
+inline void Interpreter::doUnaryOperation(Context* ctx) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> receiver(&scope, ctx->frame->topValue());
+  Object* result = unaryOperation(thread, ctx->frame, receiver, selector);
+  ctx->frame->setTopValue(result);
 }
 
 }  // namespace python

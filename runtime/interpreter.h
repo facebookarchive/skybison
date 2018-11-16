@@ -242,6 +242,16 @@ class Interpreter {
   static Object* prepareCallableCall(Thread* thread, Frame* frame,
                                      word callable_idx, word* nargs);
 
+  // Generics used in opcode handlers for binary and inplace operations
+  template <BinaryOp op>
+  static void doBinaryOperation(Context* ctx);
+
+  template <BinaryOp op>
+  static void doInplaceOperation(Context* ctx);
+
+  template <SymbolId selector>
+  static void doUnaryOperation(Context* ctx);
+
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };
 
