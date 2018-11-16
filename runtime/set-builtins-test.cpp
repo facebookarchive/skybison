@@ -410,7 +410,7 @@ TEST(SetIteratorBuiltinsTes, DunderIterReturnsSelf) {
   ASSERT_EQ(*result, *iter);
 }
 
-TEST(SetIteratorBuiltinsTest, DunderLengthHintOnEmptyTupleIterator) {
+TEST(SetIteratorBuiltinsTest, DunderLengthHintOnEmptySetReturnsZero) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(1, 0, 0);
@@ -433,7 +433,7 @@ TEST(SetIteratorBuiltinsTest, DunderLengthHintOnEmptyTupleIterator) {
   ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
 }
 
-TEST(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedTupleIterator) {
+TEST(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedSetReturnsZero) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(1, 0, 0);
