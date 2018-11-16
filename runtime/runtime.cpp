@@ -2270,7 +2270,7 @@ bool Runtime::setLookup(
     const Handle<Object>& key,
     const Handle<Object>& key_hash,
     word* index) {
-  word start = SetBucket::getIndex(*data, *key_hash);
+  word start = Set::bucketGetIndex(*data, *key_hash);
   word current = start;
   word next_free_index = -1;
 
@@ -2282,19 +2282,19 @@ bool Runtime::setLookup(
   }
 
   do {
-    SetBucket bucket(data, current);
-    if (bucket.hasKey(*key)) {
+    if (Set::bucketHasKey(*data, current, *key)) {
       *index = current;
       return true;
-    } else if (next_free_index == -1 && bucket.isTombstone()) {
+    } else if (
+        next_free_index == -1 && Set::bucketIsTombstone(*data, current)) {
       next_free_index = current;
-    } else if (bucket.isEmpty()) {
+    } else if (Set::bucketIsEmpty(*data, current)) {
       if (next_free_index == -1) {
         next_free_index = current;
       }
       break;
     }
-    current = (current + SetBucket::kNumPointers) % length;
+    current = (current + Set::kBucketNumPointers) % length;
   } while (current != start);
 
   *index = next_free_index;
@@ -2306,22 +2306,19 @@ ObjectArray* Runtime::setGrow(const Handle<ObjectArray>& data) {
   HandleScope scope;
   word new_length = data->length() * kSetGrowthFactor;
   if (new_length == 0) {
-    new_length = kInitialSetCapacity * SetBucket::kNumPointers;
+    new_length = kInitialSetCapacity * Set::kBucketNumPointers;
   }
   Handle<ObjectArray> new_data(&scope, newObjectArray(new_length));
   // Re-insert items
-  for (word i = 0; i < data->length(); i += SetBucket::kNumPointers) {
-    SetBucket old_bucket(data, i);
-    if (old_bucket.isEmpty() || old_bucket.isTombstone()) {
+  for (word i = 0; i < data->length(); i += Set::kBucketNumPointers) {
+    if (Set::bucketIsEmpty(*data, i) || Set::bucketIsTombstone(*data, i))
       continue;
-    }
-    Handle<Object> key(&scope, old_bucket.key());
-    Handle<Object> hash(&scope, old_bucket.hash());
+    Handle<Object> key(&scope, Set::bucketKey(*data, i));
+    Handle<Object> hash(&scope, Set::bucketHash(*data, i));
     word index = -1;
     setLookup(new_data, key, hash, &index);
     DCHECK(index != -1, "unexpected index %ld", index);
-    SetBucket new_bucket(new_data, index);
-    new_bucket.set(*hash, *key);
+    Set::bucketSet(*new_data, index, *hash, *key);
   }
   return *new_data;
 }
@@ -2334,7 +2331,7 @@ Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
   bool found = setLookup(data, value, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
-    return SetBucket(data, index).key();
+    return Set::bucketKey(*data, index);
   }
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
@@ -2342,11 +2339,9 @@ Object* Runtime::setAdd(const Handle<Set>& set, const Handle<Object>& value) {
     setLookup(new_data, value, key_hash, &index);
     DCHECK(index != -1, "unexpected index %ld", index);
     set->setData(*new_data);
-    SetBucket bucket(new_data, index);
-    bucket.set(*key_hash, *value);
+    Set::bucketSet(*new_data, index, *key_hash, *value);
   } else {
-    SetBucket bucket(data, index);
-    bucket.set(*key_hash, *value);
+    Set::bucketSet(*data, index, *key_hash, *value);
   }
   set->setNumItems(set->numItems() + 1);
   return *value;
@@ -2368,8 +2363,7 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
   bool found = setLookup(data, value, key_hash, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
-    SetBucket bucket(data, index);
-    bucket.setTombstone();
+    Set::bucketSetTombstone(*data, index);
     set->setNumItems(set->numItems() - 1);
   }
   return found;
@@ -2384,11 +2378,10 @@ void Runtime::setUpdate(
     Handle<Set> src(&scope, *iterable);
     Handle<ObjectArray> data(&scope, src->data());
     if (src->numItems() > 0) {
-      for (word i = 0; i < data->length(); i += SetBucket::kNumPointers) {
-        SetBucket bucket(data, i);
-        if (bucket.isTombstone() || bucket.isEmpty())
+      for (word i = 0; i < data->length(); i += Set::kBucketNumPointers) {
+        if (Set::bucketIsTombstone(*data, i) || Set::bucketIsEmpty(*data, i))
           continue;
-        elt = bucket.key();
+        elt = Set::bucketKey(*data, i);
         setAdd(dst, elt);
       }
     }

@@ -1165,10 +1165,27 @@ class Set : public HeapObject {
   // Sizing.
   static word allocationSize();
 
+  // Operations on set buckets
+  // none of these operations do bounds checking on the backing array
+  static word bucketGetIndex(ObjectArray* data, Object* hash);
+  static Object* bucketHash(ObjectArray* data, word index);
+  static bool bucketHasKey(ObjectArray* data, word index, Object* key);
+  static bool bucketIsEmpty(ObjectArray* data, word index);
+  static bool bucketIsTombstone(ObjectArray* data, word index);
+  static Object* bucketKey(ObjectArray* data, word index);
+  static void
+  bucketSet(ObjectArray* data, word index, Object* hash, Object* key);
+  static void bucketSetTombstone(ObjectArray* data, word index);
+
   // Layout.
   static const int kNumItemsOffset = HeapObject::kSize;
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kDataOffset + kPointerSize;
+
+  // Bucket Layout
+  static const word kBucketHashOffset = 0;
+  static const word kBucketKeyOffset = kBucketHashOffset + 1;
+  static const word kBucketNumPointers = kBucketKeyOffset + 1;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Set);
@@ -3111,6 +3128,45 @@ inline Ellipsis* Ellipsis::cast(Object* object) {
 
 inline word Set::allocationSize() {
   return Header::kSize + Set::kSize;
+}
+
+inline word Set::bucketGetIndex(ObjectArray* data, Object* hash) {
+  word nbuckets = data->length() / kBucketNumPointers;
+  DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
+  word value = SmallInteger::cast(hash)->value();
+  return (value & (nbuckets - 1)) * kBucketNumPointers;
+}
+
+inline Object* Set::bucketHash(ObjectArray* data, word index) {
+  return data->at(index + kBucketHashOffset);
+}
+
+inline bool Set::bucketHasKey(ObjectArray* data, word index, Object* key) {
+  return !bucketHash(data, index)->isNone() &&
+      Object::equals(bucketKey(data, index), key);
+}
+
+inline bool Set::bucketIsEmpty(ObjectArray* data, word index) {
+  return bucketHash(data, index)->isNone() && bucketKey(data, index)->isNone();
+}
+
+inline bool Set::bucketIsTombstone(ObjectArray* data, word index) {
+  return bucketHash(data, index)->isNone() && !bucketKey(data, index)->isNone();
+}
+
+inline Object* Set::bucketKey(ObjectArray* data, word index) {
+  return data->at(index + kBucketKeyOffset);
+}
+
+inline void
+Set::bucketSet(ObjectArray* data, word index, Object* hash, Object* key) {
+  data->atPut(index + kBucketHashOffset, hash);
+  data->atPut(index + kBucketKeyOffset, key);
+}
+
+inline void Set::bucketSetTombstone(ObjectArray* data, word index) {
+  data->atPut(index + kBucketHashOffset, None::object());
+  data->atPut(index + kBucketKeyOffset, Error::object());
 }
 
 inline Set* Set::cast(Object* object) {
