@@ -113,8 +113,19 @@ PY_EXPORT PyObject* PyModule_NewObject(PyObject* /* e */) {
   UNIMPLEMENTED("PyModule_NewObject");
 }
 
-PY_EXPORT int PyModule_SetDocString(PyObject* /* m */, const char* /* c */) {
-  UNIMPLEMENTED("PyModule_SetDocString");
+PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object module_obj(&scope, ApiHandle::fromPyObject(m)->asObject());
+  Object uni(&scope, runtime->newStrFromCStr(doc));
+  if (!uni->isStr() || !module_obj->isModule()) {
+    return -1;
+  }
+  Module module(&scope, *module_obj);
+  Object key(&scope, runtime->symbols()->DunderDoc());
+  runtime->moduleAtPut(module, key, uni);
+  return 0;
 }
 
 }  // namespace python

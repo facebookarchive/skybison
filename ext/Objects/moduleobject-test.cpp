@@ -96,4 +96,52 @@ TEST_F(ModuleExtensionApiTest, CheckTypeOnModuleReturnsOne) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(ModuleExtensionApiTest, SetDocStringChangesDoc) {
+  const char* mod_doc = "mymodule doc";
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+      mod_doc,
+  };
+
+  PyObject* module = PyModule_Create(&def);
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  PyObject* orig_doc = testing::moduleGet("mymodule", "__doc__");
+  ASSERT_NE(orig_doc, nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(orig_doc));
+  ASSERT_STREQ(PyUnicode_AsUTF8(orig_doc), mod_doc);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  const char* edit_mod_doc = "edited doc";
+  int result = PyModule_SetDocString(module, edit_mod_doc);
+  ASSERT_EQ(result, 0);
+
+  PyObject* edit_doc = testing::moduleGet("mymodule", "__doc__");
+  ASSERT_NE(edit_doc, nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(edit_doc));
+  ASSERT_STREQ(PyUnicode_AsUTF8(edit_doc), edit_mod_doc);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, SetDocStringCreatesDoc) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+
+  PyObject* module = PyModule_Create(&def);
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  const char* edit_mod_doc = "edited doc";
+  ASSERT_EQ(PyModule_SetDocString(module, edit_mod_doc), 0);
+
+  PyObject* doc = testing::moduleGet("mymodule", "__doc__");
+  ASSERT_STREQ(PyUnicode_AsUTF8(doc), edit_mod_doc);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
 }  // namespace python
