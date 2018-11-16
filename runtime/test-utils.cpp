@@ -13,7 +13,7 @@ namespace python {
 namespace testing {
 
 // helper function to redirect return stdout from running
-// a moodule
+// a module
 std::string compileAndRunToString(Runtime* runtime, const char* src) {
   std::stringstream tmp_stdout;
   std::ostream* saved_stdout = builtInStdout;
@@ -23,6 +23,17 @@ std::string compileAndRunToString(Runtime* runtime, const char* src) {
   CHECK(result == None::object(), "unexpected result");
   builtInStdout = saved_stdout;
   return tmp_stdout.str();
+}
+
+// helper function to return an object from running a module
+Object* compileAndRunToObject(
+    Runtime* runtime,
+    HandleScope& scope,
+    const char* src,
+    const char* obj_name) {
+  runtime->runFromCString(src);
+  Handle<Module> main(&scope, findModule(runtime, "__main__"));
+  return moduleAt(runtime, main, obj_name);
 }
 
 Object*

@@ -156,8 +156,8 @@ namespace python {
   V(SETUP_WITH, 143, interpreter::NOT_IMPLEMENTED)                   \
   V(EXTENDED_ARG, 144, interpreter::NOT_IMPLEMENTED)                 \
   V(LIST_APPEND, 145, interpreter::LIST_APPEND)                      \
-  V(SET_ADD, 146, interpreter::NOT_IMPLEMENTED)                      \
-  V(MAP_ADD, 147, interpreter::NOT_IMPLEMENTED)                      \
+  V(SET_ADD, 146, interpreter::SET_ADD)                              \
+  V(MAP_ADD, 147, interpreter::MAP_ADD)                              \
   V(LOAD_CLASSDEREF, 148, interpreter::NOT_IMPLEMENTED)              \
   V(BUILD_LIST_UNPACK, 149, interpreter::NOT_IMPLEMENTED)            \
   V(BUILD_MAP_UNPACK, 150, interpreter::NOT_IMPLEMENTED)             \

@@ -2580,6 +2580,32 @@ print(b1, b2, b3)
   EXPECT_EQ(output, "1 2 3\n");
 }
 
+TEST(ThreadTest, SetAdd) {
+  const char* src = R"(
+a = [1, 2, 3]
+b = {x for x in a}
+)";
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Object> b(&scope, compileAndRunToObject(&runtime, scope, src, "b"));
+  EXPECT_EQ(b->isSet(), true);
+  Handle<Set> set_b(&scope, *b);
+  EXPECT_EQ(set_b->numItems(), 3);
+}
+
+TEST(TestThread, MapAdd) {
+  const char* src = R"(
+a = ['a', 'b', 'c']
+b = {x:x for x in a}
+)";
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Object> b(&scope, compileAndRunToObject(&runtime, scope, src, "b"));
+  EXPECT_EQ(b->isDictionary(), true);
+  Handle<Dictionary> dict_b(&scope, *b);
+  EXPECT_EQ(dict_b->numItems(), 3);
+}
+
 TEST(UnpackList, unpackNestedLists) {
   const char* src = R"(
 b = [[1,2], [3,4,5]]

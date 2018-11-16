@@ -426,6 +426,21 @@ void LIST_APPEND(Context* ctx, word arg) {
   ctx->thread->runtime()->listAdd(list, value);
 }
 
+void SET_ADD(Context* ctx, word arg) {
+  HandleScope scope(ctx->thread);
+  Handle<Object> value(&scope, *ctx->sp++);
+  Handle<Set> set(&scope, Set::cast(*(ctx->sp + arg - 1)));
+  ctx->thread->runtime()->setAdd(set, value);
+}
+
+void MAP_ADD(Context* ctx, word arg) {
+  HandleScope scope(ctx->thread);
+  Handle<Object> key(&scope, *ctx->sp++);
+  Handle<Object> value(&scope, *ctx->sp++);
+  Handle<Dictionary> dict(&scope, Dictionary::cast(*(ctx->sp + arg - 1)));
+  ctx->thread->runtime()->dictionaryAtPut(dict, key, value);
+}
+
 void BUILD_LIST(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -764,7 +779,8 @@ void COMPARE_OP(Context* ctx, word arg) {
   HandleScope scope;
   Handle<Object> right(&scope, *sp++);
   Handle<Object> left(&scope, *sp++);
-  Object* res = Interpreter::compare(static_cast<CompareOp>(arg), left, right);
+  Object* res = Interpreter::compare(
+      ctx->thread, static_cast<CompareOp>(arg), left, right);
   DCHECK(res->isBoolean(), "unexpected comparison result");
   *--sp = res;
 }
@@ -963,6 +979,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
 }
 
 Object* Interpreter::compare(
+    Thread* thread,
     CompareOp op,
     const Handle<Object>& left,
     const Handle<Object>& right) {
@@ -983,7 +1000,7 @@ Object* Interpreter::compare(
     case EXC_MATCH:
       UNIMPLEMENTED("EXC_MATCH comparison op");
     default:
-      return richCompare(op, left, right);
+      return richCompare(thread, op, left, right);
   }
   return Boolean::fromBool(res);
 }
@@ -1009,6 +1026,7 @@ static bool compareUsingDifference(CompareOp op, T cmp) {
 }
 
 Object* Interpreter::richCompare(
+    Thread* thread,
     CompareOp op,
     const Handle<Object>& left,
     const Handle<Object>& right) {
@@ -1036,7 +1054,30 @@ Object* Interpreter::richCompare(
       for (word i = 0; i < l->length(); i++) {
         Handle<Object> next_left(&scope, l->at(i));
         Handle<Object> next_right(&scope, r->at(i));
-        Object* cmp = richCompare(op, next_left, next_right);
+        Object* cmp = richCompare(thread, op, next_left, next_right);
+        if (!Boolean::cast(cmp)->value()) {
+          res = false;
+          break;
+        }
+      }
+    }
+  } else if (op == EQ && left->isDictionary() && right->isDictionary()) {
+    HandleScope scope;
+    Runtime* runtime = thread->runtime();
+    Handle<Dictionary> l(&scope, *left);
+    Handle<Dictionary> r(&scope, *right);
+    if (l->numItems() == r->numItems()) {
+      Handle<ObjectArray> l_keys(&scope, runtime->dictionaryKeys(l));
+      res = true;
+      for (word i = 0; i < l_keys->length(); i++) {
+        Handle<Object> l_key(&scope, l_keys->at(i));
+        if (!runtime->dictionaryIncludes(r, l_key)) {
+          res = false;
+          break;
+        }
+        Handle<Object> next_left(&scope, runtime->dictionaryAt(l, l_key));
+        Handle<Object> next_right(&scope, runtime->dictionaryAt(r, l_key));
+        Object* cmp = richCompare(thread, op, next_left, next_right);
         if (!Boolean::cast(cmp)->value()) {
           res = false;
           break;

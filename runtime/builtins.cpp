@@ -421,13 +421,19 @@ Object* builtinLen(Thread* thread, Frame* callerFrame, word nargs) {
   }
   HandleScope scope(thread);
   Handle<Object> self(&scope, callerFrame->valueStackTop()[0]);
-  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-  if (list_or_error->isError()) {
-    // TODO(T27377670): Support calling __len__
-    return thread->throwTypeErrorFromCString(
-        "Unsupported type in builtin 'len'");
+  if (self->isSet()) {
+    return SmallInteger::fromWord(Set::cast(*self)->numItems());
+  } else if (self->isDictionary()) {
+    return SmallInteger::fromWord(Dictionary::cast(*self)->numItems());
+  } else {
+    Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+    if (list_or_error->isError()) {
+      // TODO(T27377670): Support calling __len__
+      return thread->throwTypeErrorFromCString(
+          "Unsupported type in builtin 'len'");
+    }
+    return SmallInteger::fromWord(List::cast(*list_or_error)->allocated());
   }
-  return SmallInteger::fromWord(List::cast(*list_or_error)->allocated());
 }
 
 Object* builtinSmallIntegerNeg(Thread* thread, Frame* caller, word nargs) {
@@ -574,7 +580,8 @@ Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
   Handle<List> list(&scope, *list_or_error);
   for (word i = 0; i < list->allocated(); i++) {
     Handle<Object> item(&scope, list->at(i));
-    if (Boolean::cast(Interpreter::richCompare(CompareOp::EQ, item, value))
+    if (Boolean::cast(
+            Interpreter::richCompare(thread, CompareOp::EQ, item, value))
             ->value()) {
       thread->runtime()->listPop(list, i);
       return None::object();

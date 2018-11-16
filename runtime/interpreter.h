@@ -15,10 +15,12 @@ class Interpreter {
   static Object* execute(Thread* thread, Frame* frame);
 
   static Object* compare(
+      Thread* thread,
       CompareOp op,
       const Handle<Object>& left,
       const Handle<Object>& right);
   static Object* richCompare(
+      Thread* thread,
       CompareOp op,
       const Handle<Object>& left,
       const Handle<Object>& right);
