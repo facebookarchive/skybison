@@ -83,19 +83,18 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   if (self->isSet()) {
     ObjectArray data(&scope, self->data());
     word num_items = self->numItems();
-    if (num_items > 0) {
-      for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-        if (Set::Bucket::isTombstone(*data, i) ||
-            Set::Bucket::isEmpty(*data, i)) {
-          continue;
-        }
+    if (num_items == 0) {
+      return thread->raiseKeyErrorWithCStr("pop from an empty set");
+    }
+    for (word i = 0, length = data->length(); i < length;
+         i += Set::Bucket::kNumPointers) {
+      if (Set::Bucket::isFilled(*data, i)) {
         Object value(&scope, Set::Bucket::key(*data, i));
         Set::Bucket::setTombstone(*data, i);
         self->setNumItems(num_items - 1);
         return *value;
       }
     }
-    return thread->raiseKeyErrorWithCStr("pop from an empty set");
   }
   // TODO(T30253711): handle user-defined subtypes of set.
   return thread->raiseTypeErrorWithCStr(
