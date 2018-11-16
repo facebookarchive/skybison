@@ -48,6 +48,19 @@ PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(int) Py_FinalizeEx(void);
 PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *flags);
 
+PyAPI_FUNC(void *) PyObject_Malloc(size_t size);
+PyAPI_FUNC(void *) PyObject_Calloc(size_t nelem, size_t elsize);
+PyAPI_FUNC(void *) PyObject_Realloc(void *ptr, size_t new_size);
+PyAPI_FUNC(void) PyObject_Free(void *ptr);
+PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
+PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
+PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
+PyAPI_FUNC(void) PyMem_Free(void *ptr);
+PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
+PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
+PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
+PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
+
 /* Non C-API functions */
 PyAPI_FUNC(int) PyBool_Check_Func(PyObject *);
 PyAPI_FUNC(int) PyLong_Check_Func(PyObject *);
