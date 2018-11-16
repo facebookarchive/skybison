@@ -172,8 +172,7 @@ Object* builtinLen(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> method(
       &scope, Interpreter::lookupMethod(thread, frame, self, selector));
   if (method->isError()) {
-    thread->throwTypeErrorFromCString("object has no len()");
-    return Error::object();
+    return thread->throwTypeErrorFromCString("object has no len()");
   }
   return Interpreter::callMethod1(
       thread, frame, frame->valueStackTop(), method, self);
@@ -339,15 +338,14 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope;
   Handle<Object> last_arg(&scope, args.get(nargs - 1));
   if (!last_arg->isObjectArray()) {
-    thread->throwTypeErrorFromCString("Keyword argument names must be a tuple");
-    return Error::object();
+    return thread->throwTypeErrorFromCString(
+        "Keyword argument names must be a tuple");
   }
   Handle<ObjectArray> names(&scope, *last_arg);
   word num_keywords = names->length();
   if (num_keywords > 2) {
-    thread->throwRuntimeErrorFromCString(
+    return thread->throwRuntimeErrorFromCString(
         "Too many keyword arguments supplied to print");
-    return Error::object();
   }
 
   Runtime* runtime = thread->runtime();
@@ -369,25 +367,23 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
             ostream = builtinStderr;
             break;
           default:
-            thread->throwTypeErrorFromCString(
+            return thread->throwTypeErrorFromCString(
                 "Unsupported argument type for 'file'");
-            return Error::object();
         }
       } else {
-        thread->throwTypeErrorFromCString(
+        return thread->throwTypeErrorFromCString(
             "Unsupported argument type for 'file'");
-        return Error::object();
       }
     } else if (*key == runtime->symbols()->End()) {
       if ((value->isString() || value->isNone())) {
         end = *value;
       } else {
-        thread->throwTypeErrorFromCString("Unsupported argument for 'end'");
-        return Error::object();
+        return thread->throwTypeErrorFromCString(
+            "Unsupported argument for 'end'");
       }
     } else {
-      thread->throwRuntimeErrorFromCString("Unsupported keyword arguments");
-      return Error::object();
+      return thread->throwRuntimeErrorFromCString(
+          "Unsupported keyword arguments");
     }
   }
 
@@ -399,18 +395,16 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1 || nargs > 3) {
-    thread->throwTypeErrorFromCString(
+    return thread->throwTypeErrorFromCString(
         "Incorrect number of arguments to range()");
-    return Error::object();
   }
 
   Arguments args(frame, nargs);
 
   for (word i = 0; i < nargs; i++) {
     if (!args.get(i)->isSmallInteger()) {
-      thread->throwTypeErrorFromCString(
+      return thread->throwTypeErrorFromCString(
           "Arguments to range() must be an integers.");
-      return Error::object();
     }
   }
 
@@ -430,9 +424,8 @@ Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
   }
 
   if (step == 0) {
-    thread->throwValueErrorFromCString(
+    return thread->throwValueErrorFromCString(
         "range() step argument must not be zero");
-    return Error::object();
   }
 
   return thread->runtime()->newRange(start, stop, step);

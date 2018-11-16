@@ -92,29 +92,24 @@ class Thread {
   // TODO: decide on the signature for this function.
   // void throwException(...);
 
-  // Convenience method for throwing a RuntimeError exception with an error
-  // message.
-  void throwRuntimeError(String* message);
+  // Convenience methods for throwing a RuntimeError exception.
+  Object* throwRuntimeError(Object* value);
   Object* throwRuntimeErrorFromCString(const char* message);
 
-  // Convenience method for throwing a TypeError exception with an error
-  // message.
-  void throwTypeError(String* message);
+  // Convenience methods for throwing a TypeError exception.
+  Object* throwTypeError(Object* value);
   Object* throwTypeErrorFromCString(const char* message);
 
-  // Convenience method for throwing a ValueError exception with an error
-  // message.
-  Object* throwValueError(String* message);
+  // Convenience methods for throwing a ValueError exception.
+  Object* throwValueError(Object* value);
   Object* throwValueErrorFromCString(const char* message);
 
-  // Convenience method for throwing an AttributeError exception with an error
-  // message.
-  Object* throwAttributeError(String* message);
+  // Convenience methods for throwing an AttributeError exception.
+  Object* throwAttributeError(Object* value);
   Object* throwAttributeErrorFromCString(const char* message);
 
-  // Convenience method for throwing a KeyError exception with an error
-  // message.
-  Object* throwKeyError(String* message);
+  // Convenience methods for throwing a KeyError exception.
+  Object* throwKeyError(Object* value);
   Object* throwKeyErrorFromCString(const char* message);
 
   // Gets the pending exception object - if it is None, no exception has been

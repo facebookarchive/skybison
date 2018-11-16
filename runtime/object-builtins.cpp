@@ -10,8 +10,8 @@ namespace python {
 
 Object* builtinObjectInit(Thread* thread, Frame*, word nargs) {
   if (nargs != 1) {
-    thread->throwTypeErrorFromCString("object.__init__() takes no arguments");
-    return Error::object();
+    return thread->throwTypeErrorFromCString(
+        "object.__init__() takes no arguments");
   }
   return None::object();
 }
@@ -19,8 +19,8 @@ Object* builtinObjectInit(Thread* thread, Frame*, word nargs) {
 Object* builtinObjectNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (nargs < 1) {
-    thread->throwTypeErrorFromCString("object.__new__() takes no arguments");
-    return Error::object();
+    return thread->throwTypeErrorFromCString(
+        "object.__new__() takes no arguments");
   }
   HandleScope scope(thread->handles());
   Handle<Class> klass(&scope, args.get(0));

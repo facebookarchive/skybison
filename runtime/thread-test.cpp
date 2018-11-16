@@ -1392,8 +1392,7 @@ static Object* nativeExceptionTest(Thread* thread, Frame*, word) {
   Handle<String> msg(
       &scope,
       String::cast(thread->runtime()->newStringFromCString("test exception")));
-  thread->throwRuntimeError(*msg);
-  return Error::object();
+  return thread->throwRuntimeError(*msg);
 }
 
 TEST(ThreadDeathTest, NativeExceptions) {

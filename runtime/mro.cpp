@@ -132,12 +132,8 @@ Object* computeMro(
     if (merge_list_indices[i] !=
         ObjectArray::cast(merge_lists->at(i))->length()) {
       // TODO: list bases in error message.
-      Handle<String> msg(
-          &scope,
-          runtime->newStringFromCString(
-              "Cannot create a consistent method resolution order (MRO)"));
-      thread->throwTypeError(*msg);
-      return Error::object();
+      return thread->throwTypeErrorFromCString(
+          "Cannot create a consistent method resolution order (MRO)");
     }
   }
 

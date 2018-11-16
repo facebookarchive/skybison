@@ -180,62 +180,59 @@ Object* Thread::runClassFunction(Object* function, Object* dictionary) {
 
 // Convenience method for throwing a RuntimeError exception with an error
 // message.
-void Thread::throwRuntimeError(String* message) {
+Object* Thread::throwRuntimeError(Object* value) {
   // TODO: instantiate RuntimeError object.
-  pending_exception_ = message;
+  pending_exception_ = value;
+  return Error::object();
 }
 
 Object* Thread::throwRuntimeErrorFromCString(const char* message) {
-  throwRuntimeError(String::cast(runtime()->newStringFromCString(message)));
-  return Error::object();
+  return throwRuntimeError(runtime()->newStringFromCString(message));
 }
 
 // Convenience method for throwing a TypeError exception with an error message.
-void Thread::throwTypeError(String* message) {
+Object* Thread::throwTypeError(Object* value) {
   // TODO: instantiate TypeError object.
-  pending_exception_ = message;
-}
-
-Object* Thread::throwTypeErrorFromCString(const char* message) {
-  throwRuntimeError(String::cast(runtime()->newStringFromCString(message)));
+  pending_exception_ = value;
   return Error::object();
 }
 
+Object* Thread::throwTypeErrorFromCString(const char* message) {
+  return throwRuntimeError(runtime()->newStringFromCString(message));
+}
+
 // Convenience method for throwing a ValueError exception with an error message.
-Object* Thread::throwValueError(String* message) {
+Object* Thread::throwValueError(Object* value) {
   // TODO: instantiate ValueError object.
-  pending_exception_ = message;
+  pending_exception_ = value;
   return Error::object();
 }
 
 Object* Thread::throwValueErrorFromCString(const char* message) {
   // TODO: instantiate ValueError object.
-  pending_exception_ = runtime()->newStringFromCString(message);
-  return Error::object();
+  return throwValueError(runtime()->newStringFromCString(message));
 }
 
-Object* Thread::throwAttributeError(String* message) {
+Object* Thread::throwAttributeError(Object* value) {
   // TODO: instantiate an AttributeError object.
-  pending_exception_ = message;
+  pending_exception_ = value;
   return Error::object();
 }
 
 Object* Thread::throwAttributeErrorFromCString(const char* message) {
   // TODO: instantiate an AttributeError object.
-  pending_exception_ = runtime()->newStringFromCString(message);
+  return throwAttributeError(runtime()->newStringFromCString(message));
+}
+
+Object* Thread::throwKeyError(Object* value) {
+  // TODO(jeethu): instantiate an KeyError object.
+  pending_exception_ = value;
   return Error::object();
 }
 
 Object* Thread::throwKeyErrorFromCString(const char* message) {
   // TODO(jeethu): instantiate a KeyError object.
-  pending_exception_ = runtime()->newStringFromCString(message);
-  return Error::object();
-}
-
-Object* Thread::throwKeyError(String* message) {
-  // TODO(jeethu): instantiate an KeyError object.
-  pending_exception_ = message;
-  return Error::object();
+  return throwKeyError(runtime()->newStringFromCString(message));
 }
 
 void Thread::ignorePendingException() {
