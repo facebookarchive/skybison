@@ -1135,7 +1135,7 @@ void Runtime::initializeTypeClass() {
   Handle<Type> type(&scope,
                     addEmptyBuiltinClass(SymbolId::kType, LayoutId::kType,
                                          LayoutId::kObject));
-  type->setFlag(Type::Flag::kClassSubclass);
+  type->setFlag(Type::Flag::kTypeSubclass);
 
   classAddBuiltinFunction(type, SymbolId::kDunderCall,
                           nativeTrampoline<builtinTypeCall>);

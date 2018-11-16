@@ -101,7 +101,7 @@ Object* builtinTupleNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Handle<Object> type_obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kClassSubclass)) {
+  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
     return thread->throwTypeErrorFromCString(
         "tuple.__new__(X): X is not a type object");
   }

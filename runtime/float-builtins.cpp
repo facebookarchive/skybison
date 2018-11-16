@@ -189,7 +189,7 @@ Object* builtinDoubleNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Handle<Object> obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*obj, Type::Flag::kClassSubclass)) {
+  if (!runtime->hasSubClassFlag(*obj, Type::Flag::kTypeSubclass)) {
     return thread->throwTypeErrorFromCString(
         "float.__new__(X): X is not a type object");
   }

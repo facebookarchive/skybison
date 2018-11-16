@@ -438,7 +438,7 @@ class Runtime {
     // called by Type::cast(). It is safe, as typeOf() is guaranteed to return
     // a Type*.
     return reinterpret_cast<Type*>(typeOf(instance))
-        ->hasFlag(Type::Flag::kClassSubclass);
+        ->hasFlag(Type::Flag::kTypeSubclass);
   }
 
   bool isInstanceOfList(Object* instance) {

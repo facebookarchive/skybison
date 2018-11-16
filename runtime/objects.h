@@ -594,8 +594,8 @@ class Type : public HeapObject {
     kStrSubclass = 1 << 7,
     kSystemExitSubclass = 1 << 8,
     kTupleSubclass = 1 << 9,
-    kClassSubclass = 1 << 10,
-    kLast = kClassSubclass,
+    kTypeSubclass = 1 << 10,
+    kLast = kTypeSubclass,
   };
   static_assert(Flag::kLast < SmallInt::kMaxValue,
                 "Flags must be encodable in a SmallInt");

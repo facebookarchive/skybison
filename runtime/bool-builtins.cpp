@@ -34,7 +34,7 @@ Object* builtinBoolNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> type_obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kClassSubclass)) {
+  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
     return thread->throwTypeErrorFromCString(
         "bool.__new__(X): X is not a type object");
   }

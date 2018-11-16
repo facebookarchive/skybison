@@ -46,7 +46,7 @@ Object* IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
 
   Handle<Object> type_obj(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kClassSubclass)) {
+  if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
     return thread->throwTypeErrorFromCString(
         "int.__new__(X): X is not a type object");
   }

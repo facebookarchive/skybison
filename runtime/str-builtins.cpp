@@ -130,7 +130,7 @@ Object* builtinStringNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Object> type(&scope, args.get(0));
-  if (!runtime->hasSubClassFlag(*type, Type::Flag::kClassSubclass)) {
+  if (!runtime->hasSubClassFlag(*type, Type::Flag::kTypeSubclass)) {
     return thread->throwTypeErrorFromCString(
         "str.__new__(X): X is not a type object");
   }
