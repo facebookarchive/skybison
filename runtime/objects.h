@@ -6,55 +6,6 @@
 
 namespace python {
 
-/*
-class Object;
-  class Boolean;
-
-  class Fixnum;
-  class HeapObject;
-    class Code;
-    class Module;
-    class ObjectArray;
-    class ByteArray;
-    class String;
-    // TODO: method objects, etc.
-*/
-// 0bXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx0 number {31,63}-bit signed numbers
-// 0bXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX01 object: mov dst, [src-1]
-// 0bXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX11 immediate small strings, true and false,
-// header word mark
-
-// 0b0011 header
-// 0b0111 boolean
-// 0b1011 none
-// 0b1111 string
-
-// small string format
-// 7 bytes of char
-// 1 byte of length + tag
-// LLL TTTT
-
-// xxxxxx00 even small integer
-// xxxxxx10  odd small integer
-// xxxxxx01 object
-// xxxxxx11 other immediate
-
-// xxxxx011 header
-// xxxx0111 small string
-// xxxx1111
-
-// [ header ]
-// [ length ]
-// [ elem 0 ]
-// [   ...  ]
-// [ elem N ]
-
-// [ header ]
-// [ attrs  ]
-// [ elem 0 ]
-// [   ...  ]
-// [ elem N ]
-
 // clang-format off
 #define INTRINSIC_IMMEDIATE_CLASS_NAMES(V) \
   V(SmallInteger)                        \
