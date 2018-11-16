@@ -3218,4 +3218,118 @@ print(benchtime != 0.0)
   EXPECT_EQ(output, "True\n");
 }
 
+TEST(ThreadTest, StringFormatEmpty) {
+  const char* src = R"(
+print("" % ("hi"))
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "\n");
+}
+
+TEST(ThreadTest, StringFormatNone) {
+  const char* src = R"(
+h = "hello"
+p = "pyro pystone"
+print("hello world" % (h, p))
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "hello world\n");
+}
+
+TEST(ThreadTest, StringFormatMod) {
+  const char* src = R"(
+print("%%%s" % (""))
+)";
+
+  Runtime runtime;
+  const std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "%\n");
+}
+
+TEST(ThreadTest, StringFormatNeg1) {
+  const char* src = R"(
+h = "hi"
+print("%" % (h, "world"))
+)";
+
+  Runtime runtime;
+  ASSERT_DEATH(compileAndRunToString(&runtime, src), "");
+}
+
+TEST(ThreadTest, StringFormatStr) {
+  const char* src = R"(
+h = "hello pyro"
+print("%s" % (h))
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "hello pyro\n");
+}
+
+TEST(ThreadTest, StringFormatStr2) {
+  const char* src = R"(
+h = "hello"
+p = "pyro"
+print("%s%s" % (h, p))
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "hellopyro\n");
+}
+
+TEST(ThreadTest, StringFormatFloat) {
+  const char* src = R"(
+d = 67.89
+print("There are %g pystones" % (d))
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "There are 67.89 pystones\n");
+}
+
+TEST(ThreadTest, StringFormatMixed) {
+  const char* src = R"(
+a = 123
+d = 67.89
+print("There are %d pystones %g" % (a, d))
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "There are 123 pystones 67.89\n");
+}
+
+TEST(ThreadTest, StringFormatMixed2) {
+  const char* src = R"(
+a = 123
+d = 67.89
+c = "now"
+print("There are %d pystones %g %s" % (a, d, c))
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "There are 123 pystones 67.89 now\n");
+}
+
+TEST(ThreadTest, StringFormatMixed3) {
+  const char* src = R"(
+a = 123
+d = 67.89
+c = "now"
+print("There are %d pystones %g %s what" % (a, d, c))
+)";
+
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "There are 123 pystones 67.89 now what\n");
+}
+
 } // namespace python

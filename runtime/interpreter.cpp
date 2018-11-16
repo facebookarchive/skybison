@@ -517,14 +517,30 @@ void BINARY_FLOOR_DIVIDE(Context* ctx, word) {
 }
 
 void BINARY_MODULO(Context* ctx, word) {
-  word divisor = SmallInteger::cast(*ctx->sp++)->value();
-  word dividend = SmallInteger::cast(*ctx->sp)->value();
-  // TODO: Throw:
-  //   ZeroDivisionError: integer division or modulo by zero
-  if (divisor == 0) {
-    UNIMPLEMENTED("ZeroDivisionError");
+  HandleScope scope(ctx->thread);
+  Handle<Object> divisor(&scope, *ctx->sp++);
+  Handle<Object> dividend(&scope, *ctx->sp);
+  if (divisor->isSmallInteger() && dividend->isSmallInteger()) {
+    word smi_divisor = SmallInteger::cast(*divisor)->value();
+    word smi_dividend = SmallInteger::cast(*dividend)->value();
+    // TODO: Throw:
+    //   ZeroDivisionError: integer division or modulo by zero
+    if (smi_divisor == 0) {
+      UNIMPLEMENTED("ZeroDivisionError");
+    }
+    *ctx->sp = SmallInteger::fromWord(smi_dividend % smi_divisor);
+  } else if (dividend->isString()) { // string formatting
+    Handle<String> src(&scope, *dividend);
+    if (divisor->isObjectArray()) {
+      Handle<ObjectArray> args(&scope, *divisor);
+      *ctx->sp = ctx->thread->runtime()->stringFormat(ctx->thread, src, args);
+    } else {
+      Handle<ObjectArray> args(
+          &scope, ctx->thread->runtime()->newObjectArray(1));
+      args->atPut(0, *divisor);
+      *ctx->sp = ctx->thread->runtime()->stringFormat(ctx->thread, src, args);
+    }
   }
-  *ctx->sp = SmallInteger::fromWord(dividend % divisor);
 }
 
 void BINARY_SUBTRACT(Context* ctx, word) {

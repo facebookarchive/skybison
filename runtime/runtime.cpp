@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include <climits>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -1956,6 +1957,104 @@ Object* Runtime::stringConcat(
   left->copyTo(reinterpret_cast<byte*>(address), llen);
   right->copyTo(reinterpret_cast<byte*>(address) + llen, rlen);
   return *result;
+}
+
+int stringFormatBufferLength(
+    HandleScope& scope,
+    const Handle<String>& fmt,
+    const Handle<ObjectArray>& args) {
+  word arg_idx = 0;
+  word len = 0;
+  for (word fmt_idx = 0; fmt_idx < fmt->length(); fmt_idx++, len++) {
+    byte ch = fmt->charAt(fmt_idx);
+    if (ch == '%') {
+      switch (fmt->charAt(++fmt_idx)) {
+        case 'd': {
+          len--;
+          Handle<Object> arg(&scope, args->at(arg_idx));
+          CHECK(arg->isInteger(), "Argument mismatch");
+          len += snprintf(NULL, 0, "%ld", Integer::cast(*arg)->asWord());
+          arg_idx++;
+        } break;
+        case 'g': {
+          len--;
+          Handle<Object> arg(&scope, args->at(arg_idx));
+          CHECK(args->at(arg_idx)->isDouble(), "Argument mismatch");
+          len += snprintf(NULL, 0, "%g", Double::cast(*arg)->value());
+          arg_idx++;
+        } break;
+        case 's': {
+          len--;
+          Handle<Object> arg(&scope, args->at(arg_idx));
+          CHECK(arg->isString(), "Argument mismatch");
+          len += String::cast(*arg)->length();
+          arg_idx++;
+        } break;
+        case '%':
+          break;
+        default:
+          UNIMPLEMENTED("Unsupported format specifier");
+      }
+    }
+  }
+  return len;
+}
+
+void stringFormatToBuffer(
+    HandleScope& scope,
+    const Handle<String>& fmt,
+    const Handle<ObjectArray>& args,
+    char* dst,
+    int len) {
+  word arg_idx = 0;
+  word dst_idx = 0;
+  for (word fmt_idx = 0; fmt_idx < fmt->length(); fmt_idx++) {
+    byte c = fmt->charAt(fmt_idx);
+    if (c != '%') {
+      dst[dst_idx++] = c;
+    } else {
+      switch (fmt->charAt(++fmt_idx)) {
+        case 'd': {
+          word value = Integer::cast(args->at(arg_idx++))->asWord();
+          dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%ld", value);
+        } break;
+        case 'g': {
+          double value = Double::cast(args->at(arg_idx++))->value();
+          dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%g", value);
+        } break;
+        case 's': {
+          Handle<String> arg(&scope, args->at(arg_idx));
+          arg->copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), arg->length());
+          dst_idx += arg->length();
+          arg_idx++;
+        } break;
+        case '%':
+          dst[dst_idx++] = '%';
+          break;
+        default:
+          UNIMPLEMENTED("Unsupported format specifier");
+      }
+    }
+  }
+}
+
+// Initial implementation to support '%' operator for pystone.
+Object* Runtime::stringFormat(
+    Thread* thread,
+    const Handle<String>& fmt,
+    const Handle<ObjectArray>& args) {
+  if (fmt->length() == 0) {
+    return *fmt;
+  }
+  HandleScope scope(thread);
+  int len = stringFormatBufferLength(scope, fmt, args);
+  char* dst = static_cast<char*>(std::malloc(len + 1));
+  CHECK(dst != nullptr, "Buffer allocation failure");
+  stringFormatToBuffer(scope, fmt, args, dst, len);
+  dst[len] = '\0';
+  Object* result = thread->runtime()->newStringFromCString(dst);
+  std::free(dst);
+  return result;
 }
 
 Object* Runtime::stringToInt(Thread* thread, const Handle<Object>& arg) {
