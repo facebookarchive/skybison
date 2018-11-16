@@ -65,4 +65,49 @@ TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {
   EXPECT_EQ(0, PyUnicode_READY(pyunicode));
 }
 
+TEST_F(UnicodeExtensionApiTest, Compare) {
+  PyObject* s1 = PyUnicode_FromString("some string");
+  PyObject* s2 = PyUnicode_FromString("some longer string");
+  PyObject* s22 = PyUnicode_FromString("some longer string");
+
+  int result = PyUnicode_Compare(s1, s2);
+  EXPECT_EQ(result, 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  result = PyUnicode_Compare(s2, s1);
+  EXPECT_EQ(result, -1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  result = PyUnicode_Compare(s2, s22);
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  Py_DECREF(s22);
+  Py_DECREF(s2);
+  Py_DECREF(s1);
+}
+
+TEST_F(UnicodeExtensionApiTest, CompareBadInput) {
+  PyObject* s = PyUnicode_FromString("this is a string");
+  PyObject* l = PyLong_FromLong(1234);
+
+  int result = PyUnicode_Compare(s, l);
+  EXPECT_TRUE(
+      testing::exceptionValueMatches("Can't compare largestr and smallint"));
+  PyErr_Clear();
+
+  result = PyUnicode_Compare(l, s);
+  EXPECT_TRUE(
+      testing::exceptionValueMatches("Can't compare smallint and largestr"));
+  PyErr_Clear();
+
+  result = PyUnicode_Compare(l, l);
+  EXPECT_TRUE(
+      testing::exceptionValueMatches("Can't compare smallint and smallint"));
+  PyErr_Clear();
+
+  Py_DECREF(l);
+  Py_DECREF(s);
+}
+
 }  // namespace python

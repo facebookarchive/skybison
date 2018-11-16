@@ -3,6 +3,7 @@
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
+#include "utils.h"
 
 namespace python {
 
@@ -191,8 +192,32 @@ PY_EXPORT PyObject* PyUnicode_BuildEncodingMap(PyObject* /* g */) {
 
 PY_EXPORT int PyUnicode_ClearFreeList() { return 0; }
 
-PY_EXPORT int PyUnicode_Compare(PyObject* /* t */, PyObject* /* t */) {
-  UNIMPLEMENTED("PyUnicode_Compare");
+PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
+  Thread* thread = Thread::currentThread();
+  if (left == nullptr || right == nullptr) {
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return -1;
+  }
+
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object left_obj(&scope, ApiHandle::fromPyObject(left)->asObject());
+  Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
+  if (runtime->isInstanceOfStr(*left_obj) &&
+      runtime->isInstanceOfStr(*right_obj)) {
+    return RawStr::cast(*left_obj)->compare(*right_obj);
+  }
+
+  Str ltype(&scope, Type::cast(runtime->typeOf(*left_obj))->name());
+  Str rtype(&scope, Type::cast(runtime->typeOf(*right_obj))->name());
+  // TODO(T32655200): Once we have a real string formatter, use that instead of
+  // converting the names to C strings here.
+  unique_c_ptr<char> ltype_name(ltype->toCStr());
+  unique_c_ptr<char> rtype_name(rtype->toCStr());
+
+  thread->raiseTypeError(runtime->newStrFromFormat(
+      "Can't compare %.100s and %.100s", ltype_name.get(), rtype_name.get()));
+  return -1;
 }
 
 PY_EXPORT int PyUnicode_CompareWithASCIIString(PyObject* /* i */,

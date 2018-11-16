@@ -17,4 +17,12 @@ TEST_F(ErrorsExtensionApiTest, CompareErrorMessageOnThread) {
   EXPECT_TRUE(testing::exceptionValueMatches(error_message));
 }
 
+TEST_F(ErrorsExtensionApiTest, ClearError) {
+  PyErr_SetString(nullptr, "Something blew up.");
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+
+  PyErr_Clear();
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python

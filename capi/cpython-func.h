@@ -104,6 +104,7 @@ PyAPI_FUNC(PyObject*) PyTuple_Pack(Py_ssize_t, ...);
 PyAPI_FUNC(PyObject*) PyUnicode_FromString(const char*);
 PyAPI_FUNC(char*) PyUnicode_AsUTF8AndSize(PyObject*, Py_ssize_t*);
 PyAPI_FUNC(char*) PyUnicode_AsUTF8(PyObject*);
+PyAPI_FUNC(int) PyUnicode_Compare(PyObject*, PyObject*);
 PyAPI_FUNC(int) PyType_Ready(PyTypeObject*);
 PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject*);
 PyAPI_FUNC(PyObject*) PyObject_GenericGetAttr(PyObject*, PyObject*);
@@ -134,6 +135,7 @@ PyAPI_FUNC(PyObject*) PyErr_Occurred(void);
 PyAPI_FUNC(PyObject*) PyErr_NoMemory(void);
 PyAPI_FUNC(void) PyErr_SetString(PyObject*, const char*);
 PyAPI_FUNC(PyObject*) PyErr_Occurred(void);
+PyAPI_FUNC(void) PyErr_Clear(void);
 
 PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(int) Py_FinalizeEx(void);

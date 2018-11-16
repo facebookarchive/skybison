@@ -19,7 +19,9 @@ PY_EXPORT PyObject* PyErr_Format(PyObject*, const char*, ...) {
   UNIMPLEMENTED("PyErr_Format");
 }
 
-PY_EXPORT void PyErr_Clear() { UNIMPLEMENTED("PyErr_Clear"); }
+PY_EXPORT void PyErr_Clear() {
+  Thread::currentThread()->clearPendingException();
+}
 
 PY_EXPORT int PyErr_BadArgument() { UNIMPLEMENTED("PyErr_BadArgument"); }
 

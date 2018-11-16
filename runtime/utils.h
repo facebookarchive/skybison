@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iosfwd>
+#include <memory>
 #include <type_traits>
 
 #include "globals.h"
@@ -141,5 +142,12 @@ using if_signed_t = typename std::enable_if<std::is_signed<T>::value, R>::type;
 template <typename T, typename R>
 using if_unsigned_t =
     typename std::enable_if<std::is_unsigned<T>::value, R>::type;
+
+// std::unique_ptr for objects created with std::malloc() rather than new.
+struct FreeDeleter {
+  void operator()(void* ptr) const { std::free(ptr); }
+};
+template <typename T>
+using unique_c_ptr = std::unique_ptr<T, FreeDeleter>;
 
 }  // namespace python
