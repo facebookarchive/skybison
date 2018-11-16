@@ -16,6 +16,8 @@ const int kWordSize = sizeof(word);
 const int kPointerSize = sizeof(void*);
 const int kDoubleSize = sizeof(double);
 
+const int kWordDigits10 = 20;
+
 const int kBitsPerByte = 8;
 const int kBitsPerPointer = kBitsPerByte * kWordSize;
 const int kBitsPerWord = kBitsPerByte * kWordSize;

@@ -590,7 +590,7 @@ Object* SmallIntBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
         "__repr__() must be called with int instance as first argument");
   }
   word value = SmallInt::cast(self)->value();
-  char buffer[21];
+  char buffer[kWordDigits10 + 1];
   int size = std::snprintf(buffer, sizeof(buffer), "%" PRIdPTR, value);
   (void)size;
   DCHECK(size < int{sizeof(buffer)}, "buffer too small");
