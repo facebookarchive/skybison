@@ -332,7 +332,7 @@ void Thread::ignorePendingException() {
   }
   *builtinStderr << "\n";
   clearPendingException();
-  Utils::printTraceback();
+  Utils::printTraceback(builtinStderr);
 }
 
 void Thread::clearPendingException() {

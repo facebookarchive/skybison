@@ -298,7 +298,8 @@ def g(ref, c=4):
   builtinStderr = saved_stdout;
   std::string exception = tmp_stdout.str();
   EXPECT_EQ(exception,
-            "ignore pending exception: TypeError: too many arguments\n");
+            "ignore pending exception: TypeError: too many "
+            "arguments\nTraceback (most recent call last)\n");
 
   EXPECT_EQ(ref1->referent(), NoneType::object());
   EXPECT_EQ(ref1->callback(), NoneType::object());

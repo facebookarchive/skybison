@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <iosfwd>
 #include <type_traits>
 
 #include "globals.h"
@@ -124,8 +125,10 @@ class Utils {
     return x == 0 ? 0 : kBitsPerWord - __builtin_clzl(x);
   }
 
-  // Prints a python level stack trace to stderr
+  // Prints a python level stack trace to std::cerr or the ostream of your
+  // choice.
   static void printTraceback();
+  static void printTraceback(std::ostream* os);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Utils);
