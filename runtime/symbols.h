@@ -117,6 +117,7 @@ class Runtime;
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
   V(Hasattr, "hasattr")                                                        \
+  V(ImportError, "ImportError")                                                \
   V(Insert, "insert")                                                          \
   V(Int, "int")                                                                \
   V(IsInstance, "isinstance")                                                  \
@@ -133,12 +134,15 @@ class Runtime;
   V(Method, "method")                                                          \
   V(Module, "module")                                                          \
   V(Modules, "modules")                                                        \
+  V(Msg, "msg")                                                                \
+  V(Name, "name")                                                              \
   V(NameError, "NameError")                                                    \
   V(NoneType, "NoneType")                                                      \
   V(NotImplemented, "NotImplemented")                                          \
   V(NotImplementedType, "NotImplementedType")                                  \
   V(ObjectClassname, "object")                                                 \
   V(Ord, "ord")                                                                \
+  V(Path, "path")                                                              \
   V(Pop, "pop")                                                                \
   V(Print, "print")                                                            \
   V(Property, "property")                                                      \

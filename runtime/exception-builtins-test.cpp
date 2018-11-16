@@ -5,6 +5,7 @@
 #include "test-utils.h"
 
 namespace python {
+using namespace testing;
 
 TEST(ExceptionBuiltinsTest, BaseExceptionNoArguments) {
   Runtime runtime;
@@ -256,6 +257,35 @@ result = exc.value
   Handle<Object> result(&scope, testing::moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(SmallInt::cast(*result)->value(), 1111);
+}
+
+TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
+  const char* src = R"(
+x = ImportError()
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> data(&scope, moduleAt(&runtime, main, "x"));
+  ASSERT_TRUE(data->isImportError());
+
+  Handle<ImportError> err(&scope, *data);
+  EXPECT_EQ(err->msg(), None::object());
+  EXPECT_EQ(err->path(), None::object());
+  EXPECT_EQ(err->name(), None::object());
+
+  err->setMsg(SmallInt::fromWord(1111));
+  ASSERT_TRUE(err->msg()->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(err->msg())->value(), 1111);
+
+  err->setPath(SmallInt::fromWord(2222));
+  ASSERT_TRUE(err->path()->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(err->path())->value(), 2222);
+
+  err->setName(SmallInt::fromWord(3333));
+  ASSERT_TRUE(err->name()->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(err->name())->value(), 3333);
 }
 
 }  // namespace python

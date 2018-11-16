@@ -145,4 +145,17 @@ Object* SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   return None::object();
 }
 
+const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
+    {SymbolId::kMsg, ImportError::kMsgOffset},
+    {SymbolId::kName, ImportError::kNameOffset},
+    {SymbolId::kPath, ImportError::kPathOffset},
+};
+
+void ImportErrorBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Type> type(&scope, runtime->addBuiltinClass(
+                                SymbolId::kImportError, LayoutId::kImportError,
+                                LayoutId::kException, kAttributes));
+}
+
 }  // namespace python

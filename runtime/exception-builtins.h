@@ -44,4 +44,14 @@ class SystemExitBuiltins {
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExitBuiltins);
 };
 
+class ImportErrorBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+ private:
+  static const BuiltinAttribute kAttributes[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ImportErrorBuiltins);
+};
+
 }  // namespace python

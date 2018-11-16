@@ -24,6 +24,7 @@ namespace python {
   V(Ellipsis)                                                                  \
   V(Exception)                                                                 \
   V(Function)                                                                  \
+  V(ImportError)                                                               \
   V(Int)                                                                       \
   V(LargeInt)                                                                  \
   V(LargeStr)                                                                  \
@@ -89,6 +90,7 @@ enum class LayoutId : word {
   kEllipsis,
   kException,
   kFunction,
+  kImportError,
   kInt,
   kLargeInt,
   kLargeStr,
@@ -145,6 +147,7 @@ class Object {
   bool isException();
   bool isFunction();
   bool isHeapObject();
+  bool isImportError();
   bool isInstance();
   bool isLargeInt();
   bool isLargeStr();
@@ -581,6 +584,30 @@ class SystemExit : public BaseException {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExit);
+};
+
+class ImportError : public Exception {
+ public:
+  // Getters and setters
+  Object* msg();
+  void setMsg(Object* msg);
+
+  Object* name();
+  void setName(Object* name);
+
+  Object* path();
+  void setPath(Object* path);
+
+  // Casting.
+  static ImportError* cast(Object* object);
+
+  static const int kMsgOffset = BaseException::kSize;
+  static const int kNameOffset = kMsgOffset + kPointerSize;
+  static const int kPathOffset = kNameOffset + kPointerSize;
+  static const int kSize = kPathOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ImportError);
 };
 
 class Type : public HeapObject {
@@ -2070,6 +2097,13 @@ inline bool Object::isSystemExit() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSystemExit;
 }
 
+inline bool Object::isImportError() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kImportError;
+}
+
 inline bool Object::isWeakRef() {
   if (!isHeapObject()) {
     return false;
@@ -2540,6 +2574,31 @@ inline Object* SystemExit::code() { return instanceVariableAt(kCodeOffset); }
 
 inline void SystemExit::setCode(Object* code) {
   instanceVariableAtPut(kCodeOffset, code);
+}
+
+// ImportError
+
+inline ImportError* ImportError::cast(Object* object) {
+  DCHECK(object->isImportError(), "invalid cast, expected ImportError");
+  return reinterpret_cast<ImportError*>(object);
+}
+
+inline Object* ImportError::msg() { return instanceVariableAt(kMsgOffset); }
+
+inline void ImportError::setMsg(Object* msg) {
+  instanceVariableAtPut(kMsgOffset, msg);
+}
+
+inline Object* ImportError::name() { return instanceVariableAt(kNameOffset); }
+
+inline void ImportError::setName(Object* name) {
+  instanceVariableAtPut(kNameOffset, name);
+}
+
+inline Object* ImportError::path() { return instanceVariableAt(kPathOffset); }
+
+inline void ImportError::setPath(Object* path) {
+  instanceVariableAtPut(kPathOffset, path);
 }
 
 // Type
