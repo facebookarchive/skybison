@@ -207,6 +207,19 @@ Object* Thread::throwRuntimeErrorFromCString(const char* message) {
   return throwRuntimeError(runtime()->newStringFromCString(message));
 }
 
+// Convenience method for throwing a SystemError exception with an error
+// message.
+Object* Thread::throwSystemError(Object* value) {
+  // TODO: instantiate SystemError object.
+  pending_exception_ = value;
+  return Error::object();
+}
+
+Object* Thread::throwSystemErrorFromCString(const char* message) {
+  // TODO: instantiate SystemError object.
+  return throwSystemError(runtime()->newStringFromCString(message));
+}
+
 // Convenience method for throwing a TypeError exception with an error message.
 Object* Thread::throwTypeError(Object* value) {
   // TODO: instantiate TypeError object.

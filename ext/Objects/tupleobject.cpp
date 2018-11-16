@@ -48,6 +48,28 @@ extern "C" Py_ssize_t PyTuple_Size(PyObject* pytuple) {
   return tuple->length();
 }
 
+extern "C" int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
+                               PyObject* pyitem) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  Handle<Object> tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
+  if (!tupleobj->isObjectArray()) {
+    thread->throwSystemErrorFromCString("bad argument to internal function");
+    return -1;
+  }
+
+  Handle<ObjectArray> tuple(&scope, *tupleobj);
+  if (pos < 0 || pos >= tuple->length()) {
+    thread->throwIndexErrorFromCString("tuple assignment index out of range");
+    return -1;
+  }
+
+  Handle<Object> item(&scope, ApiHandle::fromPyObject(pyitem)->asObject());
+  tuple->atPut(pos, *item);
+  return 0;
+}
+
 extern "C" PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);

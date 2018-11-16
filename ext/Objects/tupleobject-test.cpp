@@ -30,6 +30,39 @@ TEST(TupleObject, Size) {
   EXPECT_EQ(length, pylength);
 }
 
+TEST(TupleObject, SetItemWithNonTupleReturnsNegative) {
+  Runtime runtime;
+
+  int result = PyTuple_SetItem(Py_True, 0, Py_None);
+  EXPECT_EQ(result, -1);
+
+  Object* exception = Thread::currentThread()->pendingException();
+  ASSERT_TRUE(exception->isString());
+  EXPECT_PYSTRING_EQ(String::cast(exception),
+                     "bad argument to internal function");
+}
+
+TEST(TupleObject, SetItemWithInvalidIndexReturnsNegative) {
+  Runtime runtime;
+
+  PyObject* pytuple = PyTuple_New(1);
+  int result = PyTuple_SetItem(pytuple, 2, Py_None);
+  EXPECT_EQ(result, -1);
+
+  Object* exception = Thread::currentThread()->pendingException();
+  ASSERT_TRUE(exception->isString());
+  EXPECT_PYSTRING_EQ(String::cast(exception),
+                     "tuple assignment index out of range");
+}
+
+TEST(TupleObject, SetItemReturnsZero) {
+  Runtime runtime;
+
+  PyObject* pytuple = PyTuple_New(1);
+  int result = PyTuple_SetItem(pytuple, 0, Py_None);
+  EXPECT_EQ(result, 0);
+}
+
 TEST(TupleObject, GetItemFromNonTupleReturnsNull) {
   Runtime runtime;
   HandleScope scope;

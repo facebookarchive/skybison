@@ -96,6 +96,10 @@ class Thread {
   Object* throwRuntimeError(Object* value);
   Object* throwRuntimeErrorFromCString(const char* message);
 
+  // Convenience methods for throwing a SystemError exception.
+  Object* throwSystemError(Object* value);
+  Object* throwSystemErrorFromCString(const char* message);
+
   // Convenience methods for throwing a TypeError exception.
   Object* throwTypeError(Object* value);
   Object* throwTypeErrorFromCString(const char* message);

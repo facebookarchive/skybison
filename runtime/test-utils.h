@@ -42,7 +42,7 @@ std::string compileAndRunToString(Runtime* runtime, const char* src);
                                                String* expected_string);
 
 #define EXPECT_PYSTRING_EQ(s1, s2)                                             \
-  EXPECT_PRED_FORMAT2(AssertPyStringEqual, s1, s2)
+  EXPECT_PRED_FORMAT2(testing::AssertPyStringEqual, s1, s2)
 
 // Get the value bound to name in the supplied module. Returns Error::object()
 // if not found.
