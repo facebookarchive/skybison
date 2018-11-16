@@ -136,7 +136,7 @@ Object* Interpreter::callDescriptorGet(Thread* thread, Frame* caller,
                      receiver_type);
 }
 
-Object* Interpreter::callDescriptorSet(python::Thread* thread, Frame* caller,
+Object* Interpreter::callDescriptorSet(Thread* thread, Frame* caller,
                                        const Handle<Object>& descriptor,
                                        const Handle<Object>& receiver,
                                        const Handle<Object>& value) {
@@ -150,7 +150,7 @@ Object* Interpreter::callDescriptorSet(python::Thread* thread, Frame* caller,
   return callMethod3(thread, caller, method, descriptor, receiver, value);
 }
 
-Object* Interpreter::callDescriptorDelete(python::Thread* thread, Frame* caller,
+Object* Interpreter::callDescriptorDelete(Thread* thread, Frame* caller,
                                           const Handle<Object>& descriptor,
                                           const Handle<Object>& receiver) {
   HandleScope scope(thread);
@@ -1506,8 +1506,7 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
 }
 
 // opcode 153
-void Interpreter::doBuildSetUnpack(python::Interpreter::Context* ctx,
-                                   word arg) {
+void Interpreter::doBuildSetUnpack(Interpreter::Context* ctx, word arg) {
   Runtime* runtime = ctx->thread->runtime();
   HandleScope scope(ctx->thread);
   Handle<Set> set(&scope, runtime->newSet());
