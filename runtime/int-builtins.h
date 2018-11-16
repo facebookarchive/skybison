@@ -22,11 +22,11 @@ class IntBuiltins {
   static Object* dunderLt(Thread* thread, Frame* frame, word nargs);
   static Object* dunderPos(Thread* thread, Frame* frame, word nargs);
   static Object* intFromString(Thread* thread, Object* str, int base);
+  static Object* intFromBool(Object* bool_obj);
 
  private:
   static Object* negateLargeInteger(Runtime* runtime,
                                     const Handle<Object>& large_integer);
-  static Object* intFromBool(Object* bool_obj);
   static const BuiltinMethod kMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntBuiltins);
@@ -42,6 +42,7 @@ class SmallIntBuiltins {
   static Object* dunderMod(Thread* thread, Frame* frame, word nargs);
   static Object* dunderMul(Thread* thread, Frame* frame, word nargs);
   static Object* dunderSub(Thread* thread, Frame* frame, word nargs);
+  static Object* dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
   static Object* dunderXor(Thread* thread, Frame* frame, word nargs);
   static Object* dunderRepr(Thread* thread, Frame* frame, word nargs);
 

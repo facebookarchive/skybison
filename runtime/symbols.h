@@ -205,7 +205,8 @@ class Runtime;
   V(UnderWeakRef, "_weakref")                                                  \
   V(Value, "value")                                                            \
   V(ValueError, "ValueError")                                                  \
-  V(ValueCell, "valuecell")
+  V(ValueCell, "valuecell")                                                    \
+  V(ZeroDivisionError, "ZeroDivisionError")
 
 // clang-format off
 enum class SymbolId {

@@ -3,6 +3,7 @@
 #include <cerrno>
 #include <cinttypes>
 #include <climits>
+#include <cmath>
 
 #include "frame.h"
 #include "globals.h"
@@ -158,6 +159,7 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
+    {SymbolId::kDunderTruediv, nativeTrampoline<dunderTrueDiv>},
     {SymbolId::kDunderXor, nativeTrampoline<dunderXor>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
@@ -298,6 +300,7 @@ Object* IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
 
 Object* SmallIntBuiltins::dunderFloorDiv(Thread* thread, Frame* frame,
                                          word nargs) {
+  Runtime* runtime = thread->runtime();
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -309,14 +312,59 @@ Object* SmallIntBuiltins::dunderFloorDiv(Thread* thread, Frame* frame,
         "__floordiv__() must be called with int instance as first argument");
   }
   word left = SmallInt::cast(self)->value();
+  if (other->isFloat()) {
+    double right = Float::cast(other)->value();
+    if (right == 0.0) {
+      return thread->raiseZeroDivisionErrorWithCStr("float divmod()");
+    }
+    return runtime->newFloat(std::floor(left / right));
+  }
+  if (other->isBool()) {
+    other = IntBuiltins::intFromBool(other);
+  }
   if (other->isInt()) {
     word right = Int::cast(other)->asWord();
     if (right == 0) {
-      UNIMPLEMENTED("ZeroDivisionError");
+      return thread->raiseZeroDivisionErrorWithCStr(
+          "integer division or modulo by zero");
     }
-    return thread->runtime()->newInt(left / right);
+    return runtime->newInt(left / right);
   }
-  return thread->runtime()->notImplemented();
+  return runtime->notImplemented();
+}
+
+Object* SmallIntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs != 2) {
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (!self->isSmallInt()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__truediv__() must be called with int instance as first argument");
+  }
+  word left = SmallInt::cast(self)->value();
+  if (other->isFloat()) {
+    double right = Float::cast(other)->value();
+    if (right == 0.0) {
+      return thread->raiseZeroDivisionErrorWithCStr("float division by zero");
+    }
+    return runtime->newFloat(left / right);
+  }
+  if (other->isBool()) {
+    other = IntBuiltins::intFromBool(other);
+  }
+  if (other->isInt()) {
+    word right = Int::cast(other)->asWord();
+    if (right == 0) {
+      return thread->raiseZeroDivisionErrorWithCStr("division by zero");
+    }
+    return runtime->newFloat(left / static_cast<double>(right));
+  }
+  return runtime->notImplemented();
 }
 
 Object* IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
@@ -395,6 +443,7 @@ Object* IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 }
 
 Object* SmallIntBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
+  Runtime* runtime = thread->runtime();
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
@@ -406,14 +455,35 @@ Object* SmallIntBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
         "__mod__() must be called with int instance as first argument");
   }
   word left = SmallInt::cast(self)->value();
+  if (other->isFloat()) {
+    double right = Float::cast(other)->value();
+    if (right == 0.0) {
+      return thread->raiseZeroDivisionErrorWithCStr("float modulo");
+    }
+    double mod = std::fmod(static_cast<double>(left), right);
+    if (mod) {
+      // Ensure that the remainder has the same sign as the denominator.
+      if ((right < 0) != (mod < 0)) {
+        mod += right;
+      }
+    } else {
+      // Avoid signed zeros.
+      mod = std::copysign(0.0, right);
+    }
+    return runtime->newFloat(mod);
+  }
+  if (other->isBool()) {
+    other = IntBuiltins::intFromBool(other);
+  }
   if (other->isInt()) {
     word right = Int::cast(other)->asWord();
     if (right == 0) {
-      UNIMPLEMENTED("ZeroDivisionError");
+      return thread->raiseZeroDivisionErrorWithCStr(
+          "integer division or modulo by zero");
     }
-    return thread->runtime()->newInt(left % right);
+    return runtime->newInt(left % right);
   }
-  return thread->runtime()->notImplemented();
+  return runtime->notImplemented();
 }
 
 Object* SmallIntBuiltins::dunderMul(Thread* thread, Frame* caller, word nargs) {

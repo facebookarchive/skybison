@@ -1047,6 +1047,9 @@ void Runtime::initializeExceptionClasses() {
                        LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kOverflowError, LayoutId::kOverflowError,
                        LayoutId::kArithmeticError);
+  addEmptyBuiltinClass(SymbolId::kZeroDivisionError,
+                       LayoutId::kZeroDivisionError,
+                       LayoutId::kArithmeticError);
 
   // LookupError and its subclasses.
   addEmptyBuiltinClass(SymbolId::kLookupError, LayoutId::kLookupError,

@@ -65,7 +65,8 @@ namespace python {
   V(TypeError)                                                                 \
   V(ValueCell)                                                                 \
   V(ValueError)                                                                \
-  V(WeakRef)
+  V(WeakRef)                                                                   \
+  V(ZeroDivisionError)
 
 #define INTRINSIC_CLASS_NAMES(V)                                               \
   INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                           \
@@ -151,8 +152,9 @@ enum class LayoutId : word {
   kValueCell,
   kValueError,
   kWeakRef,
+  kZeroDivisionError,
 
-  kLastBuiltinId = kWeakRef,
+  kLastBuiltinId = kZeroDivisionError,
 };
 
 class Object {

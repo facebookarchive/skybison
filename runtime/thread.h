@@ -105,6 +105,11 @@ class Thread {
   // returned up the stack by the caller.
   Object* raiseStopIteration(Object* value);
 
+  // Raises a ZeroDivision exception and returns an Error object that must be
+  // returned up the stack by the caller.
+  Object* raiseZeroDivisionError(Object* value);
+  Object* raiseZeroDivisionErrorWithCStr(const char* message);
+
   // Returns true if there is an exception pending.
   bool hasPendingException();
 

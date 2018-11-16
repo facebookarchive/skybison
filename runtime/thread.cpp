@@ -306,6 +306,16 @@ bool Thread::hasPendingStopIteration() {
              ->hasFlag(Type::Flag::kStopIterationSubclass);
 }
 
+Object* Thread::raiseZeroDivisionError(Object* value) {
+  setExceptionType(runtime()->typeAt(LayoutId::kZeroDivisionError));
+  setExceptionValue(value);
+  return Error::object();
+}
+
+Object* Thread::raiseZeroDivisionErrorWithCStr(const char* message) {
+  return raiseZeroDivisionError(runtime()->newStrFromCStr(message));
+}
+
 void Thread::ignorePendingException() {
   if (!hasPendingException()) {
     return;

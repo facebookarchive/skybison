@@ -736,25 +736,13 @@ void Interpreter::doBinaryFloorDivide(Context* ctx, word) {
 
 // opcode 27
 void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
-  HandleScope scope;
-  double dividend, divisor;
-  Handle<Object> right(&scope, ctx->frame->popValue());
-  Handle<Object> left(&scope, ctx->frame->popValue());
-  if (right->isSmallInt()) {
-    dividend = SmallInt::cast(*right)->value();
-  } else if (right->isFloat()) {
-    dividend = Float::cast(*right)->value();
-  } else {
-    UNIMPLEMENTED("Arbitrary object binary true divide not supported.");
-  }
-  if (left->isSmallInt()) {
-    divisor = SmallInt::cast(*left)->value();
-  } else if (left->isFloat()) {
-    divisor = Float::cast(*left)->value();
-  } else {
-    UNIMPLEMENTED("Arbitrary object binary true divide not supported.");
-  }
-  ctx->frame->pushValue(ctx->thread->runtime()->newFloat(divisor / dividend));
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::TRUEDIV, self, other);
+  ctx->frame->pushValue(result);
 }
 
 // opcode 28

@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <cmath>
+
 #include "frame.h"
 #include "handles.h"
 #include "int-builtins.h"
@@ -1373,6 +1375,282 @@ bar = Bar()
     EXPECT_FALSE(Bool::cast(result)->value());
     thread->popFrame();
   }
+}
+
+TEST(SmallIntBuiltinsDeathTest, DunderModZeroDivision) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = 10
+b = 0.0
+a % b
+)"),
+               "float modulo");
+
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = 10
+b = False
+a % b
+)"),
+               "integer division or modulo by zero");
+
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = 10
+b = 0
+a % b
+)"),
+               "integer division or modulo by zero");
+}
+
+TEST(SmallIntBuiltinsDeathTest, DunderFloorDivZeroDivision) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = 10
+b = 0.0
+a // b
+)"),
+               "float divmod()");
+
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = 10
+b = False
+a // b
+)"),
+               "integer division or modulo by zero");
+
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = 10
+b = 0
+a // b
+)"),
+               "integer division or modulo by zero");
+}
+
+TEST(SmallIntBuiltinsDeathTest, DunderTrueDivZeroDivision) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = 10
+b = 0.0
+a / b
+)"),
+               "float division by zero");
+
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = 10
+b = False
+a / b
+)"),
+               "division by zero");
+
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = 10
+b = 0
+a / b
+)"),
+               "division by zero");
+}
+
+TEST(SmallIntBuiltinsTest, DunderModWithFloat) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  // Test positive smallint mod positive float
+  Handle<Float> float1(&scope, runtime.newFloat(1.5));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *float1);
+  Handle<Float> result(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  EXPECT_NEAR(result->value(), 1.0, DBL_EPSILON);
+
+  // Test positive smallint mod negative float
+  Handle<Float> float2(&scope, runtime.newFloat(-1.5));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *float2);
+  Handle<Float> result1(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  EXPECT_NEAR(result1->value(), -0.5, DBL_EPSILON);
+
+  // Test positive smallint mod infinity
+  Handle<Float> float_inf(&scope, runtime.newFloat(INFINITY));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *float_inf);
+  Handle<Float> result2(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  ASSERT_TRUE(result2->isFloat());
+  EXPECT_NEAR(result2->value(), 100.0, DBL_EPSILON);
+
+  // Test positive smallint mod negative infinity
+  Handle<Float> neg_float_inf(&scope, runtime.newFloat(-INFINITY));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *neg_float_inf);
+  Handle<Float> result3(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  EXPECT_EQ(result3->value(), -INFINITY);
+
+  // Test negative smallint mod infinity
+  frame->setLocal(0, SmallInt::fromWord(-100));
+  frame->setLocal(1, *float_inf);
+  Handle<Float> result4(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  EXPECT_EQ(result4->value(), INFINITY);
+
+  // Test negative smallint mod negative infinity
+  frame->setLocal(0, SmallInt::fromWord(-100));
+  frame->setLocal(1, *neg_float_inf);
+  Handle<Float> result5(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  EXPECT_NEAR(result5->value(), -100.0, DBL_EPSILON);
+
+  // Test negative smallint mod nan
+  Handle<Float> nan(&scope, runtime.newFloat(NAN));
+  frame->setLocal(0, SmallInt::fromWord(-100));
+  frame->setLocal(1, *nan);
+  Handle<Float> result6(&scope, SmallIntBuiltins::dunderMod(thread, frame, 2));
+  EXPECT_TRUE(std::isnan(result6->value()));
+
+  thread->popFrame();
+}
+
+TEST(SmallIntBuiltinsTest, DunderFloorDivWithFloat) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  // Test dividing a positive smallint by a positive float
+  Handle<Float> float1(&scope, runtime.newFloat(1.5));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *float1);
+  Handle<Float> result(&scope,
+                       SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  EXPECT_NEAR(result->value(), 66.0, DBL_EPSILON);
+
+  // Test dividing a positive smallint by a negative float
+  Handle<Float> float2(&scope, runtime.newFloat(-1.5));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *float2);
+  Handle<Float> result1(&scope,
+                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  EXPECT_NEAR(result1->value(), -67.0, DBL_EPSILON);
+
+  // Test dividing a positive smallint by infinity
+  Handle<Float> float_inf(&scope, runtime.newFloat(INFINITY));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *float_inf);
+  Handle<Float> result2(&scope,
+                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  EXPECT_NEAR(result2->value(), 0.0, DBL_EPSILON);
+
+  // Test dividing a positive smallint by negative infinity
+  Handle<Float> neg_float_inf(&scope, runtime.newFloat(-INFINITY));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *neg_float_inf);
+  Handle<Float> result3(&scope,
+                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  EXPECT_NEAR(result3->value(), 0.0, DBL_EPSILON);
+
+  // Test dividing a negative smallint by infinity
+  frame->setLocal(0, SmallInt::fromWord(-100));
+  frame->setLocal(1, *float_inf);
+  Handle<Float> result4(&scope,
+                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  EXPECT_NEAR(result4->value(), 0.0, DBL_EPSILON);
+
+  // Test dividing a negative smallint by negative infinity
+  frame->setLocal(0, SmallInt::fromWord(-100));
+  frame->setLocal(1, *neg_float_inf);
+  Handle<Float> result5(&scope,
+                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  EXPECT_NEAR(result5->value(), 0.0, DBL_EPSILON);
+
+  // Test dividing negative smallint by nan
+  Handle<Float> nan(&scope, runtime.newFloat(NAN));
+  frame->setLocal(0, SmallInt::fromWord(-100));
+  frame->setLocal(1, *nan);
+  Handle<Float> result6(&scope,
+                        SmallIntBuiltins::dunderFloorDiv(thread, frame, 2));
+  EXPECT_TRUE(std::isnan(result6->value()));
+
+  thread->popFrame();
+}
+
+TEST(SmallIntBuiltinsTest, DunderTrueDivWithFloat) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  // Test dividing a positive smallint by a positive float
+  Handle<Float> float1(&scope, runtime.newFloat(1.5));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *float1);
+  Handle<Float> result(&scope,
+                       SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  EXPECT_NEAR(result->value(), 66.66666666666667, DBL_EPSILON);
+
+  // Test dividing a positive smallint by a negative float
+  Handle<Float> float2(&scope, runtime.newFloat(-1.5));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *float2);
+  Handle<Float> result1(&scope,
+                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  EXPECT_NEAR(result1->value(), -66.66666666666667, DBL_EPSILON);
+
+  // Test dividing a positive smallint by infinity
+  Handle<Float> float_inf(&scope, runtime.newFloat(INFINITY));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *float_inf);
+  Handle<Float> result2(&scope,
+                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  EXPECT_NEAR(result2->value(), 0.0, DBL_EPSILON);
+
+  // Test dividing a positive smallint by negative infinity
+  Handle<Float> neg_float_inf(&scope, runtime.newFloat(-INFINITY));
+  frame->setLocal(0, SmallInt::fromWord(100));
+  frame->setLocal(1, *neg_float_inf);
+  Handle<Float> result3(&scope,
+                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  EXPECT_NEAR(result3->value(), 0.0, DBL_EPSILON);
+
+  // Test dividing a negative smallint by infinity
+  frame->setLocal(0, SmallInt::fromWord(-100));
+  frame->setLocal(1, *float_inf);
+  Handle<Float> result4(&scope,
+                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  EXPECT_NEAR(result4->value(), 0.0, DBL_EPSILON);
+
+  // Test dividing a negative smallint by negative infinity
+  frame->setLocal(0, SmallInt::fromWord(-100));
+  frame->setLocal(1, *neg_float_inf);
+  Handle<Float> result5(&scope,
+                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  EXPECT_NEAR(result5->value(), 0.0, DBL_EPSILON);
+
+  // Test dividing negative smallint by nan
+  Handle<Float> nan(&scope, runtime.newFloat(NAN));
+  frame->setLocal(0, SmallInt::fromWord(-100));
+  frame->setLocal(1, *nan);
+  Handle<Float> result6(&scope,
+                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  EXPECT_TRUE(std::isnan(result6->value()));
+
+  thread->popFrame();
+}
+
+TEST(SmallIntBuiltinsTest, DunderTrueDivWithSmallInt) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+
+  frame->setLocal(0, SmallInt::fromWord(6));
+  frame->setLocal(1, SmallInt::fromWord(3));
+  Handle<Float> result(&scope,
+                       SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  EXPECT_NEAR(result->value(), 2.0, DBL_EPSILON);
+
+  frame->setLocal(0, SmallInt::fromWord(7));
+  frame->setLocal(1, SmallInt::fromWord(3));
+  Handle<Float> result1(&scope,
+                        SmallIntBuiltins::dunderTrueDiv(thread, frame, 2));
+  EXPECT_NEAR(result1->value(), 2.3333333333333335, DBL_EPSILON);
+
+  thread->popFrame();
 }
 
 }  // namespace python
