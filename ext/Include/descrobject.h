@@ -73,7 +73,8 @@ typedef struct {
 #endif /* Py_LIMITED_API */
 
 PyAPI_DATA(PyTypeObject) PyClassMethodDescr_Type;
-PyAPI_DATA(PyTypeObject) PyGetSetDescr_Type;
+PyAPI_FUNC(PyTypeObject*) PyGetSetDescr_Type_Ptr(void);
+#define PyGetSetDescr_Type (*PyGetSetDescr_Type_Ptr())
 PyAPI_FUNC(PyTypeObject*) PyMemberDescr_Type_Ptr(void);
 #define PyMemberDescr_Type (*PyMemberDescr_Type_Ptr())
 PyAPI_FUNC(PyTypeObject*) PyMethodDescr_Type_Ptr(void);

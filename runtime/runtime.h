@@ -75,6 +75,7 @@ enum class ExtensionTypes {
   kBool,
   kDict,
   kFloat,
+  kGetSetDescr,
   kList,
   kLong,
   kMemberDescr,
