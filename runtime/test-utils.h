@@ -26,8 +26,9 @@
 namespace python {
 class Runtime;
 namespace testing {
-// Compile the supplied python snippet, run it, and return stdout.
+// Compile the supplied python snippet, run it, and return stdout or stderr
 std::string compileAndRunToString(Runtime* runtime, const char* src);
+std::string compileAndRunToStderrString(Runtime* runtime, const char* src);
 
 // A predicate-formatter for checking if a python::Str* has the same contents
 // as a std::string

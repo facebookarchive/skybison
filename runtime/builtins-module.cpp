@@ -266,20 +266,21 @@ Object* builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
   return SmallInt::fromWord(str->charAt(0));
 }
 
-static void printStr(Str* str) {
+static void printStr(Str* str, std::ostream* ostream) {
   for (word i = 0; i < str->length(); i++) {
-    *builtInStdout << str->charAt(i);
+    *ostream << str->charAt(i);
   }
 }
 
-static void printQuotedStr(Str* str) {
-  *builtInStdout << "'";
+static void printQuotedStr(Str* str, std::ostream* ostream) {
+  *ostream << "'";
   for (word i = 0; i < str->length(); i++) {
-    *builtInStdout << str->charAt(i);
+    *ostream << str->charAt(i);
   }
-  *builtInStdout << "'";
+  *ostream << "'";
 }
 
+// Print a scalar value to ostream.
 static void printScalarTypes(Object* arg, std::ostream* ostream) {
   if (arg->isBool()) {
     *ostream << (Bool::cast(arg)->value() ? "True" : "False");
@@ -288,9 +289,18 @@ static void printScalarTypes(Object* arg, std::ostream* ostream) {
   } else if (arg->isSmallInt()) {
     *ostream << SmallInt::cast(arg)->value();
   } else if (arg->isStr()) {
-    printStr(Str::cast(arg));
+    printStr(Str::cast(arg), ostream);
   } else {
     UNIMPLEMENTED("Custom print unsupported");
+  }
+}
+
+// Print a scalar value to ostream, quoting it if it's a string.
+static void printQuotedScalarTypes(Object* arg, std::ostream* ostream) {
+  if (arg->isStr()) {
+    printQuotedStr(Str::cast(arg), ostream);
+  } else {
+    printScalarTypes(arg, ostream);
   }
 }
 
@@ -316,7 +326,7 @@ static Object* doBuiltinPrint(const Arguments& args, word nargs,
       Handle<List> list(&scope, arg);
       for (word i = 0; i < list->allocated(); i++) {
         if (supportedScalarType(list->at(i))) {
-          printScalarTypes(list->at(i), ostream);
+          printQuotedScalarTypes(list->at(i), ostream);
         } else {
           UNIMPLEMENTED("Custom print unsupported");
         }
@@ -350,18 +360,14 @@ static Object* doBuiltinPrint(const Arguments& args, word nargs,
         if (!data->at(i)->isNone()) {
           Handle<Object> key(&scope, Dict::Bucket::key(*data, i));
           Handle<Object> value(&scope, Dict::Bucket::value(*data, i));
-          if (key->isStr()) {
-            printQuotedStr(Str::cast(*key));
-          } else if (supportedScalarType(*key)) {
-            printScalarTypes(*key, ostream);
+          if (supportedScalarType(*key)) {
+            printQuotedScalarTypes(*key, ostream);
           } else {
             UNIMPLEMENTED("Custom print unsupported");
           }
           *ostream << ": ";
-          if (value->isStr()) {
-            printQuotedStr(Str::cast(*value));
-          } else if (supportedScalarType(*value)) {
-            printScalarTypes(*value, ostream);
+          if (supportedScalarType(*value)) {
+            printQuotedScalarTypes(*value, ostream);
           } else {
             UNIMPLEMENTED("Custom print unsupported");
           }
@@ -383,7 +389,7 @@ static Object* doBuiltinPrint(const Arguments& args, word nargs,
   if (end->isNone()) {
     *ostream << "\n";
   } else if (end->isStr()) {
-    printStr(Str::cast(*end));
+    printStr(Str::cast(*end), ostream);
   } else {
     UNIMPLEMENTED("Unexpected type for end: %ld",
                   static_cast<word>(end->layoutId()));

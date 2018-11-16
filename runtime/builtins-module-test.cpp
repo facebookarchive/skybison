@@ -378,17 +378,26 @@ import sys
 print("hi", file=sys.stderr, end='ya')
 )";
   Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToStderrString(&runtime, src);
   EXPECT_EQ(output, "hiya");
 }
 
-TEST(BuiltinsModuleTest, BuintInPrintNone) {
+TEST(BuiltinsModuleTest, BuiltInPrintNone) {
   const char* src = R"(
 print(None)
 )";
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "None\n");
+}
+
+TEST(BuiltinsModuleTest, BuiltInPrintStrList) {
+  const char* src = R"(
+print(['one', 'two'])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "['one', 'two']\n");
 }
 
 TEST(BuiltinsModuleTest, BuiltInReprOnUserTypeWithDunderRepr) {

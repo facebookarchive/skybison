@@ -51,17 +51,25 @@ static std::string pyStringToStdString(Str* pystr) {
          << "      Which is: \"" << pyStringToStdString(expected_str) << "\"";
 }
 
-// helper function to redirect return stdout from running
-// a module
-std::string compileAndRunToString(Runtime* runtime, const char* src) {
-  std::stringstream tmp_stdout;
-  std::ostream* saved_stdout = builtInStdout;
-  builtInStdout = &tmp_stdout;
+// helper function to redirect return stdout/stderr from running a module
+static std::string compileAndRunImpl(Runtime* runtime, const char* src,
+                                     std::ostream** ostream) {
+  std::stringstream tmp_ostream;
+  std::ostream* saved_ostream = *ostream;
+  *ostream = &tmp_ostream;
   Object* result = runtime->runFromCStr(src);
   (void)result;
   CHECK(result == None::object(), "unexpected result");
-  builtInStdout = saved_stdout;
-  return tmp_stdout.str();
+  *ostream = saved_ostream;
+  return tmp_ostream.str();
+}
+
+std::string compileAndRunToString(Runtime* runtime, const char* src) {
+  return compileAndRunImpl(runtime, src, &builtInStdout);
+}
+
+std::string compileAndRunToStderrString(Runtime* runtime, const char* src) {
+  return compileAndRunImpl(runtime, src, &builtinStderr);
 }
 
 std::string callFunctionToString(const Handle<Function>& func,
