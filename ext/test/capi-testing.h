@@ -2,10 +2,12 @@
 
 #include "runtime.h"
 
+#include "gtest/gtest.h"
+
 namespace python {
 namespace testing {
 
-bool exceptionMessageMatches(const char* message);
+::testing::AssertionResult exceptionValueMatches(const char* message);
 PyObject* moduleGet(const char* module, const char* name);
 bool isBorrowed(PyObject* pyobj);
 

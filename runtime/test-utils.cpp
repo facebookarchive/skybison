@@ -1,5 +1,6 @@
 #include "test-utils.h"
 
+#include <iostream>
 #include <memory>
 #include <sstream>
 
@@ -11,6 +12,25 @@
 #include "utils.h"
 
 namespace python {
+
+std::ostream& operator<<(std::ostream& os, const Handle<Str>& str) {
+  char* data = str->toCStr();
+  return os.write(data, str->length());
+  std::free(data);
+}
+
+std::ostream& operator<<(std::ostream& os, CastError err) {
+  switch (err) {
+    case CastError::None:
+      return os << "None";
+    case CastError::Underflow:
+      return os << "Underflow";
+    case CastError::Overflow:
+      return os << "Overflow";
+  }
+  return os << "<invalid>";
+}
+
 namespace testing {
 
 // Turn a Python string object into a standard string.

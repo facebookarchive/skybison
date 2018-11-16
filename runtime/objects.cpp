@@ -3,6 +3,7 @@
 #include "thread.h"
 
 #include <cstring>
+
 namespace python {
 
 // SmallStr

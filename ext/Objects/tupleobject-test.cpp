@@ -17,7 +17,7 @@ TEST_F(TupleExtensionApiTest, SetItemWithNonTupleReturnsNegative) {
   EXPECT_EQ(result, -1);
 
   const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionMessageMatches(expected_message));
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
 }
 
 TEST_F(TupleExtensionApiTest, SetItemWithInvalidIndexReturnsNegative) {
@@ -26,7 +26,7 @@ TEST_F(TupleExtensionApiTest, SetItemWithInvalidIndexReturnsNegative) {
   EXPECT_EQ(result, -1);
 
   const char* expected_message = "tuple assignment index out of range";
-  EXPECT_TRUE(testing::exceptionMessageMatches(expected_message));
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
 }
 
 TEST_F(TupleExtensionApiTest, SetItemReturnsZero) {

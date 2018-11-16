@@ -3,6 +3,7 @@
 #include "handles.h"
 #include "objects.h"
 
+#include <iosfwd>
 #include <string>
 #include "gtest/gtest.h"
 
@@ -25,6 +26,10 @@
 
 namespace python {
 class Runtime;
+
+std::ostream& operator<<(std::ostream& os, const Handle<Str>& str);
+std::ostream& operator<<(std::ostream& os, CastError err);
+
 namespace testing {
 // Compile the supplied python snippet, run it, and return stdout or stderr
 std::string compileAndRunToString(Runtime* runtime, const char* src);

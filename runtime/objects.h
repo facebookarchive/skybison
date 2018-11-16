@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "view.h"
 
+#include <limits>
 namespace python {
 
 #define INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                     \
@@ -349,12 +350,36 @@ class Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
 };
 
+// CastError and OptInt<T> represent the result of a call to Int::asInt<T>(): If
+// error == CastError::None, value contains the result. Otherwise, error
+// indicates why the value didn't fit in T.
+enum class CastError {
+  None,
+  Underflow,
+  Overflow,
+};
+
+template <typename T>
+class OptInt {
+ public:
+  static OptInt valid(T i) { return {i, CastError::None}; }
+  static OptInt underflow() { return {0, CastError::Underflow}; }
+  static OptInt overflow() { return {0, CastError::Overflow}; }
+
+  T value;
+  CastError error;
+};
+
 // Generic wrapper around SmallInt/LargeInt.
 class Int : public Object {
  public:
   // Getters and setters.
   word asWord();
   void* asCPtr();
+
+  // If this fits in T, get its value as a T. If not, indicate what went wrong.
+  template <typename T>
+  OptInt<T> asInt();
 
   word compare(Int* other);
 
@@ -380,6 +405,12 @@ class SmallInt : public Object {
   // Getters and setters.
   word value();
   void* asCPtr();
+
+  // If this fits in T, get its value as a T. If not, indicate what went wrong.
+  template <typename T>
+  if_signed_t<T, OptInt<T>> asInt();
+  template <typename T>
+  if_unsigned_t<T, OptInt<T>> asInt();
 
   // Conversion.
   static SmallInt* fromWord(word value);
@@ -961,6 +992,12 @@ class LargeInt : public HeapObject {
 
   // LargeInt is also used for storing native pointers.
   void* asCPtr();
+
+  // If this fits in T, get its value as a T. If not, indicate what went wrong.
+  template <typename T>
+  if_signed_t<T, OptInt<T>> asInt();
+  template <typename T>
+  if_unsigned_t<T, OptInt<T>> asInt();
 
   // Sizing.
   static word allocationSize(word num_digits);
@@ -2282,6 +2319,12 @@ inline void* Int::asCPtr() {
   return LargeInt::cast(this)->asCPtr();
 }
 
+template <typename T>
+OptInt<T> Int::asInt() {
+  if (isSmallInt()) return SmallInt::cast(this)->asInt<T>();
+  return LargeInt::cast(this)->asInt<T>();
+}
+
 inline word Int::compare(Int* that) {
   if (this->isSmallInt() && that->isSmallInt()) {
     return this->asWord() - that->asWord();
@@ -2374,6 +2417,29 @@ inline word SmallInt::value() {
 }
 
 inline void* SmallInt::asCPtr() { return reinterpret_cast<void*>(value()); }
+
+template <typename T>
+if_signed_t<T, OptInt<T>> SmallInt::asInt() {
+  static_assert(sizeof(T) <= sizeof(word), "T must not be larger than word");
+
+  auto const value = this->value();
+  if (value > std::numeric_limits<T>::max()) return OptInt<T>::overflow();
+  if (value < std::numeric_limits<T>::min()) return OptInt<T>::underflow();
+  return OptInt<T>::valid(value);
+}
+
+template <typename T>
+if_unsigned_t<T, OptInt<T>> SmallInt::asInt() {
+  static_assert(sizeof(T) <= sizeof(word), "T must not be larger than word");
+  auto const max = std::numeric_limits<T>::max();
+  auto const value = this->value();
+
+  if (value < 0) return OptInt<T>::underflow();
+  if (max >= SmallInt::kMaxValue || static_cast<uword>(value) <= max) {
+    return OptInt<T>::valid(value);
+  }
+  return OptInt<T>::overflow();
+}
 
 inline SmallInt* SmallInt::fromWord(word value) {
   DCHECK(SmallInt::isValid(value), "invalid cast");
@@ -2986,6 +3052,36 @@ inline void* LargeInt::asCPtr() {
   DCHECK(numDigits() == 1, "Large integer cannot fit in a pointer");
   DCHECK(isPositive(), "Cannot cast a negative value to a C pointer");
   return reinterpret_cast<void*>(asWord());
+}
+
+template <typename T>
+if_signed_t<T, OptInt<T>> LargeInt::asInt() {
+  static_assert(sizeof(T) <= sizeof(word), "T must not be larger than word");
+
+  if (numDigits() > 1) {
+    auto const high_digit = static_cast<word>(digitAt(numDigits() - 1));
+    return high_digit < 0 ? OptInt<T>::underflow() : OptInt<T>::overflow();
+  }
+  if (numDigits() == 1) {
+    auto const value = asWord();
+    if (value <= std::numeric_limits<T>::max() &&
+        value >= std::numeric_limits<T>::min()) {
+      return OptInt<T>::valid(value);
+    }
+  }
+  return OptInt<T>::overflow();
+}
+
+template <typename T>
+if_unsigned_t<T, OptInt<T>> LargeInt::asInt() {
+  static_assert(sizeof(T) <= sizeof(word), "T must not be larger than word");
+
+  if (isNegative()) return OptInt<T>::underflow();
+  if (static_cast<size_t>(bitLength()) > sizeof(T) * kBitsPerByte) {
+    return OptInt<T>::overflow();
+  }
+  // No T accepted by this function needs more than one digit.
+  return OptInt<T>::valid(digitAt(0));
 }
 
 inline bool LargeInt::isNegative() {

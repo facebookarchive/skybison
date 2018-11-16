@@ -11,7 +11,7 @@ TEST_F(ErrorsExtensionApiTest, CompareErrorMessageOnThread) {
   PyErr_SetString(nullptr, error_message);
   ASSERT_NE(nullptr, PyErr_Occurred());
 
-  EXPECT_TRUE(testing::exceptionMessageMatches(error_message));
+  EXPECT_TRUE(testing::exceptionValueMatches(error_message));
 }
 
 }  // namespace python

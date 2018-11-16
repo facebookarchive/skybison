@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <type_traits>
 
 #include "globals.h"
 
@@ -137,5 +138,13 @@ class Utils {
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Utils);
 };
+
+// Convenience wrappers to enable templates based on signed or unsigned integral
+// types.
+template <typename T, typename R>
+using if_signed_t = typename std::enable_if<std::is_signed<T>::value, R>::type;
+template <typename T, typename R>
+using if_unsigned_t =
+    typename std::enable_if<std::is_unsigned<T>::value, R>::type;
 
 }  // namespace python

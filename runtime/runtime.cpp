@@ -736,6 +736,15 @@ Object* Runtime::newInt(word value) {
   return newIntWithDigits(View<uword>(reinterpret_cast<uword*>(&value), 1));
 }
 
+Object* Runtime::newIntFromUnsigned(uword value) {
+  if (static_cast<word>(value) >= 0 && SmallInt::isValid(value)) {
+    return SmallInt::fromWord(value);
+  }
+  uword digits[] = {value, 0};
+  View<uword> view(digits, digits[0] >> (kBitsPerWord - 1) ? 2 : 1);
+  return newIntWithDigits(view);
+}
+
 Object* Runtime::newFloat(double value) {
   return Float::cast(heap()->createFloat(value));
 }

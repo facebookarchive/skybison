@@ -173,6 +173,66 @@ TEST(IntTest, Compare) {
   EXPECT_LE(min_word->compare(*min_small_int), -1);
 }
 
+#define EXPECT_VALID(expr, expected_value)                                     \
+  {                                                                            \
+    auto const result = (expr);                                                \
+    EXPECT_EQ(result.error, CastError::None);                                  \
+    EXPECT_EQ(result.value, expected_value);                                   \
+  }
+
+TEST(IntTest, AsInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Int> zero(&scope, runtime.newInt(0));
+  EXPECT_VALID(zero->asInt<int>(), 0);
+  EXPECT_VALID(zero->asInt<unsigned>(), 0);
+  EXPECT_VALID(zero->asInt<unsigned long>(), 0);
+  EXPECT_VALID(zero->asInt<unsigned long long>(), 0);
+
+  Handle<Int> num(&scope, runtime.newInt(1234));
+  EXPECT_EQ(num->asInt<byte>().error, CastError::Overflow);
+  EXPECT_EQ(num->asInt<sbyte>().error, CastError::Overflow);
+  EXPECT_VALID(num->asInt<int>(), 1234);
+  EXPECT_VALID(num->asInt<long>(), 1234);
+  EXPECT_VALID(num->asInt<unsigned>(), 1234);
+  EXPECT_VALID(num->asInt<unsigned long>(), 1234);
+
+  Handle<Int> neg_num(&scope, runtime.newInt(-4567));
+  EXPECT_EQ(neg_num->asInt<unsigned>().error, CastError::Underflow);
+  EXPECT_EQ(neg_num->asInt<sbyte>().error, CastError::Underflow);
+  EXPECT_VALID(neg_num->asInt<int16>(), -4567);
+
+  Handle<Int> neg_one(&scope, runtime.newInt(-1));
+  EXPECT_VALID(neg_one->asInt<int>(), -1);
+  EXPECT_EQ(neg_one->asInt<unsigned>().error, CastError::Underflow);
+
+  Handle<Int> int_max(&scope, runtime.newInt(kMaxInt32));
+  EXPECT_VALID(int_max->asInt<int32>(), kMaxInt32);
+  EXPECT_EQ(int_max->asInt<int16>().error, CastError::Overflow);
+
+  Handle<Int> uword_max(&scope, runtime.newIntFromUnsigned(kMaxUword));
+  EXPECT_VALID(uword_max->asInt<uword>(), kMaxUword);
+  EXPECT_EQ(uword_max->asInt<word>().error, CastError::Overflow);
+
+  Handle<Int> word_max(&scope, runtime.newInt(kMaxWord));
+  EXPECT_VALID(word_max->asInt<word>(), kMaxWord);
+  EXPECT_VALID(word_max->asInt<uword>(), uword{kMaxWord});
+  EXPECT_EQ(word_max->asInt<int32>().error, CastError::Overflow);
+
+  Handle<Int> word_min(&scope, runtime.newInt(kMinWord));
+  EXPECT_VALID(word_min->asInt<word>(), kMinWord);
+  EXPECT_EQ(word_min->asInt<uword>().error, CastError::Underflow);
+  EXPECT_EQ(word_min->asInt<int32>().error, CastError::Overflow);
+
+  uword digits[] = {0, 0xffff000000000000LL};
+  Handle<Int> negative(&scope, runtime.newIntWithDigits(digits));
+  EXPECT_EQ(negative->asInt<word>().error, CastError::Underflow);
+  EXPECT_EQ(negative->asInt<uword>().error, CastError::Underflow);
+}
+
+#undef EXPECT_VALID
+
 TEST(ModulesTest, TestCreate) {
   Runtime runtime;
   HandleScope scope;

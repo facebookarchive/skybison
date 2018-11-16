@@ -5,10 +5,10 @@
 namespace python {
 namespace testing {
 
-bool exceptionMessageMatches(const char* message) {
+::testing::AssertionResult exceptionValueMatches(const char* message) {
   Thread* thread = Thread::currentThread();
   if (!thread->hasPendingException()) {
-    return false;
+    return ::testing::AssertionFailure() << "no pending exception";
   }
   HandleScope scope(thread);
   Handle<Object> value(&scope, thread->exceptionValue());
@@ -16,7 +16,9 @@ bool exceptionMessageMatches(const char* message) {
     UNIMPLEMENTED("Handle non string exception objects");
   }
   Handle<Str> exception(&scope, *value);
-  return exception->equalsCStr(message);
+  if (exception->equalsCStr(message)) return ::testing::AssertionSuccess();
+
+  return ::testing::AssertionFailure() << '"' << exception << '"';
 }
 
 PyObject* moduleGet(const char* module, const char* name) {

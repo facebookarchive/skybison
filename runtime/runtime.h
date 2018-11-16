@@ -81,8 +81,15 @@ class Runtime {
 
   Object* newInstance(const Handle<Layout>& layout);
 
+  // Create a new Int from a signed value.
   Object* newInt(word value);
 
+  // Create a new Int from an unsigned value.
+  Object* newIntFromUnsigned(uword value);
+
+  // Create a new Int from a sequence of digits, which will be interpreted as a
+  // signed, two's-complement number. The digits must satisfy the invariants
+  // listed on the LargeInt class.
   Object* newIntWithDigits(View<uword> digits);
 
   Object* newLayout();
