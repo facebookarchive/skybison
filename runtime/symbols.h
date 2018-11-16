@@ -100,6 +100,7 @@ class Runtime;
   V(Append, "append")                                                          \
   V(Args, "args")                                                              \
   V(Argv, "argv")                                                              \
+  V(ArithmeticError, "ArithmeticError")                                        \
   V(AttributeError, "AttributeError")                                          \
   V(BaseException, "BaseException")                                            \
   V(BitLength, "bit_length")                                                   \
@@ -164,6 +165,7 @@ class Runtime;
   V(NotImplementedType, "NotImplementedType")                                  \
   V(ObjectClassname, "object")                                                 \
   V(Ord, "ord")                                                                \
+  V(OverflowError, "OverflowError")                                            \
   V(Path, "path")                                                              \
   V(Platform, "platform")                                                      \
   V(Pop, "pop")                                                                \
@@ -190,6 +192,7 @@ class Runtime;
   V(StopIteration, "StopIteration")                                            \
   V(Super, "super")                                                            \
   V(Sys, "sys")                                                                \
+  V(SystemError, "SystemError")                                                \
   V(SystemExit, "SystemExit")                                                  \
   V(Time, "time")                                                              \
   V(Traceback, "traceback")                                                    \

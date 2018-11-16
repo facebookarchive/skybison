@@ -20,7 +20,7 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   if (!args.get(0)->isSuper()) {
-    return thread->throwTypeErrorFromCStr("requires a super object");
+    return thread->raiseTypeErrorWithCStr("requires a super object");
   }
   Handle<Super> super(&scope, args.get(0));
   Handle<Object> klass_obj(&scope, None::object());
@@ -29,19 +29,19 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     // frame is for __init__, previous frame is __call__
     // this will break if it's not invoked through __call__
     if (frame->previousFrame() == nullptr) {
-      return thread->throwRuntimeErrorFromCStr("super(): no current frame");
+      return thread->raiseRuntimeErrorWithCStr("super(): no current frame");
     }
     Frame* caller_frame = frame->previousFrame();
     if (caller_frame->previousFrame() == nullptr) {
-      return thread->throwRuntimeErrorFromCStr("super(): no current frame");
+      return thread->raiseRuntimeErrorWithCStr("super(): no current frame");
     }
     caller_frame = caller_frame->previousFrame();
     if (!caller_frame->code()->isCode()) {
-      return thread->throwRuntimeErrorFromCStr("super(): no code object");
+      return thread->raiseRuntimeErrorWithCStr("super(): no code object");
     }
     Handle<Code> code(&scope, caller_frame->code());
     if (code->argcount() == 0) {
-      return thread->throwRuntimeErrorFromCStr("super(): no arguments");
+      return thread->raiseRuntimeErrorWithCStr("super(): no arguments");
     }
     Handle<ObjectArray> free_vars(&scope, code->freevars());
     Object* cell = Error::object();
@@ -53,7 +53,7 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
       }
     }
     if (cell->isError() || !cell->isValueCell()) {
-      return thread->throwRuntimeErrorFromCStr(
+      return thread->raiseRuntimeErrorWithCStr(
           "super(): __class__ cell not found");
     }
     klass_obj = ValueCell::cast(cell)->value();
@@ -61,13 +61,13 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     obj = caller_frame->getLocal(0);
   } else {
     if (nargs != 3) {
-      return thread->throwTypeErrorFromCStr("super() expected 2 arguments");
+      return thread->raiseTypeErrorWithCStr("super() expected 2 arguments");
     }
     klass_obj = args.get(1);
     obj = args.get(2);
   }
   if (!klass_obj->isType()) {
-    return thread->throwTypeErrorFromCStr("super() argument 1 must be type");
+    return thread->raiseTypeErrorWithCStr("super() argument 1 must be type");
   }
   super->setType(*klass_obj);
   super->setObject(*obj);
@@ -85,7 +85,7 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     }
   }
   if (obj_type->isNone()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "obj must be an instance or subtype of type");
   }
   super->setObjectType(*obj_type);

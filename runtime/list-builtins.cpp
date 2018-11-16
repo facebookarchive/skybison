@@ -40,16 +40,16 @@ void ListBuiltins::initialize(Runtime* runtime) {
 
 Object* ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
-    return thread->throwTypeErrorFromCStr("not enough arguments");
+    return thread->raiseTypeErrorWithCStr("not enough arguments");
   }
   Arguments args(frame, nargs);
   if (!args.get(0)->isType()) {
-    return thread->throwTypeErrorFromCStr("not a type object");
+    return thread->raiseTypeErrorWithCStr("not a type object");
   }
   HandleScope scope(thread);
   Handle<Type> type(&scope, args.get(0));
   if (!type->hasFlag(Type::Flag::kListSubclass)) {
-    return thread->throwTypeErrorFromCStr("not a subtype of list");
+    return thread->raiseTypeErrorWithCStr("not a subtype of list");
   }
   Handle<Layout> layout(&scope, type->instanceLayout());
   Handle<List> result(&scope, thread->runtime()->newInstance(layout));
@@ -60,7 +60,7 @@ Object* ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
 Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
 
   Arguments args(frame, nargs);
@@ -68,7 +68,7 @@ Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__add__() must be called with list instance as first argument");
   }
 
@@ -84,19 +84,19 @@ Object* ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
     }
     return *new_list;
   }
-  return thread->throwTypeErrorFromCStr("can only concatenate list to list");
+  return thread->raiseTypeErrorWithCStr("can only concatenate list to list");
 }
 
 Object* ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "append() takes exactly one argument");
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Handle<Object> self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "append() only support list or its subclasses");
   }
   Handle<List> list(&scope, *self);
@@ -107,14 +107,14 @@ Object* ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
 
 Object* ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "extend() takes exactly one argument");
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Handle<Object> self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "extend() only support list or its subclasses");
   }
   Handle<List> list(&scope, *self);
@@ -128,13 +128,13 @@ Object* ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
 
 Object* ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("__len__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("__len__() takes no arguments");
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Handle<Object> self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__len__() only support list or its subclasses");
   }
   Handle<List> list(&scope, *self);
@@ -143,19 +143,19 @@ Object* ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 
 Object* ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "insert() takes exactly two arguments");
   }
   Arguments args(frame, nargs);
   if (!args.get(1)->isInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "index object cannot be interpreted as an integer");
   }
 
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "descriptor 'insert' requires a 'list' object");
   }
   Handle<List> list(&scope, *self);
@@ -167,14 +167,14 @@ Object* ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
 
 Object* ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* other = args.get(1);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__mul__() must be called with list instance as first argument");
   }
   if (other->isSmallInt()) {
@@ -182,23 +182,23 @@ Object* ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
     Handle<List> list(&scope, *self);
     return thread->runtime()->listReplicate(thread, list, ntimes);
   }
-  return thread->throwTypeErrorFromCStr("can't multiply list by non-int");
+  return thread->raiseTypeErrorWithCStr("can't multiply list by non-int");
 }
 
 Object* ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   if (nargs > 2) {
-    return thread->throwTypeErrorFromCStr("pop() takes at most 1 argument");
+    return thread->raiseTypeErrorWithCStr("pop() takes at most 1 argument");
   }
   Arguments args(frame, nargs);
   if (nargs == 2 && !args.get(1)->isSmallInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "index object cannot be interpreted as an integer");
   }
 
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "descriptor 'pop' requires a 'list' object");
   }
   Handle<List> list(&scope, *self);
@@ -224,7 +224,7 @@ Object* ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
 
 Object* ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "remove() takes exactly one argument");
   }
   Arguments args(frame, nargs);
@@ -232,7 +232,7 @@ Object* ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> value(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "descriptor 'remove' requires a 'list' object");
   }
   Handle<List> list(&scope, *self);
@@ -245,7 +245,7 @@ Object* ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
       return None::object();
     }
   }
-  return thread->throwValueErrorFromCStr("list.remove(x) x not in list");
+  return thread->raiseValueErrorWithCStr("list.remove(x) x not in list");
 }
 
 Object* ListBuiltins::slice(Thread* thread, List* list, Slice* slice) {
@@ -268,14 +268,14 @@ Object* ListBuiltins::slice(Thread* thread, List* list, Slice* slice) {
 
 Object* ListBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
 
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__getitem__() must be called with a list instance as the first "
         "argument");
   }
@@ -288,27 +288,27 @@ Object* ListBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
       idx = list->allocated() - idx;
     }
     if (idx < 0 || idx >= list->allocated()) {
-      return thread->throwIndexErrorFromCStr("list index out of range");
+      return thread->raiseIndexErrorWithCStr("list index out of range");
     }
     return list->at(idx);
   } else if (index->isSlice()) {
     Handle<Slice> list_slice(&scope, Slice::cast(index));
     return slice(thread, *list, *list_slice);
   } else {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "list indices must be integers or slices");
   }
 }
 
 Object* ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("__iter__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a list instance as the first argument");
   }
   return thread->runtime()->newListIterator(self);
@@ -330,13 +330,13 @@ void ListIteratorBuiltins::initialize(Runtime* runtime) {
 Object* ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                          word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("__iter__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isListIterator()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a list iterator instance as the first "
         "argument");
   }
@@ -346,13 +346,13 @@ Object* ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 Object* ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                          word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("__next__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isListIterator()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a list iterator instance as the first "
         "argument");
   }
@@ -366,14 +366,14 @@ Object* ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 Object* ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
                                                word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__length_hint__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isListIterator()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__length_hint__() must be called with a list iterator instance as the "
         "first argument");
   }
@@ -384,14 +384,14 @@ Object* ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
 
 Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
-    return thread->throwTypeErrorFromCStr("expected 3 arguments");
+    return thread->raiseTypeErrorWithCStr("expected 3 arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
 
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__setitem__() must be called with a list instance as the first "
         "argument");
   }
@@ -404,7 +404,7 @@ Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
       idx = list->allocated() + idx;
     }
     if (idx < 0 || idx >= list->allocated()) {
-      return thread->throwIndexErrorFromCStr(
+      return thread->raiseIndexErrorWithCStr(
           "list assignment index out of range");
     }
     Handle<Object> value(&scope, args.get(2));
@@ -412,20 +412,20 @@ Object* ListBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
     return None::object();
   }
   // TODO(T31826482): Add support for slices
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "list indices must be integers or slices");
 }
 
 Object* ListBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 2 arguments");
+    return thread->raiseTypeErrorWithCStr("expected 2 arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
 
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__delitem__() must be called with a list instance as the first "
         "argument");
   }
@@ -436,13 +436,13 @@ Object* ListBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
     word idx = SmallInt::cast(index)->value();
     idx = idx < 0 ? list->allocated() + idx : idx;
     if (idx < 0 || idx >= list->allocated()) {
-      return thread->throwIndexErrorFromCStr(
+      return thread->raiseIndexErrorWithCStr(
           "list assignment index out of range");
     }
     return thread->runtime()->listPop(list, idx);
   }
   // TODO(T31826482): Add support for slices
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "list indices must be integers or slices");
 }
 

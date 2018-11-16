@@ -21,11 +21,11 @@ void ComplexBuiltins::initialize(Runtime* runtime) {
 
 Object* ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "complex.__new__(): not enough arguments");
   }
   if (nargs > 3) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "complex() takes at most two arguments");
   }
 
@@ -35,13 +35,13 @@ Object* ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   Handle<Object> type_obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "complex.__new__(X): X is not a type object");
   }
 
   Handle<Type> type(&scope, *type_obj);
   if (!type->hasFlag(Type::Flag::kComplexSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "complex.__new__(X): X is not a subtype of complex");
   }
 

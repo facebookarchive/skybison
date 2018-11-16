@@ -23,7 +23,9 @@ Thread::Thread(word size)
       initialFrame_(nullptr),
       next_(nullptr),
       runtime_(nullptr),
-      pending_exception_(None::object()) {
+      exception_type_(None::object()),
+      exception_value_(None::object()),
+      exception_traceback_(None::object()) {
   start_ = new byte[size];
   // Stack growns down in order to match machine convention
   end_ = start_ + size;
@@ -38,7 +40,9 @@ Thread::~Thread() {
 void Thread::visitRoots(PointerVisitor* visitor) {
   visitStackRoots(visitor);
   handles()->visitPointers(visitor);
-  visitor->visitPointer(&pending_exception_);
+  visitor->visitPointer(&exception_type_);
+  visitor->visitPointer(&exception_value_);
+  visitor->visitPointer(&exception_traceback_);
 }
 
 void Thread::visitStackRoots(PointerVisitor* visitor) {
@@ -197,106 +201,100 @@ Object* Thread::runClassFunction(Object* function, Object* dict) {
 
 // Convenience method for throwing a RuntimeError exception with an error
 // message.
-Object* Thread::throwRuntimeError(Object* value) {
-  // TODO: instantiate RuntimeError object.
-  pending_exception_ = value;
+Object* Thread::raiseRuntimeError(Object* value) {
+  setExceptionType(runtime()->typeAt(LayoutId::kRuntimeError));
+  setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::throwRuntimeErrorFromCStr(const char* message) {
-  return throwRuntimeError(runtime()->newStrFromCStr(message));
+Object* Thread::raiseRuntimeErrorWithCStr(const char* message) {
+  return raiseRuntimeError(runtime()->newStrFromCStr(message));
 }
 
 // Convenience method for throwing a SystemError exception with an error
 // message.
-Object* Thread::throwSystemError(Object* value) {
-  // TODO: instantiate SystemError object.
-  pending_exception_ = value;
+Object* Thread::raiseSystemError(Object* value) {
+  setExceptionType(runtime()->typeAt(LayoutId::kSystemError));
+  setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::throwSystemErrorFromCStr(const char* message) {
+Object* Thread::raiseSystemErrorWithCStr(const char* message) {
   // TODO: instantiate SystemError object.
-  return throwSystemError(runtime()->newStrFromCStr(message));
+  return raiseSystemError(runtime()->newStrFromCStr(message));
 }
 
 // Convenience method for throwing a TypeError exception with an error message.
-Object* Thread::throwTypeError(Object* value) {
-  // TODO: instantiate TypeError object.
-  pending_exception_ = value;
+Object* Thread::raiseTypeError(Object* value) {
+  setExceptionType(runtime()->typeAt(LayoutId::kTypeError));
+  setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::throwTypeErrorFromCStr(const char* message) {
-  return throwTypeError(runtime()->newStrFromCStr(message));
+Object* Thread::raiseTypeErrorWithCStr(const char* message) {
+  return raiseTypeError(runtime()->newStrFromCStr(message));
 }
 
 // Convenience method for throwing a ValueError exception with an error message.
-Object* Thread::throwValueError(Object* value) {
-  // TODO: instantiate ValueError object.
-  pending_exception_ = value;
+Object* Thread::raiseValueError(Object* value) {
+  setExceptionType(runtime()->typeAt(LayoutId::kValueError));
+  setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::throwValueErrorFromCStr(const char* message) {
-  // TODO: instantiate ValueError object.
-  return throwValueError(runtime()->newStrFromCStr(message));
+Object* Thread::raiseValueErrorWithCStr(const char* message) {
+  return raiseValueError(runtime()->newStrFromCStr(message));
 }
 
-Object* Thread::throwAttributeError(Object* value) {
-  // TODO: instantiate an AttributeError object.
-  pending_exception_ = value;
+Object* Thread::raiseAttributeError(Object* value) {
+  setExceptionType(runtime()->typeAt(LayoutId::kAttributeError));
+  setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::throwAttributeErrorFromCStr(const char* message) {
-  // TODO: instantiate an AttributeError object.
-  return throwAttributeError(runtime()->newStrFromCStr(message));
+Object* Thread::raiseAttributeErrorWithCStr(const char* message) {
+  return raiseAttributeError(runtime()->newStrFromCStr(message));
 }
 
-Object* Thread::throwKeyError(Object* value) {
-  // TODO(jeethu): instantiate an KeyError object.
-  pending_exception_ = value;
+Object* Thread::raiseKeyError(Object* value) {
+  setExceptionType(runtime()->typeAt(LayoutId::kKeyError));
+  setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::throwKeyErrorFromCStr(const char* message) {
-  // TODO(jeethu): instantiate a KeyError object.
-  return throwKeyError(runtime()->newStrFromCStr(message));
+Object* Thread::raiseKeyErrorWithCStr(const char* message) {
+  return raiseKeyError(runtime()->newStrFromCStr(message));
 }
 
-Object* Thread::throwOverflowError(Object* value) {
-  // TODO(dulinr): instantiate an OverflowError object.
-  pending_exception_ = value;
+Object* Thread::raiseOverflowError(Object* value) {
+  setExceptionType(runtime()->typeAt(LayoutId::kOverflowError));
+  setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::throwOverflowErrorFromCStr(const char* message) {
-  return throwOverflowError(runtime()->newStrFromCStr(message));
+Object* Thread::raiseOverflowErrorWithCStr(const char* message) {
+  return raiseOverflowError(runtime()->newStrFromCStr(message));
 }
 
-Object* Thread::throwIndexError(Object* value) {
-  // TODO(jeethu): instantiate an IndexError object.
-  pending_exception_ = value;
+Object* Thread::raiseIndexError(Object* value) {
+  setExceptionType(runtime()->typeAt(LayoutId::kIndexError));
+  setExceptionValue(value);
   return Error::object();
 }
 
-Object* Thread::throwIndexErrorFromCStr(const char* message) {
-  return throwIndexError(runtime()->newStrFromCStr(message));
+Object* Thread::raiseIndexErrorWithCStr(const char* message) {
+  return raiseIndexError(runtime()->newStrFromCStr(message));
 }
 
-bool Thread::hasPendingException() { return !pendingException()->isNone(); }
+bool Thread::hasPendingException() { return !exception_type_->isNone(); }
 
 void Thread::ignorePendingException() {
-  HandleScope scope(this);
-  Handle<Object> pending_exception(&scope, pendingException());
-  if (pending_exception->isNone()) {
+  if (!hasPendingException()) {
     return;
   }
-
   *builtinStderr << "ignore pending exception";
-  if (pending_exception->isStr()) {
-    Str* message = Str::cast(*pending_exception);
+  if (exceptionValue()->isStr()) {
+    Str* message = Str::cast(exceptionValue());
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);
@@ -305,22 +303,23 @@ void Thread::ignorePendingException() {
     delete[] buffer;
   }
   *builtinStderr << "\n";
-  pending_exception_ = None::object();
+  clearPendingException();
   Utils::printTraceback();
 }
 
-void Thread::clearPendingException() { pending_exception_ = None::object(); }
+void Thread::clearPendingException() {
+  setExceptionType(None::object());
+  setExceptionValue(None::object());
+  setExceptionTraceback(None::object());
+}
 
 void Thread::abortOnPendingException() {
-  HandleScope scope(this);
-  Handle<Object> pending_ex(&scope, pendingException());
-  if (pending_ex->isNone()) {
+  if (!hasPendingException()) {
     return;
   }
-
   std::cerr << "aborting due to pending exception";
-  if (pending_ex->isStr()) {
-    Str* message = Str::cast(*pending_ex);
+  if (exceptionValue()->isStr()) {
+    Str* message = Str::cast(exceptionValue());
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);
@@ -341,7 +340,5 @@ void Thread::visitFrames(FrameVisitor* visitor) {
     frame = frame->previousFrame();
   }
 }
-
-Object* Thread::pendingException() { return pending_exception_; }
 
 }  // namespace python

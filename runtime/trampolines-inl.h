@@ -1,6 +1,7 @@
 #pragma once
 
 #include "objects.h"
+#include "thread.h"
 #include "trampolines.h"
 
 #include "utils.h"
@@ -16,8 +17,7 @@ Object* nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
   HandleScope scope(thread);
   Frame* frame = thread->pushNativeFrame(Utils::castFnPtrToVoid(Fn), argc);
   Handle<Object> result(&scope, Fn(thread, frame, argc));
-  Handle<Object> pending_exception(&scope, thread->pendingException());
-  DCHECK(result->isError() != pending_exception->isNone(),
+  DCHECK(result->isError() == thread->hasPendingException(),
          "error/exception mismatch");
   thread->abortOnPendingException();
   thread->popFrame();
@@ -29,8 +29,7 @@ Object* nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/, word argc) {
   HandleScope scope(thread);
   Frame* frame = thread->pushNativeFrame(Utils::castFnPtrToVoid(Fn), argc + 1);
   Handle<Object> result(&scope, Fn(thread, frame, argc + 1));
-  Handle<Object> pending_exception(&scope, thread->pendingException());
-  DCHECK(result->isError() != pending_exception->isNone(),
+  DCHECK(result->isError() == thread->hasPendingException(),
          "error/exception mismatch");
   thread->abortOnPendingException();
   thread->popFrame();

@@ -1874,8 +1874,8 @@ TEST_P(IntrinsicClassSetAttrTest, SetAttr) {
   Object* result = runtime.attributeAtPut(thread, klass, attr, value);
 
   EXPECT_TRUE(result->isError());
-  ASSERT_TRUE(thread->pendingException()->isStr());
-  EXPECT_PYSTRING_EQ(Str::cast(thread->pendingException()),
+  ASSERT_TRUE(thread->exceptionValue()->isStr());
+  EXPECT_PYSTRING_EQ(Str::cast(thread->exceptionValue()),
                      "can't set attributes of built-in/extension type");
 }
 

@@ -4,15 +4,15 @@ namespace python {
 
 extern "C" void PyErr_SetString(PyObject*, const char* message) {
   // TODO(T32875119): Set the correct exception type.
-  Thread::currentThread()->throwSystemErrorFromCStr(message);
+  Thread::currentThread()->raiseSystemErrorWithCStr(message);
 }
 
 extern "C" PyObject* PyErr_Occurred(void) {
   Thread* thread = Thread::currentThread();
-  if (thread->pendingException()->isNone()) {
+  if (!thread->hasPendingException()) {
     return nullptr;
   }
-  return ApiHandle::fromObject(thread->pendingException())->asPyObject();
+  return ApiHandle::fromObject(thread->exceptionType())->asPyObject();
 }
 
 extern "C" PyObject* PyErr_Format(PyObject*, const char*, ...) {

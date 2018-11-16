@@ -36,10 +36,10 @@ void StrBuiltins::initialize(Runtime* runtime) {
 
 Object* StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCStr("str.__add__ needs an argument");
+    return thread->raiseTypeErrorWithCStr("str.__add__ needs an argument");
   }
   if (nargs != 2) {
-    return thread->throwTypeError(thread->runtime()->newStrFromFormat(
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
         "expected 1 arguments, got %ld", nargs - 1));
   }
   Runtime* runtime = thread->runtime();
@@ -48,10 +48,10 @@ Object* StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> other(&scope, args.get(1));
   if (!runtime->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCStr("str.__add__ requires a str object");
+    return thread->raiseTypeErrorWithCStr("str.__add__ requires a str object");
   }
   if (!runtime->hasSubClassFlag(*other, Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCStr("can only concatenate str to str");
+    return thread->raiseTypeErrorWithCStr("can only concatenate str to str");
   }
   if (!self->isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
@@ -66,7 +66,7 @@ Object* StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
 
 Object* StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -80,7 +80,7 @@ Object* StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 
 Object* StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -94,7 +94,7 @@ Object* StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
 
 Object* StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -108,12 +108,12 @@ Object* StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 
 Object* StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   if (!runtime->hasSubClassFlag(args.get(0), Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCStr("'join' requires a 'str' object");
+    return thread->raiseTypeErrorWithCStr("'join' requires a 'str' object");
   }
   HandleScope scope(thread);
   Handle<Str> sep(&scope, args.get(0));
@@ -138,7 +138,7 @@ Object* StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
 
 Object* StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -152,7 +152,7 @@ Object* StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
 
 Object* StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("expected 0 arguments");
+    return thread->raiseTypeErrorWithCStr("expected 0 arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -162,19 +162,19 @@ Object* StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
     // not bytes
     return SmallInt::fromWord(Str::cast(*self)->length());
   }
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "descriptor '__len__' requires a 'str' object");
 }
 
 Object* StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("expected 0 arguments");
+    return thread->raiseTypeErrorWithCStr("expected 0 arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> obj(&scope, args.get(0));
   if (!obj->isStr()) {
-    return thread->throwTypeErrorFromCStr("str.lower(self): self is not a str");
+    return thread->raiseTypeErrorWithCStr("str.lower(self): self is not a str");
   }
   Handle<Str> self(&scope, *obj);
   byte* buf = new byte[self->length()];
@@ -196,7 +196,7 @@ Object* StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
 
 Object* StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -300,7 +300,7 @@ Object* StrBuiltins::strFormat(Thread* thread, const Handle<Str>& fmt,
 
 Object* StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -325,7 +325,7 @@ Object* StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
 
 Object* StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -339,11 +339,11 @@ Object* StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
 
 Object* StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "str.__new__(): not enough arguments");
   }
   if (nargs > 4) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "str() takes at most three arguments");
   }
   Arguments args(frame, nargs);
@@ -351,11 +351,11 @@ Object* StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Handle<Object> type(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*type, Type::Flag::kTypeSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "str.__new__(X): X is not a type object");
   }
   if (!Type::cast(*type)->hasFlag(Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "str.__new__(X): X is not a subtype of str");
   }
   Handle<Layout> layout(&scope, Type::cast(*type)->instanceLayout());
@@ -384,14 +384,14 @@ Object* StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Object* ret = Interpreter::callMethod1(thread, frame, method, arg);
   if (!ret->isError() &&
       !runtime->hasSubClassFlag(ret, Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCStr("__str__ returned non-string");
+    return thread->raiseTypeErrorWithCStr("__str__ returned non-string");
   }
   return ret;
 }
 
 Object* StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -406,7 +406,7 @@ Object* StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
         idx = string->length() - idx;
       }
       if (idx < 0 || idx >= string->length()) {
-        return thread->throwIndexErrorFromCStr("string index out of range");
+        return thread->raiseIndexErrorWithCStr("string index out of range");
       }
       byte c = string->charAt(idx);
       return SmallStr::fromBytes(View<byte>(&c, 1));
@@ -426,11 +426,11 @@ Object* StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
       delete[] buf;
       return *result;
     }
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "string indices must be integers or slices");
   }
   // TODO(jeethu): handle user-defined subtypes of string.
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "__getitem__() must be called with a string instance as the first "
       "argument");
 }
@@ -448,14 +448,14 @@ void StrBuiltins::byteToHex(byte** buf, byte convert) {
 
 Object* StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("expected 0 arguments");
+    return thread->raiseTypeErrorWithCStr("expected 0 arguments");
   }
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*obj, Type::Flag::kStrSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "str.__repr__(self): self is not a str");
   }
   if (!obj->isStr()) {

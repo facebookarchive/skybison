@@ -59,79 +59,78 @@ class Thread {
 
   void setRuntime(Runtime* runtime) { runtime_ = runtime; }
 
-  // Exception API
-  //
-  // Native code that wishes to throw an exception into python must do two
-  // things:
-  //
-  // 1. Call `throwException` or one of its convenience wrappers.
-  // 2. Return an Error object from the native entry point.
-  //
-  // It is an error to do one of these but not the other. When the native entry
-  // point returns, the pending exception will be raised in the python
-  // interpreter.
-  //
-  // Note that it is perfectly ok to use the Error return value internally
-  // without throwing exceptions. The restriction on returning an Error only
-  // applies to native entry points.
+  // Raises an AttributeError exception and returns an Error that must be
+  // returned up the stack by the caller.
+  Object* raiseAttributeError(Object* value);
+  Object* raiseAttributeErrorWithCStr(const char* message);
 
-  // Instantiates an exception with the given arguments and posts it to be
-  // thrown upon returning to managed code.
-  // TODO: decide on the signature for this function.
-  // void throwException(...);
+  // Raises an Index exception and returns an Error object that must be returned
+  // up the stack by the caller.
+  Object* raiseIndexError(Object* value);
+  Object* raiseIndexErrorWithCStr(const char* message);
 
-  // Convenience methods for throwing an AttributeError exception.
-  Object* throwAttributeError(Object* value);
-  Object* throwAttributeErrorFromCStr(const char* message);
+  // Raises a KeyError exception and returns an Error that must be returned up
+  // the stack by the caller.
+  Object* raiseKeyError(Object* value);
+  Object* raiseKeyErrorWithCStr(const char* message);
 
-  // Convenience methods for throwin an IndexError exception.
-  Object* throwIndexError(Object* value);
-  Object* throwIndexErrorFromCStr(const char* message);
+  // Raises an OverflowError exception and returns an Error object that must be
+  // returned up the stack by the caller.
+  Object* raiseOverflowError(Object* value);
+  Object* raiseOverflowErrorWithCStr(const char* message);
 
-  // Convenience methods for throwing a KeyError exception.
-  Object* throwKeyError(Object* value);
-  Object* throwKeyErrorFromCStr(const char* message);
+  // Raises a RuntimeError exception and returns an Error object that must be
+  // returned up the stack by the caller.
+  Object* raiseRuntimeError(Object* value);
+  Object* raiseRuntimeErrorWithCStr(const char* message);
 
-  // Convenience methods for throwing a KeyError exception.
-  Object* throwOverflowError(Object* value);
-  Object* throwOverflowErrorFromCStr(const char* message);
+  // Raises a SystemError exception and returns an Error object that must be
+  // returned up the stack by the caller.
+  Object* raiseSystemError(Object* value);
+  Object* raiseSystemErrorWithCStr(const char* message);
 
-  // Convenience methods for throwing a RuntimeError exception.
-  Object* throwRuntimeError(Object* value);
-  Object* throwRuntimeErrorFromCStr(const char* message);
+  // Raises a TypeError exception and returns an Error object that must be
+  // returned up the stack by the caller.
+  Object* raiseTypeError(Object* value);
+  Object* raiseTypeErrorWithCStr(const char* message);
 
-  // Convenience methods for throwing a SystemError exception.
-  Object* throwSystemError(Object* value);
-  Object* throwSystemErrorFromCStr(const char* message);
+  // Raises a ValueError exception and returns an Error object that must be
+  // returned up the stack by the caller.
+  Object* raiseValueError(Object* value);
+  Object* raiseValueErrorWithCStr(const char* message);
 
-  // Convenience methods for throwing a TypeError exception.
-  Object* throwTypeError(Object* value);
-  Object* throwTypeErrorFromCStr(const char* message);
-
-  // Convenience methods for throwing a ValueError exception.
-  Object* throwValueError(Object* value);
-  Object* throwValueErrorFromCStr(const char* message);
-
-  // Gets the pending exception object - if it is None, no exception has been
-  // posted.
-  Object* pendingException();
-
+  // Returns true if there is an exception pending.
   bool hasPendingException();
 
   // If there's a pending exception, clear it.
   void clearPendingException();
 
-  // If there's a pending exception, prints it and ignores
+  // If there's a pending exception, prints it and ignores it.
   void ignorePendingException();
 
-  // If there is a pending exception, prints it and aborts
+  // If there is a pending exception, prints it and aborts the runtime.
   void abortOnPendingException();
+
+  // Returns the type of the current exception or None if no exception is
+  // pending.
+  Object* exceptionType() { return exception_type_; }
+
+  // Returns the value of the current exception.
+  Object* exceptionValue() { return exception_value_; }
 
   // Walk all the frames on the stack starting with the top-most frame
   void visitFrames(FrameVisitor* visitor);
 
  private:
   void pushInitialFrame();
+
+  void setExceptionType(Object* type) { exception_type_ = type; }
+
+  void setExceptionValue(Object* value) { exception_value_ = value; }
+
+  void setExceptionTraceback(Object* traceback) {
+    exception_traceback_ = traceback;
+  }
 
   Handles* handles_;
 
@@ -150,9 +149,15 @@ class Thread {
   Thread* next_;
   Runtime* runtime_;
 
-  // A pending exception object which should be thrown upon returning to
-  // managed code. Is set to None if there is no pending exception.
-  Object* pending_exception_;
+  // The type object corresponding to the pending exception.  If there is no
+  // pending exception this will be set to None.
+  Object* exception_type_;
+
+  // The value of the pending exception.
+  Object* exception_value_;
+
+  // The traceback of the pending exception.
+  Object* exception_traceback_;
 
   static thread_local Thread* current_thread_;
 

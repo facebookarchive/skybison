@@ -88,8 +88,7 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   frame->pushValue(runtime.newStrFromCStr("not_a_cls"));
   Object* result = builtinTypeCall(thread, frame, 1);
   ASSERT_TRUE(result->isError());
-  // TODO(rkng): validate TypeError is thrown
-  ASSERT_FALSE(thread->pendingException()->isNone());
+  ASSERT_TRUE(thread->hasPendingException());
 }
 
 TEST(TypeBuiltinTest, BuiltinTypeCallInvokeDunderInitAsCallable) {

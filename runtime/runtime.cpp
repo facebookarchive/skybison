@@ -326,7 +326,7 @@ Object* Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
 
   // TODO(T25140871): Refactor this into something like:
   //     thread->throwMissingAttributeError(name)
-  return thread->throwAttributeErrorFromCStr("missing attribute");
+  return thread->raiseAttributeErrorWithCStr("missing attribute");
 }
 
 Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
@@ -339,7 +339,7 @@ Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
     // TODO(T25140871): Refactor this into something that includes the type name
     // like:
     //     thread->throwImmutableTypeManipulationError(klass)
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "can't set attributes of built-in/extension type");
   }
 
@@ -365,7 +365,7 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
   if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
+    return thread->raiseTypeErrorWithCStr("attribute name must be a string");
   }
 
   HandleScope scope(thread);
@@ -375,7 +375,7 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
     // TODO(T25140871): Refactor this into something that includes the type name
     // like:
     //     thread->throwImmutableTypeManipulationError(klass)
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "can't set attributes of built-in/extension type");
   }
 
@@ -394,7 +394,7 @@ Object* Runtime::classDelAttr(Thread* thread, const Handle<Object>& receiver,
   if (!dictRemove(klass_dict, name, nullptr)) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
-    return thread->throwAttributeErrorFromCStr("missing attribute");
+    return thread->raiseAttributeErrorWithCStr("missing attribute");
   }
 
   return None::object();
@@ -445,7 +445,7 @@ Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
 
   // TODO(T25140871): Refactor this into something like:
   //     thread->throwMissingAttributeError(name)
-  return thread->throwAttributeErrorFromCStr("missing attribute");
+  return thread->raiseAttributeErrorWithCStr("missing attribute");
 }
 
 Object* Runtime::instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
@@ -473,7 +473,7 @@ Object* Runtime::instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
   if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
+    return thread->raiseTypeErrorWithCStr("attribute name must be a string");
   }
 
   // Check for a descriptor with __delete__
@@ -493,7 +493,7 @@ Object* Runtime::instanceDelAttr(Thread* thread, const Handle<Object>& receiver,
   if (result->isError()) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
-    return thread->throwAttributeErrorFromCStr("missing attribute");
+    return thread->raiseAttributeErrorWithCStr("missing attribute");
   }
 
   return *result;
@@ -513,7 +513,7 @@ Object* Runtime::moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
   } else {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
-    return thread->throwAttributeErrorFromCStr("missing attribute");
+    return thread->raiseAttributeErrorWithCStr("missing attribute");
   }
 }
 
@@ -532,7 +532,7 @@ Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
   if (!name->isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
+    return thread->raiseTypeErrorWithCStr("attribute name must be a string");
   }
 
   // Check for a descriptor with __delete__
@@ -552,7 +552,7 @@ Object* Runtime::moduleDelAttr(Thread* thread, const Handle<Object>& receiver,
   if (!dictRemove(module_dict, name, nullptr)) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
-    return thread->throwAttributeErrorFromCStr("missing attribute");
+    return thread->raiseAttributeErrorWithCStr("missing attribute");
   }
 
   return None::object();
@@ -1021,12 +1021,20 @@ void Runtime::initializeExceptionClasses() {
                        LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kNameError, LayoutId::kNameError,
                        LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kSystemError, LayoutId::kSystemError,
+                       LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kTypeError, LayoutId::kTypeError,
                        LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kValueError, LayoutId::kValueError,
                        LayoutId::kException);
 
-  // LookupError and subclasses.
+  // ArithmeticError and its subclasses.
+  addEmptyBuiltinClass(SymbolId::kArithmeticError, LayoutId::kArithmeticError,
+                       LayoutId::kException);
+  addEmptyBuiltinClass(SymbolId::kOverflowError, LayoutId::kOverflowError,
+                       LayoutId::kArithmeticError);
+
+  // LookupError and its subclasses.
   addEmptyBuiltinClass(SymbolId::kLookupError, LayoutId::kLookupError,
                        LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kIndexError, LayoutId::kIndexError,
@@ -1034,7 +1042,7 @@ void Runtime::initializeExceptionClasses() {
   addEmptyBuiltinClass(SymbolId::kKeyError, LayoutId::kKeyError,
                        LayoutId::kLookupError);
 
-  // RuntimeError and subclasses.
+  // RuntimeError and its subclasses.
   addEmptyBuiltinClass(SymbolId::kRuntimeError, LayoutId::kRuntimeError,
                        LayoutId::kException);
   addEmptyBuiltinClass(SymbolId::kNotImplementedError,
@@ -1223,7 +1231,7 @@ Object* Runtime::importModule(const Handle<Object>& name) {
     }
   }
 
-  return Thread::currentThread()->throwRuntimeErrorFromCStr(
+  return Thread::currentThread()->raiseRuntimeErrorWithCStr(
       "importModule is unimplemented!");
 }
 
@@ -1787,19 +1795,19 @@ Object* Runtime::listExtend(Thread* thread, const Handle<List>& dst,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
-    return thread->throwTypeErrorFromCStr("object is not iterable");
+    return thread->raiseTypeErrorWithCStr("object is not iterable");
   }
   Handle<Object> iterator(
       &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
                                        iter_method, iterable));
   if (iterator->isError()) {
-    return thread->throwTypeErrorFromCStr("object is not iterable");
+    return thread->raiseTypeErrorWithCStr("object is not iterable");
   }
   Handle<Object> next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
-    return thread->throwTypeErrorFromCStr("iter() returned a non-iterator");
+    return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
   }
   Handle<Object> value(&scope, None::object());
   while (!isIteratorExhausted(thread, iterator)) {
@@ -2309,19 +2317,19 @@ Object* Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
-    return thread->throwTypeErrorFromCStr("object is not iterable");
+    return thread->raiseTypeErrorWithCStr("object is not iterable");
   }
   Handle<Object> iterator(
       &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
                                        iter_method, iterable));
   if (iterator->isError()) {
-    return thread->throwTypeErrorFromCStr("object is not iterable");
+    return thread->raiseTypeErrorWithCStr("object is not iterable");
   }
   Handle<Object> next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
-    return thread->throwTypeErrorFromCStr("iter() returned a non-iterator");
+    return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
   }
   Handle<Object> value(&scope, None::object());
   while (!isIteratorExhausted(thread, iterator)) {
@@ -2361,10 +2369,10 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
         value = Dict::Bucket::value(*data, i);
         if (merge) {
           if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
-            return thread->throwTypeErrorFromCStr("keywords must be strings");
+            return thread->raiseTypeErrorWithCStr("keywords must be strings");
           }
           if (dictIncludes(dict, key)) {
-            return thread->throwTypeErrorFromCStr(
+            return thread->raiseTypeErrorWithCStr(
                 "got multiple values for keyword argument");
           }
         }
@@ -2379,7 +2387,7 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       Interpreter::lookupMethod(thread, frame, mapping, SymbolId::kKeys));
 
   if (keys_method->isError()) {
-    return thread->throwTypeErrorFromCStr("object is not a mapping");
+    return thread->raiseTypeErrorWithCStr("object is not a mapping");
   }
 
   // Generic mapping, use keys() and __getitem__()
@@ -2387,7 +2395,7 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       &scope, Interpreter::lookupMethod(thread, frame, mapping,
                                         SymbolId::kDunderGetItem));
   if (subscr_method->isError()) {
-    return thread->throwTypeErrorFromCStr("object is not subscriptable");
+    return thread->raiseTypeErrorWithCStr("object is not subscriptable");
   }
   Handle<Object> keys(
       &scope, Interpreter::callMethod1(thread, frame, keys_method, mapping));
@@ -2397,10 +2405,10 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       key = keys_list->at(i);
       if (merge) {
         if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
-          return thread->throwTypeErrorFromCStr("keywords must be strings");
+          return thread->raiseTypeErrorWithCStr("keywords must be strings");
         }
         if (dictIncludes(dict, key)) {
-          return thread->throwTypeErrorFromCStr(
+          return thread->raiseTypeErrorWithCStr(
               "got multiple values for keyword argument");
         }
       }
@@ -2420,10 +2428,10 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       key = keys_tuple->at(i);
       if (merge) {
         if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
-          return thread->throwTypeErrorFromCStr("keywords must be strings");
+          return thread->raiseTypeErrorWithCStr("keywords must be strings");
         }
         if (dictIncludes(dict, key)) {
-          return thread->throwTypeErrorFromCStr(
+          return thread->raiseTypeErrorWithCStr(
               "got multiple values for keyword argument");
         }
       }
@@ -2442,20 +2450,20 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), keys,
                                         SymbolId::kDunderIter));
   if (iter_method->isError()) {
-    return thread->throwTypeErrorFromCStr("o.keys() are not iterable");
+    return thread->raiseTypeErrorWithCStr("o.keys() are not iterable");
   }
 
   Handle<Object> iterator(
       &scope, Interpreter::callMethod1(thread, thread->currentFrame(),
                                        iter_method, keys));
   if (iterator->isError()) {
-    return thread->throwTypeErrorFromCStr("o.keys() are not iterable");
+    return thread->raiseTypeErrorWithCStr("o.keys() are not iterable");
   }
   Handle<Object> next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->throwTypeErrorFromCStr("o.keys() are not iterable");
+    thread->raiseTypeErrorWithCStr("o.keys() are not iterable");
     thread->abortOnPendingException();
   }
   while (!isIteratorExhausted(thread, iterator)) {
@@ -2466,10 +2474,10 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
     }
     if (merge) {
       if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
-        return thread->throwTypeErrorFromCStr("keywords must be strings");
+        return thread->raiseTypeErrorWithCStr("keywords must be strings");
       }
       if (dictIncludes(dict, key)) {
-        return thread->throwTypeErrorFromCStr(
+        return thread->raiseTypeErrorWithCStr(
             "got multiple values for keyword argument");
       }
     }
@@ -2580,7 +2588,7 @@ Object* Runtime::lookupNameInMro(Thread* thread, const Handle<Type>& type,
 Object* Runtime::attributeAt(Thread* thread, const Handle<Object>& receiver,
                              const Handle<Object>& name) {
   if (!name->isStr()) {
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
+    return thread->raiseTypeErrorWithCStr("attribute name must be a string");
   }
 
   // A minimal implementation of getattr needed to get richards running.
@@ -2604,7 +2612,7 @@ Object* Runtime::attributeAtPut(Thread* thread, const Handle<Object>& receiver,
                                 const Handle<Object>& name,
                                 const Handle<Object>& value) {
   if (!name->isStr()) {
-    return thread->throwTypeErrorFromCStr("attribute name must be a string");
+    return thread->raiseTypeErrorWithCStr("attribute name must be a string");
   }
 
   HandleScope scope(thread);
@@ -2671,7 +2679,7 @@ Object* Runtime::strJoin(Thread* thread, const Handle<Str>& sep,
   for (word i = 0; i < allocated; ++i) {
     Handle<Object> elt(&scope, items->at(i));
     if (!elt->isStr() && !hasSubClassFlag(*elt, Type::Flag::kStrSubclass)) {
-      return thread->throwTypeError(
+      return thread->raiseTypeError(
           newStrFromFormat("sequence item %ld: expected str instance", i));
     }
     Handle<Str> str(&scope, items->at(i));

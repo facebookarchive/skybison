@@ -44,11 +44,11 @@ void IntBuiltins::initialize(Runtime* runtime) {
 
 Object* IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "int.__new__(): not enough arguments");
   }
   if (nargs > 3) {
-    return thread->throwTypeError(thread->runtime()->newStrFromFormat(
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
         "int() takes at most two arguments, %ld given", nargs - 1));
   }
 
@@ -58,13 +58,13 @@ Object* IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   Handle<Object> type_obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "int.__new__(X): X is not a type object");
   }
 
   Handle<Type> type(&scope, *type_obj);
   if (!type->hasFlag(Type::Flag::kIntSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "int.__new__(X): X is not a subtype of int");
   }
 
@@ -96,7 +96,7 @@ Object* IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
 Object* IntBuiltins::intFromString(Thread* thread, Object* arg_raw, int base) {
   if (!(base == 0 || (base >= 2 && base <= 36))) {
-    return thread->throwValueErrorFromCStr(
+    return thread->raiseValueErrorWithCStr(
         "Invalid base, must be between 2 and 36, or 0");
   }
   HandleScope scope(thread);
@@ -108,7 +108,7 @@ Object* IntBuiltins::intFromString(Thread* thread, Object* arg_raw, int base) {
   CHECK(arg->isStr(), "not string type");
   Handle<Str> s(&scope, *arg);
   if (s->length() == 0) {
-    return thread->throwValueErrorFromCStr("invalid literal");
+    return thread->raiseValueErrorWithCStr("invalid literal");
   }
   char* c_str = s->toCStr();  // for strtol()
   char* end_ptr;
@@ -118,21 +118,21 @@ Object* IntBuiltins::intFromString(Thread* thread, Object* arg_raw, int base) {
   bool is_complete = (*end_ptr == '\0');
   free(c_str);
   if (!is_complete || (res == 0 && saved_errno == EINVAL)) {
-    return thread->throwValueErrorFromCStr("invalid literal");
+    return thread->raiseValueErrorWithCStr("invalid literal");
   } else if ((res == LONG_MAX || res == LONG_MIN) && saved_errno == ERANGE) {
-    return thread->throwValueErrorFromCStr("invalid literal (range)");
+    return thread->raiseValueErrorWithCStr("invalid literal (range)");
   } else if (!SmallInt::isValid(res)) {
-    return thread->throwValueErrorFromCStr("unsupported type");
+    return thread->raiseValueErrorWithCStr("unsupported type");
   }
   return SmallInt::fromWord(res);
 }
 
 Object* IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
-    return thread->throwTypeErrorFromCStr("not enough arguments");
+    return thread->raiseTypeErrorWithCStr("not enough arguments");
   }
   if (nargs > 1) {
-    return thread->throwTypeError(thread->runtime()->newStrFromFormat(
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
         "expected 0 arguments, %ld given", nargs - 1));
   }
   HandleScope scope(thread);
@@ -147,7 +147,7 @@ Object* IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   if (thread->runtime()->hasSubClassFlag(*arg, Type::Flag::kIntSubclass)) {
     UNIMPLEMENTED("Strict subclass of int");
   }
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "object cannot be interpreted as an integer");
 }
 
@@ -199,7 +199,7 @@ Object* IntBuiltins::negateLargeInteger(Runtime* runtime,
 
 Object* IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -207,7 +207,7 @@ Object* IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
     return intFromBool(self);
   }
   if (!self->isInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "bit_length() must be called with int instance as the first argument");
   }
   return SmallInt::fromWord(Int::cast(self)->highestBit());
@@ -215,7 +215,7 @@ Object* IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
 
 Object* IntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   if (args.get(0)->isBool()) {
@@ -228,12 +228,12 @@ Object* IntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   if (args.get(0)->isLargeInt()) {
     return Bool::trueObj();
   }
-  return thread->throwTypeErrorFromCStr("unsupported type for __bool__");
+  return thread->raiseTypeErrorWithCStr("unsupported type for __bool__");
 }
 
 Object* IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -245,7 +245,7 @@ Object* IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     other = intFromBool(other);
   }
   if (!self->isInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__eq__() must be called with int instance as the first argument");
   }
 
@@ -259,7 +259,7 @@ Object* IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 Object* SmallIntBuiltins::dunderInvert(Thread* thread, Frame* frame,
                                        word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -268,12 +268,12 @@ Object* SmallIntBuiltins::dunderInvert(Thread* thread, Frame* frame,
     SmallInt* tos = SmallInt::cast(self);
     return SmallInt::fromWord(-(tos->value() + 1));
   }
-  return thread->throwTypeErrorFromCStr("unsupported type for __invert__");
+  return thread->raiseTypeErrorWithCStr("unsupported type for __invert__");
 }
 
 Object* IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -285,7 +285,7 @@ Object* IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
     other = intFromBool(other);
   }
   if (!self->isInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__le__() must be called with int instance as the first argument");
   }
 
@@ -299,13 +299,13 @@ Object* IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
 Object* SmallIntBuiltins::dunderFloorDiv(Thread* thread, Frame* frame,
                                          word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isSmallInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__floordiv__() must be called with int instance as first argument");
   }
   word left = SmallInt::cast(self)->value();
@@ -321,7 +321,7 @@ Object* SmallIntBuiltins::dunderFloorDiv(Thread* thread, Frame* frame,
 
 Object* IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -333,7 +333,7 @@ Object* IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
     other = intFromBool(other);
   }
   if (!self->isInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__lt__() must be called with int instance as the first argument");
   }
 
@@ -346,7 +346,7 @@ Object* IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
 
 Object* IntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -358,7 +358,7 @@ Object* IntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
     other = intFromBool(other);
   }
   if (!self->isInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__ge__() must be called with int instance as the first argument");
   }
 
@@ -371,7 +371,7 @@ Object* IntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
 
 Object* IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -383,7 +383,7 @@ Object* IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
     other = intFromBool(other);
   }
   if (!self->isInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__gt__() must be called with int instance as the first argument");
   }
 
@@ -396,13 +396,13 @@ Object* IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 
 Object* SmallIntBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(caller, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isSmallInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__mod__() must be called with int instance as first argument");
   }
   word left = SmallInt::cast(self)->value();
@@ -418,13 +418,13 @@ Object* SmallIntBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
 
 Object* SmallIntBuiltins::dunderMul(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(caller, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isSmallInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__mul__() must be called with int instance as first argument");
   }
   word left = SmallInt::cast(self)->value();
@@ -441,7 +441,7 @@ Object* SmallIntBuiltins::dunderMul(Thread* thread, Frame* caller, word nargs) {
 
 Object* IntBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -453,7 +453,7 @@ Object* IntBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
     other = intFromBool(other);
   }
   if (!self->isInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__ne__() must be called with int instance as the first argument");
   }
 
@@ -469,7 +469,7 @@ Object* IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
 
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("expected no arguments");
+    return thread->raiseTypeErrorWithCStr("expected no arguments");
   }
   Handle<Object> self(&scope, args.get(0));
   if (self->isSmallInt()) {
@@ -486,13 +486,13 @@ Object* IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   if (self->isBool()) {
     return SmallInt::fromWord(*self == Bool::trueObj() ? -1 : 0);
   }
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "__neg__() must be called with int instance as the first argument");
 }
 
 Object* IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("expected no arguments");
+    return thread->raiseTypeErrorWithCStr("expected no arguments");
   }
 
   Arguments args(frame, nargs);
@@ -506,7 +506,7 @@ Object* IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
   if (self->isBool()) {
     return intFromBool(self);
   }
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "__neg__() must be called with int instance as the first argument");
 }
 
@@ -516,7 +516,7 @@ inline Object* IntBuiltins::intFromBool(Object* bool_obj) {
 
 Object* SmallIntBuiltins::dunderAdd(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
 
   Arguments args(caller, nargs);
@@ -524,7 +524,7 @@ Object* SmallIntBuiltins::dunderAdd(Thread* thread, Frame* caller, word nargs) {
   Object* other = args.get(1);
 
   if (!self->isSmallInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__add__() must be called with int instance as the first argument");
   }
 
@@ -538,7 +538,7 @@ Object* SmallIntBuiltins::dunderAdd(Thread* thread, Frame* caller, word nargs) {
 
 Object* SmallIntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
 
   Arguments args(frame, nargs);
@@ -546,7 +546,7 @@ Object* SmallIntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   Object* other = args.get(1);
 
   if (!self->isSmallInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__sub__() must be called with int instance as the first argument");
   }
 
@@ -562,13 +562,13 @@ Object* SmallIntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
 
 Object* SmallIntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isSmallInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__xor__() must be called with int instance as first argument");
   }
   word left = SmallInt::cast(self)->value();
@@ -581,12 +581,12 @@ Object* SmallIntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
 
 Object* SmallIntBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("expected no arguments");
+    return thread->raiseTypeErrorWithCStr("expected no arguments");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   if (!self->isSmallInt()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__repr__() must be called with int instance as first argument");
   }
   word value = SmallInt::cast(self)->value();
@@ -599,11 +599,11 @@ Object* SmallIntBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
 
 Object* BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "bool.__new__(): not enough arguments");
   }
   if (nargs > 2) {
-    return thread->throwTypeErrorFromCStr("bool() takes at most one argument");
+    return thread->raiseTypeErrorWithCStr("bool() takes at most one argument");
   }
 
   Runtime* runtime = thread->runtime();
@@ -611,7 +611,7 @@ Object* BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Handle<Object> type_obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*type_obj, Type::Flag::kTypeSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "bool.__new__(X): X is not a type object");
   }
   Handle<Type> type(&scope, *type_obj);
@@ -620,7 +620,7 @@ Object* BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // bool.
   Handle<Layout> layout(&scope, type->instanceLayout());
   if (layout->id() != LayoutId::kBool) {
-    return thread->throwTypeErrorFromCStr("bool.__new__(X): X is not bool");
+    return thread->raiseTypeErrorWithCStr("bool.__new__(X): X is not bool");
   }
 
   // If no arguments are given, return false.

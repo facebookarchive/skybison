@@ -29,7 +29,7 @@ void SetBuiltins::initialize(Runtime* runtime) {
 
 Object* SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("add() takes exactly one argument");
+    return thread->raiseTypeErrorWithCStr("add() takes exactly one argument");
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -41,12 +41,12 @@ Object* SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
     return None::object();
   }
   // TODO(zekun): handle subclass of set
-  return thread->throwTypeErrorFromCStr("'add' requires a 'set' object");
+  return thread->raiseTypeErrorWithCStr("'add' requires a 'set' object");
 }
 
 Object* SetBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("__len__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("__len__() takes no arguments");
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -55,12 +55,12 @@ Object* SetBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
     return SmallInt::fromWord(Set::cast(*self)->numItems());
   }
   // TODO(cshapiro): handle user-defined subtypes of set.
-  return thread->throwTypeErrorFromCStr("'__len__' requires a 'set' object");
+  return thread->raiseTypeErrorWithCStr("'__len__' requires a 'set' object");
 }
 
 Object* SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("pop() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("pop() takes no arguments");
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -80,16 +80,16 @@ Object* SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
         return *value;
       }
     }
-    return thread->throwKeyErrorFromCStr("pop from an empty set");
+    return thread->raiseKeyErrorWithCStr("pop from an empty set");
   }
   // TODO(T30253711): handle user-defined subtypes of set.
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "descriptor 'pop' requires a 'set' object");
 }
 
 Object* SetBuiltins::dunderContains(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("__contains__ takes 1 arguments.");
+    return thread->raiseTypeErrorWithCStr("__contains__ takes 1 arguments.");
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -99,13 +99,13 @@ Object* SetBuiltins::dunderContains(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(thread->runtime()->setIncludes(self, value));
   }
   // TODO(T30253711): handle user-defined subtypes of set.
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "descriptor 'pop' requires a 'set' object");
 }
 
 Object* SetBuiltins::dunderInit(Thread* thread, Frame*, word nargs) {
   if (nargs > 2) {
-    return thread->throwTypeErrorFromCStr("set expected at most 1 arguments.");
+    return thread->raiseTypeErrorWithCStr("set expected at most 1 arguments.");
   }
   if (nargs == 2) {
     UNIMPLEMENTED("construct set with iterable");
@@ -119,14 +119,14 @@ Object* SetBuiltins::dunderNew(Thread* thread, Frame*, word) {
 
 Object* SetBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("__iter__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
 
   if (!self->isSet()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a set instance as the first argument");
   }
   return thread->runtime()->newSetIterator(self);
@@ -149,13 +149,13 @@ void SetIteratorBuiltins::initialize(Runtime* runtime) {
 Object* SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                         word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("__iter__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isSetIterator()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a set iterator instance as the first "
         "argument");
   }
@@ -165,13 +165,13 @@ Object* SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 Object* SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                         word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("__next__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isSetIterator()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a set iterator instance as the first "
         "argument");
   }
@@ -185,14 +185,14 @@ Object* SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 Object* SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
                                               word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__length_hint__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!self->isSetIterator()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__length_hint__() must be called with a tuple iterator instance as "
         "the first argument");
   }

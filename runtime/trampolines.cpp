@@ -102,7 +102,7 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
     // Add default positional args
     Handle<ObjectArray> default_args(&scope, function->defaults());
     if (default_args->length() < (code->argcount() - argc)) {
-      return thread->throwTypeErrorFromCStr(
+      return thread->raiseTypeErrorWithCStr(
           "TypeError: not enough positional arguments");
     }
     const word positional_only = code->argcount() - default_args->length();
@@ -124,7 +124,7 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
       }
       tmp_varargs = *varargs;
     } else {
-      return thread->throwTypeErrorFromCStr("TypeError: too many arguments");
+      return thread->raiseTypeErrorWithCStr("TypeError: too many arguments");
     }
   }
 
@@ -143,12 +143,12 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
           caller_frame->pushValue(val);
           argc++;
         } else {
-          return thread->throwTypeErrorFromCStr(
+          return thread->raiseTypeErrorWithCStr(
               "TypeError: missing keyword-only argument");
         }
       }
     } else {
-      return thread->throwTypeErrorFromCStr(
+      return thread->raiseTypeErrorWithCStr(
           "TypeError: missing keyword-only argument");
     }
   }
@@ -169,7 +169,7 @@ Object* interpreterTrampolineSlowPath(Thread* thread, Function* function,
   // At this point, we should have the correct number of arguments.  Throw if
   // not.
   if (argc != code->totalArgs()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "TypeError: incorrect argument count");
   }
   return callCheckFreeCell(thread, function, caller_frame, code);
@@ -241,7 +241,7 @@ Object* checkArgs(Function* function, Object** kw_arg_base,
       }
       // If we were unable to find a slot to swap into, TypeError
       if (!arg_at(arg_pos)->isError()) {
-        return Thread::currentThread()->throwTypeErrorFromCStr(
+        return Thread::currentThread()->raiseTypeErrorWithCStr(
             "TypeError: invalid arguments");
       }
     }
@@ -273,7 +273,7 @@ Object* checkArgs(Function* function, Object** kw_arg_base,
         continue;  // Got it, move on to the next
       }
     }
-    return Thread::currentThread()->throwTypeErrorFromCStr(
+    return Thread::currentThread()->raiseTypeErrorWithCStr(
         "TypeError: missing argument");
   }
   return None::object();
@@ -335,7 +335,7 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
     if (flags & Code::VARKEYARGS) {
       // Too many positional args passed?
       if (num_positional_args > code->argcount()) {
-        return thread->throwTypeErrorFromCStr(
+        return thread->raiseTypeErrorWithCStr(
             "TypeError: Too many positional arguments");
       }
       // If we have keyword arguments that don't appear in the formal parameter
@@ -377,7 +377,7 @@ Object* interpreterTrampolineKw(Thread* thread, Frame* caller_frame,
   Object** kw_arg_base = (caller_frame->valueStackTop() + num_keyword_args) -
                          1;  // pointer to first non-positional arg
   if (UNLIKELY(argc > expected_args)) {
-    return thread->throwTypeErrorFromCStr("TypeError: Too many arguments");
+    return thread->raiseTypeErrorWithCStr("TypeError: Too many arguments");
   } else if (UNLIKELY(argc < expected_args)) {
     // Too few args passed.  Can we supply default args to make it work?
     // First, normalize & pad keywords and stack arguments

@@ -65,13 +65,13 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   KwArguments args(frame, nargs);
   if (args.numArgs() < 2) {
-    return thread->throwTypeErrorFromCStr("not enough args for build class.");
+    return thread->raiseTypeErrorWithCStr("not enough args for build class.");
   }
   if (!args.get(0)->isFunction()) {
-    return thread->throwTypeErrorFromCStr("class body is not function.");
+    return thread->raiseTypeErrorWithCStr("class body is not function.");
   }
   if (!args.get(1)->isStr()) {
-    return thread->throwTypeErrorFromCStr("class name is not string.");
+    return thread->raiseTypeErrorWithCStr("class name is not string.");
   }
 
   Handle<Function> body(&scope, args.get(0));
@@ -137,7 +137,7 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinCallable(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("callable expects one argument");
+    return thread->raiseTypeErrorWithCStr("callable expects one argument");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -158,12 +158,12 @@ Object* builtinCallable(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("Unexpected 1 argumment in 'chr'");
+    return thread->raiseTypeErrorWithCStr("Unexpected 1 argumment in 'chr'");
   }
   Arguments args(frame_frame, nargs);
   Object* arg = args.get(0);
   if (!arg->isSmallInt()) {
-    return thread->throwTypeErrorFromCStr("Unsupported type in builtin 'chr'");
+    return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'chr'");
   }
   word w = SmallInt::cast(arg)->value();
   const char s[2]{static_cast<char>(w), 0};
@@ -175,14 +175,14 @@ Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
 // richards working.
 Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("isinstance expected 2 arguments");
+    return thread->raiseTypeErrorWithCStr("isinstance expected 2 arguments");
   }
 
   Arguments args(frame, nargs);
   if (!args.get(1)->isType()) {
     // TODO(mpage): This error message is misleading. Ultimately, isinstance()
     // may accept a type or a tuple.
-    return thread->throwTypeErrorFromCStr("isinstance arg 2 must be a type");
+    return thread->raiseTypeErrorWithCStr("isinstance arg 2 must be a type");
   }
 
   Runtime* runtime = thread->runtime();
@@ -194,14 +194,14 @@ Object* builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("issubclass expected 2 arguments");
+    return thread->raiseTypeErrorWithCStr("issubclass expected 2 arguments");
   }
 
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (!args.get(0)->isType()) {
-    return thread->throwTypeErrorFromCStr("issubclass arg 1 must be a type");
+    return thread->raiseTypeErrorWithCStr("issubclass arg 1 must be a type");
   }
   Handle<Type> type(&scope, args.get(0));
   Handle<Object> classinfo(&scope, args.get(1));
@@ -211,7 +211,7 @@ Object* builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
   }
   // If classinfo is not a tuple, then throw a TypeError.
   if (!classinfo->isObjectArray()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "issubclass() arg 2 must be a class of tuple of classes");
   }
   // If classinfo is a tuple, try each of the values, and return
@@ -220,7 +220,7 @@ Object* builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
   for (word i = 0; i < tuple_of_types->length(); i++) {
     // If any argument is not a type, then throw TypeError.
     if (!runtime->isInstanceOfClass(tuple_of_types->at(i))) {
-      return thread->throwTypeErrorFromCStr(
+      return thread->raiseTypeErrorWithCStr(
           "issubclass() arg 2 must be a class of tuple of classes");
     }
     Handle<Type> possible_superclass(&scope, tuple_of_types->at(i));
@@ -236,7 +236,7 @@ Object* builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("len() takes exactly one argument");
+    return thread->raiseTypeErrorWithCStr("len() takes exactly one argument");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -244,23 +244,23 @@ Object* builtinLen(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> method(&scope, Interpreter::lookupMethod(
                                     thread, frame, self, SymbolId::kDunderLen));
   if (method->isError()) {
-    return thread->throwTypeErrorFromCStr("object has no len()");
+    return thread->raiseTypeErrorWithCStr("object has no len()");
   }
   return Interpreter::callMethod1(thread, frame, method, self);
 }
 
 Object* builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("Unexpected 1 argumment in 'ord'");
+    return thread->raiseTypeErrorWithCStr("Unexpected 1 argumment in 'ord'");
   }
   Arguments args(frame_frame, nargs);
   Object* arg = args.get(0);
   if (!arg->isStr()) {
-    return thread->throwTypeErrorFromCStr("Unsupported type in builtin 'ord'");
+    return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'ord'");
   }
   auto* str = Str::cast(arg);
   if (str->length() != 1) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "Builtin 'ord' expects string of length 1");
   }
   return SmallInt::fromWord(str->charAt(0));
@@ -409,7 +409,7 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   KwArguments kw_args(frame, nargs);
   HandleScope scope(thread);
   if (kw_args.numKeywords() > 2) {
-    return thread->throwRuntimeErrorFromCStr(
+    return thread->raiseRuntimeErrorWithCStr(
         "Too many keyword arguments supplied to print");
   }
 
@@ -429,11 +429,11 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
           ostream = builtinStderr;
           break;
         default:
-          return thread->throwTypeErrorFromCStr(
+          return thread->raiseTypeErrorWithCStr(
               "Unsupported argument type for 'file'");
       }
     } else {
-      return thread->throwTypeErrorFromCStr(
+      return thread->raiseTypeErrorWithCStr(
           "Unsupported argument type for 'file'");
     }
   }
@@ -443,7 +443,7 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
     if ((end_arg->isStr() || end_arg->isNone())) {
       end = *end_arg;
     } else {
-      return thread->throwTypeErrorFromCStr("Unsupported argument for 'end'");
+      return thread->raiseTypeErrorWithCStr("Unsupported argument for 'end'");
     }
   }
 
@@ -456,7 +456,7 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1 || nargs > 3) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "Incorrect number of arguments to range()");
   }
 
@@ -464,7 +464,7 @@ Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
 
   for (word i = 0; i < nargs; i++) {
     if (!args.get(i)->isSmallInt()) {
-      return thread->throwTypeErrorFromCStr(
+      return thread->raiseTypeErrorWithCStr(
           "Arguments to range() must be an integers.");
     }
   }
@@ -485,7 +485,7 @@ Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
   }
 
   if (step == 0) {
-    return thread->throwValueErrorFromCStr(
+    return thread->raiseValueErrorWithCStr(
         "range() step argument must not be zero");
   }
 
@@ -494,7 +494,7 @@ Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("repr() takes exactly one argument");
+    return thread->raiseTypeErrorWithCStr("repr() takes exactly one argument");
   }
   Arguments args(frame, nargs);
 
@@ -510,21 +510,21 @@ Object* builtinRepr(Thread* thread, Frame* frame, word nargs) {
   if (!ret->isStr() && !ret->isError()) {
     // TODO(T31744782): Change this to allow subtypes of string.
     // If __repr__ doesn't return a string or error, throw a type error
-    return thread->throwTypeErrorFromCStr("__repr__ returned non-string");
+    return thread->raiseTypeErrorWithCStr("__repr__ returned non-string");
   }
   return ret;
 }
 
 Object* builtinGetattr(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2 || nargs > 3) {
-    return thread->throwTypeErrorFromCStr("getattr expected 2 or 3 arguments.");
+    return thread->raiseTypeErrorWithCStr("getattr expected 2 or 3 arguments.");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> name(&scope, args.get(1));
   if (!name->isStr()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "getattr(): attribute name must be string.");
   }
   Handle<Object> result(&scope,
@@ -539,14 +539,14 @@ Object* builtinGetattr(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinHasattr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("hasattr expected 2 arguments.");
+    return thread->raiseTypeErrorWithCStr("hasattr expected 2 arguments.");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> name(&scope, args.get(1));
   if (!name->isStr()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "hasattr(): attribute name must be string.");
   }
   Handle<Object> result(&scope,
@@ -561,7 +561,7 @@ Object* builtinHasattr(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinSetattr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
-    return thread->throwTypeErrorFromCStr("setattr expected 3 arguments.");
+    return thread->raiseTypeErrorWithCStr("setattr expected 3 arguments.");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -569,7 +569,7 @@ Object* builtinSetattr(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> name(&scope, args.get(1));
   Handle<Object> value(&scope, args.get(2));
   if (!name->isStr()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "setattr(): attribute name must be string.");
   }
   Handle<Object> result(

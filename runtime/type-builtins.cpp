@@ -17,7 +17,7 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
 
   // First, call __new__ to allocate a new instance.
   if (!runtime->isInstanceOfClass(args.get(0))) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "'__new__' requires a 'class' object");
   }
   Handle<Type> type(&scope, args.get(0));
@@ -56,7 +56,7 @@ Object* builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
 
   // First, call __new__ to allocate a new instance.
   if (!runtime->isInstanceOfClass(args.get(0))) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "'__new__' requires a 'class' object");
   }
   Handle<Type> type(&scope, args.get(0));
@@ -83,7 +83,7 @@ Object* builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2) {
-    return thread->throwTypeErrorFromCStr("type() takes 1 or 3 arguments");
+    return thread->raiseTypeErrorWithCStr("type() takes 1 or 3 arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -149,18 +149,18 @@ Object* builtinTypeInit(Thread*, Frame*, word) { return None::object(); }
 
 Object* builtinTypeRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "type.__repr__(): Need a self argument");
   }
   if (nargs > 1) {
-    return thread->throwTypeError(thread->runtime()->newStrFromFormat(
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
         "expected 0 arguments, got %ld", nargs - 1));
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   if (!thread->runtime()->hasSubClassFlag(*self, Type::Flag::kTypeSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "type.__repr__() requires a 'type' object");
   }
 

@@ -7,25 +7,22 @@ namespace testing {
 
 bool exceptionMessageMatches(const char* message) {
   Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-
-  Handle<Object> exception_obj(&scope, thread->pendingException());
-  if (exception_obj->isNone()) {
+  if (!thread->hasPendingException()) {
     return false;
   }
-  if (!exception_obj->isStr()) {
+  HandleScope scope(thread);
+  Handle<Object> value(&scope, thread->exceptionValue());
+  if (!value->isStr()) {
     UNIMPLEMENTED("Handle non string exception objects");
   }
-  Handle<Str> exception(&scope, *exception_obj);
-
+  Handle<Str> exception(&scope, *value);
   return exception->equalsCStr(message);
 }
 
 PyObject* moduleGet(const char* module, const char* name) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-
+  Runtime* runtime = thread->runtime();
   Handle<Module> mod(&scope, findModule(runtime, module));
   Handle<Object> var(&scope, moduleAt(runtime, mod, name));
   return ApiHandle::fromObject(*var)->asPyObject();

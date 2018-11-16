@@ -29,14 +29,14 @@ void DictBuiltins::initialize(Runtime* runtime) {
 
 Object* DictBuiltins::dunderContains(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Handle<Object> self(&scope, args.get(0));
   Handle<Object> key(&scope, args.get(1));
   if (!self->isDict()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "dict.__contains__(self): self must be a dict");
   }
   Handle<Dict> dict(&scope, *self);
@@ -45,7 +45,7 @@ Object* DictBuiltins::dunderContains(Thread* thread, Frame* frame, word nargs) {
 
 Object* DictBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -55,19 +55,19 @@ Object* DictBuiltins::dunderDelItem(Thread* thread, Frame* frame, word nargs) {
     Handle<Dict> dict(&scope, *self);
     // Remove the key. If it doesn't exist, throw a KeyError.
     if (!thread->runtime()->dictRemove(dict, key, nullptr)) {
-      return thread->throwKeyErrorFromCStr("missing key can't be deleted");
+      return thread->raiseKeyErrorWithCStr("missing key can't be deleted");
     }
     return None::object();
   }
   // TODO(T32856777): handle user-defined subtypes of dict.
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "__delitem__() must be called with a dict instance as the first "
       "argument");
 }
 
 Object* DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   if (args.get(0)->isDict() && args.get(1)->isDict()) {
@@ -105,7 +105,7 @@ Object* DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 
 Object* DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->throwTypeErrorFromCStr("__len__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("__len__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -114,12 +114,12 @@ Object* DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
     return SmallInt::fromWord(Dict::cast(*self)->numItems());
   }
   // TODO(T32856777): handle user-defined subtypes of dict.
-  return thread->throwTypeErrorFromCStr("'__len__' requires a 'dict' object");
+  return thread->raiseTypeErrorWithCStr("'__len__' requires a 'dict' object");
 }
 
 Object* DictBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -135,19 +135,19 @@ Object* DictBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
     Handle<Object> value(
         &scope, thread->runtime()->dictAtWithHash(dict, key, key_hash));
     if (value->isError()) {
-      return thread->throwKeyErrorFromCStr("KeyError");
+      return thread->raiseKeyErrorWithCStr("KeyError");
     }
     return *value;
   }
   // TODO(T32856777): handle user-defined subtypes of dict.
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "__getitem__() must be called with a dict instance as the first "
       "argument");
 }
 
 Object* DictBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
-    return thread->throwTypeErrorFromCStr("expected 2 arguments");
+    return thread->raiseTypeErrorWithCStr("expected 2 arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -167,7 +167,7 @@ Object* DictBuiltins::dunderSetItem(Thread* thread, Frame* frame, word nargs) {
     thread->runtime()->dictAtPutWithHash(dict, key, value, key_hash);
     return None::object();
   }
-  return thread->throwTypeErrorFromCStr(
+  return thread->raiseTypeErrorWithCStr(
       "__setitem__() must be called with a dict instance as the first "
       "argument");
 }

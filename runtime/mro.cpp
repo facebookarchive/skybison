@@ -126,7 +126,7 @@ Object* computeMro(Thread* thread, const Handle<Type>& type,
     if (merge_list_indices[i] !=
         ObjectArray::cast(merge_lists->at(i))->length()) {
       // TODO: list bases in error message.
-      return thread->throwTypeErrorFromCStr(
+      return thread->raiseTypeErrorWithCStr(
           "Cannot create a consistent method resolution order (MRO)");
     }
   }

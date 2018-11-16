@@ -10,7 +10,7 @@ namespace python {
 
 Object* builtinFunctionGet(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
-    return thread->throwTypeErrorFromCStr("__get__ needs 3 arguments");
+    return thread->raiseTypeErrorWithCStr("__get__ needs 3 arguments");
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);

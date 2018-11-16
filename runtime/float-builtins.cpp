@@ -49,7 +49,7 @@ Object* FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
       &scope,
       Interpreter::lookupMethod(thread, frame, obj, SymbolId::kDunderFloat));
   if (method->isError()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "TypeError: float() argument must have a __float__");
   }
 
@@ -62,7 +62,7 @@ Object* FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
 
   // If __float__ returns a non-float, throw a type error.
   if (!runtime->hasSubClassFlag(*converted, Type::Flag::kFloatSubclass)) {
-    return thread->throwTypeErrorFromCStr("__float__ returned non-float");
+    return thread->raiseTypeErrorWithCStr("__float__ returned non-float");
   }
 
   // __float__ used to be allowed to return any subtype of float, but that
@@ -90,14 +90,14 @@ Object* FloatBuiltins::floatFromString(Thread* thread, Str* str) {
 
   // No conversion occurred, the string was not a valid float.
   if (c_str == str_end) {
-    return thread->throwValueErrorFromCStr("could not convert string to float");
+    return thread->raiseValueErrorWithCStr("could not convert string to float");
   }
   return thread->runtime()->newFloat(result);
 }
 
 Object* FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -114,7 +114,7 @@ Object* FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 
 Object* FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -131,7 +131,7 @@ Object* FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
 
 Object* FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -148,7 +148,7 @@ Object* FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 
 Object* FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -165,7 +165,7 @@ Object* FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
 
 Object* FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -182,7 +182,7 @@ Object* FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
 
 Object* FloatBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
@@ -199,11 +199,11 @@ Object* FloatBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
 
 Object* FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "float.__new__(): not enough arguments");
   }
   if (nargs > 2) {
-    return thread->throwTypeError(thread->runtime()->newStrFromFormat(
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
         "float expected at most 1 arguments, got %ld", nargs));
   }
   Runtime* runtime = thread->runtime();
@@ -211,12 +211,12 @@ Object* FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Handle<Object> obj(&scope, args.get(0));
   if (!runtime->hasSubClassFlag(*obj, Type::Flag::kTypeSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "float.__new__(X): X is not a type object");
   }
   Handle<Type> type(&scope, *obj);
   if (!type->hasFlag(Type::Flag::kFloatSubclass)) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "float.__new__(X): X is not a subtype of float");
   }
   Handle<Layout> layout(&scope, type->instanceLayout());
@@ -240,14 +240,14 @@ Object* FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
 Object* FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
 
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isFloat()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__add__() must be called with float instance as first argument");
   }
 
@@ -265,14 +265,14 @@ Object* FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
 
 Object* FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->throwTypeErrorFromCStr("expected 1 argument");
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
 
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isFloat()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__sub__() must be called with float instance as first argument");
   }
 
@@ -290,17 +290,17 @@ Object* FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
 
 Object* FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2 || nargs > 3) {
-    return thread->throwTypeErrorFromCStr("expected at most 2 arguments");
+    return thread->raiseTypeErrorWithCStr("expected at most 2 arguments");
   }
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (!self->isFloat()) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__pow__() must be called with float instance as first argument");
   }
   if (nargs == 3) {
-    return thread->throwTypeErrorFromCStr(
+    return thread->raiseTypeErrorWithCStr(
         "pow() 3rd argument not allowed unless all arguments are integers");
   }
   double left = Float::cast(self)->value();

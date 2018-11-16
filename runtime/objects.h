@@ -14,6 +14,7 @@ namespace python {
 
 #define INTRINSIC_HEAP_CLASS_NAMES(V)                                          \
   V(Object)                                                                    \
+  V(ArithmeticError)                                                           \
   V(AttributeError)                                                            \
   V(BaseException)                                                             \
   V(BoundMethod)                                                               \
@@ -44,6 +45,7 @@ namespace python {
   V(NotImplemented)                                                            \
   V(NotImplementedError)                                                       \
   V(ObjectArray)                                                               \
+  V(OverflowError)                                                             \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
@@ -55,6 +57,7 @@ namespace python {
   V(StopIteration)                                                             \
   V(Str)                                                                       \
   V(Super)                                                                     \
+  V(SystemError)                                                               \
   V(SystemExit)                                                                \
   V(TupleIterator)                                                             \
   V(Type)                                                                      \
@@ -95,6 +98,7 @@ enum class LayoutId : word {
 
   // Heap objects
   kObject = 32,
+  kArithmeticError,
   kAttributeError,
   kBaseException,
   kBoundMethod,
@@ -125,6 +129,7 @@ enum class LayoutId : word {
   kNotImplemented,
   kNotImplementedError,
   kObjectArray,
+  kOverflowError,
   kProperty,
   kRange,
   kRangeIterator,
@@ -135,6 +140,7 @@ enum class LayoutId : word {
   kStaticMethod,
   kStopIteration,
   kStr,
+  kSystemError,
   kSystemExit,
   kSuper,
   kTupleIterator,

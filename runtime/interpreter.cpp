@@ -671,7 +671,7 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
       &scope,
       runtime->lookupSymbolInMro(ctx->thread, type, SymbolId::kDunderGetItem));
   if (getitem->isError()) {
-    ctx->frame->pushValue(ctx->thread->throwTypeErrorFromCStr(
+    ctx->frame->pushValue(ctx->thread->raiseTypeErrorWithCStr(
         "object does not support indexing"));
   } else {
     ctx->frame->pushValue(
@@ -743,7 +743,7 @@ void Interpreter::doGetAiter(Context* ctx, word) {
   Handle<Object> method(
       &scope, lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAiter));
   if (method->isError()) {
-    thread->throwTypeErrorFromCStr(
+    thread->raiseTypeErrorWithCStr(
         "'async for' requires an object with __aiter__ method");
     thread->abortOnPendingException();
   }
@@ -760,7 +760,7 @@ void Interpreter::doGetAnext(Context* ctx, word) {
   Handle<Object> anext(
       &scope, lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAnext));
   if (anext->isError()) {
-    thread->throwTypeErrorFromCStr(
+    thread->raiseTypeErrorWithCStr(
         "'async for' requires an iterator with __anext__ method");
     thread->abortOnPendingException();
   }
@@ -772,7 +772,7 @@ void Interpreter::doGetAnext(Context* ctx, word) {
   Handle<Object> await(
       &scope, lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAwait));
   if (await->isError()) {
-    thread->throwTypeErrorFromCStr(
+    thread->raiseTypeErrorWithCStr(
         "'async for' received an invalid object from __anext__");
     thread->abortOnPendingException();
   }
@@ -961,7 +961,7 @@ void Interpreter::doGetIter(Context* ctx, word) {
   Handle<Object> method(&scope, lookupMethod(thread, ctx->frame, iterable,
                                              SymbolId::kDunderIter));
   if (method->isError()) {
-    thread->throwTypeErrorFromCStr("object is not iterable");
+    thread->raiseTypeErrorWithCStr("object is not iterable");
     thread->abortOnPendingException();
   }
   Handle<Object> iterator(&scope,
@@ -985,7 +985,7 @@ void Interpreter::doGetYieldFromIter(Context* ctx, word) {
     Handle<Code> code(&scope, frame->code());
     if (code->flags() &
         (Code::Flags::COROUTINE | Code::Flags::ITERABLE_COROUTINE)) {
-      thread->throwTypeErrorFromCStr(
+      thread->raiseTypeErrorWithCStr(
           "cannot 'yield from' a coroutine object in a non-coroutine "
           "generator");
       thread->abortOnPendingException();
@@ -996,7 +996,7 @@ void Interpreter::doGetYieldFromIter(Context* ctx, word) {
   Handle<Object> method(
       &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (method->isError()) {
-    thread->throwTypeErrorFromCStr("object is not iterable");
+    thread->raiseTypeErrorWithCStr("object is not iterable");
     thread->abortOnPendingException();
   }
   Handle<Object> iterator(&scope, callMethod1(thread, frame, method, iterable));
@@ -1037,7 +1037,7 @@ void Interpreter::doGetAwaitable(Context* ctx, word) {
   Handle<Object> await(
       &scope, lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAwait));
   if (await->isError()) {
-    thread->throwTypeErrorFromCStr(
+    thread->raiseTypeErrorWithCStr(
         "object can't be used in 'await' expression");
     thread->abortOnPendingException();
   }
@@ -1222,7 +1222,7 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
   Handle<Object> iter_method(
       &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
-    thread->throwTypeErrorFromCStr("object is not iterable");
+    thread->raiseTypeErrorWithCStr("object is not iterable");
     thread->abortOnPendingException();
   }
   Handle<Object> iterator(&scope,
@@ -1231,7 +1231,7 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
   Handle<Object> next_method(
       &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->throwTypeErrorFromCStr("iter() returned non-iterator");
+    thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
     thread->abortOnPendingException();
   }
   word num_pushed = 0;
@@ -1248,13 +1248,13 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
 
   if (num_pushed < arg) {
     frame->dropValues(num_pushed);
-    thread->throwValueErrorFromCStr("not enough values to unpack");
+    thread->raiseValueErrorWithCStr("not enough values to unpack");
     thread->abortOnPendingException();
     return;
   }
   if (!runtime->isIteratorExhausted(thread, iterator)) {
     frame->dropValues(num_pushed);
-    thread->throwValueErrorFromCStr("too many values to unpack");
+    thread->raiseValueErrorWithCStr("too many values to unpack");
     thread->abortOnPendingException();
     return;
   }
@@ -1277,7 +1277,7 @@ void Interpreter::doForIter(Context* ctx, word arg) {
   Handle<Object> next_method(&scope, lookupMethod(thread, ctx->frame, iterator,
                                                   SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->throwValueErrorFromCStr("iter() returned non-iterator");
+    thread->raiseValueErrorWithCStr("iter() returned non-iterator");
     thread->abortOnPendingException();
   }
   if (thread->runtime()->isIteratorExhausted(thread, iterator)) {
@@ -1307,7 +1307,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
   Handle<Object> iter_method(
       &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
-    thread->throwTypeErrorFromCStr("object is not iterable");
+    thread->raiseTypeErrorWithCStr("object is not iterable");
     thread->abortOnPendingException();
   }
   Handle<Object> iterator(&scope,
@@ -1316,7 +1316,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
   Handle<Object> next_method(
       &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
-    thread->throwTypeErrorFromCStr("iter() returned non-iterator");
+    thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
     thread->abortOnPendingException();
   }
 
@@ -1339,7 +1339,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
 
   if (num_pushed < before) {
     frame->dropValues(num_pushed);
-    thread->throwValueErrorFromCStr("not enough values to unpack");
+    thread->raiseValueErrorWithCStr("not enough values to unpack");
     thread->abortOnPendingException();
   }
 
@@ -1360,7 +1360,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
 
   if (list->allocated() < after) {
     frame->dropValues(num_pushed);
-    thread->throwValueErrorFromCStr("not enough values to unpack");
+    thread->raiseValueErrorWithCStr("not enough values to unpack");
     thread->abortOnPendingException();
   }
 
