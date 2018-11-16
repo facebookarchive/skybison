@@ -1,10 +1,10 @@
 #pragma once
 
 #include <cassert>
-#include <type_traits>
 
 #include "globals.h"
 #include "thread.h"
+#include "vector.h"
 
 namespace python {
 
@@ -19,32 +19,24 @@ class Handles {
 
   Handles();
 
-  ~Handles();
-
   void visitPointers(PointerVisitor* visitor);
 
  private:
-  void grow();
-
   void push(HandleScope* scope) {
-    if (size_ == top_) {
-      grow();
-    }
-    scopes_[top_++] = scope;
+    scopes_.push_back(scope);
   }
 
   void pop() {
-    assert(top_ != 0);
-    top_--;
+    assert(!scopes_.empty());
+    scopes_.pop_back();
   }
 
   HandleScope* top() {
-    return scopes_[top_ - 1];
+    assert(!scopes_.empty());
+    return scopes_.back();
   }
 
-  HandleScope** scopes_;
-  word top_;
-  word size_;
+  Vector<HandleScope*> scopes_;
 
   template <typename T>
   friend class Handle;
