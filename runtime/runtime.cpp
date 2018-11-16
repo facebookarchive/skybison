@@ -1043,8 +1043,8 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit modules
   visitor->visitPointer(&modules_);
 
-  // Visit api handles
-  visitor->visitPointer(&apihandles_);
+  // Visit C-API handles
+  visitor->visitPointer(&api_handles_);
 
   // Visit symbols
   symbols_->visit(visitor);
@@ -1105,7 +1105,7 @@ void Runtime::initializeModules() {
 }
 
 void Runtime::initializeApiHandles() {
-  apihandles_ = newDictionary();
+  api_handles_ = newDictionary();
 }
 
 Object* Runtime::classOf(Object* object) {
@@ -2711,7 +2711,7 @@ Object* Runtime::superGetAttr(
 ApiHandle* Runtime::asApiHandle(Object* obj) {
   HandleScope scope;
   Handle<Object> key(&scope, obj);
-  Handle<Dictionary> dict(&scope, apihandles());
+  Handle<Dictionary> dict(&scope, apiHandles());
   Object* value = dictionaryAt(dict, key);
   if (value->isError()) {
     ApiHandle* handle = ApiHandle::New(obj);
@@ -2726,7 +2726,7 @@ ApiHandle* Runtime::asApiHandle(Object* obj) {
 ApiHandle* Runtime::asBorrowedApiHandle(Object* obj) {
   HandleScope scope;
   Handle<Object> key(&scope, obj);
-  Handle<Dictionary> dict(&scope, apihandles());
+  Handle<Dictionary> dict(&scope, apiHandles());
   Object* value = dictionaryAt(dict, key);
   if (value->isError()) {
     ApiHandle* handle = ApiHandle::NewBorrowed(obj);
@@ -2744,7 +2744,7 @@ Object* Runtime::asObject(PyObject* py_obj) {
 
 void Runtime::deallocApiHandles() {
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, apihandles());
+  Handle<Dictionary> dict(&scope, apiHandles());
   Handle<ObjectArray> keys(&scope, dictionaryKeys(dict));
   for (word i = 0; i < keys->length(); i++) {
     Handle<Object> key(&scope, keys->at(i));

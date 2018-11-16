@@ -223,8 +223,8 @@ class Runtime {
     return modules_;
   }
 
-  Object* apihandles() {
-    return apihandles_;
+  Object* apiHandles() {
+    return api_handles_;
   }
 
   Symbols* symbols() {
@@ -666,7 +666,7 @@ class Runtime {
   Object* modules_;
 
   // ApiHandles
-  Object* apihandles_;
+  Object* api_handles_;
 
   Thread* threads_;
 

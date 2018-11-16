@@ -1036,7 +1036,7 @@ def func():
 TEST(RuntimeTest, creatingApiHandles) {
   Runtime runtime;
   HandleScope scope;
-  Handle<Dictionary> dict(&scope, runtime.apihandles());
+  Handle<Dictionary> dict(&scope, runtime.apiHandles());
 
   Handle<Object> obj(&scope, runtime.newInteger(15));
   Object* value = runtime.dictionaryAt(dict, obj);
