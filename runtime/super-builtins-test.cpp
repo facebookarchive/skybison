@@ -141,7 +141,7 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
   EXPECT_EQ(*e, Boolean::trueObj());
 }
 
-TEST(SuperDeathTest, NoArugmentNoClassCell) {
+TEST(SuperDeathTest, NoArugmentThrow) {
   const char* src = R"(
 a = super()
 )";
@@ -150,6 +150,14 @@ a = super()
   ASSERT_DEATH(
       runtime.runFromCString(src),
       "aborting due to pending exception: super\\(\\): no arguments");
+  const char* src1 = R"(
+def f(a):
+    super()
+f(1)
+)";
+  ASSERT_DEATH(
+      runtime.runFromCString(src1),
+      "aborting due to pending exception: super\\(\\): __class__ cell not found");
 }
 
 } // namespace python
