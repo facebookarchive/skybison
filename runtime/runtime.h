@@ -72,8 +72,6 @@ class Runtime {
 
   Object* newInstance(const Handle<Layout>& layout);
 
-  Object* newExtensionInstance(ApiHandle* handle);
-
   Object* newInt(word value);
 
   Object* newIntWithDigits(View<uword> digits);

@@ -3032,27 +3032,6 @@ Object* Runtime::superGetAttr(Thread* thread, const Handle<Object>& receiver,
   return instanceGetAttr(thread, receiver, name);
 }
 
-Object* Runtime::newExtensionInstance(ApiHandle* handle) {
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-
-  // Get type class
-  Handle<Dict> extensions_dict(&scope, extensionTypes());
-  Handle<Object> type_id(
-      &scope, newIntFromCPointer(static_cast<void*>(handle->type())));
-  Handle<Type> type_class(&scope, dictAt(extensions_dict, type_id));
-
-  // Create instance
-  Handle<Layout> layout(&scope, type_class->instanceLayout());
-  Handle<HeapObject> instance(&scope, newInstance(layout));
-  Handle<Object> object_ptr(
-      &scope, newIntFromCPointer(static_cast<void*>(handle->asPyObject())));
-  Handle<Object> attr_name(&scope, symbols()->ExtensionPtr());
-  instanceAtPut(thread, instance, attr_name, object_ptr);
-
-  return *instance;
-}
-
 void Runtime::freeTrackedAllocations() {
   while (tracked_allocations_ != nullptr) {
     TrackedAllocation::free(trackedAllocations(), tracked_allocations_);
