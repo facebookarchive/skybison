@@ -31,3 +31,7 @@ PyObject* PyErr_NoMemory(void) {
 void Py_FatalError(const char*) {
   UNIMPLEMENTED("Py_FatalError");
 }
+
+PyObject* _PyErr_FormatFromCause(PyObject*, const char*, ...) {
+  UNIMPLEMENTED("_PyErr_FormatFromCause");
+}
