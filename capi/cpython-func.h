@@ -927,6 +927,18 @@ PyAPI_FUNC(char*) PyByteArray_AS_STRING_Func(PyObject*);
 #define PyMem_Resize(p, type, n) ((type*)PyMem_Resize_Func(p, sizeof(type), n))
 #define PyMem_RESIZE(p, type, n) PyMem_Resize(p, type, n)
 
+/* Character macros from pyctype.h */
+#define Py_CHARMASK(c) ((unsigned char)((c)&0xff))
+#define Py_ISALNUM(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALNUM)
+#define Py_ISALPHA(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALPHA)
+#define Py_ISDIGIT(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_DIGIT)
+#define Py_ISLOWER(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_LOWER)
+#define Py_ISSPACE(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_SPACE)
+#define Py_ISUPPER(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_UPPER)
+#define Py_ISXDIGIT(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_XDIGIT)
+#define Py_TOLOWER(c) (_Py_ctype_tolower[Py_CHARMASK(c)])
+#define Py_TOUPPER(c) (_Py_ctype_toupper[Py_CHARMASK(c)])
+
 #ifdef __cplusplus
 }
 #endif

@@ -100,6 +100,18 @@ extern int Py_UnbufferedStdioFlag;
 extern int Py_UseClassExceptionsFlag;
 extern int Py_VerboseFlag;
 
+#define PY_CTF_LOWER 0x01
+#define PY_CTF_UPPER 0x02
+#define PY_CTF_ALPHA (PY_CTF_LOWER | PY_CTF_UPPER)
+#define PY_CTF_DIGIT 0x04
+#define PY_CTF_ALNUM (PY_CTF_ALPHA | PY_CTF_DIGIT)
+#define PY_CTF_SPACE 0x08
+#define PY_CTF_XDIGIT 0x10
+
+extern const unsigned int _Py_ctype_table[256];
+extern const unsigned char _Py_ctype_tolower[256];
+extern const unsigned char _Py_ctype_toupper[256];
+
 #ifdef __cplusplus
 }
 #endif
