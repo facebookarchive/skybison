@@ -361,4 +361,39 @@ TEST(SmallStringTest, Tests) {
   EXPECT_EQ(array[2], 0);
 }
 
+TEST(String, ToCString) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<String> empty(&scope, runtime.newStringFromCString(""));
+  char* c_empty = empty->toCString();
+  ASSERT_NE(c_empty, nullptr);
+  EXPECT_STREQ(c_empty, "");
+  std::free(c_empty);
+
+  Handle<String> length1(&scope, runtime.newStringFromCString("a"));
+  char* c_length1 = length1->toCString();
+  ASSERT_NE(c_length1, nullptr);
+  EXPECT_STREQ(c_length1, "a");
+  std::free(c_length1);
+
+  Handle<String> length2(&scope, runtime.newStringFromCString("ab"));
+  char* c_length2 = length2->toCString();
+  ASSERT_NE(c_length2, nullptr);
+  EXPECT_STREQ(c_length2, "ab");
+  std::free(c_length2);
+
+  Handle<String> length10(&scope, runtime.newStringFromCString("1234567890"));
+  char* c_length10 = length10->toCString();
+  ASSERT_NE(c_length10, nullptr);
+  EXPECT_STREQ(c_length10, "1234567890");
+  std::free(c_length10);
+
+  Handle<String> nulchar(&scope, runtime.newStringFromCString("wx\0yz"));
+  char* c_nulchar = nulchar->toCString();
+  ASSERT_NE(c_nulchar, nullptr);
+  EXPECT_STREQ(c_nulchar, "wx");
+  std::free(c_nulchar);
+}
+
 } // namespace python

@@ -26,6 +26,15 @@ Object* SmallString::fromBytes(View<byte> data) {
   return reinterpret_cast<SmallString*>(result);
 }
 
+char* SmallString::toCString() {
+  word length = this->length();
+  byte* result = static_cast<byte*>(std::malloc(length + 1));
+  assert(result != nullptr);
+  copyTo(result, length);
+  result[length] = '\0';
+  return reinterpret_cast<char*>(result);
+}
+
 // String
 
 bool LargeString::equals(Object* that) {
@@ -59,6 +68,15 @@ void LargeString::copyTo(byte* dst, word length) {
   assert(length >= 0);
   assert(length <= this->length());
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
+}
+
+char* LargeString::toCString() {
+  word length = this->length();
+  byte* result = static_cast<byte*>(std::malloc(length + 1));
+  assert(result != nullptr);
+  copyTo(result, length);
+  result[length] = '\0';
+  return reinterpret_cast<char*>(result);
 }
 
 } // namespace python

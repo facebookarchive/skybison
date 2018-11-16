@@ -303,6 +303,10 @@ class String : public Object {
   inline bool equals(Object* that);
   inline bool equalsCString(const char* c_string);
 
+  // Conversion to an unescaped C string.  The underlying memory is allocated
+  // with malloc and must be freed by the caller.
+  inline char* toCString();
+
   // Casting.
   static inline String* cast(Object* object);
 
@@ -320,6 +324,10 @@ class SmallString : public Object {
   // Conversion.
   static Object* fromCString(const char* value);
   static Object* fromBytes(View<byte> data);
+
+  // Conversion to an unescaped C string.  The underlying memory is allocated
+  // with malloc and must be freed by the caller.
+  char* toCString();
 
   // Casting.
   static inline SmallString* cast(Object* object);
@@ -476,6 +484,10 @@ class LargeString : public Array {
   // Equality checks.
   bool equals(Object* that);
   bool equalsCString(const char* c_string);
+
+  // Conversion to an unescaped C string.  The underlying memory is allocated
+  // with malloc and must be freed by the caller.
+  char* toCString();
 
   // Casting.
   static inline LargeString* cast(Object* object);
@@ -1783,7 +1795,15 @@ void String::copyTo(byte* dst, word length) {
     return;
   }
   assert(isLargeString());
-  LargeString::cast(this)->copyTo(dst, length);
+  return LargeString::cast(this)->copyTo(dst, length);
+}
+
+char* String::toCString() {
+  if (isSmallString()) {
+    return SmallString::cast(this)->toCString();
+  }
+  assert(isLargeString());
+  return LargeString::cast(this)->toCString();
 }
 
 // LargeString
@@ -1803,12 +1823,6 @@ byte LargeString::charAt(word index) {
   assert(index >= 0);
   assert(index < length());
   return *reinterpret_cast<byte*>(address() + index);
-}
-
-void LargeString::charAtPut(word index, byte value) {
-  assert(index >= 0);
-  assert(index < length());
-  *reinterpret_cast<byte*>(address() + index) = value;
 }
 
 // ValueCell
