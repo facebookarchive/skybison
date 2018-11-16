@@ -146,4 +146,54 @@ str.__new__(object)
                "aborting due to pending exception");
 }
 
+TEST(StrBuiltinsTest, DunderAddWithTwoStringsReturnsConcatenatedString) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.newStringFromCString("hello"));
+  frame->setLocal(1, runtime.newStringFromCString("world"));
+  Object* str = builtinStringAdd(thread, frame, 2);
+  ASSERT_TRUE(str->isString());
+  EXPECT_PYSTRING_EQ(String::cast(str), "helloworld");
+}
+
+TEST(StrBuiltinsTest, DunderAddWithLeftEmptyAndReturnsRight) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.newStringFromCString(""));
+  frame->setLocal(1, runtime.newStringFromCString("world"));
+  Object* str = builtinStringAdd(thread, frame, 2);
+  ASSERT_TRUE(str->isString());
+  EXPECT_PYSTRING_EQ(String::cast(str), "world");
+}
+
+TEST(StrBuiltinsTest, DunderAddWithRightEmptyAndReturnsRight) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
+  frame->setLocal(0, runtime.newStringFromCString("hello"));
+  frame->setLocal(1, runtime.newStringFromCString(""));
+  Object* str = builtinStringAdd(thread, frame, 2);
+  ASSERT_TRUE(str->isString());
+  EXPECT_PYSTRING_EQ(String::cast(str), "hello");
+}
+
+TEST(StrBuiltinsTest, PlusOperatorOnStringsEqualsDunderAdd) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello"
+b = "world"
+c = a + b
+d = a.__add__(b)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> c(&scope, moduleAt(&runtime, main, "c"));
+  Handle<String> d(&scope, moduleAt(&runtime, main, "d"));
+
+  EXPECT_PYSTRING_EQ(*c, "helloworld");
+  EXPECT_PYSTRING_EQ(*d, "helloworld");
+}
+
 }  // namespace python

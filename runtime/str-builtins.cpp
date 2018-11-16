@@ -8,6 +8,37 @@
 
 namespace python {
 
+Object* builtinStringAdd(Thread* thread, Frame* frame, word nargs) {
+  if (nargs == 0) {
+    return thread->throwTypeErrorFromCString("str.__add__ needs an argument");
+  }
+  if (nargs != 2) {
+    return thread->throwTypeError(thread->runtime()->newStringFromFormat(
+        "expected 1 arguments, got %ld", nargs - 1));
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> other(&scope, args.get(1));
+  if (!runtime->hasSubClassFlag(*self, Type::Flag::kStrSubclass)) {
+    return thread->throwTypeErrorFromCString(
+        "str.__add__ requires a str object");
+  }
+  if (!runtime->hasSubClassFlag(*other, Type::Flag::kStrSubclass)) {
+    return thread->throwTypeErrorFromCString("can only concatenate str to str");
+  }
+  if (!self->isString()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  if (!other->isString()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Handle<String> self_str(&scope, *self);
+  Handle<String> other_str(&scope, *other);
+  return runtime->stringConcat(self_str, other_str);
+}
+
 Object* builtinStringEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");

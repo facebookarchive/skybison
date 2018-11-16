@@ -1053,6 +1053,9 @@ void Runtime::initializeStrClass() {
                                          LayoutId::kObject));
   type->setFlag(Type::Flag::kStrSubclass);
 
+  classAddBuiltinFunction(type, SymbolId::kDunderAdd,
+                          nativeTrampoline<builtinStringAdd>);
+
   classAddBuiltinFunction(type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinStringEq>);
 

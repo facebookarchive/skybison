@@ -7,6 +7,7 @@
 
 namespace python {
 
+Object* builtinStringAdd(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringEq(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringGe(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs);
