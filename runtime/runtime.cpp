@@ -1819,11 +1819,11 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
 
 void Runtime::listExtend(
     const Handle<List>& list,
-    const Handle<Object>& iterator) {
+    const Handle<Object>& iterable) {
   word index = list->allocated();
   HandleScope scope;
-  if (iterator->isList()) {
-    Handle<List> ext_list(&scope, *iterator);
+  if (iterable->isList()) {
+    Handle<List> ext_list(&scope, *iterable);
     if (ext_list->allocated() > 0) {
       word new_capacity = index + ext_list->allocated();
       listEnsureCapacity(list, new_capacity);
@@ -1831,16 +1831,16 @@ void Runtime::listExtend(
       for (word i = 0; i < ext_list->allocated(); i++)
         list->atPut(index++, ext_list->at(i));
     }
-  } else if (iterator->isListIterator()) {
-    Handle<ListIterator> list_iter(&scope, *iterator);
+  } else if (iterable->isListIterator()) {
+    Handle<ListIterator> list_iter(&scope, *iterable);
     while (true) {
       Handle<Object> value(&scope, list_iter->next());
       if (value->isError())
         break;
       listAdd(list, value);
     }
-  } else if (iterator->isObjectArray()) {
-    Handle<ObjectArray> tuple(&scope, *iterator);
+  } else if (iterable->isObjectArray()) {
+    Handle<ObjectArray> tuple(&scope, *iterable);
     if (tuple->length() > 0) {
       word new_capacity = index + tuple->length();
       listEnsureCapacity(list, new_capacity);
@@ -1850,6 +1850,7 @@ void Runtime::listExtend(
       }
     }
   } else {
+    // TODO(T29780822): Add support for python iterators here.
     UNIMPLEMENTED(
         "List.extend only supports extending from "
         "List, ListIterator & Tuple");

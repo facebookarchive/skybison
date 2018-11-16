@@ -1212,28 +1212,29 @@ void Interpreter::doMapAdd(Context* ctx, word arg) {
 
 // opcode 149
 void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
-  HandleScope scope;
   Runtime* runtime = ctx->thread->runtime();
+  HandleScope scope(ctx->thread);
   Handle<List> list(&scope, runtime->newList());
-  Object**& sp = ctx->sp;
+  Handle<Object> obj(&scope, None::object());
+  Object** sp = ctx->sp;
   for (word i = arg - 1; i >= 0; i--) {
-    HandleScope scope1;
-    Handle<Object> obj(&scope1, *(sp + i));
+    obj = *(sp + i);
     runtime->listExtend(list, obj);
   }
   sp += arg - 1;
   *sp = *list;
+  ctx->sp = sp;
 }
 
 // opcode 152 & opcode 158
 void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   Runtime* runtime = ctx->thread->runtime();
-  HandleScope scope;
+  HandleScope scope(ctx->thread);
   Handle<List> list(&scope, runtime->newList());
-  Object**& sp = ctx->sp;
+  Handle<Object> obj(&scope, None::object());
+  Object** sp = ctx->sp;
   for (word i = arg - 1; i >= 0; i--) {
-    HandleScope scope1;
-    Handle<Object> obj(&scope1, *(sp + i));
+    obj = *(sp + i);
     runtime->listExtend(list, obj);
   }
   ObjectArray* tuple =
@@ -1242,6 +1243,7 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
     tuple->atPut(i, list->at(i));
   sp += arg - 1;
   *sp = tuple;
+  ctx->sp = sp;
 }
 
 // opcode 155

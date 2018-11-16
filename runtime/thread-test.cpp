@@ -2103,8 +2103,12 @@ t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
   EXPECT_TRUE(t1->isObjectArray());
   Handle<ObjectArray> tuple_t1(&scope, *t1);
   EXPECT_EQ(tuple_t1->length(), 6);
-  for (word i = 0; i < tuple_t1->length(); i++)
-    EXPECT_EQ(SmallInteger::cast(tuple_t1->at(i))->value(), i);
+  EXPECT_EQ(SmallInteger::cast(tuple_t1->at(0))->value(), 0);
+  EXPECT_EQ(SmallInteger::cast(tuple_t1->at(1))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(tuple_t1->at(2))->value(), 2);
+  EXPECT_EQ(SmallInteger::cast(tuple_t1->at(3))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(tuple_t1->at(4))->value(), 4);
+  EXPECT_EQ(SmallInteger::cast(tuple_t1->at(5))->value(), 5);
 }
 
 TEST(TestThread, BuildListUnpack) {
@@ -2120,8 +2124,12 @@ l = [*[0], *[1, 2], *[], *[3, 4, 5]]
   EXPECT_TRUE(l->isList());
   Handle<List> list_l(&scope, *l);
   EXPECT_EQ(list_l->allocated(), 6);
-  for (word i = 0; i < list_l->allocated(); i++)
-    EXPECT_EQ(SmallInteger::cast(list_l->at(i))->value(), i);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(0))->value(), 0);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(1))->value(), 1);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(2))->value(), 2);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(3))->value(), 3);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(4))->value(), 4);
+  EXPECT_EQ(SmallInteger::cast(list_l->at(5))->value(), 5);
 }
 
 TEST(BuildString, buildStringEmpty) {
