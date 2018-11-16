@@ -84,15 +84,15 @@ bool RawLargeInt::isValid() {
   }
 
   word high_digit = digitAt(digits - 1);
-  word next_sign_bit = digitAt(digits - 2) >> (kBitsPerWord - 1);
+  word next_digit = digitAt(digits - 2);
 
   // Redundant sign-extension for negative values.
-  if (high_digit == -1 && next_sign_bit == 1) {
+  if (high_digit == -1 && next_digit < 0) {
     return false;
   }
 
   // Redundant zero-extension for positive values.
-  if (high_digit == 0 && next_sign_bit == 0) {
+  if (high_digit == 0 && next_digit >= 0) {
     return false;
   }
 

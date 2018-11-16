@@ -63,6 +63,28 @@ TEST(IntTest, IntTest) {
   EXPECT_EQ(o6->bitLength(), kBitsPerWord + 1);
 }
 
+TEST(IntTest, LargeIntValid) {
+  Runtime runtime;
+  HandleScope scope;
+
+  LargeInt i(&scope, runtime.heap()->createLargeInt(2));
+  i->digitAtPut(0, -1234);
+  i->digitAtPut(1, -1);
+  // Redundant sign-extension
+  EXPECT_FALSE(i->isValid());
+
+  i->digitAtPut(1, -2);
+  EXPECT_TRUE(i->isValid());
+
+  i->digitAtPut(0, 1234);
+  i->digitAtPut(1, 0);
+  // Redundant zero-extension
+  EXPECT_FALSE(i->isValid());
+
+  i->digitAtPut(1, 1);
+  EXPECT_TRUE(i->isValid());
+}
+
 TEST(IntTest, IsPositive) {
   Runtime runtime;
   HandleScope scope;
