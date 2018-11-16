@@ -139,15 +139,13 @@ Object* Interpreter::stringJoin(Thread* thread, Object** sp, word num) {
   }
 
   HandleScope scope(thread->handles());
-  Handle<String> result(
+  Handle<LargeString> result(
       &scope, thread->runtime()->heap()->createLargeString(new_len));
-  word offset = 0;
+  word offset = LargeString::kDataOffset;
   for (word i = num - 1; i >= 0; i--) {
     String* str = String::cast(sp[i]);
     word len = str->length();
-    str->copyTo(
-        reinterpret_cast<byte*>(HeapObject::cast(*result)->address() + offset),
-        len);
+    str->copyTo(reinterpret_cast<byte*>(result->address() + offset), len);
     offset += len;
   }
   return *result;

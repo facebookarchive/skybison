@@ -619,8 +619,13 @@ class ObjectArray : public Array {
 
 class LargeString : public Array {
  public:
+  // Casting.
+  static inline LargeString* cast(Object* object);
+
   // Sizing.
   inline static word allocationSize(word length);
+
+  static const int kDataOffset = HeapObject::kSize;
 
  private:
   // Interface methods are private: strings should be manipulated via the
@@ -636,9 +641,6 @@ class LargeString : public Array {
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
   char* toCString();
-
-  // Casting.
-  static inline LargeString* cast(Object* object);
 
   friend class Heap;
   friend class Object;
