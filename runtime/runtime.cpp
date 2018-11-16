@@ -529,6 +529,13 @@ Object* Runtime::newStringWithAll(View<byte> code_units) {
   return result;
 }
 
+Object* Runtime::internStringFromCString(const char* c_string) {
+  HandleScope scope;
+  // TODO(T29648342): Optimize lookup to avoid creating an intermediary String
+  Handle<Object> str(&scope, newStringFromCString(c_string));
+  return internString(str);
+}
+
 Object* Runtime::internString(const Handle<Object>& string) {
   HandleScope scope;
   Handle<Set> set(&scope, interned());

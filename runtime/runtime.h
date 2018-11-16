@@ -110,6 +110,7 @@ class Runtime {
   Object* newWeakRef();
 
   Object* internString(const Handle<Object>& string);
+  Object* internStringFromCString(const char* c_string);
 
   void collectGarbage();
 

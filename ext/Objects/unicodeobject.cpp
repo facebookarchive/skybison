@@ -16,3 +16,13 @@ PyObject* PyUnicode_FromString(const char* c_string) {
   py::Handle<py::Object> value(&scope, runtime->newStringFromCString(c_string));
   return Py_AsPyObject(runtime->asApiHandle(*value));
 }
+
+PyObject* _PyUnicode_FromId(_Py_Identifier* id) {
+  py::Thread* thread = py::Thread::currentThread();
+  py::Runtime* runtime = thread->runtime();
+  py::HandleScope scope(thread->handles());
+
+  py::Handle<py::Object> result(
+      &scope, runtime->internStringFromCString(id->string));
+  return Py_AsPyObject(runtime->asApiHandle(*result));
+}

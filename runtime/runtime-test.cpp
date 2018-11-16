@@ -427,6 +427,19 @@ TEST(RuntimeTest, InternSmallString) {
   EXPECT_EQ(*sym, *str);
 }
 
+TEST(RuntimeTest, InternCString) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Set> interned(&scope, runtime.interned());
+
+  word num_interned_strings = interned->numItems();
+  Handle<Object> sym(&scope, runtime.internStringFromCString("hello, world"));
+  EXPECT_TRUE(sym->isString());
+  EXPECT_TRUE(runtime.setIncludes(interned, sym));
+  EXPECT_EQ(num_interned_strings + 1, interned->numItems());
+}
+
 TEST(RuntimeTest, CollectAttributes) {
   Runtime runtime;
   HandleScope scope;
