@@ -80,6 +80,36 @@ Object* builtinStrGt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinStrJoin(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->throwTypeErrorFromCStr("expected 1 argument");
+  }
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  if (!runtime->hasSubClassFlag(args.get(0), Type::Flag::kStrSubclass)) {
+    return thread->throwTypeErrorFromCStr("'join' requires a 'str' object");
+  }
+  HandleScope scope(thread);
+  Handle<Str> sep(&scope, args.get(0));
+  Handle<Object> iterable(&scope, args.get(1));
+  // Tuples of strings
+  if (iterable->isObjectArray()) {
+    Handle<ObjectArray> tuple(&scope, *iterable);
+    return thread->runtime()->strJoin(thread, sep, tuple, tuple->length());
+  }
+  // Lists of strings
+  if (iterable->isList()) {
+    Handle<List> list(&scope, *iterable);
+    Handle<ObjectArray> tuple(&scope, list->items());
+    return thread->runtime()->strJoin(thread, sep, tuple, list->allocated());
+  }
+  // Iterators of strings
+  Handle<List> list(&scope, runtime->newList());
+  runtime->listExtend(thread, list, iterable);
+  Handle<ObjectArray> tuple(&scope, list->items());
+  return thread->runtime()->strJoin(thread, sep, tuple, list->allocated());
+}
+
 Object* builtinStrLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");

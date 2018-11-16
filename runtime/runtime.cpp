@@ -1095,6 +1095,9 @@ void Runtime::initializeStrClass() {
   classAddBuiltinFunction(type, SymbolId::kDunderGt,
                           nativeTrampoline<builtinStrGt>);
 
+  classAddBuiltinFunction(type, SymbolId::kJoin,
+                          nativeTrampoline<builtinStrJoin>);
+
   classAddBuiltinFunction(type, SymbolId::kDunderLe,
                           nativeTrampoline<builtinStrLe>);
 
@@ -2624,24 +2627,69 @@ Object* Runtime::attributeDel(Thread* thread, const Handle<Object>& receiver,
 
 Object* Runtime::strConcat(const Handle<Str>& left, const Handle<Str>& right) {
   HandleScope scope;
-
-  const word llen = left->length();
-  const word rlen = right->length();
-  const word new_len = llen + rlen;
-
-  if (new_len <= SmallStr::kMaxLength) {
+  word left_len = left->length();
+  word right_len = right->length();
+  word result_len = left_len + right_len;
+  // Small result
+  if (result_len <= SmallStr::kMaxLength) {
     byte buffer[SmallStr::kMaxLength];
-    left->copyTo(buffer, llen);
-    right->copyTo(buffer + llen, rlen);
-    return SmallStr::fromBytes(View<byte>(buffer, new_len));
+    left->copyTo(buffer, left_len);
+    right->copyTo(buffer + left_len, right_len);
+    return SmallStr::fromBytes(View<byte>(buffer, result_len));
   }
+  // Large result
+  Handle<LargeStr> result(&scope, heap()->createLargeStr(result_len));
+  left->copyTo(reinterpret_cast<byte*>(result->address()), left_len);
+  right->copyTo(reinterpret_cast<byte*>(result->address() + left_len),
+                right_len);
+  return *result;
+}
 
-  Handle<Str> result(&scope, LargeStr::cast(heap()->createLargeStr(new_len)));
-  DCHECK(result->isLargeStr(), "not a large string");
-  const word address = HeapObject::cast(*result)->address();
-
-  left->copyTo(reinterpret_cast<byte*>(address), llen);
-  right->copyTo(reinterpret_cast<byte*>(address) + llen, rlen);
+Object* Runtime::strJoin(Thread* thread, const Handle<Str>& sep,
+                         const Handle<ObjectArray>& items, word allocated) {
+  HandleScope scope(thread);
+  word result_len = 0;
+  for (word i = 0; i < allocated; ++i) {
+    Handle<Object> elt(&scope, items->at(i));
+    if (!elt->isStr() && !hasSubClassFlag(*elt, Type::Flag::kStrSubclass)) {
+      return thread->throwTypeError(
+          newStrFromFormat("sequence item %ld: expected str instance", i));
+    }
+    Handle<Str> str(&scope, items->at(i));
+    result_len += str->length();
+  }
+  if (allocated > 1) {
+    result_len += sep->length() * (allocated - 1);
+  }
+  // Small result
+  if (result_len <= SmallStr::kMaxLength) {
+    byte buffer[SmallStr::kMaxLength];
+    for (word i = 0, offset = 0; i < allocated; ++i) {
+      Handle<Str> str(&scope, items->at(i));
+      word str_len = str->length();
+      str->copyTo(&buffer[offset], str_len);
+      offset += str_len;
+      if ((i + 1) < allocated) {
+        word sep_len = sep->length();
+        sep->copyTo(&buffer[offset], sep_len);
+        offset += sep->length();
+      }
+    }
+    return SmallStr::fromBytes(View<byte>(buffer, result_len));
+  }
+  // Large result
+  Handle<LargeStr> result(&scope, heap()->createLargeStr(result_len));
+  for (word i = 0, offset = 0; i < allocated; ++i) {
+    Handle<Str> str(&scope, items->at(i));
+    word str_len = str->length();
+    str->copyTo(reinterpret_cast<byte*>(result->address() + offset), str_len);
+    offset += str_len;
+    if ((i + 1) < allocated) {
+      word sep_len = sep->length();
+      sep->copyTo(reinterpret_cast<byte*>(result->address() + offset), sep_len);
+      offset += sep_len;
+    }
+  }
   return *result;
 }
 

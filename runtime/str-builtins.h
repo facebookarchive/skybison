@@ -13,6 +13,7 @@ Object* builtinStrEq(Thread* thread, Frame* frame, word nargs);
 Object* builtinStrGe(Thread* thread, Frame* frame, word nargs);
 Object* builtinStrGetItem(Thread* thread, Frame* frame, word nargs);
 Object* builtinStrGt(Thread* thread, Frame* frame, word nargs);
+Object* builtinStrJoin(Thread* thread, Frame* frame, word nargs);
 Object* builtinStrLe(Thread* thread, Frame* frame, word nargs);
 Object* builtinStrLen(Thread* thread, Frame* frame, word nargs);
 Object* builtinStrLower(Thread* thread, Frame* frame, word nargs);

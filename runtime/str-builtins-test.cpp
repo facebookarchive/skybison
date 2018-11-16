@@ -498,6 +498,77 @@ a = "\n \t \r \\".__repr__()
   EXPECT_PYSTRING_EQ(*a, "'\\n \\t \\r \\\\'");
 }
 
+TEST(StrBuiltinsTest, JoinWithEmptyArray) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = ",".join([])
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "");
+}
+
+TEST(StrBuiltinsTest, JoinWithOneElementArray) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = ",".join(["1"])
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "1");
+}
+
+TEST(StrBuiltinsTest, JoinWithManyElementArray) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = ",".join(["1", "2", "3"])
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "1,2,3");
+}
+
+TEST(StrBuiltinsTest, JoinWithManyElementArrayAndEmptySeparator) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = "".join(["1", "2", "3"])
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "123");
+}
+
+TEST(StrBuiltinsTest, JoinWithIterable) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+a = ",".join(("1", "2", "3"))
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Str> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_PYSTRING_EQ(*a, "1,2,3");
+}
+
+TEST(StrBuiltinsDeathTest, JoinWithNonStringInArrayThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = ",".join(["hello", 1])
+)"),
+               "aborting due to pending exception");
+}
+
+TEST(StrBuiltinsDeathTest, JoinWithNonStringSeparatorThrowsTypeError) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+a = str.join(1, ["hello", 1])
+)"),
+               "aborting due to pending exception");
+}
+
 TEST(StrBuiltinsTest, PartitionOnSingleCharStr) {
   Runtime runtime;
   runtime.runFromCStr(R"(

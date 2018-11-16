@@ -130,6 +130,7 @@ class Runtime;
   V(IsInstance, "isinstance")                                                  \
   V(IsSubclass, "issubclass")                                                  \
   V(Items, "items")                                                            \
+  V(Join, "join")                                                              \
   V(IndexError, "IndexError")                                                  \
   V(KeyError, "KeyError")                                                      \
   V(Keys, "keys")                                                              \
