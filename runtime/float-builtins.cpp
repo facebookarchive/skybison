@@ -267,4 +267,31 @@ Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinDoublePow(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 2 || nargs > 3) {
+    return thread->throwTypeErrorFromCString("expected at most 2 arguments");
+  }
+  Arguments args(frame, nargs);
+  Object* self = args.get(0);
+  Object* other = args.get(1);
+  if (!self->isFloat()) {
+    return thread->throwTypeErrorFromCString(
+        "__pow__() must be called with float instance as first argument");
+  }
+  if (nargs == 3) {
+    return thread->throwTypeErrorFromCString(
+        "pow() 3rd argument not allowed unless all arguments are integers");
+  }
+  double left = Float::cast(self)->value();
+  if (other->isFloat()) {
+    double right = Float::cast(other)->value();
+    return thread->runtime()->newFloat(std::pow(left, right));
+  }
+  if (other->isInt()) {
+    double right = Int::cast(other)->floatValue();
+    return thread->runtime()->newFloat(std::pow(left, right));
+  }
+  return thread->runtime()->notImplemented();
+}
+
 }  // namespace python

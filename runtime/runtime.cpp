@@ -1170,8 +1170,8 @@ void Runtime::initializeFloatClass() {
                                    LayoutId::kObject));
   float_type->setFlag(Type::Flag::kFloatSubclass);
 
-  classAddBuiltinFunction(float_type, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinDoubleNew>);
+  classAddBuiltinFunction(float_type, SymbolId::kDunderAdd,
+                          nativeTrampoline<builtinDoubleAdd>);
 
   classAddBuiltinFunction(float_type, SymbolId::kDunderEq,
                           nativeTrampoline<builtinDoubleEq>);
@@ -1191,8 +1191,11 @@ void Runtime::initializeFloatClass() {
   classAddBuiltinFunction(float_type, SymbolId::kDunderNe,
                           nativeTrampoline<builtinDoubleNe>);
 
-  classAddBuiltinFunction(float_type, SymbolId::kDunderAdd,
-                          nativeTrampoline<builtinDoubleAdd>);
+  classAddBuiltinFunction(float_type, SymbolId::kDunderNew,
+                          nativeTrampoline<builtinDoubleNew>);
+
+  classAddBuiltinFunction(float_type, SymbolId::kDunderPow,
+                          nativeTrampoline<builtinDoublePow>);
 
   classAddBuiltinFunction(float_type, SymbolId::kDunderSub,
                           nativeTrampoline<builtinDoubleSub>);

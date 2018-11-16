@@ -28,7 +28,7 @@ namespace python {
   V(BINARY_MATRIX_MULTIPLY, 16, doBinaryMatrixMultiply)                        \
   V(INPLACE_MATRIX_MULTIPLY, 17, doInplaceMatrixMultiply)                      \
   V(UNUSED_BYTECODE_18, 18, doInvalidBytecode)                                 \
-  V(BINARY_POWER, 19, doNotImplemented)                                        \
+  V(BINARY_POWER, 19, doBinaryPower)                                           \
   V(BINARY_MULTIPLY, 20, doBinaryMultiply)                                     \
   V(UNUSED_BYTECODE_21, 21, doInvalidBytecode)                                 \
   V(BINARY_MODULO, 22, doBinaryModulo)                                         \
@@ -76,7 +76,7 @@ namespace python {
   V(BINARY_AND, 64, doBinaryAnd)                                               \
   V(BINARY_XOR, 65, doBinaryXor)                                               \
   V(BINARY_OR, 66, doBinaryOr)                                                 \
-  V(INPLACE_POWER, 67, doNotImplemented)                                       \
+  V(INPLACE_POWER, 67, doInplacePower)                                         \
   V(GET_ITER, 68, doGetIter)                                                   \
   V(GET_YIELD_FROM_ITER, 69, doNotImplemented)                                 \
   V(PRINT_EXPR, 70, doNotImplemented)                                          \

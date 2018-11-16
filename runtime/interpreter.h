@@ -124,6 +124,7 @@ class Interpreter {
   static void doUnaryInvert(Context* ctx, word arg);
   static void doBinaryMatrixMultiply(Context* ctx, word arg);
   static void doInplaceMatrixMultiply(Context* ctx, word arg);
+  static void doBinaryPower(Context* ctx, word arg);
   static void doBinaryMultiply(Context* ctx, word arg);
   static void doBinaryModulo(Context* ctx, word arg);
   static void doBinaryAdd(Context* ctx, word arg);

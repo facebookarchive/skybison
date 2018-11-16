@@ -312,6 +312,58 @@ float.__sub__(None, 1.0)
                "must be called with float instance as first argument");
 }
 
+TEST(FloatBuiltinsTest, PowFloatAndFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+base = 2.0
+x = base ** 4.0
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Float> result(&scope, moduleAt(&runtime, main, "x"));
+  EXPECT_EQ(result->value(), 16.0);
+}
+
+TEST(FloatBuiltinsTest, PowFloatAndInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+base = 2.0
+x = base ** 4
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Float> result(&scope, moduleAt(&runtime, main, "x"));
+  EXPECT_EQ(result->value(), 16.0);
+}
+
+TEST(FloatBuiltinsTest, InplacePowFloatAndFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+x = 2.0
+x **= 4.0
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Float> result(&scope, moduleAt(&runtime, main, "x"));
+  EXPECT_EQ(result->value(), 16.0);
+}
+
+TEST(FloatBuiltinsTest, InplacePowFloatAndInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+x = 2.0
+x **= 4
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Float> result(&scope, moduleAt(&runtime, main, "x"));
+  EXPECT_EQ(result->value(), 16.0);
+}
+
 TEST(FloatBuiltinsDeathTest, FloatNewWithDunderFloatReturnsStringThrows) {
   const char* src = R"(
 class Foo:

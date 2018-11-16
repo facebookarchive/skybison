@@ -604,6 +604,17 @@ void Interpreter::doInplaceMatrixMultiply(Context* ctx, word) {
   ctx->frame->pushValue(result);
 }
 
+// opcode 19
+void Interpreter::doBinaryPower(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      binaryOperation(thread, ctx->frame, BinaryOp::POW, self, other);
+  ctx->frame->pushValue(result);
+}
+
 // opcode 20
 void Interpreter::doBinaryMultiply(Context* ctx, word) {
   Thread* thread = ctx->thread;
@@ -853,6 +864,17 @@ void Interpreter::doBinaryOr(Context* ctx, word) {
   Handle<Object> self(&scope, ctx->frame->popValue());
   Object* result =
       binaryOperation(thread, ctx->frame, BinaryOp::OR, self, other);
+  ctx->frame->pushValue(result);
+}
+
+// opcode 67
+void Interpreter::doInplacePower(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
+  Object* result =
+      inplaceOperation(thread, ctx->frame, BinaryOp::POW, self, other);
   ctx->frame->pushValue(result);
 }
 
