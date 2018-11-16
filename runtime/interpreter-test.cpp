@@ -236,6 +236,119 @@ right = D()
   EXPECT_EQ(ObjectArray::cast(result)->at(3), *left);
 }
 
+TEST(InterpreterTest, InplaceOperationCallsInplaceMethod) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+class C:
+    def __isub__(self, other):
+        return (C, '__isub__', self, other)
+
+left = C()
+right = C()
+)");
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
+
+  Object* result = Interpreter::inplaceOperation(
+      thread,
+      frame,
+      frame->valueStackTop(),
+      Interpreter::BinaryOp::SUB,
+      left,
+      right);
+  ASSERT_TRUE(result->isObjectArray());
+  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
+  EXPECT_TRUE(String::cast(ObjectArray::cast(result)->at(1))
+                  ->equalsCString("__isub__"));
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
+  EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
+}
+
+TEST(InterpreterTest, InplaceOperationCallsBinaryMethod) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+class C:
+    def __sub__(self, other):
+        return (C, '__sub__', self, other)
+
+left = C()
+right = C()
+)");
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
+
+  Object* result = Interpreter::inplaceOperation(
+      thread,
+      frame,
+      frame->valueStackTop(),
+      Interpreter::BinaryOp::SUB,
+      left,
+      right);
+  ASSERT_TRUE(result->isObjectArray());
+  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
+  EXPECT_TRUE(
+      String::cast(ObjectArray::cast(result)->at(1))->equalsCString("__sub__"));
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
+  EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
+}
+
+TEST(InterpreterTest, InplaceOperationCallsBinaryMethodAfterNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+class C:
+    def __isub__(self, other):
+        return NotImplemented
+    def __sub__(self, other):
+        return (C, '__sub__', self, other)
+
+left = C()
+right = C()
+)");
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "left"));
+  Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "right"));
+  Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
+
+  Object* result = Interpreter::inplaceOperation(
+      thread,
+      frame,
+      frame->valueStackTop(),
+      Interpreter::BinaryOp::SUB,
+      left,
+      right);
+  ASSERT_TRUE(result->isObjectArray());
+  ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
+  EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
+  EXPECT_TRUE(
+      String::cast(ObjectArray::cast(result)->at(1))->equalsCString("__sub__"));
+  EXPECT_EQ(ObjectArray::cast(result)->at(2), *left);
+  EXPECT_EQ(ObjectArray::cast(result)->at(3), *right);
+}
+
 // To a rich comparison on two instances of the same type.  In each case, the
 // method on the left side of the comparison should be used.
 TEST(InterpreterTest, CompareOpSameClass) {

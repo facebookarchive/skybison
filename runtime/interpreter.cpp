@@ -303,6 +303,26 @@ Object* Interpreter::binaryOperation(
   UNIMPLEMENTED("throw");
 }
 
+Object* Interpreter::inplaceOperation(
+    Thread* thread,
+    Frame* caller,
+    Object** sp,
+    BinaryOp op,
+    const Handle<Object>& self,
+    const Handle<Object>& other) {
+  HandleScope scope(thread->handles());
+  Runtime* runtime = thread->runtime();
+  Handle<Object> selector(&scope, runtime->inplaceOperationSelector(op));
+  Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
+  if (!method->isError()) {
+    Object* result = callMethod2(thread, caller, sp, method, self, other);
+    if (result != runtime->notImplemented()) {
+      return result;
+    }
+  }
+  return binaryOperation(thread, caller, sp, op, self, other);
+}
+
 Object* Interpreter::compareOperation(
     Thread* thread,
     Frame* caller,
@@ -638,6 +658,17 @@ void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
     UNIMPLEMENTED("Arbitrary object binary true divide not supported.");
   }
   *--ctx->sp = ctx->thread->runtime()->newDouble(divisor / dividend);
+}
+
+// opcode 56
+void Interpreter::doInplaceSubtract(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread->handles());
+  Handle<Object> other(&scope, *ctx->sp++);
+  Handle<Object> self(&scope, *ctx->sp++);
+  Object* result =
+      inplaceOperation(thread, ctx->frame, ctx->sp, BinaryOp::SUB, self, other);
+  *--ctx->sp = result;
 }
 
 // opcode 60

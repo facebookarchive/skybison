@@ -83,6 +83,14 @@ class Interpreter {
       const Handle<Object>& left,
       const Handle<Object>& right);
 
+  static Object* inplaceOperation(
+      Thread* thread,
+      Frame* caller,
+      Object** sp,
+      BinaryOp op,
+      const Handle<Object>& left,
+      const Handle<Object>& right);
+
   static Object* compareOperation(
       Thread* thread,
       Frame* caller,
@@ -120,6 +128,7 @@ class Interpreter {
   static void doBinarySubscr(Context* ctx, word arg);
   static void doBinaryFloorDivide(Context* ctx, word arg);
   static void doBinaryTrueDivide(Context* ctx, word arg);
+  static void doInplaceSubtract(Context* ctx, word arg);
   static void doStoreSubscr(Context* ctx, word arg);
   static void doBinaryAnd(Context* ctx, word arg);
   static void doBinaryXor(Context* ctx, word arg);

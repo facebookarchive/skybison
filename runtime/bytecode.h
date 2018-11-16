@@ -65,7 +65,7 @@ namespace python {
   V(UNUSED_BYTECODE_53, 53, doInvalidBytecode)             \
   V(UNUSED_BYTECODE_54, 54, doInvalidBytecode)             \
   V(INPLACE_ADD, 55, doBinaryAdd)                          \
-  V(INPLACE_SUBTRACT, 56, doBinarySubtract)                \
+  V(INPLACE_SUBTRACT, 56, doInplaceSubtract)               \
   V(INPLACE_MULTIPLY, 57, doBinaryMultiply)                \
   V(UNUSED_BYTECODE_58, 58, doInvalidBytecode)             \
   V(INPLACE_MODULO, 59, doBinaryModulo)                    \

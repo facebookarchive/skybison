@@ -22,8 +22,21 @@ class Runtime;
   V(DunderGe, "__ge__")                  \
   V(DunderGet, "__get__")                \
   V(DunderGt, "__gt__")                  \
+  V(DunderIadd, "__iadd__")              \
+  V(DunderIand, "__iand__" )             \
+  V(DunderIfloordiv, "__ifloordiv__" )   \
+  V(DunderIlshift, "__ilshift__" )       \
+  V(DunderImatmul, "__imatmul__" )       \
+  V(DunderImod, "__imod__" )             \
+  V(DunderImul, "__imul__" )             \
   V(DunderInit, "__init__")              \
   V(DunderInvert, "__invert__")          \
+  V(DunderIor, "__ior__" )               \
+  V(DunderIpow, "__ipow__" )             \
+  V(DunderIrshift, "__irshift__" )       \
+  V(DunderIsub, "__isub__" )             \
+  V(DunderItruediv, "__itruediv__" )     \
+  V(DunderIxor, "__ixor__" )             \
   V(DunderLe, "__le__")                  \
   V(DunderLen, "__len__")                \
   V(DunderLshift, "__lshift__")          \

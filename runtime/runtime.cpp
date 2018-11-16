@@ -1507,6 +1507,39 @@ Object* Runtime::swappedBinaryOperationSelector(Interpreter::BinaryOp op) {
   }
 }
 
+Object* Runtime::inplaceOperationSelector(Interpreter::BinaryOp op) {
+  switch (op) {
+    case Interpreter::BinaryOp::ADD:
+      return symbols()->DunderIadd();
+    case Interpreter::BinaryOp::SUB:
+      return symbols()->DunderIsub();
+    case Interpreter::BinaryOp::MUL:
+      return symbols()->DunderImul();
+    case Interpreter::BinaryOp::MATMUL:
+      return symbols()->DunderImatmul();
+    case Interpreter::BinaryOp::TRUEDIV:
+      return symbols()->DunderItruediv();
+    case Interpreter::BinaryOp::FLOORDIV:
+      return symbols()->DunderIfloordiv();
+    case Interpreter::BinaryOp::MOD:
+      return symbols()->DunderImod();
+    case Interpreter::BinaryOp::POW:
+      return symbols()->DunderIpow();
+    case Interpreter::BinaryOp::LSHIFT:
+      return symbols()->DunderIlshift();
+    case Interpreter::BinaryOp::RSHIFT:
+      return symbols()->DunderIrshift();
+    case Interpreter::BinaryOp::AND:
+      return symbols()->DunderIand();
+    case Interpreter::BinaryOp::XOR:
+      return symbols()->DunderIxor();
+    case Interpreter::BinaryOp::OR:
+      return symbols()->DunderIor();
+    default:
+      UNREACHABLE("unknown inplace operation");
+  }
+}
+
 Object* Runtime::comparisonSelector(CompareOp op) {
   DCHECK(op >= CompareOp::LT, "invalid compare op");
   DCHECK(op <= CompareOp::GE, "invalid compare op");

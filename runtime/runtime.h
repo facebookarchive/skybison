@@ -220,6 +220,8 @@ class Runtime {
   Object* binaryOperationSelector(Interpreter::BinaryOp op);
   Object* swappedBinaryOperationSelector(Interpreter::BinaryOp op);
 
+  Object* inplaceOperationSelector(Interpreter::BinaryOp op);
+
   Object* comparisonSelector(CompareOp op);
   Object* swappedComparisonSelector(CompareOp op);
 
