@@ -71,6 +71,39 @@ char* RawLargeStr::toCStr() {
   return reinterpret_cast<char*>(result);
 }
 
+// RawInt
+
+word RawInt::compare(RawInt that) {
+  if (this->isSmallInt() && that->isSmallInt()) {
+    return this->asWord() - that->asWord();
+  }
+  // compare with large ints always returns -1, 0, or 1
+  if (this->isNegative() != that->isNegative()) {
+    return this->isNegative() ? -1 : 1;
+  }
+
+  word left_digits = this->numDigits();
+  word right_digits = that->numDigits();
+
+  if (left_digits > right_digits) {
+    return 1;
+  }
+  if (left_digits < right_digits) {
+    return -1;
+  }
+  for (word i = left_digits - 1; i >= 0; i--) {
+    uword left_digit = this->digitAt(i);
+    uword right_digit = that->digitAt(i);
+    if (left_digit > right_digit) {
+      return 1;
+    }
+    if (left_digit < right_digit) {
+      return -1;
+    }
+  }
+  return 0;
+}
+
 // RawLargeInt
 
 bool RawLargeInt::isValid() {
@@ -115,6 +148,123 @@ word RawLargeInt::bitLength() {
   }
   return (num_digits - 1) * kBitsPerWord + Utils::highestBit(high_digit);
 }
+
+// RawListIterator
+
+RawObject RawListIterator::next() {
+  word idx = index();
+  RawList underlying = RawList::cast(list());
+  if (idx >= underlying->numItems()) {
+    return RawError::object();
+  }
+
+  RawObject item = underlying->at(idx);
+  setIndex(idx + 1);
+  return item;
+}
+
+// RawObjectArray
+
+bool RawObjectArray::contains(RawObject object) {
+  word len = length();
+  for (word i = 0; i < len; i++) {
+    if (at(i) == object) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void RawObjectArray::copyTo(RawObject array) {
+  RawObjectArray dst = RawObjectArray::cast(array);
+  word len = length();
+  DCHECK_BOUND(len, dst->length());
+  for (word i = 0; i < len; i++) {
+    RawObject elem = at(i);
+    dst->atPut(i, elem);
+  }
+}
+
+void RawObjectArray::replaceFromWith(word start, RawObject array) {
+  RawObjectArray src = RawObjectArray::cast(array);
+  word count = Utils::minimum(this->length() - start, src->length());
+  word stop = start + count;
+  for (word i = start, j = 0; i < stop; i++, j++) {
+    atPut(i, src->at(j));
+  }
+}
+
+// RawRangeIterator
+
+bool RawRangeIterator::isOutOfRange(word cur, word stop, word step) {
+  DCHECK(step != 0,
+         "invalid step");  // should have been checked in builtinRange().
+
+  if (step < 0) {
+    if (cur <= stop) {
+      return true;
+    }
+  } else if (step > 0) {
+    if (cur >= stop) {
+      return true;
+    }
+  }
+  return false;
+}
+
+word RawRangeIterator::pendingLength() {
+  RawRange range = RawRange::cast(instanceVariableAt(kRangeOffset));
+  word stop = range->stop();
+  word step = range->step();
+  word current =
+      RawSmallInt::cast(instanceVariableAt(kCurValueOffset))->value();
+  if (isOutOfRange(current, stop, step)) {
+    return 0;
+  }
+  return std::abs((stop - current) / step);
+}
+
+RawObject RawRangeIterator::next() {
+  RawSmallInt ret = RawSmallInt::cast(instanceVariableAt(kCurValueOffset));
+  word cur = ret->value();
+
+  RawRange range = RawRange::cast(instanceVariableAt(kRangeOffset));
+  word stop = range->stop();
+  word step = range->step();
+
+  // TODO: range overflow is unchecked. Since a correct implementation
+  // has to support arbitrary precision anyway, there's no point in checking
+  // for overflow.
+  if (isOutOfRange(cur, stop, step)) {
+    // TODO: Use RawStopIteration for control flow.
+    return RawError::object();
+  }
+
+  instanceVariableAtPut(kCurValueOffset, RawSmallInt::fromWord(cur + step));
+  return ret;
+}
+
+// RawSetIterator
+
+RawObject RawSetIterator::next() {
+  word idx = index();
+  RawSet underlying = RawSet::cast(set());
+  RawObjectArray data = RawObjectArray::cast(underlying->data());
+  word length = data->length();
+  // Find the next non empty bucket
+  while (idx < length && !RawSet::Bucket::isFilled(data, idx)) {
+    idx += RawSet::Bucket::kNumPointers;
+  }
+  if (idx >= length) {
+    return RawError::object();
+  }
+  setConsumedCount(consumedCount() + 1);
+  word new_idx = (idx + RawSet::Bucket::kNumPointers);
+  setIndex(new_idx);
+  return RawSet::Bucket::key(data, idx);
+}
+
+// RawSlice
 
 void RawSlice::unpack(word* start, word* stop, word* step) {
   if (this->step()->isNoneType()) {
@@ -181,6 +331,49 @@ word RawSlice::adjustIndices(word length, word* start, word* stop, word step) {
   }
   return 0;
 }
+
+// RawStr
+
+word RawStr::compare(RawObject string) {
+  RawStr that = RawStr::cast(string);
+  word length = Utils::minimum(this->length(), that->length());
+  for (word i = 0; i < length; i++) {
+    word diff = this->charAt(i) - that->charAt(i);
+    if (diff != 0) {
+      return (diff > 0) ? 1 : -1;
+    }
+  }
+  word diff = this->length() - that->length();
+  return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
+}
+
+bool RawStr::equalsCStr(const char* c_str) {
+  const char* cp = c_str;
+  const word len = length();
+  for (word i = 0; i < len; i++, cp++) {
+    char ch = *cp;
+    if (ch == '\0' || ch != charAt(i)) {
+      return false;
+    }
+  }
+  return *cp == '\0';
+}
+
+// RawTupleIterator
+
+RawObject RawTupleIterator::next() {
+  word idx = index();
+  RawObjectArray underlying = RawObjectArray::cast(tuple());
+  if (idx >= underlying->length()) {
+    return RawError::object();
+  }
+
+  RawObject item = underlying->at(idx);
+  setIndex(idx + 1);
+  return item;
+}
+
+// RawWeakRef
 
 void RawWeakRef::enqueueReference(RawObject reference, RawObject* tail) {
   if (*tail == RawNoneType::object()) {
