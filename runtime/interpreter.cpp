@@ -294,6 +294,14 @@ RawObject Interpreter::unaryOperation(Thread* thread, Frame* caller,
   return callMethod1(thread, caller, method, self);
 }
 
+void Interpreter::doUnaryOperation(SymbolId selector, Context* ctx) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Object receiver(&scope, ctx->frame->topValue());
+  RawObject result = unaryOperation(thread, ctx->frame, receiver, selector);
+  ctx->frame->setTopValue(result);
+}
+
 RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
                                        BinaryOp op, const Object& self,
                                        const Object& other) {
@@ -347,6 +355,16 @@ RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
                 RawStr::cast(other_type->name())->toCStr());
 }
 
+void Interpreter::doBinaryOperation(BinaryOp op, Context* ctx) {
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  HandleScope scope(thread);
+  Object other(&scope, frame->popValue());
+  Object self(&scope, frame->popValue());
+  RawObject result = binaryOperation(thread, frame, op, self, other);
+  ctx->frame->pushValue(result);
+}
+
 RawObject Interpreter::inplaceOperation(Thread* thread, Frame* caller,
                                         BinaryOp op, const Object& self,
                                         const Object& other) {
@@ -361,6 +379,15 @@ RawObject Interpreter::inplaceOperation(Thread* thread, Frame* caller,
     }
   }
   return binaryOperation(thread, caller, op, self, other);
+}
+
+void Interpreter::doInplaceOperation(BinaryOp op, Context* ctx) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Object other(&scope, ctx->frame->popValue());
+  Object self(&scope, ctx->frame->popValue());
+  RawObject result = inplaceOperation(thread, ctx->frame, op, self, other);
+  ctx->frame->pushValue(result);
 }
 
 RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
@@ -572,12 +599,12 @@ void Interpreter::doNop(Context*, word) {}
 
 // opcode 10
 void Interpreter::doUnaryPositive(Context* ctx, word) {
-  doUnaryOperation<SymbolId::kDunderPos>(ctx);
+  doUnaryOperation(SymbolId::kDunderPos, ctx);
 }
 
 // opcode 11
 void Interpreter::doUnaryNegative(Context* ctx, word) {
-  doUnaryOperation<SymbolId::kDunderNeg>(ctx);
+  doUnaryOperation(SymbolId::kDunderNeg, ctx);
 }
 
 // opcode 12
@@ -591,42 +618,42 @@ void Interpreter::doUnaryNot(Context* ctx, word) {
 
 // opcode 15
 void Interpreter::doUnaryInvert(Context* ctx, word) {
-  doUnaryOperation<SymbolId::kDunderInvert>(ctx);
+  doUnaryOperation(SymbolId::kDunderInvert, ctx);
 }
 
 // opcode 16
 void Interpreter::doBinaryMatrixMultiply(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::MATMUL>(ctx);
+  doBinaryOperation(BinaryOp::MATMUL, ctx);
 }
 
 // opcode 17
 void Interpreter::doInplaceMatrixMultiply(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::MATMUL>(ctx);
+  doInplaceOperation(BinaryOp::MATMUL, ctx);
 }
 
 // opcode 19
 void Interpreter::doBinaryPower(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::POW>(ctx);
+  doBinaryOperation(BinaryOp::POW, ctx);
 }
 
 // opcode 20
 void Interpreter::doBinaryMultiply(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::MUL>(ctx);
+  doBinaryOperation(BinaryOp::MUL, ctx);
 }
 
 // opcode 22
 void Interpreter::doBinaryModulo(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::MOD>(ctx);
+  doBinaryOperation(BinaryOp::MOD, ctx);
 }
 
 // opcode 23
 void Interpreter::doBinaryAdd(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::ADD>(ctx);
+  doBinaryOperation(BinaryOp::ADD, ctx);
 }
 
 // opcode 24
 void Interpreter::doBinarySubtract(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::SUB>(ctx);
+  doBinaryOperation(BinaryOp::SUB, ctx);
 }
 
 // opcode 25
@@ -651,22 +678,22 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
 
 // opcode 26
 void Interpreter::doBinaryFloorDivide(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::FLOORDIV>(ctx);
+  doBinaryOperation(BinaryOp::FLOORDIV, ctx);
 }
 
 // opcode 27
 void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::TRUEDIV>(ctx);
+  doBinaryOperation(BinaryOp::TRUEDIV, ctx);
 }
 
 // opcode 28
 void Interpreter::doInplaceFloorDivide(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::FLOORDIV>(ctx);
+  doInplaceOperation(BinaryOp::FLOORDIV, ctx);
 }
 
 // opcode 29
 void Interpreter::doInplaceTrueDivide(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::TRUEDIV>(ctx);
+  doInplaceOperation(BinaryOp::TRUEDIV, ctx);
 }
 
 // opcode 50
@@ -745,22 +772,22 @@ void Interpreter::doBeforeAsyncWith(Context* ctx, word) {
 
 // opcode 55
 void Interpreter::doInplaceAdd(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::ADD>(ctx);
+  doInplaceOperation(BinaryOp::ADD, ctx);
 }
 
 // opcode 56
 void Interpreter::doInplaceSubtract(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::SUB>(ctx);
+  doInplaceOperation(BinaryOp::SUB, ctx);
 }
 
 // opcode 57
 void Interpreter::doInplaceMultiply(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::MUL>(ctx);
+  doInplaceOperation(BinaryOp::MUL, ctx);
 }
 
 // opcode 59
 void Interpreter::doInplaceModulo(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::MOD>(ctx);
+  doInplaceOperation(BinaryOp::MOD, ctx);
 }
 
 // opcode 60
@@ -801,12 +828,12 @@ void Interpreter::doDeleteSubscr(Context* ctx, word) {
 
 // opcode 62
 void Interpreter::doBinaryLshift(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::LSHIFT>(ctx);
+  doBinaryOperation(BinaryOp::LSHIFT, ctx);
 }
 
 // opcode 63
 void Interpreter::doBinaryRshift(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::RSHIFT>(ctx);
+  doBinaryOperation(BinaryOp::RSHIFT, ctx);
 }
 
 // opcode 64
@@ -822,17 +849,17 @@ void Interpreter::doBinaryAnd(Context* ctx, word) {
 
 // opcode 65
 void Interpreter::doBinaryXor(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::XOR>(ctx);
+  doBinaryOperation(BinaryOp::XOR, ctx);
 }
 
 // opcode 66
 void Interpreter::doBinaryOr(Context* ctx, word) {
-  doBinaryOperation<BinaryOp::OR>(ctx);
+  doBinaryOperation(BinaryOp::OR, ctx);
 }
 
 // opcode 67
 void Interpreter::doInplacePower(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::POW>(ctx);
+  doInplaceOperation(BinaryOp::POW, ctx);
 }
 
 // opcode 68
@@ -930,27 +957,27 @@ void Interpreter::doGetAwaitable(Context* ctx, word) {
 
 // opcode 75
 void Interpreter::doInplaceLshift(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::LSHIFT>(ctx);
+  doInplaceOperation(BinaryOp::LSHIFT, ctx);
 }
 
 // opcode 76
 void Interpreter::doInplaceRshift(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::RSHIFT>(ctx);
+  doInplaceOperation(BinaryOp::RSHIFT, ctx);
 }
 
 // opcode 77
 void Interpreter::doInplaceAnd(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::AND>(ctx);
+  doInplaceOperation(BinaryOp::AND, ctx);
 }
 
 // opcode 78
 void Interpreter::doInplaceXor(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::XOR>(ctx);
+  doInplaceOperation(BinaryOp::XOR, ctx);
 }
 
 // opcode 79
 void Interpreter::doInplaceOr(Context* ctx, word) {
-  doInplaceOperation<BinaryOp::OR>(ctx);
+  doInplaceOperation(BinaryOp::OR, ctx);
 }
 
 // opcode 80
@@ -1999,36 +2026,6 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
         kOpTable[bc](&ctx, arg);
     }
   }
-}
-
-template <Interpreter::BinaryOp op>
-inline void Interpreter::doBinaryOperation(Context* ctx) {
-  Thread* thread = ctx->thread;
-  Frame* frame = ctx->frame;
-  HandleScope scope(thread);
-  Object other(&scope, frame->popValue());
-  Object self(&scope, frame->popValue());
-  RawObject result = binaryOperation(thread, frame, op, self, other);
-  ctx->frame->pushValue(result);
-}
-
-template <Interpreter::BinaryOp op>
-inline void Interpreter::doInplaceOperation(Context* ctx) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Object other(&scope, ctx->frame->popValue());
-  Object self(&scope, ctx->frame->popValue());
-  RawObject result = inplaceOperation(thread, ctx->frame, op, self, other);
-  ctx->frame->pushValue(result);
-}
-
-template <SymbolId selector>
-inline void Interpreter::doUnaryOperation(Context* ctx) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Object receiver(&scope, ctx->frame->topValue());
-  RawObject result = unaryOperation(thread, ctx->frame, receiver, selector);
-  ctx->frame->setTopValue(result);
 }
 
 }  // namespace python
