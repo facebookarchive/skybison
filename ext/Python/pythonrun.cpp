@@ -1,24 +1,23 @@
+#include "cpython-func.h"
 #include "runtime.h"
 
 namespace python {
 
 struct node;
 
-namespace testing {
-RawObject findModule(Runtime*, const char*);
-RawObject moduleAt(Runtime*, const Module&, const char*);
-}  // namespace testing
-
-PY_EXPORT PyObject* PyRun_SimpleStringFlags(const char* str,
-                                            PyCompilerFlags* flags) {
+PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
   // TODO(eelizondo): Implement the usage of flags
   if (flags != nullptr) {
     UNIMPLEMENTED("Can't specify compiler flags");
   }
   Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  return ApiHandle::fromObject(runtime->runFromCStr(str));
+  runtime->runFromCStr(str);
+  if (!thread->hasPendingException()) return 0;
+
+  // TODO(T36745559): handle exceptions and add tests once we have exception
+  // support
+  UNIMPLEMENTED("print exception, clear, or exit as in PyErr_Print");
 }
 
 PY_EXPORT void PyErr_Display(PyObject* /* n */, PyObject* /* e */,
