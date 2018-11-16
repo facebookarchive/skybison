@@ -78,7 +78,7 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
   if (thread->hasPendingException() || result->isError()) {
     return nullptr;
   }
-  return ApiHandle::fromBorrowedObject(*result);
+  return ApiHandle::fromObject(*result);
 }
 
 PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* /* f */) {

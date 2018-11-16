@@ -117,8 +117,10 @@ instance2 = custom.Custom()
 
   CustomObject* instance2 = reinterpret_cast<CustomObject*>(
       testing::moduleGet("__main__", "instance2"));
-  EXPECT_EQ(Py_REFCNT(instance2), 1);
+  EXPECT_EQ(Py_REFCNT(instance2), 2);
   Py_DECREF(instance2);
+  Py_DECREF(instance2);
+  Py_DECREF(instance1);
   Py_DECREF(instance1);
 }
 

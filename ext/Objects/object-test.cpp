@@ -8,6 +8,8 @@ namespace python {
 
 using ObjectExtensionApiTest = ExtensionApi;
 
+using namespace testing;
+
 TEST_F(ObjectExtensionApiTest, PyNoneIdentityIsEqual) {
   // Test Identitiy
   PyObject* none1 = Py_None;
@@ -151,6 +153,27 @@ TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCountWithPyObjectPtr) {
     h = nullptr;
     EXPECT_EQ(Py_REFCNT(o), 1);
   }
+}
+
+TEST_F(ObjectExtensionApiTest, GetAttrIncrementsReferenceCount) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "test",
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  PyObjectPtr key(PyUnicode_FromString("test"));
+  PyObject* value = testing::createUniqueObject();
+  ASSERT_EQ(PyObject_SetAttr(module, key, value), 0);
+  EXPECT_EQ(Py_REFCNT(value), 1);
+
+  PyObject* result = PyObject_GenericGetAttr(module, key);
+  EXPECT_EQ(Py_REFCNT(result), 2);
+  Py_DECREF(result);
+  result = PyObject_GetAttr(module, key);
+  EXPECT_EQ(result, value);
+  EXPECT_EQ(Py_REFCNT(result), 2);
+  Py_DECREF(result);
+  Py_DECREF(result);
 }
 
 }  // namespace python
