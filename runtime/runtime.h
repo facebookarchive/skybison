@@ -56,6 +56,8 @@ class Runtime {
   Object* newStringFromCString(const char* c_string);
   Object* newStringWithAll(View<byte> code_units);
 
+  Object* stringConcat(const Handle<String>& a, const Handle<String>& b);
+
   Object* newValueCell();
 
   Object* internString(const Handle<Object>& string);

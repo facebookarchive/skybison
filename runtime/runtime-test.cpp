@@ -8,6 +8,7 @@
 #include "test-utils.h"
 
 namespace python {
+using namespace testing;
 
 TEST(RuntimeTest, CollectGarbage) {
   Runtime runtime;
@@ -638,6 +639,35 @@ TEST(RuntimeTest, VerifySymbols) {
     EXPECT_TRUE(String::cast(value)->equalsCString(expected))
         << "Incorrect symbol value for " << expected;
   }
+}
+
+TEST(RuntimeTest, StringConcat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<String> str1(&scope, runtime.newStringFromCString("abc"));
+  Handle<String> str2(&scope, runtime.newStringFromCString("def"));
+
+  // Large strings.
+  Handle<String> str3(&scope, runtime.newStringFromCString("0123456789abcdef"));
+  Handle<String> str4(&scope, runtime.newStringFromCString("fedbca9876543210"));
+
+  Handle<String> concat12(&scope, runtime.stringConcat(str1, str2));
+  Handle<String> concat34(&scope, runtime.stringConcat(str3, str4));
+
+  Handle<String> concat13(&scope, runtime.stringConcat(str1, str3));
+  Handle<String> concat31(&scope, runtime.stringConcat(str3, str1));
+
+  // Test that we don't make large strings when small srings would suffice.
+  EXPECT_PYSTRING_EQ(*concat12, "abcdef");
+  EXPECT_PYSTRING_EQ(*concat34, "0123456789abcdeffedbca9876543210");
+  EXPECT_PYSTRING_EQ(*concat13, "abc0123456789abcdef");
+  EXPECT_PYSTRING_EQ(*concat31, "0123456789abcdefabc");
+
+  EXPECT_TRUE(concat12->isSmallString());
+  EXPECT_TRUE(concat34->isLargeString());
+  EXPECT_TRUE(concat13->isLargeString());
+  EXPECT_TRUE(concat31->isLargeString());
 }
 
 } // namespace python

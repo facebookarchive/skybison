@@ -969,4 +969,30 @@ bool Runtime::isTruthy(Object* object) {
   std::abort();
 }
 
+Object* Runtime::stringConcat(
+    const Handle<String>& left,
+    const Handle<String>& right) {
+  HandleScope scope;
+
+  const word llen = left->length();
+  const word rlen = right->length();
+  const word new_len = llen + rlen;
+
+  if (new_len <= SmallString::kMaxLength) {
+    byte buffer[SmallString::kMaxLength];
+    left->copyTo(buffer, llen);
+    right->copyTo(buffer + llen, rlen);
+    return SmallString::fromBytes(View<byte>(buffer, new_len));
+  }
+
+  Handle<String> result(
+      &scope, LargeString::cast(heap()->createLargeString(new_len)));
+  assert(result->isLargeString());
+  const word address = HeapObject::cast(*result)->address();
+
+  left->copyTo(reinterpret_cast<byte*>(address), llen);
+  right->copyTo(reinterpret_cast<byte*>(address) + llen, rlen);
+  return *result;
+}
+
 } // namespace python
