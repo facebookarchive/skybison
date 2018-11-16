@@ -13,28 +13,30 @@ if (${PYRO_ASAN})
   set(CMAKE_CXX_FLAGS "-fsanitize=address -lpthread")
 endif()
 
-set(PYRO_HOME ${CMAKE_CURRENT_SOURCE_DIR})
-
 add_subdirectory(third-party/benchmark-1.3.0)
 add_subdirectory(third-party/googletest-1.8.0)
 add_subdirectory(third-party/siphash-20170224)
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
   set(OS_DEFINE "-DOS_OSX")
+  set(WHOLE_ARCHIVE -Wl,-force_load)
+  set(NO_WHOLE_ARCHIVE)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(OS_DEFINE "-DOS_LINUX")
+  set(WHOLE_ARCHIVE -Wl,--whole-archive)
+  set(NO_WHOLE_ARCHIVE -Wl,--no-whole-archive)
 else()
   message("Unknown CMAKE_SYSTEM_NAME " ${CMAKE_SYSTEM_NAME})
 endif()
 
-set(
-  PYRO_PROPERTIES
-  CXX_EXTENSIONS NO
-  CXX_STANDARD 11
-  CXX_STANDARD_REQUIRED YES)
+set(CMAKE_C_STANDARD 99)
+
+set(CMAKE_CXX_EXTENSIONS NO)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
+
 set(
   PYRO_COMPILE_OPTIONS
-  ${OS_DEFINE}
   -Wall
   -Werror
   -Wextra
@@ -85,37 +87,90 @@ add_library(
   runtime/vector.h
   runtime/view.h
   runtime/visitor.h)
-set_target_properties(
-  runtime
-  PROPERTIES
-  ${PYRO_PROPERTIES})
 target_compile_options(
   runtime
   PRIVATE
   ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   runtime
+  PRIVATE
   dl
   siphash)
+
+add_library(
+  extension
+  STATIC
+  ext/Include/Python.h
+  ext/Include/modsupport.h
+  ext/Include/pyport.h
+  ext/Objects/dictobject.cpp
+  ext/Objects/longobject.cpp
+  ext/Objects/moduleobject.cpp
+  ext/Objects/unicodeobject.cpp)
+target_compile_options(
+  extension
+  PUBLIC
+  ${OS_DEFINE}
+  PRIVATE
+  ${PYRO_COMPILE_OPTIONS})
+target_include_directories(
+  extension
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ext/config
+  ext/Include)
+target_link_libraries(
+  extension
+  PRIVATE
+  runtime)
+
+add_library(
+  modules
+  STATIC
+  ext/Modules/config.cpp
+  third-party/cpython/Modules/errnomodule.c)
+target_compile_options(
+  modules
+  PUBLIC
+  ${OS_DEFINE})
+target_include_directories(
+  modules
+  PRIVATE
+  ext/config
+  ext/Include)
+target_link_libraries(
+  modules
+  PRIVATE
+  extension)
+
+# TODO(eelizondo): remove this when extensions are completely standalone
+if(${CPYTHON_MODULES})
+    message("Building CPython...")
+    add_definitions(-DCPYTHON_MODULES)
+    execute_process(
+      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/cpython_build.py
+              ${CMAKE_BINARY_DIR}/cpython_build
+              ${CMAKE_CURRENT_SOURCE_DIR}/third-party/cpython
+              ${CMAKE_CURRENT_SOURCE_DIR}/ext/Objects
+      OUTPUT_VARIABLE libpython
+      ERROR_VARIABLE _unused)
+    string(STRIP "${libpython}" libpython)
+    find_package(Threads)
+    set(libpython "util ${CMAKE_THREAD_LIBS_INIT} ${libpython}")
+endif(${CPYTHON_MODULES})
 
 add_executable(
   python
   main.cpp)
-set_target_properties(
-  python
-  PROPERTIES
-  ${PYRO_PROPERTIES})
-target_compile_options(
-  runtime
-  PRIVATE
-  ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   python
-  runtime)
+  PRIVATE
+  runtime
+  modules)
 
-add_executable(
-  python-tests
-  runtime/python-test.cpp
+add_library(
+  runtime-tests
+  STATIC
   runtime/attributes-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
@@ -131,16 +186,41 @@ add_executable(
   runtime/thread-test.cpp
   runtime/utils-test.cpp
   runtime/vector-test.cpp)
-set_target_properties(
-  python-tests
-  PROPERTIES
-  ${PYRO_PROPERTIES})
-target_compile_options(
-  python-tests
-  PRIVATE
-  ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
-  python-tests
+  runtime-tests
+  PUBLIC
   benchmark
   gtest
-  runtime)
+  PRIVATE
+  runtime
+  modules)
+
+add_library(
+  extension-tests
+  STATIC
+  ext/Objects/moduleobject-test.cpp)
+target_include_directories(
+  extension-tests
+  PRIVATE
+  ext/Include
+  ext/config
+  ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(
+  extension-tests
+  PUBLIC
+  benchmark
+  gtest
+  PRIVATE
+  runtime
+  modules)
+
+add_executable(
+  python-tests
+  runtime/python-test.cpp)
+target_link_libraries(
+  python-tests
+  PRIVATE
+  ${WHOLE_ARCHIVE} runtime-tests ${NO_WHOLE_ARCHIVE}
+  ${WHOLE_ARCHIVE} extension-tests ${NO_WHOLE_ARCHIVE}
+  runtime
+  modules)

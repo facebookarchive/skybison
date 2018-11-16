@@ -25,13 +25,13 @@ if (( all )); then
   echo "Formatting all files..."
   files=(
     $(find -name \*.h -print -o -name \*.cpp -print \
-      | grep -v '^third-party' | grep -v '^ext/' )
+      | grep -v '^third-party' | grep -v '^ext/config')
   )
 elif (( have_changes )); then
   echo "Formatting only modified files..."
   files=(
       $(git diff --name-only -- '*.cpp' '*.h' \
-        | grep -v '^third-party' | grep -v '^ext/' )
+        | grep -v '^third-party' | grep -v '^ext/config')
   )
 
 elif (( authored_previous )); then
@@ -42,7 +42,7 @@ elif (( authored_previous )); then
   if [[ $reply == [Yy] ]]; then
     files=(
       $(git diff --name-only "HEAD~1..HEAD" -- '*.cpp' '*.h' \
-        | grep -v '^third-party' | grep -v '^ext/' )
+        | grep -v '^third-party' | grep -v '^ext/config')
     )
   else
     exit 1

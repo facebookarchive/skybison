@@ -1,7 +1,7 @@
 #ifndef Py_PYPORT_H
 #define Py_PYPORT_H
 
-#include "ext/config/pyconfig.h" /* include for defines */
+#include "pyconfig.h" /* include for defines */
 
 #include <inttypes.h>
 

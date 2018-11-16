@@ -6,6 +6,8 @@
 #include "symbols.h"
 #include "view.h"
 
+typedef struct _object PyObject;
+
 namespace python {
 
 class AttributeInfo;
@@ -399,6 +401,12 @@ class Runtime {
   // Return true if obj is an instance of a subclass of klass
   Object* isInstance(const Handle<Object>& obj, const Handle<Class>& klass);
 
+  // Runtime creation of "PyObjects" to cross the CPython boundary
+  PyObject* allocatePyObject(Object* obj);
+
+  // Accessor for Objects that have crossed the CPython boundary
+  Object* getObject(PyObject* py_obj);
+
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
   // dictobject.c this accommodates the majority of dictionaries without needing
@@ -601,6 +609,8 @@ class Runtime {
   NewValueCellCallback new_value_cell_callback_;
 
   Symbols* symbols_;
+
+  Vector<void*> pyobject_store_;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

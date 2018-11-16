@@ -28,6 +28,12 @@
 
 namespace python {
 
+struct PyroObject {
+  long ob_refcnt;
+  void* ob_type;
+  void* reference;
+};
+
 Runtime::Runtime(word heap_size)
     : heap_(heap_size), new_value_cell_callback_(this) {
   initializeRandom();
@@ -53,6 +59,9 @@ Runtime::~Runtime() {
     auto prev = thread;
     thread = thread->next();
     delete prev;
+  }
+  for (void* ptr : pyobject_store_) {
+    std::free(ptr);
   }
   delete symbols_;
 }
@@ -851,11 +860,26 @@ Object* Runtime::executeModule(
   return Thread::currentThread()->runModuleFunction(*module, *code);
 }
 
+struct ModuleInitializer {
+  const char* name;
+  void* (*initfunc)();
+};
+
+extern struct ModuleInitializer kModuleInitializers[];
+
 Object* Runtime::importModule(const Handle<Object>& name) {
   HandleScope scope;
   Handle<Object> cached_module(&scope, findModule(name));
   if (!cached_module->isNone()) {
     return *cached_module;
+  } else {
+    for (int i = 0; kModuleInitializers[i].name != nullptr; i++) {
+      if (String::cast(*name)->equalsCString(kModuleInitializers[i].name)) {
+        (*kModuleInitializers[i].initfunc)();
+        cached_module = findModule(name);
+        return *cached_module;
+      }
+    }
   }
 
   return Thread::currentThread()->throwRuntimeErrorFromCString(
@@ -2544,6 +2568,21 @@ Object* Runtime::superGetAttr(
   }
   // fallback to normal instance getattr
   return instanceGetAttr(thread, receiver, name);
+}
+
+PyObject* Runtime::allocatePyObject(Object* obj) {
+  void* ptr = std::malloc(sizeof(PyroObject));
+  pyobject_store_.push_back(ptr);
+  PyroObject* py_obj = reinterpret_cast<PyroObject*>(ptr);
+  py_obj->ob_refcnt = 1;
+  py_obj->ob_type = nullptr;
+  py_obj->reference = obj;
+  return reinterpret_cast<PyObject*>(py_obj);
+}
+
+Object* Runtime::getObject(PyObject* py_obj) {
+  PyroObject* pyro_obj = reinterpret_cast<PyroObject*>(py_obj);
+  return reinterpret_cast<Object*>(pyro_obj->reference);
 }
 
 } // namespace python

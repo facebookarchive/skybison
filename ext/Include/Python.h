@@ -5,7 +5,7 @@
 /* Include nearly all Python header files */
 
 #include "patchlevel.h"
-#include "ext/config/pyconfig.h"
+#include "pyconfig.h"
 #include "pymacconfig.h"
 
 #include <limits.h>
