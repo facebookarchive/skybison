@@ -2224,10 +2224,11 @@ char* Runtime::compile(const char* src) {
   const std::string command =
       "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6 -m compileall -q -b " +
       py;
-  system(command.c_str());
+  CHECK(system(command.c_str()) == 0, "Bytecode compilation failed");
+
   word len;
   char* result = OS::readFile(pyc.c_str(), &len);
-  system(cleanup.c_str());
+  CHECK(system(cleanup.c_str()) == 0, "Bytecode compilation cleanup failed");
 
   // Cache the output if possible.
   if (!cache_dir.empty() && OS::dirExists(cache_dir.c_str())) {
