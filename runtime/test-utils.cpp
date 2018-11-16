@@ -35,25 +35,32 @@ Object* findInModule(Runtime* runtime, const Handle<Module>& module,
 
 std::string callFunctionToString(const Handle<Function>& func,
                                  const Handle<ObjectArray>& args) {
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-  Handle<Code> code(&scope, func->code());
-  Frame* frame = thread->pushNativeFrame(
-      Utils::castFnPtrToVoid(callFunctionToString), args->length());
-
-  Object** sp = frame->valueStackTop();
-  *--sp = *func;
-  for (word i = 0; i < args->length(); i++) {
-    *--sp = args->at(i);
-  }
-  frame->setValueStackTop(sp);
   std::stringstream stream;
   std::ostream* old_stream = builtInStdout;
   builtInStdout = &stream;
-  func->entry()(thread, frame, code->argcount());
+  Thread* thread = Thread::currentThread();
+  Frame* frame =
+      thread->pushNativeFrame(Utils::castFnPtrToVoid(callFunctionToString), 0);
+  callFunction(func, args);
   thread->popFrame();
   builtInStdout = old_stream;
   return stream.str();
+}
+
+Object* callFunction(const Handle<Function>& func,
+                     const Handle<ObjectArray>& args) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Handle<Code> code(&scope, func->code());
+  Frame* frame = thread->pushNativeFrame(Utils::castFnPtrToVoid(callFunction),
+                                         args->length());
+  frame->pushValue(*func);
+  for (word i = 0; i < args->length(); i++) {
+    frame->pushValue(args->at(i));
+  }
+  Handle<Object> result(&scope, func->entry()(thread, frame, code->argcount()));
+  thread->popFrame();
+  return *result;
 }
 
 bool objectArrayContains(const Handle<ObjectArray>& object_array,

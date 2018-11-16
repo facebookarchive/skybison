@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "bytecode.h"
+#include "layout.h"
 #include "runtime.h"
 #include "symbols.h"
 #include "test-utils.h"
@@ -2470,6 +2471,100 @@ TEST(RuntimeIntegerTest, NewLargeIntegerWithDigits) {
       &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
   ASSERT_TRUE(positive_largeint->isLargeInteger());
   EXPECT_EQ(positive_largeint->asWord(), positive_large_int);
+}
+
+TEST(InstanceDelTest, DeleteUnknownAttribute) {
+  const char* src = R"(
+class Foo:
+    pass
+)";
+  Runtime runtime;
+  compileAndRunToString(&runtime, src);
+
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
+  Handle<Layout> layout(&scope, klass->instanceLayout());
+  Handle<HeapObject> instance(&scope, runtime.newInstance(layout));
+  Handle<Object> attr(&scope, runtime.newStringFromCString("unknown"));
+  EXPECT_EQ(runtime.instanceDel(Thread::currentThread(), instance, attr),
+            Error::object());
+}
+
+TEST(InstanceDelTest, DeleteInObjectAttribute) {
+  const char* src = R"(
+class Foo:
+    def __init__(self):
+        self.bar = 'bar'
+        self.baz = 'baz'
+
+def new_foo():
+    return Foo()
+)";
+  Runtime runtime;
+  compileAndRunToString(&runtime, src);
+
+  // Create an instance of Foo
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Function> new_foo(&scope, findInModule(&runtime, main, "new_foo"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(0));
+  Handle<HeapObject> instance(&scope, callFunction(new_foo, args));
+
+  // Verify that 'bar' is an in-object property
+  Handle<Layout> layout(&scope,
+                        runtime.layoutAt(instance->header()->layoutId()));
+  Handle<Object> attr(&scope, runtime.internStringFromCString("bar"));
+  AttributeInfo info;
+  Thread* thread = Thread::currentThread();
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, attr, &info));
+  ASSERT_TRUE(info.isInObject());
+
+  // After successful deletion, the instance should have a new layout and should
+  // no longer reference the previous value
+  EXPECT_EQ(runtime.instanceDel(thread, instance, attr), None::object());
+  Handle<Layout> new_layout(&scope,
+                            runtime.layoutAt(instance->header()->layoutId()));
+  EXPECT_NE(*layout, *new_layout);
+  EXPECT_FALSE(runtime.layoutFindAttribute(thread, new_layout, attr, &info));
+}
+
+TEST(InstanceDelTest, DeleteOverflowAttribute) {
+  const char* src = R"(
+class Foo:
+    pass
+
+def new_foo():
+    foo = Foo()
+    foo.bar = 'bar'
+    return foo
+)";
+  Runtime runtime;
+  compileAndRunToString(&runtime, src);
+
+  // Create an instance of Foo
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Function> new_foo(&scope, findInModule(&runtime, main, "new_foo"));
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(0));
+  Handle<HeapObject> instance(&scope, callFunction(new_foo, args));
+
+  // Verify that 'bar' is an overflow property
+  Handle<Layout> layout(&scope,
+                        runtime.layoutAt(instance->header()->layoutId()));
+  Handle<Object> attr(&scope, runtime.internStringFromCString("bar"));
+  AttributeInfo info;
+  Thread* thread = Thread::currentThread();
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, attr, &info));
+  ASSERT_TRUE(info.isOverflow());
+
+  // After successful deletion, the instance should have a new layout and should
+  // no longer reference the previous value
+  EXPECT_EQ(runtime.instanceDel(thread, instance, attr), None::object());
+  Handle<Layout> new_layout(&scope,
+                            runtime.layoutAt(instance->header()->layoutId()));
+  EXPECT_NE(*layout, *new_layout);
+  EXPECT_FALSE(runtime.layoutFindAttribute(thread, new_layout, attr, &info));
 }
 
 }  // namespace python

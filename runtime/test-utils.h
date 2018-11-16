@@ -62,8 +62,19 @@ Object* findInModule(Runtime* runtime, const Handle<Module>& module,
 //
 // This opens a new frame linked to the initial frame of the current thread,
 // pushes all the arguments onto the stack, and invokes the interpreter.
+//
+// The caller is responsible for cleaning up any exception state.
 std::string callFunctionToString(const Handle<Function>& func,
                                  const Handle<ObjectArray>& args);
+
+// Calls func using the supplied arguments.
+//
+// This opens a new frame linked to the initial frame of the current thread,
+// pushes all the arguments onto the stack, and invokes the interpreter.
+//
+// The caller is responsible for cleaning up any exception state.
+Object* callFunction(const Handle<Function>& func,
+                     const Handle<ObjectArray>& args);
 
 bool objectArrayContains(const Handle<ObjectArray>& object_array,
                          const Handle<Object>& key);

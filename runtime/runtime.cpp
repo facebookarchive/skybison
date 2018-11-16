@@ -2610,6 +2610,35 @@ Object* Runtime::instanceAtPut(Thread* thread,
   return None::object();
 }
 
+Object* Runtime::instanceDel(Thread* thread, const Handle<HeapObject>& instance,
+                             const Handle<Object>& name) {
+  HandleScope scope(thread);
+
+  // Make the attribute invisible
+  Handle<Layout> old_layout(&scope, layoutAt(instance->layoutId()));
+  Handle<Object> result(&scope,
+                        layoutDeleteAttribute(thread, old_layout, name));
+  if (result->isError()) {
+    return Error::object();
+  }
+  LayoutId new_layout_id = Layout::cast(*result)->id();
+  instance->setHeader(instance->header()->withLayoutId(new_layout_id));
+
+  // Remove the reference to the attribute value from the instance
+  AttributeInfo info;
+  bool found = layoutFindAttribute(thread, old_layout, name, &info);
+  CHECK(found, "couldn't find attribute");
+  if (info.isInObject()) {
+    instance->instanceVariableAtPut(info.offset(), None::object());
+  } else {
+    Handle<ObjectArray> overflow(
+        &scope, instance->instanceVariableAt(old_layout->overflowOffset()));
+    overflow->atPut(info.offset(), None::object());
+  }
+
+  return None::object();
+}
+
 Object* Runtime::layoutFollowEdge(const Handle<List>& edges,
                                   const Handle<Object>& label) {
   DCHECK(edges->allocated() % 2 == 0,

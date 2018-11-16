@@ -328,6 +328,14 @@ class Runtime {
                         const Handle<Object>& name,
                         const Handle<Object>& value);
 
+  // Attribute deletion primitive for instances.
+  //
+  // This operates directly on the instance and does not respect Python
+  // semantics for attribute deletion. This handles mutating the layout if the
+  // attribute exists. Returns Error::object() if the attribute is not found.
+  Object* instanceDel(Thread* thread, const Handle<HeapObject>& instance,
+                      const Handle<Object>& name);
+
   // Initialize the set of in-object attributes using the supplied attribute
   // names.
   //
