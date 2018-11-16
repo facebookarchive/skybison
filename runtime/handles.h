@@ -230,6 +230,7 @@ HANDLE_ALIAS(GeneratorBase);
 HANDLE_ALIAS(Generator);
 HANDLE_ALIAS(Coroutine);
 HANDLE_ALIAS(HeapFrame);
+HANDLE_ALIAS(UserFloatBase);
 #undef HANDLE_ALIAS
 
 }  // namespace python

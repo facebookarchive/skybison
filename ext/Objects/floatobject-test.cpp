@@ -54,15 +54,21 @@ f = FloatLikeClass();
 
 TEST_F(FloatExtensionApiTest, AsDoubleFromFloatSubclassReturnsFloat) {
   PyRun_SimpleString(R"(
-class FloatSubclass(float):
+class SubFloat(float):
   def __new__(self, value):
+    self.foo = 3
     return super().__new__(self, value)
-
-f = FloatSubclass(1.5)
+subfloat = SubFloat(1.5)
+subfloat_foo = subfloat.foo
   )");
-  PyObject* f = testing::moduleGet("__main__", "f");
-  double res = PyFloat_AsDouble(f);
-  EXPECT_EQ(res, 1.5);
+  PyObject* subfloat = testing::moduleGet("__main__", "subfloat");
+  ASSERT_FALSE(PyLong_CheckExact(subfloat));
+  ASSERT_TRUE(PyFloat_Check(subfloat));
+  EXPECT_EQ(1.5, PyFloat_AsDouble(subfloat));
+
+  PyObject* subfloat_foo = testing::moduleGet("__main__", "subfloat_foo");
+  ASSERT_TRUE(PyLong_Check(subfloat_foo));
+  EXPECT_EQ(3, PyLong_AsLong(subfloat_foo));
 }
 
 TEST_F(FloatExtensionApiTest, ClearFreeListReturnsZero) {

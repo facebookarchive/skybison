@@ -279,14 +279,47 @@ TEST(FloatBuiltinsTest, FloatSubclassReturnsFloat) {
   HandleScope scope;
 
   runtime.runFromCStr(R"(
-class Foo(float):
+class SubFloat(float):
   def __new__(self, value):
+    self.foo = 3
     return super().__new__(self, value)
-a = Foo(1.5)
+subfloat = SubFloat(1.5)
+subfloat_foo = subfloat.foo
 )");
 
-  Float a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_EQ(a->value(), 1.5);
+  // Check that it's a subtype of float
+  Object subfloat(&scope, moduleAt(&runtime, "__main__", "subfloat"));
+  ASSERT_FALSE(subfloat->isFloat());
+  ASSERT_TRUE(runtime.isInstanceOfFloat(*subfloat));
+
+  Object float_value(&scope, UserFloatBase::cast(*subfloat)->floatValue());
+  ASSERT_TRUE(float_value->isFloat());
+  EXPECT_EQ(Float::cast(float_value)->value(), 1.5);
+
+  Object foo_attr(&scope, moduleAt(&runtime, "__main__", "subfloat_foo"));
+  ASSERT_TRUE(foo_attr->isInt());
+  EXPECT_EQ(3, Int::cast(foo_attr)->asWord());
+}
+
+TEST(FloatBuiltins, FloatSubclassKeepsFloatInMro) {
+  const char* src = R"(
+class Test(float):
+  pass
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Object value(&scope, moduleAt(&runtime, "__main__", "Test"));
+  ASSERT_TRUE(value->isType());
+
+  Type type(&scope, *value);
+  ASSERT_TRUE(type->mro()->isTuple());
+
+  Tuple mro(&scope, type->mro());
+  ASSERT_EQ(mro->length(), 3);
+  EXPECT_EQ(mro->at(0), *type);
+  EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kFloat));
+  EXPECT_EQ(mro->at(2), runtime.typeAt(LayoutId::kObject));
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithStringOfHugeNumberReturnsInf) {

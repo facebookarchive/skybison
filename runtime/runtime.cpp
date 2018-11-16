@@ -187,7 +187,12 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
         attributes.get(i).offset,
         AttributeInfo::Flag::kInObject | AttributeInfo::Flag::kFixedOffset);
     entry = newTuple(2);
-    entry->atPut(0, symbols()->at(attributes.get(i).name));
+    SymbolId symbol_id = attributes.get(i).name;
+    if (symbol_id == SymbolId::kInvalid) {
+      entry->atPut(0, NoneType::object());
+    } else {
+      entry->atPut(0, symbols()->at(symbol_id));
+    }
     entry->atPut(1, info.asSmallInt());
     dst->atPut(start_index + i, *entry);
   }

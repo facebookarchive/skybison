@@ -1010,20 +1010,33 @@ class RawFloat : public RawHeapObject {
   // Getters and setters.
   double value();
 
-  // Casting.
-  static RawFloat cast(RawObject object);
-
   // Layout.
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kDoubleSize;
 
-  RAW_OBJECT_COMMON_NO_CAST(Float);
+  RAW_OBJECT_COMMON(Float);
 
  private:
   // Instance initialization should only done by the Heap.
   void initialize(double value);
 
   friend class Heap;
+};
+
+class RawUserFloatBase : public RawHeapObject {
+ public:
+  // Getters and setters.
+  RawObject floatValue();
+  void setFloatValue(RawObject value);
+
+  // Casting.
+  static RawUserFloatBase cast(RawObject object);
+
+  // RawLayout.
+  static const int kFloatOffset = RawHeapObject::kSize;
+  static const int kSize = kFloatOffset + kDoubleSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(UserFloatBase);
 };
 
 class RawComplex : public RawHeapObject {
@@ -3148,6 +3161,17 @@ inline double RawComplex::imag() {
 inline void RawComplex::initialize(double real, double imag) {
   *reinterpret_cast<double*>(address() + kRealOffset) = real;
   *reinterpret_cast<double*>(address() + kImagOffset) = imag;
+}
+
+// RawUserFloatBase
+
+inline RawObject RawUserFloatBase::floatValue() {
+  return instanceVariableAt(kFloatOffset);
+}
+
+inline void RawUserFloatBase::setFloatValue(RawObject value) {
+  DCHECK(value->isFloat(), "Only float type is permitted as a value");
+  instanceVariableAtPut(kFloatOffset, value);
 }
 
 // RawRange

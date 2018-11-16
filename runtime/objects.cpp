@@ -445,18 +445,18 @@ RawList RawList::cast(RawObject object) {
   return bit_cast<RawList>(object);
 }
 
-RawFloat RawFloat::cast(RawObject object) {
-  DCHECK(object->isFloat() ||
-             Thread::currentThread()->runtime()->isInstanceOfFloat(object),
-         "invalid cast, expected float");
-  return bit_cast<RawFloat>(object);
-}
-
 RawSet RawSet::cast(RawObject object) {
   DCHECK(object->isSet() ||
              Thread::currentThread()->runtime()->isInstanceOfSet(object),
          "invalid cast, expected set");
   return bit_cast<RawSet>(object);
+}
+
+RawUserFloatBase RawUserFloatBase::cast(RawObject object) {
+  DCHECK(!object->isFloat() &&
+             Thread::currentThread()->runtime()->isInstanceOfFloat(object),
+         "invalid cast, expected userfloat");
+  return bit_cast<RawUserFloatBase>(object);
 }
 
 }  // namespace python

@@ -25,22 +25,36 @@ const BuiltinMethod FloatBuiltins::kMethods[] = {
     {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
 };
 
+const BuiltinAttribute FloatBuiltins::kAttributes[] = {
+    {SymbolId::kInvalid, RawUserFloatBase::kFloatOffset},
+};
+
 void FloatBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithMethods(
-                        SymbolId::kFloat, LayoutId::kFloat, LayoutId::kObject,
-                        kMethods));
+  Type type(&scope,
+            runtime->addBuiltinType(SymbolId::kFloat, LayoutId::kFloat,
+                                    LayoutId::kObject, kAttributes, kMethods));
   type->setFlag(Type::Flag::kFloatSubclass);
 }
 
 RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
-                                         const Object& obj) {
+                                         word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs == 1) {
+    return runtime->newFloat(0.0);
+  }
+
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object obj(&scope, args.get(1));
   if (obj->isFloat()) {
     return *obj;
   }
 
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
+  // This only converts exact strings.
+  if (obj->isStr()) {
+    return floatFromString(thread, RawStr::cast(*obj));
+  }
 
   // Not a float, call __float__ on it to convert.
   // Since float itself defines __float__, subclasses of float are automatically
@@ -224,17 +238,15 @@ RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr(
         "float.__new__(X): X is not a subtype of float");
   }
-  // No arguments.
-  if (nargs == 1) {
-    return runtime->newFloat(0.0);
+
+  // Handle subclasses
+  if (!type->isIntrinsicOrExtension()) {
+    Layout type_layout(&scope, type->instanceLayout());
+    UserFloatBase instance(&scope, runtime->newInstance(type_layout));
+    instance->setFloatValue(floatFromObject(thread, frame, nargs));
+    return *instance;
   }
-  Object arg(&scope, args.get(1));
-  if (arg->isStr()) {
-    // This only converts exact strings.
-    // TODO(eelizondo): Handle string subtypes.
-    return floatFromString(thread, RawStr::cast(*arg));
-  }
-  return floatFromObject(thread, frame, arg);
+  return floatFromObject(thread, frame, nargs);
 }
 
 RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {

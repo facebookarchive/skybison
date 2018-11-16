@@ -287,6 +287,7 @@ class Runtime;
 
 // clang-format off
 enum class SymbolId {
+  kInvalid = -1,
 #define DEFINE_SYMBOL_INDEX(symbol, value) k##symbol,
   FOREACH_SYMBOL(DEFINE_SYMBOL_INDEX)
 #undef DEFINE_SYMBOL_INDEX

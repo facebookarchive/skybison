@@ -20,13 +20,17 @@ PY_EXPORT double PyFloat_AsDouble(PyObject* op) {
     return -1;
   }
 
-  // Object is float or subclass of float
+  // Object is float
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Object obj(&scope, ApiHandle::fromPyObject(op)->asObject());
+  if (obj->isFloat()) {
+    return Float::cast(*obj)->value();
+  }
+
+  // Object is subclass of float
+  Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfFloat(*obj)) {
-    Float flt(&scope, *obj);
-    return flt->value();
+    return Float::cast(UserFloatBase::cast(*obj)->floatValue())->value();
   }
 
   // Try calling __float__
