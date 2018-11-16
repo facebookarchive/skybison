@@ -8,11 +8,37 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
-static Object* floatFromObject(Thread* thread, Frame* frame,
-                               const Handle<Object>& obj) {
+const BuiltinMethod FloatBuiltins::kMethods[] = {
+    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
+    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
+    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
+    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
+    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
+    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
+    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
+    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    {SymbolId::kDunderPow, nativeTrampoline<dunderPow>},
+    {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
+};
+
+void FloatBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Type> type(
+      &scope, runtime->addEmptyBuiltinClass(SymbolId::kFloat, LayoutId::kFloat,
+                                            LayoutId::kObject));
+  type->setFlag(Type::Flag::kFloatSubclass);
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(type, kMethods[i].name,
+                                     kMethods[i].address);
+  }
+}
+
+Object* FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
+                                       const Handle<Object>& obj) {
   if (obj->isFloat()) {
     return *obj;
   }
@@ -51,7 +77,7 @@ static Object* floatFromObject(Thread* thread, Frame* frame,
   return *converted;
 }
 
-static Object* floatFromString(Thread* thread, Str* str) {
+Object* FloatBuiltins::floatFromString(Thread* thread, Str* str) {
   char* str_end = nullptr;
   char* c_str = str->toCStr();
   double result = std::strtod(c_str, &str_end);
@@ -73,7 +99,7 @@ static Object* floatFromString(Thread* thread, Str* str) {
   return thread->runtime()->newFloat(result);
 }
 
-Object* builtinDoubleEq(Thread* thread, Frame* frame, word nargs) {
+Object* FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -90,7 +116,7 @@ Object* builtinDoubleEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleGe(Thread* thread, Frame* frame, word nargs) {
+Object* FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -107,7 +133,7 @@ Object* builtinDoubleGe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleGt(Thread* thread, Frame* frame, word nargs) {
+Object* FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -124,7 +150,7 @@ Object* builtinDoubleGt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleLe(Thread* thread, Frame* frame, word nargs) {
+Object* FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -141,7 +167,7 @@ Object* builtinDoubleLe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleLt(Thread* thread, Frame* frame, word nargs) {
+Object* FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -158,7 +184,7 @@ Object* builtinDoubleLt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs) {
+Object* FloatBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -175,7 +201,7 @@ Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleNew(Thread* thread, Frame* frame, word nargs) {
+Object* FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
     return thread->throwTypeErrorFromCStr(
         "float.__new__(): not enough arguments");
@@ -216,7 +242,7 @@ Object* builtinDoubleNew(Thread* thread, Frame* frame, word nargs) {
   return floatFromObject(thread, frame, arg);
 }
 
-Object* builtinDoubleAdd(Thread* thread, Frame* frame, word nargs) {
+Object* FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -241,7 +267,7 @@ Object* builtinDoubleAdd(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs) {
+Object* FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCStr("expected 1 argument");
   }
@@ -266,7 +292,7 @@ Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-Object* builtinDoublePow(Thread* thread, Frame* frame, word nargs) {
+Object* FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2 || nargs > 3) {
     return thread->throwTypeErrorFromCStr("expected at most 2 arguments");
   }

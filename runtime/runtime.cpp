@@ -989,7 +989,7 @@ void Runtime::initializeHeapClasses() {
   DictBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kEllipsis, LayoutId::kEllipsis,
                        LayoutId::kObject);
-  initializeFloatClass();
+  FloatBuiltins::initialize(this);
   initializeFunctionClass();
   addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeStr,
                        LayoutId::kStr);
@@ -1163,44 +1163,6 @@ void Runtime::initializeImmediateClasses() {
   addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallStr,
                        LayoutId::kStr);
   SmallIntBuiltins::initialize(this);
-}
-
-void Runtime::initializeFloatClass() {
-  HandleScope scope;
-  Handle<Type> float_type(
-      &scope, addEmptyBuiltinClass(SymbolId::kFloat, LayoutId::kFloat,
-                                   LayoutId::kObject));
-  float_type->setFlag(Type::Flag::kFloatSubclass);
-
-  classAddBuiltinFunction(float_type, SymbolId::kDunderAdd,
-                          nativeTrampoline<builtinDoubleAdd>);
-
-  classAddBuiltinFunction(float_type, SymbolId::kDunderEq,
-                          nativeTrampoline<builtinDoubleEq>);
-
-  classAddBuiltinFunction(float_type, SymbolId::kDunderGe,
-                          nativeTrampoline<builtinDoubleGe>);
-
-  classAddBuiltinFunction(float_type, SymbolId::kDunderGt,
-                          nativeTrampoline<builtinDoubleGt>);
-
-  classAddBuiltinFunction(float_type, SymbolId::kDunderLe,
-                          nativeTrampoline<builtinDoubleLe>);
-
-  classAddBuiltinFunction(float_type, SymbolId::kDunderLt,
-                          nativeTrampoline<builtinDoubleLt>);
-
-  classAddBuiltinFunction(float_type, SymbolId::kDunderNe,
-                          nativeTrampoline<builtinDoubleNe>);
-
-  classAddBuiltinFunction(float_type, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinDoubleNew>);
-
-  classAddBuiltinFunction(float_type, SymbolId::kDunderPow,
-                          nativeTrampoline<builtinDoublePow>);
-
-  classAddBuiltinFunction(float_type, SymbolId::kDunderSub,
-                          nativeTrampoline<builtinDoubleSub>);
 }
 
 void Runtime::initializePropertyClass() {

@@ -508,7 +508,6 @@ class Runtime {
   void initializeSymbols();
 
   void initializeClassMethodClass();
-  void initializeFloatClass();
   void initializeFunctionClass();
   void initializeObjectClass();
   void initializePropertyClass();
