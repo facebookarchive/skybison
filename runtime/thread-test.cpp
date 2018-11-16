@@ -746,7 +746,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
 
   Handle<Dict> globals(&scope, runtime.newDict());
   Handle<Dict> builtins(&scope, runtime.newDict());
-  Handle<Object> builtins_value(&scope, runtime.newInteger(123));
+  Handle<Object> builtins_value(&scope, runtime.newInt(123));
   runtime.dictAtPutInValueCell(builtins, key, builtins_value);
 
   Thread* thread = Thread::currentThread();

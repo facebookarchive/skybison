@@ -10,7 +10,7 @@ TEST(DictObject, GetItemFromNonDictReturnsNull) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Object> non_dict(&scope, runtime.newInteger(10));
+  Handle<Object> non_dict(&scope, runtime.newInt(10));
 
   // Pass a non dict
   PyObject* result =
@@ -38,8 +38,8 @@ TEST(DictObject, GetItemReturnsValue) {
   HandleScope scope;
 
   Handle<Dict> dict(&scope, runtime.newDict());
-  Handle<Object> key(&scope, runtime.newInteger(10));
-  Handle<Object> value(&scope, runtime.newInteger(20));
+  Handle<Object> key(&scope, runtime.newInt(10));
+  Handle<Object> value(&scope, runtime.newInt(20));
   runtime.dictAtPut(dict, key, value);
 
   // Pass existing key
@@ -50,8 +50,8 @@ TEST(DictObject, GetItemReturnsValue) {
   // Check result value
   Handle<Object> result_obj(&scope,
                             ApiHandle::fromPyObject(result)->asObject());
-  ASSERT_TRUE(result_obj->isInteger());
-  EXPECT_EQ(Integer::cast(*result_obj)->asWord(), 20);
+  ASSERT_TRUE(result_obj->isInt());
+  EXPECT_EQ(Int::cast(*result_obj)->asWord(), 20);
 }
 
 TEST(DictObject, GetItemReturnsBorrowedReference) {
@@ -59,8 +59,8 @@ TEST(DictObject, GetItemReturnsBorrowedReference) {
   HandleScope scope;
 
   Handle<Dict> dict(&scope, runtime.newDict());
-  Handle<Object> key(&scope, runtime.newInteger(10));
-  Handle<Object> value(&scope, runtime.newInteger(20));
+  Handle<Object> key(&scope, runtime.newInt(10));
+  Handle<Object> value(&scope, runtime.newInt(20));
   runtime.dictAtPut(dict, key, value);
 
   // Pass existing key

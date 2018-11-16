@@ -60,7 +60,7 @@ s.add("Hello, World")
   runtime.runFromCString(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Set> s(&scope, findInModule(&runtime, main, "s"));
-  Handle<Object> one(&scope, runtime.newInteger(1));
+  Handle<Object> one(&scope, runtime.newInt(1));
   Handle<Object> hello_world(&scope,
                              runtime.newStringFromCString("Hello, World"));
   EXPECT_EQ(s->numItems(), 2);

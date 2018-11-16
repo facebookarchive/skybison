@@ -33,7 +33,7 @@ extern "C" PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   const char* c_name = def->m_name;
   Handle<Object> name(&scope, runtime->newStringFromCString(c_name));
   Handle<Module> module(&scope, runtime->newModule(name));
-  module->setDef(runtime->newIntegerFromCPointer(def));
+  module->setDef(runtime->newIntFromCPointer(def));
   runtime->addModule(module);
 
   // TODO: Check m_slots
@@ -55,10 +55,10 @@ extern "C" PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
     return nullptr;
   }
   Handle<Module> module(&scope, *module_obj);
-  if (!module->def()->isInteger()) {
+  if (!module->def()->isInt()) {
     return nullptr;
   }
-  Handle<Integer> def(&scope, module->def());
+  Handle<Int> def(&scope, module->def());
   return static_cast<PyModuleDef*>(def->asCPointer());
 }
 

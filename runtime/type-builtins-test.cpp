@@ -110,7 +110,7 @@ c = C()
   Handle<Object> x(&scope, runtime.newStringFromCString("x"));
   Object* attr = runtime.attributeAt(thread, c, x);
   ASSERT_FALSE(attr->isNone());
-  ASSERT_TRUE(attr->isInteger());
+  ASSERT_TRUE(attr->isInt());
   ASSERT_EQ(SmallInt::cast(attr)->value(), 42);
 }
 

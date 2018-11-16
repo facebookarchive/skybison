@@ -84,7 +84,7 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   type_class->setDict(*dict);
 
   // Add the PyTypeObject pointer to the class
-  type_class->setExtensionType(runtime->newIntegerFromCPointer(type));
+  type_class->setExtensionType(runtime->newIntFromCPointer(type));
 
   // Create the dict's ApiHandle
   type->tp_dict = ApiHandle::fromObject(*dict)->asPyObject();
@@ -124,7 +124,7 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   Handle<Dict> extensions_dict(&scope, runtime->extensionTypes());
   Handle<Object> type_class_obj(&scope, *type_class);
   Handle<Object> type_class_id(
-      &scope, runtime->newIntegerFromCPointer(static_cast<void*>(type)));
+      &scope, runtime->newIntFromCPointer(static_cast<void*>(type)));
   runtime->dictAtPut(extensions_dict, type_class_id, type_class_obj);
 
   // All done -- set the ready flag

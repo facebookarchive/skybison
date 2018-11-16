@@ -676,7 +676,7 @@ void Runtime::classAddExtensionFunction(const Handle<Type>& type, SymbolId name,
   Handle<Function> function(&scope, newFunction());
   Handle<Object> key(&scope, symbols()->at(name));
   function->setName(*key);
-  function->setCode(newIntegerFromCPointer(c_function));
+  function->setCode(newIntFromCPointer(c_function));
   function->setEntry(extensionTrampoline);
   function->setEntryKw(extensionTrampolineKw);
   function->setEntryEx(extensionTrampolineEx);
@@ -707,14 +707,14 @@ Object* Runtime::newModule(const Handle<Object>& name) {
   Handle<Dict> dict(&scope, newDict());
   result->setDict(*dict);
   result->setName(*name);
-  result->setDef(newIntegerFromCPointer(nullptr));
+  result->setDef(newIntFromCPointer(nullptr));
   Handle<Object> key(&scope, symbols()->DunderName());
   dictAtPutInValueCell(dict, key, name);
   return *result;
 }
 
-Object* Runtime::newIntegerFromCPointer(void* ptr) {
-  return newInteger(reinterpret_cast<word>(ptr));
+Object* Runtime::newIntFromCPointer(void* ptr) {
+  return newInt(reinterpret_cast<word>(ptr));
 }
 
 Object* Runtime::newObjectArray(word length) {
@@ -724,11 +724,11 @@ Object* Runtime::newObjectArray(word length) {
   return heap()->createObjectArray(length, None::object());
 }
 
-Object* Runtime::newInteger(word value) {
+Object* Runtime::newInt(word value) {
   if (SmallInt::isValid(value)) {
     return SmallInt::fromWord(value);
   }
-  return newIntegerWithDigits(View<uword>(reinterpret_cast<uword*>(&value), 1));
+  return newIntWithDigits(View<uword>(reinterpret_cast<uword*>(&value), 1));
 }
 
 Object* Runtime::newFloat(double value) {
@@ -739,7 +739,7 @@ Object* Runtime::newComplex(double real, double imag) {
   return Complex::cast(heap()->createComplex(real, imag));
 }
 
-Object* Runtime::newIntegerWithDigits(View<uword> digits) {
+Object* Runtime::newIntWithDigits(View<uword> digits) {
   if (digits.length() == 0) {
     return SmallInt::fromWord(0);
   }
@@ -971,7 +971,7 @@ void Runtime::initializeHeapClasses() {
 
   // Abstract classes.
   initializeStrClass();
-  IntegerBuiltins::initialize(this);
+  IntBuiltins::initialize(this);
 
   // Exception hierarchy
   initializeExceptionClasses();
@@ -989,7 +989,7 @@ void Runtime::initializeHeapClasses() {
   initializeFloatClass();
   initializeFunctionClass();
   addEmptyBuiltinClass(SymbolId::kLargeInt, LayoutId::kLargeInt,
-                       LayoutId::kInteger);
+                       LayoutId::kInt);
   addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeString,
                        LayoutId::kString);
   addEmptyBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
@@ -1157,7 +1157,7 @@ void Runtime::initializeBooleanClass() {
   HandleScope scope;
   Handle<Type> type(&scope,
                     addEmptyBuiltinClass(SymbolId::kBool, LayoutId::kBoolean,
-                                         LayoutId::kInteger));
+                                         LayoutId::kInt));
 
   classAddBuiltinFunction(type, SymbolId::kDunderBool,
                           nativeTrampoline<builtinBooleanBool>);
@@ -1634,7 +1634,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDict);
   moduleAddBuiltinType(module, SymbolId::kException, LayoutId::kException);
   moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kFloat);
-  moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInteger);
+  moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInt);
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
   moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
   moduleAddBuiltinType(module, SymbolId::kProperty, LayoutId::kProperty);
@@ -2491,9 +2491,9 @@ static word stringFormatBufferLength(const Handle<String>& fmt,
     switch (fmt->charAt(++fmt_idx)) {
       case 'd': {
         len--;
-        CHECK(args->at(arg_idx)->isInteger(), "Argument mismatch");
-        len += snprintf(nullptr, 0, "%ld",
-                        Integer::cast(args->at(arg_idx))->asWord());
+        CHECK(args->at(arg_idx)->isInt(), "Argument mismatch");
+        len +=
+            snprintf(nullptr, 0, "%ld", Int::cast(args->at(arg_idx))->asWord());
         arg_idx++;
       } break;
       case 'g': {
@@ -2531,7 +2531,7 @@ static void stringFormatToBuffer(const Handle<String>& fmt,
     }
     switch (fmt->charAt(++fmt_idx)) {
       case 'd': {
-        word value = Integer::cast(args->at(arg_idx++))->asWord();
+        word value = Int::cast(args->at(arg_idx++))->asWord();
         dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%ld", value);
       } break;
       case 'g': {
@@ -3018,14 +3018,14 @@ Object* Runtime::newExtensionInstance(ApiHandle* handle) {
   // Get type class
   Handle<Dict> extensions_dict(&scope, extensionTypes());
   Handle<Object> type_id(
-      &scope, newIntegerFromCPointer(static_cast<void*>(handle->type())));
+      &scope, newIntFromCPointer(static_cast<void*>(handle->type())));
   Handle<Type> type_class(&scope, dictAt(extensions_dict, type_id));
 
   // Create instance
   Handle<Layout> layout(&scope, type_class->instanceLayout());
   Handle<HeapObject> instance(&scope, newInstance(layout));
   Handle<Object> object_ptr(
-      &scope, newIntegerFromCPointer(static_cast<void*>(handle->asPyObject())));
+      &scope, newIntFromCPointer(static_cast<void*>(handle->asPyObject())));
   Handle<Object> attr_name(&scope, symbols()->ExtensionPtr());
   instanceAtPut(thread, instance, attr_name, object_ptr);
 
@@ -3044,7 +3044,7 @@ void Runtime::freeTrackedAllocations() {
   for (word i = 0; i < keys->length(); i++) {
     Handle<Object> key(&scope, keys->at(i));
     Object* value = dictAt(dict, key);
-    delete static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
+    delete static_cast<ApiHandle*>(Int::cast(value)->asCPointer());
   }
 }
 

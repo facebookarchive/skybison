@@ -11,7 +11,7 @@ TEST(RuntimeApiHandlesTest, creatingApiHandles) {
   HandleScope scope;
   Handle<Dict> dict(&scope, runtime.apiHandles());
 
-  Handle<Object> obj(&scope, runtime.newInteger(15));
+  Handle<Object> obj(&scope, runtime.newInt(15));
   Object* value = runtime.dictAt(dict, obj);
   EXPECT_EQ(value->isError(), true);
 
@@ -22,7 +22,7 @@ TEST(RuntimeApiHandlesTest, creatingApiHandles) {
   ApiHandle* integer_handle2 = ApiHandle::fromObject(*obj);
   EXPECT_EQ(integer_handle, integer_handle2);
 
-  Handle<Integer> integer(&scope, integer_handle->asObject());
+  Handle<Int> integer(&scope, integer_handle->asObject());
   EXPECT_EQ(integer->asWord(), 15);
 }
 
@@ -31,7 +31,7 @@ TEST(RuntimeApiHandlesTest, borrowedApiHandles) {
   HandleScope scope;
 
   // Create a borrowed handle
-  Handle<Object> obj(&scope, runtime.newInteger(15));
+  Handle<Object> obj(&scope, runtime.newInt(15));
   ApiHandle* borrowed_handle = ApiHandle::fromBorrowedObject(*obj);
   EXPECT_TRUE(borrowed_handle->isBorrowed());
 
@@ -42,7 +42,7 @@ TEST(RuntimeApiHandlesTest, borrowedApiHandles) {
   EXPECT_TRUE(borrowed_handle->isBorrowed());
 
   // Create a normal handle
-  Handle<Object> obj2(&scope, runtime.newInteger(20));
+  Handle<Object> obj2(&scope, runtime.newInt(20));
   ApiHandle* integer_handle = ApiHandle::fromObject(*obj2);
   EXPECT_FALSE(integer_handle->isBorrowed());
 

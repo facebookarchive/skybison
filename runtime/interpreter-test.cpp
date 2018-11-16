@@ -29,7 +29,7 @@ TEST(InterpreterTest, IsTrueBoolean) {
   EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::falseObj());
 }
 
-TEST(InterpreterTest, IsTrueInteger) {
+TEST(InterpreterTest, IsTrueInt) {
   Runtime runtime;
   HandleScope scope;
 
@@ -38,11 +38,11 @@ TEST(InterpreterTest, IsTrueInteger) {
 
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Handle<Object> true_value(&scope, runtime.newInteger(1234));
+  Handle<Object> true_value(&scope, runtime.newInt(1234));
   frame->pushValue(*true_value);
   EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::trueObj());
 
-  Handle<Object> false_value(&scope, runtime.newInteger(0));
+  Handle<Object> false_value(&scope, runtime.newInt(0));
   frame->pushValue(*false_value);
   EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::falseObj());
 }

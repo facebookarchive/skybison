@@ -143,7 +143,7 @@ Object* ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
         "insert() takes exactly two arguments");
   }
   Arguments args(frame, nargs);
-  if (!args.get(1)->isInteger()) {
+  if (!args.get(1)->isInt()) {
     return thread->throwTypeErrorFromCString(
         "index object cannot be interpreted as an integer");
   }

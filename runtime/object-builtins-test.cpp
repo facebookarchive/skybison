@@ -143,9 +143,9 @@ TEST(NoneBuiltinsTest, NewWithExtraArgsThrows) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->openAndLinkFrame(0, 4, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kNoneType));
-  frame->setLocal(1, runtime.newInteger(1));
-  frame->setLocal(2, runtime.newInteger(2));
-  frame->setLocal(3, runtime.newInteger(3));
+  frame->setLocal(1, runtime.newInt(1));
+  frame->setLocal(2, runtime.newInt(2));
+  frame->setLocal(3, runtime.newInt(3));
   EXPECT_TRUE(NoneBuiltins::dunderNew(thread, frame, 4)->isError());
 }
 

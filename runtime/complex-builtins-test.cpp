@@ -27,7 +27,7 @@ TEST(ComplexBuiltinsTest, NewWithOneNumberArgReturnsComplexWithReal) {
   HandleScope scope(thread);
   Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kComplex));
-  frame->setLocal(1, runtime.newInteger(1));
+  frame->setLocal(1, runtime.newInt(1));
   Handle<Complex> cmplx(&scope, ComplexBuiltins::dunderNew(thread, frame, 2));
   EXPECT_EQ(cmplx->real(), 1.0);
   EXPECT_EQ(cmplx->imag(), 0);
@@ -39,8 +39,8 @@ TEST(ComplexBuiltinsTest, NewWithTwoNumberArgReturnsComplexWithReal) {
   HandleScope scope(thread);
   Frame* frame = thread->openAndLinkFrame(0, 3, 0);
   frame->setLocal(0, runtime.typeAt(LayoutId::kComplex));
-  frame->setLocal(1, runtime.newInteger(1));
-  frame->setLocal(2, runtime.newInteger(2));
+  frame->setLocal(1, runtime.newInt(1));
+  frame->setLocal(2, runtime.newInt(2));
   Handle<Complex> cmplx(&scope, ComplexBuiltins::dunderNew(thread, frame, 3));
   EXPECT_EQ(cmplx->real(), 1.0);
   EXPECT_EQ(cmplx->imag(), 2.0);

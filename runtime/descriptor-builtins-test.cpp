@@ -259,10 +259,10 @@ x2 = c1.x
   runtime.runFromCString(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x1(&scope, moduleAt(&runtime, main, "x1"));
-  ASSERT_TRUE(x1->isInteger());
+  ASSERT_TRUE(x1->isInt());
   EXPECT_EQ(SmallInt::cast(*x1)->value(), 24);
   Handle<Object> x2(&scope, moduleAt(&runtime, main, "x2"));
-  ASSERT_TRUE(x2->isInteger());
+  ASSERT_TRUE(x2->isInt());
   EXPECT_EQ(SmallInt::cast(*x2)->value(), 42);
 }
 
@@ -290,7 +290,7 @@ x = c1.x
   runtime.runFromCString(src);
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
-  ASSERT_TRUE(x->isInteger());
+  ASSERT_TRUE(x->isInt());
   EXPECT_EQ(SmallInt::cast(*x)->value(), 42);
 }
 

@@ -63,7 +63,7 @@ TEST(TypeObject, ReadyCreatesRuntimeClass) {
 
   // Obtain EmptyType Type object from the runtime
   Handle<Object> type_id(
-      &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&empty_type)));
+      &scope, runtime.newIntFromCPointer(static_cast<void*>(&empty_type)));
   Handle<Object> type_class_obj(&scope,
                                 runtime.dictAt(extensions_dict, type_id));
   EXPECT_TRUE(type_class_obj->isType());
@@ -74,7 +74,7 @@ TEST(TypeObject, ReadyCreatesRuntimeClass) {
   EXPECT_TRUE(type_class_name->equalsCString(empty_type.tp_name));
 
   // Confirm the PyTypeObject pointer
-  Handle<Integer> pytype_addr_obj(&scope, type_class->extensionType());
+  Handle<Int> pytype_addr_obj(&scope, type_class->extensionType());
   EXPECT_EQ(&empty_type, pytype_addr_obj->asCPointer());
 }
 
@@ -89,7 +89,7 @@ TEST(TypeObject, ReadiedTypeCreatesRuntimeInstance) {
   empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
   PyType_Ready(&empty_type);
   Handle<Object> type_id(
-      &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&empty_type)));
+      &scope, runtime.newIntFromCPointer(static_cast<void*>(&empty_type)));
   Handle<Type> type_class(&scope, runtime.dictAt(extensions_dict, type_id));
 
   // Instantiate a class object
@@ -143,7 +143,7 @@ TEST(TypeObject, InitializeCustomTypeInstance) {
 
   // Add class to the runtime
   Handle<Object> type_id(
-      &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&custom_type)));
+      &scope, runtime.newIntFromCPointer(static_cast<void*>(&custom_type)));
   Handle<Dict> ext_dict(&scope, runtime.extensionTypes());
   Handle<Object> type_class(&scope, runtime.dictAt(ext_dict, type_id));
   Handle<Object> ob_name(&scope, runtime.newStringFromCString("Custom"));
@@ -164,8 +164,8 @@ instance2 = custom.Custom()
   // Get instance value
   Handle<HeapObject> instance(&scope, *instance_obj);
   Handle<Object> attr_name(&scope, runtime.symbols()->ExtensionPtr());
-  Handle<Integer> extension_obj(
-      &scope, runtime.instanceAt(thread, instance, attr_name));
+  Handle<Int> extension_obj(&scope,
+                            runtime.instanceAt(thread, instance, attr_name));
   CustomObject* custom_obj =
       static_cast<CustomObject*>(extension_obj->asCPointer());
   EXPECT_EQ(custom_obj->value, 30);
@@ -173,8 +173,8 @@ instance2 = custom.Custom()
   // Decref and dealloc custom instance
   Handle<HeapObject> instance2(
       &scope, testing::findInModule(&runtime, main, "instance2"));
-  Handle<Integer> object_ptr2(&scope,
-                              runtime.instanceAt(thread, instance2, attr_name));
+  Handle<Int> object_ptr2(&scope,
+                          runtime.instanceAt(thread, instance2, attr_name));
   CustomObject* custom_obj2 =
       static_cast<CustomObject*>(object_ptr2->asCPointer());
   EXPECT_EQ(1, Py_REFCNT(custom_obj2));

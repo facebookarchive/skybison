@@ -10,7 +10,7 @@ TEST(UnicodeObject, AsUTF8FromNonStringReturnsNull) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Object> integer_obj(&scope, runtime.newInteger(15));
+  Handle<Object> integer_obj(&scope, runtime.newInt(15));
   PyObject* pylong = ApiHandle::fromObject(*integer_obj)->asPyObject();
 
   // Pass a non string object

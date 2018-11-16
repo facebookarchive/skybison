@@ -288,16 +288,16 @@ TEST(MarshalReaderTest, ReadNegativeTypeLong) {
   const char buf[] =
       "\xec\xfb\xff\xff\xff\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x07\x00";
   Object* integer = Marshal::Reader(&scope, &runtime, buf).readObject();
-  ASSERT_TRUE(integer->isInteger());
-  EXPECT_EQ(Integer::cast(integer)->asWord(), kMinInt64 + 1);
+  ASSERT_TRUE(integer->isInt());
+  EXPECT_EQ(Int::cast(integer)->asWord(), kMinInt64 + 1);
 
   // marshal.dumps(SmallInt::kMinValue)
   const char buf1[] =
       "\xec\xfb\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00";
   const word min_value = SmallInt::kMinValue;
   integer = Marshal::Reader(&scope, &runtime, buf1).readObject();
-  ASSERT_TRUE(integer->isInteger());
-  EXPECT_EQ(Integer::cast(integer)->asWord(), min_value);
+  ASSERT_TRUE(integer->isInt());
+  EXPECT_EQ(Int::cast(integer)->asWord(), min_value);
 }
 
 TEST(MarshalReaderTest, ReadPositiveTypeLong) {
@@ -308,16 +308,16 @@ TEST(MarshalReaderTest, ReadPositiveTypeLong) {
   const char buf[] =
       "\xec\x05\x00\x00\x00\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x07\x00";
   Object* integer = Marshal::Reader(&scope, &runtime, buf).readObject();
-  ASSERT_TRUE(integer->isInteger());
-  EXPECT_EQ(Integer::cast(integer)->asWord(), kMaxInt64);
+  ASSERT_TRUE(integer->isInt());
+  EXPECT_EQ(Int::cast(integer)->asWord(), kMaxInt64);
 
   // marshal.dumps(SmallInt::kMaxValue)
   const char buf1[] =
       "\xec\x05\x00\x00\x00\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x03\x00";
   const word max_value = SmallInt::kMaxValue;
   integer = Marshal::Reader(&scope, &runtime, buf1).readObject();
-  ASSERT_TRUE(integer->isInteger());
-  EXPECT_EQ(Integer::cast(integer)->asWord(), max_value);
+  ASSERT_TRUE(integer->isInt());
+  EXPECT_EQ(Int::cast(integer)->asWord(), max_value);
 }
 
 TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {

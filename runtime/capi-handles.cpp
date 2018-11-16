@@ -29,11 +29,11 @@ ApiHandle* ApiHandle::fromObject(Object* obj) {
   if (value->isError()) {
     ApiHandle* handle = ApiHandle::newHandle(obj);
     Handle<Object> object(
-        &scope, runtime->newIntegerFromCPointer(static_cast<void*>(handle)));
+        &scope, runtime->newIntFromCPointer(static_cast<void*>(handle)));
     runtime->dictAtPut(dict, key, object);
     return handle;
   }
-  return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
+  return static_cast<ApiHandle*>(Int::cast(value)->asCPointer());
 }
 
 ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
@@ -47,11 +47,11 @@ ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
   if (value->isError()) {
     ApiHandle* handle = ApiHandle::newBorrowedHandle(obj);
     Handle<Object> object(
-        &scope, runtime->newIntegerFromCPointer(static_cast<void*>(handle)));
+        &scope, runtime->newIntFromCPointer(static_cast<void*>(handle)));
     runtime->dictAtPut(dict, key, object);
     return handle;
   }
-  return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
+  return static_cast<ApiHandle*>(Int::cast(value)->asCPointer());
 }
 
 Object* ApiHandle::asObject() {

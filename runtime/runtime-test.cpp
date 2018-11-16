@@ -793,7 +793,7 @@ TEST(RuntimeTest, HashByteArrays) {
 TEST(RuntimeTest, HashSmallInts) {
   Runtime runtime;
 
-  // In CPython, Integers hash to themselves.
+  // In CPython, Ints hash to themselves.
   SmallInt* hash123 = SmallInt::cast(runtime.hash(SmallInt::fromWord(123)));
   EXPECT_EQ(hash123->value(), 123);
   SmallInt* hash456 = SmallInt::cast(runtime.hash(SmallInt::fromWord(456)));
@@ -2631,55 +2631,54 @@ def test(module):
             Error::object());
 }
 
-TEST(RuntimeIntegerTest, NewSmallIntWithDigits) {
+TEST(RuntimeIntTest, NewSmallIntWithDigits) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Integer> zero(&scope,
-                       runtime.newIntegerWithDigits(View<uword>(nullptr, 0)));
+  Handle<Int> zero(&scope, runtime.newIntWithDigits(View<uword>(nullptr, 0)));
   ASSERT_TRUE(zero->isSmallInt());
   EXPECT_EQ(zero->asWord(), 0);
 
   uword digit = 1;
-  Object* one = runtime.newIntegerWithDigits(View<uword>(&digit, 1));
+  Object* one = runtime.newIntWithDigits(View<uword>(&digit, 1));
   ASSERT_TRUE(one->isSmallInt());
   EXPECT_EQ(SmallInt::cast(one)->value(), 1);
 
   digit = kMaxUword;
-  Object* negative_one = runtime.newIntegerWithDigits(View<uword>(&digit, 1));
+  Object* negative_one = runtime.newIntWithDigits(View<uword>(&digit, 1));
   ASSERT_TRUE(negative_one->isSmallInt());
   EXPECT_EQ(SmallInt::cast(negative_one)->value(), -1);
 
   word min_small_int = SmallInt::kMaxValue;
   digit = static_cast<uword>(min_small_int);
-  Handle<Integer> min_smallint(
-      &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
+  Handle<Int> min_smallint(&scope,
+                           runtime.newIntWithDigits(View<uword>(&digit, 1)));
   ASSERT_TRUE(min_smallint->isSmallInt());
   EXPECT_EQ(min_smallint->asWord(), min_small_int);
 
   word max_small_int = SmallInt::kMaxValue;
   digit = static_cast<uword>(max_small_int);
-  Handle<Integer> max_smallint(
-      &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
+  Handle<Int> max_smallint(&scope,
+                           runtime.newIntWithDigits(View<uword>(&digit, 1)));
   ASSERT_TRUE(max_smallint->isSmallInt());
   EXPECT_EQ(max_smallint->asWord(), max_small_int);
 }
 
-TEST(RuntimeIntegerTest, NewLargeIntWithDigits) {
+TEST(RuntimeIntTest, NewLargeIntWithDigits) {
   Runtime runtime;
   HandleScope scope;
 
   word negative_large_int = SmallInt::kMinValue - 1;
   uword digit = static_cast<uword>(negative_large_int);
-  Handle<Integer> negative_largeint(
-      &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
+  Handle<Int> negative_largeint(
+      &scope, runtime.newIntWithDigits(View<uword>(&digit, 1)));
   ASSERT_TRUE(negative_largeint->isLargeInt());
   EXPECT_EQ(negative_largeint->asWord(), negative_large_int);
 
   word positive_large_int = SmallInt::kMaxValue + 1;
   digit = static_cast<uword>(positive_large_int);
-  Handle<Integer> positive_largeint(
-      &scope, runtime.newIntegerWithDigits(View<uword>(&digit, 1)));
+  Handle<Int> positive_largeint(
+      &scope, runtime.newIntWithDigits(View<uword>(&digit, 1)));
   ASSERT_TRUE(positive_largeint->isLargeInt());
   EXPECT_EQ(positive_largeint->asWord(), positive_large_int);
 }

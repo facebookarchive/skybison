@@ -74,9 +74,9 @@ class Runtime {
 
   Object* newExtensionInstance(ApiHandle* handle);
 
-  Object* newInteger(word value);
+  Object* newInt(word value);
 
-  Object* newIntegerWithDigits(View<uword> digits);
+  Object* newIntWithDigits(View<uword> digits);
 
   Object* newLayout();
 
@@ -86,8 +86,8 @@ class Runtime {
 
   Object* newModule(const Handle<Object>& name);
 
-  // Returns an Integer that stores the numerical address of the pointer.
-  Object* newIntegerFromCPointer(void* ptr);
+  // Returns an Int that stores the numerical address of the pointer.
+  Object* newIntFromCPointer(void* ptr);
 
   Object* newObjectArray(word length);
 

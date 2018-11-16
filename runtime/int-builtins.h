@@ -8,7 +8,7 @@
 
 namespace python {
 
-class IntegerBuiltins {
+class IntBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
@@ -18,7 +18,7 @@ class IntegerBuiltins {
  private:
   static const BuiltinMethod kMethods[];
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(IntegerBuiltins);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(IntBuiltins);
 };
 
 class SmallIntBuiltins {

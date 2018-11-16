@@ -31,7 +31,7 @@ extern "C" PyObject* PyLong_FromLong(long ival) {
   HandleScope scope(thread);
 
   word val = reinterpret_cast<word>(ival);
-  Handle<Object> value(&scope, runtime->newInteger(val));
+  Handle<Object> value(&scope, runtime->newInt(val));
   return ApiHandle::fromObject(*value)->asPyObject();
 }
 

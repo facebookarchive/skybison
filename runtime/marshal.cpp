@@ -442,8 +442,7 @@ Object* Marshal::Reader::readLongObject() {
     DCHECK(carry == 0, "Carry should be zero");
   }
 
-  Object* result =
-      runtime_->newIntegerWithDigits(View<uword>(digits, digits_idx));
+  Object* result = runtime_->newIntWithDigits(View<uword>(digits, digits_idx));
   delete[] digits;
   if (isRef_) {
     addRef(result);

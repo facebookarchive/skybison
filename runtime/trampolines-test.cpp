@@ -582,7 +582,7 @@ TEST(TrampolineTest,
   ASSERT_TRUE(result->isObjectArray());
   Handle<ObjectArray> tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 3);
-  ASSERT_TRUE(tuple->at(0)->isInteger());
+  ASSERT_TRUE(tuple->at(0)->isInt());
   EXPECT_EQ(SmallInt::cast(tuple->at(0))->value(), 1234);
   ASSERT_TRUE(tuple->at(1)->isString());
   EXPECT_TRUE(String::cast(tuple->at(1))->equalsCString("foo_val"));

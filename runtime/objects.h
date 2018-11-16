@@ -24,7 +24,7 @@ namespace python {
   V(Ellipsis)                                                                  \
   V(Exception)                                                                 \
   V(Function)                                                                  \
-  V(Integer)                                                                   \
+  V(Int)                                                                       \
   V(LargeInt)                                                                  \
   V(LargeString)                                                               \
   V(Layout)                                                                    \
@@ -88,7 +88,7 @@ enum class LayoutId : word {
   kEllipsis,
   kException,
   kFunction,
-  kInteger,
+  kInt,
   kLargeInt,
   kLargeString,
   kLayout,
@@ -164,7 +164,7 @@ class Object {
   bool isWeakRef();
 
   // superclass objects
-  bool isInteger();
+  bool isInt();
   bool isString();
 
   static bool equals(Object* lhs, Object* rhs);
@@ -183,13 +183,13 @@ class Object {
 };
 
 // Generic wrapper around SmallInt/LargeInt.
-class Integer : public Object {
+class Int : public Object {
  public:
   // Getters and setters.
   word asWord();
   void* asCPointer();
 
-  word compare(Integer* other);
+  word compare(Int* other);
 
   double floatValue();
 
@@ -200,11 +200,11 @@ class Integer : public Object {
   bool isZero();
 
   // Casting.
-  static Integer* cast(Object* object);
+  static Int* cast(Object* object);
 
  private:
   static word compareDigits(View<uword> lhs, View<uword> rhs);
-  DISALLOW_COPY_AND_ASSIGN(Integer);
+  DISALLOW_COPY_AND_ASSIGN(Int);
 };
 
 // Immediate objects
@@ -617,7 +617,7 @@ class Type : public HeapObject {
   Object* dict();
   void setDict(Object* name);
 
-  // Integer holding a pointer to a PyTypeObject
+  // Int holding a pointer to a PyTypeObject
   // Only set on classes that were initialized through PyType_Ready
   Object* extensionType();
   void setExtensionType(Object* pytype);
@@ -760,7 +760,7 @@ class LargeInt : public HeapObject {
   static const int kSize = kValueOffset + kPointerSize;
 
  private:
-  friend class Integer;
+  friend class Int;
   friend class Runtime;
 
   DISALLOW_COPY_AND_ASSIGN(LargeInt);
@@ -1999,7 +1999,7 @@ inline bool Object::isLargeInt() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLargeInt;
 }
 
-inline bool Object::isInteger() { return isSmallInt() || isLargeInt(); }
+inline bool Object::isInt() { return isSmallInt() || isLargeInt(); }
 
 inline bool Object::isNotImplemented() {
   if (!isHeapObject()) {
@@ -2077,28 +2077,28 @@ inline bool Object::equals(Object* lhs, Object* rhs) {
 
 inline Object* Object::cast(Object* object) { return object; }
 
-// Integer
+// Int
 
-inline Integer* Integer::cast(Object* object) {
-  DCHECK(object->isInteger(), "invalid cast");
-  return reinterpret_cast<Integer*>(object);
+inline Int* Int::cast(Object* object) {
+  DCHECK(object->isInt(), "invalid cast");
+  return reinterpret_cast<Int*>(object);
 }
 
-inline word Integer::asWord() {
+inline word Int::asWord() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value();
   }
   return LargeInt::cast(this)->asWord();
 }
 
-inline void* Integer::asCPointer() {
+inline void* Int::asCPointer() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->asCPointer();
   }
   return LargeInt::cast(this)->asCPointer();
 }
 
-inline word Integer::compare(Integer* that) {
+inline word Int::compare(Int* that) {
   if (this->isSmallInt() && that->isSmallInt()) {
     return this->asWord() - that->asWord();
   }
@@ -2123,7 +2123,7 @@ inline word Integer::compare(Integer* that) {
   return compareDigits(lhs, rhs);
 }
 
-inline word Integer::compareDigits(View<uword> lhs, View<uword> rhs) {
+inline word Int::compareDigits(View<uword> lhs, View<uword> rhs) {
   if (lhs.length() > rhs.length()) {
     return 1;
   }
@@ -2141,7 +2141,7 @@ inline word Integer::compareDigits(View<uword> lhs, View<uword> rhs) {
   return 0;
 }
 
-inline double Integer::floatValue() {
+inline double Int::floatValue() {
   if (isSmallInt()) {
     return static_cast<double>(asWord());
   }
@@ -2153,7 +2153,7 @@ inline double Integer::floatValue() {
   UNIMPLEMENTED("LargeInts with > 1 digit");
 }
 
-inline word Integer::highestBit() {
+inline word Int::highestBit() {
   if (isSmallInt()) {
     uword self = static_cast<uword>(std::abs(SmallInt::cast(this)->value()));
     return Utils::highestBit(self);
@@ -2161,21 +2161,21 @@ inline word Integer::highestBit() {
   return LargeInt::cast(this)->highestBit();
 }
 
-inline bool Integer::isPositive() {
+inline bool Int::isPositive() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value() > 0;
   }
   return LargeInt::cast(this)->isPositive();
 }
 
-inline bool Integer::isNegative() {
+inline bool Int::isNegative() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value() < 0;
   }
   return LargeInt::cast(this)->isNegative();
 }
 
-inline bool Integer::isZero() {
+inline bool Int::isZero() {
   if (isSmallInt()) {
     return SmallInt::cast(this)->value() == 0;
   }

@@ -35,7 +35,7 @@ TEST(TupleObject, GetItemFromNonTupleReturnsNull) {
   HandleScope scope;
 
   // Get item from non tuple
-  Handle<Integer> not_tuple(&scope, runtime.newInteger(7));
+  Handle<Int> not_tuple(&scope, runtime.newInt(7));
   PyObject* pyresult =
       PyTuple_GetItem(ApiHandle::fromObject(*not_tuple)->asPyObject(), 0);
   EXPECT_EQ(nullptr, pyresult);
@@ -49,7 +49,7 @@ TEST(TupleObject, GetItemOutOfBoundsReturnsMinusOne) {
   word length = 5;
   word int_value = 10;
   Handle<ObjectArray> tuple(&scope, runtime.newObjectArray(length));
-  Handle<Integer> item(&scope, runtime.newInteger(int_value));
+  Handle<Int> item(&scope, runtime.newInt(int_value));
   tuple->atPut(pos, *item);
 
   // Get item out of bounds
@@ -69,7 +69,7 @@ TEST(TupleObject, GetItemReturnsSameItem) {
   word length = 5;
   word int_value = 10;
   Handle<ObjectArray> tuple(&scope, runtime.newObjectArray(length));
-  Handle<Integer> item(&scope, runtime.newInteger(int_value));
+  Handle<Int> item(&scope, runtime.newInt(int_value));
   tuple->atPut(pos, *item);
 
   // Get item
@@ -78,7 +78,7 @@ TEST(TupleObject, GetItemReturnsSameItem) {
   EXPECT_NE(nullptr, pyresult);
   Handle<Object> result_obj(&scope,
                             ApiHandle::fromPyObject(pyresult)->asObject());
-  ASSERT_TRUE(result_obj->isInteger());
+  ASSERT_TRUE(result_obj->isInt());
 }
 
 TEST(TupleObject, GetItemReturnsBorrowedReference) {
@@ -89,7 +89,7 @@ TEST(TupleObject, GetItemReturnsBorrowedReference) {
   word length = 5;
   word int_value = 10;
   Handle<ObjectArray> tuple(&scope, runtime.newObjectArray(length));
-  Handle<Integer> item(&scope, runtime.newInteger(int_value));
+  Handle<Int> item(&scope, runtime.newInt(int_value));
   tuple->atPut(pos, *item);
 
   // Verify borrowed handle
@@ -99,7 +99,7 @@ TEST(TupleObject, GetItemReturnsBorrowedReference) {
                             ApiHandle::fromPyObject(pyresult)->asObject());
   ApiHandle* result_handle = ApiHandle::fromObject(*result_obj);
   EXPECT_TRUE(result_handle->isBorrowed());
-  Handle<Integer> result(&scope, result_handle->asObject());
+  Handle<Int> result(&scope, result_handle->asObject());
   EXPECT_EQ(int_value, result->asWord());
 }
 

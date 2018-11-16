@@ -447,13 +447,13 @@ inline bool Frame::isSentinelFrame() { return previousFrame() == nullptr; }
 
 inline void* Frame::nativeFunctionPointer() {
   DCHECK(isNativeFrame(), "not native frame");
-  return Integer::cast(code())->asCPointer();
+  return Int::cast(code())->asCPointer();
 }
 
-inline bool Frame::isNativeFrame() { return code()->isInteger(); }
+inline bool Frame::isNativeFrame() { return code()->isInt(); }
 
 inline void Frame::makeNativeFrame(Object* fn_pointer_as_int) {
-  DCHECK(fn_pointer_as_int->isInteger(), "expected integer");
+  DCHECK(fn_pointer_as_int->isInt(), "expected integer");
   setCode(fn_pointer_as_int);
 }
 

@@ -26,7 +26,7 @@ Object* unimplementedTrampoline(Thread* thread, Frame* caller_frame, word argc)
     __attribute__((aligned(16)));
 
 // Force 16-byte alignment on trampoline addresses to disguise them as
-// smallIntegers to avoid GC issues
+// SmallInts to avoid GC issues
 template <Object* (*Fn)(Thread*, Frame*, word)>
 Object* nativeTrampoline(Thread* thread, Frame* caller_frame, word argc)
     __attribute__((aligned(16)));

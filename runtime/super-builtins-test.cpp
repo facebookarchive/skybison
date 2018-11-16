@@ -131,8 +131,8 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
   compileAndRunToString(&runtime, src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Integer> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Integer> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Int> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Int> b(&scope, moduleAt(&runtime, main, "b"));
   Handle<Boolean> c(&scope, moduleAt(&runtime, main, "c"));
   Handle<Boolean> e(&scope, moduleAt(&runtime, main, "e"));
   EXPECT_EQ(a->asWord(), 3);

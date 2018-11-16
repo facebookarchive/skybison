@@ -9,8 +9,8 @@ extern "C" int PyModule_AddIntConstant(PyObject* pymodule, const char* name,
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Handle<Object> integer(&scope, runtime->newInteger(value));
-  if (!integer->isInteger()) {
+  Handle<Object> integer(&scope, runtime->newInt(value));
+  if (!integer->isInt()) {
     // TODO(cshapiro): throw a MemoryError
     return -1;
   }

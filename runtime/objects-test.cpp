@@ -27,132 +27,124 @@ TEST(ComplexTest, ComplexTest) {
   EXPECT_EQ(c->imag(), 2.0);
 }
 
-TEST(IntegerTest, IntegerTest) {
+TEST(IntTest, IntTest) {
   Runtime runtime;
-  Object* o1 = runtime.newInteger(42);
+  Object* o1 = runtime.newInt(42);
   EXPECT_FALSE(o1->isLargeInt());
-  Integer* i1 = Integer::cast(o1);
+  Int* i1 = Int::cast(o1);
   EXPECT_EQ(i1->asWord(), 42);
 
-  Object* o2 = runtime.newInteger(9223372036854775807L);
+  Object* o2 = runtime.newInt(9223372036854775807L);
   EXPECT_TRUE(o2->isLargeInt());
-  Integer* i2 = Integer::cast(o2);
+  Int* i2 = Int::cast(o2);
   EXPECT_EQ(i2->asWord(), 9223372036854775807L);
 
   int stack_val = 123;
-  Object* o3 = runtime.newIntegerFromCPointer(&stack_val);
-  Integer* i3 = Integer::cast(o3);
+  Object* o3 = runtime.newIntFromCPointer(&stack_val);
+  Int* i3 = Int::cast(o3);
   EXPECT_EQ(*reinterpret_cast<int*>(i3->asCPointer()), 123);
 }
 
-TEST(IntegerTest, IsPositive) {
+TEST(IntTest, IsPositive) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Integer> zero(&scope, runtime.newInteger(0));
+  Handle<Int> zero(&scope, runtime.newInt(0));
   EXPECT_FALSE(zero->isPositive());
 
-  Handle<Integer> one(&scope, runtime.newInteger(1));
+  Handle<Int> one(&scope, runtime.newInt(1));
   EXPECT_TRUE(one->isPositive());
 
-  Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
+  Handle<Int> neg_one(&scope, runtime.newInt(-1));
   EXPECT_FALSE(neg_one->isPositive());
 
-  Handle<Integer> max_small_int(&scope,
-                                runtime.newInteger(SmallInt::kMaxValue));
+  Handle<Int> max_small_int(&scope, runtime.newInt(SmallInt::kMaxValue));
   EXPECT_TRUE(max_small_int->isPositive());
 
-  Handle<Integer> min_small_int(&scope,
-                                runtime.newInteger(SmallInt::kMinValue));
+  Handle<Int> min_small_int(&scope, runtime.newInt(SmallInt::kMinValue));
   EXPECT_FALSE(min_small_int->isPositive());
 
-  Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
+  Handle<Int> max_word(&scope, runtime.newInt(kMaxWord));
   EXPECT_TRUE(max_word->isPositive());
 
-  Handle<Integer> min_word(&scope, runtime.newInteger(kMinWord));
+  Handle<Int> min_word(&scope, runtime.newInt(kMinWord));
   EXPECT_FALSE(min_word->isPositive());
 }
 
-TEST(IntegerTest, IsNegative) {
+TEST(IntTest, IsNegative) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Integer> zero(&scope, runtime.newInteger(0));
+  Handle<Int> zero(&scope, runtime.newInt(0));
   EXPECT_FALSE(zero->isNegative());
 
-  Handle<Integer> one(&scope, runtime.newInteger(1));
+  Handle<Int> one(&scope, runtime.newInt(1));
   EXPECT_FALSE(one->isNegative());
 
-  Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
+  Handle<Int> neg_one(&scope, runtime.newInt(-1));
   EXPECT_TRUE(neg_one->isNegative());
 
-  Handle<Integer> max_small_int(&scope,
-                                runtime.newInteger(SmallInt::kMaxValue));
+  Handle<Int> max_small_int(&scope, runtime.newInt(SmallInt::kMaxValue));
   EXPECT_FALSE(max_small_int->isNegative());
 
-  Handle<Integer> min_small_int(&scope,
-                                runtime.newInteger(SmallInt::kMinValue));
+  Handle<Int> min_small_int(&scope, runtime.newInt(SmallInt::kMinValue));
   EXPECT_TRUE(min_small_int->isNegative());
 
-  Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
+  Handle<Int> max_word(&scope, runtime.newInt(kMaxWord));
   EXPECT_FALSE(max_word->isNegative());
 
-  Handle<Integer> min_word(&scope, runtime.newInteger(kMinWord));
+  Handle<Int> min_word(&scope, runtime.newInt(kMinWord));
   EXPECT_TRUE(min_word->isNegative());
 }
 
-TEST(IntegerTest, IsZero) {
+TEST(IntTest, IsZero) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Integer> zero(&scope, runtime.newInteger(0));
+  Handle<Int> zero(&scope, runtime.newInt(0));
   EXPECT_TRUE(zero->isZero());
 
-  Handle<Integer> one(&scope, runtime.newInteger(1));
+  Handle<Int> one(&scope, runtime.newInt(1));
   EXPECT_FALSE(one->isZero());
 
-  Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
+  Handle<Int> neg_one(&scope, runtime.newInt(-1));
   EXPECT_FALSE(neg_one->isZero());
 
-  Handle<Integer> max_small_int(&scope,
-                                runtime.newInteger(SmallInt::kMaxValue));
+  Handle<Int> max_small_int(&scope, runtime.newInt(SmallInt::kMaxValue));
   EXPECT_FALSE(max_small_int->isZero());
 
-  Handle<Integer> min_small_int(&scope,
-                                runtime.newInteger(SmallInt::kMinValue));
+  Handle<Int> min_small_int(&scope, runtime.newInt(SmallInt::kMinValue));
   EXPECT_FALSE(min_small_int->isZero());
 
-  Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
+  Handle<Int> max_word(&scope, runtime.newInt(kMaxWord));
   EXPECT_FALSE(max_word->isZero());
 
-  Handle<Integer> min_word(&scope, runtime.newInteger(kMinWord));
+  Handle<Int> min_word(&scope, runtime.newInt(kMinWord));
   EXPECT_FALSE(min_word->isZero());
 }
 
-TEST(IntegerTest, Compare) {
+TEST(IntTest, Compare) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<Integer> zero(&scope, runtime.newInteger(0));
-  Handle<Integer> one(&scope, runtime.newInteger(1));
-  Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
+  Handle<Int> zero(&scope, runtime.newInt(0));
+  Handle<Int> one(&scope, runtime.newInt(1));
+  Handle<Int> neg_one(&scope, runtime.newInt(-1));
 
   EXPECT_EQ(zero->compare(*zero), 0);
   EXPECT_GE(one->compare(*neg_one), 1);
   EXPECT_LE(neg_one->compare(*one), -1);
 
-  Handle<Integer> min_small_int(&scope,
-                                runtime.newInteger(SmallInt::kMinValue));
-  Handle<Integer> max_small_int(&scope,
-                                runtime.newInteger(SmallInt::kMaxValue));
+  Handle<Int> min_small_int(&scope, runtime.newInt(SmallInt::kMinValue));
+  Handle<Int> max_small_int(&scope, runtime.newInt(SmallInt::kMaxValue));
 
   EXPECT_GE(max_small_int->compare(*min_small_int), 1);
   EXPECT_LE(min_small_int->compare(*max_small_int), -1);
   EXPECT_EQ(min_small_int->compare(*min_small_int), 0);
   EXPECT_EQ(max_small_int->compare(*max_small_int), 0);
 
-  Handle<Integer> min_word(&scope, runtime.newInteger(kMinWord));
-  Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
+  Handle<Int> min_word(&scope, runtime.newInt(kMinWord));
+  Handle<Int> max_word(&scope, runtime.newInt(kMaxWord));
 
   EXPECT_GE(max_word->compare(*min_word), 1);
   EXPECT_LE(min_word->compare(*max_word), -1);

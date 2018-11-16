@@ -447,7 +447,7 @@ Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
 
   // Set the address pointer to the function pointer
   Handle<Function> function(&scope, caller_frame->function(argc));
-  Handle<Integer> address(&scope, function->code());
+  Handle<Int> address(&scope, function->code());
 
   Handle<Object> object(&scope, caller_frame->topValue());
   Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
@@ -456,7 +456,7 @@ Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
 
   if (object->isType()) {
     Handle<Type> type_class(&scope, *object);
-    Handle<Integer> extension_type(&scope, type_class->extensionType());
+    Handle<Int> extension_type(&scope, type_class->extensionType());
     PyObject* type = static_cast<PyObject*>(extension_type->asCPointer());
 
     // void* to CFunction idiom
@@ -468,8 +468,8 @@ Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   }
 
   Handle<HeapObject> instance(&scope, *object);
-  Handle<Integer> object_ptr(&scope,
-                             runtime->instanceAt(thread, instance, attr_name));
+  Handle<Int> object_ptr(&scope,
+                         runtime->instanceAt(thread, instance, attr_name));
   PyObject* self = static_cast<PyObject*>(object_ptr->asCPointer());
 
   // void* to CFunction idiom

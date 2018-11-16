@@ -10,7 +10,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(IntBuiltinsTest, NewWithStringReturnsInteger) {
+TEST(IntBuiltinsTest, NewWithStringReturnsInt) {
   Runtime runtime;
   runtime.runFromCString(R"(
 a = int("123")
@@ -18,13 +18,13 @@ b = int("-987")
 )");
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Integer> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Integer> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Int> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Int> b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a->asWord(), 123);
   EXPECT_EQ(b->asWord(), -987);
 }
 
-TEST(IntBuiltinsTest, NewWithStringAndIntegerBaseReturnsInteger) {
+TEST(IntBuiltinsTest, NewWithStringAndIntBaseReturnsInt) {
   Runtime runtime;
   runtime.runFromCString(R"(
 a = int("23", 8)
@@ -34,10 +34,10 @@ d = int("0xabc", 0)
 )");
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Integer> a(&scope, moduleAt(&runtime, main, "a"));
-  Handle<Integer> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Integer> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Integer> d(&scope, moduleAt(&runtime, main, "d"));
+  Handle<Int> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Int> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Int> c(&scope, moduleAt(&runtime, main, "c"));
+  Handle<Int> d(&scope, moduleAt(&runtime, main, "d"));
   EXPECT_EQ(a->asWord(), 19);
   EXPECT_EQ(b->asWord(), 2748);
   EXPECT_EQ(c->asWord(), 19);
@@ -545,17 +545,17 @@ TEST(IntBuiltinsTest, StringToIntDPos) {
 
   Handle<Object> str_d0(&scope, runtime.newStringFromCString("0"));
   Handle<SmallInt> int_d0(&scope,
-                          IntegerBuiltins::intFromString(thread, *str_d0, 10));
+                          IntBuiltins::intFromString(thread, *str_d0, 10));
   EXPECT_EQ(int_d0->value(), 0);
 
   Handle<Object> str_d123(&scope, runtime.newStringFromCString("123"));
-  Handle<SmallInt> int_d123(
-      &scope, IntegerBuiltins::intFromString(thread, *str_d123, 10));
+  Handle<SmallInt> int_d123(&scope,
+                            IntBuiltins::intFromString(thread, *str_d123, 10));
   EXPECT_EQ(int_d123->value(), 123);
 
   Handle<Object> str_d987n(&scope, runtime.newStringFromCString("-987"));
   Handle<SmallInt> int_d987n(
-      &scope, IntegerBuiltins::intFromString(thread, *str_d987n, 10));
+      &scope, IntBuiltins::intFromString(thread, *str_d987n, 10));
   EXPECT_EQ(int_d987n->value(), -987);
 }
 
@@ -565,13 +565,11 @@ TEST(IntBuiltinsTest, StringToIntDNeg) {
   Thread* thread = Thread::currentThread();
 
   Handle<Object> str1(&scope, runtime.newStringFromCString(""));
-  Handle<Object> res1(&scope,
-                      IntegerBuiltins::intFromString(thread, *str1, 10));
+  Handle<Object> res1(&scope, IntBuiltins::intFromString(thread, *str1, 10));
   EXPECT_TRUE(res1->isError());
 
   Handle<Object> str2(&scope, runtime.newStringFromCString("12ab"));
-  Handle<Object> res2(&scope,
-                      IntegerBuiltins::intFromString(thread, *str2, 10));
+  Handle<Object> res2(&scope, IntBuiltins::intFromString(thread, *str2, 10));
   EXPECT_TRUE(res2->isError());
 }
 

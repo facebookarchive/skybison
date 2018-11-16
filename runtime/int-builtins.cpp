@@ -11,14 +11,14 @@
 
 namespace python {
 
-const BuiltinMethod IntegerBuiltins::kMethods[] = {
+const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
 };
 
-void IntegerBuiltins::initialize(Runtime* runtime) {
+void IntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> type(
-      &scope, runtime->addEmptyBuiltinClass(SymbolId::kInt, LayoutId::kInteger,
+      &scope, runtime->addEmptyBuiltinClass(SymbolId::kInt, LayoutId::kInt,
                                             LayoutId::kObject));
   type->setFlag(Type::Flag::kIntSubclass);
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
@@ -27,7 +27,7 @@ void IntegerBuiltins::initialize(Runtime* runtime) {
   }
 }
 
-Object* IntegerBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+Object* IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
     return thread->throwTypeErrorFromCString(
         "int.__new__(): not enough arguments");
@@ -54,7 +54,7 @@ Object* IntegerBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   Handle<Layout> layout(&scope, type->instanceLayout());
-  if (layout->id() != LayoutId::kInteger) {
+  if (layout->id() != LayoutId::kInt) {
     // TODO(dulinr): Implement __new__ with subtypes of int.
     UNIMPLEMENTED("int.__new__(<subtype of int>, ...)");
   }
@@ -72,22 +72,21 @@ Object* IntegerBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   // The third argument is the base of the integer represented in the string.
   Handle<Object> base(&scope, args.get(2));
-  if (!base->isInteger()) {
+  if (!base->isInt()) {
     // TODO(dulinr): Call __index__ on base to convert it.
     UNIMPLEMENTED("Can't handle non-integer base");
   }
-  return intFromString(thread, *arg, Integer::cast(*base)->asWord());
+  return intFromString(thread, *arg, Int::cast(*base)->asWord());
 }
 
-Object* IntegerBuiltins::intFromString(Thread* thread, Object* arg_raw,
-                                       int base) {
+Object* IntBuiltins::intFromString(Thread* thread, Object* arg_raw, int base) {
   if (!(base == 0 || (base >= 2 && base <= 36))) {
     return thread->throwValueErrorFromCString(
         "Invalid base, must be between 2 and 36, or 0");
   }
   HandleScope scope(thread);
   Handle<Object> arg(&scope, arg_raw);
-  if (arg->isInteger()) {
+  if (arg->isInt()) {
     return *arg;
   }
 
@@ -135,9 +134,9 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
 
 void SmallIntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Handle<Type> type(&scope, runtime->addEmptyBuiltinClass(SymbolId::kSmallInt,
-                                                          LayoutId::kSmallInt,
-                                                          LayoutId::kInteger));
+  Handle<Type> type(
+      &scope, runtime->addEmptyBuiltinClass(
+                  SymbolId::kSmallInt, LayoutId::kSmallInt, LayoutId::kInt));
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
     runtime->classAddBuiltinFunction(type, kMethods[i].name,
                                      kMethods[i].address);
@@ -231,12 +230,12 @@ Object* SmallIntBuiltins::dunderFloorDiv(Thread* thread, Frame* caller,
         "__floordiv__() must be called with int instance as first argument");
   }
   word left = SmallInt::cast(self)->value();
-  if (other->isInteger()) {
-    word right = Integer::cast(other)->asWord();
+  if (other->isInt()) {
+    word right = Int::cast(other)->asWord();
     if (right == 0) {
       UNIMPLEMENTED("ZeroDivisionError");
     }
-    return thread->runtime()->newInteger(left / right);
+    return thread->runtime()->newInt(left / right);
   }
   return thread->runtime()->notImplemented();
 }
@@ -298,12 +297,12 @@ Object* SmallIntBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
         "__mod__() must be called with int instance as first argument");
   }
   word left = SmallInt::cast(self)->value();
-  if (other->isInteger()) {
-    word right = Integer::cast(other)->asWord();
+  if (other->isInt()) {
+    word right = Int::cast(other)->asWord();
     if (right == 0) {
       UNIMPLEMENTED("ZeroDivisionError");
     }
-    return thread->runtime()->newInteger(left % right);
+    return thread->runtime()->newInt(left % right);
   }
   return thread->runtime()->notImplemented();
 }
@@ -320,13 +319,13 @@ Object* SmallIntBuiltins::dunderMul(Thread* thread, Frame* caller, word nargs) {
         "__mul__() must be called with int instance as first argument");
   }
   word left = SmallInt::cast(self)->value();
-  if (other->isInteger()) {
-    word right = Integer::cast(other)->asWord();
+  if (other->isInt()) {
+    word right = Int::cast(other)->asWord();
     word product = left * right;
     if (!(left == 0 || (product / left) == right)) {
       UNIMPLEMENTED("small integer overflow");
     }
-    return thread->runtime()->newInteger(product);
+    return thread->runtime()->newInt(product);
   }
   return thread->runtime()->notImplemented();
 }
@@ -376,9 +375,9 @@ Object* SmallIntBuiltins::dunderAdd(Thread* thread, Frame* caller, word nargs) {
   }
 
   word left = SmallInt::cast(self)->value();
-  if (other->isInteger()) {
-    word right = Integer::cast(other)->asWord();
-    return thread->runtime()->newInteger(left + right);
+  if (other->isInt()) {
+    word right = Int::cast(other)->asWord();
+    return thread->runtime()->newInt(left + right);
   }
   return thread->runtime()->notImplemented();
 }
@@ -398,9 +397,9 @@ Object* SmallIntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   }
 
   word left = SmallInt::cast(self)->value();
-  if (other->isInteger()) {
-    word right = Integer::cast(other)->asWord();
-    return thread->runtime()->newInteger(left - right);
+  if (other->isInt()) {
+    word right = Int::cast(other)->asWord();
+    return thread->runtime()->newInt(left - right);
   }
   return thread->runtime()->notImplemented();
 }
@@ -417,9 +416,9 @@ Object* SmallIntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
         "__xor__() must be called with int instance as first argument");
   }
   word left = SmallInt::cast(self)->value();
-  if (other->isInteger()) {
-    word right = Integer::cast(other)->asWord();
-    return thread->runtime()->newInteger(left ^ right);
+  if (other->isInt()) {
+    word right = Int::cast(other)->asWord();
+    return thread->runtime()->newInt(left ^ right);
   }
   return thread->runtime()->notImplemented();
 }

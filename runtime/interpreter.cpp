@@ -400,8 +400,8 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
     if (result->isBoolean()) {
       return *result;
     }
-    if (result->isInteger()) {
-      Handle<Integer> integer(&scope, *result);
+    if (result->isInt()) {
+      Handle<Int> integer(&scope, *result);
       return Boolean::fromBool(integer->asWord() > 0);
     }
     UNIMPLEMENTED("throw");
@@ -409,8 +409,8 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
   method = lookupMethod(thread, caller, self, SymbolId::kDunderLen);
   if (!method->isError()) {
     Handle<Object> result(&scope, callMethod1(thread, caller, method, self));
-    if (result->isInteger()) {
-      Handle<Integer> integer(&scope, *result);
+    if (result->isInt()) {
+      Handle<Int> integer(&scope, *result);
       if (integer->isPositive()) {
         return Boolean::trueObj();
       }
@@ -962,7 +962,7 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
     word stop = range->stop();
     word step = range->step();
     for (word i = stop; i >= start; i -= step) {
-      ctx->frame->pushValue(ctx->thread->runtime()->newInteger(i));
+      ctx->frame->pushValue(ctx->thread->runtime()->newInt(i));
     }
   } else {
     UNIMPLEMENTED("Iterable unpack not supported.");
