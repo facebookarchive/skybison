@@ -7,6 +7,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
+#include "interpreter.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
@@ -151,39 +152,24 @@ Object* builtinIsinstance(Thread* thread, Frame* caller, word nargs) {
   return runtime->isInstance(obj, klass);
 }
 
-static Object* listOrDelegate(Thread* thread, const Handle<Object>& instance) {
-  if (instance->isList()) {
-    return *instance;
-  } else {
-    HandleScope scope(thread);
-    Handle<Class> klass(&scope, thread->runtime()->classOf(*instance));
-    if (klass->hasFlag(Class::Flag::kListSubclass)) {
-      return thread->runtime()->instanceDelegate(instance);
-    }
-  }
-  return Error::object();
-}
-
-Object* builtinLen(Thread* thread, Frame* callerFrame, word nargs) {
+Object* builtinLen(Thread* thread, Frame* caller, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString(
         "len() takes exactly one argument");
   }
+  Arguments args(caller, nargs);
   HandleScope scope(thread);
-  Handle<Object> self(&scope, callerFrame->valueStackTop()[0]);
-  if (self->isSet()) {
-    return SmallInteger::fromWord(Set::cast(*self)->numItems());
-  } else if (self->isDictionary()) {
-    return SmallInteger::fromWord(Dictionary::cast(*self)->numItems());
-  } else {
-    Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
-    if (list_or_error->isError()) {
-      // TODO(T27377670): Support calling __len__
-      return thread->throwTypeErrorFromCString(
-          "Unsupported type in builtin 'len'");
-    }
-    return SmallInteger::fromWord(List::cast(*list_or_error)->allocated());
+  Runtime* runtime = thread->runtime();
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> selector(&scope, runtime->symbols()->DunderLen());
+  Handle<Object> method(
+      &scope, Interpreter::lookupMethod(thread, caller, self, selector));
+  if (method->isError()) {
+    thread->throwTypeErrorFromCString("object has no len()");
+    return Error::object();
   }
+  return Interpreter::callMethod1(
+      thread, caller, caller->valueStackTop(), method, self);
 }
 
 Object* builtinOrd(Thread* thread, Frame* callerFrame, word nargs) {

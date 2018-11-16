@@ -119,7 +119,62 @@ TEST(BuiltinsModuleTest, BuiltinLen) {
   ASSERT_DEATH(
       runtime.runFromCString("print(len(1))"),
       "aborting due to pending exception: "
-      "Unsupported type in builtin 'len'");
+      "object has no len()");
+}
+
+TEST(ThreadTest, BuiltinLenGetLenFromDict) {
+  Runtime runtime;
+
+  runtime.runFromCString(R"(
+len0 = len({})
+len1 = len({'one': 1})
+len5 = len({'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5})
+)");
+
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> len0(&scope, moduleAt(&runtime, main, "len0"));
+  EXPECT_EQ(*len0, SmallInteger::fromWord(0));
+  Handle<Object> len1(&scope, moduleAt(&runtime, main, "len1"));
+  EXPECT_EQ(*len1, SmallInteger::fromWord(1));
+  Handle<Object> len5(&scope, moduleAt(&runtime, main, "len5"));
+  EXPECT_EQ(*len5, SmallInteger::fromWord(5));
+}
+
+TEST(ThreadTest, BuiltinLenGetLenFromList) {
+  Runtime runtime;
+
+  runtime.runFromCString(R"(
+len0 = len([])
+len1 = len([1])
+len5 = len([1,2,3,4,5])
+)");
+
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> len0(&scope, moduleAt(&runtime, main, "len0"));
+  EXPECT_EQ(*len0, SmallInteger::fromWord(0));
+  Handle<Object> len1(&scope, moduleAt(&runtime, main, "len1"));
+  EXPECT_EQ(*len1, SmallInteger::fromWord(1));
+  Handle<Object> len5(&scope, moduleAt(&runtime, main, "len5"));
+  EXPECT_EQ(*len5, SmallInteger::fromWord(5));
+}
+
+TEST(ThreadTest, BuiltinLenGetLenFromSet) {
+  Runtime runtime;
+
+  runtime.runFromCString(R"(
+len1 = len({1})
+len5 = len({1,2,3,4,5})
+)");
+
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  // TODO(cshapiro): test the empty set when we have builtins.set defined.
+  Handle<Object> len1(&scope, moduleAt(&runtime, main, "len1"));
+  EXPECT_EQ(*len1, SmallInteger::fromWord(1));
+  Handle<Object> len5(&scope, moduleAt(&runtime, main, "len5"));
+  EXPECT_EQ(*len5, SmallInteger::fromWord(5));
 }
 
 TEST(BuiltinsModuleTest, BuiltinOrd) {

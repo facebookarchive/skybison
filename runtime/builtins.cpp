@@ -196,6 +196,21 @@ Object* builtinDictionaryEq(Thread* thread, Frame* caller, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+Object* builtinDictionaryLen(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("__len__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (self->isDictionary()) {
+    return SmallInteger::fromWord(Dictionary::cast(*self)->numItems());
+  }
+  // TODO(cshapiro): handle user-defined subtypes of dictionary.
+  return thread->throwTypeErrorFromCString(
+      "'__len__' requires a 'dict' object");
+}
+
 // Double
 
 Object* builtinDoubleEq(Thread* thread, Frame* caller, word nargs) {
@@ -504,6 +519,22 @@ Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
   Handle<Object> arg(&scope, args.get(1));
   classmethod->setFunction(*arg);
   return *classmethod;
+}
+
+// Set
+
+Object* builtinSetLen(Thread* thread, Frame* caller, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("__len__() takes no arguments");
+  }
+  HandleScope scope(thread);
+  Arguments args(caller, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  if (self->isSet()) {
+    return SmallInteger::fromWord(Set::cast(*self)->numItems());
+  }
+  // TODO(cshapiro): handle user-defined subtypes of set.
+  return thread->throwTypeErrorFromCString("'__len__' requires a 'set' object");
 }
 
 // SmallInteger

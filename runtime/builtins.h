@@ -14,6 +14,7 @@ Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs);
 
 // Dictionary
 Object* builtinDictionaryEq(Thread* thread, Frame* frame, word nargs);
+Object* builtinDictionaryLen(Thread* thread, Frame* frame, word nargs);
 
 // Double
 Object* builtinDoubleEq(Thread* thread, Frame* frame, word nargs);
@@ -34,6 +35,9 @@ Object* builtinListRemove(Thread* thread, Frame* frame, word nargs);
 // Object
 Object* builtinObjectInit(Thread* thread, Frame* caller, word nargs);
 Object* builtinObjectNew(Thread* thread, Frame* caller, word nargs);
+
+// Set
+Object* builtinSetLen(Thread* thread, Frame* caller, word nargs);
 
 // SmallInteger
 Object* builtinSmallIntegerBool(Thread* thread, Frame* frame, word nargs);

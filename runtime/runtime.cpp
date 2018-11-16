@@ -683,7 +683,7 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("bytearray", IntrinsicLayoutId::kByteArray);
   initializeClassMethodClass();
   initializeHeapClass("code", IntrinsicLayoutId::kCode);
-  initializeDictionaryClass();
+  initializeDictClass();
   initializeHeapClass("ellipsis", IntrinsicLayoutId::kEllipsis);
   initializeFloatClass();
   initializeFunctionClass();
@@ -702,7 +702,7 @@ void Runtime::initializeHeapClasses() {
   initializeObjectArrayClass();
   initializeHeapClass("range", IntrinsicLayoutId::kRange);
   initializeHeapClass("range_iterator", IntrinsicLayoutId::kRangeIterator);
-  initializeHeapClass("set", IntrinsicLayoutId::kSet);
+  initializeSetClass();
   initializeHeapClass("slice", IntrinsicLayoutId::kSlice);
   initializeStaticMethodClass();
   initializeSuperClass();
@@ -803,14 +803,20 @@ void Runtime::initializeObjectArrayClass() {
       unimplementedTrampoline);
 }
 
-void Runtime::initializeDictionaryClass() {
+void Runtime::initializeDictClass() {
   HandleScope scope;
-  Handle<Class> type(
+  Handle<Class> dict_type(
       &scope, initializeHeapClass("dict", IntrinsicLayoutId::kDictionary));
   classAddBuiltinFunction(
-      type,
+      dict_type,
       symbols()->DunderEq(),
       nativeTrampoline<builtinDictionaryEq>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+  classAddBuiltinFunction(
+      dict_type,
+      symbols()->DunderLen(),
+      nativeTrampoline<builtinDictionaryLen>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 }
@@ -987,6 +993,18 @@ void Runtime::initializeFloatClass() {
       type,
       symbols()->DunderNe(),
       nativeTrampoline<builtinDoubleNe>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+}
+
+void Runtime::initializeSetClass() {
+  HandleScope scope;
+  Handle<Class> set_type(
+      &scope, initializeHeapClass("set", IntrinsicLayoutId::kSet));
+  classAddBuiltinFunction(
+      set_type,
+      symbols()->DunderLen(),
+      nativeTrampoline<builtinSetLen>,
       unimplementedTrampoline,
       unimplementedTrampoline);
 }

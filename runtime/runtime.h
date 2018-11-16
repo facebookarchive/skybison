@@ -526,13 +526,14 @@ class Runtime {
   template <typename... Args>
   Object* initializeHeapClass(const char* name, Args... args);
   void initializeBooleanClass();
-  void initializeDictionaryClass();
   void initializeClassMethodClass();
+  void initializeDictClass();
   void initializeFloatClass();
   void initializeFunctionClass();
   void initializeListClass();
   void initializeObjectClass();
   void initializeObjectArrayClass();
+  void initializeSetClass();
   void initializeSmallIntClass();
   void initializeStaticMethodClass();
   void initializeStrClass();
