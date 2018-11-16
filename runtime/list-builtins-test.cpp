@@ -52,9 +52,8 @@ TEST(ListBuiltinsDeathTest, AddWithNonListSelfThrows) {
 list.__add__(None, [])
 )";
   Runtime runtime;
-  ASSERT_DEATH(
-      runtime.runFromCString(src),
-      "must be called with list instance as first argument");
+  ASSERT_DEATH(runtime.runFromCString(src),
+               "must be called with list instance as first argument");
 }
 
 TEST(ListBuiltinsDeathTest, AddListToTupleThrowsTypeError) {
@@ -64,8 +63,8 @@ b = (4, 5, 6)
 c = a + b
 )";
   Runtime runtime;
-  ASSERT_DEATH(
-      runtime.runFromCString(src), "can only concatenate list to list");
+  ASSERT_DEATH(runtime.runFromCString(src),
+               "can only concatenate list to list");
 }
 
 TEST(ListBuiltinsTest, ListAppend) {
@@ -101,27 +100,24 @@ TEST(ListBuiltinsDeathTest, ListInsertExcept) {
 a = [1, 2]
 a.insert()
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src1),
-      "aborting due to pending exception: "
-      "insert\\(\\) takes exactly two arguments");
+  ASSERT_DEATH(runtime.runFromCString(src1),
+               "aborting due to pending exception: "
+               "insert\\(\\) takes exactly two arguments");
 
   const char* src2 = R"(
 list.insert(1, 2, 3)
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src2),
-      "aborting due to pending exception: "
-      "descriptor 'insert' requires a 'list' object");
+  ASSERT_DEATH(runtime.runFromCString(src2),
+               "aborting due to pending exception: "
+               "descriptor 'insert' requires a 'list' object");
 
   const char* src3 = R"(
 a = [1, 2]
 a.insert("i", "val")
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src3),
-      "aborting due to pending exception: "
-      "index object cannot be interpreted as an integer");
+  ASSERT_DEATH(runtime.runFromCString(src3),
+               "aborting due to pending exception: "
+               "index object cannot be interpreted as an integer");
 }
 
 TEST(ListBuiltinsTest, ListPop) {
@@ -151,46 +147,41 @@ TEST(ListBuiltinsDeathTest, ListPopExcept) {
 a = [1, 2]
 a.pop(1, 2, 3, 4)
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src1),
-      "aborting due to pending exception: "
-      "pop\\(\\) takes at most 1 argument");
+  ASSERT_DEATH(runtime.runFromCString(src1),
+               "aborting due to pending exception: "
+               "pop\\(\\) takes at most 1 argument");
 
   const char* src2 = R"(
 list.pop(1)
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src2),
-      "aborting due to pending exception: "
-      "descriptor 'pop' requires a 'list' object");
+  ASSERT_DEATH(runtime.runFromCString(src2),
+               "aborting due to pending exception: "
+               "descriptor 'pop' requires a 'list' object");
 
   const char* src3 = R"(
 a = [1, 2]
 a.pop("i")
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src3),
-      "aborting due to pending exception: "
-      "index object cannot be interpreted as an integer");
+  ASSERT_DEATH(runtime.runFromCString(src3),
+               "aborting due to pending exception: "
+               "index object cannot be interpreted as an integer");
 
   const char* src4 = R"(
 a = [1]
 a.pop()
 a.pop()
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src4),
-      "unimplemented: "
-      "Throw an IndexError for an out of range list");
+  ASSERT_DEATH(runtime.runFromCString(src4),
+               "unimplemented: "
+               "Throw an IndexError for an out of range list");
 
   const char* src5 = R"(
 a = [1]
 a.pop(3)
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src5),
-      "unimplemented: "
-      "Throw an IndexError for an out of range list");
+  ASSERT_DEATH(runtime.runFromCString(src5),
+               "unimplemented: "
+               "Throw an IndexError for an out of range list");
 }
 
 TEST(ListBuiltinsTest, ListRemove) {
@@ -241,4 +232,4 @@ print(l[0], l[3], l[5])
   ASSERT_EQ(output, "1 4 6\n6 4 1\n");
 }
 
-} // namespace python
+}  // namespace python

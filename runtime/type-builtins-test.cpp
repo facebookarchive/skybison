@@ -77,4 +77,4 @@ C(9)
   EXPECT_EQ(SmallInteger::cast(*global)->value(), 9);
 }
 
-} // namespace python
+}  // namespace python

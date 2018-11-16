@@ -20,17 +20,13 @@ Space::~Space() {
   }
 }
 
-void Space::protect() {
-  OS::protectMemory(raw_, size(), OS::kNoAccess);
-}
+void Space::protect() { OS::protectMemory(raw_, size(), OS::kNoAccess); }
 
-void Space::unprotect() {
-  OS::protectMemory(raw_, size(), OS::kReadWrite);
-}
+void Space::unprotect() { OS::protectMemory(raw_, size(), OS::kReadWrite); }
 
 void Space::reset() {
   std::memset(reinterpret_cast<void*>(start()), 0xFF, size());
   fill_ = start();
 }
 
-} // namespace python
+}  // namespace python

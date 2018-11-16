@@ -13,4 +13,4 @@ Object* builtinTime(Thread* thread, Frame*, word) {
   return thread->runtime()->newDouble(OS::currentTime());
 }
 
-} // namespace python
+}  // namespace python

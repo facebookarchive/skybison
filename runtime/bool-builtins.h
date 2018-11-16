@@ -9,4 +9,4 @@ namespace python {
 
 Object* builtinBooleanBool(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

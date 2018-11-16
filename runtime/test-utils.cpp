@@ -26,16 +26,15 @@ std::string compileAndRunToString(Runtime* runtime, const char* src) {
   return tmp_stdout.str();
 }
 
-Object*
-findInModule(Runtime* runtime, const Handle<Module>& module, const char* name) {
+Object* findInModule(Runtime* runtime, const Handle<Module>& module,
+                     const char* name) {
   HandleScope scope;
   Handle<Object> key(&scope, runtime->newStringFromCString(name));
   return runtime->moduleAt(module, key);
 }
 
-std::string callFunctionToString(
-    const Handle<Function>& func,
-    const Handle<ObjectArray>& args) {
+std::string callFunctionToString(const Handle<Function>& func,
+                                 const Handle<ObjectArray>& args) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Handle<Code> code(&scope, func->code());
@@ -57,9 +56,8 @@ std::string callFunctionToString(
   return stream.str();
 }
 
-bool objectArrayContains(
-    const Handle<ObjectArray>& object_array,
-    const Handle<Object>& key) {
+bool objectArrayContains(const Handle<ObjectArray>& object_array,
+                         const Handle<Object>& key) {
   for (word i = 0; i < object_array->length(); i++) {
     if (Object::equals(object_array->at(i), *key)) {
       return true;
@@ -74,13 +72,13 @@ Object* findModule(Runtime* runtime, const char* name) {
   return runtime->findModule(key);
 }
 
-Object*
-moduleAt(Runtime* runtime, const Handle<Module>& module, const char* name) {
+Object* moduleAt(Runtime* runtime, const Handle<Module>& module,
+                 const char* name) {
   HandleScope scope;
   Handle<Object> key(&scope, runtime->newStringFromCString(name));
   Handle<Object> value(&scope, runtime->moduleAt(module, key));
   return *value;
 }
 
-} // namespace testing
-} // namespace python
+}  // namespace testing
+}  // namespace python

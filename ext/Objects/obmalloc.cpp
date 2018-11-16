@@ -18,4 +18,4 @@ extern "C" void PyObject_Free(void* ptr) {
   TrackedAllocation::freePtr(runtime->trackedAllocations(), ptr);
 }
 
-} // namespace python
+}  // namespace python

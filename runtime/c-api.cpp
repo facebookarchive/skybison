@@ -23,4 +23,4 @@ Object* ApiHandle::asObject() {
   UNIMPLEMENTED("Could not materialize a runtime object from the ApiHandle");
 }
 
-} // namespace python
+}  // namespace python

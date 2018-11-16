@@ -9,4 +9,4 @@ namespace python {
 
 Object* builtinFunctionGet(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

@@ -19,8 +19,8 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   // First, call __new__ to allocate a new instance.
 
   Handle<Class> type(&scope, args.get(0));
-  Handle<Function> dunder_new(
-      &scope, runtime->lookupNameInMro(thread, type, name));
+  Handle<Function> dunder_new(&scope,
+                              runtime->lookupNameInMro(thread, type, name));
 
   frame->pushValue(*dunder_new);
   for (word i = 0; i < nargs; i++) {
@@ -33,8 +33,8 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
 
   // top of the stack should be the new instance
   Handle<Object> init(&scope, runtime->symbols()->DunderInit());
-  Handle<Function> dunder_init(
-      &scope, runtime->lookupNameInMro(thread, type, init));
+  Handle<Function> dunder_init(&scope,
+                               runtime->lookupNameInMro(thread, type, init));
 
   frame->pushValue(*dunder_init);
   frame->pushValue(*result);
@@ -67,8 +67,8 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
 
   Handle<Dictionary> dictionary(&scope, args.get(3));
   Handle<Object> class_cell_key(&scope, runtime->symbols()->DunderClassCell());
-  Handle<Object> class_cell(
-      &scope, runtime->dictionaryAt(dictionary, class_cell_key));
+  Handle<Object> class_cell(&scope,
+                            runtime->dictionaryAt(dictionary, class_cell_key));
   if (!class_cell->isError()) {
     ValueCell::cast(ValueCell::cast(*class_cell)->value())->setValue(*result);
     Object* tmp;
@@ -92,8 +92,6 @@ Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-Object* builtinTypeInit(Thread*, Frame*, word) {
-  return None::object();
-}
+Object* builtinTypeInit(Thread*, Frame*, word) { return None::object(); }
 
-} // namespace python
+}  // namespace python

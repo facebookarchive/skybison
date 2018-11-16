@@ -21,9 +21,7 @@ class Handles {
   void visitPointers(PointerVisitor* visitor);
 
  private:
-  void push(HandleScope* scope) {
-    scopes_.push_back(scope);
-  }
+  void push(HandleScope* scope) { scopes_.push_back(scope); }
 
   void pop() {
     DCHECK(!scopes_.empty(), "pop on empty");
@@ -74,9 +72,7 @@ class HandleScope {
   }
 
  private:
-  ObjectHandle* list() {
-    return list_;
-  }
+  ObjectHandle* list() { return list_; }
 
   ObjectHandle* list_;
   Handles* handles_;
@@ -97,22 +93,16 @@ class ObjectHandle {
     scope_->list_ = next_;
   }
 
-  Object** pointer() {
-    return &pointer_;
-  }
+  Object** pointer() { return &pointer_; }
 
-  ObjectHandle* next() const {
-    return next_;
-  }
+  ObjectHandle* next() const { return next_; }
 
  protected:
   Object* pointer_;
 
   // The casting constructor below needs this, but it appears you can't
   // access your parent's protected fields when they are on a sibling class.
-  static HandleScope* scope(const ObjectHandle& o) {
-    return o.scope_;
-  }
+  static HandleScope* scope(const ObjectHandle& o) { return o.scope_; }
 
  private:
   ObjectHandle* next_;
@@ -123,22 +113,17 @@ class ObjectHandle {
 template <typename T>
 class Handle : public ObjectHandle {
  public:
-  T* operator->() const {
-    return reinterpret_cast<T*>(pointer_);
-  }
+  T* operator->() const { return reinterpret_cast<T*>(pointer_); }
 
-  T* operator*() const {
-    return reinterpret_cast<T*>(pointer_);
-  }
+  T* operator*() const { return reinterpret_cast<T*>(pointer_); }
 
   // Note that Handle<T>::operator= takes a raw pointer, not a handle, so
   // to assign handles, one writes: `lhandle = *rhandle;`. (This is to avoid
   // confusion about which HandleScope tracks lhandle after the assignment.)
   template <typename S>
   Handle<T>& operator=(S* other) {
-    static_assert(
-        std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
-        "Only up- and down-casts are permitted.");
+    static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
+                  "Only up- and down-casts are permitted.");
     pointer_ = T::cast(other);
     return *this;
   }
@@ -146,20 +131,18 @@ class Handle : public ObjectHandle {
   template <typename S>
   explicit Handle(const Handle<S>& other)
       : ObjectHandle(scope(other), T::cast(*other)) {
-    static_assert(
-        std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
-        "Only up- and down-casts are permitted.");
+    static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
+                  "Only up- and down-casts are permitted.");
   }
 
   Handle(HandleScope* scope, Object* pointer)
       : ObjectHandle(scope, T::cast(pointer)) {
-    static_assert(
-        std::is_base_of<Object, T>::value,
-        "You can only get a handle to a python::Object.");
+    static_assert(std::is_base_of<Object, T>::value,
+                  "You can only get a handle to a python::Object.");
   }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Handle);
 };
 
-} // namespace python
+}  // namespace python

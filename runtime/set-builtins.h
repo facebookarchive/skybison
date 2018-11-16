@@ -14,4 +14,4 @@ Object* builtinSetLen(Thread* thread, Frame* frame, word nargs);
 Object* builtinSetNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinSetPop(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

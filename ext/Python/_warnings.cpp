@@ -10,4 +10,4 @@ extern "C" int PyErr_WarnEx(PyObject*, const char*, Py_ssize_t) {
   UNIMPLEMENTED("PyErr_WarnEx");
 }
 
-} // namespace python
+}  // namespace python

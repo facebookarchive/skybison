@@ -20,7 +20,7 @@ TEST(BuiltinsModuleDeathTest, BuiltinChr) {
       "aborting due to pending exception: Unsupported type in builtin 'chr'");
 }
 
-TEST(BuiltinsModuleTest, BuiltinInt) { // pystone dependency
+TEST(BuiltinsModuleTest, BuiltinInt) {  // pystone dependency
   const char* src = R"(
 a = int("123")
 b = int("-987")
@@ -112,14 +112,12 @@ TEST(BuiltinsModuleDeathTest, BuiltinLen) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");
   EXPECT_EQ(result, "3\n");
-  ASSERT_DEATH(
-      runtime.runFromCString("print(len(1,2))"),
-      "aborting due to pending exception: "
-      "len\\(\\) takes exactly one argument");
-  ASSERT_DEATH(
-      runtime.runFromCString("print(len(1))"),
-      "aborting due to pending exception: "
-      "object has no len()");
+  ASSERT_DEATH(runtime.runFromCString("print(len(1,2))"),
+               "aborting due to pending exception: "
+               "len\\(\\) takes exactly one argument");
+  ASSERT_DEATH(runtime.runFromCString("print(len(1))"),
+               "aborting due to pending exception: "
+               "object has no len()");
 }
 
 TEST(ThreadTest, BuiltinLenGetLenFromDict) {
@@ -219,7 +217,7 @@ print("hi", end='ho', file=sys.stdout)
   EXPECT_EQ(output, "hiho");
 }
 
-TEST(BuiltinsModuleTest, BuiltInPrintStdErr) { // pystone dependency
+TEST(BuiltinsModuleTest, BuiltInPrintStdErr) {  // pystone dependency
   const char* src = R"(
 import sys
 print("hi", file=sys.stderr, end='ya')
@@ -238,4 +236,4 @@ print(None)
   EXPECT_EQ(output, "None\n");
 }
 
-} // namespace python
+}  // namespace python

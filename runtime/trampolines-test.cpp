@@ -464,8 +464,8 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInteger::fromWord(1111));
   code->setConsts(*consts);
-  const byte bytecode[] = {
-      LOAD_CONST, 0, LOAD_CONST, 1, CALL_FUNCTION, 1, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
+                           CALL_FUNCTION, 1, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
   code->setStacksize(2);
 
@@ -477,12 +477,12 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
 
 // test "builtin-kw" func that returns a list of first position arg
 // and value of kw argument 'foo'
-static Object*
-returnsPositionalAndKeywordArgument(Thread* thread, Frame* frame, word argc) {
+static Object* returnsPositionalAndKeywordArgument(Thread* thread, Frame* frame,
+                                                   word argc) {
   KwArguments args(frame, argc);
   HandleScope scope(thread);
-  Handle<Object> foo_name(
-      &scope, thread->runtime()->newStringFromCString("foo"));
+  Handle<Object> foo_name(&scope,
+                          thread->runtime()->newStringFromCString("foo"));
   Handle<Object> foo_val_opt(&scope, args.getKw(*foo_name));
   Handle<Object> foo_val(
       &scope, (foo_val_opt->isError() ? None::object() : *foo_val_opt));
@@ -512,18 +512,8 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   code->setConsts(*consts);
 
   // load arguments and call builtin kw function
-  const byte bytecode[] = {LOAD_CONST,
-                           0,
-                           LOAD_CONST,
-                           1,
-                           LOAD_CONST,
-                           2,
-                           LOAD_CONST,
-                           3,
-                           CALL_FUNCTION_KW,
-                           2,
-                           RETURN_VALUE,
-                           0};
+  const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
+                           LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
   code->setStacksize(4);
 
@@ -538,10 +528,9 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
 
 // test "builtin-kw" func that returns a list of first position arg
 // and value of kw arguments 'foo' and 'bar'
-static Object* returnsPositionalAndTwoKeywordArguments(
-    Thread* thread,
-    Frame* frame,
-    word argc) {
+static Object* returnsPositionalAndTwoKeywordArguments(Thread* thread,
+                                                       Frame* frame,
+                                                       word argc) {
   Runtime* runtime = thread->runtime();
   KwArguments args(frame, argc);
   HandleScope scope;
@@ -556,9 +545,8 @@ static Object* returnsPositionalAndTwoKeywordArguments(
   return *tuple;
 }
 
-TEST(
-    TrampolineTest,
-    CallNativeFunctionReceivesPositionalAndTwoKeywordArguments) {
+TEST(TrampolineTest,
+     CallNativeFunctionReceivesPositionalAndTwoKeywordArguments) {
   Runtime runtime;
   HandleScope scope;
 
@@ -581,20 +569,9 @@ TEST(
   code->setConsts(*consts);
 
   // load arguments and call builtin kw function
-  const byte bytecode[] = {LOAD_CONST,
-                           0,
-                           LOAD_CONST,
-                           1,
-                           LOAD_CONST,
-                           2,
-                           LOAD_CONST,
-                           3,
-                           LOAD_CONST,
-                           4,
-                           CALL_FUNCTION_KW,
-                           3,
-                           RETURN_VALUE,
-                           0};
+  const byte bytecode[] = {LOAD_CONST,   0, LOAD_CONST, 1, LOAD_CONST,       2,
+                           LOAD_CONST,   3, LOAD_CONST, 4, CALL_FUNCTION_KW, 3,
+                           RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
   code->setStacksize(5);
 
@@ -611,4 +588,4 @@ TEST(
   EXPECT_TRUE(String::cast(tuple->at(2))->equalsCString("bar_val"));
 }
 
-} // namespace python
+}  // namespace python

@@ -12,8 +12,8 @@ TEST(TupleObject, New) {
 
   word length = 5;
   PyObject* pyresult = PyTuple_New(length);
-  Handle<Object> result_obj(
-      &scope, ApiHandle::fromPyObject(pyresult)->asObject());
+  Handle<Object> result_obj(&scope,
+                            ApiHandle::fromPyObject(pyresult)->asObject());
   ASSERT_TRUE(result_obj->isObjectArray());
 
   Handle<ObjectArray> result(&scope, *result_obj);
@@ -75,8 +75,8 @@ TEST(TupleObject, GetItemReturnsSameItem) {
   PyObject* pyresult =
       PyTuple_GetItem(runtime.asApiHandle(*tuple)->asPyObject(), pos);
   EXPECT_NE(nullptr, pyresult);
-  Handle<Object> result_obj(
-      &scope, ApiHandle::fromPyObject(pyresult)->asObject());
+  Handle<Object> result_obj(&scope,
+                            ApiHandle::fromPyObject(pyresult)->asObject());
   ASSERT_TRUE(result_obj->isInteger());
 }
 
@@ -94,8 +94,8 @@ TEST(TupleObject, GetItemReturnsBorrowedReference) {
   // Verify borrowed handle
   PyObject* pyresult =
       PyTuple_GetItem(runtime.asApiHandle(*tuple)->asPyObject(), pos);
-  Handle<Object> result_obj(
-      &scope, ApiHandle::fromPyObject(pyresult)->asObject());
+  Handle<Object> result_obj(&scope,
+                            ApiHandle::fromPyObject(pyresult)->asObject());
   ApiHandle* result_handle = runtime.asApiHandle(*result_obj);
   EXPECT_TRUE(result_handle->isBorrowed());
   Handle<Integer> result(&scope, result_handle->asObject());
@@ -107,8 +107,8 @@ TEST(TupleObject, PackZeroReturnsEmptyTuple) {
   HandleScope scope;
 
   PyObject* pytuple = PyTuple_Pack(0);
-  Handle<Object> result_obj(
-      &scope, ApiHandle::fromPyObject(pytuple)->asObject());
+  Handle<Object> result_obj(&scope,
+                            ApiHandle::fromPyObject(pytuple)->asObject());
   ASSERT_TRUE(result_obj->isObjectArray());
 
   Handle<ObjectArray> result(&scope, *result_obj);
@@ -122,8 +122,8 @@ TEST(TupleObject, PackOneValue) {
   word length1 = 1;
   PyObject* pyint = PyLong_FromLong(5);
   PyObject* pytuple1 = PyTuple_Pack(length1, pyint);
-  Handle<Object> result_obj1(
-      &scope, ApiHandle::fromPyObject(pytuple1)->asObject());
+  Handle<Object> result_obj1(&scope,
+                             ApiHandle::fromPyObject(pytuple1)->asObject());
   ASSERT_TRUE(result_obj1->isObjectArray());
 
   Handle<ObjectArray> result1(&scope, *result_obj1);
@@ -139,8 +139,8 @@ TEST(TupleObject, PackTwoValues) {
   PyObject* pyint = PyLong_FromLong(5);
   PyObject* pybool = PyBool_FromLong(1);
   PyObject* pytuple2 = PyTuple_Pack(length2, pybool, pyint);
-  Handle<Object> result_obj2(
-      &scope, ApiHandle::fromPyObject(pytuple2)->asObject());
+  Handle<Object> result_obj2(&scope,
+                             ApiHandle::fromPyObject(pytuple2)->asObject());
   ASSERT_TRUE(result_obj2->isObjectArray());
 
   Handle<ObjectArray> result2(&scope, *result_obj2);
@@ -149,4 +149,4 @@ TEST(TupleObject, PackTwoValues) {
   EXPECT_EQ(pyint, runtime.asApiHandle(result2->at(1))->asPyObject());
 }
 
-} // namespace python
+}  // namespace python

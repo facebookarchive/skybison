@@ -15,7 +15,7 @@ Object* builtinSysExit(Thread* thread, Frame* frame, word nargs) {
 
   // TODO: PyExc_SystemExit
 
-  word code = 0; // success
+  word code = 0;  // success
   if (nargs == 1) {
     Arguments args(frame, nargs);
     Object* arg = args.get(0);
@@ -29,4 +29,4 @@ Object* builtinSysExit(Thread* thread, Frame* frame, word nargs) {
   std::exit(code);
 }
 
-} // namespace python
+}  // namespace python

@@ -60,10 +60,8 @@ static const LayoutId kBuiltinHeapClassIds[] = {
 #undef ENUM
 };
 
-INSTANTIATE_TEST_CASE_P(
-    BuiltinClassIdsParameters,
-    BuiltinClassIdsTest,
-    ::testing::ValuesIn(kBuiltinHeapClassIds));
+INSTANTIATE_TEST_CASE_P(BuiltinClassIdsParameters, BuiltinClassIdsTest,
+                        ::testing::ValuesIn(kBuiltinHeapClassIds));
 
 TEST(RuntimeDictionaryTest, EmptyDictionaryInvariants) {
   Runtime runtime;
@@ -93,9 +91,8 @@ TEST(RuntimeDictionaryTest, GetSet) {
   // Retrieve the stored value
   retrieved = runtime.dictionaryAt(dict, key);
   ASSERT_TRUE(retrieved->isSmallInteger());
-  EXPECT_EQ(
-      SmallInteger::cast(retrieved)->value(),
-      SmallInteger::cast(*stored)->value());
+  EXPECT_EQ(SmallInteger::cast(retrieved)->value(),
+            SmallInteger::cast(*stored)->value());
 
   // Overwrite the stored value
   Handle<Object> new_value(&scope, SmallInteger::fromWord(5555));
@@ -105,9 +102,8 @@ TEST(RuntimeDictionaryTest, GetSet) {
   // Get the new value
   retrieved = runtime.dictionaryAt(dict, key);
   ASSERT_TRUE(retrieved->isSmallInteger());
-  EXPECT_EQ(
-      SmallInteger::cast(retrieved)->value(),
-      SmallInteger::cast(*new_value)->value());
+  EXPECT_EQ(SmallInteger::cast(retrieved)->value(),
+            SmallInteger::cast(*new_value)->value());
 }
 
 TEST(RuntimeDictionaryTest, Remove) {
@@ -130,9 +126,8 @@ TEST(RuntimeDictionaryTest, Remove) {
 
   found = runtime.dictionaryRemove(dict, key, &retrieved);
   ASSERT_TRUE(found);
-  ASSERT_EQ(
-      SmallInteger::cast(retrieved)->value(),
-      SmallInteger::cast(*stored)->value());
+  ASSERT_EQ(SmallInteger::cast(retrieved)->value(),
+            SmallInteger::cast(*stored)->value());
 
   // Looking up a key that was deleted should fail
   EXPECT_TRUE(runtime.dictionaryAt(dict, key)->isError());
@@ -174,9 +169,7 @@ TEST(RuntimeDictionaryTest, AtIfAbsentPutLength) {
   class SmallIntegerCallback : public Callback<Object*> {
    public:
     explicit SmallIntegerCallback(int i) : i_(i) {}
-    Object* call() override {
-      return SmallInteger::fromWord(i_);
-    }
+    Object* call() override { return SmallInteger::fromWord(i_); }
 
    private:
     int i_;
@@ -194,8 +187,8 @@ TEST(RuntimeDictionaryTest, AtIfAbsentPutLength) {
   // Don't overrwite existing item 1 -> v1
   Handle<Object> k3(&scope, SmallInteger::fromWord(1));
   SmallIntegerCallback cb3(333);
-  Handle<Object> entry3(
-      &scope, runtime.dictionaryAtIfAbsentPut(dict, k3, &cb3));
+  Handle<Object> entry3(&scope,
+                        runtime.dictionaryAtIfAbsentPut(dict, k3, &cb3));
   EXPECT_EQ(dict->numItems(), 2);
   retrieved = runtime.dictionaryAt(dict, k3);
   EXPECT_TRUE(retrieved->isSmallInteger());
@@ -261,9 +254,8 @@ TEST(RuntimeDictionaryTest, CollidingKeys) {
   // Make sure we get both back
   Object* retrieved = runtime.dictionaryAt(dict, key1);
   ASSERT_TRUE(retrieved->isSmallInteger());
-  EXPECT_EQ(
-      SmallInteger::cast(retrieved)->value(),
-      SmallInteger::cast(*key1)->value());
+  EXPECT_EQ(SmallInteger::cast(retrieved)->value(),
+            SmallInteger::cast(*key1)->value());
 
   retrieved = runtime.dictionaryAt(dict, key2);
   ASSERT_TRUE(retrieved->isBoolean());
@@ -285,9 +277,8 @@ TEST(RuntimeDictionaryTest, MixedKeys) {
   // Make sure we get the appropriate values back out
   Object* retrieved = runtime.dictionaryAt(dict, int_key);
   ASSERT_TRUE(retrieved->isSmallInteger());
-  EXPECT_EQ(
-      SmallInteger::cast(retrieved)->value(),
-      SmallInteger::cast(*int_key)->value());
+  EXPECT_EQ(SmallInteger::cast(retrieved)->value(),
+            SmallInteger::cast(*int_key)->value());
 
   retrieved = runtime.dictionaryAt(dict, str_key);
   ASSERT_TRUE(retrieved->isString());
@@ -360,8 +351,8 @@ TEST(RuntimeListTest, AppendToList) {
   Handle<List> list(&scope, runtime.newList());
 
   // Check that list capacity grows according to a doubling schedule
-  word expected_capacity[] = {
-      4, 4, 4, 4, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16};
+  word expected_capacity[] = {4,  4,  4,  4,  8,  8,  8,  8,
+                              16, 16, 16, 16, 16, 16, 16, 16};
   for (int i = 0; i < 16; i++) {
     Handle<Object> value(&scope, SmallInteger::fromWord(i));
     runtime.listAdd(list, value);
@@ -623,16 +614,16 @@ TEST(RuntimeTest, NewByteArray) {
 
   Handle<ByteArray> len255(&scope, runtime.newByteArray(255, 0));
   EXPECT_EQ(len255->length(), 255);
-  EXPECT_EQ(
-      len255->size(), Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
+  EXPECT_EQ(len255->size(),
+            Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 }
 
 TEST(RuntimeTest, NewByteArrayWithAll) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<ByteArray> len0(
-      &scope, runtime.newByteArrayWithAll(View<byte>(nullptr, 0)));
+  Handle<ByteArray> len0(&scope,
+                         runtime.newByteArrayWithAll(View<byte>(nullptr, 0)));
   EXPECT_EQ(len0->length(), 0);
 
   const byte src1[] = {0x42};
@@ -714,16 +705,14 @@ TEST(RuntimeTest, NewString) {
   Handle<String> s254(&scope, runtime.newStringWithAll(View<byte>(bytes, 254)));
   EXPECT_EQ(s254->length(), 254);
   ASSERT_TRUE(s254->isLargeString());
-  EXPECT_EQ(
-      HeapObject::cast(*s254)->size(),
-      Utils::roundUp(kPointerSize + 254, kPointerSize));
+  EXPECT_EQ(HeapObject::cast(*s254)->size(),
+            Utils::roundUp(kPointerSize + 254, kPointerSize));
 
   Handle<String> s255(&scope, runtime.newStringWithAll(View<byte>(bytes, 255)));
   EXPECT_EQ(s255->length(), 255);
   ASSERT_TRUE(s255->isLargeString());
-  EXPECT_EQ(
-      HeapObject::cast(*s255)->size(),
-      Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
+  EXPECT_EQ(HeapObject::cast(*s255)->size(),
+            Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 
   Handle<String> s300(&scope, runtime.newStringWithAll(View<byte>(bytes, 300)));
   ASSERT_EQ(s300->length(), 300);
@@ -733,8 +722,8 @@ TEST(RuntimeTest, NewStringWithAll) {
   Runtime runtime;
   HandleScope scope;
 
-  Handle<String> string0(
-      &scope, runtime.newStringWithAll(View<byte>(nullptr, 0)));
+  Handle<String> string0(&scope,
+                         runtime.newStringWithAll(View<byte>(nullptr, 0)));
   EXPECT_EQ(string0->length(), 0);
   EXPECT_TRUE(string0->equalsCString(""));
 
@@ -1008,20 +997,9 @@ TEST(RuntimeTest, CollectAttributes) {
   //
   // The assignment to self.foo is intentionally duplicated to ensure that we
   // only record a single attribute name.
-  const byte bc[] = {LOAD_CONST,
-                     0,
-                     LOAD_FAST,
-                     0,
-                     STORE_ATTR,
-                     0,
-                     LOAD_CONST,
-                     1,
-                     LOAD_FAST,
-                     0,
-                     STORE_ATTR,
-                     0,
-                     RETURN_VALUE,
-                     0};
+  const byte bc[] = {LOAD_CONST,   0, LOAD_FAST, 0, STORE_ATTR, 0,
+                     LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 0,
+                     RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Handle<Dictionary> attributes(&scope, runtime.newDictionary());
@@ -1040,20 +1018,9 @@ TEST(RuntimeTest, CollectAttributes) {
   //   def __init__(self):
   //       self.bar = 200
   //       self.baz = 300
-  const byte bc2[] = {LOAD_CONST,
-                      1,
-                      LOAD_FAST,
-                      0,
-                      STORE_ATTR,
-                      1,
-                      LOAD_CONST,
-                      2,
-                      LOAD_FAST,
-                      0,
-                      STORE_ATTR,
-                      2,
-                      RETURN_VALUE,
-                      0};
+  const byte bc2[] = {LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 1,
+                      LOAD_CONST,   2, LOAD_FAST, 0, STORE_ATTR, 2,
+                      RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc2));
   runtime.collectAttributes(code, attributes);
 
@@ -1094,22 +1061,9 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   //
   // There is an additional LOAD_FAST that is preceded by an EXTENDED_ARG
   // that must be skipped.
-  const byte bc[] = {LOAD_CONST,
-                     0,
-                     EXTENDED_ARG,
-                     10,
-                     LOAD_FAST,
-                     0,
-                     STORE_ATTR,
-                     1,
-                     LOAD_CONST,
-                     0,
-                     LOAD_FAST,
-                     0,
-                     STORE_ATTR,
-                     0,
-                     RETURN_VALUE,
-                     0};
+  const byte bc[] = {LOAD_CONST, 0, EXTENDED_ARG, 10, LOAD_FAST, 0,
+                     STORE_ATTR, 1, LOAD_CONST,   0,  LOAD_FAST, 0,
+                     STORE_ATTR, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Handle<Dictionary> attributes(&scope, runtime.newDictionary());
@@ -1211,8 +1165,8 @@ TEST(RuntimeTest, ClassIds) {
 
   EXPECT_PYSTRING_EQ(className(&runtime, Boolean::trueObj()), "bool");
   EXPECT_PYSTRING_EQ(className(&runtime, None::object()), "NoneType");
-  EXPECT_PYSTRING_EQ(
-      className(&runtime, runtime.newStringFromCString("abc")), "smallstr");
+  EXPECT_PYSTRING_EQ(className(&runtime, runtime.newStringFromCString("abc")),
+                     "smallstr");
 
   for (word i = 0; i < 16; i++) {
     auto small_int = SmallInteger::fromWord(i);
@@ -1263,8 +1217,8 @@ TEST(RuntimeStringTest, StringToIntDPos) {
   EXPECT_EQ(int_d123->value(), 123);
 
   Handle<Object> str_d987n(&scope, runtime.newStringFromCString("-987"));
-  Handle<SmallInteger> int_d987n(
-      &scope, runtime.stringToInt(thread, str_d987n));
+  Handle<SmallInteger> int_d987n(&scope,
+                                 runtime.stringToInt(thread, str_d987n));
   EXPECT_EQ(int_d987n->value(), -987);
 }
 
@@ -1332,8 +1286,8 @@ TEST(RuntimeStringTest, StringFormatMixed) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Handle<String> src(
-      &scope, runtime.newStringFromCString("1%s,2%s,3%s,4%s,5%s"));
+  Handle<String> src(&scope,
+                     runtime.newStringFromCString("1%s,2%s,3%s,4%s,5%s"));
   Handle<Object> arg(&scope, runtime.newStringFromCString("pyro"));
   Handle<ObjectArray> objs(&scope, runtime.newObjectArray(5));
   for (word i = 0; i < objs->length(); i++) {
@@ -1430,8 +1384,7 @@ TEST_P(LookupNameInMroTest, Lookup) {
 }
 
 INSTANTIATE_TEST_CASE_P(
-    LookupNameInMro,
-    LookupNameInMroTest,
+    LookupNameInMro, LookupNameInMroTest,
     ::testing::Values(
         LookupNameInMroData{"OnInstance", "foo", SmallInteger::fromWord(2)},
         LookupNameInMroData{"OnParent", "bar", SmallInteger::fromWord(4)},
@@ -1843,22 +1796,18 @@ static Object* createClass(Runtime* runtime) {
   return *klass;
 }
 
-static void setInClassDict(
-    Runtime* runtime,
-    const Handle<Object>& klass,
-    const Handle<Object>& attr,
-    const Handle<Object>& value) {
+static void setInClassDict(Runtime* runtime, const Handle<Object>& klass,
+                           const Handle<Object>& attr,
+                           const Handle<Object>& value) {
   HandleScope scope;
   Handle<Class> k(&scope, *klass);
   Handle<Dictionary> klass_dict(&scope, k->dictionary());
   runtime->dictionaryAtPutInValueCell(klass_dict, attr, value);
 }
 
-static void setInMetaclass(
-    Runtime* runtime,
-    const Handle<Object>& klass,
-    const Handle<Object>& attr,
-    const Handle<Object>& value) {
+static void setInMetaclass(Runtime* runtime, const Handle<Object>& klass,
+                           const Handle<Object>& attr,
+                           const Handle<Object>& value) {
   HandleScope scope;
   Handle<Object> meta_klass(&scope, runtime->classOf(*klass));
   setInClassDict(runtime, meta_klass, attr, value);
@@ -1954,16 +1903,13 @@ TEST_P(IntrinsicClassSetAttrTest, SetAttr) {
 
   EXPECT_TRUE(result->isError());
   ASSERT_TRUE(thread->pendingException()->isString());
-  EXPECT_PYSTRING_EQ(
-      String::cast(thread->pendingException()),
-      "can't set attributes of built-in/extension type");
+  EXPECT_PYSTRING_EQ(String::cast(thread->pendingException()),
+                     "can't set attributes of built-in/extension type");
 }
 
-INSTANTIATE_TEST_CASE_P(
-    IntrinsicClasses,
-    IntrinsicClassSetAttrTest,
-    ::testing::ValuesIn(kIntrinsicClassSetAttrTests),
-    intrinsicClassName);
+INSTANTIATE_TEST_CASE_P(IntrinsicClasses, IntrinsicClassSetAttrTest,
+                        ::testing::ValuesIn(kIntrinsicClassSetAttrTests),
+                        intrinsicClassName);
 
 // Set an attribute directly on the class
 TEST(ClassAttributeTest, SetAttrOnClass) {
@@ -2030,9 +1976,8 @@ TEST(ClassAttributeDeathTest, GetMissingAttribute) {
 class A: pass
 print(A.foo)
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src),
-      "aborting due to pending exception: missing attribute");
+  ASSERT_DEATH(runtime.runFromCString(src),
+               "aborting due to pending exception: missing attribute");
 }
 
 TEST(ClassAttributeTest, GetFunction) {
@@ -2062,8 +2007,8 @@ class DataDescriptor:
   runtime.runFromCString(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> descr_klass(
-      &scope, findInModule(&runtime, main, "DataDescriptor"));
+  Handle<Class> descr_klass(&scope,
+                            findInModule(&runtime, main, "DataDescriptor"));
 
   // Create the class
   Handle<Object> klass(&scope, createClass(&runtime));
@@ -2074,9 +2019,8 @@ class DataDescriptor:
   Handle<Object> descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, klass, attr, descr);
 
-  ASSERT_DEATH(
-      runtime.attributeAt(Thread::currentThread(), klass, attr),
-      "custom descriptors are unsupported");
+  ASSERT_DEATH(runtime.attributeAt(Thread::currentThread(), klass, attr),
+               "custom descriptors are unsupported");
 }
 
 TEST(ClassAttributeTest, GetNonDataDescriptorOnMetaClass) {
@@ -2091,8 +2035,8 @@ class DataDescriptor:
   runtime.runFromCString(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> descr_klass(
-      &scope, findInModule(&runtime, main, "DataDescriptor"));
+  Handle<Class> descr_klass(&scope,
+                            findInModule(&runtime, main, "DataDescriptor"));
 
   // Create the class
   Handle<Object> klass(&scope, createClass(&runtime));
@@ -2122,8 +2066,8 @@ class DataDescriptor:
   runtime.runFromCString(src);
   HandleScope scope;
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> descr_klass(
-      &scope, findInModule(&runtime, main, "DataDescriptor"));
+  Handle<Class> descr_klass(&scope,
+                            findInModule(&runtime, main, "DataDescriptor"));
 
   // Create the class
   Handle<Object> klass(&scope, createClass(&runtime));
@@ -2432,9 +2376,8 @@ class Foo:
 foo = Foo()
 print(foo.bar)
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src),
-      "aborting due to pending exception: missing attribute");
+  ASSERT_DEATH(runtime.runFromCString(src),
+               "aborting due to pending exception: missing attribute");
 }
 
 TEST(InstanceAttributeTest, DunderClass) {
@@ -2475,4 +2418,4 @@ TEST(InstanceAttributeTest, NoInstanceDictionaryReturnsClassAttribute) {
   ASSERT_TRUE(attr->isBoundMethod());
 }
 
-} // namespace python
+}  // namespace python

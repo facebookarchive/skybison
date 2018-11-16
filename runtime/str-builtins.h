@@ -14,4 +14,4 @@ Object* builtinStringLe(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringLt(Thread* thread, Frame* frame, word nargs);
 Object* builtinStringNe(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

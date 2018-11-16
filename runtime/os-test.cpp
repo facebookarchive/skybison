@@ -61,4 +61,4 @@ TEST(OsTest, allocateUseAndFreeMultiplePages) {
   EXPECT_TRUE(is_free);
 }
 
-} // namespace python
+}  // namespace python

@@ -434,4 +434,4 @@ with Foo():
   EXPECT_EQ(SmallInteger::cast(*b)->value(), 2);
 }
 
-} // namespace python
+}  // namespace python

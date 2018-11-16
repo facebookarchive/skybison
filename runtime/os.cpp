@@ -60,9 +60,7 @@ class ScopedFd {
     }
   }
 
-  int get() const {
-    return fd_;
-  }
+  int get() const { return fd_; }
 
  private:
   int fd_;
@@ -130,9 +128,7 @@ char* OS::temporaryDirectory(const char* prefix) {
   return result;
 }
 
-const char* OS::getenv(const char* var) {
-  return ::getenv(var);
-}
+const char* OS::getenv(const char* var) { return ::getenv(var); }
 
 bool OS::dirExists(const char* dir) {
   struct stat st;
@@ -176,4 +172,4 @@ double OS::currentTime() {
   return result;
 }
 
-} // namespace python
+}  // namespace python

@@ -22,4 +22,4 @@ Object* builtinFunctionGet(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newBoundMethod(self, instance);
 }
 
-} // namespace python
+}  // namespace python

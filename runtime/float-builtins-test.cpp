@@ -184,9 +184,8 @@ TEST(FloatBuiltinsDeathTest, AddWithNonFloatSelfThrows) {
 float.__add__(None, 1.0)
 )";
   Runtime runtime;
-  ASSERT_DEATH(
-      runtime.runFromCString(src),
-      "must be called with float instance as first argument");
+  ASSERT_DEATH(runtime.runFromCString(src),
+               "must be called with float instance as first argument");
 }
 
 TEST(FloatBuiltinsDeathTest, AddWithNonFloatOtherThrows) {
@@ -234,9 +233,8 @@ TEST(FloatBuiltinsDeathTest, SubWithNonFloatSelfThrows) {
 float.__sub__(None, 1.0)
 )";
   Runtime runtime;
-  ASSERT_DEATH(
-      runtime.runFromCString(src),
-      "must be called with float instance as first argument");
+  ASSERT_DEATH(runtime.runFromCString(src),
+               "must be called with float instance as first argument");
 }
 
 TEST(FloatBuiltinsDeathTest, SubWithNonFloatOtherThrows) {
@@ -247,4 +245,4 @@ TEST(FloatBuiltinsDeathTest, SubWithNonFloatOtherThrows) {
   ASSERT_DEATH(runtime.runFromCString(src), "unimplemented");
 }
 
-} // namespace python
+}  // namespace python

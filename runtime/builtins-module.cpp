@@ -22,14 +22,14 @@ Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
 
   if (nargs < 2) {
-    std::abort(); // TODO: throw a TypeError exception.
+    std::abort();  // TODO: throw a TypeError exception.
   }
   Arguments args(frame, nargs);
   if (!args.get(0)->isFunction()) {
-    std::abort(); // TODO: throw a TypeError exception.
+    std::abort();  // TODO: throw a TypeError exception.
   }
   if (!args.get(1)->isString()) {
-    std::abort(); // TODO: throw a TypeError exception.
+    std::abort();  // TODO: throw a TypeError exception.
   }
 
   Handle<Function> body(&scope, args.get(0));
@@ -82,8 +82,8 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString("metaclass not found.");
   }
   Handle<Class> metaclass(&scope, *kw_val);
-  Handle<ObjectArray> bases(
-      &scope, runtime->newObjectArray(args.numArgs() - 2));
+  Handle<ObjectArray> bases(&scope,
+                            runtime->newObjectArray(args.numArgs() - 2));
   for (word i = 0, j = 2; j < args.numArgs(); i++, j++) {
     bases->atPut(i, args.get(j));
   }
@@ -126,7 +126,7 @@ Object* builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
 Object* builtinInt(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString(
-        "int() takes exactly 1 argument"); // TODO(rkng): base (kw/optional)
+        "int() takes exactly 1 argument");  // TODO(rkng): base (kw/optional)
   }
   HandleScope scope(thread);
   Arguments args(frame_frame, nargs);
@@ -221,19 +221,16 @@ static void printScalarTypes(Object* arg, std::ostream* ostream) {
 }
 
 static bool supportedScalarType(Object* arg) {
-  return (
-      arg->isBoolean() || arg->isDouble() || arg->isSmallInteger() ||
-      arg->isString());
+  return (arg->isBoolean() || arg->isDouble() || arg->isSmallInteger() ||
+          arg->isString());
 }
 
 // NB: The print functions do not represent the final state of builtin functions
 // and should not be emulated when creating new builtins. They are minimal
 // implementations intended to get the Richards & Pystone benchmark working.
-static Object* doBuiltinPrint(
-    const Arguments& args,
-    word nargs,
-    const Handle<Object>& end,
-    std::ostream* ostream) {
+static Object* doBuiltinPrint(const Arguments& args, word nargs,
+                              const Handle<Object>& end,
+                              std::ostream* ostream) {
   const char separator = ' ';
 
   for (word i = 0; i < nargs; i++) {
@@ -315,8 +312,8 @@ static Object* doBuiltinPrint(
   } else if (end->isString()) {
     printString(String::cast(*end));
   } else {
-    UNIMPLEMENTED(
-        "Unexpected type for end: %ld", static_cast<word>(end->layoutId()));
+    UNIMPLEMENTED("Unexpected type for end: %ld",
+                  static_cast<word>(end->layoutId()));
   }
 
   return None::object();
@@ -375,8 +372,8 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
   // Remove kw arg tuple and the value for the end keyword argument
   Arguments rest(frame, nargs - kw_args.numKeywords() - 1);
   Handle<Object> end_val(&scope, end);
-  return doBuiltinPrint(
-      rest, nargs - kw_args.numKeywords() - 1, end_val, ostream);
+  return doBuiltinPrint(rest, nargs - kw_args.numKeywords() - 1, end_val,
+                        ostream);
 }
 
 Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
@@ -417,4 +414,4 @@ Object* builtinRange(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newRange(start, stop, step);
 }
 
-} // namespace python
+}  // namespace python

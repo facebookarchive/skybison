@@ -100,4 +100,4 @@ Object* builtinSetNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newSet();
 }
 
-} // namespace python
+}  // namespace python

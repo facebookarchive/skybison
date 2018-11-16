@@ -50,4 +50,4 @@ ExtensionTypeInitializer kExtensionTypeInitializers[] = {
     {nullptr},
 };
 
-} // namespace python
+}  // namespace python

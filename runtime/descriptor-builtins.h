@@ -23,4 +23,4 @@ Object* builtinPropertyInit(Thread* thread, Frame* frame, word nargs);
 Object* builtinPropertyNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinPropertySetter(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

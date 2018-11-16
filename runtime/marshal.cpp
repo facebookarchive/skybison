@@ -42,10 +42,8 @@ enum {
   TYPE_SHORT_ASCII_INTERNED = 'Z',
 };
 
-Marshal::Reader::Reader(
-    HandleScope* scope,
-    Runtime* runtime,
-    const char* buffer)
+Marshal::Reader::Reader(HandleScope* scope, Runtime* runtime,
+                        const char* buffer)
     : runtime_(runtime),
       refs_(scope, runtime->newList()),
       start_(reinterpret_cast<const byte*>(buffer)),
@@ -100,12 +98,8 @@ double Marshal::Reader::readBinaryFloat() {
 template <typename T>
 class ScopedCounter {
  public:
-  explicit ScopedCounter(T* counter) : counter_(counter) {
-    (*counter_)++;
-  }
-  ~ScopedCounter() {
-    (*counter_)--;
-  }
+  explicit ScopedCounter(T* counter) : counter_(counter) { (*counter_)++; }
+  ~ScopedCounter() { (*counter_)--; }
 
  public:
   T* counter_;
@@ -185,7 +179,7 @@ Object* Marshal::Reader::readObject() {
       break;
     }
 
-    case TYPE_STRING: // Misnomer, should be TYPE_BYTES
+    case TYPE_STRING:  // Misnomer, should be TYPE_BYTES
       result = readTypeString();
       break;
 
@@ -262,13 +256,9 @@ void Marshal::Reader::setRef(word index, Object* value) {
   refs_->atPut(index, value);
 }
 
-Object* Marshal::Reader::getRef(word index) {
-  return refs_->at(index);
-}
+Object* Marshal::Reader::getRef(word index) { return refs_->at(index); }
 
-word Marshal::Reader::numRefs() {
-  return refs_->allocated();
-}
+word Marshal::Reader::numRefs() { return refs_->allocated(); }
 
 Object* Marshal::Reader::readTypeString() {
   int32 length = readLong();
@@ -322,8 +312,8 @@ Object* Marshal::Reader::readAndInternString(word length) {
   HandleScope scope;
   // TODO(T25820368): Intern strings iff the string isn't already part of the
   // intern table.
-  Handle<Object> str(
-      &scope, runtime_->newStringWithAll(View<byte>(data, length)));
+  Handle<Object> str(&scope,
+                     runtime_->newStringWithAll(View<byte>(data, length)));
   Object* result = runtime_->internString(str);
   if (isRef_) {
     addRef(result);
@@ -387,4 +377,4 @@ Object* Marshal::Reader::readTypeRef() {
   return getRef(n);
 }
 
-} // namespace python
+}  // namespace python

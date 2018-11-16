@@ -42,25 +42,15 @@ class ApiHandle {
 
   Object* asObject();
 
-  PyObject* asPyObject() {
-    return reinterpret_cast<PyObject*>(this);
-  }
+  PyObject* asPyObject() { return reinterpret_cast<PyObject*>(this); }
 
-  bool isBorrowed() {
-    return (ob_refcnt_ & kBorrowedBit) != 0;
-  }
+  bool isBorrowed() { return (ob_refcnt_ & kBorrowedBit) != 0; }
 
-  void setBorrowed() {
-    ob_refcnt_ |= kBorrowedBit;
-  }
+  void setBorrowed() { ob_refcnt_ |= kBorrowedBit; }
 
-  void clearBorrowed() {
-    ob_refcnt_ &= ~kBorrowedBit;
-  }
+  void clearBorrowed() { ob_refcnt_ &= ~kBorrowedBit; }
 
-  PyObject* type() {
-    return reinterpret_cast<PyObject*>(ob_type_);
-  }
+  PyObject* type() { return reinterpret_cast<PyObject*>(ob_type_); }
 
  private:
   ApiHandle() = delete;
@@ -74,4 +64,4 @@ class ApiHandle {
   static const long kBorrowedBit = 1L << 31;
 };
 
-} // namespace python
+}  // namespace python

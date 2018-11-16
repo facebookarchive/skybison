@@ -160,4 +160,4 @@ Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-} // namespace python
+}  // namespace python

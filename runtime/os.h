@@ -20,8 +20,8 @@ class OS {
 
   static char* readFile(const char* filename, word* len_out = nullptr);
 
-  static void
-  writeFileExcl(const char* filename, const char* contents, word len = -1);
+  static void writeFileExcl(const char* filename, const char* contents,
+                            word len = -1);
 
   static char* temporaryDirectory(const char* prefix);
 
@@ -37,4 +37,4 @@ class OS {
   DISALLOW_IMPLICIT_CONSTRUCTORS(OS);
 };
 
-} // namespace python
+}  // namespace python

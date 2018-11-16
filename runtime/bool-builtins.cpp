@@ -18,4 +18,4 @@ Object* builtinBooleanBool(Thread* thread, Frame* frame, word nargs) {
   return thread->throwTypeErrorFromCString("unsupported type for __bool__");
 }
 
-} // namespace python
+}  // namespace python

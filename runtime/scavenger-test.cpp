@@ -226,11 +226,9 @@ def g(ref, b=2):
   {
     Handle<ObjectArray> array1(&scope, runtime.newObjectArray(10));
     Handle<Function> collect(
-        &scope,
-        runtime.newBuiltinFunction(
-            nativeTrampoline<doGarbageCollection>,
-            unimplementedTrampoline,
-            unimplementedTrampoline));
+        &scope, runtime.newBuiltinFunction(
+                    nativeTrampoline<doGarbageCollection>,
+                    unimplementedTrampoline, unimplementedTrampoline));
     ref1->setReferent(*array1);
     ref1->setCallback(*collect);
 
@@ -300,8 +298,8 @@ def g(ref, c=4):
   runtime.collectGarbage();
   builtinStderr = saved_stdout;
   std::string exception = tmp_stdout.str();
-  EXPECT_EQ(
-      exception, "ignore pending exception: TypeError: too many arguments\n");
+  EXPECT_EQ(exception,
+            "ignore pending exception: TypeError: too many arguments\n");
 
   EXPECT_EQ(ref1->referent(), None::object());
   EXPECT_EQ(ref1->callback(), None::object());
@@ -313,4 +311,4 @@ def g(ref, c=4):
   EXPECT_EQ(b->value(), 4);
 }
 
-} // namespace python
+}  // namespace python

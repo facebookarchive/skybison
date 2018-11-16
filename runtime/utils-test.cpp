@@ -71,4 +71,4 @@ TEST(UtilsTest, RotateLeft) {
   EXPECT_EQ(Utils::rotateLeft(1ULL, 63), 0x8000000000000000ULL);
 }
 
-} // namespace python
+}  // namespace python

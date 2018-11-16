@@ -16,11 +16,8 @@ class AttributeInfo {
   AttributeInfo() : value_(SmallInteger::kTag) {}
 
   AttributeInfo(word offset, word flags) : value_(SmallInteger::kTag) {
-    DCHECK(
-        isValidOffset(offset),
-        "offset %ld too large (max is %ld)",
-        offset,
-        kMaxOffset);
+    DCHECK(isValidOffset(offset), "offset %ld too large (max is %ld)", offset,
+           kMaxOffset);
     value_ |= (offset << kOffsetOffset);
     value_ |= (flags << kFlagsOffset);
   }
@@ -36,9 +33,7 @@ class AttributeInfo {
   // of the instance. For overflow attributes, this is the index into the
   // overflow array.
   word offset();
-  static bool isValidOffset(word offset) {
-    return offset <= kMaxOffset;
-  }
+  static bool isValidOffset(word offset) { return offset <= kMaxOffset; }
 
   enum Flag {
     // When set, this indicates that the attribute is stored directly on the
@@ -54,17 +49,11 @@ class AttributeInfo {
   word flags();
   bool testFlag(Flag flag);
 
-  bool isInObject() {
-    return testFlag(Flag::kInObject);
-  }
+  bool isInObject() { return testFlag(Flag::kInObject); }
 
-  bool isOverflow() {
-    return !testFlag(Flag::kInObject);
-  }
+  bool isOverflow() { return !testFlag(Flag::kInObject); }
 
-  bool isDeleted() {
-    return testFlag(Flag::kDeleted);
-  }
+  bool isDeleted() { return testFlag(Flag::kDeleted); }
 
   // Casting.
   SmallInteger* asSmallInteger();
@@ -107,4 +96,4 @@ inline SmallInteger* AttributeInfo::asSmallInteger() {
   return smi;
 }
 
-} // namespace python
+}  // namespace python

@@ -24,9 +24,7 @@ class Runtime {
   class NewValueCellCallback : public Callback<Object*> {
    public:
     explicit NewValueCellCallback(Runtime* runtime) : runtime_(runtime) {}
-    Object* call() {
-      return runtime_->newValueCell();
-    }
+    Object* call() { return runtime_->newValueCell(); }
     Runtime* runtime_;
   };
 
@@ -34,9 +32,8 @@ class Runtime {
   explicit Runtime(word size);
   ~Runtime();
 
-  Object* newBoundMethod(
-      const Handle<Object>& function,
-      const Handle<Object>& self);
+  Object* newBoundMethod(const Handle<Object>& function,
+                         const Handle<Object>& self);
 
   Object* newByteArray(word length, byte fill);
   Object* newByteArrayWithAll(View<byte> array);
@@ -56,10 +53,8 @@ class Runtime {
 
   Object* newSet();
 
-  Object* newBuiltinFunction(
-      Function::Entry entry,
-      Function::Entry entryKw,
-      Function::Entry entryEx);
+  Object* newBuiltinFunction(Function::Entry entry, Function::Entry entryKw,
+                             Function::Entry entryEx);
   Object* newFunction();
 
   Object* newInstance(const Handle<Layout>& layout);
@@ -82,19 +77,16 @@ class Runtime {
 
   Object* newObjectArray(word length);
 
-  Object* newProperty(
-      const Handle<Object>& getter,
-      const Handle<Object>& setter,
-      const Handle<Object>& deleter);
+  Object* newProperty(const Handle<Object>& getter,
+                      const Handle<Object>& setter,
+                      const Handle<Object>& deleter);
 
   Object* newRange(word start, word stop, word step);
 
   Object* newRangeIterator(const Handle<Object>& iterable);
 
-  Object* newSlice(
-      const Handle<Object>& start,
-      const Handle<Object>& stop,
-      const Handle<Object>& step);
+  Object* newSlice(const Handle<Object>& start, const Handle<Object>& stop,
+                   const Handle<Object>& step);
 
   Object* newStaticMethod();
 
@@ -108,10 +100,8 @@ class Runtime {
   Object* stringConcat(const Handle<String>& a, const Handle<String>& b);
 
   // Rudimentary support for '%' operator
-  Object* stringFormat(
-      Thread* thread,
-      const Handle<String>& fmt,
-      const Handle<ObjectArray>& args);
+  Object* stringFormat(Thread* thread, const Handle<String>& fmt,
+                       const Handle<ObjectArray>& args);
 
   // For built-in int() impl, but can be used when the need to convert arise
   Object* stringToInt(Thread* thread, const Handle<Object>& str);
@@ -136,40 +126,31 @@ class Runtime {
 
   void setArgv(int argc, const char** argv);
 
-  Heap* heap() {
-    return &heap_;
-  }
+  Heap* heap() { return &heap_; }
 
   void visitRoots(PointerVisitor* visitor);
 
   void addModule(const Handle<Module>& module);
-  void moduleAddGlobal(
-      const Handle<Module>& module,
-      const Handle<Object>& key,
-      const Handle<Object>& value);
+  void moduleAddGlobal(const Handle<Module>& module, const Handle<Object>& key,
+                       const Handle<Object>& value);
 
-  Object* moduleAddBuiltinFunction(
-      const Handle<Module>& module,
-      Object* name,
-      const Function::Entry entry,
-      const Function::Entry entryKw,
-      const Function::Entry entryEx);
+  Object* moduleAddBuiltinFunction(const Handle<Module>& module, Object* name,
+                                   const Function::Entry entry,
+                                   const Function::Entry entryKw,
+                                   const Function::Entry entryEx);
 
   Object* findModule(const Handle<Object>& name);
 
   Object* moduleAt(const Handle<Module>& module, const Handle<Object>& key);
-  void moduleAtPut(
-      const Handle<Module>& module,
-      const Handle<Object>& key,
-      const Handle<Object>& value);
+  void moduleAtPut(const Handle<Module>& module, const Handle<Object>& key,
+                   const Handle<Object>& value);
 
   Object* importModule(const Handle<Object>& name);
 
   // importModuleFromBuffer is exposed for use by the tests. We may be able to
   // remove this later.
-  Object* importModuleFromBuffer(
-      const char* buffer,
-      const Handle<Object>& name);
+  Object* importModuleFromBuffer(const char* buffer,
+                                 const Handle<Object>& name);
 
   Object* classOf(Object* object);
 
@@ -187,33 +168,19 @@ class Runtime {
   Object* comparisonSelector(CompareOp op);
   Object* swappedComparisonSelector(CompareOp op);
 
-  Object* buildClass() {
-    return build_class_;
-  }
+  Object* buildClass() { return build_class_; }
 
-  Object* interned() {
-    return interned_;
-  }
+  Object* interned() { return interned_; }
 
-  Object* modules() {
-    return modules_;
-  }
+  Object* modules() { return modules_; }
 
-  Object* notImplemented() {
-    return not_implemented_;
-  }
+  Object* notImplemented() { return not_implemented_; }
 
-  Object* apiHandles() {
-    return api_handles_;
-  }
+  Object* apiHandles() { return api_handles_; }
 
-  Object* extensionTypes() {
-    return extension_types_;
-  }
+  Object* extensionTypes() { return extension_types_; }
 
-  Symbols* symbols() {
-    return symbols_;
-  }
+  Symbols* symbols() { return symbols_; }
 
   Object* getIter(const Handle<Object>& iterable);
 
@@ -230,8 +197,8 @@ class Runtime {
 
   // Inserts an element to the specified index of the list.
   // When index >= len(list) it is equivalent to appending to the list.
-  void
-  listInsert(const Handle<List>& list, const Handle<Object>& value, word index);
+  void listInsert(const Handle<List>& list, const Handle<Object>& value,
+                  word index);
 
   // Removes and returns an element from the specified list index.
   // Expects index to be within [0, len(list)]
@@ -246,44 +213,36 @@ class Runtime {
   // Associate a value with the supplied key.
   //
   // This handles growing the backing ObjectArray if needed.
-  void dictionaryAtPut(
-      const Handle<Dictionary>& dict,
-      const Handle<Object>& key,
-      const Handle<Object>& value);
+  void dictionaryAtPut(const Handle<Dictionary>& dict,
+                       const Handle<Object>& key, const Handle<Object>& value);
 
   // Look up the value associated with key. Returns Error::object() if the
   // key was not found.
-  Object* dictionaryAt(
-      const Handle<Dictionary>& dict,
-      const Handle<Object>& key);
+  Object* dictionaryAt(const Handle<Dictionary>& dict,
+                       const Handle<Object>& key);
 
   // Looks up and returns the value associated with the key.  If the key is
   // absent, calls thunk and inserts its result as the value.
-  Object* dictionaryAtIfAbsentPut(
-      const Handle<Dictionary>& dict,
-      const Handle<Object>& key,
-      Callback<Object*>* thunk);
+  Object* dictionaryAtIfAbsentPut(const Handle<Dictionary>& dict,
+                                  const Handle<Object>& key,
+                                  Callback<Object*>* thunk);
 
   // Stores value in a ValueCell stored at key in dict. Careful to
   // reuse an existing value cell if one exists since it may be shared.
-  Object* dictionaryAtPutInValueCell(
-      const Handle<Dictionary>& dict,
-      const Handle<Object>& key,
-      const Handle<Object>& value);
+  Object* dictionaryAtPutInValueCell(const Handle<Dictionary>& dict,
+                                     const Handle<Object>& key,
+                                     const Handle<Object>& value);
 
   // Returns true if the dictionary contains the specified key.
-  bool dictionaryIncludes(
-      const Handle<Dictionary>& dict,
-      const Handle<Object>& key);
+  bool dictionaryIncludes(const Handle<Dictionary>& dict,
+                          const Handle<Object>& key);
 
   // Delete a key from the dictionary.
   //
   // Returns true if the key existed and sets the previous value in value.
   // Returns false otherwise.
-  bool dictionaryRemove(
-      const Handle<Dictionary>& dict,
-      const Handle<Object>& key,
-      Object** value);
+  bool dictionaryRemove(const Handle<Dictionary>& dict,
+                        const Handle<Object>& key, Object** value);
 
   ObjectArray* dictionaryKeys(const Handle<Dictionary>& dict);
 
@@ -308,9 +267,8 @@ class Runtime {
 
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.
-  void collectAttributes(
-      const Handle<Code>& code,
-      const Handle<Dictionary>& attributes);
+  void collectAttributes(const Handle<Code>& code,
+                         const Handle<Dictionary>& attributes);
 
   // Constructs the initial layout for instances of klass.
   //
@@ -325,73 +283,56 @@ class Runtime {
   //
   // This is equivalent to CPython's PyType_Lookup. Returns the Error object if
   // the name wasn't found.
-  Object* lookupNameInMro(
-      Thread* thread,
-      const Handle<Class>& klass,
-      const Handle<Object>& name);
+  Object* lookupNameInMro(Thread* thread, const Handle<Class>& klass,
+                          const Handle<Object>& name);
 
   // Implements `receiver.name`
-  Object* attributeAt(
-      Thread* thread,
-      const Handle<Object>& receiver,
-      const Handle<Object>& name);
+  Object* attributeAt(Thread* thread, const Handle<Object>& receiver,
+                      const Handle<Object>& name);
 
   // Implements `receiver.name = value`
-  Object* attributeAtPut(
-      Thread* thread,
-      const Handle<Object>& receiver,
-      const Handle<Object>& name,
-      const Handle<Object>& value);
+  Object* attributeAtPut(Thread* thread, const Handle<Object>& receiver,
+                         const Handle<Object>& name,
+                         const Handle<Object>& value);
 
   // Attribute lookup primitive for instances.
   //
   // This operates directly on the instance and does not respect Python
   // semantics for attribute lookup. Returns Error::object() if the attribute
   // isn't found.
-  Object* instanceAt(
-      Thread* thread,
-      const Handle<HeapObject>& instance,
-      const Handle<Object>& name);
+  Object* instanceAt(Thread* thread, const Handle<HeapObject>& instance,
+                     const Handle<Object>& name);
 
   // Attribute setting primitive for instances.
   //
   // This operates directly on the instance and does not respect Python
   // semantics for attribute storage. This handles mutating the instance's
   // layout if the attribute does not already exist on the instance.
-  Object* instanceAtPut(
-      Thread* thread,
-      const Handle<HeapObject>& instance,
-      const Handle<Object>& name,
-      const Handle<Object>& value);
+  Object* instanceAtPut(Thread* thread, const Handle<HeapObject>& instance,
+                        const Handle<Object>& name,
+                        const Handle<Object>& value);
 
   // Initialize the set of in-object attributes using the supplied attribute
   // names.
   //
   // names is expected to be an object array of attribute names.
-  void layoutInitializeInObjectAttributes(
-      Thread* thread,
-      const Handle<Layout>& layout,
-      const Handle<ObjectArray>& names);
+  void layoutInitializeInObjectAttributes(Thread* thread,
+                                          const Handle<Layout>& layout,
+                                          const Handle<ObjectArray>& names);
 
   // Looks up the named attribute in the layout.
   //
   // If the attribute is found this returns true and sets info.
   // Returns false otherwise.
-  bool layoutFindAttribute(
-      Thread* thread,
-      const Handle<Layout>& layout,
-      const Handle<Object>& name,
-      AttributeInfo* info);
+  bool layoutFindAttribute(Thread* thread, const Handle<Layout>& layout,
+                           const Handle<Object>& name, AttributeInfo* info);
 
   // Add the attribute to the overflow array.
   //
   // This returns a new layout by either following a pre-existing edge or
   // adding one.
-  Object* layoutAddAttribute(
-      Thread* thread,
-      const Handle<Layout>& layout,
-      const Handle<Object>& name,
-      word flags);
+  Object* layoutAddAttribute(Thread* thread, const Handle<Layout>& layout,
+                             const Handle<Object>& name, word flags);
 
   // Delete the named attribute from the layout.
   //
@@ -399,48 +340,37 @@ class Runtime {
   // a pre-existing edge or adding one.
   //
   // If the attribute doesn't exist, Error::object() is returned.
-  Object* layoutDeleteAttribute(
-      Thread* thread,
-      const Handle<Layout>& layout,
-      const Handle<Object>& name);
+  Object* layoutDeleteAttribute(Thread* thread, const Handle<Layout>& layout,
+                                const Handle<Object>& name);
 
   // Pre-computes fast_globals for functions.
-  Object* computeFastGlobals(
-      const Handle<Code>& code,
-      const Handle<Dictionary>& globals,
-      const Handle<Dictionary>& builtins);
+  Object* computeFastGlobals(const Handle<Code>& code,
+                             const Handle<Dictionary>& globals,
+                             const Handle<Dictionary>& builtins);
 
   Object* computeBuiltinBaseClass(const Handle<Class>& klass);
 
   // Adds a builtin function with a positional entry point definition
   // using the default keyword and splatting entry points.
-  void classAddBuiltinFunction(
-      const Handle<Class>& klass,
-      Object* name,
-      Function::Entry entry);
+  void classAddBuiltinFunction(const Handle<Class>& klass, Object* name,
+                               Function::Entry entry);
 
   // Adds a builtin function with positional and keyword entry point
   // definitions, using the default splatting entry point.
-  void classAddBuiltinFunctionKw(
-      const Handle<Class>& klass,
-      Object* name,
-      Function::Entry entry,
-      Function::Entry entry_kw);
+  void classAddBuiltinFunctionKw(const Handle<Class>& klass, Object* name,
+                                 Function::Entry entry,
+                                 Function::Entry entry_kw);
 
   // Adds a builtin function with positional, keyword & splatting entry point
   // definitions
-  void classAddBuiltinFunctionKwEx(
-      const Handle<Class>& klass,
-      Object* name,
-      Function::Entry entry,
-      Function::Entry entry_kw,
-      Function::Entry entry_ex);
+  void classAddBuiltinFunctionKwEx(const Handle<Class>& klass, Object* name,
+                                   Function::Entry entry,
+                                   Function::Entry entry_kw,
+                                   Function::Entry entry_ex);
 
   // Helper function to add extension functions to extension classes
-  void classAddExtensionFunction(
-      const Handle<Class>& klass,
-      Object* name,
-      void* c_function);
+  void classAddExtensionFunction(const Handle<Class>& klass, Object* name,
+                                 void* c_function);
 
   // determine whether the instance needs a slot for delegate base instance
   bool hasDelegate(const Handle<Class>& klass);
@@ -448,19 +378,17 @@ class Runtime {
   // Manipulate instance's delegate, since offset is only known by the type,
   // this method needs to stay in runtime.
   Object* instanceDelegate(const Handle<Object>& instance);
-  void setInstanceDelegate(
-      const Handle<Object>& instance,
-      const Handle<Object>& delegate);
+  void setInstanceDelegate(const Handle<Object>& instance,
+                           const Handle<Object>& delegate);
 
   // Converts the offset in code's bytecode into the corresponding line number
   // in the backing source file.
-  word
-  codeOffsetToLineNum(Thread* thread, const Handle<Code>& code, word offset);
+  word codeOffsetToLineNum(Thread* thread, const Handle<Code>& code,
+                           word offset);
 
   // Return true if subclass is a subclass of superclass
-  Object* isSubClass(
-      const Handle<Class>& subclass,
-      const Handle<Class>& superclass);
+  Object* isSubClass(const Handle<Class>& subclass,
+                     const Handle<Class>& superclass);
 
   // Return true if obj is an instance of a subclass of klass
   Object* isInstance(const Handle<Object>& obj, const Handle<Class>& klass);
@@ -511,9 +439,7 @@ class Runtime {
   }
 
   // Linked list of all tracked allocations
-  TrackedAllocation** trackedAllocations() {
-    return &tracked_allocations_;
-  }
+  TrackedAllocation** trackedAllocations() { return &tracked_allocations_; }
 
   // Clear the allocated memory from all extension related objects
   void freeTrackedAllocations();
@@ -575,89 +501,64 @@ class Runtime {
   // index of the bucket that contains the value. If the key is not found, this
   // function returns false and sets index to the location where the key would
   // be inserted. If the dictionary is full, it sets index to -1.
-  bool dictionaryLookup(
-      const Handle<ObjectArray>& data,
-      const Handle<Object>& key,
-      const Handle<Object>& key_hash,
-      word* index);
+  bool dictionaryLookup(const Handle<ObjectArray>& data,
+                        const Handle<Object>& key,
+                        const Handle<Object>& key_hash, word* index);
 
-  bool setLookup(
-      const Handle<ObjectArray>& data,
-      const Handle<Object>& key,
-      const Handle<Object>& key_hash,
-      word* index);
+  bool setLookup(const Handle<ObjectArray>& data, const Handle<Object>& key,
+                 const Handle<Object>& key_hash, word* index);
 
   ObjectArray* setGrow(const Handle<ObjectArray>& data);
 
   void moduleAddBuiltinPrint(const Handle<Module>& module);
 
   // Generic attribute lookup code used for class objects
-  Object* classGetAttr(
-      Thread* thread,
-      const Handle<Object>& receiver,
-      const Handle<Object>& name);
+  Object* classGetAttr(Thread* thread, const Handle<Object>& receiver,
+                       const Handle<Object>& name);
 
   // Generic attribute setting code used for class objects
-  Object* classSetAttr(
-      Thread* thread,
-      const Handle<Object>& receiver,
-      const Handle<Object>& name,
-      const Handle<Object>& value);
+  Object* classSetAttr(Thread* thread, const Handle<Object>& receiver,
+                       const Handle<Object>& name, const Handle<Object>& value);
 
   // Generic attribute lookup code used for instance objects
-  Object* instanceGetAttr(
-      Thread* thread,
-      const Handle<Object>& receiver,
-      const Handle<Object>& name);
+  Object* instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
+                          const Handle<Object>& name);
 
   // Generic attribute setting code used for instance objects
-  Object* instanceSetAttr(
-      Thread* thread,
-      const Handle<Object>& receiver,
-      const Handle<Object>& name,
-      const Handle<Object>& value);
+  Object* instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
+                          const Handle<Object>& name,
+                          const Handle<Object>& value);
 
   // Generic attribute lookup code used for module objects
-  Object* moduleGetAttr(
-      Thread* thread,
-      const Handle<Object>& receiver,
-      const Handle<Object>& name);
+  Object* moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
+                        const Handle<Object>& name);
 
   // Generic attribute setting code used for module objects
-  Object* moduleSetAttr(
-      Thread* thread,
-      const Handle<Object>& receiver,
-      const Handle<Object>& name,
-      const Handle<Object>& value);
+  Object* moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
+                        const Handle<Object>& name,
+                        const Handle<Object>& value);
 
   // Specialized attribute lookup code used for super objects
-  Object* superGetAttr(
-      Thread* thread,
-      const Handle<Object>& receiver,
-      const Handle<Object>& name);
+  Object* superGetAttr(Thread* thread, const Handle<Object>& receiver,
+                       const Handle<Object>& name);
 
   // helper function add builtin types
-  void moduleAddBuiltinType(
-      const Handle<Module>& module,
-      LayoutId layout_id,
-      Object* symbol);
+  void moduleAddBuiltinType(const Handle<Module>& module, LayoutId layout_id,
+                            Object* symbol);
 
   // Appends the edge to the list of edges.
   //
   // edges is expected to be a list of edges (label, layout pairs) corresponding
   // to a class of shape altering mutations (e.g. attribute addition).
-  void layoutAddEdge(
-      const Handle<List>& edges,
-      const Handle<Object>& label,
-      const Handle<Object>& layout);
+  void layoutAddEdge(const Handle<List>& edges, const Handle<Object>& label,
+                     const Handle<Object>& layout);
 
   // Create a new tuple for the name, info pair and return a new tuple
   // containing entries + entry.
-  Object* layoutAddAttributeEntry(
-      Thread* thread,
-      const Handle<ObjectArray>& entries,
-      const Handle<Object>& name,
-      AttributeInfo info);
+  Object* layoutAddAttributeEntry(Thread* thread,
+                                  const Handle<ObjectArray>& entries,
+                                  const Handle<Object>& name,
+                                  AttributeInfo info);
 
   // Follow the edge with the supplied label, if one exists.
   //
@@ -670,9 +571,8 @@ class Runtime {
   // If an edge with the supplied label exists the corresponding layout is
   // returned. If no edge with the supplied label exists Error::object() is
   // returned.
-  Object* layoutFollowEdge(
-      const Handle<List>& edges,
-      const Handle<Object>& label);
+  Object* layoutFollowEdge(const Handle<List>& edges,
+                           const Handle<Object>& label);
 
   // Creates a new layout that will be a child layout of the supplied parent.
   Object* layoutCreateChild(Thread* thread, const Handle<Layout>& parent);
@@ -724,4 +624,4 @@ class Runtime {
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };
 
-} // namespace python
+}  // namespace python

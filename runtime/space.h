@@ -25,31 +25,21 @@ class Space {
 
   void unprotect();
 
-  bool contains(uword address) {
-    return address >= start() && address < end();
-  }
+  bool contains(uword address) { return address >= start() && address < end(); }
 
   bool isAllocated(uword address) {
     return address >= start() && address < fill();
   }
 
-  uword start() {
-    return start_;
-  }
+  uword start() { return start_; }
 
-  uword end() {
-    return end_;
-  }
+  uword end() { return end_; }
 
-  uword fill() {
-    return fill_;
-  }
+  uword fill() { return fill_; }
 
   void reset();
 
-  word size() {
-    return end_ - start_;
-  }
+  word size() { return end_ - start_; }
 
  private:
   uword start_;
@@ -61,4 +51,4 @@ class Space {
   DISALLOW_COPY_AND_ASSIGN(Space);
 };
 
-} // namespace python
+}  // namespace python

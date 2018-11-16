@@ -62,4 +62,4 @@ Object* builtinDictionaryLen(Thread* thread, Frame* frame, word nargs) {
       "'__len__' requires a 'dict' object");
 }
 
-} // namespace python
+}  // namespace python

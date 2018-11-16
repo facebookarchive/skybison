@@ -85,4 +85,4 @@ void Utils::printTraceback() {
   printer.print();
 }
 
-} // namespace python
+}  // namespace python

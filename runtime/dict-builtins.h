@@ -10,4 +10,4 @@ namespace python {
 Object* builtinDictionaryEq(Thread* thread, Frame* frame, word nargs);
 Object* builtinDictionaryLen(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

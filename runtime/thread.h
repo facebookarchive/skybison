@@ -39,25 +39,15 @@ class Thread {
   Object* runModuleFunction(Module* module, Object* object);
   Object* runClassFunction(Object* function, Object* dictionary);
 
-  Thread* next() {
-    return next_;
-  }
+  Thread* next() { return next_; }
 
-  Handles* handles() {
-    return handles_;
-  }
+  Handles* handles() { return handles_; }
 
-  Runtime* runtime() {
-    return runtime_;
-  }
+  Runtime* runtime() { return runtime_; }
 
-  Frame* initialFrame() {
-    return initialFrame_;
-  }
+  Frame* initialFrame() { return initialFrame_; }
 
-  Frame* currentFrame() {
-    return currentFrame_;
-  }
+  Frame* currentFrame() { return currentFrame_; }
 
   // The stack pointer is computed by taking the value stack top of the current
   // frame.
@@ -67,9 +57,7 @@ class Thread {
 
   void visitStackRoots(PointerVisitor* visitor);
 
-  void setRuntime(Runtime* runtime) {
-    runtime_ = runtime;
-  }
+  void setRuntime(Runtime* runtime) { runtime_ = runtime; }
 
   // Exception API
   //
@@ -154,4 +142,4 @@ class Thread {
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
 
-} // namespace python
+}  // namespace python

@@ -208,4 +208,4 @@ Object* builtinPropertySetter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
-} // namespace python
+}  // namespace python

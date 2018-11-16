@@ -30,4 +30,4 @@ Object* builtinRefNew(Thread* thread, Frame* frame, word nargs) {
   return *ref;
 }
 
-} // namespace python
+}  // namespace python

@@ -18,8 +18,8 @@ TEST(ListObject, New) {
 
   Py_ssize_t length = 5;
   PyObject* pyresult = PyList_New(length);
-  Handle<Object> result_obj(
-      &scope, ApiHandle::fromPyObject(pyresult)->asObject());
+  Handle<Object> result_obj(&scope,
+                            ApiHandle::fromPyObject(pyresult)->asObject());
   ASSERT_TRUE(result_obj->isList());
 
   Handle<List> result(&scope, *result_obj);
@@ -32,12 +32,12 @@ TEST(ListObject, NewWithZeroLengthReturnsEmptyList) {
 
   Py_ssize_t length = 0;
   PyObject* pyresult = PyList_New(length);
-  Handle<Object> result_obj(
-      &scope, ApiHandle::fromPyObject(pyresult)->asObject());
+  Handle<Object> result_obj(&scope,
+                            ApiHandle::fromPyObject(pyresult)->asObject());
   ASSERT_TRUE(result_obj->isList());
 
   Handle<List> result(&scope, *result_obj);
   EXPECT_EQ(length, result->capacity());
 }
 
-} // namespace python
+}  // namespace python

@@ -8,4 +8,4 @@ class Callback {
   virtual T call() = 0;
 };
 
-} // namespace python
+}  // namespace python

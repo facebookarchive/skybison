@@ -202,8 +202,8 @@ Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
   Handle<List> list(&scope, *list_or_error);
   for (word i = 0; i < list->allocated(); i++) {
     Handle<Object> item(&scope, list->at(i));
-    if (Boolean::cast(Interpreter::compareOperation(
-                          thread, frame, CompareOp::EQ, item, value))
+    if (Boolean::cast(Interpreter::compareOperation(thread, frame,
+                                                    CompareOp::EQ, item, value))
             ->value()) {
       thread->runtime()->listPop(list, i);
       return None::object();
@@ -212,4 +212,4 @@ Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
   return thread->throwValueErrorFromCString("list.remove(x) x not in list");
 }
 
-} // namespace python
+}  // namespace python

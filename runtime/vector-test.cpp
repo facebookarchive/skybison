@@ -140,12 +140,8 @@ class TestStatefulAllocator {
     last_alloc_ = reinterpret_cast<T*>(std::malloc(n));
     return last_alloc_;
   }
-  void deallocate(T* p, size_t) {
-    std::free(p);
-  }
-  T* lastAlloc() {
-    return last_alloc_;
-  }
+  void deallocate(T* p, size_t) { std::free(p); }
+  T* lastAlloc() { return last_alloc_; }
   T* last_alloc_;
 };
 
@@ -158,4 +154,4 @@ TEST(VectorTest, EmptyBaseOptimization) {
   EXPECT_EQ(static_cast<size_t>(40), sizeof(vector3));
 }
 
-} // namespace python
+}  // namespace python

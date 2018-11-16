@@ -16,4 +16,4 @@ Object* builtinDoubleLt(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs);
 Object* builtinDoubleSub(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

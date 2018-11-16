@@ -64,4 +64,4 @@ TEST(TrackedAllocationTest, RemoveTrackedAllocation) {
   EXPECT_EQ(nullptr, *runtime.trackedAllocations());
 }
 
-} // namespace python
+}  // namespace python

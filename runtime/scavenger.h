@@ -26,9 +26,7 @@ class Scavenger {
   explicit Scavenger(Runtime* runtime);
   ~Scavenger();
 
-  ScavengeVisitor* visitor() {
-    return &visitor_;
-  }
+  ScavengeVisitor* visitor() { return &visitor_; }
 
   Object* scavenge();
 
@@ -55,4 +53,4 @@ class Scavenger {
   DISALLOW_COPY_AND_ASSIGN(Scavenger);
 };
 
-} // namespace python
+}  // namespace python

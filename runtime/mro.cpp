@@ -3,10 +3,9 @@
 
 namespace python {
 
-static word populateMergeLists(
-    const Handle<ObjectArray>& merge_lists,
-    const Handle<ObjectArray>& parents,
-    Vector<word>* merge_list_indices /* out */) {
+static word populateMergeLists(const Handle<ObjectArray>& merge_lists,
+                               const Handle<ObjectArray>& parents,
+                               Vector<word>* merge_list_indices /* out */) {
   HandleScope scope;
   // MROs contain at least the class itself, and Object.
   word new_mro_length = 2;
@@ -20,15 +19,13 @@ static word populateMergeLists(
   }
   merge_lists->atPut(parents->length(), *parents);
   merge_list_indices->push_back(0);
-  new_mro_length -= parents->length(); // all parent MROs end with Object.
+  new_mro_length -= parents->length();  // all parent MROs end with Object.
   return new_mro_length;
 }
 
 // Returns true if there is an i such that mro->at(i) == cls, i > head_idx.
-static bool tailContains(
-    const Handle<ObjectArray>& mro,
-    const Handle<Object>& cls,
-    word head_idx) {
+static bool tailContains(const Handle<ObjectArray>& mro,
+                         const Handle<Object>& cls, word head_idx) {
   auto const len = mro->length();
   if (head_idx >= len) {
     return false;
@@ -44,9 +41,8 @@ static bool tailContains(
 // Looks for a head class in merge_lists (i.e. the class indicated by the
 // corresponding index in merge_list_indices) which does not appear in any of
 // the merge_lists at a position *after* the head class of that list.
-static Object* findNext(
-    const Handle<ObjectArray>& merge_lists,
-    const Vector<word>& merge_list_indices) {
+static Object* findNext(const Handle<ObjectArray>& merge_lists,
+                        const Vector<word>& merge_list_indices) {
   HandleScope scope;
   for (word i = 0; i < merge_list_indices.size(); i++) {
     auto cur_idx = merge_list_indices[i];
@@ -75,10 +71,8 @@ static Object* findNext(
   return Error::object();
 }
 
-Object* computeMro(
-    Thread* thread,
-    const Handle<Class>& klass,
-    const Handle<ObjectArray>& parents) {
+Object* computeMro(Thread* thread, const Handle<Class>& klass,
+                   const Handle<ObjectArray>& parents) {
   Runtime* runtime = thread->runtime();
   HandleScope scope;
 
@@ -146,4 +140,4 @@ Object* computeMro(
   return *ret_mro;
 }
 
-} // namespace python
+}  // namespace python

@@ -16,13 +16,9 @@ class Heap {
   bool contains(void* address);
   bool verify();
 
-  Space* space() {
-    return space_;
-  }
+  Space* space() { return space_; }
 
-  void setSpace(Space* new_space) {
-    space_ = new_space;
-  }
+  void setSpace(Space* new_space) { space_ = new_space; }
 
   Object* createBoundMethod();
 
@@ -84,4 +80,4 @@ class Heap {
   Space* space_;
 };
 
-} // namespace python
+}  // namespace python

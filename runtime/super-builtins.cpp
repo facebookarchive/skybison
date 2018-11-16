@@ -92,4 +92,4 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   return *super;
 }
 
-} // namespace python
+}  // namespace python

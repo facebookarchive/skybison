@@ -131,9 +131,7 @@ class Symbols {
   ~Symbols();
 
 #define DEFINE_SYMBOL_ACCESSOR(symbol, value)                                  \
-  Object* symbol() {                                                           \
-    return at(SymbolId::k##symbol);                                            \
-  }
+  Object* symbol() { return at(SymbolId::k##symbol); }
   FOREACH_SYMBOL(DEFINE_SYMBOL_ACCESSOR)
 #undef DEFINE_SYMBOL_ACCESSOR
 
@@ -152,4 +150,4 @@ class Symbols {
   Object** symbols_;
 };
 
-} // namespace python
+}  // namespace python

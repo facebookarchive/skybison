@@ -147,17 +147,16 @@ a = super()
 )";
 
   Runtime runtime;
-  ASSERT_DEATH(
-      runtime.runFromCString(src),
-      "aborting due to pending exception: super\\(\\): no arguments");
+  ASSERT_DEATH(runtime.runFromCString(src),
+               "aborting due to pending exception: super\\(\\): no arguments");
   const char* src1 = R"(
 def f(a):
     super()
 f(1)
 )";
-  ASSERT_DEATH(
-      runtime.runFromCString(src1),
-      "aborting due to pending exception: super\\(\\): __class__ cell not found");
+  ASSERT_DEATH(runtime.runFromCString(src1),
+               "aborting due to pending exception: super\\(\\): __class__ cell "
+               "not found");
 }
 
-} // namespace python
+}  // namespace python

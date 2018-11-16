@@ -30,7 +30,8 @@ TEST(ThreadTest, RunEmptyFunction) {
       "\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x40\x00\x00\x00\x73\x04\x00"
       "\x00\x00\x64\x00\x53\x00\x29\x01\x4E\xA9\x00\x72\x01\x00\x00\x00\x72\x01"
       "\x00\x00\x00\x72\x01\x00\x00\x00\xFA\x07\x70\x61\x73\x73\x2E\x70\x79\xDA"
-      "\x08\x3C\x6D\x6F\x64\x75\x6C\x65\x3E\x01\x00\x00\x00\x73\x00\x00\x00\x00";
+      "\x08\x3C\x6D\x6F\x64\x75\x6C\x65\x3E\x01\x00\x00\x00\x73\x00\x00\x00"
+      "\x00";
   Marshal::Reader reader(&scope, &runtime, buffer);
 
   int32 magic = reader.readLong();
@@ -46,7 +47,7 @@ TEST(ThreadTest, RunEmptyFunction) {
 
   Thread thread(1 * KiB);
   Object* result = thread.run(code);
-  ASSERT_EQ(result, None::object()); // returns None
+  ASSERT_EQ(result, None::object());  // returns None
 }
 
 TEST(ThreadTest, RunHelloWorld) {
@@ -301,16 +302,8 @@ TEST(ThreadTest, CallFunction) {
   consts->atPut(1, SmallInteger::fromWord(1111));
   consts->atPut(2, SmallInteger::fromWord(2222));
   caller_code->setConsts(*consts);
-  const byte caller_bc[] = {LOAD_CONST,
-                            0,
-                            LOAD_CONST,
-                            1,
-                            LOAD_CONST,
-                            2,
-                            CALL_FUNCTION,
-                            2,
-                            RETURN_VALUE,
-                            0};
+  const byte caller_bc[] = {LOAD_CONST,    0, LOAD_CONST,   1, LOAD_CONST, 2,
+                            CALL_FUNCTION, 2, RETURN_VALUE, 0};
   caller_code->setCode(runtime.newByteArrayWithAll(caller_bc));
 
   // Execute the caller and make sure we get back the expected result
@@ -385,8 +378,8 @@ TEST(ThreadTest, ExecuteDupTopTwo) {
   Handle<Code> code(&scope, runtime.newCode());
   code->setStacksize(2);
   code->setConsts(*consts);
-  const byte bytecode[] = {
-      LOAD_CONST, 0, LOAD_CONST, 1, DUP_TOP_TWO, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST,  0, LOAD_CONST,   1,
+                           DUP_TOP_TWO, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
@@ -404,8 +397,8 @@ TEST(ThreadTest, ExecuteRotTwo) {
   Handle<Code> code(&scope, runtime.newCode());
   code->setStacksize(2);
   code->setConsts(*consts);
-  const byte bytecode[] = {
-      LOAD_CONST, 0, LOAD_CONST, 1, ROT_TWO, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,   1,
+                           ROT_TWO,    0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
@@ -424,16 +417,8 @@ TEST(ThreadTest, ExecuteRotThree) {
   Handle<Code> code(&scope, runtime.newCode());
   code->setStacksize(3);
   code->setConsts(*consts);
-  const byte bytecode[] = {LOAD_CONST,
-                           0,
-                           LOAD_CONST,
-                           1,
-                           LOAD_CONST,
-                           2,
-                           ROT_THREE,
-                           0,
-                           RETURN_VALUE,
-                           0};
+  const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,   1, LOAD_CONST, 2,
+                           ROT_THREE,  0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
@@ -451,8 +436,8 @@ TEST(ThreadTest, ExecuteJumpAbsolute) {
   Handle<Code> code(&scope, runtime.newCode());
   code->setStacksize(2);
   code->setConsts(*consts);
-  const byte bytecode[] = {
-      JUMP_ABSOLUTE, 4, LOAD_CONST, 0, LOAD_CONST, 1, RETURN_VALUE, 0};
+  const byte bytecode[] = {JUMP_ABSOLUTE, 4, LOAD_CONST,   0,
+                           LOAD_CONST,    1, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
@@ -470,8 +455,8 @@ TEST(ThreadTest, ExecuteJumpForward) {
   Handle<Code> code(&scope, runtime.newCode());
   code->setStacksize(2);
   code->setConsts(*consts);
-  const byte bytecode[] = {
-      JUMP_FORWARD, 2, LOAD_CONST, 0, LOAD_CONST, 1, RETURN_VALUE, 0};
+  const byte bytecode[] = {JUMP_FORWARD, 2, LOAD_CONST,   0,
+                           LOAD_CONST,   1, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
@@ -488,8 +473,8 @@ TEST(ThreadTest, ExecuteStoreLoadFast) {
   consts->atPut(0, SmallInteger::fromWord(1111));
   code->setConsts(*consts);
   code->setNlocals(2);
-  const byte bytecode[] = {
-      LOAD_CONST, 0, STORE_FAST, 1, LOAD_FAST, 1, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST, 0, STORE_FAST,   1,
+                           LOAD_FAST,  1, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Object* result = Thread::currentThread()->run(*code);
@@ -537,39 +522,36 @@ static std::string TestName(::testing::TestParamInfo<TestData> info) {
   return info.param.name;
 }
 
-TestData kFastGlobalTests[] = {{"LoadGlobal",
-                                "1\n",
-                                R"(
+TestData kFastGlobalTests[] = {
+    {"LoadGlobal", "1\n",
+     R"(
 a = 1
 def f():
   print(a)
 f()
 )",
-                                false},
+     false},
 
-                               {"LoadGlobalFromBuiltin",
-                                "True\n",
-                                R"(
+    {"LoadGlobalFromBuiltin", "True\n",
+     R"(
 class A(): pass
 a = A()
 def f():
   print(isinstance(a, A))
 f()
 )",
-                                false},
+     false},
 
-                               {"LoadGlobalUnbound",
-                                ".*Unbound Globals.*",
-                                R"(
+    {"LoadGlobalUnbound", ".*Unbound Globals.*",
+     R"(
 def f():
   print(a)
 f()
 )",
-                                true},
+     true},
 
-                               {"StoreGlobal",
-                                "2\n2\n",
-                                R"(
+    {"StoreGlobal", "2\n2\n",
+     R"(
 def f():
   global a
   a = 2
@@ -577,22 +559,20 @@ def f():
 f()
 print(a)
 )",
-                                false},
+     false},
 
-                               {"StoreGlobalShadowBuiltin",
-                                "2\n",
-                                R"(
+    {"StoreGlobalShadowBuiltin", "2\n",
+     R"(
 def f():
   global isinstance
   isinstance = 2
 f()
 print(isinstance)
 )",
-                                false},
+     false},
 
-                               {"DeleteGlobal",
-                                "True\nTrue\n",
-                                R"(
+    {"DeleteGlobal", "True\nTrue\n",
+     R"(
 class A(): pass
 a = A()
 def f():
@@ -603,27 +583,25 @@ def f():
 f()
 print(isinstance(a, A))
 )",
-                                false},
+     false},
 
-                               {"DeleteGlobalUnbound",
-                                ".*Unbound Globals.*",
-                                R"(
+    {"DeleteGlobalUnbound", ".*Unbound Globals.*",
+     R"(
 def f():
   global a
   del a
 f()
 )",
-                                true},
+     true},
 
-                               {"DeleteGlobalBuiltinUnbound",
-                                ".*Unbound Globals.*",
-                                R"(
+    {"DeleteGlobalBuiltinUnbound", ".*Unbound Globals.*",
+     R"(
 def f():
   global isinstance
   del isinstance
 f()
 )",
-                                true}
+     true}
 
 };
 
@@ -640,11 +618,8 @@ TEST_P(GlobalsTest, FastGlobal) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(
-    FastGlobal,
-    GlobalsTest,
-    ::testing::ValuesIn(kFastGlobalTests),
-    TestName);
+INSTANTIATE_TEST_CASE_P(FastGlobal, GlobalsTest,
+                        ::testing::ValuesIn(kFastGlobalTests), TestName);
 
 TEST(ThreadTest, StoreGlobalCreateValueCell) {
   Runtime runtime;
@@ -661,8 +636,8 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   names->atPut(0, *key);
   code->setNames(*names);
 
-  const byte bytecode[] = {
-      LOAD_CONST, 0, STORE_GLOBAL, 0, LOAD_GLOBAL, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST,  0, STORE_GLOBAL, 0,
+                           LOAD_GLOBAL, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
@@ -695,8 +670,8 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   names->atPut(0, *key);
   code->setNames(*names);
 
-  const byte bytecode[] = {
-      LOAD_CONST, 0, STORE_GLOBAL, 0, LOAD_GLOBAL, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST,  0, STORE_GLOBAL, 0,
+                           LOAD_GLOBAL, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
@@ -735,8 +710,8 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   names->atPut(0, *key);
   code->setNames(*names);
 
-  const byte bytecode[] = {
-      LOAD_CONST, 0, STORE_NAME, 0, LOAD_NAME, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST, 0, STORE_NAME,   0,
+                           LOAD_NAME,  0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
@@ -780,7 +755,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   frame->setGlobals(*globals);
   // This should be a no-op because there are no loads or stores to globals.
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
-  frame->setImplicitGlobals(*globals); // simulate module body
+  frame->setImplicitGlobals(*globals);  // simulate module body
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
@@ -804,8 +779,8 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
   names->atPut(0, *key);
   code->setNames(*names);
 
-  const byte bytecode[] = {
-      LOAD_CONST, 0, STORE_GLOBAL, 0, LOAD_NAME, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
+                           LOAD_NAME,  0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Handle<Dictionary> globals(&scope, runtime.newDictionary());
@@ -816,12 +791,12 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
   frame->setBuiltins(*builtins);
   frame->setGlobals(*globals);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
-  frame->setImplicitGlobals(*globals); // simulate module body
+  frame->setImplicitGlobals(*globals);  // simulate module body
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
   Handle<Object> val0(
-      &scope, runtime.dictionaryAt(globals, key)); // 2-level indirection
+      &scope, runtime.dictionaryAt(globals, key));  // 2-level indirection
   ASSERT_TRUE(val0->isValueCell());
   Handle<Object> val1(&scope, ValueCell::cast(*val0));
   ASSERT_TRUE(val1->isValueCell());
@@ -843,8 +818,8 @@ TEST(ThreadTest, LoadNameInClassBodyFromGlobal) {
   names->atPut(0, *key);
   code->setNames(*names);
 
-  const byte bytecode[] = {
-      LOAD_CONST, 0, STORE_GLOBAL, 0, LOAD_NAME, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
+                           LOAD_NAME,  0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Handle<Dictionary> globals(&scope, runtime.newDictionary());
@@ -857,12 +832,12 @@ TEST(ThreadTest, LoadNameInClassBodyFromGlobal) {
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
   Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
-  frame->setImplicitGlobals(*implicit_globals); // simulate cls body
+  frame->setImplicitGlobals(*implicit_globals);  // simulate cls body
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
   Handle<Object> val0(
-      &scope, runtime.dictionaryAt(globals, key)); // 2-level indirection
+      &scope, runtime.dictionaryAt(globals, key));  // 2-level indirection
   ASSERT_TRUE(val0->isValueCell());
   Handle<Object> val1(&scope, ValueCell::cast(*val0));
   ASSERT_TRUE(val1->isValueCell());
@@ -884,8 +859,8 @@ TEST(ThreadTest, LoadNameInClassBodyFromImplicitGlobals) {
   names->atPut(0, *key);
   code->setNames(*names);
 
-  const byte bytecode[] = {
-      LOAD_CONST, 0, STORE_NAME, 0, LOAD_NAME, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST, 0, STORE_NAME,   0,
+                           LOAD_NAME,  0, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bytecode));
 
   Handle<Dictionary> globals(&scope, runtime.newDictionary());
@@ -898,12 +873,12 @@ TEST(ThreadTest, LoadNameInClassBodyFromImplicitGlobals) {
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
   Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
-  frame->setImplicitGlobals(*implicit_globals); // simulate cls body
+  frame->setImplicitGlobals(*implicit_globals);  // simulate cls body
 
   Handle<Object> result(&scope, Interpreter::execute(thread, frame));
 
   Handle<Object> val(&scope, runtime.dictionaryAt(implicit_globals, key));
-  ASSERT_TRUE(val->isValueCell()); // 1-level indirection
+  ASSERT_TRUE(val->isValueCell());  // 1-level indirection
   EXPECT_EQ(*result, ValueCell::cast(*val)->value());
 }
 
@@ -925,18 +900,8 @@ TEST(ThreadTest, MakeFunction) {
   names->atPut(0, runtime.newStringFromCString("hello"));
   module->setNames(*names);
 
-  const byte bc[] = {LOAD_CONST,
-                     0,
-                     LOAD_CONST,
-                     1,
-                     MAKE_FUNCTION,
-                     0,
-                     STORE_NAME,
-                     0,
-                     LOAD_CONST,
-                     2,
-                     RETURN_VALUE,
-                     0};
+  const byte bc[] = {LOAD_CONST, 0, LOAD_CONST, 1, MAKE_FUNCTION, 0,
+                     STORE_NAME, 0, LOAD_CONST, 2, RETURN_VALUE,  0};
   module->setCode(runtime.newByteArrayWithAll(bc));
   code->setCode(runtime.newByteArrayWithAll(bc));
   code->setNames(*names);
@@ -975,16 +940,8 @@ TEST(ThreadTest, BuildList) {
   consts->atPut(2, None::object());
   code->setConsts(*consts);
 
-  const byte bc[] = {LOAD_CONST,
-                     0,
-                     LOAD_CONST,
-                     1,
-                     LOAD_CONST,
-                     2,
-                     BUILD_LIST,
-                     3,
-                     RETURN_VALUE,
-                     0};
+  const byte bc[] = {LOAD_CONST, 0, LOAD_CONST,   1, LOAD_CONST, 2,
+                     BUILD_LIST, 3, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Object* result = Thread::currentThread()->run(*code);
@@ -1024,11 +981,11 @@ TEST(ThreadTest, BuildSetWithOneItem) {
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
   Handle<Object> smi(&scope, SmallInteger::fromWord(111));
   consts->atPut(0, *smi);
-  consts->atPut(1, *smi); // dup
+  consts->atPut(1, *smi);  // dup
   code->setConsts(*consts);
 
-  const byte bc[] = {
-      LOAD_CONST, 0, LOAD_CONST, 1, BUILD_SET, 2, RETURN_VALUE, 0};
+  const byte bc[] = {LOAD_CONST, 0, LOAD_CONST,   1,
+                     BUILD_SET,  2, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Object* result = Thread::currentThread()->run(*code);
@@ -1049,7 +1006,7 @@ TEST(ThreadTest, BuildSet) {
 
   Handle<Object> smi(&scope, SmallInteger::fromWord(111));
   consts->atPut(0, *smi);
-  consts->atPut(1, *smi); // dup
+  consts->atPut(1, *smi);  // dup
 
   Handle<Object> str(&scope, runtime.newStringFromCString("qqq"));
   consts->atPut(2, *str);
@@ -1059,18 +1016,8 @@ TEST(ThreadTest, BuildSet) {
 
   code->setConsts(*consts);
 
-  const byte bc[] = {LOAD_CONST,
-                     0,
-                     LOAD_CONST,
-                     1,
-                     LOAD_CONST,
-                     2,
-                     LOAD_CONST,
-                     3,
-                     BUILD_SET,
-                     4,
-                     RETURN_VALUE,
-                     0};
+  const byte bc[] = {LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST,   2,
+                     LOAD_CONST, 3, BUILD_SET,  4, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Object* result = Thread::currentThread()->run(*code);
@@ -1156,18 +1103,8 @@ TEST(ThreadTest, PopJumpIfFalse) {
   //   if x:
   //     return 1111
   //   return 2222
-  const byte bc[] = {LOAD_CONST,
-                     0,
-                     POP_JUMP_IF_FALSE,
-                     8,
-                     LOAD_CONST,
-                     1,
-                     RETURN_VALUE,
-                     0,
-                     LOAD_CONST,
-                     2,
-                     RETURN_VALUE,
-                     0};
+  const byte bc[] = {LOAD_CONST,   0, POP_JUMP_IF_FALSE, 8, LOAD_CONST,   1,
+                     RETURN_VALUE, 0, LOAD_CONST,        2, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   // Test when the condition evaluates to a truthy value
@@ -1196,18 +1133,8 @@ TEST(ThreadTest, PopJumpIfTrue) {
   //   if not x:
   //     return 1111
   //   return 2222
-  const byte bc[] = {LOAD_CONST,
-                     0,
-                     POP_JUMP_IF_TRUE,
-                     8,
-                     LOAD_CONST,
-                     1,
-                     RETURN_VALUE,
-                     0,
-                     LOAD_CONST,
-                     2,
-                     RETURN_VALUE,
-                     0};
+  const byte bc[] = {LOAD_CONST,   0, POP_JUMP_IF_TRUE, 8, LOAD_CONST,   1,
+                     RETURN_VALUE, 0, LOAD_CONST,       2, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   // Test when the condition evaluates to a falsey value
@@ -1231,8 +1158,8 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
   consts->atPut(0, Boolean::falseObj());
   consts->atPut(1, SmallInteger::fromWord(1111));
   code->setConsts(*consts);
-  const byte bc[] = {
-      LOAD_CONST, 0, JUMP_IF_FALSE_OR_POP, 6, LOAD_CONST, 1, RETURN_VALUE, 0};
+  const byte bc[] = {LOAD_CONST, 0, JUMP_IF_FALSE_OR_POP, 6,
+                     LOAD_CONST, 1, RETURN_VALUE,         0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   // If the condition is false, we should return the top of the stack, which is
@@ -1259,8 +1186,8 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
   consts->atPut(0, Boolean::trueObj());
   consts->atPut(1, SmallInteger::fromWord(1111));
   code->setConsts(*consts);
-  const byte bc[] = {
-      LOAD_CONST, 0, JUMP_IF_TRUE_OR_POP, 6, LOAD_CONST, 1, RETURN_VALUE, 0};
+  const byte bc[] = {LOAD_CONST, 0, JUMP_IF_TRUE_OR_POP, 6,
+                     LOAD_CONST, 1, RETURN_VALUE,        0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   // If the condition is true, we should return the top of the stack, which is
@@ -1323,7 +1250,7 @@ class C:
 )";
 
   Object* result = runtime.runFromCString(src);
-  ASSERT_EQ(result, None::object()); // returns None
+  ASSERT_EQ(result, None::object());  // returns None
 
   Handle<Dictionary> dict(&scope, getMainModuleDict(&runtime));
 
@@ -1352,7 +1279,7 @@ class C:
 )";
 
   Object* result = runtime.runFromCString(src);
-  ASSERT_EQ(result, None::object()); // returns None
+  ASSERT_EQ(result, None::object());  // returns None
 
   Handle<Module> mod(&scope, findModule(&runtime, "__main__"));
   ASSERT_TRUE(mod->isModule());
@@ -1400,11 +1327,9 @@ TEST(ThreadDeathTest, NativeExceptions) {
   HandleScope scope;
 
   Handle<Function> fn(
-      &scope,
-      runtime.newBuiltinFunction(
-          nativeTrampoline<nativeExceptionTest>,
-          unimplementedTrampoline,
-          unimplementedTrampoline));
+      &scope, runtime.newBuiltinFunction(nativeTrampoline<nativeExceptionTest>,
+                                         unimplementedTrampoline,
+                                         unimplementedTrampoline));
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
@@ -1417,9 +1342,8 @@ TEST(ThreadDeathTest, NativeExceptions) {
   code->setCode(runtime.newByteArrayWithAll(bytecode));
   code->setStacksize(1);
 
-  ASSERT_DEATH(
-      Thread::currentThread()->run(*code),
-      "aborting due to pending exception: test exception");
+  ASSERT_DEATH(Thread::currentThread()->run(*code),
+               "aborting due to pending exception: test exception");
 }
 
 // MRO tests
@@ -1431,15 +1355,15 @@ static String* className(Object* obj) {
   return *name;
 }
 
-static Object*
-getMro(Runtime* runtime, const char* src, const char* desired_class) {
+static Object* getMro(Runtime* runtime, const char* src,
+                      const char* desired_class) {
   HandleScope scope;
 
   Handle<Object> result(&scope, runtime->runFromCString(src));
 
   Handle<Dictionary> mod_dict(&scope, getMainModuleDict(runtime));
-  Handle<Object> class_name(
-      &scope, runtime->newStringFromCString(desired_class));
+  Handle<Object> class_name(&scope,
+                            runtime->newStringFromCString(desired_class));
 
   Handle<Object> value(&scope, runtime->dictionaryAt(mod_dict, class_name));
   Handle<Class> cls(&scope, ValueCell::cast(*value)->value());
@@ -1533,8 +1457,8 @@ class B(A): pass
 class C(A, B): pass
 )";
 
-  EXPECT_DEATH(
-      runtime.runFromCString(src), "consistent method resolution order");
+  EXPECT_DEATH(runtime.runFromCString(src),
+               "consistent method resolution order");
 }
 
 // iteration
@@ -1564,8 +1488,7 @@ for i in range(42,100,-1):
 
 TestData kManipulateLocalsTests[] = {
     // Load an argument when no local variables are present
-    {"LoadSingleArg",
-     "1\n",
+    {"LoadSingleArg", "1\n",
      R"(
 def test(x):
   print(x)
@@ -1574,8 +1497,7 @@ test(1)
      false},
 
     // Load and store an argument when no local variables are present
-    {"LoadStoreSingleArg",
-     "1\n2\n",
+    {"LoadStoreSingleArg", "1\n2\n",
      R"(
 def test(x):
   print(x)
@@ -1586,8 +1508,7 @@ test(1)
      false},
 
     // Load multiple arguments when no local variables are present
-    {"LoadManyArgs",
-     "1 2 3\n",
+    {"LoadManyArgs", "1 2 3\n",
      R"(
 def test(x, y, z):
   print(x, y, z)
@@ -1596,8 +1517,7 @@ test(1, 2, 3)
      false},
 
     // Load/store multiple arguments when no local variables are present
-    {"LoadStoreManyArgs",
-     "1 2 3\n3 2 1\n",
+    {"LoadStoreManyArgs", "1 2 3\n3 2 1\n",
      R"(
 def test(x, y, z):
   print(x, y, z)
@@ -1609,8 +1529,7 @@ test(1, 2, 3)
      false},
 
     // Load a single local variable when no arguments are present
-    {"LoadSingleLocalVar",
-     "1\n",
+    {"LoadSingleLocalVar", "1\n",
      R"(
 def test():
   x = 1
@@ -1620,8 +1539,7 @@ test()
      false},
 
     // Load multiple local variables when no arguments are present
-    {"LoadManyLocalVars",
-     "1 2 3\n",
+    {"LoadManyLocalVars", "1 2 3\n",
      R"(
 def test():
   x = 1
@@ -1633,8 +1551,7 @@ test()
      false},
 
     // Mixed local var and arg usage
-    {"MixedLocals",
-     "1 2 3\n3 2 1\n",
+    {"MixedLocals", "1 2 3\n3 2 1\n",
      R"(
 def test(x, y):
   z = 3
@@ -1656,17 +1573,13 @@ TEST_P(LocalsTest, ManipulateLocals) {
   EXPECT_EQ(output, data.expected_output);
 }
 
-INSTANTIATE_TEST_CASE_P(
-    ManipulateLocals,
-    LocalsTest,
-    ::testing::ValuesIn(kManipulateLocalsTests),
-    TestName);
+INSTANTIATE_TEST_CASE_P(ManipulateLocals, LocalsTest,
+                        ::testing::ValuesIn(kManipulateLocalsTests), TestName);
 
 TEST(ThreadDeathTest, RaiseVarargs) {
   Runtime runtime;
-  ASSERT_DEATH(
-      runtime.runFromCString("raise 1"),
-      "unimplemented: bytecode 'RAISE_VARARGS'");
+  ASSERT_DEATH(runtime.runFromCString("raise 1"),
+               "unimplemented: bytecode 'RAISE_VARARGS'");
 }
 
 TEST(ThreadTest, InheritFromObject) {
@@ -1728,8 +1641,8 @@ import hello
 hello.say_hello()
 )";
 
-  EXPECT_DEATH(
-      runtime.runFromCString(main_src), "importModule is unimplemented");
+  EXPECT_DEATH(runtime.runFromCString(main_src),
+               "importModule is unimplemented");
 }
 
 TEST(ThreadDeathTest, ImportMissingAttributeTest) {
@@ -1955,9 +1868,9 @@ print(x)
 )";
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(
-      output,
-      "Python is an interpreted high-level programming language for general-purpose programming.\n");
+  EXPECT_EQ(output,
+            "Python is an interpreted high-level programming language for "
+            "general-purpose programming.\n");
 }
 
 TEST(TestThread, BuildTupleUnpack) {
@@ -2088,8 +2001,8 @@ TEST(BuildString, buildStringMultiSmall) {
   consts->atPut(1, *str1);
   code->setConsts(*consts);
 
-  const byte bc[] = {
-      LOAD_CONST, 0, LOAD_CONST, 1, BUILD_STRING, 2, RETURN_VALUE, 0};
+  const byte bc[] = {LOAD_CONST,   0, LOAD_CONST,   1,
+                     BUILD_STRING, 2, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Object* obj = Thread::currentThread()->run(*code);
@@ -2114,16 +2027,8 @@ TEST(BuildString, buildStringMultiLarge) {
   consts->atPut(2, *str2);
   code->setConsts(*consts);
 
-  const byte bc[] = {LOAD_CONST,
-                     0,
-                     LOAD_CONST,
-                     1,
-                     LOAD_CONST,
-                     2,
-                     BUILD_STRING,
-                     3,
-                     RETURN_VALUE,
-                     0};
+  const byte bc[] = {LOAD_CONST,   0, LOAD_CONST,   1, LOAD_CONST, 2,
+                     BUILD_STRING, 3, RETURN_VALUE, 0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
   Object* obj = Thread::currentThread()->run(*code);
@@ -2410,7 +2315,7 @@ print(len(b))
   EXPECT_EQ(output4, "0\n");
 }
 
-TEST(BuildSlice, noneSliceCopyListComp) { // pystone
+TEST(BuildSlice, noneSliceCopyListComp) {  // pystone
   const char* src = R"(
 a = [1, 2, 3]
 b = [x[:] for x in [a] * 2]
@@ -2424,7 +2329,7 @@ print(c, len(b), len(b1), b11, b12, b13)
   EXPECT_EQ(output, "False 2 3 1 2 3\n");
 }
 
-TEST(ThreadTest, SliceNoneCopyListCompPrint) { // based on pystone.py
+TEST(ThreadTest, SliceNoneCopyListCompPrint) {  // based on pystone.py
   const char* src = R"(
 Array1Glob = [0]*5
 Array2Glob = [x[:] for x in [Array1Glob]*5]
@@ -2482,16 +2387,16 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   code->setNames(*names);
 
   // see python code in BreakLoop.whileLoop (sans print)
-  const byte bc[] = {LOAD_CONST,        0, // 0
-                     STORE_NAME,        0, // a
-                     SETUP_LOOP,        22, LOAD_NAME,  0, // a
-                     LOAD_CONST,        1, // 1
-                     BINARY_ADD,        0,  STORE_NAME, 0, // a
-                     LOAD_NAME,         0, // a
-                     LOAD_CONST,        2, // 3
-                     COMPARE_OP,        2, // ==
+  const byte bc[] = {LOAD_CONST,        0,                  // 0
+                     STORE_NAME,        0,                  // a
+                     SETUP_LOOP,        22, LOAD_NAME,  0,  // a
+                     LOAD_CONST,        1,                  // 1
+                     BINARY_ADD,        0,  STORE_NAME, 0,  // a
+                     LOAD_NAME,         0,                  // a
+                     LOAD_CONST,        2,                  // 3
+                     COMPARE_OP,        2,                  // ==
                      POP_JUMP_IF_FALSE, 6,  BREAK_LOOP, 0, JUMP_ABSOLUTE, 6,
-                     POP_BLOCK,         0,  LOAD_CONST, 3, // None
+                     POP_BLOCK,         0,  LOAD_CONST, 3,  // None
                      RETURN_VALUE,      0};
   code->setCode(runtime.newByteArrayWithAll(bc));
 
@@ -2584,32 +2489,32 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   //          continue
   //      s += cnt
   //  return s
-  const byte bc[] = {LOAD_CONST,        0, // 0
-                     STORE_FAST,        0, // (cnt)
+  const byte bc[] = {LOAD_CONST,        0,  // 0
+                     STORE_FAST,        0,  // (cnt)
 
-                     LOAD_CONST,        0, // 0
-                     STORE_FAST,        1, // s
+                     LOAD_CONST,        0,  // 0
+                     STORE_FAST,        1,  // s
 
-                     SETUP_LOOP,        38, // (to 48)
-                     LOAD_FAST,         0, // (cnt)
-                     LOAD_CONST,        1, // (4)
-                     COMPARE_OP,        0, // (<)
+                     SETUP_LOOP,        38,  // (to 48)
+                     LOAD_FAST,         0,   // (cnt)
+                     LOAD_CONST,        1,   // (4)
+                     COMPARE_OP,        0,   // (<)
                      POP_JUMP_IF_FALSE, 46,
 
-                     LOAD_FAST,         0, // (cnt)
-                     LOAD_CONST,        2, // (1)
-                     INPLACE_ADD,       0,  STORE_FAST,   0, // (cnt)
+                     LOAD_FAST,         0,                    // (cnt)
+                     LOAD_CONST,        2,                    // (1)
+                     INPLACE_ADD,       0,  STORE_FAST,   0,  // (cnt)
 
-                     LOAD_FAST,         0, // (cnt)
-                     LOAD_CONST,        3, // (3)
-                     COMPARE_OP,        2, // (==)
+                     LOAD_FAST,         0,  // (cnt)
+                     LOAD_CONST,        3,  // (3)
+                     COMPARE_OP,        2,  // (==)
                      POP_JUMP_IF_FALSE, 36,
 
                      CONTINUE_LOOP,     10,
 
-                     LOAD_FAST,         1, // (s)
-                     LOAD_FAST,         0, // (cnt)
-                     INPLACE_ADD,       0,  STORE_FAST,   1, // (s)
+                     LOAD_FAST,         1,                    // (s)
+                     LOAD_FAST,         0,                    // (cnt)
+                     INPLACE_ADD,       0,  STORE_FAST,   1,  // (s)
                      JUMP_ABSOLUTE,     10, POP_BLOCK,    0,
 
                      LOAD_FAST,         1,  RETURN_VALUE, 0};
@@ -2631,7 +2536,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   EXPECT_EQ(SmallInteger::cast(*result)->value(), 7);
 };
 
-TEST(ThreadTest, Func2TestPyStone) { // mimic pystone.py Func2
+TEST(ThreadTest, Func2TestPyStone) {  // mimic pystone.py Func2
   const char* src = R"(
 def f1(x, y):
   return x + y
@@ -2644,7 +2549,7 @@ print(f2())
   EXPECT_EQ(output, "3\n");
 }
 
-TEST(ThreadTest, BinSubscrString) { // pystone dependency
+TEST(ThreadTest, BinSubscrString) {  // pystone dependency
   const char* src = R"(
 a = 'Hello'
 print(a[0],a[1],a[2],a[3],a[4])
@@ -2654,7 +2559,7 @@ print(a[0],a[1],a[2],a[3],a[4])
   EXPECT_EQ(output, "H e l l o\n");
 }
 
-TEST(ThreadTest, SetupExceptNoOp) { // pystone dependency
+TEST(ThreadTest, SetupExceptNoOp) {  // pystone dependency
   const char* src = R"(
 def f(x):
   try: print(x)
@@ -2876,4 +2781,4 @@ class C:
   EXPECT_EQ(SmallInteger::cast(*two)->value(), 2);
 }
 
-} // namespace python
+}  // namespace python

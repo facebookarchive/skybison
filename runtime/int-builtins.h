@@ -21,4 +21,4 @@ Object* builtinSmallIntegerNeg(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerPos(Thread* thread, Frame* frame, word nargs);
 Object* builtinSmallIntegerSub(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

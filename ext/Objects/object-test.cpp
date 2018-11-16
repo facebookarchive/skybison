@@ -25,4 +25,4 @@ TEST(Object, PyNoneIdentityIsEqual) {
   EXPECT_EQ(none1, none2);
 }
 
-} // namespace python
+}  // namespace python

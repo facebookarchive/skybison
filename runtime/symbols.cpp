@@ -22,9 +22,7 @@ Symbols::Symbols(Runtime* runtime) {
 #undef ADD_SYMBOL
 }
 
-Symbols::~Symbols() {
-  delete[] symbols_;
-}
+Symbols::~Symbols() { delete[] symbols_; }
 
 void Symbols::visit(PointerVisitor* visitor) {
   for (word i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
@@ -38,4 +36,4 @@ const char* Symbols::literalAt(SymbolId id) {
   return kPredefinedSymbolLiterals[index];
 }
 
-} // namespace python
+}  // namespace python

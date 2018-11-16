@@ -51,4 +51,4 @@ print(spam.CONST)
   EXPECT_EQ(output, "5\n");
 }
 
-} // namespace python
+}  // namespace python

@@ -11,13 +11,9 @@ namespace python {
 
 class RememberingVisitor : public PointerVisitor {
  public:
-  virtual void visitPointer(Object** pointer) {
-    pointers_.push_back(*pointer);
-  }
+  virtual void visitPointer(Object** pointer) { pointers_.push_back(*pointer); }
 
-  word count() {
-    return pointers_.size();
-  }
+  word count() { return pointers_.size(); }
 
   bool hasVisited(Object* object) {
     for (auto elt : pointers_) {
@@ -240,9 +236,7 @@ BENCHMARK(BM_HandleCreationDestruction);
 
 class NothingVisitor : public PointerVisitor {
  public:
-  virtual void visitPointer(Object**) {
-    visit_count++;
-  }
+  virtual void visitPointer(Object**) { visit_count++; }
 
   int visit_count = 0;
 };
@@ -268,4 +262,4 @@ static void BM_Visit(benchmark::State& state) {
 }
 BENCHMARK(BM_Visit);
 
-} // namespace python
+}  // namespace python

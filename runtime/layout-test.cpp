@@ -56,8 +56,8 @@ TEST(LayoutTest, AddNewAttributes) {
   ASSERT_FALSE(runtime.layoutFindAttribute(thread, layout, attr, &info));
 
   // Adding a new attribute should result in a new layout being created
-  Handle<Layout> layout2(
-      &scope, runtime.layoutAddAttribute(thread, layout, attr, 0));
+  Handle<Layout> layout2(&scope,
+                         runtime.layoutAddAttribute(thread, layout, attr, 0));
   ASSERT_NE(*layout, *layout2);
 
   // Should be able find the attribute as an overflow attribute in the new
@@ -69,8 +69,8 @@ TEST(LayoutTest, AddNewAttributes) {
   // Adding another attribute should transition the layout again
   Handle<Object> attr2(&scope, runtime.newStringFromCString("another_attr"));
   ASSERT_FALSE(runtime.layoutFindAttribute(thread, layout2, attr2, &info));
-  Handle<Layout> layout3(
-      &scope, runtime.layoutAddAttribute(thread, layout2, attr2, 0));
+  Handle<Layout> layout3(&scope,
+                         runtime.layoutAddAttribute(thread, layout2, attr2, 0));
   ASSERT_NE(*layout2, *layout3);
 
   // We should be able to find both attributes in the new layout
@@ -94,14 +94,14 @@ TEST(LayoutTest, AddDuplicateAttributes) {
   ASSERT_FALSE(runtime.layoutFindAttribute(thread, layout, attr, &info));
 
   // Adding a new attribute should result in a new layout being created
-  Handle<Layout> layout2(
-      &scope, runtime.layoutAddAttribute(thread, layout, attr, 0));
+  Handle<Layout> layout2(&scope,
+                         runtime.layoutAddAttribute(thread, layout, attr, 0));
   EXPECT_NE(*layout, *layout2);
 
   // Adding the attribute on the old layout should follow the edge and result
   // in the same layout being returned
-  Handle<Layout> layout3(
-      &scope, runtime.layoutAddAttribute(thread, layout, attr, 0));
+  Handle<Layout> layout3(&scope,
+                         runtime.layoutAddAttribute(thread, layout, attr, 0));
   EXPECT_EQ(*layout2, *layout3);
 
   // Should be able to find the attribute in the new layout
@@ -264,4 +264,4 @@ TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
   EXPECT_TRUE(info.isOverflow());
 }
 
-} // namespace python
+}  // namespace python

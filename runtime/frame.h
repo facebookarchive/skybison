@@ -55,19 +55,18 @@ class TryBlock {
   static const int kKindSize = 8;
   static const uword kKindMask = (1 << kKindSize) - 1;
 
-  static const int kHandlerOffset = kKindOffset + kKindSize; // 9
+  static const int kHandlerOffset = kKindOffset + kKindSize;  // 9
   static const int kHandlerSize = 30;
   static const uword kHandlerMask = (1 << kHandlerSize) - 1;
 
-  static const int kLevelOffset = kHandlerOffset + kHandlerSize; // 39
+  static const int kLevelOffset = kHandlerOffset + kHandlerSize;  // 39
   static const int kLevelSize = 25;
   static const uword kLevelMask = (1 << kLevelSize) - 1;
 
   static const int kSize = kLevelOffset + kLevelSize;
 
-  static_assert(
-      kSize <= kBitsPerByte * sizeof(uword),
-      "TryBlock must fit into a uword");
+  static_assert(kSize <= kBitsPerByte * sizeof(uword),
+                "TryBlock must fit into a uword");
 };
 
 // TODO: Determine maximum block stack depth when the code object is loaded and
@@ -263,9 +262,7 @@ class Arguments {
     return frame_->getLocal(n);
   }
 
-  word numArgs() const {
-    return num_args_;
-  }
+  word numArgs() const { return num_args_; }
 
  protected:
   Frame* frame_;
@@ -289,18 +286,14 @@ class KwArguments : public Arguments {
     return Error::object();
   }
 
-  word numKeywords() const {
-    return num_keywords_;
-  }
+  word numKeywords() const { return num_keywords_; }
 
  private:
   word num_keywords_;
   ObjectArray* kwnames_;
 };
 
-inline uword Frame::address() {
-  return reinterpret_cast<uword>(this);
-}
+inline uword Frame::address() { return reinterpret_cast<uword>(this); }
 
 inline Object* Frame::at(int offset) {
   return *reinterpret_cast<Object**>(address() + offset);
@@ -322,45 +315,33 @@ inline void Frame::setVirtualPC(word pc) {
   atPut(kVirtualPCOffset, SmallInteger::fromWord(pc));
 }
 
-inline Object* Frame::builtins() {
-  return at(kBuiltinsOffset);
-}
+inline Object* Frame::builtins() { return at(kBuiltinsOffset); }
 
 inline void Frame::setBuiltins(Object* builtins) {
   atPut(kBuiltinsOffset, builtins);
 }
 
-inline Object* Frame::globals() {
-  return at(kGlobalsOffset);
-}
+inline Object* Frame::globals() { return at(kGlobalsOffset); }
 
 inline void Frame::setGlobals(Object* globals) {
   atPut(kGlobalsOffset, globals);
 }
 
-inline Object* Frame::implicitGlobals() {
-  return at(kImplicitGlobalsOffset);
-}
+inline Object* Frame::implicitGlobals() { return at(kImplicitGlobalsOffset); }
 
 inline void Frame::setImplicitGlobals(Object* implicit_globals) {
   atPut(kImplicitGlobalsOffset, implicit_globals);
 }
 
-inline Object* Frame::fastGlobals() {
-  return at(kFastGlobalsOffset);
-}
+inline Object* Frame::fastGlobals() { return at(kFastGlobalsOffset); }
 
 inline void Frame::setFastGlobals(Object* fast_globals) {
   atPut(kFastGlobalsOffset, fast_globals);
 }
 
-inline Object* Frame::code() {
-  return at(kCodeOffset);
-}
+inline Object* Frame::code() { return at(kCodeOffset); }
 
-inline void Frame::setCode(Object* code) {
-  atPut(kCodeOffset, code);
-}
+inline void Frame::setCode(Object* code) { atPut(kCodeOffset, code); }
 
 inline Object** Frame::locals() {
   return reinterpret_cast<Object**>(at(kLocalsOffset));
@@ -379,8 +360,8 @@ inline void Frame::setLocal(word idx, Object* object) {
 inline void Frame::setNumLocals(word numLocals) {
   atPut(kNumLocalsOffset, SmallInteger::fromWord(numLocals));
   // Bias locals by 1 word to avoid doing so during {get,set}Local
-  Object* locals = reinterpret_cast<Object*>(
-      address() + Frame::kSize + ((numLocals - 1) * kPointerSize));
+  Object* locals = reinterpret_cast<Object*>(address() + Frame::kSize +
+                                             ((numLocals - 1) * kPointerSize));
   DCHECK(locals->isSmallInteger(), "expected small integer");
   atPut(kLocalsOffset, locals);
 }
@@ -395,9 +376,8 @@ inline Frame* Frame::previousFrame() {
 }
 
 inline void Frame::setPreviousFrame(Frame* frame) {
-  atPut(
-      kPreviousFrameOffset,
-      SmallInteger::fromWord(reinterpret_cast<uword>(frame)));
+  atPut(kPreviousFrameOffset,
+        SmallInteger::fromWord(reinterpret_cast<uword>(frame)));
 }
 
 inline Object** Frame::valueStackBase() {
@@ -410,9 +390,8 @@ inline Object** Frame::valueStackTop() {
 }
 
 inline void Frame::setValueStackTop(Object** top) {
-  atPut(
-      kValueStackTopOffset,
-      SmallInteger::fromWord(reinterpret_cast<uword>(top)));
+  atPut(kValueStackTopOffset,
+        SmallInteger::fromWord(reinterpret_cast<uword>(top)));
 }
 
 inline void Frame::pushValue(Object* value) {
@@ -422,10 +401,8 @@ inline void Frame::pushValue(Object* value) {
 }
 
 inline void Frame::insertValueAt(Object* value, word offset) {
-  DCHECK(
-      valueStackTop() + offset <= valueStackBase(),
-      "offset %ld overflows",
-      offset);
+  DCHECK(valueStackTop() + offset <= valueStackBase(), "offset %ld overflows",
+         offset);
   Object** sp = valueStackTop() - 1;
   for (word i = 0; i < offset; i++) {
     sp[i] = sp[i + 1];
@@ -435,10 +412,8 @@ inline void Frame::insertValueAt(Object* value, word offset) {
 }
 
 inline void Frame::setValueAt(Object* value, word offset) {
-  DCHECK(
-      valueStackTop() + offset < valueStackBase(),
-      "offset %ld overflows",
-      offset);
+  DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",
+         offset);
   *(valueStackTop() + offset) = value;
 }
 
@@ -450,26 +425,18 @@ inline Object* Frame::popValue() {
 }
 
 inline void Frame::dropValues(word count) {
-  DCHECK(
-      valueStackTop() + count <= valueStackBase(),
-      "count %ld overflows",
-      count);
+  DCHECK(valueStackTop() + count <= valueStackBase(), "count %ld overflows",
+         count);
   setValueStackTop(valueStackTop() + count);
 }
 
-inline Object* Frame::topValue() {
-  return peek(0);
-}
+inline Object* Frame::topValue() { return peek(0); }
 
-inline void Frame::setTopValue(Object* value) {
-  *valueStackTop() = value;
-}
+inline void Frame::setTopValue(Object* value) { *valueStackTop() = value; }
 
 inline Object* Frame::peek(word offset) {
-  DCHECK(
-      valueStackTop() + offset < valueStackBase(),
-      "offset %ld overflows",
-      offset);
+  DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",
+         offset);
   return *(valueStackTop() + offset);
 }
 
@@ -477,18 +444,14 @@ inline Function* Frame::function(word argc) {
   return Function::cast(peek(argc));
 }
 
-inline bool Frame::isSentinelFrame() {
-  return previousFrame() == nullptr;
-}
+inline bool Frame::isSentinelFrame() { return previousFrame() == nullptr; }
 
 inline void* Frame::nativeFunctionPointer() {
   DCHECK(isNativeFrame(), "not native frame");
   return Integer::cast(code())->asCPointer();
 }
 
-inline bool Frame::isNativeFrame() {
-  return code()->isInteger();
-}
+inline bool Frame::isNativeFrame() { return code()->isInteger(); }
 
 inline void Frame::makeNativeFrame(Object* fnPointerAsInt) {
   DCHECK(fnPointerAsInt->isInteger(), "expected integer");
@@ -501,9 +464,7 @@ inline Object* TryBlock::asSmallInteger() const {
   return obj;
 }
 
-inline word TryBlock::kind() const {
-  return valueBits(kKindOffset, kKindMask);
-}
+inline word TryBlock::kind() const { return valueBits(kKindOffset, kKindMask); }
 
 inline void TryBlock::setKind(word kind) {
   setValueBits(kKindOffset, kKindMask, kind);
@@ -533,9 +494,7 @@ inline void TryBlock::setValueBits(uword offset, uword mask, word value) {
   value_ |= (value & mask) << offset;
 }
 
-inline uword BlockStack::address() {
-  return reinterpret_cast<uword>(this);
-}
+inline uword BlockStack::address() { return reinterpret_cast<uword>(this); }
 
 inline Object* BlockStack::at(int offset) {
   return *reinterpret_cast<Object**>(address() + offset);
@@ -575,4 +534,4 @@ inline TryBlock BlockStack::pop() {
   return TryBlock(block);
 }
 
-} // namespace python
+}  // namespace python

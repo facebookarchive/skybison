@@ -66,4 +66,4 @@ weak = ref(a, f)
   EXPECT_EQ(WeakRef::cast(weak)->callback(), None::object());
 }
 
-} // namespace python
+}  // namespace python

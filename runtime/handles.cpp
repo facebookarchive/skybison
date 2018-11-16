@@ -4,9 +4,7 @@
 
 namespace python {
 
-Handles::Handles() {
-  scopes_.reserve(kInitialSize);
-}
+Handles::Handles() { scopes_.reserve(kInitialSize); }
 
 void Handles::visitPointers(PointerVisitor* visitor) {
   for (auto const& scope : scopes_) {
@@ -18,4 +16,4 @@ void Handles::visitPointers(PointerVisitor* visitor) {
   }
 }
 
-} // namespace python
+}  // namespace python

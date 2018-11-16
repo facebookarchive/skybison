@@ -88,9 +88,8 @@ Runtime::~Runtime() {
   delete symbols_;
 }
 
-Object* Runtime::newBoundMethod(
-    const Handle<Object>& function,
-    const Handle<Object>& self) {
+Object* Runtime::newBoundMethod(const Handle<Object>& function,
+                                const Handle<Object>& self) {
   HandleScope scope;
   Handle<BoundMethod> bound_method(&scope, heap()->createBoundMethod());
   bound_method->setFunction(*function);
@@ -98,15 +97,13 @@ Object* Runtime::newBoundMethod(
   return *bound_method;
 }
 
-Object* Runtime::newLayout() {
-  return newLayoutWithId(newLayoutId());
-}
+Object* Runtime::newLayout() { return newLayoutWithId(newLayoutId()); }
 
 Object* Runtime::newLayoutWithId(LayoutId layout_id) {
-  DCHECK(
-      layout_id >= LayoutId::kObject || layout_id == LayoutId::kSmallInteger ||
-          (static_cast<word>(layout_id) & 1) == 1,
-      "kSmallInteger must be the only even immediate layout id");
+  DCHECK(layout_id >= LayoutId::kObject ||
+             layout_id == LayoutId::kSmallInteger ||
+             (static_cast<word>(layout_id) & 1) == 1,
+         "kSmallInteger must be the only even immediate layout id");
   HandleScope scope;
   Handle<Layout> layout(&scope, heap()->createLayout(layout_id));
   layout->setNumInObjectAttributes(0);
@@ -148,10 +145,8 @@ Object* Runtime::newClass() {
   return *result;
 }
 
-Object* Runtime::classGetAttr(
-    Thread* thread,
-    const Handle<Object>& receiver,
-    const Handle<Object>& name) {
+Object* Runtime::classGetAttr(Thread* thread, const Handle<Object>& receiver,
+                              const Handle<Object>& name) {
   if (!name->isString()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
@@ -176,8 +171,8 @@ Object* Runtime::classGetAttr(
   if (!attr->isError()) {
     if (isNonDataDescriptor(thread, attr)) {
       Handle<Object> instance(&scope, None::object());
-      return Interpreter::callDescriptorGet(
-          thread, thread->currentFrame(), attr, instance, receiver);
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            attr, instance, receiver);
     }
     return *attr;
   }
@@ -187,8 +182,8 @@ Object* Runtime::classGetAttr(
   if (!meta_attr->isError()) {
     if (isNonDataDescriptor(thread, meta_attr)) {
       Handle<Object> owner(&scope, *meta_klass);
-      return Interpreter::callDescriptorGet(
-          thread, thread->currentFrame(), meta_attr, receiver, owner);
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            meta_attr, receiver, owner);
     }
 
     // If a regular attribute was found in the metaclass, return it
@@ -202,11 +197,9 @@ Object* Runtime::classGetAttr(
   return thread->throwAttributeErrorFromCString("missing attribute");
 }
 
-Object* Runtime::classSetAttr(
-    Thread* thread,
-    const Handle<Object>& receiver,
-    const Handle<Object>& name,
-    const Handle<Object>& value) {
+Object* Runtime::classSetAttr(Thread* thread, const Handle<Object>& receiver,
+                              const Handle<Object>& name,
+                              const Handle<Object>& value) {
   if (!name->isString()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
@@ -241,10 +234,8 @@ Object* Runtime::classSetAttr(
 }
 
 // Generic attribute lookup code used for instance objects
-Object* Runtime::instanceGetAttr(
-    Thread* thread,
-    const Handle<Object>& receiver,
-    const Handle<Object>& name) {
+Object* Runtime::instanceGetAttr(Thread* thread, const Handle<Object>& receiver,
+                                 const Handle<Object>& name) {
   if (!name->isString()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
@@ -263,8 +254,8 @@ Object* Runtime::instanceGetAttr(
   if (!klass_attr->isError()) {
     if (isDataDescriptor(thread, klass_attr)) {
       Handle<Object> owner(&scope, *klass);
-      return Interpreter::callDescriptorGet(
-          thread, thread->currentFrame(), klass_attr, receiver, owner);
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            klass_attr, receiver, owner);
     }
   }
 
@@ -282,8 +273,8 @@ Object* Runtime::instanceGetAttr(
   if (!klass_attr->isError()) {
     if (isNonDataDescriptor(thread, klass_attr)) {
       Handle<Object> owner(&scope, *klass);
-      return Interpreter::callDescriptorGet(
-          thread, thread->currentFrame(), klass_attr, receiver, owner);
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            klass_attr, receiver, owner);
     }
 
     // If a regular attribute was found in the class, return it
@@ -295,11 +286,9 @@ Object* Runtime::instanceGetAttr(
   return thread->throwAttributeErrorFromCString("missing attribute");
 }
 
-Object* Runtime::instanceSetAttr(
-    Thread* thread,
-    const Handle<Object>& receiver,
-    const Handle<Object>& name,
-    const Handle<Object>& value) {
+Object* Runtime::instanceSetAttr(Thread* thread, const Handle<Object>& receiver,
+                                 const Handle<Object>& name,
+                                 const Handle<Object>& value) {
   if (!name->isString()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
@@ -312,8 +301,8 @@ Object* Runtime::instanceSetAttr(
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
   if (!klass_attr->isError()) {
     if (isDataDescriptor(thread, klass_attr)) {
-      return Interpreter::callDescriptorSet(
-          thread, thread->currentFrame(), klass_attr, receiver, value);
+      return Interpreter::callDescriptorSet(thread, thread->currentFrame(),
+                                            klass_attr, receiver, value);
     }
   }
 
@@ -324,10 +313,8 @@ Object* Runtime::instanceSetAttr(
 
 // Note that PEP 562 adds support for data descriptors in module objects.
 // We are targeting python 3.6 for now, so we won't worry about that.
-Object* Runtime::moduleGetAttr(
-    Thread* thread,
-    const Handle<Object>& receiver,
-    const Handle<Object>& name) {
+Object* Runtime::moduleGetAttr(Thread* thread, const Handle<Object>& receiver,
+                               const Handle<Object>& name) {
   if (!name->isString()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
@@ -347,11 +334,9 @@ Object* Runtime::moduleGetAttr(
   }
 }
 
-Object* Runtime::moduleSetAttr(
-    Thread* thread,
-    const Handle<Object>& receiver,
-    const Handle<Object>& name,
-    const Handle<Object>& value) {
+Object* Runtime::moduleSetAttr(Thread* thread, const Handle<Object>& receiver,
+                               const Handle<Object>& name,
+                               const Handle<Object>& value) {
   if (!name->isString()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
@@ -372,9 +357,8 @@ bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
   return !lookupNameInMro(thread, klass, dunder_set)->isError();
 }
 
-bool Runtime::isNonDataDescriptor(
-    Thread* thread,
-    const Handle<Object>& object) {
+bool Runtime::isNonDataDescriptor(Thread* thread,
+                                  const Handle<Object>& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*object));
@@ -397,10 +381,9 @@ Object* Runtime::newCode() {
   return *result;
 }
 
-Object* Runtime::newBuiltinFunction(
-    Function::Entry entry,
-    Function::Entry entry_kw,
-    Function::Entry entry_ex) {
+Object* Runtime::newBuiltinFunction(Function::Entry entry,
+                                    Function::Entry entry_kw,
+                                    Function::Entry entry_ex) {
   Object* result = heap()->createFunction();
   DCHECK(result != nullptr, "failed to createFunction");
   auto function = Function::cast(result);
@@ -425,50 +408,42 @@ Object* Runtime::newInstance(const Handle<Layout>& layout) {
   Object* object = heap()->createInstance(layout->id(), num_words);
   auto instance = Instance::cast(object);
   // Set the overflow array
-  instance->instanceVariableAtPut(
-      layout->overflowOffset(), empty_object_array_);
+  instance->instanceVariableAtPut(layout->overflowOffset(),
+                                  empty_object_array_);
   return instance;
 }
 
-void Runtime::classAddBuiltinFunction(
-    const Handle<Class>& klass,
-    Object* name,
-    Function::Entry entry) {
-  classAddBuiltinFunctionKwEx(
-      klass, name, entry, unimplementedTrampoline, unimplementedTrampoline);
+void Runtime::classAddBuiltinFunction(const Handle<Class>& klass, Object* name,
+                                      Function::Entry entry) {
+  classAddBuiltinFunctionKwEx(klass, name, entry, unimplementedTrampoline,
+                              unimplementedTrampoline);
 }
 
-void Runtime::classAddBuiltinFunctionKw(
-    const Handle<Class>& klass,
-    Object* name,
-    Function::Entry entry,
-    Function::Entry entry_kw) {
-  classAddBuiltinFunctionKwEx(
-      klass, name, entry, entry_kw, unimplementedTrampoline);
+void Runtime::classAddBuiltinFunctionKw(const Handle<Class>& klass,
+                                        Object* name, Function::Entry entry,
+                                        Function::Entry entry_kw) {
+  classAddBuiltinFunctionKwEx(klass, name, entry, entry_kw,
+                              unimplementedTrampoline);
 }
 
-void Runtime::classAddBuiltinFunctionKwEx(
-    const Handle<Class>& klass,
-    Object* name,
-    Function::Entry entry,
-    Function::Entry entry_kw,
-    Function::Entry entry_ex) {
+void Runtime::classAddBuiltinFunctionKwEx(const Handle<Class>& klass,
+                                          Object* name, Function::Entry entry,
+                                          Function::Entry entry_kw,
+                                          Function::Entry entry_ex) {
   HandleScope scope;
   Handle<Object> key(&scope, name);
-  Handle<Function> function(
-      &scope, newBuiltinFunction(entry, entry_kw, entry_ex));
+  Handle<Function> function(&scope,
+                            newBuiltinFunction(entry, entry_kw, entry_ex));
   function->setName(*key);
   Handle<Object> value(&scope, *function);
   Handle<Dictionary> dict(&scope, klass->dictionary());
   dictionaryAtPutInValueCell(dict, key, value);
 }
 
-void Runtime::classAddExtensionFunction(
-    const Handle<Class>& klass,
-    Object* name,
-    void* c_function) {
-  DCHECK(
-      !klass->extensionType()->isNone(), "Class must contain extension type");
+void Runtime::classAddExtensionFunction(const Handle<Class>& klass,
+                                        Object* name, void* c_function) {
+  DCHECK(!klass->extensionType()->isNone(),
+         "Class must contain extension type");
 
   HandleScope scope;
   Handle<Function> function(&scope, newFunction());
@@ -536,10 +511,9 @@ Object* Runtime::newComplex(double real, double imag) {
   return Complex::cast(heap()->createComplex(real, imag));
 }
 
-Object* Runtime::newProperty(
-    const Handle<Object>& getter,
-    const Handle<Object>& setter,
-    const Handle<Object>& deleter) {
+Object* Runtime::newProperty(const Handle<Object>& getter,
+                             const Handle<Object>& setter,
+                             const Handle<Object>& deleter) {
   HandleScope scope;
   Handle<Property> new_prop(&scope, heap()->createProperty());
   new_prop->setGetter(*getter);
@@ -563,10 +537,9 @@ Object* Runtime::newRangeIterator(const Handle<Object>& range) {
   return *range_iterator;
 }
 
-Object* Runtime::newSlice(
-    const Handle<Object>& start,
-    const Handle<Object>& stop,
-    const Handle<Object>& step) {
+Object* Runtime::newSlice(const Handle<Object>& start,
+                          const Handle<Object>& stop,
+                          const Handle<Object>& step) {
   HandleScope scope;
   Handle<Slice> slice(&scope, heap()->createSlice());
   slice->setStart(*start);
@@ -575,9 +548,7 @@ Object* Runtime::newSlice(
   return *slice;
 }
 
-Object* Runtime::newStaticMethod() {
-  return heap()->createStaticMethod();
-}
+Object* Runtime::newStaticMethod() { return heap()->createStaticMethod(); }
 
 Object* Runtime::newStringFromCString(const char* c_string) {
   word length = std::strlen(c_string);
@@ -634,8 +605,8 @@ Object* Runtime::immediateHash(Object* object) {
     return SmallInteger::fromWord(Boolean::cast(object)->value() ? 1 : 0);
   }
   if (object->isSmallString()) {
-    return SmallInteger::fromWord(
-        reinterpret_cast<uword>(object) >> SmallString::kTagSize);
+    return SmallInteger::fromWord(reinterpret_cast<uword>(object) >>
+                                  SmallString::kTagSize);
   }
   return SmallInteger::fromWord(reinterpret_cast<uword>(object));
 }
@@ -656,7 +627,7 @@ void Runtime::setArgv(int argc, const char** argv) {
   HandleScope scope;
   Handle<List> list(&scope, newList());
   CHECK(argc >= 1, "Unexpected argc");
-  for (int i = 1; i < argc; i++) { // skip program name (i.e. "python")
+  for (int i = 1; i < argc; i++) {  // skip program name (i.e. "python")
     Handle<Object> arg_val(&scope, newStringFromCString(argv[i]));
     listAdd(list, arg_val);
   }
@@ -681,12 +652,9 @@ Object* Runtime::identityHash(Object* object) {
 
 word Runtime::siphash24(View<byte> array) {
   word result = 0;
-  ::halfsiphash(
-      array.data(),
-      array.length(),
-      reinterpret_cast<const uint8_t*>(hash_secret_),
-      reinterpret_cast<uint8_t*>(&result),
-      sizeof(result));
+  ::halfsiphash(array.data(), array.length(),
+                reinterpret_cast<const uint8_t*>(hash_secret_),
+                reinterpret_cast<uint8_t*>(&result), sizeof(result));
   return result;
 }
 
@@ -784,106 +752,104 @@ void Runtime::initializeRefClass() {
   HandleScope scope;
   Handle<Class> ref(&scope, initializeHeapClass("ref", LayoutId::kWeakRef));
 
-  classAddBuiltinFunction(
-      ref, symbols()->DunderInit(), nativeTrampoline<builtinRefInit>);
+  classAddBuiltinFunction(ref, symbols()->DunderInit(),
+                          nativeTrampoline<builtinRefInit>);
 
-  classAddBuiltinFunction(
-      ref, symbols()->DunderNew(), nativeTrampoline<builtinRefNew>);
+  classAddBuiltinFunction(ref, symbols()->DunderNew(),
+                          nativeTrampoline<builtinRefNew>);
 }
 
 void Runtime::initializeFunctionClass() {
   HandleScope scope;
-  Handle<Class> function(
-      &scope, initializeHeapClass("function", LayoutId::kFunction));
+  Handle<Class> function(&scope,
+                         initializeHeapClass("function", LayoutId::kFunction));
 
-  classAddBuiltinFunction(
-      function, symbols()->DunderGet(), nativeTrampoline<builtinFunctionGet>);
+  classAddBuiltinFunction(function, symbols()->DunderGet(),
+                          nativeTrampoline<builtinFunctionGet>);
 }
 
 void Runtime::initializeObjectClass() {
   HandleScope scope;
   Handle<Class> object(&scope, initializeHeapClass("object"));
 
-  classAddBuiltinFunction(
-      object, symbols()->DunderInit(), nativeTrampoline<builtinObjectInit>);
+  classAddBuiltinFunction(object, symbols()->DunderInit(),
+                          nativeTrampoline<builtinObjectInit>);
 
-  classAddBuiltinFunction(
-      object, symbols()->DunderNew(), nativeTrampoline<builtinObjectNew>);
+  classAddBuiltinFunction(object, symbols()->DunderNew(),
+                          nativeTrampoline<builtinObjectNew>);
 }
 
 void Runtime::initializeStrClass() {
   HandleScope scope;
   Handle<Class> type(&scope, initializeHeapClass("str", LayoutId::kString));
 
-  classAddBuiltinFunction(
-      type, symbols()->DunderEq(), nativeTrampoline<builtinStringEq>);
+  classAddBuiltinFunction(type, symbols()->DunderEq(),
+                          nativeTrampoline<builtinStringEq>);
 
-  classAddBuiltinFunction(
-      type, symbols()->DunderGe(), nativeTrampoline<builtinStringGe>);
+  classAddBuiltinFunction(type, symbols()->DunderGe(),
+                          nativeTrampoline<builtinStringGe>);
 
-  classAddBuiltinFunction(
-      type, symbols()->DunderGt(), nativeTrampoline<builtinStringGt>);
+  classAddBuiltinFunction(type, symbols()->DunderGt(),
+                          nativeTrampoline<builtinStringGt>);
 
-  classAddBuiltinFunction(
-      type, symbols()->DunderLe(), nativeTrampoline<builtinStringLe>);
+  classAddBuiltinFunction(type, symbols()->DunderLe(),
+                          nativeTrampoline<builtinStringLe>);
 
-  classAddBuiltinFunction(
-      type, symbols()->DunderLt(), nativeTrampoline<builtinStringLt>);
+  classAddBuiltinFunction(type, symbols()->DunderLt(),
+                          nativeTrampoline<builtinStringLt>);
 
-  classAddBuiltinFunction(
-      type, symbols()->DunderNe(), nativeTrampoline<builtinStringNe>);
+  classAddBuiltinFunction(type, symbols()->DunderNe(),
+                          nativeTrampoline<builtinStringNe>);
 }
 
 void Runtime::initializeObjectArrayClass() {
   HandleScope scope;
-  Handle<Class> type(
-      &scope, initializeHeapClass("tuple", LayoutId::kObjectArray));
-  classAddBuiltinFunction(
-      type, symbols()->DunderEq(), nativeTrampoline<builtinTupleEq>);
+  Handle<Class> type(&scope,
+                     initializeHeapClass("tuple", LayoutId::kObjectArray));
+  classAddBuiltinFunction(type, symbols()->DunderEq(),
+                          nativeTrampoline<builtinTupleEq>);
 }
 
 void Runtime::initializeDictClass() {
   HandleScope scope;
-  Handle<Class> dict_type(
-      &scope, initializeHeapClass("dict", LayoutId::kDictionary));
-  classAddBuiltinFunction(
-      dict_type, symbols()->DunderEq(), nativeTrampoline<builtinDictionaryEq>);
-  classAddBuiltinFunction(
-      dict_type,
-      symbols()->DunderLen(),
-      nativeTrampoline<builtinDictionaryLen>);
+  Handle<Class> dict_type(&scope,
+                          initializeHeapClass("dict", LayoutId::kDictionary));
+  classAddBuiltinFunction(dict_type, symbols()->DunderEq(),
+                          nativeTrampoline<builtinDictionaryEq>);
+  classAddBuiltinFunction(dict_type, symbols()->DunderLen(),
+                          nativeTrampoline<builtinDictionaryLen>);
 }
 
 void Runtime::initializeListClass() {
   HandleScope scope;
   Handle<Class> list(&scope, initializeHeapClass("list", LayoutId::kList));
 
-  classAddBuiltinFunction(
-      list, symbols()->DunderAdd(), nativeTrampoline<builtinListAdd>);
+  classAddBuiltinFunction(list, symbols()->DunderAdd(),
+                          nativeTrampoline<builtinListAdd>);
 
-  classAddBuiltinFunction(
-      list, symbols()->Append(), nativeTrampoline<builtinListAppend>);
+  classAddBuiltinFunction(list, symbols()->Append(),
+                          nativeTrampoline<builtinListAppend>);
 
-  classAddBuiltinFunction(
-      list, symbols()->DunderLen(), nativeTrampoline<builtinListLen>);
+  classAddBuiltinFunction(list, symbols()->DunderLen(),
+                          nativeTrampoline<builtinListLen>);
 
-  classAddBuiltinFunction(
-      list, symbols()->Extend(), nativeTrampoline<builtinListExtend>);
+  classAddBuiltinFunction(list, symbols()->Extend(),
+                          nativeTrampoline<builtinListExtend>);
 
-  classAddBuiltinFunction(
-      list, symbols()->Insert(), nativeTrampoline<builtinListInsert>);
+  classAddBuiltinFunction(list, symbols()->Insert(),
+                          nativeTrampoline<builtinListInsert>);
 
-  classAddBuiltinFunction(
-      list, symbols()->Insert(), nativeTrampoline<builtinListInsert>);
+  classAddBuiltinFunction(list, symbols()->Insert(),
+                          nativeTrampoline<builtinListInsert>);
 
-  classAddBuiltinFunction(
-      list, symbols()->DunderNew(), nativeTrampoline<builtinListNew>);
+  classAddBuiltinFunction(list, symbols()->DunderNew(),
+                          nativeTrampoline<builtinListNew>);
 
-  classAddBuiltinFunction(
-      list, symbols()->Pop(), nativeTrampoline<builtinListPop>);
+  classAddBuiltinFunction(list, symbols()->Pop(),
+                          nativeTrampoline<builtinListPop>);
 
-  classAddBuiltinFunction(
-      list, symbols()->Remove(), nativeTrampoline<builtinListRemove>);
+  classAddBuiltinFunction(list, symbols()->Remove(),
+                          nativeTrampoline<builtinListRemove>);
 
   list->setFlag(Class::Flag::kListSubclass);
 }
@@ -893,34 +859,28 @@ void Runtime::initializeClassMethodClass() {
   Handle<Class> classmethod(
       &scope, initializeHeapClass("classmethod", LayoutId::kClassMethod));
 
-  classAddBuiltinFunction(
-      classmethod,
-      symbols()->DunderGet(),
-      nativeTrampoline<builtinClassMethodGet>);
+  classAddBuiltinFunction(classmethod, symbols()->DunderGet(),
+                          nativeTrampoline<builtinClassMethodGet>);
 
-  classAddBuiltinFunction(
-      classmethod,
-      symbols()->DunderInit(),
-      nativeTrampoline<builtinClassMethodInit>);
+  classAddBuiltinFunction(classmethod, symbols()->DunderInit(),
+                          nativeTrampoline<builtinClassMethodInit>);
 
-  classAddBuiltinFunction(
-      classmethod,
-      symbols()->DunderNew(),
-      nativeTrampoline<builtinClassMethodNew>);
+  classAddBuiltinFunction(classmethod, symbols()->DunderNew(),
+                          nativeTrampoline<builtinClassMethodNew>);
 }
 
 void Runtime::initializeTypeClass() {
   HandleScope scope;
   Handle<Class> type(&scope, initializeHeapClass("type", LayoutId::kType));
 
-  classAddBuiltinFunction(
-      type, symbols()->DunderCall(), nativeTrampoline<builtinTypeCall>);
+  classAddBuiltinFunction(type, symbols()->DunderCall(),
+                          nativeTrampoline<builtinTypeCall>);
 
-  classAddBuiltinFunction(
-      type, symbols()->DunderInit(), nativeTrampoline<builtinTypeInit>);
+  classAddBuiltinFunction(type, symbols()->DunderInit(),
+                          nativeTrampoline<builtinTypeInit>);
 
-  classAddBuiltinFunction(
-      type, symbols()->DunderNew(), nativeTrampoline<builtinTypeNew>);
+  classAddBuiltinFunction(type, symbols()->DunderNew(),
+                          nativeTrampoline<builtinTypeNew>);
 }
 
 void Runtime::initializeImmediateClasses() {
@@ -932,179 +892,144 @@ void Runtime::initializeImmediateClasses() {
 
 void Runtime::initializeBooleanClass() {
   HandleScope scope;
-  Handle<Class> type(
-      &scope,
-      initializeHeapClass("bool", LayoutId::kBoolean, LayoutId::kInteger));
+  Handle<Class> type(&scope, initializeHeapClass("bool", LayoutId::kBoolean,
+                                                 LayoutId::kInteger));
 
-  classAddBuiltinFunction(
-      type, symbols()->DunderBool(), nativeTrampoline<builtinBooleanBool>);
+  classAddBuiltinFunction(type, symbols()->DunderBool(),
+                          nativeTrampoline<builtinBooleanBool>);
 }
 
 void Runtime::initializeFloatClass() {
   HandleScope scope;
-  Handle<Class> float_type(
-      &scope, initializeHeapClass("float", LayoutId::kDouble));
+  Handle<Class> float_type(&scope,
+                           initializeHeapClass("float", LayoutId::kDouble));
 
-  classAddBuiltinFunction(
-      float_type, symbols()->DunderEq(), nativeTrampoline<builtinDoubleEq>);
+  classAddBuiltinFunction(float_type, symbols()->DunderEq(),
+                          nativeTrampoline<builtinDoubleEq>);
 
-  classAddBuiltinFunction(
-      float_type, symbols()->DunderGe(), nativeTrampoline<builtinDoubleGe>);
+  classAddBuiltinFunction(float_type, symbols()->DunderGe(),
+                          nativeTrampoline<builtinDoubleGe>);
 
-  classAddBuiltinFunction(
-      float_type, symbols()->DunderGt(), nativeTrampoline<builtinDoubleGt>);
+  classAddBuiltinFunction(float_type, symbols()->DunderGt(),
+                          nativeTrampoline<builtinDoubleGt>);
 
-  classAddBuiltinFunction(
-      float_type, symbols()->DunderLe(), nativeTrampoline<builtinDoubleLe>);
+  classAddBuiltinFunction(float_type, symbols()->DunderLe(),
+                          nativeTrampoline<builtinDoubleLe>);
 
-  classAddBuiltinFunction(
-      float_type, symbols()->DunderLt(), nativeTrampoline<builtinDoubleLt>);
+  classAddBuiltinFunction(float_type, symbols()->DunderLt(),
+                          nativeTrampoline<builtinDoubleLt>);
 
-  classAddBuiltinFunction(
-      float_type, symbols()->DunderNe(), nativeTrampoline<builtinDoubleNe>);
+  classAddBuiltinFunction(float_type, symbols()->DunderNe(),
+                          nativeTrampoline<builtinDoubleNe>);
 
-  classAddBuiltinFunction(
-      float_type, symbols()->DunderAdd(), nativeTrampoline<builtinDoubleAdd>);
+  classAddBuiltinFunction(float_type, symbols()->DunderAdd(),
+                          nativeTrampoline<builtinDoubleAdd>);
 
-  classAddBuiltinFunction(
-      float_type, symbols()->DunderSub(), nativeTrampoline<builtinDoubleSub>);
+  classAddBuiltinFunction(float_type, symbols()->DunderSub(),
+                          nativeTrampoline<builtinDoubleSub>);
 }
 
 void Runtime::initializeSetClass() {
   HandleScope scope;
   Handle<Class> set_type(&scope, initializeHeapClass("set", LayoutId::kSet));
 
-  classAddBuiltinFunction(
-      set_type, symbols()->Add(), nativeTrampoline<builtinSetAdd>);
+  classAddBuiltinFunction(set_type, symbols()->Add(),
+                          nativeTrampoline<builtinSetAdd>);
 
-  classAddBuiltinFunction(
-      set_type,
-      symbols()->DunderContains(),
-      nativeTrampoline<builtinSetContains>);
+  classAddBuiltinFunction(set_type, symbols()->DunderContains(),
+                          nativeTrampoline<builtinSetContains>);
 
-  classAddBuiltinFunction(
-      set_type, symbols()->DunderInit(), nativeTrampoline<builtinSetInit>);
+  classAddBuiltinFunction(set_type, symbols()->DunderInit(),
+                          nativeTrampoline<builtinSetInit>);
 
-  classAddBuiltinFunction(
-      set_type, symbols()->DunderNew(), nativeTrampoline<builtinSetNew>);
+  classAddBuiltinFunction(set_type, symbols()->DunderNew(),
+                          nativeTrampoline<builtinSetNew>);
 
-  classAddBuiltinFunction(
-      set_type, symbols()->DunderLen(), nativeTrampoline<builtinSetLen>);
+  classAddBuiltinFunction(set_type, symbols()->DunderLen(),
+                          nativeTrampoline<builtinSetLen>);
 
-  classAddBuiltinFunction(
-      set_type, symbols()->Pop(), nativeTrampoline<builtinSetPop>);
+  classAddBuiltinFunction(set_type, symbols()->Pop(),
+                          nativeTrampoline<builtinSetPop>);
 }
 
 void Runtime::initializePropertyClass() {
   HandleScope scope;
-  Handle<Class> property(
-      &scope, initializeHeapClass("property", LayoutId::kProperty));
+  Handle<Class> property(&scope,
+                         initializeHeapClass("property", LayoutId::kProperty));
 
-  classAddBuiltinFunction(
-      property, symbols()->Deleter(), nativeTrampoline<builtinPropertyDeleter>);
+  classAddBuiltinFunction(property, symbols()->Deleter(),
+                          nativeTrampoline<builtinPropertyDeleter>);
 
-  classAddBuiltinFunction(
-      property,
-      symbols()->DunderGet(),
-      nativeTrampoline<builtinPropertyDunderGet>);
+  classAddBuiltinFunction(property, symbols()->DunderGet(),
+                          nativeTrampoline<builtinPropertyDunderGet>);
 
-  classAddBuiltinFunction(
-      property,
-      symbols()->DunderSet(),
-      nativeTrampoline<builtinPropertyDunderSet>);
+  classAddBuiltinFunction(property, symbols()->DunderSet(),
+                          nativeTrampoline<builtinPropertyDunderSet>);
 
-  classAddBuiltinFunction(
-      property, symbols()->DunderInit(), nativeTrampoline<builtinPropertyInit>);
+  classAddBuiltinFunction(property, symbols()->DunderInit(),
+                          nativeTrampoline<builtinPropertyInit>);
 
-  classAddBuiltinFunction(
-      property, symbols()->DunderNew(), nativeTrampoline<builtinPropertyNew>);
+  classAddBuiltinFunction(property, symbols()->DunderNew(),
+                          nativeTrampoline<builtinPropertyNew>);
 
-  classAddBuiltinFunction(
-      property, symbols()->Getter(), nativeTrampoline<builtinPropertyGetter>);
+  classAddBuiltinFunction(property, symbols()->Getter(),
+                          nativeTrampoline<builtinPropertyGetter>);
 
-  classAddBuiltinFunction(
-      property, symbols()->Setter(), nativeTrampoline<builtinPropertySetter>);
+  classAddBuiltinFunction(property, symbols()->Setter(),
+                          nativeTrampoline<builtinPropertySetter>);
 }
 
 void Runtime::initializeSmallIntClass() {
   HandleScope scope;
   Handle<Class> small_integer(
-      &scope,
-      initializeHeapClass(
-          "smallint", LayoutId::kSmallInteger, LayoutId::kInteger));
+      &scope, initializeHeapClass("smallint", LayoutId::kSmallInteger,
+                                  LayoutId::kInteger));
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->BitLength(),
-      nativeTrampoline<builtinSmallIntegerBitLength>);
+  classAddBuiltinFunction(small_integer, symbols()->BitLength(),
+                          nativeTrampoline<builtinSmallIntegerBitLength>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderBool(),
-      nativeTrampoline<builtinSmallIntegerBool>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderBool(),
+                          nativeTrampoline<builtinSmallIntegerBool>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderEq(),
-      nativeTrampoline<builtinSmallIntegerEq>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderEq(),
+                          nativeTrampoline<builtinSmallIntegerEq>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderGe(),
-      nativeTrampoline<builtinSmallIntegerGe>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderGe(),
+                          nativeTrampoline<builtinSmallIntegerGe>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderGt(),
-      nativeTrampoline<builtinSmallIntegerGt>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderGt(),
+                          nativeTrampoline<builtinSmallIntegerGt>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderInvert(),
-      nativeTrampoline<builtinSmallIntegerInvert>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderInvert(),
+                          nativeTrampoline<builtinSmallIntegerInvert>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderLe(),
-      nativeTrampoline<builtinSmallIntegerLe>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderLe(),
+                          nativeTrampoline<builtinSmallIntegerLe>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderLt(),
-      nativeTrampoline<builtinSmallIntegerLt>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderLt(),
+                          nativeTrampoline<builtinSmallIntegerLt>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderNe(),
-      nativeTrampoline<builtinSmallIntegerNe>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderNe(),
+                          nativeTrampoline<builtinSmallIntegerNe>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderNeg(),
-      nativeTrampoline<builtinSmallIntegerNeg>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderNeg(),
+                          nativeTrampoline<builtinSmallIntegerNeg>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderPos(),
-      nativeTrampoline<builtinSmallIntegerPos>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderPos(),
+                          nativeTrampoline<builtinSmallIntegerPos>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderAdd(),
-      nativeTrampoline<builtinSmallIntegerAdd>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderAdd(),
+                          nativeTrampoline<builtinSmallIntegerAdd>);
 
-  classAddBuiltinFunction(
-      small_integer,
-      symbols()->DunderSub(),
-      nativeTrampoline<builtinSmallIntegerSub>);
+  classAddBuiltinFunction(small_integer, symbols()->DunderSub(),
+                          nativeTrampoline<builtinSmallIntegerSub>);
 
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
   // SmallInteger to all locations that decode to a SmallInteger tag.
   for (word i = 1; i < 16; i++) {
-    DCHECK(
-        layoutAt(static_cast<LayoutId>(i << 1)) == None::object(),
-        "list collision");
+    DCHECK(layoutAt(static_cast<LayoutId>(i << 1)) == None::object(),
+           "list collision");
     layoutAtPut(static_cast<LayoutId>(i << 1), *small_integer);
   }
 }
@@ -1114,20 +1039,14 @@ void Runtime::initializeStaticMethodClass() {
   Handle<Class> staticmethod(
       &scope, initializeHeapClass("staticmethod", LayoutId::kStaticMethod));
 
-  classAddBuiltinFunction(
-      staticmethod,
-      symbols()->DunderGet(),
-      nativeTrampoline<builtinStaticMethodGet>);
+  classAddBuiltinFunction(staticmethod, symbols()->DunderGet(),
+                          nativeTrampoline<builtinStaticMethodGet>);
 
-  classAddBuiltinFunction(
-      staticmethod,
-      symbols()->DunderInit(),
-      nativeTrampoline<builtinStaticMethodInit>);
+  classAddBuiltinFunction(staticmethod, symbols()->DunderInit(),
+                          nativeTrampoline<builtinStaticMethodInit>);
 
-  classAddBuiltinFunction(
-      staticmethod,
-      symbols()->DunderNew(),
-      nativeTrampoline<builtinStaticMethodNew>);
+  classAddBuiltinFunction(staticmethod, symbols()->DunderNew(),
+                          nativeTrampoline<builtinStaticMethodNew>);
 }
 
 void Runtime::collectGarbage() {
@@ -1166,9 +1085,8 @@ Object* Runtime::runFromCString(const char* c_string) {
   return result;
 }
 
-Object* Runtime::executeModule(
-    const char* buffer,
-    const Handle<Module>& module) {
+Object* Runtime::executeModule(const char* buffer,
+                               const Handle<Module>& module) {
   HandleScope scope;
   Marshal::Reader reader(&scope, this, buffer);
 
@@ -1211,9 +1129,8 @@ Object* Runtime::importModule(const Handle<Object>& name) {
 // TODO: support fromlist and level. Ideally, we'll never implement that
 // functionality in c++, instead using the pure-python importlib
 // implementation that ships with cpython.
-Object* Runtime::importModuleFromBuffer(
-    const char* buffer,
-    const Handle<Object>& name) {
+Object* Runtime::importModuleFromBuffer(const char* buffer,
+                                        const Handle<Object>& name) {
   HandleScope scope;
   Handle<Object> cached_module(&scope, findModule(name));
   if (!cached_module->isNone()) {
@@ -1241,15 +1158,13 @@ void Runtime::initializePrimitiveInstances() {
   callbacks_ = None::object();
 }
 
-void Runtime::initializeInterned() {
-  interned_ = newSet();
-}
+void Runtime::initializeInterned() { interned_ = newSet(); }
 
 void Runtime::initializeRandom() {
   uword random_state[2];
   uword hash_secret[2];
-  OS::secureRandom(
-      reinterpret_cast<byte*>(&random_state), sizeof(random_state));
+  OS::secureRandom(reinterpret_cast<byte*>(&random_state),
+                   sizeof(random_state));
   OS::secureRandom(reinterpret_cast<byte*>(&hash_secret), sizeof(hash_secret));
   seedRandom(random_state, hash_secret);
 }
@@ -1326,9 +1241,8 @@ Object* Runtime::findModule(const Handle<Object>& name) {
   return value;
 }
 
-Object* Runtime::moduleAt(
-    const Handle<Module>& module,
-    const Handle<Object>& key) {
+Object* Runtime::moduleAt(const Handle<Module>& module,
+                          const Handle<Object>& key) {
   HandleScope scope;
   Handle<Dictionary> dict(&scope, module->dictionary());
   Handle<Object> value_cell(&scope, dictionaryAt(dict, key));
@@ -1338,10 +1252,9 @@ Object* Runtime::moduleAt(
   return ValueCell::cast(*value_cell)->value();
 }
 
-void Runtime::moduleAtPut(
-    const Handle<Module>& module,
-    const Handle<Object>& key,
-    const Handle<Object>& value) {
+void Runtime::moduleAtPut(const Handle<Module>& module,
+                          const Handle<Object>& key,
+                          const Handle<Object>& value) {
   HandleScope scope;
   Handle<Dictionary> dict(&scope, module->dictionary());
   dictionaryAtPutInValueCell(dict, key, value);
@@ -1393,9 +1306,8 @@ LayoutId Runtime::newLayoutId() {
   Handle<List> list(&scope, layouts_);
   Handle<Object> value(&scope, None::object());
   word result = list->allocated();
-  DCHECK(
-      result <= Header::kMaxLayoutId,
-      "exceeded layout id space in header word");
+  DCHECK(result <= Header::kMaxLayoutId,
+         "exceeded layout id space in header word");
   listAdd(list, value);
   return static_cast<LayoutId>(result);
 }
@@ -1531,21 +1443,19 @@ Object* Runtime::swappedComparisonSelector(CompareOp op) {
   return comparisonSelector(swapped_op);
 }
 
-void Runtime::moduleAddGlobal(
-    const Handle<Module>& module,
-    const Handle<Object>& key,
-    const Handle<Object>& value) {
+void Runtime::moduleAddGlobal(const Handle<Module>& module,
+                              const Handle<Object>& key,
+                              const Handle<Object>& value) {
   HandleScope scope;
   Handle<Dictionary> dictionary(&scope, module->dictionary());
   dictionaryAtPutInValueCell(dictionary, key, value);
 }
 
-Object* Runtime::moduleAddBuiltinFunction(
-    const Handle<Module>& module,
-    Object* name,
-    const Function::Entry entry,
-    const Function::Entry entry_kw,
-    const Function::Entry entry_ex) {
+Object* Runtime::moduleAddBuiltinFunction(const Handle<Module>& module,
+                                          Object* name,
+                                          const Function::Entry entry,
+                                          const Function::Entry entry_kw,
+                                          const Function::Entry entry_ex) {
   HandleScope scope;
   Handle<Object> key(&scope, name);
   Handle<Dictionary> dictionary(&scope, module->dictionary());
@@ -1555,12 +1465,10 @@ Object* Runtime::moduleAddBuiltinFunction(
 
 void Runtime::moduleAddBuiltinPrint(const Handle<Module>& module) {
   HandleScope scope;
-  Handle<Function> print(
-      &scope,
-      newBuiltinFunction(
-          nativeTrampoline<builtinPrint>,
-          nativeTrampolineKw<builtinPrintKw>,
-          unimplementedTrampoline));
+  Handle<Function> print(&scope,
+                         newBuiltinFunction(nativeTrampoline<builtinPrint>,
+                                            nativeTrampolineKw<builtinPrintKw>,
+                                            unimplementedTrampoline));
 
   // Name
   Handle<Object> name(&scope, newStringFromCString("print"));
@@ -1577,59 +1485,39 @@ void Runtime::createBuiltinsModule() {
 
   // Fill in builtins...
   build_class_ = moduleAddBuiltinFunction(
-      module,
-      symbols()->DunderBuildClass(),
+      module, symbols()->DunderBuildClass(),
       nativeTrampoline<builtinBuildClass>,
-      nativeTrampolineKw<builtinBuildClassKw>,
-      unimplementedTrampoline);
+      nativeTrampolineKw<builtinBuildClassKw>, unimplementedTrampoline);
   moduleAddBuiltinPrint(module);
-  moduleAddBuiltinFunction(
-      module,
-      symbols()->Ord(),
-      nativeTrampoline<builtinOrd>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-  moduleAddBuiltinFunction(
-      module,
-      symbols()->Chr(),
-      nativeTrampoline<builtinChr>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-  moduleAddBuiltinFunction(
-      module,
-      symbols()->Int(),
-      nativeTrampoline<builtinInt>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-  moduleAddBuiltinFunction(
-      module,
-      symbols()->Range(),
-      nativeTrampoline<builtinRange>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-  moduleAddBuiltinFunction(
-      module,
-      symbols()->IsInstance(),
-      nativeTrampoline<builtinIsinstance>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
-  moduleAddBuiltinFunction(
-      module,
-      symbols()->Len(),
-      nativeTrampoline<builtinLen>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, symbols()->Ord(),
+                           nativeTrampoline<builtinOrd>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, symbols()->Chr(),
+                           nativeTrampoline<builtinChr>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, symbols()->Int(),
+                           nativeTrampoline<builtinInt>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, symbols()->Range(),
+                           nativeTrampoline<builtinRange>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, symbols()->IsInstance(),
+                           nativeTrampoline<builtinIsinstance>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, symbols()->Len(),
+                           nativeTrampoline<builtinLen>,
+                           unimplementedTrampoline, unimplementedTrampoline);
 
   // Add builtin types
-  moduleAddBuiltinType(
-      module, LayoutId::kClassMethod, symbols()->Classmethod());
+  moduleAddBuiltinType(module, LayoutId::kClassMethod,
+                       symbols()->Classmethod());
   moduleAddBuiltinType(module, LayoutId::kDictionary, symbols()->Dict());
   moduleAddBuiltinType(module, LayoutId::kDouble, symbols()->Float());
   moduleAddBuiltinType(module, LayoutId::kList, symbols()->List());
   moduleAddBuiltinType(module, LayoutId::kObject, symbols()->ObjectClassname());
   moduleAddBuiltinType(module, LayoutId::kProperty, symbols()->Property());
-  moduleAddBuiltinType(
-      module, LayoutId::kStaticMethod, symbols()->StaticMethod());
+  moduleAddBuiltinType(module, LayoutId::kStaticMethod,
+                       symbols()->StaticMethod());
   moduleAddBuiltinType(module, LayoutId::kSet, symbols()->Set());
   moduleAddBuiltinType(module, LayoutId::kSuper, symbols()->Super());
   moduleAddBuiltinType(module, LayoutId::kType, symbols()->Type());
@@ -1641,10 +1529,8 @@ void Runtime::createBuiltinsModule() {
   addModule(module);
 }
 
-void Runtime::moduleAddBuiltinType(
-    const Handle<Module>& module,
-    LayoutId layout_id,
-    Object* symbol) {
+void Runtime::moduleAddBuiltinType(const Handle<Module>& module,
+                                   LayoutId layout_id, Object* symbol) {
   HandleScope scope;
   Handle<Object> name(&scope, symbol);
   Handle<Object> value(&scope, classAt(layout_id));
@@ -1661,12 +1547,9 @@ void Runtime::createSysModule() {
   moduleAddGlobal(module, modules_id, modules);
 
   // Fill in sys...
-  moduleAddBuiltinFunction(
-      module,
-      symbols()->Exit(),
-      nativeTrampoline<builtinSysExit>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, symbols()->Exit(),
+                           nativeTrampoline<builtinSysExit>,
+                           unimplementedTrampoline, unimplementedTrampoline);
 
   Handle<Object> stdout_id(&scope, symbols()->Stdout());
   Handle<Object> stdout_val(&scope, SmallInteger::fromWord(STDOUT_FILENO));
@@ -1694,12 +1577,8 @@ void Runtime::createTimeModule() {
 
   // time.time
   Handle<Object> time(&scope, newStringFromCString("time"));
-  moduleAddBuiltinFunction(
-      module,
-      *time,
-      nativeTrampoline<builtinTime>,
-      unimplementedTrampoline,
-      unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, *time, nativeTrampoline<builtinTime>,
+                           unimplementedTrampoline, unimplementedTrampoline);
 
   addModule(module);
 }
@@ -1735,8 +1614,8 @@ void Runtime::listEnsureCapacity(const Handle<List>& list, word index) {
   }
   HandleScope scope;
   word new_capacity = (list->capacity() < kInitialEnsuredCapacity)
-      ? kInitialEnsuredCapacity
-      : list->capacity() << 1;
+                          ? kInitialEnsuredCapacity
+                          : list->capacity() << 1;
   if (new_capacity < index) {
     new_capacity = Utils::nextPowerOfTwo(index);
   }
@@ -1754,9 +1633,8 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   list->atPut(index, *value);
 }
 
-void Runtime::listExtend(
-    const Handle<List>& dest,
-    const Handle<Object>& iterable) {
+void Runtime::listExtend(const Handle<List>& dest,
+                         const Handle<Object>& iterable) {
   HandleScope scope;
   Handle<Object> elt(&scope, None::object());
   word index = dest->allocated();
@@ -1823,10 +1701,8 @@ void Runtime::listExtend(
   }
 }
 
-void Runtime::listInsert(
-    const Handle<List>& list,
-    const Handle<Object>& value,
-    word index) {
+void Runtime::listInsert(const Handle<List>& list, const Handle<Object>& value,
+                         word index) {
   listAdd(list, value);
   word last_index = list->allocated() - 1;
   if (index < 0) {
@@ -1852,8 +1728,8 @@ Object* Runtime::listPop(const Handle<List>& list, word index) {
   return *popped;
 }
 
-Object*
-Runtime::listReplicate(Thread* thread, const Handle<List>& list, word ntimes) {
+Object* Runtime::listReplicate(Thread* thread, const Handle<List>& list,
+                               word ntimes) {
   HandleScope scope(thread);
   word len = list->allocated();
   Handle<ObjectArray> items(&scope, newObjectArray(ntimes * len));
@@ -1868,9 +1744,8 @@ Runtime::listReplicate(Thread* thread, const Handle<List>& list, word ntimes) {
   return *result;
 }
 
-Object* Runtime::listSlice(
-    const Handle<List>& list,
-    const Handle<Slice>& slice) {
+Object* Runtime::listSlice(const Handle<List>& list,
+                           const Handle<Slice>& slice) {
   word start, stop, step;
   slice->unpack(&start, &stop, &step);
   word length = Slice::adjustIndices(list->allocated(), &start, &stop, step);
@@ -1896,12 +1771,9 @@ char* Runtime::compile(const char* src) {
   word hash = 0;
 
   // Hash the input.
-  ::siphash(
-      reinterpret_cast<const uint8_t*>(src),
-      strlen(src),
-      reinterpret_cast<const uint8_t*>(seed),
-      reinterpret_cast<uint8_t*>(&hash),
-      sizeof(hash));
+  ::siphash(reinterpret_cast<const uint8_t*>(src), strlen(src),
+            reinterpret_cast<const uint8_t*>(seed),
+            reinterpret_cast<uint8_t*>(&hash), sizeof(hash));
 
   const char* cache_env = OS::getenv("PYRO_CACHE_DIR");
   std::string cache_dir;
@@ -1963,20 +1835,18 @@ Object* Runtime::newDictionary(word initial_size) {
   // TODO: initialSize should be scaled up by a load factor.
   word initial_capacity = Utils::nextPowerOfTwo(initial_size);
   Handle<ObjectArray> array(
-      &scope,
-      newObjectArray(
-          Utils::maximum(
-              static_cast<word>(kInitialDictionaryCapacity), initial_capacity) *
-          Dictionary::Bucket::kNumPointers));
+      &scope, newObjectArray(
+                  Utils::maximum(static_cast<word>(kInitialDictionaryCapacity),
+                                 initial_capacity) *
+                  Dictionary::Bucket::kNumPointers));
   Handle<Dictionary> result(&scope, newDictionary());
   result->setData(*array);
   return *result;
 }
 
-void Runtime::dictionaryAtPut(
-    const Handle<Dictionary>& dict,
-    const Handle<Object>& key,
-    const Handle<Object>& value) {
+void Runtime::dictionaryAtPut(const Handle<Dictionary>& dict,
+                              const Handle<Object>& key,
+                              const Handle<Object>& value) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
@@ -2015,15 +1885,14 @@ ObjectArray* Runtime::dictionaryGrow(const Handle<ObjectArray>& data) {
     word index = -1;
     dictionaryLookup(new_data, key, hash, &index);
     DCHECK(index != -1, "invalid index %ld", index);
-    Dictionary::Bucket::set(
-        *new_data, index, *hash, *key, Dictionary::Bucket::value(*data, i));
+    Dictionary::Bucket::set(*new_data, index, *hash, *key,
+                            Dictionary::Bucket::value(*data, i));
   }
   return *new_data;
 }
 
-Object* Runtime::dictionaryAt(
-    const Handle<Dictionary>& dict,
-    const Handle<Object>& key) {
+Object* Runtime::dictionaryAt(const Handle<Dictionary>& dict,
+                              const Handle<Object>& key) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
@@ -2036,10 +1905,9 @@ Object* Runtime::dictionaryAt(
   return Error::object();
 }
 
-Object* Runtime::dictionaryAtIfAbsentPut(
-    const Handle<Dictionary>& dict,
-    const Handle<Object>& key,
-    Callback<Object*>* thunk) {
+Object* Runtime::dictionaryAtIfAbsentPut(const Handle<Dictionary>& dict,
+                                         const Handle<Object>& key,
+                                         Callback<Object*>* thunk) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
@@ -2064,18 +1932,16 @@ Object* Runtime::dictionaryAtIfAbsentPut(
   return *value;
 }
 
-Object* Runtime::dictionaryAtPutInValueCell(
-    const Handle<Dictionary>& dict,
-    const Handle<Object>& key,
-    const Handle<Object>& value) {
+Object* Runtime::dictionaryAtPutInValueCell(const Handle<Dictionary>& dict,
+                                            const Handle<Object>& key,
+                                            const Handle<Object>& value) {
   Object* result = dictionaryAtIfAbsentPut(dict, key, newValueCellCallback());
   ValueCell::cast(result)->setValue(*value);
   return result;
 }
 
-bool Runtime::dictionaryIncludes(
-    const Handle<Dictionary>& dict,
-    const Handle<Object>& key) {
+bool Runtime::dictionaryIncludes(const Handle<Dictionary>& dict,
+                                 const Handle<Object>& key) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   Handle<Object> key_hash(&scope, hash(*key));
@@ -2083,10 +1949,8 @@ bool Runtime::dictionaryIncludes(
   return dictionaryLookup(data, key, key_hash, &ignore);
 }
 
-bool Runtime::dictionaryRemove(
-    const Handle<Dictionary>& dict,
-    const Handle<Object>& key,
-    Object** value) {
+bool Runtime::dictionaryRemove(const Handle<Dictionary>& dict,
+                               const Handle<Object>& key, Object** value) {
   HandleScope scope;
   Handle<ObjectArray> data(&scope, dict->data());
   word index = -1;
@@ -2101,11 +1965,9 @@ bool Runtime::dictionaryRemove(
   return found;
 }
 
-bool Runtime::dictionaryLookup(
-    const Handle<ObjectArray>& data,
-    const Handle<Object>& key,
-    const Handle<Object>& key_hash,
-    word* index) {
+bool Runtime::dictionaryLookup(const Handle<ObjectArray>& data,
+                               const Handle<Object>& key,
+                               const Handle<Object>& key_hash, word* index) {
   word start = Dictionary::Bucket::getIndex(*data, *key_hash);
   word current = start;
   word next_free_index = -1;
@@ -2121,9 +1983,8 @@ bool Runtime::dictionaryLookup(
     if (Dictionary::Bucket::hasKey(*data, current, *key)) {
       *index = current;
       return true;
-    } else if (
-        next_free_index == -1 &&
-        Dictionary::Bucket::isTombstone(*data, current)) {
+    } else if (next_free_index == -1 &&
+               Dictionary::Bucket::isTombstone(*data, current)) {
       next_free_index = current;
     } else if (Dictionary::Bucket::isEmpty(*data, current)) {
       if (next_free_index == -1) {
@@ -2146,8 +2007,8 @@ ObjectArray* Runtime::dictionaryKeys(const Handle<Dictionary>& dict) {
   word num_keys = 0;
   for (word i = 0; i < data->length(); i += Dictionary::Bucket::kNumPointers) {
     if (Dictionary::Bucket::isFilled(*data, i)) {
-      DCHECK(
-          num_keys < keys->length(), "%ld ! < %ld", num_keys, keys->length());
+      DCHECK(num_keys < keys->length(), "%ld ! < %ld", num_keys,
+             keys->length());
       keys->atPut(num_keys, Dictionary::Bucket::key(*data, i));
       num_keys++;
     }
@@ -2164,11 +2025,9 @@ Object* Runtime::newSet() {
   return *result;
 }
 
-bool Runtime::setLookup(
-    const Handle<ObjectArray>& data,
-    const Handle<Object>& key,
-    const Handle<Object>& key_hash,
-    word* index) {
+bool Runtime::setLookup(const Handle<ObjectArray>& data,
+                        const Handle<Object>& key,
+                        const Handle<Object>& key_hash, word* index) {
   word start = Set::Bucket::getIndex(*data, *key_hash);
   word current = start;
   word next_free_index = -1;
@@ -2184,8 +2043,8 @@ bool Runtime::setLookup(
     if (Set::Bucket::hasKey(*data, current, *key)) {
       *index = current;
       return true;
-    } else if (
-        next_free_index == -1 && Set::Bucket::isTombstone(*data, current)) {
+    } else if (next_free_index == -1 &&
+               Set::Bucket::isTombstone(*data, current)) {
       next_free_index = current;
     } else if (Set::Bucket::isEmpty(*data, current)) {
       if (next_free_index == -1) {
@@ -2269,9 +2128,8 @@ bool Runtime::setRemove(const Handle<Set>& set, const Handle<Object>& value) {
   return found;
 }
 
-void Runtime::setUpdate(
-    const Handle<Set>& dst,
-    const Handle<Object>& iterable) {
+void Runtime::setUpdate(const Handle<Set>& dst,
+                        const Handle<Object>& iterable) {
   HandleScope scope;
   Handle<Object> elt(&scope, None::object());
   if (iterable->isSet()) {
@@ -2320,17 +2178,12 @@ void Runtime::setUpdate(
   }
 }
 
-Object* Runtime::newValueCell() {
-  return heap()->createValueCell();
-}
+Object* Runtime::newValueCell() { return heap()->createValueCell(); }
 
-Object* Runtime::newWeakRef() {
-  return heap()->createWeakRef();
-}
+Object* Runtime::newWeakRef() { return heap()->createWeakRef(); }
 
-void Runtime::collectAttributes(
-    const Handle<Code>& code,
-    const Handle<Dictionary>& attributes) {
+void Runtime::collectAttributes(const Handle<Code>& code,
+                                const Handle<Dictionary>& attributes) {
   HandleScope scope;
   Handle<ByteArray> bc(&scope, code->code());
   Handle<ObjectArray> names(&scope, code->names());
@@ -2368,9 +2221,8 @@ Object* Runtime::classConstructor(const Handle<Class>& klass) {
   return ValueCell::cast(value)->value();
 }
 
-Object* Runtime::computeInitialLayout(
-    Thread* thread,
-    const Handle<Class>& klass) {
+Object* Runtime::computeInitialLayout(Thread* thread,
+                                      const Handle<Class>& klass) {
   HandleScope scope(thread);
   Handle<ObjectArray> mro(&scope, klass->mro());
   Handle<Dictionary> attrs(&scope, newDictionary());
@@ -2399,10 +2251,8 @@ Object* Runtime::computeInitialLayout(
   return *layout;
 }
 
-Object* Runtime::lookupNameInMro(
-    Thread* thread,
-    const Handle<Class>& klass,
-    const Handle<Object>& name) {
+Object* Runtime::lookupNameInMro(Thread* thread, const Handle<Class>& klass,
+                                 const Handle<Object>& name) {
   HandleScope scope(thread);
   Handle<ObjectArray> mro(&scope, klass->mro());
   for (word i = 0; i < mro->length(); i++) {
@@ -2416,10 +2266,8 @@ Object* Runtime::lookupNameInMro(
   return Error::object();
 }
 
-Object* Runtime::attributeAt(
-    Thread* thread,
-    const Handle<Object>& receiver,
-    const Handle<Object>& name) {
+Object* Runtime::attributeAt(Thread* thread, const Handle<Object>& receiver,
+                             const Handle<Object>& name) {
   // A minimal implementation of getattr needed to get richards running.
   Object* result;
   if (receiver->isClass()) {
@@ -2436,11 +2284,9 @@ Object* Runtime::attributeAt(
   return result;
 }
 
-Object* Runtime::attributeAtPut(
-    Thread* thread,
-    const Handle<Object>& receiver,
-    const Handle<Object>& name,
-    const Handle<Object>& value) {
+Object* Runtime::attributeAtPut(Thread* thread, const Handle<Object>& receiver,
+                                const Handle<Object>& name,
+                                const Handle<Object>& value) {
   HandleScope scope(thread);
   Handle<Object> interned_name(&scope, internString(name));
   // A minimal implementation of setattr needed to get richards running.
@@ -2456,9 +2302,8 @@ Object* Runtime::attributeAtPut(
   return result;
 }
 
-Object* Runtime::stringConcat(
-    const Handle<String>& left,
-    const Handle<String>& right) {
+Object* Runtime::stringConcat(const Handle<String>& left,
+                              const Handle<String>& right) {
   HandleScope scope;
 
   const word llen = left->length();
@@ -2472,8 +2317,8 @@ Object* Runtime::stringConcat(
     return SmallString::fromBytes(View<byte>(buffer, new_len));
   }
 
-  Handle<String> result(
-      &scope, LargeString::cast(heap()->createLargeString(new_len)));
+  Handle<String> result(&scope,
+                        LargeString::cast(heap()->createLargeString(new_len)));
   DCHECK(result->isLargeString(), "not a large string");
   const word address = HeapObject::cast(*result)->address();
 
@@ -2482,9 +2327,8 @@ Object* Runtime::stringConcat(
   return *result;
 }
 
-static word stringFormatBufferLength(
-    const Handle<String>& fmt,
-    const Handle<ObjectArray>& args) {
+static word stringFormatBufferLength(const Handle<String>& fmt,
+                                     const Handle<ObjectArray>& args) {
   word arg_idx = 0;
   word len = 0;
   for (word fmt_idx = 0; fmt_idx < fmt->length(); fmt_idx++, len++) {
@@ -2496,15 +2340,15 @@ static word stringFormatBufferLength(
       case 'd': {
         len--;
         CHECK(args->at(arg_idx)->isInteger(), "Argument mismatch");
-        len += snprintf(
-            nullptr, 0, "%ld", Integer::cast(args->at(arg_idx))->asWord());
+        len += snprintf(nullptr, 0, "%ld",
+                        Integer::cast(args->at(arg_idx))->asWord());
         arg_idx++;
       } break;
       case 'g': {
         len--;
         CHECK(args->at(arg_idx)->isDouble(), "Argument mismatch");
-        len += snprintf(
-            nullptr, 0, "%g", Double::cast(args->at(arg_idx))->value());
+        len += snprintf(nullptr, 0, "%g",
+                        Double::cast(args->at(arg_idx))->value());
         arg_idx++;
       } break;
       case 's': {
@@ -2522,11 +2366,9 @@ static word stringFormatBufferLength(
   return len;
 }
 
-static void stringFormatToBuffer(
-    const Handle<String>& fmt,
-    const Handle<ObjectArray>& args,
-    char* dst,
-    word len) {
+static void stringFormatToBuffer(const Handle<String>& fmt,
+                                 const Handle<ObjectArray>& args, char* dst,
+                                 word len) {
   word arg_idx = 0;
   word dst_idx = 0;
   for (word fmt_idx = 0; fmt_idx < fmt->length(); fmt_idx++) {
@@ -2561,10 +2403,8 @@ static void stringFormatToBuffer(
 }
 
 // Initial implementation to support '%' operator for pystone.
-Object* Runtime::stringFormat(
-    Thread* thread,
-    const Handle<String>& fmt,
-    const Handle<ObjectArray>& args) {
+Object* Runtime::stringFormat(Thread* thread, const Handle<String>& fmt,
+                              const Handle<ObjectArray>& args) {
   if (fmt->length() == 0) {
     return *fmt;
   }
@@ -2588,7 +2428,7 @@ Object* Runtime::stringToInt(Thread* thread, const Handle<Object>& arg) {
   if (s->length() == 0) {
     return thread->throwValueErrorFromCString("invalid literal");
   }
-  char* c_string = s->toCString(); // for strtol()
+  char* c_string = s->toCString();  // for strtol()
   char* end_ptr;
   errno = 0;
   long res = std::strtol(c_string, &end_ptr, 10);
@@ -2605,10 +2445,9 @@ Object* Runtime::stringToInt(Thread* thread, const Handle<Object>& arg) {
   return SmallInteger::fromWord(res);
 }
 
-Object* Runtime::computeFastGlobals(
-    const Handle<Code>& code,
-    const Handle<Dictionary>& globals,
-    const Handle<Dictionary>& builtins) {
+Object* Runtime::computeFastGlobals(const Handle<Code>& code,
+                                    const Handle<Dictionary>& globals,
+                                    const Handle<Dictionary>& builtins) {
   HandleScope scope;
   Handle<ByteArray> bytes(&scope, code->code());
   Handle<ObjectArray> names(&scope, code->names());
@@ -2645,10 +2484,8 @@ Object* Runtime::computeFastGlobals(
 
 // See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
 // for details about the line number table format
-word Runtime::codeOffsetToLineNum(
-    Thread* thread,
-    const Handle<Code>& code,
-    word offset) {
+word Runtime::codeOffsetToLineNum(Thread* thread, const Handle<Code>& code,
+                                  word offset) {
   HandleScope scope(thread);
   Handle<ByteArray> table(&scope, code->lnotab());
   word line = code->firstlineno();
@@ -2663,9 +2500,8 @@ word Runtime::codeOffsetToLineNum(
   return line;
 }
 
-Object* Runtime::isSubClass(
-    const Handle<Class>& subclass,
-    const Handle<Class>& superclass) {
+Object* Runtime::isSubClass(const Handle<Class>& subclass,
+                            const Handle<Class>& superclass) {
   HandleScope scope;
   Handle<ObjectArray> mro(&scope, subclass->mro());
   for (word i = 0; i < mro->length(); i++) {
@@ -2676,21 +2512,16 @@ Object* Runtime::isSubClass(
   return Boolean::falseObj();
 }
 
-Object* Runtime::isInstance(
-    const Handle<Object>& obj,
-    const Handle<Class>& klass) {
+Object* Runtime::isInstance(const Handle<Object>& obj,
+                            const Handle<Class>& klass) {
   HandleScope scope;
   Handle<Class> obj_class(&scope, classOf(*obj));
   return isSubClass(obj_class, klass);
 }
 
-Object* Runtime::newClassMethod() {
-  return heap()->createClassMethod();
-}
+Object* Runtime::newClassMethod() { return heap()->createClassMethod(); }
 
-Object* Runtime::newSuper() {
-  return heap()->createSuper();
-}
+Object* Runtime::newSuper() { return heap()->createSuper(); }
 
 Object* Runtime::computeBuiltinBaseClass(const Handle<Class>& klass) {
   // The delegate class can only be one of the builtin bases including object.
@@ -2722,9 +2553,8 @@ Object* Runtime::instanceDelegate(const Handle<Object>& instance) {
       layout->delegateOffset());
 }
 
-void Runtime::setInstanceDelegate(
-    const Handle<Object>& instance,
-    const Handle<Object>& delegate) {
+void Runtime::setInstanceDelegate(const Handle<Object>& instance,
+                                  const Handle<Object>& delegate) {
   HandleScope scope;
   Handle<Layout> layout(&scope, layoutAt(instance->layoutId()));
   DCHECK(layout->hasDelegateSlot(), "instance layout missing delegate");
@@ -2732,10 +2562,8 @@ void Runtime::setInstanceDelegate(
       layout->delegateOffset(), *delegate);
 }
 
-Object* Runtime::instanceAt(
-    Thread* thread,
-    const Handle<HeapObject>& instance,
-    const Handle<Object>& name) {
+Object* Runtime::instanceAt(Thread* thread, const Handle<HeapObject>& instance,
+                            const Handle<Object>& name) {
   HandleScope scope(thread->handles());
 
   // Figure out where the attribute lives in the instance
@@ -2758,11 +2586,10 @@ Object* Runtime::instanceAt(
   return result;
 }
 
-Object* Runtime::instanceAtPut(
-    Thread* thread,
-    const Handle<HeapObject>& instance,
-    const Handle<Object>& name,
-    const Handle<Object>& value) {
+Object* Runtime::instanceAtPut(Thread* thread,
+                               const Handle<HeapObject>& instance,
+                               const Handle<Object>& name,
+                               const Handle<Object>& value) {
   HandleScope scope(thread->handles());
 
   // If the attribute doesn't exist we'll need to transition the layout
@@ -2785,8 +2612,8 @@ Object* Runtime::instanceAtPut(
     // Build the new overflow array
     Handle<ObjectArray> overflow(
         &scope, instance->instanceVariableAt(layout->overflowOffset()));
-    Handle<ObjectArray> new_overflow(
-        &scope, newObjectArray(overflow->length() + 1));
+    Handle<ObjectArray> new_overflow(&scope,
+                                     newObjectArray(overflow->length() + 1));
     overflow->copyTo(*new_overflow);
     new_overflow->atPut(info.offset(), *value);
     instance->instanceVariableAtPut(layout->overflowOffset(), *new_overflow);
@@ -2799,12 +2626,10 @@ Object* Runtime::instanceAtPut(
   return None::object();
 }
 
-Object* Runtime::layoutFollowEdge(
-    const Handle<List>& edges,
-    const Handle<Object>& label) {
-  DCHECK(
-      edges->allocated() % 2 == 0,
-      "edges must contain an even number of elements");
+Object* Runtime::layoutFollowEdge(const Handle<List>& edges,
+                                  const Handle<Object>& label) {
+  DCHECK(edges->allocated() % 2 == 0,
+         "edges must contain an even number of elements");
   for (word i = 0; i < edges->allocated(); i++) {
     if (edges->at(i) == *label) {
       return edges->at(i + 1);
@@ -2813,22 +2638,18 @@ Object* Runtime::layoutFollowEdge(
   return Error::object();
 }
 
-void Runtime::layoutAddEdge(
-    const Handle<List>& edges,
-    const Handle<Object>& label,
-    const Handle<Object>& layout) {
-  DCHECK(
-      edges->allocated() % 2 == 0,
-      "edges must contain an even number of elements");
+void Runtime::layoutAddEdge(const Handle<List>& edges,
+                            const Handle<Object>& label,
+                            const Handle<Object>& layout) {
+  DCHECK(edges->allocated() % 2 == 0,
+         "edges must contain an even number of elements");
   listAdd(edges, label);
   listAdd(edges, layout);
 }
 
-bool Runtime::layoutFindAttribute(
-    Thread* thread,
-    const Handle<Layout>& layout,
-    const Handle<Object>& name,
-    AttributeInfo* info) {
+bool Runtime::layoutFindAttribute(Thread* thread, const Handle<Layout>& layout,
+                                  const Handle<Object>& name,
+                                  AttributeInfo* info) {
   HandleScope scope(thread->handles());
   Handle<Object> iname(&scope, internString(name));
 
@@ -2855,26 +2676,22 @@ bool Runtime::layoutFindAttribute(
   return false;
 }
 
-Object* Runtime::layoutCreateChild(
-    Thread* thread,
-    const Handle<Layout>& layout) {
+Object* Runtime::layoutCreateChild(Thread* thread,
+                                   const Handle<Layout>& layout) {
   HandleScope scope(thread->handles());
   Handle<Layout> new_layout(&scope, newLayout());
-  std::memcpy(
-      reinterpret_cast<byte*>(new_layout->address()),
-      reinterpret_cast<byte*>(layout->address()),
-      Layout::kSize);
+  std::memcpy(reinterpret_cast<byte*>(new_layout->address()),
+              reinterpret_cast<byte*>(layout->address()), Layout::kSize);
   return *new_layout;
 }
 
-Object* Runtime::layoutAddAttributeEntry(
-    Thread* thread,
-    const Handle<ObjectArray>& entries,
-    const Handle<Object>& name,
-    AttributeInfo info) {
+Object* Runtime::layoutAddAttributeEntry(Thread* thread,
+                                         const Handle<ObjectArray>& entries,
+                                         const Handle<Object>& name,
+                                         AttributeInfo info) {
   HandleScope scope(thread);
-  Handle<ObjectArray> new_entries(
-      &scope, newObjectArray(entries->length() + 1));
+  Handle<ObjectArray> new_entries(&scope,
+                                  newObjectArray(entries->length() + 1));
   entries->copyTo(*new_entries);
 
   Handle<ObjectArray> entry(&scope, newObjectArray(2));
@@ -2885,11 +2702,9 @@ Object* Runtime::layoutAddAttributeEntry(
   return *new_entries;
 }
 
-Object* Runtime::layoutAddAttribute(
-    Thread* thread,
-    const Handle<Layout>& layout,
-    const Handle<Object>& name,
-    word flags) {
+Object* Runtime::layoutAddAttribute(Thread* thread,
+                                    const Handle<Layout>& layout,
+                                    const Handle<Object>& name, word flags) {
   HandleScope scope(thread->handles());
   Handle<Object> iname(&scope, internString(name));
 
@@ -2904,9 +2719,8 @@ Object* Runtime::layoutAddAttribute(
   Handle<Layout> new_layout(&scope, layoutCreateChild(thread, layout));
   Handle<ObjectArray> inobject(&scope, layout->inObjectAttributes());
   if (inobject->length() < layout->numInObjectAttributes()) {
-    AttributeInfo info(
-        inobject->length() * kPointerSize,
-        flags | AttributeInfo::Flag::kInObject);
+    AttributeInfo info(inobject->length() * kPointerSize,
+                       flags | AttributeInfo::Flag::kInObject);
     new_layout->setInObjectAttributes(
         layoutAddAttributeEntry(thread, inobject, name, info));
   } else {
@@ -2923,10 +2737,9 @@ Object* Runtime::layoutAddAttribute(
   return *new_layout;
 }
 
-Object* Runtime::layoutDeleteAttribute(
-    Thread* thread,
-    const Handle<Layout>& layout,
-    const Handle<Object>& name) {
+Object* Runtime::layoutDeleteAttribute(Thread* thread,
+                                       const Handle<Layout>& layout,
+                                       const Handle<Object>& name) {
   HandleScope scope(thread->handles());
 
   // See if the attribute exists
@@ -2949,8 +2762,8 @@ Object* Runtime::layoutDeleteAttribute(
     // The attribute to be deleted was an in-object attribute, mark it as
     // deleted
     Handle<ObjectArray> old_inobject(&scope, layout->inObjectAttributes());
-    Handle<ObjectArray> new_inobject(
-        &scope, newObjectArray(old_inobject->length()));
+    Handle<ObjectArray> new_inobject(&scope,
+                                     newObjectArray(old_inobject->length()));
     for (word i = 0; i < old_inobject->length(); i++) {
       Handle<ObjectArray> entry(&scope, old_inobject->at(i));
       if (entry->at(0) == *iname) {
@@ -2999,17 +2812,15 @@ void Runtime::initializeSuperClass() {
   HandleScope scope;
   Handle<Class> super(&scope, initializeHeapClass("super", LayoutId::kSuper));
 
-  classAddBuiltinFunction(
-      super, symbols()->DunderInit(), nativeTrampoline<builtinSuperInit>);
+  classAddBuiltinFunction(super, symbols()->DunderInit(),
+                          nativeTrampoline<builtinSuperInit>);
 
-  classAddBuiltinFunction(
-      super, symbols()->DunderNew(), nativeTrampoline<builtinSuperNew>);
+  classAddBuiltinFunction(super, symbols()->DunderNew(),
+                          nativeTrampoline<builtinSuperNew>);
 }
 
-Object* Runtime::superGetAttr(
-    Thread* thread,
-    const Handle<Object>& receiver,
-    const Handle<Object>& name) {
+Object* Runtime::superGetAttr(Thread* thread, const Handle<Object>& receiver,
+                              const Handle<Object>& name) {
   HandleScope scope(thread);
   Handle<Super> super(&scope, *receiver);
   Handle<Class> start_type(&scope, super->objectType());
@@ -3038,8 +2849,8 @@ Object* Runtime::superGetAttr(
         self = super->object();
       }
       Handle<Object> owner(&scope, *start_type);
-      return Interpreter::callDescriptorGet(
-          thread, thread->currentFrame(), value, self, owner);
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            value, self, owner);
     }
   }
   // fallback to normal instance getattr
@@ -3074,8 +2885,8 @@ ApiHandle* Runtime::asApiHandle(Object* obj) {
   Object* value = dictionaryAt(dict, key);
   if (value->isError()) {
     ApiHandle* handle = ApiHandle::newHandle(obj);
-    Handle<Object> object(
-        &scope, newIntegerFromCPointer(static_cast<void*>(handle)));
+    Handle<Object> object(&scope,
+                          newIntegerFromCPointer(static_cast<void*>(handle)));
     dictionaryAtPut(dict, key, object);
     return handle;
   }
@@ -3089,8 +2900,8 @@ ApiHandle* Runtime::asBorrowedApiHandle(Object* obj) {
   Object* value = dictionaryAt(dict, key);
   if (value->isError()) {
     ApiHandle* handle = ApiHandle::newBorrowedHandle(obj);
-    Handle<Object> object(
-        &scope, newIntegerFromCPointer(static_cast<void*>(handle)));
+    Handle<Object> object(&scope,
+                          newIntegerFromCPointer(static_cast<void*>(handle)));
     dictionaryAtPut(dict, key, object);
     return handle;
   }
@@ -3113,4 +2924,4 @@ void Runtime::freeTrackedAllocations() {
   }
 }
 
-} // namespace python
+}  // namespace python

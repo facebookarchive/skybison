@@ -173,4 +173,4 @@ Object* WeakRef::spliceQueue(Object* tail1, Object* tail2) {
   return tail2;
 }
 
-} // namespace python
+}  // namespace python

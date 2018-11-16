@@ -48,4 +48,4 @@ TEST(HeapTest, AllocateFails) {
   ASSERT_EQ(heap->space()->end(), heap->space()->fill());
 }
 
-} // namespace python
+}  // namespace python

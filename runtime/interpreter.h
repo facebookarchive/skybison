@@ -40,88 +40,61 @@ class Interpreter {
 
   static Object* isTrue(Thread* thread, Frame* caller);
 
-  static Object* callDescriptorGet(
-      Thread* thread,
-      Frame* caller,
-      const Handle<Object>& descriptor,
-      const Handle<Object>& receiver,
-      const Handle<Object>& receiver_type);
+  static Object* callDescriptorGet(Thread* thread, Frame* caller,
+                                   const Handle<Object>& descriptor,
+                                   const Handle<Object>& receiver,
+                                   const Handle<Object>& receiver_type);
 
-  static Object* callDescriptorSet(
-      Thread* thread,
-      Frame* caller,
-      const Handle<Object>& descriptor,
-      const Handle<Object>& receiver,
-      const Handle<Object>& value);
+  static Object* callDescriptorSet(Thread* thread, Frame* caller,
+                                   const Handle<Object>& descriptor,
+                                   const Handle<Object>& receiver,
+                                   const Handle<Object>& value);
 
-  static Object* lookupMethod(
-      Thread* thread,
-      Frame* caller,
-      const Handle<Object>& receiver,
-      const Handle<Object>& selector);
+  static Object* lookupMethod(Thread* thread, Frame* caller,
+                              const Handle<Object>& receiver,
+                              const Handle<Object>& selector);
 
-  static Object* callMethod1(
-      Thread* thread,
-      Frame* caller,
-      const Handle<Object>& method,
-      const Handle<Object>& self);
+  static Object* callMethod1(Thread* thread, Frame* caller,
+                             const Handle<Object>& method,
+                             const Handle<Object>& self);
 
-  static Object* callMethod2(
-      Thread* thread,
-      Frame* caller,
-      const Handle<Object>& method,
-      const Handle<Object>& self,
-      const Handle<Object>& other);
+  static Object* callMethod2(Thread* thread, Frame* caller,
+                             const Handle<Object>& method,
+                             const Handle<Object>& self,
+                             const Handle<Object>& other);
 
-  static Object* callMethod3(
-      Thread* thread,
-      Frame* caller,
-      const Handle<Object>& method,
-      const Handle<Object>& self,
-      const Handle<Object>& arg1,
-      const Handle<Object>& arg2);
+  static Object* callMethod3(Thread* thread, Frame* caller,
+                             const Handle<Object>& method,
+                             const Handle<Object>& self,
+                             const Handle<Object>& arg1,
+                             const Handle<Object>& arg2);
 
-  static Object* callMethod4(
-      Thread* thread,
-      Frame* caller,
-      const Handle<Object>& method,
-      const Handle<Object>& self,
-      const Handle<Object>& arg1,
-      const Handle<Object>& arg2,
-      const Handle<Object>& arg3);
+  static Object* callMethod4(Thread* thread, Frame* caller,
+                             const Handle<Object>& method,
+                             const Handle<Object>& self,
+                             const Handle<Object>& arg1,
+                             const Handle<Object>& arg2,
+                             const Handle<Object>& arg3);
 
-  static Object* unaryOperation(
-      Thread* thread,
-      Frame* caller,
-      const Handle<Object>& receiver,
-      const Handle<Object>& selector);
+  static Object* unaryOperation(Thread* thread, Frame* caller,
+                                const Handle<Object>& receiver,
+                                const Handle<Object>& selector);
 
-  static Object* binaryOperation(
-      Thread* thread,
-      Frame* caller,
-      BinaryOp op,
-      const Handle<Object>& left,
-      const Handle<Object>& right);
+  static Object* binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
+                                 const Handle<Object>& left,
+                                 const Handle<Object>& right);
 
-  static Object* inplaceOperation(
-      Thread* thread,
-      Frame* caller,
-      BinaryOp op,
-      const Handle<Object>& left,
-      const Handle<Object>& right);
+  static Object* inplaceOperation(Thread* thread, Frame* caller, BinaryOp op,
+                                  const Handle<Object>& left,
+                                  const Handle<Object>& right);
 
-  static Object* compareOperation(
-      Thread* thread,
-      Frame* caller,
-      CompareOp op,
-      const Handle<Object>& left,
-      const Handle<Object>& right);
+  static Object* compareOperation(Thread* thread, Frame* caller, CompareOp op,
+                                  const Handle<Object>& left,
+                                  const Handle<Object>& right);
 
-  static Object* sequenceContains(
-      Thread* thread,
-      Frame* caller,
-      const Handle<Object>& value,
-      const Handle<Object>& container);
+  static Object* sequenceContains(Thread* thread, Frame* caller,
+                                  const Handle<Object>& value,
+                                  const Handle<Object>& container);
 
   struct Context {
     Thread* thread;
@@ -217,4 +190,4 @@ class Interpreter {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };
 
-} // namespace python
+}  // namespace python

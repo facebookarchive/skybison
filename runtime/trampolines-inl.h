@@ -17,27 +17,25 @@ Object* nativeTrampoline(Thread* thread, Frame* /*previous_frame*/, word argc) {
   Frame* frame = thread->pushNativeFrame(Utils::castFnPtrToVoid(Fn), argc);
   Handle<Object> result(&scope, Fn(thread, frame, argc));
   Handle<Object> pendingException(&scope, thread->pendingException());
-  DCHECK(
-      result->isError() != pendingException->isNone(),
-      "error/exception mismatch");
+  DCHECK(result->isError() != pendingException->isNone(),
+         "error/exception mismatch");
   thread->abortOnPendingException();
   thread->popFrame();
   return *result;
 }
 
 template <Object* (*Fn)(Thread*, Frame*, word)>
-Object*
-nativeTrampolineKw(Thread* thread, Frame* /*previous_frame*/, word argc) {
+Object* nativeTrampolineKw(Thread* thread, Frame* /*previous_frame*/,
+                           word argc) {
   HandleScope scope(thread->handles());
   Frame* frame = thread->pushNativeFrame(Utils::castFnPtrToVoid(Fn), argc + 1);
   Handle<Object> result(&scope, Fn(thread, frame, argc + 1));
   Handle<Object> pendingException(&scope, thread->pendingException());
-  DCHECK(
-      result->isError() != pendingException->isNone(),
-      "error/exception mismatch");
+  DCHECK(result->isError() != pendingException->isNone(),
+         "error/exception mismatch");
   thread->abortOnPendingException();
   thread->popFrame();
   return *result;
 }
 
-} // namespace python
+}  // namespace python

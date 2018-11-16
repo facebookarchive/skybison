@@ -18,17 +18,13 @@ class View {
     return data_[i];
   }
 
-  const T* data() {
-    return data_;
-  }
+  const T* data() { return data_; }
 
-  word length() {
-    return length_;
-  }
+  word length() { return length_; }
 
  private:
   const T* data_;
   word length_;
 };
 
-} // namespace python
+}  // namespace python

@@ -16,4 +16,4 @@ Object* builtinListNew(Thread* thread, Frame* frame, word nargs);
 Object* builtinListPop(Thread* thread, Frame* frame, word nargs);
 Object* builtinListRemove(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

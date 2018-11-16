@@ -33,17 +33,11 @@ class Vector {
   using allocator_type = Allocator;
   using allocator_traits = std::allocator_traits<allocator_type>;
 
-  Vector(Allocator const& allocator = Allocator()) {
-    _alloc() = allocator;
-  }
+  Vector(Allocator const& allocator = Allocator()) { _alloc() = allocator; }
 
-  ~Vector() {
-    release();
-  }
+  ~Vector() { release(); }
 
-  Vector(const Vector& other) {
-    *this = other;
-  }
+  Vector(const Vector& other) { *this = other; }
 
   Vector& operator=(const Vector& other) {
     clear();
@@ -55,9 +49,7 @@ class Vector {
     return *this;
   }
 
-  Vector(Vector&& other) {
-    *this = std::move(other);
-  }
+  Vector(Vector&& other) { *this = std::move(other); }
 
   Vector& operator=(Vector&& other) {
     if (!other.is_small()) {
@@ -80,18 +72,10 @@ class Vector {
     return *this;
   }
 
-  iterator begin() {
-    return begin_;
-  }
-  const_iterator begin() const {
-    return begin_;
-  }
-  iterator end() {
-    return end_;
-  }
-  const_iterator end() const {
-    return end_;
-  }
+  iterator begin() { return begin_; }
+  const_iterator begin() const { return begin_; }
+  iterator end() { return end_; }
+  const_iterator end() const { return end_; }
 
   T& operator[](size_type idx) {
     DCHECK_INDEX(idx, size());
@@ -120,17 +104,11 @@ class Vector {
     return end()[-1];
   }
 
-  size_type size() const {
-    return end_ - begin_;
-  }
+  size_type size() const { return end_ - begin_; }
 
-  bool empty() const {
-    return size() == 0;
-  }
+  bool empty() const { return size() == 0; }
 
-  size_type capacity() const {
-    return _end_storage() - begin_;
-  }
+  size_type capacity() const { return _end_storage() - begin_; }
 
   void reserve(size_type new_capacity) {
     DCHECK(new_capacity > 0, "invalid new_capacity %ld", new_capacity);
@@ -140,9 +118,7 @@ class Vector {
     grow(new_capacity);
   }
 
-  void clear() {
-    end_ = begin_;
-  }
+  void clear() { end_ = begin_; }
 
   void push_back(const T& t) {
     if (end_ >= _end_storage()) {
@@ -159,18 +135,14 @@ class Vector {
 
  protected:
   // Used by FixedVector
-  Vector(
-      T* begin,
-      T* end_storage,
-      allocator_type const& allocator = Allocator())
+  Vector(T* begin, T* end_storage,
+         allocator_type const& allocator = Allocator())
       : begin_(begin), end_(begin), end_storage_(end_storage, allocator) {}
 
  private:
   static constexpr int growthFactor = 2;
 
-  bool is_small() const {
-    return begin_ == &storage_[0];
-  }
+  bool is_small() const { return begin_ == &storage_[0]; }
 
   void release() {
     if (!is_small() and begin_ != nullptr) {
@@ -214,17 +186,11 @@ class Vector {
     }
   }
 
-  T* const& _end_storage() const noexcept {
-    return std::get<0>(end_storage_);
-  }
+  T* const& _end_storage() const noexcept { return std::get<0>(end_storage_); }
 
-  T*& _end_storage() noexcept {
-    return std::get<0>(end_storage_);
-  }
+  T*& _end_storage() noexcept { return std::get<0>(end_storage_); }
 
-  allocator_type& _alloc() noexcept {
-    return std::get<1>(end_storage_);
-  }
+  allocator_type& _alloc() noexcept { return std::get<1>(end_storage_); }
 
   allocator_type const& _alloc() const noexcept {
     return std::get<1>(end_storage_);
@@ -245,4 +211,4 @@ class Vector {
   // Do not add members after storage_!
 };
 
-} // namespace python
+}  // namespace python

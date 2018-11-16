@@ -58,9 +58,8 @@ print(E.f(1,2))
   EXPECT_EQ(output, "3\n");
 }
 
-TEST(
-    DescriptorBuiltinsTest,
-    PropertyCreateEmptyGetterSetterDeleterReturnsNone) {
+TEST(DescriptorBuiltinsTest,
+     PropertyCreateEmptyGetterSetterDeleterReturnsNone) {
   const char* src = R"(
 x = property()
 )";
@@ -173,9 +172,8 @@ print(c1.x, c2.x)
   EXPECT_EQ(output, "24 42\n");
 }
 
-TEST(
-    DescriptorBuiltinsDeathTest,
-    PropertyNoGetterThrowsAttributeErrorUnreadable) {
+TEST(DescriptorBuiltinsDeathTest,
+     PropertyNoGetterThrowsAttributeErrorUnreadable) {
   const char* src = R"(
 class C:
   def __init__(self, x):
@@ -194,9 +192,8 @@ c1.x
   EXPECT_DEATH(runtime.runFromCString(src), "unreadable attribute");
 }
 
-TEST(
-    DescriptorBuiltinsDeathTest,
-    PropertyNoSetterThrowsAttributeErrorCannotModify) {
+TEST(DescriptorBuiltinsDeathTest,
+     PropertyNoSetterThrowsAttributeErrorCannotModify) {
   const char* src = R"(
 class C:
   def __init__(self, x):
@@ -297,4 +294,4 @@ x = c1.x
   EXPECT_EQ(SmallInteger::cast(*x)->value(), 42);
 }
 
-} // namespace python
+}  // namespace python

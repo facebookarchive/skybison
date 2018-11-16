@@ -32,10 +32,8 @@ std::string compileAndRunToString(Runtime* runtime, const char* src);
 // A predicate-formatter for checking if a python::String* has the same contents
 // as a std::string
 inline ::testing::AssertionResult AssertPyStringEqual(
-    const char* string_expr,
-    const char* /*c_string_expr*/,
-    String* observed_string,
-    std::string expected_string) {
+    const char* string_expr, const char* /*c_string_expr*/,
+    String* observed_string, std::string expected_string) {
   std::string std_str;
   std_str.reserve(observed_string->length());
   for (word i = 0; i < observed_string->length(); i++) {
@@ -47,9 +45,9 @@ inline ::testing::AssertionResult AssertPyStringEqual(
   }
 
   return ::testing::AssertionFailure()
-      << "      Expected: " << string_expr << "\n"
-      << "      Which is: \"" << std_str << "\"\n"
-      << "To be equal to: \"" << expected_string << "\"";
+         << "      Expected: " << string_expr << "\n"
+         << "      Which is: \"" << std_str << "\"\n"
+         << "To be equal to: \"" << expected_string << "\"";
 }
 
 #define EXPECT_PYSTRING_EQ(s1, s2)                                             \
@@ -57,25 +55,23 @@ inline ::testing::AssertionResult AssertPyStringEqual(
 
 // Get the value bound to name in the supplied module. Returns Error::object()
 // if not found.
-Object*
-findInModule(Runtime* runtime, const Handle<Module>& module, const char* name);
+Object* findInModule(Runtime* runtime, const Handle<Module>& module,
+                     const char* name);
 
 // Calls func using the supplied arguments and captures output.
 //
 // This opens a new frame linked to the initial frame of the current thread,
 // pushes all the arguments onto the stack, and invokes the interpreter.
-std::string callFunctionToString(
-    const Handle<Function>& func,
-    const Handle<ObjectArray>& args);
+std::string callFunctionToString(const Handle<Function>& func,
+                                 const Handle<ObjectArray>& args);
 
-bool objectArrayContains(
-    const Handle<ObjectArray>& object_array,
-    const Handle<Object>& key);
+bool objectArrayContains(const Handle<ObjectArray>& object_array,
+                         const Handle<Object>& key);
 
 Object* findModule(Runtime* runtime, const char* name);
 
-Object*
-moduleAt(Runtime* runtime, const Handle<Module>& module, const char* name);
+Object* moduleAt(Runtime* runtime, const Handle<Module>& module,
+                 const char* name);
 
-} // namespace testing
-} // namespace python
+}  // namespace testing
+}  // namespace python

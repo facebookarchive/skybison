@@ -9,4 +9,4 @@ namespace python {
 
 Object* builtinTupleEq(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

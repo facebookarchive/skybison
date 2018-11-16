@@ -8,4 +8,4 @@ namespace python {
 
 Object* builtinSysExit(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

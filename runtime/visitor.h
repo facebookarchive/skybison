@@ -10,4 +10,4 @@ class PointerVisitor {
   virtual ~PointerVisitor() = default;
 };
 
-} // namespace python
+}  // namespace python

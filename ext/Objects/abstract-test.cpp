@@ -10,8 +10,8 @@ typedef struct {
   PyObject_HEAD;
 } CallableObject;
 
-static PyObject*
-CallableObject_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+static PyObject* CallableObject_new(PyTypeObject* type, PyObject* args,
+                                    PyObject* kwds) {
   return type->tp_alloc(type, 0);
 }
 
@@ -19,8 +19,8 @@ static void CallableObject_dealloc(CallableObject* self) {
   Py_TYPE(self)->tp_free(static_cast<void*>(self));
 }
 
-static PyObject*
-CallableObject_call(CallableObject* self, PyObject* args, PyObject* kwargs) {
+static PyObject* CallableObject_call(CallableObject* self, PyObject* args,
+                                     PyObject* kwargs) {
   return PyLong_FromLong(42);
 }
 
@@ -41,10 +41,10 @@ TEST(Abstract, ObjectCallNoArgumentsReturnsValue) {
   PyObject* custom_obj = PyType_GenericAlloc(&callable_type, 0);
   PyObject* result = PyObject_Call(custom_obj, PyTuple_New(0), nullptr);
 
-  Handle<Object> result_handle(
-      &scope, ApiHandle::fromPyObject(result)->asObject());
+  Handle<Object> result_handle(&scope,
+                               ApiHandle::fromPyObject(result)->asObject());
   ASSERT_TRUE(result_handle->isSmallInteger());
   ASSERT_EQ(SmallInteger::cast(*result_handle)->value(), 42);
 }
 
-} // namespace python
+}  // namespace python

@@ -28,4 +28,4 @@ TEST(SpaceTest, Allocate) {
   EXPECT_EQ(space.start(), space.fill());
 }
 
-} // namespace python
+}  // namespace python

@@ -10,7 +10,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(StrBuiltinsTest, RichCompareStringEQ) { // pystone dependency
+TEST(StrBuiltinsTest, RichCompareStringEQ) {  // pystone dependency
   const char* src = R"(
 a = "__main__"
 if (a == "__main__"):
@@ -23,7 +23,7 @@ else:
   EXPECT_EQ(output, "foo\n");
 }
 
-TEST(StrBuiltinsTest, RichCompareStringNE) { // pystone dependency
+TEST(StrBuiltinsTest, RichCompareStringNE) {  // pystone dependency
   const char* src = R"(
 a = "__main__"
 if (a != "__main__"):
@@ -58,4 +58,4 @@ a_le_a = 'a' <= 'a'
   EXPECT_EQ(*a_le_a, Boolean::trueObj());
 }
 
-} // namespace python
+}  // namespace python

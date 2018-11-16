@@ -28,4 +28,4 @@ Object* builtinObjectNew(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInstance(layout);
 }
 
-} // namespace python
+}  // namespace python

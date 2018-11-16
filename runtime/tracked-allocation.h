@@ -13,13 +13,9 @@ class TrackedAllocation {
   static void insert(TrackedAllocation** head, TrackedAllocation* alloc);
   static void remove(TrackedAllocation** head, TrackedAllocation* alloc);
 
-  TrackedAllocation* previous() {
-    return previous_;
-  }
+  TrackedAllocation* previous() { return previous_; }
 
-  TrackedAllocation* next() {
-    return next_;
-  }
+  TrackedAllocation* next() { return next_; }
 
  private:
   TrackedAllocation* previous_;
@@ -28,4 +24,4 @@ class TrackedAllocation {
   DISALLOW_IMPLICIT_CONSTRUCTORS(TrackedAllocation);
 };
 
-} // namespace python
+}  // namespace python

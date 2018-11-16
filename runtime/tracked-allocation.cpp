@@ -13,16 +13,14 @@ void TrackedAllocation::freePtr(TrackedAllocation** head, void* ptr) {
   TrackedAllocation::free(head, static_cast<TrackedAllocation*>(ptr) - 1);
 }
 
-void TrackedAllocation::free(
-    TrackedAllocation** head,
-    TrackedAllocation* alloc) {
+void TrackedAllocation::free(TrackedAllocation** head,
+                             TrackedAllocation* alloc) {
   TrackedAllocation::remove(head, alloc);
   std::free(static_cast<void*>(alloc));
 }
 
-void TrackedAllocation::insert(
-    TrackedAllocation** head,
-    TrackedAllocation* alloc) {
+void TrackedAllocation::insert(TrackedAllocation** head,
+                               TrackedAllocation* alloc) {
   if (*head == nullptr) {
     alloc->previous_ = alloc;
     alloc->next_ = alloc;
@@ -36,9 +34,8 @@ void TrackedAllocation::insert(
   }
 }
 
-void TrackedAllocation::remove(
-    TrackedAllocation** head,
-    TrackedAllocation* alloc) {
+void TrackedAllocation::remove(TrackedAllocation** head,
+                               TrackedAllocation* alloc) {
   if ((*head)->next_ == *head) {
     *head = nullptr;
   } else {
@@ -50,4 +47,4 @@ void TrackedAllocation::remove(
   }
 }
 
-} // namespace python
+}  // namespace python

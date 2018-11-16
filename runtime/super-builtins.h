@@ -10,4 +10,4 @@ namespace python {
 Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs);
 Object* builtinSuperNew(Thread* thread, Frame* frame, word nargs);
 
-} // namespace python
+}  // namespace python

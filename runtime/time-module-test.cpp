@@ -8,7 +8,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(TimeModuleTest, TimeOpSub) { // pystone dependency
+TEST(TimeModuleTest, TimeOpSub) {  // pystone dependency
   const char* src = R"(
 import time
 starttime = time.time()
@@ -23,7 +23,7 @@ print(nulltime.__class__ is float)
   EXPECT_EQ(output, "True\n");
 }
 
-TEST(TimeModuleTest, TimeOpDiv) { // pystone dependency
+TEST(TimeModuleTest, TimeOpDiv) {  // pystone dependency
   const char* src = R"(
 loops = 50
 from time import time
@@ -43,7 +43,7 @@ print(benchtime != 0.0)
   EXPECT_EQ(output, "True\n");
 }
 
-TEST(TimeModuleTest, TimeTime) { // pystone dependency
+TEST(TimeModuleTest, TimeTime) {  // pystone dependency
   const char* src = R"(
 import time
 t = time.time()
@@ -55,7 +55,7 @@ print(t.__class__ is float)
   EXPECT_EQ(output, "True\n");
 }
 
-TEST(TimeModuleTest, TimeTimeFromImport) { // pystone dependency
+TEST(TimeModuleTest, TimeTimeFromImport) {  // pystone dependency
   const char* src = R"(
 from time import time
 t = time()
@@ -67,4 +67,4 @@ print(t.__class__ is float)
   EXPECT_EQ(output, "True\n");
 }
 
-} // namespace python
+}  // namespace python

@@ -44,8 +44,8 @@ TEST(TypeObject, ReadyCreatesRuntimeClass) {
   // Obtain EmptyType Class object from the runtime
   Handle<Object> type_id(
       &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&empty_type)));
-  Handle<Object> type_class_obj(
-      &scope, runtime.dictionaryAt(extensions_dict, type_id));
+  Handle<Object> type_class_obj(&scope,
+                                runtime.dictionaryAt(extensions_dict, type_id));
   EXPECT_TRUE(type_class_obj->isClass());
 
   // Confirm the class name
@@ -70,8 +70,8 @@ TEST(TypeObject, ReadiedTypeCreatesRuntimeInstance) {
   PyType_Ready(&empty_type);
   Handle<Object> type_id(
       &scope, runtime.newIntegerFromCPointer(static_cast<void*>(&empty_type)));
-  Handle<Class> type_class(
-      &scope, runtime.dictionaryAt(extensions_dict, type_id));
+  Handle<Class> type_class(&scope,
+                           runtime.dictionaryAt(extensions_dict, type_id));
 
   // Instantiate a class object
   Handle<Layout> layout(&scope, type_class->instanceLayout());
@@ -84,8 +84,8 @@ typedef struct {
   int value;
 } CustomObject;
 
-static PyObject*
-Custom_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+static PyObject* Custom_new(PyTypeObject* type, PyObject* args,
+                            PyObject* kwds) {
   CustomObject* self = reinterpret_cast<CustomObject*>(type->tp_alloc(type, 0));
   return reinterpret_cast<PyObject*>(self);
 }
@@ -154,8 +154,8 @@ instance2 = custom.Custom()
   // Decref and dealloc custom instance
   Handle<HeapObject> instance2(
       &scope, testing::findInModule(&runtime, main, "instance2"));
-  Handle<Integer> object_ptr2(
-      &scope, runtime.instanceAt(thread, instance2, attr_name));
+  Handle<Integer> object_ptr2(&scope,
+                              runtime.instanceAt(thread, instance2, attr_name));
   CustomObject* custom_obj2 =
       static_cast<CustomObject*>(object_ptr2->asCPointer());
   EXPECT_EQ(1, Py_REFCNT(custom_obj2));
@@ -176,8 +176,8 @@ TEST(TypeObject, GenericAllocationReturnsMallocMemory) {
   PyType_Ready(&custom_type);
 
   PyObject* result = PyType_GenericAlloc(&custom_type, 0);
-  Handle<Object> instance_obj(
-      &scope, ApiHandle::fromPyObject(result)->asObject());
+  Handle<Object> instance_obj(&scope,
+                              ApiHandle::fromPyObject(result)->asObject());
   ASSERT_TRUE(instance_obj->isInstance());
   EXPECT_EQ(1, Py_REFCNT(result));
 }
@@ -199,4 +199,4 @@ TEST(TypeObject, RuntimeInitializesStaticPyTypObjects) {
   EXPECT_EQ(0, memcmp(&pytype1->tp_name, &pytype2->tp_name, length));
 }
 
-} // namespace python
+}  // namespace python

@@ -66,4 +66,4 @@ class Marshal {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Marshal);
 };
 
-} // namespace python
+}  // namespace python

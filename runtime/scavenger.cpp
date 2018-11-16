@@ -47,9 +47,7 @@ void Scavenger::scavengePointer(Object** pointer) {
   }
 }
 
-void Scavenger::processRoots() {
-  runtime_->visitRoots(visitor());
-}
+void Scavenger::processRoots() { runtime_->visitRoots(visitor()); }
 
 bool Scavenger::hasWhiteReferent(Object* reference) {
   WeakRef* weak = WeakRef::cast(reference);
@@ -119,4 +117,4 @@ Object* Scavenger::transport(Object* old_object) {
   return to_object;
 }
 
-} // namespace python
+}  // namespace python

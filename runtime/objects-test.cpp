@@ -57,12 +57,12 @@ TEST(IntegerTest, IsPositive) {
   Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
   EXPECT_FALSE(neg_one->isPositive());
 
-  Handle<Integer> max_small_int(
-      &scope, runtime.newInteger(SmallInteger::kMaxValue));
+  Handle<Integer> max_small_int(&scope,
+                                runtime.newInteger(SmallInteger::kMaxValue));
   EXPECT_TRUE(max_small_int->isPositive());
 
-  Handle<Integer> min_small_int(
-      &scope, runtime.newInteger(SmallInteger::kMinValue));
+  Handle<Integer> min_small_int(&scope,
+                                runtime.newInteger(SmallInteger::kMinValue));
   EXPECT_FALSE(min_small_int->isPositive());
 
   Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
@@ -85,12 +85,12 @@ TEST(IntegerTest, IsNegative) {
   Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
   EXPECT_TRUE(neg_one->isNegative());
 
-  Handle<Integer> max_small_int(
-      &scope, runtime.newInteger(SmallInteger::kMaxValue));
+  Handle<Integer> max_small_int(&scope,
+                                runtime.newInteger(SmallInteger::kMaxValue));
   EXPECT_FALSE(max_small_int->isNegative());
 
-  Handle<Integer> min_small_int(
-      &scope, runtime.newInteger(SmallInteger::kMinValue));
+  Handle<Integer> min_small_int(&scope,
+                                runtime.newInteger(SmallInteger::kMinValue));
   EXPECT_TRUE(min_small_int->isNegative());
 
   Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
@@ -113,12 +113,12 @@ TEST(IntegerTest, IsZero) {
   Handle<Integer> neg_one(&scope, runtime.newInteger(-1));
   EXPECT_FALSE(neg_one->isZero());
 
-  Handle<Integer> max_small_int(
-      &scope, runtime.newInteger(SmallInteger::kMaxValue));
+  Handle<Integer> max_small_int(&scope,
+                                runtime.newInteger(SmallInteger::kMaxValue));
   EXPECT_FALSE(max_small_int->isZero());
 
-  Handle<Integer> min_small_int(
-      &scope, runtime.newInteger(SmallInteger::kMinValue));
+  Handle<Integer> min_small_int(&scope,
+                                runtime.newInteger(SmallInteger::kMinValue));
   EXPECT_FALSE(min_small_int->isZero());
 
   Handle<Integer> max_word(&scope, runtime.newInteger(kMaxWord));
@@ -531,4 +531,4 @@ TEST(WeakRefTest, SpliceQueue) {
   EXPECT_EQ(list, None::object());
 }
 
-} // namespace python
+}  // namespace python

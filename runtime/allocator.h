@@ -14,15 +14,11 @@ class SimpleAllocator {
   SimpleAllocator() = default;
   SimpleAllocator(const SimpleAllocator&) = default;
 
-  T* allocate(size_t n) {
-    return reinterpret_cast<T*>(std::malloc(n));
-  }
+  T* allocate(size_t n) { return reinterpret_cast<T*>(std::malloc(n)); }
 
   // For this simple allocator, the size of the pointer is not needed.
   // std::free correctly deallocates the entire malloc'd space.
-  void deallocate(T* p, size_t) {
-    std::free(p);
-  }
+  void deallocate(T* p, size_t) { std::free(p); }
 };
 
-} // namespace python
+}  // namespace python

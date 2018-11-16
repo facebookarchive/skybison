@@ -44,8 +44,8 @@ TEST(MarshalReaderTest, ReadTypeAscii) {
   EXPECT_EQ(runtime.internString(str), *str);
 
   // Read a ref
-  Marshal::Reader ref_reader(
-      &scope, &runtime, "\xe1\x0a\x00\x00\x00testing321");
+  Marshal::Reader ref_reader(&scope, &runtime,
+                             "\xe1\x0a\x00\x00\x00testing321");
   Handle<Object> ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
   ASSERT_TRUE(ref_result->isString());
@@ -57,8 +57,8 @@ TEST(MarshalReaderTest, ReadTypeAscii) {
   EXPECT_EQ(runtime.internString(str2), *str2);
 
   // Read an ascii string with negative length
-  Marshal::Reader neg_reader(
-      &scope, &runtime, "\x61\xf6\xff\xff\xfftesting123");
+  Marshal::Reader neg_reader(&scope, &runtime,
+                             "\x61\xf6\xff\xff\xfftesting123");
   EXPECT_EQ(neg_reader.readObject(), Error::object());
 }
 
@@ -79,8 +79,8 @@ TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
   EXPECT_NE(runtime.internString(str), *str);
 
   // Read a ref
-  Marshal::Reader ref_reader(
-      &scope, &runtime, "\xc1\x0a\x00\x00\x00testing321");
+  Marshal::Reader ref_reader(&scope, &runtime,
+                             "\xc1\x0a\x00\x00\x00testing321");
   Handle<Object> ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
   ASSERT_TRUE(ref_result->isString());
@@ -92,8 +92,8 @@ TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
   EXPECT_NE(runtime.internString(str2), *str2);
 
   // Read an ascii string with negative length
-  Marshal::Reader neg_reader(
-      &scope, &runtime, "\x41\xf6\xff\xff\xfftesting123");
+  Marshal::Reader neg_reader(&scope, &runtime,
+                             "\x41\xf6\xff\xff\xfftesting123");
   EXPECT_EQ(neg_reader.readObject(), Error::object());
 }
 
@@ -114,8 +114,8 @@ TEST(MarshalReaderTest, ReadTypeUnicode) {
   EXPECT_EQ(runtime.internString(str), *str);
 
   // Read a ref
-  Marshal::Reader ref_reader(
-      &scope, &runtime, "\xf5\x0a\x00\x00\x00testing321");
+  Marshal::Reader ref_reader(&scope, &runtime,
+                             "\xf5\x0a\x00\x00\x00testing321");
   Handle<Object> ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
   ASSERT_TRUE(ref_result->isString());
@@ -127,8 +127,8 @@ TEST(MarshalReaderTest, ReadTypeUnicode) {
   EXPECT_EQ(runtime.internString(str2), *str2);
 
   // Read an unicode string with negative length
-  Marshal::Reader neg_reader(
-      &scope, &runtime, "\x75\xf6\xff\xff\xfftesting123");
+  Marshal::Reader neg_reader(&scope, &runtime,
+                             "\x75\xf6\xff\xff\xfftesting123");
   EXPECT_EQ(neg_reader.readObject(), Error::object());
 }
 
@@ -149,8 +149,8 @@ TEST(MarshalReaderTest, ReadTypeInterned) {
   EXPECT_NE(runtime.internString(str), *str);
 
   // Read a ref
-  Marshal::Reader ref_reader(
-      &scope, &runtime, "\xf4\x0a\x00\x00\x00testing321");
+  Marshal::Reader ref_reader(&scope, &runtime,
+                             "\xf4\x0a\x00\x00\x00testing321");
   Handle<Object> ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
   ASSERT_TRUE(ref_result->isString());
@@ -162,8 +162,8 @@ TEST(MarshalReaderTest, ReadTypeInterned) {
   EXPECT_NE(runtime.internString(str2), *str2);
 
   // Read an interned string with negative length
-  Marshal::Reader neg_reader(
-      &scope, &runtime, "\x74\xf6\xff\xff\xfftesting123");
+  Marshal::Reader neg_reader(&scope, &runtime,
+                             "\x74\xf6\xff\xff\xfftesting123");
   EXPECT_EQ(neg_reader.readObject(), Error::object());
 }
 
@@ -213,7 +213,7 @@ TEST(MarshalReaderTest, ReadLong) {
   ASSERT_EQ(d, 0x04030201);
 
   int32 e = Marshal::Reader(&scope, &runtime, "\x00\x00\x00\x80").readLong();
-  ASSERT_EQ(e, -2147483648); // INT32_MIN
+  ASSERT_EQ(e, -2147483648);  // INT32_MIN
 }
 
 TEST(MarshalReaderTest, ReadTypeIntMin) {
@@ -286,9 +286,8 @@ TEST(MarshalReaderDeathTest, ReadNegativeTypeLong) {
 
   // marshal.dumps(INT32_MIN - 1)
   const char buf[] = "\xec\xfd\xff\xff\xff\x01\x00\x00\x00\x02\x00";
-  EXPECT_DEATH(
-      Marshal::Reader(&scope, &runtime, buf).readObject(),
-      "unimplemented: TYPE_LONG");
+  EXPECT_DEATH(Marshal::Reader(&scope, &runtime, buf).readObject(),
+               "unimplemented: TYPE_LONG");
 }
 
 TEST(MarshalReaderDeathTest, ReadPositiveTypeLong) {
@@ -297,18 +296,16 @@ TEST(MarshalReaderDeathTest, ReadPositiveTypeLong) {
 
   // marshal.dumps(INT32_MAX + 1)
   const char buf[] = "\xec\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00";
-  EXPECT_DEATH(
-      Marshal::Reader(&scope, &runtime, buf).readObject(),
-      "unimplemented: TYPE_LONG");
+  EXPECT_DEATH(Marshal::Reader(&scope, &runtime, buf).readObject(),
+               "unimplemented: TYPE_LONG");
 }
 
 TEST(MarshalReaderDeathTest, ReadUnknownTypeCode) {
   Runtime runtime;
   HandleScope scope;
   const char buf[] = "\xff";
-  EXPECT_DEATH(
-      Marshal::Reader(&scope, &runtime, buf).readObject(),
-      "unreachable: unknown type");
+  EXPECT_DEATH(Marshal::Reader(&scope, &runtime, buf).readObject(),
+               "unreachable: unknown type");
 }
 
 TEST(MarshalReaderTest, ReadShort) {
@@ -322,7 +319,7 @@ TEST(MarshalReaderTest, ReadShort) {
   ASSERT_EQ(b, 0x0201);
 
   int16 c = Marshal::Reader(&scope, &runtime, "\x00\x80").readShort();
-  ASSERT_EQ(c, -32768); // INT16_MIN
+  ASSERT_EQ(c, -32768);  // INT16_MIN
 }
 
 TEST(MarshalReaderTest, ReadObjectNull) {
@@ -340,7 +337,8 @@ TEST(MarshalReaderTest, ReadObjectCode) {
       "\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x40\x00\x00\x00\x73\x04\x00"
       "\x00\x00\x64\x00\x53\x00\x29\x01\x4E\xA9\x00\x72\x01\x00\x00\x00\x72\x01"
       "\x00\x00\x00\x72\x01\x00\x00\x00\xFA\x07\x70\x61\x73\x73\x2E\x70\x79\xDA"
-      "\x08\x3C\x6D\x6F\x64\x75\x6C\x65\x3E\x01\x00\x00\x00\x73\x00\x00\x00\x00";
+      "\x08\x3C\x6D\x6F\x64\x75\x6C\x65\x3E\x01\x00\x00\x00\x73\x00\x00\x00"
+      "\x00";
   Marshal::Reader reader(&scope, &runtime, buffer);
 
   int32 magic = reader.readLong();
@@ -392,4 +390,4 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   EXPECT_EQ(ByteArray::cast(code->lnotab())->length(), 0);
 }
 
-} // namespace python
+}  // namespace python

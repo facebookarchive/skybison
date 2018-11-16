@@ -10,4 +10,4 @@ const char* const kBytecodeNames[] = {
 
 const CompareOp kSwappedCompareOp[] = {GT, GE, EQ, NE, LT, LE};
 
-} // namespace python
+}  // namespace python
