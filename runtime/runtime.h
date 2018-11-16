@@ -591,6 +591,9 @@ class Runtime {
                            const Handle<Object>& label);
 
   // Creates a new layout that will be a child layout of the supplied parent.
+  //
+  // The new layout shares the in-object and overflow attributes with the
+  // parent and contains no outgoing edges.
   Object* layoutCreateChild(Thread* thread, const Handle<Layout>& parent);
 
   // The size listEnsureCapacity grows to if array is empty

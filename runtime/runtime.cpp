@@ -2672,9 +2672,15 @@ Object* Runtime::layoutCreateChild(Thread* thread,
                                    const Handle<Layout>& layout) {
   HandleScope scope(thread);
   Handle<Layout> new_layout(&scope, newLayout());
-  std::memcpy(reinterpret_cast<byte*>(new_layout->address()),
-              reinterpret_cast<byte*>(layout->address()), Layout::kSize);
   new_layout->setId(reserveLayoutId());
+  new_layout->setDescribedClass(layout->describedClass());
+  new_layout->setNumInObjectAttributes(layout->numInObjectAttributes());
+  new_layout->setInObjectAttributes(layout->inObjectAttributes());
+  new_layout->setOverflowAttributes(layout->overflowAttributes());
+  new_layout->setInstanceSize(layout->instanceSize());
+  if (layout->hasDelegateSlot()) {
+    new_layout->addDelegateSlot();
+  }
   layoutAtPut(new_layout->id(), *new_layout);
   return *new_layout;
 }

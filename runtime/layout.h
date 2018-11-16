@@ -36,6 +36,8 @@ class AttributeInfo {
   static bool isValidOffset(word offset) { return offset <= kMaxOffset; }
 
   enum Flag {
+    kNone = 0,
+
     // When set, this indicates that the attribute is stored directly on the
     // instance. When unset, this indicates that the attribute is stored in
     // the overflow array attached to the instance.
