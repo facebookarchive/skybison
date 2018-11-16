@@ -168,8 +168,8 @@ doBuiltinPrint(const Arguments& args, word nargs, const Handle<Object>& end) {
   return None::object();
 }
 
-Object* builtinPrint(Thread*, Frame* frame, word nargs) {
-  HandleScope scope;
+Object* builtinPrint(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
   Handle<Object> end(&scope, None::object());
   Arguments args(frame, nargs);
   return doBuiltinPrint(args, nargs, end);
@@ -202,7 +202,7 @@ Object* builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
     return Error::object();
   }
 
-  HandleScope scope;
+  HandleScope scope(thread);
   Handle<Object> end(&scope, args.get(nargs - 1));
   if (!(end->isString() || end->isNone())) {
     thread->throwTypeErrorFromCString("'end' must be a string or None");
@@ -301,6 +301,19 @@ Object* builtinLen(Thread* thread, Frame* callerFrame, word nargs) {
 }
 
 // List
+Object* listOrDelegate(Thread* thread, const Handle<Object>& instance) {
+  if (instance->isList()) {
+    return *instance;
+  } else {
+    HandleScope scope(thread);
+    Handle<Class> klass(&scope, thread->runtime()->classOf(*instance));
+    if (klass->hasFlag(Class::Flag::kListSubclass)) {
+      return thread->runtime()->instanceDelegate(instance);
+    }
+  }
+  return Error::object();
+}
+
 Object* builtinListNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newList();
 }
@@ -310,22 +323,17 @@ Object* builtinListAppend(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString(
         "append() takes exactly one argument");
   }
-  HandleScope scope;
-  Handle<Object> arg(&scope, frame->valueStackTop()[0]);
-  Handle<Object> instance(&scope, frame->valueStackTop()[1]);
-  if (instance->isList()) {
-    Handle<List> list(&scope, *instance);
-    thread->runtime()->listAdd(list, arg);
-  } else {
-    Handle<Class> klass(&scope, thread->runtime()->classOf(*instance));
-    if (klass->hasFlag(Class::Flag::kListSubclass)) {
-      Handle<List> list(&scope, thread->runtime()->instanceDelegate(instance));
-      thread->runtime()->listAdd(list, arg);
-    } else {
-      return thread->throwTypeErrorFromCString(
-          "append() only support list or its subclasses");
-    }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
+    return thread->throwTypeErrorFromCString(
+        "append() only support list or its subclasses");
   }
+  Handle<List> list(&scope, *list_or_error);
+  Handle<Object> value(&scope, args.get(1));
+  thread->runtime()->listAdd(list, value);
   return None::object();
 }
 
@@ -335,17 +343,19 @@ Object* builtinListInsert(Thread* thread, Frame* frame, word nargs) {
         "insert() takes exactly two arguments");
   }
   Arguments args(frame, nargs);
-  if (!args.get(0)->isList()) {
-    return thread->throwTypeErrorFromCString(
-        "descriptor 'insert' requires a 'list' object");
-  }
   if (!args.get(1)->isInteger()) {
     return thread->throwTypeErrorFromCString(
         "index object cannot be interpreted as an integer");
   }
 
-  HandleScope scope;
-  Handle<List> list(&scope, args.get(0));
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
+    return thread->throwTypeErrorFromCString(
+        "descriptor 'insert' requires a 'list' object");
+  }
+  Handle<List> list(&scope, *list_or_error);
   word index = SmallInteger::cast(args.get(1))->value();
   Handle<Object> value(&scope, args.get(2));
   thread->runtime()->listInsert(list, value, index);
@@ -357,17 +367,19 @@ Object* builtinListPop(Thread* thread, Frame* frame, word nargs) {
     return thread->throwTypeErrorFromCString("pop() takes at most 1 argument");
   }
   Arguments args(frame, nargs);
-  if (!args.get(0)->isList()) {
-    return thread->throwTypeErrorFromCString(
-        "descriptor 'pop' requires a 'list' object");
-  }
   if (nargs == 2 && !args.get(1)->isSmallInteger()) {
     return thread->throwTypeErrorFromCString(
         "index object cannot be interpreted as an integer");
   }
 
-  HandleScope scope;
-  Handle<List> list(&scope, args.get(0));
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  Handle<Object> list_or_error(&scope, listOrDelegate(thread, self));
+  if (list_or_error->isError()) {
+    return thread->throwTypeErrorFromCString(
+        "descriptor 'pop' requires a 'list' object");
+  }
+  Handle<List> list(&scope, *list_or_error);
   word index = list->allocated() - 1;
   if (nargs == 2) {
     word last_index = index;

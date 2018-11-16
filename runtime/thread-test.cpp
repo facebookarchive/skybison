@@ -2565,10 +2565,14 @@ class Bar(Foo, list): pass
 a = Bar()
 a.append(1)
 print(a[0], a.a)
+a.insert(0, 2)
+print(a[0], a[1])
+a.pop()
+print(a[0])
 )";
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "1 a\n");
+  EXPECT_EQ(output, "1 a\n2 1\n2\n");
 }
 
 TEST(ThreadTest, BaseClassConflict) {
