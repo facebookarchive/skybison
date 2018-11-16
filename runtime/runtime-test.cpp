@@ -1795,6 +1795,8 @@ static Object* createClass(Runtime* runtime) {
   Handle<ObjectArray> mro(&scope, runtime->newObjectArray(1));
   mro->atPut(0, *klass);
   klass->setMro(*mro);
+  layout->setId(runtime->reserveLayoutId());
+  runtime->layoutAtPut(layout->id(), *layout);
   return *klass;
 }
 

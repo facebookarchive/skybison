@@ -15,6 +15,7 @@
 #include "callback.h"
 #include "descriptor-builtins.h"
 #include "dict-builtins.h"
+#include "exception-builtins.h"
 #include "float-builtins.h"
 #include "frame.h"
 #include "function-builtins.h"
@@ -137,6 +138,93 @@ Object* Runtime::newLayout() {
   layout->setDeletions(newList());
   layout->setNumInObjectAttributes(0);
   return *layout;
+}
+
+Object* Runtime::layoutCreateSubclassWithBuiltins(
+    LayoutId subclass_id, LayoutId superclass_id,
+    View<BuiltinAttribute> attributes) {
+  HandleScope scope;
+
+  // A builtin class is special since it contains attributes that must be
+  // located at fixed offsets from the start of an instance.  These attributes
+  // are packed at the beginning of the layout starting at offset 0.
+  Handle<Layout> super_layout(&scope, layoutAt(superclass_id));
+  Handle<ObjectArray> super_attributes(&scope,
+                                       super_layout->inObjectAttributes());
+
+  // Sanity check that a subclass that has fixed attributes does inherit from a
+  // superclass with attributes that are not fixed.
+  for (word i = 0; i < super_attributes->length(); i++) {
+    Handle<ObjectArray> elt(&scope, super_attributes->at(i));
+    AttributeInfo info(elt->at(1));
+    CHECK(info.isInObject() && info.isFixedOffset(),
+          "all superclass attributes must be in-object and fixed");
+  }
+
+  // Create an empty layout for the subclass
+  Handle<Layout> result(&scope, newLayout());
+  result->setId(subclass_id);
+
+  // Copy down all of the superclass attributes into the subclass layout
+  Handle<ObjectArray> in_object(
+      &scope, newObjectArray(super_attributes->length() + attributes.length()));
+  super_attributes->copyTo(*in_object);
+  appendBuiltinAttributes(attributes, in_object, super_attributes->length());
+
+  // Install the in-object attributes
+  result->setInObjectAttributes(*in_object);
+  result->setNumInObjectAttributes(in_object->length());
+
+  return *result;
+}
+
+void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
+                                      const Handle<ObjectArray>& dst,
+                                      word start_index) {
+  if (attributes.length() == 0) {
+    return;
+  }
+  HandleScope scope;
+  Handle<ObjectArray> entry(&scope, empty_object_array_);
+  for (word i = start_index; i < attributes.length(); i++) {
+    AttributeInfo info(
+        attributes.get(i).offset,
+        AttributeInfo::Flag::kInObject | AttributeInfo::Flag::kFixedOffset);
+    entry = newObjectArray(2);
+    entry->atPut(0, symbols()->at(attributes.get(i).name));
+    entry->atPut(1, info.asSmallInteger());
+    dst->atPut(i, *entry);
+  }
+}
+
+Object* Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                                 LayoutId superclass_id,
+                                 View<BuiltinAttribute> attributes) {
+  HandleScope scope;
+
+  // Create a class object for the subclass
+  Handle<Class> subclass(&scope, newClass());
+  subclass->setName(symbols()->at(name));
+
+  Handle<Layout> layout(&scope, layoutCreateSubclassWithBuiltins(
+                                    subclass_id, superclass_id, attributes));
+
+  // Assign the layout to the class
+  layout->setDescribedClass(*subclass);
+
+  // Now we can create an MRO
+  Handle<ObjectArray> mro(&scope, createMro(layout, superclass_id));
+
+  subclass->setMro(*mro);
+  subclass->setInstanceLayout(*layout);
+  Handle<Class> superclass(&scope, classAt(superclass_id));
+  subclass->setFlags(superclass->flags());
+
+  // Install the layout and class
+  layoutAtPut(subclass_id, *layout);
+
+  // return the class
+  return *subclass;
 }
 
 Object* Runtime::newByteArray(word length, byte fill) {
@@ -431,7 +519,7 @@ Object* Runtime::newFunction() {
 Object* Runtime::newInstance(const Handle<Layout>& layout) {
   word num_words = layout->instanceSize();
   Object* object = heap()->createInstance(layout->id(), num_words);
-  auto instance = Instance::cast(object);
+  HeapObject* instance = HeapObject::cast(object);
   // Set the overflow array
   instance->instanceVariableAtPut(layout->overflowOffset(),
                                   empty_object_array_);
@@ -771,6 +859,9 @@ void Runtime::initializeHeapClasses() {
   initializeStrClass();
   initializeHeapClass("int", LayoutId::kInteger, LayoutId::kObject);
 
+  // Exception hierarchy
+  initializeExceptionClasses();
+
   // Concrete classes.
   initializeHeapClass("bytearray", LayoutId::kByteArray, LayoutId::kObject);
   initializeClassMethodClass();
@@ -801,6 +892,14 @@ void Runtime::initializeHeapClasses() {
   initializeSuperClass();
   initializeTypeClass();
   initializeHeapClass("valuecell", LayoutId::kValueCell, LayoutId::kObject);
+}
+
+void Runtime::initializeExceptionClasses() {
+  BaseExceptionBuiltins::initialize(this);
+  SystemExitBuiltins::initialize(this);
+  addBuiltinClass(SymbolId::kException, LayoutId::kException,
+                  LayoutId::kBaseException, View<BuiltinAttribute>(nullptr, 0));
+  StopIterationBuiltins::initialize(this);
 }
 
 void Runtime::initializeRefClass() {
@@ -1497,8 +1596,11 @@ void Runtime::createBuiltinsModule() {
                            unimplementedTrampoline, unimplementedTrampoline);
 
   // Add builtin types
+  moduleAddBuiltinType(module, SymbolId::kBaseException,
+                       LayoutId::kBaseException);
   moduleAddBuiltinType(module, SymbolId::kClassmethod, LayoutId::kClassMethod);
   moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDictionary);
+  moduleAddBuiltinType(module, SymbolId::kException, LayoutId::kException);
   moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kDouble);
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
   moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
@@ -1506,6 +1608,9 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kStaticMethod,
                        LayoutId::kStaticMethod);
   moduleAddBuiltinType(module, SymbolId::kSet, LayoutId::kSet);
+  moduleAddBuiltinType(module, SymbolId::kStopIteration,
+                       LayoutId::kStopIteration);
+  moduleAddBuiltinType(module, SymbolId::kSystemExit, LayoutId::kSystemExit);
   moduleAddBuiltinType(module, SymbolId::kSuper, LayoutId::kSuper);
   moduleAddBuiltinType(module, SymbolId::kType, LayoutId::kType);
 

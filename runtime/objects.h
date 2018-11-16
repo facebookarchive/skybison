@@ -14,6 +14,7 @@ namespace python {
 
 #define INTRINSIC_HEAP_CLASS_NAMES(V)                                          \
   V(Object)                                                                    \
+  V(BaseException)                                                             \
   V(BoundMethod)                                                               \
   V(ByteArray)                                                                 \
   V(ClassMethod)                                                               \
@@ -21,6 +22,7 @@ namespace python {
   V(Dictionary)                                                                \
   V(Double)                                                                    \
   V(Ellipsis)                                                                  \
+  V(Exception)                                                                 \
   V(Function)                                                                  \
   V(Integer)                                                                   \
   V(LargeInteger)                                                              \
@@ -36,7 +38,9 @@ namespace python {
   V(Set)                                                                       \
   V(Slice)                                                                     \
   V(StaticMethod)                                                              \
+  V(StopIteration)                                                             \
   V(String)                                                                    \
+  V(SystemExit)                                                                \
   V(Type)                                                                      \
   V(ValueCell)                                                                 \
   V(WeakRef)
@@ -73,6 +77,7 @@ enum class LayoutId : word {
 
   // Heap objects
   kObject = 32,
+  kBaseException,
   kBoundMethod,
   kByteArray,
   kClassMethod,
@@ -81,6 +86,7 @@ enum class LayoutId : word {
   kDictionary,
   kDouble,
   kEllipsis,
+  kException,
   kFunction,
   kInteger,
   kLargeInteger,
@@ -97,7 +103,9 @@ enum class LayoutId : word {
   kSet,
   kSlice,
   kStaticMethod,
+  kStopIteration,
   kString,
+  kSystemExit,
   kSuper,
   kType,
   kValueCell,
@@ -121,7 +129,7 @@ class Object {
   bool isSmallString();
 
   // Heap objects
-  bool isHeapObject();
+  bool isBaseException();
   bool isBoundMethod();
   bool isByteArray();
   bool isClass();
@@ -131,9 +139,10 @@ class Object {
   bool isDictionary();
   bool isDouble();
   bool isEllipsis();
+  bool isException();
   bool isFunction();
+  bool isHeapObject();
   bool isInstance();
-  bool isInteger();
   bool isLargeInteger();
   bool isLargeString();
   bool isLayout();
@@ -148,11 +157,14 @@ class Object {
   bool isSet();
   bool isSlice();
   bool isStaticMethod();
+  bool isStopIteration();
   bool isSuper();
+  bool isSystemExit();
   bool isValueCell();
   bool isWeakRef();
 
   // superclass objects
+  bool isInteger();
   bool isString();
 
   static bool equals(Object* lhs, Object* rhs);
@@ -497,11 +509,85 @@ class HeapObject : public Object {
   friend class Runtime;
 };
 
+class BaseException : public HeapObject {
+ public:
+  // Getters and setters.
+  Object* args();
+  void setArgs(Object* args);
+
+  Object* traceback();
+  void setTraceback(Object* traceback);
+
+  Object* cause();
+  void setCause(Object* cause);
+
+  Object* context();
+  void setContext(Object* context);
+
+  // Casting.
+  static BaseException* cast(Object* object);
+
+  // Sizing.
+  static word allocationSize();
+
+  static const int kArgsOffset = HeapObject::kSize;
+  static const int kTracebackOffset = kArgsOffset + kPointerSize;
+  static const int kCauseOffset = kTracebackOffset + kPointerSize;
+  static const int kContextOffset = kCauseOffset + kPointerSize;
+  static const int kSize = kContextOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(BaseException);
+};
+
+class Exception : public BaseException {
+ public:
+  // Casting.
+  static Exception* cast(Object* object);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Exception);
+};
+
+class StopIteration : public BaseException {
+ public:
+  // Getters and setters.
+  Object* value();
+  void setValue(Object* value);
+
+  // Casting.
+  static StopIteration* cast(Object* object);
+
+  static const int kValueOffset = BaseException::kSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(StopIteration);
+};
+
+class SystemExit : public BaseException {
+ public:
+  Object* code();
+  void setCode(Object* code);
+
+  // Casting.
+  static SystemExit* cast(Object* object);
+
+  static const int kCodeOffset = BaseException::kSize;
+  static const int kSize = kCodeOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExit);
+};
+
 class Class : public HeapObject {
  public:
   enum Flag {
-    kListSubclass = 1,
-    kDictSubclass = 2,
+    kBaseExceptionSubclass = 1 << 0,
+    kDictSubclass = 1 << 1,
+    kListSubclass = 1 << 2,
+    kStopIterationSubclass = 1 << 3,
+    kSystemExitSubclass = 1 << 4,
   };
 
   // Getters and setters.
@@ -1772,6 +1858,21 @@ inline bool Object::isLayout() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLayout;
 }
 
+inline bool Object::isBaseException() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+         LayoutId::kBaseException;
+}
+
+inline bool Object::isException() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kException;
+}
+
 inline bool Object::isBoundMethod() {
   if (!isHeapObject()) {
     return false;
@@ -1948,7 +2049,22 @@ inline bool Object::isStaticMethod() {
          LayoutId::kStaticMethod;
 }
 
+inline bool Object::isStopIteration() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+         LayoutId::kStopIteration;
+}
+
 inline bool Object::isString() { return isSmallString() || isLargeString(); }
+
+inline bool Object::isSystemExit() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSystemExit;
+}
 
 inline bool Object::isWeakRef() {
   if (!isHeapObject()) {
@@ -2351,6 +2467,78 @@ inline Object* HeapObject::instanceVariableAt(word offset) {
 
 inline void HeapObject::instanceVariableAtPut(word offset, Object* value) {
   *reinterpret_cast<Object**>(address() + offset) = value;
+}
+
+// BaseException
+
+inline BaseException* BaseException::cast(Object* object) {
+  DCHECK(object->isBaseException(), "invalid cast, expected BaseException");
+  return reinterpret_cast<BaseException*>(object);
+}
+
+inline Object* BaseException::args() { return instanceVariableAt(kArgsOffset); }
+
+inline void BaseException::setArgs(Object* args) {
+  instanceVariableAtPut(kArgsOffset, args);
+}
+
+inline Object* BaseException::traceback() {
+  return instanceVariableAt(kTracebackOffset);
+}
+
+inline void BaseException::setTraceback(Object* traceback) {
+  instanceVariableAtPut(kTracebackOffset, traceback);
+}
+
+inline Object* BaseException::cause() {
+  return instanceVariableAt(kCauseOffset);
+}
+
+inline void BaseException::setCause(Object* cause) {
+  return instanceVariableAtPut(kCauseOffset, cause);
+}
+
+inline Object* BaseException::context() {
+  return instanceVariableAt(kContextOffset);
+}
+
+inline void BaseException::setContext(Object* context) {
+  return instanceVariableAtPut(kContextOffset, context);
+}
+
+// Exception
+
+inline Exception* Exception::cast(Object* object) {
+  DCHECK(object->isException(), "invalid cast, expected Exception");
+  return reinterpret_cast<Exception*>(object);
+}
+
+// StopIteration
+
+inline StopIteration* StopIteration::cast(Object* object) {
+  DCHECK(object->isStopIteration(), "invalid cast, expected StopIteration");
+  return reinterpret_cast<StopIteration*>(object);
+}
+
+inline Object* StopIteration::value() {
+  return instanceVariableAt(kValueOffset);
+}
+
+inline void StopIteration::setValue(Object* value) {
+  instanceVariableAtPut(kValueOffset, value);
+}
+
+// SystemExit
+
+inline SystemExit* SystemExit::cast(Object* object) {
+  DCHECK(object->isSystemExit(), "invalid cast, expected SystemExit");
+  return reinterpret_cast<SystemExit*>(object);
+}
+
+inline Object* SystemExit::code() { return instanceVariableAt(kCodeOffset); }
+
+inline void SystemExit::setCode(Object* code) {
+  instanceVariableAtPut(kCodeOffset, code);
 }
 
 // Class

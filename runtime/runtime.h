@@ -6,6 +6,7 @@
 #include "handles.h"
 #include "heap.h"
 #include "interpreter.h"
+#include "layout.h"
 #include "symbols.h"
 #include "tracked-allocation.h"
 #include "view.h"
@@ -18,6 +19,16 @@ class Object;
 class ObjectArray;
 class PointerVisitor;
 class Thread;
+
+struct BuiltinAttribute {
+  SymbolId name;
+  int offset;
+};
+
+struct BuiltinMethod {
+  SymbolId name;
+  Object* (*address)(Thread* thread, Frame* frame, word nargs);
+};
 
 class Runtime {
  public:
@@ -158,6 +169,12 @@ class Runtime {
   Object* classAt(LayoutId layout_id);
   Object* layoutAt(LayoutId layout_id);
   void layoutAtPut(LayoutId layout_id, Object* object);
+
+  // Bootstrapping primitive for creating a built-in class that has built-in
+  // attributes.
+  Object* addBuiltinClass(SymbolId name, LayoutId subclass_id,
+                          LayoutId superclass_id,
+                          View<BuiltinAttribute> attributes);
 
   LayoutId reserveLayoutId();
 
@@ -414,6 +431,10 @@ class Runtime {
   Object* isSubClass(const Handle<Class>& subclass,
                      const Handle<Class>& superclass);
 
+  bool hasSubClassFlag(Object* instance, Class::Flag flag) {
+    return Class::cast(classAt(instance->layoutId()))->hasFlag(flag);
+  }
+
   // Return true if obj is an instance of a subclass of klass
   Object* isInstance(const Handle<Object>& obj, const Handle<Class>& klass);
 
@@ -474,6 +495,7 @@ class Runtime {
  private:
   void initializeThreads();
   void initializeClasses();
+  void initializeExceptionClasses();
   void initializeLayouts();
   void initializeHeapClasses();
   void initializeImmediateClasses();
@@ -569,6 +591,18 @@ class Runtime {
   // helper function add builtin types
   void moduleAddBuiltinType(const Handle<Module>& module, SymbolId name,
                             LayoutId layout_id);
+
+  // Creates a layout that is a subclass of a built-in class and zero or more
+  // additional built-in attributes.
+  Object* layoutCreateSubclassWithBuiltins(LayoutId subclass_id,
+                                           LayoutId superclass_id,
+                                           View<BuiltinAttribute> attributes);
+
+  // Appends attribute entries for fixed attributes to an array of in-object
+  // attribute entries starting at a specific index.  Useful for constructing
+  // the in-object attributes array for built-in classes with fixed attributes.
+  void appendBuiltinAttributes(View<BuiltinAttribute> attributes,
+                               const Handle<ObjectArray>& dst, word index);
 
   // Appends the edge to the list of edges.
   //

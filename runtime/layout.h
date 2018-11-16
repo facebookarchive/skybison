@@ -46,6 +46,9 @@ class AttributeInfo {
     // Only applies to in-object attributes. When set, it indicates that the
     // attribute has been deleted.
     kDeleted = 2,
+
+    // Attribute lives at a fixed offset in the layout.
+    kFixedOffset = 4,
   };
 
   word flags();
@@ -56,6 +59,8 @@ class AttributeInfo {
   bool isOverflow() { return !testFlag(Flag::kInObject); }
 
   bool isDeleted() { return testFlag(Flag::kDeleted); }
+
+  bool isFixedOffset() { return testFlag(Flag::kFixedOffset); }
 
   // Casting.
   SmallInteger* asSmallInteger();

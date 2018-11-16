@@ -64,6 +64,8 @@ add_library(
   runtime/descriptor-builtins.h
   runtime/dict-builtins.cpp
   runtime/dict-builtins.h
+  runtime/exception-builtins.cpp
+  runtime/exception-builtins.h
   runtime/float-builtins.cpp
   runtime/float-builtins.h
   runtime/frame.cpp
@@ -207,6 +209,7 @@ add_library(
   STATIC
   runtime/builtins-module-test.cpp
   runtime/descriptor-builtins-test.cpp
+  runtime/exception-builtins-test.cpp
   runtime/float-builtins-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp

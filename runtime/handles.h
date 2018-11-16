@@ -154,4 +154,27 @@ class Handle : public ObjectHandle {
   DISALLOW_COPY_AND_ASSIGN(Handle);
 };
 
+// This class is a temporary workaround until there is infrastructure to do a
+// checked up-cast based on a class flag instead of a class ID.  This is only
+// needed when a handle must up-cast a user-defined subclass to a built-in class
+// type.  The use of this handle should be limited to handles types that are
+// subclasses of BaseException.
+template <typename T>
+class UncheckedHandle : public ObjectHandle {
+ public:
+  T* operator->() const { return reinterpret_cast<T*>(pointer_); }
+
+  T* operator*() const { return reinterpret_cast<T*>(pointer_); }
+
+  UncheckedHandle(HandleScope* scope, Object* pointer)
+      : ObjectHandle(scope, pointer) {
+    static_assert(std::is_base_of<Object, T>::value,
+                  "You can only get a handle to a python::Object.");
+  }
+
+ private:
+  DISALLOW_HEAP_ALLOCATION();
+  DISALLOW_COPY_AND_ASSIGN(UncheckedHandle);
+};
+
 }  // namespace python

@@ -17,6 +17,7 @@ class Runtime;
   V(DunderClass, "__class__")                                                  \
   V(DunderClassCell, "__classcell__")                                          \
   V(DunderContains, "__contains__")                                            \
+  V(DunderContext, "__context__")                                              \
   V(DunderDivmod, "__divmod__")                                                \
   V(DunderEnter, "__enter__")                                                  \
   V(DunderEq, "__eq__")                                                        \
@@ -77,14 +78,18 @@ class Runtime;
   V(DunderXor, "__xor__")                                                      \
   V(Add, "add")                                                                \
   V(Append, "append")                                                          \
+  V(Args, "args")                                                              \
   V(Argv, "argv")                                                              \
+  V(BaseException, "BaseException")                                            \
   V(BitLength, "bit_length")                                                   \
   V(Builtins, "builtins")                                                      \
+  V(Cause, "cause")                                                            \
   V(Chr, "chr")                                                                \
   V(Classmethod, "classmethod")                                                \
   V(Deleter, "deleter")                                                        \
   V(Dict, "dict")                                                              \
   V(End, "end")                                                                \
+  V(Exception, "Exception")                                                    \
   V(Exit, "exit")                                                              \
   V(Extend, "extend")                                                          \
   V(ExtensionPtr, "___extension___")                                           \
@@ -109,14 +114,19 @@ class Runtime;
   V(Remove, "remove")                                                          \
   V(Set, "set")                                                                \
   V(Setter, "setter")                                                          \
+  V(Size, "size")                                                              \
   V(StaticMethod, "staticmethod")                                              \
   V(Stderr, "stderr")                                                          \
   V(Stdout, "stdout")                                                          \
+  V(StopIteration, "StopIteration")                                            \
   V(Super, "super")                                                            \
   V(Sys, "sys")                                                                \
+  V(SystemExit, "SystemExit")                                                  \
   V(Time, "time")                                                              \
+  V(Traceback, "traceback")                                                    \
   V(Type, "type")                                                              \
-  V(UnderWeakRef, "_weakref")
+  V(UnderWeakRef, "_weakref")                                                  \
+  V(Value, "value")
 
 // clang-format off
 enum class SymbolId {
