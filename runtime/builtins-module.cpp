@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <iostream>
 
-#include "builtins.h" // for builtinTypeCall
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
@@ -11,6 +10,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace python {
 

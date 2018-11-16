@@ -3,7 +3,6 @@
 #include <iostream>
 #include <memory>
 
-#include "builtins.h"
 #include "bytecode.h"
 #include "frame.h"
 #include "globals.h"
@@ -69,74 +68,6 @@ hello()
   // Execute the code and make sure we get back the result we expect
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "hello, world\n");
-}
-
-TEST(ThreadTest, DunderCallClass) {
-  Runtime runtime;
-  HandleScope scope;
-
-  const char* src = R"(
-class C: pass
-c = C()
-)";
-
-  runtime.runFromCString(src);
-
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Class> type(&scope, moduleAt(&runtime, main, "C"));
-  ASSERT_FALSE(type->isError());
-  Handle<Object> instance(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_FALSE(instance->isError());
-  Handle<Object> instance_type(&scope, runtime.classOf(*instance));
-  ASSERT_FALSE(instance_type->isError());
-
-  EXPECT_EQ(*type, *instance_type);
-}
-
-TEST(ThreadTest, DunderCallClassWithInit) {
-  Runtime runtime;
-  HandleScope scope;
-
-  const char* src = R"(
-class C:
-  def __init__(self):
-    global g
-    g = 2
-
-g = 1
-C()
-)";
-
-  runtime.runFromCString(src);
-
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
-  ASSERT_FALSE(global->isError());
-  ASSERT_TRUE(global->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*global)->value(), 2);
-}
-
-TEST(ThreadTest, DunderCallClassWithInitAndArgs) {
-  Runtime runtime;
-  HandleScope scope;
-
-  const char* src = R"(
-class C:
-  def __init__(self, x):
-    global g
-    g = x
-
-g = 1
-C(9)
-)";
-
-  runtime.runFromCString(src);
-
-  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
-  Handle<Object> global(&scope, moduleAt(&runtime, main, "g"));
-  ASSERT_FALSE(global->isError());
-  ASSERT_TRUE(global->isSmallInteger());
-  EXPECT_EQ(SmallInteger::cast(*global)->value(), 9);
 }
 
 TEST(ThreadTest, DunderCallInstance) {
@@ -2030,23 +1961,6 @@ print(x)
       "Python is an interpreted high-level programming language for general-purpose programming.\n");
 }
 
-TEST(ThreadTest, Classmethod) {
-  const char* src = R"(
-class Foo():
-  a = 1
-  @classmethod
-  def bar(cls):
-    print(cls.a)
-a = Foo()
-a.bar()
-Foo.a = 2
-Foo.bar()
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "1\n2\n");
-}
-
 TEST(TestThread, BuildTupleUnpack) {
   const char* src = R"(
 t = (*[0], *[1, 2], *[], *[3, 4, 5])
@@ -2768,37 +2682,6 @@ print("There are %d pystones %g %s what" % (a, d, c))
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "There are 123 pystones 67.89 now what\n");
-}
-
-TEST(ThreadTest, StaticmethodObjAccess) {
-  const char* src = R"(
-class E:
-    @staticmethod
-    def f(x):
-        return x + 1
-
-e = E()
-print(e.f(5))
-)";
-
-  Runtime runtime;
-  const std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "6\n");
-}
-
-TEST(ThreadTest, StaticmethodClsAccess) {
-  const char* src = R"(
-class E():
-    @staticmethod
-    def f(x, y):
-        return x + y
-
-print(E.f(1,2))
-)";
-
-  Runtime runtime;
-  const std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "3\n");
 }
 
 TEST(ThreadTest, BuildClassWithMetaClass) {

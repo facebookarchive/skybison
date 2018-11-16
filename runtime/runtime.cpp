@@ -11,12 +11,13 @@
 
 #include "bool-builtins.h"
 #include "builtins-module.h"
-#include "builtins.h"
 #include "bytecode.h"
 #include "callback.h"
+#include "descriptor-builtins.h"
 #include "dict-builtins.h"
 #include "float-builtins.h"
 #include "frame.h"
+#include "function-builtins.h"
 #include "globals.h"
 #include "handles.h"
 #include "heap.h"
@@ -25,6 +26,7 @@
 #include "layout.h"
 #include "list-builtins.h"
 #include "marshal.h"
+#include "object-builtins.h"
 #include "os.h"
 #include "ref-builtins.h"
 #include "scavenger.h"
@@ -37,6 +39,7 @@
 #include "time-module.h"
 #include "trampolines-inl.h"
 #include "tuple-builtins.h"
+#include "type-builtins.h"
 #include "utils.h"
 #include "visitor.h"
 
@@ -777,9 +780,7 @@ void Runtime::initializeFunctionClass() {
       &scope, initializeHeapClass("function", LayoutId::kFunction));
 
   classAddBuiltinFunction(
-      function,
-      symbols()->DunderGet(),
-      nativeTrampoline<functionDescriptorGet>);
+      function, symbols()->DunderGet(), nativeTrampoline<builtinFunctionGet>);
 }
 
 void Runtime::initializeObjectClass() {
@@ -875,7 +876,7 @@ void Runtime::initializeClassMethodClass() {
   classAddBuiltinFunction(
       classmethod,
       symbols()->DunderGet(),
-      nativeTrampoline<classmethodDescriptorGet>);
+      nativeTrampoline<builtinClassMethodGet>);
 
   classAddBuiltinFunction(
       classmethod,
@@ -1036,7 +1037,7 @@ void Runtime::initializeStaticMethodClass() {
   classAddBuiltinFunction(
       staticmethod,
       symbols()->DunderGet(),
-      nativeTrampoline<staticmethodDescriptorGet>);
+      nativeTrampoline<builtinStaticMethodGet>);
 
   classAddBuiltinFunction(
       staticmethod,

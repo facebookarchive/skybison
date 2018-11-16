@@ -52,24 +52,25 @@ add_library(
   runtime/allocator.h
   runtime/bool-builtins.cpp
   runtime/bool-builtins.h
-  runtime/builtins.cpp
-  runtime/builtins.h
   runtime/builtins-module.cpp
   runtime/builtins-module.h
   runtime/bytecode.cpp
   runtime/bytecode.h
   runtime/callback.h
+  runtime/descriptor-builtins.cpp
+  runtime/descriptor-builtins.h
   runtime/dict-builtins.cpp
   runtime/dict-builtins.h
+  runtime/float-builtins.cpp
+  runtime/float-builtins.h
   runtime/frame.cpp
   runtime/frame.h
+  runtime/function-builtins.cpp
   runtime/globals.h
   runtime/handles.cpp
   runtime/handles.h
   runtime/heap.cpp
   runtime/heap.h
-  runtime/float-builtins.cpp
-  runtime/float-builtins.h
   runtime/int-builtins.cpp
   runtime/int-builtins.h
   runtime/interpreter.cpp
@@ -81,6 +82,7 @@ add_library(
   runtime/marshal.h
   runtime/mro.cpp
   runtime/mro.h
+  runtime/object-builtins.cpp
   runtime/objects.cpp
   runtime/objects.h
   runtime/os.cpp
@@ -91,10 +93,10 @@ add_library(
   runtime/runtime.h
   runtime/scavenger.cpp
   runtime/scavenger.h
-  runtime/space.cpp
-  runtime/space.h
   runtime/set-builtins.cpp
   runtime/set-builtins.h
+  runtime/space.cpp
+  runtime/space.h
   runtime/str-builtins.cpp
   runtime/str-builtins.h
   runtime/super-builtins.cpp
@@ -107,11 +109,12 @@ add_library(
   runtime/thread.h
   runtime/time-module.cpp
   runtime/time-module.h
+  runtime/trampolines-inl.h
   runtime/trampolines.cpp
   runtime/trampolines.h
-  runtime/trampolines-inl.h
   runtime/tuple-builtins.cpp
   runtime/tuple-builtins.h
+  runtime/type-builtins.cpp
   runtime/utils.cpp
   runtime/utils.h
   runtime/vector.h
@@ -190,7 +193,7 @@ add_library(
   runtime-tests
   STATIC
   runtime/builtins-module-test.cpp
-  runtime/trampolines-test.cpp
+  runtime/descriptor-builtins-test.cpp
   runtime/float-builtins-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
@@ -201,18 +204,20 @@ add_library(
   runtime/marshal-test.cpp
   runtime/objects-test.cpp
   runtime/os-test.cpp
-  runtime/runtime-test.cpp
   runtime/ref-builtins-test.cpp
+  runtime/runtime-test.cpp
   runtime/scavenger-test.cpp
   runtime/set-builtins-test.cpp
   runtime/space-test.cpp
+  runtime/str-builtins-test.cpp
   runtime/super-builtins-test.cpp
   runtime/sys-module-test.cpp
-  runtime/str-builtins-test.cpp
   runtime/test-utils.cpp
   runtime/test-utils.h
   runtime/thread-test.cpp
   runtime/time-module-test.cpp
+  runtime/trampolines-test.cpp
+  runtime/type-builtins-test.cpp
   runtime/utils-test.cpp
   runtime/vector-test.cpp)
 target_link_libraries(

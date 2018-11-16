@@ -2,7 +2,6 @@
 
 #include "Python.h"
 
-#include "runtime/builtins.h"
 #include "runtime/handles.h"
 #include "runtime/mro.h"
 #include "runtime/objects.h"
