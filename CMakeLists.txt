@@ -311,6 +311,7 @@ add_library(
   ext/Objects/typeobject-test.cpp
   ext/Objects/unicodeobject-test.cpp
   ext/Python/errors-test.cpp
+  ext/Python/getargs-test.cpp
   ext/Python/modsupport-test.cpp
   ext/test/capi-fixture.h
   ext/test/capi-testing.h

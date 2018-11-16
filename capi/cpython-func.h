@@ -105,6 +105,11 @@ PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject *);
 #define PyType_Check(op) \
   PyType_Check_Func((PyObject*)op)
 #define PyType_CheckExact(op) (PyType_CheckExact_Func((PyObject*)op))
+
+#define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
+// TODO(T33954927): redefine PyTuple_GET_ITEM in a way that doesnt break pyro
+#define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem((PyObject*)op, i, v)
+
 /* clang-format on */
 
 #ifdef __cplusplus
