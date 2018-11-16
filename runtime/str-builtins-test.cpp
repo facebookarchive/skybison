@@ -280,6 +280,60 @@ l = "aloha".__len__("arg")
   EXPECT_DEATH(runtime.runFromCString(code), "expected 0 arguments");
 }
 
+TEST(StrBuiltinsTest, IndexWithSliceWithPositiveInts) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello"
+b = a[1:2]
+c = a[1:4]
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<String> c(&scope, moduleAt(&runtime, main, "c"));
+
+  EXPECT_PYSTRING_EQ(*a, "hello");
+  EXPECT_PYSTRING_EQ(*b, "e");
+  EXPECT_PYSTRING_EQ(*c, "ell");
+}
+
+TEST(StrBuiltinsTest, IndexWithSliceWithNegativeInts) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello"
+b = a[-1:]
+c = a[1:-2]
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<String> c(&scope, moduleAt(&runtime, main, "c"));
+
+  EXPECT_PYSTRING_EQ(*a, "hello");
+  EXPECT_PYSTRING_EQ(*b, "o");
+  EXPECT_PYSTRING_EQ(*c, "el");
+}
+
+TEST(StrBuiltinsTest, IndexWithSliceWithStep) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+a = "hello"
+b = a[0:5:2]
+c = a[1:5:3]
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<String> c(&scope, moduleAt(&runtime, main, "c"));
+
+  EXPECT_PYSTRING_EQ(*a, "hello");
+  EXPECT_PYSTRING_EQ(*b, "hlo");
+  EXPECT_PYSTRING_EQ(*c, "eo");
+}
+
 TEST(StrBuiltinsTest, StringFormat) {
   Runtime runtime;
   runtime.runFromCString(R"(

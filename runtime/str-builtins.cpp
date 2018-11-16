@@ -356,11 +356,24 @@ Object* builtinStringGetItem(Thread* thread, Frame* frame, word nargs) {
       }
       byte c = string->charAt(idx);
       return SmallStr::fromBytes(View<byte>(&c, 1));
-    } else {
-      // TODO(jeethu): Add support for slicing strings
-      return thread->throwTypeErrorFromCString(
-          "string indices must be integers");
     }
+    if (index->isSlice()) {
+      Handle<Slice> slice(&scope, index);
+      word start, stop, step;
+      slice->unpack(&start, &stop, &step);
+      word length = Slice::adjustIndices(string->length(), &start, &stop, step);
+      byte* buf = new byte[length];
+      byte* curr = buf;
+      for (word i = start; i < stop; i += step) {
+        *curr++ = string->charAt(i);
+      }
+      Handle<String> result(
+          &scope, thread->runtime()->newStringWithAll(View<byte>{buf, length}));
+      delete[] buf;
+      return *result;
+    }
+    return thread->throwTypeErrorFromCString(
+        "string indices must be integers or slices");
   }
   // TODO(jeethu): handle user-defined subtypes of string.
   return thread->throwTypeErrorFromCString(
