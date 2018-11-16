@@ -5,10 +5,38 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
-Object* builtinObjectHash(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod ObjectBuiltins::kMethods[] = {
+    {SymbolId::kDunderHash, nativeTrampoline<dunderHash>},
+    {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
+    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
+    {SymbolId::kDunderStr, nativeTrampoline<dunderStr>}};
+
+void ObjectBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+
+  Handle<Layout> layout(&scope, runtime->newLayout());
+  layout->setId(LayoutId::kObject);
+  Handle<Class> object_type(&scope, runtime->newClass());
+  layout->setDescribedClass(*object_type);
+  object_type->setName(runtime->symbols()->ObjectClassname());
+  Handle<ObjectArray> mro(&scope, runtime->newObjectArray(1));
+  mro->atPut(0, *object_type);
+  object_type->setMro(*mro);
+  object_type->setInstanceLayout(*layout);
+  runtime->layoutAtPut(LayoutId::kObject, *layout);
+
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(object_type, kMethods[i].name,
+                                     kMethods[i].address);
+  }
+}
+
+Object* ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString(
         "object.__hash__() takes no arguments");
@@ -17,7 +45,7 @@ Object* builtinObjectHash(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->hash(args.get(0));
 }
 
-Object* builtinObjectInit(Thread* thread, Frame* frame, word nargs) {
+Object* ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   // object.__init__ doesn't do anything except throw a TypeError if the wrong
   // number of arguments are given. It only throws if __new__ is not overloaded
   // or __init__ was overloaded, else it allows the excess arguments.
@@ -45,7 +73,7 @@ Object* builtinObjectInit(Thread* thread, Frame* frame, word nargs) {
   return None::object();
 }
 
-Object* builtinObjectNew(Thread* thread, Frame* frame, word nargs) {
+Object* ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (nargs < 1) {
     return thread->throwTypeErrorFromCString(
@@ -57,7 +85,7 @@ Object* builtinObjectNew(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInstance(layout);
 }
 
-Object* builtinObjectRepr(Thread* thread, Frame* frame, word nargs) {
+Object* ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->throwTypeErrorFromCString("expected 0 arguments");
   }
@@ -78,7 +106,7 @@ Object* builtinObjectRepr(Thread* thread, Frame* frame, word nargs) {
   return str;
 }
 
-Object* builtinObjectStr(Thread* thread, Frame* frame, word nargs) {
+Object* ObjectBuiltins::dunderStr(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
     return thread->throwTypeErrorFromCString(
         "object.__str__() takes a self argument");

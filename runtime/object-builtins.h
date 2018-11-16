@@ -1,16 +1,24 @@
 #pragma once
 
-#include "frame.h"
 #include "globals.h"
-#include "objects.h"
-#include "thread.h"
+#include "runtime.h"
 
 namespace python {
 
-Object* builtinObjectHash(Thread* thread, Frame* frame, word nargs);
-Object* builtinObjectInit(Thread* thread, Frame* caller, word nargs);
-Object* builtinObjectNew(Thread* thread, Frame* caller, word nargs);
-Object* builtinObjectRepr(Thread* thread, Frame* caller, word nargs);
-Object* builtinObjectStr(Thread* thread, Frame* caller, word nargs);
+class ObjectBuiltins {
+ public:
+  static void initialize(Runtime* runtime);
+
+  static Object* dunderHash(Thread*, Frame*, word);
+  static Object* dunderInit(Thread*, Frame*, word);
+  static Object* dunderNew(Thread*, Frame*, word);
+  static Object* dunderRepr(Thread*, Frame*, word);
+  static Object* dunderStr(Thread*, Frame*, word);
+
+ private:
+  static const BuiltinMethod kMethods[];
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectBuiltins);
+};
 
 }  // namespace python

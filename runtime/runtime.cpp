@@ -972,7 +972,7 @@ Object* Runtime::createMro(const Handle<Layout>& subclass_layout,
 }
 
 void Runtime::initializeHeapClasses() {
-  initializeObjectClass();
+  ObjectBuiltins::initialize(this);
 
   // Abstract classes.
   initializeStrClass();
@@ -1049,36 +1049,6 @@ void Runtime::initializeFunctionClass() {
 
   classAddBuiltinFunction(function, SymbolId::kDunderGet,
                           nativeTrampoline<builtinFunctionGet>);
-}
-
-void Runtime::initializeObjectClass() {
-  HandleScope scope;
-
-  Handle<Layout> layout(&scope, newLayout());
-  layout->setId(LayoutId::kObject);
-  Handle<Class> object_type(&scope, newClass());
-  layout->setDescribedClass(*object_type);
-  object_type->setName(symbols()->ObjectClassname());
-  Handle<ObjectArray> mro(&scope, newObjectArray(1));
-  mro->atPut(0, *object_type);
-  object_type->setMro(*mro);
-  object_type->setInstanceLayout(*layout);
-  layoutAtPut(LayoutId::kObject, *layout);
-
-  classAddBuiltinFunction(object_type, SymbolId::kDunderHash,
-                          nativeTrampoline<builtinObjectHash>);
-
-  classAddBuiltinFunction(object_type, SymbolId::kDunderInit,
-                          nativeTrampoline<builtinObjectInit>);
-
-  classAddBuiltinFunction(object_type, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinObjectNew>);
-
-  classAddBuiltinFunction(object_type, SymbolId::kDunderRepr,
-                          nativeTrampoline<builtinObjectRepr>);
-
-  classAddBuiltinFunction(object_type, SymbolId::kDunderStr,
-                          nativeTrampoline<builtinObjectStr>);
 }
 
 void Runtime::initializeStrClass() {
