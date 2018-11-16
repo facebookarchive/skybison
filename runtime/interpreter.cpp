@@ -120,6 +120,13 @@ Interpreter::callType(Thread* thread, Frame* frame, Object** sp, word nargs) {
 }
 
 namespace interpreter {
+enum MakeFunctionFlag {
+  DEFAULT = 0x01,
+  DEFAULT_KW = 0x02,
+  ANNOTATION_DICT = 0X04,
+  CLOSURE = 0X08,
+};
+
 enum class Result {
   CONTINUE,
   RETURN,
@@ -242,7 +249,7 @@ Result DELETE_GLOBAL(Context* ctx, word arg) {
   value_cell->setValue(value_in_builtin);
   return Result::CONTINUE;
 }
-Result MAKE_FUNCTION(Context* ctx, word) {
+Result MAKE_FUNCTION(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -256,6 +263,10 @@ Result MAKE_FUNCTION(Context* ctx, word) {
   function->setFastGlobals(
       thread->runtime()->computeFastGlobals(code, globals, builtins));
   function->setEntry(interpreterTrampoline);
+  if (arg & MakeFunctionFlag::CLOSURE) {
+    CHECK((*ctx->sp)->isObjectArray(), "Closure is not tuple.");
+    function->setClosure(*ctx->sp++);
+  }
   *--ctx->sp = *function;
   return Result::CONTINUE;
 }
@@ -531,6 +542,23 @@ Result BUILD_CONST_KEY_MAP(Context* ctx, word arg) {
   *--sp = *dict;
   return Result::CONTINUE;
 }
+Result STORE_DEREF(Context* ctx, word arg) {
+  Code* code = Code::cast(ctx->frame->code());
+  ValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))
+      ->setValue(*ctx->sp++);
+  return Result::CONTINUE;
+}
+Result LOAD_DEREF(Context* ctx, word arg) {
+  Code* code = Code::cast(ctx->frame->code());
+  *--ctx->sp =
+      ValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))->value();
+  return Result::CONTINUE;
+}
+Result LOAD_CLOSURE(Context* ctx, word arg) {
+  Code* code = Code::cast(ctx->frame->code());
+  *--ctx->sp = ctx->frame->getLocal(code->nlocals() + arg);
+  return Result::CONTINUE;
+}
 
 using Op = Result (*)(Context*, word);
 Op opTable[256];
@@ -590,6 +618,9 @@ void Interpreter::initOpTable() {
   opTable[Bytecode::IMPORT_NAME] = interpreter::IMPORT_NAME;
   opTable[Bytecode::DELETE_GLOBAL] = interpreter::DELETE_GLOBAL;
   opTable[Bytecode::BUILD_CONST_KEY_MAP] = interpreter::BUILD_CONST_KEY_MAP;
+  opTable[Bytecode::LOAD_CLOSURE] = interpreter::LOAD_CLOSURE;
+  opTable[Bytecode::STORE_DEREF] = interpreter::STORE_DEREF;
+  opTable[Bytecode::LOAD_DEREF] = interpreter::LOAD_DEREF;
 }
 
 Object* Interpreter::execute(Thread* thread, Frame* frame) {

@@ -1933,4 +1933,24 @@ test()
   EXPECT_DEATH(compileAndRunToString(&runtime, src), re);
 }
 
+TEST(ThreadTest, Closure) {
+  const char* src = R"(
+def f():
+  a = 1
+  def g():
+    b = 2
+    def h():
+      print(b)
+    print(a)
+    h()
+    b = 3
+    h()
+  g()
+f()
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1\n2\n3\n");
+}
+
 } // namespace python
