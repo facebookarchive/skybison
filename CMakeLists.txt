@@ -85,6 +85,8 @@ add_library(
   runtime/objects.h
   runtime/os.cpp
   runtime/os.h
+  runtime/ref-builtins.cpp
+  runtime/ref-builtins.h
   runtime/runtime.cpp
   runtime/runtime.h
   runtime/scavenger.cpp
@@ -200,6 +202,7 @@ add_library(
   runtime/objects-test.cpp
   runtime/os-test.cpp
   runtime/runtime-test.cpp
+  runtime/ref-builtins-test.cpp
   runtime/scavenger-test.cpp
   runtime/space-test.cpp
   runtime/super-builtins-test.cpp

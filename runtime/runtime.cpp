@@ -26,6 +26,7 @@
 #include "list-builtins.h"
 #include "marshal.h"
 #include "os.h"
+#include "ref-builtins.h"
 #include "scavenger.h"
 #include "set-builtins.h"
 #include "siphash.h"
@@ -731,13 +732,33 @@ void Runtime::initializeHeapClasses() {
   initializeObjectArrayClass();
   initializeHeapClass("range", IntrinsicLayoutId::kRange);
   initializeHeapClass("range_iterator", IntrinsicLayoutId::kRangeIterator);
+  initializeRefClass();
   initializeSetClass();
   initializeHeapClass("slice", IntrinsicLayoutId::kSlice);
   initializeStaticMethodClass();
   initializeSuperClass();
   initializeTypeClass();
   initializeHeapClass("valuecell", IntrinsicLayoutId::kValueCell);
-  initializeHeapClass("weakref", IntrinsicLayoutId::kWeakRef);
+}
+
+void Runtime::initializeRefClass() {
+  HandleScope scope;
+  Handle<Class> ref(
+      &scope, initializeHeapClass("ref", IntrinsicLayoutId::kWeakRef));
+
+  classAddBuiltinFunction(
+      ref,
+      symbols()->DunderInit(),
+      nativeTrampoline<builtinRefInit>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
+
+  classAddBuiltinFunction(
+      ref,
+      symbols()->DunderNew(),
+      nativeTrampoline<builtinRefNew>,
+      unimplementedTrampoline,
+      unimplementedTrampoline);
 }
 
 void Runtime::initializeFunctionClass() {
@@ -1189,6 +1210,7 @@ void Runtime::processCallbacks() {
     *--sp = weak->callback();
     *--sp = Object::cast(*weak);
     Interpreter::call(thread, frame, sp, 1);
+    thread->ignorePendingException();
     *sp += 2;
     weak->setCallback(None::object());
   }
@@ -1394,6 +1416,7 @@ void Runtime::initializeModules() {
   createBuiltinsModule();
   createSysModule();
   createTimeModule();
+  createWeakRefModule();
 }
 
 struct ExtensionTypeInitializer {
@@ -1712,6 +1735,15 @@ void Runtime::createSysModule() {
   Handle<Object> stderr_id(&scope, symbols()->Stderr());
   Handle<Object> stderr_val(&scope, SmallInteger::fromWord(STDERR_FILENO));
   moduleAddGlobal(module, stderr_id, stderr_val);
+  addModule(module);
+}
+
+void Runtime::createWeakRefModule() {
+  HandleScope scope;
+  Handle<Object> name(&scope, symbols()->UnderWeakRef());
+  Handle<Module> module(&scope, newModule(name));
+
+  moduleAddBuiltinType(module, IntrinsicLayoutId::kWeakRef, symbols()->Ref());
   addModule(module);
 }
 

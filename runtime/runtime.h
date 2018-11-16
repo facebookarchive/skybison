@@ -545,6 +545,7 @@ class Runtime {
   void initializeListClass();
   void initializeObjectClass();
   void initializeObjectArrayClass();
+  void initializeRefClass();
   void initializeSetClass();
   void initializeSmallIntClass();
   void initializeStaticMethodClass();
@@ -555,6 +556,7 @@ class Runtime {
   void createBuiltinsModule();
   void createSysModule();
   void createTimeModule();
+  void createWeakRefModule();
   Object* createMainModule();
 
   Object* executeModule(const char* buffer, const Handle<Module>& module);

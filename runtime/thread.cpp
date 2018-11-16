@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include "builtins-module.h"
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
@@ -226,6 +227,27 @@ Object* Thread::throwAttributeErrorFromCString(const char* message) {
   return Error::object();
 }
 
+void Thread::ignorePendingException() {
+  HandleScope scope(this);
+  Handle<Object> pending_exception(&scope, pendingException());
+  if (pending_exception->isNone()) {
+    return;
+  }
+
+  *builtinStderr << "ignore pending exception";
+  if (pending_exception->isString()) {
+    String* message = String::cast(*pending_exception);
+    word len = message->length();
+    byte* buffer = new byte[len + 1];
+    message->copyTo(buffer, len);
+    buffer[len] = 0;
+    *builtinStderr << ": " << buffer;
+    delete[] buffer;
+  }
+  *builtinStderr << "\n";
+  Utils::printTraceback();
+}
+
 void Thread::abortOnPendingException() {
   HandleScope scope(this);
   Handle<Object> pending_exception(&scope, pendingException());
@@ -233,16 +255,17 @@ void Thread::abortOnPendingException() {
     return;
   }
 
-  fprintf(stderr, "aborting due to pending exception");
+  std::cerr << "aborting due to pending exception";
   if (pending_exception->isString()) {
     String* message = String::cast(*pending_exception);
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);
     buffer[len] = 0;
-    fprintf(stderr, ": %.*s", static_cast<int>(len), buffer);
+    std::cerr << ": " << buffer;
+    delete[] buffer;
   }
-  fprintf(stderr, "\n");
+  std::cerr << "\n";
   Utils::printTraceback();
 
   std::abort();

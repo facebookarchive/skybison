@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "builtins-module.h"
 #include "scavenger.h"
 #include "test-utils.h"
 #include "trampolines-inl.h"
@@ -253,6 +254,63 @@ def g(ref, b=2):
   EXPECT_EQ(ref2->callback(), None::object());
   Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_EQ(a->value(), 2);
+}
+
+TEST(ScavengerTest, IgnoreCallbackException) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = R"(
+a = 1
+b = 2
+def f():
+  global a
+  a = 3
+def g(ref, c=4):
+  global b
+  b = c
+)";
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<WeakRef> ref1(&scope, runtime.newWeakRef());
+  Handle<WeakRef> ref2(&scope, runtime.newWeakRef());
+  {
+    Handle<ObjectArray> array1(&scope, runtime.newObjectArray(10));
+    Handle<Function> func_f(&scope, moduleAt(&runtime, main, "f"));
+    ref1->setReferent(*array1);
+    ref1->setCallback(*func_f);
+
+    Handle<ObjectArray> array2(&scope, runtime.newObjectArray(10));
+    Handle<Function> func_g(&scope, moduleAt(&runtime, main, "g"));
+    ref2->setReferent(*array2);
+    ref2->setCallback(*func_g);
+
+    runtime.collectGarbage();
+
+    EXPECT_EQ(ref1->referent(), *array1);
+    EXPECT_EQ(ref2->referent(), *array2);
+    Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
+    Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+    EXPECT_EQ(a->value(), 1);
+    EXPECT_EQ(b->value(), 2);
+  }
+
+  std::stringstream tmp_stdout;
+  std::ostream* saved_stdout = builtinStderr;
+  builtinStderr = &tmp_stdout;
+  runtime.collectGarbage();
+  builtinStderr = saved_stdout;
+  std::string exception = tmp_stdout.str();
+  EXPECT_EQ(
+      exception, "ignore pending exception: TypeError: too many arguments\n");
+
+  EXPECT_EQ(ref1->referent(), None::object());
+  EXPECT_EQ(ref1->callback(), None::object());
+  EXPECT_EQ(ref2->referent(), None::object());
+  EXPECT_EQ(ref2->callback(), None::object());
+  Handle<SmallInteger> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<SmallInteger> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_EQ(a->value(), 1);
+  EXPECT_EQ(b->value(), 4);
 }
 
 } // namespace python

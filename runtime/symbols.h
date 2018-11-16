@@ -94,13 +94,15 @@ class Runtime;
   V(Pop, "pop")                          \
   V(Range, "range")                      \
   V(Remove, "remove")                    \
+  V(Ref, "ref")                          \
   V(StaticMethod, "staticmethod")        \
   V(Stderr, "stderr")                    \
   V(Stdout, "stdout")                    \
   V(Super, "super")                      \
   V(Sys, "sys")                          \
   V(Time, "time")                        \
-  V(Type, "type")
+  V(Type, "type")                        \
+  V(UnderWeakRef, "_weakref")
 // clang-format on
 
 // Provides convenient, fast access to commonly used names. Stolen from Dart.
