@@ -132,32 +132,19 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kw)
 {
     PyObject *ret;
     PyObject *argappl, *kwappl;
-    PyObject **stack;
-    Py_ssize_t nargs;
+    // facebook begin D10844415
 
     assert (PyCallable_Check(pto->fn));
     assert (PyTuple_Check(pto->args));
     assert (PyDict_Check(pto->kw));
 
-    if (PyTuple_GET_SIZE(pto->args) == 0) {
-        stack = &PyTuple_GET_ITEM(args, 0);
-        nargs = PyTuple_GET_SIZE(args);
-        argappl = NULL;
+    argappl = PySequence_Concat(pto->args, args);
+    if (argappl == NULL) {
+        return NULL;
     }
-    else if (PyTuple_GET_SIZE(args) == 0) {
-        stack = &PyTuple_GET_ITEM(pto->args, 0);
-        nargs = PyTuple_GET_SIZE(pto->args);
-        argappl = NULL;
-    }
-    else {
-        stack = NULL;
-        argappl = PySequence_Concat(pto->args, args);
-        if (argappl == NULL) {
-            return NULL;
-        }
 
-        assert(PyTuple_Check(argappl));
-    }
+    assert(PyTuple_Check(argappl));
+    // facebook end D10844415
 
     if (PyDict_Size(pto->kw) == 0) {
         kwappl = kw;
@@ -179,13 +166,11 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kw)
         }
     }
 
-    if (stack) {
-        ret = _PyObject_FastCallDict(pto->fn, stack, nargs, kwappl);
-    }
-    else {
-        ret = PyObject_Call(pto->fn, argappl, kwappl);
-        Py_DECREF(argappl);
-    }
+    // facebook begin D10844415
+    ret = PyObject_Call(pto->fn, argappl, kwappl);
+    Py_DECREF(argappl);
+    // facebook end D10844415
+
     Py_XDECREF(kwappl);
     return ret;
 }
