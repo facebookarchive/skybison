@@ -321,7 +321,7 @@ void MAKE_FUNCTION(Context* ctx, word arg) {
 void LIST_APPEND(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Handle<Object> value(&scope, *ctx->sp++);
-  Handle<List> list(&scope, List::cast(*(ctx->sp + arg - 1)));
+  Handle<List> list(&scope, *(ctx->sp + arg - 1));
   ctx->thread->runtime()->listAdd(list, value);
 }
 
