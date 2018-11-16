@@ -25,7 +25,7 @@ class Heap {
 
   RawObject createBytes(word length);
 
-  RawObject createClass(LayoutId metaclass_id);
+  RawObject createType(LayoutId metaclass_id);
 
   RawObject createComplex(double real, double imag);
 

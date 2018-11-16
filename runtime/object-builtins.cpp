@@ -22,9 +22,9 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
 
   Layout layout(&scope, runtime->newLayout());
   layout->setId(LayoutId::kObject);
-  Type object_type(&scope, runtime->newClass());
-  layout->setDescribedClass(*object_type);
-  object_type->setName(runtime->symbols()->ObjectClassname());
+  Type object_type(&scope, runtime->newType());
+  layout->setDescribedType(*object_type);
+  object_type->setName(runtime->symbols()->ObjectTypename());
   ObjectArray mro(&scope, runtime->newObjectArray(1));
   mro->atPut(0, *object_type);
   object_type->setMro(*mro);
@@ -32,12 +32,12 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
   runtime->layoutAtPut(LayoutId::kObject, *layout);
 
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->classAddBuiltinFunction(object_type, kMethods[i].name,
-                                     kMethods[i].address);
+    runtime->typeAddBuiltinFunction(object_type, kMethods[i].name,
+                                    kMethods[i].address);
   }
-  runtime->classAddBuiltinFunctionKw(object_type, SymbolId::kDunderNew,
-                                     nativeTrampoline<dunderNew>,
-                                     nativeTrampolineKw<dunderNewKw>);
+  runtime->typeAddBuiltinFunctionKw(object_type, SymbolId::kDunderNew,
+                                    nativeTrampoline<dunderNew>,
+                                    nativeTrampolineKw<dunderNewKw>);
 }
 
 RawObject ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
@@ -127,7 +127,7 @@ const BuiltinMethod NoneBuiltins::kMethods[] = {
 
 void NoneBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClassWithMethods(
+  Type type(&scope, runtime->addBuiltinTypeWithMethods(
                         SymbolId::kNoneType, LayoutId::kNoneType,
                         LayoutId::kObject, kMethods));
 }

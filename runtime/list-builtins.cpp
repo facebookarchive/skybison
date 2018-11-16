@@ -33,8 +33,8 @@ void ListBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
   Type list(&scope,
-            runtime->addBuiltinClass(SymbolId::kList, LayoutId::kList,
-                                     LayoutId::kObject, kAttributes, kMethods));
+            runtime->addBuiltinType(SymbolId::kList, LayoutId::kList,
+                                    LayoutId::kObject, kAttributes, kMethods));
   list->setFlag(Type::Flag::kListSubclass);
 }
 
@@ -324,7 +324,7 @@ const BuiltinMethod ListIteratorBuiltins::kMethods[] = {
 
 void ListIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type list_iter(&scope, runtime->addBuiltinClassWithMethods(
+  Type list_iter(&scope, runtime->addBuiltinTypeWithMethods(
                              SymbolId::kListIterator, LayoutId::kListIterator,
                              LayoutId::kObject, kMethods));
 }

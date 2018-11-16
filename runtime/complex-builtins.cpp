@@ -13,7 +13,7 @@ const BuiltinMethod ComplexBuiltins::kMethods[] = {
 
 void ComplexBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClassWithMethods(
+  Type type(&scope, runtime->addBuiltinTypeWithMethods(
                         SymbolId::kComplex, LayoutId::kComplex,
                         LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kComplexSubclass);

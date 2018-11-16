@@ -95,7 +95,7 @@ RawObject Heap::createBytes(word length) {
   return RawBytes::cast(result);
 }
 
-RawObject Heap::createClass(LayoutId metaclass_id) {
+RawObject Heap::createType(LayoutId metaclass_id) {
   RawObject raw = allocate(allocationSize<RawType>(), RawHeader::kSize);
   CHECK(raw != Error::object(), "out of memory");
   auto result = bit_cast<RawType>(raw);

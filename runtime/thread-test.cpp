@@ -920,7 +920,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
   EXPECT_EQ(*result, RawValueCell::cast(*val1)->value());
 }
 
-TEST(ThreadTest, LoadNameInClassBodyFromGlobal) {
+TEST(ThreadTest, LoadNameInTypeBodyFromGlobal) {
   Runtime runtime;
   HandleScope scope;
 
@@ -960,7 +960,7 @@ TEST(ThreadTest, LoadNameInClassBodyFromGlobal) {
   EXPECT_EQ(*result, RawValueCell::cast(*val1)->value());
 }
 
-TEST(ThreadTest, LoadNameInClassBodyFromImplicitGlobals) {
+TEST(ThreadTest, LoadNameInTypeBodyFromImplicitGlobals) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1356,7 +1356,7 @@ static RawDict getMainModuleDict(Runtime* runtime) {
   return *dict;
 }
 
-TEST(ThreadTest, LoadBuildClassEmptyClass) {
+TEST(ThreadTest, LoadBuildTypeEmptyType) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1384,7 +1384,7 @@ class C:
   EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
 }
 
-TEST(ThreadTest, LoadBuildClassClassWithInit) {
+TEST(ThreadTest, LoadBuildTypeTypeWithInit) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1483,7 +1483,7 @@ static RawObject getMro(Runtime* runtime, const char* src,
   return cls->mro();
 }
 
-TEST(ThreadTest, LoadBuildClassVerifyMro) {
+TEST(ThreadTest, LoadBuildTypeVerifyMro) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1501,7 +1501,7 @@ class C(A,B): pass
   EXPECT_PYSTRING_EQ(className(mro->at(3)), "object");
 }
 
-TEST(ThreadTest, LoadBuildClassVerifyMroInheritance) {
+TEST(ThreadTest, LoadBuildTypeVerifyMroInheritance) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1519,7 +1519,7 @@ class C(B): pass
   EXPECT_PYSTRING_EQ(className(mro->at(3)), "object");
 }
 
-TEST(ThreadTest, LoadBuildClassVerifyMroMultiInheritance) {
+TEST(ThreadTest, LoadBuildTypeVerifyMroMultiInheritance) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1539,7 +1539,7 @@ class D(B,C): pass
   EXPECT_PYSTRING_EQ(className(mro->at(4)), "object");
 }
 
-TEST(ThreadTest, LoadBuildClassVerifyMroDiamond) {
+TEST(ThreadTest, LoadBuildTypeVerifyMroDiamond) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1559,7 +1559,7 @@ class D(B,C): pass
   EXPECT_PYSTRING_EQ(className(mro->at(4)), "object");
 }
 
-TEST(ThreadDeathTest, LoadBuildClassVerifyMroError) {
+TEST(ThreadDeathTest, LoadBuildTypeVerifyMroError) {
   Runtime runtime;
   HandleScope scope;
 
@@ -2339,7 +2339,7 @@ l.insert(-1, 3)
   EXPECT_EQ(RawSmallInt::cast(list_l->at(4))->value(), 4);
 }
 
-TEST(ThreadDeathTest, BaseClassConflict) {
+TEST(ThreadDeathTest, BaseTypeConflict) {
   const char* src = R"(
 class Foo(list, dict): pass
 )";
@@ -2773,7 +2773,7 @@ print("There are %d pystones %g %s what" % (a, d, c))
   EXPECT_EQ(output, "There are 123 pystones 67.89 now what\n");
 }
 
-TEST(ThreadTest, BuildClassWithMetaClass) {
+TEST(ThreadTest, BuildTypeWithMetaType) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
@@ -2789,7 +2789,7 @@ a = Foo()
   EXPECT_TRUE(runtime.typeOf(*a) == *foo);
 }
 
-TEST(ThreadTest, BuildClassWithMetaClass2) {
+TEST(ThreadTest, BuildTypeWithMetaType2) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
@@ -2817,7 +2817,7 @@ c = a.hahaha
   EXPECT_EQ(RawSmallInt::cast(*c)->value(), 456);
 }
 
-TEST(ThreadTest, NameLookupInClassBodyFindsImplicitGlobal) {
+TEST(ThreadTest, NameLookupInTypeBodyFindsImplicitGlobal) {
   const char* src = R"(
 a = 0
 b = 0
@@ -2839,7 +2839,7 @@ class C:
   EXPECT_EQ(RawSmallInt::cast(*b)->value(), 6);
 }
 
-TEST(ThreadTest, NameLookupInClassBodyFindsGlobal) {
+TEST(ThreadTest, NameLookupInTypeBodyFindsGlobal) {
   const char* src = R"(
 var = 1
 class C:
@@ -2970,7 +2970,7 @@ foo = Foo(1111, b=2222, c=3333)
   EXPECT_EQ(RawSmallInt::cast(*result_c)->value(), 3333);
 }
 
-TEST(ThreadTest, LoadClassDeref) {
+TEST(ThreadTest, LoadTypeDeref) {
   const char* src = R"(
 def foo():
   a = 1
@@ -2987,7 +2987,7 @@ x = foo()
   EXPECT_EQ(*x, SmallInt::fromWord(1));
 }
 
-TEST(ThreadTest, LoadClassDerefFromLocal) {
+TEST(ThreadTest, LoadTypeDerefFromLocal) {
   Runtime runtime;
   HandleScope scope;
   Code code(&scope, runtime.newCode());

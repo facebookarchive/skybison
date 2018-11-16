@@ -59,11 +59,11 @@ static const char* layoutIdName(LayoutId id) {
   return "<invalid>";
 }
 
-class BuiltinClassIdsTest : public ::testing::TestWithParam<LayoutId> {};
+class BuiltinTypeIdsTest : public ::testing::TestWithParam<LayoutId> {};
 
 // Make sure that each built-in class has a class object.  Check that its class
 // object points to a layout with the same layout ID as the built-in class.
-TEST_P(BuiltinClassIdsTest, HasClassObject) {
+TEST_P(BuiltinTypeIdsTest, HasTypeObject) {
   Runtime runtime;
   HandleScope scope;
 
@@ -77,14 +77,14 @@ TEST_P(BuiltinClassIdsTest, HasClassObject) {
   EXPECT_EQ(layout->id(), GetParam());
 }
 
-static const LayoutId kBuiltinHeapClassIds[] = {
+static const LayoutId kBuiltinHeapTypeIds[] = {
 #define ENUM(x) LayoutId::k##x,
     INTRINSIC_HEAP_CLASS_NAMES(ENUM)
 #undef ENUM
 };
 
-INSTANTIATE_TEST_CASE_P(BuiltinClassIdsParameters, BuiltinClassIdsTest,
-                        ::testing::ValuesIn(kBuiltinHeapClassIds));
+INSTANTIATE_TEST_CASE_P(BuiltinTypeIdsParameters, BuiltinTypeIdsTest,
+                        ::testing::ValuesIn(kBuiltinHeapTypeIds));
 
 TEST(RuntimeDictTest, EmptyDictInvariants) {
   Runtime runtime;
@@ -1211,20 +1211,20 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   EXPECT_TRUE(RawStr::cast(*result)->equals(*foo));
 }
 
-TEST(RuntimeTest, GetClassConstructor) {
+TEST(RuntimeTest, GetTypeConstructor) {
   Runtime runtime;
   HandleScope scope;
-  Type klass(&scope, runtime.newClass());
-  Dict klass_dict(&scope, runtime.newDict());
-  klass->setDict(*klass_dict);
+  Type type(&scope, runtime.newType());
+  Dict type_dict(&scope, runtime.newDict());
+  type->setDict(*type_dict);
 
-  EXPECT_EQ(runtime.classConstructor(klass), NoneType::object());
+  EXPECT_EQ(runtime.classConstructor(type), NoneType::object());
 
   Object init(&scope, runtime.symbols()->DunderInit());
   Object func(&scope, runtime.newFunction());
-  runtime.dictAtPutInValueCell(klass_dict, init, func);
+  runtime.dictAtPutInValueCell(type_dict, init, func);
 
-  EXPECT_EQ(runtime.classConstructor(klass), *func);
+  EXPECT_EQ(runtime.classConstructor(type), *func);
 }
 
 TEST(RuntimeTest, NewInstanceEmptyClass) {
@@ -1238,7 +1238,7 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
   Layout layout(&scope, type->instanceLayout());
   EXPECT_EQ(layout->instanceSize(), 1);
 
-  Type cls(&scope, layout->describedClass());
+  Type cls(&scope, layout->describedType());
   EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyEmptyClass");
 
   Instance instance(&scope, runtime.newInstance(layout));
@@ -1251,7 +1251,7 @@ TEST(RuntimeTest, NewInstanceManyAttributes) {
   HandleScope scope;
 
   const char* src = R"(
-class MyClassWithAttributes():
+class MyTypeWithAttributes():
   def __init__(self):
     self.a = 1
     self.b = 2
@@ -1260,12 +1260,12 @@ class MyClassWithAttributes():
   runtime.runFromCStr(src);
 
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type type(&scope, moduleAt(&runtime, main, "MyClassWithAttributes"));
+  Type type(&scope, moduleAt(&runtime, main, "MyTypeWithAttributes"));
   Layout layout(&scope, type->instanceLayout());
   ASSERT_EQ(layout->instanceSize(), 4);
 
-  Type cls(&scope, layout->describedClass());
-  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyClassWithAttributes");
+  Type cls(&scope, layout->describedType());
+  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithAttributes");
 
   Instance instance(&scope, runtime.newInstance(layout));
   EXPECT_TRUE(instance->isInstance());
@@ -1291,7 +1291,7 @@ static RawStr className(Runtime* runtime, RawObject o) {
   return name;
 }
 
-TEST(RuntimeTest, ClassIds) {
+TEST(RuntimeTest, TypeIds) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1594,12 +1594,12 @@ TEST_P(LookupNameInMroTest, Lookup) {
   HandleScope scope;
 
   auto create_class_with_attr = [&](const char* attr, word value) {
-    Type klass(&scope, runtime.newClass());
-    Dict dict(&scope, klass->dict());
+    Type type(&scope, runtime.newType());
+    Dict dict(&scope, type->dict());
     Object key(&scope, runtime.newStrFromCStr(attr));
     Object val(&scope, SmallInt::fromWord(value));
     runtime.dictAtPutInValueCell(dict, key, val);
-    return *klass;
+    return *type;
   };
 
   ObjectArray mro(&scope, runtime.newObjectArray(3));
@@ -1607,13 +1607,13 @@ TEST_P(LookupNameInMroTest, Lookup) {
   mro->atPut(1, create_class_with_attr("bar", 4));
   mro->atPut(2, create_class_with_attr("baz", 8));
 
-  Type klass(&scope, mro->at(0));
-  klass->setMro(*mro);
+  Type type(&scope, mro->at(0));
+  type->setMro(*mro);
 
   auto param = GetParam();
   Object key(&scope, runtime.newStrFromCStr(param.name));
   RawObject result =
-      runtime.lookupNameInMro(Thread::currentThread(), klass, key);
+      runtime.lookupNameInMro(Thread::currentThread(), type, key);
   EXPECT_EQ(result, param.expected);
 }
 
@@ -1631,11 +1631,11 @@ TEST(RuntimeTypeCallTest, TypeCallNoInitMethod) {
   HandleScope scope;
 
   const char* src = R"(
-class MyClassWithNoInitMethod():
+class MyTypeWithNoInitMethod():
   def m(self):
     pass
 
-c = MyClassWithNoInitMethod()
+c = MyTypeWithNoInitMethod()
 )";
   runtime.runFromCStr(src);
 
@@ -1646,8 +1646,8 @@ c = MyClassWithNoInitMethod()
   Layout layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
-  Type cls(&scope, layout->describedClass());
-  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyClassWithNoInitMethod");
+  Type cls(&scope, layout->describedType());
+  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithNoInitMethod");
 }
 
 TEST(RuntimeTypeCallTest, TypeCallEmptyInitMethod) {
@@ -1655,13 +1655,13 @@ TEST(RuntimeTypeCallTest, TypeCallEmptyInitMethod) {
   HandleScope scope;
 
   const char* src = R"(
-class MyClassWithEmptyInitMethod():
+class MyTypeWithEmptyInitMethod():
   def __init__(self):
     pass
   def m(self):
     pass
 
-c = MyClassWithEmptyInitMethod()
+c = MyTypeWithEmptyInitMethod()
 )";
   runtime.runFromCStr(src);
 
@@ -1672,8 +1672,8 @@ c = MyClassWithEmptyInitMethod()
   Layout layout(&scope, runtime.layoutAt(layout_id));
   EXPECT_EQ(layout->instanceSize(), 1);
 
-  Type cls(&scope, layout->describedClass());
-  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyClassWithEmptyInitMethod");
+  Type cls(&scope, layout->describedType());
+  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithEmptyInitMethod");
 }
 
 TEST(RuntimeTypeCallTest, TypeCallWithArguments) {
@@ -1681,18 +1681,18 @@ TEST(RuntimeTypeCallTest, TypeCallWithArguments) {
   HandleScope scope;
 
   const char* src = R"(
-class MyClassWithAttributes():
+class MyTypeWithAttributes():
   def __init__(self, x):
     self.x = x
   def m(self):
     pass
 
-c = MyClassWithAttributes(1)
+c = MyTypeWithAttributes(1)
 )";
   runtime.runFromCStr(src);
 
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type type(&scope, moduleAt(&runtime, main, "MyClassWithAttributes"));
+  Type type(&scope, moduleAt(&runtime, main, "MyTypeWithAttributes"));
   Object instance(&scope, moduleAt(&runtime, main, "c"));
   ASSERT_TRUE(instance->isInstance());
   LayoutId layout_id = instance->layoutId();
@@ -1702,8 +1702,8 @@ c = MyClassWithAttributes(1)
   Layout layout(&scope, runtime.layoutAt(layout_id));
   ASSERT_EQ(layout->instanceSize(), 2);
 
-  Type cls(&scope, layout->describedClass());
-  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyClassWithAttributes");
+  Type cls(&scope, layout->describedType());
+  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithAttributes");
 
   Object name(&scope, runtime.newStrFromCStr("x"));
   Object value(&scope,
@@ -2255,99 +2255,99 @@ TEST(RuntimeSetTest, SetIsProperSubsetWithSubsetReturnsFalse) {
 
 // Attribute tests
 
-static RawObject createClass(Runtime* runtime) {
+static RawObject createType(Runtime* runtime) {
   HandleScope scope;
-  Type klass(&scope, runtime->newClass());
+  Type type(&scope, runtime->newType());
   Thread* thread = Thread::currentThread();
   Layout layout(&scope, runtime->layoutCreateEmpty(thread));
-  layout->setDescribedClass(*klass);
-  klass->setInstanceLayout(*layout);
+  layout->setDescribedType(*type);
+  type->setInstanceLayout(*layout);
   ObjectArray mro(&scope, runtime->newObjectArray(1));
-  mro->atPut(0, *klass);
-  klass->setMro(*mro);
+  mro->atPut(0, *type);
+  type->setMro(*mro);
   layout->setId(runtime->reserveLayoutId());
   runtime->layoutAtPut(layout->id(), *layout);
-  return *klass;
+  return *type;
 }
 
-static void setInClassDict(Runtime* runtime, const Object& klass,
-                           const Object& attr, const Object& value) {
+static void setInTypeDict(Runtime* runtime, const Object& type,
+                          const Object& attr, const Object& value) {
   HandleScope scope;
-  Type k(&scope, *klass);
-  Dict klass_dict(&scope, k->dict());
-  runtime->dictAtPutInValueCell(klass_dict, attr, value);
+  Type k(&scope, *type);
+  Dict type_dict(&scope, k->dict());
+  runtime->dictAtPutInValueCell(type_dict, attr, value);
 }
 
-static void setInMetaclass(Runtime* runtime, const Object& klass,
+static void setInMetaclass(Runtime* runtime, const Object& type,
                            const Object& attr, const Object& value) {
   HandleScope scope;
-  Object meta_klass(&scope, runtime->typeOf(*klass));
-  setInClassDict(runtime, meta_klass, attr, value);
+  Object meta_type(&scope, runtime->typeOf(*type));
+  setInTypeDict(runtime, meta_type, attr, value);
 }
 
 // Get an attribute that corresponds to a function on the metaclass
-TEST(ClassGetAttrTest, MetaClassFunction) {
+TEST(TypeGetAttrTest, MetaClassFunction) {
   Runtime runtime;
   HandleScope scope;
-  Object klass(&scope, createClass(&runtime));
+  Object type(&scope, createType(&runtime));
 
   // Store the function on the metaclass
   Object attr(&scope, runtime.newStrFromCStr("test"));
   Object value(&scope, runtime.newFunction());
-  setInMetaclass(&runtime, klass, attr, value);
+  setInMetaclass(&runtime, type, attr, value);
 
   // Fetch it from the class and ensure the bound method was created
-  RawObject result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
   ASSERT_TRUE(result->isBoundMethod());
   BoundMethod bm(&scope, result);
   EXPECT_TRUE(Object::equals(bm->function(), *value));
-  EXPECT_TRUE(Object::equals(bm->self(), *klass));
+  EXPECT_TRUE(Object::equals(bm->self(), *type));
 }
 
 // Get an attribute that resides on the metaclass
-TEST(ClassGetAttrTest, MetaClassAttr) {
+TEST(TypeGetAttrTest, MetaTypeAttr) {
   Runtime runtime;
   HandleScope scope;
-  Object klass(&scope, createClass(&runtime));
+  Object type(&scope, createType(&runtime));
 
   // Store the attribute on the metaclass
   Object attr(&scope, runtime.newStrFromCStr("test"));
   Object value(&scope, SmallInt::fromWord(100));
-  setInMetaclass(&runtime, klass, attr, value);
+  setInMetaclass(&runtime, type, attr, value);
 
   // Fetch it from the class
-  RawObject result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
   EXPECT_TRUE(Object::equals(result, *value));
 }
 
 // Get an attribute that resides on the class and shadows an attribute on
 // the metaclass
-TEST(ClassGetAttrTest, ShadowingAttr) {
+TEST(TypeGetAttrTest, ShadowingAttr) {
   Runtime runtime;
   HandleScope scope;
-  Object klass(&scope, createClass(&runtime));
+  Object type(&scope, createType(&runtime));
 
   // Store the attribute on the metaclass
   Object attr(&scope, runtime.newStrFromCStr("test"));
-  Object meta_klass_value(&scope, SmallInt::fromWord(100));
-  setInMetaclass(&runtime, klass, attr, meta_klass_value);
+  Object meta_type_value(&scope, SmallInt::fromWord(100));
+  setInMetaclass(&runtime, type, attr, meta_type_value);
 
   // Store the attribute on the class so that it shadows the attr
   // on the metaclass
-  Object klass_value(&scope, SmallInt::fromWord(200));
-  setInClassDict(&runtime, klass, attr, klass_value);
+  Object type_value(&scope, SmallInt::fromWord(200));
+  setInTypeDict(&runtime, type, attr, type_value);
 
   // Fetch it from the class
-  RawObject result = runtime.attributeAt(Thread::currentThread(), klass, attr);
-  EXPECT_TRUE(Object::equals(result, *klass_value));
+  RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
+  EXPECT_TRUE(Object::equals(result, *type_value));
 }
 
-struct IntrinsicClassSetAttrTestData {
+struct IntrinsicTypeSetAttrTestData {
   LayoutId layout_id;
   const char* name;
 };
 
-IntrinsicClassSetAttrTestData kIntrinsicClassSetAttrTests[] = {
+IntrinsicTypeSetAttrTestData kIntrinsicTypeSetAttrTests[] = {
 // clang-format off
 #define DEFINE_TEST(class_name) {LayoutId::k##class_name, #class_name},
   INTRINSIC_CLASS_NAMES(DEFINE_TEST)
@@ -2355,23 +2355,23 @@ IntrinsicClassSetAttrTestData kIntrinsicClassSetAttrTests[] = {
     // clang-format on
 };
 
-static std::string intrinsicClassName(
-    ::testing::TestParamInfo<IntrinsicClassSetAttrTestData> info) {
+static std::string intrinsicTypeName(
+    ::testing::TestParamInfo<IntrinsicTypeSetAttrTestData> info) {
   return info.param.name;
 }
 
-class IntrinsicClassSetAttrTest
-    : public ::testing::TestWithParam<IntrinsicClassSetAttrTestData> {};
+class IntrinsicTypeSetAttrTest
+    : public ::testing::TestWithParam<IntrinsicTypeSetAttrTestData> {};
 
-TEST_P(IntrinsicClassSetAttrTest, SetAttr) {
+TEST_P(IntrinsicTypeSetAttrTest, SetAttr) {
   Runtime runtime;
   HandleScope scope;
-  Object klass(&scope, runtime.typeAt(GetParam().layout_id));
+  Object type(&scope, runtime.typeAt(GetParam().layout_id));
   Object attr(&scope, runtime.newStrFromCStr("test"));
   Object value(&scope, SmallInt::fromWord(100));
   Thread* thread = Thread::currentThread();
 
-  RawObject result = runtime.attributeAtPut(thread, klass, attr, value);
+  RawObject result = runtime.attributeAtPut(thread, type, attr, value);
 
   EXPECT_TRUE(result->isError());
   ASSERT_TRUE(thread->exceptionValue()->isStr());
@@ -2379,30 +2379,30 @@ TEST_P(IntrinsicClassSetAttrTest, SetAttr) {
                      "can't set attributes of built-in/extension type");
 }
 
-INSTANTIATE_TEST_CASE_P(IntrinsicClasses, IntrinsicClassSetAttrTest,
-                        ::testing::ValuesIn(kIntrinsicClassSetAttrTests),
-                        intrinsicClassName);
+INSTANTIATE_TEST_CASE_P(IntrinsicTypes, IntrinsicTypeSetAttrTest,
+                        ::testing::ValuesIn(kIntrinsicTypeSetAttrTests),
+                        intrinsicTypeName);
 
 // Set an attribute directly on the class
-TEST(ClassAttributeTest, SetAttrOnClass) {
+TEST(TypeAttributeTest, SetAttrOnType) {
   Runtime runtime;
   HandleScope scope;
 
-  Object klass(&scope, createClass(&runtime));
+  Object type(&scope, createType(&runtime));
   Object attr(&scope, runtime.newStrFromCStr("test"));
   Object value(&scope, SmallInt::fromWord(100));
 
   RawObject result =
-      runtime.attributeAtPut(Thread::currentThread(), klass, attr, value);
+      runtime.attributeAtPut(Thread::currentThread(), type, attr, value);
   ASSERT_FALSE(result->isError());
 
-  Dict klass_dict(&scope, RawType::cast(*klass)->dict());
-  Object value_cell(&scope, runtime.dictAt(klass_dict, attr));
+  Dict type_dict(&scope, RawType::cast(*type)->dict());
+  Object value_cell(&scope, runtime.dictAt(type_dict, attr));
   ASSERT_TRUE(value_cell->isValueCell());
   EXPECT_EQ(RawValueCell::cast(*value_cell)->value(), SmallInt::fromWord(100));
 }
 
-TEST(ClassAttributeTest, Simple) {
+TEST(TypeAttributeTest, Simple) {
   Runtime runtime;
   const char* src = R"(
 class A:
@@ -2413,7 +2413,7 @@ print(A.foo)
   EXPECT_EQ(output, "hello\n");
 }
 
-TEST(ClassAttributeTest, SingleInheritance) {
+TEST(TypeAttributeTest, SingleInheritance) {
   Runtime runtime;
   const char* src = R"(
 class A:
@@ -2428,7 +2428,7 @@ print(A.foo, B.foo, C.foo)
   EXPECT_EQ(output, "hello hello hello\nhello 123 123\n");
 }
 
-TEST(ClassAttributeTest, MultipleInheritance) {
+TEST(TypeAttributeTest, MultipleInheritance) {
   Runtime runtime;
   const char* src = R"(
 class A:
@@ -2452,7 +2452,7 @@ print(A.foo)
                "aborting due to pending exception: missing attribute");
 }
 
-TEST(ClassAttributeTest, GetFunction) {
+TEST(TypeAttributeTest, GetFunction) {
   Runtime runtime;
   const char* src = R"(
 class Foo:
@@ -2464,7 +2464,7 @@ Foo.bar('testing 123')
   EXPECT_EQ(output, "testing 123\n");
 }
 
-TEST(ClassAttributeDeathTest, GetDataDescriptorOnMetaClass) {
+TEST(ClassAttributeDeathTest, GetDataDescriptorOnMetaType) {
   Runtime runtime;
 
   // Create the data descriptor class
@@ -2479,22 +2479,22 @@ class DataDescriptor:
   runtime.runFromCStr(src);
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type descr_klass(&scope, moduleAt(&runtime, main, "DataDescriptor"));
+  Type descr_type(&scope, moduleAt(&runtime, main, "DataDescriptor"));
 
   // Create the class
-  Object klass(&scope, createClass(&runtime));
+  Object type(&scope, createType(&runtime));
 
   // Create an instance of the descriptor and store it on the metaclass
   Object attr(&scope, runtime.newStrFromCStr("test"));
-  Layout layout(&scope, descr_klass->instanceLayout());
+  Layout layout(&scope, descr_type->instanceLayout());
   Object descr(&scope, runtime.newInstance(layout));
-  setInMetaclass(&runtime, klass, attr, descr);
+  setInMetaclass(&runtime, type, attr, descr);
 
-  ASSERT_DEATH(runtime.attributeAt(Thread::currentThread(), klass, attr),
+  ASSERT_DEATH(runtime.attributeAt(Thread::currentThread(), type, attr),
                "custom descriptors are unsupported");
 }
 
-TEST(ClassAttributeTest, GetNonDataDescriptorOnMetaClass) {
+TEST(TypeAttributeTest, GetNonDataDescriptorOnMetaType) {
   Runtime runtime;
 
   // Create the non-data descriptor class
@@ -2506,25 +2506,25 @@ class DataDescriptor:
   runtime.runFromCStr(src);
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type descr_klass(&scope, moduleAt(&runtime, main, "DataDescriptor"));
+  Type descr_type(&scope, moduleAt(&runtime, main, "DataDescriptor"));
 
   // Create the class
-  Object klass(&scope, createClass(&runtime));
+  Object type(&scope, createType(&runtime));
 
   // Create an instance of the descriptor and store it on the metaclass
   Object attr(&scope, runtime.newStrFromCStr("test"));
-  Layout layout(&scope, descr_klass->instanceLayout());
+  Layout layout(&scope, descr_type->instanceLayout());
   Object descr(&scope, runtime.newInstance(layout));
-  setInMetaclass(&runtime, klass, attr, descr);
+  setInMetaclass(&runtime, type, attr, descr);
 
-  RawObject result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
   ASSERT_EQ(RawObjectArray::cast(result)->length(), 3);
-  EXPECT_EQ(runtime.typeOf(RawObjectArray::cast(result)->at(0)), *descr_klass);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(1), *klass);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), runtime.typeOf(*klass));
+  EXPECT_EQ(runtime.typeOf(RawObjectArray::cast(result)->at(0)), *descr_type);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(1), *type);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(2), runtime.typeOf(*type));
 }
 
-TEST(ClassAttributeTest, GetNonDataDescriptorOnClass) {
+TEST(TypeAttributeTest, GetNonDataDescriptorOnType) {
   Runtime runtime;
 
   // Create the non-data descriptor class
@@ -2536,25 +2536,25 @@ class DataDescriptor:
   runtime.runFromCStr(src);
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type descr_klass(&scope, moduleAt(&runtime, main, "DataDescriptor"));
+  Type descr_type(&scope, moduleAt(&runtime, main, "DataDescriptor"));
 
   // Create the class
-  Object klass(&scope, createClass(&runtime));
+  Object type(&scope, createType(&runtime));
 
   // Create an instance of the descriptor and store it on the metaclass
   Object attr(&scope, runtime.newStrFromCStr("test"));
-  Layout layout(&scope, descr_klass->instanceLayout());
+  Layout layout(&scope, descr_type->instanceLayout());
   Object descr(&scope, runtime.newInstance(layout));
-  setInClassDict(&runtime, klass, attr, descr);
+  setInTypeDict(&runtime, type, attr, descr);
 
-  RawObject result = runtime.attributeAt(Thread::currentThread(), klass, attr);
+  RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
   ASSERT_EQ(RawObjectArray::cast(result)->length(), 3);
-  EXPECT_EQ(runtime.typeOf(RawObjectArray::cast(result)->at(0)), *descr_klass);
+  EXPECT_EQ(runtime.typeOf(RawObjectArray::cast(result)->at(0)), *descr_type);
   EXPECT_EQ(RawObjectArray::cast(result)->at(1), NoneType::object());
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *klass);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *type);
 }
 
-TEST(GetClassAttributeTest, GetMetaclassAttribute) {
+TEST(GetTypeAttributeTest, GetMetaclassAttribute) {
   Runtime runtime;
   const char* src = R"(
 class MyMeta(type):
@@ -2588,9 +2588,9 @@ def test(x):
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
-  Type klass(&scope, moduleAt(&runtime, main, "Foo"));
+  Type type(&scope, moduleAt(&runtime, main, "Foo"));
   ObjectArray args(&scope, runtime.newObjectArray(1));
-  Layout layout(&scope, klass->instanceLayout());
+  Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
   ASSERT_DEATH(callFunctionToString(test, args), "missing attribute");
@@ -2612,9 +2612,9 @@ def test(x):
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
-  Type klass(&scope, moduleAt(&runtime, main, "Foo"));
+  Type type(&scope, moduleAt(&runtime, main, "Foo"));
   ObjectArray args(&scope, runtime.newObjectArray(1));
-  Layout layout(&scope, klass->instanceLayout());
+  Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
   EXPECT_EQ(callFunctionToString(test, args), "testing 123\n");
@@ -2637,9 +2637,9 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type klass(&scope, moduleAt(&runtime, main, "Foo"));
+  Type type(&scope, moduleAt(&runtime, main, "Foo"));
   ObjectArray args(&scope, runtime.newObjectArray(1));
-  Layout layout(&scope, klass->instanceLayout());
+  Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
   // Run __init__
@@ -2666,9 +2666,9 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type klass(&scope, moduleAt(&runtime, main, "Foo"));
+  Type type(&scope, moduleAt(&runtime, main, "Foo"));
   ObjectArray args(&scope, runtime.newObjectArray(1));
-  Layout layout(&scope, klass->instanceLayout());
+  Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
   // Run __init__ then RMW the attribute
@@ -2698,8 +2698,8 @@ def test(x):
   // Create an instance of Foo
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type klass(&scope, moduleAt(&runtime, main, "Foo"));
-  Layout layout(&scope, klass->instanceLayout());
+  Type type(&scope, moduleAt(&runtime, main, "Foo"));
+  Layout layout(&scope, type->instanceLayout());
   Instance foo1(&scope, runtime.newInstance(layout));
   LayoutId original_layout_id = layout->id();
 
@@ -2739,9 +2739,9 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type klass(&scope, moduleAt(&runtime, main, "Foo"));
+  Type type(&scope, moduleAt(&runtime, main, "Foo"));
   ObjectArray args(&scope, runtime.newObjectArray(1));
-  Layout layout(&scope, klass->instanceLayout());
+  Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
   // Run __init__ then call the method
@@ -2767,22 +2767,22 @@ class Foo:
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type descr_klass(&scope, moduleAt(&runtime, main, "DataDescr"));
-  Object klass(&scope, moduleAt(&runtime, main, "Foo"));
+  Type descr_type(&scope, moduleAt(&runtime, main, "DataDescr"));
+  Object type(&scope, moduleAt(&runtime, main, "Foo"));
   Object attr(&scope, runtime.newStrFromCStr("attr"));
-  Layout descr_layout(&scope, descr_klass->instanceLayout());
+  Layout descr_layout(&scope, descr_type->instanceLayout());
   Object descr(&scope, runtime.newInstance(descr_layout));
-  setInClassDict(&runtime, klass, attr, descr);
+  setInTypeDict(&runtime, type, attr, descr);
 
   // Fetch it from the instance
-  Layout instance_layout(&scope, RawType::cast(*klass)->instanceLayout());
+  Layout instance_layout(&scope, RawType::cast(*type)->instanceLayout());
   Object instance(&scope, runtime.newInstance(instance_layout));
   ObjectArray result(
       &scope, runtime.attributeAt(Thread::currentThread(), instance, attr));
   ASSERT_EQ(result->length(), 3);
-  EXPECT_EQ(runtime.typeOf(result->at(0)), *descr_klass);
+  EXPECT_EQ(runtime.typeOf(result->at(0)), *descr_type);
   EXPECT_EQ(result->at(1), *instance);
-  EXPECT_EQ(result->at(2), *klass);
+  EXPECT_EQ(result->at(2), *type);
 }
 
 TEST(InstanceAttributeTest, GetNonDataDescriptor) {
@@ -2800,23 +2800,23 @@ class Foo:
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type descr_klass(&scope, moduleAt(&runtime, main, "Descr"));
-  Object klass(&scope, moduleAt(&runtime, main, "Foo"));
+  Type descr_type(&scope, moduleAt(&runtime, main, "Descr"));
+  Object type(&scope, moduleAt(&runtime, main, "Foo"));
   Object attr(&scope, runtime.newStrFromCStr("attr"));
-  Layout descr_layout(&scope, descr_klass->instanceLayout());
+  Layout descr_layout(&scope, descr_type->instanceLayout());
   Object descr(&scope, runtime.newInstance(descr_layout));
-  setInClassDict(&runtime, klass, attr, descr);
+  setInTypeDict(&runtime, type, attr, descr);
 
   // Fetch it from the instance
-  Layout instance_layout(&scope, RawType::cast(*klass)->instanceLayout());
+  Layout instance_layout(&scope, RawType::cast(*type)->instanceLayout());
   Object instance(&scope, runtime.newInstance(instance_layout));
 
   RawObject result =
       runtime.attributeAt(Thread::currentThread(), instance, attr);
   ASSERT_EQ(RawObjectArray::cast(result)->length(), 3);
-  EXPECT_EQ(runtime.typeOf(RawObjectArray::cast(result)->at(0)), *descr_klass);
+  EXPECT_EQ(runtime.typeOf(RawObjectArray::cast(result)->at(0)), *descr_type);
   EXPECT_EQ(RawObjectArray::cast(result)->at(1), *instance);
-  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *klass);
+  EXPECT_EQ(RawObjectArray::cast(result)->at(2), *type);
 }
 
 TEST(InstanceAttributeTest, ManipulateMultipleAttributes) {
@@ -2841,9 +2841,9 @@ def test(x):
   // Create the instance
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type klass(&scope, moduleAt(&runtime, main, "Foo"));
+  Type type(&scope, moduleAt(&runtime, main, "Foo"));
   ObjectArray args(&scope, runtime.newObjectArray(1));
-  Layout layout(&scope, klass->instanceLayout());
+  Layout layout(&scope, type->instanceLayout());
   args->atPut(0, runtime.newInstance(layout));
 
   // Run the test
@@ -3397,8 +3397,8 @@ class Foo:
 
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
-  Type klass(&scope, moduleAt(&runtime, main, "Foo"));
-  Layout layout(&scope, klass->instanceLayout());
+  Type type(&scope, moduleAt(&runtime, main, "Foo"));
+  Layout layout(&scope, type->instanceLayout());
   HeapObject instance(&scope, runtime.newInstance(layout));
   Object attr(&scope, runtime.newStrFromCStr("unknown"));
   EXPECT_EQ(runtime.instanceDel(Thread::currentThread(), instance, attr),
@@ -3477,7 +3477,7 @@ def new_foo():
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, new_layout, attr, &info));
 }
 
-TEST(MetaclassTest, ClassWithTypeMetaclassIsConcreteClass) {
+TEST(MetaclassTest, ClassWithTypeMetaclassIsConcreteType) {
   const char* src = R"(
 # This is equivalent to `class Foo(type)`
 class Foo(type, metaclass=type):
@@ -3498,7 +3498,7 @@ class Bar(Foo):
   EXPECT_TRUE(bar->isType());
 }
 
-TEST(MetaclassTest, ClassWithCustomMetaclassIsntConcreteClass) {
+TEST(MetaclassTest, ClassWithCustomMetaclassIsntConcreteType) {
   const char* src = R"(
 class MyMeta(type):
     pass
@@ -3515,7 +3515,7 @@ class Foo(type, metaclass=MyMeta):
   EXPECT_FALSE(foo->isType());
 }
 
-TEST(MetaclassTest, ClassWithTypeMetaclassIsInstanceOfClass) {
+TEST(MetaclassTest, ClassWithTypeMetaclassIsInstanceOfType) {
   const char* src = R"(
 class Foo(type):
     pass
@@ -3535,7 +3535,7 @@ class Bar(Foo):
   EXPECT_TRUE(runtime.isInstanceOfType(*bar));
 }
 
-TEST(MetaclassTest, ClassWithCustomMetaclassIsInstanceOfClass) {
+TEST(MetaclassTest, ClassWithCustomMetaclassIsInstanceOfType) {
   const char* src = R"(
 class MyMeta(type):
     pass

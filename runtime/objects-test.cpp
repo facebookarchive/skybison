@@ -755,10 +755,10 @@ TEST(WeakRefTest, SpliceQueue) {
   EXPECT_EQ(list, NoneType::object());
 }
 
-TEST(ClassTest, SetFlagThenHasFlagReturnsTrue) {
+TEST(TypeTest, SetFlagThenHasFlagReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
-  Type type(&scope, runtime.newClass());
+  Type type(&scope, runtime.newType());
   type->setFlag(Type::Flag::kDictSubclass);
   type->setFlag(Type::Flag::kListSubclass);
   EXPECT_TRUE(type->hasFlag(Type::Flag::kDictSubclass));

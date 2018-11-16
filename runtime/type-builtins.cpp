@@ -101,7 +101,7 @@ RawObject builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
     return runtime->typeOf(*arg);
   }
   Object name(&scope, args.get(1));
-  Type result(&scope, runtime->newClassWithMetaclass(class_layout_id));
+  Type result(&scope, runtime->newTypeWithMetaclass(class_layout_id));
   result->setName(*name);
 
   // Compute MRO
@@ -126,11 +126,11 @@ RawObject builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   result->setDict(*dict);
 
   // Compute builtin base class
-  LayoutId base_layout_id = runtime->computeBuiltinBaseClass(result);
+  LayoutId base_layout_id = runtime->computeBuiltinBaseType(result);
   // Initialize instance layout
   Layout layout(&scope,
                 runtime->computeInitialLayout(thread, result, base_layout_id));
-  layout->setDescribedClass(*result);
+  layout->setDescribedType(*result);
   result->setInstanceLayout(*layout);
 
   // Copy down class flags from bases

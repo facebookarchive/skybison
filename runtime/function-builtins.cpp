@@ -21,7 +21,7 @@ const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
 
 void FunctionBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type function(&scope, runtime->addBuiltinClass(
+  Type function(&scope, runtime->addBuiltinType(
                             SymbolId::kFunction, LayoutId::kFunction,
                             LayoutId::kObject, kAttributes, kMethods));
 }

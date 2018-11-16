@@ -278,7 +278,7 @@ TEST(LayoutTest, VerifyChildLayout) {
   EXPECT_EQ(RawList::cast(child->additions())->numItems(), 0);
   EXPECT_NE(child->deletions(), parent->deletions());
   EXPECT_EQ(RawList::cast(child->deletions())->numItems(), 0);
-  EXPECT_EQ(child->describedClass(), parent->describedClass());
+  EXPECT_EQ(child->describedType(), parent->describedType());
   EXPECT_EQ(child->instanceSize(), parent->instanceSize());
 }
 

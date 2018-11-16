@@ -101,8 +101,8 @@ RawObject ApiHandle::asInstance(RawObject obj) {
   HandleScope scope(thread);
 
   DCHECK(obj->isType(), "not a RawType object");
-  Type klass(&scope, obj);
-  Layout layout(&scope, klass->instanceLayout());
+  Type type(&scope, obj);
+  Layout layout(&scope, type->instanceLayout());
   HeapObject instance(&scope, runtime->newInstance(layout));
   Object object_ptr(&scope, runtime->newIntFromCPtr(static_cast<void*>(this)));
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());

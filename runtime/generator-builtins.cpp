@@ -51,7 +51,7 @@ const BuiltinMethod GeneratorBuiltins::kMethods[] = {
 
 void GeneratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type generator(&scope, runtime->addBuiltinClassWithMethods(
+  Type generator(&scope, runtime->addBuiltinTypeWithMethods(
                              SymbolId::kGenerator, LayoutId::kGenerator,
                              LayoutId::kObject, kMethods));
 }
@@ -97,7 +97,7 @@ const BuiltinMethod CoroutineBuiltins::kMethods[] = {
 
 void CoroutineBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type coroutine(&scope, runtime->addBuiltinClassWithMethods(
+  Type coroutine(&scope, runtime->addBuiltinTypeWithMethods(
                              SymbolId::kCoroutine, LayoutId::kCoroutine,
                              LayoutId::kObject, kMethods));
 }

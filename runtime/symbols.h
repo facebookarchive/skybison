@@ -211,7 +211,7 @@ class Runtime;
   V(NotImplementedError, "NotImplementedError")                                \
   V(NotImplementedType, "NotImplementedType")                                  \
   V(OSError, "OSError")                                                        \
-  V(ObjectClassname, "object")                                                 \
+  V(ObjectTypename, "object")                                                  \
   V(Ord, "ord")                                                                \
   V(OverflowError, "OverflowError")                                            \
   V(Path, "path")                                                              \

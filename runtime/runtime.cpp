@@ -85,12 +85,12 @@ Runtime::Runtime(word heap_size)
     : heap_(heap_size), new_value_cell_callback_(this) {
   initializeRandom();
   initializeThreads();
-  // This must be called before initializeClasses is called. Methods in
-  // initializeClasses rely on instances that are created in this method.
+  // This must be called before initializeTypes is called. Methods in
+  // initializeTypes rely on instances that are created in this method.
   initializePrimitiveInstances();
   initializeInterned();
   initializeSymbols();
-  initializeClasses();
+  initializeTypes();
   initializeModules();
   initializeApiData();
 }
@@ -194,43 +194,43 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
   }
 }
 
-RawObject Runtime::addEmptyBuiltinClass(SymbolId name, LayoutId subclass_id,
-                                        LayoutId superclass_id) {
-  return addBuiltinClass(name, subclass_id, superclass_id,
-                         View<BuiltinAttribute>(nullptr, 0),
-                         View<BuiltinMethod>(nullptr, 0));
+RawObject Runtime::addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
+                                       LayoutId superclass_id) {
+  return addBuiltinType(name, subclass_id, superclass_id,
+                        View<BuiltinAttribute>(nullptr, 0),
+                        View<BuiltinMethod>(nullptr, 0));
 }
 
-RawObject Runtime::addBuiltinClassWithAttrs(SymbolId name, LayoutId subclass_id,
-                                            LayoutId superclass_id,
-                                            View<BuiltinAttribute> attrs) {
-  return addBuiltinClass(name, subclass_id, superclass_id, attrs,
-                         View<BuiltinMethod>(nullptr, 0));
+RawObject Runtime::addBuiltinTypeWithAttrs(SymbolId name, LayoutId subclass_id,
+                                           LayoutId superclass_id,
+                                           View<BuiltinAttribute> attrs) {
+  return addBuiltinType(name, subclass_id, superclass_id, attrs,
+                        View<BuiltinMethod>(nullptr, 0));
 }
 
-RawObject Runtime::addBuiltinClassWithMethods(SymbolId name,
-                                              LayoutId subclass_id,
-                                              LayoutId superclass_id,
-                                              View<BuiltinMethod> methods) {
-  return addBuiltinClass(name, subclass_id, superclass_id,
-                         View<BuiltinAttribute>(nullptr, 0), methods);
+RawObject Runtime::addBuiltinTypeWithMethods(SymbolId name,
+                                             LayoutId subclass_id,
+                                             LayoutId superclass_id,
+                                             View<BuiltinMethod> methods) {
+  return addBuiltinType(name, subclass_id, superclass_id,
+                        View<BuiltinAttribute>(nullptr, 0), methods);
 }
 
-RawObject Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                                   LayoutId superclass_id,
-                                   View<BuiltinAttribute> attrs,
-                                   View<BuiltinMethod> methods) {
+RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
+                                  LayoutId superclass_id,
+                                  View<BuiltinAttribute> attrs,
+                                  View<BuiltinMethod> methods) {
   HandleScope scope;
 
   // Create a class object for the subclass
-  Type subclass(&scope, newClass());
+  Type subclass(&scope, newType());
   subclass->setName(symbols()->at(name));
 
   Layout layout(&scope, layoutCreateSubclassWithBuiltins(subclass_id,
                                                          superclass_id, attrs));
 
   // Assign the layout to the class
-  layout->setDescribedClass(*subclass);
+  layout->setDescribedType(*subclass);
 
   // Now we can create an MRO
   ObjectArray mro(&scope, createMro(layout, superclass_id));
@@ -245,7 +245,7 @@ RawObject Runtime::addBuiltinClass(SymbolId name, LayoutId subclass_id,
 
   // Add the provided methods.
   for (const BuiltinMethod& meth : methods) {
-    classAddBuiltinFunction(subclass, meth.name, meth.address);
+    typeAddBuiltinFunction(subclass, meth.name, meth.address);
   }
 
   // return the class
@@ -273,11 +273,11 @@ RawObject Runtime::newBytesWithAll(View<byte> array) {
   return result;
 }
 
-RawObject Runtime::newClass() { return newClassWithMetaclass(LayoutId::kType); }
+RawObject Runtime::newType() { return newTypeWithMetaclass(LayoutId::kType); }
 
-RawObject Runtime::newClassWithMetaclass(LayoutId metaclass_id) {
+RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   HandleScope scope;
-  Type result(&scope, heap()->createClass(metaclass_id));
+  Type result(&scope, heap()->createType(metaclass_id));
   Dict dict(&scope, newDict());
   result->setFlags(SmallInt::fromWord(0));
   result->setDict(*dict);
@@ -288,11 +288,11 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
                                 const Object& name) {
   DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
-  Type klass(&scope, *receiver);
-  Type meta_klass(&scope, typeOf(*receiver));
+  Type type(&scope, *receiver);
+  Type meta_type(&scope, typeOf(*receiver));
 
   // Look for the attribute in the meta class
-  Object meta_attr(&scope, lookupNameInMro(thread, meta_klass, name));
+  Object meta_attr(&scope, lookupNameInMro(thread, meta_type, name));
   if (!meta_attr->isError()) {
     if (isDataDescriptor(thread, meta_attr)) {
       // TODO(T25692531): Call __get__ from meta_attr
@@ -300,8 +300,8 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
     }
   }
 
-  // No data descriptor found on the meta class, look in the mro of the klass
-  Object attr(&scope, lookupNameInMro(thread, klass, name));
+  // No data descriptor found on the meta class, look in the mro of the type
+  Object attr(&scope, lookupNameInMro(thread, type, name));
   if (!attr->isError()) {
     if (isNonDataDescriptor(thread, attr)) {
       Object instance(&scope, NoneType::object());
@@ -311,11 +311,11 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
     return *attr;
   }
 
-  // No attr found in klass or its mro, use the non-data descriptor found in
+  // No attr found in type or its mro, use the non-data descriptor found in
   // the metaclass (if any).
   if (!meta_attr->isError()) {
     if (isNonDataDescriptor(thread, meta_attr)) {
-      Object owner(&scope, *meta_klass);
+      Object owner(&scope, *meta_type);
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
                                             meta_attr, receiver, owner);
     }
@@ -335,18 +335,18 @@ RawObject Runtime::classSetAttr(Thread* thread, const Object& receiver,
                                 const Object& name, const Object& value) {
   DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
-  Type klass(&scope, *receiver);
-  if (klass->isIntrinsicOrExtension()) {
+  Type type(&scope, *receiver);
+  if (type->isIntrinsicOrExtension()) {
     // TODO(T25140871): Refactor this into something that includes the type name
     // like:
-    //     thread->throwImmutableTypeManipulationError(klass)
+    //     thread->throwImmutableTypeManipulationError(type)
     return thread->raiseTypeErrorWithCStr(
         "can't set attributes of built-in/extension type");
   }
 
   // Check for a data descriptor
-  Type metaklass(&scope, typeOf(*receiver));
-  Object meta_attr(&scope, lookupNameInMro(thread, metaklass, name));
+  Type metatype(&scope, typeOf(*receiver));
+  Object meta_attr(&scope, lookupNameInMro(thread, metatype, name));
   if (!meta_attr->isError()) {
     if (isDataDescriptor(thread, meta_attr)) {
       // TODO(T25692531): Call __set__ from meta_attr
@@ -354,9 +354,9 @@ RawObject Runtime::classSetAttr(Thread* thread, const Object& receiver,
     }
   }
 
-  // No data descriptor found, store the attribute in the klass dict
-  Dict klass_dict(&scope, klass->dict());
-  dictAtPutInValueCell(klass_dict, name, value);
+  // No data descriptor found, store the attribute in the type dict
+  Dict type_dict(&scope, type->dict());
+  dictAtPutInValueCell(type_dict, name, value);
 
   return NoneType::object();
 }
@@ -370,19 +370,19 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   }
 
   HandleScope scope(thread);
-  Type klass(&scope, *receiver);
+  Type type(&scope, *receiver);
   // TODO(mpage): This needs to handle built-in extension types.
-  if (klass->isIntrinsicOrExtension()) {
+  if (type->isIntrinsicOrExtension()) {
     // TODO(T25140871): Refactor this into something that includes the type name
     // like:
-    //     thread->throwImmutableTypeManipulationError(klass)
+    //     thread->throwImmutableTypeManipulationError(type)
     return thread->raiseTypeErrorWithCStr(
         "can't set attributes of built-in/extension type");
   }
 
   // Check for a delete descriptor
-  Type metaklass(&scope, typeOf(*receiver));
-  Object meta_attr(&scope, lookupNameInMro(thread, metaklass, name));
+  Type metatype(&scope, typeOf(*receiver));
+  Object meta_attr(&scope, lookupNameInMro(thread, metatype, name));
   if (!meta_attr->isError()) {
     if (isDeleteDescriptor(thread, meta_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -390,9 +390,9 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
     }
   }
 
-  // No delete descriptor found, attempt to delete from the klass dict
-  Dict klass_dict(&scope, klass->dict());
-  if (dictRemove(klass_dict, name)->isError()) {
+  // No delete descriptor found, attempt to delete from the type dict
+  Dict type_dict(&scope, type->dict());
+  if (dictRemove(type_dict, name)->isError()) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
     return thread->raiseAttributeErrorWithCStr("missing attribute");
@@ -412,13 +412,13 @@ RawObject Runtime::instanceGetAttr(Thread* thread, const Object& receiver,
 
   // Look for the attribute in the class
   HandleScope scope(thread);
-  Type klass(&scope, typeOf(*receiver));
-  Object klass_attr(&scope, lookupNameInMro(thread, klass, name));
-  if (!klass_attr->isError()) {
-    if (isDataDescriptor(thread, klass_attr)) {
-      Object owner(&scope, *klass);
+  Type type(&scope, typeOf(*receiver));
+  Object type_attr(&scope, lookupNameInMro(thread, type, name));
+  if (!type_attr->isError()) {
+    if (isDataDescriptor(thread, type_attr)) {
+      Object owner(&scope, *type);
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            klass_attr, receiver, owner);
+                                            type_attr, receiver, owner);
     }
   }
 
@@ -433,15 +433,15 @@ RawObject Runtime::instanceGetAttr(Thread* thread, const Object& receiver,
 
   // Nothing found in the instance, if we found a non-data descriptor via the
   // class search, use it.
-  if (!klass_attr->isError()) {
-    if (isNonDataDescriptor(thread, klass_attr)) {
-      Object owner(&scope, *klass);
+  if (!type_attr->isError()) {
+    if (isNonDataDescriptor(thread, type_attr)) {
+      Object owner(&scope, *type);
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            klass_attr, receiver, owner);
+                                            type_attr, receiver, owner);
     }
 
     // If a regular attribute was found in the class, return it
-    return *klass_attr;
+    return *type_attr;
   }
 
   // TODO(T25140871): Refactor this into something like:
@@ -454,12 +454,12 @@ RawObject Runtime::instanceSetAttr(Thread* thread, const Object& receiver,
   DCHECK(name->isStr(), "Name is not a string");
   // Check for a data descriptor
   HandleScope scope(thread);
-  Type klass(&scope, typeOf(*receiver));
-  Object klass_attr(&scope, lookupNameInMro(thread, klass, name));
-  if (!klass_attr->isError()) {
-    if (isDataDescriptor(thread, klass_attr)) {
+  Type type(&scope, typeOf(*receiver));
+  Object type_attr(&scope, lookupNameInMro(thread, type, name));
+  if (!type_attr->isError()) {
+    if (isDataDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorSet(thread, thread->currentFrame(),
-                                            klass_attr, receiver, value);
+                                            type_attr, receiver, value);
     }
   }
 
@@ -478,12 +478,12 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
 
   // Check for a descriptor with __delete__
   HandleScope scope(thread);
-  Type klass(&scope, typeOf(*receiver));
-  Object klass_attr(&scope, lookupNameInMro(thread, klass, name));
-  if (!klass_attr->isError()) {
-    if (isDeleteDescriptor(thread, klass_attr)) {
+  Type type(&scope, typeOf(*receiver));
+  Object type_attr(&scope, lookupNameInMro(thread, type, name));
+  if (!type_attr->isError()) {
+    if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
-                                               klass_attr, receiver);
+                                               type_attr, receiver);
     }
   }
 
@@ -536,12 +536,12 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
 
   // Check for a descriptor with __delete__
   HandleScope scope(thread);
-  Type klass(&scope, typeOf(*receiver));
-  Object klass_attr(&scope, lookupNameInMro(thread, klass, name));
-  if (!klass_attr->isError()) {
-    if (isDeleteDescriptor(thread, klass_attr)) {
+  Type type(&scope, typeOf(*receiver));
+  Object type_attr(&scope, lookupNameInMro(thread, type, name));
+  if (!type_attr->isError()) {
+    if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
-                                               klass_attr, receiver);
+                                               type_attr, receiver);
     }
   }
 
@@ -643,23 +643,23 @@ RawObject Runtime::newInstance(const Layout& layout) {
   return instance;
 }
 
-void Runtime::classAddBuiltinFunction(const Type& type, SymbolId name,
-                                      Function::Entry entry) {
-  classAddBuiltinFunctionKwEx(type, name, entry, unimplementedTrampoline,
-                              unimplementedTrampoline);
+void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
+                                     Function::Entry entry) {
+  typeAddBuiltinFunctionKwEx(type, name, entry, unimplementedTrampoline,
+                             unimplementedTrampoline);
 }
 
-void Runtime::classAddBuiltinFunctionKw(const Type& type, SymbolId name,
-                                        Function::Entry entry,
-                                        Function::Entry entry_kw) {
-  classAddBuiltinFunctionKwEx(type, name, entry, entry_kw,
-                              unimplementedTrampoline);
+void Runtime::typeAddBuiltinFunctionKw(const Type& type, SymbolId name,
+                                       Function::Entry entry,
+                                       Function::Entry entry_kw) {
+  typeAddBuiltinFunctionKwEx(type, name, entry, entry_kw,
+                             unimplementedTrampoline);
 }
 
-void Runtime::classAddBuiltinFunctionKwEx(const Type& type, SymbolId name,
-                                          Function::Entry entry,
-                                          Function::Entry entry_kw,
-                                          Function::Entry entry_ex) {
+void Runtime::typeAddBuiltinFunctionKwEx(const Type& type, SymbolId name,
+                                         Function::Entry entry,
+                                         Function::Entry entry_kw,
+                                         Function::Entry entry_ex) {
   HandleScope scope;
   Function function(&scope,
                     newBuiltinFunction(name, entry, entry_kw, entry_ex));
@@ -954,10 +954,10 @@ RawObject Runtime::valueHash(RawObject object) {
   return SmallInt::fromWord(code);
 }
 
-void Runtime::initializeClasses() {
+void Runtime::initializeTypes() {
   initializeLayouts();
-  initializeHeapClasses();
-  initializeImmediateClasses();
+  initializeHeapTypes();
+  initializeImmediateTypes();
 }
 
 void Runtime::initializeLayouts() {
@@ -974,19 +974,19 @@ void Runtime::initializeLayouts() {
 RawObject Runtime::createMro(const Layout& subclass_layout,
                              LayoutId superclass_id) {
   HandleScope scope;
-  CHECK(subclass_layout->describedClass()->isType(),
+  CHECK(subclass_layout->describedType()->isType(),
         "subclass layout must have a described class");
   Type superclass(&scope, typeAt(superclass_id));
   ObjectArray src(&scope, superclass->mro());
   ObjectArray dst(&scope, newObjectArray(1 + src->length()));
-  dst->atPut(0, subclass_layout->describedClass());
+  dst->atPut(0, subclass_layout->describedType());
   for (word i = 0; i < src->length(); i++) {
     dst->atPut(1 + i, src->at(i));
   }
   return *dst;
 }
 
-void Runtime::initializeHeapClasses() {
+void Runtime::initializeHeapTypes() {
   ObjectBuiltins::initialize(this);
 
   // Abstract classes.
@@ -994,13 +994,13 @@ void Runtime::initializeHeapClasses() {
   IntBuiltins::initialize(this);
 
   // Exception hierarchy
-  initializeExceptionClasses();
+  initializeExceptionTypes();
 
   // Concrete classes.
 
-  addEmptyBuiltinClass(SymbolId::kBytes, LayoutId::kBytes, LayoutId::kObject);
-  initializeClassMethodClass();
-  addEmptyBuiltinClass(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kBytes, LayoutId::kBytes, LayoutId::kObject);
+  initializeClassMethodType();
+  addEmptyBuiltinType(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   ComplexBuiltins::initialize(this);
   DictBuiltins::initialize(this);
   DictItemsBuiltins::initialize(this);
@@ -1009,297 +1009,293 @@ void Runtime::initializeHeapClasses() {
   DictKeyIteratorBuiltins::initialize(this);
   DictValuesBuiltins::initialize(this);
   DictValueIteratorBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kEllipsis, LayoutId::kEllipsis,
-                       LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kEllipsis, LayoutId::kEllipsis,
+                      LayoutId::kObject);
   FloatBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kFrame, LayoutId::kHeapFrame,
-                       LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kFrame, LayoutId::kHeapFrame,
+                      LayoutId::kObject);
   FunctionBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kLargeStr, LayoutId::kLargeStr,
-                       LayoutId::kStr);
-  addEmptyBuiltinClass(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kLargeStr, LayoutId::kLargeStr, LayoutId::kStr);
+  addEmptyBuiltinType(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
   ListBuiltins::initialize(this);
   ListIteratorBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kMethod, LayoutId::kBoundMethod,
-                       LayoutId::kObject);
-  addEmptyBuiltinClass(SymbolId::kModule, LayoutId::kModule, LayoutId::kObject);
-  addEmptyBuiltinClass(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
-                       LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kMethod, LayoutId::kBoundMethod,
+                      LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kModule, LayoutId::kModule, LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
+                      LayoutId::kObject);
   TupleBuiltins::initialize(this);
   TupleIteratorBuiltins::initialize(this);
-  initializePropertyClass();
+  initializePropertyType();
   RangeBuiltins::initialize(this);
   RangeIteratorBuiltins::initialize(this);
-  initializeRefClass();
+  initializeRefType();
   SetBuiltins::initialize(this);
   SetIteratorBuiltins::initialize(this);
   StrIteratorBuiltins::initialize(this);
   GeneratorBaseBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
-  initializeStaticMethodClass();
-  initializeSuperClass();
-  initializeTypeClass();
-  addEmptyBuiltinClass(SymbolId::kValueCell, LayoutId::kValueCell,
-                       LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
+  initializeStaticMethodType();
+  initializeSuperType();
+  initializeTypeType();
+  addEmptyBuiltinType(SymbolId::kValueCell, LayoutId::kValueCell,
+                      LayoutId::kObject);
 }
 
-void Runtime::initializeExceptionClasses() {
+void Runtime::initializeExceptionTypes() {
   BaseExceptionBuiltins::initialize(this);
 
   // BaseException subclasses
-  addEmptyBuiltinClass(SymbolId::kException, LayoutId::kException,
-                       LayoutId::kBaseException);
-  addEmptyBuiltinClass(SymbolId::kKeyboardInterrupt,
-                       LayoutId::kKeyboardInterrupt, LayoutId::kBaseException);
-  addEmptyBuiltinClass(SymbolId::kGeneratorExit, LayoutId::kGeneratorExit,
-                       LayoutId::kBaseException);
+  addEmptyBuiltinType(SymbolId::kException, LayoutId::kException,
+                      LayoutId::kBaseException);
+  addEmptyBuiltinType(SymbolId::kKeyboardInterrupt,
+                      LayoutId::kKeyboardInterrupt, LayoutId::kBaseException);
+  addEmptyBuiltinType(SymbolId::kGeneratorExit, LayoutId::kGeneratorExit,
+                      LayoutId::kBaseException);
   SystemExitBuiltins::initialize(this);
 
   // Exception subclasses
-  addEmptyBuiltinClass(SymbolId::kArithmeticError, LayoutId::kArithmeticError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kAssertionError, LayoutId::kAssertionError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kAttributeError, LayoutId::kAttributeError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kBufferError, LayoutId::kBufferError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kEOFError, LayoutId::kEOFError,
-                       LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kArithmeticError, LayoutId::kArithmeticError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kAssertionError, LayoutId::kAssertionError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kAttributeError, LayoutId::kAttributeError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kBufferError, LayoutId::kBufferError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kEOFError, LayoutId::kEOFError,
+                      LayoutId::kException);
   ImportErrorBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kLookupError, LayoutId::kLookupError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kMemoryError, LayoutId::kMemoryError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kNameError, LayoutId::kNameError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kOSError, LayoutId::kOSError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kReferenceError, LayoutId::kReferenceError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kRuntimeError, LayoutId::kRuntimeError,
-                       LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kLookupError, LayoutId::kLookupError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kMemoryError, LayoutId::kMemoryError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kNameError, LayoutId::kNameError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kOSError, LayoutId::kOSError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kReferenceError, LayoutId::kReferenceError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kRuntimeError, LayoutId::kRuntimeError,
+                      LayoutId::kException);
   StopIterationBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kStopAsyncIteration,
-                       LayoutId::kStopAsyncIteration, LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kSyntaxError, LayoutId::kSyntaxError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kSystemError, LayoutId::kSystemError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kTypeError, LayoutId::kTypeError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kValueError, LayoutId::kValueError,
-                       LayoutId::kException);
-  addEmptyBuiltinClass(SymbolId::kWarning, LayoutId::kWarning,
-                       LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kStopAsyncIteration,
+                      LayoutId::kStopAsyncIteration, LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kSyntaxError, LayoutId::kSyntaxError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kSystemError, LayoutId::kSystemError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kTypeError, LayoutId::kTypeError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kValueError, LayoutId::kValueError,
+                      LayoutId::kException);
+  addEmptyBuiltinType(SymbolId::kWarning, LayoutId::kWarning,
+                      LayoutId::kException);
 
   // ArithmeticError subclasses
-  addEmptyBuiltinClass(SymbolId::kFloatingPointError,
-                       LayoutId::kFloatingPointError,
-                       LayoutId::kArithmeticError);
-  addEmptyBuiltinClass(SymbolId::kOverflowError, LayoutId::kOverflowError,
-                       LayoutId::kArithmeticError);
-  addEmptyBuiltinClass(SymbolId::kZeroDivisionError,
-                       LayoutId::kZeroDivisionError,
-                       LayoutId::kArithmeticError);
+  addEmptyBuiltinType(SymbolId::kFloatingPointError,
+                      LayoutId::kFloatingPointError,
+                      LayoutId::kArithmeticError);
+  addEmptyBuiltinType(SymbolId::kOverflowError, LayoutId::kOverflowError,
+                      LayoutId::kArithmeticError);
+  addEmptyBuiltinType(SymbolId::kZeroDivisionError,
+                      LayoutId::kZeroDivisionError, LayoutId::kArithmeticError);
 
   // ImportError subclasses
-  addEmptyBuiltinClass(SymbolId::kModuleNotFoundError,
-                       LayoutId::kModuleNotFoundError, LayoutId::kImportError);
+  addEmptyBuiltinType(SymbolId::kModuleNotFoundError,
+                      LayoutId::kModuleNotFoundError, LayoutId::kImportError);
 
   // LookupError subclasses
-  addEmptyBuiltinClass(SymbolId::kIndexError, LayoutId::kIndexError,
-                       LayoutId::kLookupError);
-  addEmptyBuiltinClass(SymbolId::kKeyError, LayoutId::kKeyError,
-                       LayoutId::kLookupError);
+  addEmptyBuiltinType(SymbolId::kIndexError, LayoutId::kIndexError,
+                      LayoutId::kLookupError);
+  addEmptyBuiltinType(SymbolId::kKeyError, LayoutId::kKeyError,
+                      LayoutId::kLookupError);
 
   // NameError subclasses
-  addEmptyBuiltinClass(SymbolId::kUnboundLocalError,
-                       LayoutId::kUnboundLocalError, LayoutId::kNameError);
+  addEmptyBuiltinType(SymbolId::kUnboundLocalError,
+                      LayoutId::kUnboundLocalError, LayoutId::kNameError);
 
   // OSError subclasses
-  addEmptyBuiltinClass(SymbolId::kBlockingIOError, LayoutId::kBlockingIOError,
-                       LayoutId::kOSError);
-  addEmptyBuiltinClass(SymbolId::kChildProcessError,
-                       LayoutId::kChildProcessError, LayoutId::kOSError);
-  addEmptyBuiltinClass(SymbolId::kConnectionError, LayoutId::kConnectionError,
-                       LayoutId::kOSError);
-  addEmptyBuiltinClass(SymbolId::kFileExistsError, LayoutId::kFileExistsError,
-                       LayoutId::kOSError);
-  addEmptyBuiltinClass(SymbolId::kFileNotFoundError,
-                       LayoutId::kFileNotFoundError, LayoutId::kOSError);
-  addEmptyBuiltinClass(SymbolId::kInterruptedError, LayoutId::kInterruptedError,
-                       LayoutId::kOSError);
-  addEmptyBuiltinClass(SymbolId::kIsADirectoryError,
-                       LayoutId::kIsADirectoryError, LayoutId::kOSError);
-  addEmptyBuiltinClass(SymbolId::kNotADirectoryError,
-                       LayoutId::kNotADirectoryError, LayoutId::kOSError);
-  addEmptyBuiltinClass(SymbolId::kPermissionError, LayoutId::kPermissionError,
-                       LayoutId::kOSError);
-  addEmptyBuiltinClass(SymbolId::kProcessLookupError,
-                       LayoutId::kProcessLookupError, LayoutId::kOSError);
-  addEmptyBuiltinClass(SymbolId::kTimeoutError, LayoutId::kTimeoutError,
-                       LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kBlockingIOError, LayoutId::kBlockingIOError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kChildProcessError,
+                      LayoutId::kChildProcessError, LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kConnectionError, LayoutId::kConnectionError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kFileExistsError, LayoutId::kFileExistsError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kFileNotFoundError,
+                      LayoutId::kFileNotFoundError, LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kInterruptedError, LayoutId::kInterruptedError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kIsADirectoryError,
+                      LayoutId::kIsADirectoryError, LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kNotADirectoryError,
+                      LayoutId::kNotADirectoryError, LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kPermissionError, LayoutId::kPermissionError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kProcessLookupError,
+                      LayoutId::kProcessLookupError, LayoutId::kOSError);
+  addEmptyBuiltinType(SymbolId::kTimeoutError, LayoutId::kTimeoutError,
+                      LayoutId::kOSError);
 
   // ConnectionError subclasses
-  addEmptyBuiltinClass(SymbolId::kBrokenPipeError, LayoutId::kBrokenPipeError,
-                       LayoutId::kConnectionError);
-  addEmptyBuiltinClass(SymbolId::kConnectionAbortedError,
-                       LayoutId::kConnectionAbortedError,
-                       LayoutId::kConnectionError);
-  addEmptyBuiltinClass(SymbolId::kConnectionRefusedError,
-                       LayoutId::kConnectionRefusedError,
-                       LayoutId::kConnectionError);
-  addEmptyBuiltinClass(SymbolId::kConnectionResetError,
-                       LayoutId::kConnectionResetError,
-                       LayoutId::kConnectionError);
+  addEmptyBuiltinType(SymbolId::kBrokenPipeError, LayoutId::kBrokenPipeError,
+                      LayoutId::kConnectionError);
+  addEmptyBuiltinType(SymbolId::kConnectionAbortedError,
+                      LayoutId::kConnectionAbortedError,
+                      LayoutId::kConnectionError);
+  addEmptyBuiltinType(SymbolId::kConnectionRefusedError,
+                      LayoutId::kConnectionRefusedError,
+                      LayoutId::kConnectionError);
+  addEmptyBuiltinType(SymbolId::kConnectionResetError,
+                      LayoutId::kConnectionResetError,
+                      LayoutId::kConnectionError);
 
   // RuntimeError subclasses
-  addEmptyBuiltinClass(SymbolId::kNotImplementedError,
-                       LayoutId::kNotImplementedError, LayoutId::kRuntimeError);
-  addEmptyBuiltinClass(SymbolId::kRecursionError, LayoutId::kRecursionError,
-                       LayoutId::kRuntimeError);
+  addEmptyBuiltinType(SymbolId::kNotImplementedError,
+                      LayoutId::kNotImplementedError, LayoutId::kRuntimeError);
+  addEmptyBuiltinType(SymbolId::kRecursionError, LayoutId::kRecursionError,
+                      LayoutId::kRuntimeError);
 
   // SyntaxError subclasses
-  addEmptyBuiltinClass(SymbolId::kIndentationError, LayoutId::kIndentationError,
-                       LayoutId::kSyntaxError);
+  addEmptyBuiltinType(SymbolId::kIndentationError, LayoutId::kIndentationError,
+                      LayoutId::kSyntaxError);
 
   // IndentationError subclasses
-  addEmptyBuiltinClass(SymbolId::kTabError, LayoutId::kTabError,
-                       LayoutId::kIndentationError);
+  addEmptyBuiltinType(SymbolId::kTabError, LayoutId::kTabError,
+                      LayoutId::kIndentationError);
 
   // ValueError subclasses
-  addEmptyBuiltinClass(SymbolId::kUnicodeError, LayoutId::kUnicodeError,
-                       LayoutId::kValueError);
+  addEmptyBuiltinType(SymbolId::kUnicodeError, LayoutId::kUnicodeError,
+                      LayoutId::kValueError);
 
   // UnicodeError subclasses
-  addEmptyBuiltinClass(SymbolId::kUnicodeEncodeError,
-                       LayoutId::kUnicodeEncodeError, LayoutId::kUnicodeError);
-  addEmptyBuiltinClass(SymbolId::kUnicodeDecodeError,
-                       LayoutId::kUnicodeDecodeError, LayoutId::kUnicodeError);
-  addEmptyBuiltinClass(SymbolId::kUnicodeTranslateError,
-                       LayoutId::kUnicodeTranslateError,
-                       LayoutId::kUnicodeError);
+  addEmptyBuiltinType(SymbolId::kUnicodeEncodeError,
+                      LayoutId::kUnicodeEncodeError, LayoutId::kUnicodeError);
+  addEmptyBuiltinType(SymbolId::kUnicodeDecodeError,
+                      LayoutId::kUnicodeDecodeError, LayoutId::kUnicodeError);
+  addEmptyBuiltinType(SymbolId::kUnicodeTranslateError,
+                      LayoutId::kUnicodeTranslateError,
+                      LayoutId::kUnicodeError);
 
   // Warning subclasses
-  addEmptyBuiltinClass(SymbolId::kUserWarning, LayoutId::kUserWarning,
-                       LayoutId::kWarning);
-  addEmptyBuiltinClass(SymbolId::kDeprecationWarning,
-                       LayoutId::kDeprecationWarning, LayoutId::kWarning);
-  addEmptyBuiltinClass(SymbolId::kPendingDeprecationWarning,
-                       LayoutId::kPendingDeprecationWarning,
-                       LayoutId::kWarning);
-  addEmptyBuiltinClass(SymbolId::kSyntaxWarning, LayoutId::kSyntaxWarning,
-                       LayoutId::kWarning);
-  addEmptyBuiltinClass(SymbolId::kRuntimeWarning, LayoutId::kRuntimeWarning,
-                       LayoutId::kWarning);
-  addEmptyBuiltinClass(SymbolId::kFutureWarning, LayoutId::kFutureWarning,
-                       LayoutId::kWarning);
-  addEmptyBuiltinClass(SymbolId::kImportWarning, LayoutId::kImportWarning,
-                       LayoutId::kWarning);
-  addEmptyBuiltinClass(SymbolId::kUnicodeWarning, LayoutId::kUnicodeWarning,
-                       LayoutId::kWarning);
-  addEmptyBuiltinClass(SymbolId::kBytesWarning, LayoutId::kBytesWarning,
-                       LayoutId::kWarning);
-  addEmptyBuiltinClass(SymbolId::kResourceWarning, LayoutId::kResourceWarning,
-                       LayoutId::kWarning);
+  addEmptyBuiltinType(SymbolId::kUserWarning, LayoutId::kUserWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(SymbolId::kDeprecationWarning,
+                      LayoutId::kDeprecationWarning, LayoutId::kWarning);
+  addEmptyBuiltinType(SymbolId::kPendingDeprecationWarning,
+                      LayoutId::kPendingDeprecationWarning, LayoutId::kWarning);
+  addEmptyBuiltinType(SymbolId::kSyntaxWarning, LayoutId::kSyntaxWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(SymbolId::kRuntimeWarning, LayoutId::kRuntimeWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(SymbolId::kFutureWarning, LayoutId::kFutureWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(SymbolId::kImportWarning, LayoutId::kImportWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(SymbolId::kUnicodeWarning, LayoutId::kUnicodeWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(SymbolId::kBytesWarning, LayoutId::kBytesWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(SymbolId::kResourceWarning, LayoutId::kResourceWarning,
+                      LayoutId::kWarning);
 }
 
-void Runtime::initializeRefClass() {
+void Runtime::initializeRefType() {
   HandleScope scope;
-  Type ref(&scope, addEmptyBuiltinClass(SymbolId::kRef, LayoutId::kWeakRef,
-                                        LayoutId::kObject));
+  Type ref(&scope, addEmptyBuiltinType(SymbolId::kRef, LayoutId::kWeakRef,
+                                       LayoutId::kObject));
 
-  classAddBuiltinFunction(ref, SymbolId::kDunderInit,
-                          nativeTrampoline<builtinRefInit>);
+  typeAddBuiltinFunction(ref, SymbolId::kDunderInit,
+                         nativeTrampoline<builtinRefInit>);
 
-  classAddBuiltinFunction(ref, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinRefNew>);
+  typeAddBuiltinFunction(ref, SymbolId::kDunderNew,
+                         nativeTrampoline<builtinRefNew>);
 }
 
-void Runtime::initializeClassMethodClass() {
+void Runtime::initializeClassMethodType() {
   HandleScope scope;
   Type classmethod(
-      &scope, addEmptyBuiltinClass(SymbolId::kClassmethod,
-                                   LayoutId::kClassMethod, LayoutId::kObject));
+      &scope, addEmptyBuiltinType(SymbolId::kClassmethod,
+                                  LayoutId::kClassMethod, LayoutId::kObject));
 
-  classAddBuiltinFunction(classmethod, SymbolId::kDunderGet,
-                          nativeTrampoline<builtinClassMethodGet>);
+  typeAddBuiltinFunction(classmethod, SymbolId::kDunderGet,
+                         nativeTrampoline<builtinClassMethodGet>);
 
-  classAddBuiltinFunction(classmethod, SymbolId::kDunderInit,
-                          nativeTrampoline<builtinClassMethodInit>);
+  typeAddBuiltinFunction(classmethod, SymbolId::kDunderInit,
+                         nativeTrampoline<builtinClassMethodInit>);
 
-  classAddBuiltinFunction(classmethod, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinClassMethodNew>);
+  typeAddBuiltinFunction(classmethod, SymbolId::kDunderNew,
+                         nativeTrampoline<builtinClassMethodNew>);
 }
 
-void Runtime::initializeTypeClass() {
+void Runtime::initializeTypeType() {
   HandleScope scope;
-  Type type(&scope, addEmptyBuiltinClass(SymbolId::kType, LayoutId::kType,
-                                         LayoutId::kObject));
+  Type type(&scope, addEmptyBuiltinType(SymbolId::kType, LayoutId::kType,
+                                        LayoutId::kObject));
   type->setFlag(Type::Flag::kTypeSubclass);
 
-  classAddBuiltinFunctionKw(type, SymbolId::kDunderCall,
-                            nativeTrampoline<builtinTypeCall>,
-                            nativeTrampolineKw<builtinTypeCallKw>);
+  typeAddBuiltinFunctionKw(type, SymbolId::kDunderCall,
+                           nativeTrampoline<builtinTypeCall>,
+                           nativeTrampolineKw<builtinTypeCallKw>);
 
-  classAddBuiltinFunction(type, SymbolId::kDunderInit,
-                          nativeTrampoline<builtinTypeInit>);
+  typeAddBuiltinFunction(type, SymbolId::kDunderInit,
+                         nativeTrampoline<builtinTypeInit>);
 
-  classAddBuiltinFunction(type, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinTypeNew>);
+  typeAddBuiltinFunction(type, SymbolId::kDunderNew,
+                         nativeTrampoline<builtinTypeNew>);
 }
 
-void Runtime::initializeImmediateClasses() {
+void Runtime::initializeImmediateTypes() {
   BoolBuiltins::initialize(this);
   NoneBuiltins::initialize(this);
-  addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallStr,
-                       LayoutId::kStr);
+  addEmptyBuiltinType(SymbolId::kSmallStr, LayoutId::kSmallStr, LayoutId::kStr);
   SmallIntBuiltins::initialize(this);
 }
 
-void Runtime::initializePropertyClass() {
+void Runtime::initializePropertyType() {
   HandleScope scope;
   Type property(&scope,
-                addEmptyBuiltinClass(SymbolId::kProperty, LayoutId::kProperty,
-                                     LayoutId::kObject));
+                addEmptyBuiltinType(SymbolId::kProperty, LayoutId::kProperty,
+                                    LayoutId::kObject));
 
-  classAddBuiltinFunction(property, SymbolId::kDeleter,
-                          nativeTrampoline<builtinPropertyDeleter>);
+  typeAddBuiltinFunction(property, SymbolId::kDeleter,
+                         nativeTrampoline<builtinPropertyDeleter>);
 
-  classAddBuiltinFunction(property, SymbolId::kDunderGet,
-                          nativeTrampoline<builtinPropertyDunderGet>);
+  typeAddBuiltinFunction(property, SymbolId::kDunderGet,
+                         nativeTrampoline<builtinPropertyDunderGet>);
 
-  classAddBuiltinFunction(property, SymbolId::kDunderSet,
-                          nativeTrampoline<builtinPropertyDunderSet>);
+  typeAddBuiltinFunction(property, SymbolId::kDunderSet,
+                         nativeTrampoline<builtinPropertyDunderSet>);
 
-  classAddBuiltinFunction(property, SymbolId::kDunderInit,
-                          nativeTrampoline<builtinPropertyInit>);
+  typeAddBuiltinFunction(property, SymbolId::kDunderInit,
+                         nativeTrampoline<builtinPropertyInit>);
 
-  classAddBuiltinFunction(property, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinPropertyNew>);
+  typeAddBuiltinFunction(property, SymbolId::kDunderNew,
+                         nativeTrampoline<builtinPropertyNew>);
 
-  classAddBuiltinFunction(property, SymbolId::kGetter,
-                          nativeTrampoline<builtinPropertyGetter>);
+  typeAddBuiltinFunction(property, SymbolId::kGetter,
+                         nativeTrampoline<builtinPropertyGetter>);
 
-  classAddBuiltinFunction(property, SymbolId::kSetter,
-                          nativeTrampoline<builtinPropertySetter>);
+  typeAddBuiltinFunction(property, SymbolId::kSetter,
+                         nativeTrampoline<builtinPropertySetter>);
 }
 
-void Runtime::initializeStaticMethodClass() {
+void Runtime::initializeStaticMethodType() {
   HandleScope scope;
   Type staticmethod(
-      &scope, addEmptyBuiltinClass(SymbolId::kStaticMethod,
-                                   LayoutId::kStaticMethod, LayoutId::kObject));
+      &scope, addEmptyBuiltinType(SymbolId::kStaticMethod,
+                                  LayoutId::kStaticMethod, LayoutId::kObject));
 
-  classAddBuiltinFunction(staticmethod, SymbolId::kDunderGet,
-                          nativeTrampoline<builtinStaticMethodGet>);
+  typeAddBuiltinFunction(staticmethod, SymbolId::kDunderGet,
+                         nativeTrampoline<builtinStaticMethodGet>);
 
-  classAddBuiltinFunction(staticmethod, SymbolId::kDunderInit,
-                          nativeTrampoline<builtinStaticMethodInit>);
+  typeAddBuiltinFunction(staticmethod, SymbolId::kDunderInit,
+                         nativeTrampoline<builtinStaticMethodInit>);
 
-  classAddBuiltinFunction(staticmethod, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinStaticMethodNew>);
+  typeAddBuiltinFunction(staticmethod, SymbolId::kDunderNew,
+                         nativeTrampoline<builtinStaticMethodNew>);
 }
 
 void Runtime::collectGarbage() {
@@ -1537,7 +1533,7 @@ void Runtime::initializeApiData() {
 RawObject Runtime::typeOf(RawObject object) {
   HandleScope scope;
   Layout layout(&scope, layoutAt(object->layoutId()));
-  return layout->describedClass();
+  return layout->describedType();
 }
 
 RawObject Runtime::layoutAt(LayoutId layout_id) {
@@ -1549,7 +1545,7 @@ void Runtime::layoutAtPut(LayoutId layout_id, RawObject object) {
 }
 
 RawObject Runtime::typeAt(LayoutId layout_id) {
-  return RawLayout::cast(layoutAt(layout_id))->describedClass();
+  return RawLayout::cast(layoutAt(layout_id))->describedType();
 }
 
 LayoutId Runtime::reserveLayoutId() {
@@ -1739,7 +1735,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kNotImplementedError,
                        LayoutId::kNotImplementedError);
   moduleAddBuiltinType(module, SymbolId::kOSError, LayoutId::kOSError);
-  moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
+  moduleAddBuiltinType(module, SymbolId::kObjectTypename, LayoutId::kObject);
   moduleAddBuiltinType(module, SymbolId::kOverflowError,
                        LayoutId::kOverflowError);
   moduleAddBuiltinType(module, SymbolId::kPendingDeprecationWarning,
@@ -3103,7 +3099,7 @@ RawObject Runtime::classConstructor(const Type& type) {
   return RawValueCell::cast(value)->value();
 }
 
-RawObject Runtime::computeInitialLayout(Thread* thread, const Type& klass,
+RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
                                         LayoutId base_layout_id) {
   HandleScope scope(thread);
   // Create the layout
@@ -3112,7 +3108,7 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& klass,
                             layout_id, base_layout_id,
                             View<BuiltinAttribute>(nullptr, 0)));
 
-  ObjectArray mro(&scope, klass->mro());
+  ObjectArray mro(&scope, type->mro());
   Dict attrs(&scope, newDict());
 
   // Collect set of in-object attributes by scanning the __init__ method of
@@ -3353,10 +3349,10 @@ RawObject Runtime::isSubClass(const Type& subclass, const Type& superclass) {
   return Bool::falseObj();
 }
 
-RawObject Runtime::isInstance(const Object& obj, const Type& klass) {
+RawObject Runtime::isInstance(const Object& obj, const Type& type) {
   HandleScope scope;
   Type obj_class(&scope, typeOf(*obj));
-  return isSubClass(obj_class, klass);
+  return isSubClass(obj_class, type);
 }
 
 RawObject Runtime::newClassMethod() { return heap()->create<RawClassMethod>(); }
@@ -3379,33 +3375,33 @@ RawObject Runtime::newTupleIterator(const Object& tuple) {
   return *result;
 }
 
-LayoutId Runtime::computeBuiltinBaseClass(const Type& klass) {
+LayoutId Runtime::computeBuiltinBaseType(const Type& type) {
   // The base class can only be one of the builtin bases including object.
   // We use the first non-object builtin base if any, throw if multiple.
   HandleScope scope;
-  ObjectArray mro(&scope, klass->mro());
-  Type object_klass(&scope, typeAt(LayoutId::kObject));
-  Type candidate(&scope, *object_klass);
+  ObjectArray mro(&scope, type->mro());
+  Type object_type(&scope, typeAt(LayoutId::kObject));
+  Type candidate(&scope, *object_type);
   // Skip itself since builtin class won't go through this.
   DCHECK(RawType::cast(mro->at(0))->instanceLayout()->isNoneType(),
          "only user defined class should go through this via type_new, and at "
          "this point layout is not ready");
   for (word i = 1; i < mro->length(); i++) {
-    Type mro_klass(&scope, mro->at(i));
-    if (!mro_klass->isIntrinsicOrExtension()) {
+    Type mro_type(&scope, mro->at(i));
+    if (!mro_type->isIntrinsicOrExtension()) {
       continue;
     }
-    if (*candidate == *object_klass) {
-      candidate = *mro_klass;
-    } else if (*mro_klass != *object_klass &&
-               !RawObjectArray::cast(candidate->mro())->contains(*mro_klass)) {
+    if (*candidate == *object_type) {
+      candidate = *mro_type;
+    } else if (*mro_type != *object_type &&
+               !RawObjectArray::cast(candidate->mro())->contains(*mro_type)) {
       // Allow subclassing of built-in classes that are themselves subclasses
       // of built-in classes (e.g. Exception)
 
       // TODO: throw TypeError
       CHECK(false, "multiple bases have instance lay-out conflict '%s' '%s'",
             RawStr::cast(candidate->name())->toCStr(),
-            RawStr::cast(mro_klass->name())->toCStr());
+            RawStr::cast(mro_type->name())->toCStr());
     }
   }
   return RawLayout::cast(candidate->instanceLayout())->id();
@@ -3559,7 +3555,7 @@ RawObject Runtime::layoutCreateChild(Thread* thread, const Layout& layout) {
   HandleScope scope(thread);
   Layout new_layout(&scope, newLayout());
   new_layout->setId(reserveLayoutId());
-  new_layout->setDescribedClass(layout->describedClass());
+  new_layout->setDescribedType(layout->describedType());
   new_layout->setNumInObjectAttributes(layout->numInObjectAttributes());
   new_layout->setInObjectAttributes(layout->inObjectAttributes());
   new_layout->setOverflowAttributes(layout->overflowAttributes());
@@ -3686,16 +3682,16 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   return *new_layout;
 }
 
-void Runtime::initializeSuperClass() {
+void Runtime::initializeSuperType() {
   HandleScope scope;
-  Type super(&scope, addEmptyBuiltinClass(SymbolId::kSuper, LayoutId::kSuper,
-                                          LayoutId::kObject));
+  Type super(&scope, addEmptyBuiltinType(SymbolId::kSuper, LayoutId::kSuper,
+                                         LayoutId::kObject));
 
-  classAddBuiltinFunction(super, SymbolId::kDunderInit,
-                          nativeTrampoline<builtinSuperInit>);
+  typeAddBuiltinFunction(super, SymbolId::kDunderInit,
+                         nativeTrampoline<builtinSuperInit>);
 
-  classAddBuiltinFunction(super, SymbolId::kDunderNew,
-                          nativeTrampoline<builtinSuperNew>);
+  typeAddBuiltinFunction(super, SymbolId::kDunderNew,
+                         nativeTrampoline<builtinSuperNew>);
 }
 
 RawObject Runtime::superGetAttr(Thread* thread, const Object& receiver,

@@ -78,7 +78,7 @@ RawObject computeMro(Thread* thread, const Type& type,
 
   Object object_class(
       &scope,
-      RawLayout::cast(runtime->layoutAt(LayoutId::kObject))->describedClass());
+      RawLayout::cast(runtime->layoutAt(LayoutId::kObject))->describedType());
 
   // Special case for no explicit ancestors.
   if (parents->length() == 0) {

@@ -10,7 +10,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(TypeBuiltinsTest, DunderCallClass) {
+TEST(TypeBuiltinsTest, DunderCallType) {
   Runtime runtime;
   HandleScope scope;
 
@@ -29,7 +29,7 @@ c = C()
   EXPECT_EQ(*type, *instance_type);
 }
 
-TEST(TypeBuiltinsTest, DunderCallClassWithInit) {
+TEST(TypeBuiltinsTest, DunderCallTypeWithInit) {
   Runtime runtime;
   HandleScope scope;
 
@@ -49,7 +49,7 @@ C()
   EXPECT_EQ(RawSmallInt::cast(*global)->value(), 2);
 }
 
-TEST(TypeBuiltinsTest, DunderCallClassWithInitAndArgs) {
+TEST(TypeBuiltinsTest, DunderCallTypeWithInitAndArgs) {
   Runtime runtime;
   HandleScope scope;
 

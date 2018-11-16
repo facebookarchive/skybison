@@ -57,7 +57,7 @@ PY_EXPORT int PyType_Ready(PyTypeObject* type) {
   pyobj->ob_type = reinterpret_cast<PyTypeObject*>(pytype_type);
 
   // Create a new class for the PyTypeObject
-  Type type_class(&scope, runtime->newClass());
+  Type type_class(&scope, runtime->newType());
   Dict dict(&scope, runtime->newDict());
   type_class->setDict(*dict);
 
@@ -84,7 +84,7 @@ PY_EXPORT int PyType_Ready(PyTypeObject* type) {
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   Layout layout(&scope,
                 runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));
-  layout->setDescribedClass(*type_class);
+  layout->setDescribedType(*type_class);
   type_class->setInstanceLayout(*layout);
 
   // Register DunderNew

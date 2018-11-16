@@ -36,11 +36,11 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
 void IntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Type type(&scope,
-            runtime->addBuiltinClassWithMethods(SymbolId::kInt, LayoutId::kInt,
-                                                LayoutId::kObject, kMethods));
+            runtime->addBuiltinTypeWithMethods(SymbolId::kInt, LayoutId::kInt,
+                                               LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
   Type largeint_type(
-      &scope, runtime->addEmptyBuiltinClass(
+      &scope, runtime->addEmptyBuiltinType(
                   SymbolId::kLargeInt, LayoutId::kLargeInt, LayoutId::kInt));
   largeint_type->setFlag(Type::Flag::kIntSubclass);
 }
@@ -170,7 +170,7 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
 
 void SmallIntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClassWithMethods(
+  Type type(&scope, runtime->addBuiltinTypeWithMethods(
                         SymbolId::kSmallInt, LayoutId::kSmallInt,
                         LayoutId::kInt, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
@@ -826,8 +826,8 @@ const BuiltinMethod BoolBuiltins::kMethods[] = {
 void BoolBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Type type(&scope,
-            runtime->addBuiltinClassWithMethods(
-                SymbolId::kBool, LayoutId::kBool, LayoutId::kInt, kMethods));
+            runtime->addBuiltinTypeWithMethods(SymbolId::kBool, LayoutId::kBool,
+                                               LayoutId::kInt, kMethods));
   type->setFlag(Type::Flag::kIntSubclass);
 }
 

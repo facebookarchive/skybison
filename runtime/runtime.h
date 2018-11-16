@@ -56,8 +56,8 @@ class Runtime {
   RawObject newBytes(word length, byte fill);
   RawObject newBytesWithAll(View<byte> array);
 
-  RawObject newClass();
-  RawObject newClassWithMetaclass(LayoutId metaclass_id);
+  RawObject newType();
+  RawObject newTypeWithMetaclass(LayoutId metaclass_id);
 
   RawObject newClassMethod();
 
@@ -212,18 +212,17 @@ class Runtime {
 
   // Bootstrapping primitive for creating a built-in class that has built-in
   // attributes and/or methods.
-  RawObject addEmptyBuiltinClass(SymbolId name, LayoutId subclass_id,
-                                 LayoutId superclass_id);
-  RawObject addBuiltinClassWithAttrs(SymbolId name, LayoutId subclass_id,
-                                     LayoutId superclass_id,
-                                     View<BuiltinAttribute> attrs);
-  RawObject addBuiltinClassWithMethods(SymbolId name, LayoutId subclass_id,
-                                       LayoutId superclass_id,
-                                       View<BuiltinMethod> methods);
-  RawObject addBuiltinClass(SymbolId name, LayoutId subclass_id,
-                            LayoutId superclass_id,
-                            View<BuiltinAttribute> attrs,
-                            View<BuiltinMethod> methods);
+  RawObject addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
+                                LayoutId superclass_id);
+  RawObject addBuiltinTypeWithAttrs(SymbolId name, LayoutId subclass_id,
+                                    LayoutId superclass_id,
+                                    View<BuiltinAttribute> attrs);
+  RawObject addBuiltinTypeWithMethods(SymbolId name, LayoutId subclass_id,
+                                      LayoutId superclass_id,
+                                      View<BuiltinMethod> methods);
+  RawObject addBuiltinType(SymbolId name, LayoutId subclass_id,
+                           LayoutId superclass_id, View<BuiltinAttribute> attrs,
+                           View<BuiltinMethod> methods);
 
   LayoutId reserveLayoutId();
 
@@ -403,8 +402,8 @@ class Runtime {
   // Constructs the initial layout for instances of type.
   //
   // The layout contains the set of in-object attributes. This is computed by
-  // scanning the constructors of every klass in klass's MRO.
-  RawObject computeInitialLayout(Thread* thread, const Type& klass,
+  // scanning the constructors of every type in type's MRO.
+  RawObject computeInitialLayout(Thread* thread, const Type& type,
                                  LayoutId base_layout_id);
 
   // Returns type's __init__ method, or None
@@ -484,25 +483,25 @@ class Runtime {
   RawObject computeFastGlobals(const Code& code, const Dict& globals,
                                const Dict& builtins);
 
-  LayoutId computeBuiltinBaseClass(const Type& klass);
+  LayoutId computeBuiltinBaseType(const Type& type);
 
   // Adds a builtin function with a positional entry point definition
   // using the default keyword and splatting entry points.
-  void classAddBuiltinFunction(const Type& type, SymbolId name,
-                               Function::Entry entry);
+  void typeAddBuiltinFunction(const Type& type, SymbolId name,
+                              Function::Entry entry);
 
   // Adds a builtin function with positional and keyword entry point
   // definitions, using the default splatting entry point.
-  void classAddBuiltinFunctionKw(const Type& type, SymbolId name,
-                                 Function::Entry entry,
-                                 Function::Entry entry_kw);
+  void typeAddBuiltinFunctionKw(const Type& type, SymbolId name,
+                                Function::Entry entry,
+                                Function::Entry entry_kw);
 
   // Adds a builtin function with positional, keyword & splatting entry point
   // definitions
-  void classAddBuiltinFunctionKwEx(const Type& type, SymbolId name,
-                                   Function::Entry entry,
-                                   Function::Entry entry_kw,
-                                   Function::Entry entry_ex);
+  void typeAddBuiltinFunctionKwEx(const Type& type, SymbolId name,
+                                  Function::Entry entry,
+                                  Function::Entry entry_kw,
+                                  Function::Entry entry_ex);
 
   // Helper function to add extension functions to extension classes
   void classAddExtensionFunction(const Type& type, SymbolId name,
@@ -569,8 +568,8 @@ class Runtime {
     return Type::cast(typeOf(instance))->hasFlag(Type::Flag::kStrSubclass);
   }
 
-  // Return true if obj is an instance of a subclass of klass
-  RawObject isInstance(const Object& obj, const Type& klass);
+  // Return true if obj is an instance of a subclass of type
+  RawObject isInstance(const Object& obj, const Type& type);
 
   // Clear the allocated memory from all extension related objects
   void deallocExtensions();
@@ -620,11 +619,11 @@ class Runtime {
 
  private:
   void initializeThreads();
-  void initializeClasses();
-  void initializeExceptionClasses();
+  void initializeTypes();
+  void initializeExceptionTypes();
   void initializeLayouts();
-  void initializeHeapClasses();
-  void initializeImmediateClasses();
+  void initializeHeapTypes();
+  void initializeImmediateTypes();
   void initializePrimitiveInstances();
   void initializeInterned();
   void initializeModules();
@@ -632,14 +631,14 @@ class Runtime {
   void initializeRandom();
   void initializeSymbols();
 
-  void initializeClassMethodClass();
-  void initializeObjectClass();
-  void initializePropertyClass();
-  void initializeRefClass();
+  void initializeClassMethodType();
+  void initializeObjectType();
+  void initializePropertyType();
+  void initializeRefType();
 
-  void initializeStaticMethodClass();
-  void initializeSuperClass();
-  void initializeTypeClass();
+  void initializeStaticMethodType();
+  void initializeSuperType();
+  void initializeTypeType();
 
   static bool isAsciiSpace(byte ch);
 

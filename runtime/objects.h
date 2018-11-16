@@ -382,7 +382,7 @@ class RawObject {
 
   // The bottom five bits of immediate objects are used as the class id when
   // indexing into the class table in the runtime.
-  static const uword kImmediateClassTableIndexMask = (1 << 5) - 1;
+  static const uword kImmediateTypeTableIndexMask = (1 << 5) - 1;
 
   RAW_OBJECT_COMMON(Object);
 
@@ -866,8 +866,8 @@ class RawType : public RawHeapObject {
   void setExtensionType(RawObject pytype);
 
   // builtin base related
-  RawObject builtinBaseClass();
-  void setBuiltinBaseClass(RawObject base);
+  RawObject builtinBaseType();
+  void setBuiltinBaseType(RawObject base);
 
   bool isIntrinsicOrExtension();
 
@@ -880,9 +880,8 @@ class RawType : public RawHeapObject {
   static const int kNameOffset = kInstanceLayoutOffset + kPointerSize;
   static const int kFlagsOffset = kNameOffset + kPointerSize;
   static const int kDictOffset = kFlagsOffset + kPointerSize;
-  static const int kBuiltinBaseClassOffset = kDictOffset + kPointerSize;
-  static const int kExtensionTypeOffset =
-      kBuiltinBaseClassOffset + kPointerSize;
+  static const int kBuiltinBaseTypeOffset = kDictOffset + kPointerSize;
+  static const int kExtensionTypeOffset = kBuiltinBaseTypeOffset + kPointerSize;
   static const int kSize = kExtensionTypeOffset + kPointerSize;
 
   RAW_OBJECT_COMMON_NO_CAST(Type);
@@ -1913,8 +1912,8 @@ class RawLayout : public RawHeapObject {
   void setId(LayoutId id);
 
   // Returns the class whose instances are described by this layout
-  RawObject describedClass();
-  void setDescribedClass(RawObject type);
+  RawObject describedType();
+  void setDescribedType(RawObject type);
 
   // Set the number of in-object attributes that may be stored on an instance
   // described by this layout.
@@ -1973,9 +1972,9 @@ class RawLayout : public RawHeapObject {
   word overflowOffset();
 
   // Layout.
-  static const int kDescribedClassOffset = RawHeapObject::kSize;
+  static const int kDescribedTypeOffset = RawHeapObject::kSize;
   static const int kInObjectAttributesOffset =
-      kDescribedClassOffset + kPointerSize;
+      kDescribedTypeOffset + kPointerSize;
   static const int kOverflowAttributesOffset =
       kInObjectAttributesOffset + kPointerSize;
   static const int kAdditionsOffset = kOverflowAttributesOffset + kPointerSize;
@@ -2063,7 +2062,7 @@ inline LayoutId RawObject::layoutId() {
   if (isSmallInt()) {
     return LayoutId::kSmallInt;
   }
-  return static_cast<LayoutId>(raw() & kImmediateClassTableIndexMask);
+  return static_cast<LayoutId>(raw() & kImmediateTypeTableIndexMask);
 }
 
 inline bool RawObject::isType() {
@@ -2815,8 +2814,8 @@ inline void RawType::setDict(RawObject dict) {
   instanceVariableAtPut(kDictOffset, dict);
 }
 
-inline RawObject RawType::builtinBaseClass() {
-  return instanceVariableAt(kBuiltinBaseClassOffset);
+inline RawObject RawType::builtinBaseType() {
+  return instanceVariableAt(kBuiltinBaseTypeOffset);
 }
 
 inline RawObject RawType::extensionType() {
@@ -2827,8 +2826,8 @@ inline void RawType::setExtensionType(RawObject pytype) {
   instanceVariableAtPut(kExtensionTypeOffset, pytype);
 }
 
-inline void RawType::setBuiltinBaseClass(RawObject base) {
-  instanceVariableAtPut(kBuiltinBaseClassOffset, base);
+inline void RawType::setBuiltinBaseType(RawObject base) {
+  instanceVariableAtPut(kBuiltinBaseTypeOffset, base);
 }
 
 inline bool RawType::isIntrinsicOrExtension() {
@@ -3612,12 +3611,12 @@ inline void RawLayout::setId(LayoutId id) {
   setHeader(header()->withHashCode(static_cast<word>(id)));
 }
 
-inline void RawLayout::setDescribedClass(RawObject type) {
-  instanceVariableAtPut(kDescribedClassOffset, type);
+inline void RawLayout::setDescribedType(RawObject type) {
+  instanceVariableAtPut(kDescribedTypeOffset, type);
 }
 
-inline RawObject RawLayout::describedClass() {
-  return instanceVariableAt(kDescribedClassOffset);
+inline RawObject RawLayout::describedType() {
+  return instanceVariableAt(kDescribedTypeOffset);
 }
 
 inline void RawLayout::setInObjectAttributes(RawObject attributes) {

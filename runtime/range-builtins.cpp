@@ -10,10 +10,10 @@ namespace python {
 void RangeBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Type range(&scope,
-             runtime->addEmptyBuiltinClass(SymbolId::kRange, LayoutId::kRange,
-                                           LayoutId::kObject));
-  runtime->classAddBuiltinFunction(range, SymbolId::kDunderIter,
-                                   nativeTrampoline<dunderIter>);
+             runtime->addEmptyBuiltinType(SymbolId::kRange, LayoutId::kRange,
+                                          LayoutId::kObject));
+  runtime->typeAddBuiltinFunction(range, SymbolId::kDunderIter,
+                                  nativeTrampoline<dunderIter>);
 }
 
 RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
@@ -39,9 +39,9 @@ const BuiltinMethod RangeIteratorBuiltins::kMethods[] = {
 void RangeIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Type range_iter(
-      &scope, runtime->addBuiltinClassWithMethods(SymbolId::kRangeIterator,
-                                                  LayoutId::kRangeIterator,
-                                                  LayoutId::kObject, kMethods));
+      &scope, runtime->addBuiltinTypeWithMethods(SymbolId::kRangeIterator,
+                                                 LayoutId::kRangeIterator,
+                                                 LayoutId::kObject, kMethods));
 }
 
 RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

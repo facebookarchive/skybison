@@ -21,7 +21,7 @@ const BuiltinMethod DictBuiltins::kMethods[] = {
 
 void DictBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type dict_type(&scope, runtime->addBuiltinClassWithMethods(
+  Type dict_type(&scope, runtime->addBuiltinTypeWithMethods(
                              SymbolId::kDict, LayoutId::kDict,
                              LayoutId::kObject, kMethods));
   dict_type->setFlag(Type::Flag::kDictSubclass);
@@ -175,34 +175,33 @@ RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
 }
 
 void DictItemIteratorBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinClass(SymbolId::kDictItemIterator,
-                                LayoutId::kDictItemIterator, LayoutId::kObject);
+  runtime->addEmptyBuiltinType(SymbolId::kDictItemIterator,
+                               LayoutId::kDictItemIterator, LayoutId::kObject);
 }
 
 void DictItemsBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinClass(SymbolId::kDictItems, LayoutId::kDictItems,
-                                LayoutId::kObject);
+  runtime->addEmptyBuiltinType(SymbolId::kDictItems, LayoutId::kDictItems,
+                               LayoutId::kObject);
 }
 
 void DictKeyIteratorBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinClass(SymbolId::kDictKeyIterator,
-                                LayoutId::kDictKeyIterator, LayoutId::kObject);
+  runtime->addEmptyBuiltinType(SymbolId::kDictKeyIterator,
+                               LayoutId::kDictKeyIterator, LayoutId::kObject);
 }
 
 void DictKeysBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinClass(SymbolId::kDictKeys, LayoutId::kDictKeys,
-                                LayoutId::kObject);
+  runtime->addEmptyBuiltinType(SymbolId::kDictKeys, LayoutId::kDictKeys,
+                               LayoutId::kObject);
 }
 
 void DictValueIteratorBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinClass(SymbolId::kDictValueIterator,
-                                LayoutId::kDictValueIterator,
-                                LayoutId::kObject);
+  runtime->addEmptyBuiltinType(SymbolId::kDictValueIterator,
+                               LayoutId::kDictValueIterator, LayoutId::kObject);
 }
 
 void DictValuesBuiltins::initialize(Runtime* runtime) {
-  runtime->addEmptyBuiltinClass(SymbolId::kDictValues, LayoutId::kDictValues,
-                                LayoutId::kObject);
+  runtime->addEmptyBuiltinType(SymbolId::kDictValues, LayoutId::kDictValues,
+                               LayoutId::kObject);
 }
 
 }  // namespace python

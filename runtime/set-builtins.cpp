@@ -37,8 +37,8 @@ void SetBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
   Type set(&scope,
-           runtime->addBuiltinClass(SymbolId::kSet, LayoutId::kSet,
-                                    LayoutId::kObject, kAttributes, kMethods));
+           runtime->addBuiltinType(SymbolId::kSet, LayoutId::kSet,
+                                   LayoutId::kObject, kAttributes, kMethods));
   set->setFlag(Type::Flag::kSetSubclass);
 }
 
@@ -508,7 +508,7 @@ const BuiltinMethod SetIteratorBuiltins::kMethods[] = {
 
 void SetIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type set_iter(&scope, runtime->addBuiltinClassWithMethods(
+  Type set_iter(&scope, runtime->addBuiltinTypeWithMethods(
                             SymbolId::kSetIterator, LayoutId::kSetIterator,
                             LayoutId::kObject, kMethods));
 }

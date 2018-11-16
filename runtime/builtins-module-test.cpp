@@ -8,7 +8,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(BuiltinsModuleDeathTest, BuiltinCallableOnClassReturnsTrue) {
+TEST(BuiltinsModuleDeathTest, BuiltinCallableOnTypeReturnsTrue) {
   Runtime runtime;
   runtime.runFromCStr(R"(
 class Foo:

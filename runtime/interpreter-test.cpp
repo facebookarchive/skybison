@@ -312,7 +312,7 @@ right = C()
 
 // To a rich comparison on two instances of the same type.  In each case, the
 // method on the left side of the comparison should be used.
-TEST(InterpreterTest, CompareOpSameClass) {
+TEST(InterpreterTest, CompareOpSameType) {
   Runtime runtime;
   HandleScope scope;
 

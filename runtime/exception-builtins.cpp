@@ -20,7 +20,7 @@ const BuiltinMethod BaseExceptionBuiltins::kMethods[] = {
 
 void BaseExceptionBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClass(
+  Type type(&scope, runtime->addBuiltinType(
                         SymbolId::kBaseException, LayoutId::kBaseException,
                         LayoutId::kObject, kAttributes, kMethods));
   type->setFlag(Type::Flag::kBaseExceptionSubclass);
@@ -58,7 +58,7 @@ const BuiltinMethod StopIterationBuiltins::kMethods[] = {
 
 void StopIterationBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClass(
+  Type type(&scope, runtime->addBuiltinType(
                         SymbolId::kStopIteration, LayoutId::kStopIteration,
                         LayoutId::kException, kAttributes, kMethods));
   type->setFlag(Type::Flag::kStopIterationSubclass);
@@ -99,7 +99,7 @@ const BuiltinMethod SystemExitBuiltins::kMethods[] = {
 
 void SystemExitBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClass(
+  Type type(&scope, runtime->addBuiltinType(
                         SymbolId::kSystemExit, LayoutId::kSystemExit,
                         LayoutId::kBaseException, kAttributes, kMethods));
   type->setFlag(Type::Flag::kSystemExitSubclass);
@@ -138,7 +138,7 @@ const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
 
 void ImportErrorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinClassWithAttrs(
+  Type type(&scope, runtime->addBuiltinTypeWithAttrs(
                         SymbolId::kImportError, LayoutId::kImportError,
                         LayoutId::kException, kAttributes));
 }

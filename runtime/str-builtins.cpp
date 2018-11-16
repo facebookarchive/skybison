@@ -33,8 +33,8 @@ const BuiltinMethod StrBuiltins::kMethods[] = {
 void StrBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Type type(&scope,
-            runtime->addBuiltinClassWithMethods(SymbolId::kStr, LayoutId::kStr,
-                                                LayoutId::kObject, kMethods));
+            runtime->addBuiltinTypeWithMethods(SymbolId::kStr, LayoutId::kStr,
+                                               LayoutId::kObject, kMethods));
   type->setFlag(Type::Flag::kStrSubclass);
 }
 
@@ -706,7 +706,7 @@ const BuiltinMethod StrIteratorBuiltins::kMethods[] = {
 
 void StrIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type str_iter(&scope, runtime->addBuiltinClassWithMethods(
+  Type str_iter(&scope, runtime->addBuiltinTypeWithMethods(
                             SymbolId::kStrIterator, LayoutId::kStrIterator,
                             LayoutId::kObject, kMethods));
 }
