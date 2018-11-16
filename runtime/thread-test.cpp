@@ -143,6 +143,75 @@ result = c(y=3)
   EXPECT_EQ(SmallInt::cast(*result)->value(), 3);
 }
 
+TEST(ThreadTest, DunderCallInstanceSplatArgs) {
+  const char* src = R"(
+class C:
+  def __call__(self, y):
+    return y
+
+c = C()
+args = (3,)
+result = c(*args)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> result(&scope, moduleAt(&runtime, main, "result"));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 3);
+}
+
+TEST(ThreadTest, DunderCallInstanceSplatKw) {
+  const char* src = R"(
+class C:
+  def __call__(self, y):
+    return y
+
+c = C()
+kwargs = {'y': 3}
+result = c(**kwargs)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> result(&scope, moduleAt(&runtime, main, "result"));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 3);
+}
+
+TEST(ThreadTest, DunderCallInstanceSplatArgsAndKw) {
+  const char* src = R"(
+result_x = None
+result_y = None
+class C:
+  def __call__(self, x, y):
+    global result_x
+    global result_y
+    result_x = x
+    result_y = y
+
+c = C()
+args = (1,)
+kwargs = {'y': 3}
+c(*args, **kwargs)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> result_x(&scope, moduleAt(&runtime, main, "result_x"));
+  ASSERT_TRUE(result_x->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_x)->value(), 1);
+  Handle<Object> result_y(&scope, moduleAt(&runtime, main, "result_y"));
+  ASSERT_TRUE(result_y->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_y)->value(), 3);
+}
+
 TEST(ThreadTest, OverlappingFrames) {
   Runtime runtime;
   HandleScope scope;

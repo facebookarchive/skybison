@@ -87,9 +87,32 @@ Object* Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
   // In all cases, var-positional tuple is next, followed by the function
   // pointer.
   word function_position = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
-  Function* function = Function::cast(frame->peek(function_position));
   Object** sp = frame->valueStackTop() + function_position + 1;
-  Object* result = function->entryEx()(thread, frame, flags);
+  Object* function = frame->peek(function_position);
+  Object* result;
+  if (!function->isFunction()) {
+    HandleScope scope(thread);
+    Handle<Object> callable(&scope, function);
+    // Create a new argument tuple with self as the first argument
+    word args_position = function_position - 1;
+    Handle<ObjectArray> args(&scope, frame->peek(args_position));
+    Handle<ObjectArray> new_args(
+        &scope, thread->runtime()->newObjectArray(args->length() + 1));
+    Handle<Object> target(&scope, None::object());
+    if (callable->isBoundMethod()) {
+      Handle<BoundMethod> method(&scope, *callable);
+      new_args->atPut(0, method->self());
+      target = method->function();
+    } else {
+      new_args->atPut(0, *callable);
+      target = lookupMethod(thread, frame, callable, SymbolId::kDunderCall);
+    }
+    new_args->replaceFromWith(1, *args);
+    frame->setValueAt(*target, function_position);
+    frame->setValueAt(*new_args, args_position);
+    function = *target;
+  }
+  result = Function::cast(function)->entryEx()(thread, frame, flags);
   frame->setValueStackTop(sp);
   return result;
 }

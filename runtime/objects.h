@@ -688,6 +688,8 @@ class ObjectArray : public Array {
 
   void copyTo(Object* dst);
 
+  void replaceFromWith(word start, Object* array);
+
   bool contains(Object* object);
 
  private:
@@ -2666,6 +2668,15 @@ inline void ObjectArray::copyTo(Object* array) {
   for (word i = 0; i < len; i++) {
     Object* elem = at(i);
     dst->atPut(i, elem);
+  }
+}
+
+inline void ObjectArray::replaceFromWith(word start, Object* array) {
+  ObjectArray* src = ObjectArray::cast(array);
+  word count = Utils::minimum(this->length() - start, src->length());
+  word stop = start + count;
+  for (word i = start, j = 0; i < stop; i++, j++) {
+    atPut(i, src->at(j));
   }
 }
 

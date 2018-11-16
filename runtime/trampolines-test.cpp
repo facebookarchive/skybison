@@ -120,6 +120,154 @@ def test(callable):
   EXPECT_EQ(SmallInt::cast(*result_b)->value(), 3333);
 }
 
+TEST(CallTest, CallBoundMethodExArgs) {
+  Runtime runtime;
+
+  const char* src = R"(
+result_self = None
+result_a = None
+result_b = None
+
+def func(self, a, b):
+  global result_self, result_a, result_b
+  result_self = self
+  result_a = a
+  result_b = b
+
+def test(callable):
+  args = (2222, 3333)
+  return callable(*args)
+)";
+  runtime.runFromCString(src);
+
+  HandleScope scope;
+  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
+  ASSERT_TRUE(function->isFunction());
+
+  Handle<Object> self(&scope, SmallInt::fromWord(1111));
+  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
+
+  Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
+  ASSERT_TRUE(test->isFunction());
+  Handle<Function> func(&scope, *test);
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, *method);
+  callFunction(func, args);
+
+  Handle<Object> result_self(&scope,
+                             findInModule(&runtime, module, "result_self"));
+  ASSERT_TRUE(result_self->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_self)->value(), 1111);
+
+  Handle<Object> result_a(&scope, findInModule(&runtime, module, "result_a"));
+  ASSERT_TRUE(result_a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_a)->value(), 2222);
+
+  Handle<Object> result_b(&scope, findInModule(&runtime, module, "result_b"));
+  ASSERT_TRUE(result_b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_b)->value(), 3333);
+}
+
+TEST(CallTest, CallBoundMethodExKwargs) {
+  Runtime runtime;
+
+  const char* src = R"(
+result_self = None
+result_a = None
+result_b = None
+
+def func(self, a, b):
+  global result_self, result_a, result_b
+  result_self = self
+  result_a = a
+  result_b = b
+
+def test(callable):
+  kwargs = {'a': 2222, 'b': 3333}
+  return callable(**kwargs)
+)";
+  runtime.runFromCString(src);
+
+  HandleScope scope;
+  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
+  ASSERT_TRUE(function->isFunction());
+
+  Handle<Object> self(&scope, SmallInt::fromWord(1111));
+  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
+
+  Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
+  ASSERT_TRUE(test->isFunction());
+  Handle<Function> func(&scope, *test);
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, *method);
+  callFunction(func, args);
+
+  Handle<Object> result_self(&scope,
+                             findInModule(&runtime, module, "result_self"));
+  ASSERT_TRUE(result_self->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_self)->value(), 1111);
+
+  Handle<Object> result_a(&scope, findInModule(&runtime, module, "result_a"));
+  ASSERT_TRUE(result_a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_a)->value(), 2222);
+
+  Handle<Object> result_b(&scope, findInModule(&runtime, module, "result_b"));
+  ASSERT_TRUE(result_b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_b)->value(), 3333);
+}
+
+TEST(CallTest, CallBoundMethodExArgsAndKwargs) {
+  Runtime runtime;
+
+  const char* src = R"(
+result_self = None
+result_a = None
+result_b = None
+
+def func(self, a, b):
+  global result_self, result_a, result_b
+  result_self = self
+  result_a = a
+  result_b = b
+
+def test(callable):
+  args = (2222,)
+  kwargs = {'b': 3333}
+  return callable(*args, **kwargs)
+)";
+  runtime.runFromCString(src);
+
+  HandleScope scope;
+  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
+  ASSERT_TRUE(function->isFunction());
+
+  Handle<Object> self(&scope, SmallInt::fromWord(1111));
+  Handle<BoundMethod> method(&scope, runtime.newBoundMethod(function, self));
+
+  Handle<Object> test(&scope, findInModule(&runtime, module, "test"));
+  ASSERT_TRUE(test->isFunction());
+  Handle<Function> func(&scope, *test);
+  Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
+  args->atPut(0, *method);
+  callFunction(func, args);
+
+  Handle<Object> result_self(&scope,
+                             findInModule(&runtime, module, "result_self"));
+  ASSERT_TRUE(result_self->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_self)->value(), 1111);
+
+  Handle<Object> result_a(&scope, findInModule(&runtime, module, "result_a"));
+  ASSERT_TRUE(result_a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_a)->value(), 2222);
+
+  Handle<Object> result_b(&scope, findInModule(&runtime, module, "result_b"));
+  ASSERT_TRUE(result_b->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result_b)->value(), 3333);
+}
+
 TEST(CallTest, CallDefaultArgs) {
   Runtime runtime;
   HandleScope scope;
