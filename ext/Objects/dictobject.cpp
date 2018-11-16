@@ -101,7 +101,7 @@ extern "C" int PyDict_SetItemString(PyObject* pydict, const char* key,
   HandleScope scope(thread);
 
   Handle<Object> keyobj(&scope, runtime->newStringFromCString(key));
-  return PyDict_SetItem(pydict, runtime->asApiHandle(*keyobj)->asPyObject(),
+  return PyDict_SetItem(pydict, ApiHandle::fromObject(*keyobj)->asPyObject(),
                         value);
 }
 
@@ -111,7 +111,7 @@ extern "C" PyObject* PyDict_New(void) {
   HandleScope scope(thread);
 
   Handle<Object> value(&scope, runtime->newDictionary());
-  return runtime->asApiHandle(*value)->asPyObject();
+  return ApiHandle::fromObject(*value)->asPyObject();
 }
 
 extern "C" PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
@@ -129,7 +129,7 @@ extern "C" PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
   if (value->isError()) {
     return nullptr;
   }
-  return runtime->asBorrowedApiHandle(value)->asPyObject();
+  return ApiHandle::fromBorrowedObject(value)->asPyObject();
 }
 
 }  // namespace python

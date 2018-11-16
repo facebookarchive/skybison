@@ -4,6 +4,42 @@
 
 namespace python {
 
+ApiHandle* ApiHandle::fromObject(Object* obj) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Handle<Object> key(&scope, obj);
+  Handle<Dictionary> dict(&scope, runtime->apiHandles());
+  Object* value = runtime->dictionaryAt(dict, key);
+  if (value->isError()) {
+    ApiHandle* handle = ApiHandle::newHandle(obj);
+    Handle<Object> object(
+        &scope, runtime->newIntegerFromCPointer(static_cast<void*>(handle)));
+    runtime->dictionaryAtPut(dict, key, object);
+    return handle;
+  }
+  return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
+}
+
+ApiHandle* ApiHandle::fromBorrowedObject(Object* obj) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Handle<Object> key(&scope, obj);
+  Handle<Dictionary> dict(&scope, runtime->apiHandles());
+  Object* value = runtime->dictionaryAt(dict, key);
+  if (value->isError()) {
+    ApiHandle* handle = ApiHandle::newBorrowedHandle(obj);
+    Handle<Object> object(
+        &scope, runtime->newIntegerFromCPointer(static_cast<void*>(handle)));
+    runtime->dictionaryAtPut(dict, key, object);
+    return handle;
+  }
+  return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
+}
+
 bool Type_IsBuiltin(PyObject*);
 
 Object* ApiHandle::asObject() {

@@ -26,7 +26,7 @@ TEST(TupleObject, Size) {
 
   word length = 5;
   Handle<ObjectArray> tuple(&scope, runtime.newObjectArray(length));
-  word pylength = PyTuple_Size(runtime.asApiHandle(*tuple)->asPyObject());
+  word pylength = PyTuple_Size(ApiHandle::fromObject(*tuple)->asPyObject());
   EXPECT_EQ(length, pylength);
 }
 
@@ -37,7 +37,7 @@ TEST(TupleObject, GetItemFromNonTupleReturnsNull) {
   // Get item from non tuple
   Handle<Integer> not_tuple(&scope, runtime.newInteger(7));
   PyObject* pyresult =
-      PyTuple_GetItem(runtime.asApiHandle(*not_tuple)->asPyObject(), 0);
+      PyTuple_GetItem(ApiHandle::fromObject(*not_tuple)->asPyObject(), 0);
   EXPECT_EQ(nullptr, pyresult);
 }
 
@@ -54,9 +54,9 @@ TEST(TupleObject, GetItemOutOfBoundsReturnsMinusOne) {
 
   // Get item out of bounds
   PyObject* pyresult =
-      PyTuple_GetItem(runtime.asApiHandle(*tuple)->asPyObject(), -1);
+      PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), -1);
   EXPECT_EQ(nullptr, pyresult);
-  pyresult = PyTuple_GetItem(runtime.asApiHandle(*tuple)->asPyObject(), length);
+  pyresult = PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), length);
   EXPECT_EQ(nullptr, pyresult);
 }
 
@@ -73,7 +73,7 @@ TEST(TupleObject, GetItemReturnsSameItem) {
 
   // Get item
   PyObject* pyresult =
-      PyTuple_GetItem(runtime.asApiHandle(*tuple)->asPyObject(), pos);
+      PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), pos);
   EXPECT_NE(nullptr, pyresult);
   Handle<Object> result_obj(&scope,
                             ApiHandle::fromPyObject(pyresult)->asObject());
@@ -93,10 +93,10 @@ TEST(TupleObject, GetItemReturnsBorrowedReference) {
 
   // Verify borrowed handle
   PyObject* pyresult =
-      PyTuple_GetItem(runtime.asApiHandle(*tuple)->asPyObject(), pos);
+      PyTuple_GetItem(ApiHandle::fromObject(*tuple)->asPyObject(), pos);
   Handle<Object> result_obj(&scope,
                             ApiHandle::fromPyObject(pyresult)->asObject());
-  ApiHandle* result_handle = runtime.asApiHandle(*result_obj);
+  ApiHandle* result_handle = ApiHandle::fromObject(*result_obj);
   EXPECT_TRUE(result_handle->isBorrowed());
   Handle<Integer> result(&scope, result_handle->asObject());
   EXPECT_EQ(int_value, result->asWord());
@@ -128,7 +128,7 @@ TEST(TupleObject, PackOneValue) {
 
   Handle<ObjectArray> result1(&scope, *result_obj1);
   EXPECT_EQ(length1, result1->length());
-  EXPECT_EQ(pyint, runtime.asApiHandle(result1->at(0))->asPyObject());
+  EXPECT_EQ(pyint, ApiHandle::fromObject(result1->at(0))->asPyObject());
 }
 
 TEST(TupleObject, PackTwoValues) {
@@ -145,8 +145,8 @@ TEST(TupleObject, PackTwoValues) {
 
   Handle<ObjectArray> result2(&scope, *result_obj2);
   EXPECT_EQ(length2, result2->length());
-  EXPECT_EQ(pybool, runtime.asApiHandle(result2->at(0))->asPyObject());
-  EXPECT_EQ(pyint, runtime.asApiHandle(result2->at(1))->asPyObject());
+  EXPECT_EQ(pybool, ApiHandle::fromObject(result2->at(0))->asPyObject());
+  EXPECT_EQ(pyint, ApiHandle::fromObject(result2->at(1))->asPyObject());
 }
 
 }  // namespace python

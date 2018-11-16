@@ -443,13 +443,6 @@ class Runtime {
   // Return true if obj is an instance of a subclass of klass
   Object* isInstance(const Handle<Object>& obj, const Handle<Class>& klass);
 
-  // Wrap an Object as an ApiHandle to cross the CPython boundary
-  // Create a new ApiHandle if there is not a pre-existing one
-  ApiHandle* asApiHandle(Object* obj);
-
-  // Same as asApiHandle, but creates a borrowed ApiHandle if no handle exists
-  ApiHandle* asBorrowedApiHandle(Object* obj);
-
   // Clear the allocated memory from all extension related objects
   void deallocExtensions();
 

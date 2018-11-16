@@ -14,8 +14,8 @@ TEST(DictObject, GetItemFromNonDictionaryReturnsNull) {
 
   // Pass a non dictionary
   PyObject* result =
-      PyDict_GetItem(runtime.asApiHandle(*non_dict)->asPyObject(),
-                     runtime.asApiHandle(*non_dict)->asPyObject());
+      PyDict_GetItem(ApiHandle::fromObject(*non_dict)->asPyObject(),
+                     ApiHandle::fromObject(*non_dict)->asPyObject());
   EXPECT_EQ(result, nullptr);
 }
 
@@ -27,8 +27,8 @@ TEST(DictObject, GetItemNonExistingKeyReturnsNull) {
   Handle<Object> nonkey(&scope, SmallInteger::fromWord(30));
 
   // Pass a non existing key
-  PyObject* result = PyDict_GetItem(runtime.asApiHandle(*dict)->asPyObject(),
-                                    runtime.asApiHandle(*nonkey)->asPyObject());
+  PyObject* result = PyDict_GetItem(ApiHandle::fromObject(*dict)->asPyObject(),
+                                    ApiHandle::fromObject(*nonkey)->asPyObject());
   EXPECT_EQ(result, nullptr);
 }
 
@@ -42,8 +42,8 @@ TEST(DictObject, GetItemReturnsValue) {
   runtime.dictionaryAtPut(dict, key, value);
 
   // Pass existing key
-  PyObject* result = PyDict_GetItem(runtime.asApiHandle(*dict)->asPyObject(),
-                                    runtime.asApiHandle(*key)->asPyObject());
+  PyObject* result = PyDict_GetItem(ApiHandle::fromObject(*dict)->asPyObject(),
+                                    ApiHandle::fromObject(*key)->asPyObject());
   ASSERT_NE(result, nullptr);
 
   // Check result value
@@ -63,16 +63,16 @@ TEST(DictObject, GetItemReturnsBorrowedReference) {
   runtime.dictionaryAtPut(dict, key, value);
 
   // Pass existing key
-  PyObject* result = PyDict_GetItem(runtime.asApiHandle(*dict)->asPyObject(),
-                                    runtime.asApiHandle(*key)->asPyObject());
+  PyObject* result = PyDict_GetItem(ApiHandle::fromObject(*dict)->asPyObject(),
+                                    ApiHandle::fromObject(*key)->asPyObject());
   ASSERT_NE(result, nullptr);
 
   // Check that key is a normal handle
-  ApiHandle* key_handle = runtime.asApiHandle(*key);
+  ApiHandle* key_handle = ApiHandle::fromObject(*key);
   EXPECT_FALSE(key_handle->isBorrowed());
 
   // Check that value returned PyDict_GetItem is a borrowed reference
-  ApiHandle* value_handle = runtime.asApiHandle(*value);
+  ApiHandle* value_handle = ApiHandle::fromObject(*value);
   EXPECT_TRUE(value_handle->isBorrowed());
 }
 

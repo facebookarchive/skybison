@@ -79,7 +79,7 @@ extern "C" PyObject* PyTuple_New(Py_ssize_t length) {
   HandleScope scope(thread);
 
   Handle<ObjectArray> tuple(&scope, runtime->newObjectArray(length));
-  return runtime->asApiHandle(*tuple)->asPyObject();
+  return ApiHandle::fromObject(*tuple)->asPyObject();
 }
 
 extern "C" Py_ssize_t PyTuple_Size(PyObject* pytuple) {
@@ -97,7 +97,6 @@ extern "C" Py_ssize_t PyTuple_Size(PyObject* pytuple) {
 
 extern "C" PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
   Handle<Object> tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
@@ -110,7 +109,7 @@ extern "C" PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
     return nullptr;
   }
 
-  return runtime->asBorrowedApiHandle(tuple->at(pos))->asPyObject();
+  return ApiHandle::fromBorrowedObject(tuple->at(pos))->asPyObject();
 }
 
 extern "C" PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
@@ -127,7 +126,7 @@ extern "C" PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
     tuple->atPut(i, ApiHandle::fromPyObject(item)->asObject());
   }
   va_end(vargs);
-  return runtime->asApiHandle(*tuple)->asPyObject();
+  return ApiHandle::fromObject(*tuple)->asPyObject();
 }
 
 }  // namespace python

@@ -28,6 +28,15 @@ enum class ExtensionTypes {
 // An isomorphic structure to CPython's PyObject
 class ApiHandle {
  public:
+  // Wrap an Object as an ApiHandle to cross the CPython boundary
+  // Create a new ApiHandle if there is not a pre-existing one
+  static ApiHandle* fromObject(Object* obj);
+
+  // Same as asApiHandle, but creates a borrowed ApiHandle if no handle exists
+  static ApiHandle* fromBorrowedObject(Object* obj);
+
+  // Wrap a PyObject as an ApiHandle to cross the CPython boundary
+  // Cast the PyObject into an ApiHandle
   static ApiHandle* fromPyObject(PyObject* py_obj) {
     return reinterpret_cast<ApiHandle*>(py_obj);
   }

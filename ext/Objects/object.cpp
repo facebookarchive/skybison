@@ -72,9 +72,7 @@ extern "C" PyTypeObject* PyNone_Type_Ptr() {
 }
 
 extern "C" PyObject* PyNone_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return runtime->asApiHandle(None::object())->asPyObject();
+  return ApiHandle::fromObject(None::object())->asPyObject();
 }
 
 extern "C" void _Py_Dealloc(PyObject* op) {

@@ -3082,36 +3082,6 @@ Object* Runtime::newExtensionInstance(ApiHandle* handle) {
   return *instance;
 }
 
-ApiHandle* Runtime::asApiHandle(Object* obj) {
-  HandleScope scope;
-  Handle<Object> key(&scope, obj);
-  Handle<Dictionary> dict(&scope, apiHandles());
-  Object* value = dictionaryAt(dict, key);
-  if (value->isError()) {
-    ApiHandle* handle = ApiHandle::newHandle(obj);
-    Handle<Object> object(&scope,
-                          newIntegerFromCPointer(static_cast<void*>(handle)));
-    dictionaryAtPut(dict, key, object);
-    return handle;
-  }
-  return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
-}
-
-ApiHandle* Runtime::asBorrowedApiHandle(Object* obj) {
-  HandleScope scope;
-  Handle<Object> key(&scope, obj);
-  Handle<Dictionary> dict(&scope, apiHandles());
-  Object* value = dictionaryAt(dict, key);
-  if (value->isError()) {
-    ApiHandle* handle = ApiHandle::newBorrowedHandle(obj);
-    Handle<Object> object(&scope,
-                          newIntegerFromCPointer(static_cast<void*>(handle)));
-    dictionaryAtPut(dict, key, object);
-    return handle;
-  }
-  return static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
-}
-
 void Runtime::freeTrackedAllocations() {
   while (tracked_allocations_ != nullptr) {
     TrackedAllocation::free(trackedAllocations(), tracked_allocations_);

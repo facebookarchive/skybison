@@ -24,7 +24,7 @@ TEST(UnicodeObject, AsUTF8FromNonStringReturnsNull) {
   HandleScope scope;
 
   Handle<Object> integer_obj(&scope, runtime.newInteger(15));
-  PyObject* pylong = runtime.asApiHandle(*integer_obj)->asPyObject();
+  PyObject* pylong = ApiHandle::fromObject(*integer_obj)->asPyObject();
 
   // Pass a non string object
   char* cstring = PyUnicode_AsUTF8AndSize(pylong, nullptr);
@@ -37,7 +37,7 @@ TEST(UnicodeObject, AsUTF8WithNullSizeReturnsCString) {
 
   const char* str = "Some C String";
   Handle<String> string_obj(&scope, runtime.newStringFromCString(str));
-  PyObject* pyunicode = runtime.asApiHandle(*string_obj)->asPyObject();
+  PyObject* pyunicode = ApiHandle::fromObject(*string_obj)->asPyObject();
 
   // Pass a nullptr size
   char* cstring = PyUnicode_AsUTF8AndSize(pyunicode, nullptr);
@@ -52,7 +52,7 @@ TEST(UnicodeObject, AsUTF8WithReferencedSizeReturnsCString) {
 
   const char* str = "Some C String";
   Handle<String> string_obj(&scope, runtime.newStringFromCString(str));
-  PyObject* pyunicode = runtime.asApiHandle(*string_obj)->asPyObject();
+  PyObject* pyunicode = ApiHandle::fromObject(*string_obj)->asPyObject();
 
   // Pass a size reference
   Py_ssize_t size = 0;

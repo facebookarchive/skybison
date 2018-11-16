@@ -73,15 +73,11 @@ extern "C" PyTypeObject* PyBool_Type_Ptr() {
 }
 
 extern "C" PyObject* PyTrue_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return runtime->asApiHandle(Boolean::trueObj())->asPyObject();
+  return ApiHandle::fromObject(Boolean::trueObj())->asPyObject();
 }
 
 extern "C" PyObject* PyFalse_Ptr() {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  return runtime->asApiHandle(Boolean::falseObj())->asPyObject();
+  return ApiHandle::fromObject(Boolean::falseObj())->asPyObject();
 }
 
 // Start of automatically generated code, from Object/boolobject.c

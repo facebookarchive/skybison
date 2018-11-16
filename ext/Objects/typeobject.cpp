@@ -201,7 +201,7 @@ extern "C" int PyType_Ready(PyTypeObject* type) {
   type_class->setExtensionType(runtime->newIntegerFromCPointer(type));
 
   // Create the dictionary's ApiHandle
-  type->tp_dict = runtime->asApiHandle(*dictionary)->asPyObject();
+  type->tp_dict = ApiHandle::fromObject(*dictionary)->asPyObject();
 
   // Set the class name
   Handle<Object> name(&scope, runtime->newStringFromCString(type->tp_name));

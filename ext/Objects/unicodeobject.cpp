@@ -80,7 +80,7 @@ extern "C" PyObject* PyUnicode_FromString(const char* c_string) {
   HandleScope scope(thread);
 
   Handle<Object> value(&scope, runtime->newStringFromCString(c_string));
-  return runtime->asApiHandle(*value)->asPyObject();
+  return ApiHandle::fromObject(*value)->asPyObject();
 }
 
 extern "C" PyObject* _PyUnicode_FromId(_Py_Identifier* id) {
@@ -89,7 +89,7 @@ extern "C" PyObject* _PyUnicode_FromId(_Py_Identifier* id) {
   HandleScope scope(thread);
 
   Handle<Object> result(&scope, runtime->internStringFromCString(id->string));
-  return runtime->asApiHandle(*result)->asPyObject();
+  return ApiHandle::fromObject(*result)->asPyObject();
 }
 
 extern "C" char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,

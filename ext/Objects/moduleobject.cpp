@@ -90,16 +90,15 @@ extern "C" PyObject* PyModule_Create2(struct PyModuleDef* pymodule, int) {
   // TODO: Add methods
   // TODO: Add m_doc
 
-  return runtime->asApiHandle(*module)->asPyObject();
+  return ApiHandle::fromObject(*module)->asPyObject();
 }
 
 extern "C" PyObject* PyModule_GetDict(PyObject* pymodule) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
   Handle<Module> module(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  return runtime->asApiHandle(module->dictionary())->asPyObject();
+  return ApiHandle::fromObject(module->dictionary())->asPyObject();
 }
 
 }  // namespace python

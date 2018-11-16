@@ -208,6 +208,7 @@ add_library(
   runtime-tests
   STATIC
   runtime/builtins-module-test.cpp
+  runtime/capi-handles-test.cpp
   runtime/descriptor-builtins-test.cpp
   runtime/exception-builtins-test.cpp
   runtime/float-builtins-test.cpp
