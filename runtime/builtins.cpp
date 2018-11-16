@@ -51,9 +51,8 @@ Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   Handle<Object> name(&scope, args.get(1));
 
   Handle<Dictionary> dictionary(&scope, runtime->newDictionary());
-  Handle<Object> key(
-      &scope, thread->runtime()->newStringFromCString("__name__"));
-  thread->runtime()->dictionaryAtPutInValueCell(dictionary, key, name);
+  Handle<Object> key(&scope, runtime->symbols()->DunderName());
+  runtime->dictionaryAtPutInValueCell(dictionary, key, name);
 
   // TODO: might need to do some kind of callback here and we want backtraces to
   // work correctly.  The key to doing that would be to put some state on the

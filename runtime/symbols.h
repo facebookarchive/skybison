@@ -5,16 +5,20 @@
 
 namespace python {
 
+class Runtime;
+
 // List of predefined symbols, one per line
 // clang-format off
-#define FOREACH_SYMBOL(V) \
-  V(DunderInit, "__init__")
+#define FOREACH_SYMBOL(V)                \
+  V(DunderInit, "__init__")              \
+  V(DunderMain, "__main__")              \
+  V(DunderName, "__name__")
 // clang-format on
 
 // Provides convenient, fast access to commonly used names. Stolen from Dart.
 class Symbols {
  public:
-  Symbols(Heap* heap);
+  Symbols(Runtime* runtime);
   ~Symbols();
 
   enum SymbolId {
@@ -46,8 +50,6 @@ class Symbols {
   const char* literalAt(SymbolId id);
 
  private:
-  void addSymbol(Heap* heap, SymbolId id, const char* value);
-
   // TODO(T25010996) - Benchmark whether this is faster than an ObjectArray
   Object** symbols_;
 };

@@ -27,8 +27,8 @@ Runtime::Runtime() : heap_(64 * MiB), new_value_cell_callback_(this) {
   initializePrimitiveInstances();
   initializeClasses();
   initializeInterned();
-  initializeModules();
   initializeSymbols();
+  initializeModules();
 }
 
 Runtime::~Runtime() {
@@ -115,7 +115,7 @@ Object* Runtime::newList() {
 Object* Runtime::newModule(const Handle<Object>& name) {
   HandleScope scope;
   Handle<Dictionary> dictionary(&scope, newDictionary());
-  Handle<Object> key(&scope, newStringFromCString("__name__"));
+  Handle<Object> key(&scope, symbols()->DunderName());
   dictionaryAtPut(dictionary, key, name);
   return heap()->createModule(*name, *dictionary);
 }
@@ -421,7 +421,7 @@ void Runtime::initializeRandom() {
 
 void Runtime::initializeSymbols() {
   HandleScope scope;
-  symbols_ = new Symbols(&heap_);
+  symbols_ = new Symbols(this);
   for (word i = 0; i < Symbols::kMaxSymbolId; i++) {
     Handle<Object> symbol(
         &scope, symbols_->at(static_cast<Symbols::SymbolId>(i)));
@@ -560,7 +560,7 @@ void Runtime::createSysModule() {
 
 Object* Runtime::createMainModule() {
   HandleScope scope;
-  Handle<Object> name(&scope, newStringFromCString("__main__"));
+  Handle<Object> name(&scope, symbols()->DunderMain());
   Handle<Module> module(&scope, newModule(name));
 
   // Fill in __main__...

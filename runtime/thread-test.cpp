@@ -206,8 +206,8 @@ TEST(ThreadTest, ManipulateValueStack) {
   word values[] = {3333, 2222, 1111};
   for (int i = 0; i < 3; i++) {
     Object* object = frame->peek(i);
-    ASSERT_TRUE(object->isSmallInteger()) << "Value at stack depth " << i
-                                          << " is not an integer";
+    ASSERT_TRUE(object->isSmallInteger())
+        << "Value at stack depth " << i << " is not an integer";
     EXPECT_EQ(SmallInteger::cast(object)->value(), values[i])
         << "Incorrect value at stack depth " << i;
   }
@@ -1018,7 +1018,7 @@ TEST(ThreadTest, LoadBuildClassClassWithInit) {
   ASSERT_TRUE(cls_dict->isDictionary());
 
   // Check for the __init__ method name in the dictionary
-  Handle<Object> meth_name(&scope, runtime.newStringFromCString("__init__"));
+  Handle<Object> meth_name(&scope, runtime.symbols()->DunderInit());
   ASSERT_TRUE(runtime.dictionaryIncludes(cls_dict, meth_name));
   runtime.dictionaryAt(cls_dict, meth_name, value.pointer());
   ASSERT_TRUE(value->isValueCell());
