@@ -1,3 +1,5 @@
+#include "gtest/gtest.h"
+
 #include "capi-testing.h"
 #include "cpython-func.h"
 #include "runtime.h"

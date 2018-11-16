@@ -1,5 +1,8 @@
+#include "gtest/gtest.h"
+
+#include "Python.h"
 #include "capi-fixture.h"
-#include "cpython-data.h"
+#include "capi-testing.h"
 
 namespace python {
 
