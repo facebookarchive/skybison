@@ -317,7 +317,7 @@ class RawHeapFrame : public RawHeapObject {
   // Number of words that aren't the Frame.
   static const int kNumOverheadWords = kFrameOffset / kPointerSize;
 
-  RAW_OBJECT_COMMON(HeapFrame)
+  RAW_OBJECT_COMMON(HeapFrame);
 };
 
 class FrameVisitor {

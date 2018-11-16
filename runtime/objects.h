@@ -267,14 +267,14 @@ INTRINSIC_CLASS_NAMES(CASE)
 #define RAW_OBJECT_COMMON_NO_CAST(ty)                                          \
   /* TODO(T34683229) The const_cast here is temporary for a migration */       \
   Raw##ty* operator->() const { return const_cast<Raw##ty*>(this); }           \
-  DISALLOW_HEAP_ALLOCATION();
+  DISALLOW_HEAP_ALLOCATION()
 
 #define RAW_OBJECT_COMMON(ty)                                                  \
-  RAW_OBJECT_COMMON_NO_CAST(ty)                                                \
   static Raw##ty cast(RawObject object) {                                      \
     DCHECK(object.is##ty(), "invalid cast, expected " #ty);                    \
     return bit_cast<Raw##ty>(object);                                          \
-  }
+  }                                                                            \
+  RAW_OBJECT_COMMON_NO_CAST(ty)
 
 class RawObject {
  public:
@@ -363,7 +363,7 @@ class RawObject {
   // indexing into the class table in the runtime.
   static const uword kImmediateClassTableIndexMask = (1 << 5) - 1;
 
-  RAW_OBJECT_COMMON(Object)
+  RAW_OBJECT_COMMON(Object);
 
  private:
   // Zero-initializing raw_ gives RawSmallInt::fromWord(0).
@@ -414,7 +414,7 @@ class RawInt : public RawObject {
   bool isPositive();
   bool isZero();
 
-  RAW_OBJECT_COMMON(Int)
+  RAW_OBJECT_COMMON(Int);
 
   // Indexing into digits
   word digitAt(word index);
@@ -455,7 +455,7 @@ class RawSmallInt : public RawObject {
   static const word kMinValue = -(1L << (kBitsPerPointer - (kTagSize + 1)));
   static const word kMaxValue = (1L << (kBitsPerPointer - (kTagSize + 1))) - 1;
 
-  RAW_OBJECT_COMMON(SmallInt)
+  RAW_OBJECT_COMMON(SmallInt);
 };
 
 enum class ObjectFormat {
@@ -538,7 +538,7 @@ class RawHeader : public RawObject {
   // Constants
   static const word kMaxLayoutId = (1L << (kLayoutIdSize + 1)) - 1;
 
-  RAW_OBJECT_COMMON(Header)
+  RAW_OBJECT_COMMON(Header);
 };
 
 class RawBool : public RawObject {
@@ -559,7 +559,7 @@ class RawBool : public RawObject {
   static const int kTagSize = 5;
   static const uword kTagMask = (1 << kTagSize) - 1;
 
-  RAW_OBJECT_COMMON(Bool)
+  RAW_OBJECT_COMMON(Bool);
 };
 
 class RawNoneType : public RawObject {
@@ -572,7 +572,7 @@ class RawNoneType : public RawObject {
   static const int kTagSize = 5;
   static const uword kTagMask = (1 << kTagSize) - 1;
 
-  RAW_OBJECT_COMMON(NoneType)
+  RAW_OBJECT_COMMON(NoneType);
 };
 
 // RawError is a special object type, internal to the runtime. It is used to
@@ -588,7 +588,7 @@ class RawError : public RawObject {
   static const int kTagSize = 5;
   static const uword kTagMask = (1 << kTagSize) - 1;
 
-  RAW_OBJECT_COMMON(Error)
+  RAW_OBJECT_COMMON(Error);
 };
 
 // RawSuper class of common string functionality
@@ -608,7 +608,7 @@ class RawStr : public RawObject {
   // with malloc and must be freed by the caller.
   char* toCStr();
 
-  RAW_OBJECT_COMMON(Str)
+  RAW_OBJECT_COMMON(Str);
 };
 
 class RawSmallStr : public RawObject {
@@ -624,7 +624,7 @@ class RawSmallStr : public RawObject {
 
   static const word kMaxLength = kWordSize - 1;
 
-  RAW_OBJECT_COMMON(SmallStr)
+  RAW_OBJECT_COMMON(SmallStr);
 
  private:
   // Interface methods are private: strings should be manipulated via the
@@ -688,7 +688,7 @@ class RawHeapObject : public RawObject {
 
   static const word kMinimumSize = kPointerSize * 2;
 
-  RAW_OBJECT_COMMON(HeapObject)
+  RAW_OBJECT_COMMON(HeapObject);
 
  protected:
   RawObject instanceVariableAt(word offset);
@@ -719,12 +719,12 @@ class RawBaseException : public RawHeapObject {
   static const int kContextOffset = kCauseOffset + kPointerSize;
   static const int kSize = kContextOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(BaseException)
+  RAW_OBJECT_COMMON(BaseException);
 };
 
 class RawException : public RawBaseException {
  public:
-  RAW_OBJECT_COMMON(Exception)
+  RAW_OBJECT_COMMON(Exception);
 };
 
 class RawStopIteration : public RawBaseException {
@@ -736,7 +736,7 @@ class RawStopIteration : public RawBaseException {
   static const int kValueOffset = RawBaseException::kSize;
   static const int kSize = kValueOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(StopIteration)
+  RAW_OBJECT_COMMON(StopIteration);
 };
 
 class RawSystemExit : public RawBaseException {
@@ -747,17 +747,17 @@ class RawSystemExit : public RawBaseException {
   static const int kCodeOffset = RawBaseException::kSize;
   static const int kSize = kCodeOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(SystemExit)
+  RAW_OBJECT_COMMON(SystemExit);
 };
 
 class RawRuntimeError : public RawException {
  public:
-  RAW_OBJECT_COMMON(RuntimeError)
+  RAW_OBJECT_COMMON(RuntimeError);
 };
 
 class RawNotImplementedError : public RawRuntimeError {
  public:
-  RAW_OBJECT_COMMON(NotImplementedError)
+  RAW_OBJECT_COMMON(NotImplementedError);
 };
 
 class RawImportError : public RawException {
@@ -777,27 +777,27 @@ class RawImportError : public RawException {
   static const int kPathOffset = kNameOffset + kPointerSize;
   static const int kSize = kPathOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(ImportError)
+  RAW_OBJECT_COMMON(ImportError);
 };
 
 class RawModuleNotFoundError : public RawImportError {
  public:
-  RAW_OBJECT_COMMON(ModuleNotFoundError)
+  RAW_OBJECT_COMMON(ModuleNotFoundError);
 };
 
 class RawLookupError : public RawException {
  public:
-  RAW_OBJECT_COMMON(LookupError)
+  RAW_OBJECT_COMMON(LookupError);
 };
 
 class RawIndexError : public RawLookupError {
  public:
-  RAW_OBJECT_COMMON(IndexError)
+  RAW_OBJECT_COMMON(IndexError);
 };
 
 class RawKeyError : public RawLookupError {
  public:
-  RAW_OBJECT_COMMON(KeyError)
+  RAW_OBJECT_COMMON(KeyError);
 };
 
 class RawType : public RawHeapObject {
@@ -863,14 +863,14 @@ class RawType : public RawHeapObject {
       kBuiltinBaseClassOffset + kPointerSize;
   static const int kSize = kExtensionTypeOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON_NO_CAST(Type)
+  RAW_OBJECT_COMMON_NO_CAST(Type);
 };
 
 class RawArray : public RawHeapObject {
  public:
   word length();
 
-  RAW_OBJECT_COMMON_NO_CAST(Array)
+  RAW_OBJECT_COMMON_NO_CAST(Array);
 };
 
 class RawBytes : public RawArray {
@@ -882,7 +882,7 @@ class RawBytes : public RawArray {
   // Sizing.
   static word allocationSize(word length);
 
-  RAW_OBJECT_COMMON(Bytes)
+  RAW_OBJECT_COMMON(Bytes);
 };
 
 class RawObjectArray : public RawArray {
@@ -900,7 +900,7 @@ class RawObjectArray : public RawArray {
 
   bool contains(RawObject object);
 
-  RAW_OBJECT_COMMON(ObjectArray)
+  RAW_OBJECT_COMMON(ObjectArray);
 };
 
 class RawLargeStr : public RawArray {
@@ -910,7 +910,7 @@ class RawLargeStr : public RawArray {
 
   static const int kDataOffset = RawHeapObject::kSize;
 
-  RAW_OBJECT_COMMON(LargeStr)
+  RAW_OBJECT_COMMON(LargeStr);
 
  private:
   // Interface methods are private: strings should be manipulated via the
@@ -975,7 +975,7 @@ class RawLargeInt : public RawHeapObject {
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(LargeInt)
+  RAW_OBJECT_COMMON(LargeInt);
 
  private:
   friend class RawInt;
@@ -997,7 +997,7 @@ class RawFloat : public RawHeapObject {
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kDoubleSize;
 
-  RAW_OBJECT_COMMON_NO_CAST(Float)
+  RAW_OBJECT_COMMON_NO_CAST(Float);
 };
 
 class RawComplex : public RawHeapObject {
@@ -1014,7 +1014,7 @@ class RawComplex : public RawHeapObject {
   static const int kImagOffset = kRealOffset + kDoubleSize;
   static const int kSize = kImagOffset + kDoubleSize;
 
-  RAW_OBJECT_COMMON(Complex)
+  RAW_OBJECT_COMMON(Complex);
 };
 
 class RawProperty : public RawHeapObject {
@@ -1035,7 +1035,7 @@ class RawProperty : public RawHeapObject {
   static const int kDeleterOffset = kSetterOffset + kPointerSize;
   static const int kSize = kDeleterOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Property)
+  RAW_OBJECT_COMMON(Property);
 };
 
 class RawRange : public RawHeapObject {
@@ -1056,7 +1056,7 @@ class RawRange : public RawHeapObject {
   static const int kStepOffset = kStopOffset + kPointerSize;
   static const int kSize = kStepOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Range)
+  RAW_OBJECT_COMMON(Range);
 };
 
 class RawRangeIterator : public RawHeapObject {
@@ -1078,7 +1078,7 @@ class RawRangeIterator : public RawHeapObject {
   static const int kCurValueOffset = kRangeOffset + kPointerSize;
   static const int kSize = kCurValueOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(RangeIterator)
+  RAW_OBJECT_COMMON(RangeIterator);
 
  private:
   static bool isOutOfRange(word cur, word stop, word step);
@@ -1109,7 +1109,7 @@ class RawSlice : public RawHeapObject {
   static const int kStepOffset = kStopOffset + kPointerSize;
   static const int kSize = kStepOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Slice)
+  RAW_OBJECT_COMMON(Slice);
 };
 
 class RawStaticMethod : public RawHeapObject {
@@ -1122,7 +1122,7 @@ class RawStaticMethod : public RawHeapObject {
   static const int kFunctionOffset = RawHeapObject::kSize;
   static const int kSize = kFunctionOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(StaticMethod)
+  RAW_OBJECT_COMMON(StaticMethod);
 };
 
 class RawListIterator : public RawHeapObject {
@@ -1142,7 +1142,7 @@ class RawListIterator : public RawHeapObject {
   static const int kIndexOffset = kListOffset + kPointerSize;
   static const int kSize = kIndexOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(ListIterator)
+  RAW_OBJECT_COMMON(ListIterator);
 };
 
 class RawSetIterator : public RawHeapObject {
@@ -1169,7 +1169,7 @@ class RawSetIterator : public RawHeapObject {
   static const int kConsumedCountOffset = kIndexOffset + kPointerSize;
   static const int kSize = kConsumedCountOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(SetIterator)
+  RAW_OBJECT_COMMON(SetIterator);
 };
 
 class RawTupleIterator : public RawHeapObject {
@@ -1191,7 +1191,7 @@ class RawTupleIterator : public RawHeapObject {
   static const int kIndexOffset = kTupleOffset + kPointerSize;
   static const int kSize = kIndexOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(TupleIterator)
+  RAW_OBJECT_COMMON(TupleIterator);
 };
 
 class RawCode : public RawHeapObject {
@@ -1286,7 +1286,7 @@ class RawCode : public RawHeapObject {
   static const int kLnotabOffset = kNameOffset + kPointerSize;
   static const int kSize = kLnotabOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Code)
+  RAW_OBJECT_COMMON(Code);
 };
 
 class Frame;
@@ -1395,7 +1395,7 @@ class RawFunction : public RawHeapObject {
   static const int kFastGlobalsOffset = kEntryExOffset + kPointerSize;
   static const int kSize = kFastGlobalsOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Function)
+  RAW_OBJECT_COMMON(Function);
 };
 
 class RawInstance : public RawHeapObject {
@@ -1403,7 +1403,7 @@ class RawInstance : public RawHeapObject {
   // Sizing.
   static word allocationSize(word num_attributes);
 
-  RAW_OBJECT_COMMON(Instance)
+  RAW_OBJECT_COMMON(Instance);
 };
 
 class RawModule : public RawHeapObject {
@@ -1426,7 +1426,7 @@ class RawModule : public RawHeapObject {
   static const int kDefOffset = kDictOffset + kPointerSize;
   static const int kSize = kDefOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Module)
+  RAW_OBJECT_COMMON(Module);
 };
 
 class RawNotImplemented : public RawHeapObject {
@@ -1437,7 +1437,7 @@ class RawNotImplemented : public RawHeapObject {
   static const int kPaddingOffset = RawHeapObject::kSize;
   static const int kSize = kPaddingOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(NotImplemented)
+  RAW_OBJECT_COMMON(NotImplemented);
 };
 
 /**
@@ -1473,7 +1473,7 @@ class RawDict : public RawHeapObject {
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kDataOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Dict)
+  RAW_OBJECT_COMMON(Dict);
 };
 
 // Helper class for manipulating buckets in the RawObjectArray that backs the
@@ -1560,7 +1560,7 @@ class RawSet : public RawHeapObject {
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kDataOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Set)
+  RAW_OBJECT_COMMON(Set);
 };
 
 // Helper class for manipulating buckets in the RawObjectArray that backs the
@@ -1650,7 +1650,7 @@ class RawList : public RawHeapObject {
   static const int kAllocatedOffset = kItemsOffset + kPointerSize;
   static const int kSize = kAllocatedOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON_NO_CAST(List)
+  RAW_OBJECT_COMMON_NO_CAST(List);
 };
 
 class RawValueCell : public RawHeapObject {
@@ -1666,7 +1666,7 @@ class RawValueCell : public RawHeapObject {
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(ValueCell)
+  RAW_OBJECT_COMMON(ValueCell);
 };
 
 class RawEllipsis : public RawHeapObject {
@@ -1677,7 +1677,7 @@ class RawEllipsis : public RawHeapObject {
   static const int kPaddingOffset = RawHeapObject::kSize;
   static const int kSize = kPaddingOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Ellipsis)
+  RAW_OBJECT_COMMON(Ellipsis);
 };
 
 class RawWeakRef : public RawHeapObject {
@@ -1710,7 +1710,7 @@ class RawWeakRef : public RawHeapObject {
   static const int kLinkOffset = kCallbackOffset + kPointerSize;
   static const int kSize = kLinkOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(WeakRef)
+  RAW_OBJECT_COMMON(WeakRef);
 };
 
 /**
@@ -1753,7 +1753,7 @@ class RawBoundMethod : public RawHeapObject {
   static const int kSelfOffset = kFunctionOffset + kPointerSize;
   static const int kSize = kSelfOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(BoundMethod)
+  RAW_OBJECT_COMMON(BoundMethod);
 };
 
 class RawClassMethod : public RawHeapObject {
@@ -1766,7 +1766,7 @@ class RawClassMethod : public RawHeapObject {
   static const int kFunctionOffset = RawHeapObject::kSize;
   static const int kSize = kFunctionOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(ClassMethod)
+  RAW_OBJECT_COMMON(ClassMethod);
 };
 
 /**
@@ -1888,7 +1888,7 @@ class RawLayout : public RawHeapObject {
       kOverflowOffsetOffset + kPointerSize;
   static const int kSize = kNumInObjectAttributesOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Layout)
+  RAW_OBJECT_COMMON(Layout);
 
  private:
   void setOverflowOffset(word offset);
@@ -1910,7 +1910,7 @@ class RawSuper : public RawHeapObject {
   static const int kObjectTypeOffset = kObjectOffset + kPointerSize;
   static const int kSize = kObjectTypeOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Super)
+  RAW_OBJECT_COMMON(Super);
 };
 
 /**
@@ -1929,7 +1929,7 @@ class RawGeneratorBase : public RawHeapObject {
   static const int kCodeOffset = kIsRunningOffset + kPointerSize;
   static const int kSize = kCodeOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(GeneratorBase)
+  RAW_OBJECT_COMMON(GeneratorBase);
 };
 
 class RawGenerator : public RawGeneratorBase {
@@ -1937,7 +1937,7 @@ class RawGenerator : public RawGeneratorBase {
   static const int kYieldFromOffset = RawGeneratorBase::kSize;
   static const int kSize = kYieldFromOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Generator)
+  RAW_OBJECT_COMMON(Generator);
 };
 
 class RawCoroutine : public RawGeneratorBase {
@@ -1947,7 +1947,7 @@ class RawCoroutine : public RawGeneratorBase {
   static const int kOriginOffset = kAwaitOffset + kPointerSize;
   static const int kSize = kOriginOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Coroutine)
+  RAW_OBJECT_COMMON(Coroutine);
 };
 
 // RawObject
