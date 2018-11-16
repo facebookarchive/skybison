@@ -453,6 +453,12 @@ class Runtime {
       Function::Entry entryKw,
       Function::Entry entryEx);
 
+  // Helper function to add extension functions to extension classes
+  void classAddExtensionFunction(
+      const Handle<Class>& klass,
+      Object* name,
+      void* c_function);
+
   // determine whether the instance needs a slot for delegate base instance
   bool hasDelegate(const Handle<Class>& klass);
 

@@ -74,8 +74,76 @@ TEST(PyTypeObject, EmptyTypeInstantiateObject) {
 
   // Instantiate a class object
   Handle<Layout> layout(&scope, type_class->instanceLayout());
-  Handle<Object> type_class_instance(&scope, runtime.newInstance(layout));
-  EXPECT_TRUE(type_class_instance->isInstance());
+  Handle<Object> type_instance(&scope, runtime.newInstance(layout));
+  EXPECT_TRUE(type_instance->isInstance());
+}
+
+typedef struct {
+  PyObject_HEAD;
+  int value;
+} CustomObject;
+
+static PyObject*
+Custom_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+  // TODO(T29877036): malloc should be handled by tp_alloc
+  CustomObject* self = (CustomObject*)std::malloc(sizeof(CustomObject));
+  return (PyObject*)self;
+}
+
+static int Custom_init(CustomObject* self, PyObject* args, PyObject* kwds) {
+  self->value = 30;
+  return 0;
+}
+
+TEST(PyTypeObject, InitializeCustomTypeypeInstance) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+
+  // Instantiate module
+  Handle<Object> module_name(&scope, runtime.newStringFromCString("custom"));
+  Handle<Module> module(&scope, runtime.newModule(module_name));
+  Handle<Dictionary> module_dict(&scope, module->dictionary());
+  runtime.addModule(module);
+
+  // Instantiate Class
+  PyTypeObject custom_type{PyObject_HEAD_INIT(nullptr)};
+  custom_type.tp_name = "custom.Custom";
+  custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
+  custom_type.tp_new = Custom_new;
+  custom_type.tp_init = (initproc)Custom_init;
+  PyType_Ready(&custom_type);
+
+  // Add class to the runtime
+  Handle<Object> tp_name(
+      &scope, runtime.newStringFromCString(custom_type.tp_name));
+  Handle<Dictionary> ext_dict(&scope, runtime.extensionTypes());
+  Handle<Object> type_class(&scope, runtime.dictionaryAt(ext_dict, tp_name));
+  Handle<Object> ob_name(&scope, runtime.newStringFromCString("Custom"));
+  runtime.dictionaryAtPutInValueCell(module_dict, ob_name, type_class);
+
+  runtime.runFromCString(R"(
+import custom
+instance = custom.Custom()
+)");
+
+  // Verify the initialized value
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> instance_obj(
+      &scope, testing::findInModule(&runtime, main, "instance"));
+  ASSERT_TRUE(instance_obj->isInstance());
+
+  // Get instance value
+  Handle<HeapObject> instance(&scope, *instance_obj);
+  Handle<Object> attr_name(&scope, runtime.symbols()->ExtensionPtr());
+  Handle<Integer> extension_obj(
+      &scope, runtime.instanceAt(thread, instance, attr_name));
+  CustomObject* custom_obj =
+      static_cast<CustomObject*>(extension_obj->asCPointer());
+  EXPECT_EQ(custom_obj->value, 30);
+
+  // TODO(T29877145): free should be handled by tp_dealloc
+  std::free(custom_obj);
 }
 
 } // namespace python

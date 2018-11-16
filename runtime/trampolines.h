@@ -34,4 +34,11 @@ template <Object* (*Fn)(Thread*, Frame*, word)>
 Object* nativeTrampoline(Thread* thread, Frame* callerFrame, word argc)
     __attribute__((aligned(16)));
 
+Object* extensionTrampoline(Thread* thread, Frame* previousFrame, word argc)
+    __attribute__((aligned(16)));
+Object* extensionTrampolineKw(Thread* thread, Frame* previousFrame, word argc)
+    __attribute__((aligned(16)));
+Object* extensionTrampolineEx(Thread* thread, Frame* previousFrame, word argc)
+    __attribute__((aligned(16)));
+
 } // namespace python

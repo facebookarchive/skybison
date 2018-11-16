@@ -8,6 +8,7 @@
 #include "runtime/objects.h"
 #include "runtime/runtime.h"
 #include "runtime/trampolines.h"
+#include "runtime/utils.h"
 
 namespace py = python;
 
@@ -144,6 +145,9 @@ int PyType_Ready(PyTypeObject* type) {
   py::Handle<py::Dictionary> dictionary(&scope, runtime->newDictionary());
   type_class->setDictionary(*dictionary);
 
+  // Add the PyTypeObject pointer to the class
+  type_class->setExtensionType(runtime->newIntegerFromCPointer(type));
+
   // Create the dictionary's ApiHandle
   type->tp_dict = runtime->asApiHandle(*dictionary)->asPyObject();
 
@@ -160,29 +164,25 @@ int PyType_Ready(PyTypeObject* type) {
   type_class->setMro(*mro);
 
   // Initialize instance Layout
-  // TODO(T29775652): The layout should contain a pointer to the real PyObject
-  py::Handle<py::Layout> layout(
+  py::Handle<py::Layout> layout_init(
       &scope, runtime->computeInitialLayout(thread, type_class));
+  py::Handle<py::Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
+  py::Handle<py::Layout> layout(
+      &scope, runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));
   layout->setDescribedClass(*type_class);
   type_class->setInstanceLayout(*layout);
 
   // Register DunderNew
-  // TODO(T29775599): Make DunderNew run tp_new
-  runtime->classAddBuiltinFunction(
+  runtime->classAddExtensionFunction(
       type_class,
       runtime->symbols()->DunderNew(),
-      py::nativeTrampoline<py::builtinObjectNew>,
-      py::unimplementedTrampoline,
-      py::unimplementedTrampoline);
+      py::Utils::castFnPtrToVoid(type->tp_new));
 
   // Register DunderInit
-  // TODO(T29775466): Make DunderInit run tp_init
-  runtime->classAddBuiltinFunction(
+  runtime->classAddExtensionFunction(
       type_class,
       runtime->symbols()->DunderInit(),
-      py::nativeTrampoline<py::builtinObjectInit>,
-      py::unimplementedTrampoline,
-      py::unimplementedTrampoline);
+      py::Utils::castFnPtrToVoid(type->tp_init));
 
   // TODO(T29618332): Implement missing PyType_Ready features
 
@@ -190,9 +190,6 @@ int PyType_Ready(PyTypeObject* type) {
   py::Handle<py::Dictionary> extensions_dict(&scope, runtime->extensionTypes());
   py::Handle<py::Object> type_class_obj(&scope, *type_class);
   runtime->dictionaryAtPut(extensions_dict, name, type_class_obj);
-
-  // Add the PyTypeObject pointer to the class
-  type_class->setExtensionType(runtime->newIntegerFromCPointer(type));
 
   // All done -- set the ready flag
   type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;

@@ -423,6 +423,26 @@ void Runtime::classAddBuiltinFunction(
   dictionaryAtPutInValueCell(dict, key, value);
 }
 
+void Runtime::classAddExtensionFunction(
+    const Handle<Class>& klass,
+    Object* name,
+    void* c_function) {
+  DCHECK(
+      !klass->extensionType()->isNone(), "Class must contain extension type");
+
+  HandleScope scope;
+  Handle<Function> function(&scope, newFunction());
+  function->setName(name);
+  function->setCode(newIntegerFromCPointer(c_function));
+  function->setEntry(extensionTrampoline);
+  function->setEntryKw(extensionTrampolineKw);
+  function->setEntryEx(extensionTrampolineEx);
+  Handle<Object> key(&scope, name);
+  Handle<Object> value(&scope, *function);
+  Handle<Dictionary> dict(&scope, klass->dictionary());
+  dictionaryAtPutInValueCell(dict, key, value);
+}
+
 Object* Runtime::newList() {
   HandleScope scope;
   Handle<List> result(&scope, heap()->createList());

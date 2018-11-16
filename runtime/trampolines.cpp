@@ -478,6 +478,58 @@ Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word arg) {
   }
 }
 
+typedef PyObject* (*PyCFunction)(PyObject*, PyObject*, PyObject*);
+
+Object* extensionTrampoline(Thread* thread, Frame* previousFrame, word argc) {
+  Runtime* runtime = thread->runtime();
+  Object** sp = previousFrame->valueStackTop();
+  HandleScope scope(thread->handles());
+
+  // Set the address pointer to the function pointer
+  Handle<Function> function(&scope, previousFrame->function(argc));
+  Handle<Integer> address(&scope, function->code());
+
+  Handle<Object> object(&scope, *sp++);
+  Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
+  // TODO(eelizondo): Cache the None handle
+  PyObject* none = runtime->asApiHandle(None::object())->asPyObject();
+
+  if (object->isClass()) {
+    Handle<Class> type_class(&scope, *object);
+    Handle<Layout> layout(&scope, type_class->instanceLayout());
+    Handle<HeapObject> instance(&scope, runtime->newInstance(layout));
+
+    // void* to CFunction idiom
+    PyCFunction new_function;
+    *reinterpret_cast<void**>(&new_function) = address->asCPointer();
+    void* result = (*new_function)(none, none, none);
+
+    Handle<Object> object_ptr(&scope, runtime->newIntegerFromCPointer(result));
+    runtime->instanceAtPut(thread, instance, attr_name, object_ptr);
+    return *instance;
+  }
+
+  Handle<HeapObject> instance(&scope, *object);
+  Handle<Integer> object_ptr(
+      &scope, runtime->instanceAt(thread, instance, attr_name));
+  PyObject* self = static_cast<PyObject*>(object_ptr->asCPointer());
+
+  // void* to CFunction idiom
+  PyCFunction init_function;
+  *reinterpret_cast<void**>(&init_function) = address->asCPointer();
+  (*init_function)(self, none, none);
+
+  return *instance;
+}
+
+Object* extensionTrampolineKw(Thread*, Frame*, word) {
+  UNIMPLEMENTED("ExtensionTrampolineKw");
+}
+
+Object* extensionTrampolineEx(Thread*, Frame*, word) {
+  UNIMPLEMENTED("ExtensionTrampolineEx");
+}
+
 Object* unimplementedTrampoline(Thread*, Frame*, word) {
   UNIMPLEMENTED("Trampoline");
 }
