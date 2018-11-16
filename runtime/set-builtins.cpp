@@ -23,7 +23,7 @@ Object* builtinSetAdd(Thread* thread, Frame* frame, word nargs) {
     return None::object();
   }
   // TODO(zekun): handle subclass of set
-  return thread->runtime()->notImplemented();
+  return thread->throwTypeErrorFromCString("'add' requires a 'set' object");
 }
 
 Object* builtinSetLen(Thread* thread, Frame* frame, word nargs) {
