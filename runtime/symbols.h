@@ -182,6 +182,7 @@ class Runtime;
   V(Time, "time")                                                              \
   V(Traceback, "traceback")                                                    \
   V(Tuple, "tuple")                                                            \
+  V(TupleIterator, "tuple_iterator")                                           \
   V(Type, "type")                                                              \
   V(TypeError, "TypeError")                                                    \
   V(UnderWeakRef, "_weakref")                                                  \

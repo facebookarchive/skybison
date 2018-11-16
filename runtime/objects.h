@@ -118,6 +118,7 @@ enum class LayoutId : word {
   kString,
   kSystemExit,
   kSuper,
+  kTupleIterator,
   kType,
   kTypeError,
   kValueCell,
@@ -180,6 +181,7 @@ class Object {
   bool isStopIteration();
   bool isSuper();
   bool isSystemExit();
+  bool isTupleIterator();
   bool isValueCell();
   bool isWeakRef();
 
@@ -1081,6 +1083,33 @@ class ListIterator : public HeapObject {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListIterator);
+};
+
+class TupleIterator : public HeapObject {
+ public:
+  // Getters and setters.
+  word index();
+  void setIndex(word index);
+
+  Object* tuple();
+  void setTuple(Object* tuple);
+
+  // Iteration.
+  Object* next();
+
+  // Sizing.
+  static word allocationSize();
+
+  // Casting.
+  static TupleIterator* cast(Object* object);
+
+  // Layout.
+  static const int kTupleOffset = HeapObject::kSize;
+  static const int kIndexOffset = kTupleOffset + kPointerSize;
+  static const int kSize = kIndexOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(TupleIterator);
 };
 
 class Code : public HeapObject {
@@ -2196,6 +2225,14 @@ inline bool Object::isSystemExit() {
     return false;
   }
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSystemExit;
+}
+
+inline bool Object::isTupleIterator() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+         LayoutId::kTupleIterator;
 }
 
 inline bool Object::isImportError() {
@@ -3936,5 +3973,45 @@ inline Super* Super::cast(Object* object) {
 }
 
 inline word Super::allocationSize() { return Header::kSize + Super::kSize; }
+
+// TupleIterator
+
+inline TupleIterator* TupleIterator::cast(Object* object) {
+  DCHECK(object->isTupleIterator(), "invalid cast, expected tuple_iterator");
+  return reinterpret_cast<TupleIterator*>(object);
+}
+
+inline word TupleIterator::allocationSize() {
+  return Header::kSize + TupleIterator::kSize;
+}
+
+inline Object* TupleIterator::tuple() {
+  return instanceVariableAt(kTupleOffset);
+}
+
+inline void TupleIterator::setTuple(Object* tuple) {
+  instanceVariableAtPut(kTupleOffset, tuple);
+  instanceVariableAtPut(kIndexOffset, SmallInt::fromWord(0));
+}
+
+inline word TupleIterator::index() {
+  return SmallInt::cast(instanceVariableAt(kIndexOffset))->value();
+}
+
+inline void TupleIterator::setIndex(word index) {
+  instanceVariableAtPut(kIndexOffset, SmallInt::fromWord(index));
+}
+
+inline Object* TupleIterator::next() {
+  word idx = index();
+  ObjectArray* underlying = ObjectArray::cast(tuple());
+  if (idx >= underlying->length()) {
+    return Error::object();
+  }
+
+  Object* item = underlying->at(idx);
+  setIndex(idx + 1);
+  return item;
+}
 
 }  // namespace python

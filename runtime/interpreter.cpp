@@ -1029,18 +1029,9 @@ void Interpreter::doDeleteName(Context* ctx, word arg) {
 
 // opcode 92
 void Interpreter::doUnpackSequence(Context* ctx, word arg) {
-  Object* seq = ctx->frame->popValue();
-  if (seq->isObjectArray()) {
-    DCHECK(ObjectArray::cast(seq)->length() == arg,
-           "Wrong number of items to unpack");
-    while (arg--) {
-      ctx->frame->pushValue(ObjectArray::cast(seq)->at(arg));
-    }
-    return;
-  }
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
-  Handle<Object> iterable(&scope, seq);
+  Handle<Object> iterable(&scope, ctx->frame->popValue());
   Handle<Object> iter_method(
       &scope, lookupMethod(thread, thread->currentFrame(), iterable,
                            SymbolId::kDunderIter));

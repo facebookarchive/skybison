@@ -367,6 +367,17 @@ Object* Heap::createSuper() {
   return Super::cast(result);
 }
 
+Object* Heap::createTupleIterator() {
+  word size = TupleIterator::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<TupleIterator*>(raw);
+  result->setHeader(Header::from(TupleIterator::kSize / kPointerSize, 0,
+                                 LayoutId::kTupleIterator,
+                                 ObjectFormat::kObjectInstance));
+  return TupleIterator::cast(result);
+}
+
 Object* Heap::createValueCell() {
   word size = ValueCell::allocationSize();
   Object* raw = allocate(size, Header::kSize);

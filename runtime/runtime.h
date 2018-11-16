@@ -109,6 +109,8 @@ class Runtime {
 
   Object* newSuper();
 
+  Object* newTupleIterator(const Handle<Object>& iterable);
+
   void processCallbacks();
 
   Object* stringConcat(const Handle<String>& a, const Handle<String>& b);

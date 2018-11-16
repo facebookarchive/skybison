@@ -13,6 +13,7 @@ namespace python {
 const BuiltinMethod TupleBuiltins::kMethods[] = {
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>}};
@@ -203,6 +204,96 @@ Object* TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   // Construct a new tuple from the iterable.
   UNIMPLEMENTED("Can't construct tuple from iterable");
+}
+
+Object* TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+
+  if (!self->isObjectArray()) {
+    return thread->throwTypeErrorFromCString(
+        "__iter__() must be called with a tuple instance as the first "
+        "argument");
+  }
+  return thread->runtime()->newTupleIterator(self);
+}
+
+const BuiltinMethod TupleIteratorBuiltins::kMethods[] = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
+
+void TupleIteratorBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Handle<Type> tuple_iter(
+      &scope, runtime->addEmptyBuiltinClass(SymbolId::kTupleIterator,
+                                            LayoutId::kTupleIterator,
+                                            LayoutId::kObject));
+
+  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
+    runtime->classAddBuiltinFunction(tuple_iter, kMethods[i].name,
+                                     kMethods[i].address);
+  }
+}
+
+Object* TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                          word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("__iter__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (!self->isTupleIterator()) {
+    return thread->throwTypeErrorFromCString(
+        "__iter__() must be called with a tuple iterator instance as the first "
+        "argument");
+  }
+  return *self;
+}
+
+Object* TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                          word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString("__next__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (!self->isTupleIterator()) {
+    return thread->throwTypeErrorFromCString(
+        "__next__() must be called with a tuple iterator instance as the first "
+        "argument");
+  }
+  Handle<Object> value(&scope, TupleIterator::cast(*self)->next());
+  if (value->isError()) {
+    UNIMPLEMENTED("throw StopIteration");
+  }
+  return *value;
+}
+
+Object* TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
+                                                word nargs) {
+  if (nargs != 1) {
+    return thread->throwTypeErrorFromCString(
+        "__length_hint__() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  if (!self->isTupleIterator()) {
+    return thread->throwTypeErrorFromCString(
+        "__length_hint__() must be called with a tuple iterator instance as "
+        "the "
+        "first argument");
+  }
+  Handle<TupleIterator> tuple_iterator(&scope, *self);
+  Handle<ObjectArray> tuple(&scope, tuple_iterator->tuple());
+  return SmallInt::fromWord(tuple->length() - tuple_iterator->index());
 }
 
 }  // namespace python

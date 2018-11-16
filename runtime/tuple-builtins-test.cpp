@@ -375,4 +375,131 @@ a = (1,2,3) * -2
   EXPECT_EQ(a->length(), 0);
 }
 
+TEST(TupleBuiltinsTest, DunderIterReturnsTupleIter) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<ObjectArray> empty_tuple(&scope, tupleFromRange(0, 0));
+
+  frame->setLocal(0, *empty_tuple);
+  Handle<Object> iter(&scope, TupleBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isTupleIterator());
+}
+
+TEST(TupleIteratorBuiltinsTest, CallDunderNext) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<ObjectArray> tuple(&scope, tupleFromRange(0, 2));
+
+  frame->setLocal(0, *tuple);
+  Handle<Object> iter(&scope, TupleBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isTupleIterator());
+
+  Handle<Object> next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
+                                        SymbolId::kDunderNext));
+  ASSERT_FALSE(next_method->isError());
+
+  Handle<Object> item1(
+      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  ASSERT_TRUE(item1->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*item1)->value(), 0);
+
+  Handle<Object> item2(
+      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  ASSERT_TRUE(item2->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*item2)->value(), 1);
+}
+
+TEST(TupleIteratorBuiltinsTest, DunderIterReturnsSelf) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<ObjectArray> empty_tuple(&scope, tupleFromRange(0, 0));
+
+  frame->setLocal(0, *empty_tuple);
+  Handle<Object> iter(&scope, TupleBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isTupleIterator());
+
+  // Now call __iter__ on the iterator object
+  Handle<Object> iter_iter(
+      &scope,
+      Interpreter::lookupMethod(thread, frame, iter, SymbolId::kDunderIter));
+  ASSERT_FALSE(iter_iter->isError());
+  Handle<Object> result(
+      &scope, Interpreter::callMethod1(thread, frame, iter_iter, iter));
+  ASSERT_EQ(*result, *iter);
+}
+
+TEST(TupleIteratorBuiltinsTest, DunderLengthHintOnEmptyTupleIterator) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<ObjectArray> empty_tuple(&scope, tupleFromRange(0, 0));
+
+  frame->setLocal(0, *empty_tuple);
+  Handle<Object> iter(&scope, TupleBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isTupleIterator());
+
+  Handle<Object> length_hint_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
+                                        SymbolId::kDunderLengthHint));
+  ASSERT_FALSE(length_hint_method->isError());
+
+  Handle<Object> length_hint(
+      &scope,
+      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  ASSERT_TRUE(length_hint->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*length_hint)->value(), 0);
+}
+
+TEST(TupleIteratorBuiltinsTest, DunderLengthHintOnConsumedTupleIterator) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(1, 0, 0);
+
+  HandleScope scope(thread);
+  Handle<ObjectArray> tuple(&scope, tupleFromRange(0, 1));
+
+  frame->setLocal(0, *tuple);
+  Handle<Object> iter(&scope, TupleBuiltins::dunderIter(thread, frame, 1));
+  ASSERT_TRUE(iter->isTupleIterator());
+
+  Handle<Object> length_hint_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
+                                        SymbolId::kDunderLengthHint));
+  ASSERT_FALSE(length_hint_method->isError());
+
+  Handle<Object> length_hint1(
+      &scope,
+      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  ASSERT_TRUE(length_hint1->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*length_hint1)->value(), 1);
+
+  // Consume the iterator
+  Handle<Object> next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), iter,
+                                        SymbolId::kDunderNext));
+  ASSERT_FALSE(next_method->isError());
+  Handle<Object> item1(
+      &scope, Interpreter::callMethod1(thread, frame, next_method, iter));
+  ASSERT_TRUE(item1->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*item1)->value(), 0);
+
+  Handle<Object> length_hint2(
+      &scope,
+      Interpreter::callMethod1(thread, frame, length_hint_method, iter));
+  ASSERT_TRUE(length_hint1->isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*length_hint2)->value(), 0);
+}
+
 }  // namespace python

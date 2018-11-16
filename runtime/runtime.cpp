@@ -995,6 +995,7 @@ void Runtime::initializeHeapClasses() {
   addEmptyBuiltinClass(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
                        LayoutId::kObject);
   TupleBuiltins::initialize(this);
+  TupleIteratorBuiltins::initialize(this);
   initializePropertyClass();
   RangeBuiltins::initialize(this);
   RangeIteratorBuiltins::initialize(this);
@@ -2664,6 +2665,13 @@ Object* Runtime::isInstance(const Handle<Object>& obj,
 Object* Runtime::newClassMethod() { return heap()->createClassMethod(); }
 
 Object* Runtime::newSuper() { return heap()->createSuper(); }
+
+Object* Runtime::newTupleIterator(const Handle<Object>& tuple) {
+  HandleScope scope;
+  Handle<TupleIterator> tuple_iterator(&scope, heap()->createTupleIterator());
+  tuple_iterator->setTuple(*tuple);
+  return *tuple_iterator;
+}
 
 LayoutId Runtime::computeBuiltinBaseClass(const Handle<Type>& klass) {
   // The base class can only be one of the builtin bases including object.

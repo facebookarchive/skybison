@@ -72,6 +72,8 @@ class Heap {
 
   Object* createSuper();
 
+  Object* createTupleIterator();
+
   Object* createValueCell();
 
   Object* createWeakRef();
