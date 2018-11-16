@@ -113,21 +113,35 @@ class BlockStack {
  * the stack looks like:
  *
  *     Function
- *     Arg 0
- *     ...
- *     Arg N
- *     Locals 0
- *     ...
- *     Locals N
- *     Block stack
- *     Saved virtual PC
- *     Builtins
- *     Globals
- *     Code Object
- *     Pointer to the top of the value stack
- *     Saved stack pointer
- *     Saved frame pointer  <- Frame pointer
- *                          <- Top of stack / lower memory addresses
+ *     Arg 0 <------------------------------------------------+
+ *     ...                                                    |
+ *     Arg N                                                  |
+ *     Locals 0                                               |
+ *     ...                                                    |
+ *     Locals N                                               |
+ *     +-------------------------------+ Frame (fixed size)   |
+ *     | Fast globals                  |                      |
+ *     | Locals -----------------------|----------------------+
+ *     | Num locals                    |
+ *     |+----------------+ BlockStack  |
+ *     || Blockstack top |             |
+ *     || .              | ^           |
+ *     || .              | |           |
+ *     || . entries      | | growth    |
+ *     |+----------------+             |
+ *     | Virtual PC                    |
+ *     | Builtins                      |
+ *     | Implicit globals              |
+ *     | Globals                       |
+ *     | Code object                   |
+ *     | Value stack top --------------|--+
+ *     | Previous frame ptr            |<-+ <--Frame pointer
+ *     +-------------------------------+
+ *     .                               .
+ *     .                  | growth     .
+ *     . Value stack      |            .
+ *     .                  v            .
+ *     +...............................+
  */
 class Frame {
  public:
