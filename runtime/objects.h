@@ -9,7 +9,7 @@ namespace python {
 #define INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                     \
   V(SmallInt)                                                                  \
   V(SmallString)                                                               \
-  V(Boolean)                                                                   \
+  V(Bool)                                                                      \
   V(NoneType)
 
 #define INTRINSIC_HEAP_CLASS_NAMES(V)                                          \
@@ -68,7 +68,7 @@ enum class LayoutId : word {
   // be looked up simply by using the low 5 bits of the immediate value. This
   // implies that all other immediate class ids must be odd.
   kSmallInt = 0,
-  kBoolean = 7,
+  kBool = 7,
   kNoneType = 15,
   // there is no class associated with the Error object type, this is here as a
   // placeholder.
@@ -121,7 +121,7 @@ class Object {
   LayoutId layoutId();
 
   // Immediate objects
-  bool isBoolean();
+  bool isBool();
   bool isError();
   bool isHeader();
   bool isNone();
@@ -330,21 +330,21 @@ class Header : public Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Header);
 };
 
-class Boolean : public Object {
+class Bool : public Object {
  public:
   // Getters and setters.
   bool value();
 
   // Singletons
-  static Boolean* trueObj();
-  static Boolean* falseObj();
+  static Bool* trueObj();
+  static Bool* falseObj();
 
   // Conversion.
-  static Boolean* fromBool(bool value);
-  static Boolean* negate(Object* value);
+  static Bool* fromBool(bool value);
+  static Bool* negate(Object* value);
 
   // Casting.
-  static Boolean* cast(Object* object);
+  static Bool* cast(Object* object);
 
   // Tags.
   static const int kTag = 7;  // 0b00111
@@ -352,7 +352,7 @@ class Boolean : public Object {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Boolean);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Bool);
 };
 
 class None : public Object {
@@ -1829,9 +1829,9 @@ inline bool Object::isHeader() {
   return tag == Header::kTag;
 }
 
-inline bool Object::isBoolean() {
-  uword tag = reinterpret_cast<uword>(this) & Boolean::kTagMask;
-  return tag == Boolean::kTag;
+inline bool Object::isBool() {
+  uword tag = reinterpret_cast<uword>(this) & Bool::kTagMask;
+  return tag == Bool::kTag;
 }
 
 inline bool Object::isNone() {
@@ -2312,28 +2312,28 @@ inline Error* Error::cast(Object* object) {
   return reinterpret_cast<Error*>(object);
 }
 
-// Boolean
+// Bool
 
-inline Boolean* Boolean::trueObj() { return fromBool(true); }
+inline Bool* Bool::trueObj() { return fromBool(true); }
 
-inline Boolean* Boolean::falseObj() { return fromBool(false); }
+inline Bool* Bool::falseObj() { return fromBool(false); }
 
-inline Boolean* Boolean::negate(Object* value) {
-  DCHECK(value->isBoolean(), "not a boolean instance");
+inline Bool* Bool::negate(Object* value) {
+  DCHECK(value->isBool(), "not a boolean instance");
   return (value == trueObj()) ? falseObj() : trueObj();
 }
 
-inline Boolean* Boolean::fromBool(bool value) {
-  return reinterpret_cast<Boolean*>((static_cast<uword>(value) << kTagSize) |
-                                    kTag);
+inline Bool* Bool::fromBool(bool value) {
+  return reinterpret_cast<Bool*>((static_cast<uword>(value) << kTagSize) |
+                                 kTag);
 }
 
-inline Boolean* Boolean::cast(Object* object) {
-  DCHECK(object->isBoolean(), "invalid cast, expected Boolean");
-  return reinterpret_cast<Boolean*>(object);
+inline Bool* Bool::cast(Object* object) {
+  DCHECK(object->isBool(), "invalid cast, expected Bool");
+  return reinterpret_cast<Bool*>(object);
 }
 
-inline bool Boolean::value() {
+inline bool Bool::value() {
   return (reinterpret_cast<uword>(this) >> kTagSize) ? true : false;
 }
 

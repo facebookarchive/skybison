@@ -863,8 +863,8 @@ Object* Runtime::immediateHash(Object* object) {
   if (object->isSmallInt()) {
     return object;
   }
-  if (object->isBoolean()) {
-    return SmallInt::fromWord(Boolean::cast(object)->value() ? 1 : 0);
+  if (object->isBool()) {
+    return SmallInt::fromWord(Bool::cast(object)->value() ? 1 : 0);
   }
   if (object->isSmallString()) {
     return SmallInt::fromWord(reinterpret_cast<uword>(object) >>
@@ -1146,21 +1146,21 @@ void Runtime::initializeTypeClass() {
 }
 
 void Runtime::initializeImmediateClasses() {
-  initializeBooleanClass();
+  initializeBoolClass();
   NoneBuiltins::initialize(this);
   addEmptyBuiltinClass(SymbolId::kSmallStr, LayoutId::kSmallString,
                        LayoutId::kString);
   SmallIntBuiltins::initialize(this);
 }
 
-void Runtime::initializeBooleanClass() {
+void Runtime::initializeBoolClass() {
   HandleScope scope;
-  Handle<Type> type(&scope,
-                    addEmptyBuiltinClass(SymbolId::kBool, LayoutId::kBoolean,
-                                         LayoutId::kInt));
+  Handle<Type> type(
+      &scope,
+      addEmptyBuiltinClass(SymbolId::kBool, LayoutId::kBool, LayoutId::kInt));
 
   classAddBuiltinFunction(type, SymbolId::kDunderBool,
-                          nativeTrampoline<builtinBooleanBool>);
+                          nativeTrampoline<builtinBooldunderBool>);
 }
 
 void Runtime::initializeFloatClass() {
@@ -2630,10 +2630,10 @@ Object* Runtime::isSubClass(const Handle<Type>& subclass,
   Handle<ObjectArray> mro(&scope, subclass->mro());
   for (word i = 0; i < mro->length(); i++) {
     if (mro->at(i) == *superclass) {
-      return Boolean::trueObj();
+      return Bool::trueObj();
     }
   }
-  return Boolean::falseObj();
+  return Bool::falseObj();
 }
 
 Object* Runtime::isInstance(const Handle<Object>& obj,

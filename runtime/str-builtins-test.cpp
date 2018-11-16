@@ -49,13 +49,13 @@ a_le_a = 'a' <= 'a'
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
 
   Handle<Object> a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
-  EXPECT_EQ(*a_le_b, Boolean::trueObj());
+  EXPECT_EQ(*a_le_b, Bool::trueObj());
 
   Handle<Object> b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
-  EXPECT_EQ(*b_le_a, Boolean::falseObj());
+  EXPECT_EQ(*b_le_a, Bool::falseObj());
 
   Handle<Object> a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
-  EXPECT_EQ(*a_le_a, Boolean::trueObj());
+  EXPECT_EQ(*a_le_a, Bool::trueObj());
 }
 
 TEST(StrBuiltinsTest, DunderNewCallsDunderStr) {

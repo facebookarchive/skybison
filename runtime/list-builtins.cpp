@@ -234,8 +234,8 @@ Object* ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   Handle<List> list(&scope, *self);
   for (word i = 0; i < list->allocated(); i++) {
     Handle<Object> item(&scope, list->at(i));
-    if (Boolean::cast(Interpreter::compareOperation(thread, frame,
-                                                    CompareOp::EQ, item, value))
+    if (Bool::cast(Interpreter::compareOperation(thread, frame, CompareOp::EQ,
+                                                 item, value))
             ->value()) {
       thread->runtime()->listPop(list, i);
       return None::object();

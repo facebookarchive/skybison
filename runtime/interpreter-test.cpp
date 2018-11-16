@@ -11,7 +11,7 @@
 
 namespace python {
 
-TEST(InterpreterTest, IsTrueBoolean) {
+TEST(InterpreterTest, IsTrueBool) {
   Runtime runtime;
   HandleScope scope;
 
@@ -20,13 +20,13 @@ TEST(InterpreterTest, IsTrueBoolean) {
 
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Handle<Object> true_value(&scope, Boolean::trueObj());
+  Handle<Object> true_value(&scope, Bool::trueObj());
   frame->pushValue(*true_value);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::trueObj());
 
-  Handle<Object> false_object(&scope, Boolean::falseObj());
+  Handle<Object> false_object(&scope, Bool::falseObj());
   frame->pushValue(*false_object);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::falseObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::falseObj());
 }
 
 TEST(InterpreterTest, IsTrueInt) {
@@ -40,11 +40,11 @@ TEST(InterpreterTest, IsTrueInt) {
 
   Handle<Object> true_value(&scope, runtime.newInt(1234));
   frame->pushValue(*true_value);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::trueObj());
 
   Handle<Object> false_value(&scope, runtime.newInt(0));
   frame->pushValue(*false_value);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::falseObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::falseObj());
 }
 
 TEST(InterpreterTest, IsTrueDunderLen) {
@@ -62,12 +62,12 @@ TEST(InterpreterTest, IsTrueDunderLen) {
 
   Handle<Object> true_value(&scope, *nonempty_list);
   frame->pushValue(*true_value);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::trueObj());
 
   Handle<List> empty_list(&scope, runtime.newList());
   Handle<Object> false_value(&scope, *empty_list);
   frame->pushValue(*false_value);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::falseObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::falseObj());
 }
 
 TEST(InterpreterTest, BinaryOpInvokesSelfMethod) {
@@ -336,11 +336,11 @@ c20 = C(20)
 
   Object* left_lt_right =
       Interpreter::compareOperation(thread, frame, CompareOp::LT, left, right);
-  EXPECT_EQ(left_lt_right, Boolean::trueObj());
+  EXPECT_EQ(left_lt_right, Bool::trueObj());
 
   Object* right_lt_left =
       Interpreter::compareOperation(thread, frame, CompareOp::LT, right, left);
-  EXPECT_EQ(right_lt_left, Boolean::falseObj());
+  EXPECT_EQ(right_lt_left, Bool::falseObj());
 }
 
 TEST(InterpreterTest, CompareOpFallback) {
@@ -367,17 +367,17 @@ c20 = C(20)
 
   Object* left_eq_right =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, left, right);
-  EXPECT_EQ(left_eq_right, Boolean::falseObj());
+  EXPECT_EQ(left_eq_right, Bool::falseObj());
   Object* left_ne_right =
       Interpreter::compareOperation(thread, frame, CompareOp::NE, left, right);
-  EXPECT_EQ(left_ne_right, Boolean::trueObj());
+  EXPECT_EQ(left_ne_right, Bool::trueObj());
 
   Object* right_eq_left =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, left, right);
-  EXPECT_EQ(right_eq_left, Boolean::falseObj());
+  EXPECT_EQ(right_eq_left, Bool::falseObj());
   Object* right_ne_left =
       Interpreter::compareOperation(thread, frame, CompareOp::NE, left, right);
-  EXPECT_EQ(right_ne_left, Boolean::trueObj());
+  EXPECT_EQ(right_ne_left, Bool::trueObj());
 }
 
 TEST(InterpreterTest, SequenceContains) {
@@ -403,8 +403,8 @@ c = 3
       Interpreter::sequenceContains(thread, frame, b, container);
   Object* contains_false =
       Interpreter::sequenceContains(thread, frame, c, container);
-  EXPECT_EQ(contains_true, Boolean::trueObj());
-  EXPECT_EQ(contains_false, Boolean::falseObj());
+  EXPECT_EQ(contains_true, Bool::trueObj());
+  EXPECT_EQ(contains_false, Bool::falseObj());
 }
 
 TEST(InterpreterTest, ContextManagerCallEnterExit) {

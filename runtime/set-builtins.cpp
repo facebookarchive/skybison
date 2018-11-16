@@ -78,7 +78,7 @@ Object* builtinSetContains(Thread* thread, Frame* frame, word nargs) {
   Handle<Set> self(&scope, args.get(0));
   Handle<Object> value(&scope, args.get(1));
   if (self->isSet()) {
-    return Boolean::fromBool(thread->runtime()->setIncludes(self, value));
+    return Bool::fromBool(thread->runtime()->setIncludes(self, value));
   }
   // TODO(T30253711): handle user-defined subtypes of set.
   return thread->throwTypeErrorFromCString(

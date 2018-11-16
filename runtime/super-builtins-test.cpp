@@ -133,12 +133,12 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Int> a(&scope, moduleAt(&runtime, main, "a"));
   Handle<Int> b(&scope, moduleAt(&runtime, main, "b"));
-  Handle<Boolean> c(&scope, moduleAt(&runtime, main, "c"));
-  Handle<Boolean> e(&scope, moduleAt(&runtime, main, "e"));
+  Handle<Bool> c(&scope, moduleAt(&runtime, main, "c"));
+  Handle<Bool> e(&scope, moduleAt(&runtime, main, "e"));
   EXPECT_EQ(a->asWord(), 3);
   EXPECT_EQ(b->asWord(), 10);
-  EXPECT_EQ(*c, Boolean::trueObj());
-  EXPECT_EQ(*e, Boolean::trueObj());
+  EXPECT_EQ(*c, Bool::trueObj());
+  EXPECT_EQ(*e, Bool::trueObj());
 }
 
 TEST(SuperDeathTest, NoArugmentThrow) {

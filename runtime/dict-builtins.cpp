@@ -21,7 +21,7 @@ Object* builtinDictEq(Thread* thread, Frame* frame, word nargs) {
     Handle<Dict> self(&scope, args.get(0));
     Handle<Dict> other(&scope, args.get(1));
     if (self->numItems() != other->numItems()) {
-      return Boolean::falseObj();
+      return Bool::falseObj();
     }
     Handle<ObjectArray> keys(&scope, runtime->dictKeys(self));
     Handle<Object> left_key(&scope, None::object());
@@ -33,15 +33,15 @@ Object* builtinDictEq(Thread* thread, Frame* frame, word nargs) {
       left = runtime->dictAt(self, left_key);
       right = runtime->dictAt(other, left_key);
       if (right->isError()) {
-        return Boolean::falseObj();
+        return Bool::falseObj();
       }
       Object* result =
           Interpreter::compareOperation(thread, frame, EQ, left, right);
-      if (result == Boolean::falseObj()) {
+      if (result == Bool::falseObj()) {
         return result;
       }
     }
-    return Boolean::trueObj();
+    return Bool::trueObj();
   }
   // TODO(cshapiro): handle user-defined subtypes of dict.
   return thread->runtime()->notImplemented();

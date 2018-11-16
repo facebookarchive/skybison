@@ -16,7 +16,7 @@ Object* builtinStringEq(Thread* thread, Frame* frame, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
-    return Boolean::fromBool(String::cast(self)->compare(other) == 0);
+    return Bool::fromBool(String::cast(self)->compare(other) == 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -30,7 +30,7 @@ Object* builtinStringGe(Thread* thread, Frame* frame, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
-    return Boolean::fromBool(String::cast(self)->compare(other) >= 0);
+    return Bool::fromBool(String::cast(self)->compare(other) >= 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -44,7 +44,7 @@ Object* builtinStringGt(Thread* thread, Frame* frame, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
-    return Boolean::fromBool(String::cast(self)->compare(other) > 0);
+    return Bool::fromBool(String::cast(self)->compare(other) > 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -58,7 +58,7 @@ Object* builtinStringLe(Thread* thread, Frame* frame, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
-    return Boolean::fromBool(String::cast(self)->compare(other) <= 0);
+    return Bool::fromBool(String::cast(self)->compare(other) <= 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -72,7 +72,7 @@ Object* builtinStringLt(Thread* thread, Frame* frame, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
-    return Boolean::fromBool(String::cast(self)->compare(other) < 0);
+    return Bool::fromBool(String::cast(self)->compare(other) < 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -111,7 +111,7 @@ Object* builtinStringNe(Thread* thread, Frame* frame, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isString() && other->isString()) {
-    return Boolean::fromBool(String::cast(self)->compare(other) != 0);
+    return Bool::fromBool(String::cast(self)->compare(other) != 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();

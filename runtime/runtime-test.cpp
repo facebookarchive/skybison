@@ -248,7 +248,7 @@ TEST(RuntimeDictTest, CollidingKeys) {
   Handle<Object> key1(&scope, SmallInt::fromWord(1));
   runtime.dictAtPut(dict, key1, key1);
 
-  Handle<Object> key2(&scope, Boolean::trueObj());
+  Handle<Object> key2(&scope, Bool::trueObj());
   runtime.dictAtPut(dict, key2, key2);
 
   // Make sure we get both back
@@ -257,8 +257,8 @@ TEST(RuntimeDictTest, CollidingKeys) {
   EXPECT_EQ(SmallInt::cast(retrieved)->value(), SmallInt::cast(*key1)->value());
 
   retrieved = runtime.dictAt(dict, key2);
-  ASSERT_TRUE(retrieved->isBoolean());
-  EXPECT_EQ(Boolean::cast(retrieved)->value(), Boolean::cast(*key2)->value());
+  ASSERT_TRUE(retrieved->isBool());
+  EXPECT_EQ(Bool::cast(retrieved)->value(), Bool::cast(*key2)->value());
 }
 
 TEST(RuntimeDictTest, MixedKeys) {
@@ -292,7 +292,7 @@ TEST(RuntimeDictTest, GetKeys) {
   Handle<ObjectArray> keys(&scope, runtime.newObjectArray(4));
   keys->atPut(0, SmallInt::fromWord(100));
   keys->atPut(1, runtime.newStringFromCString("testing 123"));
-  keys->atPut(2, Boolean::trueObj());
+  keys->atPut(2, Bool::trueObj());
   keys->atPut(3, None::object());
 
   // Add keys to dict
@@ -746,13 +746,13 @@ TEST(RuntimeTest, NewStringWithAll) {
   EXPECT_TRUE(string10->equalsCString("ABCDEFGHIJ"));
 }
 
-TEST(RuntimeTest, HashBooleans) {
+TEST(RuntimeTest, HashBools) {
   Runtime runtime;
 
   // In CPython, False hashes to 0 and True hashes to 1.
-  SmallInt* hash0 = SmallInt::cast(runtime.hash(Boolean::falseObj()));
+  SmallInt* hash0 = SmallInt::cast(runtime.hash(Bool::falseObj()));
   EXPECT_EQ(hash0->value(), 0);
-  SmallInt* hash1 = SmallInt::cast(runtime.hash(Boolean::trueObj()));
+  SmallInt* hash1 = SmallInt::cast(runtime.hash(Bool::trueObj()));
   EXPECT_EQ(hash1->value(), 1);
 }
 
@@ -1169,7 +1169,7 @@ TEST(RuntimeTest, ClassIds) {
   Runtime runtime;
   HandleScope scope;
 
-  EXPECT_PYSTRING_EQ(className(&runtime, Boolean::trueObj()), "bool");
+  EXPECT_PYSTRING_EQ(className(&runtime, Bool::trueObj()), "bool");
   EXPECT_PYSTRING_EQ(className(&runtime, None::object()), "NoneType");
   EXPECT_PYSTRING_EQ(className(&runtime, runtime.newStringFromCString("abc")),
                      "smallstr");

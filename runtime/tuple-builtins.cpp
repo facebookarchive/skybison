@@ -19,7 +19,7 @@ Object* builtinTupleEq(Thread* thread, Frame* frame, word nargs) {
     Handle<ObjectArray> self(&scope, args.get(0));
     Handle<ObjectArray> other(&scope, args.get(1));
     if (self->length() != other->length()) {
-      return Boolean::falseObj();
+      return Bool::falseObj();
     }
     Handle<Object> left(&scope, None::object());
     Handle<Object> right(&scope, None::object());
@@ -29,11 +29,11 @@ Object* builtinTupleEq(Thread* thread, Frame* frame, word nargs) {
       right = other->at(i);
       Object* result =
           Interpreter::compareOperation(thread, frame, EQ, left, right);
-      if (result == Boolean::falseObj()) {
+      if (result == Bool::falseObj()) {
         return result;
       }
     }
-    return Boolean::trueObj();
+    return Bool::trueObj();
   }
   // TODO(cshapiro): handle user-defined subtypes of tuple.
   return thread->runtime()->notImplemented();

@@ -84,7 +84,7 @@ Object* builtinDoubleEq(Thread* thread, Frame* frame, word nargs) {
   if (self->isFloat() && other->isFloat()) {
     Float* left = Float::cast(self);
     Float* right = Float::cast(other);
-    return Boolean::fromBool(left->value() == right->value());
+    return Bool::fromBool(left->value() == right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
@@ -101,7 +101,7 @@ Object* builtinDoubleGe(Thread* thread, Frame* frame, word nargs) {
   if (self->isFloat() && other->isFloat()) {
     Float* left = Float::cast(self);
     Float* right = Float::cast(other);
-    return Boolean::fromBool(left->value() >= right->value());
+    return Bool::fromBool(left->value() >= right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
@@ -118,7 +118,7 @@ Object* builtinDoubleGt(Thread* thread, Frame* frame, word nargs) {
   if (self->isFloat() && other->isFloat()) {
     Float* left = Float::cast(self);
     Float* right = Float::cast(other);
-    return Boolean::fromBool(left->value() > right->value());
+    return Bool::fromBool(left->value() > right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
@@ -135,7 +135,7 @@ Object* builtinDoubleLe(Thread* thread, Frame* frame, word nargs) {
   if (self->isFloat() && other->isFloat()) {
     Float* left = Float::cast(self);
     Float* right = Float::cast(other);
-    return Boolean::fromBool(left->value() <= right->value());
+    return Bool::fromBool(left->value() <= right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
@@ -152,7 +152,7 @@ Object* builtinDoubleLt(Thread* thread, Frame* frame, word nargs) {
   if (self->isFloat() && other->isFloat()) {
     Float* left = Float::cast(self);
     Float* right = Float::cast(other);
-    return Boolean::fromBool(left->value() < right->value());
+    return Bool::fromBool(left->value() < right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }
@@ -169,7 +169,7 @@ Object* builtinDoubleNe(Thread* thread, Frame* frame, word nargs) {
   if (self->isFloat() && other->isFloat()) {
     Float* left = Float::cast(self);
     Float* right = Float::cast(other);
-    return Boolean::fromBool(left->value() != right->value());
+    return Bool::fromBool(left->value() != right->value());
   } else if (self->isInt() || other->isInt()) {
     UNIMPLEMENTED("integer to float conversion");
   }

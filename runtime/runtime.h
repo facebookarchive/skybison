@@ -515,7 +515,7 @@ class Runtime {
   void initializeRandom();
   void initializeSymbols();
 
-  void initializeBooleanClass();
+  void initializeBoolClass();
   void initializeClassMethodClass();
   void initializeDictClass();
   void initializeFloatClass();

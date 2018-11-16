@@ -26,11 +26,11 @@ extern "C" PyTypeObject* PyBool_Type_Ptr() {
 }
 
 extern "C" PyObject* PyTrue_Ptr() {
-  return ApiHandle::fromObject(Boolean::trueObj())->asPyObject();
+  return ApiHandle::fromObject(Bool::trueObj())->asPyObject();
 }
 
 extern "C" PyObject* PyFalse_Ptr() {
-  return ApiHandle::fromObject(Boolean::falseObj())->asPyObject();
+  return ApiHandle::fromObject(Bool::falseObj())->asPyObject();
 }
 
 // TODO(eelizondo): Remove once boolobject.c is complied in

@@ -75,12 +75,12 @@ Object* builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   Handle<Type> klass(&scope, *klass_obj);
   if (obj->isType()) {
     Handle<Type> obj_klass(&scope, *obj);
-    if (thread->runtime()->isSubClass(obj_klass, klass) == Boolean::trueObj()) {
+    if (thread->runtime()->isSubClass(obj_klass, klass) == Bool::trueObj()) {
       obj_type = *obj;
     }
   } else {
     Handle<Type> obj_klass(&scope, thread->runtime()->typeOf(*obj));
-    if (thread->runtime()->isSubClass(obj_klass, klass) == Boolean::trueObj()) {
+    if (thread->runtime()->isSubClass(obj_klass, klass) == Bool::trueObj()) {
       obj_type = *obj_klass;
     }
   }

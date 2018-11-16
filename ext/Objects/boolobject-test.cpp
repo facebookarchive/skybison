@@ -14,15 +14,15 @@ TEST(BoolObject, ConvertLongToBool) {
   PyObject* pybool_true = PyBool_FromLong(1);
   Handle<Object> bool_true(&scope,
                            ApiHandle::fromPyObject(pybool_true)->asObject());
-  ASSERT_TRUE(bool_true->isBoolean());
-  EXPECT_TRUE(Boolean::cast(*bool_true)->value());
+  ASSERT_TRUE(bool_true->isBool());
+  EXPECT_TRUE(Bool::cast(*bool_true)->value());
 
   // Test False
   PyObject* pybool_false = PyBool_FromLong(0);
   Handle<Object> bool_false(&scope,
                             ApiHandle::fromPyObject(pybool_false)->asObject());
-  ASSERT_TRUE(bool_false->isBoolean());
-  EXPECT_FALSE(Boolean::cast(*bool_false)->value());
+  ASSERT_TRUE(bool_false->isBool());
+  EXPECT_FALSE(Bool::cast(*bool_false)->value());
 }
 
 TEST(BoolObject, CheckBoolIdentity) {

@@ -25,11 +25,11 @@ b_eq_b = b == b
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a_eq_b(&scope, moduleAt(&runtime, main, "a_eq_b"));
-  EXPECT_EQ(*a_eq_b, Boolean::falseObj());
+  EXPECT_EQ(*a_eq_b, Bool::falseObj());
   Handle<Object> a_eq_a(&scope, moduleAt(&runtime, main, "a_eq_a"));
-  EXPECT_EQ(*a_eq_a, Boolean::trueObj());
+  EXPECT_EQ(*a_eq_a, Bool::trueObj());
   Handle<Object> b_eq_b(&scope, moduleAt(&runtime, main, "b_eq_b"));
-  EXPECT_EQ(*b_eq_b, Boolean::trueObj());
+  EXPECT_EQ(*b_eq_b, Bool::trueObj());
 }
 
 TEST(FloatBuiltinsTest, CompareDoubleGe) {
@@ -47,13 +47,13 @@ b_ge_b = b >= b
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a_ge_a(&scope, moduleAt(&runtime, main, "a_ge_a"));
-  EXPECT_EQ(*a_ge_a, Boolean::trueObj());
+  EXPECT_EQ(*a_ge_a, Bool::trueObj());
   Handle<Object> a_ge_b(&scope, moduleAt(&runtime, main, "a_ge_b"));
-  EXPECT_EQ(*a_ge_b, Boolean::falseObj());
+  EXPECT_EQ(*a_ge_b, Bool::falseObj());
   Handle<Object> b_ge_a(&scope, moduleAt(&runtime, main, "b_ge_a"));
-  EXPECT_EQ(*b_ge_a, Boolean::trueObj());
+  EXPECT_EQ(*b_ge_a, Bool::trueObj());
   Handle<Object> b_ge_b(&scope, moduleAt(&runtime, main, "b_ge_b"));
-  EXPECT_EQ(*b_ge_b, Boolean::trueObj());
+  EXPECT_EQ(*b_ge_b, Bool::trueObj());
 }
 
 TEST(FloatBuiltinsTest, CompareDoubleGt) {
@@ -71,13 +71,13 @@ b_gt_b = b > b
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a_gt_a(&scope, moduleAt(&runtime, main, "a_gt_a"));
-  EXPECT_EQ(*a_gt_a, Boolean::falseObj());
+  EXPECT_EQ(*a_gt_a, Bool::falseObj());
   Handle<Object> a_gt_b(&scope, moduleAt(&runtime, main, "a_gt_b"));
-  EXPECT_EQ(*a_gt_b, Boolean::falseObj());
+  EXPECT_EQ(*a_gt_b, Bool::falseObj());
   Handle<Object> b_gt_a(&scope, moduleAt(&runtime, main, "b_gt_a"));
-  EXPECT_EQ(*b_gt_a, Boolean::trueObj());
+  EXPECT_EQ(*b_gt_a, Bool::trueObj());
   Handle<Object> b_gt_b(&scope, moduleAt(&runtime, main, "b_gt_b"));
-  EXPECT_EQ(*b_gt_b, Boolean::falseObj());
+  EXPECT_EQ(*b_gt_b, Bool::falseObj());
 }
 
 TEST(FloatBuiltinsTest, CompareDoubleLe) {
@@ -95,13 +95,13 @@ b_le_b = b <= b
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a_le_a(&scope, moduleAt(&runtime, main, "a_le_a"));
-  EXPECT_EQ(*a_le_a, Boolean::trueObj());
+  EXPECT_EQ(*a_le_a, Bool::trueObj());
   Handle<Object> a_le_b(&scope, moduleAt(&runtime, main, "a_le_b"));
-  EXPECT_EQ(*a_le_b, Boolean::trueObj());
+  EXPECT_EQ(*a_le_b, Bool::trueObj());
   Handle<Object> b_le_a(&scope, moduleAt(&runtime, main, "b_le_a"));
-  EXPECT_EQ(*b_le_a, Boolean::falseObj());
+  EXPECT_EQ(*b_le_a, Bool::falseObj());
   Handle<Object> b_le_b(&scope, moduleAt(&runtime, main, "b_le_b"));
-  EXPECT_EQ(*b_le_b, Boolean::trueObj());
+  EXPECT_EQ(*b_le_b, Bool::trueObj());
 }
 
 TEST(FloatBuiltinsTest, CompareDoubleLt) {
@@ -119,13 +119,13 @@ b_lt_b = b < b
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a_lt_a(&scope, moduleAt(&runtime, main, "a_lt_a"));
-  EXPECT_EQ(*a_lt_a, Boolean::falseObj());
+  EXPECT_EQ(*a_lt_a, Bool::falseObj());
   Handle<Object> a_lt_b(&scope, moduleAt(&runtime, main, "a_lt_b"));
-  EXPECT_EQ(*a_lt_b, Boolean::trueObj());
+  EXPECT_EQ(*a_lt_b, Bool::trueObj());
   Handle<Object> b_lt_a(&scope, moduleAt(&runtime, main, "b_lt_a"));
-  EXPECT_EQ(*b_lt_a, Boolean::falseObj());
+  EXPECT_EQ(*b_lt_a, Bool::falseObj());
   Handle<Object> b_lt_b(&scope, moduleAt(&runtime, main, "b_lt_b"));
-  EXPECT_EQ(*b_lt_b, Boolean::falseObj());
+  EXPECT_EQ(*b_lt_b, Bool::falseObj());
 }
 
 TEST(FloatBuiltinsTest, CompareDoubleNe) {
@@ -142,11 +142,11 @@ b_ne_b = b != b
 
   Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> a_ne_b(&scope, moduleAt(&runtime, main, "a_ne_b"));
-  EXPECT_EQ(*a_ne_b, Boolean::trueObj());
+  EXPECT_EQ(*a_ne_b, Bool::trueObj());
   Handle<Object> a_ne_a(&scope, moduleAt(&runtime, main, "a_ne_a"));
-  EXPECT_EQ(*a_ne_a, Boolean::falseObj());
+  EXPECT_EQ(*a_ne_a, Bool::falseObj());
   Handle<Object> b_ne_b(&scope, moduleAt(&runtime, main, "b_ne_b"));
-  EXPECT_EQ(*b_ne_b, Boolean::falseObj());
+  EXPECT_EQ(*b_ne_b, Bool::falseObj());
 }
 
 TEST(FloatBuiltinsTest, BinaryAddDouble) {

@@ -1095,7 +1095,7 @@ TEST(ThreadTest, PopJumpIfFalse) {
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
-  consts->atPut(0, Boolean::trueObj());
+  consts->atPut(0, Bool::trueObj());
   consts->atPut(1, SmallInt::fromWord(1111));
   consts->atPut(2, SmallInt::fromWord(2222));
   code->setConsts(*consts);
@@ -1113,7 +1113,7 @@ TEST(ThreadTest, PopJumpIfFalse) {
   EXPECT_EQ(SmallInt::cast(result)->value(), 1111);
 
   // Test when the condition evaluates to a falsey value
-  consts->atPut(0, Boolean::falseObj());
+  consts->atPut(0, Bool::falseObj());
   result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(SmallInt::cast(result)->value(), 2222);
@@ -1125,7 +1125,7 @@ TEST(ThreadTest, PopJumpIfTrue) {
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(3));
-  consts->atPut(0, Boolean::falseObj());
+  consts->atPut(0, Bool::falseObj());
   consts->atPut(1, SmallInt::fromWord(1111));
   consts->atPut(2, SmallInt::fromWord(2222));
   code->setConsts(*consts);
@@ -1143,7 +1143,7 @@ TEST(ThreadTest, PopJumpIfTrue) {
   EXPECT_EQ(SmallInt::cast(result)->value(), 1111);
 
   // Test when the condition evaluates to a truthy value
-  consts->atPut(0, Boolean::trueObj());
+  consts->atPut(0, Bool::trueObj());
   result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(SmallInt::cast(result)->value(), 2222);
@@ -1155,7 +1155,7 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
-  consts->atPut(0, Boolean::falseObj());
+  consts->atPut(0, Bool::falseObj());
   consts->atPut(1, SmallInt::fromWord(1111));
   code->setConsts(*consts);
   const byte bc[] = {LOAD_CONST, 0, JUMP_IF_FALSE_OR_POP, 6,
@@ -1165,13 +1165,13 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
   // If the condition is false, we should return the top of the stack, which is
   // the condition itself
   Object* result = Thread::currentThread()->run(*code);
-  ASSERT_TRUE(result->isBoolean());
-  EXPECT_FALSE(Boolean::cast(result)->value());
+  ASSERT_TRUE(result->isBool());
+  EXPECT_FALSE(Bool::cast(result)->value());
 
   // If the condition is true, we should pop the top of the stack (the
   // condition) and continue execution. In our case that loads a const and
   // returns it.
-  consts->atPut(0, Boolean::trueObj());
+  consts->atPut(0, Bool::trueObj());
   result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(SmallInt::cast(result)->value(), 1111);
@@ -1183,7 +1183,7 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
-  consts->atPut(0, Boolean::trueObj());
+  consts->atPut(0, Bool::trueObj());
   consts->atPut(1, SmallInt::fromWord(1111));
   code->setConsts(*consts);
   const byte bc[] = {LOAD_CONST, 0, JUMP_IF_TRUE_OR_POP, 6,
@@ -1193,13 +1193,13 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
   // If the condition is true, we should return the top of the stack, which is
   // the condition itself
   Object* result = Thread::currentThread()->run(*code);
-  ASSERT_TRUE(result->isBoolean());
-  EXPECT_TRUE(Boolean::cast(result)->value());
+  ASSERT_TRUE(result->isBool());
+  EXPECT_TRUE(Bool::cast(result)->value());
 
   // If the condition is false, we should pop the top of the stack (the
   // condition) and continue execution. In our case that loads a const and
   // returns it.
-  consts->atPut(0, Boolean::falseObj());
+  consts->atPut(0, Bool::falseObj());
   result = Thread::currentThread()->run(*code);
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(SmallInt::cast(result)->value(), 1111);
@@ -1211,7 +1211,7 @@ TEST(ThreadTest, UnaryNot) {
 
   Handle<Code> code(&scope, runtime.newCode());
   Handle<ObjectArray> consts(&scope, runtime.newObjectArray(1));
-  consts->atPut(0, Boolean::trueObj());
+  consts->atPut(0, Bool::trueObj());
   code->setConsts(*consts);
   // Bytecode for the snippet:
   //     return not x
@@ -1220,14 +1220,14 @@ TEST(ThreadTest, UnaryNot) {
 
   // If the condition is true, we should return false
   Object* result = Thread::currentThread()->run(*code);
-  ASSERT_TRUE(result->isBoolean());
-  EXPECT_FALSE(Boolean::cast(result)->value());
+  ASSERT_TRUE(result->isBool());
+  EXPECT_FALSE(Bool::cast(result)->value());
 
   // If the condition is false, we should return true
-  consts->atPut(0, Boolean::falseObj());
+  consts->atPut(0, Bool::falseObj());
   result = Thread::currentThread()->run(*code);
-  ASSERT_TRUE(result->isBoolean());
-  EXPECT_TRUE(Boolean::cast(result)->value());
+  ASSERT_TRUE(result->isBool());
+  EXPECT_TRUE(Bool::cast(result)->value());
 }
 
 static Dict* getMainModuleDict(Runtime* runtime) {

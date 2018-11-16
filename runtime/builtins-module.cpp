@@ -195,8 +195,8 @@ static void printQuotedString(String* str) {
 }
 
 static void printScalarTypes(Object* arg, std::ostream* ostream) {
-  if (arg->isBoolean()) {
-    *ostream << (Boolean::cast(arg)->value() ? "True" : "False");
+  if (arg->isBool()) {
+    *ostream << (Bool::cast(arg)->value() ? "True" : "False");
   } else if (arg->isFloat()) {
     *ostream << Float::cast(arg)->value();
   } else if (arg->isSmallInt()) {
@@ -209,7 +209,7 @@ static void printScalarTypes(Object* arg, std::ostream* ostream) {
 }
 
 static bool supportedScalarType(Object* arg) {
-  return (arg->isBoolean() || arg->isFloat() || arg->isSmallInt() ||
+  return (arg->isBool() || arg->isFloat() || arg->isSmallInt() ||
           arg->isString());
 }
 

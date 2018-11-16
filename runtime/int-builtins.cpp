@@ -171,7 +171,7 @@ Object* SmallIntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   if (args.get(0)->isSmallInt()) {
-    return Boolean::fromBool(args.get(0) != SmallInt::fromWord(0));
+    return Bool::fromBool(args.get(0) != SmallInt::fromWord(0));
   }
   return thread->throwTypeErrorFromCString("unsupported type for __bool__");
 }
@@ -184,7 +184,7 @@ Object* SmallIntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isSmallInt() && other->isSmallInt()) {
-    return Boolean::fromBool(self == other);
+    return Bool::fromBool(self == other);
   }
   return thread->runtime()->notImplemented();
 }
@@ -212,7 +212,7 @@ Object* SmallIntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   if (self->isSmallInt() && other->isSmallInt()) {
     SmallInt* left = SmallInt::cast(self);
     SmallInt* right = SmallInt::cast(other);
-    return Boolean::fromBool(left->value() <= right->value());
+    return Bool::fromBool(left->value() <= right->value());
   }
   return thread->runtime()->notImplemented();
 }
@@ -250,7 +250,7 @@ Object* SmallIntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   if (self->isSmallInt() && other->isSmallInt()) {
     SmallInt* left = SmallInt::cast(self);
     SmallInt* right = SmallInt::cast(other);
-    return Boolean::fromBool(left->value() < right->value());
+    return Bool::fromBool(left->value() < right->value());
   }
   return thread->runtime()->notImplemented();
 }
@@ -265,7 +265,7 @@ Object* SmallIntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   if (self->isSmallInt() && other->isSmallInt()) {
     SmallInt* left = SmallInt::cast(self);
     SmallInt* right = SmallInt::cast(other);
-    return Boolean::fromBool(left->value() >= right->value());
+    return Bool::fromBool(left->value() >= right->value());
   }
   return thread->runtime()->notImplemented();
 }
@@ -280,7 +280,7 @@ Object* SmallIntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   if (self->isSmallInt() && other->isSmallInt()) {
     SmallInt* left = SmallInt::cast(self);
     SmallInt* right = SmallInt::cast(other);
-    return Boolean::fromBool(left->value() > right->value());
+    return Bool::fromBool(left->value() > right->value());
   }
   return thread->runtime()->notImplemented();
 }
@@ -338,7 +338,7 @@ Object* SmallIntBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Object* self = args.get(0);
   Object* other = args.get(1);
   if (self->isSmallInt() && other->isSmallInt()) {
-    return Boolean::fromBool(self != other);
+    return Bool::fromBool(self != other);
   }
   return thread->runtime()->notImplemented();
 }

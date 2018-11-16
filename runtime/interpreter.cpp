@@ -263,7 +263,7 @@ Object* Interpreter::binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
   Handle<Type> other_type(&scope, runtime->typeOf(*other));
   bool is_derived_type =
       (*self_type != *other_type) &&
-      (runtime->isSubClass(other_type, self_type) == Boolean::trueObj());
+      (runtime->isSubClass(other_type, self_type) == Bool::trueObj());
 
   SymbolId selector = runtime->binaryOperationSelector(op);
   Handle<Object> self_method(&scope,
@@ -365,9 +365,9 @@ Object* Interpreter::compareOperation(Thread* thread, Frame* caller,
     }
   }
   if (op == CompareOp::EQ) {
-    return Boolean::fromBool(*left == *right);
+    return Bool::fromBool(*left == *right);
   } else if (op == CompareOp::NE) {
-    return Boolean::fromBool(*left != *right);
+    return Bool::fromBool(*left != *right);
   }
   UNIMPLEMENTED("throw");
 }
@@ -397,12 +397,12 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
       &scope, lookupMethod(thread, caller, self, SymbolId::kDunderBool));
   if (!method->isError()) {
     Handle<Object> result(&scope, callMethod1(thread, caller, method, self));
-    if (result->isBoolean()) {
+    if (result->isBool()) {
       return *result;
     }
     if (result->isInt()) {
       Handle<Int> integer(&scope, *result);
-      return Boolean::fromBool(integer->asWord() > 0);
+      return Bool::fromBool(integer->asWord() > 0);
     }
     UNIMPLEMENTED("throw");
   }
@@ -412,15 +412,15 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
     if (result->isInt()) {
       Handle<Int> integer(&scope, *result);
       if (integer->isPositive()) {
-        return Boolean::trueObj();
+        return Bool::trueObj();
       }
       if (integer->isZero()) {
-        return Boolean::falseObj();
+        return Bool::falseObj();
       }
       UNIMPLEMENTED("throw");
     }
   }
-  return Boolean::trueObj();
+  return Bool::trueObj();
 }
 
 static Bytecode currentBytecode(const Interpreter::Context* ctx) {
@@ -502,10 +502,10 @@ void Interpreter::doUnaryNegative(Context* ctx, word) {
 
 // opcode 12
 void Interpreter::doUnaryNot(Context* ctx, word) {
-  if (isTrue(ctx->thread, ctx->frame) == Boolean::trueObj()) {
-    ctx->frame->setTopValue(Boolean::falseObj());
+  if (isTrue(ctx->thread, ctx->frame) == Bool::trueObj()) {
+    ctx->frame->setTopValue(Bool::falseObj());
   } else {
-    ctx->frame->setTopValue(Boolean::trueObj());
+    ctx->frame->setTopValue(Bool::trueObj());
   }
 }
 
@@ -1178,14 +1178,14 @@ void Interpreter::doCompareOp(Context* ctx, word arg) {
   CompareOp op = static_cast<CompareOp>(arg);
   Object* result;
   if (op == IS) {
-    result = Boolean::fromBool(*left == *right);
+    result = Bool::fromBool(*left == *right);
   } else if (op == IS_NOT) {
-    result = Boolean::fromBool(*left != *right);
+    result = Bool::fromBool(*left != *right);
   } else if (op == IN) {
     result = sequenceContains(ctx->thread, ctx->frame, left, right);
   } else if (op == NOT_IN) {
     result =
-        Boolean::negate(sequenceContains(ctx->thread, ctx->frame, left, right));
+        Bool::negate(sequenceContains(ctx->thread, ctx->frame, left, right));
   } else {
     result = compareOperation(ctx->thread, ctx->frame, op, left, right);
   }
@@ -1228,7 +1228,7 @@ void Interpreter::doJumpForward(Context* ctx, word arg) { ctx->pc += arg; }
 // opcode 111
 void Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
   Object* result = isTrue(ctx->thread, ctx->frame);
-  if (result == Boolean::falseObj()) {
+  if (result == Bool::falseObj()) {
     ctx->pc = arg;
   } else {
     ctx->frame->popValue();
@@ -1238,7 +1238,7 @@ void Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
 // opcode 112
 void Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
   Object* result = isTrue(ctx->thread, ctx->frame);
-  if (result == Boolean::trueObj()) {
+  if (result == Bool::trueObj()) {
     ctx->pc = arg;
   } else {
     ctx->frame->popValue();
@@ -1252,7 +1252,7 @@ void Interpreter::doJumpAbsolute(Context* ctx, word arg) { ctx->pc = arg; }
 void Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
   Object* result = isTrue(ctx->thread, ctx->frame);
   ctx->frame->popValue();
-  if (result == Boolean::falseObj()) {
+  if (result == Bool::falseObj()) {
     ctx->pc = arg;
   }
 }
@@ -1261,7 +1261,7 @@ void Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
 void Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
   Object* result = isTrue(ctx->thread, ctx->frame);
   ctx->frame->popValue();
-  if (result == Boolean::trueObj()) {
+  if (result == Bool::trueObj()) {
     ctx->pc = arg;
   }
 }
