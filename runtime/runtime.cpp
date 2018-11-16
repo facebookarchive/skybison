@@ -2363,15 +2363,15 @@ Object* Runtime::setUpdate(Thread* thread, const Handle<Set>& dst,
 
 Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
                             const Handle<Object>& mapping) {
-  return dictUpdate<false>(thread, dict, mapping);
+  return dictUpdate<DictUpdateType::Update>(thread, dict, mapping);
 }
 
 Object* Runtime::dictMerge(Thread* thread, const Handle<Dict>& dict,
                            const Handle<Object>& mapping) {
-  return dictUpdate<true>(thread, dict, mapping);
+  return dictUpdate<DictUpdateType::Merge>(thread, dict, mapping);
 }
 
-template <bool merge>
+template <DictUpdateType type>
 inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
                                    const Handle<Object>& mapping) {
   HandleScope scope;
@@ -2385,7 +2385,7 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
       if (Dict::Bucket::isFilled(*data, i)) {
         key = Dict::Bucket::key(*data, i);
         value = Dict::Bucket::value(*data, i);
-        if (merge) {
+        if (type == DictUpdateType::Merge) {
           if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
             return thread->raiseTypeErrorWithCStr("keywords must be strings");
           }
@@ -2421,7 +2421,7 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
     Handle<List> keys_list(&scope, *keys);
     for (word i = 0; i < keys_list->allocated(); ++i) {
       key = keys_list->at(i);
-      if (merge) {
+      if (type == DictUpdateType::Merge) {
         if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
           return thread->raiseTypeErrorWithCStr("keywords must be strings");
         }
@@ -2444,7 +2444,7 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
     Handle<ObjectArray> keys_tuple(&scope, *keys);
     for (word i = 0; i < keys_tuple->length(); ++i) {
       key = keys_tuple->at(i);
-      if (merge) {
+      if (type == DictUpdateType::Merge) {
         if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
           return thread->raiseTypeErrorWithCStr("keywords must be strings");
         }
@@ -2490,7 +2490,7 @@ inline Object* Runtime::dictUpdate(Thread* thread, const Handle<Dict>& dict,
     if (key->isError()) {
       return *key;
     }
-    if (merge) {
+    if (type == DictUpdateType::Merge) {
       if (!hasSubClassFlag(*key, Type::Flag::kStrSubclass)) {
         return thread->raiseTypeErrorWithCStr("keywords must be strings");
       }

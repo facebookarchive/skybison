@@ -29,6 +29,8 @@ struct BuiltinMethod {
   Object* (*address)(Thread* thread, Frame* frame, word nargs);
 };
 
+enum class DictUpdateType { Update, Merge };
+
 enum class SetLookupType { Lookup, Insertion };
 
 class Runtime {
@@ -690,7 +692,7 @@ class Runtime {
   // if merge is true, checks that keys are strings and are not repeated.
   // in the merge case, if either of the checks fail, returns by throwing a
   // python TypeError exception.
-  template <bool merge>
+  template <DictUpdateType type>
   Object* dictUpdate(Thread* thread, const Handle<Dict>& dict,
                      const Handle<Object>& mapping);
 
