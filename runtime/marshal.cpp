@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "heap.h"
+#include "runtime.h"
 
 namespace python {
 
@@ -39,8 +40,9 @@ enum {
   TYPE_SHORT_ASCII_INTERNED = 'Z',
 };
 
-Marshal::Reader::Reader(const char* buffer)
-    : start_(reinterpret_cast<const byte*>(buffer)),
+Marshal::Reader::Reader(Runtime* runtime, const char* buffer)
+    : runtime_(runtime),
+      start_(reinterpret_cast<const byte*>(buffer)),
       length_(strlen(buffer)),
       refs_(nullptr),
       pos_(0),
@@ -216,13 +218,13 @@ Object* Marshal::Reader::readObject() {
 int Marshal::Reader::addRef(Object* value) {
   if (refs_ == nullptr) {
     // Lazily create a new refs array.
-    refs_ = Heap::createObjectArray(1);
+    refs_ = runtime_->createObjectArray(1);
     ObjectArray::cast(refs_)->set(0, value);
     return 0;
   } else {
     // Grow the refs array
     int length = ObjectArray::cast(refs_)->length();
-    Object* new_array = Heap::createObjectArray(length + 1);
+    Object* new_array = runtime_->createObjectArray(length + 1);
     for (int i = 0; i < length; i++) {
       Object* value = ObjectArray::cast(refs_)->get(i);
       ObjectArray::cast(new_array)->set(i, value);
@@ -244,7 +246,7 @@ Object* Marshal::Reader::getRef(int index) {
 Object* Marshal::Reader::readTypeString() {
   int length = readLong();
   const byte* data = readString(length);
-  Object* result = Heap::createByteArray(length);
+  Object* result = runtime_->createByteArray(length);
   if (isRef_) {
     addRef(result);
   }
@@ -257,7 +259,7 @@ Object* Marshal::Reader::readTypeString() {
 Object* Marshal::Reader::readTypeShortAscii() {
   int length = readByte();
   const byte* data = readString(length);
-  Object* result = Heap::createString(length);
+  Object* result = runtime_->createString(length);
   if (isRef_) {
     addRef(result);
   }
@@ -278,7 +280,7 @@ Object* Marshal::Reader::readTypeTuple() {
 }
 
 Object* Marshal::Reader::doTupleElements(int32 length) {
-  Object* result = Heap::createObjectArray(length);
+  Object* result = runtime_->createObjectArray(length);
   if (isRef_) {
     addRef(result);
   }
@@ -309,7 +311,7 @@ Object* Marshal::Reader::readTypeCode() {
   Object* name = readObject();
   int firstlineno = readLong();
   Object* lnotab = readObject();
-  Object* result = Heap::createCode(
+  Object* result = runtime_->createCode(
       argcount,
       kwonlyargcount,
       nlocals,

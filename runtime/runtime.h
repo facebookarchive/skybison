@@ -7,41 +7,58 @@ namespace python {
 
 class Runtime {
  public:
-  static void initialize();
+  Runtime();
+  ~Runtime();
 
-  static Class* byteArrayClass() {
-    return Class::cast(byteArrayClass_);
-  }
-  static Class* objectArrayClass() {
-    return Class::cast(objectArrayClass_);
-  }
-  static Class* codeClass() {
-    return Class::cast(codeClass_);
-  }
-  static Class* classClass() {
-    return Class::cast(classClass_);
-  }
-  static Class* stringClass() {
-    return Class::cast(stringClass_);
-  }
-  static Class* functionClass() {
-    return Class::cast(functionClass_);
-  }
+  Object* createByteArray(intptr_t length);
+
+  Object* createCode(
+      int argcount,
+      int kwonlyargcount,
+      int nlocals,
+      int stacksize,
+      int flags,
+      Object* code,
+      Object* consts,
+      Object* names,
+      Object* varnames,
+      Object* freevars,
+      Object* cellvars,
+      Object* filename,
+      Object* name,
+      int firstlineno,
+      Object* lnotab);
+
+  Object* createObjectArray(intptr_t length);
+
+  Object* createString(intptr_t length);
+
+  Heap* heap() {
+    return &heap_;
+  };
+
+  Object* modules() {
+    return modules_;
+  };
 
  private:
+  void allocateClasses();
+
+  Heap heap_;
+
   // the equivalent of sys.modules in python
-  static Object* modules_;
+  Object* modules_;
 
-  static Object* byteArrayClass_;
-  static Object* objectArrayClass_;
-  static Object* classClass_;
-  static Object* codeClass_;
-  static Object* stringClass_;
-  static Object* functionClass_;
-  static Object* moduleClass_;
-  static Object* dictionaryClass_;
+  Object* byteArrayClass_;
+  Object* classClass_;
+  Object* codeClass_;
+  Object* dictionaryClass_;
+  Object* functionClass_;
+  Object* moduleClass_;
+  Object* objectArrayClass_;
+  Object* stringClass_;
 
-  static void allocateClasses();
+  DISALLOW_COPY_AND_ASSIGN(Runtime);
 };
 
 } // namespace python

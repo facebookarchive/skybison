@@ -1,16 +1,17 @@
 #pragma once
 
 #include "globals.h"
-#include "handle.h"
-#include "objects.h"
 
 namespace python {
+
+class Object;
+class Runtime;
 
 class Marshal {
  public:
   class Reader {
    public:
-    Reader(const char* buffer);
+    Reader(Runtime* runtime, const char* buffer);
 
     byte readByte();
 
@@ -36,6 +37,8 @@ class Marshal {
     Object* getRef(int index);
 
    private:
+    Runtime* runtime_;
+
     bool isRef_;
     Object* refs_;
 

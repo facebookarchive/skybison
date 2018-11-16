@@ -6,36 +6,67 @@
 
 namespace python {
 
-Object* Runtime::byteArrayClass_ = nullptr;
-Object* Runtime::objectArrayClass_ = nullptr;
-Object* Runtime::codeClass_ = nullptr;
-Object* Runtime::classClass_ = nullptr;
-Object* Runtime::stringClass_ = nullptr;
-
-Object* Runtime::functionClass_ = nullptr;
-Object* Runtime::moduleClass_ = nullptr;
-Object* Runtime::dictionaryClass_ = nullptr;
-
-void Runtime::allocateClasses() {
-  // Create the class Class by hand to accommodate circularity.
-  Object* raw = Heap::allocate(Class::allocationSize());
-  assert(raw != nullptr);
-  Class* result = reinterpret_cast<Class*>(raw);
-  result->setClass(result);
-  result->setLayout(Layout::CLASS);
-  classClass_ = result;
-
-  byteArrayClass_ = Heap::createClass(Layout::BYTE_ARRAY);
-  objectArrayClass_ = Heap::createClass(Layout::OBJECT_ARRAY);
-  codeClass_ = Heap::createClass(Layout::CODE);
-  stringClass_ = Heap::createClass(Layout::STRING);
-  functionClass_ = Heap::createClass(Layout::FUNCTION);
+Runtime::Runtime() : heap_(64 * MiB) {
+  Handles::initialize();
+  allocateClasses();
 }
 
-void Runtime::initialize() {
-  Handles::initialize();
-  Heap::initialize(100 * MiB);
-  allocateClasses();
+Runtime::~Runtime() {}
+
+Object* Runtime::createByteArray(intptr_t length) {
+  return heap()->createByteArray(Runtime::byteArrayClass_, length);
+}
+
+Object* Runtime::createCode(
+    int argcount,
+    int kwonlyargcount,
+    int nlocals,
+    int stacksize,
+    int flags,
+    Object* code,
+    Object* consts,
+    Object* names,
+    Object* varnames,
+    Object* freevars,
+    Object* cellvars,
+    Object* filename,
+    Object* name,
+    int firstlineno,
+    Object* lnotab) {
+  return heap()->createCode(
+      codeClass_,
+      argcount,
+      kwonlyargcount,
+      nlocals,
+      stacksize,
+      flags,
+      code,
+      consts,
+      names,
+      varnames,
+      freevars,
+      cellvars,
+      filename,
+      name,
+      firstlineno,
+      lnotab);
+}
+
+Object* Runtime::createObjectArray(intptr_t length) {
+  return heap()->createObjectArray(objectArrayClass_, length);
+}
+
+Object* Runtime::createString(intptr_t length) {
+  return heap()->createString(stringClass_, length);
+}
+
+void Runtime::allocateClasses() {
+  classClass_ = heap()->createClassClass();
+  byteArrayClass_ = heap()->createClass(classClass_, Layout::BYTE_ARRAY);
+  objectArrayClass_ = heap()->createClass(classClass_, Layout::OBJECT_ARRAY);
+  codeClass_ = heap()->createClass(classClass_, Layout::CODE);
+  stringClass_ = heap()->createClass(classClass_, Layout::STRING);
+  functionClass_ = heap()->createClass(classClass_, Layout::FUNCTION);
 }
 
 } // namespace python
