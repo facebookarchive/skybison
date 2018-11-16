@@ -233,6 +233,7 @@ PyAPI_FUNC(char*) PyByteArray_AS_STRING_Func(PyObject*);
     PyByteArray_AS_STRING_Func((PyObject*)self)
 
 #define PYTHON_API_VERSION 1013
+#define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_Create(module) \
     PyModule_Create2(module, PYTHON_API_VERSION)
 

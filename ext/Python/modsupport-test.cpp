@@ -94,4 +94,24 @@ TEST_F(ModSupportExtensionApiTest, RepeatedAddStringConstantOverwritesValue) {
   EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, c_str));
 }
 
+TEST_F(ModSupportExtensionApiTest, AddIntMacroAddsInt) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+
+#pragma push_macro("MYINT")
+#undef MYINT
+#define MYINT 5
+  ASSERT_EQ(PyModule_AddIntMacro(module, MYINT), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  testing::PyObjectPtr myint(PyObject_GetAttrString(module, "MYINT"));
+  EXPECT_EQ(PyLong_AsLong(myint), MYINT);
+#pragma pop_macro("MYINT")
+}
 }  // namespace python
