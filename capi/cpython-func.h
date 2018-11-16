@@ -107,6 +107,7 @@ PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
 PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(int) PyModule_AddObject(PyObject *, const char *, PyObject *);
 
 PyAPI_FUNC(PyObject *) PyErr_Occurred(void);
 PyAPI_FUNC(PyObject *) PyErr_NoMemory(void);
@@ -129,6 +130,11 @@ PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
 PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
+
+/* Reused C-API functions */
+PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
+PyAPI_FUNC(int)
+    PyModule_AddStringConstant(PyObject *, const char *, const char *);
 
 /* Non C-API functions */
 PyAPI_FUNC(int) PyBool_Check_Func(PyObject *);

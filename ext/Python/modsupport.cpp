@@ -4,16 +4,12 @@
 
 namespace python {
 
-extern "C" int PyModule_AddIntConstant(PyObject* pymodule, const char* name,
-                                       long value) {
+extern "C" int PyModule_AddObject(PyObject* pymodule, const char* name,
+                                  PyObject* obj) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Handle<Object> integer(&scope, runtime->newInt(value));
-  if (!integer->isInt()) {
-    // TODO(cshapiro): throw a MemoryError
-    return -1;
-  }
+
   Handle<Object> module_obj(&scope,
                             ApiHandle::fromPyObject(pymodule)->asObject());
   if (!module_obj->isModule()) {
@@ -30,13 +26,9 @@ extern "C" int PyModule_AddIntConstant(PyObject* pymodule, const char* name,
     return -1;
   }
   Handle<Module> module(&scope, *module_obj);
-  runtime->moduleAtPut(module, key, integer);
+  Handle<Object> value(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  runtime->moduleAtPut(module, key, value);
   return 0;
-}
-
-extern "C" int PyModule_AddObject(PyObject* /* m */, const char* /* e */,
-                                  PyObject* /* o */) {
-  UNIMPLEMENTED("PyModule_AddObject");
 }
 
 extern "C" int PyModule_AddStringConstant(PyObject* /* m */,

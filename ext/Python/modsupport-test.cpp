@@ -5,7 +5,7 @@ namespace python {
 
 using ModSupportExtensionApiTest = ExtensionApi;
 
-TEST_F(ModSupportExtensionApiTest, AddIntConstantAddsToModule) {
+TEST_F(ModSupportExtensionApiTest, AddObjectAddsToModule) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
@@ -14,20 +14,20 @@ TEST_F(ModSupportExtensionApiTest, AddIntConstantAddsToModule) {
   PyObject* module = PyModule_Create(&def);
   ASSERT_NE(module, nullptr);
 
-  int myglobal = PyModule_AddIntConstant(module, "myglobal", 123);
-  ASSERT_NE(myglobal, -1);
+  PyObject* obj = PyList_New(1);
+  int myobj = PyModule_AddObject(module, "myobj", obj);
+  ASSERT_NE(myobj, -1);
 
   PyRun_SimpleString(R"(
 import mymodule
-x = mymodule.myglobal
+x = mymodule.myobj
 )");
 
   PyObject* x = testing::moduleGet("__main__", "x");
-  int result = PyLong_AsLong(x);
-  ASSERT_EQ(result, 123);
+  ASSERT_TRUE(PyList_CheckExact(x));
 }
 
-TEST_F(ModSupportExtensionApiTest, AddIntConstantWithNullNameFails) {
+TEST_F(ModSupportExtensionApiTest, AddObjectWithNullNameFails) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
@@ -36,11 +36,12 @@ TEST_F(ModSupportExtensionApiTest, AddIntConstantWithNullNameFails) {
   PyObject* module = PyModule_Create(&def);
   ASSERT_NE(module, nullptr);
 
-  int result = PyModule_AddIntConstant(module, nullptr, 123);
+  PyObject* obj = PyList_New(1);
+  int result = PyModule_AddObject(module, nullptr, obj);
   ASSERT_EQ(result, -1);
 }
 
-TEST_F(ModSupportExtensionApiTest, RepeatedAddIntConstantOverwritesValue) {
+TEST_F(ModSupportExtensionApiTest, RepeatedAddObjectOverwritesValue) {
   PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "mymodule",
@@ -49,20 +50,22 @@ TEST_F(ModSupportExtensionApiTest, RepeatedAddIntConstantOverwritesValue) {
   PyObject* module = PyModule_Create(&def);
   ASSERT_NE(module, nullptr);
 
-  int myglobal = PyModule_AddIntConstant(module, "myglobal", 123);
-  ASSERT_NE(myglobal, -1);
+  PyObject* listobj = PyList_New(1);
+  int myobj = PyModule_AddObject(module, "myobj", listobj);
+  ASSERT_NE(myobj, -1);
 
-  myglobal = PyModule_AddIntConstant(module, "myglobal", 456);
-  ASSERT_NE(myglobal, -1);
+  PyObject* tupleobj = PyTuple_New(1);
+  myobj = PyModule_AddObject(module, "myobj", tupleobj);
+  ASSERT_NE(myobj, -1);
 
   PyRun_SimpleString(R"(
 import mymodule
-x = mymodule.myglobal
+x = mymodule.myobj
 )");
 
   PyObject* x = testing::moduleGet("__main__", "x");
-  int result = PyLong_AsLong(x);
-  ASSERT_EQ(result, 456);
+  ASSERT_FALSE(PyList_CheckExact(x));
+  ASSERT_TRUE(PyTuple_CheckExact(x));
 }
 
 }  // namespace python
