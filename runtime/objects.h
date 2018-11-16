@@ -278,6 +278,7 @@ class Object {
   bool isFunction();
   bool isGenerator();
   bool isHeapObject();
+  bool isHeapObjectWithLayout(LayoutId layout_id);
   bool isImportError();
   bool isIndexError();
   bool isInstance();
@@ -2152,18 +2153,10 @@ inline LayoutId Object::layoutId() {
                                kImmediateClassTableIndexMask);
 }
 
-inline bool Object::isType() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kType;
-}
+inline bool Object::isType() { return isHeapObjectWithLayout(LayoutId::kType); }
 
 inline bool Object::isClassMethod() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kClassMethod;
+  return isHeapObjectWithLayout(LayoutId::kClassMethod);
 }
 
 inline bool Object::isSmallInt() {
@@ -2201,82 +2194,53 @@ inline bool Object::isHeapObject() {
   return tag == HeapObject::kTag;
 }
 
-inline bool Object::isLayout() {
+inline bool Object::isHeapObjectWithLayout(LayoutId layout_id) {
   if (!isHeapObject()) {
     return false;
   }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLayout;
+  return HeapObject::cast(this)->header()->layoutId() == layout_id;
+}
+
+inline bool Object::isLayout() {
+  return isHeapObjectWithLayout(LayoutId::kLayout);
 }
 
 inline bool Object::isBaseException() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kBaseException;
+  return isHeapObjectWithLayout(LayoutId::kBaseException);
 }
 
 inline bool Object::isException() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kException;
+  return isHeapObjectWithLayout(LayoutId::kException);
 }
 
 inline bool Object::isBoundMethod() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kBoundMethod;
+  return isHeapObjectWithLayout(LayoutId::kBoundMethod);
 }
 
 inline bool Object::isBytes() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kBytes;
+  return isHeapObjectWithLayout(LayoutId::kBytes);
 }
 
 inline bool Object::isObjectArray() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kObjectArray;
+  return isHeapObjectWithLayout(LayoutId::kObjectArray);
 }
 
-inline bool Object::isCode() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kCode;
-}
+inline bool Object::isCode() { return isHeapObjectWithLayout(LayoutId::kCode); }
 
 inline bool Object::isComplex() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kComplex;
+  return isHeapObjectWithLayout(LayoutId::kComplex);
 }
 
 inline bool Object::isCoroutine() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kCoroutine;
+  return isHeapObjectWithLayout(LayoutId::kCoroutine);
 }
 
 inline bool Object::isLargeStr() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLargeStr;
+  return isHeapObjectWithLayout(LayoutId::kLargeStr);
 }
 
 inline bool Object::isFunction() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kFunction;
+  return isHeapObjectWithLayout(LayoutId::kFunction);
 }
 
 inline bool Object::isInstance() {
@@ -2288,228 +2252,123 @@ inline bool Object::isInstance() {
 }
 
 inline bool Object::isKeyError() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kKeyError;
+  return isHeapObjectWithLayout(LayoutId::kKeyError);
 }
 
-inline bool Object::isDict() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kDict;
-}
+inline bool Object::isDict() { return isHeapObjectWithLayout(LayoutId::kDict); }
 
 inline bool Object::isFloat() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kFloat;
+  return isHeapObjectWithLayout(LayoutId::kFloat);
 }
 
 inline bool Object::isHeapFrame() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kHeapFrame;
+  return isHeapObjectWithLayout(LayoutId::kHeapFrame);
 }
 
-inline bool Object::isSet() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSet;
-}
+inline bool Object::isSet() { return isHeapObjectWithLayout(LayoutId::kSet); }
 
 inline bool Object::isSetIterator() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSetIterator;
+  return isHeapObjectWithLayout(LayoutId::kSetIterator);
 }
 
 inline bool Object::isSuper() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSuper;
+  return isHeapObjectWithLayout(LayoutId::kSuper);
 }
 
 inline bool Object::isModule() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kModule;
+  return isHeapObjectWithLayout(LayoutId::kModule);
 }
 
-inline bool Object::isList() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kList;
-}
+inline bool Object::isList() { return isHeapObjectWithLayout(LayoutId::kList); }
 
 inline bool Object::isListIterator() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kListIterator;
+  return isHeapObjectWithLayout(LayoutId::kListIterator);
 }
 
 inline bool Object::isLookupError() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLookupError;
+  return isHeapObjectWithLayout(LayoutId::kLookupError);
 }
 
 inline bool Object::isValueCell() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kValueCell;
+  return isHeapObjectWithLayout(LayoutId::kValueCell);
 }
 
 inline bool Object::isEllipsis() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kEllipsis;
+  return isHeapObjectWithLayout(LayoutId::kEllipsis);
 }
 
 inline bool Object::isGenerator() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kGenerator;
+  return isHeapObjectWithLayout(LayoutId::kGenerator);
 }
 
 inline bool Object::isLargeInt() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kLargeInt;
+  return isHeapObjectWithLayout(LayoutId::kLargeInt);
 }
 
 inline bool Object::isInt() { return isSmallInt() || isLargeInt(); }
 
 inline bool Object::isNotImplemented() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kNotImplemented;
+  return isHeapObjectWithLayout(LayoutId::kNotImplemented);
 }
 
 inline bool Object::isNotImplementedError() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kNotImplementedError;
+  return isHeapObjectWithLayout(LayoutId::kNotImplementedError);
 }
 
 inline bool Object::isProperty() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kProperty;
+  return isHeapObjectWithLayout(LayoutId::kProperty);
 }
 
 inline bool Object::isRange() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kRange;
+  return isHeapObjectWithLayout(LayoutId::kRange);
 }
 
 inline bool Object::isRangeIterator() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kRangeIterator;
+  return isHeapObjectWithLayout(LayoutId::kRangeIterator);
 }
 
 inline bool Object::isGeneratorBase() { return isGenerator() || isCoroutine(); }
 
 inline bool Object::isRuntimeError() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kRuntimeError;
+  return isHeapObjectWithLayout(LayoutId::kRuntimeError);
 }
 
 inline bool Object::isSlice() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSlice;
+  return isHeapObjectWithLayout(LayoutId::kSlice);
 }
 
 inline bool Object::isStaticMethod() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kStaticMethod;
+  return isHeapObjectWithLayout(LayoutId::kStaticMethod);
 }
 
 inline bool Object::isStopIteration() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kStopIteration;
+  return isHeapObjectWithLayout(LayoutId::kStopIteration);
 }
 
 inline bool Object::isStr() { return isSmallStr() || isLargeStr(); }
 
 inline bool Object::isSystemExit() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kSystemExit;
+  return isHeapObjectWithLayout(LayoutId::kSystemExit);
 }
 
 inline bool Object::isTupleIterator() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kTupleIterator;
+  return isHeapObjectWithLayout(LayoutId::kTupleIterator);
 }
 
 inline bool Object::isImportError() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kImportError;
+  return isHeapObjectWithLayout(LayoutId::kImportError);
 }
 
 inline bool Object::isIndexError() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kIndexError;
+  return isHeapObjectWithLayout(LayoutId::kIndexError);
 }
 
 inline bool Object::isWeakRef() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() == LayoutId::kWeakRef;
+  return isHeapObjectWithLayout(LayoutId::kWeakRef);
 }
 
 inline bool Object::isModuleNotFoundError() {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return HeapObject::cast(this)->header()->layoutId() ==
-         LayoutId::kModuleNotFoundError;
+  return isHeapObjectWithLayout(LayoutId::kModuleNotFoundError);
 }
 
 inline bool Object::equals(Object* lhs, Object* rhs) {
