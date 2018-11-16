@@ -49,7 +49,7 @@ class Heap {
       int firstlineno,
       Object* lnotab);
 
-  Object* createDictionary(Object* dictionary_class);
+  Object* createDictionary(Object* dictionary_class, Object* items);
 
   Object* createFunction(Object* function_class);
 

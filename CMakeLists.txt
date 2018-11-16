@@ -45,6 +45,7 @@ target_link_libraries(
 
 add_executable(
   python-tests
+  runtime/dictionary-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
   runtime/list-test.cpp

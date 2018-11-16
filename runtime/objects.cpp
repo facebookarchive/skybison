@@ -5,6 +5,8 @@
 
 namespace python {
 
+// List
+
 int List::allocationSize() {
   return Utils::roundUp(List::kSize, kPointerSize);
 }
@@ -69,6 +71,179 @@ void List::appendAndGrow(List* list, Object* value, Runtime* runtime) {
   list->setElems(newElems);
   list->setLength(len + 1);
   list->set(len, value);
+}
+
+// Dictionary
+// TODO(mpage): Needs handlizing
+
+// Helper class for working with entries in the backing ObjectArray.
+class DictItem {
+ public:
+  DictItem(ObjectArray* items, int bucket) : items_(items), bucket_(bucket){};
+
+  inline Object* hash() {
+    return items_->get(bucket_ + Dictionary::kBucketHashOffset);
+  }
+
+  inline Object* key() {
+    return items_->get(bucket_ + Dictionary::kBucketKeyOffset);
+  }
+
+  inline Object* value() {
+    return items_->get(bucket_ + Dictionary::kBucketValueOffset);
+  }
+
+  inline bool matches(Object* that) {
+    return !hash()->isNone() && Object::equals(key(), that);
+  }
+
+  inline void set(Object* hash, Object* key, Object* value) {
+    items_->set(bucket_ + Dictionary::kBucketHashOffset, hash);
+    items_->set(bucket_ + Dictionary::kBucketKeyOffset, key);
+    items_->set(bucket_ + Dictionary::kBucketValueOffset, value);
+  }
+
+  inline bool isTombstone() {
+    return hash()->isNone() && !key()->isNone();
+  }
+
+  inline void setTombstone() {
+    set(None::object(), Ellipsis::object(), None::object());
+  }
+
+  inline bool isEmpty() {
+    return hash()->isNone() && key()->isNone();
+  }
+
+  inline void setEmpty() {
+    set(None::object(), None::object(), None::object());
+  }
+
+  ObjectArray* items_;
+  int bucket_;
+};
+
+void Dictionary::setNumItems(word numItems) {
+  atPut(kNumItemsOffset, SmallInteger::fromWord(numItems));
+}
+
+ObjectArray* Dictionary::items() {
+  return ObjectArray::cast(at(kItemsOffset));
+}
+
+void Dictionary::setItems(ObjectArray* items) {
+  assert((items->length() % kPointersPerBucket) == 0);
+  assert(Utils::isPowerOfTwo(items->length() / kPointersPerBucket));
+  atPut(kItemsOffset, items);
+}
+
+bool Dictionary::itemAt(
+    Object* dictObj,
+    Object* key,
+    word hash,
+    Object** value) {
+  Dictionary* dict = Dictionary::cast(dictObj);
+  int bucket = -1;
+  bool found = lookup(dict, key, hash, &bucket);
+  if (found) {
+    assert(bucket != -1);
+    DictItem item(dict->items(), bucket);
+    *value = item.value();
+  }
+  return found;
+}
+
+void Dictionary::itemAtPut(
+    Object* dictObj,
+    Object* key,
+    word hash,
+    Object* value,
+    Runtime* runtime) {
+  Dictionary* dict = Dictionary::cast(dictObj);
+  int bucket = -1;
+  bool found = lookup(dict, key, hash, &bucket);
+  if (bucket == -1) {
+    // TODO(mpage): Grow at a predetermined load factor, rather than when full
+    grow(dict, runtime);
+    lookup(dict, key, hash, &bucket);
+    assert(bucket != -1);
+  }
+  DictItem item(dict->items(), bucket);
+  item.set(SmallInteger::fromWord(hash), key, value);
+  if (!found) {
+    dict->setNumItems(dict->numItems() + 1);
+  }
+}
+
+bool Dictionary::itemAtRemove(
+    Object* dictObj,
+    Object* key,
+    word hash,
+    Object** value) {
+  Dictionary* dict = Dictionary::cast(dictObj);
+  int bucket = -1;
+  bool found = lookup(dict, key, hash, &bucket);
+  if (found) {
+    DictItem item(dict->items(), bucket);
+    *value = item.value();
+    item.setTombstone();
+    dict->setNumItems(dict->numItems() - 1);
+  }
+  return found;
+}
+
+bool Dictionary::lookup(Dictionary* dict, Object* key, word hash, int* bucket) {
+  int startIdx = kPointersPerBucket * (hash & (dict->capacity() - 1));
+  int idx = startIdx;
+  int nextFreeBucket = -1;
+  ObjectArray* items = dict->items();
+
+  assert(bucket != nullptr);
+
+  // TODO(mpage) - Quadratic probing?
+  do {
+    DictItem item(items, idx);
+    if (item.matches(key)) {
+      *bucket = idx;
+      return true;
+    } else if (nextFreeBucket == -1 && item.isTombstone()) {
+      nextFreeBucket = idx;
+    } else if (item.isEmpty()) {
+      if (nextFreeBucket == -1) {
+        nextFreeBucket = idx;
+      }
+      break;
+    }
+    idx = (idx + kPointersPerBucket) % items->length();
+  } while (idx != startIdx);
+
+  *bucket = nextFreeBucket;
+
+  return false;
+}
+
+void Dictionary::grow(Dictionary* dict, Runtime* runtime) {
+  // Double the size of the backing store
+  Object* obj = runtime->createObjectArray(dict->items()->length() * 2);
+  assert(obj != nullptr);
+  ObjectArray* newItems = ObjectArray::cast(obj);
+
+  // Re-insert items
+  ObjectArray* oldItems = dict->items();
+  dict->setItems(newItems);
+  for (int i = 0; i < oldItems->length(); i += kPointersPerBucket) {
+    DictItem oldItem(oldItems, i);
+    Object* oldHash = oldItem.hash();
+    if (oldHash->isNone()) {
+      continue;
+    }
+    int bucket = -1;
+    word hash = SmallInteger::cast(oldHash)->value();
+    lookup(dict, oldItem.key(), hash, &bucket);
+    assert(bucket != -1);
+    DictItem newItem(newItems, bucket);
+    newItem.set(oldItem.key(), oldHash, oldItem.value());
+  }
 }
 
 } // namespace python

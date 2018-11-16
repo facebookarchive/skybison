@@ -187,13 +187,13 @@ Object* Heap::createByteArray(Object* byte_array_class, intptr_t length) {
   return ByteArray::cast(result);
 }
 
-Object* Heap::createDictionary(Object* dictionary_class) {
+Object* Heap::createDictionary(Object* dictionary_class, Object* items) {
   int size = Dictionary::allocationSize();
   Object* raw = allocate(size);
   assert(raw != nullptr);
   Dictionary* result = reinterpret_cast<Dictionary*>(raw);
   result->setClass(Class::cast(dictionary_class));
-  result->initialize();
+  result->initialize(items);
   return Dictionary::cast(result);
 }
 
@@ -236,7 +236,7 @@ Object* Heap::createString(Object* string_class, intptr_t length) {
   assert(raw != nullptr);
   String* result = reinterpret_cast<String*>(raw);
   result->setClass(Class::cast(string_class));
-  result->setLength(length);
+  result->initialize(length);
   return String::cast(result);
 }
 

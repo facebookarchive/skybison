@@ -97,6 +97,8 @@ class Object {
   inline bool isDictionary();
   inline bool isList();
 
+  static inline bool equals(Object* lhs, Object* rhs);
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
 };
@@ -291,10 +293,12 @@ class ObjectArray : public Array {
 class String : public Array {
  public:
   static inline String* cast(Object* object);
+  inline void initialize(word length);
+  inline static int allocationSize(int length);
+
   inline byte charAt(int index);
   inline void setCharAt(int index, byte value);
-
-  inline static int allocationSize(int length);
+  inline bool equals(Object* that);
 
   static const int kElementSize = 1;
 
@@ -397,17 +401,87 @@ class Module : public HeapObject {
   DISALLOW_COPY_AND_ASSIGN(Module);
 };
 
+class Runtime;
+
+/**
+ * A simple dictionary that uses open addressing and linear probing.
+ *
+ * Layout:
+ *
+ *   [Class pointer]
+ *   [NumItems     ] - Number of items currently in the dictionary
+ *   [Items        ] - Pointer to an ObjectArray that stores the underlying
+ * data.
+ *
+ * Dictionary entries are stored as a triple of (hash, key, value).
+ * Empty buckets are stored as (None, None, None).
+ * Tombstone buckets are stored as (None, <not None>, <Any>).
+ *
+ */
 class Dictionary : public HeapObject {
  public:
   inline static Dictionary* cast(Object* object);
-  inline Object* data();
   inline static int allocationSize();
-  inline static void initialize();
+  inline void initialize(Object* items);
 
-  static const int kDataOffset = HeapObject::kSize;
-  static const int kSize = kDataOffset + kPointerSize;
+  // Number of items currently in the dictionary
+  inline word numItems();
+
+  // Total number of items that could be stored in the ObjectArray backing the
+  // dictionary
+  inline word capacity();
+
+  // Look up the value associated with key.
+  //
+  // Returns true if the key was found and sets the associated value in value.
+  // Returns false otherwise.
+  static bool itemAt(Object* dict, Object* key, word hash, Object** value);
+
+  // Associate a value with the supplied key.
+  //
+  // This handles growing the backing ObjectArray if needed.
+  static void itemAtPut(
+      Object* dict,
+      Object* key,
+      word hash,
+      Object* value,
+      Runtime* runtime);
+
+  // Delete a key from the dictionary.
+  //
+  // Returns true if the key existed and sets the previous value in value.
+  // Returns false otherwise.
+  static bool
+  itemAtRemove(Object* dict, Object* key, word hash, Object** value);
+
+  static const int kBucketHashOffset = 0;
+  static const int kBucketKeyOffset = kBucketHashOffset + 1;
+  static const int kBucketValueOffset = kBucketKeyOffset + 2;
+  static const int kPointersPerBucket = kBucketValueOffset + 1;
+
+  // Initial size of the dictionary. According to comments in CPython's
+  // dictobject.c this accomodates the majority of dictionaries without needing
+  // a resize (obviously this depends on the load factor used to resize the
+  // dict).
+  static const int kInitialItemsSize = 8 * kPointersPerBucket;
+  static const int kNumItemsOffset = HeapObject::kSize;
+  static const int kItemsOffset = kNumItemsOffset + kPointerSize;
+  static const int kSize = kItemsOffset + kPointerSize;
 
  private:
+  ObjectArray* items();
+  void setItems(ObjectArray* items);
+  void setNumItems(word numItems);
+
+  // Looks up the supplied key in the dictionary.
+  //
+  // If the key is found, this function returns true and sets bucket to the
+  // index of the bucket that contains the value. If the key is not found, this
+  // function returns false and sets bucket to the location where the key would
+  // be inserted. If the dictionary is full, it sets bucket to -1.
+  static bool lookup(Dictionary* dict, Object* key, word hash, int* bucket);
+  static void grow(Dictionary* dict, Runtime* runtime);
+
   DISALLOW_COPY_AND_ASSIGN(Dictionary);
 };
 
@@ -478,7 +552,7 @@ bool Object::isNone() {
 
 bool Object::isEllipsis() {
   int tag = reinterpret_cast<uword>(this) & None::kTagMask;
-  return tag == None::kTag;
+  return tag == Ellipsis::kTag;
 }
 
 bool Object::isHeapObject() {
@@ -540,6 +614,10 @@ bool Object::isList() {
     return false;
   }
   return HeapObject::cast(this)->getClass()->layout() == Layout::LIST;
+}
+
+bool Object::equals(Object* lhs, Object* rhs) {
+  return (lhs == rhs) || (lhs->isString() && String::cast(lhs)->equals(rhs));
 }
 
 // SmallInteger
@@ -885,30 +963,15 @@ void Module::initialize() {
   // ???
 }
 
-// Dictionary
-
-int Dictionary::allocationSize() {
-  return Utils::roundUp(Module::kSize, kPointerSize);
-}
-
-Dictionary* Dictionary::cast(Object* object) {
-  assert(object->isDictionary());
-  return reinterpret_cast<Dictionary*>(object);
-}
-
-void Dictionary::initialize() {
-  // ???
-}
-
-Object* Dictionary::data() {
-  return at(Dictionary::kDataOffset);
-}
-
 // String
 
 String* String::cast(Object* object) {
   assert(object->isString());
   return reinterpret_cast<String*>(object);
+}
+
+void String::initialize(word length) {
+  setLength(length);
 }
 
 int String::allocationSize(int length) {
@@ -925,6 +988,43 @@ void String::setCharAt(int index, byte value) {
   assert(index >= 0);
   assert(index < length());
   *reinterpret_cast<byte*>(address() + String::kSize + index) = value;
+}
+
+bool String::equals(Object* that) {
+  if (!that->isString()) {
+    return false;
+  }
+  String* thatStr = String::cast(that);
+  if (length() != thatStr->length()) {
+    return false;
+  }
+  auto s1 = reinterpret_cast<void*>(address() + String::kSize);
+  auto s2 = reinterpret_cast<void*>(thatStr->address() + String::kSize);
+  return memcmp(s1, s2, length()) == 0;
+}
+
+// Dictionary
+
+int Dictionary::allocationSize() {
+  return Utils::roundUp(Module::kSize, kPointerSize);
+}
+
+void Dictionary::initialize(Object* items) {
+  atPut(kNumItemsOffset, SmallInteger::fromWord(0));
+  atPut(kItemsOffset, items);
+}
+
+Dictionary* Dictionary::cast(Object* object) {
+  assert(object->isDictionary());
+  return reinterpret_cast<Dictionary*>(object);
+}
+
+word Dictionary::numItems() {
+  return SmallInteger::cast(at(kNumItemsOffset))->value();
+};
+
+word Dictionary::capacity() {
+  return items()->length() / kPointersPerBucket;
 }
 
 } // namespace python

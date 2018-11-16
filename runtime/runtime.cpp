@@ -68,6 +68,12 @@ Object* Runtime::createCode(
       lnotab);
 }
 
+Object* Runtime::createDictionary() {
+  Object* items = createObjectArray(Dictionary::kInitialItemsSize);
+  assert(items != nullptr);
+  return heap()->createDictionary(dictionary_class_, items);
+}
+
 Object* Runtime::createList() {
   return heap()->createList(list_class_, empty_object_array_);
 }
@@ -81,6 +87,16 @@ Object* Runtime::createObjectArray(intptr_t length) {
 
 Object* Runtime::createString(intptr_t length) {
   return heap()->createString(string_class_, length);
+}
+
+Object* Runtime::createStringFromCString(const char* c_string) {
+  intptr_t length = strlen(c_string);
+  Object* result = createString(length);
+  for (intptr_t i = 0; i < length; i++) {
+    String::cast(result)->setCharAt(
+        i, *reinterpret_cast<const byte*>(c_string + i));
+  }
+  return result;
 }
 
 void Runtime::initializeClasses() {

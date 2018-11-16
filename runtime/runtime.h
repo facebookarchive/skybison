@@ -33,11 +33,14 @@ class Runtime {
       int firstlineno,
       Object* lnotab);
 
+  Object* createDictionary();
+
+  Object* createList();
+
   Object* createObjectArray(intptr_t length);
 
   Object* createString(intptr_t length);
-
-  Object* createList();
+  Object* createStringFromCString(const char* c_string);
 
   void collectGarbage();
 
