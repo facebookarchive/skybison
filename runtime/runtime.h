@@ -176,6 +176,10 @@ class Runtime {
     return modules_;
   }
 
+  Object* apihandles() {
+    return apihandles_;
+  }
+
   Symbols* symbols() {
     return symbols_;
   }
@@ -401,11 +405,18 @@ class Runtime {
   // Return true if obj is an instance of a subclass of klass
   Object* isInstance(const Handle<Object>& obj, const Handle<Class>& klass);
 
-  // Runtime creation of "PyObjects" to cross the CPython boundary
-  PyObject* allocatePyObject(Object* obj);
+  // Wrap an Object as an ApiHandle to cross the CPython boundary
+  // Create a new ApiHandle if there is not a pre-existing one
+  PyObject* asApiHandle(Object* obj);
 
   // Accessor for Objects that have crossed the CPython boundary
-  Object* getObject(PyObject* py_obj);
+  Object* asObject(PyObject* py_obj);
+
+  // Runtime allocation of a Handle
+  Object* allocateApiHandle(Object* obj);
+
+  // Iterate the ApiHandles dictionary to free the allocated memory
+  void deallocApiHandles();
 
   static const int kDictionaryGrowthFactor = 2;
   // Initial size of the dictionary. According to comments in CPython's
@@ -441,6 +452,7 @@ class Runtime {
   void initializePrimitiveInstances();
   void initializeInterned();
   void initializeModules();
+  void initializeApiHandles();
   void initializeRandom();
   void initializeSymbols();
 
@@ -600,6 +612,9 @@ class Runtime {
 
   // Modules
   Object* modules_;
+
+  // ApiHandles
+  Object* apihandles_;
 
   Thread* threads_;
 

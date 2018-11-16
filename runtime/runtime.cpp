@@ -28,12 +28,6 @@
 
 namespace python {
 
-struct PyroObject {
-  long ob_refcnt;
-  void* ob_type;
-  void* reference;
-};
-
 Runtime::Runtime(word heap_size)
     : heap_(heap_size), new_value_cell_callback_(this) {
   initializeRandom();
@@ -45,11 +39,13 @@ Runtime::Runtime(word heap_size)
   initializeSymbols();
   initializeClasses();
   initializeModules();
+  initializeApiHandles();
 }
 
 Runtime::Runtime() : Runtime(64 * MiB) {}
 
 Runtime::~Runtime() {
+  deallocApiHandles();
   for (Thread* thread = threads_; thread != nullptr;) {
     if (thread == Thread::currentThread()) {
       Thread::setCurrentThread(nullptr);
@@ -983,6 +979,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit modules
   visitor->visitPointer(&modules_);
 
+  // Visit api handles
+  visitor->visitPointer(&apihandles_);
+
   // Visit symbols
   symbols_->visit(visitor);
 }
@@ -1039,6 +1038,10 @@ void Runtime::initializeModules() {
   createBuiltinsModule();
   createSysModule();
   createTimeModule();
+}
+
+void Runtime::initializeApiHandles() {
+  apihandles_ = newDictionary();
 }
 
 Object* Runtime::classOf(Object* object) {
@@ -2589,19 +2592,53 @@ Object* Runtime::superGetAttr(
   return instanceGetAttr(thread, receiver, name);
 }
 
-PyObject* Runtime::allocatePyObject(Object* obj) {
-  void* ptr = std::malloc(sizeof(PyroObject));
-  pyobject_store_.push_back(ptr);
-  PyroObject* py_obj = reinterpret_cast<PyroObject*>(ptr);
-  py_obj->ob_refcnt = 1;
-  py_obj->ob_type = nullptr;
-  py_obj->reference = obj;
-  return reinterpret_cast<PyObject*>(py_obj);
+// An isomorphic structure to CPython's PyObject
+struct ApiHandle {
+  void* reference;
+  long ob_refcnt;
+  void* ob_type;
+};
+
+PyObject* Runtime::asApiHandle(Object* obj) {
+  HandleScope scope;
+  Handle<Object> key(&scope, obj);
+  Handle<Dictionary> dict(&scope, apihandles());
+  Object* value = dictionaryAt(dict, key);
+  if (value->isError()) {
+    value = allocateApiHandle(obj);
+  }
+  return static_cast<PyObject*>(Integer::cast(value)->asCPointer());
 }
 
-Object* Runtime::getObject(PyObject* py_obj) {
-  PyroObject* pyro_obj = reinterpret_cast<PyroObject*>(py_obj);
-  return reinterpret_cast<Object*>(pyro_obj->reference);
+Object* Runtime::asObject(PyObject* handle) {
+  return static_cast<Object*>(reinterpret_cast<ApiHandle*>(handle)->reference);
+}
+
+Object* Runtime::allocateApiHandle(Object* obj) {
+  HandleScope scope;
+  Handle<Object> key(&scope, obj);
+  Handle<Dictionary> dict(&scope, apihandles());
+
+  ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
+  handle->ob_refcnt = 1;
+  handle->ob_type = nullptr;
+  handle->reference = obj;
+
+  Handle<Object> object(
+      &scope, newIntegerFromCPointer(static_cast<void*>(handle)));
+  dictionaryAtPut(dict, key, object);
+  return *object;
+}
+
+void Runtime::deallocApiHandles() {
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, apihandles());
+  Handle<ObjectArray> keys(&scope, dictionaryKeys(dict));
+  for (word i = 0; i < keys->length(); i++) {
+    Handle<Object> key(&scope, keys->at(i));
+    Object* value = dictionaryAt(dict, key);
+    std::free(Integer::cast(value)->asCPointer());
+  }
 }
 
 } // namespace python

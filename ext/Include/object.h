@@ -75,8 +75,8 @@ whose size is determined when the object is allocated.
 #define _PyObject_EXTRA_INIT 0, 0,
 
 #else
-#define _PyObject_HEAD_EXTRA
-#define _PyObject_EXTRA_INIT
+#define _PyObject_HEAD_EXTRA struct _object* reference;
+#define _PyObject_EXTRA_INIT 0,
 #endif
 
 /* PyObject_HEAD defines the initial segment of every PyObject. */
