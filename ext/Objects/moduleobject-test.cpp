@@ -56,6 +56,67 @@ TEST_F(ModuleExtensionApiTest, CreateAddsDocstring) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(ModuleExtensionApiTest, CreateSetsStateNull) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  ASSERT_EQ(PyModule_GetState(module), nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, GetStateAllocatesAndAllowsMutation) {
+  struct my_mod_state {
+    char letter;
+    int number;
+    double big_number;
+    PyObject* object;
+  };
+
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+      "doc",
+      sizeof(my_mod_state),
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  void* state = PyModule_GetState(module);
+  ASSERT_NE(state, nullptr);
+  my_mod_state* mod_state = reinterpret_cast<my_mod_state*>(state);
+  mod_state->letter = 'a';
+  mod_state->number = 2;
+  mod_state->big_number = 2.1;
+  testing::PyObjectPtr unique_obj(testing::createUniqueObject());
+  mod_state->object = unique_obj;
+
+  ASSERT_EQ(PyModule_GetState(module), state);
+  EXPECT_EQ(mod_state->letter, 'a');
+  EXPECT_EQ(mod_state->number, 2);
+  EXPECT_EQ(mod_state->big_number, 2.1);
+  EXPECT_EQ(mod_state->object, unique_obj);
+
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, GetStateFailsOnNonModule) {
+  testing::PyObjectPtr not_a_module(testing::createUniqueObject());
+
+  EXPECT_EQ(PyModule_GetState(not_a_module), nullptr);
+  EXPECT_TRUE(
+      testing::exceptionValueMatches("Bad argument to PyModule_GetState"));
+}
+
 TEST_F(ModuleExtensionApiTest, GetDefWithExtensionModuleRetunsNonNull) {
   static PyModuleDef def;
   def = {

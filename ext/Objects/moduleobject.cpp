@@ -34,12 +34,19 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
     runtime->moduleAtPut(module, key, doc);
   }
 
+  ApiHandle* handle = ApiHandle::fromObject(module);
+  if (def->m_size > 0) {
+    handle->setCache(std::malloc(def->m_size));
+  } else {
+    handle->setCache(nullptr);
+  }
+
   // TODO(eelizondo): Check m_slots
   // TODO(eelizondo): Set md_state
   // TODO(eelizondo): Validate m_methods
   // TODO(eelizondo): Add methods
 
-  return ApiHandle::fromObject(*module);
+  return handle;
 }
 
 PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
@@ -74,7 +81,8 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
   Object module_obj(&scope, ApiHandle::fromPyObject(mod)->asObject());
   if (!module_obj->isModule()) {
     // TODO(atalaba): Allow for module subclassing
-    thread->raiseTypeErrorWithCStr("PyModule_GetNameObject takes a Module object");
+    thread->raiseTypeErrorWithCStr(
+        "PyModule_GetNameObject takes a Module object");
     return nullptr;
   }
   Module module(&scope, *module_obj);
@@ -87,8 +95,18 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
   return ApiHandle::fromObject(name);
 }
 
-PY_EXPORT void* PyModule_GetState(PyObject* /* m */) {
-  UNIMPLEMENTED("PyModule_GetState");
+PY_EXPORT void* PyModule_GetState(PyObject* m) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  Object mod_object(&scope, ApiHandle::fromPyObject(m)->asObject());
+  if (!mod_object->isModule()) {
+    // TODO(atalaba): Support module subclassing
+    // TODO(T36797384): Replace SystemError with PyErr_BadArgument()
+    thread->raiseSystemErrorWithCStr("Bad argument to PyModule_GetState");
+    return nullptr;
+  }
+  return ApiHandle::fromObject(mod_object)->cache();
 }
 
 PY_EXPORT PyObject* PyModuleDef_Init(struct PyModuleDef* /* f */) {
