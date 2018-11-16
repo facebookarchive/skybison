@@ -1724,6 +1724,18 @@ void Interpreter::doBuildSetUnpack(Context* ctx, word arg) {
   ctx->frame->setTopValue(*set);
 }
 
+// opcode 154
+void Interpreter::doSetupAsyncWith(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  HandleScope scope(ctx->thread);
+  Handle<Object> result(&scope, frame->popValue());
+  word stack_depth = frame->valueStackSize();
+  BlockStack* block_stack = frame->blockStack();
+  block_stack->push(
+      TryBlock(Bytecode::SETUP_FINALLY, ctx->pc + arg, stack_depth));
+  frame->pushValue(*result);
+}
+
 // opcode 155
 // A incomplete impl of FORMAT_VALUE; assumes no conv
 void Interpreter::doFormatValue(Context* ctx, word flags) {

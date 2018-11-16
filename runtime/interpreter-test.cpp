@@ -858,4 +858,23 @@ TEST(InterpreterDeathTest, GetAIterOnNonIterable) {
                "'async for' requires an object with __aiter__ method");
 }
 
+TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<Code> code(&scope, runtime.newCode());
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  consts->atPut(0, SmallInt::fromWord(42));
+  consts->atPut(1, None::object());
+  code->setConsts(*consts);
+  code->setNlocals(0);
+  const byte bc[] = {
+      LOAD_CONST, 0, LOAD_CONST,   1, SETUP_ASYNC_WITH, 0,
+      POP_BLOCK,  0, RETURN_VALUE, 0,
+  };
+  code->setCode(runtime.newByteArrayWithAll(bc));
+  Object* result = Thread::currentThread()->run(*code);
+  EXPECT_EQ(result, SmallInt::fromWord(42));
+}  // namespace python
+
 }  // namespace python

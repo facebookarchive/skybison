@@ -163,7 +163,7 @@ namespace python {
   V(BUILD_MAP_UNPACK_WITH_CALL, 151, doNotImplemented)                         \
   V(BUILD_TUPLE_UNPACK, 152, doBuildTupleUnpack)                               \
   V(BUILD_SET_UNPACK, 153, doBuildSetUnpack)                                   \
-  V(SETUP_ASYNC_WITH, 154, doNotImplemented)                                   \
+  V(SETUP_ASYNC_WITH, 154, doSetupAsyncWith)                                   \
   V(FORMAT_VALUE, 155, doFormatValue)                                          \
   V(BUILD_CONST_KEY_MAP, 156, doBuildConstKeyMap)                              \
   V(BUILD_STRING, 157, doBuildString)                                          \
