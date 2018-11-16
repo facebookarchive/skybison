@@ -52,11 +52,24 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
 }
 
 Object* builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 2) {
+    return thread->throwTypeErrorFromCString("type() takes 1 or 3 arguments");
+  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Handle<Type> metatype(&scope, args.get(0));
   LayoutId class_layout_id = Layout::cast(metatype->instanceLayout())->id();
+  // If the first argument is exactly type, and there are no other arguments,
+  // then this call acts like a "typeof" operator, and returns the type of the
+  // argument.
+  if (nargs == 2 && class_layout_id == LayoutId::kType) {
+    Handle<Object> arg(&scope, args.get(1));
+    // TODO(dulinr): In the future, types that should be visible only to the
+    // runtime should be shown here, and things like SmallInt should return Int
+    // instead.
+    return runtime->typeOf(*arg);
+  }
   Handle<Object> name(&scope, args.get(1));
   Handle<Type> result(&scope, runtime->newClassWithMetaclass(class_layout_id));
   result->setName(*name);

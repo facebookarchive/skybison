@@ -144,4 +144,32 @@ class Foo:
   EXPECT_PYSTRING_EQ(String::cast(result), "<class 'Foo'>");
 }
 
+TEST(TypeBuiltinTest, DunderNewWithOneArgReturnsTypeOfArg) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(R"(
+a = type.__new__(type, 1);
+b = type.__new__(type, "hello");
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Type> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Type> b(&scope, moduleAt(&runtime, main, "b"));
+
+  EXPECT_EQ(Layout::cast(a->instanceLayout())->id(), LayoutId::kSmallInt);
+  EXPECT_EQ(Layout::cast(b->instanceLayout())->id(), LayoutId::kSmallStr);
+}
+
+TEST(TypeBuiltinTest, DunderNewWithOneMetaclassArgReturnsType) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(R"(
+class Foo(type):
+  pass
+a = type.__new__(type, Foo);
+)");
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Type> a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_EQ(Layout::cast(a->instanceLayout())->id(), LayoutId::kType);
+}
+
 }  // namespace python
