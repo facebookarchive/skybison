@@ -13,6 +13,8 @@ if (${PYRO_ASAN})
   set(CMAKE_CXX_FLAGS "-fsanitize=address -lpthread")
 endif()
 
+set(PYRO_HOME ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_subdirectory(third-party/benchmark-1.3.0)
 add_subdirectory(third-party/googletest-1.8.0)
 add_subdirectory(third-party/siphash-20170224)
@@ -141,7 +143,14 @@ target_link_libraries(
 
 add_custom_target(
   check
-  COMMAND python-tests
+  COMMAND ${PYRO_HOME}/third-party/gtest-parallel/gtest-parallel
+          ./python-tests --gtest_filter=\${filter}
+  DEPENDS python-tests python)
+
+add_custom_target(
+  flaky_check
+  COMMAND ${PYRO_HOME}/third-party/gtest-parallel/gtest-parallel
+          ./python-tests --gtest_filter=\${filter} --repeat=\${repeat}
   DEPENDS python-tests python)
 
 add_executable(
