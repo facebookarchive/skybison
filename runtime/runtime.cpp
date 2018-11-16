@@ -740,6 +740,7 @@ Object* Runtime::dictionaryAtIfAbsentPut(
     Bucket bucket(data, index);
     bucket.set(*key_hash, *key, *value);
   }
+  dict->setNumItems(dict->numItems() + 1);
   return *value;
 }
 

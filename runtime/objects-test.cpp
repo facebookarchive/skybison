@@ -30,6 +30,7 @@ TEST(DictionaryTest, GetSet) {
   // Store a value
   Handle<Object> stored(&scope, SmallInteger::fromWord(67890));
   runtime.dictionaryAtPut(dict, key, stored);
+  EXPECT_EQ(dict->numItems(), 1);
 
   // Retrieve the stored value
   found = runtime.dictionaryAt(dict, key, &retrieved);
@@ -41,6 +42,7 @@ TEST(DictionaryTest, GetSet) {
   // Overwrite the stored value
   Handle<Object> newValue(&scope, SmallInteger::fromWord(5555));
   runtime.dictionaryAtPut(dict, key, newValue);
+  EXPECT_EQ(dict->numItems(), 1);
 
   // Get the new value
   found = runtime.dictionaryAt(dict, key, &retrieved);
@@ -66,6 +68,8 @@ TEST(DictionaryTest, Remove) {
   Handle<Object> stored(&scope, SmallInteger::fromWord(54321));
 
   runtime.dictionaryAtPut(dict, key, stored);
+  EXPECT_EQ(dict->numItems(), 1);
+
   found = runtime.dictionaryRemove(dict, key, &retrieved);
   ASSERT_TRUE(found);
   ASSERT_EQ(
@@ -75,6 +79,7 @@ TEST(DictionaryTest, Remove) {
   // Looking up a key that was deleted should fail
   found = runtime.dictionaryAt(dict, key, &retrieved);
   ASSERT_FALSE(found);
+  EXPECT_EQ(dict->numItems(), 0);
 }
 
 TEST(DictionaryTest, Length) {
@@ -97,6 +102,48 @@ TEST(DictionaryTest, Length) {
     ASSERT_TRUE(found);
   }
   EXPECT_EQ(dict->numItems(), 5);
+}
+
+TEST(DictionaryTest, AtIfAbsentPutLength) {
+  Runtime runtime;
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, runtime.newDictionary());
+
+  Handle<Object> k1(&scope, SmallInteger::fromWord(1));
+  Handle<Object> v1(&scope, SmallInteger::fromWord(111));
+  runtime.dictionaryAtPut(dict, k1, v1);
+  EXPECT_EQ(dict->numItems(), 1);
+
+  class SmallIntegerCallback : public Callback<Object*> {
+   public:
+    explicit SmallIntegerCallback(int i) : i_(i) {}
+    Object* call() override {
+      return SmallInteger::fromWord(i_);
+    }
+
+   private:
+    int i_;
+  };
+
+  // Add new item
+  Handle<Object> k2(&scope, SmallInteger::fromWord(2));
+  SmallIntegerCallback cb(222);
+  Handle<Object> entry2(&scope, runtime.dictionaryAtIfAbsentPut(dict, k2, &cb));
+  EXPECT_EQ(dict->numItems(), 2);
+  Object* retrieved;
+  bool found = runtime.dictionaryAt(dict, k2, &retrieved);
+  EXPECT_TRUE(found);
+  EXPECT_EQ(retrieved, SmallInteger::fromWord(222));
+
+  // Don't overrwite existing item 1 -> v1
+  Handle<Object> k3(&scope, SmallInteger::fromWord(1));
+  SmallIntegerCallback cb3(333);
+  Handle<Object> entry3(
+      &scope, runtime.dictionaryAtIfAbsentPut(dict, k3, &cb3));
+  EXPECT_EQ(dict->numItems(), 2);
+  found = runtime.dictionaryAt(dict, k3, &retrieved);
+  EXPECT_TRUE(found);
+  EXPECT_EQ(retrieved, *v1);
 }
 
 TEST(DictionaryTest, GrowWhenFull) {
