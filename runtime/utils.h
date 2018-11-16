@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "Globals.h"
+#include "globals.h"
 
 class Utils {
  public:

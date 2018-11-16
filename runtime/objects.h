@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Globals.h"
-#include "Utils.h"
+#include "globals.h"
+#include "utils.h"
 
 namespace python {
 

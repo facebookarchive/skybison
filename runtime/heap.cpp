@@ -1,7 +1,7 @@
-#include "Heap.h"
+#include "heap.h"
 
-#include "Object.h"
-#include "Runtime.h"
+#include "objects.h"
+#include "runtime.h"
 
 namespace python {
 

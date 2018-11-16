@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "Globals.h"
-#include "Marshal.h"
-#include "Runtime.h"
+#include "globals.h"
+#include "marshal.h"
+#include "runtime.h"
 
 namespace python {
 

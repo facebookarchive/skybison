@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Heap.h"
-#include "Object.h"
+#include "heap.h"
+#include "objects.h"
 
 namespace python {
 

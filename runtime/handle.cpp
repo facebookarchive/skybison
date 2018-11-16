@@ -1,7 +1,7 @@
-#include "Handle.h"
+#include "handle.h"
 
-#include "Globals.h"
-#include "Object.h"
+#include "globals.h"
+#include "objects.h"
 
 namespace python {
 

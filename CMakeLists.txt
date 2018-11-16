@@ -9,11 +9,10 @@ add_subdirectory(third-party/googletest-1.8.0)
 include_directories(third-party/googletest-1.8.0/googletest/include)
 include_directories(third-party/googletest-1.8.0/googlemock/include)
 
-#set(SOURCE_FILES main.cpp runtime/Heap.cpp runtime/Heap.h runtime/Handle.cpp runtime/Handle.h runtime/Runtime.cpp runtime/Runtime.h runtime/Globals.h runtime/Object.h runtime/Marshal.cpp runtime/Marshal.h)
-set(SOURCE_FILES runtime/Heap.cpp runtime/Heap.h runtime/Handle.cpp runtime/Handle.h runtime/Runtime.cpp runtime/Runtime.h runtime/Globals.h runtime/Object.h runtime/Marshal.cpp runtime/Marshal.h runtime/Utils.h)
+set(SOURCE_FILES runtime/bytecode.h runtime/frame.h runtime/globals.h runtime/handle.cpp runtime/handle.h runtime/heap.cpp runtime/heap.h runtime/interpreter.cpp runtime/interpreter.h runtime/marshal.cpp runtime/marshal.h runtime/objects.h runtime/runtime.cpp runtime/runtime.h runtime/thread.cpp runtime/thread.h runtime/utils.h)
 
 add_executable(python main.cpp ${SOURCE_FILES})
 
-set(TEST_FILES runtime/MarshalTest.cpp runtime/Thread.cpp runtime/Thread.h runtime/Interpreter.cpp runtime/Interpreter.h runtime/Bytecode.h runtime/Frame.h runtime/ThreadTest.cpp)
+set(TEST_FILES runtime/marshal-test.cpp runtime/thread-test.cpp)
 add_executable(python-tests ${SOURCE_FILES} ${TEST_FILES})
 target_link_libraries(python-tests gtest gtest_main)

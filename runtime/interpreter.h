@@ -1,11 +1,6 @@
-//
-// Created by Carl S. Shapiro on 9/15/17.
-//
+#pragma once
 
-#ifndef PYTHON_INTERPRETER_H
-#define PYTHON_INTERPRETER_H
-
-#include "Globals.h"
+#include "globals.h"
 
 namespace python {
 
@@ -22,5 +17,3 @@ class Interpreter {
 };
 
 }
-
-#endif //PYTHON_INTERPRETER_H

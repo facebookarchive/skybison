@@ -1,8 +1,9 @@
-#include "Frame.h"
-#include "Globals.h"
-#include "Object.h"
-#include "Thread.h"
-#include "Interpreter.h"
+#include "thread.h"
+
+#include "frame.h"
+#include "globals.h"
+#include "interpreter.h"
+#include "objects.h"
 
 namespace python {
 

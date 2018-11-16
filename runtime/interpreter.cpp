@@ -1,10 +1,10 @@
 #include <cstdlib>
 
-#include "Bytecode.h"
-#include "Interpreter.h"
-#include "Object.h"
-#include "Thread.h"
-#include "Frame.h"
+#include "bytecode.h"
+#include "interpreter.h"
+#include "objects.h"
+#include "thread.h"
+#include "frame.h"
 
 namespace python {
 

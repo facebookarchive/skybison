@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Globals.h"
-#include "Handle.h"
-#include "Object.h"
+#include "globals.h"
+#include "handle.h"
+#include "objects.h"
 
 namespace python {
 

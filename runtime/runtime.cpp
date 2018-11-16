@@ -1,8 +1,8 @@
-#include "Runtime.h"
+#include "runtime.h"
 
-#include "Globals.h"
-#include "Handle.h"
-#include "Heap.h"
+#include "globals.h"
+#include "handle.h"
+#include "heap.h"
 
 namespace python {
 
