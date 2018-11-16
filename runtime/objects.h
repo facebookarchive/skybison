@@ -56,11 +56,17 @@ class Object;
 // [ elem N ]
 
 enum ClassId {
-  // Immediate objects
+  // Immediate objects - note that the SmallInteger class is also aliased to
+  // all even integers less than 32, so that classes of immediate objects can
+  // be looked up simply by using the low 5 bits of the immediate value. This
+  // implies that all other immediate class ids must be odd.
   kSmallInteger = 0,
-  kSmallString,
-  kBoolean,
-  kNone,
+  kBoolean = 7,
+  kNone = 15,
+  // there is no class associated with the Error object type, this is here as a
+  // placeholder.
+  kError = 23,
+  kSmallString = 31,
 
   // Heap objects
   kObject = 32,
@@ -88,6 +94,7 @@ class Object {
   // Getters and setters.
 
   inline bool isObject();
+  inline ClassId classId();
 
   // Immediate objects
   inline bool isSmallInteger();
@@ -124,6 +131,12 @@ class Object {
   static inline Object* cast(Object* object);
   template <typename T>
   inline T* cast();
+
+  // Constants
+
+  // The bottom five bits of immediate objects are used as the class id when
+  // indexing into the class table in the runtime.
+  static const uword kImmediateClassTableIndexMask = (1 << 5) - 1;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Object);
@@ -972,6 +985,17 @@ class Ellipsis : public HeapObject {
 
 bool Object::isObject() {
   return true;
+}
+
+ClassId Object::classId() {
+  if (isHeapObject()) {
+    return HeapObject::cast(this)->header()->classId();
+  }
+  if (isSmallInteger()) {
+    return ClassId::kSmallInteger;
+  }
+  return static_cast<ClassId>(
+      reinterpret_cast<uword>(this) & kImmediateClassTableIndexMask);
 }
 
 bool Object::isClass() {

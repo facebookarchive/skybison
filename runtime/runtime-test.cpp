@@ -641,6 +641,27 @@ TEST(RuntimeTest, VerifySymbols) {
   }
 }
 
+static String* className(Runtime* runtime, Object* o) {
+  auto cls = Class::cast(runtime->classAt(o->classId()));
+  auto name = String::cast(cls->name());
+  return name;
+}
+
+TEST(RuntimeTest, ClassIds) {
+  Runtime runtime;
+  HandleScope scope;
+
+  EXPECT_PYSTRING_EQ(className(&runtime, Boolean::fromBool(true)), "bool");
+  EXPECT_PYSTRING_EQ(className(&runtime, None::object()), "NoneType");
+  EXPECT_PYSTRING_EQ(
+      className(&runtime, runtime.newStringFromCString("abc")), "smallstr");
+
+  for (word i = 0; i < 16; i++) {
+    auto small_int = SmallInteger::fromWord(i);
+    EXPECT_PYSTRING_EQ(className(&runtime, small_int), "smallint");
+  }
+}
+
 TEST(RuntimeTest, StringConcat) {
   Runtime runtime;
   HandleScope scope;

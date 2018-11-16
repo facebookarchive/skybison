@@ -72,6 +72,10 @@ Object* Runtime::newClass() {
 
 Object* Runtime::newClassWithId(ClassId class_id) {
   auto index = static_cast<word>(class_id);
+  // kSmallInteger must be the only even immediate class id.
+  assert(
+      index >= static_cast<word>(ClassId::kObject) ||
+      class_id == ClassId::kSmallInteger || (index & 1) == 1);
   assert(index < List::cast(class_table_)->allocated());
   HandleScope scope;
   Handle<Class> klass(&scope, heap()->createClass(class_id));
