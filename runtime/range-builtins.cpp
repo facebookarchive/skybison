@@ -7,7 +7,7 @@
 
 namespace python {
 
-void RangeBuiltins::initialize(Runtime *runtime) {
+void RangeBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> range(
       &scope, runtime->addEmptyBuiltinClass(SymbolId::kRange, LayoutId::kRange,
@@ -16,7 +16,7 @@ void RangeBuiltins::initialize(Runtime *runtime) {
                                    nativeTrampoline<dunderIter>);
 }
 
-Object *RangeBuiltins::dunderIter(Thread *thread, Frame *frame, word nargs) {
+Object* RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
   }
@@ -36,7 +36,7 @@ const BuiltinMethod RangeIteratorBuiltins::kMethods[] = {
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
 
-void RangeIteratorBuiltins::initialize(Runtime *runtime) {
+void RangeIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Handle<Type> range_iter(
       &scope, runtime->addBuiltinClass(SymbolId::kRangeIterator,
@@ -44,7 +44,7 @@ void RangeIteratorBuiltins::initialize(Runtime *runtime) {
                                        LayoutId::kObject, kMethods));
 }
 
-Object *RangeIteratorBuiltins::dunderIter(Thread *thread, Frame *frame,
+Object* RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                           word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
@@ -60,7 +60,7 @@ Object *RangeIteratorBuiltins::dunderIter(Thread *thread, Frame *frame,
   return *self;
 }
 
-Object *RangeIteratorBuiltins::dunderNext(Thread *thread, Frame *frame,
+Object* RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                           word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
@@ -80,7 +80,7 @@ Object *RangeIteratorBuiltins::dunderNext(Thread *thread, Frame *frame,
   return *value;
 }
 
-Object *RangeIteratorBuiltins::dunderLengthHint(Thread *thread, Frame *frame,
+Object* RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
                                                 word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr(
