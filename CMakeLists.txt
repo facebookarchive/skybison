@@ -58,6 +58,8 @@ add_library(
   runtime/builtins-module.h
   runtime/bytecode.cpp
   runtime/bytecode.h
+  runtime/c-api.cpp
+  runtime/c-api.h
   runtime/callback.h
   runtime/descriptor-builtins.cpp
   runtime/descriptor-builtins.h

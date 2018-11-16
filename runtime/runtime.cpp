@@ -3042,7 +3042,7 @@ Object* Runtime::newExtensionInstance(ApiHandle* handle) {
   // Get type class
   Handle<Dictionary> extensions_dict(&scope, extensionTypes());
   Handle<Object> type_id(
-      &scope, newIntegerFromCPointer(static_cast<void*>(handle->obType())));
+      &scope, newIntegerFromCPointer(static_cast<void*>(handle->type())));
   Handle<Class> type_class(&scope, dictionaryAt(extensions_dict, type_id));
 
   // Create instance
@@ -3062,7 +3062,7 @@ ApiHandle* Runtime::asApiHandle(Object* obj) {
   Handle<Dictionary> dict(&scope, apiHandles());
   Object* value = dictionaryAt(dict, key);
   if (value->isError()) {
-    ApiHandle* handle = ApiHandle::New(obj);
+    ApiHandle* handle = ApiHandle::newHandle(obj);
     Handle<Object> object(
         &scope, newIntegerFromCPointer(static_cast<void*>(handle)));
     dictionaryAtPut(dict, key, object);
@@ -3077,7 +3077,7 @@ ApiHandle* Runtime::asBorrowedApiHandle(Object* obj) {
   Handle<Dictionary> dict(&scope, apiHandles());
   Object* value = dictionaryAt(dict, key);
   if (value->isError()) {
-    ApiHandle* handle = ApiHandle::NewBorrowed(obj);
+    ApiHandle* handle = ApiHandle::newBorrowedHandle(obj);
     Handle<Object> object(
         &scope, newIntegerFromCPointer(static_cast<void*>(handle)));
     dictionaryAtPut(dict, key, object);
@@ -3100,25 +3100,6 @@ void Runtime::freeTrackedAllocations() {
     Object* value = dictionaryAt(dict, key);
     delete static_cast<ApiHandle*>(Integer::cast(value)->asCPointer());
   }
-}
-
-bool Type_IsBuiltin(PyObject*);
-
-Object* ApiHandle::asObject() {
-  // Fast path
-  if (reference_ != nullptr) {
-    return static_cast<Object*>(reference_);
-  }
-
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  // Create runtime instance from extension object
-  if (obType() && !Type_IsBuiltin(obType())) {
-    return runtime->newExtensionInstance(this);
-  }
-
-  UNIMPLEMENTED("Could not materialize a runtime object from the ApiHandle");
 }
 
 } // namespace python
