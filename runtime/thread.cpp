@@ -81,6 +81,7 @@ Frame* Thread::pushModuleFunctionFrame(
     Object* object,
     Frame* previousFrame) {
   Frame* result = pushFrame(object, previousFrame);
+  result->setGlobals(module->dictionary());
   result->setImplicitGlobals(module->dictionary());
   return result;
 }

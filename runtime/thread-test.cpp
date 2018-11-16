@@ -84,6 +84,55 @@ TEST(ThreadTest, RunHelloWorld) {
   ASSERT_EQ(result, None::object()); // returns None
 }
 
+TEST(ThreadTest, ModuleBodyCallsHelloWorldFunction) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // These bytes correspond to the .pyc output from compiling a file containing
+  // just the following statements:
+  //
+  //   def hello():
+  //     print('hello, world')
+  //   hello()
+  const char* buffer =
+      "\x33\x0D\x0D\x0A\x20\x05\x1E\x5A\x50\x00\x00\x00\xE3\x00\x00\x00\x00\x00"
+      "\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x40\x00\x00\x00\x73\x12\x00"
+      "\x00\x00\x64\x00\x64\x01\x84\x00\x5A\x00\x65\x00\x83\x00\x01\x00\x64\x02"
+      "\x53\x00\x29\x03\x63\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02"
+      "\x00\x00\x00\x43\x00\x00\x00\x73\x0C\x00\x00\x00\x74\x00\x64\x01\x83\x01"
+      "\x01\x00\x64\x00\x53\x00\x29\x02\x4E\x7A\x0C\x68\x65\x6C\x6C\x6F\x2C\x20"
+      "\x77\x6F\x72\x6C\x64\x29\x01\xDA\x05\x70\x72\x69\x6E\x74\xA9\x00\x72\x02"
+      "\x00\x00\x00\x72\x02\x00\x00\x00\xFA\x0C\x63\x61\x6C\x6C\x68\x65\x6C\x6C"
+      "\x6F\x2E\x70\x79\xDA\x0A\x68\x65\x6C\x6C\x6F\x77\x6F\x72\x6C\x64\x02\x00"
+      "\x00\x00\x73\x02\x00\x00\x00\x00\x01\x72\x04\x00\x00\x00\x4E\x29\x01\x72"
+      "\x04\x00\x00\x00\x72\x02\x00\x00\x00\x72\x02\x00\x00\x00\x72\x02\x00\x00"
+      "\x00\x72\x03\x00\x00\x00\xDA\x08\x3C\x6D\x6F\x64\x75\x6C\x65\x3E\x02\x00"
+      "\x00\x00\x73\x02\x00\x00\x00\x08\x02";
+  Marshal::Reader reader(&scope, &runtime, buffer);
+
+  int32 magic = reader.readLong();
+  EXPECT_EQ(magic, 0x0A0D0D33);
+  int32 mtime = reader.readLong();
+  EXPECT_EQ(mtime, 0x5A1E0520);
+  int32 size = reader.readLong();
+  EXPECT_EQ(size, 80);
+
+  auto code = reader.readObject();
+  ASSERT_TRUE(code->isCode());
+  EXPECT_EQ(Code::cast(code)->argcount(), 0);
+
+  // TODO(cshapiro): abstract away retrieving the main module.
+  Handle<Dictionary> modules(&scope, runtime.modules());
+  Handle<Object> key(&scope, runtime.newStringFromCString("__main__"));
+  Handle<Object> value(&scope, None::object());
+  bool is_present = runtime.dictionaryAt(modules, key, value.pointer());
+  ASSERT_TRUE(is_present);
+  Handle<Module> main(&scope, *value);
+
+  Object* result = Thread::currentThread()->runModuleFunction(*main, code);
+  ASSERT_EQ(result, None::object()); // returns None
+}
+
 TEST(ThreadTest, OverlappingFrames) {
   Runtime runtime;
   HandleScope scope;

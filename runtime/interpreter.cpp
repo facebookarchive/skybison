@@ -136,6 +136,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         Function* function = Function::cast(thread->runtime()->newFunction());
         function->setName(*sp++);
         function->setCode(*sp++);
+        function->setGlobals(frame->globals());
         function->setEntry(interpreterTrampoline);
         *--sp = function;
         break;
