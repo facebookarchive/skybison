@@ -138,15 +138,23 @@ Object* builtinSmallIntegerSub(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->throwTypeErrorFromCString("expected 1 argument");
   }
+
   Arguments args(frame, nargs);
   Object* self = args.get(0);
   Object* other = args.get(1);
+
+  if (!self->isSmallInteger())
+    return thread->throwTypeErrorFromCString(
+        "descriptor '__sub__' requires a 'int' object");
+
   if (self->isSmallInteger() && other->isSmallInteger()) {
     SmallInteger* left = SmallInteger::cast(self);
     SmallInteger* right = SmallInteger::cast(other);
-    // TODO(cshapiro): handle overflow
-    return SmallInteger::fromWord(left->value() - right->value());
+    word a = left->value();
+    word b = right->value();
+    return thread->runtime()->newInteger(a - b);
   }
+  // TODO(T30610701): Handle LargeIntegers
   return thread->runtime()->notImplemented();
 }
 
