@@ -228,6 +228,10 @@ class Runtime {
 
   SymbolId binaryOperationSelector(Interpreter::BinaryOp op);
   SymbolId swappedBinaryOperationSelector(Interpreter::BinaryOp op);
+  bool shouldReverseBinaryOperation(Thread* thread, const Object& left,
+                                    const Object& left_reversed_method,
+                                    const Object& right,
+                                    const Object& right_reversed_method);
 
   SymbolId inplaceOperationSelector(Interpreter::BinaryOp op);
 

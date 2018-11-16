@@ -308,47 +308,36 @@ RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
-  Type self_type(&scope, runtime->typeOf(*self));
-  Type other_type(&scope, runtime->typeOf(*other));
-  bool is_derived_type =
-      (*self_type != *other_type) &&
-      (runtime->isSubClass(other_type, self_type) == Bool::trueObj());
-
   SymbolId selector = runtime->binaryOperationSelector(op);
   Object self_method(&scope, lookupMethod(thread, caller, self, selector));
-  Object other_method(&scope, lookupMethod(thread, caller, other, selector));
 
   SymbolId swapped_selector = runtime->swappedBinaryOperationSelector(op);
-  Object self_reflected_method(
+  Object self_reversed_method(
       &scope, lookupMethod(thread, caller, self, swapped_selector));
-  Object other_reflected_method(
+  Object other_reversed_method(
       &scope, lookupMethod(thread, caller, other, swapped_selector));
 
   bool try_other = true;
   if (!self_method->isError()) {
-    if (is_derived_type && !other_reflected_method->isError() &&
-        *self_reflected_method != *other_reflected_method) {
-      RawObject result =
-          callMethod2(thread, caller, other_reflected_method, other, self);
-      if (result != runtime->notImplemented()) {
-        return result;
-      }
+    if (runtime->shouldReverseBinaryOperation(
+            thread, self, self_reversed_method, other, other_reversed_method)) {
+      Object result(&scope, callMethod2(thread, caller, other_reversed_method,
+                                        other, self));
+      if (!result->isNotImplemented()) return *result;
       try_other = false;
     }
-    RawObject result = callMethod2(thread, caller, self_method, self, other);
-    if (result != runtime->notImplemented()) {
-      return result;
-    }
+    Object result(&scope,
+                  callMethod2(thread, caller, self_method, self, other));
+    if (!result->isNotImplemented()) return *result;
   }
-  if (try_other) {
-    if (!other_reflected_method->isError()) {
-      RawObject result =
-          callMethod2(thread, caller, other_reflected_method, other, self);
-      if (result != runtime->notImplemented()) {
-        return result;
-      }
-    }
+  if (try_other && !other_reversed_method->isError()) {
+    Object result(&scope, callMethod2(thread, caller, other_reversed_method,
+                                      other, self));
+    if (!result->isNotImplemented()) return *result;
   }
+
+  Type self_type(&scope, runtime->typeOf(*self));
+  Type other_type(&scope, runtime->typeOf(*other));
   UNIMPLEMENTED("Cannot do binary op %ld for types '%s' and '%s'",
                 static_cast<word>(op),
                 RawStr::cast(self_type->name())->toCStr(),

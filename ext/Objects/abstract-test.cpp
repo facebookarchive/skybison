@@ -13,6 +13,46 @@ TEST_F(AbstractExtensionApiTest, PyNumberIndexOnIntReturnsSelf) {
   EXPECT_EQ(pylong, PyNumber_Index(pylong));
 }
 
+TEST_F(AbstractExtensionApiTest, PyNumberBinaryOp) {
+  PyObject* v = PyLong_FromLong(0b101010);
+  PyObject* w = PyLong_FromLong(0b111000);
+  PyObject* result = PyNumber_Xor(v, w);
+  EXPECT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 0b010010);
+  Py_DECREF(v);
+  Py_DECREF(w);
+  Py_DECREF(result);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberBinaryOpCallsDunderMethod) {
+  PyRun_SimpleString(R"(
+class ClassWithDunderAdd:
+  def __add__(self, other):
+    return "hello";
+
+a = ClassWithDunderAdd()
+  )");
+  PyObject* a = testing::moduleGet("__main__", "a");
+  PyObject* i = PyLong_FromLong(7);
+  PyObject* result = PyNumber_Add(a, i);
+  EXPECT_TRUE(PyUnicode_Check(result));
+  EXPECT_STREQ(PyUnicode_AsUTF8(result), "hello");
+  Py_DECREF(a);
+  Py_DECREF(i);
+  Py_DECREF(result);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberBinaryOpWithInvalidArgsReturnsNull) {
+  PyObject* v = PyLong_FromLong(1);
+  PyObject* w = PyUnicode_FromString("pyro");
+  PyObject* result = PyNumber_Subtract(v, w);
+  ASSERT_EQ(result, nullptr);
+  // TODO(T34841408): check the error message
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  Py_DECREF(v);
+  Py_DECREF(w);
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberIndexCallsIndex) {
   PyRun_SimpleString(R"(
 class IntLikeClass:
