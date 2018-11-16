@@ -250,6 +250,13 @@ Result DUP_TOP(Context* ctx, word) {
   *--ctx->sp = top;
   return Result::CONTINUE;
 }
+Result DUP_TOP_TWO(Context* ctx, word) {
+  Object* first = *ctx->sp;
+  Object* second = *(ctx->sp + 1);
+  *--ctx->sp = second;
+  *--ctx->sp = first;
+  return Result::CONTINUE;
+}
 Result ROT_TWO(Context* ctx, word) {
   Object* top = *ctx->sp;
   *ctx->sp = *(ctx->sp + 1);

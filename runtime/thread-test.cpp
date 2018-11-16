@@ -399,6 +399,25 @@ TEST(ThreadTest, ExecuteDupTop) {
   EXPECT_EQ(SmallInteger::cast(result)->value(), 1111);
 }
 
+TEST(ThreadTest, ExecuteDupTopTwo) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(2));
+  consts->atPut(0, SmallInteger::fromWord(1111));
+  consts->atPut(1, SmallInteger::fromWord(2222));
+  Handle<Code> code(&scope, runtime.newCode());
+  code->setStacksize(2);
+  code->setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, DUP_TOP_TWO, 0, RETURN_VALUE, 0};
+  code->setCode(runtime.newByteArrayWithAll(bytecode));
+
+  Object* result = Thread::currentThread()->run(*code);
+  ASSERT_TRUE(result->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(result)->value(), 2222);
+}
+
 TEST(ThreadTest, ExecuteRotTwo) {
   Runtime runtime;
   HandleScope scope;
