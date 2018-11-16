@@ -2760,4 +2760,20 @@ del var
   EXPECT_TRUE(var->isError());
 }
 
+TEST(ThreadTest, SetupFinally) {
+  const char* src = R"(
+x = 1
+try:
+  pass
+finally:
+  x = 2
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> x(&scope, moduleAt(&runtime, main, "x"));
+  EXPECT_EQ(*x, SmallInteger::fromWord(2));
+}
+
 }  // namespace python

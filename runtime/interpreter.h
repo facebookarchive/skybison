@@ -184,6 +184,7 @@ class Interpreter {
   static void doContinueLoop(Context* ctx, word arg);
   static void doSetupLoop(Context* ctx, word arg);
   static void doSetupExcept(Context* ctx, word arg);
+  static void doSetupFinally(Context* ctx, word arg);
   static void doLoadFast(Context* ctx, word arg);
   static void doStoreFast(Context* ctx, word arg);
   static void doCallFunction(Context* ctx, word arg);

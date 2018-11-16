@@ -131,7 +131,7 @@ namespace python {
   V(CONTINUE_LOOP, 119, doContinueLoop)                                        \
   V(SETUP_LOOP, 120, doSetupLoop)                                              \
   V(SETUP_EXCEPT, 121, doSetupExcept)                                          \
-  V(SETUP_FINALLY, 122, doNotImplemented)                                      \
+  V(SETUP_FINALLY, 122, doSetupFinally)                                        \
   V(UNUSED_BYTECODE_123, 123, doInvalidBytecode)                               \
   V(LOAD_FAST, 124, doLoadFast)                                                \
   V(STORE_FAST, 125, doStoreFast)                                              \

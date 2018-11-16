@@ -1311,6 +1311,15 @@ void Interpreter::doSetupExcept(Context* ctx, word arg) {
       TryBlock(Bytecode::SETUP_EXCEPT, ctx->pc + arg, stack_depth));
 }
 
+// opcode 122
+void Interpreter::doSetupFinally(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  word stack_depth = frame->valueStackBase() - frame->valueStackTop();
+  BlockStack* block_stack = frame->blockStack();
+  block_stack->push(
+      TryBlock(Bytecode::SETUP_FINALLY, ctx->pc + arg, stack_depth));
+}
+
 // opcode 124
 void Interpreter::doLoadFast(Context* ctx, word arg) {
   // TODO: Need to handle unbound local error
