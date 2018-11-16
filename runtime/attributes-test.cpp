@@ -245,7 +245,7 @@ class DataDescriptor:
 )";
   compileAndRunToString(&runtime, src);
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> descr_klass(
       &scope, findInModule(&runtime, main, "DataDescriptor"));
 
@@ -273,7 +273,7 @@ class DataDescriptor:
 )";
   compileAndRunToString(&runtime, src);
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> descr_klass(
       &scope, findInModule(&runtime, main, "DataDescriptor"));
 
@@ -301,7 +301,7 @@ class DataDescriptor:
 )";
   compileAndRunToString(&runtime, src);
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> descr_klass(
       &scope, findInModule(&runtime, main, "DataDescriptor"));
 
@@ -330,7 +330,7 @@ def test(x):
 )";
   compileAndRunToString(&runtime, src);
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
@@ -353,7 +353,7 @@ def test(x):
 
   // Create the instance
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Function> test(&scope, findInModule(&runtime, main, "test"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
@@ -378,7 +378,7 @@ def test(x):
 
   // Create the instance
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   args->atPut(0, runtime.newInstance(klass->id()));
@@ -406,7 +406,7 @@ def test(x):
 
   // Create the instance
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   args->atPut(0, runtime.newInstance(klass->id()));
@@ -437,7 +437,7 @@ def test(x):
 
   // Create the instance
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   args->atPut(0, runtime.newInstance(klass->id()));
@@ -464,7 +464,7 @@ class Foo:
 
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> descr_klass(&scope, findInModule(&runtime, main, "DataDescr"));
   Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
@@ -493,7 +493,7 @@ class Foo:
 
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> descr_klass(&scope, findInModule(&runtime, main, "Descr"));
   Handle<Object> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<Object> attr(&scope, runtime.newStringFromCString("attr"));
@@ -529,7 +529,7 @@ def test(x):
 
   // Create the instance
   HandleScope scope;
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Class> klass(&scope, findInModule(&runtime, main, "Foo"));
   Handle<ObjectArray> args(&scope, runtime.newObjectArray(1));
   args->atPut(0, runtime.newInstance(klass->id()));

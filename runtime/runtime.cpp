@@ -269,6 +269,48 @@ Object* Runtime::instanceSetAttr(
   UNIMPLEMENTED("unknown attribute '%s'", String::cast(*name)->toCString());
 }
 
+// Note that PEP 562 adds support for data descriptors in module objects.
+// We are targeting python 3.6 for now, so we won't worry about that.
+Object* Runtime::moduleGetAttr(
+    Thread* thread,
+    const Handle<Object>& receiver,
+    const Handle<Object>& name) {
+  if (!name->isString()) {
+    // TODO(T25140871): Refactor into something like:
+    //     thread->throwUnexpectedTypeError(expected, actual)
+    return thread->throwTypeErrorFromCString("attribute name must be a string");
+  }
+
+  HandleScope scope(thread->handles());
+  Handle<Module> mod(&scope, *receiver);
+  Handle<Object> ret(&scope, moduleAt(mod, name));
+
+  if (!ret->isError()) {
+    return *ret;
+  } else {
+    // TODO(T25140871): Refactor this into something like:
+    //     thread->throwMissingAttributeError(name)
+    return thread->throwAttributeErrorFromCString("missing attribute");
+  }
+}
+
+Object* Runtime::moduleSetAttr(
+    Thread* thread,
+    const Handle<Object>& receiver,
+    const Handle<Object>& name,
+    const Handle<Object>& value) {
+  if (!name->isString()) {
+    // TODO(T25140871): Refactor into something like:
+    //     thread->throwUnexpectedTypeError(expected, actual)
+    return thread->throwTypeErrorFromCString("attribute name must be a string");
+  }
+
+  HandleScope scope(thread->handles());
+  Handle<Module> mod(&scope, *receiver);
+  moduleAtPut(mod, name, value);
+  return None::object();
+}
+
 bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
   if (object->isFunction() || object->isError()) {
     return false;
@@ -649,18 +691,54 @@ void Runtime::collectGarbage() {
 Object* Runtime::run(const char* buffer) {
   HandleScope scope;
 
+  Handle<Module> main(&scope, createMainModule());
+  return executeModule(buffer, main);
+}
+
+Object* Runtime::executeModule(
+    const char* buffer,
+    const Handle<Module>& module) {
+  HandleScope scope;
   Marshal::Reader reader(&scope, this, buffer);
 
   reader.readLong();
   reader.readLong();
   reader.readLong();
 
-  auto code = reader.readObject();
-  assert(code->isCode());
-  assert(Code::cast(code)->argcount() == 0);
+  Handle<Code> code(&scope, reader.readObject());
+  assert(code->argcount() == 0);
 
-  Handle<Module> main(&scope, createMainModule());
-  return Thread::currentThread()->runModuleFunction(*main, code);
+  return Thread::currentThread()->runModuleFunction(*module, *code);
+}
+
+Object* Runtime::importModule(const Handle<Object>& name) {
+  HandleScope scope;
+  Handle<Object> cached_module(&scope, findModule(name));
+  if (!cached_module->isNone()) {
+    return *cached_module;
+  }
+
+  return Thread::currentThread()->throwRuntimeErrorFromCString(
+      "importModule is unimplemented!");
+}
+
+// TODO: support fromlist and level. Ideally, we'll never implement that
+// functionality in c++, instead using the pure-python importlib
+// implementation that ships with cpython.
+Object* Runtime::importModuleFromBuffer(
+    const char* buffer,
+    const Handle<Object>& name) {
+  HandleScope scope;
+  Handle<Object> cached_module(&scope, findModule(name));
+  if (!cached_module->isNone()) {
+    return *cached_module;
+  }
+
+  Handle<Module> module(&scope, newModule(name));
+  addModule(module);
+  addBuiltins(module);
+  executeModule(buffer, module);
+  return *module;
 }
 
 void Runtime::initializeThreads() {
@@ -737,12 +815,13 @@ void Runtime::addModule(const Handle<Module>& module) {
   dictionaryAtPut(dict, key, value);
 }
 
-Object* Runtime::findModule(const char* name) {
+Object* Runtime::findModule(const Handle<Object>& name) {
+  assert(name->isString());
+
   HandleScope scope;
   Handle<Dictionary> dict(&scope, modules());
-  Handle<Object> key(&scope, newStringFromCString(name));
   Handle<Object> value(&scope, None::object());
-  dictionaryAt(dict, key, value.pointer());
+  dictionaryAt(dict, name, value.pointer());
   return *value;
 }
 
@@ -756,6 +835,15 @@ Object* Runtime::moduleAt(
     return ValueCell::cast(*value)->value();
   }
   return Error::object();
+}
+
+void Runtime::moduleAtPut(
+    const Handle<Module>& module,
+    const Handle<Object>& key,
+    const Handle<Object>& value) {
+  HandleScope scope;
+  Handle<Dictionary> dict(&scope, module->dictionary());
+  dictionaryAtPutInValueCell(dict, key, value);
 }
 
 void Runtime::initializeModules() {
@@ -823,18 +911,7 @@ void Runtime::createBuiltinsModule() {
   Handle<Module> module(&scope, newModule(name));
 
   // Fill in builtins...
-  build_class_ = moduleAddBuiltinFunction(
-      module,
-      "__build_class__",
-      nativeTrampoline<builtinBuildClass>,
-      nativeTrampoline<unimplementedTrampoline>);
-  moduleAddBuiltinPrint(module);
-  moduleAddBuiltinFunction(
-      module,
-      "isinstance",
-      nativeTrampoline<builtinIsinstance>,
-      nativeTrampoline<unimplementedTrampoline>);
-  moduleAddBuiltinPrint(module);
+  addBuiltins(module);
 
   // Add 'object'
   Handle<Object> object(&scope, symbols()->ObjectClassname());
@@ -849,6 +926,10 @@ void Runtime::createSysModule() {
   Handle<Object> name(&scope, newStringFromCString("sys"));
   Handle<Module> module(&scope, newModule(name));
 
+  Handle<Object> modules_id(&scope, newStringFromCString("modules"));
+  Handle<Object> modules(&scope, modules_);
+  moduleAddGlobal(module, modules_id, modules);
+
   // Fill in sys...
   addModule(module);
 }
@@ -859,6 +940,24 @@ Object* Runtime::createMainModule() {
   Handle<Module> module(&scope, newModule(name));
 
   // Fill in __main__...
+  // TODO: remove this call once we do builtin lookups correctly.
+  addBuiltins(module);
+
+  addModule(module);
+
+  return *module;
+}
+
+// TODO: fold this function into createBuiltinsModule once we don't
+// need to add builtins to every module individually.
+void Runtime::addBuiltins(const Handle<Module>& module) {
+  HandleScope scope;
+
+  build_class_ = moduleAddBuiltinFunction(
+      module,
+      "__build_class__",
+      nativeTrampoline<builtinBuildClass>,
+      nativeTrampoline<unimplementedTrampoline>);
   moduleAddBuiltinPrint(module);
   moduleAddBuiltinFunction(
       module,
@@ -885,10 +984,6 @@ Object* Runtime::createMainModule() {
   Handle<Object> object(&scope, symbols()->ObjectClassname());
   Handle<Object> value(&scope, classAt(ClassId::kObject));
   moduleAddGlobal(module, object, value);
-
-  addModule(module);
-
-  return *module;
 }
 
 Object* Runtime::getIter(Object* o) {
@@ -1480,6 +1575,8 @@ Object* Runtime::attributeAt(
     result = classGetAttr(thread, receiver, name);
   } else if (receiver->isInstance()) {
     result = instanceGetAttr(thread, receiver, name);
+  } else if (receiver->isModule()) {
+    result = moduleGetAttr(thread, receiver, name);
   } else {
     result = thread->throwTypeErrorFromCString(
         "can only look up attributes from classes or instances");
@@ -1500,6 +1597,8 @@ Object* Runtime::attributeAtPut(
     result = classSetAttr(thread, receiver, interned_name, value);
   } else if (receiver->isInstance()) {
     result = instanceSetAttr(thread, receiver, interned_name, value);
+  } else if (receiver->isModule()) {
+    result = moduleSetAttr(thread, receiver, interned_name, value);
   } else {
     result = thread->throwTypeErrorFromCString(
         "can only set attributes on classes or instances");

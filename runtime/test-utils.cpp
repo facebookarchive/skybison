@@ -75,5 +75,11 @@ bool objectArrayContains(
   return false;
 }
 
+Object* findModule(Runtime* runtime, const char* name) {
+  HandleScope scope;
+  Handle<Object> key(&scope, runtime->newStringFromCString(name));
+  return runtime->findModule(key);
+}
+
 } // namespace testing
 } // namespace python

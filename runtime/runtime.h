@@ -97,9 +97,21 @@ class Runtime {
       const Function::Entry entry,
       const Function::Entry entryKw);
 
-  Object* findModule(const char* name);
+  Object* findModule(const Handle<Object>& name);
 
   Object* moduleAt(const Handle<Module>& module, const Handle<Object>& key);
+  void moduleAtPut(
+      const Handle<Module>& module,
+      const Handle<Object>& key,
+      const Handle<Object>& value);
+
+  Object* importModule(const Handle<Object>& name);
+
+  // importModuleFromBuffer is exposed for use by the tests. We may be able to
+  // remove this later.
+  Object* importModuleFromBuffer(
+      const char* buffer,
+      const Handle<Object>& name);
 
   Object* classAt(ClassId class_id);
   Object* classOf(Object* object);
@@ -265,6 +277,10 @@ class Runtime {
   void createSysModule();
   Object* createMainModule();
 
+  void addBuiltins(const Handle<Module>& module);
+
+  Object* executeModule(const char* buffer, const Handle<Module>& module);
+
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
 
@@ -319,6 +335,19 @@ class Runtime {
 
   // Generic attribute setting code used for instance objects
   Object* instanceSetAttr(
+      Thread* thread,
+      const Handle<Object>& receiver,
+      const Handle<Object>& name,
+      const Handle<Object>& value);
+
+  // Generic attribute lookup code used for module objects
+  Object* moduleGetAttr(
+      Thread* thread,
+      const Handle<Object>& receiver,
+      const Handle<Object>& name);
+
+  // Generic attribute setting code used for module objects
+  Object* moduleSetAttr(
       Thread* thread,
       const Handle<Object>& receiver,
       const Handle<Object>& name,

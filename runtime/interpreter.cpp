@@ -474,6 +474,17 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
 
+      case Bytecode::IMPORT_NAME: {
+        HandleScope scope;
+        Handle<Object> name(&scope, ObjectArray::cast(code->names())->at(arg));
+        Handle<Object> fromlist(&scope, *sp++);
+        Handle<Object> level(&scope, *sp);
+        Runtime* runtime = thread->runtime();
+        *sp = runtime->importModule(name);
+        thread->abortOnPendingException();
+        break;
+      }
+
       default:
         // TODO: Distinguish between intentionally unimplemented bytecode
         // and unreachable code.

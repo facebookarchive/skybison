@@ -825,7 +825,7 @@ c = MyClassWithNoInitMethod()
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithNoInitMethod");
   EXPECT_EQ(cls->instanceSize(), 0);
 
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> key(&scope, runtime.newStringFromCString("c"));
   Handle<Object> instance(&scope, runtime.moduleAt(main, key));
   ASSERT_TRUE(instance->isInstance());
@@ -853,7 +853,7 @@ c = MyClassWithEmptyInitMethod()
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithEmptyInitMethod");
   EXPECT_EQ(cls->instanceSize(), 0);
 
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> key(&scope, runtime.newStringFromCString("c"));
   Handle<Object> instance(&scope, runtime.moduleAt(main, key));
   ASSERT_TRUE(instance->isInstance());
@@ -881,7 +881,7 @@ c = MyClassWithAttributes(1)
   EXPECT_PYSTRING_EQ(String::cast(cls->name()), "MyClassWithAttributes");
   ASSERT_EQ(cls->instanceSize(), 1);
 
-  Handle<Module> main(&scope, runtime.findModule("__main__"));
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
   Handle<Object> key(&scope, runtime.newStringFromCString("c"));
   Handle<Object> instance(&scope, runtime.moduleAt(main, key));
   ASSERT_TRUE(instance->isInstance());

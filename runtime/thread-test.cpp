@@ -905,7 +905,7 @@ TEST(ThreadTest, UnaryNot) {
 
 static Dictionary* getMainModuleDict(Runtime* runtime) {
   HandleScope scope;
-  Handle<Module> mod(&scope, runtime->findModule("__main__"));
+  Handle<Module> mod(&scope, findModule(runtime, "__main__"));
   EXPECT_TRUE(mod->isModule());
 
   Handle<Dictionary> dict(&scope, mod->dictionary());
@@ -959,7 +959,7 @@ class C:
   Object* result = runtime.run(buffer.get());
   ASSERT_EQ(result, None::object()); // returns None
 
-  Handle<Module> mod(&scope, runtime.findModule("__main__"));
+  Handle<Module> mod(&scope, findModule(&runtime, "__main__"));
   ASSERT_TRUE(mod->isModule());
 
   Handle<Dictionary> mod_dict(&scope, mod->dictionary());
@@ -1407,7 +1407,7 @@ def test(callable):
   compileAndRunToString(&runtime, src);
 
   HandleScope scope;
-  Handle<Module> module(&scope, runtime.findModule("__main__"));
+  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
   Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
 
@@ -1438,7 +1438,7 @@ def test(callable):
   compileAndRunToString(&runtime, src);
 
   HandleScope scope;
-  Handle<Module> module(&scope, runtime.findModule("__main__"));
+  Handle<Module> module(&scope, findModule(&runtime, "__main__"));
   Handle<Object> function(&scope, findInModule(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
 
@@ -1503,7 +1503,7 @@ def test(a, b):
 
   // We can move these tests into the python code above once we can
   // call classes.
-  Object* object = runtime.findModule("__main__");
+  Object* object = findModule(&runtime, "__main__");
   ASSERT_TRUE(object->isModule());
   Handle<Module> main(&scope, object);
 
@@ -1600,7 +1600,7 @@ class Foo(object):
 
   // Look up the class Foo
   HandleScope scope;
-  Object* object = runtime.findModule("__main__");
+  Object* object = findModule(&runtime, "__main__");
   ASSERT_TRUE(object->isModule());
   Handle<Module> main(&scope, object);
   object = findInModule(&runtime, main, "Foo");
@@ -1613,6 +1613,93 @@ class Foo(object):
   ASSERT_EQ(mro->length(), 2);
   EXPECT_EQ(mro->at(0), *klass);
   EXPECT_EQ(mro->at(1), runtime.classAt(ClassId::kObject));
+}
+
+// imports
+
+TEST(ThreadTest, ImportTest) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* module_src = R"(
+def say_hello():
+  print("hello");
+)";
+
+  const char* main_src = R"(
+import hello
+hello.say_hello()
+)";
+
+  // Pre-load the hello module so is cached.
+  std::unique_ptr<char[]> module_buf(Runtime::compile(module_src));
+  Handle<Object> name(&scope, runtime.newStringFromCString("hello"));
+  runtime.importModuleFromBuffer(module_buf.get(), name);
+
+  std::string output = compileAndRunToString(&runtime, main_src);
+  EXPECT_EQ(output, "hello\n");
+}
+
+TEST(ThreadTest, FailedImportTest) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* main_src = R"(
+import hello
+hello.say_hello()
+)";
+
+  EXPECT_DEATH(
+      compileAndRunToString(&runtime, main_src),
+      "importModule is unimplemented");
+}
+
+TEST(ThreadTest, ImportMissingAttributeTest) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* module_src = R"(
+def say_hello():
+  print("hello");
+)";
+
+  const char* main_src = R"(
+import hello
+hello.foo()
+)";
+
+  // Pre-load the hello module so is cached.
+  std::unique_ptr<char[]> module_buf(Runtime::compile(module_src));
+  Handle<Object> name(&scope, runtime.newStringFromCString("hello"));
+  runtime.importModuleFromBuffer(module_buf.get(), name);
+
+  EXPECT_DEATH(compileAndRunToString(&runtime, main_src), "missing attribute");
+}
+
+TEST(ThreadTest, ModuleSetAttrTest) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* module_src = R"(
+def say_hello():
+  print("hello");
+)";
+
+  const char* main_src = R"(
+import hello
+def goodbye():
+  print("goodbye")
+hello.say_hello = goodbye
+hello.say_hello()
+)";
+
+  // Pre-load the hello module so is cached.
+  std::unique_ptr<char[]> module_buf(Runtime::compile(module_src));
+  Handle<Object> name(&scope, runtime.newStringFromCString("hello"));
+  runtime.importModuleFromBuffer(module_buf.get(), name);
+
+  std::string output = compileAndRunToString(&runtime, main_src);
+  EXPECT_EQ(output, "goodbye\n");
 }
 
 } // namespace python
