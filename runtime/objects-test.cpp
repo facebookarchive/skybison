@@ -33,18 +33,18 @@ TEST(IntTest, IntTest) {
 
   Object o1(&scope, runtime.newInt(42));
   ASSERT_TRUE(o1->isSmallInt());
-  Int i1(o1);
+  Int i1(&scope, o1);
   EXPECT_EQ(i1->asWord(), 42);
 
   Object o2(&scope, runtime.newInt(9223372036854775807L));
   ASSERT_TRUE(o2->isLargeInt());
-  Int i2(o2);
+  Int i2(&scope, o2);
   EXPECT_EQ(i2->asWord(), 9223372036854775807L);
 
   int stack_val = 123;
   Object o3(&scope, runtime.newIntFromCPtr(&stack_val));
   ASSERT_TRUE(o3->isInt());
-  Int i3(o3);
+  Int i3(&scope, o3);
   EXPECT_EQ(*static_cast<int*>(i3->asCPtr()), 123);
 
   Object o4(&scope, runtime.newInt(kMinWord));

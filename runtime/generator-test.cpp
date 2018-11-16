@@ -104,7 +104,7 @@ for i in g:
 
   // Manually check element 3 for object identity
   ASSERT_TRUE(result->isList());
-  List list(result);
+  List list(&scope, result);
   Object initial(&scope, moduleAt(&runtime, "__main__", "initial_str"));
   EXPECT_GE(list->numItems(), 3);
   EXPECT_EQ(list->at(3), *initial);

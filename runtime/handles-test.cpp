@@ -37,7 +37,7 @@ TEST(HandlesTest, UpCastTest) {
 
   SmallInt h1(&scope, bit_cast<RawSmallInt>(0xFEEDFACEL));
 
-  Object h2(h1);
+  Object h2(&scope, h1);
 
   RememberingVisitor visitor;
   handles.visitPointers(&visitor);
@@ -52,7 +52,7 @@ TEST(HandlesTest, DownCastTest) {
   auto i1 = bit_cast<RawSmallInt>(0xFEEDFACEL);
   Object h1(&scope, i1);
 
-  SmallInt h2(h1);
+  SmallInt h2(&scope, h1);
 
   RememberingVisitor visitor;
   handles.visitPointers(&visitor);
@@ -67,7 +67,7 @@ TEST(HandlesTest, IllegalCastRunTimeTest) {
   auto i1 = bit_cast<RawSmallInt>(0xFEEDFACEL);
   Object h1(&scope, i1);
 
-  EXPECT_DEBUG_DEATH(Dict h2(h1), "isDict");
+  EXPECT_DEBUG_DEATH(Dict h2(&scope, h1), "isDict");
 }
 
 TEST(HandlesTest, VisitNoScopes) {

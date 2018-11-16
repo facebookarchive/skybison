@@ -63,7 +63,7 @@ PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
     return nullptr;
   }
 
-  Str str(obj);
+  Str str(&scope, obj);
   word length = str->length();
   if (size) *size = length;
   if (void* cache = handle->cache()) return static_cast<char*>(cache);

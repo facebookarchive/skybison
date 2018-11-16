@@ -102,13 +102,6 @@ class Handle : public T {
         next_(scope->push(this)),
         scope_(scope) {}
 
-  template <typename S>
-  explicit Handle(const Handle<S, is_checked>& other)
-      : Handle(other.scope_, other) {
-    static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
-                  "Only up- and down-casts are permitted.");
-  }
-
   ~Handle() {
     DCHECK(scope_->list_ == reinterpret_cast<Handle<RawObject>*>(this),
            "unexpected this");

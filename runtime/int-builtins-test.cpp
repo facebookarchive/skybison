@@ -770,7 +770,7 @@ TEST(LargeIntBuiltinsTest, UnaryNegateTest) {
   frame->setLocal(0, *min_word);
   Object e(&scope, IntBuiltins::dunderNeg(thread, frame, 1));
   ASSERT_TRUE(e->isLargeInt());
-  LargeInt large_e(e);
+  LargeInt large_e(&scope, e);
   EXPECT_TRUE(large_e->isPositive());
   Int max_word(&scope, runtime.newInt(kMaxWord));
   EXPECT_EQ(RawInt::cast(*large_e)->compare(*max_word), 1);

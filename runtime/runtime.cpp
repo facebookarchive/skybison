@@ -2978,7 +2978,7 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& klass,
     if (!maybe_init->isFunction()) {
       continue;
     }
-    Function init(maybe_init);
+    Function init(&scope, maybe_init);
     RawObject maybe_code = init->code();
     if (!maybe_code->isCode()) {
       continue;
