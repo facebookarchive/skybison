@@ -203,12 +203,7 @@ Object* builtinListRemove(Thread* thread, Frame* frame, word nargs) {
   for (word i = 0; i < list->allocated(); i++) {
     Handle<Object> item(&scope, list->at(i));
     if (Boolean::cast(Interpreter::compareOperation(
-                          thread,
-                          frame,
-                          frame->valueStackTop(),
-                          CompareOp::EQ,
-                          item,
-                          value))
+                          thread, frame, CompareOp::EQ, item, value))
             ->value()) {
       thread->runtime()->listPop(list, i);
       return None::object();

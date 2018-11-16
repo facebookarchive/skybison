@@ -11,28 +11,29 @@
 
 namespace python {
 
-Object*
-Interpreter::call(Thread* thread, Frame* frame, Object** sp, word nargs) {
-  Object* callable = sp[nargs];
+Object* Interpreter::call(Thread* thread, Frame* frame, word nargs) {
+  Object* callable = frame->peek(nargs);
+  Object** sp = frame->valueStackTop() + nargs + 1;
+  Object* result = None::object();
   switch (callable->layoutId()) {
     case LayoutId::kFunction: {
-      frame->setValueStackTop(sp);
-      return Function::cast(callable)->entry()(thread, frame, nargs);
+      result = Function::cast(callable)->entry()(thread, frame, nargs);
+      break;
     }
     case LayoutId::kBoundMethod: {
-      return callBoundMethod(thread, frame, sp, nargs);
+      result = callBoundMethod(thread, frame, nargs);
+      break;
     }
-    default: { return callCallable(thread, frame, sp, nargs); }
+    default: { result = callCallable(thread, frame, nargs); }
   }
+  // Clear the stack of the function object.
+  frame->setValueStackTop(sp);
+  return result;
 }
 
-Object* Interpreter::callCallable(
-    Thread* thread,
-    Frame* frame,
-    Object** sp,
-    word nargs) {
+Object* Interpreter::callCallable(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread->handles());
-  Handle<Object> receiver(&scope, sp[nargs]);
+  Handle<Object> receiver(&scope, frame->peek(nargs));
   Runtime* runtime = thread->runtime();
 
   Handle<Object> name(&scope, runtime->symbols()->DunderCall());
@@ -48,6 +49,7 @@ Object* Interpreter::callCallable(
   // the method goes at the bottom of the stack, followed by the receiver,
   // followed by zero or more arguments.
 
+  Object** sp = frame->valueStackTop();
   sp -= 1;
   for (word i = 0; i <= nargs; i++) {
     sp[i] = sp[i + 1];
@@ -59,31 +61,23 @@ Object* Interpreter::callCallable(
   return function->entry()(thread, frame, nargs + 1);
 }
 
-Object*
-Interpreter::callKw(Thread* thread, Frame* frame, Object** sp, word nargs) {
+Object* Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
   // Top of stack is a tuple of keyword argument names in the order they
   // appear on the stack.
-  frame->setValueStackTop(sp);
-  Function* function = Function::cast(*(sp + nargs + 1));
+  Function* function = Function::cast(frame->peek(nargs + 1));
   return function->entryKw()(thread, frame, nargs);
 }
 
-Object*
-Interpreter::callEx(Thread* thread, Frame* frame, Object** sp, word flags) {
+Object* Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
   // Low bit of flags indicates whether var-keyword argument is on TOS.
   // In all cases, var-positional tuple is next, followed by the function
   // pointer.
-  frame->setValueStackTop(sp);
   word function_position = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
-  Function* function = Function::cast(*(sp + function_position));
+  Function* function = Function::cast(frame->peek(function_position));
   return function->entryEx()(thread, frame, flags);
 }
 
-Object* Interpreter::callBoundMethod(
-    Thread* thread,
-    Frame* frame,
-    Object** sp,
-    word nargs) {
+Object* Interpreter::callBoundMethod(Thread* thread, Frame* frame, word nargs) {
   // Shift all arguments on the stack down by 1 and unpack the BoundMethod.
   //
   // We don't need to worry too much about the performance overhead for method
@@ -100,6 +94,7 @@ Object* Interpreter::callBoundMethod(
   //   m()
   //
   // Our contention is that uses of this pattern are not performance sensitive.
+  Object** sp = frame->valueStackTop();
   sp -= 1;
   for (word i = 0; i < nargs; i++) {
     sp[i] = sp[i + 1];
@@ -159,15 +154,12 @@ Object* Interpreter::callDescriptorGet(
   Handle<Class> descriptor_type(&scope, runtime->classOf(*descriptor));
   Handle<Function> method(
       &scope, runtime->lookupNameInMro(thread, descriptor_type, selector));
-  Object** sp = caller->valueStackTop();
-  *--sp = *method;
-  *--sp = *descriptor;
-  *--sp = *receiver;
-  *--sp = *receiver_type;
-  caller->setValueStackTop(sp);
+  caller->pushValue(*method);
+  caller->pushValue(*descriptor);
+  caller->pushValue(*receiver);
+  caller->pushValue(*receiver_type);
   Object* result = method->entry()(thread, caller, 3);
-  sp += 4;
-  caller->setValueStackTop(sp);
+  caller->dropValues(4);
   return result;
 }
 
@@ -197,19 +189,16 @@ Object* Interpreter::lookupMethod(
 Object* Interpreter::callMethod1(
     Thread* thread,
     Frame* caller,
-    Object** sp,
     const Handle<Object>& method,
     const Handle<Object>& self) {
   Object* result;
   if (method->isFunction()) {
-    sp -= 2;
-    sp[1] = *method;
-    sp[0] = *self;
-    result = call(thread, caller, sp, 1);
+    caller->pushValue(*method);
+    caller->pushValue(*self);
+    result = call(thread, caller, 1);
   } else {
-    sp -= 1;
-    sp[0] = *method;
-    result = call(thread, caller, sp, 0);
+    caller->pushValue(*method);
+    result = call(thread, caller, 0);
   }
   return result;
 }
@@ -217,22 +206,19 @@ Object* Interpreter::callMethod1(
 Object* Interpreter::callMethod2(
     Thread* thread,
     Frame* caller,
-    Object** sp,
     const Handle<Object>& method,
     const Handle<Object>& self,
     const Handle<Object>& other) {
   Object* result;
   if (method->isFunction()) {
-    sp -= 3;
-    sp[2] = *method;
-    sp[1] = *self;
-    sp[0] = *other;
-    result = call(thread, caller, sp, 2);
+    caller->pushValue(*method);
+    caller->pushValue(*self);
+    caller->pushValue(*other);
+    result = call(thread, caller, 2);
   } else {
-    sp -= 2;
-    sp[1] = *method;
-    sp[0] = *other;
-    result = call(thread, caller, sp, 1);
+    caller->pushValue(*method);
+    caller->pushValue(*other);
+    result = call(thread, caller, 1);
   }
   return result;
 }
@@ -240,7 +226,6 @@ Object* Interpreter::callMethod2(
 Object* Interpreter::callMethod4(
     Thread* thread,
     Frame* caller,
-    Object** sp,
     const Handle<Object>& method,
     const Handle<Object>& self,
     const Handle<Object>& arg1,
@@ -248,20 +233,18 @@ Object* Interpreter::callMethod4(
     const Handle<Object>& arg3) {
   Object* result;
   if (method->isFunction()) {
-    sp -= 5;
-    sp[4] = *method;
-    sp[3] = *self;
-    sp[2] = *arg1;
-    sp[1] = *arg2;
-    sp[0] = *arg3;
-    result = call(thread, caller, sp, 4);
+    caller->pushValue(*method);
+    caller->pushValue(*self);
+    caller->pushValue(*arg1);
+    caller->pushValue(*arg2);
+    caller->pushValue(*arg3);
+    result = call(thread, caller, 4);
   } else {
-    sp -= 4;
-    sp[3] = *method;
-    sp[2] = *arg1;
-    sp[1] = *arg2;
-    sp[0] = *arg3;
-    result = call(thread, caller, sp, 3);
+    caller->pushValue(*method);
+    caller->pushValue(*arg1);
+    caller->pushValue(*arg2);
+    caller->pushValue(*arg3);
+    result = call(thread, caller, 3);
   }
   return result;
 }
@@ -269,19 +252,17 @@ Object* Interpreter::callMethod4(
 Object* Interpreter::unaryOperation(
     Thread* thread,
     Frame* caller,
-    Object** sp,
     const Handle<Object>& self,
     const Handle<Object>& selector) {
   HandleScope scope(thread->handles());
   Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
   CHECK(!method->isError(), "unknown unary operation");
-  return callMethod1(thread, caller, sp, method, self);
+  return callMethod1(thread, caller, method, self);
 }
 
 Object* Interpreter::binaryOperation(
     Thread* thread,
     Frame* caller,
-    Object** sp,
     BinaryOp op,
     const Handle<Object>& self,
     const Handle<Object>& other) {
@@ -311,13 +292,13 @@ Object* Interpreter::binaryOperation(
     if (is_derived_type && !other_reflected_method->isError() &&
         *self_reflected_method != *other_reflected_method) {
       Object* result =
-          callMethod2(thread, caller, sp, other_reflected_method, other, self);
+          callMethod2(thread, caller, other_reflected_method, other, self);
       if (result != runtime->notImplemented()) {
         return result;
       }
       try_other = false;
     }
-    Object* result = callMethod2(thread, caller, sp, self_method, self, other);
+    Object* result = callMethod2(thread, caller, self_method, self, other);
     if (result != runtime->notImplemented()) {
       return result;
     }
@@ -325,7 +306,7 @@ Object* Interpreter::binaryOperation(
   if (try_other) {
     if (!other_reflected_method->isError()) {
       Object* result =
-          callMethod2(thread, caller, sp, other_reflected_method, other, self);
+          callMethod2(thread, caller, other_reflected_method, other, self);
       if (result != runtime->notImplemented()) {
         return result;
       }
@@ -337,7 +318,6 @@ Object* Interpreter::binaryOperation(
 Object* Interpreter::inplaceOperation(
     Thread* thread,
     Frame* caller,
-    Object** sp,
     BinaryOp op,
     const Handle<Object>& self,
     const Handle<Object>& other) {
@@ -346,18 +326,17 @@ Object* Interpreter::inplaceOperation(
   Handle<Object> selector(&scope, runtime->inplaceOperationSelector(op));
   Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
   if (!method->isError()) {
-    Object* result = callMethod2(thread, caller, sp, method, self, other);
+    Object* result = callMethod2(thread, caller, method, self, other);
     if (result != runtime->notImplemented()) {
       return result;
     }
   }
-  return binaryOperation(thread, caller, sp, op, self, other);
+  return binaryOperation(thread, caller, op, self, other);
 }
 
 Object* Interpreter::compareOperation(
     Thread* thread,
     Frame* caller,
-    Object** sp,
     CompareOp op,
     const Handle<Object>& left,
     const Handle<Object>& right) {
@@ -375,7 +354,7 @@ Object* Interpreter::compareOperation(
     Handle<Object> method(
         &scope, lookupMethod(thread, caller, right, selector));
     if (!method->isError()) {
-      Object* result = callMethod2(thread, caller, sp, method, right, left);
+      Object* result = callMethod2(thread, caller, method, right, left);
       if (result != runtime->notImplemented()) {
         return result;
       }
@@ -384,7 +363,7 @@ Object* Interpreter::compareOperation(
     Handle<Object> selector(&scope, runtime->comparisonSelector(op));
     Handle<Object> method(&scope, lookupMethod(thread, caller, left, selector));
     if (!method->isError()) {
-      Object* result = callMethod2(thread, caller, sp, method, left, right);
+      Object* result = callMethod2(thread, caller, method, left, right);
       if (result != runtime->notImplemented()) {
         return result;
       }
@@ -395,7 +374,7 @@ Object* Interpreter::compareOperation(
     Handle<Object> method(
         &scope, lookupMethod(thread, caller, right, selector));
     if (!method->isError()) {
-      Object* result = callMethod2(thread, caller, sp, method, right, left);
+      Object* result = callMethod2(thread, caller, method, right, left);
       if (result != runtime->notImplemented()) {
         return result;
       }
@@ -412,7 +391,6 @@ Object* Interpreter::compareOperation(
 Object* Interpreter::sequenceContains(
     Thread* thread,
     Frame* caller,
-    Object** sp,
     const Handle<Object>& value,
     const Handle<Object>& container) {
   HandleScope scope(thread);
@@ -422,22 +400,23 @@ Object* Interpreter::sequenceContains(
       &scope, lookupMethod(thread, caller, container, selector));
   if (!method->isError()) {
     Handle<Object> result(
-        &scope, callMethod2(thread, caller, sp, method, container, value));
-    *--sp = *result;
-    return isTrue(thread, caller, sp);
+        &scope, callMethod2(thread, caller, method, container, value));
+    caller->pushValue(*result);
+    Object* is_true = isTrue(thread, caller);
+    caller->popValue();
+    return is_true;
   } else {
     UNIMPLEMENTED("fallback to iter search.");
   }
 }
 
-Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
+Object* Interpreter::isTrue(Thread* thread, Frame* caller) {
   HandleScope scope(thread->handles());
-  Handle<Object> self(&scope, *sp);
+  Handle<Object> self(&scope, caller->topValue());
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderBool());
   Handle<Object> method(&scope, lookupMethod(thread, caller, self, selector));
   if (!method->isError()) {
-    Handle<Object> result(
-        &scope, callMethod1(thread, caller, sp, method, self));
+    Handle<Object> result(&scope, callMethod1(thread, caller, method, self));
     if (result->isBoolean()) {
       return *result;
     }
@@ -450,8 +429,7 @@ Object* Interpreter::isTrue(Thread* thread, Frame* caller, Object** sp) {
   selector = thread->runtime()->symbols()->DunderLen();
   method = lookupMethod(thread, caller, self, selector);
   if (!method->isError()) {
-    Handle<Object> result(
-        &scope, callMethod1(thread, caller, sp, method, self));
+    Handle<Object> result(&scope, callMethod1(thread, caller, method, self));
     if (result->isInteger()) {
       Handle<Integer> integer(&scope, *result);
       if (integer->isPositive()) {
@@ -489,36 +467,37 @@ void Interpreter::doNotImplemented(Context* ctx, word) {
 
 // opcode 1
 void Interpreter::doPopTop(Context* ctx, word) {
-  ctx->sp++;
+  ctx->frame->popValue();
 }
 
 // opcode 2
 void Interpreter::doRotTwo(Context* ctx, word) {
-  Object* top = *ctx->sp;
-  *ctx->sp = *(ctx->sp + 1);
-  *(ctx->sp + 1) = top;
+  Object** sp = ctx->frame->valueStackTop();
+  Object* top = *sp;
+  *sp = *(sp + 1);
+  *(sp + 1) = top;
 }
 
 // opcode 3
 void Interpreter::doRotThree(Context* ctx, word) {
-  Object* top = *ctx->sp;
-  *ctx->sp = *(ctx->sp + 1);
-  *(ctx->sp + 1) = *(ctx->sp + 2);
-  *(ctx->sp + 2) = top;
+  Object** sp = ctx->frame->valueStackTop();
+  Object* top = *sp;
+  *sp = *(sp + 1);
+  *(sp + 1) = *(sp + 2);
+  *(sp + 2) = top;
 }
 
 // opcode 4
 void Interpreter::doDupTop(Context* ctx, word) {
-  Object* top = *ctx->sp;
-  *--ctx->sp = top;
+  ctx->frame->pushValue(ctx->frame->topValue());
 }
 
 // opcode 5
 void Interpreter::doDupTopTwo(Context* ctx, word) {
-  Object* first = *ctx->sp;
-  Object* second = *(ctx->sp + 1);
-  *--ctx->sp = second;
-  *--ctx->sp = first;
+  Object* first = ctx->frame->topValue();
+  Object* second = ctx->frame->peek(1);
+  ctx->frame->pushValue(second);
+  ctx->frame->pushValue(first);
 }
 
 // opcode 9
@@ -528,30 +507,28 @@ void Interpreter::doNop(Context*, word) {}
 void Interpreter::doUnaryPositive(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
-  Handle<Object> receiver(&scope, *ctx->sp);
+  Handle<Object> receiver(&scope, ctx->frame->topValue());
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderPos());
-  Object* result =
-      unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
-  *ctx->sp = result;
+  Object* result = unaryOperation(thread, ctx->frame, receiver, selector);
+  ctx->frame->setTopValue(result);
 }
 
 // opcode 11
 void Interpreter::doUnaryNegative(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
-  Handle<Object> receiver(&scope, *ctx->sp);
+  Handle<Object> receiver(&scope, ctx->frame->topValue());
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderNeg());
-  Object* result =
-      unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
-  *ctx->sp = result;
+  Object* result = unaryOperation(thread, ctx->frame, receiver, selector);
+  ctx->frame->setTopValue(result);
 }
 
 // opcode 12
 void Interpreter::doUnaryNot(Context* ctx, word) {
-  if (isTrue(ctx->thread, ctx->frame, ctx->sp) == Boolean::trueObj()) {
-    *ctx->sp = Boolean::falseObj();
+  if (isTrue(ctx->thread, ctx->frame) == Boolean::trueObj()) {
+    ctx->frame->setTopValue(Boolean::falseObj());
   } else {
-    *ctx->sp = Boolean::trueObj();
+    ctx->frame->setTopValue(Boolean::trueObj());
   }
 }
 
@@ -559,38 +536,37 @@ void Interpreter::doUnaryNot(Context* ctx, word) {
 void Interpreter::doUnaryInvert(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
-  Handle<Object> receiver(&scope, *ctx->sp);
+  Handle<Object> receiver(&scope, ctx->frame->topValue());
   Handle<Object> selector(&scope, thread->runtime()->symbols()->DunderInvert());
-  Object* result =
-      unaryOperation(thread, ctx->frame, ctx->sp, receiver, selector);
-  *ctx->sp = result;
+  Object* result = unaryOperation(thread, ctx->frame, receiver, selector);
+  ctx->frame->setTopValue(result);
 }
 
 // opcode 20
 void Interpreter::doBinaryMultiply(Context* ctx, word) {
-  Object**& sp = ctx->sp;
-  if (sp[1]->isSmallInteger()) {
-    word right = SmallInteger::cast(*sp++)->value();
-    word left = SmallInteger::cast(*sp)->value();
+  if (ctx->frame->peek(1)->isSmallInteger()) {
+    word right = SmallInteger::cast(ctx->frame->popValue())->value();
+    word left = SmallInteger::cast(ctx->frame->topValue())->value();
     word result = left * right;
     if (!(left == 0 || (result / left) == right)) {
       UNIMPLEMENTED("small integer overflow");
     }
-    *sp = SmallInteger::fromWord(result);
+    ctx->frame->setTopValue(SmallInteger::fromWord(result));
   } else {
-    word ntimes = SmallInteger::cast(*sp++)->value();
+    word ntimes = SmallInteger::cast(ctx->frame->popValue())->value();
     Thread* thread = ctx->thread;
     HandleScope scope(thread);
-    Handle<List> list(&scope, *sp);
-    *sp = thread->runtime()->listReplicate(thread, list, ntimes);
+    Handle<List> list(&scope, ctx->frame->topValue());
+    ctx->frame->setTopValue(
+        thread->runtime()->listReplicate(thread, list, ntimes));
   }
 }
 
 // opcode 22
 void Interpreter::doBinaryModulo(Context* ctx, word) {
   HandleScope scope(ctx->thread);
-  Handle<Object> divisor(&scope, *ctx->sp++);
-  Handle<Object> dividend(&scope, *ctx->sp);
+  Handle<Object> divisor(&scope, ctx->frame->popValue());
+  Handle<Object> dividend(&scope, ctx->frame->topValue());
   if (divisor->isSmallInteger() && dividend->isSmallInteger()) {
     word smi_divisor = SmallInteger::cast(*divisor)->value();
     word smi_dividend = SmallInteger::cast(*dividend)->value();
@@ -599,17 +575,19 @@ void Interpreter::doBinaryModulo(Context* ctx, word) {
     if (smi_divisor == 0) {
       UNIMPLEMENTED("ZeroDivisionError");
     }
-    *ctx->sp = SmallInteger::fromWord(smi_dividend % smi_divisor);
+    ctx->frame->setTopValue(SmallInteger::fromWord(smi_dividend % smi_divisor));
   } else if (dividend->isString()) { // string formatting
     Handle<String> src(&scope, *dividend);
     if (divisor->isObjectArray()) {
       Handle<ObjectArray> args(&scope, *divisor);
-      *ctx->sp = ctx->thread->runtime()->stringFormat(ctx->thread, src, args);
+      ctx->frame->setTopValue(
+          ctx->thread->runtime()->stringFormat(ctx->thread, src, args));
     } else {
       Handle<ObjectArray> args(
           &scope, ctx->thread->runtime()->newObjectArray(1));
       args->atPut(0, *divisor);
-      *ctx->sp = ctx->thread->runtime()->stringFormat(ctx->thread, src, args);
+      ctx->frame->setTopValue(
+          ctx->thread->runtime()->stringFormat(ctx->thread, src, args));
     }
   }
 }
@@ -618,53 +596,52 @@ void Interpreter::doBinaryModulo(Context* ctx, word) {
 void Interpreter::doBinaryAdd(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
-  Handle<Object> other(&scope, *ctx->sp++);
-  Handle<Object> self(&scope, *ctx->sp++);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
   Object* result =
-      binaryOperation(thread, ctx->frame, ctx->sp, BinaryOp::ADD, self, other);
-  *--ctx->sp = result;
+      binaryOperation(thread, ctx->frame, BinaryOp::ADD, self, other);
+  ctx->frame->pushValue(result);
 }
 
 // opcode 24
 void Interpreter::doBinarySubtract(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
-  Handle<Object> other(&scope, *ctx->sp++);
-  Handle<Object> self(&scope, *ctx->sp++);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
   Object* result =
-      binaryOperation(thread, ctx->frame, ctx->sp, BinaryOp::SUB, self, other);
-  *--ctx->sp = result;
+      binaryOperation(thread, ctx->frame, BinaryOp::SUB, self, other);
+  ctx->frame->pushValue(result);
 }
 
 // opcode 25
 void Interpreter::doBinarySubscr(Context* ctx, word) {
   // TODO: The implementation of the {BINARY,STORE}_SUBSCR opcodes are
   // enough to get richards working.
-  Object**& sp = ctx->sp;
   HandleScope scope;
-  Handle<Object> key(&scope, *sp++);
-  Handle<Object> container(&scope, *sp++);
+  Handle<Object> key(&scope, ctx->frame->popValue());
+  Handle<Object> container(&scope, ctx->frame->popValue());
   if (container->isInstance()) {
     container = ctx->thread->runtime()->instanceDelegate(container);
   }
   if (container->isList()) {
     if (key->isSmallInteger()) {
       word idx = SmallInteger::cast(*key)->value();
-      *--sp = List::cast(*container)->at(idx);
+      ctx->frame->pushValue(List::cast(*container)->at(idx));
     } else if (key->isSlice()) { // slice as key: custom behavior
       Handle<Slice> slice(&scope, *key);
       Handle<List> list(&scope, *container);
-      *--sp = ctx->thread->runtime()->listSlice(list, slice);
+      ctx->frame->pushValue(ctx->thread->runtime()->listSlice(list, slice));
     }
   } else if (container->isDictionary()) {
     Handle<Dictionary> dict(&scope, *container);
     Handle<Object> value(
         &scope, ctx->thread->runtime()->dictionaryAt(dict, key));
     CHECK(!value->isError(), "KeyError");
-    *--sp = *value;
+    ctx->frame->pushValue(*value);
   } else if (container->isObjectArray()) {
     word idx = SmallInteger::cast(*key)->value();
-    *--sp = ObjectArray::cast(*container)->at(idx);
+    ctx->frame->pushValue(ObjectArray::cast(*container)->at(idx));
   } else if (container->isString()) {
     // TODO: throw TypeError & IndexError
     if (!key->isInteger()) {
@@ -675,7 +652,8 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
     }
     word idx = SmallInteger::cast(*key)->value();
     byte c = String::cast(*container)->charAt(idx); // TODO: u8charAt?
-    *--sp = SmallString::fromBytes(View<byte>(&c, 1)); // safe for SmallString
+    ctx->frame->pushValue(
+        SmallString::fromBytes(View<byte>(&c, 1))); // safe for SmallString
   } else {
     UNIMPLEMENTED("Custom Subscription");
   }
@@ -683,22 +661,22 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
 
 // opcode 26
 void Interpreter::doBinaryFloorDivide(Context* ctx, word) {
-  word divisor = SmallInteger::cast(*ctx->sp++)->value();
-  word dividend = SmallInteger::cast(*ctx->sp)->value();
+  word divisor = SmallInteger::cast(ctx->frame->popValue())->value();
+  word dividend = SmallInteger::cast(ctx->frame->topValue())->value();
   // TODO: Throw:
   //   ZeroDivisionError: integer division or modulo by zero
   if (divisor == 0) {
     UNIMPLEMENTED("ZeroDivisionError");
   }
-  *ctx->sp = SmallInteger::fromWord(dividend / divisor);
+  ctx->frame->setTopValue(SmallInteger::fromWord(dividend / divisor));
 }
 
 // opcode 27
 void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
   HandleScope scope;
   double dividend, divisor;
-  Handle<Object> right(&scope, *ctx->sp++);
-  Handle<Object> left(&scope, *ctx->sp++);
+  Handle<Object> right(&scope, ctx->frame->popValue());
+  Handle<Object> left(&scope, ctx->frame->popValue());
   if (right->isSmallInteger()) {
     dividend = SmallInteger::cast(*right)->value();
   } else if (right->isDouble()) {
@@ -713,56 +691,56 @@ void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
   } else {
     UNIMPLEMENTED("Arbitrary object binary true divide not supported.");
   }
-  *--ctx->sp = ctx->thread->runtime()->newDouble(divisor / dividend);
+  ctx->frame->pushValue(ctx->thread->runtime()->newDouble(divisor / dividend));
 }
 
 // opcode 56
 void Interpreter::doInplaceSubtract(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
-  Handle<Object> other(&scope, *ctx->sp++);
-  Handle<Object> self(&scope, *ctx->sp++);
+  Handle<Object> other(&scope, ctx->frame->popValue());
+  Handle<Object> self(&scope, ctx->frame->popValue());
   Object* result =
-      inplaceOperation(thread, ctx->frame, ctx->sp, BinaryOp::SUB, self, other);
-  *--ctx->sp = result;
+      inplaceOperation(thread, ctx->frame, BinaryOp::SUB, self, other);
+  ctx->frame->pushValue(result);
 }
 
 // opcode 60
 void Interpreter::doStoreSubscr(Context* ctx, word) {
   // TODO: The implementation of the {BINARY,STORE}_SUBSCR opcodes are
   // enough to get richards working.
-  word idx = SmallInteger::cast(*ctx->sp++)->value();
-  auto list = List::cast(*ctx->sp++);
-  list->atPut(idx, *ctx->sp++);
+  word idx = SmallInteger::cast(ctx->frame->popValue())->value();
+  auto list = List::cast(ctx->frame->popValue());
+  list->atPut(idx, ctx->frame->popValue());
 }
 
 // opcode 64
 void Interpreter::doBinaryAnd(Context* ctx, word) {
-  word right = SmallInteger::cast(*ctx->sp++)->value();
-  word left = SmallInteger::cast(*ctx->sp)->value();
-  *ctx->sp = SmallInteger::fromWord(left & right);
+  word right = SmallInteger::cast(ctx->frame->popValue())->value();
+  word left = SmallInteger::cast(ctx->frame->topValue())->value();
+  ctx->frame->setTopValue(SmallInteger::fromWord(left & right));
 }
 
 // opcode 65
 void Interpreter::doBinaryXor(Context* ctx, word) {
-  word right = SmallInteger::cast(*ctx->sp++)->value();
-  word left = SmallInteger::cast(*ctx->sp)->value();
-  *ctx->sp = SmallInteger::fromWord(left ^ right);
+  word right = SmallInteger::cast(ctx->frame->popValue())->value();
+  word left = SmallInteger::cast(ctx->frame->topValue())->value();
+  ctx->frame->setTopValue(SmallInteger::fromWord(left ^ right));
 }
 
 // opcode 68
 void Interpreter::doGetIter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());
-  Handle<Object> iterable(&scope, *ctx->sp);
-  *ctx->sp = thread->runtime()->getIter(iterable);
+  Handle<Object> iterable(&scope, ctx->frame->topValue());
+  ctx->frame->setTopValue(thread->runtime()->getIter(iterable));
 }
 
 // opcode 71
 void Interpreter::doLoadBuildClass(Context* ctx, word) {
   Thread* thread = ctx->thread;
   ValueCell* value_cell = ValueCell::cast(thread->runtime()->buildClass());
-  *--ctx->sp = value_cell->value();
+  ctx->frame->pushValue(value_cell->value());
 }
 
 // opcode 80
@@ -775,18 +753,17 @@ void Interpreter::doBreakLoop(Context* ctx, word) {
 // opcode 81
 void Interpreter::doWithCleanupStart(Context* ctx, word) {
   HandleScope scope(ctx->thread);
-  Handle<Object> exc(&scope, *ctx->sp++);
+  Handle<Object> exc(&scope, ctx->frame->popValue());
   if (exc->isNone()) {
     // This is a bound method.
-    Handle<Object> exit(&scope, *ctx->sp);
+    Handle<Object> exit(&scope, ctx->frame->topValue());
     Handle<Object> none(&scope, None::object());
-    *ctx->sp = *exc;
+    ctx->frame->setTopValue(*exc);
     Handle<Object> result(
         &scope,
-        callMethod4(
-            ctx->thread, ctx->frame, ctx->sp, exit, none, none, none, none));
-    *--ctx->sp = *exc;
-    *--ctx->sp = *result;
+        callMethod4(ctx->thread, ctx->frame, exit, none, none, none, none));
+    ctx->frame->pushValue(*exc);
+    ctx->frame->pushValue(*result);
   } else {
     UNIMPLEMENTED("exception handling in context manager");
   }
@@ -795,8 +772,8 @@ void Interpreter::doWithCleanupStart(Context* ctx, word) {
 // opcode 82
 void Interpreter::doWithCleanupFinish(Context* ctx, word) {
   HandleScope scope(ctx->thread);
-  Handle<Object> result(&scope, *ctx->sp++);
-  Handle<Object> exc(&scope, *ctx->sp++);
+  Handle<Object> result(&scope, ctx->frame->popValue());
+  Handle<Object> exc(&scope, ctx->frame->popValue());
   if (!exc->isNone()) {
     UNIMPLEMENTED("exception handling in context manager");
   }
@@ -806,11 +783,11 @@ void Interpreter::doWithCleanupFinish(Context* ctx, word) {
 void Interpreter::doPopBlock(Context* ctx, word) {
   Frame* frame = ctx->frame;
   TryBlock block = frame->blockStack()->pop();
-  ctx->sp = frame->valueStackBase() - block.level();
+  frame->setValueStackTop(frame->valueStackBase() - block.level());
 }
 
 void Interpreter::doEndFinally(Context* ctx, word) {
-  Object* status = *ctx->sp++;
+  Object* status = ctx->frame->popValue();
   if (!status->isNone()) {
     UNIMPLEMENTED("exception handling in context manager");
   }
@@ -825,25 +802,25 @@ void Interpreter::doStoreName(Context* ctx, word arg) {
   Handle<Dictionary> implicit_globals(&scope, frame->implicitGlobals());
   Object* names = Code::cast(frame->code())->names();
   Handle<Object> key(&scope, ObjectArray::cast(names)->at(arg));
-  Handle<Object> value(&scope, *ctx->sp++);
+  Handle<Object> value(&scope, frame->popValue());
   thread->runtime()->dictionaryAtPutInValueCell(implicit_globals, key, value);
 }
 
 // opcode 92
 void Interpreter::doUnpackSequence(Context* ctx, word arg) {
-  Object* seq = *ctx->sp++;
+  Object* seq = ctx->frame->popValue();
   if (seq->isObjectArray()) {
     DCHECK(
         ObjectArray::cast(seq)->length() == arg,
         "Wrong number of items to unpack");
     while (arg--) {
-      *--ctx->sp = ObjectArray::cast(seq)->at(arg);
+      ctx->frame->pushValue(ObjectArray::cast(seq)->at(arg));
     }
   } else if (seq->isList()) {
     DCHECK(
         List::cast(seq)->allocated() == arg, "Wrong number of items to unpack");
     while (arg--) {
-      *--ctx->sp = List::cast(seq)->at(arg);
+      ctx->frame->pushValue(List::cast(seq)->at(arg));
     }
   } else if (seq->isRange()) {
     HandleScope scope(ctx->thread);
@@ -852,7 +829,7 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
     word stop = range->stop();
     word step = range->step();
     for (word i = stop; i >= start; i -= step) {
-      *--ctx->sp = ctx->thread->runtime()->newInteger(i);
+      ctx->frame->pushValue(ctx->thread->runtime()->newInteger(i));
     }
   } else {
     UNIMPLEMENTED("Iterable unpack not supported.");
@@ -861,7 +838,7 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
 
 // opcode 93
 void Interpreter::doForIter(Context* ctx, word arg) {
-  Object* top = *ctx->sp;
+  Object* top = ctx->frame->topValue();
   Object* next = Error::object();
   if (top->isRangeIterator()) {
     next = RangeIterator::cast(top)->next();
@@ -873,10 +850,10 @@ void Interpreter::doForIter(Context* ctx, word arg) {
   }
 
   if (next->isError()) {
-    ctx->sp++;
+    ctx->frame->popValue();
     ctx->pc += arg;
   } else {
-    *--ctx->sp = next;
+    ctx->frame->pushValue(next);
   }
 }
 
@@ -884,11 +861,10 @@ void Interpreter::doForIter(Context* ctx, word arg) {
 void Interpreter::doStoreAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
-  Handle<Object> receiver(&scope, *ctx->sp);
+  Handle<Object> receiver(&scope, ctx->frame->popValue());
   auto* names = Code::cast(ctx->frame->code())->names();
   Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
-  Handle<Object> value(&scope, *(ctx->sp + 1));
-  ctx->sp += 2;
+  Handle<Object> value(&scope, ctx->frame->popValue());
   thread->runtime()->attributeAtPut(thread, receiver, name, value);
   thread->abortOnPendingException();
 }
@@ -896,7 +872,7 @@ void Interpreter::doStoreAttr(Context* ctx, word arg) {
 // opcode 97
 void Interpreter::doStoreGlobal(Context* ctx, word arg) {
   ValueCell::cast(ObjectArray::cast(ctx->frame->fastGlobals())->at(arg))
-      ->setValue(*ctx->sp++);
+      ->setValue(ctx->frame->popValue());
 }
 
 // opcode 98
@@ -924,7 +900,7 @@ void Interpreter::doDeleteGlobal(Context* ctx, word arg) {
 // opcode 100
 void Interpreter::doLoadConst(Context* ctx, word arg) {
   Object* consts = Code::cast(ctx->frame->code())->consts();
-  *--ctx->sp = ObjectArray::cast(consts)->at(arg);
+  ctx->frame->pushValue(ObjectArray::cast(consts)->at(arg));
 }
 
 // opcode 101
@@ -947,7 +923,7 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
       DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound builtins");
       value = ValueCell::cast(value)->value();
     }
-    *--ctx->sp = value;
+    frame->pushValue(value);
     return;
   }
 
@@ -966,7 +942,7 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
       DCHECK(!ValueCell::cast(value)->isUnbound(), "unbound builtins");
       value = ValueCell::cast(value)->value();
     }
-    *--ctx->sp = value;
+    frame->pushValue(value);
     return;
   }
 
@@ -981,7 +957,7 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
   if (value->isError()) {
     UNIMPLEMENTED("Unbound variable");
   }
-  *--ctx->sp = value;
+  frame->pushValue(value);
 }
 
 // opcode 102
@@ -989,11 +965,10 @@ void Interpreter::doBuildTuple(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<ObjectArray> tuple(&scope, thread->runtime()->newObjectArray(arg));
-  Object**& sp = ctx->sp;
   for (word i = arg - 1; i >= 0; i--) {
-    tuple->atPut(i, *sp++);
+    tuple->atPut(i, ctx->frame->popValue());
   }
-  *--sp = *tuple;
+  ctx->frame->pushValue(*tuple);
 }
 
 // opcode 103
@@ -1002,12 +977,12 @@ void Interpreter::doBuildList(Context* ctx, word arg) {
   HandleScope scope;
   Handle<ObjectArray> array(&scope, thread->runtime()->newObjectArray(arg));
   for (word i = arg - 1; i >= 0; i--) {
-    array->atPut(i, *ctx->sp++);
+    array->atPut(i, ctx->frame->popValue());
   }
   List* list = List::cast(thread->runtime()->newList());
   list->setItems(*array);
   list->setAllocated(array->length());
-  *--ctx->sp = list;
+  ctx->frame->pushValue(list);
 }
 
 // opcode 104
@@ -1017,9 +992,9 @@ void Interpreter::doBuildSet(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   Handle<Set> set(&scope, Set::cast(runtime->newSet()));
   for (word i = arg - 1; i >= 0; i--) {
-    runtime->setAdd(set, Handle<Object>(&scope, *ctx->sp++));
+    runtime->setAdd(set, Handle<Object>(&scope, ctx->frame->popValue()));
   }
-  *--ctx->sp = *set;
+  ctx->frame->pushValue(*set);
 }
 
 // opcode 105
@@ -1028,33 +1003,31 @@ void Interpreter::doBuildMap(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   HandleScope scope;
   Handle<Dictionary> dict(&scope, runtime->newDictionary(arg));
-  Object**& sp = ctx->sp;
   for (word i = 0; i < arg; i++) {
-    Handle<Object> value(&scope, *sp++);
-    Handle<Object> key(&scope, *sp++);
+    Handle<Object> value(&scope, ctx->frame->popValue());
+    Handle<Object> key(&scope, ctx->frame->popValue());
     runtime->dictionaryAtPut(dict, key, value);
   }
-  *--sp = *dict;
+  ctx->frame->pushValue(*dict);
 }
 
 // opcode 106
 void Interpreter::doLoadAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
-  Handle<Object> receiver(&scope, *ctx->sp);
+  Handle<Object> receiver(&scope, ctx->frame->topValue());
   auto* names = Code::cast(ctx->frame->code())->names();
   Handle<Object> name(&scope, ObjectArray::cast(names)->at(arg));
-  ctx->frame->setValueStackTop(ctx->sp);
-  *ctx->sp = thread->runtime()->attributeAt(ctx->thread, receiver, name);
+  ctx->frame->setTopValue(
+      thread->runtime()->attributeAt(ctx->thread, receiver, name));
   thread->abortOnPendingException();
 }
 
 // opcode 107
 void Interpreter::doCompareOp(Context* ctx, word arg) {
-  Object**& sp = ctx->sp;
   HandleScope scope;
-  Handle<Object> right(&scope, *sp++);
-  Handle<Object> left(&scope, *sp++);
+  Handle<Object> right(&scope, ctx->frame->popValue());
+  Handle<Object> left(&scope, ctx->frame->popValue());
   CompareOp op = static_cast<CompareOp>(arg);
   Object* result;
   if (op == IS) {
@@ -1062,15 +1035,14 @@ void Interpreter::doCompareOp(Context* ctx, word arg) {
   } else if (op == IS_NOT) {
     result = Boolean::fromBool(*left != *right);
   } else if (op == IN) {
-    result = sequenceContains(ctx->thread, ctx->frame, ctx->sp, left, right);
+    result = sequenceContains(ctx->thread, ctx->frame, left, right);
   } else if (op == NOT_IN) {
-    result = Boolean::negate(
-        sequenceContains(ctx->thread, ctx->frame, ctx->sp, left, right));
-  } else {
     result =
-        compareOperation(ctx->thread, ctx->frame, ctx->sp, op, left, right);
+        Boolean::negate(sequenceContains(ctx->thread, ctx->frame, left, right));
+  } else {
+    result = compareOperation(ctx->thread, ctx->frame, op, left, right);
   }
-  *--sp = result;
+  ctx->frame->pushValue(result);
 }
 
 // opcode 108
@@ -1078,11 +1050,11 @@ void Interpreter::doImportName(Context* ctx, word arg) {
   HandleScope scope;
   Handle<Code> code(&scope, ctx->frame->code());
   Handle<Object> name(&scope, ObjectArray::cast(code->names())->at(arg));
-  Handle<Object> fromlist(&scope, *ctx->sp++);
-  Handle<Object> level(&scope, *ctx->sp);
+  Handle<Object> fromlist(&scope, ctx->frame->popValue());
+  Handle<Object> level(&scope, ctx->frame->topValue());
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
-  *ctx->sp = runtime->importModule(name);
+  ctx->frame->setTopValue(runtime->importModule(name));
   thread->abortOnPendingException();
 }
 
@@ -1093,12 +1065,12 @@ void Interpreter::doImportFrom(Context* ctx, word arg) {
   Handle<Code> code(&scope, ctx->frame->code());
   Handle<Object> name(&scope, ObjectArray::cast(code->names())->at(arg));
   CHECK(name->isString(), "name not found");
-  Handle<Module> module(&scope, *ctx->sp);
+  Handle<Module> module(&scope, ctx->frame->topValue());
   Runtime* runtime = thread->runtime();
   CHECK(module->isModule(), "Unexpected type to import from");
   Object* value = runtime->moduleAt(module, name);
   CHECK(!value->isError(), "cannot import name");
-  *--ctx->sp = value;
+  ctx->frame->pushValue(value);
 }
 
 // opcode 110
@@ -1108,21 +1080,21 @@ void Interpreter::doJumpForward(Context* ctx, word arg) {
 
 // opcode 111
 void Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
-  Object* result = isTrue(ctx->thread, ctx->frame, ctx->sp);
+  Object* result = isTrue(ctx->thread, ctx->frame);
   if (result == Boolean::falseObj()) {
     ctx->pc = arg;
   } else {
-    ctx->sp++;
+    ctx->frame->popValue();
   }
 }
 
 // opcode 112
 void Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
-  Object* result = isTrue(ctx->thread, ctx->frame, ctx->sp);
+  Object* result = isTrue(ctx->thread, ctx->frame);
   if (result == Boolean::trueObj()) {
     ctx->pc = arg;
   } else {
-    ctx->sp++;
+    ctx->frame->popValue();
   }
 }
 
@@ -1133,8 +1105,8 @@ void Interpreter::doJumpAbsolute(Context* ctx, word arg) {
 
 // opcode 114
 void Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
-  Object* result = isTrue(ctx->thread, ctx->frame, ctx->sp);
-  ctx->sp++;
+  Object* result = isTrue(ctx->thread, ctx->frame);
+  ctx->frame->popValue();
   if (result == Boolean::falseObj()) {
     ctx->pc = arg;
   }
@@ -1142,8 +1114,8 @@ void Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
 
 // opcode 115
 void Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
-  Object* result = isTrue(ctx->thread, ctx->frame, ctx->sp);
-  ctx->sp++;
+  Object* result = isTrue(ctx->thread, ctx->frame);
+  ctx->frame->popValue();
   if (result == Boolean::trueObj()) {
     ctx->pc = arg;
   }
@@ -1158,14 +1130,14 @@ void Interpreter::doLoadGlobal(Context* ctx, word arg) {
     CHECK(!ValueCell::cast(value)->isUnbound(), "Unbound Globals");
     value = ValueCell::cast(value)->value();
   }
-  *--ctx->sp = value;
-  DCHECK(*ctx->sp != Error::object(), "unexpected error object");
+  ctx->frame->pushValue(value);
+  DCHECK(ctx->frame->topValue() != Error::object(), "unexpected error object");
 }
 
 // opcode 120
 void Interpreter::doSetupLoop(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
-  word stack_depth = frame->valueStackBase() - ctx->sp;
+  word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
   block_stack->push(TryBlock(Bytecode::SETUP_LOOP, ctx->pc + arg, stack_depth));
 }
@@ -1173,7 +1145,7 @@ void Interpreter::doSetupLoop(Context* ctx, word arg) {
 // opcode 121
 void Interpreter::doSetupExcept(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
-  word stack_depth = frame->valueStackBase() - ctx->sp;
+  word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
   block_stack->push(
       TryBlock(Bytecode::SETUP_EXCEPT, ctx->pc + arg, stack_depth));
@@ -1182,20 +1154,19 @@ void Interpreter::doSetupExcept(Context* ctx, word arg) {
 // opcode 124
 void Interpreter::doLoadFast(Context* ctx, word arg) {
   // TODO: Need to handle unbound local error
-  *--ctx->sp = ctx->frame->getLocal(arg);
+  ctx->frame->pushValue(ctx->frame->getLocal(arg));
 }
 
 // opcode 125
 void Interpreter::doStoreFast(Context* ctx, word arg) {
-  Object* value = *ctx->sp++;
+  Object* value = ctx->frame->popValue();
   ctx->frame->setLocal(arg, value);
 }
 
 // opcode 131
 void Interpreter::doCallFunction(Context* ctx, word arg) {
-  Object* result = call(ctx->thread, ctx->frame, ctx->sp, arg);
-  ctx->sp += arg;
-  *ctx->sp = result;
+  Object* result = call(ctx->thread, ctx->frame, arg);
+  ctx->frame->pushValue(result);
   ctx->thread->abortOnPendingException();
 }
 
@@ -1205,8 +1176,8 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Handle<Function> function(&scope, thread->runtime()->newFunction());
-  function->setName(*ctx->sp++);
-  function->setCode(*ctx->sp++);
+  function->setName(frame->popValue());
+  function->setCode(frame->popValue());
   function->setGlobals(frame->globals());
   Handle<Dictionary> globals(&scope, frame->globals());
   Handle<Dictionary> builtins(&scope, frame->builtins());
@@ -1217,69 +1188,72 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   function->setEntryKw(interpreterTrampolineKw);
   function->setEntryEx(interpreterTrampolineEx);
   if (arg & MakeFunctionFlag::CLOSURE) {
-    DCHECK((*ctx->sp)->isObjectArray(), "Closure expects tuple");
-    function->setClosure(*ctx->sp++);
+    DCHECK((frame->topValue())->isObjectArray(), "Closure expects tuple");
+    function->setClosure(frame->popValue());
   }
   if (arg & MakeFunctionFlag::ANNOTATION_DICT) {
     DCHECK(
-        (*ctx->sp)->isDictionary(), "Parameter annotations expect dictionary");
-    function->setAnnotations(*ctx->sp++);
+        (frame->topValue())->isDictionary(),
+        "Parameter annotations expect dictionary");
+    function->setAnnotations(frame->popValue());
   }
   if (arg & MakeFunctionFlag::DEFAULT_KW) {
-    DCHECK((*ctx->sp)->isDictionary(), "Keyword arguments expect dictionary");
-    function->setKwDefaults(*ctx->sp++);
+    DCHECK(
+        (frame->topValue())->isDictionary(),
+        "Keyword arguments expect dictionary");
+    function->setKwDefaults(frame->popValue());
   }
   if (arg & MakeFunctionFlag::DEFAULT) {
-    DCHECK((*ctx->sp)->isObjectArray(), "Default arguments expect tuple");
-    function->setDefaults(*ctx->sp++);
+    DCHECK(
+        (frame->topValue())->isObjectArray(), "Default arguments expect tuple");
+    function->setDefaults(frame->popValue());
   }
-  *--ctx->sp = *function;
+  frame->pushValue(*function);
 }
 
 // opcode 133
 void Interpreter::doBuildSlice(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
-  Handle<Object> step(&scope, (arg == 3) ? *ctx->sp++ : None::object());
-  Handle<Object> stop(&scope, *ctx->sp++);
-  Handle<Object> start(&scope, *ctx->sp); // TOP
+  Handle<Object> step(
+      &scope, (arg == 3) ? ctx->frame->popValue() : None::object());
+  Handle<Object> stop(&scope, ctx->frame->popValue());
+  Handle<Object> start(&scope, ctx->frame->topValue()); // TOP
   Handle<Slice> slice(&scope, thread->runtime()->newSlice(start, stop, step));
-  *ctx->sp = *slice;
+  ctx->frame->setTopValue(*slice);
 }
 
 // opcode 135
 void Interpreter::doLoadClosure(Context* ctx, word arg) {
   Code* code = Code::cast(ctx->frame->code());
-  *--ctx->sp = ctx->frame->getLocal(code->nlocals() + arg);
+  ctx->frame->pushValue(ctx->frame->getLocal(code->nlocals() + arg));
 }
 
 // opcode 136
 void Interpreter::doLoadDeref(Context* ctx, word arg) {
   Code* code = Code::cast(ctx->frame->code());
-  *--ctx->sp =
-      ValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))->value();
+  ctx->frame->pushValue(
+      ValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))->value());
 }
 
 // opcode 137
 void Interpreter::doStoreDeref(Context* ctx, word arg) {
   Code* code = Code::cast(ctx->frame->code());
   ValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))
-      ->setValue(*ctx->sp++);
+      ->setValue(ctx->frame->popValue());
 }
 
 // opcode 141
 void Interpreter::doCallFunctionKw(Context* ctx, word arg) {
-  Object* result = callKw(ctx->thread, ctx->frame, ctx->sp, arg);
-  ctx->sp += arg + 1;
-  *ctx->sp = result;
+  Object* result = callKw(ctx->thread, ctx->frame, arg);
+  ctx->frame->pushValue(result);
   ctx->thread->abortOnPendingException();
 }
 
 // opcode 142
 void Interpreter::doCallFunctionEx(Context* ctx, word arg) {
-  Object* result = callEx(ctx->thread, ctx->frame, ctx->sp, arg);
-  ctx->sp += (arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
-  *ctx->sp = result;
+  Object* result = callEx(ctx->thread, ctx->frame, arg);
+  ctx->frame->pushValue(result);
   ctx->thread->abortOnPendingException();
 }
 
@@ -1289,46 +1263,45 @@ void Interpreter::doSetupWith(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
   Frame* frame = ctx->frame;
-  Handle<Object> mgr(&scope, *ctx->sp);
+  Handle<Object> mgr(&scope, frame->topValue());
   Handle<Object> enter_selector(&scope, runtime->symbols()->DunderEnter());
   Handle<Object> exit_selector(&scope, runtime->symbols()->DunderExit());
   Handle<Object> enter(
       &scope, lookupMethod(thread, frame, mgr, enter_selector));
   Handle<BoundMethod> exit(
       &scope, runtime->attributeAt(thread, mgr, exit_selector));
-  *ctx->sp = *exit;
-  Handle<Object> result(
-      &scope, callMethod1(thread, frame, ctx->sp, enter, mgr));
+  frame->setTopValue(*exit);
+  Handle<Object> result(&scope, callMethod1(thread, frame, enter, mgr));
 
-  word stack_depth = frame->valueStackBase() - ctx->sp;
+  word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
   block_stack->push(
       TryBlock(Bytecode::SETUP_FINALLY, ctx->pc + arg, stack_depth));
-  *--ctx->sp = *result;
+  frame->pushValue(*result);
 }
 
 // opcode 145
 void Interpreter::doListAppend(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
-  Handle<Object> value(&scope, *ctx->sp++);
-  Handle<List> list(&scope, *(ctx->sp + arg - 1));
+  Handle<Object> value(&scope, ctx->frame->popValue());
+  Handle<List> list(&scope, ctx->frame->peek(arg - 1));
   ctx->thread->runtime()->listAdd(list, value);
 }
 
 // opcode 146
 void Interpreter::doSetAdd(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
-  Handle<Object> value(&scope, *ctx->sp++);
-  Handle<Set> set(&scope, Set::cast(*(ctx->sp + arg - 1)));
+  Handle<Object> value(&scope, ctx->frame->popValue());
+  Handle<Set> set(&scope, Set::cast(ctx->frame->peek(arg - 1)));
   ctx->thread->runtime()->setAdd(set, value);
 }
 
 // opcode 147
 void Interpreter::doMapAdd(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
-  Handle<Object> key(&scope, *ctx->sp++);
-  Handle<Object> value(&scope, *ctx->sp++);
-  Handle<Dictionary> dict(&scope, Dictionary::cast(*(ctx->sp + arg - 1)));
+  Handle<Object> key(&scope, ctx->frame->popValue());
+  Handle<Object> value(&scope, ctx->frame->popValue());
+  Handle<Dictionary> dict(&scope, Dictionary::cast(ctx->frame->peek(arg - 1)));
   ctx->thread->runtime()->dictionaryAtPut(dict, key, value);
 }
 
@@ -1338,14 +1311,12 @@ void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Handle<List> list(&scope, runtime->newList());
   Handle<Object> obj(&scope, None::object());
-  Object** sp = ctx->sp;
   for (word i = arg - 1; i >= 0; i--) {
-    obj = *(sp + i);
+    obj = ctx->frame->peek(i);
     runtime->listExtend(list, obj);
   }
-  sp += arg - 1;
-  *sp = *list;
-  ctx->sp = sp;
+  ctx->frame->dropValues(arg - 1);
+  ctx->frame->setTopValue(*list);
 }
 
 // opcode 152 & opcode 158
@@ -1354,18 +1325,16 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Handle<List> list(&scope, runtime->newList());
   Handle<Object> obj(&scope, None::object());
-  Object** sp = ctx->sp;
   for (word i = arg - 1; i >= 0; i--) {
-    obj = *(sp + i);
+    obj = ctx->frame->peek(i);
     runtime->listExtend(list, obj);
   }
   ObjectArray* tuple =
       ObjectArray::cast(runtime->newObjectArray(list->allocated()));
   for (word i = 0; i < list->allocated(); i++)
     tuple->atPut(i, list->at(i));
-  sp += arg - 1;
-  *sp = tuple;
-  ctx->sp = sp;
+  ctx->frame->dropValues(arg - 1);
+  ctx->frame->setTopValue(tuple);
 }
 
 // opcode 153
@@ -1376,14 +1345,12 @@ void Interpreter::doBuildSetUnpack(
   HandleScope scope(ctx->thread);
   Handle<Set> set(&scope, runtime->newSet());
   Handle<Object> obj(&scope, None::object());
-  Object** sp = ctx->sp;
   for (word i = 0; i < arg; i++) {
-    obj = *(sp + i);
+    obj = ctx->frame->peek(i);
     runtime->setUpdate(set, obj);
   }
-  sp += arg - 1;
-  *sp = *set;
-  ctx->sp = sp;
+  ctx->frame->dropValues(arg - 1);
+  ctx->frame->setTopValue(*set);
 }
 
 // opcode 155
@@ -1403,26 +1370,25 @@ void Interpreter::doFormatValue(Context* ctx, word flags) {
   }
 
   if (have_fmt_spec) {
-    Handle<String> fmt_str(&scope, *ctx->sp++);
-    Handle<String> value(&scope, *ctx->sp++);
-    *--ctx->sp = thread->runtime()->stringConcat(fmt_str, value);
+    Handle<String> fmt_str(&scope, ctx->frame->popValue());
+    Handle<String> value(&scope, ctx->frame->popValue());
+    ctx->frame->pushValue(thread->runtime()->stringConcat(fmt_str, value));
   } // else no-op
 }
 
 // opcode 156
 void Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
-  Object**& sp = ctx->sp;
   Thread* thread = ctx->thread;
   HandleScope scope;
-  Handle<ObjectArray> keys(&scope, *sp++);
+  Handle<ObjectArray> keys(&scope, ctx->frame->popValue());
   Handle<Dictionary> dict(
       &scope, thread->runtime()->newDictionary(keys->length()));
   for (word i = arg - 1; i >= 0; i--) {
     Handle<Object> key(&scope, keys->at(i));
-    Handle<Object> value(&scope, *sp++);
+    Handle<Object> value(&scope, ctx->frame->popValue());
     thread->runtime()->dictionaryAtPut(dict, key, value);
   }
-  *--sp = *dict;
+  ctx->frame->pushValue(*dict);
 }
 
 // opcode 157
@@ -1432,14 +1398,14 @@ void Interpreter::doBuildString(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   switch (arg) {
     case 0: // empty
-      *--ctx->sp = runtime->newStringWithAll(View<byte>(nullptr, 0));
+      ctx->frame->pushValue(runtime->newStringWithAll(View<byte>(nullptr, 0)));
       break;
     case 1: // no-op
       break;
     default: { // concat
-      Object* res = stringJoin(thread, ctx->sp, arg);
-      ctx->sp += (arg - 1);
-      *ctx->sp = res;
+      Object* res = stringJoin(thread, ctx->frame->valueStackTop(), arg);
+      ctx->frame->dropValues(arg - 1);
+      ctx->frame->setTopValue(res);
       break;
     }
   }
@@ -1458,7 +1424,6 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
   Handle<ByteArray> byte_array(&scope, code->code());
   Context ctx;
   ctx.pc = 0;
-  ctx.sp = frame->valueStackTop();
   ctx.thread = thread;
   ctx.frame = frame;
   for (;;) {
@@ -1473,7 +1438,7 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         goto dispatch;
       }
       case Bytecode::RETURN_VALUE: {
-        Object* result = *ctx.sp++;
+        Object* result = ctx.frame->popValue();
         // Clean up after ourselves
         thread->popFrame();
         return result;

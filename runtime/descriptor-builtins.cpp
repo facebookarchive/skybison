@@ -107,8 +107,7 @@ Object* builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
   }
 
   Handle<Object> getter(&scope, property->getter());
-  return Interpreter::callMethod1(
-      thread, frame, frame->valueStackTop(), getter, obj);
+  return Interpreter::callMethod1(thread, frame, getter, obj);
 }
 
 Object* builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {

@@ -22,19 +22,17 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   Handle<Function> dunder_new(
       &scope, runtime->lookupNameInMro(thread, type, name));
 
-  Object** sp = frame->valueStackTop();
-  *--sp = *dunder_new;
+  frame->pushValue(*dunder_new);
   for (word i = 0; i < nargs; i++) {
-    *--sp = args.get(i);
+    frame->pushValue(args.get(i));
   }
-  frame->setValueStackTop(sp);
 
   Handle<Object> result(&scope, dunder_new->entry()(thread, frame, nargs));
 
   // Pop all of the arguments we pushed for the __new__ call.  While we will
   // push the same number of arguments again for the __init__ call below,
   // starting over from scratch keeps the addressing arithmetic simple.
-  frame->setValueStackTop(sp + nargs + 1);
+  frame->dropValues(nargs + 1);
 
   // Second, call __init__ to initialize the instance.
 
@@ -43,15 +41,14 @@ Object* builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   Handle<Function> dunder_init(
       &scope, runtime->lookupNameInMro(thread, type, init));
 
-  sp = frame->valueStackTop();
-  *--sp = *dunder_init;
-  *--sp = *result;
+  frame->pushValue(*dunder_init);
+  frame->pushValue(*result);
   for (word i = 1; i < nargs; i++) {
-    *--sp = args.get(i);
+    frame->pushValue(args.get(i));
   }
-  frame->setValueStackTop(sp);
 
   dunder_init->entry()(thread, frame, nargs);
+  frame->dropValues(nargs + 1);
 
   // TODO: throw a type error if the __init__ method does not return None.
   return *result;

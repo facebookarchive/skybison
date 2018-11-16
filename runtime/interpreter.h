@@ -31,14 +31,14 @@ class Interpreter {
 
   static Object* execute(Thread* thread, Frame* frame);
 
-  static Object* call(Thread* thread, Frame* frame, Object** sp, word nargs);
-  static Object* callKw(Thread* thread, Frame* frame, Object** sp, word nargs);
-  static Object* callEx(Thread* thread, Frame* frame, Object** sp, word flags);
+  static Object* call(Thread* thread, Frame* frame, word nargs);
+  static Object* callKw(Thread* thread, Frame* frame, word nargs);
+  static Object* callEx(Thread* thread, Frame* frame, word flags);
 
   // batch concat/join <num> string objects on the stack (no conversion)
   static Object* stringJoin(Thread* thread, Object** sp, word num);
 
-  static Object* isTrue(Thread* thread, Frame* caller, Object** sp);
+  static Object* isTrue(Thread* thread, Frame* caller);
 
   static Object* callDescriptorGet(
       Thread* thread,
@@ -56,14 +56,12 @@ class Interpreter {
   static Object* callMethod1(
       Thread* thread,
       Frame* caller,
-      Object** sp,
       const Handle<Object>& method,
       const Handle<Object>& self);
 
   static Object* callMethod2(
       Thread* thread,
       Frame* caller,
-      Object** sp,
       const Handle<Object>& method,
       const Handle<Object>& self,
       const Handle<Object>& other);
@@ -71,7 +69,6 @@ class Interpreter {
   static Object* callMethod4(
       Thread* thread,
       Frame* caller,
-      Object** sp,
       const Handle<Object>& method,
       const Handle<Object>& self,
       const Handle<Object>& arg1,
@@ -81,14 +78,12 @@ class Interpreter {
   static Object* unaryOperation(
       Thread* thread,
       Frame* caller,
-      Object** sp,
       const Handle<Object>& receiver,
       const Handle<Object>& selector);
 
   static Object* binaryOperation(
       Thread* thread,
       Frame* caller,
-      Object** sp,
       BinaryOp op,
       const Handle<Object>& left,
       const Handle<Object>& right);
@@ -96,7 +91,6 @@ class Interpreter {
   static Object* inplaceOperation(
       Thread* thread,
       Frame* caller,
-      Object** sp,
       BinaryOp op,
       const Handle<Object>& left,
       const Handle<Object>& right);
@@ -104,7 +98,6 @@ class Interpreter {
   static Object* compareOperation(
       Thread* thread,
       Frame* caller,
-      Object** sp,
       CompareOp op,
       const Handle<Object>& left,
       const Handle<Object>& right);
@@ -112,14 +105,12 @@ class Interpreter {
   static Object* sequenceContains(
       Thread* thread,
       Frame* caller,
-      Object** sp,
       const Handle<Object>& value,
       const Handle<Object>& container);
 
   struct Context {
     Thread* thread;
     Frame* frame;
-    Object** sp;
     word pc;
   };
 
@@ -203,11 +194,9 @@ class Interpreter {
   static void doBuildString(Context* ctx, word arg);
 
  private:
-  static Object*
-  callBoundMethod(Thread* thread, Frame* frame, Object** sp, word nargs);
+  static Object* callBoundMethod(Thread* thread, Frame* frame, word nargs);
 
-  static Object*
-  callCallable(Thread* thread, Frame* frame, Object** sp, word nargs);
+  static Object* callCallable(Thread* thread, Frame* frame, word nargs);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };

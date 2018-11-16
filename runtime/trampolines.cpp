@@ -10,14 +10,6 @@
 
 namespace python {
 
-static inline void push(Object**& sp, Object* val) {
-  *--sp = val;
-}
-
-static inline Object* pop(Object**& sp) {
-  return *sp++;
-}
-
 static inline void initFrame(
     Thread* thread,
     Function* function,
@@ -120,7 +112,6 @@ Object* interpreterTrampolineSlowPath(
   uword flags = code->flags();
   HandleScope scope(thread->handles());
   Handle<Object> tmp_varargs(&scope, None::object());
-  Object** sp = caller_frame->valueStackTop();
   if (argc < code->argcount() && function->hasDefaults()) {
     // Add default positional args
     Handle<ObjectArray> default_args(&scope, function->defaults());
@@ -130,9 +121,8 @@ Object* interpreterTrampolineSlowPath(
     }
     const word positional_only = code->argcount() - default_args->length();
     for (; argc < code->argcount(); argc++) {
-      push(sp, default_args->at(argc - positional_only));
+      caller_frame->pushValue(default_args->at(argc - positional_only));
     }
-    caller_frame->setValueStackTop(sp);
   }
 
   if ((argc > code->argcount()) || (flags & Code::VARARGS)) {
@@ -142,11 +132,11 @@ Object* interpreterTrampolineSlowPath(
       Handle<ObjectArray> varargs(
           &scope, thread->runtime()->newObjectArray(len));
       for (word i = (len - 1); i >= 0; i--) {
-        varargs->atPut(i, pop(sp));
+        varargs->atPut(i, caller_frame->topValue());
+        caller_frame->popValue();
         argc--;
       }
       tmp_varargs = *varargs;
-      caller_frame->setValueStackTop(sp);
     } else {
       return thread->throwTypeErrorFromCString("TypeError: too many arguments");
     }
@@ -164,9 +154,8 @@ Object* interpreterTrampolineSlowPath(
         Handle<Object> name(&scope, formal_names->at(first_kw + i));
         Object* val = thread->runtime()->dictionaryAt(kw_defaults, name);
         if (!val->isError()) {
-          push(sp, val);
+          caller_frame->pushValue(val);
           argc++;
-          caller_frame->setValueStackTop(sp);
         } else {
           return thread->throwTypeErrorFromCString(
               "TypeError: missing keyword-only argument");
@@ -179,18 +168,15 @@ Object* interpreterTrampolineSlowPath(
   }
 
   if (flags & Code::VARARGS) {
-    push(sp, *tmp_varargs);
+    caller_frame->pushValue(*tmp_varargs);
     argc++;
-    caller_frame->setValueStackTop(sp);
   }
 
   if (flags & Code::VARKEYARGS) {
     // VARKEYARGS - because we arrived via CALL_FUNCTION, no keyword arguments
     // provided.  Just add an empty dictionary.
     Handle<Object> kwdict(&scope, thread->runtime()->newDictionary());
-    Object** sp = caller_frame->valueStackTop();
-    push(sp, *kwdict);
-    caller_frame->setValueStackTop(sp);
+    caller_frame->pushValue(*kwdict);
     argc++;
   }
 
@@ -315,12 +301,11 @@ Object* checkArgs(
 Object*
 interpreterTrampolineKw(Thread* thread, Frame* caller_frame, word argc) {
   HandleScope scope(thread->handles());
-  Object** sp = caller_frame->valueStackTop();
   // Destructively pop the tuple of kwarg names
-  Handle<ObjectArray> keywords(&scope, pop(sp));
-  caller_frame->setValueStackTop(sp);
+  Handle<ObjectArray> keywords(&scope, caller_frame->topValue());
+  caller_frame->popValue();
   DCHECK(keywords->length() > 0, "Invalid keyword name tuple");
-  Handle<Function> function(&scope, *(sp + argc));
+  Handle<Function> function(&scope, caller_frame->peek(argc));
   Handle<Code> code(&scope, function->code());
   word expected_args = code->argcount() + code->kwonlyargcount();
   word num_keyword_args = keywords->length();
@@ -345,7 +330,8 @@ interpreterTrampolineKw(Thread* thread, Frame* caller_frame, word argc) {
           &scope, thread->runtime()->newObjectArray(excess));
       if (excess > 0) {
         // Point to the leftmost excess argument
-        Object** p = (sp + num_keyword_args + excess) - 1;
+        Object** p =
+            (caller_frame->valueStackTop() + num_keyword_args + excess) - 1;
         // Copy the excess to the * tuple
         for (word i = 0; i < excess; i++) {
           varargs->atPut(i, *(p - i));
@@ -356,10 +342,9 @@ interpreterTrampolineKw(Thread* thread, Frame* caller_frame, word argc) {
           p--;
         }
         // Adjust the counts
-        sp += excess;
+        caller_frame->dropValues(excess);
         argc -= excess;
         num_positional_args -= excess;
-        caller_frame->setValueStackTop(sp);
       }
       tmp_varargs = *varargs;
     }
@@ -376,7 +361,7 @@ interpreterTrampolineKw(Thread* thread, Frame* caller_frame, word argc) {
       Handle<List> saved_values(&scope, thread->runtime()->newList());
       word formal_parm_size = formal_parm_names->length();
       Runtime* runtime = thread->runtime();
-      Object** p = sp + (num_keyword_args - 1);
+      Object** p = caller_frame->valueStackTop() + (num_keyword_args - 1);
       for (word i = 0; i < num_keyword_args; i++) {
         Handle<Object> key(&scope, keywords->at(i));
         Handle<Object> value(&scope, *(p - i));
@@ -392,20 +377,21 @@ interpreterTrampolineKw(Thread* thread, Frame* caller_frame, word argc) {
       }
       // Now, restore the stashed values to the stack and build a new
       // keywords name list.
-      sp += num_keyword_args; // Pop all of the old keyword values
+      caller_frame->dropValues(
+          num_keyword_args); // Pop all of the old keyword values
       num_keyword_args = saved_keyword_list->allocated();
       // Replace the old keywords list with a new one.
       keywords = runtime->newObjectArray(num_keyword_args);
       for (word i = 0; i < num_keyword_args; i++) {
-        push(sp, saved_values->at(i));
+        caller_frame->pushValue(saved_values->at(i));
         keywords->atPut(i, saved_keyword_list->at(i));
       }
       tmp_dict = *dict;
     }
   }
   // At this point, all vararg forms have been normalized
-  Object** kw_arg_base =
-      (sp + num_keyword_args) - 1; // pointer to first non-positional arg
+  Object** kw_arg_base = (caller_frame->valueStackTop() + num_keyword_args) -
+      1; // pointer to first non-positional arg
   if (UNLIKELY(argc > expected_args)) {
     return thread->throwTypeErrorFromCString("TypeError: Too many arguments");
   } else if (UNLIKELY(argc < expected_args)) {
@@ -419,10 +405,9 @@ interpreterTrampolineKw(Thread* thread, Frame* caller_frame, word argc) {
     }
     // Fill in missing spots w/ Error code
     for (word i = num_keyword_args; i < name_tuple_size; i++) {
-      push(sp, Error::object());
+      caller_frame->pushValue(Error::object());
       padded_keywords->atPut(i, Error::object());
     }
-    caller_frame->setValueStackTop(sp);
     keywords = *padded_keywords;
   }
   // Now we've got the right number.  Do they match up?
@@ -435,12 +420,10 @@ interpreterTrampolineKw(Thread* thread, Frame* caller_frame, word argc) {
   // If we're a vararg form, need to push the tuple/dictionary.
   if (res->isNone()) {
     if (flags & Code::VARARGS) {
-      push(sp, *tmp_varargs);
-      caller_frame->setValueStackTop(sp);
+      caller_frame->pushValue(*tmp_varargs);
     }
     if (flags & Code::VARKEYARGS) {
-      push(sp, *tmp_dict);
-      caller_frame->setValueStackTop(sp);
+      caller_frame->pushValue(*tmp_dict);
     }
     return callNoChecks(thread, *function, caller_frame, *code);
   }
@@ -450,13 +433,14 @@ interpreterTrampolineKw(Thread* thread, Frame* caller_frame, word argc) {
 Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word arg) {
   HandleScope scope(thread->handles());
   Handle<Object> kw_dict(&scope, None::object());
-  Object** sp = caller_frame->valueStackTop();
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
-    kw_dict = pop(sp);
+    kw_dict = caller_frame->topValue();
+    caller_frame->popValue();
   }
-  Handle<ObjectArray> positional_args(&scope, pop(sp));
+  Handle<ObjectArray> positional_args(&scope, caller_frame->topValue());
+  caller_frame->popValue();
   for (word i = 0; i < positional_args->length(); i++) {
-    push(sp, positional_args->at(i));
+    caller_frame->pushValue(positional_args->at(i));
   }
   word argc = positional_args->length();
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
@@ -465,30 +449,27 @@ Object* interpreterTrampolineEx(Thread* thread, Frame* caller_frame, word arg) {
     Handle<ObjectArray> keys(&scope, runtime->dictionaryKeys(dict));
     for (word i = 0; i < keys->length(); i++) {
       Handle<Object> key(&scope, keys->at(i));
-      push(sp, runtime->dictionaryAt(dict, key));
+      caller_frame->pushValue(runtime->dictionaryAt(dict, key));
     }
     argc += keys->length();
-    push(sp, *keys);
-    caller_frame->setValueStackTop(sp);
+    caller_frame->pushValue(*keys);
     return interpreterTrampolineKw(thread, caller_frame, argc);
   } else {
-    caller_frame->setValueStackTop(sp);
     return interpreterTrampoline(thread, caller_frame, argc);
   }
 }
 
 typedef PyObject* (*PyCFunction)(PyObject*, PyObject*, PyObject*);
 
-Object* extensionTrampoline(Thread* thread, Frame* previous_frame, word argc) {
+Object* extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   Runtime* runtime = thread->runtime();
-  Object** sp = previous_frame->valueStackTop();
   HandleScope scope(thread->handles());
 
   // Set the address pointer to the function pointer
-  Handle<Function> function(&scope, previous_frame->function(argc));
+  Handle<Function> function(&scope, caller_frame->function(argc));
   Handle<Integer> address(&scope, function->code());
 
-  Handle<Object> object(&scope, *sp++);
+  Handle<Object> object(&scope, caller_frame->topValue());
   Handle<Object> attr_name(&scope, runtime->symbols()->ExtensionPtr());
   // TODO(eelizondo): Cache the None handle
   PyObject* none = runtime->asApiHandle(None::object())->asPyObject();

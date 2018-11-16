@@ -35,8 +35,8 @@ Object* builtinDictionaryEq(Thread* thread, Frame* frame, word nargs) {
       if (right->isError()) {
         return Boolean::falseObj();
       }
-      Object* result = Interpreter::compareOperation(
-          thread, frame, frame->valueStackTop(), EQ, left, right);
+      Object* result =
+          Interpreter::compareOperation(thread, frame, EQ, left, right);
       if (result == Boolean::falseObj()) {
         return result;
       }

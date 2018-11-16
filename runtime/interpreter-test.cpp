@@ -20,16 +20,13 @@ TEST(InterpreterTest, IsTrueBoolean) {
 
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Object** sp = frame->valueStackTop();
-  sp--;
-
   Handle<Object> true_value(&scope, Boolean::trueObj());
-  *sp = *true_value;
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, sp), Boolean::trueObj());
+  frame->pushValue(*true_value);
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::trueObj());
 
   Handle<Object> false_object(&scope, Boolean::falseObj());
-  *sp = *false_object;
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, sp), Boolean::falseObj());
+  frame->pushValue(*false_object);
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::falseObj());
 }
 
 TEST(InterpreterTest, IsTrueInteger) {
@@ -41,15 +38,13 @@ TEST(InterpreterTest, IsTrueInteger) {
 
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Object** sp = frame->valueStackTop();
-
   Handle<Object> true_value(&scope, runtime.newInteger(1234));
-  *sp = *true_value;
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, sp), Boolean::trueObj());
+  frame->pushValue(*true_value);
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::trueObj());
 
   Handle<Object> false_value(&scope, runtime.newInteger(0));
-  *sp = *false_value;
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, sp), Boolean::falseObj());
+  frame->pushValue(*false_value);
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::falseObj());
 }
 
 TEST(InterpreterTest, IsTrueDunderLen) {
@@ -61,20 +56,18 @@ TEST(InterpreterTest, IsTrueDunderLen) {
 
   ASSERT_TRUE(frame->isSentinelFrame());
 
-  Object** sp = frame->valueStackTop();
-
   Handle<List> nonempty_list(&scope, runtime.newList());
   Handle<Object> elt(&scope, None::object());
   runtime.listAdd(nonempty_list, elt);
 
   Handle<Object> true_value(&scope, *nonempty_list);
-  *sp = *true_value;
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, sp), Boolean::trueObj());
+  frame->pushValue(*true_value);
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::trueObj());
 
   Handle<List> empty_list(&scope, runtime.newList());
   Handle<Object> false_value(&scope, *empty_list);
-  *sp = *false_value;
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, sp), Boolean::falseObj());
+  frame->pushValue(*false_value);
+  EXPECT_EQ(Interpreter::isTrue(thread, frame), Boolean::falseObj());
 }
 
 TEST(InterpreterTest, BinaryOpInvokesSelfMethod) {
@@ -99,12 +92,7 @@ right = C()
   Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
   Object* result = Interpreter::binaryOperation(
-      thread,
-      frame,
-      frame->valueStackTop(),
-      Interpreter::BinaryOp::SUB,
-      left,
-      right);
+      thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
@@ -139,12 +127,7 @@ right = C()
   Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
   Object* result = Interpreter::binaryOperation(
-      thread,
-      frame,
-      frame->valueStackTop(),
-      Interpreter::BinaryOp::SUB,
-      left,
-      right);
+      thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
@@ -181,12 +164,7 @@ right = D()
   Handle<Object> d_class(&scope, testing::moduleAt(&runtime, main, "D"));
 
   Object* result = Interpreter::binaryOperation(
-      thread,
-      frame,
-      frame->valueStackTop(),
-      Interpreter::BinaryOp::SUB,
-      left,
-      right);
+      thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *d_class);
@@ -221,12 +199,7 @@ right = D()
   Handle<Object> d_class(&scope, testing::moduleAt(&runtime, main, "D"));
 
   Object* result = Interpreter::binaryOperation(
-      thread,
-      frame,
-      frame->valueStackTop(),
-      Interpreter::BinaryOp::SUB,
-      left,
-      right);
+      thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *d_class);
@@ -258,12 +231,7 @@ right = C()
   Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
   Object* result = Interpreter::inplaceOperation(
-      thread,
-      frame,
-      frame->valueStackTop(),
-      Interpreter::BinaryOp::SUB,
-      left,
-      right);
+      thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
@@ -295,12 +263,7 @@ right = C()
   Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
   Object* result = Interpreter::inplaceOperation(
-      thread,
-      frame,
-      frame->valueStackTop(),
-      Interpreter::BinaryOp::SUB,
-      left,
-      right);
+      thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
@@ -334,12 +297,7 @@ right = C()
   Handle<Object> c_class(&scope, testing::moduleAt(&runtime, main, "C"));
 
   Object* result = Interpreter::inplaceOperation(
-      thread,
-      frame,
-      frame->valueStackTop(),
-      Interpreter::BinaryOp::SUB,
-      left,
-      right);
+      thread, frame, Interpreter::BinaryOp::SUB, left, right);
   ASSERT_TRUE(result->isObjectArray());
   ASSERT_EQ(ObjectArray::cast(result)->length(), 4);
   EXPECT_EQ(ObjectArray::cast(result)->at(0), *c_class);
@@ -376,12 +334,12 @@ c20 = C(20)
   Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "c10"));
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "c20"));
 
-  Object* left_lt_right = Interpreter::compareOperation(
-      thread, frame, frame->valueStackTop(), CompareOp::LT, left, right);
+  Object* left_lt_right =
+      Interpreter::compareOperation(thread, frame, CompareOp::LT, left, right);
   EXPECT_EQ(left_lt_right, Boolean::trueObj());
 
-  Object* right_lt_left = Interpreter::compareOperation(
-      thread, frame, frame->valueStackTop(), CompareOp::LT, right, left);
+  Object* right_lt_left =
+      Interpreter::compareOperation(thread, frame, CompareOp::LT, right, left);
   EXPECT_EQ(right_lt_left, Boolean::falseObj());
 }
 
@@ -407,18 +365,18 @@ c20 = C(20)
   Handle<Object> left(&scope, testing::moduleAt(&runtime, main, "c10"));
   Handle<Object> right(&scope, testing::moduleAt(&runtime, main, "c20"));
 
-  Object* left_eq_right = Interpreter::compareOperation(
-      thread, frame, frame->valueStackTop(), CompareOp::EQ, left, right);
+  Object* left_eq_right =
+      Interpreter::compareOperation(thread, frame, CompareOp::EQ, left, right);
   EXPECT_EQ(left_eq_right, Boolean::falseObj());
-  Object* left_ne_right = Interpreter::compareOperation(
-      thread, frame, frame->valueStackTop(), CompareOp::NE, left, right);
+  Object* left_ne_right =
+      Interpreter::compareOperation(thread, frame, CompareOp::NE, left, right);
   EXPECT_EQ(left_ne_right, Boolean::trueObj());
 
-  Object* right_eq_left = Interpreter::compareOperation(
-      thread, frame, frame->valueStackTop(), CompareOp::EQ, left, right);
+  Object* right_eq_left =
+      Interpreter::compareOperation(thread, frame, CompareOp::EQ, left, right);
   EXPECT_EQ(right_eq_left, Boolean::falseObj());
-  Object* right_ne_left = Interpreter::compareOperation(
-      thread, frame, frame->valueStackTop(), CompareOp::NE, left, right);
+  Object* right_ne_left =
+      Interpreter::compareOperation(thread, frame, CompareOp::NE, left, right);
   EXPECT_EQ(right_ne_left, Boolean::trueObj());
 }
 
@@ -441,10 +399,10 @@ c = 3
   Handle<Object> container(&scope, testing::moduleAt(&runtime, main, "a"));
   Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
   Handle<Object> c(&scope, testing::moduleAt(&runtime, main, "c"));
-  Object* contains_true = Interpreter::sequenceContains(
-      thread, frame, frame->valueStackTop(), b, container);
-  Object* contains_false = Interpreter::sequenceContains(
-      thread, frame, frame->valueStackTop(), c, container);
+  Object* contains_true =
+      Interpreter::sequenceContains(thread, frame, b, container);
+  Object* contains_false =
+      Interpreter::sequenceContains(thread, frame, c, container);
   EXPECT_EQ(contains_true, Boolean::trueObj());
   EXPECT_EQ(contains_false, Boolean::falseObj());
 }

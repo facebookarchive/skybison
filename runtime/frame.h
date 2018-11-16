@@ -189,6 +189,17 @@ class Frame {
 
   Object** valueStackBase();
 
+  // Push value on the stack.
+  void pushValue(Object* value);
+  // Pop the top value off the stack and return it.
+  Object* popValue();
+  // Pop n items off the stack.
+  void dropValues(word count);
+  // Return the top value of the stack.
+  Object* topValue();
+  // Set the top value of the stack.
+  void setTopValue(Object* value);
+
   // Return the object at offset from the top of the value stack (e.g. peek(0)
   // returns the top of the stack)
   Object* peek(word offset);
@@ -396,6 +407,35 @@ inline void Frame::setValueStackTop(Object** top) {
   atPut(
       kValueStackTopOffset,
       SmallInteger::fromWord(reinterpret_cast<uword>(top)));
+}
+
+inline void Frame::pushValue(Object* value) {
+  Object** top = valueStackTop();
+  *--top = value;
+  setValueStackTop(top);
+}
+
+inline Object* Frame::popValue() {
+  DCHECK(valueStackTop() + 1 <= valueStackBase(), "offset %d overflows", 1);
+  Object* result = *valueStackTop();
+  setValueStackTop(valueStackTop() + 1);
+  return result;
+}
+
+inline void Frame::dropValues(word count) {
+  DCHECK(
+      valueStackTop() + count <= valueStackBase(),
+      "count %ld overflows",
+      count);
+  setValueStackTop(valueStackTop() + count);
+}
+
+inline Object* Frame::topValue() {
+  return peek(0);
+}
+
+inline void Frame::setTopValue(Object* value) {
+  *valueStackTop() = value;
 }
 
 inline Object* Frame::peek(word offset) {

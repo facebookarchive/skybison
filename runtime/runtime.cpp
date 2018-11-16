@@ -1122,17 +1122,13 @@ void Runtime::collectGarbage() {
 void Runtime::processCallbacks() {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
-  Object** sp = frame->valueStackTop();
   HandleScope scope(thread);
   while (callbacks_ != None::object()) {
-    Handle<WeakRef> weak(
-        &scope, WeakRef::cast(WeakRef::dequeueReference(&callbacks_)));
-    *--sp = weak->callback();
-    *--sp = Object::cast(*weak);
-    Interpreter::call(thread, frame, sp, 1);
+    Handle<Object> weak(&scope, WeakRef::dequeueReference(&callbacks_));
+    Handle<Object> callback(&scope, WeakRef::cast(*weak)->callback());
+    Interpreter::callMethod1(thread, frame, callback, weak);
     thread->ignorePendingException();
-    *sp += 2;
-    weak->setCallback(None::object());
+    WeakRef::cast(*weak)->setCallback(None::object());
   }
 }
 

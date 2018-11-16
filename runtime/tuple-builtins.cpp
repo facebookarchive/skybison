@@ -27,8 +27,8 @@ Object* builtinTupleEq(Thread* thread, Frame* frame, word nargs) {
     for (word i = 0; i < length; i++) {
       left = self->at(i);
       right = other->at(i);
-      Object* result = Interpreter::compareOperation(
-          thread, frame, frame->valueStackTop(), EQ, left, right);
+      Object* result =
+          Interpreter::compareOperation(thread, frame, EQ, left, right);
       if (result == Boolean::falseObj()) {
         return result;
       }

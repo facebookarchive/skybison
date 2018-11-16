@@ -48,18 +48,16 @@ Object* builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   // the on-stack state for the class body function call.
   thread->runClassFunction(*body, *dictionary);
 
-  Object** sp = frame->valueStackTop();
   Handle<Class> klass(&scope, runtime->classAt(LayoutId::kType));
-  *--sp = *klass;
-  *--sp = *name;
-  *--sp = *bases;
-  *--sp = *dictionary;
-  frame->setValueStackTop(sp);
+  frame->pushValue(*klass);
+  frame->pushValue(*name);
+  frame->pushValue(*bases);
+  frame->pushValue(*dictionary);
   Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
   Handle<Function> dunder_call(
       &scope, runtime->lookupNameInMro(thread, klass, call_name));
   Handle<Object> result(&scope, dunder_call->entry()(thread, frame, 4));
-  frame->setValueStackTop(sp + 4);
+  frame->dropValues(4);
   return *result;
 }
 
@@ -96,17 +94,15 @@ Object* builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   // caller and the on-stack state for the class body function call.
   thread->runClassFunction(*body, *dictionary);
 
-  Object** sp = frame->valueStackTop();
-  *--sp = *metaclass;
-  *--sp = *name;
-  *--sp = *bases;
-  *--sp = *dictionary;
-  frame->setValueStackTop(sp);
+  frame->pushValue(*metaclass);
+  frame->pushValue(*name);
+  frame->pushValue(*bases);
+  frame->pushValue(*dictionary);
   Handle<Object> call_name(&scope, runtime->symbols()->DunderCall());
   Handle<Function> dunder_call(
       &scope, runtime->lookupNameInMro(thread, metaclass, call_name));
   Handle<Object> result(&scope, dunder_call->entry()(thread, frame, 4));
-  frame->setValueStackTop(sp + 4);
+  frame->dropValues(4);
 
   return *result;
 }
@@ -174,8 +170,7 @@ Object* builtinLen(Thread* thread, Frame* frame, word nargs) {
   if (method->isError()) {
     return thread->throwTypeErrorFromCString("object has no len()");
   }
-  return Interpreter::callMethod1(
-      thread, frame, frame->valueStackTop(), method, self);
+  return Interpreter::callMethod1(thread, frame, method, self);
 }
 
 Object* builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
