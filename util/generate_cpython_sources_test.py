@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+
 import generate_cpython_sources as gcs
 
 
@@ -145,10 +146,17 @@ void Foo_Type_Init(void) {
 extern "C" PyTypeObject *bar_function() {
   // Implmementation
 }
+
+extern "C" PyObject *baz_function_with_many_args(PyObject *, PyObject *,
+                                                 PyObject *, PyObject *) {
+  // Implementation
+}
 """
         symbols_dict = gcs.find_symbols_in_file(lines, gcs.SOURCE_SYMBOL_REGEX)
         res = symbols_dict["pyfunction"]
-        self.assertEqual(res, ["foo_function", "bar_function"])
+        self.assertEqual(
+            res, ["foo_function", "bar_function", "baz_function_with_many_args"]
+        )
 
 
 class TestDefinitionRegex(unittest.TestCase):
