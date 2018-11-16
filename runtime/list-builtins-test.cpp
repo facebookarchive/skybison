@@ -485,6 +485,149 @@ TEST(ListBuiltinsDeathTest, SetItemWithInvalidIndexThrows) {
   ASSERT_DEATH(runtime.runFromCStr(src), "list assignment index out of range");
 }
 
+TEST(ListBuiltinsTest, SetItemSliceBasic) {
+  const char* src = R"(
+letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+letters[2:5] = ['C', 'D', 'E']
+result = letters
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "E", "f", "g"});
+}
+
+TEST(ListBuiltinsTest, SetItemSliceGrow) {
+  const char* src = R"(
+letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+letters[2:5] = ['C', 'D', 'E','X','Y','Z']
+result = letters
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "E", "X", "Y", "Z", "f", "g"});
+}
+
+TEST(ListBuiltinsTest, SetItemSliceShrink) {
+  const char* src = R"(
+letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+letters[2:6] = ['C', 'D']
+result = letters
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "g"});
+}
+
+TEST(ListBuiltinsTest, SetItemSliceIterable) {
+  const char* src = R"(
+letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+letters[2:6] = ('x', 'y', 12)
+result = letters
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"a", "b", "x", "y", 12, "g"});
+}
+
+TEST(ListBuiltinsTest, SetItemSliceSelf) {
+  const char* src = R"(
+letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+letters[2:5] = letters
+result = letters
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result,
+                   {"a", "b", "a", "b", "c", "d", "e", "f", "g", "f", "g"});
+}
+
+// Reverse ordered bounds, but step still +1:
+TEST(ListBuiltinsTest, SetItemSliceRevBounds) {
+  const char* src = R"(
+a = list(range(20))
+a[5:2] = ['a','b','c','d','e']
+result = a
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {0, 1, 2,  3,  4,  "a", "b", "c", "d", "e", 5,  6, 7,
+                            8, 9, 10, 11, 12, 13,  14,  15,  16,  17,  18, 19});
+}
+
+TEST(ListBuiltinsTest, SetItemSliceStep) {
+  const char* src = R"(
+a = list(range(20))
+a[2:10:3] = ['a', 'b', 'c']
+result = a
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {0,  1,  "a", 3,  4,  "b", 6,  7,  "c", 9,
+                            10, 11, 12,  13, 14, 15,  16, 17, 18,  19});
+}
+
+TEST(ListBuiltinsTest, SetItemSliceStepNeg) {
+  const char* src = R"(
+a = list(range(20))
+a[10:2:-3] = ['a', 'b', 'c']
+result = a
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {0,   1,  2,  3,  "c", 5,  6,  "b", 8,  9,
+                            "a", 11, 12, 13, 14,  15, 16, 17,  18, 19});
+}
+
+TEST(ListBuiltinsTest, SetItemSliceStepSizeErr) {
+  const char* src = R"(
+a = list(range(20))
+a[2:10:3] = ['a', 'b', 'c', 'd']
+)";
+  Runtime runtime;
+  ASSERT_DEATH(
+      runtime.runFromCStr(src),
+      "attempt to assign sequence of size 4 to extended slice of size 3");
+}
+
+TEST(ListBuiltinsTest, SetItemSliceScalarErr) {
+  const char* src = R"(
+letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+letters[2:6] = 5
+)";
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(src), "can only assign an iterable");
+}
+
+TEST(ListBuiltinsTest, SetItemSliceStepTuple) {
+  const char* src = R"(
+a = list(range(20))
+a[2:10:3] = ('a', 'b', 'c')
+result = a
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(src);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {0,  1,  "a", 3,  4,  "b", 6,  7,  "c", 9,
+                            10, 11, 12,  13, 14, 15,  16, 17, 18,  19});
+}
+
 TEST(ListBuiltinsDeathTest, NonTypeInDunderNew) {
   const char* src = R"(
 list.__new__(1)

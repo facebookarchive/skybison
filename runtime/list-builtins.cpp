@@ -382,6 +382,114 @@ RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   return SmallInt::fromWord(list->numItems() - list_iterator->index());
 }
 
+static RawObject setItemSlice(Thread* thread, List& list, Object& slice_index,
+                              Object& src) {
+  HandleScope scope(thread);
+  Slice slice(&scope, Slice::cast(slice_index));
+  word start, stop, step;
+  slice->unpack(&start, &stop, &step);
+  word slice_length =
+      Slice::adjustIndices(list->numItems(), &start, &stop, step);
+  word suffix_start = Utils::maximum(start + 1, stop);
+
+  // degenerate case of a bad slice; behaves like a single index:
+  if ((step >= 0) && (start > stop)) {
+    stop = start;
+    suffix_start = start;  // do not drop any items
+  }
+
+  // Potential optimization:
+  // We could check for __length_hint__ or __len__ and attempt to
+  // do in-place update or at least have a good estimate of
+  // capacity for result_list
+  Runtime* runtime = thread->runtime();
+  List result_list(&scope, runtime->newList());
+
+  // Note: initial capacity for result array here is an optimistic guess
+  // since we don't yet know length iterator
+  // Potential optimization: use __length_hint__ of src
+  runtime->listEnsureCapacity(result_list, list->numItems());
+
+  // copy prefix into result array:
+  word prefix_length = Utils::minimum(start, stop + 1);
+  result_list->setNumItems(prefix_length);
+  for (word i = 0; i < prefix_length; i++) {
+    result_list->atPut(i, list->at(i));
+  }
+  if (step == 1) {
+    Object extend_result(&scope, runtime->listExtend(thread, result_list, src));
+    if (extend_result->isError()) {
+      return thread->raiseTypeErrorWithCStr("can only assign an iterable");
+    }
+    result_list = *extend_result;
+  } else {
+    Object iter_method(
+        &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), src,
+                                          SymbolId::kDunderIter));
+    if (iter_method->isError()) {
+      return thread->raiseTypeErrorWithCStr("object is not iterable");
+    }
+    Object iterator(&scope,
+                    Interpreter::callMethod1(thread, thread->currentFrame(),
+                                             iter_method, src));
+    if (iterator->isError()) {
+      return thread->raiseTypeErrorWithCStr("object is not iterable");
+    }
+    Object next_method(
+        &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                          iterator, SymbolId::kDunderNext));
+    if (next_method->isError()) {
+      return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
+    }
+
+    Object iter_length_val(&scope,
+                           runtime->iteratorLengthHint(thread, iterator));
+    if (iter_length_val->isError()) {
+      return thread->raiseTypeErrorWithCStr(
+          "slice assignment: unable to get length of assigned sequence");
+    }
+    word iter_length = SmallInt::cast(*iter_length_val)->value();
+    if (slice_length != iter_length) {
+      return thread->raiseValueError(thread->runtime()->newStrFromFormat(
+          "attempt to assign sequence of size %ld to extended slice of size "
+          "%ld",
+          iter_length, slice_length));
+    }
+
+    Object value(&scope, NoneType::object());
+
+    result_list->setNumItems(result_list->numItems() + std::abs(stop - start));
+    for (word i = start, incr = (step > 0) ? 1 : -1, count = 0; i != stop;
+         i += incr, count++) {
+      if ((count % step) == 0) {
+        value = Interpreter::callMethod1(thread, thread->currentFrame(),
+                                         next_method, iterator);
+        if (value->isError()) {
+          return *value;
+        }
+      } else {
+        value = list->at(i);
+      }
+      result_list->atPut(i, value);
+    }
+  }
+
+  // And now copy suffix:
+  word suffix_length = list->numItems() - suffix_start;
+  word result_length = result_list->numItems() + suffix_length;
+  runtime->listEnsureCapacity(result_list, result_length);
+
+  word index = result_list->numItems();
+  result_list->setNumItems(result_length);
+  for (word i = suffix_start; i < list->numItems(); i++, index++) {
+    result_list->atPut(index, list->at(i));
+  }
+
+  list->setItems(result_list->items());
+  list->setNumItems(result_list->numItems());
+  return NoneType::object();
+}
+
 RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs != 3) {
@@ -398,7 +506,9 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   }
 
   List list(&scope, *self);
-  RawObject index = args.get(1);
+  Object index(&scope, args.get(1));
+  Object src(&scope, args.get(2));
+
   if (index->isSmallInt()) {
     word idx = RawSmallInt::cast(index)->value();
     if (idx < 0) {
@@ -408,11 +518,12 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
       return thread->raiseIndexErrorWithCStr(
           "list assignment index out of range");
     }
-    Object value(&scope, args.get(2));
-    list->atPut(idx, *value);
+    list->atPut(idx, *src);
     return NoneType::object();
   }
-  // TODO(T31826482): Add support for slices
+  if (index->isSlice()) {
+    return setItemSlice(thread, list, index, src);
+  }
   return thread->raiseTypeErrorWithCStr(
       "list indices must be integers or slices");
 }

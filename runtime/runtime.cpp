@@ -3612,20 +3612,30 @@ RawObject Runtime::lookupSymbolInMro(Thread* thread, const Type& type,
   return Error::object();
 }
 
-bool Runtime::isIteratorExhausted(Thread* thread, const Object& iterator) {
+RawObject Runtime::iteratorLengthHint(Thread* thread, const Object& iterator) {
   HandleScope scope(thread);
   Object length_hint_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderLengthHint));
   if (length_hint_method->isError()) {
-    return true;
+    return *length_hint_method;
   }
   Object result(&scope, Interpreter::callMethod1(thread, thread->currentFrame(),
                                                  length_hint_method, iterator));
   if (result->isError()) {
-    return true;
+    return *result;
   }
   if (!result->isSmallInt()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__length_hint__ returned non-integer value");
+  }
+  return *result;
+}
+
+bool Runtime::isIteratorExhausted(Thread* thread, const Object& iterator) {
+  HandleScope scope(thread);
+  Object result(&scope, iteratorLengthHint(thread, iterator));
+  if (result->isError()) {
     return true;
   }
   return (RawSmallInt::cast(*result)->value() == 0);
