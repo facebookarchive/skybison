@@ -630,6 +630,51 @@ Result BINARY_TRUE_DIVIDE(Context* ctx, word) {
   return Result::CONTINUE;
 }
 
+Result BUILD_STRING(Context* ctx, word arg) {
+  HandleScope scope(ctx->thread->handles());
+  Runtime* runtime = ctx->thread->runtime();
+  switch (arg) {
+    case 0: // empty
+      *--ctx->sp = runtime->newStringWithAll(View<byte>(nullptr, 0));
+      break;
+    case 1: // no-op
+      break;
+    default: { // concat
+      Handle<String> res(&scope, *(ctx->sp + arg - 1));
+      for (word i = 2; i <= arg; i++) {
+        Handle<String> elem(&scope, *(ctx->sp + arg - i));
+        res = runtime->stringConcat(res, elem); // TODO: add stringJoin
+      }
+      *--ctx->sp = *res;
+      break;
+    }
+  }
+  return Result::CONTINUE;
+}
+
+// A incomplete impl of FORMAT_VALUE; assumes no conv
+Result FORMAT_VALUE(Context* ctx, word flags) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread->handles());
+  int conv = (flags & FVC_MASK);
+  int have_fmt_spec = (flags & FVS_MASK) == FVS_HAVE_SPEC;
+  switch (conv) {
+    case FVC_STR:
+    case FVC_REPR:
+    case FVC_ASCII:
+      UNIMPLEMENTED("Conversion not supported.");
+    default: // 0: no conv
+      break;
+  }
+
+  if (have_fmt_spec) {
+    Handle<String> fmt_str(&scope, *ctx->sp++);
+    Handle<String> value(&scope, *ctx->sp++);
+    *--ctx->sp = thread->runtime()->stringConcat(fmt_str, value);
+  } // else no-op
+  return Result::CONTINUE;
+}
+
 using Op = Result (*)(Context*, word);
 Op opTable[256];
 } // namespace interpreter
@@ -695,6 +740,8 @@ void Interpreter::initOpTable() {
   opTable[Bytecode::LOAD_DEREF] = interpreter::LOAD_DEREF;
   opTable[Bytecode::UNPACK_SEQUENCE] = interpreter::UNPACK_SEQUENCE;
   opTable[Bytecode::BINARY_TRUE_DIVIDE] = interpreter::BINARY_TRUE_DIVIDE;
+  opTable[Bytecode::BUILD_STRING] = interpreter::BUILD_STRING;
+  opTable[Bytecode::FORMAT_VALUE] = interpreter::FORMAT_VALUE;
 }
 
 Object* Interpreter::execute(Thread* thread, Frame* frame) {

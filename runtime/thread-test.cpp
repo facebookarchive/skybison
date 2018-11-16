@@ -2080,4 +2080,52 @@ print(a[0], a[1], a[2][0])
   EXPECT_EQ(output, "1 2 3\n");
 }
 
+TEST(FormatTest, NoConvEmpty) {
+  const char* src = R"(
+print(f'')
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "\n");
+}
+
+TEST(FormatTest, NoConvOneElement) {
+  const char* src = R"(
+a = "hello"
+x = f'a={a}'
+print(x)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "a=hello\n");
+}
+
+TEST(FormatTest, NoConvMultiElements) {
+  const char* src = R"(
+a = "hello"
+b = "world"
+c = "python"
+x = f'{a} {b} {c}'
+print(x)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "hello world python\n");
+}
+
+TEST(FormatTest, NoConvMultiElementsLarge) {
+  const char* src = R"(
+a = "Python"
+b = "is"
+c = "an interpreted high-level programming language for general-purpose programming.";
+x = f'{a} {b} {c}'
+print(x)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(
+      output,
+      "Python is an interpreted high-level programming language for general-purpose programming.\n");
+}
+
 } // namespace python
