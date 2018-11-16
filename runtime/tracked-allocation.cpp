@@ -9,6 +9,15 @@ void* TrackedAllocation::malloc(TrackedAllocation** head, word num_bytes) {
   return static_cast<void*>(alloc + 1);
 }
 
+void* TrackedAllocation::calloc(TrackedAllocation** head, word num_elems,
+                                word num_bytes) {
+  word size = sizeof(TrackedAllocation) + num_elems * num_bytes;
+  TrackedAllocation* alloc =
+      static_cast<TrackedAllocation*>(std::calloc(1, size));
+  TrackedAllocation::insert(head, alloc);
+  return static_cast<void*>(alloc + 1);
+}
+
 void TrackedAllocation::freePtr(TrackedAllocation** head, void* ptr) {
   TrackedAllocation::free(head, static_cast<TrackedAllocation*>(ptr) - 1);
 }

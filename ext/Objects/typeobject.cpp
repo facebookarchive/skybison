@@ -15,7 +15,8 @@ void PyType_Type_Init() {
 
   // PyType_Type init is handled independently as its metatype is itself
   ApiTypeHandle* pytype_type =
-      static_cast<ApiTypeHandle*>(std::calloc(1, sizeof(PyTypeObject)));
+      static_cast<ApiTypeHandle*>(TrackedAllocation::calloc(
+          runtime->trackedAllocations(), 1, sizeof(PyTypeObject)));
   pytype_type->ob_base.ob_base.ob_type = pytype_type;
   pytype_type->ob_base.ob_base.ob_refcnt = 1;
   pytype_type->tp_name = "type";

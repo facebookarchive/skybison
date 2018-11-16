@@ -7,6 +7,7 @@ namespace python {
 class TrackedAllocation {
  public:
   static void* malloc(TrackedAllocation** head, word num_bytes);
+  static void* calloc(TrackedAllocation** head, word num_elems, word num_bytes);
   static void freePtr(TrackedAllocation** head, void* ptr);
   static void free(TrackedAllocation** head, TrackedAllocation* alloc);
 

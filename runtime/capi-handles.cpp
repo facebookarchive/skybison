@@ -1,13 +1,16 @@
 #include "capi-handles.h"
 
 #include "runtime.h"
+#include "tracked-allocation.h"
 
 namespace python {
 
 ApiTypeHandle* ApiTypeHandle::newTypeHandle(const char* name,
                                             PyTypeObject* metatype) {
-  PyTypeObject* pytype =
-      static_cast<PyTypeObject*>(std::calloc(1, sizeof(PyTypeObject)));
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  PyTypeObject* pytype = static_cast<PyTypeObject*>(TrackedAllocation::calloc(
+      runtime->trackedAllocations(), 1, sizeof(PyTypeObject)));
   pytype->ob_base.ob_base.ob_type = metatype;
   pytype->ob_base.ob_base.ob_refcnt = 1;
   pytype->tp_name = name;
