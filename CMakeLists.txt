@@ -150,9 +150,7 @@ target_include_directories(
 add_library(
   extension
   STATIC
-  ext/Objects/abstract.cpp
   ext/Objects/boolobject.cpp
-  ext/Objects/descrobject.cpp
   ext/Objects/dictobject.cpp
   ext/Objects/exceptions.cpp
   ext/Objects/floatobject.cpp
@@ -264,7 +262,6 @@ target_link_libraries(
 add_library(
   extension-tests
   STATIC
-  ext/Objects/abstract-test.cpp
   ext/Objects/boolobject-test.cpp
   ext/Objects/floatobject-test.cpp
   ext/Objects/dictobject-test.cpp

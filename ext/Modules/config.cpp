@@ -23,11 +23,8 @@ void PyBaseObject_Type_Init();
 void PyBool_Type_Init();
 void PyDict_Type_Init();
 void PyFloat_Type_Init();
-void PyGetSetDescr_Type_Init();
 void PyList_Type_Init();
 void PyLong_Type_Init();
-void PyMemberDescr_Type_Init();
-void PyMethodDescr_Type_Init();
 void PyModule_Type_Init();
 void PyNone_Type_Init();
 void PyTuple_Type_Init();
@@ -40,11 +37,8 @@ ExtensionTypeInitializer kExtensionTypeInitializers[] = {
     {PyBool_Type_Init},
     {PyDict_Type_Init},
     {PyFloat_Type_Init},
-    {PyGetSetDescr_Type_Init},
     {PyList_Type_Init},
     {PyLong_Type_Init},
-    {PyMemberDescr_Type_Init},
-    {PyMethodDescr_Type_Init},
     {PyModule_Type_Init},
     {PyNone_Type_Init},
     {PyTuple_Type_Init},
