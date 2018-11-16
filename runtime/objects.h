@@ -688,6 +688,8 @@ class ObjectArray : public Array {
 
   void copyTo(Object* dst);
 
+  bool contains(Object* object);
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectArray);
 };
@@ -2665,6 +2667,16 @@ inline void ObjectArray::copyTo(Object* array) {
     Object* elem = at(i);
     dst->atPut(i, elem);
   }
+}
+
+inline bool ObjectArray::contains(Object* object) {
+  word len = length();
+  for (word i = 0; i < len; i++) {
+    if (at(i) == object) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Code

@@ -2680,9 +2680,15 @@ LayoutId Runtime::computeBuiltinBaseClass(const Handle<Type>& klass) {
     }
     if (*candidate == *object_klass) {
       candidate = *mro_klass;
-    } else if (*mro_klass != *object_klass) {
+    } else if (*mro_klass != *object_klass &&
+               !ObjectArray::cast(candidate->mro())->contains(*mro_klass)) {
+      // Allow subclassing of built-in classes that are themselves subclasses
+      // of built-in classes (e.g. Exception)
+
       // TODO: throw TypeError
-      CHECK(false, "multiple bases have instance lay-out conflict.");
+      CHECK(false, "multiple bases have instance lay-out conflict '%s' '%s'",
+            String::cast(candidate->name())->toCString(),
+            String::cast(mro_klass->name())->toCString());
     }
   }
   return Layout::cast(candidate->instanceLayout())->id();

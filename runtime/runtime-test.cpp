@@ -2910,4 +2910,27 @@ meta_path = sys.meta_path
   ASSERT_TRUE(meta_path->isList());
 }
 
+TEST(SubclassingTest, SubclassBuiltinSubclass) {
+  const char* src = R"(
+class Test(Exception):
+  pass
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCString(src);
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> value(&scope, moduleAt(&runtime, main, "Test"));
+  ASSERT_TRUE(value->isType());
+
+  Handle<Type> type(&scope, *value);
+  ASSERT_TRUE(type->mro()->isObjectArray());
+
+  Handle<ObjectArray> mro(&scope, type->mro());
+  ASSERT_EQ(mro->length(), 4);
+  EXPECT_EQ(mro->at(0), *type);
+  EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kException));
+  EXPECT_EQ(mro->at(2), runtime.typeAt(LayoutId::kBaseException));
+  EXPECT_EQ(mro->at(3), runtime.typeAt(LayoutId::kObject));
+}
+
 }  // namespace python
