@@ -12,26 +12,22 @@ using namespace testing;
 TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   Dict dict(&scope, runtime.newDictWithSize(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
-  frame->setLocal(0, *dict);
-  frame->setLocal(1, *key);
-  RawObject result = DictBuiltins::dunderContains(thread, frame, 2);
+
+  RawObject result = runBuiltin(DictBuiltins::dunderContains, dict, key);
   ASSERT_TRUE(result->isBool());
   EXPECT_TRUE(RawBool::cast(result)->value());
 }
 
 TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
-  frame->setLocal(0, runtime.newDictWithSize(0));
-  frame->setLocal(1, runtime.newStrFromCStr("foo"));
-  RawObject result = DictBuiltins::dunderContains(thread, frame, 2);
+  HandleScope scope;
+  Object dict(&scope, runtime.newDictWithSize(0));
+  Object str(&scope, runtime.newStrFromCStr("foo"));
+  RawObject result = runBuiltin(DictBuiltins::dunderContains, dict, str);
   ASSERT_TRUE(result->isBool());
   EXPECT_FALSE(RawBool::cast(result)->value());
 }
@@ -65,32 +61,26 @@ foo_in_d = "foo" in d
 TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   Dict dict(&scope, runtime.newDictWithSize(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
-  frame->setLocal(0, *dict);
-  frame->setLocal(1, *key);
-  RawObject result = DictBuiltins::dunderDelItem(thread, frame, 2);
+  RawObject result = runBuiltin(DictBuiltins::dunderDelItem, dict, key);
   EXPECT_TRUE(result->isNoneType());
 }
 
 TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyThrowsKeyError) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(0, 2, 0);
   Dict dict(&scope, runtime.newDictWithSize(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
-  frame->setLocal(0, *dict);
+
   // "bar" doesn't exist in this dictionary, attempting to delete it should
   // cause a KeyError.
-  frame->setLocal(1, runtime.newStrFromCStr("bar"));
-  RawObject result = DictBuiltins::dunderDelItem(thread, frame, 2);
+  Object key2(&scope, runtime.newStrFromCStr("bar"));
+  RawObject result = runBuiltin(DictBuiltins::dunderDelItem, dict, key2);
   ASSERT_TRUE(result->isError());
 }
 
@@ -120,17 +110,14 @@ del d["foo"]
 TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(0, 3, 0);
   Dict dict(&scope, runtime.newDictWithSize(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object val(&scope, runtime.newInt(0));
   Object val2(&scope, runtime.newInt(1));
   runtime.dictAtPut(dict, key, val);
-  frame->setLocal(0, *dict);
-  frame->setLocal(1, *key);
-  frame->setLocal(2, *val2);
-  Object result(&scope, DictBuiltins::dunderSetItem(thread, frame, 3));
+
+  Object result(&scope,
+                runBuiltin(DictBuiltins::dunderSetItem, dict, key, val2));
   ASSERT_TRUE(result->isNoneType());
   ASSERT_EQ(dict->numItems(), 1);
   ASSERT_EQ(runtime.dictAt(dict, key), *val2);
@@ -139,16 +126,12 @@ TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
 TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->openAndLinkFrame(0, 3, 0);
   Dict dict(&scope, runtime.newDictWithSize(1));
+  ASSERT_EQ(dict->numItems(), 0);
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object val(&scope, runtime.newInt(0));
-  frame->setLocal(0, *dict);
-  frame->setLocal(1, *key);
-  frame->setLocal(2, *val);
-  ASSERT_EQ(dict->numItems(), 0);
-  Object result(&scope, DictBuiltins::dunderSetItem(thread, frame, 3));
+  Object result(&scope,
+                runBuiltin(DictBuiltins::dunderSetItem, dict, key, val));
   ASSERT_TRUE(result->isNoneType());
   ASSERT_EQ(dict->numItems(), 1);
   ASSERT_EQ(runtime.dictAt(dict, key), *val);

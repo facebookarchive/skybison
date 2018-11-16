@@ -2,7 +2,9 @@
 
 #include "handles.h"
 #include "objects.h"
+#include "runtime.h"
 
+#include <functional>
 #include <iosfwd>
 #include <string>
 #include "gtest/gtest.h"
@@ -150,6 +152,17 @@ RawObject newIntWithDigits(Runtime* runtime, const std::vector<word>& digits);
 // Helper to create set objects.
 // Equivalent to evaluating "set(range(start, stop))" in Python.
 RawObject setFromRange(word start, word stop);
+
+RawObject runBuiltinImpl(
+    BuiltinMethodType method,
+    View<std::reference_wrapper<const Object>> args);
+
+template <typename... Args>
+RawObject runBuiltin(BuiltinMethodType method, const Args&... args) {
+  using ref = std::reference_wrapper<const Object>;
+  ref args_array[] = {ref(args)...};
+  return runBuiltinImpl(method, args_array);
+}
 
 }  // namespace testing
 }  // namespace python

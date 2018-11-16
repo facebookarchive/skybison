@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -295,6 +296,19 @@ RawObject setFromRange(word start, word stop) {
     value = SmallInt::fromWord(i);
     thread->runtime()->setAdd(result, value);
   }
+  return *result;
+}
+
+RawObject runBuiltinImpl(BuiltinMethodType method,
+                         View<std::reference_wrapper<const Object>> args) {
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->openAndLinkFrame(0, args.length(), 0);
+  for (word i = 0; i < args.length(); i++) {
+    frame->setLocal(i, *args.get(i).get());
+  }
+  HandleScope scope(thread);
+  Object result(&scope, method(thread, frame, args.length()));
+  thread->popFrame();
   return *result;
 }
 

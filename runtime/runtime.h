@@ -24,9 +24,12 @@ struct BuiltinAttribute {
   int offset;
 };
 
+using BuiltinMethodType = RawObject (*)(Thread* thread, Frame* frame,
+                                        word nargs);
+
 struct BuiltinMethod {
   SymbolId name;
-  RawObject (*address)(Thread* thread, Frame* frame, word nargs);
+  BuiltinMethodType address;
 };
 
 enum class DictUpdateType { Update, Merge };
