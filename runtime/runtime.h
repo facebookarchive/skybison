@@ -72,6 +72,11 @@ class Runtime {
 
   Object* newRangeIterator(const Handle<Object>& iterable);
 
+  Object* newSlice(
+      const Handle<Object>& start,
+      const Handle<Object>& stop,
+      const Handle<Object>& step);
+
   Object* newStringFromCString(const char* c_string);
   Object* newStringWithAll(View<byte> code_units);
 
@@ -171,6 +176,12 @@ class Runtime {
 
   // Return a new list that is composed of list repeated ntimes
   Object* listReplicate(Thread* thread, const Handle<List>& list, word ntimes);
+
+  // Limited implementation: only copy via [:] supported
+  Object* listSlice(
+      Thread* thread,
+      const Handle<List>& list,
+      const Handle<Slice>& slice);
 
   // Associate a value with the supplied key.
   //

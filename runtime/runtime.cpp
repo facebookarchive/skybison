@@ -508,6 +508,21 @@ Object* Runtime::newRangeIterator(const Handle<Object>& range) {
   return *range_iterator;
 }
 
+Object* Runtime::newSlice(
+    const Handle<Object>& start,
+    const Handle<Object>& stop,
+    const Handle<Object>& step) {
+  CHECK(
+      start->isNone() && stop->isNone() && step->isNone(),
+      "Only empty slice supported.");
+  HandleScope scope;
+  Handle<Slice> slice(&scope, heap()->createSlice());
+  slice->setStart(*start);
+  slice->setStop(*stop);
+  slice->setStep(*step);
+  return *slice;
+}
+
 Object* Runtime::newStringFromCString(const char* c_string) {
   word length = std::strlen(c_string);
   auto data = reinterpret_cast<const byte*>(c_string);
@@ -663,6 +678,7 @@ void Runtime::initializeHeapClasses() {
   initializeHeapClass("ellipsis", ClassId::kEllipsis);
   initializeHeapClass("range", ClassId::kRange);
   initializeHeapClass("range_iterator", ClassId::kRangeIterator);
+  initializeHeapClass("slice", ClassId::kSlice);
   initializeHeapClass("weakref", ClassId::kWeakRef);
   initializeListClass();
   initializeClassMethodClass();
@@ -1065,6 +1081,17 @@ Runtime::listReplicate(Thread* thread, const Handle<List>& list, word ntimes) {
   result->setItems(*items);
   result->setAllocated(items->length());
   return *result;
+}
+
+Object* Runtime::listSlice(
+    Thread* thread,
+    const Handle<List>& list,
+    const Handle<Slice>& slice) {
+  CHECK(
+      slice->start()->isNone() && slice->stop()->isNone() &&
+          slice->step()->isNone(),
+      "Only empty slice supported.");
+  return thread->runtime()->listReplicate(thread, list, 1);
 }
 
 char* Runtime::compile(const char* src) {

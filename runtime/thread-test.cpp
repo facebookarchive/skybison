@@ -2332,6 +2332,19 @@ print(b1, b2, b3)
   EXPECT_EQ(output, "1 2 3\n");
 }
 
+TEST(UnpackList, unpackNestedLists) {
+  const char* src = R"(
+b = [[1,2], [3,4,5]]
+b1, b2 = b
+b11, b12 = b1
+b21, b22, b23 = b2
+print(len(b), len(b1), len(b2), b11, b12, b21, b22, b23)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "2 2 3 1 2 3 4 5\n");
+}
+
 TEST(UnpackSeq, unpackRangeStep) {
   const char* src = R"(
 [a ,b, c, d] = range(2, 10, 2)
@@ -2397,6 +2410,42 @@ class Foo(list, dict): pass
 )";
   Runtime runtime;
   EXPECT_DEATH(compileAndRunToString(&runtime, src), "lay-out conflict");
+}
+
+TEST(BuildSlice, noneSliceCopyList) {
+  const char* src = R"(
+a = [1, 2, 3]
+b = a[:]
+print(len(b), b[0], b[1], b[2])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "3 1 2 3\n");
+}
+
+TEST(BuildSlice, noneSliceCopyListComp) { // pystone
+  const char* src = R"(
+a = [1, 2, 3]
+b = [x[:] for x in [a] * 2]
+c = b is a
+b1, b2 = b
+b11, b12, b13 = b1
+print(c, len(b), len(b1), b11, b12, b13)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "False 2 3 1 2 3\n");
+}
+
+TEST(BuildSlice, pystone) { // pystone src
+  const char* src = R"(
+Array1Glob = [0]*51
+Array2Glob = [x[:] for x in [Array1Glob]*51]
+print(len(Array1Glob), len(Array2Glob), len(Array2Glob[0]))
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "51 51 51\n");
 }
 
 } // namespace python

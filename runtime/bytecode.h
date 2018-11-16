@@ -143,7 +143,7 @@ namespace python {
   V(RAISE_VARARGS, 130, interpreter::NOT_IMPLEMENTED)                \
   V(CALL_FUNCTION, 131, interpreter::CALL_FUNCTION)                  \
   V(MAKE_FUNCTION, 132, interpreter::MAKE_FUNCTION)                  \
-  V(BUILD_SLICE, 133, interpreter::NOT_IMPLEMENTED)                  \
+  V(BUILD_SLICE, 133, interpreter::BUILD_SLICE)                      \
   V(UNUSED_BYTECODE_134, 134, interpreter::INVALID_BYTECODE)         \
   V(LOAD_CLOSURE, 135, interpreter::LOAD_CLOSURE)                    \
   V(LOAD_DEREF, 136, interpreter::LOAD_DEREF)                        \

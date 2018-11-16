@@ -79,6 +79,7 @@ class Object;
   V(ObjectArray)                    \
   V(Range)                          \
   V(RangeIterator)                  \
+  V(Slice)                          \
   V(Type)                           \
   V(ValueCell)                      \
   V(WeakRef)
@@ -122,6 +123,7 @@ enum ClassId {
   kRange,
   kRangeIterator,
   kSet,
+  kSlice,
   kType,
   kValueCell,
   kWeakRef,
@@ -165,6 +167,7 @@ class Object {
   inline bool isRange();
   inline bool isRangeIterator();
   inline bool isSet();
+  inline bool isSlice();
   inline bool isValueCell();
   inline bool isWeakRef();
 
@@ -737,6 +740,34 @@ class RangeIterator : public HeapObject {
   static inline bool isOutOfRange(word cur, word stop, word step);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIterator);
+};
+
+class Slice : public HeapObject {
+ public:
+  // Getters and setters.
+  inline Object* start();
+  inline void setStart(Object* value);
+
+  inline Object* stop();
+  inline void setStop(Object* value);
+
+  inline Object* step();
+  inline void setStep(Object* value);
+
+  // Casting.
+  static inline Slice* cast(Object* object);
+
+  // Sizing.
+  static inline word allocationSize();
+
+  // Layout.
+  static const int kStartOffset = HeapObject::kSize;
+  static const int kStopOffset = kStartOffset + kPointerSize;
+  static const int kStepOffset = kStopOffset + kPointerSize;
+  static const int kSize = kStepOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Slice);
 };
 
 class ListIterator : public HeapObject {
@@ -1455,6 +1486,13 @@ bool Object::isRangeIterator() {
     return false;
   }
   return HeapObject::cast(this)->header()->classId() == ClassId::kRangeIterator;
+}
+
+bool Object::isSlice() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->classId() == ClassId::kSlice;
 }
 
 bool Object::isString() {
@@ -2281,6 +2319,41 @@ word RangeIterator::allocationSize() {
 RangeIterator* RangeIterator::cast(Object* object) {
   assert(object->isRangeIterator());
   return reinterpret_cast<RangeIterator*>(object);
+}
+
+// Slice
+
+Object* Slice::start() {
+  return instanceVariableAt(kStartOffset);
+}
+
+void Slice::setStart(Object* value) {
+  instanceVariableAtPut(kStartOffset, value);
+}
+
+Object* Slice::stop() {
+  return instanceVariableAt(kStopOffset);
+}
+
+void Slice::setStop(Object* value) {
+  instanceVariableAtPut(kStopOffset, value);
+}
+
+Object* Slice::step() {
+  return instanceVariableAt(kStepOffset);
+}
+
+void Slice::setStep(Object* value) {
+  instanceVariableAtPut(kStepOffset, value);
+}
+
+word Slice::allocationSize() {
+  return Header::kSize + Slice::kSize;
+}
+
+Slice* Slice::cast(Object* object) {
+  assert(object->isSlice());
+  return reinterpret_cast<Slice*>(object);
 }
 
 // Dictionary

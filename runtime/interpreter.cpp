@@ -359,6 +359,18 @@ Result BUILD_SET(Context* ctx, word arg) {
   *--ctx->sp = *set;
   return Result::CONTINUE;
 }
+
+Result BUILD_SLICE(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Handle<Object> step(&scope, (arg == 3) ? *ctx->sp++ : None::object());
+  Handle<Object> stop(&scope, *ctx->sp++);
+  Handle<Object> start(&scope, *ctx->sp); // TOP
+  Handle<Slice> slice(&scope, thread->runtime()->newSlice(start, stop, step));
+  *ctx->sp = *slice;
+  return Result::CONTINUE;
+}
+
 Result BUILD_TUPLE(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -553,8 +565,14 @@ Result BINARY_SUBSCR(Context* ctx, word) {
     container = ctx->thread->runtime()->instanceDelegate(container);
   }
   if (container->isList()) {
-    word idx = SmallInteger::cast(*key)->value();
-    *--sp = List::cast(*container)->at(idx);
+    if (key->isSmallInteger()) {
+      word idx = SmallInteger::cast(*key)->value();
+      *--sp = List::cast(*container)->at(idx);
+    } else if (key->isSlice()) { // slice as key: custom behavior
+      Handle<Slice> slice(&scope, *key);
+      Handle<List> list(&scope, *container);
+      *--sp = ctx->thread->runtime()->listSlice(ctx->thread, list, slice);
+    }
   } else if (container->isDictionary()) {
     Handle<Dictionary> dict(&scope, *container);
     Handle<Object> value(

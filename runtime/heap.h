@@ -64,6 +64,8 @@ class Heap {
 
   Object* createRangeIterator();
 
+  Object* createSlice();
+
   Object* createWeakRef();
 
  private:

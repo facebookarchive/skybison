@@ -340,6 +340,20 @@ Object* Heap::createBoundMethod() {
   return BoundMethod::cast(result);
 }
 
+Object* Heap::createSlice() {
+  word size = Slice::allocationSize();
+  Object* raw = allocate(size, Header::kSize);
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = reinterpret_cast<Slice*>(raw);
+  result->setHeader(Header::from(
+      Slice::kSize / kPointerSize,
+      0,
+      ClassId::kSlice,
+      ObjectFormat::kObjectInstance));
+  result->initialize(Slice::kSize, None::object());
+  return Slice::cast(result);
+}
+
 Object* Heap::createWeakRef() {
   word size = WeakRef::allocationSize();
   Object* raw = allocate(size, Header::kSize);
