@@ -1076,6 +1076,9 @@ void Runtime::initializeObjectClass() {
 
   classAddBuiltinFunction(object_type, SymbolId::kDunderRepr,
                           nativeTrampoline<builtinObjectRepr>);
+
+  classAddBuiltinFunction(object_type, SymbolId::kDunderStr,
+                          nativeTrampoline<builtinObjectStr>);
 }
 
 void Runtime::initializeStrClass() {

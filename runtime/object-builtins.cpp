@@ -78,4 +78,20 @@ Object* builtinObjectRepr(Thread* thread, Frame* frame, word nargs) {
   return str;
 }
 
+Object* builtinObjectStr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1) {
+    return thread->throwTypeErrorFromCString(
+        "object.__str__() takes a self argument");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Handle<Object> self(&scope, args.get(0));
+  // Forward to __repr__.
+  Handle<Object> repr(&scope, Interpreter::lookupMethod(thread, frame, self,
+                                                        SymbolId::kDunderRepr));
+  DCHECK(!repr->isError(),
+         "__repr__ must be defined since it exists on object");
+  return Interpreter::callMethod1(thread, frame, repr, self);
+}
+
 }  // namespace python

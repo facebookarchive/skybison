@@ -34,6 +34,40 @@ a = object.__repr__(Foo())
   free(c_str);
 }
 
+TEST(ObjectBuiltinsTest, DunderStrReturnsDunderRepr) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  pass
+
+f = Foo()
+a = object.__str__(f)
+b = object.__repr__(f)
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_PYSTRING_EQ(*a, *b);
+}
+
+TEST(ObjectBuiltinsTest, UserDefinedTypeInheritsDunderStr) {
+  Runtime runtime;
+  runtime.runFromCString(R"(
+class Foo:
+  pass
+
+f = Foo()
+a = object.__str__(f)
+b = f.__str__()
+)");
+  HandleScope scope;
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<String> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<String> b(&scope, moduleAt(&runtime, main, "b"));
+  EXPECT_PYSTRING_EQ(*a, *b);
+}
+
 TEST(ObjectBuiltinsTest, DunderInitDoesNotThrowIfNewIsDifferentButInitIsSame) {
   Runtime runtime;
   runtime.runFromCString(R"(
