@@ -1619,19 +1619,6 @@ def test(callable):
   EXPECT_EQ(output, "1111 2222 3333\n");
 }
 
-TEST(ThreadTest, Subscript) {
-  Runtime runtime;
-  const char* src = R"(
-l = [1, 2, 3, 4, 5, 6]
-print(l[0], l[3], l[5])
-l[0] = 6
-l[5] = 1
-print(l[0], l[3], l[5])
-)";
-  std::string output = compileAndRunToString(&runtime, src);
-  ASSERT_EQ(output, "1 4 6\n6 4 1\n");
-}
-
 TEST(ThreadTest, RaiseVarargs) {
   Runtime runtime;
   ASSERT_DEATH(
@@ -1883,7 +1870,20 @@ test()
   EXPECT_EQ(output, "1 2 3\n");
 }
 
-TEST(ThreadTest, BuildConstKeyMap) {
+TEST(ThreadTest, SubscriptList) {
+  Runtime runtime;
+  const char* src = R"(
+l = [1, 2, 3, 4, 5, 6]
+print(l[0], l[3], l[5])
+l[0] = 6
+l[5] = 1
+print(l[0], l[3], l[5])
+)";
+  std::string output = compileAndRunToString(&runtime, src);
+  ASSERT_EQ(output, "1 4 6\n6 4 1\n");
+}
+
+TEST(ThreadTest, SubscriptDict) {
   const char* src = R"(
 a = {"1": 2, 2: 3}
 print(a["1"])
@@ -1897,6 +1897,17 @@ a = {"1": 2, 2: 3}
 print(a[1])
 )";
   EXPECT_DEATH(compileAndRunToString(&runtime, src1), "KeyError");
+}
+
+TEST(ThreadTest, SubscriptTuple) {
+  const char* src = R"(
+a = 1
+b = (a, 2)
+print(b[0])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1\n");
 }
 
 } // namespace python
