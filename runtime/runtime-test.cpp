@@ -200,10 +200,9 @@ TEST(RuntimeTest, HashSingletonImmediates) {
   SmallInteger* hash_none = SmallInteger::cast(runtime.hash(None::object()));
   EXPECT_EQ(hash_none->value(), none_value);
 
-  word ellipsis_value = reinterpret_cast<word>(Ellipsis::object());
-  SmallInteger* hash_ellipsis =
-      SmallInteger::cast(runtime.hash(Ellipsis::object()));
-  EXPECT_EQ(hash_ellipsis->value(), ellipsis_value);
+  word error_value = reinterpret_cast<word>(Error::object());
+  SmallInteger* hash_error = SmallInteger::cast(runtime.hash(Error::object()));
+  EXPECT_EQ(hash_error->value(), error_value);
 }
 
 TEST(RuntimeTest, HashStrings) {

@@ -588,7 +588,7 @@ class Bucket {
   }
 
   inline void setTombstone() {
-    set(None::object(), Ellipsis::object(), None::object());
+    set(None::object(), Error::object(), None::object());
   }
 
   inline bool isEmpty() {

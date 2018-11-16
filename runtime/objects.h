@@ -89,7 +89,7 @@ class Object {
   inline bool isSmallInteger();
   inline bool isHeader();
   inline bool isNone();
-  inline bool isEllipsis();
+  inline bool isError();
   inline bool isBoolean();
 
   // Heap objects
@@ -265,13 +265,16 @@ class None : public Object {
   DISALLOW_IMPLICIT_CONSTRUCTORS(None);
 };
 
-class Ellipsis : public Object {
+// Error is a special object type, internal to the runtime. It is used to signal
+// that an error has occurred inside the runtime or native code, e.g. an
+// exception has been thrown.
+class Error : public Object {
  public:
   // Singletons.
-  inline static Ellipsis* object();
+  inline static Error* object();
 
   // Casting.
-  static inline Ellipsis* cast(Object* object);
+  static inline Error* cast(Object* object);
 
   // Tagging.
   static const int kTag = 23; // 0b10111
@@ -279,7 +282,7 @@ class Ellipsis : public Object {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Ellipsis);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Error);
 };
 
 class SmallString : public Object {
@@ -794,9 +797,9 @@ bool Object::isNone() {
   return tag == None::kTag;
 }
 
-bool Object::isEllipsis() {
+bool Object::isError() {
   uword tag = reinterpret_cast<uword>(this) & None::kTagMask;
-  return tag == Ellipsis::kTag;
+  return tag == Error::kTag;
 }
 
 bool Object::isHeapObject() {
@@ -956,15 +959,15 @@ None* None::cast(Object* object) {
   return reinterpret_cast<None*>(object);
 }
 
-// Ellipsis
+// Error
 
-Ellipsis* Ellipsis::object() {
-  return reinterpret_cast<Ellipsis*>(kTag);
+Error* Error::object() {
+  return reinterpret_cast<Error*>(kTag);
 }
 
-Ellipsis* Ellipsis::cast(Object* object) {
-  assert(object->isEllipsis());
-  return reinterpret_cast<Ellipsis*>(object);
+Error* Error::cast(Object* object) {
+  assert(object->isError());
+  return reinterpret_cast<Error*>(object);
 }
 
 // Boolean
