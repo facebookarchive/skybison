@@ -135,6 +135,7 @@ class Runtime;
   V(MetaPath, "meta_path")                                                     \
   V(Method, "method")                                                          \
   V(Module, "module")                                                          \
+  V(ModuleNotFoundError, "ModuleNotFoundError")                                \
   V(Modules, "modules")                                                        \
   V(Msg, "msg")                                                                \
   V(Name, "name")                                                              \

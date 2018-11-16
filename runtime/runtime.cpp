@@ -1025,6 +1025,8 @@ void Runtime::initializeExceptionClasses() {
                        LayoutId::kException);
   StopIterationBuiltins::initialize(this);
   ImportErrorBuiltins::initialize(this);
+  addEmptyBuiltinClass(SymbolId::kModuleNotFoundError,
+                       LayoutId::kModuleNotFoundError, LayoutId::kImportError);
 }
 
 void Runtime::initializeRefClass() {
@@ -1628,6 +1630,8 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kImportError, LayoutId::kImportError);
   moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInt);
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
+  moduleAddBuiltinType(module, SymbolId::kModuleNotFoundError,
+                       LayoutId::kModuleNotFoundError);
   moduleAddBuiltinType(module, SymbolId::kNameError, LayoutId::kNameError);
   moduleAddBuiltinType(module, SymbolId::kObjectClassname, LayoutId::kObject);
   moduleAddBuiltinType(module, SymbolId::kProperty, LayoutId::kProperty);

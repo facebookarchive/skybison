@@ -335,4 +335,25 @@ x = ImportError(foo=123)
   EXPECT_DEATH(runtime.runFromCString(src), "RAISE_VARARGS");
 }
 
+TEST(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+exc = ModuleNotFoundError(1111, name=2222, path=3333)
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> data(&scope, testing::moduleAt(&runtime, main, "exc"));
+  ASSERT_TRUE(data->isModuleNotFoundError());
+
+  Handle<ModuleNotFoundError> err(&scope, *data);
+  ASSERT_TRUE(err->msg()->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(err->msg())->value(), 1111);
+  ASSERT_TRUE(err->name()->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(err->name())->value(), 2222);
+  ASSERT_TRUE(err->path()->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(err->path())->value(), 3333);
+}
+
 }  // namespace python

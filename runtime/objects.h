@@ -98,6 +98,7 @@ enum class LayoutId : word {
   kList,
   kListIterator,
   kModule,
+  kModuleNotFoundError,
   kNameError,
   kNotImplemented,
   kObjectArray,
@@ -155,6 +156,7 @@ class Object {
   bool isList();
   bool isListIterator();
   bool isModule();
+  bool isModuleNotFoundError();
   bool isNotImplemented();
   bool isObjectArray();
   bool isProperty();
@@ -608,6 +610,15 @@ class ImportError : public Exception {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ImportError);
+};
+
+class ModuleNotFoundError : public ImportError {
+ public:
+  // Casting.
+  static ModuleNotFoundError* cast(Object* object);
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleNotFoundError);
 };
 
 class Type : public HeapObject {
@@ -2111,6 +2122,14 @@ inline bool Object::isWeakRef() {
   return HeapObject::cast(this)->header()->layoutId() == LayoutId::kWeakRef;
 }
 
+inline bool Object::isModuleNotFoundError() {
+  if (!isHeapObject()) {
+    return false;
+  }
+  return HeapObject::cast(this)->header()->layoutId() ==
+         LayoutId::kModuleNotFoundError;
+}
+
 inline bool Object::equals(Object* lhs, Object* rhs) {
   return (lhs == rhs) ||
          (lhs->isLargeStr() && LargeStr::cast(lhs)->equals(rhs));
@@ -2599,6 +2618,14 @@ inline Object* ImportError::path() { return instanceVariableAt(kPathOffset); }
 
 inline void ImportError::setPath(Object* path) {
   instanceVariableAtPut(kPathOffset, path);
+}
+
+// ModuleNotFoundError
+
+inline ModuleNotFoundError* ModuleNotFoundError::cast(Object* object) {
+  DCHECK(object->isModuleNotFoundError(),
+         "invalid cast, expected ModuleNotFoundError");
+  return reinterpret_cast<ModuleNotFoundError*>(object);
 }
 
 // Type
