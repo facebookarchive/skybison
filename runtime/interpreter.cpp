@@ -810,7 +810,9 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
           assert(r == Result::NOT_IMPLEMENTED);
           // TODO: Distinguish between intentionally unimplemented bytecode
           // and unreachable code.
-          UNIMPLEMENTED("aborting due to unimplemented bytecode: %d\n", bc);
+          UNIMPLEMENTED(
+              "aborting due to unimplemented bytecode: %s\n",
+              bytecode::name(bc));
         }
       }
     }

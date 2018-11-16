@@ -43,6 +43,7 @@ add_library(
   STATIC
   runtime/builtins.cpp
   runtime/builtins.h
+  runtime/bytecode.cpp
   runtime/bytecode.h
   runtime/callback.h
   runtime/frame.cpp
@@ -111,6 +112,7 @@ add_executable(
   python-tests
   runtime/python-test.cpp
   runtime/attributes-test.cpp
+  runtime/bytecode-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
   runtime/marshal-test.cpp
