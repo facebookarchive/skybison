@@ -130,6 +130,9 @@ class Runtime {
   // Appends an element to the end of the list.
   void listAdd(const Handle<List>& list, const Handle<Object>& value);
 
+  // Return a new list that is composed of list repeated ntimes
+  Object* listReplicate(Thread* thread, const Handle<List>& list, word ntimes);
+
   // Associate a value with the supplied key.
   //
   // This handles growing the backing ObjectArray if needed.

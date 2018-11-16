@@ -1579,4 +1579,15 @@ False
   EXPECT_EQ(result, expected);
 }
 
+TEST(ThreadTest, ReplicateList) {
+  const char* src = R"(
+data = [1, 2, 3] * 3
+for i in range(9):
+  print(data[i])
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1\n2\n3\n1\n2\n3\n1\n2\n3\n");
+}
+
 } // namespace python

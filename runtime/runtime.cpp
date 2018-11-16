@@ -902,6 +902,22 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
   list->atPut(index, *value);
 }
 
+Object*
+Runtime::listReplicate(Thread* thread, const Handle<List>& list, word ntimes) {
+  HandleScope scope(thread->handles());
+  word len = list->allocated();
+  Handle<ObjectArray> items(&scope, newObjectArray(ntimes * len));
+  for (word i = 0; i < ntimes; i++) {
+    for (word j = 0; j < len; j++) {
+      items->atPut((i * len) + j, list->at(j));
+    }
+  }
+  Handle<List> result(&scope, newList());
+  result->setItems(*items);
+  result->setAllocated(items->length());
+  return *result;
+}
+
 char* Runtime::compile(const char* src) {
   std::unique_ptr<char[]> tmpDir(OS::temporaryDirectory("python-tests"));
   const std::string dir(tmpDir.get());

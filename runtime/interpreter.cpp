@@ -343,13 +343,28 @@ Object* Interpreter::execute(Thread* thread, Frame* frame) {
         break;
       }
 
-      case Bytecode::INPLACE_MULTIPLY:
-      case Bytecode::BINARY_MULTIPLY: {
+      case Bytecode::INPLACE_MULTIPLY: {
         word right = SmallInteger::cast(*sp++)->value();
         word left = SmallInteger::cast(*sp)->value();
         word result = left * right;
         assert(left == 0 || (result / left) == right);
         *sp = SmallInteger::fromWord(result);
+        break;
+      }
+
+      case Bytecode::BINARY_MULTIPLY: {
+        if (sp[1]->isSmallInteger()) {
+          word right = SmallInteger::cast(*sp++)->value();
+          word left = SmallInteger::cast(*sp)->value();
+          word result = left * right;
+          assert(left == 0 || (result / left) == right);
+          *sp = SmallInteger::fromWord(result);
+        } else {
+          word ntimes = SmallInteger::cast(*sp++)->value();
+          HandleScope scope(thread->handles());
+          Handle<List> list(&scope, *sp);
+          *sp = thread->runtime()->listReplicate(thread, list, ntimes);
+        }
         break;
       }
 
