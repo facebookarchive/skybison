@@ -383,6 +383,87 @@ c20 = C(20)
   EXPECT_EQ(right_ne_left, Bool::trueObj());
 }
 
+TEST(InterpreterTest, CompareOpSubclass) {
+  using namespace testing;
+
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCStr(R"(
+called = None
+class A:
+  def __eq__(self, other):
+    global called
+    if (called is not None):
+      called = "ERROR"
+    else:
+      called = "A"
+    return False
+
+class B:
+  def __eq__(self, other):
+    global called
+    if (called is not None):
+      called = "ERROR"
+    else:
+      called = "B"
+    return True
+
+class C(A):
+  def __eq__(self, other):
+    global called
+    if (called is not None):
+      called = "ERROR"
+    else:
+      called = "C"
+    return True
+
+a = A()
+b = B()
+c = C()
+)");
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+  ASSERT_TRUE(frame->isSentinelFrame());
+
+  Handle<Module> main(&scope, findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, moduleAt(&runtime, main, "b"));
+  Handle<Object> c(&scope, moduleAt(&runtime, main, "c"));
+
+  // Comparisons where rhs is not a subtype of lhs try lhs.__eq__(rhs) first.
+  Object* a_eq_b =
+      Interpreter::compareOperation(thread, frame, CompareOp::EQ, a, b);
+  EXPECT_EQ(a_eq_b, Bool::falseObj());
+  Handle<Str> called(&scope, moduleAt(&runtime, main, "called"));
+  EXPECT_PYSTRING_EQ(*called, "A");
+
+  Handle<Str> called_name(&scope, runtime.newStrFromCStr("called"));
+  Handle<Object> none(&scope, None::object());
+  runtime.moduleAtPut(main, called_name, none);
+  Object* b_eq_a =
+      Interpreter::compareOperation(thread, frame, CompareOp::EQ, b, a);
+  EXPECT_EQ(b_eq_a, Bool::trueObj());
+  called = moduleAt(&runtime, main, "called");
+  EXPECT_PYSTRING_EQ(*called, "B");
+
+  runtime.moduleAtPut(main, called_name, none);
+  Object* c_eq_a =
+      Interpreter::compareOperation(thread, frame, CompareOp::EQ, c, a);
+  EXPECT_EQ(c_eq_a, Bool::trueObj());
+  called = moduleAt(&runtime, main, "called");
+  EXPECT_PYSTRING_EQ(*called, "C");
+
+  // When rhs is a subtype of lhs, only rhs.__eq__(rhs) is tried.
+  runtime.moduleAtPut(main, called_name, none);
+  Object* a_eq_c =
+      Interpreter::compareOperation(thread, frame, CompareOp::EQ, a, c);
+  EXPECT_EQ(a_eq_c, Bool::trueObj());
+  called = moduleAt(&runtime, main, "called");
+  EXPECT_PYSTRING_EQ(*called, "C");
+}
+
 TEST(InterpreterTest, SequenceContains) {
   Runtime runtime;
   HandleScope scope;
