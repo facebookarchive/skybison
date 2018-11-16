@@ -96,7 +96,7 @@ Object* Runtime::classGetAttr(
     return thread->throwTypeErrorFromCString("attribute name must be a string");
   }
 
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Class> klass(&scope, *receiver);
   Handle<Class> meta_klass(&scope, classOf(*receiver));
 
@@ -159,7 +159,7 @@ Object* Runtime::classSetAttr(
     return thread->throwTypeErrorFromCString("attribute name must be a string");
   }
 
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Class> klass(&scope, *receiver);
   if (klass->isIntrinsicOrExtension()) {
     // TODO(T25140871): Refactor this into something that includes the type name
@@ -196,7 +196,7 @@ Object* Runtime::instanceGetAttr(
   }
 
   // Look for the attribute in the class
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*receiver));
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
   if (isDataDescriptor(thread, klass_attr)) {
@@ -252,7 +252,7 @@ Object* Runtime::instanceSetAttr(
   }
 
   // Check for a data descriptor
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*receiver));
   Handle<Object> klass_attr(&scope, lookupNameInMro(thread, klass, name));
   if (isDataDescriptor(thread, klass_attr)) {
@@ -286,7 +286,7 @@ Object* Runtime::moduleGetAttr(
     return thread->throwTypeErrorFromCString("attribute name must be a string");
   }
 
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Module> mod(&scope, *receiver);
   Handle<Object> ret(&scope, moduleAt(mod, name));
 
@@ -310,7 +310,7 @@ Object* Runtime::moduleSetAttr(
     return thread->throwTypeErrorFromCString("attribute name must be a string");
   }
 
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Module> mod(&scope, *receiver);
   moduleAtPut(mod, name, value);
   return None::object();
@@ -321,7 +321,7 @@ bool Runtime::isDataDescriptor(Thread* thread, const Handle<Object>& object) {
     return false;
   }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*object));
   Handle<Object> dunder_set(&scope, symbols()->DunderSet());
   return !lookupNameInMro(thread, klass, dunder_set)->isError();
@@ -336,7 +336,7 @@ bool Runtime::isNonDataDescriptor(
     return false;
   }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Class> klass(&scope, classOf(*object));
   Handle<Object> dunder_get(&scope, symbols()->DunderGet());
   return !lookupNameInMro(thread, klass, dunder_get)->isError();
@@ -1065,7 +1065,7 @@ void Runtime::listAdd(const Handle<List>& list, const Handle<Object>& value) {
 
 Object*
 Runtime::listReplicate(Thread* thread, const Handle<List>& list, word ntimes) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   word len = list->allocated();
   Handle<ObjectArray> items(&scope, newObjectArray(ntimes * len));
   for (word i = 0; i < ntimes; i++) {
@@ -1653,7 +1653,7 @@ Object* Runtime::lookupNameInMro(
     Thread* thread,
     const Handle<Class>& klass,
     const Handle<Object>& name) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<ObjectArray> mro(&scope, klass->mro());
   for (word i = 0; i < mro->length(); i++) {
     Handle<Class> mro_klass(&scope, mro->at(i));
@@ -1688,7 +1688,7 @@ Object* Runtime::attributeAtPut(
     const Handle<Object>& receiver,
     const Handle<Object>& name,
     const Handle<Object>& value) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> interned_name(&scope, internString(name));
   // A minimal implementation of setattr needed to get richards running.
   Object* result;
@@ -1782,7 +1782,7 @@ word Runtime::codeOffsetToLineNum(
     Thread* thread,
     const Handle<Code>& code,
     word offset) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<ByteArray> table(&scope, code->lnotab());
   word line = code->firstlineno();
   word cur_offset = 0;

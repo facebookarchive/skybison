@@ -57,6 +57,11 @@ class HandleScope {
     handles_->push(this);
   }
 
+  explicit HandleScope(Thread* thread)
+      : list_(nullptr), handles_(thread->handles()) {
+    handles_->push(this);
+  }
+
   ~HandleScope() {
     assert(this == handles_->top());
     handles_->pop();

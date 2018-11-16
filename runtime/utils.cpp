@@ -20,7 +20,7 @@ class TracebackPrinter : public FrameVisitor {
     }
 
     Thread* thread = Thread::currentThread();
-    HandleScope scope(thread->handles());
+    HandleScope scope(thread);
     Handle<Code> code(&scope, frame->code());
     std::stringstream line;
 

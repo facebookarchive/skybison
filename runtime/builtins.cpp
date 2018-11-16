@@ -48,7 +48,7 @@ Object* builtinIsinstance(Thread* thread, Frame* caller, word nargs) {
   }
 
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Object> obj(&scope, args.get(0));
   Handle<Class> klass(&scope, args.get(1));
   return runtime->isInstance(obj, klass);
@@ -62,7 +62,7 @@ Object* builtinGenericNew(Thread* thread, Frame* frame, word nargs) {
 
 Object* builtinBuildClass(Thread* thread, Frame* caller, word nargs) {
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
 
   if (nargs < 2) {
     std::abort(); // TODO: throw a TypeError exception.
@@ -317,7 +317,7 @@ Object* builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
         "classmethod expected 1 arguments");
   }
   Arguments args(frame, nargs);
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<ClassMethod> classmethod(&scope, args.get(0));
   Handle<Object> arg(&scope, args.get(1));
   classmethod->setFunction(*arg);

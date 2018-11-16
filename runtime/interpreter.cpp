@@ -503,7 +503,7 @@ Result BINARY_MULTIPLY(Context* ctx, word) {
   } else {
     word ntimes = SmallInteger::cast(*sp++)->value();
     Thread* thread = ctx->thread;
-    HandleScope scope(thread->handles());
+    HandleScope scope(thread);
     Handle<List> list(&scope, *sp);
     *sp = thread->runtime()->listReplicate(thread, list, ntimes);
   }
@@ -668,7 +668,7 @@ Result BINARY_TRUE_DIVIDE(Context* ctx, word) {
 
 Result BUILD_STRING(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   switch (arg) {
     case 0: // empty
@@ -689,7 +689,7 @@ Result BUILD_STRING(Context* ctx, word arg) {
 // A incomplete impl of FORMAT_VALUE; assumes no conv
 Result FORMAT_VALUE(Context* ctx, word flags) {
   Thread* thread = ctx->thread;
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   int conv = (flags & FVC_MASK);
   int have_fmt_spec = (flags & FVS_MASK) == FVS_HAVE_SPEC;
   switch (conv) {
@@ -779,7 +779,7 @@ void Interpreter::initOpTable() {
 }
 
 Object* Interpreter::execute(Thread* thread, Frame* frame) {
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Code* code = Code::cast(frame->code());
   Handle<ByteArray> byteArray(&scope, code->code());
   Context ctx;

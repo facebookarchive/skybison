@@ -85,7 +85,7 @@ Frame* Thread::openAndLinkFrame(word numArgs, word numVars, word stackDepth) {
 }
 
 Frame* Thread::pushFrame(Object* object) {
-  HandleScope scope(handles());
+  HandleScope scope(this);
   Handle<Code> code(&scope, object);
   word numVars = code->nlocals() + code->numCellvars() + code->numFreevars();
   auto frame = openAndLinkFrame(code->argcount(), numVars, code->stacksize());
@@ -212,7 +212,7 @@ Object* Thread::throwAttributeErrorFromCString(const char* message) {
 }
 
 void Thread::abortOnPendingException() {
-  HandleScope scope(handles());
+  HandleScope scope(this);
   Handle<Object> pending_exception(&scope, pendingException());
   if (pending_exception->isNone()) {
     return;

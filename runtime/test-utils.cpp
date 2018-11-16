@@ -40,7 +40,7 @@ std::string callFunctionToString(
     const Handle<Function>& func,
     const Handle<ObjectArray>& args) {
   Thread* thread = Thread::currentThread();
-  HandleScope scope(thread->handles());
+  HandleScope scope(thread);
   Handle<Code> code(&scope, func->code());
   Frame* frame = thread->openAndLinkFrame(0, 0, code->argcount() + 1);
   Object** sp = frame->valueStackTop();
