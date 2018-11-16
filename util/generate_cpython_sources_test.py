@@ -131,6 +131,23 @@ typedef int FooBar;
         ]
         self.assertEqual(res, ["Foo_Type", "Bar_Type"])
 
+    def test_pyfunction_regex_returns_multiple_symbols(self):
+        lines = """
+extern "C" type* foo_function() {
+  // Implmementation
+}
+
+void Foo_Type_Init(void) {
+  // Implementation
+}
+
+extern "C" PyTypeObject *bar_function() {
+  // Implmementation
+}
+"""
+        res = gcs.find_symbols_in_file(gcs.SYMBOL_REGEX, lines)["pyfunction"]
+        self.assertEqual(res, ["foo_function", "bar_function"])
+
 
 class TestDefinitionRegex(unittest.TestCase):
     def test_multiple_typedef_definitions_are_replaced(self):
@@ -332,6 +349,70 @@ typedef int FooBar;
 #define FooBaz(o) Foo,
 """
         symbols_to_replace = {"pytypeobject_macro": ["Foo_Type", "Bar_Type"]}
+        res = gcs.modify_file(original_lines, symbols_to_replace)
+        self.assertEqual(res, expected_lines)
+
+    def test_pyfunction_definitions_are_replaced(self):
+        original_lines = """
+static type *global_str = NULL;
+
+type*
+foo_function(type *arg1, type arg2, ...)
+{
+  // Implementation
+}
+
+Type foobar_function(
+  type *arg1) {
+  // Implementation
+}
+
+FooBar(argument);
+
+/* Function comments*/
+static type bar_function(void) {
+  // Implementation
+}
+
+Type baz_function(
+  type *arg1,
+  type arg2,
+  type* arg3)
+{
+  // Implementation
+}
+
+static type foobaz_function(void)
+{
+  // Implementation
+}
+
+int counter = 1;
+"""
+        expected_lines = """
+static type *global_str = NULL;
+
+
+Type foobar_function(
+  type *arg1) {
+  // Implementation
+}
+
+FooBar(argument);
+
+/* Function comments*/
+
+
+static type foobaz_function(void)
+{
+  // Implementation
+}
+
+int counter = 1;
+"""
+        symbols_to_replace = {
+            "pyfunction": ["foo_function", "bar_function", "baz_function"]
+        }
         res = gcs.modify_file(original_lines, symbols_to_replace)
         self.assertEqual(res, expected_lines)
 

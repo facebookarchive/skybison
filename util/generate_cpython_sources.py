@@ -26,10 +26,14 @@ SYMBOL_REGEX = {
         regex=re.compile("^#define.*\\\\", re.MULTILINE), pos=1
     ),
     "pytypeobject": SymbolRegex(
-        regex=re.compile("^extern.*PyTypeObject.*_Type", re.MULTILINE), pos=3
+        regex=re.compile('^extern "C".*PyTypeObject.*_Type', re.MULTILINE),
+        pos=3,
     ),
     "pytypeobject_macro": SymbolRegex(
         regex=re.compile("^#define.*_Type ", re.MULTILINE), pos=1
+    ),
+    "pyfunction": SymbolRegex(
+        regex=re.compile('^extern "C".*', re.MULTILINE), pos=3
     ),
 }
 
@@ -58,6 +62,14 @@ DEFINITIONS_REGEX = {
     "pytypeobject_macro": SymbolRegex(
         regex=re.compile("^PyAPI_DATA\(.*;.*\n", re.MULTILINE), pos=2
     ),
+    # This regex looks for function declarations. The pattern is that they
+    # start with either an a-zA-Z character from either the static or the
+    # return type. Then, match all the way to the '{' which opens the function
+    # scpoe. Finally, the regex matches all the way up to the closing scope '}'
+    "pyfunction": SymbolRegex(
+        regex=re.compile("^[a-zA-Z](.|.\n)*?{(.|\n)*?}.*\n", re.MULTILINE),
+        pos=1,
+    ),
 }
 
 
@@ -75,8 +87,9 @@ def find_symbols_in_file(symbols_dict, lines):
             # type (*name variables...) -> type name variables
             modified_match = re.sub(special_chars_regex, " ", modified_match)
             # Split and locate symbol based on its position
-            modified_match = modified_match.split()[sr.pos]
-            symbols_dict[symbol_type].append(modified_match)
+            modified_match = modified_match.split()
+            if len(modified_match) > sr.pos:
+                symbols_dict[symbol_type].append(modified_match[sr.pos])
     return symbols_dict
 
 
@@ -91,10 +104,17 @@ def create_symbols_dict(modified_source_paths):
 
 # The set of heuristics to determine if a substitution should be performed
 def replace_definition_if(match, symbol, pos):
+    static_function_regex = re.compile("^static ", re.MULTILINE)
     special_chars_regex = re.compile("[\*|,|;|\(|\)|]")
     original_match = match.group(0)
     # Remove extra characters to standardize symbol location
     modified_match = re.sub(special_chars_regex, " ", original_match)
+    # Offset the position by one when dealing with static functions.
+    # For example:
+    # static type foo() vs type foo().
+    # The static qualifier offsets the position by one.
+    if re.search(static_function_regex, modified_match):
+        pos += 1
     # Verify that this is indeed the definition for symbol
     if symbol == modified_match.split()[pos]:
         return ""
