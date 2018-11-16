@@ -504,45 +504,128 @@ TEST(ThreadTest, LoadGlobal) {
   EXPECT_EQ(*result, value_cell->value());
 }
 
-TEST(ThreadTest, LoadGlobalIntegration) {
-  Runtime runtime;
-  const char* src = R"(
+struct TestData {
+  const char* name;
+  const char* expected_output;
+  const char* src;
+  const bool death;
+};
+
+static std::string TestName(::testing::TestParamInfo<TestData> info) {
+  return info.param.name;
+}
+
+TestData kFastGlobalTests[] = {{"LoadGlobal",
+                                "1\n",
+                                R"(
 a = 1
 def f():
-  global a
   print(a)
+f()
+)",
+                                false},
+
+                               {"LoadGlobalFromBuiltin",
+                                "True\n",
+                                R"(
+class A(): pass
+a = A()
+def f():
+  print(isinstance(a, A))
+f()
+)",
+                                false},
+
+                               {"LoadGlobalUnbound",
+                                ".*Unbound Globals.*",
+                                R"(
+def f():
+  print(a)
+f()
+)",
+                                true},
+
+                               {"StoreGlobal",
+                                "2\n2\n",
+                                R"(
+def f():
+  global a
   a = 2
   print(a)
 f()
 print(a)
-)";
-  const char* expected = R"(1
-2
-2
-)";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
-}
+)",
+                                false},
 
-TEST(ThreadTest, DeleteGlobal) {
-  Runtime runtime;
-  const char* src = R"(
-isinstance = 1
-class A(): pass
+                               {"StoreGlobalShadowBuiltin",
+                                "2\n",
+                                R"(
 def f():
   global isinstance
-  print(isinstance)
-  del isinstance
-  a = A()
-  print(isinstance(a, A))
+  isinstance = 2
+del isinstance  # remove once we remove our HACK of adding builtins to main
 f()
-)";
-  const char* expected = R"(1
-True
-)";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+print(isinstance)
+)",
+                                false},
+
+                               {"DeleteGlobal",
+                                "True\nTrue\n",
+                                R"(
+class A(): pass
+a = A()
+def f():
+  global isinstance
+  isinstance = 1
+  del isinstance
+  print(isinstance(a, A))  # fallback to builtin
+f()
+print(isinstance(a, A))
+)",
+                                false},
+
+                               {"DeleteGlobalUnbound",
+                                ".*Unbound Globals.*",
+                                R"(
+def f():
+  global a
+  del a
+f()
+)",
+                                true},
+
+                               {"DeleteGlobalBuiltinUnbound",
+                                ".*Unbound Globals.*",
+                                R"(
+def f():
+  global isinstance
+  del isinstance  # remove once we remove our HACK of adding builtins to main
+  del isinstance
+f()
+)",
+                                true}
+
+};
+
+class GlobalsTest : public ::testing::TestWithParam<TestData> {};
+
+TEST_P(GlobalsTest, FastGlobal) {
+  Runtime runtime;
+  TestData data = GetParam();
+  if (data.death) {
+    EXPECT_DEATH(
+        compileAndRunToString(&runtime, data.src), data.expected_output);
+  } else {
+    std::string output = compileAndRunToString(&runtime, data.src);
+    EXPECT_EQ(output, data.expected_output);
+  }
 }
+
+INSTANTIATE_TEST_CASE_P(
+    FastGlobal,
+    GlobalsTest,
+    ::testing::ValuesIn(kFastGlobalTests),
+    TestName);
 
 TEST(ThreadTest, StoreGlobalCreateValueCell) {
   Runtime runtime;
@@ -1347,66 +1430,80 @@ print(a)
 )");
 }
 
-struct LocalsTestData {
-  const char* name;
-  const char* expected_output;
-  const char* src;
-};
-
-LocalsTestData kManipulateLocalsTests[] = {
+TestData kManipulateLocalsTests[] = {
     // Load an argument when no local variables are present
-    {"LoadSingleArg", "1\n", R"(
+    {"LoadSingleArg",
+     "1\n",
+     R"(
 def test(x):
   print(x)
 test(1)
-)"},
+)",
+     false},
 
     // Load and store an argument when no local variables are present
-    {"LoadStoreSingleArg", "1\n2\n", R"(
+    {"LoadStoreSingleArg",
+     "1\n2\n",
+     R"(
 def test(x):
   print(x)
   x = 2
   print(x)
 test(1)
-)"},
+)",
+     false},
 
     // Load multiple arguments when no local variables are present
-    {"LoadManyArgs", "1 2 3\n", R"(
+    {"LoadManyArgs",
+     "1 2 3\n",
+     R"(
 def test(x, y, z):
   print(x, y, z)
 test(1, 2, 3)
-)"},
+)",
+     false},
 
     // Load/store multiple arguments when no local variables are present
-    {"LoadStoreManyArgs", "1 2 3\n3 2 1\n", R"(
+    {"LoadStoreManyArgs",
+     "1 2 3\n3 2 1\n",
+     R"(
 def test(x, y, z):
   print(x, y, z)
   x = 3
   z = 1
   print(x, y, z)
 test(1, 2, 3)
-)"},
+)",
+     false},
 
     // Load a single local variable when no arguments are present
-    {"LoadSingleLocalVar", "1\n", R"(
+    {"LoadSingleLocalVar",
+     "1\n",
+     R"(
 def test():
   x = 1
   print(x)
 test()
-)"},
+)",
+     false},
 
     // Load multiple local variables when no arguments are present
-    {"LoadManyLocalVars", "1 2 3\n", R"(
+    {"LoadManyLocalVars",
+     "1 2 3\n",
+     R"(
 def test():
   x = 1
   y = 2
   z = 3
   print(x, y, z)
 test()
-)"},
+)",
+     false},
 
     // Mixed local var and arg usage
-    {"MixedLocals", "1 2 3\n3 2 1\n", R"(
+    {"MixedLocals",
+     "1 2 3\n3 2 1\n",
+     R"(
 def test(x, y):
   z = 3
   print(x, y, z)
@@ -1414,19 +1511,15 @@ def test(x, y):
   z = 1
   print(x, y, z)
 test(1, 2)
-)"},
+)",
+     false},
 };
 
-static std::string localsTestName(
-    ::testing::TestParamInfo<LocalsTestData> info) {
-  return info.param.name;
-}
-
-class LocalsTest : public ::testing::TestWithParam<LocalsTestData> {};
+class LocalsTest : public ::testing::TestWithParam<TestData> {};
 
 TEST_P(LocalsTest, ManipulateLocals) {
   Runtime runtime;
-  LocalsTestData data = GetParam();
+  TestData data = GetParam();
   std::string output = compileAndRunToString(&runtime, data.src);
   EXPECT_EQ(output, data.expected_output);
 }
@@ -1435,7 +1528,7 @@ INSTANTIATE_TEST_CASE_P(
     ManipulateLocals,
     LocalsTest,
     ::testing::ValuesIn(kManipulateLocalsTests),
-    localsTestName);
+    TestName);
 
 TEST(ThreadTest, BuiltinChr) {
   Runtime runtime;

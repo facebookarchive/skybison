@@ -1068,8 +1068,8 @@ class ValueCell : public HeapObject {
   inline Object* value();
   inline void setValue(Object* object);
 
-  inline Object* source();
-  inline void setSource(Object* object);
+  inline bool isUnbound();
+  inline void makeUnbound();
 
   // Casting.
   static inline ValueCell* cast(Object* object);
@@ -1082,8 +1082,7 @@ class ValueCell : public HeapObject {
 
   // Layout.
   static const int kValueOffset = HeapObject::kSize;
-  static const int kSourceOffset = kValueOffset + kPointerSize;
-  static const int kSize = kSourceOffset + kPointerSize;
+  static const int kSize = kValueOffset + kPointerSize;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(ValueCell);
@@ -2426,12 +2425,12 @@ void ValueCell::setValue(Object* object) {
   instanceVariableAtPut(kValueOffset, object);
 }
 
-Object* ValueCell::source() {
-  return instanceVariableAt(kSourceOffset);
+bool ValueCell::isUnbound() {
+  return this == value();
 }
 
-void ValueCell::setSource(Object* source) {
-  instanceVariableAtPut(kSourceOffset, source);
+void ValueCell::makeUnbound() {
+  setValue(this);
 }
 
 ValueCell* ValueCell::cast(Object* object) {
