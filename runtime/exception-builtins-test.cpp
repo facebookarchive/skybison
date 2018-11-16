@@ -84,6 +84,24 @@ exc = NameError()
   EXPECT_EQ(args->length(), 0);
 }
 
+TEST(ExceptionBuiltinsTest, TypeErrorReturnsTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runtime.runFromCString(R"(
+exc = TypeError()
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> exc(&scope, testing::moduleAt(&runtime, main, "exc"));
+  UncheckedHandle<Exception> exception(&scope, *exc);
+
+  // The args attribute contains a tuple of the constructor arguments.
+  ASSERT_TRUE(exception->args()->isObjectArray());
+  Handle<ObjectArray> args(&scope, exception->args());
+  EXPECT_EQ(args->length(), 0);
+}
+
 TEST(ExceptionBuiltinsTest, StopIterationNoArguments) {
   Runtime runtime;
   HandleScope scope;

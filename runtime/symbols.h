@@ -165,6 +165,7 @@ class Runtime;
   V(Traceback, "traceback")                                                    \
   V(Tuple, "tuple")                                                            \
   V(Type, "type")                                                              \
+  V(TypeError, "TypeError")                                                    \
   V(UnderWeakRef, "_weakref")                                                  \
   V(Value, "value")                                                            \
   V(ValueCell, "valuecell")

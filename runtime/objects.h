@@ -42,6 +42,7 @@ namespace python {
   V(String)                                                                    \
   V(SystemExit)                                                                \
   V(Type)                                                                      \
+  V(TypeError)                                                                 \
   V(ValueCell)                                                                 \
   V(WeakRef)
 
@@ -109,6 +110,7 @@ enum class LayoutId : word {
   kSystemExit,
   kSuper,
   kType,
+  kTypeError,
   kValueCell,
   kWeakRef,
 
