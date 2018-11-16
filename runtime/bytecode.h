@@ -93,7 +93,7 @@ namespace python {
   V(WITH_CLEANUP_START, 81, doWithCleanupStart)                                \
   V(WITH_CLEANUP_FINISH, 82, doWithCleanupFinish)                              \
   V(RETURN_VALUE, 83, doInvalidBytecode)                                       \
-  V(IMPORT_STAR, 84, doNotImplemented)                                         \
+  V(IMPORT_STAR, 84, doImportStar)                                             \
   V(SETUP_ANNOTATIONS, 85, doSetupAnnotations)                                 \
   V(YIELD_VALUE, 86, doNotImplemented)                                         \
   V(POP_BLOCK, 87, doPopBlock)                                                 \

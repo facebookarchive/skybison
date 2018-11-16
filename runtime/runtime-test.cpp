@@ -2956,4 +2956,28 @@ class Test(Exception):
   EXPECT_EQ(mro->at(3), runtime.typeAt(LayoutId::kObject));
 }
 
+TEST(ModuleImportTest, ModuleImportsAllPublicSymbols) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Create Module
+  Handle<Object> name(&scope, runtime.newStrFromCStr("foo"));
+  Handle<Module> module(&scope, runtime.newModule(name));
+
+  // Add symbols
+  Handle<Dict> module_dict(&scope, module->dict());
+  Handle<Object> symbol_str1(&scope, runtime.newStrFromCStr("public_symbol"));
+  Handle<Object> symbol_str2(&scope, runtime.newStrFromCStr("_private_symbol"));
+  runtime.dictAtPutInValueCell(module_dict, symbol_str1, symbol_str1);
+  runtime.dictAtPutInValueCell(module_dict, symbol_str2, symbol_str2);
+
+  // Import public symbols to dictionary
+  Handle<Dict> symbols_dict(&scope, runtime.newDict());
+  runtime.moduleImportAllFrom(symbols_dict, module);
+  EXPECT_EQ(symbols_dict->numItems(), 1);
+
+  Handle<ValueCell> result(&scope, runtime.dictAt(symbols_dict, symbol_str1));
+  EXPECT_PYSTRING_EQ(Str::cast(result->value()), "public_symbol");
+}
+
 }  // namespace python

@@ -493,6 +493,10 @@ class Runtime {
   // Creates an layout with a new ID and no attributes.
   Object* layoutCreateEmpty(Thread* thread);
 
+  // Import all the public module's symbols to the given dict
+  void moduleImportAllFrom(const Handle<Dict>& dict,
+                           const Handle<Module>& module);
+
  private:
   void initializeThreads();
   void initializeClasses();

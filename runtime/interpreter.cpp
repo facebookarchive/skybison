@@ -1066,6 +1066,24 @@ void Interpreter::doSetupAnnotations(Context* ctx, word) {
   }
 }
 
+// opcode 84
+void Interpreter::doImportStar(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+
+  // Pre-python3 this used to merge the locals with the locals dict. However,
+  // that's not necessary anymore. You can't import * inside a function
+  // body anymore.
+
+  Handle<Code> code(&scope, ctx->frame->code());
+  Handle<Module> module(&scope, ctx->frame->popValue());
+  CHECK(module->isModule(), "Unexpected type to import from");
+
+  Frame* frame = ctx->frame;
+  Handle<Dict> implicit_globals(&scope, frame->implicitGlobals());
+  thread->runtime()->moduleImportAllFrom(implicit_globals, module);
+}
+
 // opcode 87
 void Interpreter::doPopBlock(Context* ctx, word) {
   Frame* frame = ctx->frame;

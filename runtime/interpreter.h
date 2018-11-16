@@ -159,6 +159,7 @@ class Interpreter {
   static void doBreakLoop(Context* ctx, word arg);
   static void doWithCleanupStart(Context* ctx, word arg);
   static void doWithCleanupFinish(Context* ctx, word arg);
+  static void doImportStar(Context* ctx, word arg);
   static void doSetupAnnotations(Context* ctx, word arg);
   static void doPopBlock(Context* ctx, word arg);
   static void doEndFinally(Context* ctx, word arg);

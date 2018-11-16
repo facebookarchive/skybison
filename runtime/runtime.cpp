@@ -1574,6 +1574,24 @@ void Runtime::moduleAddBuiltinType(const Handle<Module>& module, SymbolId name,
   moduleAddGlobal(module, name, value);
 }
 
+void Runtime::moduleImportAllFrom(const Handle<Dict>& dict,
+                                  const Handle<Module>& module) {
+  HandleScope scope;
+  Handle<Dict> module_dict(&scope, module->dict());
+  Handle<ObjectArray> module_keys(&scope, dictKeys(module_dict));
+  for (word i = 0; i < module_keys->length(); i++) {
+    Handle<Object> symbol_name(&scope, module_keys->at(i));
+    CHECK(symbol_name->isStr(), "Symbol is not a String");
+
+    // Load all the symbols not starting with '_'
+    Handle<Str> symbol_name_str(&scope, *symbol_name);
+    if (symbol_name_str->charAt(0) != '_') {
+      Handle<Object> value(&scope, moduleAt(module, symbol_name));
+      dictAtPutInValueCell(dict, symbol_name, value);
+    }
+  }
+}
+
 void Runtime::createSysModule() {
   HandleScope scope;
   Handle<Object> name(&scope, symbols()->Sys());

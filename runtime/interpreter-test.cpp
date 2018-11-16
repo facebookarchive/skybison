@@ -1271,4 +1271,62 @@ v = outer()
       "UnboundLocalError: local variable referenced before assignment");
 }
 
+TEST(InterpreterTest, ImportStarImportsPublicSymbols) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* module_src = R"(
+def public_symbol():
+    return 1
+def public_symbol2():
+    return 2
+)";
+
+  // Preload the module
+  Handle<Object> name(&scope, runtime.newStrFromCStr("test_module"));
+  runtime.importModuleFromBuffer(Runtime::compile(module_src), name);
+
+  runtime.runFromCStr(R"(
+from test_module import *
+a = public_symbol()
+b = public_symbol2()
+)");
+
+  Handle<Module> main(&scope, testing::findModule(&runtime, "__main__"));
+  Handle<Object> a(&scope, testing::moduleAt(&runtime, main, "a"));
+  Handle<Object> b(&scope, testing::moduleAt(&runtime, main, "b"));
+  ASSERT_TRUE(a->isInt());
+  ASSERT_TRUE(b->isInt());
+
+  Handle<Int> result1(&scope, *a);
+  Handle<Int> result2(&scope, *b);
+  EXPECT_EQ(result1->asWord(), 1);
+  EXPECT_EQ(result2->asWord(), 2);
+}
+
+TEST(InterpreterDeathTest, ImportStarDoesNotImportPrivateSymbols) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* module_src = R"(
+def public_symbol():
+    return 1
+def _private_symbol():
+    return 2
+)";
+
+  // Preload the module
+  Handle<Object> name(&scope, runtime.newStrFromCStr("test_module"));
+  runtime.importModuleFromBuffer(Runtime::compile(module_src), name);
+
+  const char* main_src = R"(
+from test_module import *
+a = public_symbol()
+b = _private_symbol()
+)";
+
+  ASSERT_DEATH(testing::compileAndRunToString(&runtime, main_src),
+               "unimplemented: Unbound variable '_private_symbol'");
+}
+
 }  // namespace python
