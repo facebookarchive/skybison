@@ -272,6 +272,17 @@ Result BUILD_LIST(Context* ctx, word arg) {
   *--ctx->sp = list;
   return Result::CONTINUE;
 }
+Result BUILD_TUPLE(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  HandleScope scope;
+  Handle<ObjectArray> tuple(&scope, thread->runtime()->newObjectArray(arg));
+  Object**& sp = ctx->sp;
+  for (int i = arg - 1; i >= 0; i--) {
+    tuple->atPut(i, *sp++);
+  }
+  *--sp = *tuple;
+  return Result::CONTINUE;
+}
 Result POP_JUMP_IF_FALSE(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Object* cond = *ctx->sp++;
@@ -446,6 +457,9 @@ Result BINARY_SUBSCR(Context* ctx, word) {
         ctx->thread->runtime()->dictionaryAt(dict, key, value.pointer()),
         "KeyError");
     *--sp = *value;
+  } else if (container->isObjectArray()) {
+    word idx = SmallInteger::cast(*key)->value();
+    *--sp = ObjectArray::cast(*container)->at(idx);
   } else {
     UNIMPLEMENTED("Custom Subscription");
   }
@@ -540,6 +554,7 @@ void Interpreter::initOpTable() {
   opTable[Bytecode::STORE_GLOBAL] = interpreter::STORE_GLOBAL;
   opTable[Bytecode::MAKE_FUNCTION] = interpreter::MAKE_FUNCTION;
   opTable[Bytecode::BUILD_LIST] = interpreter::BUILD_LIST;
+  opTable[Bytecode::BUILD_TUPLE] = interpreter::BUILD_TUPLE;
   opTable[Bytecode::POP_JUMP_IF_FALSE] = interpreter::POP_JUMP_IF_FALSE;
   opTable[Bytecode::POP_JUMP_IF_TRUE] = interpreter::POP_JUMP_IF_TRUE;
   opTable[Bytecode::JUMP_IF_TRUE_OR_POP] = interpreter::JUMP_IF_TRUE_OR_POP;
