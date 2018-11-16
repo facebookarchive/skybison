@@ -90,7 +90,7 @@ namespace python {
   V(INPLACE_AND, 77, interpreter::BINARY_AND)                        \
   V(INPLACE_XOR, 78, interpreter::BINARY_XOR)                        \
   V(INPLACE_OR, 79, interpreter::NOT_IMPLEMENTED)                    \
-  V(BREAK_LOOP, 80, interpreter::NOT_IMPLEMENTED)                    \
+  V(BREAK_LOOP, 80, interpreter::BREAK_LOOP)                         \
   V(WITH_CLEANUP_START, 81, interpreter::NOT_IMPLEMENTED)            \
   V(WITH_CLEANUP_FINISH, 82, interpreter::NOT_IMPLEMENTED)           \
   V(RETURN_VALUE, 83, interpreter::NOT_IMPLEMENTED)                  \

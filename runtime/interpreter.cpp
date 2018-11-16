@@ -466,6 +466,14 @@ Result POP_BLOCK(Context* ctx, word) {
   ctx->sp = frame->valueStackBase() - block.level();
   return Result::CONTINUE;
 }
+
+Result BREAK_LOOP(Context* ctx, word) {
+  Frame* frame = ctx->frame;
+  TryBlock block = frame->blockStack()->pop();
+  ctx->pc = block.handler();
+  return Result::CONTINUE;
+}
+
 Result GET_ITER(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread->handles());

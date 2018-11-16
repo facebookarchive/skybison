@@ -2448,4 +2448,107 @@ print(len(Array1Glob), len(Array2Glob), len(Array2Glob[0]))
   EXPECT_EQ(output, "51 51 51\n");
 }
 
+TEST(ThreadTest, BreakLoopWhileLoop) {
+  const char* src = R"(
+a = 0
+while 1:
+    a = a + 1
+    print(a)
+    if a == 3:
+        break
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1\n2\n3\n");
+}
+
+TEST(ThreadTest, BreakLoopWhileLoop1) {
+  const char* src = R"(
+a = 0
+while 1:
+    a = a + 1
+    print(a)
+    if a == 3:
+        break
+print("ok",a)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1\n2\n3\nok 3\n");
+}
+
+TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Handle<ObjectArray> consts(&scope, runtime.newObjectArray(4));
+  Handle<Code> code(&scope, runtime.newCode());
+  consts->atPut(0, SmallInteger::fromWord(0));
+  consts->atPut(1, SmallInteger::fromWord(1));
+  consts->atPut(2, SmallInteger::fromWord(3));
+  consts->atPut(3, None::object());
+  code->setConsts(*consts);
+
+  Handle<ObjectArray> names(&scope, runtime.newObjectArray(1));
+  Handle<Object> key(&scope, runtime.newStringFromCString("a"));
+  names->atPut(0, *key);
+  code->setNames(*names);
+
+  // see python code in BreakLoop.whileLoop (sans print)
+  const byte bc[] = {LOAD_CONST,        0, // 0
+                     STORE_NAME,        0, // a
+                     SETUP_LOOP,        22, LOAD_NAME,  0, // a
+                     LOAD_CONST,        1, // 1
+                     BINARY_ADD,        0,  STORE_NAME, 0, // a
+                     LOAD_NAME,         0, // a
+                     LOAD_CONST,        2, // 3
+                     COMPARE_OP,        2, // ==
+                     POP_JUMP_IF_FALSE, 6,  BREAK_LOOP, 0, JUMP_ABSOLUTE, 6,
+                     POP_BLOCK,         0,  LOAD_CONST, 3, // None
+                     RETURN_VALUE,      0};
+  code->setCode(runtime.newByteArrayWithAll(bc));
+
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->pushFrame(*code);
+
+  Handle<Dictionary> implicit_globals(&scope, runtime.newDictionary());
+  Handle<Dictionary> builtins(&scope, runtime.newDictionary());
+
+  frame->setImplicitGlobals(*implicit_globals);
+  frame->setFastGlobals(
+      runtime.computeFastGlobals(code, implicit_globals, builtins));
+
+  Handle<Object> result(&scope, Interpreter::execute(thread, frame));
+  Handle<Object> value(&scope, runtime.dictionaryAt(implicit_globals, key));
+  ASSERT_TRUE(value->isValueCell());
+  Object* valueObj = ValueCell::cast(*value)->value();
+  EXPECT_TRUE(valueObj->isSmallInteger());
+  EXPECT_EQ(SmallInteger::cast(valueObj)->value(), 3);
+}
+
+TEST(ThreadTest, BreakLoopRangeLoop) {
+  const char* src = R"(
+for x in range(1,6):
+  if x == 3:
+    break;
+  print(x)
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "1\n2\n");
+}
+
+TEST(ThreadTest, Func2TestPyStone) { // mimic pystone.py Func2
+  const char* src = R"(
+def f1(x, y):
+  return x + y
+def f2():
+  return f1(1, 2)
+print(f2())
+)";
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, src);
+  EXPECT_EQ(output, "3\n");
+}
+
 } // namespace python
