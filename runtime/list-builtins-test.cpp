@@ -667,6 +667,56 @@ result = a
                             10, 11, 12,  13, 14, 15,  16, 17, 18,  19});
 }
 
+TEST(ListBuiltinsTest, SetItemSliceShortValue) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_DEATH(
+      runtime.runFromCStr(R"(
+a = [1,2,3,4,5,6,7,8,9,10]
+b = [0,0,0]
+a[:8:2] = b
+)"),
+      "attempt to assign sequence of size 3 to extended slice of size 4");
+}
+TEST(ListBuiltinsTest, SetItemSliceShortStop) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+a = [1,2,3,4,5,6,7,8,9,10]
+b = [0,0,0]
+a[:1] = b
+result = a
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {0, 0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+}
+
+TEST(ListBuiltinsTest, SetItemSliceLongStop) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+a = [1,1,1]
+b = [0,0,0,0,0]
+a[:1] = b
+result = a
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {0, 0, 0, 0, 0, 1, 1});
+}
+
+TEST(ListBuiltinsTest, SetItemSliceShortStep) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+a = [1,2,3,4,5,6,7,8,9,10]
+b = [0,0,0]
+a[::1] = b
+result = a
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {0, 0, 0});
+}
+
 TEST(ListBuiltinsDeathTest, GetItemWithTooFewArgumentsThrowsTypeError) {
   Runtime runtime;
   ASSERT_DEATH(runtime.runFromCStr(R"(
