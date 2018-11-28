@@ -910,7 +910,7 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
 #define PySet_GET_SIZE(op) PySet_Size((PyObject*)op)
 
 #define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
-// TODO(T33954927): redefine PyTuple_GET_ITEM in a way that doesnt break pyro
+#define PyTuple_GET_ITEM(op, i) PyTuple_GetItem((PyObject*)op, i)
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem((PyObject*)op, i, v)
 
 #define PyUnicode_GET_LENGTH(op) PyUnicode_GetLength((PyObject*)op)
