@@ -749,6 +749,7 @@ class RawType : public RawHeapObject {
   // TODO(eelizondo): this should cover all of the slots but,
   // we are starting with just these few for now
   enum class ExtensionSlot {
+    kFlags,
     kInit,
     kNew,
     kEnd,

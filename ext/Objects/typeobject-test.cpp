@@ -24,22 +24,21 @@ TEST_F(TypeExtensionApiTest, PyTypeCheckOnType) {
   EXPECT_TRUE(PyType_CheckExact(type));
 }
 
-TEST_F(TypeExtensionApiTest, ReadyInitializesType) {
-  // Create a simple PyTypeObject
-  static PyTypeObject empty_type;
-  empty_type = {PyObject_HEAD_INIT(nullptr)};
-  empty_type.tp_name = "Empty";
-  empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
+TEST_F(TypeExtensionApiDeathTest, GetFlagsFromBuiltInType) {
+  testing::PyObjectPtr long_obj(PyLong_FromLong(5));
+  PyTypeObject* long_type = Py_TYPE(long_obj);
+  ASSERT_TRUE(PyType_CheckExact(long_type));
+  EXPECT_DEATH(PyType_GetFlags(reinterpret_cast<PyTypeObject*>(long_type)),
+               "unimplemented: GetFlags from built-in types");
+}
 
-  // EmptyType is not initialized yet
-  EXPECT_FALSE(PyType_GetFlags(&empty_type) & Py_TPFLAGS_READY);
-
-  // Run PyType_Ready
-  EXPECT_EQ(0, PyType_Ready(&empty_type));
-
-  // Expect PyTypeObject to contain the correct flags
-  EXPECT_TRUE(PyType_GetFlags(&empty_type) & Py_TPFLAGS_DEFAULT);
-  EXPECT_TRUE(PyType_GetFlags(&empty_type) & Py_TPFLAGS_READY);
+TEST_F(TypeExtensionApiDeathTest, GetFlagsFromManagedType) {
+  PyRun_SimpleString(R"(class Foo: pass)");
+  PyObject* foo_type = testing::moduleGet("__main__", "Foo");
+  ASSERT_TRUE(PyType_CheckExact(foo_type));
+  EXPECT_DEATH(
+      PyType_GetFlags(reinterpret_cast<PyTypeObject*>(foo_type)),
+      "unimplemented: GetFlags from types initialized through Python code");
 }
 
 TEST_F(TypeExtensionApiTest, ReadyCreatesRuntimeType) {

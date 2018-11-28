@@ -25,8 +25,25 @@ PY_EXPORT int PyType_Check_Func(PyObject* obj) {
                                                   LayoutId::kType);
 }
 
-PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type) {
-  return type->tp_flags;
+PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
+  ApiHandle* handle =
+      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj));
+  CHECK(handle->isManaged(),
+        "Type is unmanaged. Please initialize using PyType_FromSpec");
+
+  HandleScope scope;
+  Type type(&scope, handle->asObject());
+  if (type->isBuiltin()) {
+    UNIMPLEMENTED("GetFlags from built-in types");
+  }
+
+  if (type->extensionSlots()->isNoneType()) {
+    UNIMPLEMENTED("GetFlags from types initialized through Python code");
+  }
+
+  word flags_idx = static_cast<word>(Type::ExtensionSlot::kFlags);
+  Int flags(&scope, RawTuple::cast(type->extensionSlots())->at(flags_idx));
+  return flags->asWord();
 }
 
 static Type::ExtensionSlot slotToTypeSlot(int slot) {
