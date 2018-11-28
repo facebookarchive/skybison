@@ -68,7 +68,7 @@ set(
   -Wall
   -Werror
   -Wextra
-  -pedantic)
+  -Wpedantic)
 
 # Define the `cpython` target
 set(
