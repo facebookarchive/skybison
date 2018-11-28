@@ -94,7 +94,7 @@ TEST_F(ModuleExtensionApiTest, CreateSetsStateNull) {
 }
 
 TEST_F(ModuleExtensionApiTest, GetStateAllocatesAndAllowsMutation) {
-  struct my_mod_state {
+  struct MyState {
     char letter;
     int number;
     double big_number;
@@ -106,7 +106,7 @@ TEST_F(ModuleExtensionApiTest, GetStateAllocatesAndAllowsMutation) {
       PyModuleDef_HEAD_INIT,
       "mymodule",
       "doc",
-      sizeof(my_mod_state),
+      sizeof(MyState),
   };
 
   testing::PyObjectPtr module(PyModule_Create(&def));
@@ -115,7 +115,7 @@ TEST_F(ModuleExtensionApiTest, GetStateAllocatesAndAllowsMutation) {
 
   void* state = PyModule_GetState(module);
   ASSERT_NE(state, nullptr);
-  my_mod_state* mod_state = reinterpret_cast<my_mod_state*>(state);
+  MyState* mod_state = static_cast<MyState*>(state);
   mod_state->letter = 'a';
   mod_state->number = 2;
   mod_state->big_number = 2.1;
