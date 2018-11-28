@@ -1,84 +1,44 @@
 #pragma once
 
-#include "globals.h"
+#include "objects.h"
 #include "thread.h"
-#include "utils.h"
-#include "vector.h"
 
 namespace python {
 
-class HandleScope;
-template <typename T, bool is_checked = true>
+template <typename>
 class Handle;
-class PointerVisitor;
-
-class Handles {
- public:
-  static const int kInitialSize = 10;
-
-  Handles();
-
-  void visitPointers(PointerVisitor* visitor);
-
- private:
-  void push(HandleScope* scope) { scopes_.push_back(scope); }
-
-  void pop() {
-    DCHECK(!scopes_.empty(), "pop on empty");
-    scopes_.pop_back();
-  }
-
-  HandleScope* top() {
-    DCHECK(!scopes_.empty(), "top on empty");
-    return scopes_.back();
-  }
-
-  Vector<HandleScope*> scopes_;
-
-  template <typename, bool>
-  friend class Handle;
-  friend class HandleScope;
-
-  DISALLOW_COPY_AND_ASSIGN(Handles);
-};
 
 class HandleScope {
  public:
-  explicit HandleScope()
-      : list_(nullptr), handles_(Thread::currentThread()->handles()) {
-    handles_->push(this);
-  }
+  explicit HandleScope() : HandleScope(Thread::currentThread()) {}
 
-  explicit HandleScope(Thread* thread)
-      : list_(nullptr), handles_(thread->handles()) {
-    handles_->push(this);
+  explicit HandleScope(Thread* thread) : list_(nullptr), thread_(thread) {
+    handles()->push(this);
   }
 
   ~HandleScope() {
-    DCHECK(this == handles_->top(), "unexpected this");
-    handles_->pop();
+    DCHECK(this == handles()->top(), "unexpected this");
+    handles()->pop();
   }
 
-  template <typename T, bool is_checked>
-  Handle<RawObject>* push(Handle<T, is_checked>* handle) {
-    DCHECK(this == handles_->top(), "unexpected this");
+  template <typename T>
+  Handle<RawObject>* push(Handle<T>* handle) {
+    DCHECK(this == handles()->top(), "unexpected this");
     Handle<RawObject>* result = list_;
     list_ = reinterpret_cast<Handle<RawObject>*>(handle);
     return result;
   }
 
  private:
-  explicit HandleScope(Handles* handles) : list_(nullptr), handles_(handles) {
-    handles_->push(this);
-  }
-
   Handle<RawObject>* list() { return list_; }
+  Handles* handles() { return thread()->handles(); }
+  Thread* thread() { return thread_; }
 
   Handle<RawObject>* list_;
-  Handles* handles_;
+  Thread* thread_;
 
   friend class Handles;
-  template <typename, bool>
+  template <typename>
   friend class Handle;
 
   // TODO(jeethu): use FRIEND_TEST
@@ -94,18 +54,18 @@ class HandleScope {
   DISALLOW_COPY_AND_ASSIGN(HandleScope);
 };
 
-template <typename T, bool is_checked>
+template <typename T>
 class Handle : public T {
  public:
-  Handle(HandleScope* scope, RawObject pointer)
-      : T(is_checked ? T::cast(pointer) : bit_cast<T>(pointer)),
-        next_(scope->push(this)),
-        scope_(scope) {}
+  Handle(HandleScope* scope, RawObject obj)
+      : T(bit_cast<T>(obj)), next_(scope->push(this)), scope_(scope) {
+    DCHECK(isValidType(), "Invalid Handle construction");
+  }
 
   // Don't allow constructing a Handle directly from another Handle; require
   // dereferencing the source.
-  template <typename S, bool checked>
-  Handle(HandleScope*, Handle<S, checked>) = delete;
+  template <typename S>
+  Handle(HandleScope*, const Handle<S>&) = delete;
 
   ~Handle() {
     DCHECK(scope_->list_ == reinterpret_cast<Handle<RawObject>*>(this),
@@ -128,16 +88,17 @@ class Handle : public T {
   Handle& operator=(S other) {
     static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
                   "Only up- and down-casts are permitted.");
-    *static_cast<T*>(this) = is_checked ? T::cast(other) : bit_cast<T>(other);
+    *static_cast<T*>(this) = bit_cast<T>(other);
+    DCHECK(isValidType(), "Invalid Handle assignment");
     return *this;
   }
 
   // Let Handle<T> pretend to be a subtype of Handle<S> when T is a subtype of
   // S.
   template <typename S>
-  operator const Handle<S, is_checked>&() const {
+  operator const Handle<S>&() const {
     static_assert(std::is_base_of<S, T>::value, "Only up-casts are permitted");
-    return *reinterpret_cast<const Handle<S, is_checked>*>(this);
+    return *reinterpret_cast<const Handle<S>*>(this);
   }
 
   static_assert(std::is_base_of<RawObject, T>::value,
@@ -147,90 +108,88 @@ class Handle : public T {
   DISALLOW_HEAP_ALLOCATION();
 
  private:
-  template <typename, bool>
+  template <typename>
   friend class Handle;
+
+  bool isValidType() const;
 
   Handle<RawObject>* next_;
   HandleScope* scope_;
 };
 
-// This is a temporary workaround until there is infrastructure to do a
-// checked up-cast based on a class flag instead of a class ID.  This is only
-// needed when a handle must up-cast a user-defined subclass to a built-in class
-// type.  The use of this handle should be limited to handles types that are
-// subclasses of BaseException.
-template <typename T>
-using UncheckedHandle = Handle<T, false>;
+// TODO(T34683229): This macro and its uses are temporary as part of an
+// in-progress migration.
+#define HANDLE_TYPES(V)                                                        \
+  V(Object)                                                                    \
+  V(Bool)                                                                      \
+  V(BoundMethod)                                                               \
+  V(Bytes)                                                                     \
+  V(ClassMethod)                                                               \
+  V(Code)                                                                      \
+  V(Complex)                                                                   \
+  V(Coroutine)                                                                 \
+  V(DictItemIterator)                                                          \
+  V(DictItems)                                                                 \
+  V(DictKeyIterator)                                                           \
+  V(DictKeys)                                                                  \
+  V(DictValueIterator)                                                         \
+  V(DictValues)                                                                \
+  V(Ellipsis)                                                                  \
+  V(Error)                                                                     \
+  V(Exception)                                                                 \
+  V(Float)                                                                     \
+  V(Function)                                                                  \
+  V(Generator)                                                                 \
+  V(GeneratorBase)                                                             \
+  V(Header)                                                                    \
+  V(HeapFrame)                                                                 \
+  V(HeapObject)                                                                \
+  V(IndexError)                                                                \
+  V(Instance)                                                                  \
+  V(Int)                                                                       \
+  V(KeyError)                                                                  \
+  V(LargeInt)                                                                  \
+  V(LargeStr)                                                                  \
+  V(Layout)                                                                    \
+  V(ListIterator)                                                              \
+  V(LookupError)                                                               \
+  V(Module)                                                                    \
+  V(ModuleNotFoundError)                                                       \
+  V(NoneType)                                                                  \
+  V(NotImplemented)                                                            \
+  V(NotImplementedError)                                                       \
+  V(Property)                                                                  \
+  V(Range)                                                                     \
+  V(RangeIterator)                                                             \
+  V(RuntimeError)                                                              \
+  V(SetIterator)                                                               \
+  V(Slice)                                                                     \
+  V(SmallInt)                                                                  \
+  V(SmallStr)                                                                  \
+  V(StaticMethod)                                                              \
+  V(Str)                                                                       \
+  V(StrIterator)                                                               \
+  V(Super)                                                                     \
+  V(Tuple)                                                                     \
+  V(TupleIterator)                                                             \
+  V(ValueCell)                                                                 \
+  V(WeakRef)
 
-// TODO(T34683229): These typedefs are temporary as part of an in-progress
-// migration.
-#define HANDLE_ALIAS(ty)                                                       \
-  class Raw##ty;                                                               \
-  using ty = Handle<Raw##ty>
-HANDLE_ALIAS(Object);
-HANDLE_ALIAS(Int);
-HANDLE_ALIAS(SmallInt);
-HANDLE_ALIAS(Header);
-HANDLE_ALIAS(Bool);
-HANDLE_ALIAS(NoneType);
-HANDLE_ALIAS(Error);
-HANDLE_ALIAS(Str);
-HANDLE_ALIAS(SmallStr);
-HANDLE_ALIAS(HeapObject);
-HANDLE_ALIAS(BaseException);
-HANDLE_ALIAS(Exception);
-HANDLE_ALIAS(StopIteration);
-HANDLE_ALIAS(SystemExit);
-HANDLE_ALIAS(RuntimeError);
-HANDLE_ALIAS(NotImplementedError);
-HANDLE_ALIAS(ImportError);
-HANDLE_ALIAS(ModuleNotFoundError);
-HANDLE_ALIAS(LookupError);
-HANDLE_ALIAS(IndexError);
-HANDLE_ALIAS(KeyError);
-HANDLE_ALIAS(Type);
-HANDLE_ALIAS(Array);
-HANDLE_ALIAS(Bytes);
-HANDLE_ALIAS(Tuple);
-HANDLE_ALIAS(LargeStr);
-HANDLE_ALIAS(LargeInt);
-HANDLE_ALIAS(Float);
-HANDLE_ALIAS(Complex);
-HANDLE_ALIAS(Property);
-HANDLE_ALIAS(Range);
-HANDLE_ALIAS(RangeIterator);
-HANDLE_ALIAS(Slice);
-HANDLE_ALIAS(StaticMethod);
-HANDLE_ALIAS(ListIterator);
-HANDLE_ALIAS(SetIterator);
-HANDLE_ALIAS(StrIterator);
-HANDLE_ALIAS(TupleIterator);
-HANDLE_ALIAS(Code);
-HANDLE_ALIAS(Function);
-HANDLE_ALIAS(Instance);
-HANDLE_ALIAS(Module);
-HANDLE_ALIAS(NotImplemented);
-HANDLE_ALIAS(Dict);
-HANDLE_ALIAS(DictItemIterator);
-HANDLE_ALIAS(DictItems);
-HANDLE_ALIAS(DictKeyIterator);
-HANDLE_ALIAS(DictKeys);
-HANDLE_ALIAS(DictValueIterator);
-HANDLE_ALIAS(DictValues);
-HANDLE_ALIAS(Set);
-HANDLE_ALIAS(List);
-HANDLE_ALIAS(ValueCell);
-HANDLE_ALIAS(Ellipsis);
-HANDLE_ALIAS(WeakRef);
-HANDLE_ALIAS(BoundMethod);
-HANDLE_ALIAS(ClassMethod);
-HANDLE_ALIAS(Layout);
-HANDLE_ALIAS(Super);
-HANDLE_ALIAS(GeneratorBase);
-HANDLE_ALIAS(Generator);
-HANDLE_ALIAS(Coroutine);
-HANDLE_ALIAS(HeapFrame);
-HANDLE_ALIAS(UserFloatBase);
+// The handles for certain types allow user-defined subtypes.
+#define SUBTYPE_HANDLE_TYPES(V)                                                \
+  V(BaseException)                                                             \
+  V(Dict)                                                                      \
+  V(ImportError)                                                               \
+  V(List)                                                                      \
+  V(Set)                                                                       \
+  V(StopIteration)                                                             \
+  V(SystemExit)                                                                \
+  V(Type)                                                                      \
+  V(UserFloatBase)
+
+#define HANDLE_ALIAS(ty) using ty = Handle<class Raw##ty>;
+HANDLE_TYPES(HANDLE_ALIAS)
+SUBTYPE_HANDLE_TYPES(HANDLE_ALIAS)
 #undef HANDLE_ALIAS
 
 }  // namespace python

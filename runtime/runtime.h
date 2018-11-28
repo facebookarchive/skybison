@@ -533,6 +533,7 @@ class Runtime {
   DEFINE_IS_INSTANCE(Complex)
   DEFINE_IS_INSTANCE(Dict)
   DEFINE_IS_INSTANCE(Float)
+  DEFINE_IS_INSTANCE(ImportError)
   DEFINE_IS_INSTANCE(Int)
   DEFINE_IS_INSTANCE(List)
   DEFINE_IS_INSTANCE(Set)
@@ -548,6 +549,13 @@ class Runtime {
     LayoutId base = RawType::cast(typeOf(obj)).builtinBase();
     return base >= LayoutId::kFirstException &&
            base <= LayoutId::kLastException;
+  }
+
+  // UserFloatBase has no corresponding LayoutId, so we detect it by looking
+  // for an object that is a float subclass but not exactly float.
+  bool isInstanceOfUserFloatBase(RawObject obj) {
+    return !obj.isFloat() &&
+           RawType::cast(typeOf(obj)).builtinBase() == LayoutId::kFloat;
   }
 #undef DEFINE_IS_INSTANCE
 

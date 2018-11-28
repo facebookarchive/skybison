@@ -2,14 +2,43 @@
 
 #include "globals.h"
 #include "objects.h"
+#include "vector.h"
 
 namespace python {
 
 class Frame;
 class FrameVisitor;
-class Handles;
+class HandleScope;
 class PointerVisitor;
 class Runtime;
+
+class Handles {
+ public:
+  static const int kInitialSize = 10;
+
+  Handles();
+
+  void visitPointers(PointerVisitor* visitor);
+
+ private:
+  void push(HandleScope* scope) { scopes_.push_back(scope); }
+
+  void pop() {
+    DCHECK(!scopes_.empty(), "pop on empty");
+    scopes_.pop_back();
+  }
+
+  HandleScope* top() {
+    DCHECK(!scopes_.empty(), "top on empty");
+    return scopes_.back();
+  }
+
+  Vector<HandleScope*> scopes_;
+
+  friend class HandleScope;
+
+  DISALLOW_COPY_AND_ASSIGN(Handles);
+};
 
 class Thread {
  public:
@@ -44,7 +73,7 @@ class Thread {
 
   Thread* next() { return next_; }
 
-  Handles* handles() { return handles_; }
+  Handles* handles() { return &handles_; }
 
   Runtime* runtime() { return runtime_; }
 
@@ -148,7 +177,7 @@ class Thread {
     exception_traceback_ = traceback;
   }
 
-  Handles* handles_;
+  Handles handles_;
 
   word size_;
   byte* start_;

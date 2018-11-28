@@ -111,14 +111,13 @@ value_error = ValueError()
 rt_error = RuntimeError()
 )");
 
-  UncheckedHandle<RawException> attr_error(
-      &scope, moduleAt(&runtime, "__main__", "attr_error"));
-  UncheckedHandle<RawException> name_error(
-      &scope, moduleAt(&runtime, "__main__", "name_error"));
-  UncheckedHandle<RawException> value_error(
-      &scope, moduleAt(&runtime, "__main__", "value_error"));
-  UncheckedHandle<RawException> rt_error(
-      &scope, moduleAt(&runtime, "__main__", "rt_error"));
+  BaseException attr_error(&scope,
+                           moduleAt(&runtime, "__main__", "attr_error"));
+  BaseException name_error(&scope,
+                           moduleAt(&runtime, "__main__", "name_error"));
+  BaseException value_error(&scope,
+                            moduleAt(&runtime, "__main__", "value_error"));
+  BaseException rt_error(&scope, moduleAt(&runtime, "__main__", "rt_error"));
 
   EXPECT_TRUE(runtime.isInstanceOfBaseException(*attr_error));
   EXPECT_EQ(attr_error->layoutId(), LayoutId::kAttributeError);
@@ -205,7 +204,7 @@ exc = TypeError()
 )");
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
-  UncheckedHandle<RawException> exception(&scope, *exc);
+  BaseException exception(&scope, *exc);
 
   // The args attribute contains a tuple of the constructor arguments.
   ASSERT_TRUE(exception->args()->isTuple());

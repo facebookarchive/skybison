@@ -3439,9 +3439,8 @@ RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
   Type object_type(&scope, typeAt(LayoutId::kObject));
   Type candidate(&scope, *object_type);
   // Skip itself since builtin class won't go through this.
-  DCHECK(RawType::cast(mro->at(0))->instanceLayout()->isNoneType(),
-         "only user defined class should go through this via type_new, and at "
-         "this point layout is not ready");
+  DCHECK(*type == mro->at(0) && type->instanceLayout()->isNoneType(),
+         "type's layout should not be set at this point");
   for (word i = 1; i < mro->length(); i++) {
     Type mro_type(&scope, mro->at(i));
     if (!mro_type->isIntrinsicOrExtension()) {

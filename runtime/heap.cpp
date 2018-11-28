@@ -102,7 +102,9 @@ RawObject Heap::createType(LayoutId metaclass_id) {
   result->setHeader(Header::from(RawType::kSize / kPointerSize, 0, metaclass_id,
                                  ObjectFormat::kObjectInstance));
   result->initialize(RawType::kSize, NoneType::object());
-  return RawType::cast(result);
+  DCHECK(Thread::currentThread()->runtime()->isInstanceOfType(result),
+         "Invalid Type");
+  return result;
 }
 
 RawObject Heap::createComplex(double real, double imag) {

@@ -292,7 +292,8 @@ subfloat_foo = subfloat.foo
   ASSERT_FALSE(subfloat->isFloat());
   ASSERT_TRUE(runtime.isInstanceOfFloat(*subfloat));
 
-  Object float_value(&scope, UserFloatBase::cast(*subfloat)->floatValue());
+  UserFloatBase user_float(&scope, *subfloat);
+  Object float_value(&scope, user_float->floatValue());
   ASSERT_TRUE(float_value->isFloat());
   EXPECT_EQ(Float::cast(float_value)->value(), 1.5);
 

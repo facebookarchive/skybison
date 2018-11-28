@@ -431,32 +431,4 @@ RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
   return tail2;
 }
 
-RawType RawType::cast(RawObject object) {
-  DCHECK(object->isType() ||
-             Thread::currentThread()->runtime()->isInstanceOfType(object),
-         "invalid cast, expected class");
-  return bit_cast<RawType>(object);
-}
-
-RawList RawList::cast(RawObject object) {
-  DCHECK(object->isList() ||
-             Thread::currentThread()->runtime()->isInstanceOfList(object),
-         "invalid cast, expected list");
-  return bit_cast<RawList>(object);
-}
-
-RawSet RawSet::cast(RawObject object) {
-  DCHECK(object->isSet() ||
-             Thread::currentThread()->runtime()->isInstanceOfSet(object),
-         "invalid cast, expected set");
-  return bit_cast<RawSet>(object);
-}
-
-RawUserFloatBase RawUserFloatBase::cast(RawObject object) {
-  DCHECK(!object->isFloat() &&
-             Thread::currentThread()->runtime()->isInstanceOfFloat(object),
-         "invalid cast, expected userfloat");
-  return bit_cast<RawUserFloatBase>(object);
-}
-
 }  // namespace python

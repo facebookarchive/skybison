@@ -37,7 +37,7 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
     return thread->raiseTypeErrorWithCStr(
         "'__init__' requires a 'BaseException' object");
   }
-  UncheckedHandle<RawBaseException> self(&scope, args.get(0));
+  BaseException self(&scope, args.get(0));
   Tuple tuple(&scope, thread->runtime()->newTuple(nargs - 1));
   for (word i = 1; i < nargs; i++) {
     tuple->atPut(i - 1, args.get(i));
@@ -73,7 +73,7 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
     return thread->raiseTypeErrorWithCStr(
         "'__init__' requires a 'StopIteration' object");
   }
-  UncheckedHandle<RawStopIteration> self(&scope, args.get(0));
+  StopIteration self(&scope, args.get(0));
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
   if (result->isError()) {
     return result;
@@ -112,7 +112,7 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
     return thread->raiseTypeErrorWithCStr(
         "'__init__' requires a 'SystemExit' object");
   }
-  UncheckedHandle<RawSystemExit> self(&scope, args.get(0));
+  SystemExit self(&scope, args.get(0));
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
   if (result->isError()) {
     return result;

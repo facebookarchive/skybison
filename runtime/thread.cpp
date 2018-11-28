@@ -15,11 +15,22 @@
 
 namespace python {
 
+Handles::Handles() { scopes_.reserve(kInitialSize); }
+
+void Handles::visitPointers(PointerVisitor* visitor) {
+  for (auto const& scope : scopes_) {
+    Handle<RawObject>* handle = scope->list();
+    while (handle != nullptr) {
+      visitor->visitPointer(handle->pointer());
+      handle = handle->next();
+    }
+  }
+}
+
 thread_local Thread* Thread::current_thread_ = nullptr;
 
 Thread::Thread(word size)
-    : handles_(new Handles()),
-      size_(Utils::roundUp(size, kPointerSize)),
+    : size_(Utils::roundUp(size, kPointerSize)),
       initialFrame_(nullptr),
       next_(nullptr),
       runtime_(nullptr),
@@ -32,10 +43,7 @@ Thread::Thread(word size)
   pushInitialFrame();
 }
 
-Thread::~Thread() {
-  delete handles_;
-  delete[] start_;
-}
+Thread::~Thread() { delete[] start_; }
 
 void Thread::visitRoots(PointerVisitor* visitor) {
   visitStackRoots(visitor);

@@ -778,9 +778,6 @@ class RawType : public RawHeapObject {
 
   bool isIntrinsicOrExtension();
 
-  // Casting.
-  static RawType cast(RawObject object);
-
   // Layout.
   static const int kMroOffset = RawHeapObject::kSize;
   static const int kInstanceLayoutOffset = kMroOffset + kPointerSize;
@@ -792,7 +789,7 @@ class RawType : public RawHeapObject {
 
   static const int kBuiltinBaseMask = 0xff;
 
-  RAW_OBJECT_COMMON_NO_CAST(Type);
+  RAW_OBJECT_COMMON(Type);
 
  private:
   void setFlags(Flag value);
@@ -937,9 +934,6 @@ class RawUserFloatBase : public RawHeapObject {
   // Getters and setters.
   RawObject floatValue();
   void setFloatValue(RawObject value);
-
-  // Casting.
-  static RawUserFloatBase cast(RawObject object);
 
   // RawLayout.
   static const int kFloatOffset = RawHeapObject::kSize;
@@ -1591,15 +1585,12 @@ class RawSet : public RawHeapObject {
   word numItems();
   void setNumItems(word num_items);
 
-  // Casting.
-  static RawSet cast(RawObject object);
-
   // Layout.
   static const int kNumItemsOffset = RawHeapObject::kSize;
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kDataOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON_NO_CAST(Set);
+  RAW_OBJECT_COMMON(Set);
 };
 
 // Helper class for manipulating buckets in the RawTuple that backs the
@@ -1680,15 +1671,12 @@ class RawList : public RawHeapObject {
   // list
   word capacity();
 
-  // Casting.
-  static RawList cast(RawObject object);
-
   // Layout.
   static const int kItemsOffset = RawHeapObject::kSize;
   static const int kAllocatedOffset = kItemsOffset + kPointerSize;
   static const int kSize = kAllocatedOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON_NO_CAST(List);
+  RAW_OBJECT_COMMON(List);
 };
 
 class RawValueCell : public RawHeapObject {
