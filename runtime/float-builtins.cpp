@@ -239,7 +239,7 @@ RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   // Handle subclasses
-  if (!type->isIntrinsicOrExtension()) {
+  if (!type->isBuiltin()) {
     Layout type_layout(&scope, type->instanceLayout());
     UserFloatBase instance(&scope, runtime->newInstance(type_layout));
     instance->setFloatValue(floatFromObject(thread, frame, nargs));

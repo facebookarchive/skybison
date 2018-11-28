@@ -776,7 +776,7 @@ class RawType : public RawHeapObject {
   RawObject extensionType();
   void setExtensionType(RawObject pytype);
 
-  bool isIntrinsicOrExtension();
+  bool isBuiltin();
 
   // Layout.
   static const int kMroOffset = RawHeapObject::kSize;
@@ -2767,7 +2767,7 @@ inline void RawType::setExtensionType(RawObject pytype) {
   instanceVariableAtPut(kExtensionTypeOffset, pytype);
 }
 
-inline bool RawType::isIntrinsicOrExtension() {
+inline bool RawType::isBuiltin() {
   return RawLayout::cast(instanceLayout())->id() <= LayoutId::kLastBuiltinId;
 }
 

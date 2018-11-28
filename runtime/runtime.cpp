@@ -341,7 +341,7 @@ RawObject Runtime::classSetAttr(Thread* thread, const Object& receiver,
   DCHECK(name->isStr(), "Name is not a string");
   HandleScope scope(thread);
   Type type(&scope, *receiver);
-  if (type->isIntrinsicOrExtension()) {
+  if (type->isBuiltin()) {
     // TODO(T25140871): Refactor this into something that includes the type name
     // like:
     //     thread->throwImmutableTypeManipulationError(type)
@@ -377,7 +377,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   HandleScope scope(thread);
   Type type(&scope, *receiver);
   // TODO(mpage): This needs to handle built-in extension types.
-  if (type->isIntrinsicOrExtension()) {
+  if (type->isBuiltin()) {
     // TODO(T25140871): Refactor this into something that includes the type name
     // like:
     //     thread->throwImmutableTypeManipulationError(type)
@@ -3493,7 +3493,7 @@ RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
          "type's layout should not be set at this point");
   for (word i = 1; i < mro->length(); i++) {
     Type mro_type(&scope, mro->at(i));
-    if (!mro_type->isIntrinsicOrExtension()) {
+    if (!mro_type->isBuiltin()) {
       continue;
     }
     if (*candidate == *object_type) {
