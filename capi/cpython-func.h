@@ -923,6 +923,10 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
   PyUnicode_READ_CHAR_Func((PyObject*)op, index)
 #define PyUnicode_READY(op) 0
 
+#define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
+#define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define Py_ABS(x) ((x) < 0 ? -(x) : (x))
+
 #define Py_DECREF(op) Py_DECREF_Func((PyObject*)op)
 #define Py_INCREF(op) Py_INCREF_Func((PyObject*)op)
 #define Py_REFCNT(op) Py_REFCNT_Func((PyObject*)op)
@@ -955,6 +959,8 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
 #define Py_ISXDIGIT(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_XDIGIT)
 #define Py_TOLOWER(c) (_Py_ctype_tolower[Py_CHARMASK(c)])
 #define Py_TOUPPER(c) (_Py_ctype_toupper[Py_CHARMASK(c)])
+
+#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 
 #ifdef __cplusplus
 }

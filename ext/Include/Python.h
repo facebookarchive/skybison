@@ -48,8 +48,8 @@
 #include <assert.h>
 
 #include "cpython-types.h"
-#include "pyport.h"
 #include "cpython-data.h"
+#include "pyport.h"
 #include "cpython-func.h"
 #include "pymacro.h"
 

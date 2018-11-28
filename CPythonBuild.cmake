@@ -42,7 +42,6 @@ set(
 	CPYTHON_SOURCES
 	${CPYTHON_SOURCES}
   "${CPYTHON_DIR}/Python/pyctype.c"
-  "${CPYTHON_DIR}/Python/getargs.c"
   "${CPYTHON_DIR}/Modules/_asynciomodule.c"
   "${CPYTHON_DIR}/Modules/_bisectmodule.c"
   "${CPYTHON_DIR}/Modules/_blake2/blake2b_impl.c"

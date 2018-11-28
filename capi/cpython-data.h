@@ -112,6 +112,11 @@ extern const unsigned int _Py_ctype_table[256];
 extern const unsigned char _Py_ctype_tolower[256];
 extern const unsigned char _Py_ctype_toupper[256];
 
+#define Py_CLEANUP_SUPPORTED 0x20000
+
+/* Define to printf format modifier for Py_ssize_t */
+#define PY_FORMAT_SIZE_T "z"
+
 /* Flags for getting buffers */
 #define PyBUF_SIMPLE 0
 #define PyBUF_WRITABLE 0x0001
