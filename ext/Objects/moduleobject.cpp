@@ -130,8 +130,27 @@ PY_EXPORT const char* PyModule_GetFilename(PyObject* /* m */) {
   UNIMPLEMENTED("PyModule_GetFilename");
 }
 
-PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* /* m */) {
-  UNIMPLEMENTED("PyModule_GetFilenameObject");
+PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
+  if (!module_obj->isModule()) {
+    // TODO(atalaba): Allow for module subclassing
+    // TODO(T36797384): Replace with PyErr_BadArgument
+    thread->raiseTypeErrorWithCStr(
+        "PyModule_GetFilenameObject takes a Module object");
+    return nullptr;
+  }
+  Module module(&scope, *module_obj);
+  Str key(&scope, runtime->symbols()->DunderFile());
+  Object filename(&scope, runtime->moduleAt(module, key));
+  if (!runtime->isInstanceOfStr(filename)) {
+    thread->raiseSystemErrorWithCStr("module filename missing");
+    return nullptr;
+  }
+  return ApiHandle::fromObject(filename);
 }
 
 PY_EXPORT const char* PyModule_GetName(PyObject* /* m */) {

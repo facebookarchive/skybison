@@ -32,6 +32,7 @@ class Runtime;
   V(DunderEnter, "__enter__")                                                  \
   V(DunderEq, "__eq__")                                                        \
   V(DunderExit, "__exit__")                                                    \
+  V(DunderFile, "__file__")                                                    \
   V(DunderFloat, "__float__")                                                  \
   V(DunderFloordiv, "__floordiv__")                                            \
   V(DunderGe, "__ge__")                                                        \

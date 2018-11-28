@@ -309,4 +309,56 @@ TEST_F(ModuleExtensionApiTest, GetNameObjectFailsIfNotString) {
   Py_DECREF(module);
   Py_DECREF(not_a_module);
 }
+
+TEST_F(ModuleExtensionApiTest, GetFilenameObjectReturnsFilename) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+
+  const char* filename = "file";
+  PyModule_AddObject(module, "__file__", PyUnicode_FromString(filename));
+  testing::PyObjectPtr result(PyModule_GetFilenameObject(module));
+
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyUnicode_Check(result));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(result, filename));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, GetFilenameObjectFailsIfNotModule) {
+  testing::PyObjectPtr not_a_module(PyLong_FromLong(1));
+  testing::PyObjectPtr result(PyModule_GetFilenameObject(not_a_module));
+  EXPECT_EQ(result, nullptr);
+
+  const char* expected_message =
+      "PyModule_GetFilenameObject takes a Module object";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(ModuleExtensionApiTest, GetFilenameObjectFailsIfFilenameNotString) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+
+  PyObject* module = PyModule_Create(&def);
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  testing::PyObjectPtr not_a_string(PyLong_FromLong(1));
+
+  PyModule_AddObject(module, "__file__", not_a_string);
+  testing::PyObjectPtr result(PyModule_GetFilenameObject(module));
+  EXPECT_EQ(result, nullptr);
+
+  const char* expected_message = "module filename missing";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
 }  // namespace python
