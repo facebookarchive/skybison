@@ -6,6 +6,8 @@
 
 namespace python {
 
+template <typename>
+class Handle;
 class Frame;
 class FrameVisitor;
 class HandleScope;
@@ -52,24 +54,28 @@ class Thread {
 
   Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
   Frame* linkFrame(Frame* frame);
-  Frame* pushFrame(RawObject code);
+  Frame* pushFrame(const Handle<RawCode>& code);
   Frame* pushNativeFrame(void* fn, word nargs);
-  Frame* pushModuleFunctionFrame(RawModule module, RawObject code);
-  Frame* pushClassFunctionFrame(RawObject function, RawObject dict);
+  Frame* pushModuleFunctionFrame(const Handle<RawModule>& module,
+                                 const Handle<RawCode>& code);
+  Frame* pushClassFunctionFrame(const Handle<RawFunction>& function,
+                                const Handle<RawDict>& dict);
   void checkStackOverflow(word max_size);
 
   void popFrame();
 
   // Runs a code object on the current thread.  Assumes that the initial frame
   // is at the top of the stack.
-  RawObject run(RawObject code);
+  RawObject run(const Handle<RawCode>& code);
 
   // Runs a module body function on the current thread.  Assumes that the
   // initial frame is at the top of the stack.
-  RawObject runModuleFunction(RawModule module, RawObject object);
+  RawObject runModuleFunction(const Handle<RawModule>& module,
+                              const Handle<RawCode>& code);
 
   // Runs a class body function on the current thread.
-  RawObject runClassFunction(RawObject function, RawObject dict);
+  RawObject runClassFunction(const Handle<RawFunction>& function,
+                             const Handle<RawDict>& dict);
 
   Thread* next() { return next_; }
 

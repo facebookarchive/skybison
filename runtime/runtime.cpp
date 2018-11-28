@@ -1411,7 +1411,7 @@ RawObject Runtime::executeModule(const char* buffer, const Module& module) {
   Code code(&scope, reader.readObject());
   DCHECK(code->argcount() == 0, "invalid argcount %ld", code->argcount());
 
-  return Thread::currentThread()->runModuleFunction(*module, *code);
+  return Thread::currentThread()->runModuleFunction(module, code);
 }
 
 extern "C" struct _inittab _PyImport_Inittab[];

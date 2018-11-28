@@ -14,7 +14,7 @@ namespace python {
 static Frame* pushCallee(Thread* thread, const Function& function,
                          Frame* caller, const Code& code) {
   // Set up the new frame
-  Frame* callee_frame = thread->pushFrame(*code);
+  Frame* callee_frame = thread->pushFrame(code);
 
   // Initialize it
   callee_frame->setGlobals(function->globals());

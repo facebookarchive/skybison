@@ -119,19 +119,16 @@ Frame* Thread::pushNativeFrame(void* fn, word nargs) {
   return frame;
 }
 
-Frame* Thread::pushFrame(RawObject object) {
-  HandleScope scope(this);
-  Code code(&scope, object);
-  auto frame =
+Frame* Thread::pushFrame(const Code& code) {
+  Frame* frame =
       openAndLinkFrame(code->totalArgs(), code->totalVars(), code->stacksize());
   frame->setCode(*code);
   return frame;
 }
 
-Frame* Thread::pushModuleFunctionFrame(RawModule module, RawObject object) {
-  HandleScope scope;
-  Frame* result = pushFrame(object);
-  Code code(&scope, object);
+Frame* Thread::pushModuleFunctionFrame(const Module& module, const Code& code) {
+  HandleScope scope(this);
+  Frame* result = pushFrame(code);
   Dict globals(&scope, module->dict());
   Object name(&scope, runtime()->symbols()->Builtins());
   Dict builtins(&scope, RawModule::cast(runtime()->findModule(name))->dict());
@@ -143,10 +140,11 @@ Frame* Thread::pushModuleFunctionFrame(RawModule module, RawObject object) {
   return result;
 }
 
-Frame* Thread::pushClassFunctionFrame(RawObject function, RawObject dict) {
-  HandleScope scope;
+Frame* Thread::pushClassFunctionFrame(const Function& function,
+                                      const Dict& dict) {
+  HandleScope scope(this);
   Code code(&scope, RawFunction::cast(function)->code());
-  Frame* result = pushFrame(*code);
+  Frame* result = pushFrame(code);
   Dict globals(&scope, RawFunction::cast(function)->globals());
   Object name(&scope, runtime()->symbols()->Builtins());
   Dict builtins(&scope, RawModule::cast(runtime()->findModule(name))->dict());
@@ -195,19 +193,19 @@ void Thread::popFrame() {
   currentFrame_ = frame->previousFrame();
 }
 
-RawObject Thread::run(RawObject code) {
+RawObject Thread::run(const Code& code) {
   DCHECK(currentFrame_ == initialFrame_, "thread must be inactive");
   Frame* frame = pushFrame(code);
   return Interpreter::execute(this, frame);
 }
 
-RawObject Thread::runModuleFunction(RawModule module, RawObject object) {
+RawObject Thread::runModuleFunction(const Module& module, const Code& code) {
   DCHECK(currentFrame_ == initialFrame_, "thread must be inactive");
-  Frame* frame = pushModuleFunctionFrame(module, object);
+  Frame* frame = pushModuleFunctionFrame(module, code);
   return Interpreter::execute(this, frame);
 }
 
-RawObject Thread::runClassFunction(RawObject function, RawObject dict) {
+RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
   Frame* frame = pushClassFunctionFrame(function, dict);
   return Interpreter::execute(this, frame);
 }

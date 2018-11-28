@@ -664,7 +664,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
   code->setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(*code);
+  RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(result)->value(), 1111);
 }
@@ -711,7 +711,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   code->setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(*code);
+  RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isTuple());
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 2);
@@ -769,7 +769,7 @@ TEST(TrampolineTest,
   code->setStacksize(5);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(*code);
+  RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isTuple());
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple->length(), 3);

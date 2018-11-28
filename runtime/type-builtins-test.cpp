@@ -75,7 +75,7 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   Code code(&scope, runtime.newCode());
   code->setArgcount(1);
   Thread* thread = Thread::currentThread();
-  Frame* frame = thread->pushFrame(*code);
+  Frame* frame = thread->pushFrame(code);
   frame->pushValue(runtime.newStrFromCStr("not_a_cls"));
   RawObject result = builtinTypeCall(thread, frame, 1);
   ASSERT_TRUE(result->isError());

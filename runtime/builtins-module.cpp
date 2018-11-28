@@ -47,7 +47,7 @@ RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   // backtraces to work correctly.  The key to doing that would be to put some
   // state on the stack in between the the incoming arguments from the builtin'
   // caller and the on-stack state for the class body function call.
-  thread->runClassFunction(*body, *dict);
+  thread->runClassFunction(body, dict);
 
   Type type(&scope, runtime->typeAt(LayoutId::kType));
   Function dunder_call(
@@ -113,13 +113,13 @@ RawObject builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   // backtraces to work correctly.  The key to doing that would be to put some
   // state on the stack in between the the incoming arguments from the builtin'
   // caller and the on-stack state for the class body function call.
-  thread->runClassFunction(*body, *dict_obj);
+  Dict dict(&scope, *dict_obj);
+  thread->runClassFunction(body, dict);
 
   // A bootstrap class initialization is complete at this point.  Add a type
   // name to the type dictionary and return the initialized type object.
   if (*bootstrap == Bool::trueObj()) {
     Object key(&scope, runtime->symbols()->DunderName());
-    Dict dict(&scope, *dict_obj);
     runtime->dictAtPutInValueCell(dict, key, name);
     return *type_obj;
   }
