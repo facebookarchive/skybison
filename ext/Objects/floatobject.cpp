@@ -1,5 +1,7 @@
 // floatobject.c implementation
 
+#include <cfloat>
+
 #include "objects.h"
 #include "runtime.h"
 
@@ -72,8 +74,8 @@ PY_EXPORT PyObject* PyFloat_FromString(PyObject* /* v */) {
 
 PY_EXPORT PyObject* PyFloat_GetInfo() { UNIMPLEMENTED("PyFloat_GetInfo"); }
 
-PY_EXPORT double PyFloat_GetMax() { UNIMPLEMENTED("PyFloat_GetMax"); }
+PY_EXPORT double PyFloat_GetMax() {  return DBL_MAX; }
 
-PY_EXPORT double PyFloat_GetMin() { UNIMPLEMENTED("PyFloat_GetMin"); }
+PY_EXPORT double PyFloat_GetMin() {  return DBL_MIN; }
 
 }  // namespace python

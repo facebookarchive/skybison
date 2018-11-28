@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <cfloat>
+
 #include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
@@ -73,6 +75,14 @@ subfloat_foo = subfloat.foo
 
 TEST_F(FloatExtensionApiTest, ClearFreeListReturnsZero) {
   EXPECT_EQ(PyFloat_ClearFreeList(), 0);
+}
+
+TEST_F(FloatExtensionApiTest, GetMaxReturnsDblMax) {
+  EXPECT_EQ(PyFloat_GetMax(), DBL_MAX);
+}
+
+TEST_F(FloatExtensionApiTest, GetMinReturnsDblMin) {
+  EXPECT_EQ(PyFloat_GetMin(), DBL_MIN);
 }
 
 }  // namespace python
