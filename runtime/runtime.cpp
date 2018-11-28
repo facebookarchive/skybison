@@ -669,7 +669,7 @@ RawObject Runtime::newCoroutine() { return heap()->create<RawCoroutine>(); }
 RawObject Runtime::newGenerator() { return heap()->create<RawGenerator>(); }
 
 RawObject Runtime::newHeapFrame(const Code& code) {
-  DCHECK(code->flags() & (Code::GENERATOR | Code::COROUTINE),
+  DCHECK(code->hasCoroutineOrGenerator(),
          "expected a RawGenerator/RawCoroutine code object");
 
   word num_args = code->totalArgs();

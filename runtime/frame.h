@@ -216,9 +216,6 @@ class Frame {
   // Push locals at [offset, offset + count) onto the stack
   void pushLocals(word count, word offset);
 
-  // A function lives immediately below the arguments on the value stack
-  RawFunction function(word argc);
-
   bool isSentinelFrame();
   void makeSentinel();
 
@@ -530,10 +527,6 @@ inline RawObject Frame::peek(word offset) {
   DCHECK(valueStackTop() + offset < valueStackBase(), "offset %ld overflows",
          offset);
   return *(valueStackTop() + offset);
-}
-
-inline RawFunction Frame::function(word argc) {
-  return RawFunction::cast(peek(argc));
 }
 
 inline bool Frame::isSentinelFrame() { return previousFrame() == nullptr; }

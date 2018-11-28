@@ -1244,6 +1244,30 @@ class RawCode : public RawHeapObject {
   RawObject varnames();
   void setVarnames(RawObject value);
 
+  // Returns true if the code is for a coroutine.
+  bool hasCoroutine();
+
+  // Returns true if the code is for a generator function.
+  bool hasGenerator();
+
+  // Returns true if the code is for an iterable coroutine.
+  bool hasIterableCoroutine();
+
+  // Returns true if the code is for a coroutine or a generator function.
+  bool hasCoroutineOrGenerator();
+
+  // Returns true if the code has free variables or cell variables.
+  bool hasFreevarsOrCellvars();
+
+  // Returns true if the code has varargs.
+  bool hasVarargs();
+
+  // Returns true if the code has varkeyword arguments.
+  bool hasVarkeyargs();
+
+  // Returns true if the code has varargs or varkeyword arguments.
+  bool hasVarargsOrVarkeyargs();
+
   // Layout.
   static const int kArgcountOffset = RawHeapObject::kSize;
   static const int kKwonlyargcountOffset = kArgcountOffset + kPointerSize;
@@ -3011,6 +3035,28 @@ inline RawObject RawCode::varnames() {
 
 inline void RawCode::setVarnames(RawObject value) {
   instanceVariableAtPut(kVarnamesOffset, value);
+}
+
+inline bool RawCode::hasCoroutine() { return (flags() & COROUTINE) != 0; }
+
+inline bool RawCode::hasCoroutineOrGenerator() {
+  return hasCoroutine() || hasGenerator();
+}
+
+inline bool RawCode::hasFreevarsOrCellvars() { return (flags() & NOFREE) == 0; }
+
+inline bool RawCode::hasGenerator() { return (flags() & GENERATOR) != 0; }
+
+inline bool RawCode::hasIterableCoroutine() {
+  return (flags() & ITERABLE_COROUTINE) != 0;
+}
+
+inline bool RawCode::hasVarargs() { return (flags() & VARARGS) != 0; }
+
+inline bool RawCode::hasVarkeyargs() { return (flags() & VARKEYARGS) != 0; }
+
+inline bool RawCode::hasVarargsOrVarkeyargs() {
+  return hasVarargs() || hasVarkeyargs();
 }
 
 // RawLargeInt

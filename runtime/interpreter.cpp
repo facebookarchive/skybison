@@ -876,8 +876,7 @@ void Interpreter::doGetYieldFromIter(Context* ctx, word) {
 
   if (iterable->isCoroutine()) {
     Code code(&scope, frame->code());
-    if (code->flags() &
-        (Code::Flags::COROUTINE | Code::Flags::ITERABLE_COROUTINE)) {
+    if (code->hasCoroutine() || code->hasIterableCoroutine()) {
       thread->raiseTypeErrorWithCStr(
           "cannot 'yield from' a coroutine object in a non-coroutine "
           "generator");
@@ -1654,9 +1653,27 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   }
   function->setFastGlobals(
       runtime->computeFastGlobals(code, globals, builtins));
-  function->setEntry(interpreterTrampoline);
-  function->setEntryKw(interpreterTrampolineKw);
-  function->setEntryEx(interpreterTrampolineEx);
+  if (code->hasCoroutineOrGenerator()) {
+    if (code->hasFreevarsOrCellvars()) {
+      function->setEntry(generatorClosureTrampoline);
+      function->setEntryKw(generatorClosureTrampolineKw);
+      function->setEntryEx(generatorClosureTrampolineEx);
+    } else {
+      function->setEntry(generatorTrampoline);
+      function->setEntryKw(generatorTrampolineKw);
+      function->setEntryEx(generatorTrampolineEx);
+    }
+  } else {
+    if (code->hasFreevarsOrCellvars()) {
+      function->setEntry(interpreterClosureTrampoline);
+      function->setEntryKw(interpreterClosureTrampolineKw);
+      function->setEntryEx(interpreterClosureTrampolineEx);
+    } else {
+      function->setEntry(interpreterTrampoline);
+      function->setEntryKw(interpreterTrampolineKw);
+      function->setEntryEx(interpreterTrampolineEx);
+    }
+  }
   if (arg & MakeFunctionFlag::CLOSURE) {
     DCHECK((frame->topValue())->isTuple(), "Closure expects tuple");
     function->setClosure(frame->popValue());
@@ -1998,7 +2015,7 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
         RawObject result = ctx.frame->popValue();
         // Clean up after ourselves
         thread->popFrame();
-        if (code->flags() & Code::GENERATOR) {
+        if (code->hasGenerator()) {
           return thread->raiseStopIteration(result);
         }
         return result;

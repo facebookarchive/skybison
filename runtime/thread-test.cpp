@@ -1020,6 +1020,7 @@ TEST(ThreadTest, MakeFunction) {
                      STORE_NAME, 0, LOAD_CONST, 2, RETURN_VALUE,  0};
   module->setCode(runtime.newBytesWithAll(bc));
   code->setCode(runtime.newBytesWithAll(bc));
+  code->setFlags(Code::Flags::NOFREE);
   code->setNames(*names);
 
   Thread* thread = Thread::currentThread();
