@@ -222,29 +222,30 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout4, attr3, &info));
 }
 
+static RawObject createLayoutAttribute(Runtime* runtime, const Object& name,
+                                       uword flags) {
+  HandleScope scope;
+  Tuple entry(&scope, runtime->newTuple(2));
+  entry->atPut(0, *name);
+  entry->atPut(1, AttributeInfo(0, flags).asSmallInt());
+  Tuple result(&scope, runtime->newTuple(1));
+  result->atPut(0, *entry);
+  return *result;
+}
+
 TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
   Runtime runtime;
-  HandleScope scope;
   Thread* thread = Thread::currentThread();
-
-  auto create_attrs = [&runtime](const Object& name, uword flags) {
-    HandleScope scope;
-    Tuple entry(&scope, runtime.newTuple(2));
-    entry->atPut(0, *name);
-    entry->atPut(1, AttributeInfo(0, flags).asSmallInt());
-    Tuple result(&scope, runtime.newTuple(1));
-    result->atPut(0, *entry);
-    return *result;
-  };
+  HandleScope scope(thread);
 
   // Create a new layout with one overflow attribute and one in-object
   // attribute
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
   Object inobject(&scope, runtime.newStrFromCStr("inobject"));
-  layout->setInObjectAttributes(
-      create_attrs(inobject, AttributeInfo::Flag::kInObject));
+  layout->setInObjectAttributes(createLayoutAttribute(
+      &runtime, inobject, AttributeInfo::Flag::kInObject));
   Object overflow(&scope, runtime.newStrFromCStr("overflow"));
-  layout->setOverflowAttributes(create_attrs(overflow, 0));
+  layout->setOverflowAttributes(createLayoutAttribute(&runtime, overflow, 0));
 
   // Delete the in-object attribute and add it back. It should be re-added as
   // an overflow attribute.

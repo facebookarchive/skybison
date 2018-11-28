@@ -1409,8 +1409,8 @@ static int vgetargskeywords(PyObject* args, PyObject* keywords,
   // make sure there are no extraneous keyword arguments
   if (nkeywords > 0) {
     PyObject *key, *value;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(keywords, &pos, &key, &value)) {
+    Py_ssize_t iter_pos = 0;
+    while (PyDict_Next(keywords, &iter_pos, &key, &value)) {
       int match = 0;
       if (!PyUnicode_Check(key)) {
         PyErr_SetString(PyExc_TypeError, "keywords must be strings");

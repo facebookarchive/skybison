@@ -1302,17 +1302,17 @@ class RawFunction : public RawHeapObject {
   // Returns the entry to be used when the function is invoked via
   // CALL_FUNCTION
   Entry entry();
-  void setEntry(Entry entry);
+  void setEntry(Entry thunk);
 
   // Returns the entry to be used when the function is invoked via
   // CALL_FUNCTION_KW
   Entry entryKw();
-  void setEntryKw(Entry entry_kw);
+  void setEntryKw(Entry thunk);
 
   // Returns the entry to be used when the function is invoked via
   // CALL_FUNCTION_EX
   inline Entry entryEx();
-  inline void setEntryEx(Entry entry_ex);
+  inline void setEntryEx(Entry thunk);
 
   // The dict that holds this function's global namespace. User-code
   // cannot change this
@@ -3285,8 +3285,8 @@ inline RawFunction::Entry RawFunction::entry() {
   return bit_cast<RawFunction::Entry>(object);
 }
 
-inline void RawFunction::setEntry(RawFunction::Entry entry) {
-  auto object = RawSmallInt::fromFunctionPointer(entry);
+inline void RawFunction::setEntry(RawFunction::Entry thunk) {
+  auto object = RawSmallInt::fromFunctionPointer(thunk);
   instanceVariableAtPut(kEntryOffset, object);
 }
 
@@ -3296,8 +3296,8 @@ inline RawFunction::Entry RawFunction::entryKw() {
   return bit_cast<RawFunction::Entry>(object);
 }
 
-inline void RawFunction::setEntryKw(RawFunction::Entry entry_kw) {
-  auto object = RawSmallInt::fromFunctionPointer(entry_kw);
+inline void RawFunction::setEntryKw(RawFunction::Entry thunk) {
+  auto object = RawSmallInt::fromFunctionPointer(thunk);
   instanceVariableAtPut(kEntryKwOffset, object);
 }
 
@@ -3307,8 +3307,8 @@ RawFunction::Entry RawFunction::entryEx() {
   return bit_cast<RawFunction::Entry>(object);
 }
 
-void RawFunction::setEntryEx(RawFunction::Entry entry_ex) {
-  auto object = RawSmallInt::fromFunctionPointer(entry_ex);
+void RawFunction::setEntryEx(RawFunction::Entry thunk) {
+  auto object = RawSmallInt::fromFunctionPointer(thunk);
   instanceVariableAtPut(kEntryExOffset, object);
 }
 

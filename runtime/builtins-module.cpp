@@ -323,13 +323,13 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
       *ostream << "[";
       HandleScope scope;
       List list(&scope, arg);
-      for (word i = 0; i < list->numItems(); i++) {
-        if (supportedScalarType(list->at(i))) {
-          printQuotedScalarTypes(list->at(i), ostream);
+      for (word j = 0; j < list->numItems(); j++) {
+        if (supportedScalarType(list->at(j))) {
+          printQuotedScalarTypes(list->at(j), ostream);
         } else {
           UNIMPLEMENTED("Custom print unsupported");
         }
-        if (i != list->numItems() - 1) {
+        if (j != list->numItems() - 1) {
           *ostream << ", ";
         }
       }
@@ -338,13 +338,13 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
       *ostream << "(";
       HandleScope scope;
       Tuple array(&scope, arg);
-      for (word i = 0; i < array->length(); i++) {
-        if (supportedScalarType(array->at(i))) {
-          printScalarTypes(array->at(i), ostream);
+      for (word j = 0; j < array->length(); j++) {
+        if (supportedScalarType(array->at(j))) {
+          printScalarTypes(array->at(j), ostream);
         } else {
           UNIMPLEMENTED("Custom print unsupported");
         }
-        if (i != array->length() - 1) {
+        if (j != array->length() - 1) {
           *ostream << ", ";
         }
       }
@@ -355,10 +355,10 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
       Dict dict(&scope, arg);
       Tuple data(&scope, dict->data());
       word items = dict->numItems();
-      for (word i = 0; i < data->length(); i += 3) {
-        if (!data->at(i)->isNoneType()) {
-          Object key(&scope, Dict::Bucket::key(*data, i));
-          Object value(&scope, Dict::Bucket::value(*data, i));
+      for (word j = 0; j < data->length(); j += 3) {
+        if (!data->at(j)->isNoneType()) {
+          Object key(&scope, Dict::Bucket::key(*data, j));
+          Object value(&scope, Dict::Bucket::value(*data, j));
           if (supportedScalarType(*key)) {
             printQuotedScalarTypes(*key, ostream);
           } else {

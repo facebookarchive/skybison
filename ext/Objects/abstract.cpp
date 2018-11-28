@@ -85,7 +85,6 @@ static RawObject doBinaryOpImpl(Thread* thread, Interpreter::BinaryOp op,
       &scope,
       Interpreter::lookupMethod(thread, caller, right, swapped_selector));
 
-  Object result(&scope, Error::object());
   bool try_other = true;
   if (!left_method->isError()) {
     if (runtime->shouldReverseBinaryOperation(
