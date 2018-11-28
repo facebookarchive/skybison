@@ -202,4 +202,61 @@ TEST_F(GetArgsExtensionApiTest, OldStyleParseWithInt) {
   EXPECT_EQ(n, 666);
 }
 
+TEST_F(GetArgsExtensionApiTest, ParseTupleAndKeywordsParseFromDict) {
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr key(PyUnicode_FromString("first"));
+  PyObjectPtr value(PyLong_FromLong(42));
+  ASSERT_EQ(PyDict_SetItem(kwargs, key, value), 0);
+
+  const char* kwnames[] = {"first", nullptr};
+  int out = -1;
+  EXPECT_TRUE(PyArg_ParseTupleAndKeywords(args, kwargs, "i",
+                                          const_cast<char**>(kwnames), &out));
+  EXPECT_EQ(out, 42);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleAndKeywordsParseFromTuple) {
+  PyObjectPtr args(PyTuple_New(1));
+  ASSERT_NE(-1, PyTuple_SetItem(args, 0, PyLong_FromLong(43)));
+  PyObjectPtr kwargs(PyDict_New());
+
+  const char* kwnames[] = {"first", nullptr};
+  int out = -1;
+  EXPECT_TRUE(PyArg_ParseTupleAndKeywords(args, kwargs, "i",
+                                          const_cast<char**>(kwnames), &out));
+  EXPECT_EQ(out, 43);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleAndKeywordsParseFromTupleAndDict) {
+  PyObjectPtr args(PyTuple_New(1));
+  ASSERT_NE(-1, PyTuple_SetItem(args, 0, PyLong_FromLong(44)));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr key(PyUnicode_FromString("second"));
+  PyObjectPtr value(PyLong_FromLong(45));
+  ASSERT_EQ(PyDict_SetItem(kwargs, key, value), 0);
+
+  const char* kwnames[] = {"first", "second", nullptr};
+  int out1 = -1, out2 = -1;
+  EXPECT_TRUE(PyArg_ParseTupleAndKeywords(
+      args, kwargs, "ii", const_cast<char**>(kwnames), &out1, &out2));
+  EXPECT_EQ(out1, 44);
+  EXPECT_EQ(out2, 45);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleAndKeywordsWithOptionals) {
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr key(PyUnicode_FromString("second"));
+  PyObjectPtr value(PyLong_FromLong(42));
+  ASSERT_EQ(PyDict_SetItem(kwargs, key, value), 0);
+
+  const char* kwnames[] = {"first", "second", nullptr};
+  int out1 = -1, out2 = -1;
+  EXPECT_TRUE(PyArg_ParseTupleAndKeywords(
+      args, kwargs, "|ii", const_cast<char**>(kwnames), &out1, &out2));
+  EXPECT_EQ(out1, -1);
+  EXPECT_EQ(out2, 42);
+}
+
 }  // namespace python
