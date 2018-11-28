@@ -17,13 +17,15 @@ class DictBuiltins {
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderSetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderItems(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderKeys(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderSetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderValues(Thread* thread, Frame* frame, word nargs);
 
  private:
+  static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictBuiltins);

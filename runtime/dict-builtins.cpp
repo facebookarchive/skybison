@@ -9,6 +9,10 @@
 #include "trampolines-inl.h"
 
 namespace python {
+const BuiltinAttribute DictBuiltins::kAttributes[] = {
+    {SymbolId::kInvalid, RawDict::kNumItemsOffset},
+    {SymbolId::kInvalid, RawDict::kDataOffset},
+};
 
 const BuiltinMethod DictBuiltins::kMethods[] = {
     {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
@@ -16,18 +20,19 @@ const BuiltinMethod DictBuiltins::kMethods[] = {
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
-    {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
     {SymbolId::kDunderItems, nativeTrampoline<dunderItems>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderKeys, nativeTrampoline<dunderKeys>},
+    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
     {SymbolId::kDunderValues, nativeTrampoline<dunderValues>},
 };
 
 void DictBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type dict_type(&scope, runtime->addBuiltinTypeWithMethods(
+  Type dict_type(&scope, runtime->addBuiltinType(
                              SymbolId::kDict, LayoutId::kDict,
-                             LayoutId::kObject, kMethods));
+                             LayoutId::kObject, kAttributes, kMethods));
 }
 
 RawObject DictBuiltins::dunderContains(Thread* thread, Frame* frame,
@@ -39,12 +44,13 @@ RawObject DictBuiltins::dunderContains(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object key(&scope, args.get(1));
-  if (!self->isDict()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
     return thread->raiseTypeErrorWithCStr(
         "dict.__contains__(self): self must be a dict");
   }
   Dict dict(&scope, *self);
-  return Bool::fromBool(thread->runtime()->dictIncludes(dict, key));
+  return Bool::fromBool(runtime->dictIncludes(dict, key));
 }
 
 RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
@@ -56,18 +62,18 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object key(&scope, args.get(1));
-  if (self->isDict()) {
-    Dict dict(&scope, *self);
-    // Remove the key. If it doesn't exist, throw a KeyError.
-    if (thread->runtime()->dictRemove(dict, key)->isError()) {
-      return thread->raiseKeyErrorWithCStr("missing key can't be deleted");
-    }
-    return NoneType::object();
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__delitem__() must be called with a dict instance as the first "
+        "argument");
   }
-  // TODO(T32856777): handle user-defined subtypes of dict.
-  return thread->raiseTypeErrorWithCStr(
-      "__delitem__() must be called with a dict instance as the first "
-      "argument");
+  Dict dict(&scope, *self);
+  // Remove the key. If it doesn't exist, throw a KeyError.
+  if (runtime->dictRemove(dict, key)->isError()) {
+    return thread->raiseKeyErrorWithCStr("missing key can't be deleted");
+  }
+  return NoneType::object();
 }
 
 RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
@@ -75,10 +81,14 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  if (args.get(0)->isDict() && args.get(1)->isDict()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(args.get(0))) {
+    return thread->raiseTypeErrorWithCStr(
+        "__eq__() must be called with a dict instance as the first "
+        "argument");
+  }
+  if (runtime->isInstanceOfDict(args.get(1))) {
     HandleScope scope(thread);
-    Runtime* runtime = thread->runtime();
-
     Dict self(&scope, args.get(0));
     Dict other(&scope, args.get(1));
     if (self->numItems() != other->numItems()) {
@@ -104,7 +114,6 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     }
     return Bool::trueObj();
   }
-  // TODO(T32856777): handle user-defined subtypes of dict.
   return thread->runtime()->notImplemented();
 }
 
@@ -115,11 +124,10 @@ RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (self->isDict()) {
-    return SmallInt::fromWord(RawDict::cast(*self)->numItems());
+  if (!thread->runtime()->isInstanceOfDict(*self)) {
+    return thread->raiseTypeErrorWithCStr("'__len__' requires a 'dict' object");
   }
-  // TODO(T32856777): handle user-defined subtypes of dict.
-  return thread->raiseTypeErrorWithCStr("'__len__' requires a 'dict' object");
+  return SmallInt::fromWord(RawDict::cast(*self)->numItems());
 }
 
 RawObject DictBuiltins::dunderGetItem(Thread* thread, Frame* frame,
@@ -131,23 +139,22 @@ RawObject DictBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object key(&scope, args.get(1));
-  if (self->isDict()) {
-    Dict dict(&scope, *self);
-    Object dunder_hash(&scope, Interpreter::lookupMethod(
-                                   thread, frame, key, SymbolId::kDunderHash));
-    Object key_hash(&scope,
-                    Interpreter::callMethod1(thread, frame, dunder_hash, key));
-    Object value(&scope,
-                 thread->runtime()->dictAtWithHash(dict, key, key_hash));
-    if (value->isError()) {
-      return thread->raiseKeyErrorWithCStr("RawKeyError");
-    }
-    return *value;
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__getitem__() must be called with a dict instance as the first "
+        "argument");
   }
-  // TODO(T32856777): handle user-defined subtypes of dict.
-  return thread->raiseTypeErrorWithCStr(
-      "__getitem__() must be called with a dict instance as the first "
-      "argument");
+  Dict dict(&scope, *self);
+  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key,
+                                                       SymbolId::kDunderHash));
+  Object key_hash(&scope,
+                  Interpreter::callMethod1(thread, frame, dunder_hash, key));
+  Object value(&scope, runtime->dictAtWithHash(dict, key, key_hash));
+  if (value->isError()) {
+    return thread->raiseKeyErrorWithCStr("RawKeyError");
+  }
+  return *value;
 }
 
 RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
@@ -160,21 +167,22 @@ RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   Object self(&scope, args.get(0));
   Object key(&scope, args.get(1));
   Object value(&scope, args.get(2));
-  if (self->isDict()) {
-    Dict dict(&scope, *self);
-    Object dunder_hash(&scope, Interpreter::lookupMethod(
-                                   thread, frame, key, SymbolId::kDunderHash));
-    Object key_hash(&scope,
-                    Interpreter::callMethod1(thread, frame, dunder_hash, key));
-    if (key_hash->isError()) {
-      return *key_hash;
-    }
-    thread->runtime()->dictAtPutWithHash(dict, key, value, key_hash);
-    return NoneType::object();
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__setitem__() must be called with a dict instance as the first "
+        "argument");
   }
-  return thread->raiseTypeErrorWithCStr(
-      "__setitem__() must be called with a dict instance as the first "
-      "argument");
+  Dict dict(&scope, *self);
+  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key,
+                                                       SymbolId::kDunderHash));
+  Object key_hash(&scope,
+                  Interpreter::callMethod1(thread, frame, dunder_hash, key));
+  if (key_hash->isError()) {
+    return *key_hash;
+  }
+  runtime->dictAtPutWithHash(dict, key, value, key_hash);
+  return NoneType::object();
 }
 
 RawObject DictBuiltins::dunderItems(Thread* thread, Frame* frame, word nargs) {
@@ -184,14 +192,15 @@ RawObject DictBuiltins::dunderItems(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isDict()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
     return thread->raiseTypeErrorWithCStr(
         "__items__() must be called with a dict instance as the first "
         "argument");
   }
 
   Dict dict(&scope, *self);
-  return thread->runtime()->newDictItems(dict);
+  return runtime->newDictItems(dict);
 }
 
 RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
@@ -201,7 +210,8 @@ RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isDict()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
     return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a dict instance as the first "
         "argument");
@@ -209,7 +219,7 @@ RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
 
   Dict dict(&scope, *self);
   // .iter() on a dict returns a keys iterator
-  return thread->runtime()->newDictKeyIterator(dict);
+  return runtime->newDictKeyIterator(dict);
 }
 
 RawObject DictBuiltins::dunderKeys(Thread* thread, Frame* frame, word nargs) {
@@ -219,14 +229,15 @@ RawObject DictBuiltins::dunderKeys(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isDict()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
     return thread->raiseTypeErrorWithCStr(
         "__keys__() must be called with a dict instance as the first "
         "argument");
   }
 
   Dict dict(&scope, *self);
-  return thread->runtime()->newDictKeys(dict);
+  return runtime->newDictKeys(dict);
 }
 
 RawObject DictBuiltins::dunderValues(Thread* thread, Frame* frame, word nargs) {
@@ -236,14 +247,35 @@ RawObject DictBuiltins::dunderValues(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isDict()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
     return thread->raiseTypeErrorWithCStr(
         "__values__() must be called with a dict instance as the first "
         "argument");
   }
 
   Dict dict(&scope, *self);
-  return thread->runtime()->newDictValues(dict);
+  return runtime->newDictValues(dict);
+}
+
+RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1) {
+    return thread->raiseTypeErrorWithCStr("not enough arguments");
+  }
+  Arguments args(frame, nargs);
+  if (!args.get(0)->isType()) {
+    return thread->raiseTypeErrorWithCStr("not a type object");
+  }
+  HandleScope scope(thread);
+  Type type(&scope, args.get(0));
+  if (type->builtinBase() != LayoutId::kDict) {
+    return thread->raiseTypeErrorWithCStr("not a subtype of dict");
+  }
+  Layout layout(&scope, type->instanceLayout());
+  Dict result(&scope, thread->runtime()->newInstance(layout));
+  result->setNumItems(0);
+  result->setData(thread->runtime()->newTuple(0));
+  return *result;
 }
 
 // TODO(T35787656): Instead of re-writing everything for every class, make a

@@ -134,6 +134,50 @@ TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
   ASSERT_EQ(runtime.dictAt(dict, key), *val);
 }
 
+TEST(DictBuiltinsDeathTest, NonTypeInDunderNew) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+dict.__new__(1)
+)"),
+               "not a type object");
+}
+
+TEST(DictBuiltinsDeathTest, NonSubclassInDunderNew) {
+  Runtime runtime;
+  ASSERT_DEATH(runtime.runFromCStr(R"(
+class Foo: pass
+dict.__new__(Foo)
+)"),
+               "not a subtype of dict");
+}
+
+TEST(DictBuiltinsTest, DunderNewConstructsDict) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kDict));
+  Object result(&scope, runBuiltin(DictBuiltins::dunderNew, type));
+  ASSERT_TRUE(result->isDict());
+}
+
+TEST(DictBuiltinsTest, DunderSetItemWithDictSubclassSetsItem) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+class foo(dict):
+  pass
+d = foo()
+)");
+  Dict dict(&scope, moduleAt(&runtime, "__main__", "d"));
+  Str key(&scope, runtime.newStrFromCStr("a"));
+  Str value(&scope, runtime.newStrFromCStr("b"));
+  Object result1(&scope,
+                 runBuiltin(DictBuiltins::dunderSetItem, dict, key, value));
+  EXPECT_TRUE(result1->isNoneType());
+  Object result2(&scope, runtime.dictAt(dict, key));
+  ASSERT_TRUE(result2->isStr());
+  EXPECT_EQ(RawStr::cast(*result2), *value);
+}
+
 TEST(DictBuiltinsTest, DunderIterReturnsDictKeyIter) {
   Runtime runtime;
   HandleScope scope;
@@ -164,6 +208,15 @@ TEST(DictBuiltinsTest, DunderValuesReturnsDictValues) {
   Dict dict(&scope, runtime.newDict());
   Object values(&scope, runBuiltin(DictBuiltins::dunderValues, dict));
   ASSERT_TRUE(values->isDictValues());
+}
+
+TEST(DictBuiltinsTest, DunderEqWithNonDict) {
+  Runtime runtime;
+  HandleScope scope;
+  Dict dict(&scope, runtime.newDict());
+  Object not_a_dict(&scope, SmallInt::fromWord(5));
+  EXPECT_EQ(runBuiltin(DictBuiltins::dunderEq, dict, not_a_dict),
+            runtime.notImplemented());
 }
 
 TEST(DictItemsBuiltinsTest, DunderIterReturnsIter) {
