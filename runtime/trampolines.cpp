@@ -478,7 +478,7 @@ RawObject extensionTrampoline(Thread* thread, Frame* caller_frame, word argc) {
   Object object(&scope, caller_frame->topValue());
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   // TODO(eelizondo): Cache the None handle
-  PyObject* none = ApiHandle::fromObject(NoneType::object());
+  PyObject* none = ApiHandle::newReference(thread, NoneType::object());
 
   if (object->isType()) {
     Type type_class(&scope, *object);

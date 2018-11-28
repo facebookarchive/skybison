@@ -21,8 +21,8 @@ PY_EXPORT int PyLong_Check_Func(PyObject* obj) {
 // Converting from signed ints.
 
 PY_EXPORT PyObject* PyLong_FromLong(long ival) {
-  return ApiHandle::fromObject(
-      Thread::currentThread()->runtime()->newInt(ival));
+  Thread* thread = Thread::currentThread();
+  return ApiHandle::newReference(thread, thread->runtime()->newInt(ival));
 }
 
 PY_EXPORT PyObject* PyLong_FromLongLong(long long ival) {
@@ -40,8 +40,9 @@ PY_EXPORT PyObject* PyLong_FromSsize_t(Py_ssize_t ival) {
 PY_EXPORT PyObject* PyLong_FromUnsignedLong(unsigned long ival) {
   static_assert(sizeof(ival) <= sizeof(uword),
                 "Unsupported unsigned long type");
-  return ApiHandle::fromObject(
-      Thread::currentThread()->runtime()->newIntFromUnsigned(ival));
+  Thread* thread = Thread::currentThread();
+  return ApiHandle::newReference(thread,
+                                 thread->runtime()->newIntFromUnsigned(ival));
 }
 
 PY_EXPORT PyObject* PyLong_FromUnsignedLongLong(unsigned long long ival) {

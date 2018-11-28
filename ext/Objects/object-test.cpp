@@ -130,27 +130,29 @@ TEST_F(ObjectExtensionApiTest, RefCountDecreaseDeallocsHandle) {
 
 TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCount) {
   PyObject* o = testing::createUniqueObject();
-  EXPECT_EQ(Py_REFCNT(o), 1);
+  long refcnt = Py_REFCNT(o);
+  EXPECT_GE(Py_REFCNT(o), 1);
   Py_INCREF(o);
-  EXPECT_EQ(Py_REFCNT(o), 2);
+  EXPECT_EQ(Py_REFCNT(o), refcnt + 1);
   Py_DECREF(o);
-  EXPECT_EQ(Py_REFCNT(o), 1);
+  EXPECT_EQ(Py_REFCNT(o), refcnt);
 }
 
 TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCountWithPyObjectPtr) {
   PyObject* o = testing::createUniqueObject();
+  long refcnt = Py_REFCNT(o);
   {
     Py_INCREF(o);
-    EXPECT_EQ(Py_REFCNT(o), 2);
+    EXPECT_EQ(Py_REFCNT(o), refcnt + 1);
     testing::PyObjectPtr h(o);
   }
-  EXPECT_EQ(Py_REFCNT(o), 1);
+  EXPECT_EQ(Py_REFCNT(o), refcnt);
   {
     Py_INCREF(o);
-    EXPECT_EQ(Py_REFCNT(o), 2);
+    EXPECT_EQ(Py_REFCNT(o), refcnt + 1);
     testing::PyObjectPtr h(o);
     h = nullptr;
-    EXPECT_EQ(Py_REFCNT(o), 1);
+    EXPECT_EQ(Py_REFCNT(o), refcnt);
   }
 }
 
@@ -164,14 +166,14 @@ TEST_F(ObjectExtensionApiTest, GetAttrIncrementsReferenceCount) {
   PyObjectPtr key(PyUnicode_FromString("test"));
   PyObject* value = testing::createUniqueObject();
   ASSERT_EQ(PyObject_SetAttr(module, key, value), 0);
-  EXPECT_EQ(Py_REFCNT(value), 1);
 
+  long refcnt = Py_REFCNT(value);
   PyObject* result = PyObject_GenericGetAttr(module, key);
-  EXPECT_EQ(Py_REFCNT(result), 2);
+  EXPECT_EQ(Py_REFCNT(result), refcnt + 1);
   Py_DECREF(result);
   result = PyObject_GetAttr(module, key);
   EXPECT_EQ(result, value);
-  EXPECT_EQ(Py_REFCNT(result), 2);
+  EXPECT_EQ(Py_REFCNT(result), refcnt + 1);
   Py_DECREF(result);
   Py_DECREF(result);
 }

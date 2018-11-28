@@ -21,7 +21,7 @@ PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
   list->setNumItems(size);
   list->setItems(*items);
 
-  return ApiHandle::fromObject(*list);
+  return ApiHandle::newReference(thread, *list);
 }
 
 PY_EXPORT int PyList_CheckExact_Func(PyObject* obj) {

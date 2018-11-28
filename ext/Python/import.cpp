@@ -4,8 +4,8 @@
 namespace python {
 
 PY_EXPORT PyObject* PyImport_GetModuleDict(void) {
-  Runtime* runtime = Thread::currentThread()->runtime();
-  return ApiHandle::fromBorrowedObject(runtime->modules());
+  Thread* thread = Thread::currentThread();
+  return ApiHandle::borrowedReference(thread, thread->runtime()->modules());
 }
 
 PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* /* e */,
@@ -32,13 +32,13 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
   Dict modules_dict(&scope, runtime->modules());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object module(&scope, runtime->dictAt(modules_dict, name_obj));
-  if (!module->isError() && module->isModule()) {
-    return ApiHandle::fromBorrowedObject(module);
+  if (module->isModule()) {
+    return ApiHandle::borrowedReference(thread, module);
   }
 
   Module new_module(&scope, runtime->newModule(name_obj));
   runtime->addModule(new_module);
-  return ApiHandle::fromBorrowedObject(*new_module);
+  return ApiHandle::borrowedReference(thread, *new_module);
 }
 
 PY_EXPORT int PyImport_AppendInittab(const char* /* e */,

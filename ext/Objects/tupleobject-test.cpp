@@ -74,16 +74,16 @@ TEST_F(TupleExtensionApiTest, GetItemReturnsBorrowedReference) {
   Py_ssize_t pos = 3;
   PyObject* pytuple = PyTuple_New(length);
   PyObject* pyitem = testing::createUniqueObject();
-  EXPECT_EQ(Py_REFCNT(pyitem), 1);
+  long refcnt = Py_REFCNT(pyitem);
   ASSERT_EQ(PyTuple_SetItem(pytuple, pos, pyitem), 0);
   // PyTuple_SetItem "steals" a reference to the item.  Verify that the
   // reference count did not change.
-  EXPECT_EQ(Py_REFCNT(pyitem), 1);
+  EXPECT_EQ(Py_REFCNT(pyitem), refcnt);
 
   PyObject* pyresult = PyTuple_GetItem(pytuple, pos);
   // PyTuple_GetItem "borrows" a reference for the return value.  Verify the
   // reference count did not change.
-  EXPECT_EQ(Py_REFCNT(pyresult), 1);
+  EXPECT_EQ(Py_REFCNT(pyresult), refcnt);
 }
 
 TEST_F(TupleExtensionApiTest, PackZeroReturnsEmptyTuple) {

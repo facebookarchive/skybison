@@ -6,7 +6,8 @@
 namespace python {
 
 PY_EXPORT PyObject* PyNone_Ptr() {
-  return ApiHandle::fromBorrowedObject(NoneType::object());
+  return ApiHandle::borrowedReference(Thread::currentThread(),
+                                      NoneType::object());
 }
 
 PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
@@ -66,7 +67,7 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
   if (thread->hasPendingException() || result->isError()) {
     return nullptr;
   }
-  return ApiHandle::fromObject(*result);
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* /* f */) {

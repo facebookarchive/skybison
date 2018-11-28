@@ -283,19 +283,13 @@ TEST_F(ModuleExtensionApiTest, GetNameObjectGetsName) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   Py_DECREF(result);
 
-  EXPECT_EQ(Py_REFCNT(module), 1);
   Py_DECREF(module);
 }
 
 TEST_F(ModuleExtensionApiTest, GetNameObjectFailsIfNotModule) {
   PyObject* not_a_module = PyTuple_New(10);
-  EXPECT_EQ(Py_REFCNT(not_a_module), 1);
-
   PyObject* result = PyModule_GetNameObject(not_a_module);
   EXPECT_EQ(result, nullptr);
-  Py_XDECREF(result);
-
-  EXPECT_EQ(Py_REFCNT(not_a_module), 1);
 
   const char* expected_message = "PyModule_GetNameObject takes a Module object";
   EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
@@ -315,19 +309,13 @@ TEST_F(ModuleExtensionApiTest, GetNameObjectFailsIfNotString) {
   EXPECT_TRUE(PyModule_CheckExact(module));
 
   PyObject* not_a_module = PyTuple_New(10);
-  EXPECT_EQ(Py_REFCNT(not_a_module), 1);
-
   PyObject_SetAttrString(module, "__name__", not_a_module);
   PyObject* result = PyModule_GetNameObject(module);
   EXPECT_EQ(result, nullptr);
-  Py_XDECREF(result);
-
-  EXPECT_EQ(Py_REFCNT(not_a_module), 1);
 
   const char* expected_message = "nameless module";
   EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
 
-  EXPECT_EQ(Py_REFCNT(module), 1);
   Py_DECREF(module);
   Py_DECREF(not_a_module);
 }

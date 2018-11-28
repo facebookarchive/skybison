@@ -50,7 +50,7 @@ PY_EXPORT int PyType_Ready(PyTypeObject* type) {
   // TODO(T32512394): Handle metaclass initialization
   PyObject* pyobj = reinterpret_cast<PyObject*>(type);
   PyObject* pytype_type =
-      ApiHandle::fromObject(runtime->typeAt(LayoutId::kType));
+      ApiHandle::newReference(thread, runtime->typeAt(LayoutId::kType));
   pyobj->ob_type = reinterpret_cast<PyTypeObject*>(pytype_type);
 
   // Create a new class for the PyTypeObject
@@ -62,7 +62,7 @@ PY_EXPORT int PyType_Ready(PyTypeObject* type) {
   type_class->setExtensionType(runtime->newIntFromCPtr(type));
 
   // Create the dict's ApiHandle
-  type->tp_dict = ApiHandle::fromObject(*dict);
+  type->tp_dict = ApiHandle::newReference(thread, *dict);
 
   // Set the class name
   Object name(&scope, runtime->newStrFromCStr(type->tp_name));

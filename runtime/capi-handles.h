@@ -8,14 +8,13 @@ namespace python {
 
 class ApiHandle : public PyObject {
  public:
-  // Returns an ApiHandle wrapping an object to cross the CPython boundary.  If
-  // this object has not been wrapped before, a new handle is allocated with a
-  // reference count of 1.  Otherwise, increments the reference count of the
-  // object's existing handle.
-  static ApiHandle* fromObject(RawObject obj);
+  // Returns a handle for a managed object.  Increments the reference count of
+  // the handle.
+  static ApiHandle* newReference(Thread* thread, RawObject obj);
 
-  // Same as asApiHandle, but creates a borrowed ApiHandle if no handle exists
-  static ApiHandle* fromBorrowedObject(RawObject obj);
+  // Returns a handle for a managed object.  Does not affect the reference count
+  // of the handle.
+  static ApiHandle* borrowedReference(Thread* thread, RawObject obj);
 
   static ApiHandle* fromPyObject(PyObject* py_obj) {
     return static_cast<ApiHandle*>(py_obj);
@@ -43,31 +42,37 @@ class ApiHandle : public PyObject {
   // Check if the type is PyType_Type
   bool isType();
 
-  bool isBorrowed() { return (ob_refcnt & kBorrowedBit) != 0; }
+  // Returns true if the handle referent is a managed object.
+  bool isManaged() { return (ob_refcnt & kManagedBit) != 0; }
 
-  void setBorrowed() { ob_refcnt |= kBorrowedBit; }
+  // Sets the managed status of the handle.
+  void setManaged() { ob_refcnt |= kManagedBit; }
 
-  void clearBorrowed() { ob_refcnt &= ~kBorrowedBit; }
+  // Clears the managed status of the handle.
+  void clearManaged() { ob_refcnt &= ~kManagedBit; }
 
+  // Increments the reference count of the handle to signal the addition of a
+  // reference from extension code.
   void incref() {
-    DCHECK(refcnt() < kBorrowedBit - 1, "Reference count overflowed");
+    DCHECK((refcnt() & ~kManagedBit) < (kManagedBit - 1),
+           "Reference count overflowed");
     ++ob_refcnt;
   }
 
-  void decref() {
-    DCHECK(refcnt() > 0, "Reference count underflowed");
-    --ob_refcnt;
-  }
-
-  word refcnt() { return ob_refcnt & ~kBorrowedBit; }
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ApiHandle);
+  // Returns the number of references to this handle from extension code.
+  word refcnt() { return ob_refcnt; }
 
  private:
-  static ApiHandle* create(RawObject reference, long refcnt);
+  // Allocates a handle for a managed object.
+  static ApiHandle* alloc(Thread* thread, RawObject obj);
 
-  // Cast RawObject to ApiHandle* and set borrowed bit if needed
-  static ApiHandle* castFromObject(RawObject value, bool borrowed);
+  // Returns a handle for a managed object.  If a handle does not already
+  // exist, a new handle is created and its reference count is initialized to
+  // the managed bit.
+  static ApiHandle* ensure(Thread* thread, RawObject obj);
+
+  // Cast RawObject to ApiHandle*
+  static ApiHandle* castFromObject(RawObject value);
 
   // Create a new runtime instance based on this ApiHandle
   RawObject asInstance(RawObject type);
@@ -76,7 +81,9 @@ class ApiHandle : public PyObject {
   // instance
   static RawObject getExtensionPtrAttr(Thread* thread, const Object& obj);
 
-  static const long kBorrowedBit = 1L << 31;
+  static const long kManagedBit = 1L << 31;
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ApiHandle);
 };
 
 static_assert(sizeof(ApiHandle) == sizeof(PyObject),

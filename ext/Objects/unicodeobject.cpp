@@ -47,7 +47,7 @@ PY_EXPORT PyObject* PyUnicode_FromString(const char* c_string) {
   HandleScope scope(thread);
 
   Object value(&scope, runtime->newStrFromCStr(c_string));
-  return ApiHandle::fromObject(*value);
+  return ApiHandle::newReference(thread, *value);
 }
 
 PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
@@ -101,7 +101,7 @@ PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char* u,
   const byte* data = reinterpret_cast<const byte*>(u);
   Object value(&scope,
                thread->runtime()->newStrWithAll(View<byte>(data, size)));
-  return ApiHandle::fromObject(value);
+  return ApiHandle::newReference(thread, value);
 }
 
 PY_EXPORT PyObject* PyUnicode_EncodeFSDefault(PyObject* /* e */) {

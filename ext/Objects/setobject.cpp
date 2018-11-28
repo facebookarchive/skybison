@@ -66,7 +66,7 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
   HandleScope scope(thread);
 
   if (iterable == nullptr) {
-    return ApiHandle::fromObject(runtime->newSet());
+    return ApiHandle::newReference(thread, runtime->newSet());
   }
 
   Object obj(&scope, ApiHandle::fromPyObject(iterable)->asObject());
@@ -78,7 +78,7 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
     return nullptr;
   }
 
-  return ApiHandle::fromObject(*set);
+  return ApiHandle::newReference(thread, *set);
 }
 
 PY_EXPORT PyObject* PySet_Pop(PyObject* /* t */) { UNIMPLEMENTED("PySet_Pop"); }

@@ -118,7 +118,7 @@ static PyObject* doBinaryOp(PyObject* v, PyObject* w,
   Object right(&scope, ApiHandle::fromPyObject(w)->asObject());
   Object result(&scope, doBinaryOpImpl(thread, op, left, right));
   if (!result->isError()) {
-    return ApiHandle::fromObject(result);
+    return ApiHandle::newReference(thread, result);
   }
 
   // TODO(T32655200): Once we have a real string formatter, use that instead of
@@ -231,7 +231,7 @@ PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
     thread->raiseTypeErrorWithCStr("__index__ returned non-int");
     return nullptr;
   }
-  return ApiHandle::fromObject(*int_obj);
+  return ApiHandle::newReference(thread, *int_obj);
 }
 
 PY_EXPORT PyObject* PyNumber_Invert(PyObject* /* o */) {

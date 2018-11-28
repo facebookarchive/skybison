@@ -1,88 +1,62 @@
 #include "capi-handles.h"
-
+#include "cpython-types.h"
 #include "runtime.h"
 
 namespace python {
 
-ApiHandle* ApiHandle::create(RawObject reference, long refcnt) {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-
-  ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
-  handle->reference_ = reinterpret_cast<void*>(reference.raw());
-  handle->ob_refcnt = refcnt;
-  RawObject reftype = runtime->typeOf(reference);
-  if (reference == reftype) {
-    handle->ob_type = reinterpret_cast<PyTypeObject*>(handle);
+ApiHandle* ApiHandle::alloc(Thread* thread, RawObject reference) {
+  ApiHandle* result = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
+  result->reference_ = reinterpret_cast<void*>(reference.raw());
+  result->ob_refcnt = 0;
+  RawObject type = thread->runtime()->typeOf(reference);
+  if (reference == type) {
+    result->ob_type = reinterpret_cast<PyTypeObject*>(result);
   } else {
-    handle->ob_type =
-        reinterpret_cast<PyTypeObject*>(ApiHandle::fromObject(reftype));
+    result->ob_type =
+        reinterpret_cast<PyTypeObject*>(ApiHandle::newReference(thread, type));
   }
-  return handle;
+  return result;
 }
 
-ApiHandle* ApiHandle::fromObject(RawObject obj) {
-  Thread* thread = Thread::currentThread();
+ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Object key(&scope, obj);
   Dict dict(&scope, runtime->apiHandles());
-  RawObject value = runtime->dictAt(dict, key);
+  Object key(&scope, obj);
+  Object value(&scope, runtime->dictAt(dict, key));
 
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
-    ApiHandle* result = castFromObject(value, false);
-    result->incref();
-    return result;
+    return castFromObject(value);
   }
 
   // Get the PyObject pointer from extension instances
   RawObject extension_ptr = getExtensionPtrAttr(thread, key);
   if (!extension_ptr->isError()) {
-    ApiHandle* result = castFromObject(extension_ptr, false);
-    result->incref();
-    return result;
+    return castFromObject(extension_ptr);
   }
 
   // Initialize an ApiHandle for a builtin object or runtime instance
-  ApiHandle* handle = ApiHandle::create(obj, 1);
+  ApiHandle* handle = ApiHandle::alloc(thread, obj);
+  handle->setManaged();
   Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
   runtime->dictAtPut(dict, key, object);
   return handle;
 }
 
-ApiHandle* ApiHandle::fromBorrowedObject(RawObject obj) {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Object key(&scope, obj);
-  Dict dict(&scope, runtime->apiHandles());
-  RawObject value = runtime->dictAt(dict, key);
-
-  // Fast path: All initialized builtin objects
-  if (!value->isError()) {
-    return castFromObject(value, true);
-  }
-
-  // Get the PyObject pointer from extension instances
-  RawObject extension_ptr = getExtensionPtrAttr(thread, key);
-  if (!extension_ptr->isError()) {
-    return castFromObject(extension_ptr, true);
-  }
-
-  // Initialize a Borrowed ApiHandle for a builtin object or runtime instance
-  ApiHandle* handle = ApiHandle::create(obj, kBorrowedBit);
-  Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
-  runtime->dictAtPut(dict, key, object);
-  return handle;
+ApiHandle* ApiHandle::newReference(Thread* thread, RawObject obj) {
+  ApiHandle* result = ApiHandle::ensure(thread, obj);
+  result->incref();
+  return result;
 }
 
-ApiHandle* ApiHandle::castFromObject(RawObject value, bool borrowed) {
-  ApiHandle* handle = static_cast<ApiHandle*>(RawInt::cast(value)->asCPtr());
-  if (borrowed) handle->setBorrowed();
-  return handle;
+ApiHandle* ApiHandle::borrowedReference(Thread* thread, RawObject obj) {
+  return ApiHandle::ensure(thread, obj);
+}
+
+ApiHandle* ApiHandle::castFromObject(RawObject value) {
+  return static_cast<ApiHandle*>(RawInt::cast(value)->asCPtr());
 }
 
 RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {

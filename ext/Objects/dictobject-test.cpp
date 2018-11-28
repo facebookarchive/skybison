@@ -31,21 +31,25 @@ TEST_F(DictExtensionApiTest, GetItemReturnsBorrowedValue) {
   PyObject* dict = PyDict_New();
   PyObject* key = PyLong_FromLong(10);
   PyObject* value = testing::createUniqueObject();
-  EXPECT_EQ(Py_REFCNT(value), 1);
 
-  // Insert key value
+  // Insert the value into the dictionary
   ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
-  EXPECT_EQ(Py_REFCNT(value), 2);
 
-  // Pass existing key
-  PyObject* result = PyDict_GetItem(dict, key);
-  ASSERT_NE(result, nullptr);
+  // Record the reference count of the value
+  long refcnt = Py_REFCNT(value);
 
-  // Check result value
-  EXPECT_EQ(result, value);
-  // PyDict_GetItem "borrows" a reference for the return value.  Verify the
-  // reference count did not change.
-  EXPECT_EQ(Py_REFCNT(result), 2);
+  // Get a new reference to the value from the dictionary
+  PyObject* value2 = PyDict_GetItem(dict, key);
+
+  // The new reference should be equal to the original reference
+  EXPECT_EQ(value2, value);
+
+  // The reference count should not be affected
+  EXPECT_EQ(Py_REFCNT(value), refcnt);
+
+  Py_DECREF(value);
+  Py_DECREF(key);
+  Py_DECREF(dict);
 }
 
 TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {

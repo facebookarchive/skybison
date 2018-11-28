@@ -5,7 +5,7 @@ namespace python {
 static PyObject* typeObjectHandle(LayoutId id) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  return ApiHandle::fromBorrowedObject(runtime->typeAt(id));
+  return ApiHandle::borrowedReference(thread, runtime->typeAt(id));
 }
 
 PY_EXPORT PyObject* PyExc_BaseException_Ptr() {

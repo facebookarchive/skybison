@@ -32,9 +32,6 @@ PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
   Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Dict dict(&scope, *dictobj);
   runtime->dictAtPut(dict, keyobj, valueobj);
-  // TODO(eelizondo): increment the reference count through ApiHandle
-  key->ob_refcnt++;
-  value->ob_refcnt++;
   return 0;
 }
 
@@ -45,7 +42,8 @@ PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
   HandleScope scope(thread);
 
   Object keyobj(&scope, runtime->newStrFromCStr(key));
-  return PyDict_SetItem(pydict, ApiHandle::fromObject(*keyobj), value);
+  return PyDict_SetItem(pydict, ApiHandle::newReference(thread, *keyobj),
+                        value);
 }
 
 PY_EXPORT PyObject* PyDict_New() {
@@ -54,7 +52,7 @@ PY_EXPORT PyObject* PyDict_New() {
   HandleScope scope(thread);
 
   Object value(&scope, runtime->newDict());
-  return ApiHandle::fromObject(*value);
+  return ApiHandle::newReference(thread, *value);
 }
 
 PY_EXPORT PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
@@ -72,7 +70,7 @@ PY_EXPORT PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
   if (value->isError()) {
     return nullptr;
   }
-  return ApiHandle::fromBorrowedObject(value);
+  return ApiHandle::borrowedReference(thread, value);
 }
 
 PY_EXPORT void PyDict_Clear(PyObject* /* p */) {

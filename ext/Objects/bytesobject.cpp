@@ -73,7 +73,7 @@ PY_EXPORT PyObject* PyBytes_FromStringAndSize(const char* str,
   View<byte> view(reinterpret_cast<const byte*>(str), size);
   Object bytes_obj(&scope, runtime->newBytesWithAll(view));
 
-  return ApiHandle::fromObject(*bytes_obj);
+  return ApiHandle::newReference(thread, *bytes_obj);
 }
 
 PY_EXPORT PyObject* PyBytes_FromString(const char* str) {
