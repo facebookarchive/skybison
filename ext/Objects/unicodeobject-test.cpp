@@ -150,6 +150,31 @@ TEST_F(UnicodeExtensionApiTest, CompareBadInput) {
   Py_DECREF(str_obj);
 }
 
+TEST_F(UnicodeExtensionApiTest, EqSameLength) {
+  PyObject* str1 = PyUnicode_FromString("some string");
+
+  PyObject* str2 = PyUnicode_FromString("some other string");
+  EXPECT_EQ(_PyUnicode_EQ(str1, str2), 0);
+  EXPECT_EQ(_PyUnicode_EQ(str2, str1), 0);
+  Py_DECREF(str2);
+
+  PyObject* str3 = PyUnicode_FromString("some string");
+  EXPECT_EQ(_PyUnicode_EQ(str1, str3), 1);
+  EXPECT_EQ(_PyUnicode_EQ(str3, str1), 1);
+  Py_DECREF(str3);
+
+  Py_DECREF(str1);
+}
+
+TEST_F(UnicodeExtensionApiTest, EqDifferentLength) {
+  PyObject* small = PyUnicode_FromString("123");
+  PyObject* large = PyUnicode_FromString("1234567890");
+  EXPECT_EQ(_PyUnicode_EQ(small, large), 0);
+  EXPECT_EQ(_PyUnicode_EQ(large, small), 0);
+  Py_DECREF(large);
+  Py_DECREF(small);
+}
+
 TEST_F(UnicodeExtensionApiTest, EqualToASCIIString) {
   PyObject* unicode = PyUnicode_FromString("here's another string");
 

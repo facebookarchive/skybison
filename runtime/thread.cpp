@@ -217,6 +217,7 @@ RawObject Thread::runClassFunction(RawObject function, RawObject dict) {
 RawObject Thread::raiseRuntimeError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kRuntimeError));
   setExceptionValue(value);
+  setExceptionTraceback(NoneType::object());
   return Error::object();
 }
 
@@ -229,6 +230,7 @@ RawObject Thread::raiseRuntimeErrorWithCStr(const char* message) {
 RawObject Thread::raiseSystemError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kSystemError));
   setExceptionValue(value);
+  setExceptionTraceback(NoneType::object());
   return Error::object();
 }
 
@@ -240,6 +242,7 @@ RawObject Thread::raiseSystemErrorWithCStr(const char* message) {
 RawObject Thread::raiseTypeError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kTypeError));
   setExceptionValue(value);
+  setExceptionTraceback(NoneType::object());
   return Error::object();
 }
 
@@ -251,6 +254,7 @@ RawObject Thread::raiseTypeErrorWithCStr(const char* message) {
 RawObject Thread::raiseValueError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kValueError));
   setExceptionValue(value);
+  setExceptionTraceback(NoneType::object());
   return Error::object();
 }
 
@@ -261,6 +265,7 @@ RawObject Thread::raiseValueErrorWithCStr(const char* message) {
 RawObject Thread::raiseAttributeError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kAttributeError));
   setExceptionValue(value);
+  setExceptionTraceback(NoneType::object());
   return Error::object();
 }
 
@@ -271,6 +276,7 @@ RawObject Thread::raiseAttributeErrorWithCStr(const char* message) {
 RawObject Thread::raiseKeyError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kKeyError));
   setExceptionValue(value);
+  setExceptionTraceback(NoneType::object());
   return Error::object();
 }
 
@@ -278,9 +284,17 @@ RawObject Thread::raiseKeyErrorWithCStr(const char* message) {
   return raiseKeyError(runtime()->newStrFromCStr(message));
 }
 
+RawObject Thread::raiseMemoryError() {
+  setExceptionType(runtime()->typeAt(LayoutId::kMemoryError));
+  setExceptionValue(NoneType::object());
+  setExceptionTraceback(NoneType::object());
+  return Error::object();
+}
+
 RawObject Thread::raiseOverflowError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kOverflowError));
   setExceptionValue(value);
+  setExceptionTraceback(NoneType::object());
   return Error::object();
 }
 
@@ -291,6 +305,7 @@ RawObject Thread::raiseOverflowErrorWithCStr(const char* message) {
 RawObject Thread::raiseIndexError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kIndexError));
   setExceptionValue(value);
+  setExceptionTraceback(NoneType::object());
   return Error::object();
 }
 
@@ -301,6 +316,7 @@ RawObject Thread::raiseIndexErrorWithCStr(const char* message) {
 RawObject Thread::raiseStopIteration(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kStopIteration));
   setExceptionValue(value);
+  setExceptionTraceback(NoneType::object());
   return Error::object();
 }
 
@@ -315,6 +331,7 @@ bool Thread::hasPendingStopIteration() {
 RawObject Thread::raiseZeroDivisionError(RawObject value) {
   setExceptionType(runtime()->typeAt(LayoutId::kZeroDivisionError));
   setExceptionValue(value);
+  setExceptionTraceback(NoneType::object());
   return Error::object();
 }
 

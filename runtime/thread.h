@@ -106,6 +106,10 @@ class Thread {
   RawObject raiseKeyError(RawObject value);
   RawObject raiseKeyErrorWithCStr(const char* message);
 
+  // Raises a MemoryError exception and returns an Error that must be returned
+  // up the stack by the caller.
+  RawObject raiseMemoryError();
+
   // Raises an OverflowError exception and returns an Error object that must be
   // returned up the stack by the caller.
   RawObject raiseOverflowError(RawObject value);
@@ -160,22 +164,25 @@ class Thread {
   // pending.
   RawObject exceptionType() { return exception_type_; }
 
+  void setExceptionType(RawObject new_type) { exception_type_ = new_type; }
+
   // Returns the value of the current exception.
   RawObject exceptionValue() { return exception_value_; }
+
+  void setExceptionValue(RawObject new_value) { exception_value_ = new_value; }
+
+  // Returns the traceback of the current exception.
+  RawObject exceptionTraceback() { return exception_traceback_; }
+
+  void setExceptionTraceback(RawObject new_traceback) {
+    exception_traceback_ = new_traceback;
+  }
 
   // Walk all the frames on the stack starting with the top-most frame
   void visitFrames(FrameVisitor* visitor);
 
  private:
   void pushInitialFrame();
-
-  void setExceptionType(RawObject type) { exception_type_ = type; }
-
-  void setExceptionValue(RawObject value) { exception_value_ = value; }
-
-  void setExceptionTraceback(RawObject traceback) {
-    exception_traceback_ = traceback;
-  }
 
   Handles handles_;
 

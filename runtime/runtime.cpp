@@ -1097,6 +1097,8 @@ void Runtime::initializeHeapTypes() {
   addEmptyBuiltinType(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
   initializeStaticMethodType();
   initializeSuperType();
+  addEmptyBuiltinType(SymbolId::kTraceback, LayoutId::kTraceback,
+                      LayoutId::kObject);
   initializeTypeType();
   addEmptyBuiltinType(SymbolId::kValueCell, LayoutId::kValueCell,
                       LayoutId::kObject);

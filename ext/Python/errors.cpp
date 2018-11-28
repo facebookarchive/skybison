@@ -1,10 +1,13 @@
+#include "cpython-data.h"
+#include "cpython-func.h"
 #include "runtime.h"
 
 namespace python {
 
-PY_EXPORT void PyErr_SetString(PyObject*, const char* message) {
-  // TODO(T32875119): Set the correct exception type.
-  Thread::currentThread()->raiseSystemErrorWithCStr(message);
+PY_EXPORT void PyErr_SetString(PyObject* exc, const char* msg) {
+  PyObject* value = PyUnicode_FromString(msg);
+  PyErr_SetObject(exc, value);
+  Py_XDECREF(value);
 }
 
 PY_EXPORT PyObject* PyErr_Occurred() {
@@ -23,25 +26,52 @@ PY_EXPORT void PyErr_Clear() {
   Thread::currentThread()->clearPendingException();
 }
 
-PY_EXPORT int PyErr_BadArgument() { UNIMPLEMENTED("PyErr_BadArgument"); }
+PY_EXPORT int PyErr_BadArgument() {
+  Thread* thread = Thread::currentThread();
+  thread->raiseTypeErrorWithCStr("bad argument type for built-in operation");
+  return 0;
+}
 
-PY_EXPORT PyObject* PyErr_NoMemory() { UNIMPLEMENTED("PyErr_NoMemory"); }
+PY_EXPORT PyObject* PyErr_NoMemory() {
+  Thread* thread = Thread::currentThread();
+  thread->raiseMemoryError();
+  return nullptr;
+}
 
 PY_EXPORT PyObject* _PyErr_FormatFromCause(PyObject*, const char*, ...) {
   UNIMPLEMENTED("_PyErr_FormatFromCause");
 }
 
 PY_EXPORT void PyErr_BadInternalCall() {
-  UNIMPLEMENTED("PyErr_BadInternalCall");
+  Thread* thread = Thread::currentThread();
+  thread->raiseSystemErrorWithCStr("bad argument to internal function");
 }
 
-PY_EXPORT int PyErr_ExceptionMatches(PyObject* /* c */) {
-  UNIMPLEMENTED("PyErr_ExceptionMatches");
+PY_EXPORT int PyErr_ExceptionMatches(PyObject* exc) {
+  return PyErr_GivenExceptionMatches(PyErr_Occurred(), exc);
 }
 
-PY_EXPORT void PyErr_Fetch(PyObject** /* p_type */, PyObject** /* p_value */,
-                           PyObject** /* p_traceback */) {
-  UNIMPLEMENTED("PyErr_Fetch");
+PY_EXPORT void PyErr_Fetch(PyObject** pexc, PyObject** pval, PyObject** ptb) {
+  Thread* thread = Thread::currentThread();
+  DCHECK(pexe != nullptr, "pexc is null");
+  if (thread->exceptionType().isNoneType()) {
+    *pexc = nullptr;
+  } else {
+    *pexc = ApiHandle::borrowedReference(thread, thread->exceptionType());
+  }
+  DCHECK(pval != nullptr, "pval is null");
+  if (thread->exceptionValue().isNoneType()) {
+    *pval = nullptr;
+  } else {
+    *pval = ApiHandle::borrowedReference(thread, thread->exceptionValue());
+  }
+  DCHECK(ptb != nullptr, "ptb is null");
+  if (thread->exceptionTraceback().isNoneType()) {
+    *ptb = nullptr;
+  } else {
+    *ptb = ApiHandle::borrowedReference(thread, thread->exceptionTraceback());
+  }
+  thread->clearPendingException();
 }
 
 PY_EXPORT PyObject* PyErr_FormatV(PyObject* /* n */, const char* /* t */,
@@ -55,9 +85,47 @@ PY_EXPORT void PyErr_GetExcInfo(PyObject** /* p_type */,
   UNIMPLEMENTED("PyErr_GetExcInfo");
 }
 
-PY_EXPORT int PyErr_GivenExceptionMatches(PyObject* /* r */,
-                                          PyObject* /* c */) {
-  UNIMPLEMENTED("PyErr_GivenExceptionMatches");
+static bool givenExceptionMatches(Thread* thread, const Object& given,
+                                  const Object& exc) {
+  HandleScope scope(thread);
+  if (exc->isTuple()) {
+    Tuple tuple(&scope, *exc);
+    Object item(&scope, NoneType::object());
+    for (word i = 0; i < tuple->length(); i++) {
+      item = tuple->at(i);
+      if (givenExceptionMatches(thread, given, item)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  Runtime* runtime = thread->runtime();
+  Object given_type(&scope, *given);
+  if (runtime->isInstanceOfBaseException(*given_type)) {
+    given_type = runtime->typeOf(*given);
+  }
+  if (runtime->isInstanceOfType(*given_type) &&
+      (RawType::cast(*given_type).builtinBase() >= LayoutId::kFirstException) &&
+      (RawType::cast(*given_type).builtinBase() <= LayoutId::kLastException) &&
+      runtime->isInstanceOfType(*exc) &&
+      (RawType::cast(*exc).builtinBase() >= LayoutId::kFirstException) &&
+      (RawType::cast(*exc).builtinBase() <= LayoutId::kLastException)) {
+    Type subtype(&scope, *given_type);
+    Type supertype(&scope, *exc);
+    return runtime->isSubclass(subtype, supertype) == Bool::trueObj();
+  }
+  return *given_type == *exc;
+}
+
+PY_EXPORT int PyErr_GivenExceptionMatches(PyObject* given, PyObject* exc) {
+  if (given == nullptr || exc == nullptr) {
+    return 0;
+  }
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object given_obj(&scope, ApiHandle::fromPyObject(given)->asObject());
+  Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
+  return givenExceptionMatches(thread, given_obj, exc_obj) ? 1 : 0;
 }
 
 PY_EXPORT PyObject* PyErr_NewException(const char* /* e */, PyObject* /* e */,
@@ -147,12 +215,12 @@ PY_EXPORT PyObject* PyErr_SetImportErrorSubclass(PyObject* /* n */,
   UNIMPLEMENTED("PyErr_SetImportErrorSubclass");
 }
 
-PY_EXPORT void PyErr_SetNone(PyObject* /* n */) {
-  UNIMPLEMENTED("PyErr_SetNone");
-}
+PY_EXPORT void PyErr_SetNone(PyObject* type) { PyErr_SetObject(type, Py_None); }
 
-PY_EXPORT void PyErr_SetObject(PyObject* /* n */, PyObject* /* e */) {
-  UNIMPLEMENTED("PyErr_SetObject");
+PY_EXPORT void PyErr_SetObject(PyObject* exc, PyObject* val) {
+  // TODO(cshapiro): chain exception when val is an exception instance
+  Py_XINCREF(exc);
+  PyErr_Restore(exc, val, nullptr);
 }
 
 PY_EXPORT void PyErr_SyntaxLocation(const char* /* e */, int /* o */) {
@@ -168,17 +236,50 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* /* j */) {
   UNIMPLEMENTED("PyErr_WriteUnraisable");
 }
 
-PY_EXPORT void _PyErr_BadInternalCall(const char* /* e */, int /* o */) {
-  UNIMPLEMENTED("_PyErr_BadInternalCall");
+PY_EXPORT void _PyErr_BadInternalCall(const char* filename, int lineno) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object message(&scope, thread->runtime()->newStrFromFormat(
+                             "%s:%d: bad argument to internal function",
+                             filename, lineno));
+  thread->raiseSystemError(*message);
 }
 
 PY_EXPORT PyObject* PyErr_ProgramTextObject(PyObject* /* e */, int /* o */) {
   UNIMPLEMENTED("PyErr_ProgramTextObject");
 }
 
-PY_EXPORT void PyErr_Restore(PyObject* /* type */, PyObject* /* value */,
-                             PyObject* /* traceback */) {
-  UNIMPLEMENTED("PyErr_Restore");
+PY_EXPORT void PyErr_Restore(PyObject* type, PyObject* value,
+                             PyObject* traceback) {
+  Thread* thread = Thread::currentThread();
+  if (type == nullptr) {
+    thread->setExceptionType(NoneType::object());
+  } else {
+    thread->setExceptionType(ApiHandle::fromPyObject(type)->asObject());
+    // This is a stolen reference, decrement the reference count
+    ApiHandle::fromPyObject(type)->decref();
+  }
+  if (value == nullptr) {
+    thread->setExceptionValue(NoneType::object());
+  } else {
+    thread->setExceptionValue(ApiHandle::fromPyObject(value)->asObject());
+    // This is a stolen reference, decrement the reference count
+    ApiHandle::fromPyObject(value)->decref();
+  }
+  if (traceback != nullptr &&
+      !ApiHandle::fromPyObject(traceback)->asObject()->isTraceback()) {
+    ApiHandle::fromPyObject(traceback)->decref();
+    // Can only store traceback instances as the traceback
+    traceback = nullptr;
+  }
+  if (traceback == nullptr) {
+    thread->setExceptionTraceback(NoneType::object());
+  } else {
+    thread->setExceptionTraceback(
+        ApiHandle::fromPyObject(traceback)->asObject());
+    // This is a stolen reference, decrement the reference count
+    ApiHandle::fromPyObject(traceback)->decref();
+  }
 }
 
 }  // namespace python

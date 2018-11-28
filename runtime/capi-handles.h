@@ -59,6 +59,13 @@ class ApiHandle : public PyObject {
     ++ob_refcnt;
   }
 
+  // Decrements the reference count of the handle to signal the removal of a
+  // reference count from extension code.
+  void decref() {
+    DCHECK((refcnt() & ~kManagedBit) > 0, "Reference count underflowed");
+    --ob_refcnt;
+  }
+
   // Returns the number of references to this handle from extension code.
   word refcnt() { return ob_refcnt; }
 

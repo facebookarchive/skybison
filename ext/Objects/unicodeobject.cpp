@@ -17,8 +17,13 @@ PY_EXPORT int _PyUnicode_EqualToASCIIString(PyObject* unicode,
   return str->equalsCStr(c_str);
 }
 
-PY_EXPORT int _PyUnicode_EQ(PyObject* /* aa */, PyObject* /* bb */) {
-  UNIMPLEMENTED("_PyUnicode_EQ");
+PY_EXPORT int _PyUnicode_EQ(PyObject* aa, PyObject* bb) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Str lhs(&scope, ApiHandle::fromPyObject(aa)->asObject());
+  Str rhs(&scope, ApiHandle::fromPyObject(bb)->asObject());
+  word diff = lhs->compare(*rhs);
+  return diff == 0 ? 1 : 0;
 }
 
 PY_EXPORT size_t Py_UNICODE_strlen(const Py_UNICODE* /* u */) {

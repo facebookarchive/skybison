@@ -54,6 +54,7 @@ namespace python {
   V(Str)                                                                       \
   V(StrIterator)                                                               \
   V(Super)                                                                     \
+  V(Traceback)                                                                 \
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(Type)                                                                      \
@@ -277,6 +278,7 @@ class RawObject {
   bool isStrIterator();
   bool isSuper();
   bool isSystemExit();
+  bool isTraceback();
   bool isTuple();
   bool isTupleIterator();
   bool isValueCell();
@@ -1994,6 +1996,18 @@ class RawCoroutine : public RawGeneratorBase {
   RAW_OBJECT_COMMON(Coroutine);
 };
 
+class RawTraceback : public RawHeapObject {
+ public:
+  // Layout.
+  static const int kNextOffset = RawHeapObject::kSize;
+  static const int kFrameOffset = kNextOffset + kPointerSize;
+  static const int kLastiOffset = kFrameOffset + kPointerSize;
+  static const int kLinenoOffset = kLastiOffset + kPointerSize;
+  static const int kSize = kLinenoOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Traceback);
+};
+
 // RawObject
 
 inline RawObject::RawObject(uword raw) : raw_{raw} {}
@@ -2243,6 +2257,10 @@ inline bool RawObject::isStrIterator() {
 
 inline bool RawObject::isSystemExit() {
   return isHeapObjectWithLayout(LayoutId::kSystemExit);
+}
+
+inline bool RawObject::isTraceback() {
+  return isHeapObjectWithLayout(LayoutId::kTraceback);
 }
 
 inline bool RawObject::isTupleIterator() {
