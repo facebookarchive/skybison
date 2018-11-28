@@ -744,6 +744,15 @@ class RawType : public RawHeapObject {
     // LayoutId.
   };
 
+  // TODO(eelizondo): this should cover all of the slots but,
+  // we are starting with just these few for now
+  enum class ExtensionSlot {
+    kInit,
+    kNew,
+    kEnd,
+    kFirst = kInit,
+  };
+
   // Getters and setters.
   RawObject instanceLayout();
   void setInstanceLayout(RawObject layout);
@@ -778,6 +787,9 @@ class RawType : public RawHeapObject {
 
   bool isBuiltin();
 
+  RawObject extensionSlots();
+  void setExtensionSlots(RawObject slots);
+
   // Layout.
   static const int kMroOffset = RawHeapObject::kSize;
   static const int kInstanceLayoutOffset = kMroOffset + kPointerSize;
@@ -785,7 +797,8 @@ class RawType : public RawHeapObject {
   static const int kFlagsOffset = kNameOffset + kPointerSize;
   static const int kDictOffset = kFlagsOffset + kPointerSize;
   static const int kExtensionTypeOffset = kDictOffset + kPointerSize;
-  static const int kSize = kExtensionTypeOffset + kPointerSize;
+  static const int kExtensionSlotsOffset = kExtensionTypeOffset + kPointerSize;
+  static const int kSize = kExtensionSlotsOffset + kPointerSize;
 
   static const int kBuiltinBaseMask = 0xff;
 
@@ -2757,6 +2770,14 @@ inline RawObject RawType::dict() { return instanceVariableAt(kDictOffset); }
 
 inline void RawType::setDict(RawObject dict) {
   instanceVariableAtPut(kDictOffset, dict);
+}
+
+inline RawObject RawType::extensionSlots() {
+  return instanceVariableAt(kExtensionSlotsOffset);
+}
+
+inline void RawType::setExtensionSlots(RawObject slots) {
+  instanceVariableAtPut(kExtensionSlotsOffset, slots);
 }
 
 inline RawObject RawType::extensionType() {

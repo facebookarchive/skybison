@@ -9,6 +9,7 @@ namespace python {
 using namespace testing;
 
 using TypeExtensionApiTest = ExtensionApi;
+using TypeExtensionApiDeathTest = ExtensionApi;
 
 TEST_F(TypeExtensionApiTest, PyTypeCheckOnInt) {
   PyObject* pylong = PyLong_FromLong(10);
@@ -161,6 +162,140 @@ TEST_F(TypeExtensionApiTest, IsSubtypeWithDifferentTypesReturnsFalse) {
   PyObjectPtr pylong(PyLong_FromLong(10));
   PyObjectPtr pyuni(PyUnicode_FromString("string"));
   EXPECT_FALSE(PyType_IsSubtype(Py_TYPE(pylong), Py_TYPE(pyuni)));
+}
+
+TEST_F(TypeExtensionApiTest, GetSlotFromBuiltinTypeThrowsSystemError) {
+  testing::PyObjectPtr long_obj(PyLong_FromLong(5));
+  PyTypeObject* long_type = Py_TYPE(long_obj);
+  ASSERT_TRUE(PyType_CheckExact(long_type));
+
+  EXPECT_EQ(PyType_GetSlot(long_type, Py_tp_new), nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+
+  const char* expected_message = "bad argument to internal function";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(TypeExtensionApiTest, GetSlotFromStaticExtensionTypeThrowsSystemError) {
+  static PyTypeObject type_obj;
+  type_obj = {PyObject_HEAD_INIT(nullptr)};
+  type_obj.tp_name = "Foo";
+
+  EXPECT_EQ(PyType_GetSlot(&type_obj, Py_tp_new), nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+
+  const char* expected_message = "bad argument to internal function";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(TypeExtensionApiDeathTest,
+       GetSlotFromManagedTypeReturnsFunctionPointer) {
+  PyRun_SimpleString(R"(
+class Foo:
+    def __init__(self):
+        pass
+  )");
+
+  PyObject* foo_type = testing::moduleGet("__main__", "Foo");
+  ASSERT_TRUE(PyType_CheckExact(foo_type));
+  EXPECT_DEATH(
+      PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type), Py_tp_init),
+      "Get slots from types initialized through Python code");
+}
+
+TEST_F(TypeExtensionApiDeathTest, InitSlotWrapperReturnsInstance) {
+  PyRun_SimpleString(R"(
+class Foo(object):
+    def __init__(self):
+        self.bar = 3
+  )");
+
+  PyObject* foo_type = testing::moduleGet("__main__", "Foo");
+  ASSERT_TRUE(PyType_CheckExact(foo_type));
+  auto foo_type_obj = reinterpret_cast<PyTypeObject*>(foo_type);
+  EXPECT_DEATH(PyType_GetSlot(foo_type_obj, Py_tp_new),
+               "Get slots from types initialized through Python code");
+}
+
+TEST_F(TypeExtensionApiDeathTest, CallSlotsWithDescriptorsReturnsInstance) {
+  PyRun_SimpleString(R"(
+def custom_get(self, instance, value):
+    return self
+
+def custom_new(type):
+    type.baz = 5
+    return object.__new__(type)
+
+def custom_init(self):
+    self.bar = 3
+# custom_init.__get__ = custom_get
+
+class Foo(object): pass
+Foo.__new__ = custom_new
+Foo.__init__ = custom_init
+  )");
+
+  PyObject* foo_type = testing::moduleGet("__main__", "Foo");
+  ASSERT_TRUE(PyType_CheckExact(foo_type));
+  auto foo_type_obj = reinterpret_cast<PyTypeObject*>(foo_type);
+  EXPECT_DEATH(PyType_GetSlot(foo_type_obj, Py_tp_new),
+               "Get slots from types initialized through Python code");
+}
+
+TEST_F(TypeExtensionApiDeathTest, SlotWrapperWithArgumentsAborts) {
+  PyRun_SimpleString(R"(
+class Foo:
+    def __new__(self, value):
+        self.bar = value
+  )");
+
+  PyObject* foo_type = testing::moduleGet("__main__", "Foo");
+  ASSERT_TRUE(PyType_CheckExact(foo_type));
+  auto foo_type_obj = reinterpret_cast<PyTypeObject*>(foo_type);
+  EXPECT_DEATH(PyType_GetSlot(foo_type_obj, Py_tp_new),
+               "Get slots from types initialized through Python code");
+}
+
+TEST_F(TypeExtensionApiTest, GetNonExistentSlotFromManagedTypeReturnsNull) {
+  PyRun_SimpleString(R"(
+class Foo: pass
+  )");
+
+  PyObject* foo_type = testing::moduleGet("__main__", "Foo");
+  ASSERT_TRUE(PyType_CheckExact(foo_type));
+  EXPECT_EQ(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type), Py_nb_or),
+            nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  Py_DECREF(foo_type);
+}
+
+TEST_F(TypeExtensionApiTest, GetSlotFromNegativeSlotThrowsSystemError) {
+  PyRun_SimpleString(R"(
+class Foo: pass
+  )");
+
+  PyObject* foo_type = testing::moduleGet("__main__", "Foo");
+  ASSERT_TRUE(PyType_CheckExact(foo_type));
+
+  EXPECT_EQ(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type), -1),
+            nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+
+  const char* expected_message = "bad argument to internal function";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(TypeExtensionApiTest, GetSlotFromLargerThanMaxSlotReturnsNull) {
+  PyRun_SimpleString(R"(
+class Foo: pass
+  )");
+
+  PyObject* foo_type = testing::moduleGet("__main__", "Foo");
+  ASSERT_TRUE(PyType_CheckExact(foo_type));
+
+  EXPECT_EQ(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type), 1000),
+            nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 }  // namespace python

@@ -1,5 +1,6 @@
 // typeobject.c implementation
 
+#include "cpython-data.h"
 #include "cpython-func.h"
 #include "cpython-types.h"
 
@@ -26,6 +27,57 @@ PY_EXPORT int PyType_Check_Func(PyObject* obj) {
 
 PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type) {
   return type->tp_flags;
+}
+
+static Type::ExtensionSlot slotToTypeSlot(int slot) {
+  // TODO(eelizondo): this should cover all of the slots but,
+  // we are starting with just these few for now
+  switch (slot) {
+    case Py_tp_init:
+      return Type::ExtensionSlot::kInit;
+    case Py_tp_new:
+      return Type::ExtensionSlot::kNew;
+    default:
+      return Type::ExtensionSlot::kEnd;
+  }
+}
+
+PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
+  Thread* thread = Thread::currentThread();
+  if (slot < 0) {
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return nullptr;
+  }
+
+  ApiHandle* handle =
+      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj));
+  if (!handle->isManaged()) {
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return nullptr;
+  }
+
+  HandleScope scope(thread);
+  Type type(&scope, handle->asObject());
+  if (type->isBuiltin()) {
+    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    return nullptr;
+  }
+
+  // Extension module requesting slot from a future version
+  Type::ExtensionSlot field_id = slotToTypeSlot(slot);
+  if (field_id >= Type::ExtensionSlot::kEnd) {
+    return nullptr;
+  }
+
+  if (type->extensionSlots()->isNoneType()) {
+    UNIMPLEMENTED("Get slots from types initialized through Python code");
+  }
+
+  DCHECK(!type->extensionSlots()->isNoneType(), "Type is not extension type");
+  Int address(
+      &scope,
+      RawTuple::cast(type->extensionSlots())->at(static_cast<word>(field_id)));
+  return address->asCPtr();
 }
 
 PY_EXPORT int PyType_Ready(PyTypeObject* type) {
@@ -134,10 +186,6 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type, Py_ssize_t nitems) {
 PY_EXPORT PyObject* PyType_GenericNew(PyTypeObject* /* e */, PyObject* /* s */,
                                       PyObject* /* s */) {
   UNIMPLEMENTED("PyType_GenericNew");
-}
-
-PY_EXPORT void* PyType_GetSlot(PyTypeObject* /* e */, int /* t */) {
-  UNIMPLEMENTED("PyType_GetSlot");
 }
 
 PY_EXPORT int PyType_IsSubtype(PyTypeObject* a, PyTypeObject* b) {
