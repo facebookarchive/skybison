@@ -187,6 +187,14 @@ typedef struct PyModuleDef_Base {
   PyObject* m_copy;
 } PyModuleDef_Base;
 
+typedef struct PyModuleDef_Slot {
+  int slot;
+  void* value;
+} PyModuleDef_Slot;
+
+#define Py_mod_create 1
+#define Py_mod_exec 2
+
 typedef struct PyModuleDef {
   PyModuleDef_Base m_base;
   const char* m_name;

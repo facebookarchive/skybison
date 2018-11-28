@@ -7,6 +7,8 @@
 namespace python {
 
 using ModuleExtensionApiTest = ExtensionApi;
+// Used to convert non-capturing closures into function pointers.
+using slot_func = int (*)(PyObject*);
 
 TEST_F(ModuleExtensionApiTest, SpamModule) {
   static PyModuleDef def;
@@ -380,6 +382,207 @@ TEST_F(ModuleExtensionApiTest, GetFilenameObjectFailsIfFilenameNotString) {
   EXPECT_EQ(result, nullptr);
 
   const char* expected_message = "module filename missing";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(ModuleExtensionApiTest, ExecDefReturnsZeroWithNoSlots) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  EXPECT_EQ(PyModule_ExecDef(module, &def), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, ExecDefFailsIfPassedNamelessModule) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+  };
+
+  testing::PyObjectPtr module(PyModule_NewObject(Py_None));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  EXPECT_EQ(PyModule_ExecDef(module, &def), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, ExecDefFailsIfDefHasUnknownSlot) {
+  slot_func mod_exec = [](PyObject* module) {
+    PyModule_SetDocString(module, "testing");
+    return 0;
+  };
+
+  static PyModuleDef_Slot slots[] = {
+      {-1, reinterpret_cast<void*>(mod_exec)},
+      {0, nullptr},
+  };
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "mymodule", nullptr, 0, nullptr, slots,
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  EXPECT_EQ(PyModule_ExecDef(module, &def), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  const char* expected_message = "module initialized with unknown slot";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(ModuleExtensionApiTest, ExecDefRunsCorrectSingleSlot) {
+  slot_func mod_exec = [](PyObject* module) {
+    PyModule_SetDocString(module, "testing");
+    return 0;
+  };
+
+  static PyModuleDef_Slot slots[] = {
+      {Py_mod_exec, reinterpret_cast<void*>(mod_exec)},
+      {0, nullptr},
+  };
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "mymodule", nullptr, 0, nullptr, slots,
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  EXPECT_EQ(PyModule_ExecDef(module, &def), 0);
+
+  testing::PyObjectPtr doc(PyObject_GetAttrString(module, "__doc__"));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(doc, "testing"));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, ExecDefRunsMultipleSlotsInOrder) {
+  slot_func mod_exec = [](PyObject* module) {
+    PyModule_SetDocString(module, "doc test");
+    return 0;
+  };
+
+  slot_func mod_exec_second = [](PyObject* module) {
+    if (PyObject_GetAttrString(module, "__doc__") != nullptr)
+      PyObject_SetAttrString(module, "test1", PyUnicode_FromString("testing1"));
+    return 0;
+  };
+
+  slot_func mod_exec_third = [](PyObject* module) {
+    if (PyObject_GetAttrString(module, "__doc__") != nullptr)
+      PyObject_SetAttrString(module, "test2", PyUnicode_FromString("testing2"));
+    return 0;
+  };
+
+  static PyModuleDef_Slot slots[] = {
+      {Py_mod_exec, reinterpret_cast<void*>(mod_exec)},
+      {Py_mod_exec, reinterpret_cast<void*>(mod_exec_second)},
+      {Py_mod_exec, reinterpret_cast<void*>(mod_exec_third)},
+      {0, nullptr},
+  };
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "mymodule", nullptr, 0, nullptr, slots,
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  EXPECT_EQ(PyModule_ExecDef(module, &def), 0);
+
+  testing::PyObjectPtr doc(PyObject_GetAttrString(module, "__doc__"));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(doc, "doc test"));
+  testing::PyObjectPtr test_attr_one(PyObject_GetAttrString(module, "test1"));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(test_attr_one, "testing1"));
+  testing::PyObjectPtr test_attr_two(PyObject_GetAttrString(module, "test2"));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(test_attr_two, "testing2"));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotHasErrorButReturnsZero) {
+  slot_func mod_exec_fail_silently = [](PyObject* module) {
+    testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
+    return 0;
+  };
+
+  static PyModuleDef_Slot slots[] = {
+      {Py_mod_exec, reinterpret_cast<void*>(mod_exec_fail_silently)},
+      {0, nullptr},
+  };
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "mymodule", nullptr, 0, nullptr, slots,
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  EXPECT_EQ(PyModule_ExecDef(module, &def), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  const char* expected_message = "execution of module raised exception";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsButDoesntSetError) {
+  slot_func mod_exec_fail_no_error = [](PyObject* module) {
+    testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
+    PyErr_Clear();
+    return -1;
+  };
+
+  static PyModuleDef_Slot slots[] = {
+      {Py_mod_exec, reinterpret_cast<void*>(mod_exec_fail_no_error)},
+      {0, nullptr},
+  };
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "mymodule", nullptr, 0, nullptr, slots,
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  EXPECT_EQ(PyModule_ExecDef(module, &def), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  const char* expected_message = "execution failed without setting exception";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+}
+
+TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsAndPropogatesError) {
+  slot_func mod_exec_fail = [](PyObject* module) {
+    testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
+    return -1;
+  };
+
+  static PyModuleDef_Slot slots[] = {
+      {Py_mod_exec, reinterpret_cast<void*>(mod_exec_fail)},
+      {0, nullptr},
+  };
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "mymodule", nullptr, 0, nullptr, slots,
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  EXPECT_EQ(PyModule_ExecDef(module, &def), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  const char* expected_message = "missing attribute";
   EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
 }
 }  // namespace python

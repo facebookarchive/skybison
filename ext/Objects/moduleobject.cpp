@@ -1,5 +1,6 @@
 // moduleobject.c implementation
 
+#include "cpython-func.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
@@ -117,8 +118,59 @@ PY_EXPORT int PyModule_AddFunctions(PyObject* /* m */, PyMethodDef* /* s */) {
   UNIMPLEMENTED("PyModule_AddFunctions");
 }
 
-PY_EXPORT int PyModule_ExecDef(PyObject* /* e */, PyModuleDef* /* f */) {
-  UNIMPLEMENTED("PyModule_ExecDef");
+PY_EXPORT int PyModule_ExecDef(PyObject* module, PyModuleDef* def) {
+  // TODO(atalaba): Replace with PyModule_GetName once it's ready
+  PyObject* name = PyModule_GetNameObject(module);
+  if (name == nullptr) return -1;
+
+  Thread* thread = Thread::currentThread();
+  if (def->m_size >= 0) {
+    ApiHandle* handle = ApiHandle::fromPyObject(module);
+    if (handle->cache() == nullptr) {
+      handle->setCache(std::calloc(def->m_size, 1));
+      if (!handle->cache()) {
+        // TODO(T36797384): Change system error with PyErr_NoMemory
+        thread->raiseSystemErrorWithCStr("out of memory");
+        return -1;
+      }
+    }
+  }
+
+  if (def->m_slots == NULL) {
+    return 0;
+  }
+
+  for (PyModuleDef_Slot* cur_slot = def->m_slots; cur_slot && cur_slot->slot;
+       cur_slot++) {
+    switch (cur_slot->slot) {
+      // TODO(T36797384): Add PyErr_Format calls
+      case Py_mod_create:
+        // handled in PyModule_FromDefAndSpec2
+        break;
+      case Py_mod_exec: {
+        typedef int (*slot_func)(PyObject*);
+        slot_func thunk = reinterpret_cast<slot_func>(cur_slot->value);
+        if ((*thunk)(module) != 0) {
+          if (!PyErr_Occurred()) {
+            thread->raiseSystemErrorWithCStr(
+                "execution failed without setting exception");
+          }
+          return -1;
+        }
+        if (PyErr_Occurred()) {
+          thread->raiseSystemErrorWithCStr(
+              "execution of module raised exception");
+          return -1;
+        }
+        break;
+      }
+      default:
+        thread->raiseSystemErrorWithCStr(
+            "module initialized with unknown slot");
+        return -1;
+    }
+  }
+  return 0;
 }
 
 PY_EXPORT PyObject* PyModule_FromDefAndSpec2(struct PyModuleDef* /* f */,
