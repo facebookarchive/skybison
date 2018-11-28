@@ -923,11 +923,11 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
   PyUnicode_READ_CHAR_Func((PyObject*)op, index)
 #define PyUnicode_READY(op) 0
 
-#define Py_INCREF(op) (Py_INCREF_Func((PyObject*)op))
 #define Py_DECREF(op) Py_DECREF_Func((PyObject*)op)
+#define Py_INCREF(op) Py_INCREF_Func((PyObject*)op)
 #define Py_REFCNT(op) Py_REFCNT_Func((PyObject*)op)
-#define Py_XINCREF(op) (Py_XINCREF_Func((PyObject*)op))
-#define Py_XDECREF(op) Py_XDECREF_Func((PyObject*)op)
+#define Py_XDECREF(op) Py_DecRef((PyObject*)op)
+#define Py_XINCREF(op) Py_IncRef((PyObject*)op)
 
 #define PyObject_INIT(op, typeobj)                                             \
   PyObject_Init((PyObject*)op, (PyTypeObject*)typeobj)

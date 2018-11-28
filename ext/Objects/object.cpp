@@ -26,16 +26,6 @@ PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->refcnt();
 }
 
-PY_EXPORT void Py_XDECREF_Func(PyObject* obj) {
-  if (obj == nullptr) return;
-  Py_DECREF_Func(obj);
-}
-
-PY_EXPORT void Py_XINCREF_Func(PyObject* obj) {
-  if (obj == nullptr) return;
-  Py_INCREF_Func(obj);
-}
-
 PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
                                       PyObject* value) {
   Thread* thread = Thread::currentThread();
@@ -189,9 +179,15 @@ PY_EXPORT PyObject* PyObject_Str(PyObject* /* v */) {
   UNIMPLEMENTED("PyObject_Str");
 }
 
-PY_EXPORT void Py_DecRef(PyObject* /* o */) { UNIMPLEMENTED("Py_DecRef"); }
+PY_EXPORT void Py_DecRef(PyObject* obj) {
+  if (obj == nullptr) return;
+  Py_DECREF_Func(obj);
+}
 
-PY_EXPORT void Py_IncRef(PyObject* /* o */) { UNIMPLEMENTED("Py_IncRef"); }
+PY_EXPORT void Py_IncRef(PyObject* obj) {
+  if (obj == nullptr) return;
+  Py_INCREF_Func(obj);
+}
 
 PY_EXPORT int Py_ReprEnter(PyObject* /* j */) { UNIMPLEMENTED("Py_ReprEnter"); }
 
