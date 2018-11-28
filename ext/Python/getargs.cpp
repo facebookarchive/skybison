@@ -11,11 +11,6 @@ namespace python {
 // This file is mostly imported from CPython. The following functions are
 // intentionally not imported:
 //
-// - _PyArg_Parse_SizeT and others ending with _SizeT (T36694462). Those are
-// variants of PyArg_Parse etc., but returning size_t instead of int for some
-// specifiers. The 'int' behavior is deprecated, we will see if we need to
-// support this.
-//
 // - _PyArg_ParseStack, functions related to METH_FASTCALL (T36694691). Those
 // functions needs PyObject** that we currently cannot support.
 
@@ -67,12 +62,32 @@ PY_EXPORT int PyArg_Parse(PyObject* args, const char* format, ...) {
   return retval;
 }
 
+PY_EXPORT int _PyArg_Parse_SizeT(PyObject* args, const char* format, ...) {
+  int retval;
+  va_list va;
+
+  va_start(va, format);
+  retval = vgetargs1(args, format, &va, FLAG_COMPAT | FLAG_SIZE_T);
+  va_end(va);
+  return retval;
+}
+
 PY_EXPORT int PyArg_ParseTuple(PyObject* args, const char* format, ...) {
   int retval;
   va_list va;
 
   va_start(va, format);
   retval = vgetargs1(args, format, &va, 0);
+  va_end(va);
+  return retval;
+}
+
+PY_EXPORT int _PyArg_ParseTuple_SizeT(PyObject* args, const char* format, ...) {
+  int retval;
+  va_list va;
+
+  va_start(va, format);
+  retval = vgetargs1(args, format, &va, FLAG_SIZE_T);
   va_end(va);
   return retval;
 }
@@ -84,6 +99,18 @@ PY_EXPORT int PyArg_VaParse(PyObject* args, const char* format, va_list va) {
   va_copy(lva, va);
 
   retval = vgetargs1(args, format, &lva, 0);
+  va_end(lva);
+  return retval;
+}
+
+PY_EXPORT int _PyArg_VaParse_SizeT(PyObject* args, const char* format,
+                                   va_list va) {
+  va_list lva;
+  int retval;
+
+  va_copy(lva, va);
+
+  retval = vgetargs1(args, format, &lva, FLAG_SIZE_T);
   va_end(lva);
   return retval;
 }
@@ -1187,6 +1214,26 @@ PY_EXPORT int PyArg_ParseTupleAndKeywords(PyObject* args, PyObject* keywords,
   return retval;
 }
 
+PY_EXPORT int _PyArg_ParseTupleAndKeywords_SizeT(PyObject* args,
+                                                 PyObject* keywords,
+                                                 const char* format,
+                                                 char** kwlist, ...) {
+  int retval;
+  va_list va;
+
+  if ((args == NULL || !PyTuple_Check(args)) ||
+      (keywords != NULL && !PyDict_Check(keywords)) || format == NULL ||
+      kwlist == NULL) {
+    PyErr_BadInternalCall();
+    return 0;
+  }
+
+  va_start(va, kwlist);
+  retval = vgetargskeywords(args, keywords, format, kwlist, &va, FLAG_SIZE_T);
+  va_end(va);
+  return retval;
+}
+
 PY_EXPORT int PyArg_VaParseTupleAndKeywords(PyObject* args, PyObject* keywords,
                                             const char* format, char** kwlist,
                                             va_list va) {
@@ -1203,6 +1250,27 @@ PY_EXPORT int PyArg_VaParseTupleAndKeywords(PyObject* args, PyObject* keywords,
   va_copy(lva, va);
 
   retval = vgetargskeywords(args, keywords, format, kwlist, &lva, 0);
+  va_end(lva);
+  return retval;
+}
+
+PY_EXPORT int _PyArg_VaParseTupleAndKeywords_SizeT(PyObject* args,
+                                                   PyObject* keywords,
+                                                   const char* format,
+                                                   char** kwlist, va_list va) {
+  int retval;
+  va_list lva;
+
+  if ((args == NULL || !PyTuple_Check(args)) ||
+      (keywords != NULL && !PyDict_Check(keywords)) || format == NULL ||
+      kwlist == NULL) {
+    PyErr_BadInternalCall();
+    return 0;
+  }
+
+  va_copy(lva, va);
+
+  retval = vgetargskeywords(args, keywords, format, kwlist, &lva, FLAG_SIZE_T);
   va_end(lva);
   return retval;
 }

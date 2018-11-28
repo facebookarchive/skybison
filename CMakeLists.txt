@@ -395,6 +395,7 @@ add_library(
   ext/Objects/unicodeobject-test.cpp
   ext/Python/errors-test.cpp
   ext/Python/getargs-test.cpp
+  ext/Python/getargs-ssizet-test.cpp
   ext/Python/import-test.cpp
   ext/Python/modsupport-test.cpp
   ext/Python/mysnprintf-test.cpp

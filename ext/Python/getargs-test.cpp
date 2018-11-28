@@ -75,7 +75,7 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleString) {
 }
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleStringFromNone) {
-  PyObject* pytuple = PyTuple_New(2);
+  PyObjectPtr pytuple(PyTuple_New(2));
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, Py_None));
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 1, Py_None));
 
@@ -88,11 +88,9 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleStringFromNone) {
 }
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleStringWithSize) {
-  PyObject* pytuple = PyTuple_New(2);
-  PyObject* in1 = PyUnicode_FromString("hello");
-  PyObject* in2 = PyUnicode_FromString("cpython");
-  ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, in1));
-  ASSERT_NE(-1, PyTuple_SetItem(pytuple, 1, in2));
+  PyObjectPtr pytuple(PyTuple_New(2));
+  ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, PyUnicode_FromString("hello")));
+  ASSERT_NE(-1, PyTuple_SetItem(pytuple, 1, PyUnicode_FromString("cpython")));
 
   char *out1, *out2;
   int size1, size2;
