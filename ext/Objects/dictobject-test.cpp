@@ -6,6 +6,8 @@
 
 namespace python {
 
+using namespace testing;
+
 using DictExtensionApiTest = ExtensionApi;
 
 TEST_F(DictExtensionApiTest, ClearFreeListReturnsZero) {
@@ -30,7 +32,7 @@ TEST_F(DictExtensionApiTest, GetItemNonExistingKeyReturnsNull) {
 TEST_F(DictExtensionApiTest, GetItemReturnsBorrowedValue) {
   PyObject* dict = PyDict_New();
   PyObject* key = PyLong_FromLong(10);
-  PyObject* value = testing::createUniqueObject();
+  PyObject* value = createUniqueObject();
 
   // Insert the value into the dictionary
   ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
@@ -50,6 +52,17 @@ TEST_F(DictExtensionApiTest, GetItemReturnsBorrowedValue) {
   Py_DECREF(value);
   Py_DECREF(key);
   Py_DECREF(dict);
+}
+
+TEST_F(DictExtensionApiTest, GetItemStringReturnsValue) {
+  PyObjectPtr dict(PyDict_New());
+  const char* key_cstr = "key";
+  PyObjectPtr key(PyUnicode_FromString(key_cstr));
+  PyObjectPtr value(createUniqueObject());
+  ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+
+  PyObject* item = PyDict_GetItemString(dict, key_cstr);
+  EXPECT_EQ(item, value);
 }
 
 TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {
@@ -73,9 +86,9 @@ TEST_F(DictExtensionApiTest, SizeWithNonEmptyDict) {
   PyObject* dict = PyDict_New();
   PyObject* key1 = PyLong_FromLong(1);
   PyObject* key2 = PyLong_FromLong(2);
-  PyObject* value1 = testing::createUniqueObject();
-  PyObject* value2 = testing::createUniqueObject();
-  PyObject* value3 = testing::createUniqueObject();
+  PyObject* value1 = createUniqueObject();
+  PyObject* value2 = createUniqueObject();
+  PyObject* value3 = createUniqueObject();
 
   // Dict starts out empty
   EXPECT_EQ(PyDict_Size(dict), 0);

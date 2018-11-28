@@ -55,22 +55,34 @@ PY_EXPORT PyObject* PyDict_New() {
   return ApiHandle::newReference(thread, *value);
 }
 
-PY_EXPORT PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
+static PyObject* getItem(Thread* thread, const Object& dict_obj,
+                         const Object& key_obj) {
   HandleScope scope(thread);
-
-  Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
-  if (!dictobj->isDict()) {
+  if (!dict_obj->isDict()) {
     return nullptr;
   }
-  Dict dict(&scope, *dictobj);
-  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
-  RawObject value = runtime->dictAt(dict, key_obj);
+  Dict dict(&scope, *dict_obj);
+  Object value(&scope, thread->runtime()->dictAt(dict, key_obj));
   if (value->isError()) {
     return nullptr;
   }
-  return ApiHandle::borrowedReference(thread, value);
+  return ApiHandle::borrowedReference(thread, *value);
+}
+
+PY_EXPORT PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object dict(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  return getItem(thread, dict, key_obj);
+}
+
+PY_EXPORT PyObject* PyDict_GetItemString(PyObject* pydict, const char* key) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object dict(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Object key_obj(&scope, thread->runtime()->newStrFromCStr(key));
+  return getItem(thread, dict, key_obj);
 }
 
 PY_EXPORT void PyDict_Clear(PyObject* /* p */) {
@@ -93,11 +105,6 @@ PY_EXPORT int PyDict_DelItem(PyObject* /* p */, PyObject* /* y */) {
 
 PY_EXPORT int PyDict_DelItemString(PyObject* /* v */, const char* /* y */) {
   UNIMPLEMENTED("PyDict_DelItemString");
-}
-
-PY_EXPORT PyObject* PyDict_GetItemString(PyObject* /* v */,
-                                         const char* /* y */) {
-  UNIMPLEMENTED("PyDict_GetItemString");
 }
 
 PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* /* p */,
