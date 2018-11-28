@@ -1,19 +1,24 @@
+#include "Python.h"
+
 #include "capi-fixture.h"
 #include "capi-testing.h"
-#include "cpython-data.h"
-#include "cpython-func.h"
 
 namespace python {
+
+using namespace testing;
 
 using GetArgsExtensionApiTest = ExtensionApi;
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleOneObject) {
-  PyObject* pytuple = PyTuple_New(1);
+  PyObjectPtr pytuple(PyTuple_New(1));
   PyObject* in = PyLong_FromLong(42);
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, in));
 
+  long refcnt = Py_REFCNT(in);
   PyObject* out;
   EXPECT_TRUE(PyArg_ParseTuple(pytuple, "O:xyz", &out));
+  // This returns a borrowed reference, verify ref count did not change
+  EXPECT_EQ(Py_REFCNT(out), refcnt);
   EXPECT_EQ(42, PyLong_AsLong(out));
 }
 
@@ -43,6 +48,17 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleUnicodeObject) {
   PyObject* out1;
   EXPECT_TRUE(PyArg_ParseTuple(pytuple, "U:is_frozen", &out1));
   EXPECT_EQ(in1, out1);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleWithWrongType) {
+  PyObjectPtr pytuple(PyTuple_New(1));
+  PyObjectPtr in(PyLong_FromLong(42));
+  ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, in));
+
+  PyObject* out1 = nullptr;
+  EXPECT_FALSE(PyArg_ParseTuple(pytuple, "U:is_frozen", &out1));
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(out1, nullptr);
 }
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleString) {
@@ -118,6 +134,72 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleNumbers) {
   EXPECT_EQ(131, n_l);
   EXPECT_EQ(132ULL, n_k);
   EXPECT_EQ(133, nn);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleOptionalPresent) {
+  PyObjectPtr pytuple(PyTuple_New(1));
+  ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, PyLong_FromLong(111)));
+
+  PyObject* out = nullptr;
+  EXPECT_TRUE(PyArg_ParseTuple(pytuple, "|O", &out));
+  ASSERT_NE(out, nullptr);
+  EXPECT_EQ(111, PyLong_AsLong(out));
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleOptionalNotPresent) {
+  PyObjectPtr pytuple(PyTuple_New(0));
+
+  PyObject* out = nullptr;
+  EXPECT_TRUE(PyArg_ParseTuple(pytuple, "|O", &out));
+  ASSERT_EQ(out, nullptr);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleObjectWithCorrectType) {
+  PyObjectPtr pytuple(PyTuple_New(1));
+  PyObject* in = PyLong_FromLong(111);
+  PyTypeObject* type = Py_TYPE(in);
+  ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, in));
+
+  PyObject* out = nullptr;
+  EXPECT_TRUE(PyArg_ParseTuple(pytuple, "O!", type, &out));
+
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(111, PyLong_AsLong(out));
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleObjectWithIncorrectType) {
+  PyObjectPtr pytuple(PyTuple_New(1));
+  PyObject* in = PyLong_FromLong(111);
+  PyTypeObject* type = Py_TYPE(pytuple);
+  ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, in));
+
+  PyObject* out = nullptr;
+  EXPECT_FALSE(PyArg_ParseTuple(pytuple, "O!", type, &out));
+
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(out, nullptr);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleObjectWithConverter) {
+  using converter_func = void (*)(PyObject*, void*);
+  converter_func parseTupleConverter = [](PyObject* ptr, void* out) {
+    *static_cast<int*>(out) = 1 + PyLong_AsLong(ptr);
+  };
+
+  PyObjectPtr pytuple(PyTuple_New(1));
+  ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, PyLong_FromLong(111)));
+
+  int out = 0;
+  EXPECT_TRUE(PyArg_ParseTuple(pytuple, "O&", parseTupleConverter,
+                               static_cast<void*>(&out)));
+  EXPECT_EQ(out, 112);
+}
+
+TEST_F(GetArgsExtensionApiTest, OldStyleParseWithInt) {
+  PyObjectPtr pylong(PyLong_FromLong(666));
+  int n = 0;
+  EXPECT_TRUE(PyArg_Parse(pylong, "i", &n));
+  EXPECT_EQ(n, 666);
 }
 
 }  // namespace python
