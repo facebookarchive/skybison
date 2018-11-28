@@ -18,6 +18,7 @@ const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
     {SymbolId::kDunderModule, RawFunction::kModuleOffset},
     {SymbolId::kDunderName, RawFunction::kNameOffset},
     {SymbolId::kDunderQualname, RawFunction::kQualnameOffset},
+    {SymbolId::kDunderDict, RawFunction::kDictOffset},
 };
 
 void FunctionBuiltins::initialize(Runtime* runtime) {

@@ -3725,4 +3725,82 @@ TEST(ModuleTest, NewModuleSetsDictValues) {
   EXPECT_EQ(moduleAt(&runtime, module, "__spec__"), NoneType::object());
 }
 
+TEST(FunctionAttrTest, SetAttribute) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+def foo(): pass
+foo.x = 3
+)");
+  HandleScope scope;
+  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Dict function_dict(&scope, function->dict());
+  Object key(&scope, runtime.newStrFromCStr("x"));
+  Object value(&scope, runtime.dictAt(function_dict, key));
+  ASSERT_TRUE(value->isInt());
+  EXPECT_EQ(Int::cast(value)->asWord(), 3);
+}
+
+TEST(FunctionAttrTest, GetAttribute) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+def foo(): pass
+foo.x = 3
+value = foo.x
+)");
+  HandleScope scope;
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  ASSERT_TRUE(value->isInt());
+  EXPECT_EQ(Int::cast(value)->asWord(), 3);
+}
+
+TEST(FunctionAttrTest, GetAttributePrefersBuiltinAttributesOverDict) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+def foo(): pass
+foo.__doc__ = "bar"
+foo.__dict__['__doc__'] = "baz"
+value = foo.__doc__
+)");
+  HandleScope scope;
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  ASSERT_TRUE(value->isStr());
+  EXPECT_TRUE(RawStr::cast(*value)->equalsCStr("bar"));
+}
+
+TEST(FunctionAttrDeathTest, GetInvalidAttribute) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+def foo(): pass
+value = foo.x
+)"),
+               "missing attr");
+}
+
+TEST(RuntimeTest, LazilyInitializationOfFunctionDict) {
+  Runtime runtime;
+  HandleScope scope;
+  Function function(&scope, runtime.newFunction());
+  ASSERT_TRUE(function->dict()->isNoneType());
+
+  Object dict_name(&scope, runtime.newStrFromCStr("__dict__"));
+  runtime.attributeAt(Thread::currentThread(), function, dict_name);
+  EXPECT_TRUE(function->dict()->isDict());
+}
+
+TEST(RuntimeTest, SetFunctionDict) {
+  Runtime runtime;
+  HandleScope scope;
+  Function function(&scope, runtime.newFunction());
+  ASSERT_TRUE(function->dict()->isNoneType());
+
+  Object dict_name(&scope, runtime.newStrFromCStr("__dict__"));
+  Object dict(&scope, runtime.newDict());
+  runtime.attributeAtPut(Thread::currentThread(), function, dict_name, dict);
+
+  Object result(&scope, runtime.attributeAt(Thread::currentThread(), function,
+                                            dict_name));
+  EXPECT_TRUE(result->isDict());
+  EXPECT_EQ(*dict, *result);
+}
+
 }  // namespace python

@@ -1340,6 +1340,10 @@ class RawFunction : public RawHeapObject {
   RawObject fastGlobals();
   void setFastGlobals(RawObject fast_globals);
 
+  // The function's dictionary
+  RawObject dict();
+  void setDict(RawObject dict);
+
   // Layout.
   static const int kDocOffset = RawHeapObject::kSize;
   static const int kNameOffset = kDocOffset + kPointerSize;
@@ -1355,7 +1359,8 @@ class RawFunction : public RawHeapObject {
   static const int kEntryKwOffset = kEntryOffset + kPointerSize;
   static const int kEntryExOffset = kEntryKwOffset + kPointerSize;
   static const int kFastGlobalsOffset = kEntryExOffset + kPointerSize;
-  static const int kSize = kFastGlobalsOffset + kPointerSize;
+  static const int kDictOffset = kFastGlobalsOffset + kPointerSize;
+  static const int kSize = kDictOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Function);
 };
@@ -3351,6 +3356,12 @@ inline RawObject RawFunction::fastGlobals() {
 
 inline void RawFunction::setFastGlobals(RawObject fast_globals) {
   return instanceVariableAtPut(kFastGlobalsOffset, fast_globals);
+}
+
+inline RawObject RawFunction::dict() { return instanceVariableAt(kDictOffset); }
+
+inline void RawFunction::setDict(RawObject dict) {
+  instanceVariableAtPut(kDictOffset, dict);
 }
 
 // RawInstance

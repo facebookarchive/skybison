@@ -24,9 +24,10 @@ class Runtime;
   V(DunderClassCell, "__classcell__")                                          \
   V(DunderContains, "__contains__")                                            \
   V(DunderContext, "__context__")                                              \
+  V(DunderDelItem, "__delitem__")                                              \
   V(DunderDelattr, "__delattr__")                                              \
   V(DunderDelete, "__delete__")                                                \
-  V(DunderDelItem, "__delitem__")                                              \
+  V(DunderDict, "__dict__")                                                    \
   V(DunderDivmod, "__divmod__")                                                \
   V(DunderDoc, "__doc__")                                                      \
   V(DunderEnter, "__enter__")                                                  \

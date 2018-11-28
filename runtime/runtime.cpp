@@ -504,6 +504,52 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   return *result;
 }
 
+RawObject Runtime::functionGetAttr(Thread* thread, const Object& receiver,
+                                   const Object& name) {
+  DCHECK(name->isStr(), "Name is not a string");
+
+  // Initialize Dict if non-existent
+  HandleScope scope(thread);
+  Function func(&scope, *receiver);
+  if (func->dict()->isNoneType()) {
+    func->setDict(newDict());
+  }
+
+  AttributeInfo info;
+  Layout layout(&scope, layoutAt(receiver->layoutId()));
+  if (layoutFindAttribute(thread, layout, name, &info)) {
+    return instanceGetAttr(thread, receiver, name);
+  }
+  Dict function_dict(&scope, func->dict());
+  Object result(&scope, dictAt(function_dict, name));
+  if (!result->isError()) {
+    return *result;
+  }
+  return thread->raiseAttributeErrorWithCStr("missing attribute");
+}
+
+RawObject Runtime::functionSetAttr(Thread* thread, const Object& receiver,
+                                   const Object& name, const Object& value) {
+  DCHECK(name->isStr(), "Name is not a string");
+
+  // Initialize Dict if non-existent
+  HandleScope scope(thread);
+  Function func(&scope, *receiver);
+  if (func->dict()->isNoneType()) {
+    func->setDict(newDict());
+  }
+
+  AttributeInfo info;
+  Layout layout(&scope, layoutAt(receiver->layoutId()));
+  if (layoutFindAttribute(thread, layout, name, &info)) {
+    // TODO(eelizondo): Handle __dict__ with descriptor
+    return instanceSetAttr(thread, receiver, name, value);
+  }
+  Dict function_dict(&scope, func->dict());
+  dictAtPut(function_dict, name, value);
+  return NoneType::object();
+}
+
 // Note that PEP 562 adds support for data descriptors in module objects.
 // We are targeting python 3.6 for now, so we won't worry about that.
 RawObject Runtime::moduleGetAttr(Thread* thread, const Object& receiver,
@@ -3222,6 +3268,8 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& receiver,
   } else if (receiver->isSuper()) {
     // TODO(T27518836): remove when we support __getattro__
     result = superGetAttr(thread, receiver, name);
+  } else if (receiver->isFunction()) {
+    result = functionGetAttr(thread, receiver, name);
   } else {
     // everything else should fallback to instance
     result = instanceGetAttr(thread, receiver, name);
@@ -3243,6 +3291,8 @@ RawObject Runtime::attributeAtPut(Thread* thread, const Object& receiver,
     result = classSetAttr(thread, receiver, interned_name, value);
   } else if (receiver->isModule()) {
     result = moduleSetAttr(thread, receiver, interned_name, value);
+  } else if (receiver->isFunction()) {
+    result = functionSetAttr(thread, receiver, interned_name, value);
   } else {
     // everything else should fallback to instance
     result = instanceSetAttr(thread, receiver, interned_name, value);

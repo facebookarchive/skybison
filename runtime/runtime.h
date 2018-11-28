@@ -702,6 +702,14 @@ class Runtime {
   RawObject superGetAttr(Thread* thread, const Object& receiver,
                          const Object& name);
 
+  // Generic attribute lookup code used for function objects
+  RawObject functionGetAttr(Thread* thread, const Object& receiver,
+                            const Object& name);
+
+  // Generic attribute setting code used for function objects
+  RawObject functionSetAttr(Thread* thread, const Object& receiver,
+                            const Object& name, const Object& value);
+
   // helper function add builtin types
   void moduleAddBuiltinType(const Module& module, SymbolId name,
                             LayoutId layout_id);
