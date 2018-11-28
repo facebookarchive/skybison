@@ -519,7 +519,7 @@ class Runtime {
   word codeOffsetToLineNum(Thread* thread, const Code& code, word offset);
 
   // Return true if subclass is a subclass of superclass
-  RawObject isSubClass(const Type& subclass, const Type& superclass);
+  RawObject isSubclass(const Type& subclass, const Type& superclass);
 
   // For commonly-subclassed builtin types, define isInstanceOfFoo(RawObject)
   // that does a check including subclasses (unlike RawObject::isFoo(), which

@@ -389,7 +389,7 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
   bool try_swapped = true;
   bool has_different_type = (*left_type != *right_type);
   if (has_different_type &&
-      runtime->isSubClass(right_type, left_type) == Bool::trueObj()) {
+      runtime->isSubclass(right_type, left_type) == Bool::trueObj()) {
     try_swapped = false;
     SymbolId selector = runtime->swappedComparisonSelector(op);
     Object method(&scope, lookupMethod(thread, caller, right, selector));

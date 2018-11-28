@@ -14,7 +14,7 @@ PY_EXPORT int PyLong_Check_Func(PyObject* obj) {
   if (PyLong_CheckExact_Func(obj)) {
     return true;
   }
-  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
                                                   LayoutId::kInt);
 }
 

@@ -75,12 +75,12 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   Type type(&scope, *type_obj);
   if (obj->isType()) {
     Type obj_type(&scope, *obj);
-    if (thread->runtime()->isSubClass(obj_type, type) == Bool::trueObj()) {
+    if (thread->runtime()->isSubclass(obj_type, type) == Bool::trueObj()) {
       obj_type_obj = *obj;
     }
   } else {
     Type obj_type(&scope, thread->runtime()->typeOf(*obj));
-    if (thread->runtime()->isSubClass(obj_type, type) == Bool::trueObj()) {
+    if (thread->runtime()->isSubclass(obj_type, type) == Bool::trueObj()) {
       obj_type_obj = *obj_type;
     }
   }

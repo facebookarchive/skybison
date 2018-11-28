@@ -207,7 +207,7 @@ RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
   Object classinfo(&scope, args.get(1));
   if (runtime->isInstanceOfType(*classinfo)) {
     Type possible_superclass(&scope, *classinfo);
-    return runtime->isSubClass(type, possible_superclass);
+    return runtime->isSubclass(type, possible_superclass);
   }
   // If classinfo is not a tuple, then throw a TypeError.
   if (!classinfo->isTuple()) {
@@ -224,7 +224,7 @@ RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
           "issubclass() arg 2 must be a class of tuple of classes");
     }
     Type possible_superclass(&scope, tuple_of_types->at(i));
-    Bool result(&scope, runtime->isSubClass(type, possible_superclass));
+    Bool result(&scope, runtime->isSubclass(type, possible_superclass));
     // If any of the types are a superclass, return true.
     if (result->value()) {
       return Bool::trueObj();

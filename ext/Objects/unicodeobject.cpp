@@ -37,7 +37,7 @@ PY_EXPORT int PyUnicode_Check_Func(PyObject* obj) {
   if (PyUnicode_CheckExact_Func(obj)) {
     return true;
   }
-  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
                                                   LayoutId::kStr);
 }
 

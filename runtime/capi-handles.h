@@ -38,7 +38,7 @@ class ApiHandle : public PyObject {
 
   // Check if the object is subtype of a type at given layout. This is used as a
   // helper for PyXyz_Check functions
-  bool isSubClass(Thread* thread, LayoutId layout_id);
+  bool isSubclass(Thread* thread, LayoutId layout_id);
 
   // Check if the type is PyType_Type
   bool isType();

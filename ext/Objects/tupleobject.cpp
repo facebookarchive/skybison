@@ -24,7 +24,7 @@ PY_EXPORT int PyTuple_Check_Func(PyObject* obj) {
   if (PyTuple_CheckExact_Func(obj)) {
     return true;
   }
-  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
                                                   LayoutId::kTuple);
 }
 

@@ -10,7 +10,7 @@ PY_EXPORT int PyBytes_Check_Func(PyObject* obj) {
   if (PyBytes_CheckExact_Func(obj)) {
     return true;
   }
-  return ApiHandle::fromPyObject(obj)->isSubClass(Thread::currentThread(),
+  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
                                                   LayoutId::kBytes);
 }
 

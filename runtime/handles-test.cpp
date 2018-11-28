@@ -70,7 +70,7 @@ TEST(HandlesTest, IllegalCastRunTimeTest) {
   EXPECT_DEBUG_DEATH(Dict h2(&scope, *h1), "Invalid Handle construction");
 }
 
-TEST(HandlesTest, ThreadSubClassTest) {
+TEST(HandlesTest, ThreadSubclassTest) {
   Runtime runtime;
   HandleScope scope;
 
