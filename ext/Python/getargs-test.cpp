@@ -112,11 +112,11 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleNumbers) {
   EXPECT_EQ(125, nh);
   EXPECT_EQ(126, n_h);
   EXPECT_EQ(127, ni);
-  EXPECT_EQ(128, n_i);
+  EXPECT_EQ(128U, n_i);
   EXPECT_EQ(129, nl);
-  EXPECT_EQ(130, nk);
+  EXPECT_EQ(130UL, nk);
   EXPECT_EQ(131, n_l);
-  EXPECT_EQ(132, n_k);
+  EXPECT_EQ(132ULL, n_k);
   EXPECT_EQ(133, nn);
 }
 

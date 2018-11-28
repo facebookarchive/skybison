@@ -52,7 +52,6 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithNoneExistingKeyReturnsNull) {
       PyModuleDef_HEAD_INIT,
       "test",
   };
-  int expected_int = 5;
   PyObject* module = PyModule_Create(&def);
 
   PyObject* key = PyUnicode_FromString("a_key");
@@ -158,7 +157,8 @@ TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCountWithPyObjectPtr) {
 TEST_F(ObjectExtensionApiTest, GetAttrIncrementsReferenceCount) {
   static PyModuleDef def;
   def = {
-      PyModuleDef_HEAD_INIT, "test",
+      PyModuleDef_HEAD_INIT,
+      "test",
   };
   PyObjectPtr module(PyModule_Create(&def));
   PyObjectPtr key(PyUnicode_FromString("test"));

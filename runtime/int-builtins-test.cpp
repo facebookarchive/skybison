@@ -502,7 +502,7 @@ c = a | b
 )");
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*c)->value(), 0b111101);
+  EXPECT_EQ(SmallInt::cast(*c)->value(), 0x3D);  // 0b111101
 }
 
 TEST(IntBuiltinsDeathTest, DunderOrWithNonIntReturnsNotImplemented) {
@@ -529,7 +529,7 @@ b = a << 3
 )");
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 0b1101000);
+  EXPECT_EQ(SmallInt::cast(*b)->value(), 0x68);  // 0b1101000
 }
 
 TEST(IntBuiltinsDeathTest, DunderLshiftWithNonIntReturnsNotImplemented) {
@@ -623,7 +623,7 @@ TEST(IntBuiltinsTest, BitLength) {
   ASSERT_TRUE(bit_length6->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*bit_length6)->value(), 64);
 
-  word digits[] = {0, kMaxInt32};
+  uword digits[] = {0, kMaxInt32};
   num = runtime.newIntWithDigits(digits);
   Object bit_length7(&scope, runBuiltin(IntBuiltins::bitLength, num));
   ASSERT_TRUE(bit_length7->isSmallInt());
@@ -631,14 +631,14 @@ TEST(IntBuiltinsTest, BitLength) {
   EXPECT_EQ(RawSmallInt::cast(*bit_length7)->value(), 95);
 
   // (kMinInt64 * 4).bit_length() == 66
-  word digits2[] = {0, -2};
+  uword digits2[] = {0, kMaxUword - 1};  // kMaxUword - 1 == -2
   num = runtime.newIntWithDigits(digits2);
   Object bit_length8(&scope, runBuiltin(IntBuiltins::bitLength, num));
   ASSERT_TRUE(bit_length8->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*bit_length8)->value(), 66);
 
   // (kMinInt64 * 4 + 3).bit_length() == 65
-  word digits3[] = {3, -2};
+  uword digits3[] = {3, kMaxUword - 1};  // kMaxUword - 1 == -2
   num = runtime.newIntWithDigits(digits3);
   Object bit_length9(&scope, runBuiltin(IntBuiltins::bitLength, num));
   ASSERT_TRUE(bit_length9->isSmallInt());
@@ -774,8 +774,8 @@ TEST(LargeIntBuiltinsTest, UnaryNegateTest) {
   Int max_word(&scope, runtime.newInt(kMaxWord));
   EXPECT_EQ(RawInt::cast(*large_e)->compare(*max_word), 1);
   EXPECT_EQ(large_e->numDigits(), 2);
-  EXPECT_EQ(large_e->digitAt(0), 1ULL << (kBitsPerWord - 1));
-  EXPECT_EQ(large_e->digitAt(1), 0);
+  EXPECT_EQ(large_e->digitAt(0), uword{1} << (kBitsPerWord - 1));
+  EXPECT_EQ(large_e->digitAt(1), uword{0});
 }
 
 TEST(LargeIntBuiltinsTest, TruthyLargeInt) {
@@ -968,7 +968,6 @@ TEST(IntBuiltinsTest, StringToIntDNeg) {
 TEST(IntBuiltinsTest, DunderIndexReturnsSameValue) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
 
   runtime.runFromCStr(R"(
 a = (7).__index__()
@@ -986,7 +985,6 @@ b = int.__index__(7)
 TEST(IntBuiltinsTest, DunderIntReturnsSameValue) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
 
   runtime.runFromCStr(R"(
 a = (7).__int__()

@@ -84,7 +84,7 @@ static const LayoutId kBuiltinHeapTypeIds[] = {
 };
 
 INSTANTIATE_TEST_CASE_P(BuiltinTypeIdsParameters, BuiltinTypeIdsTest,
-                        ::testing::ValuesIn(kBuiltinHeapTypeIds));
+                        ::testing::ValuesIn(kBuiltinHeapTypeIds), );
 
 TEST(RuntimeDictTest, EmptyDictInvariants) {
   Runtime runtime;
@@ -3202,29 +3202,29 @@ TEST(RuntimeIntTest, NewSmallIntWithDigits) {
   Runtime runtime;
   HandleScope scope;
 
-  Int zero(&scope, runtime.newIntWithDigits(View<word>(nullptr, 0)));
+  Int zero(&scope, runtime.newIntWithDigits(View<uword>(nullptr, 0)));
   ASSERT_TRUE(zero->isSmallInt());
   EXPECT_EQ(zero->asWord(), 0);
 
-  word digit = 1;
-  RawObject one = runtime.newIntWithDigits(View<word>(&digit, 1));
+  uword digit = 1;
+  RawObject one = runtime.newIntWithDigits(View<uword>(&digit, 1));
   ASSERT_TRUE(one->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(one)->value(), 1);
 
   digit = kMaxUword;
-  RawObject negative_one = runtime.newIntWithDigits(View<word>(&digit, 1));
+  RawObject negative_one = runtime.newIntWithDigits(View<uword>(&digit, 1));
   ASSERT_TRUE(negative_one->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(negative_one)->value(), -1);
 
   word min_small_int = RawSmallInt::kMaxValue;
-  digit = min_small_int;
-  Int min_smallint(&scope, runtime.newIntWithDigits(View<word>(&digit, 1)));
+  digit = static_cast<uword>(min_small_int);
+  Int min_smallint(&scope, runtime.newIntWithDigits(View<uword>(&digit, 1)));
   ASSERT_TRUE(min_smallint->isSmallInt());
   EXPECT_EQ(min_smallint->asWord(), min_small_int);
 
   word max_small_int = RawSmallInt::kMaxValue;
-  digit = max_small_int;
-  Int max_smallint(&scope, runtime.newIntWithDigits(View<word>(&digit, 1)));
+  digit = static_cast<uword>(max_small_int);
+  Int max_smallint(&scope, runtime.newIntWithDigits(View<uword>(&digit, 1)));
   ASSERT_TRUE(max_smallint->isSmallInt());
   EXPECT_EQ(max_smallint->asWord(), max_small_int);
 }
@@ -3234,16 +3234,16 @@ TEST(RuntimeIntTest, NewLargeIntWithDigits) {
   HandleScope scope;
 
   word negative_large_int = RawSmallInt::kMinValue - 1;
-  word digit = negative_large_int;
+  uword digit = static_cast<uword>(negative_large_int);
   Int negative_largeint(&scope,
-                        runtime.newIntWithDigits(View<word>(&digit, 1)));
+                        runtime.newIntWithDigits(View<uword>(&digit, 1)));
   ASSERT_TRUE(negative_largeint->isLargeInt());
   EXPECT_EQ(negative_largeint->asWord(), negative_large_int);
 
   word positive_large_int = RawSmallInt::kMaxValue + 1;
-  digit = positive_large_int;
+  digit = static_cast<uword>(positive_large_int);
   Int positive_largeint(&scope,
-                        runtime.newIntWithDigits(View<word>(&digit, 1)));
+                        runtime.newIntWithDigits(View<uword>(&digit, 1)));
   ASSERT_TRUE(positive_largeint->isLargeInt());
   EXPECT_EQ(positive_largeint->asWord(), positive_large_int);
 }
@@ -3251,12 +3251,12 @@ TEST(RuntimeIntTest, NewLargeIntWithDigits) {
 TEST(RuntimeIntTest, BinaryOrWithPositiveInts) {
   Runtime runtime;
   HandleScope scope;
-  Int left(&scope, SmallInt::fromWord(0b101010));
-  Int right(&scope, SmallInt::fromWord(0b10101));
+  Int left(&scope, SmallInt::fromWord(0x2A));   // 0b00101010
+  Int right(&scope, SmallInt::fromWord(0x15));  // 0b00010101
   Object result(&scope,
                 runtime.intBinaryOr(Thread::currentThread(), left, right));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result)->value(), 0b111111);
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 0x3F);  // 0b00111111;
 }
 
 TEST(RuntimeIntTest, BinaryOrWithPositiveAndNegativeInt) {
@@ -3334,13 +3334,13 @@ TEST(RuntimeIntTest, BinaryLshiftReturnsSmallInt) {
   Int max(&scope, SmallInt::fromWord(SmallInt::kMaxValue >> 2));
   Object result(&scope, runtime.intBinaryLshift(thread, max, 2));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), SmallInt::kMaxValue & ~0b11);
+  EXPECT_EQ(SmallInt::cast(result)->value(), SmallInt::kMaxValue & ~0x3);
 
   // (SmallInt::min >> 2) << 2 = SmallInt::min with last two bits zeroed
   Int min(&scope, SmallInt::fromWord(SmallInt::kMinValue >> 2));
   result = runtime.intBinaryLshift(thread, min, 2);
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), SmallInt::kMinValue & ~0b11);
+  EXPECT_EQ(SmallInt::cast(result)->value(), SmallInt::kMinValue & ~0x3);
 }
 
 TEST(RuntimeIntTest, BinaryLshiftFitsOneWord) {
@@ -3349,16 +3349,16 @@ TEST(RuntimeIntTest, BinaryLshiftFitsOneWord) {
   Thread* thread = Thread::currentThread();
 
   // Shift a 1 to the second most significant bit, verify result has 1 word
-  Int num(&scope, SmallInt::fromWord(0b100));
+  Int num(&scope, SmallInt::fromWord(4));  // 0b100
   Int result(&scope, runtime.intBinaryLshift(thread, num, kBitsPerWord - 4));
   ASSERT_EQ(result->numDigits(), 1);
-  EXPECT_EQ(result->asWord(), word{0b100} << (kBitsPerWord - 4));
+  EXPECT_EQ(result->digitAt(0), uword{4} << (kBitsPerWord - 4));
 
   // Same for negative - shift 0 to second most significant bit
-  num = Int::cast(SmallInt::fromWord(~0b100));
+  num = Int::cast(SmallInt::fromWord(~4));
   result = runtime.intBinaryLshift(thread, num, kBitsPerWord - 4);
   ASSERT_EQ(result->numDigits(), 1);
-  EXPECT_EQ(result->asWord(), ~uword{0b100} << (kBitsPerWord - 4));
+  EXPECT_EQ(result->digitAt(0), ~uword{4} << (kBitsPerWord - 4));
 }
 
 TEST(RuntimeIntTest, BinaryLshiftDoesNotFitInOneWord) {
@@ -3369,19 +3369,19 @@ TEST(RuntimeIntTest, BinaryLshiftDoesNotFitInOneWord) {
   // Test that when we shift 1 into the highest significant bit of the first
   // word (sign bit), an extra word is added to preserve the sign
   // 0100 << 1 = 0000 1000
-  Int num(&scope, SmallInt::fromWord(0b100));
+  Int num(&scope, SmallInt::fromWord(4));  // 0b0100
   Int result(&scope, runtime.intBinaryLshift(thread, num, kBitsPerWord - 3));
   ASSERT_EQ(result->numDigits(), 2);
-  EXPECT_EQ(result->digitAt(0), word{0b100} << (kBitsPerWord - 3));
-  EXPECT_EQ(result->digitAt(1), 0);
+  EXPECT_EQ(result->digitAt(0), uword{4} << (kBitsPerWord - 3));
+  EXPECT_EQ(result->digitAt(1), 0U);
 
   // Same for negative, shifting 0 into the highest significant bit
   // 1011 << 1 = 1111 0110
-  num = Int::cast(SmallInt::fromWord(~0b100));
+  num = Int::cast(SmallInt::fromWord(~4));  // 0b0100
   result = runtime.intBinaryLshift(thread, num, kBitsPerWord - 3);
   ASSERT_EQ(result->numDigits(), 2);
-  EXPECT_EQ(result->digitAt(0), ~uword{0b100} << (kBitsPerWord - 3));
-  EXPECT_EQ(result->digitAt(1), -1);
+  EXPECT_EQ(result->digitAt(0), ~uword{4} << (kBitsPerWord - 3));
+  EXPECT_EQ(result->digitAt(1), kMaxUword);
 }
 
 TEST(RuntimeIntTest, BinaryLshiftWithLargeInt) {
@@ -3395,20 +3395,21 @@ TEST(RuntimeIntTest, BinaryLshiftWithLargeInt) {
   Int result(&scope,
              runtime.intBinaryLshift(thread, num, 2 * kBitsPerWord + 2));
   ASSERT_EQ(result->numDigits(), 4);
-  EXPECT_EQ(result->digitAt(0), 0);
-  EXPECT_EQ(result->digitAt(1), 0);
-  EXPECT_EQ(result->digitAt(2), 4);
-  EXPECT_EQ(result->digitAt(3), 4);
+  EXPECT_EQ(result->digitAt(0), uword{0});
+  EXPECT_EQ(result->digitAt(1), uword{0});
+  EXPECT_EQ(result->digitAt(2), uword{4});
+  EXPECT_EQ(result->digitAt(3), uword{4});
 
   // shift a negative number by 2 words + 2
   // 1110 1110 << 10 = 1011 1000 0000 0000
-  num = Int::cast(testing::newIntWithDigits(&runtime, {-2, -2}));
+  num = Int::cast(
+      testing::newIntWithDigits(&runtime, {kMaxUword - 1, kMaxUword - 1}));
   result = runtime.intBinaryLshift(thread, num, 2 * kBitsPerWord + 2);
   ASSERT_EQ(result->numDigits(), 4);
-  EXPECT_EQ(result->digitAt(0), 0);
-  EXPECT_EQ(result->digitAt(1), 0);
-  EXPECT_EQ(result->digitAt(2), -8);
-  EXPECT_EQ(result->digitAt(3), -5);
+  EXPECT_EQ(result->digitAt(0), uword{0});
+  EXPECT_EQ(result->digitAt(1), uword{0});
+  EXPECT_EQ(result->digitAt(2), kMaxUword - 7);  // kMaxUword - 7 == -8
+  EXPECT_EQ(result->digitAt(3), kMaxUword - 4);  // kMaxUword - 4 == -5
 }
 
 TEST(InstanceDelTest, DeleteUnknownAttribute) {

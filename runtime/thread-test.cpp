@@ -2612,7 +2612,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   Object result(&scope, Interpreter::execute(thread, frame));
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), 7);
-};
+}
 
 TEST(ThreadTest, Func2TestPyStone) {  // mimic pystone.py Func2
   const char* src = R"(

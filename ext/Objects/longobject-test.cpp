@@ -50,7 +50,8 @@ TEST_F(LongExtensionApiTest, AsLongWithNullReturnsNegative) {
 TEST_F(LongExtensionApiTest, AsLongWithNonIntegerReturnsNegative) {
   long res = PyLong_AsLong(Py_None);
   EXPECT_EQ(res, -1);
-  // TODO(eelizondo): Add exception checks once PyLong_AsLong is fully implemented
+  // TODO(eelizondo): Add exception checks once PyLong_AsLong is fully
+  // implemented
 }
 
 TEST_F(LongExtensionApiTest, FromLongReturnsLong) {
@@ -120,7 +121,7 @@ TEST_F(LongExtensionApiTest, Overflow) {
   PyErr_Clear();
 
   pylong = PyLong_FromLong(-123);
-  EXPECT_EQ(PyLong_AsUnsignedLongLong(pylong), -1);
+  EXPECT_EQ(PyLong_AsUnsignedLongLong(pylong), -1ULL);
   EXPECT_TRUE(testing::exceptionValueMatches(
       "can't convert negative value to unsigned"));
 }
@@ -171,13 +172,11 @@ TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithMax) {
 }
 
 TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithLargeInt) {
-  const int num = 123;
   PyObjectPtr largeint(lshift(1, 100));
-  PyObjectPtr pylong(PyNumber_Or(largeint, PyObjectPtr(PyLong_FromLong(num))));
-
-  EXPECT_EQ(PyLong_AsUnsignedLongMask(pylong), num);
+  PyObjectPtr pylong(PyNumber_Or(largeint, PyObjectPtr(PyLong_FromLong(123))));
+  EXPECT_EQ(PyLong_AsUnsignedLongMask(pylong), 123UL);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(PyLong_AsUnsignedLongLongMask(pylong), num);
+  EXPECT_EQ(PyLong_AsUnsignedLongLongMask(pylong), 123ULL);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 

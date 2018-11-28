@@ -68,6 +68,8 @@ set(
   -Wall
   -Werror
   -Wextra
+  -Wno-missing-braces
+  -Wno-missing-field-initializers
   -Wpedantic)
 
 # Define the `cpython` target
@@ -360,6 +362,10 @@ add_library(
   runtime/utils-test.cpp
   runtime/vector-test.cpp
   runtime/warnings-module-test.cpp)
+target_compile_options(
+  runtime-tests
+  PRIVATE
+  ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   runtime-tests
   PUBLIC
@@ -396,6 +402,10 @@ add_library(
   ext/test/capi-testing-test.cpp
   ext/test/capi-testing.cpp
   ext/test/capi-testing.h)
+target_compile_options(
+  extension-tests
+  PRIVATE
+  ${PYRO_COMPILE_OPTIONS})
 target_include_directories(
   extension-tests
   PRIVATE
@@ -414,6 +424,10 @@ target_link_libraries(
 add_executable(
   python-tests
   runtime/python-test.cpp)
+target_compile_options(
+  python-tests
+  PRIVATE
+  ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   python-tests
   PRIVATE

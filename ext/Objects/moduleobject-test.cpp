@@ -20,9 +20,8 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
   // PyInit_spam
   const int val = 5;
   {
-    PyObject *m, *d, *de;
-    m = PyModule_Create(&def);
-    de = PyDict_New();
+    PyObject* m = PyModule_Create(&def);
+    PyObject* de = PyDict_New();
     PyModule_AddObject(m, "constants", de);
 
     const char* c = "CONST";
@@ -473,14 +472,16 @@ TEST_F(ModuleExtensionApiTest, ExecDefRunsMultipleSlotsInOrder) {
   };
 
   slot_func mod_exec_second = [](PyObject* module) {
-    if (PyObject_GetAttrString(module, "__doc__") != nullptr)
+    if (PyObject_GetAttrString(module, "__doc__") != nullptr) {
       PyObject_SetAttrString(module, "test1", PyUnicode_FromString("testing1"));
+    }
     return 0;
   };
 
   slot_func mod_exec_third = [](PyObject* module) {
-    if (PyObject_GetAttrString(module, "__doc__") != nullptr)
+    if (PyObject_GetAttrString(module, "__doc__") != nullptr) {
       PyObject_SetAttrString(module, "test2", PyUnicode_FromString("testing2"));
+    }
     return 0;
   };
 

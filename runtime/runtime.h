@@ -102,7 +102,7 @@ class Runtime {
   // Create a new Int from a sequence of digits, which will be interpreted as a
   // signed, two's-complement number. The digits must satisfy the invariants
   // listed on the LargeInt class.
-  RawObject newIntWithDigits(View<word> digits);
+  RawObject newIntWithDigits(View<uword> digits);
 
   RawObject newLayout();
 

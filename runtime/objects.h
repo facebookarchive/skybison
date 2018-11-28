@@ -351,7 +351,7 @@ class RawInt : public RawObject {
   RAW_OBJECT_COMMON(Int);
 
   // Indexing into digits
-  word digitAt(word index);
+  uword digitAt(word index);
 
   // Number of digits
   word numDigits();
@@ -889,8 +889,8 @@ class RawLargeInt : public RawHeapObject {
   static word allocationSize(word num_digits);
 
   // Indexing into digits
-  word digitAt(word index);
-  void digitAtPut(word index, word digit);
+  uword digitAt(word index);
+  void digitAtPut(word index, uword digit);
 
   bool isNegative();
   bool isPositive();
@@ -2353,14 +2353,14 @@ inline word RawInt::numDigits() {
   return RawLargeInt::cast(*this)->numDigits();
 }
 
-inline word RawInt::digitAt(word index) {
+inline uword RawInt::digitAt(word index) {
   if (isSmallInt()) {
     DCHECK(index == 0, "RawSmallInt digit index out of bounds");
     return RawSmallInt::cast(*this)->value();
   }
   if (isBool()) {
     DCHECK(index == 0, "RawBool digit index out of bounds");
-    return RawBool::cast(*this) == RawBool::trueObj() ? 1 : 0;
+    return RawBool::cast(*this)->value();
   }
   return RawLargeInt::cast(*this)->digitAt(index);
 }
@@ -3027,14 +3027,14 @@ inline bool RawLargeInt::isPositive() {
   return highest_digit >= 0;
 }
 
-inline word RawLargeInt::digitAt(word index) {
+inline uword RawLargeInt::digitAt(word index) {
   DCHECK_INDEX(index, numDigits());
-  return reinterpret_cast<word*>(address() + kValueOffset)[index];
+  return reinterpret_cast<uword*>(address() + kValueOffset)[index];
 }
 
-inline void RawLargeInt::digitAtPut(word index, word digit) {
+inline void RawLargeInt::digitAtPut(word index, uword digit) {
   DCHECK_INDEX(index, numDigits());
-  reinterpret_cast<word*>(address() + kValueOffset)[index] = digit;
+  reinterpret_cast<uword*>(address() + kValueOffset)[index] = digit;
 }
 
 inline word RawLargeInt::numDigits() { return headerCountOrOverflow(); }

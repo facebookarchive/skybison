@@ -194,8 +194,7 @@ static bool negationOverflows(const LargeInt& value) {
       return false;
     }
   }
-  return value->digitAt(num_digits - 1) ==
-         static_cast<word>(1ULL << (kBitsPerWord - 1));
+  return value->digitAt(num_digits - 1) == uword{1} << (kBitsPerWord - 1);
 }
 
 RawObject IntBuiltins::negateLargeInteger(Runtime* runtime,

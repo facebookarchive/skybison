@@ -147,7 +147,7 @@ std::string typeName(Runtime* runtime, RawObject obj);
 
 // Helper to allow construction from initializer list, like
 // newIntFromDigits(runtime, {-1, 1})
-RawObject newIntWithDigits(Runtime* runtime, const std::vector<word>& digits);
+RawObject newIntWithDigits(Runtime* runtime, const std::vector<uword>& digits);
 
 // Helper to create set objects.
 // Equivalent to evaluating "set(range(start, stop))" in Python.

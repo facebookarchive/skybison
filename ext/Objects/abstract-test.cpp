@@ -14,11 +14,11 @@ TEST_F(AbstractExtensionApiTest, PyNumberIndexOnIntReturnsSelf) {
 }
 
 TEST_F(AbstractExtensionApiTest, PyNumberBinaryOp) {
-  PyObject* v = PyLong_FromLong(0b101010);
-  PyObject* w = PyLong_FromLong(0b111000);
+  PyObject* v = PyLong_FromLong(0x2A);  // 0b101010
+  PyObject* w = PyLong_FromLong(0x38);  // 0b111000
   PyObject* result = PyNumber_Xor(v, w);
   EXPECT_TRUE(PyLong_CheckExact(result));
-  EXPECT_EQ(PyLong_AsLong(result), 0b010010);
+  EXPECT_EQ(PyLong_AsLong(result), 0x12);  // 0b010010
   Py_DECREF(v);
   Py_DECREF(w);
   Py_DECREF(result);

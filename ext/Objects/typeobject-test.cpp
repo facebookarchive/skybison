@@ -55,8 +55,7 @@ TEST_F(TypeExtensionApiTest, ReadyCreatesRuntimeType) {
       PyModuleDef_HEAD_INIT,
       "test",
   };
-  PyObject *m, *d;
-  m = PyModule_Create(&def);
+  PyObject* m = PyModule_Create(&def);
   PyModule_AddObject(m, "Empty", reinterpret_cast<PyObject*>(&empty_type));
 
   // TODO(miro): import the module instead of injecting it into __main__
@@ -65,18 +64,19 @@ TEST_F(TypeExtensionApiTest, ReadyCreatesRuntimeType) {
   EXPECT_TRUE(PyType_CheckExact(testing::moduleGet("__main__", "x")));
 }
 
+// clang-format off
 typedef struct {
-  PyObject_HEAD;
+  PyObject_HEAD
   int value;
 } CustomObject;
+// clang-format on
 
-static PyObject* Custom_new(PyTypeObject* type, PyObject* args,
-                            PyObject* kwds) {
+static PyObject* Custom_new(PyTypeObject* type, PyObject*, PyObject*) {
   CustomObject* self = reinterpret_cast<CustomObject*>(type->tp_alloc(type, 0));
   return reinterpret_cast<PyObject*>(self);
 }
 
-static int Custom_init(CustomObject* self, PyObject* args, PyObject* kwds) {
+static int Custom_init(CustomObject* self, PyObject*, PyObject*) {
   self->value = 30;
   return 0;
 }

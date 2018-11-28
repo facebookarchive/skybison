@@ -396,9 +396,9 @@ RawObject Marshal::Reader::readLongObject() {
   word bits_consumed = 0;
   word n_bits = std::abs(n) * kBitsPerLongDigit;
   word num_digits = ((n_bits + kBitsPerWord + 1) / kBitsPerWord) + 1;
-  std::unique_ptr<word[]> digits{new word[num_digits]};
+  std::unique_ptr<uword[]> digits{new uword[num_digits]};
   word digits_idx = 0;
-  word buf = 0;
+  uword buf = 0;
   word word_offset = 0;
   while (bits_consumed < n_bits) {
     int16 digit = readShort();
@@ -427,9 +427,8 @@ RawObject Marshal::Reader::readLongObject() {
   }
   if (word_offset > 0 && buf != 0) {
     digits[digits_idx++] = buf;
-  } else if (digits[digits_idx - 1] < 0 &&
-             (n > 0 ||
-              (digits[digits_idx - 1] & ~(1ULL << (kBitsPerWord - 1))))) {
+  } else if ((digits[digits_idx - 1] >> (kBitsPerWord - 1)) &&
+             (n > 0 || digits[digits_idx - 1] << 1)) {
     // Zero extend if the MSB is set in the top digit and either the result is
     // positive or the top digit has at least one other bit set (in which case
     // we need the extra digit for the negation).
@@ -438,15 +437,15 @@ RawObject Marshal::Reader::readLongObject() {
   if (n < 0) {
     uword carry = 1;
     for (word i = 0; i < digits_idx; i++) {
-      auto digit = static_cast<uword>(digits[i]);
+      uword digit = digits[i];
       carry = __builtin_uaddl_overflow(~digit, carry, &digit);
-      digits[i] = static_cast<word>(digit);
+      digits[i] = digit;
     }
     DCHECK(carry == 0, "Carry should be zero");
   }
 
   RawObject result =
-      runtime_->newIntWithDigits(View<word>(digits.get(), digits_idx));
+      runtime_->newIntWithDigits(View<uword>(digits.get(), digits_idx));
   if (isRef_) {
     addRef(result);
   }

@@ -791,7 +791,7 @@ RawObject Runtime::newInt(word value) {
   if (SmallInt::isValid(value)) {
     return SmallInt::fromWord(value);
   }
-  word digit[1] = {value};
+  uword digit[1] = {static_cast<uword>(value)};
   return newIntWithDigits(digit);
 }
 
@@ -799,8 +799,8 @@ RawObject Runtime::newIntFromUnsigned(uword value) {
   if (static_cast<word>(value) >= 0 && SmallInt::isValid(value)) {
     return SmallInt::fromWord(value);
   }
-  word digits[] = {static_cast<word>(value), 0};
-  View<word> view(digits, digits[0] >> (kBitsPerWord - 1) ? 2 : 1);
+  uword digits[] = {value, 0};
+  View<uword> view(digits, digits[0] >> (kBitsPerWord - 1) ? 2 : 1);
   return newIntWithDigits(view);
 }
 
@@ -812,7 +812,7 @@ RawObject Runtime::newComplex(double real, double imag) {
   return RawComplex::cast(heap()->createComplex(real, imag));
 }
 
-RawObject Runtime::newIntWithDigits(View<word> digits) {
+RawObject Runtime::newIntWithDigits(View<uword> digits) {
   if (digits.length() == 0) {
     return SmallInt::fromWord(0);
   }
@@ -4083,7 +4083,8 @@ RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num, word shift) {
   }
   if (overflow) {
     // signed shift takes cares of keeping the sign
-    result->digitAtPut(num_digits - 1, static_cast<word>(prev) >> right_shift);
+    word overflow_digit = static_cast<word>(prev) >> right_shift;
+    result->digitAtPut(num_digits - 1, static_cast<uword>(overflow_digit));
   }
   return *result;
 }

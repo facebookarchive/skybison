@@ -121,14 +121,14 @@ template <typename T1, typename T2>
 
   HandleScope scope(thread);
   List list(&scope, *actual);
-  if (list->numItems() != expected.size()) {
+  if (static_cast<size_t>(list->numItems()) != expected.size()) {
     return ::testing::AssertionFailure()
            << "Length of: " << actual_expr << "\n"
            << "   Actual: " << list->numItems() << "\n"
            << " Expected: " << expected.size();
   }
 
-  for (word i = 0; i < expected.size(); i++) {
+  for (size_t i = 0; i < expected.size(); i++) {
     Object actual_item(&scope, list->at(i));
     const Value& expected_item = expected[i];
 
@@ -219,8 +219,7 @@ std::string callFunctionToString(const Function& func, const Tuple& args) {
   std::ostream* old_stream = builtInStdout;
   builtInStdout = &stream;
   Thread* thread = Thread::currentThread();
-  Frame* frame =
-      thread->pushNativeFrame(bit_cast<void*>(&callFunctionToString), 0);
+  thread->pushNativeFrame(bit_cast<void*>(&callFunctionToString), 0);
   callFunction(func, args);
   thread->popFrame();
   builtInStdout = old_stream;
@@ -282,8 +281,8 @@ std::string typeName(Runtime* runtime, RawObject obj) {
   return result;
 }
 
-RawObject newIntWithDigits(Runtime* runtime, const std::vector<word>& digits) {
-  return runtime->newIntWithDigits(View<word>(digits.data(), digits.size()));
+RawObject newIntWithDigits(Runtime* runtime, const std::vector<uword>& digits) {
+  return runtime->newIntWithDigits(View<uword>(digits.data(), digits.size()));
 }
 
 RawObject setFromRange(word start, word stop) {

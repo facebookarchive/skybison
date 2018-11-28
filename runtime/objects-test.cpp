@@ -52,12 +52,12 @@ TEST(IntTest, IntTest) {
   EXPECT_EQ(RawLargeInt::cast(*o4)->numDigits(), 1);
   EXPECT_EQ(RawLargeInt::cast(*o4)->asWord(), kMinWord);
 
-  word digits[] = {-1, 0};
+  uword digits[] = {kMaxUword, 0};
   Int o5(&scope, runtime.newIntWithDigits(digits));
   EXPECT_TRUE(o5->isLargeInt());
   EXPECT_EQ(o5->bitLength(), kBitsPerWord);
 
-  word digits2[] = {-1, 1};
+  uword digits2[] = {kMaxUword, 1};
   Int o6(&scope, runtime.newIntWithDigits(digits2));
   EXPECT_TRUE(o6->isLargeInt());
   EXPECT_EQ(o6->bitLength(), kBitsPerWord + 1);
@@ -199,7 +199,7 @@ TEST(IntTest, LargeIntCompare) {
   Runtime runtime;
   HandleScope scope;
   Int great(&scope, testing::newIntWithDigits(&runtime, {1, 1}));
-  Int small(&scope, testing::newIntWithDigits(&runtime, {0, 0, -1}));
+  Int small(&scope, testing::newIntWithDigits(&runtime, {0, 0, kMaxUword}));
   EXPECT_EQ(great->compare(small), 1);
   EXPECT_EQ(small->compare(great), -1);
 
@@ -208,13 +208,13 @@ TEST(IntTest, LargeIntCompare) {
   EXPECT_EQ(great->compare(small), 1);
   EXPECT_EQ(small->compare(great), -1);
 
-  great = testing::newIntWithDigits(&runtime, {-2, 1});
+  great = testing::newIntWithDigits(&runtime, {kMaxUword - 1, 1});
   small = testing::newIntWithDigits(&runtime, {2, 1});
   EXPECT_EQ(great->compare(small), 1);
   EXPECT_EQ(small->compare(great), -1);
 
-  great = testing::newIntWithDigits(&runtime, {-2, -2});
-  small = testing::newIntWithDigits(&runtime, {2, -2});
+  great = testing::newIntWithDigits(&runtime, {kMaxUword - 1, kMaxUword - 1});
+  small = testing::newIntWithDigits(&runtime, {2, kMaxUword - 1});
   EXPECT_EQ(great->compare(small), 1);
   EXPECT_EQ(small->compare(great), -1);
 }
@@ -232,17 +232,17 @@ TEST(IntTest, AsInt) {
 
   Int zero(&scope, runtime.newInt(0));
   EXPECT_VALID(zero->asInt<int>(), 0);
-  EXPECT_VALID(zero->asInt<unsigned>(), 0);
-  EXPECT_VALID(zero->asInt<unsigned long>(), 0);
-  EXPECT_VALID(zero->asInt<unsigned long long>(), 0);
+  EXPECT_VALID(zero->asInt<unsigned>(), 0U);
+  EXPECT_VALID(zero->asInt<unsigned long>(), 0UL);
+  EXPECT_VALID(zero->asInt<unsigned long long>(), 0ULL);
 
   Int num(&scope, runtime.newInt(1234));
   EXPECT_EQ(num->asInt<byte>().error, CastError::Overflow);
   EXPECT_EQ(num->asInt<sbyte>().error, CastError::Overflow);
   EXPECT_VALID(num->asInt<int>(), 1234);
   EXPECT_VALID(num->asInt<long>(), 1234);
-  EXPECT_VALID(num->asInt<unsigned>(), 1234);
-  EXPECT_VALID(num->asInt<unsigned long>(), 1234);
+  EXPECT_VALID(num->asInt<unsigned>(), 1234U);
+  EXPECT_VALID(num->asInt<unsigned long>(), 1234UL);
 
   Int neg_num(&scope, runtime.newInt(-4567));
   EXPECT_EQ(neg_num->asInt<unsigned>().error, CastError::Underflow);
@@ -271,7 +271,7 @@ TEST(IntTest, AsInt) {
   EXPECT_EQ(word_min->asInt<uword>().error, CastError::Underflow);
   EXPECT_EQ(word_min->asInt<int32>().error, CastError::Overflow);
 
-  word digits[] = {0, -1};
+  uword digits[] = {0, kMaxUword};
   Int negative(&scope, runtime.newIntWithDigits(digits));
   EXPECT_EQ(negative->asInt<word>().error, CastError::Underflow);
   EXPECT_EQ(negative->asInt<uword>().error, CastError::Underflow);

@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <cstring>
+
 #include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
@@ -35,7 +37,7 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8WithReferencedSizeReturnsCString) {
   char* cstring = PyUnicode_AsUTF8AndSize(pyunicode, &size);
   ASSERT_NE(nullptr, cstring);
   EXPECT_STREQ(str, cstring);
-  EXPECT_EQ(size, strlen(str));
+  EXPECT_EQ(size, static_cast<Py_ssize_t>(std::strlen(str)));
 
   // Repeated calls should return the same buffer and still set the size.
   size = 0;
@@ -98,7 +100,9 @@ TEST_F(UnicodeExtensionApiTest, FromStringAndSizeIncrementsRefCount) {
 
 TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {
   PyObject* pyunicode = PyUnicode_FromString("some string");
-  EXPECT_EQ(0, PyUnicode_READY(pyunicode));
+  int is_ready = PyUnicode_READY(pyunicode);
+  EXPECT_EQ(0, is_ready);
+  Py_DECREF(pyunicode);
 }
 
 TEST_F(UnicodeExtensionApiTest, Compare) {
@@ -124,26 +128,26 @@ TEST_F(UnicodeExtensionApiTest, Compare) {
 }
 
 TEST_F(UnicodeExtensionApiTest, CompareBadInput) {
-  PyObject* s = PyUnicode_FromString("this is a string");
-  PyObject* l = PyLong_FromLong(1234);
+  PyObject* str_obj = PyUnicode_FromString("this is a string");
+  PyObject* int_obj = PyLong_FromLong(1234);
 
-  int result = PyUnicode_Compare(s, l);
+  PyUnicode_Compare(str_obj, int_obj);
   EXPECT_TRUE(
       testing::exceptionValueMatches("Can't compare largestr and smallint"));
   PyErr_Clear();
 
-  result = PyUnicode_Compare(l, s);
+  PyUnicode_Compare(int_obj, str_obj);
   EXPECT_TRUE(
       testing::exceptionValueMatches("Can't compare smallint and largestr"));
   PyErr_Clear();
 
-  result = PyUnicode_Compare(l, l);
+  PyUnicode_Compare(int_obj, int_obj);
   EXPECT_TRUE(
       testing::exceptionValueMatches("Can't compare smallint and smallint"));
   PyErr_Clear();
 
-  Py_DECREF(l);
-  Py_DECREF(s);
+  Py_DECREF(int_obj);
+  Py_DECREF(str_obj);
 }
 
 TEST_F(UnicodeExtensionApiTest, EqualToASCIIString) {

@@ -333,7 +333,7 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
   RawLargeInt integer = RawLargeInt::cast(obj);
   EXPECT_EQ(integer->numDigits(), 2);
   EXPECT_TRUE(integer->isPositive());
-  EXPECT_EQ(integer->digitAt(0), kMaxUword);
+  EXPECT_EQ(integer->digitAt(0), kMaxUint64);
 
   // marshal.dumps(kMaxUint64 << 1)
   const char buf1[] =
@@ -344,8 +344,8 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
   integer = RawLargeInt::cast(obj);
   EXPECT_EQ(integer->numDigits(), 2);
   EXPECT_TRUE(integer->isPositive());
-  EXPECT_EQ(integer->digitAt(0), kMaxUint64 - 1);
-  EXPECT_EQ(integer->digitAt(1), 1);
+  EXPECT_EQ(integer->digitAt(0), uword{kMaxUint64 - 0x1});
+  EXPECT_EQ(integer->digitAt(1), uword{1});
 
   // marshal.dumps(kMaxUint64 << 4)
   const char buf2[] =
@@ -356,8 +356,8 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
   integer = RawLargeInt::cast(obj);
   EXPECT_EQ(integer->numDigits(), 2);
   EXPECT_TRUE(integer->isPositive());
-  EXPECT_EQ(integer->digitAt(0), kMaxUint64 - 0xF);
-  EXPECT_EQ(integer->digitAt(1), 0xF);
+  EXPECT_EQ(integer->digitAt(0), uword{kMaxUint64 - 0xF});
+  EXPECT_EQ(integer->digitAt(1), uword{15});
 
   // marshal.dumps(1 << 63)
   const char buf3[] =
@@ -367,8 +367,8 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
   ASSERT_TRUE(obj->isLargeInt());
   integer = RawLargeInt::cast(obj);
   ASSERT_EQ(integer->numDigits(), 2);
-  EXPECT_EQ(integer->digitAt(0), 1ULL << (kBitsPerWord - 1));
-  EXPECT_EQ(integer->digitAt(1), 0);
+  EXPECT_EQ(integer->digitAt(0), uword{1} << (kBitsPerWord - 1));
+  EXPECT_EQ(integer->digitAt(1), uword{0});
 }
 
 TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
@@ -383,8 +383,8 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
   RawLargeInt integer = RawLargeInt::cast(obj);
   EXPECT_EQ(integer->numDigits(), 2);
   EXPECT_TRUE(integer->isNegative());
-  EXPECT_EQ(integer->digitAt(0), 1);
-  EXPECT_EQ(integer->digitAt(1), kMaxUint64);
+  EXPECT_EQ(integer->digitAt(0), uword{1});
+  EXPECT_EQ(integer->digitAt(1), uword{kMaxUint64});
 
   // marshal.dumps(-(kMaxUint64 << 1))
   const char buf1[] =
@@ -394,8 +394,8 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
   RawLargeInt integer1 = RawLargeInt::cast(obj1);
   EXPECT_EQ(integer1->numDigits(), 2);
   EXPECT_TRUE(integer1->isNegative());
-  EXPECT_EQ(integer1->digitAt(0), 2);               // ~(kMaxUint64 << 1) + 1
-  EXPECT_EQ(integer1->digitAt(1), kMaxUint64 ^ 1);  // sign_extend(~1)
+  EXPECT_EQ(integer1->digitAt(0), uword{2});  // ~(kMaxUint64 << 1) + 1
+  EXPECT_EQ(integer1->digitAt(1), uword{kMaxUint64 ^ 1});  // sign_extend(~1)
 
   // marshal.dumps(-(kMaxUint64 << 4))
   const char buf2[] =
@@ -405,8 +405,8 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
   RawLargeInt integer2 = RawLargeInt::cast(obj2);
   EXPECT_EQ(integer2->numDigits(), 2);
   EXPECT_TRUE(integer2->isNegative());
-  EXPECT_EQ(integer2->digitAt(0), 16);  // ~(kMaxUint64 << 4) + 1
-  EXPECT_EQ(integer2->digitAt(1), ~(16ULL) + 1);
+  EXPECT_EQ(integer2->digitAt(0), uword{16});  // ~(kMaxUint64 << 4) + 1
+  EXPECT_EQ(integer2->digitAt(1), ~uword{16} + 1);
 
   // marshal.dumps(-(1 << 63))
   const char buf3[] =
@@ -415,7 +415,7 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
   ASSERT_TRUE(obj3->isLargeInt());
   RawLargeInt integer3 = RawLargeInt::cast(obj3);
   ASSERT_EQ(integer3->numDigits(), 1);
-  EXPECT_EQ(integer3->digitAt(0), kMinWord);
+  EXPECT_EQ(integer3->digitAt(0), uword{1} << (kBitsPerWord - 1));
 }
 
 TEST(MarshalReaderDeathTest, ReadUnknownTypeCode) {

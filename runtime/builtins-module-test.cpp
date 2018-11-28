@@ -402,7 +402,6 @@ print(['one', 'two'])
 
 TEST(BuiltinsModuleTest, BuiltInReprOnUserTypeWithDunderRepr) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
   runtime.runFromCStr(R"(
 class Foo:
   def __repr__(self):
