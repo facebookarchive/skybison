@@ -60,6 +60,27 @@ TEST_F(ModuleExtensionApiTest, NewObjectDoesNotAddModuleToModuleDict) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(ModuleExtensionApiTest, NewWithEmptyStringReturnsModule) {
+  testing::PyObjectPtr module(PyModule_New(""));
+  ASSERT_TRUE(PyModule_CheckExact(module));
+
+  testing::PyObjectPtr mod_name(PyObject_GetAttrString(module, "__name__"));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(mod_name, ""));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, NewDoesNotAddModuleToModuleDict) {
+  testing::PyObjectPtr module(PyModule_New("mymodule"));
+  ASSERT_TRUE(PyModule_CheckExact(module));
+
+  PyObject* mods = PyImport_GetModuleDict();
+  testing::PyObjectPtr name(PyUnicode_FromString("mymodule"));
+  PyObject* item = PyDict_GetItem(mods, name);
+  EXPECT_EQ(item, nullptr);
+
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(ModuleExtensionApiTest, CreateAddsDocstring) {
   const char* mod_doc = "documentation for spam";
   static PyModuleDef def;

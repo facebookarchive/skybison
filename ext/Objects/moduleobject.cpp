@@ -157,8 +157,14 @@ PY_EXPORT const char* PyModule_GetName(PyObject* /* m */) {
   UNIMPLEMENTED("PyModule_GetName");
 }
 
-PY_EXPORT PyObject* PyModule_New(const char* /* e */) {
-  UNIMPLEMENTED("PyModule_New");
+PY_EXPORT PyObject* PyModule_New(const char* c_name) {
+  DCHECK(name != nullptr, "PyModule_New takes a valid string");
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Str name(&scope, runtime->newStrFromCStr(c_name));
+  return ApiHandle::fromObject(runtime->newModule(name));
 }
 
 PY_EXPORT PyObject* PyModule_NewObject(PyObject* name) {
