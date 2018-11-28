@@ -93,8 +93,22 @@ PY_EXPORT PyObject* PyBytes_Repr(PyObject* /* j */, int /* s */) {
   UNIMPLEMENTED("PyBytes_Repr");
 }
 
-PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* /* p */) {
-  UNIMPLEMENTED("PyBytes_Size");
+PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Object bytes_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
+
+  if (!runtime->isInstanceOfBytes(bytes_obj)) {
+    thread->raiseTypeErrorWithCStr("PyBytes_Size expected bytes");
+    return -1;
+  }
+
+  // TODO(wmeehan): handle delegated subtype of bytes
+
+  Bytes bytes(&scope, *bytes_obj);
+  return bytes->length();
 }
 
 }  // namespace python

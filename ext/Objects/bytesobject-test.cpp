@@ -21,14 +21,14 @@ TEST_F(BytesExtensionApiTest, FromStringAndSizeIncrementsRefCount) {
 TEST_F(BytesExtensionApiTest, FromStringAndSizeReturnsBytes) {
   PyObjectPtr bytes(PyBytes_FromStringAndSize("foo", 3));
   EXPECT_TRUE(PyBytes_CheckExact(bytes));
-  // TODO(T35906055): EXPECT_EQ(PyBytes_Size(bytes), 3);
+  EXPECT_EQ(PyBytes_Size(bytes), 3);
 }
 
 TEST_F(BytesExtensionApiTest,
        FromStringAndSizeWithEmptyStringReturnsEmptyBytes) {
   PyObjectPtr bytes(PyBytes_FromStringAndSize("", 0));
   EXPECT_TRUE(PyBytes_CheckExact(bytes));
-  // TODO(T35906055): EXPECT_EQ(PyBytes_Size(bytes), 0);
+  EXPECT_EQ(PyBytes_Size(bytes), 0);
 }
 
 TEST_F(BytesExtensionApiTest, FromStringAndSizeWithNegativeSizeReturnsNull) {
@@ -42,13 +42,13 @@ TEST_F(BytesExtensionApiTest, FromStringAndSizeWithNegativeSizeReturnsNull) {
 TEST_F(BytesExtensionApiTest, FromStringAndSizeWithShorterSize) {
   PyObjectPtr bytes(PyBytes_FromStringAndSize("foo bar", 5));
   EXPECT_TRUE(PyBytes_CheckExact(bytes));
-  // TODO(T35906055): EXPECT_EQ(PyBytes_Size(bytes), 5);
+  EXPECT_EQ(PyBytes_Size(bytes), 5);
 }
 
 TEST_F(BytesExtensionApiTest, FromStringAndSizeWithSizeZero) {
   PyObjectPtr bytes(PyBytes_FromStringAndSize("foo bar", 0));
   EXPECT_TRUE(PyBytes_CheckExact(bytes));
-  // TODO(T35906055): EXPECT_EQ(PyBytes_Size(bytes), 0);
+  EXPECT_EQ(PyBytes_Size(bytes), 0);
 }
 
 TEST_F(BytesExtensionApiTest, FromStringIncrementsRefCount) {
@@ -62,13 +62,23 @@ TEST_F(BytesExtensionApiTest, FromStringIncrementsRefCount) {
 TEST_F(BytesExtensionApiTest, FromStringReturnsBytes) {
   PyObjectPtr bytes(PyBytes_FromString("foo"));
   EXPECT_TRUE(PyBytes_CheckExact(bytes));
-  // TODO(T35906055): EXPECT_EQ(PyBytes_Size(bytes), 3);
+  EXPECT_EQ(PyBytes_Size(bytes), 3);
 }
 
 TEST_F(BytesExtensionApiTest, FromStringWithEmptyStringReturnsEmptyBytes) {
   PyObjectPtr bytes(PyBytes_FromString(""));
   EXPECT_TRUE(PyBytes_CheckExact(bytes));
-  // TODO(T35906055): EXPECT_EQ(PyBytes_Size(bytes), 0);
+  EXPECT_EQ(PyBytes_Size(bytes), 0);
+}
+
+TEST_F(BytesExtensionApiTest, SizeWithNonBytesReturnsNegative) {
+  PyObjectPtr dict(PyDict_New());
+
+  EXPECT_EQ(PyBytes_Size(dict), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  // TODO(miro): replace with PyErr_ExceptionMatches(PyExc_TypeError);
+  const char* expected = "PyBytes_Size expected bytes";
+  EXPECT_TRUE(testing::exceptionValueMatches(expected));
 }
 
 }  // namespace python
