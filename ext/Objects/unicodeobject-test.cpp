@@ -229,11 +229,9 @@ TEST_F(UnicodeExtensionApiTest, GetLengthWithNonStrReturnsNegative) {
 TEST_F(UnicodeExtensionApiTest, GETLENGTHAndGetLengthSame) {
   PyObjectPtr mty(PyUnicode_FromString(""));
   PyObjectPtr str(PyUnicode_FromString("some string"));
-  PyObjectPtr num(PyLong_FromLong(5));
 
-  EXPECT_EQ(PyUnicode_GET_LENGTH(mty), PyUnicode_GetLength(mty));
-  EXPECT_EQ(PyUnicode_GET_LENGTH(str), PyUnicode_GetLength(str));
-  EXPECT_EQ(PyUnicode_GET_LENGTH(num), PyUnicode_GetLength(num));
+  EXPECT_EQ(PyUnicode_GET_LENGTH(mty.get()), PyUnicode_GetLength(mty));
+  EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), PyUnicode_GetLength(str));
 }
 
 TEST_F(UnicodeExtensionApiTest, GetSizeWithEmptyStrReturnsZero) {
@@ -256,11 +254,9 @@ TEST_F(UnicodeExtensionApiTest, GetSizeWithNonStrReturnsNegative) {
 TEST_F(UnicodeExtensionApiTest, GETSIZEAndGetSizeSame) {
   PyObjectPtr mty(PyUnicode_FromString(""));
   PyObjectPtr str(PyUnicode_FromString("another string"));
-  PyObjectPtr set(PySet_New(nullptr));
 
-  EXPECT_EQ(PyUnicode_GET_SIZE(mty), PyUnicode_GetSize(mty));
-  EXPECT_EQ(PyUnicode_GET_SIZE(str), PyUnicode_GetSize(str));
-  EXPECT_EQ(PyUnicode_GET_SIZE(set), PyUnicode_GetSize(set));
+  EXPECT_EQ(PyUnicode_GET_SIZE(mty.get()), PyUnicode_GetSize(mty));
+  EXPECT_EQ(PyUnicode_GET_SIZE(str.get()), PyUnicode_GetSize(str));
 }
 
 }  // namespace python

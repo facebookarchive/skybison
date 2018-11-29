@@ -24,6 +24,8 @@ class PyObjectPtr {
 
   operator PyObject*() const { return obj_; }
 
+  PyObject* get() const { return obj_; }
+
   // disable copy and assignment
   PyObjectPtr(const PyObjectPtr&) = delete;
   PyObjectPtr& operator=(PyObjectPtr const&) = delete;
