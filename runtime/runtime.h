@@ -546,6 +546,7 @@ class Runtime {
   DEFINE_IS_INSTANCE(SystemExit)
   DEFINE_IS_INSTANCE(Tuple)
   DEFINE_IS_INSTANCE(Type)
+#undef DEFINE_IS_INSTANCE
 
   // BaseException must be handled specially because it has builtin subclasses
   // that are visible to managed code.
@@ -561,7 +562,6 @@ class Runtime {
     return !obj.isFloat() &&
            RawType::cast(typeOf(obj)).builtinBase() == LayoutId::kFloat;
   }
-#undef DEFINE_IS_INSTANCE
 
   // Clear the allocated memory from all extension related objects
   void deallocExtensions();
