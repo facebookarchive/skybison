@@ -189,7 +189,7 @@ RawObject builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
   Type type(&scope, args.get(1));
-  return runtime->isInstance(obj, type);
+  return Bool::fromBool(runtime->isInstance(obj, type));
 }
 
 RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
@@ -207,7 +207,7 @@ RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
   Object classinfo(&scope, args.get(1));
   if (runtime->isInstanceOfType(*classinfo)) {
     Type possible_superclass(&scope, *classinfo);
-    return runtime->isSubclass(type, possible_superclass);
+    return Bool::fromBool(runtime->isSubclass(type, possible_superclass));
   }
   // If classinfo is not a tuple, then throw a TypeError.
   if (!classinfo->isTuple()) {
@@ -224,11 +224,8 @@ RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
           "issubclass() arg 2 must be a class of tuple of classes");
     }
     Type possible_superclass(&scope, tuple_of_types->at(i));
-    Bool result(&scope, runtime->isSubclass(type, possible_superclass));
     // If any of the types are a superclass, return true.
-    if (result->value()) {
-      return Bool::trueObj();
-    }
+    if (runtime->isSubclass(type, possible_superclass)) return Bool::trueObj();
   }
   // None of the types in the tuple were a superclass, so return false.
   return Bool::falseObj();

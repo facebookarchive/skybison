@@ -1634,8 +1634,8 @@ bool Runtime::shouldReverseBinaryOperation(
   HandleScope scope(thread);
   Type left_type(&scope, typeOf(*left));
   Type right_type(&scope, typeOf(*right));
-  bool is_derived_type = (*left_type != *right_type) &&
-                         (isSubclass(right_type, left_type) == Bool::trueObj());
+  bool is_derived_type =
+      (*left_type != *right_type) && isSubclass(right_type, left_type);
   bool is_method_different = !right_reversed_method->isError() &&
                              *left_reversed_method != *right_reversed_method;
   return is_derived_type && is_method_different;
@@ -3464,18 +3464,18 @@ word Runtime::codeOffsetToLineNum(Thread* thread, const Code& code,
   return line;
 }
 
-RawObject Runtime::isSubclass(const Type& subclass, const Type& superclass) {
+bool Runtime::isSubclass(const Type& subclass, const Type& superclass) {
   HandleScope scope;
   Tuple mro(&scope, subclass->mro());
   for (word i = 0; i < mro->length(); i++) {
     if (mro->at(i) == *superclass) {
-      return Bool::trueObj();
+      return true;
     }
   }
-  return Bool::falseObj();
+  return false;
 }
 
-RawObject Runtime::isInstance(const Object& obj, const Type& type) {
+bool Runtime::isInstance(const Object& obj, const Type& type) {
   HandleScope scope;
   Type obj_class(&scope, typeOf(*obj));
   return isSubclass(obj_class, type);

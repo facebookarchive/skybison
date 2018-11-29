@@ -137,7 +137,7 @@ bool ApiHandle::isSubclass(Thread* thread, LayoutId layout_id) {
   HandleScope scope(thread);
   Type superclass(&scope, runtime->typeAt(layout_id));
   Type subclass(&scope, type()->asObject());
-  return runtime->isSubclass(subclass, superclass) == Bool::trueObj();
+  return runtime->isSubclass(subclass, superclass);
 }
 
 void ApiHandle::dispose() {

@@ -112,7 +112,7 @@ static bool givenExceptionMatches(Thread* thread, const Object& given,
       (RawType::cast(*exc).builtinBase() <= LayoutId::kLastException)) {
     Type subtype(&scope, *given_type);
     Type supertype(&scope, *exc);
-    return runtime->isSubclass(subtype, supertype) == Bool::trueObj();
+    return runtime->isSubclass(subtype, supertype);
   }
   return *given_type == *exc;
 }
