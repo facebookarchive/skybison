@@ -25,6 +25,8 @@ class OS {
 
   static char* temporaryDirectory(const char* prefix);
 
+  static char* temporaryFile(const char* prefix, int* fd);
+
   static const char* getenv(const char* var);
 
   static const char* name();

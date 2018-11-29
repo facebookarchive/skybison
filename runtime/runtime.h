@@ -161,10 +161,11 @@ class Runtime {
   void createBuiltinsModule();
   void createImportModule();
   void createSysModule();
+  void createThreadModule();
   void createTimeModule();
+  void createUnderIoModule();
   void createWarningsModule();
   void createWeakRefModule();
-  void createThreadModule();
 
   RawObject internStr(const Object& str);
   RawObject internStrFromCStr(const char* c_str);

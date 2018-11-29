@@ -215,6 +215,8 @@ add_library(
   runtime/imp-module.h
   runtime/int-builtins.cpp
   runtime/int-builtins.h
+  runtime/io-module.cpp
+  runtime/io-module.h
   runtime/interpreter.cpp
   runtime/interpreter.h
   runtime/layout.h
@@ -336,6 +338,7 @@ add_library(
   runtime/imp-module-test.cpp
   runtime/int-builtins-test.cpp
   runtime/interpreter-test.cpp
+  runtime/io-module-test.cpp
   runtime/layout-test.cpp
   runtime/list-builtins-test.cpp
   runtime/marshal-test.cpp

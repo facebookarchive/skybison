@@ -275,6 +275,9 @@ class Runtime;
   V(TypeError, "TypeError")                                                    \
   V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderImp, "_imp")                                                          \
+  V(UnderIo, "_io")                                                            \
+  V(UnderReadBytes, "_readbytes")                                              \
+  V(UnderReadFile, "_readfile")                                                \
   V(UnderThread, "_thread")                                                    \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakRef, "_weakref")                                                  \

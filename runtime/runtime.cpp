@@ -27,6 +27,7 @@
 #include "imp-module.h"
 #include "int-builtins.h"
 #include "interpreter.h"
+#include "io-module.h"
 #include "layout.h"
 #include "list-builtins.h"
 #include "marshal.h"
@@ -1572,6 +1573,7 @@ struct {
     {SymbolId::kSys, &Runtime::createSysModule},
     {SymbolId::kTime, &Runtime::createTimeModule},
     {SymbolId::kUnderImp, &Runtime::createImportModule},
+    {SymbolId::kUnderIo, &Runtime::createUnderIoModule},
     {SymbolId::kUnderThread, &Runtime::createThreadModule},
     {SymbolId::kUnderWarnings, &Runtime::createWarningsModule},
     {SymbolId::kUnderWeakRef, &Runtime::createWeakRefModule},
@@ -2045,6 +2047,22 @@ void Runtime::createTimeModule() {
   // time.time
   moduleAddBuiltinFunction(module, SymbolId::kTime,
                            nativeTrampoline<builtinTime>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+
+  addModule(module);
+}
+
+void Runtime::createUnderIoModule() {
+  HandleScope scope;
+  Object name(&scope, symbols()->UnderIo());
+  Module module(&scope, newModule(name));
+
+  // TODO(eelizondo): Remove once _io is fully imported
+  moduleAddBuiltinFunction(module, SymbolId::kUnderReadFile,
+                           nativeTrampoline<ioReadFile>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderReadBytes,
+                           nativeTrampoline<ioReadBytes>,
                            unimplementedTrampoline, unimplementedTrampoline);
 
   addModule(module);

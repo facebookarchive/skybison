@@ -504,6 +504,9 @@ def decode_source(source_bytes):
 
     Universal newline support is used in the decoding.
     """
+    # TODO(eelizondo): Remve once _io is fully imported
+    if True:
+        return _io._readbytes(source_bytes)
     import tokenize  # To avoid bootstrap issues.
     source_bytes_readline = _io.BytesIO(source_bytes).readline
     encoding = tokenize.detect_encoding(source_bytes_readline)
@@ -822,6 +825,9 @@ class FileLoader:
 
     def get_data(self, path):
         """Return the data from path as raw bytes."""
+        # TODO(eelizondo): Remve once _io is fully imported
+        if True:
+            return _io._readfile(path)
         with _io.FileIO(path, 'r') as file:
             return file.read()
 

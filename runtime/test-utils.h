@@ -163,5 +163,13 @@ RawObject runBuiltin(BuiltinMethodType method, const Args&... args) {
   return runBuiltinImpl(method, args_array);
 }
 
+struct FileDeleter {
+  void operator()(char* filename) const {
+    std::remove(filename);
+    delete[] filename;
+  }
+};
+using unique_file_ptr = std::unique_ptr<char, FileDeleter>;
+
 }  // namespace testing
 }  // namespace python
