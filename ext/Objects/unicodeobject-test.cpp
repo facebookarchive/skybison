@@ -85,9 +85,8 @@ TEST_F(UnicodeExtensionApiTest, FromStringAndSizeFailsNegSize) {
   PyObjectPtr pyuni(PyUnicode_FromStringAndSize("a", -1));
   ASSERT_EQ(pyuni, nullptr);
 
-  const char* expected_message =
-      "Negative size passed to PyUnicode_FromStringAndSize";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(UnicodeExtensionApiTest, FromStringAndSizeIncrementsRefCount) {
@@ -132,18 +131,18 @@ TEST_F(UnicodeExtensionApiTest, CompareBadInput) {
   PyObject* int_obj = PyLong_FromLong(1234);
 
   PyUnicode_Compare(str_obj, int_obj);
-  EXPECT_TRUE(
-      testing::exceptionValueMatches("Can't compare largestr and smallint"));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
   PyErr_Clear();
 
   PyUnicode_Compare(int_obj, str_obj);
-  EXPECT_TRUE(
-      testing::exceptionValueMatches("Can't compare smallint and largestr"));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
   PyErr_Clear();
 
   PyUnicode_Compare(int_obj, int_obj);
-  EXPECT_TRUE(
-      testing::exceptionValueMatches("Can't compare smallint and smallint"));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
   PyErr_Clear();
 
   Py_DECREF(int_obj);
@@ -223,10 +222,8 @@ TEST_F(UnicodeExtensionApiTest, GetLengthWithNonEmptyString) {
 TEST_F(UnicodeExtensionApiTest, GetLengthWithNonStrReturnsNegative) {
   PyObjectPtr list(PyList_New(3));
   EXPECT_EQ(PyUnicode_GetLength(list), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 TEST_F(UnicodeExtensionApiTest, GETLENGTHAndGetLengthSame) {
@@ -252,10 +249,8 @@ TEST_F(UnicodeExtensionApiTest, GetSizeWithNonEmptyString) {
 TEST_F(UnicodeExtensionApiTest, GetSizeWithNonStrReturnsNegative) {
   PyObjectPtr dict(PyDict_New());
   EXPECT_EQ(PyUnicode_GetSize(dict), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 TEST_F(UnicodeExtensionApiTest, GETSIZEAndGetSizeSame) {

@@ -68,10 +68,8 @@ TEST_F(DictExtensionApiTest, GetItemStringReturnsValue) {
 TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {
   PyObject* list = PyList_New(0);
   EXPECT_EQ(PyDict_Size(list), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 
   Py_DECREF(list);
 }

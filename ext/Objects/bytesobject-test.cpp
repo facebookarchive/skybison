@@ -33,10 +33,8 @@ TEST_F(BytesExtensionApiTest,
 
 TEST_F(BytesExtensionApiTest, FromStringAndSizeWithNegativeSizeReturnsNull) {
   EXPECT_EQ(PyBytes_FromStringAndSize("foo", -1), nullptr);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-  // TODO(miro): replace with PyErr_ExceptionMatches(PyExc_SystemError);
-  const char* expected = "Negative size passed to PyBytes_FromStringAndSize";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(BytesExtensionApiTest, FromStringAndSizeWithShorterSize) {
@@ -75,10 +73,8 @@ TEST_F(BytesExtensionApiTest, SizeWithNonBytesReturnsNegative) {
   PyObjectPtr dict(PyDict_New());
 
   EXPECT_EQ(PyBytes_Size(dict), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-  // TODO(miro): replace with PyErr_ExceptionMatches(PyExc_TypeError);
-  const char* expected = "PyBytes_Size expected bytes";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 }  // namespace python

@@ -2,6 +2,7 @@
 
 #include <cfloat>
 
+#include "cpython-func.h"
 #include "objects.h"
 #include "runtime.h"
 
@@ -18,7 +19,7 @@ PY_EXPORT PyObject* PyFloat_FromDouble(double fval) {
 PY_EXPORT double PyFloat_AsDouble(PyObject* op) {
   Thread* thread = Thread::currentThread();
   if (op == nullptr) {
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    PyErr_BadArgument();
     return -1;
   }
 
@@ -74,8 +75,8 @@ PY_EXPORT PyObject* PyFloat_FromString(PyObject* /* v */) {
 
 PY_EXPORT PyObject* PyFloat_GetInfo() { UNIMPLEMENTED("PyFloat_GetInfo"); }
 
-PY_EXPORT double PyFloat_GetMax() {  return DBL_MAX; }
+PY_EXPORT double PyFloat_GetMax() { return DBL_MAX; }
 
-PY_EXPORT double PyFloat_GetMin() {  return DBL_MIN; }
+PY_EXPORT double PyFloat_GetMin() { return DBL_MIN; }
 
 }  // namespace python

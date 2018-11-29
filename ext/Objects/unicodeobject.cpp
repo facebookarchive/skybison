@@ -1,5 +1,6 @@
 // unicodeobject.c implementation
 
+#include "cpython-func.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
@@ -85,7 +86,7 @@ PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
   return reinterpret_cast<char*>(result);
 }
 
-PY_EXPORT const char* PyUnicode_AsUTF8(PyObject* unicode) {
+PY_EXPORT char* PyUnicode_AsUTF8(PyObject* unicode) {
   return PyUnicode_AsUTF8AndSize(unicode, nullptr);
 }
 
@@ -473,8 +474,7 @@ PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* py_str) {
 
   Object str_obj(&scope, ApiHandle::fromPyObject(py_str)->asObject());
   if (!runtime->isInstanceOfStr(str_obj)) {
-    // TODO(wmeehan) replace this error with PyErr_BadInternalCall
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    PyErr_BadArgument();
     return -1;
   }
 
@@ -494,8 +494,7 @@ PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* py_str) {
 
   Object str_obj(&scope, ApiHandle::fromPyObject(py_str)->asObject());
   if (!runtime->isInstanceOfStr(str_obj)) {
-    // TODO(wmeehan) replace this error with PyErr_BadInternalCall
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    PyErr_BadArgument();
     return -1;
   }
 

@@ -9,12 +9,10 @@ namespace python {
 using ErrorsExtensionApiTest = ExtensionApi;
 
 TEST_F(ErrorsExtensionApiTest, CompareErrorMessageOnThread) {
-  const char* error_message = "An exception occured";
+  ASSERT_EQ(nullptr, PyErr_Occurred());
 
-  PyErr_SetString(PyExc_Exception, error_message);
+  PyErr_SetString(PyExc_Exception, "An exception occured");
   ASSERT_EQ(PyExc_Exception, PyErr_Occurred());
-
-  EXPECT_TRUE(testing::exceptionValueMatches(error_message));
 }
 
 TEST_F(ErrorsExtensionApiTest, SetObjectSetsTypeAndValue) {

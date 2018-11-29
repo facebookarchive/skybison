@@ -43,8 +43,8 @@ TEST_F(LongExtensionApiTest, AsLongWithNullReturnsNegative) {
   long res = PyLong_AsLong(nullptr);
   EXPECT_EQ(res, -1);
 
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(LongExtensionApiTest, AsLongWithNonIntegerReturnsNegative) {
@@ -106,24 +106,24 @@ TEST_F(LongExtensionApiTest, Overflow) {
   PyObjectPtr pylong(lshift(1, 100));
 
   EXPECT_EQ(PyLong_AsUnsignedLong(pylong), -1UL);
-  EXPECT_TRUE(testing::exceptionValueMatches(
-      "Python int too big to convert to C unsigned long"));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
   PyErr_Clear();
 
   EXPECT_EQ(PyLong_AsLong(pylong), -1);
-  EXPECT_TRUE(testing::exceptionValueMatches(
-      "Python int too big to convert to C long"));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
   PyErr_Clear();
 
   EXPECT_EQ(PyLong_AsSsize_t(pylong), -1);
-  EXPECT_TRUE(testing::exceptionValueMatches(
-      "Python int too big to convert to C ssize_t"));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
   PyErr_Clear();
 
   pylong = PyLong_FromLong(-123);
   EXPECT_EQ(PyLong_AsUnsignedLongLong(pylong), -1ULL);
-  EXPECT_TRUE(testing::exceptionValueMatches(
-      "can't convert negative value to unsigned"));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
 }
 
 TEST_F(LongExtensionApiTest, AsLongAndOverflow) {

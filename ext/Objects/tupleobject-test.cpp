@@ -19,8 +19,8 @@ TEST_F(TupleExtensionApiTest, SetItemWithNonTupleReturnsNegative) {
   int result = PyTuple_SetItem(Py_True, 0, Py_None);
   EXPECT_EQ(result, -1);
 
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(TupleExtensionApiTest, SetItemWithInvalidIndexReturnsNegative) {
@@ -28,8 +28,8 @@ TEST_F(TupleExtensionApiTest, SetItemWithInvalidIndexReturnsNegative) {
   int result = PyTuple_SetItem(pytuple, 2, Py_None);
   EXPECT_EQ(result, -1);
 
-  const char* expected_message = "tuple assignment index out of range";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
 }
 
 TEST_F(TupleExtensionApiTest, SetItemReturnsZero) {

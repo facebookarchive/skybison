@@ -157,8 +157,8 @@ TEST_F(ModuleExtensionApiTest, GetStateFailsOnNonModule) {
   testing::PyObjectPtr not_a_module(testing::createUniqueObject());
 
   EXPECT_EQ(PyModule_GetState(not_a_module), nullptr);
-  EXPECT_TRUE(
-      testing::exceptionValueMatches("Bad argument to PyModule_GetState"));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 TEST_F(ModuleExtensionApiTest, GetDefWithExtensionModuleRetunsNonNull) {
@@ -291,8 +291,8 @@ TEST_F(ModuleExtensionApiTest, GetNameObjectFailsIfNotModule) {
   PyObject* result = PyModule_GetNameObject(not_a_module);
   EXPECT_EQ(result, nullptr);
 
-  const char* expected_message = "PyModule_GetNameObject takes a Module object";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 
   Py_DECREF(not_a_module);
 }
@@ -313,8 +313,8 @@ TEST_F(ModuleExtensionApiTest, GetNameObjectFailsIfNotString) {
   PyObject* result = PyModule_GetNameObject(module);
   EXPECT_EQ(result, nullptr);
 
-  const char* expected_message = "nameless module";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 
   Py_DECREF(module);
   Py_DECREF(not_a_module);
@@ -345,10 +345,8 @@ TEST_F(ModuleExtensionApiTest, GetFilenameObjectFailsIfNotModule) {
   testing::PyObjectPtr not_a_module(PyLong_FromLong(1));
   testing::PyObjectPtr result(PyModule_GetFilenameObject(not_a_module));
   EXPECT_EQ(result, nullptr);
-
-  const char* expected_message =
-      "PyModule_GetFilenameObject takes a Module object";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 TEST_F(ModuleExtensionApiTest, GetFilenameObjectFailsIfFilenameNotString) {
@@ -368,8 +366,8 @@ TEST_F(ModuleExtensionApiTest, GetFilenameObjectFailsIfFilenameNotString) {
   testing::PyObjectPtr result(PyModule_GetFilenameObject(module));
   EXPECT_EQ(result, nullptr);
 
-  const char* expected_message = "module filename missing";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(ModuleExtensionApiTest, ExecDefReturnsZeroWithNoSlots) {
@@ -422,9 +420,8 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfDefHasUnknownSlot) {
   EXPECT_TRUE(PyModule_CheckExact(module));
 
   EXPECT_EQ(PyModule_ExecDef(module, &def), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-  const char* expected_message = "module initialized with unknown slot";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(ModuleExtensionApiTest, ExecDefRunsCorrectSingleSlot) {
@@ -519,9 +516,8 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotHasErrorButReturnsZero) {
   EXPECT_TRUE(PyModule_CheckExact(module));
 
   EXPECT_EQ(PyModule_ExecDef(module, &def), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-  const char* expected_message = "execution of module raised exception";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsButDoesntSetError) {
@@ -545,9 +541,8 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsButDoesntSetError) {
   EXPECT_TRUE(PyModule_CheckExact(module));
 
   EXPECT_EQ(PyModule_ExecDef(module, &def), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-  const char* expected_message = "execution failed without setting exception";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsAndPropogatesError) {
@@ -570,8 +565,7 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsAndPropogatesError) {
   EXPECT_TRUE(PyModule_CheckExact(module));
 
   EXPECT_EQ(PyModule_ExecDef(module, &def), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-  const char* expected_message = "missing attribute";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
 }
 }  // namespace python

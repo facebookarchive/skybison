@@ -101,8 +101,7 @@ PY_EXPORT void* PyModule_GetState(PyObject* mod) {
   Object module_obj(&scope, handle->asObject());
   if (!module_obj->isModule()) {
     // TODO(atalaba): Support module subclassing
-    // TODO(T36797384): Replace SystemError with PyErr_BadArgument()
-    thread->raiseSystemErrorWithCStr("Bad argument to PyModule_GetState");
+    PyErr_BadArgument();
     return nullptr;
   }
   return handle->cache();

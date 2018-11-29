@@ -169,10 +169,8 @@ TEST_F(TypeExtensionApiTest, GetSlotFromBuiltinTypeThrowsSystemError) {
   ASSERT_TRUE(PyType_CheckExact(long_type));
 
   EXPECT_EQ(PyType_GetSlot(long_type, Py_tp_new), nullptr);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(TypeExtensionApiTest, GetSlotFromStaticExtensionTypeThrowsSystemError) {
@@ -181,10 +179,8 @@ TEST_F(TypeExtensionApiTest, GetSlotFromStaticExtensionTypeThrowsSystemError) {
   type_obj.tp_name = "Foo";
 
   EXPECT_EQ(PyType_GetSlot(&type_obj, Py_tp_new), nullptr);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(TypeExtensionApiDeathTest,
@@ -278,10 +274,9 @@ class Foo: pass
 
   EXPECT_EQ(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type), -1),
             nullptr);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
 
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(TypeExtensionApiTest, GetSlotFromLargerThanMaxSlotReturnsNull) {

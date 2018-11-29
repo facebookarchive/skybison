@@ -37,20 +37,16 @@ TEST_F(ListExtensionApiTest, AppendToNonListReturnsNegative) {
   PyObject* pylong = PyLong_FromLong(10);
   int result = PyList_Append(dict, pylong);
   EXPECT_EQ(result, -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(ListExtensionApiTest, AppendWithNullValueReturnsNegative) {
   PyObject* list = PyList_New(0);
   int result = PyList_Append(list, nullptr);
   EXPECT_EQ(result, -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(ListExtensionApiTest, AppendReturnsZero) {
@@ -82,10 +78,8 @@ TEST_F(ListExtensionApiTest, SizeIncreasesAfterAppend) {
 TEST_F(ListExtensionApiTest, SizeWithNonListReturnsNegative) {
   PyObject* dict = PyDict_New();
   EXPECT_EQ(PyList_Size(dict), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 
   Py_DECREF(dict);
 }

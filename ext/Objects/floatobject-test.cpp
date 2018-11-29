@@ -28,8 +28,8 @@ TEST_F(FloatExtensionApiTest, AsDoubleFromNullThrowsException) {
   double res = PyFloat_AsDouble(nullptr);
   EXPECT_EQ(res, -1);
 
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 TEST_F(FloatExtensionApiTest, AsDoubleFromNonFloatThrowsException) {
@@ -37,8 +37,8 @@ TEST_F(FloatExtensionApiTest, AsDoubleFromNonFloatThrowsException) {
   double res = PyFloat_AsDouble(list);
   EXPECT_EQ(res, -1);
 
-  const char* expected_message = "must be a real number";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 TEST_F(FloatExtensionApiTest, AsDoubleCallsDunderFloat) {

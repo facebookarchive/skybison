@@ -15,10 +15,8 @@ TEST_F(SetExtensionApiTest, AddWithNonSetReturnsNegative) {
   PyObjectPtr key(PyLong_FromLong(1));
 
   EXPECT_EQ(PySet_Add(dict, key), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-  // TODO(wmeehan): replace with PyErr_ExceptionMatches(PyExc_SystemError);
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(SetExtensionApiTest, ClearFreeListReturnsZero) {
@@ -46,10 +44,8 @@ TEST_F(SetExtensionApiTest, ContainsWithNonSetReturnsNegative) {
   PyObjectPtr key(PyLong_FromLong(1));
 
   EXPECT_EQ(PySet_Contains(dict, key), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-  // TODO(wmeehan): replace with PyErr_ExceptionMatches(PyExc_SystemError);
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(SetExtensionApiTest, NewWithDictCopiesKeys) {
@@ -104,10 +100,8 @@ TEST_F(SetExtensionApiTest, NewWithNonIterableReturnsNull) {
   PyObjectPtr num(PyLong_FromLong(1));
 
   EXPECT_EQ(PySet_New(num), nullptr);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-  // TODO(wmeehan): replace with PyErr_ExceptionMatches(PyExc_TypeError);
-  const char* expected_message = "PySet_New requires an iterable";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 TEST_F(SetExtensionApiTest, NewWithNullReturnsEmpty) {
@@ -134,10 +128,8 @@ TEST_F(SetExtensionApiTest, SizeOfNonSetReturnsNegative) {
   PyObjectPtr list(PyList_New(2));
 
   EXPECT_EQ(PySet_Size(list), -1);
-  EXPECT_NE(PyErr_Occurred(), nullptr);
-  // TODO(wmeehan): replace with PyErr_ExceptionMatches(PyExc_SystemError);
-  const char* expected_message = "bad argument to internal function";
-  EXPECT_TRUE(testing::exceptionValueMatches(expected_message));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 }  // namespace python
