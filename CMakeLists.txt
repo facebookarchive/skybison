@@ -379,9 +379,8 @@ target_link_libraries(
   runtime
   modules)
 
-add_library(
-  extension-tests
-  STATIC
+set(
+  EXTENSION_TESTS
   ext/Objects/abstract-test.cpp
   ext/Objects/boolobject-test.cpp
   ext/Objects/bytesobject-test.cpp
@@ -407,6 +406,10 @@ add_library(
   ext/test/capi-testing-test.cpp
   ext/test/capi-testing.cpp
   ext/test/capi-testing.h)
+add_library(
+  extension-tests
+  STATIC
+  ${EXTENSION_TESTS})
 target_compile_options(
   extension-tests
   PRIVATE
@@ -414,7 +417,6 @@ target_compile_options(
 target_include_directories(
   extension-tests
   PRIVATE
-  runtime
   ext/test)
 target_link_libraries(
   extension-tests
@@ -423,7 +425,6 @@ target_link_libraries(
   gtest
   PRIVATE
   cpython
-  runtime
   modules)
 
 add_executable(
@@ -440,3 +441,65 @@ target_link_libraries(
   ${WHOLE_ARCHIVE} extension-tests ${NO_WHOLE_ARCHIVE}
   runtime
   modules)
+
+# Extension tests with CPython
+set(LIBPYTHON_BIN "libpython3.6m.a")
+set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
+file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
+add_custom_command(
+  OUTPUT ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN}
+  COMMAND ${CPYTHON_DIR}/configure && make -j
+  WORKING_DIRECTORY ${CPYTHON_BUILD_DIR})
+add_custom_target(
+  compile-cpython
+  DEPENDS ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN})
+add_library(libpython STATIC IMPORTED)
+add_dependencies(libpython compile-cpython)
+set_target_properties(
+  libpython
+  PROPERTIES IMPORTED_LOCATION ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN})
+
+add_library(
+  cpython-extension-tests
+  STATIC
+  ${EXTENSION_TESTS})
+target_compile_options(
+  cpython-extension-tests
+  PUBLIC
+  ${OS_DEFINE})
+
+target_include_directories(
+  cpython-extension-tests
+  PRIVATE
+  ext/test
+  ext/config
+  third-party/cpython/Include)
+target_link_libraries(
+  cpython-extension-tests
+  PUBLIC
+  benchmark
+  gtest
+  PRIVATE
+  libpython)
+
+add_executable(
+  cpython-tests
+  runtime/python-test.cpp)
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  set(CPYTHON_LINK_FLAGS -lpthread -ldl -lutil -lm -Xlinker -export-dynamic)
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  set(CPYTHON_LINK_FLAGS -ldl)
+else()
+  message(FATAL_ERROR "Unsupported system")
+endif()
+target_link_libraries(
+  cpython-tests
+  PRIVATE
+  ${WHOLE_ARCHIVE} cpython-extension-tests ${NO_WHOLE_ARCHIVE}
+  ${CPYTHON_LINK_FLAGS})
+# Lib/ is needed for cpython-test, copy it into the build directory
+add_custom_command(
+  TARGET cpython-tests
+  POST_BUILD
+  COMMAND cp -a ${CPYTHON_DIR}/Lib/. ${CPYTHON_BUILD_DIR}/Lib/)

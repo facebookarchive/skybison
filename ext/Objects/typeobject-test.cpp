@@ -24,7 +24,7 @@ TEST_F(TypeExtensionApiTest, PyTypeCheckOnType) {
   EXPECT_TRUE(PyType_CheckExact(type));
 }
 
-TEST_F(TypeExtensionApiDeathTest, GetFlagsFromBuiltInType) {
+TEST_F(TypeExtensionApiDeathTest, GetFlagsFromBuiltInType_Pyro) {
   testing::PyObjectPtr long_obj(PyLong_FromLong(5));
   PyTypeObject* long_type = Py_TYPE(long_obj);
   ASSERT_TRUE(PyType_CheckExact(long_type));
@@ -32,7 +32,7 @@ TEST_F(TypeExtensionApiDeathTest, GetFlagsFromBuiltInType) {
                "unimplemented: GetFlags from built-in types");
 }
 
-TEST_F(TypeExtensionApiDeathTest, GetFlagsFromManagedType) {
+TEST_F(TypeExtensionApiDeathTest, GetFlagsFromManagedType_Pyro) {
   PyRun_SimpleString(R"(class Foo: pass)");
   PyObject* foo_type = testing::moduleGet("__main__", "Foo");
   ASSERT_TRUE(PyType_CheckExact(foo_type));
@@ -85,7 +85,7 @@ static void Custom_dealloc(CustomObject* self) {
   Py_TYPE(self)->tp_free(static_cast<void*>(self));
 }
 
-TEST_F(TypeExtensionApiTest, InitializeCustomTypeInstance) {
+TEST_F(TypeExtensionApiTest, InitializeCustomTypeInstance_Pyro) {
   // Instantiate Type
   static PyTypeObject custom_type;
   custom_type = {PyObject_HEAD_INIT(nullptr)};
@@ -184,7 +184,7 @@ TEST_F(TypeExtensionApiTest, GetSlotFromStaticExtensionTypeThrowsSystemError) {
 }
 
 TEST_F(TypeExtensionApiDeathTest,
-       GetSlotFromManagedTypeReturnsFunctionPointer) {
+       GetSlotFromManagedTypeReturnsFunctionPointer_Pyro) {
   PyRun_SimpleString(R"(
 class Foo:
     def __init__(self):
@@ -198,7 +198,7 @@ class Foo:
       "Get slots from types initialized through Python code");
 }
 
-TEST_F(TypeExtensionApiDeathTest, InitSlotWrapperReturnsInstance) {
+TEST_F(TypeExtensionApiDeathTest, InitSlotWrapperReturnsInstance_Pyro) {
   PyRun_SimpleString(R"(
 class Foo(object):
     def __init__(self):
@@ -212,7 +212,8 @@ class Foo(object):
                "Get slots from types initialized through Python code");
 }
 
-TEST_F(TypeExtensionApiDeathTest, CallSlotsWithDescriptorsReturnsInstance) {
+TEST_F(TypeExtensionApiDeathTest,
+       CallSlotsWithDescriptorsReturnsInstance_Pyro) {
   PyRun_SimpleString(R"(
 def custom_get(self, instance, value):
     return self
@@ -237,7 +238,7 @@ Foo.__init__ = custom_init
                "Get slots from types initialized through Python code");
 }
 
-TEST_F(TypeExtensionApiDeathTest, SlotWrapperWithArgumentsAborts) {
+TEST_F(TypeExtensionApiDeathTest, SlotWrapperWithArgumentsAborts_Pyro) {
   PyRun_SimpleString(R"(
 class Foo:
     def __new__(self, value):

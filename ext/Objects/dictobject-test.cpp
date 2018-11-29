@@ -10,7 +10,7 @@ using namespace testing;
 
 using DictExtensionApiTest = ExtensionApi;
 
-TEST_F(DictExtensionApiTest, ClearFreeListReturnsZero) {
+TEST_F(DictExtensionApiTest, ClearFreeListReturnsZero_Pyro) {
   EXPECT_EQ(PyDict_ClearFreeList(), 0);
 }
 

@@ -19,7 +19,7 @@ TEST_F(SetExtensionApiTest, AddWithNonSetReturnsNegative) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
-TEST_F(SetExtensionApiTest, ClearFreeListReturnsZero) {
+TEST_F(SetExtensionApiTest, ClearFreeListReturnsZero_Pyro) {
   EXPECT_EQ(PySet_ClearFreeList(), 0);
 }
 

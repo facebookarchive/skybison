@@ -116,7 +116,7 @@ TEST_F(TupleExtensionApiTest, PackTwoValues) {
   EXPECT_EQ(PyLong_AsLong(pyresult2), int_value2);
 }
 
-TEST_F(TupleExtensionApiTest, ClearFreeListReturnsZero) {
+TEST_F(TupleExtensionApiTest, ClearFreeListReturnsZero_Pyro) {
   EXPECT_EQ(PyTuple_ClearFreeList(), 0);
 }
 

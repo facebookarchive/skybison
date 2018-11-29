@@ -1,8 +1,7 @@
 #pragma once
 
+#include "Python.h"
 #include "gtest/gtest.h"
-
-#include "cpython-func.h"
 
 namespace python {
 

@@ -400,7 +400,8 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfPassedNamelessModule) {
   EXPECT_NE(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(ModuleExtensionApiTest, ExecDefFailsIfDefHasUnknownSlot) {
+// TODO(T37048769): Replace _Create with _FromDefAndSpec and run with CPython
+TEST_F(ModuleExtensionApiTest, ExecDefFailsIfDefHasUnknownSlot_Pyro) {
   slot_func mod_exec = [](PyObject* module) {
     PyModule_SetDocString(module, "testing");
     return 0;
@@ -424,7 +425,8 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfDefHasUnknownSlot) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
-TEST_F(ModuleExtensionApiTest, ExecDefRunsCorrectSingleSlot) {
+// TODO(T37048769): Replace _Create with _FromDefAndSpec and run with CPython
+TEST_F(ModuleExtensionApiTest, ExecDefRunsCorrectSingleSlot_Pyro) {
   slot_func mod_exec = [](PyObject* module) {
     PyModule_SetDocString(module, "testing");
     return 0;
@@ -450,7 +452,8 @@ TEST_F(ModuleExtensionApiTest, ExecDefRunsCorrectSingleSlot) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(ModuleExtensionApiTest, ExecDefRunsMultipleSlotsInOrder) {
+// TODO(T37048769): Replace _Create with _FromDefAndSpec and run with CPython
+TEST_F(ModuleExtensionApiTest, ExecDefRunsMultipleSlotsInOrder_Pyro) {
   slot_func mod_exec = [](PyObject* module) {
     PyModule_SetDocString(module, "doc test");
     return 0;
@@ -496,7 +499,8 @@ TEST_F(ModuleExtensionApiTest, ExecDefRunsMultipleSlotsInOrder) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotHasErrorButReturnsZero) {
+// TODO(T37048769): Replace _Create with _FromDefAndSpec and run with CPython
+TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotHasErrorButReturnsZero_Pyro) {
   slot_func mod_exec_fail_silently = [](PyObject* module) {
     testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
     return 0;
@@ -520,7 +524,8 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotHasErrorButReturnsZero) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
-TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsButDoesntSetError) {
+// TODO(T37048769): Replace _Create with _FromDefAndSpec and run with CPython
+TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsButDoesntSetError_Pyro) {
   slot_func mod_exec_fail_no_error = [](PyObject* module) {
     testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
     PyErr_Clear();
@@ -545,7 +550,8 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsButDoesntSetError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
-TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsAndPropogatesError) {
+// TODO(T37048769): Replace _Create with _FromDefAndSpec and run with CPython
+TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsAndPropogatesError_Pyro) {
   slot_func mod_exec_fail = [](PyObject* module) {
     testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
     return -1;

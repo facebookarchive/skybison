@@ -60,7 +60,7 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8ReturnsCString) {
   EXPECT_EQ(cstring2, cstring);
 }
 
-TEST_F(UnicodeExtensionApiTest, ClearFreeListReturnsZero) {
+TEST_F(UnicodeExtensionApiTest, ClearFreeListReturnsZero_Pyro) {
   EXPECT_EQ(PyUnicode_ClearFreeList(), 0);
 }
 

@@ -6,7 +6,7 @@
 namespace python {
 using MethodExtensionApiTest = ExtensionApi;
 
-TEST_F(MethodExtensionApiTest, ClearFreeListReturnsZero) {
+TEST_F(MethodExtensionApiTest, ClearFreeListReturnsZero_Pyro) {
   EXPECT_EQ(PyMethod_ClearFreeList(), 0);
 }
 

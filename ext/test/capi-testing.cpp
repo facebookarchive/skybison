@@ -4,8 +4,6 @@
 
 #include "Python.h"
 #include "capi-testing.h"
-#include "runtime.h"
-#include "test-utils.h"
 
 namespace python {
 namespace testing {
@@ -40,7 +38,6 @@ int moduleSet(const char* module, const char* name, PyObject* value) {
 PyObject* createUniqueObject() {
   PyObject* pytuple = PyTuple_New(1);
   PyTuple_SetItem(pytuple, 0, Py_None);
-  DCHECK(Py_REFCNT(pytuple) == 1, "ref count should be 1");
   return pytuple;
 }
 
