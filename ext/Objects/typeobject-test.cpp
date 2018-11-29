@@ -293,4 +293,22 @@ class Foo: pass
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(TypeExtensionApiDeathTest, VarSizeFromBuiltInType) {
+  testing::PyObjectPtr long_obj(PyLong_FromLong(5));
+  PyTypeObject* long_type = Py_TYPE(long_obj);
+  ASSERT_TRUE(PyType_CheckExact(long_type));
+  EXPECT_DEATH(
+      _PyObject_VAR_SIZE(reinterpret_cast<PyTypeObject*>(long_type), 1),
+      "unimplemented: VAR_SIZE from built-in types");
+}
+
+TEST_F(TypeExtensionApiDeathTest, VarSizeFromManagedType) {
+  PyRun_SimpleString(R"(class Foo: pass)");
+  PyObject* foo_type = testing::moduleGet("__main__", "Foo");
+  ASSERT_TRUE(PyType_CheckExact(foo_type));
+  EXPECT_DEATH(
+      _PyObject_VAR_SIZE(reinterpret_cast<PyTypeObject*>(foo_type), 1),
+      "unimplemented: VAR_SIZE from types initialized through Python code");
+}
+
 }  // namespace python

@@ -186,6 +186,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* /* c */,
 }
 
 PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type, Py_ssize_t nitems) {
+  // TODO(eelizondo): Replace with VAR_SIZE once PyType_FromSpec is implemented
   size_t size = Utils::roundUp(
       type->tp_basicsize + ((nitems + 1) * type->tp_itemsize), kWordSize);
   PyObject* obj = static_cast<PyObject*>(PyObject_Calloc(1, size));
@@ -225,6 +226,30 @@ PY_EXPORT void PyType_Modified(PyTypeObject* /* e */) {
 PY_EXPORT PyObject* _PyObject_LookupSpecial(PyObject* /* f */,
                                             _Py_Identifier* /* d */) {
   UNIMPLEMENTED("_PyObject_LookupSpecial");
+}
+
+PY_EXPORT Py_ssize_t _PyObject_VAR_SIZE_Func(PyTypeObject* type_obj,
+                                             Py_ssize_t nitems) {
+  ApiHandle* handle =
+      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj));
+  CHECK(handle->isManaged(),
+        "Type is unmanaged. Please initialize using PyType_FromSpec");
+
+  HandleScope scope;
+  Type type(&scope, handle->asObject());
+  if (type->isBuiltin()) {
+    UNIMPLEMENTED("VAR_SIZE from built-in types");
+  }
+
+  if (type->extensionSlots()->isNoneType()) {
+    UNIMPLEMENTED("VAR_SIZE from types initialized through Python code");
+  }
+
+  word bsize_idx = static_cast<word>(Type::ExtensionSlot::kBasicSize);
+  Int bsize(&scope, RawTuple::cast(type->extensionSlots())->at(bsize_idx));
+  word isize_idx = static_cast<word>(Type::ExtensionSlot::kItemSize);
+  Int isize(&scope, RawTuple::cast(type->extensionSlots())->at(isize_idx));
+  return Utils::roundUp(nitems * isize->asWord() + bsize->asWord(), kWordSize);
 }
 
 }  // namespace python

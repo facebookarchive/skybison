@@ -750,6 +750,8 @@ class RawType : public RawHeapObject {
   // we are starting with just these few for now
   enum class ExtensionSlot {
     kFlags,
+    kBasicSize,
+    kItemSize,
     kInit,
     kNew,
     kEnd,
