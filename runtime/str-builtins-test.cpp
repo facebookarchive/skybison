@@ -263,53 +263,63 @@ TEST(StrBuiltinsDeathTest, StringLenWithExtraArgument) {
 
 TEST(StrBuiltinsTest, IndexWithSliceWithPositiveInts) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
-a = "hello"
-b = a[1:2]
-c = a[1:4]
-)");
   HandleScope scope;
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
-  Str c(&scope, moduleAt(&runtime, "__main__", "c"));
-
-  EXPECT_PYSTRING_EQ(*a, "hello");
-  EXPECT_PYSTRING_EQ(*b, "e");
-  EXPECT_PYSTRING_EQ(*c, "ell");
+  Str hello(&scope, runtime.newStrFromCStr("hello"));
+  Int one(&scope, RawSmallInt::fromWord(1));
+  Int two(&scope, RawSmallInt::fromWord(2));
+  Int four(&scope, RawSmallInt::fromWord(4));
+  Object none(&scope, NoneType::object());
+  Slice slice_a(&scope, runtime.newSlice(one, two, none));
+  Object result_a(&scope,
+                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_a));
+  ASSERT_TRUE(result_a->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result_a), "e");
+  Slice slice_b(&scope, runtime.newSlice(one, four, none));
+  Object result_b(&scope,
+                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_b));
+  ASSERT_TRUE(result_b->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result_b), "ell");
 }
 
 TEST(StrBuiltinsTest, IndexWithSliceWithNegativeInts) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
-a = "hello"
-b = a[-1:]
-c = a[1:-2]
-)");
   HandleScope scope;
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
-  Str c(&scope, moduleAt(&runtime, "__main__", "c"));
-
-  EXPECT_PYSTRING_EQ(*a, "hello");
-  EXPECT_PYSTRING_EQ(*b, "o");
-  EXPECT_PYSTRING_EQ(*c, "el");
+  Str hello(&scope, runtime.newStrFromCStr("hello"));
+  Int negative_two(&scope, RawSmallInt::fromWord(-2));
+  Int negative_one(&scope, RawSmallInt::fromWord(-1));
+  Int one(&scope, RawSmallInt::fromWord(1));
+  Object none(&scope, NoneType::object());
+  Slice slice_a(&scope, runtime.newSlice(negative_one, none, none));
+  Object result_a(&scope,
+                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_a));
+  ASSERT_TRUE(result_a->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result_a), "o");
+  Slice slice_b(&scope, runtime.newSlice(one, negative_two, none));
+  Object result_b(&scope,
+                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_b));
+  ASSERT_TRUE(result_b->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result_b), "el");
 }
 
 TEST(StrBuiltinsTest, IndexWithSliceWithStep) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
-a = "hello"
-b = a[0:5:2]
-c = a[1:5:3]
-)");
   HandleScope scope;
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
-  Str c(&scope, moduleAt(&runtime, "__main__", "c"));
-
-  EXPECT_PYSTRING_EQ(*a, "hello");
-  EXPECT_PYSTRING_EQ(*b, "hlo");
-  EXPECT_PYSTRING_EQ(*c, "eo");
+  Str hello(&scope, runtime.newStrFromCStr("hello"));
+  Int zero(&scope, RawSmallInt::fromWord(0));
+  Int one(&scope, RawSmallInt::fromWord(1));
+  Int two(&scope, RawSmallInt::fromWord(2));
+  Int three(&scope, RawSmallInt::fromWord(3));
+  Int five(&scope, RawSmallInt::fromWord(5));
+  Slice slice_a(&scope, runtime.newSlice(zero, five, two));
+  Object result_a(&scope,
+                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_a));
+  ASSERT_TRUE(result_a->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result_a), "hlo");
+  Slice slice_b(&scope, runtime.newSlice(one, five, three));
+  Object result_b(&scope,
+                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_b));
+  ASSERT_TRUE(result_b->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result_b), "eo");
 }
 
 TEST(StrBuiltinsTest, StartsWithEmptyStringReturnsTrue) {
