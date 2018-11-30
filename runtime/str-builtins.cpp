@@ -403,6 +403,19 @@ RawObject StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return ret;
 }
 
+RawObject StrBuiltins::slice(Thread* thread, const Str& str,
+                             const Slice& slice) {
+  word start, stop, step;
+  slice->unpack(&start, &stop, &step);
+  word length = Slice::adjustIndices(str->length(), &start, &stop, step);
+  std::unique_ptr<char[]> buf(new char[length + 1]);
+  buf[length] = '\0';
+  for (word i = 0, index = start; i < length; i++, index += step) {
+    buf[i] = str->charAt(index);
+  }
+  return thread->runtime()->newStrFromCStr(buf.get());
+}
+
 RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
@@ -426,19 +439,8 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
       return SmallStr::fromBytes(View<byte>(&c, 1));
     }
     if (index->isSlice()) {
-      Slice slice(&scope, index);
-      word start, stop, step;
-      slice->unpack(&start, &stop, &step);
-      word length = Slice::adjustIndices(string->length(), &start, &stop, step);
-      byte* buf = new byte[length];
-      byte* curr = buf;
-      for (word i = start; i < stop; i += step) {
-        *curr++ = string->charAt(i);
-      }
-      Str result(&scope,
-                 thread->runtime()->newStrWithAll(View<byte>{buf, length}));
-      delete[] buf;
-      return *result;
+      Slice str_slice(&scope, index);
+      return slice(thread, string, str_slice);
     }
     return thread->raiseTypeErrorWithCStr(
         "string indices must be integers or slices");

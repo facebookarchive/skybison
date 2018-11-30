@@ -322,6 +322,42 @@ TEST(StrBuiltinsTest, IndexWithSliceWithStep) {
   EXPECT_PYSTRING_EQ(RawStr::cast(*result_b), "eo");
 }
 
+TEST(StrBuiltinsTest, EmptyStringIndexWithSliceWithNegativeOneStep) {
+  Runtime runtime;
+  HandleScope scope;
+  Str hello(&scope, runtime.newStrFromCStr(""));
+  Object none(&scope, NoneType::object());
+  Int negative_one(&scope, RawSmallInt::fromWord(-1));
+  Slice slice(&scope, runtime.newSlice(none, none, negative_one));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "");
+}
+
+TEST(StrBuiltinsTest, IndexWithSliceWithNegativeOneStep) {
+  Runtime runtime;
+  HandleScope scope;
+  Str hello(&scope, runtime.newStrFromCStr("hello"));
+  Object none(&scope, NoneType::object());
+  Int negative_one(&scope, RawSmallInt::fromWord(-1));
+  Slice slice(&scope, runtime.newSlice(none, none, negative_one));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "olleh");
+}
+
+TEST(StrBuiltinsTest, IndexWithSliceWithNegativeTwoStep) {
+  Runtime runtime;
+  HandleScope scope;
+  Str hello(&scope, runtime.newStrFromCStr("hello"));
+  Object none(&scope, NoneType::object());
+  Int negative_one(&scope, RawSmallInt::fromWord(-2));
+  Slice slice(&scope, runtime.newSlice(none, none, negative_one));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "olh");
+}
+
 TEST(StrBuiltinsTest, StartsWithEmptyStringReturnsTrue) {
   Runtime runtime;
   runtime.runFromCStr(R"(
