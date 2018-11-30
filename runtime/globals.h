@@ -50,13 +50,17 @@ const int kNanosecondsPerMicrosecond = 1000;
 const int kNanosecondsPerSecond =
     kMicrosecondsPerSecond * kNanosecondsPerMicrosecond;
 
+#if __GNUG__ && __GNUC__ < 5
+#define IS_TRIVIALLY_COPYABLE(T) __has_trivial_copy(T)
+#else
+#define IS_TRIVIALLY_COPYABLE(T) std::is_trivially_copyable<T>::value
+#endif
+
 template <typename D, typename S>
 inline D bit_cast(const S& src) {
   static_assert(sizeof(S) == sizeof(D), "src and dst must be the same size");
-  static_assert(std::is_trivially_copyable<S>::value,
-                "src must be trivially copyable");
-  static_assert(std::is_trivially_copyable<D>::value,
-                "dst must be trivially copyable");
+  static_assert(IS_TRIVIALLY_COPYABLE(S), "src must be trivially copyable");
+  static_assert(IS_TRIVIALLY_COPYABLE(D), "dst must be trivially copyable");
   static_assert(std::is_trivially_destructible<D>::value,
                 "dst must be trivially destructable");
   D dst;

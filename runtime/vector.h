@@ -20,8 +20,7 @@ template <typename T>
 class Vector {
   // We can add support for non-POD types but its a lot harder to get right, so
   // we'll start with the simple thing.
-  static_assert(std::is_trivially_copyable<T>::value,
-                "Vector only supports POD types");
+  static_assert(IS_TRIVIALLY_COPYABLE(T), "Vector only supports POD types");
 
  public:
   using size_type = word;
