@@ -293,7 +293,7 @@ class Foo: pass
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(TypeExtensionApiDeathTest, VarSizeFromBuiltInType) {
+TEST_F(TypeExtensionApiDeathTest, VarSizeFromBuiltInType_Pyro) {
   testing::PyObjectPtr long_obj(PyLong_FromLong(5));
   PyTypeObject* long_type = Py_TYPE(long_obj);
   ASSERT_TRUE(PyType_CheckExact(long_type));
@@ -302,7 +302,7 @@ TEST_F(TypeExtensionApiDeathTest, VarSizeFromBuiltInType) {
       "unimplemented: VAR_SIZE from built-in types");
 }
 
-TEST_F(TypeExtensionApiDeathTest, VarSizeFromManagedType) {
+TEST_F(TypeExtensionApiDeathTest, VarSizeFromManagedType_Pyro) {
   PyRun_SimpleString(R"(class Foo: pass)");
   PyObject* foo_type = testing::moduleGet("__main__", "Foo");
   ASSERT_TRUE(PyType_CheckExact(foo_type));
