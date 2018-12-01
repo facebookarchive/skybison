@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -19,9 +20,7 @@ class VCS(ABC):
     @abstractmethod
     def has_changes(self) -> bool:
         """Return whether there are modified files with respect to the last commit"""
-        raise NotImplementedError(
-            "Checking if there are changes is not supported"
-        )
+        raise NotImplementedError("Checking if there are changes is not supported")
 
     @abstractmethod
     def get_commit_title(self) -> str:
@@ -39,59 +38,62 @@ class VCS(ABC):
     @staticmethod
     def infer_vcs(dir: Path):
         """Return the VCS inferred from the given directory"""
-        # For now assume it is Git, later do detection of .git or .hg directory.
-        return Git()
-
-
-class Git(VCS):
-    def __init__(self) -> None:
-        self.exe = get_exe("git")
-
-    def root(self) -> Path:
-        return Path(
-            subprocess.check_output(
-                [str(self.exe), "rev-parse", "--show-toplevel"]
-            ).decode()
-            # Trim the trailing new line.
-            .strip()
-        )
-
-    def has_changes(self) -> bool:
-        return subprocess.run(
-            [str(self.exe), "diff", "--exit-code", "--quiet", "HEAD"]
-        ).returncode
-
-    def get_commit_title(self) -> str:
-        return subprocess.check_output(
-            [str(self.exe), "log", '--format="%h %s"', "HEAD~1..HEAD"]
-        ).decode()
-
-    def get_changed_files(self, from_commit: bool = False) -> List[Path]:
-        return [
-            Path(f.decode())
-            for f in subprocess.check_output(
-                [str(self.exe), "diff", "--name-only"]
-                + (["HEAD~1..HEAD"] if from_commit else ["HEAD"])
-                + ["--", "*.cpp", "*.h", "*.py"]
-            ).splitlines()
-        ]
-
-    def authored_previous(self) -> bool:
-        return subprocess.run(
-            [
-                str(self.exe),
-                "log",
-                "--exit-code",
-                "HEAD~1..HEAD",
-                "--author",
-                os.environ["USER"],
-            ],
-            stdout=subprocess.DEVNULL,
-        ).returncode
+        path = Path(os.getcwd())
+        while True:
+            if Path(path, ".git").exists():
+                raise RuntimeError("git is not supported")
+            if Path(path, ".hg").exists():
+                return Mercurial()
+            if str(path) == path.root:
+                raise RuntimeError(f"Couldn't find vcs root from {os.getcwd()}")
+            path = path.parent
 
 
 class Mercurial(VCS):
-    pass
+    files_re = re.compile("(\.cpp|\.h|\.py)$")
+
+    def __init__(self) -> None:
+        self.exe = get_exe("hg")
+
+    def root(self) -> Path:
+        return Path(subprocess.check_output([str(self.exe), "root"]).decode().strip())
+
+    def has_changes(self) -> bool:
+        return (
+            subprocess.check_output(
+                # Ask for all files except untracked.
+                [str(self.exe), "status", "-mard"]
+            )
+            .decode()
+            .strip()
+            != ""
+        )
+
+    def get_commit_title(self) -> str:
+        return (
+            subprocess.check_output([str(self.exe), "log", "-r.", "-T{desc|firstline}"])
+            .decode()
+            .strip()
+        )
+
+    def get_changed_files(self, from_commit: bool = False) -> List[Path]:
+        files = (
+            subprocess.check_output(
+                [str(self.exe), "status", "--rev", ".^" if from_commit else ".", "-man"]
+            )
+            .decode()
+            .strip()
+            .split("\n")
+        )
+        return [Path(f) for f in files if (type(self).files_re.search(f) is not None)]
+
+    def authored_previous(self) -> bool:
+        author = (
+            subprocess.check_output([str(self.exe), "log", "-r.", "-T{author}"])
+            .decode()
+            .strip()
+        )
+        return os.environ["USER"] in author
 
 
 class Formatter(ABC):
@@ -122,9 +124,7 @@ class BlackFormat(Formatter):
         self.exe = get_exe("black")
 
     def format(self, file: Path) -> str:
-        return subprocess.check_output(
-            [str(self.exe), "--quiet", str(file)]
-        ).decode()
+        return subprocess.check_output([str(self.exe), "--quiet", str(file)]).decode()
 
 
 def main() -> int:
@@ -200,7 +200,10 @@ def file_should_be_formatted(file: Path) -> bool:
 
 
 def get_exe(exe: str) -> Path:
-    return Path(shutil.which(exe))
+    path = shutil.which(exe)
+    if path is None:
+        raise RuntimeError(f"Couldn't find {exe} in PATH")
+    return Path(path)
 
 
 if __name__ == "__main__":
