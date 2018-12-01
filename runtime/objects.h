@@ -200,7 +200,7 @@ INTRINSIC_CLASS_NAMES(CASE)
 #define RAW_OBJECT_COMMON(ty)                                                  \
   static Raw##ty cast(RawObject object) {                                      \
     DCHECK(object.is##ty(), "invalid cast, expected " #ty);                    \
-    return bit_cast<Raw##ty>(object);                                          \
+    return object.rawCast<Raw##ty>();                                          \
   }                                                                            \
   RAW_OBJECT_COMMON_NO_CAST(ty)
 
@@ -300,6 +300,11 @@ class RawObject {
   static const uword kImmediateTypeTableIndexMask = (1 << 5) - 1;
 
   RAW_OBJECT_COMMON(Object);
+
+  // Cast this RawObject to another Raw* type with no runtime checks. Only used
+  // in a few limited situations; most code should use Raw*::cast() instead.
+  template <typename T>
+  T rawCast() const;
 
  private:
   // Zero-initializing raw_ gives RawSmallInt::fromWord(0).
@@ -2323,6 +2328,13 @@ inline bool RawObject::operator!=(const RawObject& other) const {
   return !operator==(other);
 }
 
+template <typename T>
+T RawObject::rawCast() const {
+  T dest;
+  dest.raw_ = raw();
+  return dest;
+}
+
 // RawInt
 
 inline word RawInt::asWord() {
@@ -2533,13 +2545,13 @@ inline RawHeader RawHeader::from(word count, word hash, LayoutId id,
 // None
 
 inline RawNoneType RawNoneType::object() {
-  return bit_cast<RawNoneType>(static_cast<uword>(kTag));
+  return RawObject{kTag}.rawCast<RawNoneType>();
 }
 
 // RawError
 
 inline RawError RawError::object() {
-  return bit_cast<RawError>(static_cast<uword>(kTag));
+  return RawObject{kTag}.rawCast<RawError>();
 }
 
 // RawBool

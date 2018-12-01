@@ -58,7 +58,7 @@ template <typename T>
 class Handle : public T {
  public:
   Handle(HandleScope* scope, RawObject obj)
-      : T(bit_cast<T>(obj)), next_(scope->push(this)), scope_(scope) {
+      : T(obj.rawCast<T>()), next_(scope->push(this)), scope_(scope) {
     DCHECK(isValidType(), "Invalid Handle construction");
   }
 
@@ -88,7 +88,7 @@ class Handle : public T {
   Handle& operator=(S other) {
     static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
                   "Only up- and down-casts are permitted.");
-    *static_cast<T*>(this) = bit_cast<T>(other);
+    *static_cast<T*>(this) = other.template rawCast<T>();
     DCHECK(isValidType(), "Invalid Handle assignment");
     return *this;
   }

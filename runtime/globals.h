@@ -60,9 +60,7 @@ template <typename D, typename S>
 inline D bit_cast(const S& src) {
   static_assert(sizeof(S) == sizeof(D), "src and dst must be the same size");
   static_assert(IS_TRIVIALLY_COPYABLE(S), "src must be trivially copyable");
-  static_assert(IS_TRIVIALLY_COPYABLE(D), "dst must be trivially copyable");
-  static_assert(std::is_trivially_destructible<D>::value,
-                "dst must be trivially destructable");
+  static_assert(std::is_trivial<D>::value, "dst must be trivial");
   D dst;
   std::memcpy(&dst, &src, sizeof(dst));
   return dst;

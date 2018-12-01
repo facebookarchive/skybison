@@ -35,7 +35,7 @@ TEST(HandlesTest, UpCastTest) {
   Runtime runtime;
   HandleScope scope;
 
-  SmallInt h1(&scope, bit_cast<RawSmallInt>(0xFEEDFACEL));
+  SmallInt h1(&scope, RawObject{0xFEEDFACEL});
 
   Object h2(&scope, *h1);
 
@@ -49,7 +49,7 @@ TEST(HandlesTest, DownCastTest) {
   Runtime runtime;
   HandleScope scope;
 
-  auto i1 = bit_cast<RawSmallInt>(0xFEEDFACEL);
+  RawObject i1{0xFEEDFACEL};
   Object h1(&scope, i1);
 
   SmallInt h2(&scope, *h1);
@@ -64,7 +64,7 @@ TEST(HandlesTest, IllegalCastRunTimeTest) {
   Runtime runtime;
   HandleScope scope;
 
-  auto i1 = bit_cast<RawSmallInt>(0xFEEDFACEL);
+  RawObject i1{0xFEEDFACEL};
   Object h1(&scope, i1);
 
   EXPECT_DEBUG_DEATH(Dict h2(&scope, *h1), "Invalid Handle construction");
@@ -105,7 +105,7 @@ TEST(HandlesTest, VisitEmptyScope) {
 TEST(HandlesTest, VisitOneHandle) {
   Runtime runtime;
   HandleScope scope;
-  auto object = bit_cast<RawObject>(0xFEEDFACEL);
+  RawObject object{0xFEEDFACEL};
   Object handle(&scope, object);
   RememberingVisitor visitor;
   scope.handles()->visitPointers(&visitor);
@@ -117,9 +117,9 @@ TEST(HandlesTest, VisitTwoHandles) {
   Runtime runtime;
   HandleScope scope;
   RememberingVisitor visitor;
-  auto o1 = bit_cast<RawObject>(0xFEEDFACEL);
+  RawObject o1{0xFEEDFACEL};
   Object h1(&scope, o1);
-  auto o2 = bit_cast<RawObject>(0xFACEFEEDL);
+  RawObject o2{0xFACEFEEDL};
   Object h2(&scope, o2);
   scope.handles()->visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 2);
@@ -131,7 +131,7 @@ TEST(HandlesTest, VisitObjectInNestedScope) {
   Runtime runtime;
   Handles* handles = Thread::currentThread()->handles();
 
-  auto object = bit_cast<RawObject>(0xFEEDFACEL);
+  RawObject object{0xFEEDFACEL};
   {
     HandleScope s1;
     {
@@ -173,9 +173,9 @@ TEST(HandlesTest, NestedScopes) {
   Runtime runtime;
   Handles* handles = Thread::currentThread()->handles();
 
-  auto o1 = bit_cast<RawObject>(0xDECAF1L);
-  auto o2 = bit_cast<RawObject>(0xDECAF2L);
-  auto o3 = bit_cast<RawObject>(0xDECAF3L);
+  RawObject o1{0xDECAF1L};
+  RawObject o2{0xDECAF2L};
+  RawObject o3{0xDECAF3L};
 
   {
     HandleScope s1;
@@ -258,7 +258,7 @@ BENCHMARK_F(HandleBenchmark, CreationDestruction)(benchmark::State& state) {
   Handles handles;
   HandleScope scope(Thread::currentThread());
 
-  auto o1 = bit_cast<RawObject>(0xFEEDFACEL);
+  RawObject o1{0xFEEDFACEL};
 
   for (auto _ : state) {
     Object h1(&scope, o1);
@@ -276,15 +276,15 @@ BENCHMARK_F(HandleBenchmark, Visit)(benchmark::State& state) {
   Handles handles;
   HandleScope scope(Thread::currentThread());
 
-  Object h1(&scope, bit_cast<RawObject>(0xFEEDFACEL));
-  Object h2(&scope, bit_cast<RawObject>(0xFEEDFACFL));
-  Object h3(&scope, bit_cast<RawObject>(0xFEEDFAD0L));
-  Object h4(&scope, bit_cast<RawObject>(0xFEEDFAD1L));
-  Object h5(&scope, bit_cast<RawObject>(0xFEEDFAD2L));
-  Object h6(&scope, bit_cast<RawObject>(0xFEEDFAD3L));
-  Object h7(&scope, bit_cast<RawObject>(0xFEEDFAD4L));
-  Object h8(&scope, bit_cast<RawObject>(0xFEEDFAD5L));
-  Object h9(&scope, bit_cast<RawObject>(0xFEEDFAD6L));
+  Object h1(&scope, RawObject{0xFEEDFACEL});
+  Object h2(&scope, RawObject{0xFEEDFACFL});
+  Object h3(&scope, RawObject{0xFEEDFAD0L});
+  Object h4(&scope, RawObject{0xFEEDFAD1L});
+  Object h5(&scope, RawObject{0xFEEDFAD2L});
+  Object h6(&scope, RawObject{0xFEEDFAD3L});
+  Object h7(&scope, RawObject{0xFEEDFAD4L});
+  Object h8(&scope, RawObject{0xFEEDFAD5L});
+  Object h9(&scope, RawObject{0xFEEDFAD6L});
 
   NothingVisitor visitor;
   for (auto _ : state) {

@@ -536,7 +536,7 @@ class Runtime {
 #define DEFINE_IS_INSTANCE(ty)                                                 \
   bool isInstanceOf##ty(RawObject obj) {                                       \
     if (obj.is##ty()) return true;                                             \
-    return bit_cast<RawType>(typeOf(obj)).builtinBase() == LayoutId::k##ty;    \
+    return typeOf(obj).rawCast<RawType>().builtinBase() == LayoutId::k##ty;    \
   }
   DEFINE_IS_INSTANCE(Bytes)
   DEFINE_IS_INSTANCE(Complex)
