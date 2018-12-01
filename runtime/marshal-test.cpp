@@ -474,7 +474,7 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   EXPECT_EQ(code->kwonlyargcount(), 0);
   EXPECT_EQ(code->nlocals(), 0);
   EXPECT_EQ(code->stacksize(), 1);
-  EXPECT_EQ(code->cell2arg(), 0);
+  EXPECT_TRUE(code->cell2arg()->isNoneType());
   EXPECT_EQ(code->flags(), Code::SIMPLE_CALL | Code::NOFREE);
 
   ASSERT_TRUE(code->code()->isBytes());

@@ -218,7 +218,7 @@ TEST(ThreadTest, OverlappingFrames) {
   HandleScope scope;
 
   // Push a frame for a code object with space for 3 items on the value stack
-  Code caller_code(&scope, runtime.newCode());
+  Code caller_code(&scope, testing::newEmptyCode(&runtime));
   caller_code->setStacksize(3);
   auto thread = Thread::currentThread();
   auto caller_frame = thread->pushFrame(caller_code);
@@ -234,7 +234,7 @@ TEST(ThreadTest, OverlappingFrames) {
 
   // Push a frame for a code object that expects 3 arguments and needs space
   // for 3 local variables
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setArgcount(3);
   code->setNlocals(3);
   auto frame = thread->pushFrame(code);
@@ -269,7 +269,7 @@ TEST(ThreadTest, PushPopFrame) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setNlocals(2);
   code->setStacksize(3);
 
@@ -294,7 +294,7 @@ TEST(ThreadTest, PushFrameWithNoCellVars) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setCellvars(NoneType::object());
   code->setFreevars(runtime.newTuple(0));
   auto thread = Thread::currentThread();
@@ -308,7 +308,7 @@ TEST(ThreadTest, PushFrameWithNoFreeVars) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setFreevars(NoneType::object());
   code->setCellvars(runtime.newTuple(0));
   auto thread = Thread::currentThread();
@@ -400,7 +400,7 @@ TEST(ThreadTest, CallFunction) {
   //         return 2222
   //
   auto expected_result = SmallInt::fromWord(2222);
-  Code callee_code(&scope, runtime.newCode());
+  Code callee_code(&scope, testing::newEmptyCode(&runtime));
   callee_code->setArgcount(2);
   callee_code->setStacksize(1);
   callee_code->setConsts(runtime.newTuple(1));
@@ -414,7 +414,7 @@ TEST(ThreadTest, CallFunction) {
   callee->setEntry(interpreterTrampoline);
 
   // Build a code object to call the function defined above
-  Code caller_code(&scope, runtime.newCode());
+  Code caller_code(&scope, testing::newEmptyCode(&runtime));
   caller_code->setStacksize(3);
   Tuple consts(&scope, runtime.newTuple(3));
   consts->atPut(0, *callee);
@@ -445,7 +445,7 @@ TEST(ThreadTest, ExtendedArg) {
     constants->atPut(i, zero);
   }
   constants->atPut(num_consts - 1, non_zero);
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setConsts(*constants);
   code->setCode(runtime.newBytesWithAll(bytecode));
   code->setStacksize(2);
@@ -476,7 +476,7 @@ TEST(ThreadTest, ExecuteDupTop) {
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(1111));
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setStacksize(2);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, DUP_TOP, 0, RETURN_VALUE, 0};
@@ -494,7 +494,7 @@ TEST(ThreadTest, ExecuteDupTopTwo) {
   Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, SmallInt::fromWord(1111));
   consts->atPut(1, SmallInt::fromWord(2222));
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setStacksize(2);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,  0, LOAD_CONST,   1,
@@ -513,7 +513,7 @@ TEST(ThreadTest, ExecuteRotTwo) {
   Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, SmallInt::fromWord(1111));
   consts->atPut(1, SmallInt::fromWord(2222));
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setStacksize(2);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,   1,
@@ -533,7 +533,7 @@ TEST(ThreadTest, ExecuteRotThree) {
   consts->atPut(0, SmallInt::fromWord(1111));
   consts->atPut(1, SmallInt::fromWord(2222));
   consts->atPut(2, SmallInt::fromWord(3333));
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setStacksize(3);
   code->setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,   1, LOAD_CONST, 2,
@@ -552,7 +552,7 @@ TEST(ThreadTest, ExecuteJumpAbsolute) {
   Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, SmallInt::fromWord(1111));
   consts->atPut(1, SmallInt::fromWord(2222));
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setStacksize(2);
   code->setConsts(*consts);
   const byte bytecode[] = {JUMP_ABSOLUTE, 4, LOAD_CONST,   0,
@@ -571,7 +571,7 @@ TEST(ThreadTest, ExecuteJumpForward) {
   Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, SmallInt::fromWord(1111));
   consts->atPut(1, SmallInt::fromWord(2222));
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setStacksize(2);
   code->setConsts(*consts);
   const byte bytecode[] = {JUMP_FORWARD, 2, LOAD_CONST,   0,
@@ -587,7 +587,7 @@ TEST(ThreadTest, ExecuteStoreLoadFast) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(1111));
   code->setConsts(*consts);
@@ -605,7 +605,7 @@ TEST(ThreadTest, LoadGlobal) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names->atPut(0, *key);
@@ -744,7 +744,7 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
@@ -778,7 +778,7 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
@@ -818,7 +818,7 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
@@ -853,7 +853,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
@@ -887,7 +887,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
@@ -925,7 +925,7 @@ TEST(ThreadTest, LoadNameInTypeBodyFromGlobal) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
@@ -965,7 +965,7 @@ TEST(ThreadTest, LoadNameInTypeBodyFromImplicitGlobals) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(42));
@@ -1003,10 +1003,10 @@ TEST(ThreadTest, MakeFunction) {
   Runtime runtime;
   HandleScope scope;
 
-  Code module(&scope, runtime.newCode());
+  Code module(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(3));
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   consts->atPut(0, *code);
   Object key(&scope, runtime.newStrFromCStr("hello"));
   consts->atPut(1, *key);
@@ -1050,7 +1050,7 @@ TEST(ThreadTest, BuildList) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(3));
   consts->atPut(0, SmallInt::fromWord(111));
@@ -1080,7 +1080,7 @@ TEST(ThreadTest, BuildSetEmpty) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   const byte bc[] = {BUILD_SET, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bc));
 
@@ -1094,7 +1094,7 @@ TEST(ThreadTest, BuildSetEmpty) {
 TEST(ThreadTest, BuildSetWithOneItem) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(2));
   Object smi(&scope, SmallInt::fromWord(111));
@@ -1118,7 +1118,7 @@ TEST(ThreadTest, BuildSetWithOneItem) {
 TEST(ThreadTest, BuildSet) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(4));
 
@@ -1154,7 +1154,7 @@ TEST(ThreadTest, SetupLoop) {
   HandleScope scope;
 
   const byte bc[] = {SETUP_LOOP, 100, RETURN_VALUE, 0};
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setCode(runtime.newBytesWithAll(bc));
   code->setStacksize(3);
 
@@ -1182,7 +1182,7 @@ TEST(ThreadTest, PopBlock) {
   HandleScope scope;
 
   const byte bc[] = {POP_BLOCK, 0, RETURN_VALUE, 0};
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setCode(runtime.newBytesWithAll(bc));
   code->setStacksize(3);
 
@@ -1211,7 +1211,7 @@ TEST(ThreadTest, PopJumpIfFalse) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
   consts->atPut(0, Bool::trueObj());
   consts->atPut(1, SmallInt::fromWord(1111));
@@ -1241,7 +1241,7 @@ TEST(ThreadTest, PopJumpIfTrue) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
   consts->atPut(0, Bool::falseObj());
   consts->atPut(1, SmallInt::fromWord(1111));
@@ -1271,7 +1271,7 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, Bool::falseObj());
   consts->atPut(1, SmallInt::fromWord(1111));
@@ -1299,7 +1299,7 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, Bool::trueObj());
   consts->atPut(1, SmallInt::fromWord(1111));
@@ -1327,7 +1327,7 @@ TEST(ThreadTest, UnaryNot) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, Bool::trueObj());
   code->setConsts(*consts);
@@ -1446,7 +1446,7 @@ TEST(ThreadDeathTest, NativeExceptions) {
   Function fn(&scope, runtime.newFunction());
   fn->setEntry(nativeTrampoline<nativeExceptionTest>);
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, *fn);
   code->setConsts(*consts);
@@ -2055,7 +2055,7 @@ s = {*[0, 1], *{2, 3}, *(4, 5), *[]}
 TEST(BuildString, buildStringEmpty) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   const byte bc[] = {BUILD_STRING, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bc));
@@ -2071,7 +2071,7 @@ TEST(BuildString, buildStringEmpty) {
 TEST(BuildString, buildStringSingle) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
   const char* expected = "foo";
@@ -2093,7 +2093,7 @@ TEST(BuildString, buildStringSingle) {
 TEST(BuildString, buildStringMultiSmall) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(2));
   Object str(&scope, SmallStr::fromCStr("foo"));
@@ -2117,7 +2117,7 @@ TEST(BuildString, buildStringMultiSmall) {
 TEST(BuildString, buildStringMultiLarge) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(3));
   Object str(&scope, SmallStr::fromCStr("hello"));
@@ -2454,7 +2454,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   HandleScope scope;
 
   Tuple consts(&scope, runtime.newTuple(4));
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   consts->atPut(0, SmallInt::fromWord(0));
   consts->atPut(1, SmallInt::fromWord(1));
   consts->atPut(2, SmallInt::fromWord(3));
@@ -2543,7 +2543,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   HandleScope scope;
 
   Tuple consts(&scope, runtime.newTuple(5));
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   consts->atPut(0, SmallInt::fromWord(0));
   consts->atPut(1, SmallInt::fromWord(4));
   consts->atPut(2, SmallInt::fromWord(1));
@@ -2992,7 +2992,7 @@ x = foo()
 TEST(ThreadTest, LoadTypeDerefFromLocal) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, SmallInt::fromWord(1111));
   Tuple freevars(&scope, runtime.newTuple(1));

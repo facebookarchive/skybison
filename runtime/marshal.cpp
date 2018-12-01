@@ -352,22 +352,25 @@ RawObject Marshal::Reader::readTypeCode() {
     index = addRef(NoneType::object());
   }
   HandleScope scope;
-  Code result(&scope, runtime_->newCode());
-  result->setArgcount(readLong());
-  result->setKwonlyargcount(readLong());
-  result->setNlocals(readLong());
-  result->setStacksize(readLong());
-  result->setFlags(readLong());
-  result->setCode(readObject());
-  result->setConsts(readObject());
-  result->setNames(readObject());
-  result->setVarnames(readObject());
-  result->setFreevars(readObject());
-  result->setCellvars(readObject());
-  result->setFilename(readObject());
-  result->setName(readObject());
-  result->setFirstlineno(readLong());
-  result->setLnotab(readObject());
+  int32 argcount = readLong();
+  int32 kwonlyargcount = readLong();
+  int32 nlocals = readLong();
+  int32 stacksize = readLong();
+  int32 flags = readLong();
+  Object code(&scope, readObject());
+  Object consts(&scope, readObject());
+  Object names(&scope, readObject());
+  Tuple varnames(&scope, readObject());
+  Tuple freevars(&scope, readObject());
+  Tuple cellvars(&scope, readObject());
+  Object filename(&scope, readObject());
+  Object name(&scope, readObject());
+  int32 firstlineno = readLong();
+  Object lnotab(&scope, readObject());
+  Code result(&scope,
+              runtime_->newCode(argcount, kwonlyargcount, nlocals, stacksize,
+                                flags, code, consts, names, varnames, freevars,
+                                cellvars, filename, name, firstlineno, lnotab));
   if (isRef_) {
     DCHECK(index != -1, "unexpected addRef result");
     setRef(index, *result);

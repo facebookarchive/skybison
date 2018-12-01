@@ -766,30 +766,6 @@ TEST(RuntimeTest, NewBytesWithAll) {
   EXPECT_EQ(len3->byteAt(2), 0xCC);
 }
 
-TEST(RuntimeTest, NewCode) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Code code(&scope, runtime.newCode());
-  EXPECT_EQ(code->argcount(), 0);
-  EXPECT_EQ(code->cell2arg(), 0);
-  ASSERT_TRUE(code->cellvars()->isTuple());
-  EXPECT_EQ(RawTuple::cast(code->cellvars())->length(), 0);
-  EXPECT_TRUE(code->code()->isNoneType());
-  EXPECT_TRUE(code->consts()->isNoneType());
-  EXPECT_TRUE(code->filename()->isNoneType());
-  EXPECT_EQ(code->firstlineno(), 0);
-  EXPECT_EQ(code->flags(), 0);
-  ASSERT_TRUE(code->freevars()->isTuple());
-  EXPECT_EQ(RawTuple::cast(code->freevars())->length(), 0);
-  EXPECT_EQ(code->kwonlyargcount(), 0);
-  EXPECT_TRUE(code->lnotab()->isNoneType());
-  EXPECT_TRUE(code->name()->isNoneType());
-  EXPECT_EQ(code->nlocals(), 0);
-  EXPECT_EQ(code->stacksize(), 0);
-  EXPECT_TRUE(code->varnames()->isNoneType());
-}
-
 TEST(RuntimeTest, NewTuple) {
   Runtime runtime;
   HandleScope scope;
@@ -975,7 +951,7 @@ TEST(RuntimeTest, Random) {
 
 TEST(RuntimeTest, HashCodeSizeCheck) {
   Runtime runtime;
-  RawObject code = runtime.newCode();
+  RawObject code = testing::newEmptyCode(&runtime);
   ASSERT_TRUE(code->isHeapObject());
   EXPECT_EQ(RawHeapObject::cast(code)->header()->hashCode(), 0);
   // Verify that large-magnitude random numbers are properly
@@ -1120,7 +1096,7 @@ TEST(RuntimeTest, CollectAttributes) {
   consts->atPut(2, SmallInt::fromWord(300));
   consts->atPut(3, NoneType::object());
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setNames(*names);
   // Bytecode for the snippet:
   //
@@ -1185,7 +1161,7 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   Tuple consts(&scope, runtime.newTuple(1));
   consts->atPut(0, NoneType::object());
 
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   code->setNames(*names);
   // Bytecode for the snippet:
   //
@@ -3802,6 +3778,62 @@ TEST(RuntimeTest, SetFunctionDict) {
                                             dict_name));
   EXPECT_TRUE(result->isDict());
   EXPECT_EQ(*dict, *result);
+}
+
+TEST(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
+  Runtime runtime;
+  HandleScope scope;
+  word argcount = 3;
+  word kwargcount = 0;
+  Tuple varnames(&scope, runtime.newTuple(argcount + kwargcount));
+  Tuple cellvars(&scope, runtime.newTuple(2));
+  Str foo(&scope, runtime.internStrFromCStr("foo"));
+  Str bar(&scope, runtime.internStrFromCStr("bar"));
+  Str baz(&scope, runtime.internStrFromCStr("baz"));
+  Str foobar(&scope, runtime.internStrFromCStr("foobar"));
+  Str foobaz(&scope, runtime.internStrFromCStr("foobaz"));
+  varnames->atPut(0, *foo);
+  varnames->atPut(1, *bar);
+  varnames->atPut(2, *baz);
+  cellvars->atPut(0, *foobar);
+  cellvars->atPut(1, *foobaz);
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, runtime.newTuple(0));
+  Code code(&scope, runtime.newCode(argcount, kwargcount, 0, 0, 0, none, none,
+                                    none, varnames, empty_tuple, cellvars, none,
+                                    none, 0, none));
+  EXPECT_TRUE(code->cell2arg()->isNoneType());
+}
+
+TEST(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
+  Runtime runtime;
+  HandleScope scope;
+  word argcount = 3;
+  word kwargcount = 0;
+  Tuple varnames(&scope, runtime.newTuple(argcount + kwargcount));
+  Tuple cellvars(&scope, runtime.newTuple(2));
+  Str foo(&scope, runtime.internStrFromCStr("foo"));
+  Str bar(&scope, runtime.internStrFromCStr("bar"));
+  Str baz(&scope, runtime.internStrFromCStr("baz"));
+  Str foobar(&scope, runtime.internStrFromCStr("foobar"));
+  varnames->atPut(0, *foo);
+  varnames->atPut(1, *bar);
+  varnames->atPut(2, *baz);
+  cellvars->atPut(0, *baz);
+  cellvars->atPut(1, *foobar);
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, runtime.newTuple(0));
+  Code code(&scope, runtime.newCode(argcount, kwargcount, 0, 0, 0, none, none,
+                                    none, varnames, empty_tuple, cellvars, none,
+                                    none, 0, none));
+  ASSERT_FALSE(code->cell2arg()->isNoneType());
+  Tuple cell2arg(&scope, code->cell2arg());
+  ASSERT_EQ(cell2arg->length(), 2);
+
+  ASSERT_TRUE(cell2arg->at(0)->isInt());
+  Int cell2arg_value(&scope, cell2arg->at(0));
+  EXPECT_EQ(cell2arg_value->asWord(), 2);
+  EXPECT_EQ(cell2arg->at(1), NoneType::object());
 }
 
 }  // namespace python

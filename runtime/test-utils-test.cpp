@@ -79,4 +79,28 @@ Expected: four)";
   EXPECT_STREQ(bad_str.message(), str_msg);
 }
 
+TEST(TestUtils, NewEmptyCode) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Code code(&scope, testing::newEmptyCode(&runtime));
+  EXPECT_EQ(code->argcount(), 0);
+  EXPECT_TRUE(code->cell2arg()->isNoneType());
+  ASSERT_TRUE(code->cellvars()->isTuple());
+  EXPECT_EQ(RawTuple::cast(code->cellvars())->length(), 0);
+  EXPECT_TRUE(code->code()->isNoneType());
+  EXPECT_TRUE(code->consts()->isNoneType());
+  EXPECT_TRUE(code->filename()->isNoneType());
+  EXPECT_EQ(code->firstlineno(), 0);
+  EXPECT_EQ(code->flags(), 0);
+  ASSERT_TRUE(code->freevars()->isTuple());
+  EXPECT_EQ(RawTuple::cast(code->freevars())->length(), 0);
+  EXPECT_EQ(code->kwonlyargcount(), 0);
+  EXPECT_TRUE(code->lnotab()->isNoneType());
+  EXPECT_TRUE(code->name()->isNoneType());
+  EXPECT_EQ(code->nlocals(), 0);
+  EXPECT_EQ(code->stacksize(), 0);
+  EXPECT_TRUE(code->varnames()->isTuple());
+}
+
 }  // namespace python

@@ -629,18 +629,46 @@ bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
   return !lookupSymbolInMro(thread, type, SymbolId::kDunderDelete)->isError();
 }
 
-RawObject Runtime::newCode() {
+RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
+                           word stacksize, word flags, const Object& code,
+                           const Object& consts, const Object& names,
+                           const Tuple& varnames, const Tuple& freevars,
+                           const Tuple& cellvars, const Object& filename,
+                           const Object& name, word firstlineno,
+                           const Object& lnotab) {
   HandleScope scope;
   Code result(&scope, heap()->create<RawCode>());
-  result->setArgcount(0);
-  result->setKwonlyargcount(0);
-  result->setCell2arg(0);
-  result->setNlocals(0);
-  result->setStacksize(0);
-  result->setFlags(0);
-  result->setFreevars(empty_object_array_);
-  result->setCellvars(empty_object_array_);
-  result->setFirstlineno(0);
+  result->setArgcount(argcount);
+  result->setKwonlyargcount(kwonlyargcount);
+  result->setNlocals(nlocals);
+  result->setStacksize(stacksize);
+  result->setFlags(flags);
+  result->setCode(*code);
+  result->setConsts(*consts);
+  result->setNames(*names);
+  result->setVarnames(*varnames);
+  result->setFreevars(*freevars);
+  result->setCellvars(*cellvars);
+  result->setFilename(*filename);
+  result->setName(*name);
+  result->setFirstlineno(firstlineno);
+  result->setLnotab(*lnotab);
+
+  // Create mapping between cells and arguments if needed
+  if (result->numCellvars() > 0) {
+    Tuple cell2arg(&scope, newTuple(result->numCellvars()));
+    bool value_set = false;
+    for (word i = 0; i < result->numCellvars(); i++) {
+      for (word j = 0; j < result->totalArgs(); j++) {
+        if (Tuple::cast(*cellvars)->at(i) == Tuple::cast(*varnames)->at(j)) {
+          cell2arg->atPut(i, newInt(j));
+          value_set = true;
+        }
+      }
+    }
+    if (value_set) result->setCell2arg(*cell2arg);
+  }
+
   return *result;
 }
 

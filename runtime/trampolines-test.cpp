@@ -653,7 +653,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
   callee->setEntry(nativeTrampoline<firstArg>);
 
   // Set up a code object that calls the builtin with a single argument.
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1111));
@@ -694,7 +694,7 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   callee->setEntryKw(nativeTrampolineKw<returnsPositionalAndKeywordArgument>);
 
   // Set up a code object that calls the builtin with (1234, foo='bar')
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(4));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1234));
@@ -749,7 +749,7 @@ TEST(TrampolineTest,
       nativeTrampolineKw<returnsPositionalAndTwoKeywordArguments>);
 
   // Code object that calls func with (1234, (foo='foo_val', bar='bar_val'))
-  Code code(&scope, runtime.newCode());
+  Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(5));
   consts->atPut(0, *callee);
   consts->atPut(1, SmallInt::fromWord(1234));
@@ -779,6 +779,87 @@ TEST(TrampolineTest,
   EXPECT_TRUE(RawStr::cast(tuple->at(1))->equalsCStr("foo_val"));
   ASSERT_TRUE(tuple->at(2)->isStr());
   EXPECT_TRUE(RawStr::cast(tuple->at(2))->equalsCStr("bar_val"));
+}
+
+TEST(TrampolineTest, InterpreterClosureUsesArgOverCellValue) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Create code object
+  word nlocals = 1;
+  Tuple varnames(&scope, runtime.newTuple(nlocals));
+  Tuple cellvars(&scope, runtime.newTuple(1));
+  Str bar(&scope, runtime.internStrFromCStr("bar"));
+  varnames->atPut(0, *bar);
+  cellvars->atPut(0, *bar);
+  const byte bytecode[] = {LOAD_CLOSURE, 0, LOAD_DEREF, 0, RETURN_VALUE, 0};
+  Bytes bc(&scope, runtime.newBytesWithAll(bytecode));
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, runtime.newTuple(0));
+  Code code(&scope,
+            runtime.newCode(1, 0, nlocals, 0, 0, bc, none, none, varnames,
+                            empty_tuple, cellvars, none, none, 0, none));
+  ASSERT_TRUE(!code->cell2arg()->isNoneType());
+
+  // Create a function
+  runtime.runFromCStr(R"(
+def foo(bar): pass
+)");
+  Function foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  foo->setEntry(interpreterClosureTrampoline);
+  foo->setCode(*code);
+
+  // Run function
+  runtime.runFromCStr(R"(
+result = foo(1)
+)");
+  Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(Int::cast(result)->asWord(), 1);
+}
+
+TEST(TrampolineTest, InterpreterClosureUsesCellValue) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Create code object
+  word nlocals = 2;
+  Tuple consts(&scope, runtime.newTuple(1));
+  consts->atPut(0, runtime.newInt(10));
+  Tuple varnames(&scope, runtime.newTuple(nlocals));
+  Tuple cellvars(&scope, runtime.newTuple(2));
+  Str bar(&scope, runtime.internStrFromCStr("bar"));
+  Str baz(&scope, runtime.internStrFromCStr("baz"));
+  Str foobar(&scope, runtime.internStrFromCStr("foobar"));
+  varnames->atPut(0, *bar);
+  varnames->atPut(1, *baz);
+  cellvars->atPut(0, *foobar);
+  cellvars->atPut(1, *bar);
+  const byte bytecode[] = {LOAD_CONST, 0, STORE_DEREF,  0,
+                           LOAD_DEREF, 0, RETURN_VALUE, 0};
+  Bytes bc(&scope, runtime.newBytesWithAll(bytecode));
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, runtime.newTuple(0));
+  Code code(&scope,
+            runtime.newCode(1, 0, nlocals, 0, 0, bc, consts, none, varnames,
+                            empty_tuple, cellvars, none, none, 0, none));
+  ASSERT_TRUE(!code->cell2arg()->isNoneType());
+
+  // Create a function
+  runtime.runFromCStr(R"(
+def foo(bar): pass
+)");
+  Function foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  foo->setEntry(interpreterClosureTrampoline);
+  foo->setCode(*code);
+
+  // Run function
+  runtime.runFromCStr(R"(
+result = foo(1)
+)");
+  Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(Int::cast(result)->asWord(), 10);
 }
 
 }  // namespace python

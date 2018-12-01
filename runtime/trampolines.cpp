@@ -40,15 +40,36 @@ static void processFreevarsAndCellvars(Thread* thread, const Function& function,
                                        Frame* callee_frame, const Code& code) {
   CHECK(code->hasFreevarsOrCellvars(), "no free variables or cell variables");
 
-  // initialize cell var
+  // initialize cell variables
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   word num_locals = code->nlocals();
   word num_cellvars = code->numCellvars();
   for (word i = 0; i < code->numCellvars(); i++) {
-    // TODO(T36407558): implement cell2arg
-    callee_frame->setLocal(num_locals + i, thread->runtime()->newValueCell());
+    ValueCell value_cell(&scope, runtime->newValueCell());
+
+    // Allocate a cell for a local variable if cell2arg is not preset
+    if (code->cell2arg()->isNoneType()) {
+      callee_frame->setLocal(num_locals + i, *value_cell);
+      continue;
+    }
+
+    // Allocate a cell for a local variable if cell2arg is present but
+    // the cell does not match any argument
+    Object arg_index(&scope, Tuple::cast(code->cell2arg())->at(i));
+    if (arg_index->isNoneType()) {
+      callee_frame->setLocal(num_locals + i, *value_cell);
+      continue;
+    }
+
+    // Allocate a cell for an argument
+    word local_idx = Int::cast(arg_index)->asWord();
+    value_cell->setValue(callee_frame->getLocal(local_idx));
+    callee_frame->setLocal(local_idx, NoneType::object());
+    callee_frame->setLocal(num_locals + i, *value_cell);
   }
 
-  // initialize free var
+  // initialize free variables
   DCHECK(
       code->numFreevars() == 0 ||
           code->numFreevars() == RawTuple::cast(function->closure())->length(),

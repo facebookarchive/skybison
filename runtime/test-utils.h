@@ -171,5 +171,8 @@ struct FileDeleter {
 };
 using unique_file_ptr = std::unique_ptr<char, FileDeleter>;
 
+// Create an empty code object for testing purposes
+RawObject newEmptyCode(Runtime* runtime);
+
 }  // namespace testing
 }  // namespace python

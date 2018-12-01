@@ -1196,8 +1196,8 @@ class RawCode : public RawHeapObject {
   void setArgcount(word value);
   word totalArgs();
 
-  word cell2arg();
-  void setCell2arg(word value);
+  RawObject cell2arg();
+  void setCell2arg(RawObject args);
 
   RawObject cellvars();
   void setCellvars(RawObject value);
@@ -2890,8 +2890,8 @@ inline void RawCode::setArgcount(word value) {
   instanceVariableAtPut(kArgcountOffset, RawSmallInt::fromWord(value));
 }
 
-inline word RawCode::cell2arg() {
-  return RawSmallInt::cast(instanceVariableAt(kCell2argOffset))->value();
+inline RawObject RawCode::cell2arg() {
+  return instanceVariableAt(kCell2argOffset);
 }
 
 inline word RawCode::totalArgs() {
@@ -2906,8 +2906,8 @@ inline word RawCode::totalArgs() {
   return res;
 }
 
-inline void RawCode::setCell2arg(word value) {
-  instanceVariableAtPut(kCell2argOffset, RawSmallInt::fromWord(value));
+inline void RawCode::setCell2arg(RawObject value) {
+  instanceVariableAtPut(kCell2argOffset, value);
 }
 
 inline RawObject RawCode::cellvars() {
