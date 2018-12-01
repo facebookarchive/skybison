@@ -73,7 +73,7 @@ subfloat_foo = subfloat.foo
   EXPECT_EQ(3, PyLong_AsLong(subfloat_foo));
 }
 
-TEST_F(FloatExtensionApiTest, ClearFreeListReturnsZero_Pyro) {
+TEST_F(FloatExtensionApiTest, ClearFreeListReturnsZeroPyro) {
   EXPECT_EQ(PyFloat_ClearFreeList(), 0);
 }
 

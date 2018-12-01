@@ -57,7 +57,7 @@ TEST_F(ListExtensionApiTest, AppendReturnsZero) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(ListExtensionApiTest, ClearFreeListReturnsZero_Pyro) {
+TEST_F(ListExtensionApiTest, ClearFreeListReturnsZeroPyro) {
   EXPECT_EQ(PyList_ClearFreeList(), 0);
 }
 
