@@ -462,6 +462,7 @@ set_target_properties(
 add_library(
   cpython-extension-tests
   STATIC
+  EXCLUDE_FROM_ALL
   ${EXTENSION_TESTS})
 target_compile_options(
   cpython-extension-tests
@@ -484,6 +485,7 @@ target_link_libraries(
 
 add_executable(
   cpython-tests
+  EXCLUDE_FROM_ALL
   runtime/python-test.cpp)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
