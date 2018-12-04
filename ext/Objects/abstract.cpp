@@ -21,8 +21,17 @@ PY_EXPORT PyObject* PyIter_Next(PyObject* /* r */) {
   UNIMPLEMENTED("PyIter_Next");
 }
 
-PY_EXPORT int PyMapping_Check(PyObject* /* o */) {
-  UNIMPLEMENTED("PyMapping_Check");
+PY_EXPORT int PyMapping_Check(PyObject* py_obj) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(py_obj)->asObject());
+
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->typeOf(obj));
+  Object getitem(&scope, runtime->lookupSymbolInMro(thread, type,
+                                                    SymbolId::kDunderGetItem));
+
+  return !getitem->isError();
 }
 
 PY_EXPORT PyObject* PyMapping_GetItemString(PyObject* /* o */,
