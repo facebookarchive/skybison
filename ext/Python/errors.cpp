@@ -1,5 +1,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
+
+#include "exception-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -105,11 +107,9 @@ static bool givenExceptionMatches(Thread* thread, const Object& given,
     given_type = runtime->typeOf(*given);
   }
   if (runtime->isInstanceOfType(*given_type) &&
-      (RawType::cast(*given_type).builtinBase() >= LayoutId::kFirstException) &&
-      (RawType::cast(*given_type).builtinBase() <= LayoutId::kLastException) &&
+      RawType::cast(*given_type).isBaseExceptionSubclass() &&
       runtime->isInstanceOfType(*exc) &&
-      (RawType::cast(*exc).builtinBase() >= LayoutId::kFirstException) &&
-      (RawType::cast(*exc).builtinBase() <= LayoutId::kLastException)) {
+      RawType::cast(*exc).isBaseExceptionSubclass()) {
     Type subtype(&scope, *given_type);
     Type supertype(&scope, *exc);
     return runtime->isSubclass(subtype, supertype);
@@ -140,10 +140,36 @@ PY_EXPORT PyObject* PyErr_NewExceptionWithDoc(const char* /* e */,
   UNIMPLEMENTED("PyErr_NewExceptionWithDoc");
 }
 
-PY_EXPORT void PyErr_NormalizeException(PyObject** /* exc */,
-                                        PyObject** /* val */,
-                                        PyObject** /* tb */) {
-  UNIMPLEMENTED("PyErr_NormalizeException");
+PY_EXPORT void PyErr_NormalizeException(PyObject** exc, PyObject** val,
+                                        PyObject** tb) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  Object exc_obj(&scope, *exc ? ApiHandle::fromPyObject(*exc)->asObject()
+                              : NoneType::object());
+  Object exc_orig(&scope, *exc_obj);
+  Object val_obj(&scope, *val ? ApiHandle::fromPyObject(*val)->asObject()
+                              : NoneType::object());
+  Object val_orig(&scope, *val_obj);
+  Object tb_obj(&scope, *tb ? ApiHandle::fromPyObject(*tb)->asObject()
+                            : NoneType::object());
+  Object tb_orig(&scope, *tb_obj);
+  normalizeException(thread, &exc_obj, &val_obj, &tb_obj);
+  if (*exc_obj != *exc_orig) {
+    PyObject* tmp = *exc;
+    *exc = ApiHandle::newReference(thread, *exc_obj);
+    Py_XDECREF(tmp);
+  }
+  if (*val_obj != *val_orig) {
+    PyObject* tmp = *val;
+    *val = ApiHandle::newReference(thread, *val_obj);
+    Py_XDECREF(tmp);
+  }
+  if (*tb_obj != *tb_orig) {
+    PyObject* tmp = *tb;
+    *tb = ApiHandle::newReference(thread, *tb_obj);
+    Py_XDECREF(tmp);
+  }
 }
 
 PY_EXPORT PyObject* PyErr_ProgramText(const char* /* e */, int /* o */) {

@@ -34,9 +34,7 @@ PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
   HandleScope scope(thread);
 
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  if (!(object->isType() || object->isModule() || object->isInstance())) {
-    return -1;
-  }
+  if (!object->isHeapObject()) return -1;
 
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
@@ -56,9 +54,7 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
   HandleScope scope(thread);
 
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  if (!(object->isType() || object->isModule() || object->isInstance())) {
-    return nullptr;
-  }
+  if (!object->isHeapObject()) return nullptr;
 
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object result(&scope, runtime->attributeAt(thread, object, name_obj));

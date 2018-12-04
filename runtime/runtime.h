@@ -556,9 +556,7 @@ class Runtime {
   // BaseException must be handled specially because it has builtin subclasses
   // that are visible to managed code.
   bool isInstanceOfBaseException(RawObject obj) {
-    LayoutId base = RawType::cast(typeOf(obj)).builtinBase();
-    return base >= LayoutId::kFirstException &&
-           base <= LayoutId::kLastException;
+    return RawType::cast(typeOf(obj)).isBaseExceptionSubclass();
   }
 
   // UserFloatBase has no corresponding LayoutId, so we detect it by looking

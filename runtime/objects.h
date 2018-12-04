@@ -800,6 +800,8 @@ class RawType : public RawHeapObject {
   RawObject extensionSlots();
   void setExtensionSlots(RawObject slots);
 
+  bool isBaseExceptionSubclass();
+
   // Layout.
   static const int kMroOffset = RawHeapObject::kSize;
   static const int kInstanceLayoutOffset = kMroOffset + kPointerSize;
@@ -2847,6 +2849,11 @@ inline void RawType::setExtensionType(RawObject pytype) {
 
 inline bool RawType::isBuiltin() {
   return RawLayout::cast(instanceLayout())->id() <= LayoutId::kLastBuiltinId;
+}
+
+inline bool RawType::isBaseExceptionSubclass() {
+  LayoutId base = builtinBase();
+  return base >= LayoutId::kFirstException && base <= LayoutId::kLastException;
 }
 
 // RawArray

@@ -210,13 +210,21 @@ RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
   return Interpreter::execute(this, frame);
 }
 
-// Convenience method for throwing a RuntimeError exception with an error
-// message.
-RawObject Thread::raiseRuntimeError(RawObject value) {
-  setExceptionType(runtime()->typeAt(LayoutId::kRuntimeError));
+RawObject Thread::raise(LayoutId type, RawObject value) {
+  setExceptionType(runtime()->typeAt(type));
   setExceptionValue(value);
   setExceptionTraceback(NoneType::object());
   return Error::object();
+}
+
+RawObject Thread::raiseWithCStr(LayoutId type, const char* message) {
+  return raise(type, runtime()->newStrFromCStr(message));
+}
+
+// Convenience method for throwing a RuntimeError exception with an error
+// message.
+RawObject Thread::raiseRuntimeError(RawObject value) {
+  return raise(LayoutId::kRuntimeError, value);
 }
 
 RawObject Thread::raiseRuntimeErrorWithCStr(const char* message) {
@@ -226,10 +234,7 @@ RawObject Thread::raiseRuntimeErrorWithCStr(const char* message) {
 // Convenience method for throwing a SystemError exception with an error
 // message.
 RawObject Thread::raiseSystemError(RawObject value) {
-  setExceptionType(runtime()->typeAt(LayoutId::kSystemError));
-  setExceptionValue(value);
-  setExceptionTraceback(NoneType::object());
-  return Error::object();
+  return raise(LayoutId::kSystemError, value);
 }
 
 RawObject Thread::raiseSystemErrorWithCStr(const char* message) {
@@ -238,10 +243,7 @@ RawObject Thread::raiseSystemErrorWithCStr(const char* message) {
 
 // Convenience method for throwing a TypeError exception with an error message.
 RawObject Thread::raiseTypeError(RawObject value) {
-  setExceptionType(runtime()->typeAt(LayoutId::kTypeError));
-  setExceptionValue(value);
-  setExceptionTraceback(NoneType::object());
-  return Error::object();
+  return raise(LayoutId::kTypeError, value);
 }
 
 RawObject Thread::raiseTypeErrorWithCStr(const char* message) {
@@ -250,10 +252,7 @@ RawObject Thread::raiseTypeErrorWithCStr(const char* message) {
 
 // Convenience method for throwing a ValueError exception with an error message.
 RawObject Thread::raiseValueError(RawObject value) {
-  setExceptionType(runtime()->typeAt(LayoutId::kValueError));
-  setExceptionValue(value);
-  setExceptionTraceback(NoneType::object());
-  return Error::object();
+  return raise(LayoutId::kValueError, value);
 }
 
 RawObject Thread::raiseValueErrorWithCStr(const char* message) {
@@ -261,10 +260,7 @@ RawObject Thread::raiseValueErrorWithCStr(const char* message) {
 }
 
 RawObject Thread::raiseAttributeError(RawObject value) {
-  setExceptionType(runtime()->typeAt(LayoutId::kAttributeError));
-  setExceptionValue(value);
-  setExceptionTraceback(NoneType::object());
-  return Error::object();
+  return raise(LayoutId::kAttributeError, value);
 }
 
 RawObject Thread::raiseAttributeErrorWithCStr(const char* message) {
@@ -272,10 +268,7 @@ RawObject Thread::raiseAttributeErrorWithCStr(const char* message) {
 }
 
 RawObject Thread::raiseKeyError(RawObject value) {
-  setExceptionType(runtime()->typeAt(LayoutId::kKeyError));
-  setExceptionValue(value);
-  setExceptionTraceback(NoneType::object());
-  return Error::object();
+  return raise(LayoutId::kKeyError, value);
 }
 
 RawObject Thread::raiseKeyErrorWithCStr(const char* message) {
@@ -283,17 +276,11 @@ RawObject Thread::raiseKeyErrorWithCStr(const char* message) {
 }
 
 RawObject Thread::raiseMemoryError() {
-  setExceptionType(runtime()->typeAt(LayoutId::kMemoryError));
-  setExceptionValue(NoneType::object());
-  setExceptionTraceback(NoneType::object());
-  return Error::object();
+  return raise(LayoutId::kMemoryError, NoneType::object());
 }
 
 RawObject Thread::raiseOverflowError(RawObject value) {
-  setExceptionType(runtime()->typeAt(LayoutId::kOverflowError));
-  setExceptionValue(value);
-  setExceptionTraceback(NoneType::object());
-  return Error::object();
+  return raise(LayoutId::kOverflowError, value);
 }
 
 RawObject Thread::raiseOverflowErrorWithCStr(const char* message) {
@@ -301,10 +288,7 @@ RawObject Thread::raiseOverflowErrorWithCStr(const char* message) {
 }
 
 RawObject Thread::raiseIndexError(RawObject value) {
-  setExceptionType(runtime()->typeAt(LayoutId::kIndexError));
-  setExceptionValue(value);
-  setExceptionTraceback(NoneType::object());
-  return Error::object();
+  return raise(LayoutId::kIndexError, value);
 }
 
 RawObject Thread::raiseIndexErrorWithCStr(const char* message) {
@@ -312,10 +296,15 @@ RawObject Thread::raiseIndexErrorWithCStr(const char* message) {
 }
 
 RawObject Thread::raiseStopIteration(RawObject value) {
-  setExceptionType(runtime()->typeAt(LayoutId::kStopIteration));
-  setExceptionValue(value);
-  setExceptionTraceback(NoneType::object());
-  return Error::object();
+  return raise(LayoutId::kStopIteration, value);
+}
+
+RawObject Thread::raiseZeroDivisionError(RawObject value) {
+  return raise(LayoutId::kZeroDivisionError, value);
+}
+
+RawObject Thread::raiseZeroDivisionErrorWithCStr(const char* message) {
+  return raiseZeroDivisionError(runtime()->newStrFromCStr(message));
 }
 
 bool Thread::hasPendingException() { return !exception_type_->isNoneType(); }
@@ -324,17 +313,6 @@ bool Thread::hasPendingStopIteration() {
   return exception_type_->isType() &&
          RawType::cast(exception_type_).builtinBase() ==
              LayoutId::kStopIteration;
-}
-
-RawObject Thread::raiseZeroDivisionError(RawObject value) {
-  setExceptionType(runtime()->typeAt(LayoutId::kZeroDivisionError));
-  setExceptionValue(value);
-  setExceptionTraceback(NoneType::object());
-  return Error::object();
-}
-
-RawObject Thread::raiseZeroDivisionErrorWithCStr(const char* message) {
-  return raiseZeroDivisionError(runtime()->newStrFromCStr(message));
 }
 
 void Thread::ignorePendingException() {

@@ -230,6 +230,29 @@ RawObject Interpreter::lookupMethod(Thread* thread, Frame* caller,
   return *method;
 }
 
+RawObject Interpreter::callFunction0(Thread* thread, Frame* caller,
+                                     const Object& func) {
+  caller->pushValue(*func);
+  return call(thread, caller, 0);
+}
+
+RawObject Interpreter::callFunction1(Thread* thread, Frame* caller,
+                                     const Object& func, const Object& arg1) {
+  caller->pushValue(*func);
+  caller->pushValue(*arg1);
+  return call(thread, caller, 1);
+}
+
+RawObject Interpreter::callFunction(Thread* thread, Frame* caller,
+                                    const Object& func, const Tuple& args) {
+  caller->pushValue(*func);
+  word length = args->length();
+  for (word i = 0; i < length; i++) {
+    caller->pushValue(args->at(i));
+  }
+  return call(thread, caller, length);
+}
+
 RawObject Interpreter::callMethod1(Thread* thread, Frame* caller,
                                    const Object& method, const Object& self) {
   word nargs = 0;

@@ -6,6 +6,7 @@
 
 namespace python {
 
+using namespace testing;
 using ErrorsExtensionApiTest = ExtensionApi;
 
 TEST_F(ErrorsExtensionApiTest, CompareErrorMessageOnThread) {
@@ -205,6 +206,91 @@ TEST_F(ErrorsExtensionApiTest, Restore) {
   EXPECT_EQ(type, PyExc_Exception);
   EXPECT_EQ(value, Py_True);
   EXPECT_EQ(traceback, nullptr);
+}
+
+TEST_F(ErrorsExtensionApiTest, NormalizeCreatesException) {
+  PyObject* exc = PyExc_RuntimeError;
+  PyObject* val = PyUnicode_FromString("something went wrong!");
+  PyObjectPtr val_orig(val);
+  Py_INCREF(val_orig);
+  PyObject* tb = nullptr;
+  PyErr_NormalizeException(&exc, &val, &tb);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_GivenExceptionMatches(exc, PyExc_RuntimeError));
+  ASSERT_TRUE(PyErr_GivenExceptionMatches(val, PyExc_RuntimeError));
+  PyObjectPtr args(PyObject_GetAttrString(val, "args"));
+  ASSERT_TRUE(PyTuple_CheckExact(args));
+  ASSERT_EQ(PyTuple_Size(args), 1);
+  EXPECT_EQ(PyTuple_GetItem(args, 0), val_orig);
+
+  Py_DECREF(val);
+  Py_DECREF(exc);
+}
+
+TEST_F(ErrorsExtensionApiTest, NormalizeWithNullTypeDoesNothing) {
+  PyObject* exc = nullptr;
+  PyObject* val = nullptr;
+  PyObject* tb = nullptr;
+  PyErr_NormalizeException(&exc, &val, &tb);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(exc, nullptr);
+  EXPECT_EQ(val, nullptr);
+  EXPECT_EQ(tb, nullptr);
+}
+
+TEST_F(ErrorsExtensionApiTest, NormalizeWithNullValueUsesNone) {
+  PyObject* exc = PyExc_TypeError;
+  PyObject* val = Py_None;
+  Py_INCREF(val);
+  PyObject* tb = nullptr;
+  PyErr_NormalizeException(&exc, &val, &tb);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_GivenExceptionMatches(exc, PyExc_TypeError));
+  ASSERT_TRUE(PyErr_GivenExceptionMatches(val, PyExc_TypeError));
+  PyObjectPtr args(PyObject_GetAttrString(val, "args"));
+  ASSERT_TRUE(PyTuple_CheckExact(args));
+  EXPECT_EQ(PyTuple_Size(args), 0);
+
+  Py_DECREF(val);
+  Py_DECREF(exc);
+}
+
+TEST_F(ErrorsExtensionApiTest, NormalizeWithTupleUsesArgs) {
+  PyObject* exc = PyExc_Exception;
+  PyObject* val = PyTuple_New(2);
+  PyObjectPtr t0(PyLong_FromLong(111));
+  PyObjectPtr t1(PyUnicode_FromString("hello"));
+  Py_INCREF(t0);
+  PyTuple_SET_ITEM(val, 0, t0);
+  Py_INCREF(t1);
+  PyTuple_SET_ITEM(val, 1, t1);
+  PyObject* tb = nullptr;
+  PyErr_NormalizeException(&exc, &val, &tb);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_GivenExceptionMatches(exc, PyExc_Exception));
+  ASSERT_TRUE(PyErr_GivenExceptionMatches(val, PyExc_Exception));
+  PyObjectPtr args(PyObject_GetAttrString(val, "args"));
+  ASSERT_TRUE(PyTuple_CheckExact(args));
+  ASSERT_EQ(PyTuple_Size(args), 2);
+  EXPECT_EQ(PyTuple_GetItem(args, 0), t0);
+  EXPECT_EQ(PyTuple_GetItem(args, 1), t1);
+
+  Py_DECREF(val);
+  Py_DECREF(exc);
+}
+
+TEST_F(ErrorsExtensionApiTest, NormalizeWithNonExceptionDoesNothing) {
+  PyObject *exc = PyLong_FromLong(123), *exc_orig = exc;
+  PyObject *val = PyLong_FromLong(456), *val_orig = val;
+  PyObject* tb = nullptr;
+  PyErr_NormalizeException(&exc, &val, &tb);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(exc, exc_orig);
+  EXPECT_EQ(val, val_orig);
+  EXPECT_EQ(tb, nullptr);
+
+  Py_DECREF(val);
+  Py_DECREF(exc);
 }
 
 }  // namespace python

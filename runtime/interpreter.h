@@ -58,6 +58,13 @@ class Interpreter {
   static RawObject lookupMethod(Thread* thread, Frame* caller,
                                 const Object& receiver, SymbolId selector);
 
+  static RawObject callFunction0(Thread* thread, Frame* caller,
+                                 const Object& func);
+  static RawObject callFunction1(Thread* thread, Frame* caller,
+                                 const Object& func, const Object& arg1);
+  static RawObject callFunction(Thread* thread, Frame* caller,
+                                const Object& func, const Tuple& args);
+
   static RawObject callMethod1(Thread* thread, Frame* caller,
                                const Object& method, const Object& self);
 

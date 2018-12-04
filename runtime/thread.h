@@ -97,6 +97,11 @@ class Thread {
 
   void setRuntime(Runtime* runtime) { runtime_ = runtime; }
 
+  // Raises an exception with the given type and returns an Error that must be
+  // returned up the stack by the caller.
+  RawObject raise(LayoutId type, RawObject value);
+  RawObject raiseWithCStr(LayoutId type, const char* message);
+
   // Raises an AttributeError exception and returns an Error that must be
   // returned up the stack by the caller.
   RawObject raiseAttributeError(RawObject value);

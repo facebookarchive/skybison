@@ -7,6 +7,78 @@
 
 namespace python {
 
+RawObject createException(Thread* thread, const Type& type,
+                          const Object& value) {
+  Frame* caller = thread->currentFrame();
+
+  if (value->isNoneType()) {
+    return Interpreter::callFunction0(thread, caller, type);
+  }
+  if (thread->runtime()->isInstanceOfTuple(*value)) {
+    HandleScope scope(thread);
+    Tuple args(&scope, *value);
+    return Interpreter::callFunction(thread, caller, type, args);
+  }
+  return Interpreter::callFunction1(thread, caller, type, value);
+}
+
+void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  auto normalize = [&] {
+    if (!runtime->isInstanceOfType(**exc)) return true;
+    Type type(&scope, **exc);
+    if (!type->isBaseExceptionSubclass()) return true;
+    Object value(&scope, **val);
+    Type value_type(&scope, runtime->typeOf(*value));
+
+    // TODO(bsimmers): Extend this to support all the weird cases allowed by
+    // PyObject_IsSubclass.
+    if (!runtime->isSubclass(value_type, type)) {
+      // value isn't an instance of type. Replace it with type(value).
+      value = createException(thread, type, value);
+      if (value->isError()) return false;
+      *val = *value;
+    } else if (*value_type != *type) {
+      // value_type is more specific than type, so use it instead.
+      *exc = *value_type;
+    }
+
+    return true;
+  };
+
+  // If a new exception is raised during normalization, attempt to normalize
+  // that exception. If this process repeats too many times, give up and throw a
+  // RecursionError. If even that exception fails to normalize, abort.
+  const int normalize_limit = 32;
+  for (word i = 0; i <= normalize_limit; i++) {
+    if (normalize()) return;
+
+    if (i == normalize_limit - 1) {
+      thread->raiseWithCStr(
+          LayoutId::kRecursionError,
+          "maximum recursion depth exceeded while normalizing an exception");
+    }
+
+    *exc = thread->exceptionType();
+    *val = thread->exceptionValue();
+    Object new_tb(&scope, thread->exceptionTraceback());
+    if (!new_tb->isNoneType()) *tb = *new_tb;
+    thread->clearPendingException();
+  }
+
+  if (runtime->isInstanceOfType(**exc)) {
+    Type type(&scope, **exc);
+    if (type->builtinBase() == LayoutId::kMemoryError) {
+      UNIMPLEMENTED(
+          "Cannot recover from MemoryErrors while normalizing exceptions.");
+    }
+    UNIMPLEMENTED(
+        "Cannot recover from the recursive normalization of an exception.");
+  }
+}
+
 const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {
     {SymbolId::kArgs, RawBaseException::kArgsOffset},
     {SymbolId::kTraceback, RawBaseException::kTracebackOffset},
