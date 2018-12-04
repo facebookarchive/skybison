@@ -127,7 +127,9 @@ RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (!thread->runtime()->isInstanceOfDict(*self)) {
     return thread->raiseTypeErrorWithCStr("'__len__' requires a 'dict' object");
   }
-  return SmallInt::fromWord(RawDict::cast(*self)->numItems());
+
+  Dict dict(&scope, *self);
+  return SmallInt::fromWord(dict->numItems());
 }
 
 RawObject DictBuiltins::dunderGetItem(Thread* thread, Frame* frame,
