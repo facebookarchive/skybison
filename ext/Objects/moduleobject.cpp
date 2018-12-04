@@ -202,8 +202,11 @@ PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
   return ApiHandle::newReference(thread, filename);
 }
 
-PY_EXPORT const char* PyModule_GetName(PyObject* /* m */) {
-  UNIMPLEMENTED("PyModule_GetName");
+PY_EXPORT const char* PyModule_GetName(PyObject* pymodule) {
+  PyObject* name = PyModule_GetNameObject(pymodule);
+  if (name == nullptr) return nullptr;
+  Py_DECREF(name);
+  return PyUnicode_AsUTF8(name);
 }
 
 PY_EXPORT PyObject* PyModule_New(const char* c_name) {

@@ -574,4 +574,49 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsAndPropogatesErrorPyro) {
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
 }
+
+TEST_F(ModuleExtensionApiTest, GetNameGetsName) {
+  const char* mod_name = "mymodule";
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      mod_name,
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+
+  EXPECT_STREQ(PyModule_GetName(module), mod_name);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, GetNameReturnsNullIfNoName) {
+  testing::PyObjectPtr not_a_module(PyLong_FromLong(1));
+  EXPECT_EQ(PyModule_GetName(not_a_module), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ModuleExtensionApiTest, GetNameDoesNotIncrementModuleNameRefcount) {
+  const char* mod_name = "mymodule";
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      mod_name,
+  };
+
+  testing::PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+
+  PyObject* name = PyModule_GetNameObject(module);
+  ASSERT_NE(name, nullptr);
+  EXPECT_TRUE(PyUnicode_Check(name));
+
+  Py_ssize_t name_count = Py_REFCNT(name);
+  EXPECT_STREQ(PyModule_GetName(module), mod_name);
+  EXPECT_EQ(Py_REFCNT(name), name_count);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python
