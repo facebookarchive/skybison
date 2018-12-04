@@ -170,4 +170,94 @@ i = IntLikeClass();
   EXPECT_NE(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest, PySequenceCheckWithoutGetItemReturnsFalse) {
+  PyRun_SimpleString(R"(
+class ClassWithoutDunderGetItem: pass
+
+obj = ClassWithoutDunderGetItem()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_FALSE(PySequence_Check(obj));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceCheckWithoutGetItemOnClassReturnsFalse) {
+  PyRun_SimpleString(R"(
+class ClassWithoutDunderGetItem: pass
+
+obj = ClassWithoutDunderGetItem()
+obj.__getitem__ = lambda self, key : 1
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_FALSE(PySequence_Check(obj));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceCheckWithNumericReturnsFalse) {
+  PyObjectPtr num(PyLong_FromLong(3));
+  EXPECT_FALSE(PySequence_Check(num));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceCheckWithSetReturnsFalse) {
+  PyObjectPtr set(PySet_New(nullptr));
+  EXPECT_FALSE(PySequence_Check(set));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceCheckWithDictReturnsFalse) {
+  PyObjectPtr dict(PyDict_New());
+  EXPECT_FALSE(PySequence_Check(dict));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceCheckWithDictSubclassReturnsFalse) {
+  PyRun_SimpleString(R"(
+class Subclass(dict): pass
+
+obj = Subclass()
+)");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_FALSE(PySequence_Check(obj));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceCheckWithNoneReturnsFalse) {
+  PyObjectPtr py_none(Py_None);
+  EXPECT_FALSE(PySequence_Check(py_none));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceCheckWithGetItemMethodReturnsTrue) {
+  PyRun_SimpleString(R"(
+class ClassWithDunderGetItemMethod:
+  def __getitem__(self, key):
+    return None
+
+obj = ClassWithDunderGetItemMethod()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_TRUE(PySequence_Check(obj));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceCheckWithGetItemAttrReturnsTrue) {
+  PyRun_SimpleString(R"(
+class ClassWithDunderGetItemAttr:
+  __getitem__ = 42
+
+obj = ClassWithDunderGetItemAttr()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_TRUE(PySequence_Check(obj));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceCheckWithStringReturnsTrue) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  EXPECT_TRUE(PySequence_Check(str));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceCheckWithListReturnsTrue) {
+  PyObjectPtr list(PyList_New(3));
+  EXPECT_TRUE(PySequence_Check(list));
+}
+
 }  // namespace python

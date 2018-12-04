@@ -426,8 +426,21 @@ PY_EXPORT PyObject* PyObject_Type(PyObject* /* o */) {
   UNIMPLEMENTED("PyObject_Type");
 }
 
-PY_EXPORT int PySequence_Check(PyObject* /* s */) {
-  UNIMPLEMENTED("PySequence_Check");
+PY_EXPORT int PySequence_Check(PyObject* py_obj) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  Object obj(&scope, ApiHandle::fromPyObject(py_obj)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfDict(obj)) {
+    return 0;
+  }
+
+  Type type(&scope, runtime->typeOf(obj));
+  Object getitem(&scope, runtime->lookupSymbolInMro(thread, type,
+                                                    SymbolId::kDunderGetItem));
+
+  return !getitem->isError();
 }
 
 PY_EXPORT PyObject* PySequence_Concat(PyObject* /* s */, PyObject* /* o */) {
