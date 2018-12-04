@@ -107,6 +107,12 @@ class Thread {
   RawObject raiseAttributeError(RawObject value);
   RawObject raiseAttributeErrorWithCStr(const char* message);
 
+  // Raises a TypeError exception for PyErr_BadArgument.
+  void raiseBadArgument();
+
+  // Raises a SystemError exception for PyErr_BadInternalCall.
+  void raiseBadInternalCall();
+
   // Raises an Index exception and returns an Error object that must be returned
   // up the stack by the caller.
   RawObject raiseIndexError(RawObject value);

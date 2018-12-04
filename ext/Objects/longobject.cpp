@@ -70,7 +70,7 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
   HandleScope scope(thread);
 
   if (pylong == nullptr) {
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
 
@@ -105,7 +105,7 @@ static T asIntWithoutOverflowCheck(PyObject* pylong) {
   HandleScope scope(thread);
 
   if (pylong == nullptr) {
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
 

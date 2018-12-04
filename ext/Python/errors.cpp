@@ -30,7 +30,7 @@ PY_EXPORT void PyErr_Clear() {
 
 PY_EXPORT int PyErr_BadArgument() {
   Thread* thread = Thread::currentThread();
-  thread->raiseTypeErrorWithCStr("bad argument type for built-in operation");
+  thread->raiseBadArgument();
   return 0;
 }
 
@@ -44,10 +44,15 @@ PY_EXPORT PyObject* _PyErr_FormatFromCause(PyObject*, const char*, ...) {
   UNIMPLEMENTED("_PyErr_FormatFromCause");
 }
 
+// Remove the preprocessor macro for PyErr_BadInternalCall() so that we can
+// export the entry point for existing object code:
+#pragma push_macro("PyErr_BadInternalCall")
+#undef PyErr_BadInternalCall
 PY_EXPORT void PyErr_BadInternalCall() {
   Thread* thread = Thread::currentThread();
-  thread->raiseSystemErrorWithCStr("bad argument to internal function");
+  thread->raiseBadInternalCall();
 }
+#pragma pop_macro("PyErr_BadInternalCall")
 
 PY_EXPORT int PyErr_ExceptionMatches(PyObject* exc) {
   return PyErr_GivenExceptionMatches(PyErr_Occurred(), exc);

@@ -48,7 +48,7 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   if (!tupleobj->isTuple()) {
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
 

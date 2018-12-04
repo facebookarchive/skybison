@@ -79,8 +79,7 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
   Object module_obj(&scope, ApiHandle::fromPyObject(mod)->asObject());
   if (!module_obj->isModule()) {
     // TODO(atalaba): Allow for module subclassing
-    thread->raiseTypeErrorWithCStr(
-        "PyModule_GetNameObject takes a Module object");
+    thread->raiseBadArgument();
     return nullptr;
   }
   Module module(&scope, *module_obj);
@@ -101,7 +100,7 @@ PY_EXPORT void* PyModule_GetState(PyObject* mod) {
   Object module_obj(&scope, handle->asObject());
   if (!module_obj->isModule()) {
     // TODO(atalaba): Support module subclassing
-    PyErr_BadArgument();
+    thread->raiseBadArgument();
     return nullptr;
   }
   return handle->cache();
@@ -116,8 +115,7 @@ PY_EXPORT int PyModule_AddFunctions(PyObject* /* m */, PyMethodDef* /* s */) {
 }
 
 PY_EXPORT int PyModule_ExecDef(PyObject* module, PyModuleDef* def) {
-  // TODO(atalaba): Replace with PyModule_GetName once it's ready
-  PyObject* name = PyModule_GetNameObject(module);
+  const char* name = PyModule_GetName(module);
   if (name == nullptr) return -1;
 
   Thread* thread = Thread::currentThread();
@@ -126,8 +124,7 @@ PY_EXPORT int PyModule_ExecDef(PyObject* module, PyModuleDef* def) {
     if (handle->cache() == nullptr) {
       handle->setCache(std::calloc(def->m_size, 1));
       if (!handle->cache()) {
-        // TODO(T36797384): Change system error with PyErr_NoMemory
-        thread->raiseSystemErrorWithCStr("out of memory");
+        thread->raiseMemoryError();
         return -1;
       }
     }
@@ -140,7 +137,6 @@ PY_EXPORT int PyModule_ExecDef(PyObject* module, PyModuleDef* def) {
   for (PyModuleDef_Slot* cur_slot = def->m_slots; cur_slot && cur_slot->slot;
        cur_slot++) {
     switch (cur_slot->slot) {
-      // TODO(T36797384): Add PyErr_Format calls
       case Py_mod_create:
         // handled in PyModule_FromDefAndSpec2
         break;
@@ -148,22 +144,25 @@ PY_EXPORT int PyModule_ExecDef(PyObject* module, PyModuleDef* def) {
         typedef int (*slot_func)(PyObject*);
         slot_func thunk = reinterpret_cast<slot_func>(cur_slot->value);
         if ((*thunk)(module) != 0) {
-          if (!PyErr_Occurred()) {
-            thread->raiseSystemErrorWithCStr(
-                "execution failed without setting exception");
+          if (!thread->hasPendingException()) {
+            thread->raiseSystemError(thread->runtime()->newStrFromFormat(
+                "execution of module %s failed without setting an exception",
+                name));
           }
           return -1;
         }
-        if (PyErr_Occurred()) {
-          thread->raiseSystemErrorWithCStr(
-              "execution of module raised exception");
+        if (thread->hasPendingException()) {
+          thread->raiseSystemError(thread->runtime()->newStrFromFormat(
+              "execution of module %s failed without setting an exception",
+              name));
           return -1;
         }
         break;
       }
       default:
-        thread->raiseSystemErrorWithCStr(
-            "module initialized with unknown slot");
+        thread->raiseSystemError(thread->runtime()->newStrFromFormat(
+            "module %s initialized with unknown slot %i", name,
+            cur_slot->slot));
         return -1;
     }
   }
@@ -187,9 +186,7 @@ PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
   Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
   if (!module_obj->isModule()) {
     // TODO(atalaba): Allow for module subclassing
-    // TODO(T36797384): Replace with PyErr_BadArgument
-    thread->raiseTypeErrorWithCStr(
-        "PyModule_GetFilenameObject takes a Module object");
+    thread->raiseBadArgument();
     return nullptr;
   }
   Module module(&scope, *module_obj);

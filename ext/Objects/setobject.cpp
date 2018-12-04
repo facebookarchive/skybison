@@ -17,8 +17,7 @@ PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
 
   // TODO(T28454727): add FrozenSet
   if (!runtime->isInstanceOfSet(set_obj)) {
-    // TODO(wmeehan): replace with PyErr_BadInternalCall
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
 
@@ -45,8 +44,7 @@ PY_EXPORT int PySet_Contains(PyObject* anyset, PyObject* key) {
 
   // TODO(T28454727): add FrozenSet
   if (!runtime->isInstanceOfSet(set_obj)) {
-    // TODO(wmeehan) replace with PyErr_BadInternalCall
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
 
@@ -91,8 +89,7 @@ PY_EXPORT Py_ssize_t PySet_Size(PyObject* anyset) {
   Object set_obj(&scope, ApiHandle::fromPyObject(anyset)->asObject());
   // TODO(T28454727): test for FrozenSet
   if (!runtime->isInstanceOfSet(set_obj)) {
-    // TODO(wmeehan) replace with PyErr_BadInternalCall
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
 

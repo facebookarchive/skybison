@@ -62,21 +62,21 @@ static Type::ExtensionSlot slotToTypeSlot(int slot) {
 PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
   Thread* thread = Thread::currentThread();
   if (slot < 0) {
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return nullptr;
   }
 
   ApiHandle* handle =
       ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj));
   if (!handle->isManaged()) {
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return nullptr;
   }
 
   HandleScope scope(thread);
   Type type(&scope, handle->asObject());
   if (type->isBuiltin()) {
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return nullptr;
   }
 

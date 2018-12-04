@@ -1,6 +1,5 @@
 // unicodeobject.c implementation
 
-#include "cpython-func.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
@@ -61,7 +60,7 @@ PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
   HandleScope scope(thread);
 
   if (pyunicode == nullptr) {
-    UNIMPLEMENTED("PyErr_BadArgument");
+    thread->raiseBadArgument();
     return nullptr;
   }
 
@@ -71,7 +70,7 @@ PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
     if (thread->runtime()->isInstanceOfStr(*obj)) {
       UNIMPLEMENTED("RawStr subclass");
     }
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return nullptr;
   }
 
@@ -222,7 +221,7 @@ PY_EXPORT int PyUnicode_ClearFreeList() { return 0; }
 PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
   Thread* thread = Thread::currentThread();
   if (left == nullptr || right == nullptr) {
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
 
@@ -474,7 +473,7 @@ PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* py_str) {
 
   Object str_obj(&scope, ApiHandle::fromPyObject(py_str)->asObject());
   if (!runtime->isInstanceOfStr(str_obj)) {
-    PyErr_BadArgument();
+    thread->raiseBadArgument();
     return -1;
   }
 
@@ -494,7 +493,7 @@ PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* py_str) {
 
   Object str_obj(&scope, ApiHandle::fromPyObject(py_str)->asObject());
   if (!runtime->isInstanceOfStr(str_obj)) {
-    PyErr_BadArgument();
+    thread->raiseBadArgument();
     return -1;
   }
 

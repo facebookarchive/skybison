@@ -141,8 +141,7 @@ PY_EXPORT Py_ssize_t PyDict_Size(PyObject* p) {
 
   Object dict_obj(&scope, ApiHandle::fromPyObject(p)->asObject());
   if (!runtime->isInstanceOfDict(dict_obj)) {
-    // TODO(wmeehan) replace with PyErr_BadInternalCall
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
 

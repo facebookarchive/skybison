@@ -59,14 +59,14 @@ PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
   HandleScope scope(thread);
 
   if (newitem == nullptr) {
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
   Object value(&scope, ApiHandle::fromPyObject(newitem)->asObject());
 
   Object list_obj(&scope, ApiHandle::fromPyObject(op)->asObject());
   if (!runtime->isInstanceOfList(*list_obj)) {
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
   List list(&scope, *list_obj);
@@ -100,8 +100,7 @@ PY_EXPORT Py_ssize_t PyList_Size(PyObject* p) {
 
   Object list_obj(&scope, ApiHandle::fromPyObject(p)->asObject());
   if (!runtime->isInstanceOfList(*list_obj)) {
-    // TODO(wmeehan) replace this error with PyErr_BadInternalCall
-    thread->raiseSystemErrorWithCStr("bad argument to internal function");
+    thread->raiseBadInternalCall();
     return -1;
   }
 

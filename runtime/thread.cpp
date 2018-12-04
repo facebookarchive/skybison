@@ -267,6 +267,14 @@ RawObject Thread::raiseAttributeErrorWithCStr(const char* message) {
   return raiseAttributeError(runtime()->newStrFromCStr(message));
 }
 
+void Thread::raiseBadArgument() {
+  raiseTypeErrorWithCStr("bad argument type for built-in operation");
+}
+
+void Thread::raiseBadInternalCall() {
+  raiseSystemErrorWithCStr("bad argument to internal function");
+}
+
 RawObject Thread::raiseKeyError(RawObject value) {
   return raise(LayoutId::kKeyError, value);
 }

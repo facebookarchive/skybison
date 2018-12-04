@@ -2,7 +2,6 @@
 
 #include <cfloat>
 
-#include "cpython-func.h"
 #include "objects.h"
 #include "runtime.h"
 
@@ -19,7 +18,7 @@ PY_EXPORT PyObject* PyFloat_FromDouble(double fval) {
 PY_EXPORT double PyFloat_AsDouble(PyObject* op) {
   Thread* thread = Thread::currentThread();
   if (op == nullptr) {
-    PyErr_BadArgument();
+    thread->raiseBadArgument();
     return -1;
   }
 
