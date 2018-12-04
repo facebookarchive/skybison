@@ -250,33 +250,6 @@ PY_EXPORT PyObject* PyNumber_Positive(PyObject* /* o */) {
   UNIMPLEMENTED("PyNumber_Positive");
 }
 
-PY_EXPORT int PyObject_AsWriteBuffer(PyObject* /* j */, void** /* buffer */,
-                                     Py_ssize_t* /* n */) {
-  UNIMPLEMENTED("PyObject_AsWriteBuffer");
-}
-
-PY_EXPORT int PyObject_DelItem(PyObject* /* o */, PyObject* /* y */) {
-  UNIMPLEMENTED("PyObject_DelItem");
-}
-
-PY_EXPORT int PyObject_GetBuffer(PyObject* /* j */, Py_buffer* /* w */,
-                                 int /* s */) {
-  UNIMPLEMENTED("PyObject_GetBuffer");
-}
-
-PY_EXPORT PyObject* PyObject_GetItem(PyObject* /* o */, PyObject* /* y */) {
-  UNIMPLEMENTED("PyObject_GetItem");
-}
-
-PY_EXPORT int PyObject_SetItem(PyObject* /* o */, PyObject* /* y */,
-                               PyObject* /* e */) {
-  UNIMPLEMENTED("PyObject_SetItem");
-}
-
-PY_EXPORT Py_ssize_t PyObject_Size(PyObject* /* o */) {
-  UNIMPLEMENTED("PyObject_Size");
-}
-
 PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* /* m */, PyObject* /* r */) {
   UNIMPLEMENTED("PyNumber_AsSsize_t");
 }
@@ -327,6 +300,11 @@ PY_EXPORT int PyObject_AsReadBuffer(PyObject* /* j */,
   UNIMPLEMENTED("PyObject_AsReadBuffer");
 }
 
+PY_EXPORT int PyObject_AsWriteBuffer(PyObject* /* j */, void** /* buffer */,
+                                     Py_ssize_t* /* n */) {
+  UNIMPLEMENTED("PyObject_AsWriteBuffer");
+}
+
 PY_EXPORT PyObject* PyObject_Call(PyObject* /* e */, PyObject* /* s */,
                                   PyObject* /* s */) {
   UNIMPLEMENTED("PyObject_Call");
@@ -370,6 +348,10 @@ PY_EXPORT int PyObject_CheckReadBuffer(PyObject* /* j */) {
   UNIMPLEMENTED("PyObject_CheckReadBuffer");
 }
 
+PY_EXPORT int PyObject_DelItem(PyObject* /* o */, PyObject* /* y */) {
+  UNIMPLEMENTED("PyObject_DelItem");
+}
+
 PY_EXPORT int PyObject_DelItemString(PyObject* /* o */, const char* /* y */) {
   UNIMPLEMENTED("PyObject_DelItemString");
 }
@@ -392,6 +374,15 @@ PY_EXPORT PyObject* PyObject_Format(PyObject* /* j */, PyObject* /* c */) {
   UNIMPLEMENTED("PyObject_Format");
 }
 
+PY_EXPORT int PyObject_GetBuffer(PyObject* /* j */, Py_buffer* /* w */,
+                                 int /* s */) {
+  UNIMPLEMENTED("PyObject_GetBuffer");
+}
+
+PY_EXPORT PyObject* PyObject_GetItem(PyObject* /* o */, PyObject* /* y */) {
+  UNIMPLEMENTED("PyObject_GetItem");
+}
+
 PY_EXPORT PyObject* PyObject_GetIter(PyObject* /* o */) {
   UNIMPLEMENTED("PyObject_GetIter");
 }
@@ -411,6 +402,15 @@ PY_EXPORT Py_ssize_t PyObject_Length(PyObject* /* o */) {
 PY_EXPORT Py_ssize_t PyObject_LengthHint(PyObject* /* o */,
                                          Py_ssize_t /* defaultvalue */) {
   UNIMPLEMENTED("PyObject_LengthHint");
+}
+
+PY_EXPORT int PyObject_SetItem(PyObject* /* o */, PyObject* /* y */,
+                               PyObject* /* e */) {
+  UNIMPLEMENTED("PyObject_SetItem");
+}
+
+PY_EXPORT Py_ssize_t PyObject_Size(PyObject* /* o */) {
+  UNIMPLEMENTED("PyObject_Size");
 }
 
 PY_EXPORT PyObject* PyObject_Type(PyObject* /* o */) {
