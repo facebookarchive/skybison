@@ -860,7 +860,6 @@ PyAPI_FUNC(void) Py_INCREF_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t) Py_REFCNT_Func(PyObject*);
 PyAPI_FUNC(void) Py_XDECREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_XINCREF_Func(PyObject*);
-PyAPI_FUNC(Py_ssize_t) _PyObject_VAR_SIZE_Func(PyTypeObject*, Py_ssize_t);
 
 PyAPI_FUNC(void*) PyMem_New_Func(size_t size, size_t n);
 PyAPI_FUNC(void*) PyMem_Resize_Func(void* p, size_t size, size_t n);
@@ -938,8 +937,6 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
   PyObject_Init((PyObject*)op, (PyTypeObject*)typeobj)
 #define PyObject_INIT_VAR(op, typeobj, size)                                   \
   PyObject_InitVar((PyVarObject*)op, (PyTypeObject*)typeobj, size)
-#define _PyObject_VAR_SIZE(typeobj, nitems)                                    \
-  (_PyObject_VAR_SIZE_Func(typeobj, nitems))
 
 /* Memory macros from pymem.h */
 #define PyMem_DEL(p) PyMem_Del(p)

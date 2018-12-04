@@ -757,8 +757,11 @@ class RawType : public RawHeapObject {
     kFlags,
     kBasicSize,
     kItemSize,
+    kAlloc,
+    kDealloc,
     kInit,
     kNew,
+    kFree,
     kEnd,
     kFirst = kInit,
   };
@@ -790,11 +793,6 @@ class RawType : public RawHeapObject {
   RawObject dict();
   void setDict(RawObject name);
 
-  // RawInt holding a pointer to a PyTypeObject
-  // Only set on classes that were initialized through PyType_Ready
-  RawObject extensionType();
-  void setExtensionType(RawObject pytype);
-
   bool isBuiltin();
 
   RawObject extensionSlots();
@@ -808,8 +806,7 @@ class RawType : public RawHeapObject {
   static const int kNameOffset = kInstanceLayoutOffset + kPointerSize;
   static const int kFlagsOffset = kNameOffset + kPointerSize;
   static const int kDictOffset = kFlagsOffset + kPointerSize;
-  static const int kExtensionTypeOffset = kDictOffset + kPointerSize;
-  static const int kExtensionSlotsOffset = kExtensionTypeOffset + kPointerSize;
+  static const int kExtensionSlotsOffset = kDictOffset + kPointerSize;
   static const int kSize = kExtensionSlotsOffset + kPointerSize;
 
   static const int kBuiltinBaseMask = 0xff;
@@ -2837,14 +2834,6 @@ inline RawObject RawType::extensionSlots() {
 
 inline void RawType::setExtensionSlots(RawObject slots) {
   instanceVariableAtPut(kExtensionSlotsOffset, slots);
-}
-
-inline RawObject RawType::extensionType() {
-  return instanceVariableAt(kExtensionTypeOffset);
-}
-
-inline void RawType::setExtensionType(RawObject pytype) {
-  instanceVariableAtPut(kExtensionTypeOffset, pytype);
 }
 
 inline bool RawType::isBuiltin() {

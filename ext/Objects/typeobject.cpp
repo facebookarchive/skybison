@@ -25,6 +25,18 @@ PY_EXPORT int PyType_Check_Func(PyObject* obj) {
                                                   LayoutId::kType);
 }
 
+static RawObject extensionSlot(const Type& type, Type::ExtensionSlot slot_id) {
+  DCHECK(!type->extensionSlots()->isNoneType(), "Type is not an extension");
+  return RawTuple::cast(type->extensionSlots())->at(static_cast<word>(slot_id));
+}
+
+static void setExtensionSlot(const Type& type, Type::ExtensionSlot slot_id,
+                             RawObject slot) {
+  DCHECK(!type->extensionSlots()->isNoneType(), "Type is not an extension");
+  return RawTuple::cast(type->extensionSlots())
+      ->atPut(static_cast<word>(slot_id), slot);
+}
+
 PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
   ApiHandle* handle =
       ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj));
@@ -41,8 +53,7 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
     UNIMPLEMENTED("GetFlags from types initialized through Python code");
   }
 
-  word flags_idx = static_cast<word>(Type::ExtensionSlot::kFlags);
-  Int flags(&scope, RawTuple::cast(type->extensionSlots())->at(flags_idx));
+  Int flags(&scope, extensionSlot(type, Type::ExtensionSlot::kFlags));
   return flags->asWord();
 }
 
@@ -50,10 +61,16 @@ static Type::ExtensionSlot slotToTypeSlot(int slot) {
   // TODO(eelizondo): this should cover all of the slots but,
   // we are starting with just these few for now
   switch (slot) {
+    case Py_tp_alloc:
+      return Type::ExtensionSlot::kAlloc;
+    case Py_tp_dealloc:
+      return Type::ExtensionSlot::kDealloc;
     case Py_tp_init:
       return Type::ExtensionSlot::kInit;
     case Py_tp_new:
       return Type::ExtensionSlot::kNew;
+    case Py_tp_free:
+      return Type::ExtensionSlot::kFree;
     default:
       return Type::ExtensionSlot::kEnd;
   }
@@ -91,114 +108,125 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
   }
 
   DCHECK(!type->extensionSlots()->isNoneType(), "Type is not extension type");
-  Int address(
-      &scope,
-      RawTuple::cast(type->extensionSlots())->at(static_cast<word>(field_id)));
+  Int address(&scope, extensionSlot(type, field_id));
   return address->asCPtr();
 }
 
-PY_EXPORT int PyType_Ready(PyTypeObject* type) {
-  // Type is already initialized
-  if (type->tp_flags & Py_TPFLAGS_READY) {
-    return 0;
-  }
+PY_EXPORT int PyType_Ready(PyTypeObject*) {
+  UNIMPLEMENTED("This funciton will never be implemented");
+}
 
-  type->tp_flags |= Py_TPFLAGS_READYING;
+PY_EXPORT PyObject* PyType_FromSpec(PyType_Spec* spec) {
+  return PyType_FromSpecWithBases(spec, nullptr);
+}
 
-  if (!type->tp_name) {
-    UNIMPLEMENTED("PyExc_SystemError");
-    type->tp_flags &= ~Py_TPFLAGS_READYING;
-    return -1;
-  }
-
+PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
+                                             PyObject* /* bases */) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  // Set the base type to PyType_Type
-  // TODO(T32512394): Handle metaclass initialization
-  PyObject* pyobj = reinterpret_cast<PyObject*>(type);
-  PyObject* pytype_type =
-      ApiHandle::newReference(thread, runtime->typeAt(LayoutId::kType));
-  pyobj->ob_type = reinterpret_cast<PyTypeObject*>(pytype_type);
-
-  // Create a new class for the PyTypeObject
-  Type type_class(&scope, runtime->newType());
+  // Create a new type for the PyTypeObject
+  Type type(&scope, runtime->newType());
   Dict dict(&scope, runtime->newDict());
-  type_class->setDict(*dict);
-
-  // Add the PyTypeObject pointer to the class
-  type_class->setExtensionType(runtime->newIntFromCPtr(type));
-
-  // Create the dict's ApiHandle
-  type->tp_dict = ApiHandle::newReference(thread, *dict);
+  type->setDict(*dict);
 
   // Set the class name
-  Object name(&scope, runtime->newStrFromCStr(type->tp_name));
-  type_class->setName(*name);
+  const char* class_name = strrchr(spec->name, '.');
+  if (class_name == nullptr) {
+    class_name = spec->name;
+  } else {
+    class_name++;
+  }
+  Object name_obj(&scope, runtime->newStrFromCStr(class_name));
+  type->setName(*name_obj);
   Object dict_key(&scope, runtime->symbols()->DunderName());
-  runtime->dictAtPutInValueCell(dict, dict_key, name);
+  runtime->dictAtPutInValueCell(dict, dict_key, name_obj);
 
   // Compute Mro
   Tuple parents(&scope, runtime->newTuple(0));
-  Object mro(&scope, computeMro(thread, type_class, parents));
-  type_class->setMro(*mro);
+  Object mro(&scope, computeMro(thread, type, parents));
+  type->setMro(*mro);
 
   // Initialize instance Layout
-  Layout layout_init(&scope, runtime->computeInitialLayout(thread, type_class,
-                                                           LayoutId::kObject));
+  Layout layout_init(
+      &scope, runtime->computeInitialLayout(thread, type, LayoutId::kObject));
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   Layout layout(&scope,
                 runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));
-  layout->setDescribedType(*type_class);
-  type_class->setInstanceLayout(*layout);
+  layout->setDescribedType(*type);
+  type->setInstanceLayout(*layout);
 
-  // Register DunderNew
-  runtime->classAddExtensionFunction(type_class, SymbolId::kDunderNew,
-                                     bit_cast<void*>(type->tp_new));
+  // Initialize the extension slots tuple
+  Object extension_slots(
+      &scope, runtime->newTuple(static_cast<int>(Type::ExtensionSlot::kEnd)));
+  type->setExtensionSlots(*extension_slots);
 
-  // Register DunderInit
-  runtime->classAddExtensionFunction(type_class, SymbolId::kDunderInit,
-                                     bit_cast<void*>(type->tp_init));
+  // Set the type slots
+  for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
+    void* slot_ptr = bit_cast<void*>(slot->pfunc);
+    Object field(&scope, runtime->newIntFromCPtr(slot_ptr));
+    Type::ExtensionSlot field_id = slotToTypeSlot(slot->slot);
+    if (slot->slot < 0 || field_id >= Type::ExtensionSlot::kEnd) {
+      thread->raiseRuntimeErrorWithCStr("invalid slot offset");
+      return nullptr;
+    }
+    setExtensionSlot(type, field_id, *field);
 
-  // TODO(T29618332): Implement missing PyType_Ready features
+    switch (slot->slot) {
+      case Py_tp_new:
+        runtime->classAddExtensionFunction(type, SymbolId::kDunderNew,
+                                           slot_ptr);
+        break;
+      case Py_tp_init:
+        runtime->classAddExtensionFunction(type, SymbolId::kDunderInit,
+                                           slot_ptr);
+        break;
+    }
+  }
 
-  // Add the runtime class object reference to PyTypeObject
-  // TODO(eelizondo): Handled this automatically in PyType_FromSpec
-  pyobj->reference_ = reinterpret_cast<void*>(type_class->raw());
+  // Set size
+  Object basic_size(&scope, runtime->newInt(spec->basicsize));
+  Object item_size(&scope, runtime->newInt(spec->itemsize));
+  setExtensionSlot(type, Type::ExtensionSlot::kBasicSize, *basic_size);
+  setExtensionSlot(type, Type::ExtensionSlot::kItemSize, *item_size);
 
-  // All done -- set the ready flag
-  type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
-  return 0;
+  // Set the class flags
+  Object flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY));
+  setExtensionSlot(type, Type::ExtensionSlot::kFlags, *flags);
+
+  return ApiHandle::newReference(thread, *type);
+}
+
+PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
+                                        Py_ssize_t nitems) {
+  ApiHandle* handle =
+      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj));
+  DCHECK(handle->isManaged(),
+         "Type is unmanaged. Please initialize using PyType_FromSpec");
+  HandleScope scope;
+  Type type(&scope, handle->asObject());
+  DCHECK(!type->isBuiltin(),
+         "Type is unmanaged. Please initialize using PyType_FromSpec");
+  DCHECK(!type->extensionSlots()->isNoneType(),
+         "GenericAlloc from types initialized through Python code");
+  Int basic_size(&scope, extensionSlot(type, Type::ExtensionSlot::kBasicSize));
+  Int item_size(&scope, extensionSlot(type, Type::ExtensionSlot::kItemSize));
+  Py_ssize_t size = Utils::roundUp(
+      nitems * item_size->asWord() + basic_size->asWord(), kWordSize);
+
+  PyObject* pyobj = static_cast<PyObject*>(PyObject_Calloc(1, size));
+  if (pyobj == nullptr) return nullptr;
+  pyobj->ob_refcnt = 1;
+  pyobj->ob_type = type_obj;
+  if (item_size->asWord() != 0) {
+    reinterpret_cast<PyVarObject*>(pyobj)->ob_size = nitems;
+  }
+  return pyobj;
 }
 
 PY_EXPORT unsigned int PyType_ClearCache() {
   UNIMPLEMENTED("PyType_ClearCache");
-}
-
-PY_EXPORT PyObject* PyType_FromSpec(PyType_Spec* /* c */) {
-  UNIMPLEMENTED("PyType_FromSpec");
-}
-
-PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* /* c */,
-                                             PyObject* /* s */) {
-  UNIMPLEMENTED("PyType_FromSpecWithBases");
-}
-
-PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type, Py_ssize_t nitems) {
-  // TODO(eelizondo): Replace with VAR_SIZE once PyType_FromSpec is implemented
-  size_t size = Utils::roundUp(
-      type->tp_basicsize + ((nitems + 1) * type->tp_itemsize), kWordSize);
-  PyObject* obj = static_cast<PyObject*>(PyObject_Calloc(1, size));
-  if (obj == nullptr) {
-    return nullptr;
-  }
-  obj->ob_refcnt = 1;
-  obj->ob_type = type;
-  if (type->tp_itemsize == 0) {
-    reinterpret_cast<PyVarObject*>(obj)->ob_size = nitems;
-  }
-  return obj;
 }
 
 PY_EXPORT PyObject* PyType_GenericNew(PyTypeObject* /* e */, PyObject* /* s */,
@@ -226,30 +254,6 @@ PY_EXPORT void PyType_Modified(PyTypeObject* /* e */) {
 PY_EXPORT PyObject* _PyObject_LookupSpecial(PyObject* /* f */,
                                             _Py_Identifier* /* d */) {
   UNIMPLEMENTED("_PyObject_LookupSpecial");
-}
-
-PY_EXPORT Py_ssize_t _PyObject_VAR_SIZE_Func(PyTypeObject* type_obj,
-                                             Py_ssize_t nitems) {
-  ApiHandle* handle =
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj));
-  CHECK(handle->isManaged(),
-        "Type is unmanaged. Please initialize using PyType_FromSpec");
-
-  HandleScope scope;
-  Type type(&scope, handle->asObject());
-  if (type->isBuiltin()) {
-    UNIMPLEMENTED("VAR_SIZE from built-in types");
-  }
-
-  if (type->extensionSlots()->isNoneType()) {
-    UNIMPLEMENTED("VAR_SIZE from types initialized through Python code");
-  }
-
-  word bsize_idx = static_cast<word>(Type::ExtensionSlot::kBasicSize);
-  Int bsize(&scope, RawTuple::cast(type->extensionSlots())->at(bsize_idx));
-  word isize_idx = static_cast<word>(Type::ExtensionSlot::kItemSize);
-  Int isize(&scope, RawTuple::cast(type->extensionSlots())->at(isize_idx));
-  return Utils::roundUp(nitems * isize->asWord() + bsize->asWord(), kWordSize);
 }
 
 }  // namespace python

@@ -41,27 +41,53 @@ TEST_F(TypeExtensionApiDeathTest, GetFlagsFromManagedTypePyro) {
       "unimplemented: GetFlags from types initialized through Python code");
 }
 
-TEST_F(TypeExtensionApiTest, ReadyCreatesRuntimeType) {
-  // Create a simple PyTypeObject
-  static PyTypeObject empty_type;
-  empty_type = {PyObject_HEAD_INIT(nullptr)};
-  empty_type.tp_name = "test.Empty";
-  empty_type.tp_flags = Py_TPFLAGS_DEFAULT;
-  ASSERT_EQ(PyType_Ready(&empty_type), 0);
-
-  // Add to a module
-  static PyModuleDef def;
-  def = {
-      PyModuleDef_HEAD_INIT,
-      "test",
+TEST_F(TypeExtensionApiTest, GetFlagsFromExtensionTypeReturnsSetFlags) {
+  PyType_Slot slot[] = {
+      {0, nullptr},
   };
-  PyObject* m = PyModule_Create(&def);
-  PyModule_AddObject(m, "Empty", reinterpret_cast<PyObject*>(&empty_type));
+  PyType_Spec spec;
+  spec.name = "test.Empty";
+  spec.flags = Py_TPFLAGS_DEFAULT;
+  spec.slots = slot;
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type.get(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type.get()));
 
-  // TODO(miro): import the module instead of injecting it into __main__
-  testing::moduleSet("__main__", "test", m);
-  PyRun_SimpleString("x = test.Empty");
+  EXPECT_TRUE(PyType_GetFlags(reinterpret_cast<PyTypeObject*>(type.get())) &
+              Py_TPFLAGS_DEFAULT);
+  EXPECT_TRUE(PyType_GetFlags(reinterpret_cast<PyTypeObject*>(type.get())) &
+              Py_TPFLAGS_READY);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecCreatesRuntimeType) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  PyType_Spec spec;
+  spec.name = "test.Empty";
+  spec.flags = Py_TPFLAGS_DEFAULT;
+  spec.slots = slots;
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type.get(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type.get()));
+
+  testing::moduleSet("__main__", "Empty", type.get());
+  PyRun_SimpleString("x = Empty");
   EXPECT_TRUE(PyType_CheckExact(testing::moduleGet("__main__", "x")));
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithInvalidSlotThrowsError) {
+  PyType_Slot slots[] = {
+      {-1, nullptr},
+  };
+  PyType_Spec spec;
+  spec.name = "test.Empty";
+  spec.flags = Py_TPFLAGS_DEFAULT;
+  spec.slots = slots;
+  ASSERT_EQ(PyType_FromSpec(&spec), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_RuntimeError));
+  // TODO(eelizondo): Check that error matches with "invalid slot offset"
 }
 
 // clang-format off
@@ -71,76 +97,67 @@ typedef struct {
 } CustomObject;
 // clang-format on
 
-static PyObject* Custom_new(PyTypeObject* type, PyObject*, PyObject*) {
-  CustomObject* self = reinterpret_cast<CustomObject*>(type->tp_alloc(type, 0));
-  return reinterpret_cast<PyObject*>(self);
-}
-
-static int Custom_init(CustomObject* self, PyObject*, PyObject*) {
-  self->value = 30;
-  return 0;
-}
-
-static void Custom_dealloc(CustomObject* self) {
-  Py_TYPE(self)->tp_free(static_cast<void*>(self));
-}
-
-TEST_F(TypeExtensionApiTest, InitializeCustomTypeInstancePyro) {
-  // Instantiate Type
-  static PyTypeObject custom_type;
-  custom_type = {PyObject_HEAD_INIT(nullptr)};
-  custom_type.tp_basicsize = sizeof(CustomObject);
-  custom_type.tp_name = "custom.Custom";
-  custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
-  custom_type.tp_alloc = PyType_GenericAlloc;
-  custom_type.tp_new = reinterpret_cast<newfunc>(Custom_new);
-  custom_type.tp_init = reinterpret_cast<initproc>(Custom_init);
-  custom_type.tp_dealloc = reinterpret_cast<destructor>(Custom_dealloc);
-  custom_type.tp_free = reinterpret_cast<freefunc>(PyObject_Del);
-  PyType_Ready(&custom_type);
-
-  // Add to a module
-  static PyModuleDef def;
-  def = {
-      PyModuleDef_HEAD_INIT,
-      "custom",
+TEST_F(TypeExtensionApiTest, CallExtensionTypeReturnsExtensionInstancePyro) {
+  newfunc custom_new = [](PyTypeObject* type, PyObject*, PyObject*) {
+    void* slot = PyType_GetSlot(type, Py_tp_alloc);
+    return reinterpret_cast<allocfunc>(slot)(type, 0);
   };
-  PyObject* m = PyModule_Create(&def);
-  PyModule_AddObject(m, "Custom", reinterpret_cast<PyObject*>(&custom_type));
+  initproc custom_init = [](PyObject* self, PyObject*, PyObject*) {
+    reinterpret_cast<CustomObject*>(self)->value = 30;
+    return 0;
+  };
+  destructor custom_dealloc = [](PyObject* self) {
+    void* slot = PyType_GetSlot(Py_TYPE(self), Py_tp_free);
+    return reinterpret_cast<freefunc>(slot)(self);
+  };
+  PyType_Slot custom_slots[] = {
+      {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
+      {Py_tp_new, reinterpret_cast<void*>(custom_new)},
+      {Py_tp_init, reinterpret_cast<void*>(custom_init)},
+      {Py_tp_dealloc, reinterpret_cast<void*>(custom_dealloc)},
+      {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)},
+      {0, nullptr},
+  };
+  PyType_Spec custom_spec = {
+      "custom.Custom",    sizeof(CustomObject), 0,
+      Py_TPFLAGS_DEFAULT, custom_slots,
+  };
+  PyObjectPtr custom_type(PyType_FromSpec(&custom_spec));
+  ASSERT_NE(custom_type.get(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(custom_type.get()));
 
-  // TODO(miro): import the module instead of injecting it into __main__
-  testing::moduleSet("__main__", "custom", m);
+  testing::moduleSet("__main__", "Custom", custom_type.get());
   PyRun_SimpleString(R"(
-instance1 = custom.Custom()
-instance2 = custom.Custom()
+instance = Custom()
 )");
 
-  // Verify the initialized value
-  CustomObject* instance1 = reinterpret_cast<CustomObject*>(
-      testing::moduleGet("__main__", "instance1"));
-  EXPECT_EQ(instance1->value, 30);
-
-  CustomObject* instance2 = reinterpret_cast<CustomObject*>(
-      testing::moduleGet("__main__", "instance2"));
-  EXPECT_EQ(Py_REFCNT(instance2), 2);
-  Py_DECREF(instance2);
-  Py_DECREF(instance2);
-  Py_DECREF(instance1);
-  Py_DECREF(instance1);
+  PyObjectPtr instance(testing::moduleGet("__main__", "instance"));
+  ASSERT_NE(instance.get(), nullptr);
+  CustomObject* custom_instance =
+      reinterpret_cast<CustomObject*>(instance.get());
+  EXPECT_EQ(custom_instance->value, 30);
+  EXPECT_EQ(Py_REFCNT(custom_instance), 2);
+  Py_DECREF(custom_instance);
 }
 
 TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
-  // Instantiate Type
-  static PyTypeObject custom_type;
-  custom_type = {PyObject_HEAD_INIT(nullptr)};
-  custom_type.tp_basicsize = sizeof(CustomObject);
-  custom_type.tp_name = "custom.Custom";
-  custom_type.tp_flags = Py_TPFLAGS_DEFAULT;
-  PyType_Ready(&custom_type);
+  int basic_size = sizeof(CustomObject);
+  int item_size = 16;
+  PyType_Slot custom_slots[] = {
+      {0, nullptr},
+  };
+  PyType_Spec custom_spec = {
+      "custom.Custom", basic_size, item_size, Py_TPFLAGS_DEFAULT, custom_slots,
+  };
+  PyObjectPtr custom_type(PyType_FromSpec(&custom_spec));
+  ASSERT_NE(custom_type.get(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(custom_type.get()));
 
-  PyObject* result = PyType_GenericAlloc(&custom_type, 0);
-  EXPECT_EQ(1, Py_REFCNT(result));
-  Py_DECREF(result);
+  PyObjectPtr result(PyType_GenericAlloc(
+      reinterpret_cast<PyTypeObject*>(custom_type.get()), item_size));
+  ASSERT_NE(result.get(), nullptr);
+  EXPECT_EQ(Py_REFCNT(result.get()), 1);
+  EXPECT_EQ(Py_SIZE(result.get()), item_size);
 }
 
 TEST_F(TypeExtensionApiTest, IsSubtypeWithSameTypeReturnsTrue) {
@@ -169,16 +186,6 @@ TEST_F(TypeExtensionApiTest, GetSlotFromBuiltinTypeThrowsSystemError) {
   ASSERT_TRUE(PyType_CheckExact(long_type));
 
   EXPECT_EQ(PyType_GetSlot(long_type, Py_tp_new), nullptr);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
-}
-
-TEST_F(TypeExtensionApiTest, GetSlotFromStaticExtensionTypeThrowsSystemError) {
-  static PyTypeObject type_obj;
-  type_obj = {PyObject_HEAD_INIT(nullptr)};
-  type_obj.tp_name = "Foo";
-
-  EXPECT_EQ(PyType_GetSlot(&type_obj, Py_tp_new), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
@@ -292,22 +299,35 @@ class Foo: pass
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(TypeExtensionApiDeathTest, VarSizeFromBuiltInTypePyro) {
-  testing::PyObjectPtr long_obj(PyLong_FromLong(5));
-  PyTypeObject* long_type = Py_TYPE(long_obj);
-  ASSERT_TRUE(PyType_CheckExact(long_type));
-  EXPECT_DEATH(
-      _PyObject_VAR_SIZE(reinterpret_cast<PyTypeObject*>(long_type), 1),
-      "unimplemented: VAR_SIZE from built-in types");
-}
+TEST_F(TypeExtensionApiTest, GetSlotFromExtensionType) {
+  newfunc custom_new = [](PyTypeObject* type, PyObject*, PyObject*) {
+    void* slot = PyType_GetSlot(type, Py_tp_alloc);
+    return reinterpret_cast<allocfunc>(slot)(type, 0);
+  };
+  initproc custom_init = [](PyObject*, PyObject*, PyObject*) { return 0; };
+  PyType_Slot custom_slots[] = {
+      {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
+      {Py_tp_new, reinterpret_cast<void*>(custom_new)},
+      {Py_tp_init, reinterpret_cast<void*>(custom_init)},
+      {0, nullptr},
+  };
+  PyType_Spec custom_spec = {
+      "custom.Custom",    sizeof(CustomObject), 0,
+      Py_TPFLAGS_DEFAULT, custom_slots,
+  };
+  PyObjectPtr custom_type(PyType_FromSpec(&custom_spec));
+  ASSERT_NE(custom_type.get(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(custom_type.get()));
 
-TEST_F(TypeExtensionApiDeathTest, VarSizeFromManagedTypePyro) {
-  PyRun_SimpleString(R"(class Foo: pass)");
-  PyObject* foo_type = testing::moduleGet("__main__", "Foo");
-  ASSERT_TRUE(PyType_CheckExact(foo_type));
-  EXPECT_DEATH(
-      _PyObject_VAR_SIZE(reinterpret_cast<PyTypeObject*>(foo_type), 1),
-      "unimplemented: VAR_SIZE from types initialized through Python code");
+  PyTypeObject* custom_type_obj =
+      reinterpret_cast<PyTypeObject*>(custom_type.get());
+  EXPECT_EQ(PyType_GetSlot(custom_type_obj, Py_tp_alloc),
+            reinterpret_cast<void*>(PyType_GenericAlloc));
+  EXPECT_EQ(PyType_GetSlot(custom_type_obj, Py_tp_new),
+            reinterpret_cast<void*>(custom_new));
+  EXPECT_EQ(PyType_GetSlot(custom_type_obj, Py_tp_init),
+            reinterpret_cast<void*>(custom_init));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 }  // namespace python

@@ -750,8 +750,7 @@ void Runtime::typeAddBuiltinFunctionKwEx(const Type& type, SymbolId name,
 
 void Runtime::classAddExtensionFunction(const Type& type, SymbolId name,
                                         void* c_function) {
-  DCHECK(!type->extensionType()->isNoneType(),
-         "RawType must contain extension type");
+  DCHECK(!type->extensionSlots()->isNoneType(), "Type is not an extension");
 
   HandleScope scope;
   Function function(&scope, newFunction());

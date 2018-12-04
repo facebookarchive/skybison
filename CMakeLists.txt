@@ -467,7 +467,9 @@ add_library(
 target_compile_options(
   cpython-extension-tests
   PUBLIC
-  ${OS_DEFINE})
+  ${OS_DEFINE}
+  PRIVATE
+  ${PYRO_COMPILE_OPTIONS})
 
 target_include_directories(
   cpython-extension-tests

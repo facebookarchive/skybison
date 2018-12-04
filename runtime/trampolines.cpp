@@ -658,17 +658,13 @@ RawObject extensionTrampoline(Thread* thread, Frame* caller, word argc) {
   Object object(&scope, caller->topValue());
   Runtime* runtime = thread->runtime();
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  // TODO(eelizondo): Cache the None handle
-  PyObject* none = ApiHandle::newReference(thread, NoneType::object());
+  PyObject* none = ApiHandle::borrowedReference(thread, NoneType::object());
 
   if (object->isType()) {
     Type type_class(&scope, *object);
-    Int extension_type(&scope, type_class->extensionType());
-    PyObject* type = static_cast<PyObject*>(extension_type->asCPtr());
-
     PyCFunction new_function = bit_cast<PyCFunction>(address->asCPtr());
-
-    PyObject* new_pyobject = (*new_function)(type, none, none);
+    PyObject* new_pyobject = (*new_function)(
+        ApiHandle::borrowedReference(thread, *type_class), none, none);
     return ApiHandle::fromPyObject(new_pyobject)->asObject();
   }
 
