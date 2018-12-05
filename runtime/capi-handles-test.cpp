@@ -6,7 +6,7 @@
 
 namespace python {
 
-static RawObject initializeExtensionType(PyTypeObject* extension_type) {
+static RawObject initializeExtensionType(PyObject* extension_type) {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -118,27 +118,12 @@ TEST(CApiHandlesTest, ApiHandleReturnsBuiltinObject) {
   EXPECT_TRUE(handle_obj->isList());
 }
 
-TEST(CApiHandlesTest, PyTypeObjectReturnsExtensionType) {
-  Runtime runtime;
-  HandleScope scope;
-
-  // Create type
-  PyTypeObject extension_type{PyObject_HEAD_INIT(nullptr)};
-  Type type(&scope, initializeExtensionType(&extension_type));
-
-  Object handle_obj(&scope, ApiHandle::fromPyObject(
-                                reinterpret_cast<PyObject*>(&extension_type))
-                                ->asObject());
-  EXPECT_TRUE(handle_obj->isType());
-  EXPECT_EQ(*type, *handle_obj);
-}
-
 TEST(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
   Runtime runtime;
   HandleScope scope;
 
   // Create type
-  PyTypeObject extension_type{PyObject_HEAD_INIT(nullptr)};
+  PyObject extension_type;
   Type type(&scope, initializeExtensionType(&extension_type));
 
   // Create instance
@@ -162,7 +147,7 @@ TEST(CApiHandlesTest, RuntimeInstanceObjectReturnsPyObject) {
   HandleScope scope;
 
   // Create type
-  PyTypeObject extension_type{PyObject_HEAD_INIT(nullptr)};
+  PyObject extension_type;
   Type type(&scope, initializeExtensionType(&extension_type));
 
   // Initialize instance Layout
@@ -185,7 +170,7 @@ TEST(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
   HandleScope scope;
 
   // Create type
-  PyTypeObject extension_type{PyObject_HEAD_INIT(nullptr)};
+  PyObject extension_type;
   Type type(&scope, initializeExtensionType(&extension_type));
 
   PyObject pyobj = {nullptr, 1,

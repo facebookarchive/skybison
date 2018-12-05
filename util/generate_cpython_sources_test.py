@@ -23,9 +23,7 @@ typedef PyObject *(*Func)(PyObject *, PyObject *);
 """
         symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
         res = symbols_dict["typedef"]
-        self.assertListEqual(
-            res, ["World", "Foo", "Bar", "Baz", "Func", "Foo_Bar"]
-        )
+        self.assertListEqual(res, ["World", "Foo", "Bar", "Baz", "Func", "Foo_Bar"])
 
     def test_struct_regex_returns_multiple_symbols(self):
         lines = """
@@ -138,6 +136,23 @@ PY_EXPORT PyObject *baz_function_with_many_args(PyObject *, PyObject *,
 
 
 class TestDefinitionRegex(unittest.TestCase):
+    def test_pytypeobject_typedef_is_modified_to_struct_definition(self):
+        original_lines = """
+typedef struct _typeobject {
+  int foo;
+} PyTypeObject;
+"""
+        expected_lines = """
+struct _typeobject {
+  int foo;
+};
+"""
+        symbols_to_replace = {"typedef": ["PyTypeObject"]}
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
+        )
+        self.assertEqual(res, expected_lines)
+
     def test_multiple_typedef_definitions_are_replaced(self):
         original_lines = """
 typedef type1 Foo; // Comment

@@ -14,87 +14,62 @@ SymbolRegex = collections.namedtuple("SymbolRegex", ["regex", "pos"])
 # For sources where only the symbol is required
 HEADER_SYMBOL_REGEX = {
     "typedef": [
-        SymbolRegex(
-            regex=re.compile("^typedef struct.*;", re.MULTILINE), pos=3
-        ),
-        SymbolRegex(
-            regex=re.compile("^typedef(?! struct).*;", re.MULTILINE), pos=2
-        ),
+        SymbolRegex(regex=re.compile("^typedef struct.*;", re.MULTILINE), pos=3),
+        SymbolRegex(regex=re.compile("^typedef(?! struct).*;", re.MULTILINE), pos=2),
         SymbolRegex(regex=re.compile("^} .*;", re.MULTILINE), pos=-1),
     ],
-    "struct": [
-        SymbolRegex(regex=re.compile("^struct.*{", re.MULTILINE), pos=1)
-    ],
+    "struct": [SymbolRegex(regex=re.compile("^struct.*{", re.MULTILINE), pos=1)],
     "macro": [
-        SymbolRegex(
-            regex=re.compile("^#define.*[^\\\\]\n", re.MULTILINE), pos=1
-        ),
+        SymbolRegex(regex=re.compile("^#define.*[^\\\\]\n", re.MULTILINE), pos=1),
         SymbolRegex(regex=re.compile("^#define.*\\\\", re.MULTILINE), pos=1),
     ],
     "pytypeobject_macro": [
         SymbolRegex(regex=re.compile("^#define.*_Type ", re.MULTILINE), pos=1)
     ],
     "pyexc_macro": [
-        SymbolRegex(
-            regex=re.compile("^#define PyExc_\w+ ", re.MULTILINE), pos=1
-        )
+        SymbolRegex(regex=re.compile("^#define PyExc_\w+ ", re.MULTILINE), pos=1)
     ],
 }
 
 SOURCE_SYMBOL_REGEX = {
     "pytypeobject": [
         SymbolRegex(
-            regex=re.compile('^extern "C".*PyTypeObject.*_Type', re.MULTILINE),
-            pos=3,
+            regex=re.compile('^extern "C".*PyTypeObject.*_Type', re.MULTILINE), pos=3
         )
     ],
     "pyfunction": [
-        SymbolRegex(
-            regex=re.compile("^PY_EXPORT(?:[^{]|\n)*{", re.MULTILINE), pos=2
-        )
+        SymbolRegex(regex=re.compile("^PY_EXPORT(?:[^{]|\n)*{", re.MULTILINE), pos=2)
     ],
 }
 
 # For sources where the entire definition match is required
 HEADER_DEFINITIONS_REGEX = {
     "typedef": [
+        SymbolRegex(regex=re.compile("^\s*typedef struct.*;", re.MULTILINE), pos=3),
         SymbolRegex(
-            regex=re.compile("^\s*typedef struct.*;", re.MULTILINE), pos=3
+            regex=re.compile("^\s*typedef(?! struct).*;.*\n", re.MULTILINE), pos=2
         ),
         SymbolRegex(
-            regex=re.compile("^\s*typedef(?! struct).*;.*\n", re.MULTILINE),
-            pos=2,
-        ),
-        SymbolRegex(
-            regex=re.compile("^typedef.*{(.|\n)*?}.*;.*\n", re.MULTILINE),
-            pos=-1,
+            regex=re.compile("^typedef.*{(.|\n)*?}.*;.*\n", re.MULTILINE), pos=-1
         ),
     ],
     "struct": [
-        SymbolRegex(
-            regex=re.compile("^struct(.|\n)*?};.*\n", re.MULTILINE), pos=1
-        )
+        SymbolRegex(regex=re.compile("^struct(.|\n)*?};.*\n", re.MULTILINE), pos=1)
     ],
     "macro": [
+        SymbolRegex(regex=re.compile("^#define.*[^\\\\]\n", re.MULTILINE), pos=1),
         SymbolRegex(
-            regex=re.compile("^#define.*[^\\\\]\n", re.MULTILINE), pos=1
-        ),
-        SymbolRegex(
-            regex=re.compile("^#define.*\\\\(\n.*\\\\)*\n.*\n", re.MULTILINE),
-            pos=1,
+            regex=re.compile("^#define.*\\\\(\n.*\\\\)*\n.*\n", re.MULTILINE), pos=1
         ),
     ],
     "pytypeobject_macro": [
         SymbolRegex(
-            regex=re.compile("^PyAPI_DATA\(PyTypeObject.*;.*\n", re.MULTILINE),
-            pos=2,
+            regex=re.compile("^PyAPI_DATA\(PyTypeObject.*;.*\n", re.MULTILINE), pos=2
         )
     ],
     "pyexc_macro": [
         SymbolRegex(
-            regex=re.compile(
-                "^PyAPI_DATA\(PyObject.*(PyExc_\w+).*\n", re.MULTILINE
-            ),
+            regex=re.compile("^PyAPI_DATA\(PyObject.*(PyExc_\w+).*\n", re.MULTILINE),
             pos=2,
         )
     ],
@@ -103,16 +78,12 @@ HEADER_DEFINITIONS_REGEX = {
 SOURCE_DEFINITIONS_REGEX = {
     "pytypeobject": [
         SymbolRegex(
-            regex=re.compile("^PyTypeObject.*= {(.|\n)*?};.*\n", re.MULTILINE),
-            pos=1,
+            regex=re.compile("^PyTypeObject.*= {(.|\n)*?};.*\n", re.MULTILINE), pos=1
         )
     ],
     "pyfunction": [
         SymbolRegex(
-            regex=re.compile(
-                "^[a-zA-Z](.|.\n)*?{\n\s(.|\n)*?\n}", re.MULTILINE
-            ),
-            pos=1,
+            regex=re.compile("^[a-zA-Z](.|.\n)*?{\n\s(.|\n)*?\n}", re.MULTILINE), pos=1
         )
     ],
 }
@@ -185,6 +156,11 @@ def replace_definition(match, pos, symbols):
     original_match = match.group(0)
     # Split and locate symbol based on its position
     symbol = remove_extra_chars(original_match).split()[pos]
+    # Remove the forward declare of PyTypeObject
+    if symbol == "PyTypeObject":
+        modified_match = original_match.replace("typedef struct", "struct")
+        modified_match = modified_match.replace("} PyTypeObject", "}")
+        return modified_match
     # Check if symbol is redefined or not
     if symbol in symbols:
         return ""
@@ -198,18 +174,14 @@ def modify_file(lines, symbols_dict, regex_dict):
         for sr in regex_dict[symbol_type]:
             # Iterate the symbols that will be replaced
             lines = re.sub(
-                sr.regex,
-                lambda m: replace_definition(m, sr.pos, symbols),
-                lines,
+                sr.regex, lambda m: replace_definition(m, sr.pos, symbols), lines
             )
 
     return lines
 
 
 # Given a list of sources files, modify the patterns that were annotated
-def create_output_file_dict(
-    source_paths, header_symbols_dict, source_symbols_dict
-):
+def create_output_file_dict(source_paths, header_symbols_dict, source_symbols_dict):
     output_file_dict = {}
     # Iterate all source files
     for path in source_paths:
@@ -233,9 +205,7 @@ def create_output_file_dict(
                 with open(path, "r") as f:
                     lines = f.read()
                 output_file_dict[path] = modify_file(
-                    lines,
-                    source_symbols_dict[file_name],
-                    SOURCE_DEFINITIONS_REGEX,
+                    lines, source_symbols_dict[file_name], SOURCE_DEFINITIONS_REGEX
                 )
     return output_file_dict
 
