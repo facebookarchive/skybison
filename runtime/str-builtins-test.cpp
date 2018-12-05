@@ -991,7 +991,7 @@ d = "hellllo".split("ll")
   EXPECT_PYSTRING_EQ(RawStr::cast(d->at(2)), "o");
 }
 
-TEST(StrBuiltinsTest, SplitWithMaxSplitBelowPartsStopsEarly) {
+TEST(StrBuiltinsTest, SplitWithMaxSplitBelowNumPartsStopsEarly) {
   Runtime runtime;
   runtime.runFromCStr(R"(
 a = "hello".split("l", 1)
@@ -1018,7 +1018,6 @@ a = "hello".split("l", 2)
 b = "1,2,3,4".split(",", 5)
 )");
   HandleScope scope;
-
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_EQ(a->numItems(), 3);
   EXPECT_PYSTRING_EQ(RawStr::cast(a->at(0)), "he");
@@ -1031,6 +1030,250 @@ b = "1,2,3,4".split(",", 5)
   EXPECT_PYSTRING_EQ(RawStr::cast(b->at(1)), "2");
   EXPECT_PYSTRING_EQ(RawStr::cast(b->at(2)), "3");
   EXPECT_PYSTRING_EQ(RawStr::cast(b->at(3)), "4");
+}
+
+TEST(StrBuiltinsTest, RpartitionOnSingleCharStrPartitionsCorrectly) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+t = "hello".rpartition("l")
+)");
+  HandleScope scope;
+  Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
+  ASSERT_EQ(result->length(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "hel");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "l");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "o");
+}
+
+TEST(StrBuiltinsTest, RpartitionOnMultiCharStrPartitionsCorrectly) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+t = "hello".rpartition("ll")
+)");
+  HandleScope scope;
+  Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
+  ASSERT_EQ(result->length(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "ll");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "o");
+}
+
+TEST(StrBuiltinsTest, RpartitionOnSuffixPutsEmptyStrAtEndOfResult) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+t = "hello".rpartition("lo")
+)");
+  HandleScope scope;
+  Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
+  ASSERT_EQ(result->length(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "hel");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "lo");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "");
+}
+
+TEST(StrBuiltinsTest, RpartitionOnNonExistentSuffixPutsStrAtEndOfResult) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+t = "hello".rpartition("lop")
+)");
+  HandleScope scope;
+  Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
+  ASSERT_EQ(result->length(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "hello");
+}
+
+TEST(StrBuiltinsTest, RpartitionOnPrefixPutsEmptyStrAtBeginningOfResult) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+t = "hello".rpartition("he")
+)");
+  HandleScope scope;
+  Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
+  ASSERT_EQ(result->length(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "llo");
+}
+
+TEST(StrBuiltinsTest, RpartitionOnNonExistentPrefixPutsStrAtEndOfResult) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+t = "hello".rpartition("hex")
+)");
+  HandleScope scope;
+  Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
+  ASSERT_EQ(result->length(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "hello");
+}
+
+TEST(StrBuiltinsTest, RpartitionLargerStrPutsStrAtEndOfResult) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+t = "hello".rpartition("foobarbaz")
+)");
+  HandleScope scope;
+  Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
+  ASSERT_EQ(result->length(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "hello");
+}
+
+TEST(StrBuiltinsTest, RpartitionEmptyStrReturnsTupleOfEmptyStrings) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+t = "".rpartition("a")
+)");
+  HandleScope scope;
+  Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
+  ASSERT_EQ(result->length(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "");
+}
+
+TEST(StrBuiltinsTest, RsplitWithOneCharSeparatorSplitsCorrectly) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "hello".rsplit("e")
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 2);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "h");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "llo");
+}
+
+TEST(StrBuiltinsTest, RsplitWithRepeatedOneCharSeparatorSplitsCorrectly) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "hello".rsplit("l")
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "o");
+}
+
+TEST(StrBuiltinsTest, RsplitWithEmptySelfReturnsSingleEmptyString) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "".rsplit("a")
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 1);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "");
+}
+
+TEST(StrBuiltinsTest, RsplitWithMultiCharSeparatorSplitsFromRight) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "hello".rsplit("el")
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 2);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "h");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "lo");
+}
+
+TEST(StrBuiltinsTest, RsplitWithRepeatedCharSeparatorSplitsFromRight) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "hello".rsplit("ll")
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 2);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "o");
+}
+
+TEST(StrBuiltinsTest, RsplitWithSeparatorSameAsInputSplitsIntoEmptyComponents) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "hello".rsplit("hello")
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 2);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "");
+}
+
+TEST(StrBuiltinsTest,
+     RsplitWithMultiCharSeparatorWithMultipleAppearancesSplitsCorrectly) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "hellllo".rsplit("ll")
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "o");
+}
+
+TEST(StrBuiltinsTest,
+     RsplitWithRepeatedCharAndMaxSplitBelowNumPartsStopsEarly) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "hello".rsplit("l", 1)
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 2);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "hel");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "o");
+}
+
+TEST(StrBuiltinsTest, RsplitWithMaxSplitBelowNumPartsStopsEarly) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "1,2,3,4".rsplit(",", 2)
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "1,2");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "3");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "4");
+}
+
+TEST(StrBuiltinsTest,
+     RsplitWithRepeatedCharAndMaxSplitGreaterThanNumPartsSplitsCorrectly) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "hello".rsplit("l", 2)
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 3);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "he");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "o");
+}
+
+TEST(StrBuiltinsTest, RsplitWithMaxSplitGreaterThanNumPartsSplitsCorrectly) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = "1,2,3,4".rsplit(",", 5)
+)");
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "l"));
+  ASSERT_EQ(result->numItems(), 4);
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(0)), "1");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "2");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(2)), "3");
+  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(3)), "4");
 }
 
 TEST(StrBuiltinsDeathTest, StrStripWithNoArgsThrowsTypeError) {

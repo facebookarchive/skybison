@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
 """Built-in classes, functions, and constants."""
 
 
-class object(bootstrap=True):
+class object(bootstrap=True):  # noqa: E999
     def __str__(self):
         return self.__repr__()
 
@@ -90,9 +91,7 @@ class str(bootstrap=True):
             return self
         # If the separator is not specified, split on all whitespace characters.
         if sep is None:
-            raise NotImplementedError(
-                "Splitting on whitespace not yet implemented"
-            )
+            raise NotImplementedError("Splitting on whitespace not yet implemented")
         if not isinstance(sep, str):
             raise TypeError("must be str or None")
         sep_len = len(sep)
@@ -226,6 +225,15 @@ class str(bootstrap=True):
             if suffix_match(self, suf, start, end):
                 return True
         return False
+
+    # TODO(T37437993): Write in C++
+    def rsplit(self, sep=None, maxsplit=-1):
+        return [s[::-1] for s in self[::-1].split(sep[::-1], maxsplit)[::-1]]
+
+    # TODO(T37438017): Write in C++
+    def rpartition(self, sep):
+        before, itself, after = self[::-1].partition(sep[::-1])[::-1]
+        return before[::-1], itself[::-1], after[::-1]
 
     def __str__(self):
         return self
