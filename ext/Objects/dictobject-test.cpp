@@ -54,6 +54,23 @@ TEST_F(DictExtensionApiTest, GetItemReturnsBorrowedValue) {
   Py_DECREF(dict);
 }
 
+TEST_F(DictExtensionApiTest, GetItemWithDictSubclassReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo(dict): pass
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr key(PyLong_FromLong(1));
+  PyObjectPtr val(PyLong_FromLong(2));
+  ASSERT_EQ(PyDict_SetItem(obj, key, val), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr result(PyDict_GetItem(obj, key));
+  EXPECT_EQ(result, val);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(DictExtensionApiTest, GetItemStringReturnsValue) {
   PyObjectPtr dict(PyDict_New());
   const char* key_cstr = "key";
@@ -63,6 +80,39 @@ TEST_F(DictExtensionApiTest, GetItemStringReturnsValue) {
 
   PyObject* item = PyDict_GetItemString(dict, key_cstr);
   EXPECT_EQ(item, value);
+}
+
+TEST_F(DictExtensionApiTest, SetItemWithNonDictRaisesSystemError) {
+  PyObjectPtr set(PySet_New(nullptr));
+  PyObjectPtr key(createUniqueObject());
+  PyObjectPtr val(createUniqueObject());
+
+  ASSERT_EQ(PyDict_SetItem(set, key, val), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, SetItemWithNewDictReturnsZero) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key(createUniqueObject());
+  PyObjectPtr val(createUniqueObject());
+
+  EXPECT_EQ(PyDict_SetItem(dict, key, val), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, SetItemWithNewDictSubclassReturnsZero) {
+  PyRun_SimpleString(R"(
+class Foo(dict): pass
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr key(createUniqueObject());
+  PyObjectPtr val(createUniqueObject());
+
+  EXPECT_EQ(PyDict_SetItem(obj, key, val), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {

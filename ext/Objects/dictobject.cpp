@@ -20,17 +20,18 @@ PY_EXPORT int PyDict_Check_Func(PyObject* obj) {
 
 PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-
   Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
-  if (!dictobj->isDict()) {
+
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(dictobj)) {
+    thread->raiseBadInternalCall();
     return -1;
   }
 
+  Dict dict(&scope, *dictobj);
   Object keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Dict dict(&scope, *dictobj);
   runtime->dictAtPut(dict, keyobj, valueobj);
   return 0;
 }
@@ -57,15 +58,13 @@ PY_EXPORT PyObject* PyDict_New() {
 
 static PyObject* getItem(Thread* thread, const Object& dict_obj,
                          const Object& key_obj) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(dict_obj)) return nullptr;
+
   HandleScope scope(thread);
-  if (!dict_obj->isDict()) {
-    return nullptr;
-  }
   Dict dict(&scope, *dict_obj);
-  Object value(&scope, thread->runtime()->dictAt(dict, key_obj));
-  if (value->isError()) {
-    return nullptr;
-  }
+  Object value(&scope, runtime->dictAt(dict, key_obj));
+  if (value->isError()) return nullptr;
   return ApiHandle::borrowedReference(thread, *value);
 }
 
