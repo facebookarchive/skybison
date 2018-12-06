@@ -813,11 +813,9 @@ void Interpreter::doStoreSubscr(Context* ctx, word) {
     UNIMPLEMENTED("throw TypeError");
   }
   Object value(&scope, ctx->frame->popValue());
-  RawObject result =
-      callMethod3(thread, ctx->frame, setitem, container, key, value);
+  callMethod3(thread, ctx->frame, setitem, container, key, value);
   // TODO(T31788973): propagate an exception
   thread->abortOnPendingException();
-  ctx->frame->pushValue(result);
 }
 
 // opcode 61

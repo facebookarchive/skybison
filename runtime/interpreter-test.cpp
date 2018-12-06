@@ -2179,4 +2179,20 @@ TEST(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
   EXPECT_TRUE(thread->hasPendingException());
 }
 
+TEST(InterpreterTest, StoreSubscr) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+l = [0]
+for i in range(5):
+    l[0] += i
+)");
+
+  HandleScope scope;
+  Object l_obj(&scope, testing::moduleAt(&runtime, "__main__", "l"));
+  ASSERT_TRUE(l_obj->isList());
+  List l(&scope, *l_obj);
+  ASSERT_EQ(l->numItems(), 1);
+  EXPECT_EQ(l->at(0), SmallInt::fromWord(10));
+}
+
 }  // namespace python
