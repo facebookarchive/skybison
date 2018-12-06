@@ -1,4 +1,7 @@
+#include <cstdarg>
+
 #include "cpython-func.h"
+#include "frame.h"
 #include "runtime.h"
 
 namespace python {
@@ -324,8 +327,38 @@ PY_EXPORT PyObject* PyObject_CallFunction(PyObject* /* e */,
   UNIMPLEMENTED("PyObject_CallFunction");
 }
 
-PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* /* e */, ...) {
-  UNIMPLEMENTED("PyObject_CallFunctionObjArgs");
+PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...) {
+  Thread* thread = Thread::currentThread();
+  if (callable == nullptr) {
+    if (!thread->hasPendingException()) {
+      thread->raiseSystemErrorWithCStr("null argument to internal routine");
+    }
+    return nullptr;
+  }
+  DCHECK(!thread->hasPendingException(),
+         "This function should not be called with an exception set as it might "
+         "be cleared");
+
+  HandleScope scope(thread);
+  Object function(&scope, ApiHandle::fromPyObject(callable)->asObject());
+  Frame* frame = thread->currentFrame();
+  frame->pushValue(function);
+
+  word nargs = 0;
+  {
+    va_list vargs;
+    va_start(vargs, callable);
+    for (PyObject* arg; (arg = va_arg(vargs, PyObject*)) != nullptr; nargs++) {
+      frame->pushValue(ApiHandle::fromPyObject(arg)->asObject());
+    }
+    va_end(vargs);
+  }
+
+  // TODO(T30925218): CPython tracks recursive calls before calling the function
+  // through Py_EnterRecursiveCall, and we should probably do the same
+  Object result(&scope, Interpreter::call(thread, frame, nargs));
+  if (result->isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* _PyObject_CallFunction_SizeT(PyObject* /* e */,

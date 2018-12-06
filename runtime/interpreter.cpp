@@ -65,7 +65,7 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
           continue;
         }
       }
-      UNIMPLEMENTED("throw TypeError: object is not callable");
+      return thread->raiseTypeErrorWithCStr("object is not callable");
     }
   }
   if (is_bound) {
@@ -82,6 +82,10 @@ RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
   RawObject callable = frame->peek(nargs);
   if (!callable->isFunction()) {
     callable = prepareCallableCall(thread, frame, nargs, &nargs);
+  }
+  if (callable->isError()) {
+    frame->setValueStackTop(sp);
+    return callable;
   }
   RawObject result = RawFunction::cast(callable)->entry()(thread, frame, nargs);
   // Clear the stack of the function object.

@@ -2167,4 +2167,16 @@ def bar(): pass
   EXPECT_TRUE(bar_docstring->isNoneType());
 }
 
+TEST(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+  Str not_a_func(&scope, runtime.newStrFromCStr(""));
+  frame->pushValue(*not_a_func);
+  RawObject result = Interpreter::call(thread, frame, 0);
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(thread->hasPendingException());
+}
+
 }  // namespace python

@@ -260,4 +260,63 @@ TEST_F(AbstractExtensionApiTest, PySequenceCheckWithListReturnsTrue) {
   EXPECT_TRUE(PySequence_Check(list));
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjCallFunctionObjArgsWithNullReturnsNull) {
+  testing::PyObjectPtr test(PyObject_CallFunctionObjArgs(nullptr, nullptr));
+  EXPECT_EQ(nullptr, test);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjCallFunctionObjArgsWithNonFunctionReturnsNull) {
+  testing::PyObjectPtr non_func(PyTuple_New(0));
+  testing::PyObjectPtr test(PyObject_CallFunctionObjArgs(non_func, nullptr));
+  EXPECT_EQ(test, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, CallFunctionObjArgsWithNoArgsReturnsValue) {
+  PyRun_SimpleString(R"(
+def func():
+  return 5
+  )");
+
+  testing::PyObjectPtr func(testing::moduleGet("__main__", "func"));
+  testing::PyObjectPtr func_result(PyObject_CallFunctionObjArgs(func, nullptr));
+  EXPECT_EQ(PyLong_AsLong(func_result), 5);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       CallFunctionObjArgsWithCallableClassReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo():
+  def __call__(self):
+    return 5
+f = Foo()
+  )");
+
+  testing::PyObjectPtr f(testing::moduleGet("__main__", "f"));
+  testing::PyObjectPtr f_result(PyObject_CallFunctionObjArgs(f, nullptr));
+  EXPECT_EQ(PyLong_AsLong(f_result), 5);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       CallFunctionObjArgsWithManyArgumentsReturnsValue) {
+  PyRun_SimpleString(R"(
+def func(a, b, c, d, e, f):
+  return a + b + c + d + e + f
+  )");
+
+  testing::PyObjectPtr func(testing::moduleGet("__main__", "func"));
+  PyObject* one = PyLong_FromLong(1);
+  PyObject* two = PyLong_FromLong(2);
+  testing::PyObjectPtr func_result(PyObject_CallFunctionObjArgs(
+      func, one, one, two, two, one, two, nullptr));
+  Py_DECREF(one);
+  Py_DECREF(two);
+  EXPECT_EQ(PyLong_AsLong(func_result), 9);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python
