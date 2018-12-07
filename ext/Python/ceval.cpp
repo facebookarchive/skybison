@@ -63,11 +63,12 @@ PY_EXPORT void PyEval_ReleaseThread(PyThreadState* /* e */) {
 }
 
 PY_EXPORT void PyEval_RestoreThread(PyThreadState* /* e */) {
-  UNIMPLEMENTED("PyEval_RestoreThread");
+  // TODO(T37761469): Implement instead of making it a noop
 }
 
 PY_EXPORT PyThreadState* PyEval_SaveThread() {
-  UNIMPLEMENTED("PyEval_SaveThread");
+  // TODO(T37761469): Implement instead of making it a noop
+  return nullptr;
 }
 
 PY_EXPORT int Py_AddPendingCall(int (*/* func */)(void*), void* /* g */) {
