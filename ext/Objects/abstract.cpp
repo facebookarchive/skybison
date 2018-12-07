@@ -6,6 +6,67 @@
 
 namespace python {
 
+static Py_ssize_t objectLength(PyObject* pyobj) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+
+  Frame* caller = thread->currentFrame();
+  Object len_func(&scope, Interpreter::lookupMethod(thread, caller, obj,
+                                                    SymbolId::kDunderLen));
+  if (len_func->isError()) {
+    thread->raiseTypeErrorWithCStr("object has no __len__()");
+    return -1;
+  }
+
+  OptInt<Py_ssize_t> len_or_error;
+  Object len_obj(&scope,
+                 Interpreter::callMethod1(thread, caller, len_func, obj));
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfInt(len_obj)) {
+    Int len(&scope, *len_obj);
+    len_or_error = len->asInt<Py_ssize_t>();
+  } else {
+    Object index_func(&scope,
+                      Interpreter::lookupMethod(thread, caller, len_obj,
+                                                SymbolId::kDunderIndex));
+    if (index_func->isError()) {
+      thread->raiseTypeErrorWithCStr(
+          "__len__() cannot be interpreted as an integer");
+      return -1;
+    }
+
+    Object index_obj(
+        &scope, Interpreter::callMethod1(thread, caller, index_func, len_obj));
+    if (!runtime->isInstanceOfInt(index_obj)) {
+      thread->raiseTypeErrorWithCStr("__index__() returned non-int");
+      return -1;
+    }
+
+    Int len(&scope, *index_obj);
+    len_or_error = len->asInt<Py_ssize_t>();
+  }
+
+  switch (len_or_error.error) {
+    case CastError::None:
+      if (len_or_error.value < 0) {
+        thread->raiseValueErrorWithCStr("__len__() should be non-negative");
+        return -1;
+      }
+      return len_or_error.value;
+    case CastError::Overflow:
+      thread->raiseOverflowErrorWithCStr(
+          "cannot fit 'int' into an index-sized integer");
+      return -1;
+    case CastError::Underflow:
+      thread->raiseOverflowErrorWithCStr(
+          "cannot fit 'int' into an index-sized integer");
+      return -1;
+  }
+
+  UNREACHABLE("RawInt::asInt() gave an invalid CastError");
+}
+
 PY_EXPORT int PyBuffer_FillInfo(Py_buffer* /* w */, PyObject* /* j */,
                                 void* /* f */, Py_ssize_t /* n */, int /* y */,
                                 int /* s */) {
@@ -58,8 +119,8 @@ PY_EXPORT PyObject* PyMapping_Keys(PyObject* /* o */) {
   UNIMPLEMENTED("PyMapping_Keys");
 }
 
-PY_EXPORT Py_ssize_t PyMapping_Length(PyObject* /* o */) {
-  UNIMPLEMENTED("PyMapping_Length");
+PY_EXPORT Py_ssize_t PyMapping_Length(PyObject* pyobj) {
+  return objectLength(pyobj);
 }
 
 PY_EXPORT int PyMapping_SetItemString(PyObject* /* o */, const char* /* y */,
@@ -67,8 +128,8 @@ PY_EXPORT int PyMapping_SetItemString(PyObject* /* o */, const char* /* y */,
   UNIMPLEMENTED("PyMapping_SetItemString");
 }
 
-PY_EXPORT Py_ssize_t PyMapping_Size(PyObject* /* o */) {
-  UNIMPLEMENTED("PyMapping_Size");
+PY_EXPORT Py_ssize_t PyMapping_Size(PyObject* pyobj) {
+  return objectLength(pyobj);
 }
 
 PY_EXPORT PyObject* PyMapping_Values(PyObject* /* o */) {
@@ -437,8 +498,8 @@ PY_EXPORT int PyObject_IsSubclass(PyObject* /* d */, PyObject* /* s */) {
   UNIMPLEMENTED("PyObject_IsSubclass");
 }
 
-PY_EXPORT Py_ssize_t PyObject_Length(PyObject* /* o */) {
-  UNIMPLEMENTED("PyObject_Length");
+PY_EXPORT Py_ssize_t PyObject_Length(PyObject* pyobj) {
+  return objectLength(pyobj);
 }
 
 PY_EXPORT Py_ssize_t PyObject_LengthHint(PyObject* /* o */,
@@ -451,8 +512,8 @@ PY_EXPORT int PyObject_SetItem(PyObject* /* o */, PyObject* /* y */,
   UNIMPLEMENTED("PyObject_SetItem");
 }
 
-PY_EXPORT Py_ssize_t PyObject_Size(PyObject* /* o */) {
-  UNIMPLEMENTED("PyObject_Size");
+PY_EXPORT Py_ssize_t PyObject_Size(PyObject* pyobj) {
+  return objectLength(pyobj);
 }
 
 PY_EXPORT PyObject* PyObject_Type(PyObject* /* o */) {
@@ -528,8 +589,8 @@ PY_EXPORT PyObject* PySequence_InPlaceRepeat(PyObject* /* o */,
   UNIMPLEMENTED("PySequence_InPlaceRepeat");
 }
 
-PY_EXPORT Py_ssize_t PySequence_Length(PyObject* /* s */) {
-  UNIMPLEMENTED("PySequence_Length");
+PY_EXPORT Py_ssize_t PySequence_Length(PyObject* pyobj) {
+  return objectLength(pyobj);
 }
 
 PY_EXPORT PyObject* PySequence_List(PyObject* /* v */) {
@@ -550,8 +611,8 @@ PY_EXPORT int PySequence_SetSlice(PyObject* /* s */, Py_ssize_t /* 1 */,
   UNIMPLEMENTED("PySequence_SetSlice");
 }
 
-PY_EXPORT Py_ssize_t PySequence_Size(PyObject* /* s */) {
-  UNIMPLEMENTED("PySequence_Size");
+PY_EXPORT Py_ssize_t PySequence_Size(PyObject* pyobj) {
+  return objectLength(pyobj);
 }
 
 PY_EXPORT PyObject* PySequence_Tuple(PyObject* /* v */) {

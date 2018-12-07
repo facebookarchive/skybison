@@ -89,6 +89,19 @@ TEST_F(AbstractExtensionApiTest, PyMappingCheckWithDictReturnsTrue) {
   EXPECT_TRUE(PyMapping_Check(dict));
 }
 
+TEST_F(AbstractExtensionApiTest, PyMappingLengthWithNonMappingReturnsLen) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __len__(self):
+    return 1
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyMapping_Length(obj), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberIndexOnIntReturnsSelf) {
   PyObject* pylong = PyLong_FromLong(666);
   EXPECT_EQ(pylong, PyNumber_Index(pylong));
@@ -168,6 +181,156 @@ i = IntLikeClass();
   EXPECT_EQ(PyNumber_Index(i), nullptr);
   // TODO(T34841408): check the error message
   EXPECT_NE(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectLengthWithoutDunderLenRaisesTypeError) {
+  PyObjectPtr num(PyLong_FromLong(3));
+  ASSERT_EQ(PyObject_Length(num), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithNonIntLenRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __len__(self):
+    return "foo"
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyObject_Length(obj), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithoutIndexRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class Foo: pass
+class Bar:
+  def __len__(self): return Foo()
+obj = Bar()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyObject_Length(obj), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithNonIntIndexRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __index__(self): return None
+class Bar:
+  def __len__(self): return Foo()
+obj = Bar()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyObject_Length(obj), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithIndexReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __index__(self): return 1
+class Bar:
+  def __len__(self): return Foo()
+obj = Bar()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_Length(obj), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectLengthWithNegativeLenRaisesValueError) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __len__(self):
+    return -5
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyObject_Length(obj), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectLengthWithOverflowRaisesOverflowError) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __len__(self):
+    return 0x8000000000000000
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyObject_Length(obj), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectLengthWithUnderflowRaisesOverflowError) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __len__(self):
+    return -0x8000000000000001
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyObject_Length(obj), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithEmptyDictReturnsZero) {
+  PyObjectPtr dict(PyDict_New());
+  EXPECT_EQ(PyObject_Length(dict), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithEmptyListReturnsZero) {
+  PyObjectPtr list(PyList_New(0));
+  EXPECT_EQ(PyObject_Length(list), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithEmptyStringReturnsZero) {
+  PyObjectPtr str(PyUnicode_FromString(""));
+  EXPECT_EQ(PyObject_Length(str), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithNonEmptyDictReturnsValue) {
+  PyObjectPtr dict(PyDict_New());
+
+  {
+    PyObjectPtr value(PyLong_FromLong(3));
+
+    PyObjectPtr key1(PyLong_FromLong(1));
+    PyDict_SetItem(dict, key1, value);
+
+    PyObjectPtr key2(PyLong_FromLong(2));
+    PyDict_SetItem(dict, key2, value);
+  }
+
+  EXPECT_EQ(PyObject_Length(dict), 2);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithNonEmptyListReturnsValue) {
+  PyObjectPtr list(PyList_New(3));
+  EXPECT_EQ(PyObject_Length(list), 3);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithNonEmptyStringReturnsValue) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PyObject_Length(str), 3);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceCheckWithoutGetItemReturnsFalse) {
@@ -258,6 +421,52 @@ TEST_F(AbstractExtensionApiTest, PySequenceCheckWithStringReturnsTrue) {
 TEST_F(AbstractExtensionApiTest, PySequenceCheckWithListReturnsTrue) {
   PyObjectPtr list(PyList_New(3));
   EXPECT_TRUE(PySequence_Check(list));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceLengthWithNonSequenceReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __len__(self):
+    return 1
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PySequence_Length(obj), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+// PySequence_Length fails on `dict` in CPython, but succeeds on subclasses
+TEST_F(AbstractExtensionApiTest,
+       PySequenceLengthWithEmptyDictSubclassReturnsZero) {
+  PyRun_SimpleString(R"(
+class Foo(dict):
+  pass
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PySequence_Length(obj), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceLengthWithNonEmptyDictSubclassReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo(dict):
+  pass
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+
+  ASSERT_EQ(PyDict_SetItem(obj, one, two), 0);
+  ASSERT_EQ(PyDict_SetItem(obj, two, one), 0);
+
+  EXPECT_EQ(PySequence_Length(obj), 2);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(AbstractExtensionApiTest, PyObjCallFunctionObjArgsWithNullReturnsNull) {
