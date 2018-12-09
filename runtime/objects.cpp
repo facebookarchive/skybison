@@ -1,4 +1,6 @@
 #include "objects.h"
+
+#include "frame.h"
 #include "runtime.h"
 #include "thread.h"
 
@@ -429,6 +431,12 @@ RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
   RawWeakRef::cast(tail1)->setLink(head2);
   RawWeakRef::cast(tail2)->setLink(head1);
   return tail2;
+}
+
+// RawHeapFrame
+
+word RawHeapFrame::numAttributes(word extra_words) {
+  return kNumOverheadWords + Frame::kSize / kPointerSize + extra_words;
 }
 
 }  // namespace python

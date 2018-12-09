@@ -259,65 +259,6 @@ class Frame {
   DISALLOW_COPY_AND_ASSIGN(Frame);
 };
 
-/**
- * A Frame in a HeapObject, with space allocated before and after for stack and
- * locals, respectively. It looks almost exactly like the ascii art diagram for
- * Frame, except that there is a fixed amount of space allocated for the value
- * stack, which comes from stacksize() on the Code object this is created from:
- *
- *   +----------------------+  <--+
- *   | Arg 0                |     |
- *   | ...                  |     |
- *   | Arg N                |     |
- *   | Local 0              |     | frame()-code()->totalVars() * kPointerSize
- *   | ...                  |     |
- *   | Local N              |     |
- *   +----------------------+  <--+
- *   |                      |     |
- *   | Frame                |     | Frame::kSize
- *   |                      |     |
- *   +----------------------+  <--+  <-- frame()
- *   |                      |     |
- *   | Value stack          |     | maxStackSize() * kPointerSize
- *   |                      |     |
- *   +----------------------+  <--+
- *   | maxStackSize         |
- *   +----------------------+
- */
-class RawHeapFrame : public RawHeapObject {
- public:
-  // The Frame contained in this HeapFrame.
-  Frame* frame();
-
-  // The size of the embedded frame + stack and locals, in words.
-  word numFrameWords();
-
-  // Get or set the number of words allocated for the value stack. Used to
-  // derive a pointer to the Frame inside this HeapFrame.
-  word maxStackSize();
-  void setMaxStackSize(word offset);
-
-  // Push a new Frame below caller_frame, and copy this HeapFrame into it. Stack
-  // overflow checks must be done by the caller. Returns a pointer to the new
-  // stack Frame.
-  Frame* copyToNewStackFrame(Frame* caller_frame);
-
-  // Copy a Frame from the stack back into this HeapFrame.
-  void copyFromStackFrame(Frame* frame);
-
-  // Sizing.
-  static word numAttributes(word extra_words);
-
-  // Layout.
-  static const int kMaxStackSizeOffset = RawHeapObject::kSize;
-  static const int kFrameOffset = kMaxStackSizeOffset + kPointerSize;
-
-  // Number of words that aren't the Frame.
-  static const int kNumOverheadWords = kFrameOffset / kPointerSize;
-
-  RAW_OBJECT_COMMON(HeapFrame);
-};
-
 class FrameVisitor {
  public:
   virtual void visit(Frame* frame) = 0;
@@ -553,47 +494,6 @@ inline void Frame::unstashInternalPointers() {
   auto stashed_size = reinterpret_cast<word>(valueStackTop());
   setValueStackTop(valueStackBase() - stashed_size);
   resetLocals(numLocals());
-}
-
-// HeapFrame
-
-inline Frame* RawHeapFrame::frame() {
-  return reinterpret_cast<Frame*>(address() + kFrameOffset +
-                                  maxStackSize() * kPointerSize);
-}
-
-inline word RawHeapFrame::numFrameWords() {
-  return header()->count() - kNumOverheadWords;
-}
-
-inline word RawHeapFrame::maxStackSize() {
-  return RawSmallInt::cast(instanceVariableAt(kMaxStackSizeOffset))->value();
-}
-
-inline void RawHeapFrame::setMaxStackSize(word offset) {
-  instanceVariableAtPut(kMaxStackSizeOffset, SmallInt::fromWord(offset));
-}
-
-inline Frame* RawHeapFrame::copyToNewStackFrame(Frame* caller_frame) {
-  auto src_base = reinterpret_cast<RawObject*>(address() + kFrameOffset);
-  word frame_words = numFrameWords();
-  RawObject* dest_base = caller_frame->valueStackTop() - frame_words;
-  std::memcpy(dest_base, src_base, frame_words * kPointerSize);
-
-  auto live_frame = reinterpret_cast<Frame*>(dest_base + maxStackSize());
-  live_frame->unstashInternalPointers();
-  return live_frame;
-}
-
-inline void RawHeapFrame::copyFromStackFrame(Frame* live_frame) {
-  auto dest_base = reinterpret_cast<RawObject*>(address() + kFrameOffset);
-  RawObject* src_base = live_frame->valueStackBase() - maxStackSize();
-  std::memcpy(dest_base, src_base, numFrameWords() * kPointerSize);
-  frame()->stashInternalPointers(live_frame);
-}
-
-inline word RawHeapFrame::numAttributes(word extra_words) {
-  return kNumOverheadWords + Frame::kSize / kPointerSize + extra_words;
 }
 
 inline RawObject TryBlock::asSmallInt() const {

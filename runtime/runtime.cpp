@@ -3177,17 +3177,46 @@ RawObject Runtime::dictValueIteratorNext(Thread* thread,
   return Error::object();
 }
 
+// Push a new Frame below caller_frame, and copy a HeapFrame into it. Stack
+// overflow checks must be done by the caller. Returns a pointer to the new
+// stack Frame.
+static Frame* copyHeapFrameToStackFrame(const HeapFrame& heap_frame,
+                                        Frame* caller_frame) {
+  auto src_base = reinterpret_cast<RawObject*>(heap_frame->address() +
+                                               RawHeapFrame::kFrameOffset);
+  word frame_words = heap_frame->numFrameWords();
+  RawObject* dest_base = caller_frame->valueStackTop() - frame_words;
+  std::memcpy(dest_base, src_base, frame_words * kPointerSize);
+
+  auto live_frame =
+      reinterpret_cast<Frame*>(dest_base + heap_frame->maxStackSize());
+  live_frame->unstashInternalPointers();
+  return live_frame;
+}
+
 RawObject Runtime::genSend(Thread* thread, const GeneratorBase& gen,
                            const Object& value) {
   HandleScope scope(thread);
   HeapFrame heap_frame(&scope, gen->heapFrame());
   thread->checkStackOverflow(heap_frame->numFrameWords() * kPointerSize);
-  Frame* live_frame = heap_frame->copyToNewStackFrame(thread->currentFrame());
+  Frame* live_frame =
+      copyHeapFrameToStackFrame(heap_frame, thread->currentFrame());
   if (live_frame->virtualPC() != 0) {
     live_frame->pushValue(*value);
   }
   thread->linkFrame(live_frame);
   return Interpreter::execute(thread, live_frame);
+}
+
+// Copy a Frame from the stack back into a HeapFrame.
+static void copyStackFrameToHeapFrame(Frame* live_frame,
+                                      const HeapFrame& heap_frame) {
+  auto dest_base = reinterpret_cast<RawObject*>(heap_frame->address() +
+                                                RawHeapFrame::kFrameOffset);
+  RawObject* src_base =
+      live_frame->valueStackBase() - heap_frame->maxStackSize();
+  std::memcpy(dest_base, src_base, heap_frame->numFrameWords() * kPointerSize);
+  heap_frame->frame()->stashInternalPointers(live_frame);
 }
 
 void Runtime::genSave(Thread* thread, const GeneratorBase& gen) {
@@ -3196,7 +3225,7 @@ void Runtime::genSave(Thread* thread, const GeneratorBase& gen) {
   Frame* live_frame = thread->currentFrame();
   DCHECK(live_frame->valueStackSize() <= heap_frame->maxStackSize(),
          "not enough space in RawGeneratorBase to save live stack");
-  heap_frame->copyFromStackFrame(live_frame);
+  copyStackFrameToHeapFrame(live_frame, heap_frame);
   thread->popFrame();
 }
 

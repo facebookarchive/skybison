@@ -8,6 +8,8 @@
 
 namespace python {
 
+class Frame;
+
 // Python types that store their value directly in a RawObject.
 #define INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                     \
   V(SmallInt)                                                                  \
@@ -1991,6 +1993,58 @@ class RawSuper : public RawHeapObject {
 };
 
 /**
+ * A Frame in a HeapObject, with space allocated before and after for stack and
+ * locals, respectively. It looks almost exactly like the ascii art diagram for
+ * Frame (from frame.h), except that there is a fixed amount of space allocated
+ * for the value stack, which comes from stacksize() on the Code object this is
+ * created from:
+ *
+ *   +----------------------+  <--+
+ *   | Arg 0                |     |
+ *   | ...                  |     |
+ *   | Arg N                |     |
+ *   | Local 0              |     | frame()-code()->totalVars() * kPointerSize
+ *   | ...                  |     |
+ *   | Local N              |     |
+ *   +----------------------+  <--+
+ *   |                      |     |
+ *   | Frame                |     | Frame::kSize
+ *   |                      |     |
+ *   +----------------------+  <--+  <-- frame()
+ *   |                      |     |
+ *   | Value stack          |     | maxStackSize() * kPointerSize
+ *   |                      |     |
+ *   +----------------------+  <--+
+ *   | maxStackSize         |
+ *   +----------------------+
+ */
+class RawHeapFrame : public RawHeapObject {
+ public:
+  // The Frame contained in this HeapFrame.
+  Frame* frame();
+
+  // The size of the embedded frame + stack and locals, in words.
+  word numFrameWords();
+
+  // Get or set the number of words allocated for the value stack. Used to
+  // derive a pointer to the Frame inside this HeapFrame.
+  word maxStackSize();
+  void setMaxStackSize(word offset);
+
+  // Sizing.
+  static word numAttributes(word extra_words);
+
+  // Layout.
+  static const int kMaxStackSizeOffset = RawHeapObject::kSize;
+  static const int kFrameOffset = kMaxStackSizeOffset + kPointerSize;
+
+  // Number of words that aren't the Frame.
+  static const int kNumOverheadWords = kFrameOffset / kPointerSize;
+
+  RAW_OBJECT_COMMON(HeapFrame);
+};
+
+/**
  * Base class containing functionality needed by all objects representing a
  * suspended execution frame: RawGenerator, RawCoroutine, and AsyncGenerator.
  */
@@ -3834,6 +3888,25 @@ inline RawObject RawGeneratorBase::heapFrame() {
 
 inline void RawGeneratorBase::setHeapFrame(RawObject obj) {
   instanceVariableAtPut(kFrameOffset, obj);
+}
+
+// RawHeapFrame
+
+inline Frame* RawHeapFrame::frame() {
+  return reinterpret_cast<Frame*>(address() + kFrameOffset +
+                                  maxStackSize() * kPointerSize);
+}
+
+inline word RawHeapFrame::numFrameWords() {
+  return header()->count() - kNumOverheadWords;
+}
+
+inline word RawHeapFrame::maxStackSize() {
+  return RawSmallInt::cast(instanceVariableAt(kMaxStackSizeOffset))->value();
+}
+
+inline void RawHeapFrame::setMaxStackSize(word offset) {
+  instanceVariableAtPut(kMaxStackSizeOffset, RawSmallInt::fromWord(offset));
 }
 
 }  // namespace python
