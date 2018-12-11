@@ -310,6 +310,11 @@ RawObject runBuiltinImpl(BuiltinMethodType method,
   return *result;
 }
 
+RawObject runBuiltin(BuiltinMethodType method) {
+  return runBuiltinImpl(method,
+                        View<std::reference_wrapper<const Object>>{nullptr, 0});
+}
+
 RawObject newEmptyCode(Runtime* runtime) {
   HandleScope scope;
   Object none(&scope, NoneType::object());

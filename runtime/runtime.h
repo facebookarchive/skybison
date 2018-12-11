@@ -32,8 +32,6 @@ struct BuiltinMethod {
   BuiltinMethodType address;
 };
 
-enum class DictUpdateType { Update, Merge };
-
 enum class SetLookupType { Lookup, Insertion };
 
 enum class StrStripDirection { Left, Right, Both };
@@ -378,16 +376,6 @@ class Runtime {
   // Update a set from an iterator
   // Returns either the updated set or an Error object.
   RawObject setUpdate(Thread* thread, const Set& set, const Object& iterable);
-
-  // Update a dictionary from another dictionary or an iterator.
-  // Returns either the updated dict or an Error object.
-  RawObject dictUpdate(Thread* thread, const Dict& dict, const Object& mapping);
-
-  // Merges a dictionary with another dictionary or a mapping.
-  // Returns either the merged dictionary or an Error object.
-  // throws a TypeError if the keys are not strings or
-  // if any of the mappings have the same key repeated in them.
-  RawObject dictMerge(Thread* thread, const Dict& dict, const Object& mapping);
 
   // Resume a GeneratorBase, passing it the given value and returning either the
   // yielded value or Error on termination.
@@ -760,13 +748,6 @@ class Runtime {
   // The new layout shares the in-object and overflow attributes with the
   // parent and contains no outgoing edges.
   RawObject layoutCreateChild(Thread* thread, const Layout& parent);
-
-  // Generic version of dictUpdate, used by both dictUpdate and dictMerge
-  // if merge is true, checks that keys are strings and are not repeated.
-  // in the merge case, if either of the checks fail, returns by throwing a
-  // python TypeError exception.
-  template <DictUpdateType type>
-  RawObject dictUpdate(Thread* thread, const Dict& dict, const Object& mapping);
 
   RawObject strSubstr(const Str& str, word start, word length);
 

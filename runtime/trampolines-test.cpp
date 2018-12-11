@@ -862,4 +862,15 @@ result = foo(1)
   EXPECT_EQ(Int::cast(result)->asWord(), 10);
 }
 
+TEST(TrampolineTest, ExplodeCallWithBadKeywordFails) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+def take_kwargs(a): pass
+
+kwargs = {12: 34}
+take_kwargs(**kwargs)
+)"),
+               "keywords must be strings");
+}
+
 }  // namespace python

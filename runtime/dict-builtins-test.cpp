@@ -194,19 +194,19 @@ TEST(DictBuiltinsTest, DunderItemsReturnsDictItems) {
   ASSERT_TRUE(items->isDictItems());
 }
 
-TEST(DictBuiltinsTest, DunderKeysReturnsDictKeys) {
+TEST(DictBuiltinsTest, KeysReturnsDictKeys) {
   Runtime runtime;
   HandleScope scope;
   Dict dict(&scope, runtime.newDict());
-  Object keys(&scope, runBuiltin(DictBuiltins::dunderKeys, dict));
+  Object keys(&scope, runBuiltin(DictBuiltins::keys, dict));
   ASSERT_TRUE(keys->isDictKeys());
 }
 
-TEST(DictBuiltinsTest, DunderValuesReturnsDictValues) {
+TEST(DictBuiltinsTest, ValuesReturnsDictValues) {
   Runtime runtime;
   HandleScope scope;
   Dict dict(&scope, runtime.newDict());
-  Object values(&scope, runBuiltin(DictBuiltins::dunderValues, dict));
+  Object values(&scope, runBuiltin(DictBuiltins::values, dict));
   ASSERT_TRUE(values->isDictValues());
 }
 
@@ -217,6 +217,58 @@ TEST(DictBuiltinsTest, DunderEqWithNonDict) {
   Object not_a_dict(&scope, SmallInt::fromWord(5));
   EXPECT_EQ(runBuiltin(DictBuiltins::dunderEq, dict, not_a_dict),
             runtime.notImplemented());
+}
+
+TEST(DictBuiltinsTest, UpdateWithNoArgumentsThrowsTypeError) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  EXPECT_TRUE(runBuiltin(DictBuiltins::update).isError());
+  EXPECT_EQ(thread->exceptionType(), runtime.typeAt(LayoutId::kTypeError));
+}
+
+TEST(DictBuiltinsTest, UpdateWithNonDictThrowsTypeError) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  List list(&scope, runtime.newList());
+  EXPECT_TRUE(runBuiltin(DictBuiltins::update, list).isError());
+  EXPECT_EQ(thread->exceptionType(), runtime.typeAt(LayoutId::kTypeError));
+}
+
+TEST(DictBuiltinsDeathTest, UpdateWithNonMappingTypeThrowsTypeError) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Dict dict(&scope, runtime.newDict());
+  Int i(&scope, runtime.newInt(1));
+  EXPECT_TRUE(runBuiltin(DictBuiltins::update, dict, i).isError());
+  EXPECT_EQ(thread->exceptionType(), runtime.typeAt(LayoutId::kTypeError));
+}
+
+TEST(DictBuiltinsTest, UpdateWithDictReturnsUpdatedDict) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+d1 = {"a": 1, "b": 2}
+d2 = {"c": 3, "d": 4}
+d3 = {"a": 123}
+)");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Dict d1(&scope, moduleAt(&runtime, "__main__", "d1"));
+  Dict d2(&scope, moduleAt(&runtime, "__main__", "d2"));
+  ASSERT_EQ(d1->numItems(), 2);
+  ASSERT_EQ(d2->numItems(), 2);
+  ASSERT_TRUE(runBuiltin(DictBuiltins::update, d1, d2).isNoneType());
+  EXPECT_EQ(d1->numItems(), 4);
+  EXPECT_EQ(d2->numItems(), 2);
+
+  Dict d3(&scope, moduleAt(&runtime, "__main__", "d3"));
+  ASSERT_TRUE(runBuiltin(DictBuiltins::update, d1, d3).isNoneType());
+  EXPECT_EQ(d1->numItems(), 4);
+  Str a(&scope, runtime.newStrFromCStr("a"));
+  Object a_val(&scope, runtime.dictAt(d1, a));
+  ASSERT_TRUE(a_val->isInt());
+  EXPECT_EQ(RawInt::cast(*a_val).asWord(), 123);
 }
 
 TEST(DictItemsBuiltinsTest, DunderIterReturnsIter) {

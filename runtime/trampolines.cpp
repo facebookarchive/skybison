@@ -392,7 +392,11 @@ static RawObject processKeywordArguments(Thread* thread, Frame* caller,
 }
 
 // Converts explode arguments into positional arguments.
-static word processExplodeArguments(Thread* thread, Frame* caller, word arg) {
+//
+// Returns the new number of positional arguments as a SmallInt, or Error if an
+// exception was raised (most likely due to a non-string keyword name).
+static RawObject processExplodeArguments(Thread* thread, Frame* caller,
+                                         word arg) {
   HandleScope scope(thread);
   Object kw_dict(&scope, NoneType::object());
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
@@ -410,12 +414,15 @@ static word processExplodeArguments(Thread* thread, Frame* caller, word arg) {
     Tuple keys(&scope, runtime->dictKeys(dict));
     for (word i = 0; i < keys->length(); i++) {
       Object key(&scope, keys->at(i));
+      if (!thread->runtime()->isInstanceOfStr(*key)) {
+        return thread->raiseTypeErrorWithCStr("keywords must be strings");
+      }
       caller->pushValue(runtime->dictAt(dict, key));
     }
     argc += keys->length();
     caller->pushValue(*keys);
   }
-  return argc;
+  return SmallInt::fromWord(argc);
 }
 
 // Takes the outgoing arguments of a positional argument call and rearranges
@@ -434,12 +441,15 @@ RawObject preparePositionalCall(Thread* thread, const Function& function,
   return NoneType::object();
 }
 
-// Takes the outgoing arguments of a explode argument call and rearranges them
+// Takes the outgoing arguments of an explode argument call and rearranges them
 // into the form expected by the callee and opens a new frame for the callee to
 // execute in.
 RawObject prepareExplodeCall(Thread* thread, const Function& function,
                              const Code& code, Frame* caller, word arg) {
-  word new_argc = processExplodeArguments(thread, caller, arg);
+  RawObject arg_obj = processExplodeArguments(thread, caller, arg);
+  if (arg_obj.isError()) return arg_obj;
+  word new_argc = RawSmallInt::cast(arg_obj).value();
+
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
     RawObject result = processKeywordArguments(thread, caller, new_argc);
     if (result->isError()) {

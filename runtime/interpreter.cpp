@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "dict-builtins.h"
 #include "frame.h"
 #include "objects.h"
 #include "runtime.h"
@@ -1870,8 +1871,13 @@ void Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (runtime->dictUpdate(thread, dict, obj)->isError()) {
-      frame->dropValues(arg);
+    if (dictUpdate(thread, dict, obj).isError()) {
+      if (thread->exceptionType() ==
+          runtime->typeAt(LayoutId::kAttributeError)) {
+        // TODO(bsimmers): Include type name once we have a better formatter.
+        thread->clearPendingException();
+        thread->raiseTypeErrorWithCStr("object is not a mapping");
+      }
       thread->abortOnPendingException();
     }
   }
@@ -1889,8 +1895,24 @@ void Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (runtime->dictMerge(thread, dict, obj)->isError()) {
-      frame->dropValues(arg);
+    if (dictMergeHard(thread, dict, obj).isError()) {
+      if (thread->exceptionType() ==
+          runtime->typeAt(LayoutId::kAttributeError)) {
+        thread->clearPendingException();
+        thread->raiseTypeErrorWithCStr("object is not a mapping");
+      } else if (thread->exceptionType() ==
+                 runtime->typeAt(LayoutId::kKeyError)) {
+        Object value(&scope, thread->exceptionValue());
+        thread->clearPendingException();
+        // TODO(bsimmers): Make these error messages more informative once
+        // we have a better formatter.
+        if (runtime->isInstanceOfStr(*value)) {
+          thread->raiseTypeErrorWithCStr(
+              "got multiple values for keyword argument");
+        } else {
+          thread->raiseTypeErrorWithCStr("keywords must be strings");
+        }
+      }
       thread->abortOnPendingException();
     }
   }

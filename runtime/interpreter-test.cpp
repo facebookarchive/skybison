@@ -1333,7 +1333,7 @@ class Foo:
 
 d = {**Foo(), 'd': 4}
   )"),
-               R"(o.keys\(\) are not iterable)");
+               R"(keys\(\) is not iterable)");
 }
 
 TEST(InterpreterDeathTest, BuildMapUnpackWithBadIteratorKeys) {
@@ -1355,7 +1355,7 @@ class Foo:
 
 d = {**Foo(), 'd': 4}
   )"),
-               R"(o.keys\(\) are not iterable)");
+               R"(keys\(\) is not iterable)");
 }
 
 TEST(InterpreterDeathTest, UnpackSequenceExWithTooFewObjectsBefore) {
@@ -1953,7 +1953,7 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               R"(o.keys\(\) are not iterable)");
+               R"(keys\(\) is not iterable)");
 }
 
 TEST(InterpreterDeathTest, BuildMapUnpackWithCallIterableWithoutNext) {
@@ -1975,7 +1975,7 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               R"(o.keys\(\) are not iterable)");
+               R"(keys\(\) is not iterable)");
 }
 
 TEST(InterpreterDeathTest, BuildMapUnpackWithCallIterableNonStrKey) {

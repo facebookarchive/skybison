@@ -9,6 +9,149 @@
 #include "trampolines-inl.h"
 
 namespace python {
+
+namespace {
+enum class Override {
+  kIgnore,
+  kOverride,
+  kError,
+};
+
+RawObject dictMergeDict(Thread* thread, const Dict& dict, const Object& mapping,
+                        Override do_override) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  if (*mapping == *dict) return NoneType::object();
+
+  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  Dict other(&scope, *mapping);
+  Tuple other_data(&scope, other->data());
+  for (word i = 0; i < other_data->length(); i += Dict::Bucket::kNumPointers) {
+    if (Dict::Bucket::isFilled(*other_data, i)) {
+      key = Dict::Bucket::key(*other_data, i);
+      value = Dict::Bucket::value(*other_data, i);
+      if (do_override == Override::kOverride ||
+          !runtime->dictIncludes(dict, key)) {
+        runtime->dictAtPut(dict, key, value);
+      } else if (do_override == Override::kError) {
+        return thread->raiseKeyError(*key);
+      }
+    }
+  }
+  return NoneType::object();
+}
+
+RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
+                        Override do_override) {
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfDict(*mapping)) {
+    return dictMergeDict(thread, dict, mapping, do_override);
+  }
+
+  HandleScope scope;
+  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  Frame* frame = thread->currentFrame();
+  Object keys_method(&scope, Interpreter::lookupMethod(thread, frame, mapping,
+                                                       SymbolId::kKeys));
+  if (keys_method->isError()) {
+    return thread->raiseAttributeErrorWithCStr(
+        "object has no 'keys' attribute");
+  }
+
+  // Generic mapping, use keys() and __getitem__()
+  Object subscr_method(&scope,
+                       Interpreter::lookupMethod(thread, frame, mapping,
+                                                 SymbolId::kDunderGetItem));
+  if (subscr_method->isError()) {
+    return thread->raiseTypeErrorWithCStr("object is not subscriptable");
+  }
+  Object keys(&scope,
+              Interpreter::callMethod1(thread, frame, keys_method, mapping));
+  if (keys->isError()) return *keys;
+
+  if (keys->isList()) {
+    List keys_list(&scope, *keys);
+    for (word i = 0; i < keys_list->numItems(); ++i) {
+      key = keys_list->at(i);
+      if (do_override == Override::kOverride ||
+          !runtime->dictIncludes(dict, key)) {
+        value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
+                                         key);
+        if (value->isError()) return *value;
+        runtime->dictAtPut(dict, key, value);
+      } else if (do_override == Override::kError) {
+        return thread->raiseKeyError(*key);
+      }
+    }
+    return NoneType::object();
+  }
+
+  if (keys->isTuple()) {
+    Tuple keys_tuple(&scope, *keys);
+    for (word i = 0; i < keys_tuple->length(); ++i) {
+      key = keys_tuple->at(i);
+      if (do_override == Override::kOverride ||
+          !runtime->dictIncludes(dict, key)) {
+        value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
+                                         key);
+        if (value->isError()) return *value;
+        runtime->dictAtPut(dict, key, value);
+      } else if (do_override == Override::kError) {
+        return thread->raiseKeyError(*key);
+      }
+    }
+    return NoneType::object();
+  }
+
+  // keys is probably an iterator
+  Object iter_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), keys,
+                                        SymbolId::kDunderIter));
+  if (iter_method->isError()) {
+    return thread->raiseTypeErrorWithCStr("keys() is not iterable");
+  }
+
+  Object iterator(&scope,
+                  Interpreter::callMethod1(thread, thread->currentFrame(),
+                                           iter_method, keys));
+  if (iterator->isError()) {
+    return thread->raiseTypeErrorWithCStr("keys() is not iterable");
+  }
+  Object next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterator, SymbolId::kDunderNext));
+  if (next_method->isError()) {
+    return thread->raiseTypeErrorWithCStr("keys() is not iterable");
+  }
+  while (!runtime->isIteratorExhausted(thread, iterator)) {
+    key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
+                                   iterator);
+    if (key->isError()) return *key;
+    if (do_override == Override::kOverride ||
+        !runtime->dictIncludes(dict, key)) {
+      value =
+          Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
+      if (value->isError()) return *value;
+      runtime->dictAtPut(dict, key, value);
+    } else if (do_override == Override::kError) {
+      return thread->raiseKeyError(*key);
+    }
+  }
+  return NoneType::object();
+}
+}  // namespace
+
+RawObject dictUpdate(Thread* thread, const Dict& dict, const Object& mapping) {
+  return dictMergeImpl(thread, dict, mapping, Override::kOverride);
+}
+
+RawObject dictMergeHard(Thread* thread, const Dict& dict,
+                        const Object& mapping) {
+  return dictMergeImpl(thread, dict, mapping, Override::kError);
+}
+
 const BuiltinAttribute DictBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, RawDict::kNumItemsOffset},
     {SymbolId::kInvalid, RawDict::kDataOffset},
@@ -19,13 +162,14 @@ const BuiltinMethod DictBuiltins::kMethods[] = {
     {SymbolId::kDunderDelItem, nativeTrampoline<dunderDelItem>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
-    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderItems, nativeTrampoline<dunderItems>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderKeys, nativeTrampoline<dunderKeys>},
+    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
-    {SymbolId::kDunderValues, nativeTrampoline<dunderValues>},
+    {SymbolId::kKeys, nativeTrampoline<keys>},
+    {SymbolId::kUpdate, nativeTrampoline<update>},
+    {SymbolId::kValues, nativeTrampoline<values>},
 };
 
 void DictBuiltins::initialize(Runtime* runtime) {
@@ -224,9 +368,9 @@ RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDictKeyIterator(dict);
 }
 
-RawObject DictBuiltins::dunderKeys(Thread* thread, Frame* frame, word nargs) {
+RawObject DictBuiltins::keys(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__keys__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("keys() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -234,7 +378,7 @@ RawObject DictBuiltins::dunderKeys(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self)) {
     return thread->raiseTypeErrorWithCStr(
-        "__keys__() must be called with a dict instance as the first "
+        "keys() must be called with a dict instance as the first "
         "argument");
   }
 
@@ -242,9 +386,9 @@ RawObject DictBuiltins::dunderKeys(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDictKeys(dict);
 }
 
-RawObject DictBuiltins::dunderValues(Thread* thread, Frame* frame, word nargs) {
+RawObject DictBuiltins::values(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__values__() takes no arguments");
+    return thread->raiseTypeErrorWithCStr("values() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -252,7 +396,7 @@ RawObject DictBuiltins::dunderValues(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self)) {
     return thread->raiseTypeErrorWithCStr(
-        "__values__() must be called with a dict instance as the first "
+        "values() must be called with a dict instance as the first "
         "argument");
   }
 
@@ -278,6 +422,33 @@ RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   result->setNumItems(0);
   result->setData(thread->runtime()->newTuple(0));
   return *result;
+}
+
+RawObject DictBuiltins::update(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1) {
+    return thread->raiseTypeErrorWithCStr("dict.update: not enough arguments");
+  }
+  if (nargs > 2) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "update expected at most 1 arguments, got %ld", nargs));
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(self)) {
+    return thread->raiseTypeErrorWithCStr("'update' requires a 'dict' object");
+  }
+  Dict dict(&scope, *self);
+  Object other(&scope, args.get(1));
+  Type other_type(&scope, runtime->typeOf(*other));
+  if (!runtime->lookupSymbolInMro(thread, other_type, SymbolId::kKeys)
+           .isError()) {
+    return dictUpdate(thread, dict, other);
+  }
+
+  // TODO(bsimmers): Support iterables of pairs, like PyDict_MergeFromSeq2().
+  return thread->raiseTypeErrorWithCStr("object is not a mapping");
 }
 
 // TODO(T35787656): Instead of re-writing everything for every class, make a

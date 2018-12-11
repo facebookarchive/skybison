@@ -8,6 +8,19 @@
 
 namespace python {
 
+// Update a dict from another dict or an iterator, overwriting existing keys if
+// duplicates exist.
+//
+// Returns None on success, or an Error object if an exception was raised.
+RawObject dictUpdate(Thread* thread, const Dict& dict, const Object& mapping);
+
+// Merges a dict with another dict or a mapping, raising an exception on
+// duplicate keys.
+//
+// Returns None on success, or an Error object if an exception was raised.
+RawObject dictMergeHard(Thread* thread, const Dict& dict,
+                        const Object& mapping);
+
 class DictBuiltins {
  public:
   static void initialize(Runtime* runtime);
@@ -19,10 +32,12 @@ class DictBuiltins {
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderItems(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderKeys(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSetItem(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderValues(Thread* thread, Frame* frame, word nargs);
+
+  static RawObject keys(Thread* thread, Frame* frame, word nargs);
+  static RawObject update(Thread* thread, Frame* frame, word nargs);
+  static RawObject values(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinAttribute kAttributes[];

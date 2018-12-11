@@ -156,6 +156,8 @@ RawObject setFromRange(word start, word stop);
 RawObject runBuiltinImpl(BuiltinMethodType method,
                          View<std::reference_wrapper<const Object>> args);
 
+RawObject runBuiltin(BuiltinMethodType method);
+
 template <typename... Args>
 RawObject runBuiltin(BuiltinMethodType method, const Args&... args) {
   using ref = std::reference_wrapper<const Object>;

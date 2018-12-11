@@ -286,8 +286,10 @@ class Runtime;
   V(UnicodeError, "UnicodeError")                                              \
   V(UnicodeTranslateError, "UnicodeTranslateError")                            \
   V(UnicodeWarning, "UnicodeWarning")                                          \
+  V(Update, "update")                                                          \
   V(UserWarning, "UserWarning")                                                \
   V(Value, "value")                                                            \
+  V(Values, "values")                                                          \
   V(ValueCell, "valuecell")                                                    \
   V(ValueError, "ValueError")                                                  \
   V(Warning, "Warning")                                                        \
