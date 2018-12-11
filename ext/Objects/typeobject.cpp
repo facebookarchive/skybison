@@ -113,7 +113,7 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
 }
 
 PY_EXPORT int PyType_Ready(PyTypeObject*) {
-  UNIMPLEMENTED("This funciton will never be implemented");
+  UNIMPLEMENTED("This function will never be implemented");
 }
 
 PY_EXPORT PyObject* PyType_FromSpec(PyType_Spec* spec) {
