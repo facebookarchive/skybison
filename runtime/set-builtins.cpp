@@ -39,6 +39,7 @@ void SetBuiltins::initialize(Runtime* runtime) {
   Type set(&scope,
            runtime->addBuiltinType(SymbolId::kSet, LayoutId::kSet,
                                    LayoutId::kObject, kAttributes, kMethods));
+  set->sealAttributes();
 }
 
 // TODO(T36810889): implement high-level setAdd function with error handling

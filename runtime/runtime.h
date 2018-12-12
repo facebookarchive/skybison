@@ -767,7 +767,7 @@ class Runtime {
 
   Heap heap_;
 
-  // An Tuple of Layout objects, indexed by layout id.
+  // A List of Layout objects, indexed by layout id.
   RawObject layouts_;
 
   // Cached instances

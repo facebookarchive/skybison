@@ -1212,7 +1212,7 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "MyEmptyClass"));
   Layout layout(&scope, type->instanceLayout());
-  EXPECT_EQ(layout->instanceSize(), 1);
+  EXPECT_EQ(layout->instanceSize(), 1 * kPointerSize);
 
   Type cls(&scope, layout->describedType());
   EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyEmptyClass");
@@ -1238,7 +1238,7 @@ class MyTypeWithAttributes():
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "MyTypeWithAttributes"));
   Layout layout(&scope, type->instanceLayout());
-  ASSERT_EQ(layout->instanceSize(), 4);
+  ASSERT_EQ(layout->instanceSize(), 4 * kPointerSize);
 
   Type cls(&scope, layout->describedType());
   EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithAttributes");
@@ -1620,7 +1620,7 @@ c = MyTypeWithNoInitMethod()
   ASSERT_TRUE(instance->isInstance());
   LayoutId layout_id = instance->layoutId();
   Layout layout(&scope, runtime.layoutAt(layout_id));
-  EXPECT_EQ(layout->instanceSize(), 1);
+  EXPECT_EQ(layout->instanceSize(), 1 * kPointerSize);
 
   Type cls(&scope, layout->describedType());
   EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithNoInitMethod");
@@ -1646,7 +1646,7 @@ c = MyTypeWithEmptyInitMethod()
   ASSERT_TRUE(instance->isInstance());
   LayoutId layout_id = instance->layoutId();
   Layout layout(&scope, runtime.layoutAt(layout_id));
-  EXPECT_EQ(layout->instanceSize(), 1);
+  EXPECT_EQ(layout->instanceSize(), 1 * kPointerSize);
 
   Type cls(&scope, layout->describedType());
   EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithEmptyInitMethod");
@@ -1676,7 +1676,7 @@ c = MyTypeWithAttributes(1)
   // the layout id from the type.
   ASSERT_GT(layout_id, RawLayout::cast(type->instanceLayout())->id());
   Layout layout(&scope, runtime.layoutAt(layout_id));
-  ASSERT_EQ(layout->instanceSize(), 2);
+  ASSERT_EQ(layout->instanceSize(), 2 * kPointerSize);
 
   Type cls(&scope, layout->describedType());
   EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithAttributes");
@@ -3834,6 +3834,67 @@ TEST(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   Int cell2arg_value(&scope, cell2arg->at(0));
   EXPECT_EQ(cell2arg_value->asWord(), 2);
   EXPECT_EQ(cell2arg->at(1), NoneType::object());
+}
+
+// Set is not special except that it is a builtin type with sealed attributes.
+TEST(RuntimeTest, SetHasSameSizeCreatedTwoDifferentWays) {
+  Runtime runtime;
+  HandleScope scope;
+  Layout layout(&scope, runtime.layoutAt(LayoutId::kSet));
+  Set set1(&scope, runtime.newInstance(layout));
+  Set set2(&scope, runtime.newSet());
+  EXPECT_EQ(set1->size(), set2->size());
+}
+
+// Set is not special except that it is a builtin type with sealed attributes.
+TEST(RuntimeTest, SealedClassLayoutDoesNotHaveSpaceForOverflowAttributes) {
+  Runtime runtime;
+  HandleScope scope;
+  Layout layout(&scope, runtime.layoutAt(LayoutId::kSet));
+  EXPECT_TRUE(layout->overflowAttributes().isNoneType());
+  word expected_set_size = kPointerSize * layout->numInObjectAttributes();
+  EXPECT_EQ(layout->instanceSize(), expected_set_size);
+}
+
+TEST(RuntimeTest, SettingNewAttributeOnSealedClassThrows) {
+  Runtime runtime;
+  HandleScope scope;
+  Set set(&scope, runtime.newSet());
+  Str attr(&scope, runtime.newStrFromCStr("attr"));
+  Str value(&scope, runtime.newStrFromCStr("value"));
+  Thread* thread = Thread::currentThread();
+  Object result(&scope, runtime.instanceAtPut(thread, set, attr, value));
+  ASSERT_TRUE(result->isError());
+  EXPECT_EQ(thread->exceptionType(), runtime.typeAt(LayoutId::kAttributeError));
+  EXPECT_TRUE(thread->exceptionValue().isStr());
+}
+
+// Exception attributes can be set on the fly.
+TEST(RuntimeTest, NonSealedClassHasSpaceForOverflowAttrbutes) {
+  Runtime runtime;
+  HandleScope scope;
+  Layout layout(&scope, runtime.layoutAt(LayoutId::kMemoryError));
+  EXPECT_TRUE(layout->overflowAttributes().isTuple());
+  EXPECT_EQ(
+      layout->instanceSize(),
+      (layout->numInObjectAttributes() + 1) * kPointerSize);  // 1=overflow
+}
+
+// User-defined class attributes can be set on the fly.
+TEST(RuntimeTest, UserCanSetOverflowAttributeOnUserDefinedClass) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+class C(): pass
+a = C()
+)");
+  HandleScope scope;
+  HeapObject a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Str attr(&scope, runtime.newStrFromCStr("attr"));
+  Str value(&scope, runtime.newStrFromCStr("value"));
+  Object result(&scope,
+                runtime.instanceAtPut(Thread::currentThread(), a, attr, value));
+  ASSERT_FALSE(result->isError());
+  EXPECT_EQ(runtime.instanceAt(Thread::currentThread(), a, attr), *value);
 }
 
 }  // namespace python

@@ -713,8 +713,9 @@ RawObject Runtime::newHeapFrame(const Code& code) {
 }
 
 RawObject Runtime::newInstance(const Layout& layout) {
-  word num_words = layout->instanceSize();
-  RawObject object = heap()->createInstance(layout->id(), num_words);
+  // This takes into account the potential overflow pointer.
+  word num_attrs = layout->instanceSize() / kPointerSize;
+  RawObject object = heap()->createInstance(layout->id(), num_attrs);
   RawHeapObject instance = RawHeapObject::cast(object);
   // Set the overflow array
   instance->instanceVariableAtPut(layout->overflowOffset(),
@@ -1086,7 +1087,6 @@ void Runtime::initializeHeapTypes() {
   initializeExceptionTypes();
 
   // Concrete classes.
-
   addEmptyBuiltinType(SymbolId::kBytes, LayoutId::kBytes, LayoutId::kObject);
   initializeClassMethodType();
   addEmptyBuiltinType(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
@@ -3469,6 +3469,10 @@ RawObject Runtime::instanceAtPut(Thread* thread, const HeapObject& instance,
   Layout layout(&scope, layoutAt(instance->layoutId()));
   AttributeInfo info;
   if (!layoutFindAttribute(thread, layout, name, &info)) {
+    if (layout->overflowAttributes().isNoneType()) {
+      return thread->raiseAttributeErrorWithCStr(
+          "Cannot set attribute on sealed class");
+    }
     // Transition the layout
     layout = layoutAddAttribute(thread, layout, name, 0);
     has_new_layout_id = true;
@@ -3560,6 +3564,9 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
   }
 
   // Check overflow attributes
+  if (layout->overflowAttributes().isNoneType()) {
+    return false;
+  }
   Tuple overflow(&scope, layout->overflowAttributes());
   for (word i = 0; i < overflow->length(); i++) {
     Tuple entry(&scope, overflow->at(i));
@@ -3588,7 +3595,6 @@ RawObject Runtime::layoutCreateChild(Thread* thread, const Layout& layout) {
   new_layout->setNumInObjectAttributes(layout->numInObjectAttributes());
   new_layout->setInObjectAttributes(layout->inObjectAttributes());
   new_layout->setOverflowAttributes(layout->overflowAttributes());
-  new_layout->setInstanceSize(layout->instanceSize());
   layoutAtPut(new_layout->id(), *new_layout);
   return *new_layout;
 }

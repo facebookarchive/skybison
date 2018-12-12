@@ -802,6 +802,10 @@ class RawType : public RawHeapObject {
 
   bool isBaseExceptionSubclass();
 
+  // Seal the attributes of the type. Sets the layout's overflowAttributes to
+  // RawNoneType::object().
+  void sealAttributes();
+
   // Layout.
   static const int kMroOffset = RawHeapObject::kSize;
   static const int kInstanceLayoutOffset = kMroOffset + kPointerSize;
@@ -1945,13 +1949,17 @@ class RawLayout : public RawHeapObject {
   RawObject deletions();
   void setDeletions(RawObject deletions);
 
-  // Returns the number of words in an instance described by this layout,
-  // including the overflow array.
+  // Returns the number of bytes in an instance described by this layout,
+  // including the overflow array. Computed from the number of in-object
+  // attributes and possible overflow slot.
   word instanceSize();
-  void setInstanceSize(word size);
 
   // Return the offset, in bytes, of the overflow slot
   word overflowOffset();
+
+  // Seal the attributes of the layout. Sets overflowAttributes to
+  // RawNoneType::object().
+  void sealAttributes();
 
   // Layout.
   static const int kDescribedTypeOffset = RawHeapObject::kSize;
@@ -1961,16 +1969,11 @@ class RawLayout : public RawHeapObject {
       kInObjectAttributesOffset + kPointerSize;
   static const int kAdditionsOffset = kOverflowAttributesOffset + kPointerSize;
   static const int kDeletionsOffset = kAdditionsOffset + kPointerSize;
-  static const int kInstanceSizeOffset = kDeletionsOffset + kPointerSize;
-  static const int kOverflowOffsetOffset = kInstanceSizeOffset + kPointerSize;
   static const int kNumInObjectAttributesOffset =
-      kOverflowOffsetOffset + kPointerSize;
+      kDeletionsOffset + kPointerSize;
   static const int kSize = kNumInObjectAttributesOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Layout);
-
- private:
-  void setOverflowOffset(word offset);
 };
 
 class RawSuper : public RawHeapObject {
@@ -2899,6 +2902,21 @@ inline bool RawType::isBaseExceptionSubclass() {
   return base >= LayoutId::kFirstException && base <= LayoutId::kLastException;
 }
 
+inline void RawType::sealAttributes() {
+  RawLayout layout = RawLayout::cast(instanceLayout());
+  DCHECK(layout.additions().isList(), "Additions must be list");
+  DCHECK(RawList::cast(layout.additions()).numItems() == 0,
+         "Cannot seal a layout with outgoing edges");
+  DCHECK(layout.deletions().isList(), "Deletions must be list");
+  DCHECK(RawList::cast(layout.deletions()).numItems() == 0,
+         "Cannot seal a layout with outgoing edges");
+  DCHECK(layout.overflowAttributes().isTuple(),
+         "OverflowAttributes must be tuple");
+  DCHECK(RawTuple::cast(layout.overflowAttributes()).length() == 0,
+         "Cannot seal a layout with outgoing edges");
+  layout.sealAttributes();
+}
+
 // RawArray
 
 inline word RawArray::length() {
@@ -3740,11 +3758,9 @@ inline void RawLayout::setOverflowAttributes(RawObject attributes) {
 }
 
 inline word RawLayout::instanceSize() {
-  return RawSmallInt::cast(instanceVariableAt(kInstanceSizeOffset))->value();
-}
-
-inline void RawLayout::setInstanceSize(word size) {
-  instanceVariableAtPut(kInstanceSizeOffset, RawSmallInt::fromWord(size));
+  word instance_size_in_words =
+      numInObjectAttributes() + !overflowAttributes().isNoneType();
+  return instance_size_in_words * kPointerSize;
 }
 
 inline RawObject RawLayout::overflowAttributes() {
@@ -3768,11 +3784,7 @@ inline RawObject RawLayout::deletions() {
 }
 
 inline word RawLayout::overflowOffset() {
-  return RawSmallInt::cast(instanceVariableAt(kOverflowOffsetOffset))->value();
-}
-
-inline void RawLayout::setOverflowOffset(word offset) {
-  instanceVariableAtPut(kOverflowOffsetOffset, RawSmallInt::fromWord(offset));
+  return numInObjectAttributes() * kPointerSize;
 }
 
 inline word RawLayout::numInObjectAttributes() {
@@ -3783,8 +3795,10 @@ inline word RawLayout::numInObjectAttributes() {
 inline void RawLayout::setNumInObjectAttributes(word count) {
   instanceVariableAtPut(kNumInObjectAttributesOffset,
                         RawSmallInt::fromWord(count));
-  setOverflowOffset(count * kPointerSize);
-  setInstanceSize(numInObjectAttributes() + 1);
+}
+
+inline void RawLayout::sealAttributes() {
+  setOverflowAttributes(RawNoneType::object());
 }
 
 // RawSetIterator
