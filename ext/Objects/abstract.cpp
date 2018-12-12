@@ -516,8 +516,14 @@ PY_EXPORT Py_ssize_t PyObject_Size(PyObject* pyobj) {
   return objectLength(pyobj);
 }
 
-PY_EXPORT PyObject* PyObject_Type(PyObject* /* o */) {
-  UNIMPLEMENTED("PyObject_Type");
+PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->typeOf(obj));
+  return ApiHandle::newReference(thread, type);
 }
 
 PY_EXPORT int PySequence_Check(PyObject* py_obj) {

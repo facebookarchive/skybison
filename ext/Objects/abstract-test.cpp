@@ -333,6 +333,12 @@ TEST_F(AbstractExtensionApiTest, PyObjectLengthWithNonEmptyStringReturnsValue) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectTypeReturnsType) {
+  PyObjectPtr num(PyLong_FromLong(4));
+  PyObjectPtr type(PyObject_Type(num));
+  EXPECT_TRUE(PyType_Check(type));
+}
+
 TEST_F(AbstractExtensionApiTest, PySequenceCheckWithoutGetItemReturnsFalse) {
   PyRun_SimpleString(R"(
 class ClassWithoutDunderGetItem: pass
