@@ -256,6 +256,42 @@ TEST(SetBuiltinsTest, SetIntersectionWithIterableReturnsIntersection) {
   EXPECT_TRUE(runtime.setIncludes(set, key));
 }
 
+TEST(SetBuiltinsTest, SetIntersectionWithFrozenSetReturnsSet) {
+  Runtime runtime;
+  HandleScope scope;
+  Set set(&scope, runtime.newSet());
+  FrozenSet frozen_set(&scope, runtime.newFrozenSet());
+  Object result(&scope, runBuiltin(SetBuiltins::intersection, set, frozen_set));
+  ASSERT_TRUE(result->isSet());
+}
+
+TEST(SetBuiltinsTest, FrozenSetIntersectionWithSetReturnsFrozenSet) {
+  Runtime runtime;
+  HandleScope scope;
+  FrozenSet frozen_set(&scope, runtime.newFrozenSet());
+  Set set(&scope, runtime.newSet());
+  Object result(&scope, runBuiltin(SetBuiltins::intersection, frozen_set, set));
+  ASSERT_TRUE(result->isFrozenSet());
+}
+
+TEST(SetBuiltinsTest, SetAndWithFrozenSetReturnsSet) {
+  Runtime runtime;
+  HandleScope scope;
+  Set set(&scope, runtime.newSet());
+  FrozenSet frozen_set(&scope, runtime.newFrozenSet());
+  Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, set, frozen_set));
+  ASSERT_TRUE(result->isSet());
+}
+
+TEST(SetBuiltinsTest, FrozenSetAndWithSetReturnsFrozenSet) {
+  Runtime runtime;
+  HandleScope scope;
+  FrozenSet frozen_set(&scope, runtime.newFrozenSet());
+  Set set(&scope, runtime.newSet());
+  Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, frozen_set, set));
+  ASSERT_TRUE(result->isFrozenSet());
+}
+
 TEST(SetIteratorBuiltinsTest, CallDunderNext) {
   Runtime runtime;
   HandleScope scope;
@@ -827,7 +863,7 @@ TEST(SetBuiltinsDeathTest, DunderEqWithTooFewArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__eq__()
 )"),
-               "descriptor '__eq__' of 'set' object needs an argument");
+               "__eq__\\(\\) of 'set' object needs an argument");
 }
 
 TEST(SetBuiltinsDeathTest, DunderNeWithTooFewArgsThrowsTypeError) {
@@ -835,7 +871,7 @@ TEST(SetBuiltinsDeathTest, DunderNeWithTooFewArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__ne__()
 )"),
-               "descriptor '__ne__' of 'set' object needs an argument");
+               "__ne__\\(\\) of 'set' object needs an argument");
 }
 
 TEST(SetBuiltinsDeathTest, DunderGeWithTooFewArgsThrowsTypeError) {
@@ -843,7 +879,7 @@ TEST(SetBuiltinsDeathTest, DunderGeWithTooFewArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__ge__()
 )"),
-               "descriptor '__ge__' of 'set' object needs an argument");
+               "__ge__\\(\\) of 'set' object needs an argument");
 }
 
 TEST(SetBuiltinsDeathTest, DunderGtWithTooFewArgsThrowsTypeError) {
@@ -851,7 +887,7 @@ TEST(SetBuiltinsDeathTest, DunderGtWithTooFewArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__gt__()
 )"),
-               "descriptor '__gt__' of 'set' object needs an argument");
+               "__gt__\\(\\) of 'set' object needs an argument");
 }
 
 TEST(SetBuiltinsDeathTest, DunderLeWithTooFewArgsThrowsTypeError) {
@@ -859,7 +895,7 @@ TEST(SetBuiltinsDeathTest, DunderLeWithTooFewArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__le__()
 )"),
-               "descriptor '__le__' of 'set' object needs an argument");
+               "__le__\\(\\) of 'set' object needs an argument");
 }
 
 TEST(SetBuiltinsDeathTest, DunderLtWithTooFewArgsThrowsTypeError) {
@@ -867,7 +903,7 @@ TEST(SetBuiltinsDeathTest, DunderLtWithTooFewArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__lt__()
 )"),
-               "descriptor '__lt__' of 'set' object needs an argument");
+               "__lt__\\(\\) of 'set' object needs an argument");
 }
 
 TEST(SetBuiltinsDeathTest, DunderEqWithNonSetFirstArgThrowsTypeError) {
@@ -875,7 +911,7 @@ TEST(SetBuiltinsDeathTest, DunderEqWithNonSetFirstArgThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__eq__(None, set())
 )"),
-               "descriptor '__eq__' requires a 'set' object");
+               "__eq__\\(\\) requires a 'set' or 'frozenset' object");
 }
 
 TEST(SetBuiltinsDeathTest, DunderNeWithNonSetFirstArgThrowsTypeError) {
@@ -883,7 +919,7 @@ TEST(SetBuiltinsDeathTest, DunderNeWithNonSetFirstArgThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__ne__(None, set())
 )"),
-               "descriptor '__ne__' requires a 'set' object");
+               "__ne__\\(\\) requires a 'set' or 'frozenset' object");
 }
 
 TEST(SetBuiltinsDeathTest, DunderGeWithNonSetFirstArgThrowsTypeError) {
@@ -891,7 +927,7 @@ TEST(SetBuiltinsDeathTest, DunderGeWithNonSetFirstArgThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__ge__(None, set())
 )"),
-               "descriptor '__ge__' requires a 'set' object");
+               "__ge__\\(\\) requires a 'set' or 'frozenset' object");
 }
 
 TEST(SetBuiltinsDeathTest, DunderGtWithNonSetFirstArgThrowsTypeError) {
@@ -899,7 +935,7 @@ TEST(SetBuiltinsDeathTest, DunderGtWithNonSetFirstArgThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__gt__(None, set())
 )"),
-               "descriptor '__gt__' requires a 'set' object");
+               "__gt__\\(\\) requires a 'set' or 'frozenset' object");
 }
 
 TEST(SetBuiltinsDeathTest, DunderLeWithNonSetFirstArgThrowsTypeError) {
@@ -907,7 +943,7 @@ TEST(SetBuiltinsDeathTest, DunderLeWithNonSetFirstArgThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__le__(None, set())
 )"),
-               "descriptor '__le__' requires a 'set' object");
+               "__le__\\(\\) requires a 'set' or 'frozenset' object");
 }
 
 TEST(SetBuiltinsDeathTest, DunderLtWithNonSetFirstArgThrowsTypeError) {
@@ -915,7 +951,7 @@ TEST(SetBuiltinsDeathTest, DunderLtWithNonSetFirstArgThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__lt__(None, set())
 )"),
-               "descriptor '__lt__' requires a 'set' object");
+               "__lt__\\(\\) requires a 'set' or 'frozenset' object");
 }
 
 TEST(SetBuiltinsDeathTest, DunderEqWithTooManyArgsThrowsTypeError) {
@@ -931,7 +967,7 @@ TEST(SetBuiltinsDeathTest, DunderNeWithTooManyArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__ne__(set(), set(), set())
 )"),
-               "expected 1 arguments, got 2");
+               "expected 1 argument, got 2");
 }
 
 TEST(SetBuiltinsDeathTest, DunderGeWithTooManyArgsThrowsTypeError) {
@@ -939,7 +975,7 @@ TEST(SetBuiltinsDeathTest, DunderGeWithTooManyArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__ge__(set(), set(), set())
 )"),
-               "expected 1 arguments, got 2");
+               "expected 1 argument, got 2");
 }
 
 TEST(SetBuiltinsDeathTest, DunderGtWithTooManyArgsThrowsTypeError) {
@@ -947,7 +983,7 @@ TEST(SetBuiltinsDeathTest, DunderGtWithTooManyArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__gt__(set(), set(), set())
 )"),
-               "expected 1 arguments, got 2");
+               "expected 1 argument, got 2");
 }
 
 TEST(SetBuiltinsDeathTest, DunderLeWithTooManyArgsThrowsTypeError) {
@@ -955,7 +991,7 @@ TEST(SetBuiltinsDeathTest, DunderLeWithTooManyArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__le__(set(), set(), set())
 )"),
-               "expected 1 arguments, got 2");
+               "expected 1 argument, got 2");
 }
 
 TEST(SetBuiltinsDeathTest, DunderLtWithTooManyArgsThrowsTypeError) {
@@ -963,7 +999,7 @@ TEST(SetBuiltinsDeathTest, DunderLtWithTooManyArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__lt__(set(), set(), set())
 )"),
-               "expected 1 arguments, got 2");
+               "expected 1 argument, got 2");
 }
 
 TEST(SetBuiltinsDeathTest, DunderInitWithNonSetFirstArgThrowsTypeError) {
@@ -971,7 +1007,7 @@ TEST(SetBuiltinsDeathTest, DunderInitWithNonSetFirstArgThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__init__([])
 )"),
-               "descriptor '__init__' requires a 'set' object");
+               "__init__\\(\\) requires a 'set' object");
 }
 
 TEST(SetBuiltinsDeathTest, DunderInitWithTooFewArgsThrowsTypeError) {
@@ -979,7 +1015,7 @@ TEST(SetBuiltinsDeathTest, DunderInitWithTooFewArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__init__()
 )"),
-               "descriptor '__init__' of 'set' object needs an argument");
+               "__init__\\(\\) of 'set' object needs an argument");
 }
 
 TEST(SetBuiltinsDeathTest, DunderInitWithTooManyArgsThrowsTypeError) {
@@ -987,7 +1023,7 @@ TEST(SetBuiltinsDeathTest, DunderInitWithTooManyArgsThrowsTypeError) {
   ASSERT_DEATH(runtime.runFromCStr(R"(
 set.__init__(set(), None, None, None)
 )"),
-               "set expected at most 1 arguments, got 3");
+               "set expected at most 1 argument, got 3");
 }
 
 TEST(SetBuiltinsDeathTest, DunderInitWithNonIterableThrowsTypeError) {
@@ -1031,6 +1067,22 @@ s = Set([0, 1, 2])
   EXPECT_TRUE(runtime.setIncludes(set, key));
   key = SmallInt::fromWord(2);
   EXPECT_TRUE(runtime.setIncludes(set, key));
+}
+
+TEST(SetBuiltinsTest, DunderLenWithSetSubclassReturnsLen) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+class Set(set): pass
+
+s = Set([0, 1, 2])
+)");
+  Object s(&scope, moduleAt(&runtime, "__main__", "s"));
+  ASSERT_TRUE(runtime.isInstanceOfSet(s));
+
+  Object result(&scope, runBuiltin(SetBuiltins::dunderLen, s));
+  ASSERT_TRUE(result.isInt());
+  EXPECT_EQ(RawSmallInt::cast(*result).value(), 3);
 }
 
 }  // namespace python

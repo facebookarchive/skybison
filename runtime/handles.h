@@ -179,9 +179,11 @@ class Handle : public T {
 #define SUBTYPE_HANDLE_TYPES(V)                                                \
   V(BaseException)                                                             \
   V(Dict)                                                                      \
+  V(FrozenSet)                                                                 \
   V(ImportError)                                                               \
   V(List)                                                                      \
   V(Set)                                                                       \
+  V(SetBase)                                                                   \
   V(StopIteration)                                                             \
   V(SystemExit)                                                                \
   V(Type)                                                                      \

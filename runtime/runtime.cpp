@@ -1103,6 +1103,7 @@ void Runtime::initializeHeapTypes() {
   FloatBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kFrame, LayoutId::kHeapFrame,
                       LayoutId::kObject);
+  FrozenSetBuiltins::initialize(this);
   FunctionBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
   ListBuiltins::initialize(this);
@@ -1807,6 +1808,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kFloat);
   moduleAddBuiltinType(module, SymbolId::kFloatingPointError,
                        LayoutId::kFloatingPointError);
+  moduleAddBuiltinType(module, SymbolId::kFrozenSet, LayoutId::kFrozenSet);
   moduleAddBuiltinType(module, SymbolId::kFutureWarning,
                        LayoutId::kFutureWarning);
   moduleAddBuiltinType(module, SymbolId::kGeneratorExit,
@@ -2140,7 +2142,7 @@ RawObject Runtime::listExtend(Thread* thread, const List& dst,
   Object elt(&scope, NoneType::object());
   word index = dst->numItems();
   // Special case for lists
-  if (iterable->isList()) {
+  if (thread->runtime()->isInstanceOfList(*iterable)) {
     List src(&scope, *iterable);
     if (src->numItems() > 0) {
       word new_capacity = index + src->numItems();
@@ -2182,18 +2184,18 @@ RawObject Runtime::listExtend(Thread* thread, const List& dst,
     return *dst;
   }
   // Special case for sets
-  if (iterable->isSet()) {
-    Set set(&scope, *iterable);
+  if (thread->runtime()->isInstanceOfSetBase(*iterable)) {
+    SetBase set(&scope, *iterable);
     if (set->numItems() > 0) {
       Tuple data(&scope, set->data());
       word new_capacity = index + set->numItems();
       listEnsureCapacity(dst, new_capacity);
       dst->setNumItems(new_capacity);
-      for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-        if (!Set::Bucket::isFilled(data, i)) {
+      for (word i = 0; i < data->length(); i += SetBase::Bucket::kNumPointers) {
+        if (!SetBase::Bucket::isFilled(data, i)) {
           continue;
         }
-        dst->atPut(index++, Set::Bucket::key(*data, i));
+        dst->atPut(index++, SetBase::Bucket::key(*data, i));
       }
     }
     return *dst;
@@ -2613,23 +2615,18 @@ RawObject Runtime::newSet() {
   return *result;
 }
 
-RawObject Runtime::newSetWithSize(word initial_size) {
+RawObject Runtime::newFrozenSet() {
   HandleScope scope;
-  Set result(&scope, heap()->create<RawSet>());
-  word initial_capacity = Utils::nextPowerOfTwo(initial_size);
-  Tuple array(&scope,
-              newTuple(Utils::maximum(static_cast<word>(kInitialSetCapacity),
-                                      initial_capacity) *
-                       Set::Bucket::kNumPointers));
-  result->setData(*array);
+  FrozenSet result(&scope, heap()->create<RawFrozenSet>());
   result->setNumItems(0);
+  result->setData(empty_object_array_);
   return *result;
 }
 
 template <SetLookupType type>
 word Runtime::setLookup(const Tuple& data, const Object& key,
                         const Object& key_hash) {
-  word start = Set::Bucket::getIndex(*data, *key_hash);
+  word start = SetBase::Bucket::getIndex(*data, *key_hash);
   word current = start;
   word next_free_index = -1;
 
@@ -2640,21 +2637,21 @@ word Runtime::setLookup(const Tuple& data, const Object& key,
   }
 
   do {
-    if (Set::Bucket::hasKey(*data, current, *key)) {
+    if (SetBase::Bucket::hasKey(*data, current, *key)) {
       return current;
     }
-    if (next_free_index == -1 && Set::Bucket::isTombstone(*data, current)) {
+    if (next_free_index == -1 && SetBase::Bucket::isTombstone(*data, current)) {
       if (type == SetLookupType::Insertion) {
         return current;
       }
       next_free_index = current;
-    } else if (Set::Bucket::isEmpty(*data, current)) {
+    } else if (SetBase::Bucket::isEmpty(*data, current)) {
       if (next_free_index == -1) {
         next_free_index = current;
       }
       break;
     }
-    current = (current + Set::Bucket::kNumPointers) & (length - 1);
+    current = (current + SetBase::Bucket::kNumPointers) & (length - 1);
   } while (current != start);
 
   if (type == SetLookupType::Insertion) {
@@ -2667,30 +2664,30 @@ RawTuple Runtime::setGrow(const Tuple& data) {
   HandleScope scope;
   word new_length = data->length() * kSetGrowthFactor;
   if (new_length == 0) {
-    new_length = kInitialSetCapacity * Set::Bucket::kNumPointers;
+    new_length = kInitialSetCapacity * SetBase::Bucket::kNumPointers;
   }
   Tuple new_data(&scope, newTuple(new_length));
   // Re-insert items
   for (word i = 0, length = data->length(); i < length;
-       i += Set::Bucket::kNumPointers) {
-    if (Set::Bucket::isFilled(*data, i)) {
-      Object key(&scope, Set::Bucket::key(*data, i));
-      Object hash(&scope, Set::Bucket::hash(*data, i));
+       i += SetBase::Bucket::kNumPointers) {
+    if (SetBase::Bucket::isFilled(*data, i)) {
+      Object key(&scope, SetBase::Bucket::key(*data, i));
+      Object hash(&scope, SetBase::Bucket::hash(*data, i));
       word index = setLookup<SetLookupType::Insertion>(new_data, key, hash);
       DCHECK(index != -1, "unexpected index %ld", index);
-      Set::Bucket::set(*new_data, index, *hash, *key);
+      SetBase::Bucket::set(*new_data, index, *hash, *key);
     }
   }
   return *new_data;
 }
 
-RawObject Runtime::setAddWithHash(const Set& set, const Object& value,
+RawObject Runtime::setAddWithHash(const SetBase& set, const Object& value,
                                   const Object& key_hash) {
   HandleScope scope;
   Tuple data(&scope, set->data());
   word index = setLookup<SetLookupType::Lookup>(data, value, key_hash);
   if (index != -1) {
-    return Set::Bucket::key(*data, index);
+    return SetBase::Bucket::key(*data, index);
   }
   Tuple new_data(&scope, *data);
   if (data->length() == 0 || set->numItems() >= data->length() / 2) {
@@ -2699,52 +2696,54 @@ RawObject Runtime::setAddWithHash(const Set& set, const Object& value,
   index = setLookup<SetLookupType::Insertion>(new_data, value, key_hash);
   DCHECK(index != -1, "unexpected index %ld", index);
   set->setData(*new_data);
-  Set::Bucket::set(*new_data, index, *key_hash, *value);
+  SetBase::Bucket::set(*new_data, index, *key_hash, *value);
   set->setNumItems(set->numItems() + 1);
   return *value;
 }
 
-RawObject Runtime::setAdd(const Set& set, const Object& value) {
+RawObject Runtime::setAdd(const SetBase& set, const Object& value) {
   HandleScope scope;
   Object key_hash(&scope, hash(*value));
   return setAddWithHash(set, value, key_hash);
 }
 
-RawObject Runtime::setCopy(const Set& set) {
+RawObject Runtime::setCopy(const SetBase& set) {
   word num_items = set->numItems();
   if (num_items == 0) {
-    return newSet();
+    return isInstanceOfSet(*set) ? newSet() : newFrozenSet();
   }
 
   HandleScope scope;
-  Set new_set(&scope, newSetWithSize(num_items));
+  SetBase new_set(&scope, isInstanceOfSet(*set) ? newSet() : newFrozenSet());
   Tuple data(&scope, set->data());
-  Tuple new_data(&scope, new_set->data());
+  Tuple new_data(&scope, newTuple(data->length()));
   Object key(&scope, NoneType::object());
   Object key_hash(&scope, NoneType::object());
   for (word i = 0, data_len = data->length(); i < data_len;
-       i += Set::Bucket::kNumPointers) {
-    if (!Set::Bucket::isFilled(*data, i)) {
+       i += SetBase::Bucket::kNumPointers) {
+    if (!SetBase::Bucket::isFilled(*data, i)) {
       continue;
     }
-    key = Set::Bucket::key(*data, i);
-    key_hash = Set::Bucket::hash(*data, i);
-    Set::Bucket::set(*new_data, i, *key_hash, *key);
+    key = SetBase::Bucket::key(*data, i);
+    key_hash = SetBase::Bucket::hash(*data, i);
+    SetBase::Bucket::set(*new_data, i, *key_hash, *key);
   }
+  new_set->setData(*new_data);
   new_set->setNumItems(set->numItems());
   return *new_set;
 }
 
-bool Runtime::setIsSubset(Thread* thread, const Set& set, const Set& other) {
+bool Runtime::setIsSubset(Thread* thread, const SetBase& set,
+                          const SetBase& other) {
   HandleScope scope(thread);
   Tuple data(&scope, set->data());
   Tuple other_data(&scope, other->data());
   Object key(&scope, NoneType::object());
   Object key_hash(&scope, NoneType::object());
-  for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-    if (RawSet::Bucket::isFilled(*data, i)) {
-      key = RawSet::Bucket::key(*data, i);
-      key_hash = RawSet::Bucket::hash(*data, i);
+  for (word i = 0; i < data->length(); i += SetBase::Bucket::kNumPointers) {
+    if (RawSetBase::Bucket::isFilled(*data, i)) {
+      key = RawSetBase::Bucket::key(*data, i);
+      key_hash = RawSetBase::Bucket::hash(*data, i);
       if (setLookup<SetLookupType::Lookup>(other_data, key, key_hash) == -1) {
         return false;
       }
@@ -2753,15 +2752,16 @@ bool Runtime::setIsSubset(Thread* thread, const Set& set, const Set& other) {
   return true;
 }
 
-bool Runtime::setIsProperSubset(Thread* thread, const Set& set,
-                                const Set& other) {
+bool Runtime::setIsProperSubset(Thread* thread, const SetBase& set,
+                                const SetBase& other) {
   if (set->numItems() == other->numItems()) {
     return false;
   }
   return setIsSubset(thread, set, other);
 }
 
-bool Runtime::setEquals(Thread* thread, const Set& set, const Set& other) {
+bool Runtime::setEquals(Thread* thread, const SetBase& set,
+                        const SetBase& other) {
   if (set->numItems() != other->numItems()) {
     return false;
   }
@@ -2771,23 +2771,24 @@ bool Runtime::setEquals(Thread* thread, const Set& set, const Set& other) {
   return setIsSubset(thread, set, other);
 }
 
-bool Runtime::setIncludes(const Set& set, const Object& value) {
+bool Runtime::setIncludes(const SetBase& set, const Object& value) {
   HandleScope scope;
   Tuple data(&scope, set->data());
   Object key_hash(&scope, hash(*value));
   return setLookup<SetLookupType::Lookup>(data, value, key_hash) != -1;
 }
 
-RawObject Runtime::setIntersection(Thread* thread, const Set& set,
+RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
                                    const Object& iterable) {
   HandleScope scope;
-  Set dst(&scope, Runtime::newSet());
+  SetBase dst(&scope, isInstanceOfSet(*set) ? Runtime::newSet()
+                                            : Runtime::newFrozenSet());
   Object key(&scope, NoneType::object());
   Object key_hash(&scope, NoneType::object());
   // Special case for sets
-  if (iterable->isSet()) {
-    Set self(&scope, *set);
-    Set other(&scope, *iterable);
+  if (thread->runtime()->isInstanceOfSetBase(*iterable)) {
+    SetBase self(&scope, *set);
+    SetBase other(&scope, *iterable);
     if (set->numItems() == 0 || other->numItems() == 0) {
       return *dst;
     }
@@ -2798,12 +2799,12 @@ RawObject Runtime::setIntersection(Thread* thread, const Set& set,
     }
     Tuple data(&scope, self->data());
     Tuple other_data(&scope, other->data());
-    for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-      if (!Set::Bucket::isFilled(*data, i)) {
+    for (word i = 0; i < data->length(); i += SetBase::Bucket::kNumPointers) {
+      if (!SetBase::Bucket::isFilled(*data, i)) {
         continue;
       }
-      key = Set::Bucket::key(*data, i);
-      key_hash = Set::Bucket::hash(*data, i);
+      key = SetBase::Bucket::key(*data, i);
+      key_hash = SetBase::Bucket::hash(*data, i);
       if (setLookup<SetLookupType::Lookup>(other_data, key, key_hash) != -1) {
         setAddWithHash(dst, key, key_hash);
       }
@@ -2853,14 +2854,14 @@ bool Runtime::setRemove(const Set& set, const Object& value) {
   Object key_hash(&scope, hash(*value));
   word index = setLookup<SetLookupType::Lookup>(data, value, key_hash);
   if (index != -1) {
-    Set::Bucket::setTombstone(*data, index);
+    SetBase::Bucket::setTombstone(*data, index);
     set->setNumItems(set->numItems() - 1);
     return true;
   }
   return false;
 }
 
-RawObject Runtime::setUpdate(Thread* thread, const Set& dst,
+RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
                              const Object& iterable) {
   HandleScope scope(thread);
   Object elt(&scope, NoneType::object());
@@ -2893,17 +2894,17 @@ RawObject Runtime::setUpdate(Thread* thread, const Set& dst,
     }
     return *dst;
   }
-  // Special case for sets
-  if (iterable->isSet()) {
-    Set src(&scope, *iterable);
+  // Special case for built-in set types
+  if (thread->runtime()->isInstanceOfSetBase(*iterable)) {
+    SetBase src(&scope, *iterable);
     Tuple data(&scope, src->data());
     if (src->numItems() > 0) {
       Object hash(&scope, NoneType::object());
-      for (word i = 0; i < data->length(); i += Set::Bucket::kNumPointers) {
-        if (Set::Bucket::isFilled(*data, i)) {
-          elt = Set::Bucket::key(*data, i);
+      for (word i = 0; i < data->length(); i += SetBase::Bucket::kNumPointers) {
+        if (SetBase::Bucket::isFilled(*data, i)) {
+          elt = SetBase::Bucket::key(*data, i);
           // take hash from data to avoid recomputing it.
-          hash = Set::Bucket::hash(*data, i);
+          hash = SetBase::Bucket::hash(*data, i);
           setAddWithHash(dst, elt, hash);
         }
       }

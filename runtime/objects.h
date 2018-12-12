@@ -35,6 +35,7 @@ class Frame;
   V(DictValues)                                                                \
   V(Ellipsis)                                                                  \
   V(Float)                                                                     \
+  V(FrozenSet)                                                                 \
   V(Function)                                                                  \
   V(Generator)                                                                 \
   V(HeapFrame)                                                                 \
@@ -249,6 +250,7 @@ class RawObject {
   bool isException();
   bool isFloat();
   bool isHeapFrame();
+  bool isFrozenSet();
   bool isFunction();
   bool isGenerator();
   bool isHeapObject();
@@ -288,6 +290,7 @@ class RawObject {
 
   // superclass objects
   bool isInt();
+  bool isSetBase();
   bool isStr();
 
   static bool equals(RawObject lhs, RawObject rhs);
@@ -1627,9 +1630,9 @@ class RawDictValues : public RawDictViewBase {
 };
 
 /**
- * A simple set implementation.
+ * A simple set implementation. Used by set and frozenset.
  */
-class RawSet : public RawHeapObject {
+class RawSetBase : public RawHeapObject {
  public:
   class Bucket;
 
@@ -1647,12 +1650,22 @@ class RawSet : public RawHeapObject {
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kDataOffset + kPointerSize;
 
+  RAW_OBJECT_COMMON(SetBase);
+};
+
+class RawSet : public RawSetBase {
+ public:
   RAW_OBJECT_COMMON(Set);
+};
+
+class RawFrozenSet : public RawSetBase {
+ public:
+  RAW_OBJECT_COMMON(FrozenSet);
 };
 
 // Helper class for manipulating buckets in the RawTuple that backs the
 // set
-class RawSet::Bucket {
+class RawSetBase::Bucket {
  public:
   // none of these operations do bounds checking on the backing array
   static word getIndex(RawTuple data, RawObject hash) {
@@ -2197,6 +2210,10 @@ inline bool RawObject::isLargeStr() {
   return isHeapObjectWithLayout(LayoutId::kLargeStr);
 }
 
+inline bool RawObject::isFrozenSet() {
+  return isHeapObjectWithLayout(LayoutId::kFrozenSet);
+}
+
 inline bool RawObject::isFunction() {
   return isHeapObjectWithLayout(LayoutId::kFunction);
 }
@@ -2248,6 +2265,8 @@ inline bool RawObject::isFloat() {
 inline bool RawObject::isHeapFrame() {
   return isHeapObjectWithLayout(LayoutId::kHeapFrame);
 }
+
+inline bool RawObject::isSetBase() { return isSet() || isFrozenSet(); }
 
 inline bool RawObject::isSet() {
   return isHeapObjectWithLayout(LayoutId::kSet);
@@ -3659,19 +3678,19 @@ inline bool RawValueCell::isUnbound() { return *this == value(); }
 
 inline void RawValueCell::makeUnbound() { setValue(*this); }
 
-// RawSet
+// RawSetBase
 
-inline word RawSet::numItems() {
+inline word RawSetBase::numItems() {
   return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset))->value();
 }
 
-inline void RawSet::setNumItems(word num_items) {
+inline void RawSetBase::setNumItems(word num_items) {
   instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_items));
 }
 
-inline RawObject RawSet::data() { return instanceVariableAt(kDataOffset); }
+inline RawObject RawSetBase::data() { return instanceVariableAt(kDataOffset); }
 
-inline void RawSet::setData(RawObject data) {
+inline void RawSetBase::setData(RawObject data) {
   instanceVariableAtPut(kDataOffset, data);
 }
 

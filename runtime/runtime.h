@@ -83,7 +83,8 @@ class Runtime {
   RawObject newFloat(double value);
 
   RawObject newSet();
-  RawObject newSetWithSize(word initial_size);
+
+  RawObject newFrozenSet();
 
   RawObject newBuiltinFunction(SymbolId name, Function::Entry entry,
                                Function::Entry entry_kw,
@@ -342,40 +343,42 @@ class Runtime {
 
   // Set related function, based on dict.
   // Add a value to set and return the object in set.
-  RawObject setAdd(const Set& set, const Object& value);
+  RawObject setAdd(const SetBase& set, const Object& value);
 
-  RawObject setAddWithHash(const Set& set, const Object& value,
+  RawObject setAddWithHash(const SetBase& set, const Object& value,
                            const Object& key_hash);
 
   // Return a shallow copy of a set
-  RawObject setCopy(const Set& set);
+  RawObject setCopy(const SetBase& set);
 
   // Returns true if set and other contain the same set of values
-  bool setEquals(Thread* thread, const Set& set, const Set& other);
+  bool setEquals(Thread* thread, const SetBase& set, const SetBase& other);
 
   // Returns true if the set contains the specified value.
-  bool setIncludes(const Set& set, const Object& value);
+  bool setIncludes(const SetBase& set, const Object& value);
 
   // Compute the set intersection between a set and an iterator
   // Returns either a new set with the intersection or an Error object.
-  RawObject setIntersection(Thread* thread, const Set& set,
+  RawObject setIntersection(Thread* thread, const SetBase& set,
                             const Object& iterable);
 
   // Returns true if every element of set is in other
   // and the elements in set and other are not the same.
   // This is analogous to the < operator on Python sets.
-  bool setIsProperSubset(Thread* thread, const Set& set, const Set& other);
+  bool setIsProperSubset(Thread* thread, const SetBase& set,
+                         const SetBase& other);
 
   // Returns true if every element of set is in other.
   // This is analogous to the <= operator on Python sets.
-  bool setIsSubset(Thread* thread, const Set& set, const Set& other);
+  bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other);
 
   // Delete a key from the set, returns true if the key existed.
   bool setRemove(const Set& set, const Object& value);
 
   // Update a set from an iterator
   // Returns either the updated set or an Error object.
-  RawObject setUpdate(Thread* thread, const Set& set, const Object& iterable);
+  RawObject setUpdate(Thread* thread, const SetBase& set,
+                      const Object& iterable);
 
   // Resume a GeneratorBase, passing it the given value and returning either the
   // yielded value or Error on termination.
@@ -530,6 +533,7 @@ class Runtime {
   DEFINE_IS_INSTANCE(Complex)
   DEFINE_IS_INSTANCE(Dict)
   DEFINE_IS_INSTANCE(Float)
+  DEFINE_IS_INSTANCE(FrozenSet)
   DEFINE_IS_INSTANCE(ImportError)
   DEFINE_IS_INSTANCE(Int)
   DEFINE_IS_INSTANCE(List)
@@ -552,6 +556,17 @@ class Runtime {
   bool isInstanceOfUserFloatBase(RawObject obj) {
     return !obj.isFloat() &&
            RawType::cast(typeOf(obj)).builtinBase() == LayoutId::kFloat;
+  }
+
+  // SetBase must also be handled specially because many builtin functions
+  // accept set or frozenset, despite them not having a common ancestor.
+  bool isInstanceOfSetBase(RawObject instance) {
+    if (instance.isSetBase()) {
+      return true;
+    }
+    LayoutId builtin_base = RawType::cast(typeOf(instance)).builtinBase();
+    return builtin_base == LayoutId::kSet ||
+           builtin_base == LayoutId::kFrozenSet;
   }
 
   // Clear the allocated memory from all extension related objects

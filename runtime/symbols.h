@@ -166,6 +166,7 @@ class Runtime;
   V(Float, "float")                                                            \
   V(FloatingPointError, "FloatingPointError")                                  \
   V(Frame, "frame")                                                            \
+  V(FrozenSet, "frozenset")                                                    \
   V(Function, "function")                                                      \
   V(FutureWarning, "FutureWarning")                                            \
   V(Generator, "generator")                                                    \
