@@ -19,6 +19,7 @@ class Runtime;
   V(DunderAwait, "__await__")                                                  \
   V(DunderBool, "__bool__")                                                    \
   V(DunderBuildClass, "__build_class__")                                       \
+  V(DunderBuiltins, "__builtins__")                                            \
   V(DunderCall, "__call__")                                                    \
   V(DunderClass, "__class__")                                                  \
   V(DunderClassCell, "__classcell__")                                          \

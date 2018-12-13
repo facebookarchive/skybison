@@ -128,33 +128,40 @@ Frame* Thread::pushFrame(const Code& code) {
   return frame;
 }
 
+Frame* Thread::pushExecFrame(const Code& code, const Dict& globals,
+                             const Object& locals) {
+  HandleScope scope(this);
+  Str dunder_builtins_name(&scope, runtime()->symbols()->DunderBuiltins());
+  Object builtins_obj(&scope,
+                      runtime()->typeDictAt(globals, dunder_builtins_name));
+  // TODO(T36914735): __builtins__ should always be in globals.
+  if (builtins_obj->isError()) {  // couldn't find __builtins__ in globals
+    Str builtins_name(&scope, runtime()->symbols()->Builtins());
+    builtins_obj = runtime()->findModule(builtins_name);
+  }
+  Module builtins(&scope, *builtins_obj);
+  Dict builtins_dict(&scope, builtins->dict());
+  Frame* result = pushFrame(code);
+  result->setGlobals(*globals);
+  result->setBuiltins(*builtins_dict);
+  result->setFastGlobals(
+      runtime()->computeFastGlobals(code, globals, builtins_dict));
+  result->setImplicitGlobals(*locals);
+  return result;
+}
+
 Frame* Thread::pushModuleFunctionFrame(const Module& module, const Code& code) {
   HandleScope scope(this);
-  Frame* result = pushFrame(code);
   Dict globals(&scope, module->dict());
-  Object name(&scope, runtime()->symbols()->Builtins());
-  Dict builtins(&scope, RawModule::cast(runtime()->findModule(name))->dict());
-  result->setGlobals(*globals);
-  result->setBuiltins(*builtins);
-  result->setFastGlobals(
-      runtime()->computeFastGlobals(code, globals, builtins));
-  result->setImplicitGlobals(*globals);
-  return result;
+  return pushExecFrame(code, globals, globals);
 }
 
 Frame* Thread::pushClassFunctionFrame(const Function& function,
                                       const Dict& dict) {
   HandleScope scope(this);
   Code code(&scope, RawFunction::cast(function)->code());
-  Frame* result = pushFrame(code);
   Dict globals(&scope, RawFunction::cast(function)->globals());
-  Object name(&scope, runtime()->symbols()->Builtins());
-  Dict builtins(&scope, RawModule::cast(runtime()->findModule(name))->dict());
-  result->setGlobals(*globals);
-  result->setBuiltins(*builtins);
-  result->setFastGlobals(
-      runtime()->computeFastGlobals(code, globals, builtins));
-  result->setImplicitGlobals(dict);
+  Frame* result = pushExecFrame(code, globals, dict);
 
   word num_locals = code->nlocals();
   word num_cellvars = code->numCellvars();
@@ -198,6 +205,12 @@ void Thread::popFrame() {
 RawObject Thread::run(const Code& code) {
   DCHECK(currentFrame_ == initialFrame_, "thread must be inactive");
   Frame* frame = pushFrame(code);
+  return Interpreter::execute(this, frame);
+}
+
+RawObject Thread::exec(const Code& code, const Dict& globals,
+                       const Object& locals) {
+  Frame* frame = pushExecFrame(code, globals, locals);
   return Interpreter::execute(this, frame);
 }
 

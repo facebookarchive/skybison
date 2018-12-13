@@ -56,6 +56,9 @@ class Thread {
   Frame* linkFrame(Frame* frame);
   Frame* pushFrame(const Handle<RawCode>& code);
   Frame* pushNativeFrame(void* fn, word nargs);
+  Frame* pushExecFrame(const Handle<RawCode>& code,
+                       const Handle<RawDict>& globals,
+                       const Handle<RawObject>& locals);
   Frame* pushModuleFunctionFrame(const Handle<RawModule>& module,
                                  const Handle<RawCode>& code);
   Frame* pushClassFunctionFrame(const Handle<RawFunction>& function,
@@ -67,6 +70,10 @@ class Thread {
   // Runs a code object on the current thread.  Assumes that the initial frame
   // is at the top of the stack.
   RawObject run(const Handle<RawCode>& code);
+
+  // Runs a code object on the current thread.
+  RawObject exec(const Handle<RawCode>& code, const Handle<RawDict>& globals,
+                 const Handle<RawObject>& locals);
 
   // Runs a module body function on the current thread.  Assumes that the
   // initial frame is at the top of the stack.

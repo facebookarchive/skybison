@@ -1604,6 +1604,17 @@ void Runtime::moduleAtPut(const Module& module, const Object& key,
   dictAtPutInValueCell(dict, key, value);
 }
 
+RawObject Runtime::typeDictAt(const Dict& dict, const Object& key) {
+  HandleScope scope;
+  Object value_cell(&scope, dictAt(dict, key));
+  if (value_cell->isError()) {
+    return Error::object();
+  }
+  CHECK(value_cell->isValueCell(),
+        "dict in typeDictAt should return ValueCell");
+  return RawValueCell::cast(*value_cell)->value();
+}
+
 struct {
   SymbolId name;
   void (Runtime::*create_module)();
