@@ -605,6 +605,9 @@ class Runtime {
   // Returns whether object's class provides a __delete__ method
   bool isDeleteDescriptor(Thread* thread, const Object& object);
 
+  // Return whether object's class provides a __getitem__ method
+  bool isMapping(Thread* thread, const Object& obj);
+
   // Clear the allocated memory from all extension related objects
   void freeApiHandles();
 

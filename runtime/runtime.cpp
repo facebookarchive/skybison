@@ -629,6 +629,12 @@ bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
   return !lookupSymbolInMro(thread, type, SymbolId::kDunderDelete)->isError();
 }
 
+bool Runtime::isMapping(Thread* thread, const Object& obj) {
+  HandleScope scope(thread);
+  Type type(&scope, typeOf(*obj));
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetItem).isError();
+}
+
 RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
                            word stacksize, word flags, const Object& code,
                            const Object& consts, const Object& names,

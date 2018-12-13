@@ -3898,4 +3898,75 @@ a = C()
   EXPECT_EQ(runtime.instanceAt(Thread::currentThread(), a, attr), *value);
 }
 
+TEST(RuntimeTest, IsMappingReturnsFalseOnSet) {
+  Runtime runtime;
+  HandleScope scope;
+  Set set(&scope, runtime.newSet());
+  EXPECT_FALSE(runtime.isMapping(Thread::currentThread(), set));
+}
+
+TEST(RuntimeTest, IsMappingReturnsTrueOnDict) {
+  Runtime runtime;
+  HandleScope scope;
+  Dict dict(&scope, runtime.newDict());
+  EXPECT_TRUE(runtime.isMapping(Thread::currentThread(), dict));
+}
+
+TEST(RuntimeTest, IsMappingReturnsTrueOnList) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, runtime.newList());
+  EXPECT_TRUE(runtime.isMapping(Thread::currentThread(), list));
+}
+
+TEST(RuntimeTest, IsMappingReturnsTrueOnCustomClassWithMethod) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+class C():
+  def __getitem__(self, key):
+    pass
+o = C()
+)");
+  HandleScope scope;
+  Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
+  EXPECT_TRUE(runtime.isMapping(Thread::currentThread(), obj));
+}
+
+TEST(RuntimeTest, IsMappingWithClassAttrNotCallableReturnsTrue) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+class C():
+  __getitem__ = 4
+o = C()
+)");
+  HandleScope scope;
+  Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
+  EXPECT_TRUE(runtime.isMapping(Thread::currentThread(), obj));
+}
+
+TEST(RuntimeTest, IsMappingReturnsFalseOnCustomClassWithoutMethod) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+class C():
+  pass
+o = C()
+)");
+  HandleScope scope;
+  Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
+  EXPECT_FALSE(runtime.isMapping(Thread::currentThread(), obj));
+}
+
+TEST(RuntimeTest, IsMappingWithInstanceAttrReturnsFalse) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+class C():
+  pass
+o = C()
+o.__getitem__ = 4
+)");
+  HandleScope scope;
+  Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
+  EXPECT_FALSE(runtime.isMapping(Thread::currentThread(), obj));
+}
+
 }  // namespace python

@@ -89,13 +89,7 @@ PY_EXPORT int PyMapping_Check(PyObject* py_obj) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(py_obj)->asObject());
-
-  Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->typeOf(obj));
-  Object getitem(&scope, runtime->lookupSymbolInMro(thread, type,
-                                                    SymbolId::kDunderGetItem));
-
-  return !getitem->isError();
+  return thread->runtime()->isMapping(thread, obj);
 }
 
 PY_EXPORT PyObject* PyMapping_GetItemString(PyObject* /* o */,
