@@ -17,7 +17,7 @@ PY_EXPORT PyObject* PyErr_Occurred() {
   if (!thread->hasPendingException()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, thread->exceptionType());
+  return ApiHandle::newReference(thread, thread->pendingExceptionType());
 }
 
 PY_EXPORT PyObject* PyErr_Format(PyObject*, const char*, ...) {
@@ -61,22 +61,25 @@ PY_EXPORT int PyErr_ExceptionMatches(PyObject* exc) {
 PY_EXPORT void PyErr_Fetch(PyObject** pexc, PyObject** pval, PyObject** ptb) {
   Thread* thread = Thread::currentThread();
   DCHECK(pexe != nullptr, "pexc is null");
-  if (thread->exceptionType().isNoneType()) {
+  if (thread->pendingExceptionType().isNoneType()) {
     *pexc = nullptr;
   } else {
-    *pexc = ApiHandle::borrowedReference(thread, thread->exceptionType());
+    *pexc =
+        ApiHandle::borrowedReference(thread, thread->pendingExceptionType());
   }
   DCHECK(pval != nullptr, "pval is null");
-  if (thread->exceptionValue().isNoneType()) {
+  if (thread->pendingExceptionValue().isNoneType()) {
     *pval = nullptr;
   } else {
-    *pval = ApiHandle::borrowedReference(thread, thread->exceptionValue());
+    *pval =
+        ApiHandle::borrowedReference(thread, thread->pendingExceptionValue());
   }
   DCHECK(ptb != nullptr, "ptb is null");
-  if (thread->exceptionTraceback().isNoneType()) {
+  if (thread->pendingExceptionTraceback().isNoneType()) {
     *ptb = nullptr;
   } else {
-    *ptb = ApiHandle::borrowedReference(thread, thread->exceptionTraceback());
+    *ptb = ApiHandle::borrowedReference(thread,
+                                        thread->pendingExceptionTraceback());
   }
   thread->clearPendingException();
 }
@@ -90,36 +93,6 @@ PY_EXPORT void PyErr_GetExcInfo(PyObject** /* p_type */,
                                 PyObject** /* p_value */,
                                 PyObject** /* p_traceback */) {
   UNIMPLEMENTED("PyErr_GetExcInfo");
-}
-
-static bool givenExceptionMatches(Thread* thread, const Object& given,
-                                  const Object& exc) {
-  HandleScope scope(thread);
-  if (exc->isTuple()) {
-    Tuple tuple(&scope, *exc);
-    Object item(&scope, NoneType::object());
-    for (word i = 0; i < tuple->length(); i++) {
-      item = tuple->at(i);
-      if (givenExceptionMatches(thread, given, item)) {
-        return true;
-      }
-    }
-    return false;
-  }
-  Runtime* runtime = thread->runtime();
-  Object given_type(&scope, *given);
-  if (runtime->isInstanceOfBaseException(*given_type)) {
-    given_type = runtime->typeOf(*given);
-  }
-  if (runtime->isInstanceOfType(*given_type) &&
-      RawType::cast(*given_type).isBaseExceptionSubclass() &&
-      runtime->isInstanceOfType(*exc) &&
-      RawType::cast(*exc).isBaseExceptionSubclass()) {
-    Type subtype(&scope, *given_type);
-    Type supertype(&scope, *exc);
-    return runtime->isSubclass(subtype, supertype);
-  }
-  return *given_type == *exc;
 }
 
 PY_EXPORT int PyErr_GivenExceptionMatches(PyObject* given, PyObject* exc) {
@@ -284,16 +257,17 @@ PY_EXPORT void PyErr_Restore(PyObject* type, PyObject* value,
                              PyObject* traceback) {
   Thread* thread = Thread::currentThread();
   if (type == nullptr) {
-    thread->setExceptionType(NoneType::object());
+    thread->setPendingExceptionType(NoneType::object());
   } else {
-    thread->setExceptionType(ApiHandle::fromPyObject(type)->asObject());
+    thread->setPendingExceptionType(ApiHandle::fromPyObject(type)->asObject());
     // This is a stolen reference, decrement the reference count
     ApiHandle::fromPyObject(type)->decref();
   }
   if (value == nullptr) {
-    thread->setExceptionValue(NoneType::object());
+    thread->setPendingExceptionValue(NoneType::object());
   } else {
-    thread->setExceptionValue(ApiHandle::fromPyObject(value)->asObject());
+    thread->setPendingExceptionValue(
+        ApiHandle::fromPyObject(value)->asObject());
     // This is a stolen reference, decrement the reference count
     ApiHandle::fromPyObject(value)->decref();
   }
@@ -304,9 +278,9 @@ PY_EXPORT void PyErr_Restore(PyObject* type, PyObject* value,
     traceback = nullptr;
   }
   if (traceback == nullptr) {
-    thread->setExceptionTraceback(NoneType::object());
+    thread->setPendingExceptionTraceback(NoneType::object());
   } else {
-    thread->setExceptionTraceback(
+    thread->setPendingExceptionTraceback(
         ApiHandle::fromPyObject(traceback)->asObject());
     // This is a stolen reference, decrement the reference count
     ApiHandle::fromPyObject(traceback)->decref();

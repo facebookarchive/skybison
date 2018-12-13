@@ -438,7 +438,7 @@ TEST(ExceptionBuiltinsDeathTest, ImportErrorConstructWithInvalidKwargs) {
   Runtime runtime;
   HandleScope scope;
   EXPECT_DEATH(runtime.runFromCStr("x = ImportError(foo=123)"),
-               "RAISE_VARARGS");
+               "invalid keyword arguments supplied");
 }
 
 TEST(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {

@@ -34,6 +34,7 @@ class Frame;
   V(DictValueIterator)                                                         \
   V(DictValues)                                                                \
   V(Ellipsis)                                                                  \
+  V(ExceptionState)                                                            \
   V(Float)                                                                     \
   V(FrozenSet)                                                                 \
   V(Function)                                                                  \
@@ -248,6 +249,7 @@ class RawObject {
   bool isDictValues();
   bool isEllipsis();
   bool isException();
+  bool isExceptionState();
   bool isFloat();
   bool isHeapFrame();
   bool isFrozenSet();
@@ -2061,6 +2063,38 @@ class RawHeapFrame : public RawHeapObject {
 };
 
 /**
+ * The exception currently being handled. Every Generator and Coroutine has its
+ * own exception state that is installed while it's running, to allow yielding
+ * from an except block without losing track of the caught exception.
+ *
+ * TODO(T38009294): This class won't exist forever. Think very hard about
+ * adding any more bits of state to it.
+ */
+class RawExceptionState : public RawHeapObject {
+ public:
+  // Getters and setters.
+  RawObject type();
+  RawObject value();
+  RawObject traceback();
+
+  void setType(RawObject type);
+  void setValue(RawObject value);
+  void setTraceback(RawObject tb);
+
+  RawObject previous();
+  void setPrevious(RawObject prev);
+
+  // Layout.
+  static const int kTypeOffset = RawHeapObject::kSize + kPointerSize;
+  static const int kValueOffset = kTypeOffset + kPointerSize;
+  static const int kTracebackOffset = kValueOffset + kPointerSize;
+  static const int kPreviousOffset = kTracebackOffset + kPointerSize;
+  static const int kSize = kPreviousOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(ExceptionState);
+};
+
+/**
  * Base class containing functionality needed by all objects representing a
  * suspended execution frame: RawGenerator, RawCoroutine, and AsyncGenerator.
  */
@@ -2070,11 +2104,13 @@ class RawGeneratorBase : public RawHeapObject {
   RawObject heapFrame();
   void setHeapFrame(RawObject obj);
 
+  RawObject exceptionState();
+  void setExceptionState(RawObject obj);
+
   // Layout.
   static const int kFrameOffset = RawHeapObject::kSize;
-  static const int kIsRunningOffset = kFrameOffset + kPointerSize;
-  static const int kCodeOffset = kIsRunningOffset + kPointerSize;
-  static const int kSize = kCodeOffset + kPointerSize;
+  static const int kExceptionStateOffset = kFrameOffset + kPointerSize;
+  static const int kSize = kExceptionStateOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(GeneratorBase);
 };
@@ -2180,6 +2216,10 @@ inline bool RawObject::isBaseException() {
 
 inline bool RawObject::isException() {
   return isHeapObjectWithLayout(LayoutId::kException);
+}
+
+inline bool RawObject::isExceptionState() {
+  return isHeapObjectWithLayout(LayoutId::kExceptionState);
 }
 
 inline bool RawObject::isBoundMethod() {
@@ -3913,6 +3953,40 @@ inline void RawTupleIterator::setIndex(word index) {
   instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
 }
 
+// RawExceptionState
+
+inline RawObject RawExceptionState::type() {
+  return instanceVariableAt(kTypeOffset);
+}
+
+inline RawObject RawExceptionState::value() {
+  return instanceVariableAt(kValueOffset);
+}
+
+inline RawObject RawExceptionState::traceback() {
+  return instanceVariableAt(kTracebackOffset);
+}
+
+inline void RawExceptionState::setType(RawObject type) {
+  instanceVariableAtPut(kTypeOffset, type);
+}
+
+inline void RawExceptionState::setValue(RawObject value) {
+  instanceVariableAtPut(kValueOffset, value);
+}
+
+inline void RawExceptionState::setTraceback(RawObject tb) {
+  instanceVariableAtPut(kTracebackOffset, tb);
+}
+
+inline RawObject RawExceptionState::previous() {
+  return instanceVariableAt(kPreviousOffset);
+}
+
+inline void RawExceptionState::setPrevious(RawObject prev) {
+  instanceVariableAtPut(kPreviousOffset, prev);
+}
+
 // RawGeneratorBase
 
 inline RawObject RawGeneratorBase::heapFrame() {
@@ -3921,6 +3995,14 @@ inline RawObject RawGeneratorBase::heapFrame() {
 
 inline void RawGeneratorBase::setHeapFrame(RawObject obj) {
   instanceVariableAtPut(kFrameOffset, obj);
+}
+
+inline RawObject RawGeneratorBase::exceptionState() {
+  return instanceVariableAt(kExceptionStateOffset);
+}
+
+inline void RawGeneratorBase::setExceptionState(RawObject obj) {
+  instanceVariableAtPut(kExceptionStateOffset, obj);
 }
 
 // RawHeapFrame

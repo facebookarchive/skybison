@@ -108,6 +108,18 @@ class Interpreter {
     word pc;
   };
 
+  // Process the operands to the RAISE_VARARGS bytecode into a pending exception
+  // on ctx->thread.
+  static void raise(Context* ctx, RawObject exc, RawObject cause);
+
+  // Unwind the stack for a pending exception. Intended to be tail-called by a
+  // bytecode handler that is raising an exception.
+  //
+  // Returns true if the exception escaped frames owned by the current
+  // Interpreter instance, indicating that an Error should be returned to the
+  // caller.
+  static bool unwind(Context* ctx);
+
   // Pseudo-opcodes
   static void doInvalidBytecode(Context* ctx, word arg);
   static void doNotImplemented(Context* ctx, word arg);
@@ -130,7 +142,7 @@ class Interpreter {
   static void doBinaryModulo(Context* ctx, word arg);
   static void doBinaryAdd(Context* ctx, word arg);
   static void doBinarySubtract(Context* ctx, word arg);
-  static void doBinarySubscr(Context* ctx, word arg);
+  static bool doBinarySubscr(Context* ctx, word arg);
   static void doBinaryFloorDivide(Context* ctx, word arg);
   static void doBinaryTrueDivide(Context* ctx, word arg);
   static void doInplaceFloorDivide(Context* ctx, word arg);
@@ -166,7 +178,8 @@ class Interpreter {
   static void doImportStar(Context* ctx, word arg);
   static void doSetupAnnotations(Context* ctx, word arg);
   static void doPopBlock(Context* ctx, word arg);
-  static void doEndFinally(Context* ctx, word arg);
+  static bool doEndFinally(Context* ctx, word arg);
+  static void doPopExcept(Context* ctx, word arg);
   static void doStoreName(Context* ctx, word arg);
   static void doDeleteName(Context* ctx, word arg);
   static void doUnpackSequence(Context* ctx, word arg);
@@ -182,7 +195,7 @@ class Interpreter {
   static void doBuildSet(Context* ctx, word arg);
   static void doBuildMap(Context* ctx, word arg);
   static void doLoadAttr(Context* ctx, word arg);
-  static void doCompareOp(Context* ctx, word arg);
+  static bool doCompareOp(Context* ctx, word arg);
   static void doImportName(Context* ctx, word arg);
   static void doImportFrom(Context* ctx, word arg);
   static void doJumpForward(Context* ctx, word arg);
@@ -200,7 +213,8 @@ class Interpreter {
   static void doStoreFast(Context* ctx, word arg);
   static void doDeleteFast(Context* ctx, word arg);
   static void doStoreAnnotation(Context* ctx, word arg);
-  static void doCallFunction(Context* ctx, word arg);
+  static bool doRaiseVarargs(Context* ctx, word arg);
+  static bool doCallFunction(Context* ctx, word arg);
   static void doMakeFunction(Context* ctx, word arg);
   static void doBuildSlice(Context* ctx, word arg);
   static void doLoadClosure(Context* ctx, word arg);

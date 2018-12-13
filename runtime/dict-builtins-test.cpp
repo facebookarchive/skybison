@@ -223,7 +223,8 @@ TEST(DictBuiltinsTest, UpdateWithNoArgumentsThrowsTypeError) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   EXPECT_TRUE(runBuiltin(DictBuiltins::update).isError());
-  EXPECT_EQ(thread->exceptionType(), runtime.typeAt(LayoutId::kTypeError));
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, UpdateWithNonDictThrowsTypeError) {
@@ -232,7 +233,8 @@ TEST(DictBuiltinsTest, UpdateWithNonDictThrowsTypeError) {
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   EXPECT_TRUE(runBuiltin(DictBuiltins::update, list).isError());
-  EXPECT_EQ(thread->exceptionType(), runtime.typeAt(LayoutId::kTypeError));
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsDeathTest, UpdateWithNonMappingTypeThrowsTypeError) {
@@ -242,7 +244,8 @@ TEST(DictBuiltinsDeathTest, UpdateWithNonMappingTypeThrowsTypeError) {
   Dict dict(&scope, runtime.newDict());
   Int i(&scope, runtime.newInt(1));
   EXPECT_TRUE(runBuiltin(DictBuiltins::update, dict, i).isError());
-  EXPECT_EQ(thread->exceptionType(), runtime.typeAt(LayoutId::kTypeError));
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, UpdateWithDictReturnsUpdatedDict) {

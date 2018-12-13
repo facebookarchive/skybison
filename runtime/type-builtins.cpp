@@ -29,7 +29,8 @@ RawObject builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
     frame->pushValue(args.get(i));
   }
 
-  Object result(&scope, Interpreter::call(thread, frame, nargs));
+  Object instance(&scope, Interpreter::call(thread, frame, nargs));
+  if (instance->isError()) return *instance;
 
   // Second, call __init__ to initialize the instance.
 
@@ -38,16 +39,17 @@ RawObject builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
       &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderInit));
 
   frame->pushValue(*dunder_init);
-  frame->pushValue(*result);
+  frame->pushValue(*instance);
   for (word i = 1; i < nargs; i++) {
     frame->pushValue(args.get(i));
   }
 
   // TODO(T36407643): throw a type error if the __init__ method does not return
   // None.
-  Interpreter::call(thread, frame, nargs);
+  Object result(&scope, Interpreter::call(thread, frame, nargs));
+  if (result->isError()) return *result;
 
-  return *result;
+  return *instance;
 }
 
 RawObject builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
@@ -66,21 +68,23 @@ RawObject builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
   frame->pushValue(*dunder_new);
   // Copy down the args, kwargs, and kwarg tuple that __call__ was called with
   frame->pushLocals(nargs, 0);
-  Object result(&scope, Interpreter::callKw(thread, frame, nargs - 1));
+  Object new_obj(&scope, Interpreter::callKw(thread, frame, nargs - 1));
+  if (new_obj->isError()) return *new_obj;
 
   // Second, call __init__ to initialize the instance.
   Object dunder_init(
       &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderInit));
   frame->pushValue(*dunder_init);
-  frame->pushValue(*result);
+  frame->pushValue(*new_obj);
   // Copy down everything that __call_ was called with, except for the first
   // argument (the type)
   frame->pushLocals(nargs - 1, 1);
   // TODO(T36407643): throw a type error if the __init__ method does not return
   // None.
-  Interpreter::callKw(thread, frame, nargs - 1);
+  Object result(&scope, Interpreter::callKw(thread, frame, nargs - 1));
+  if (result->isError()) return *result;
 
-  return *result;
+  return *new_obj;
 }
 
 RawObject builtinTypeNew(Thread* thread, Frame* frame, word nargs) {

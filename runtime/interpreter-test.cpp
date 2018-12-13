@@ -2195,4 +2195,195 @@ for i in range(5):
   EXPECT_EQ(l->at(0), SmallInt::fromWord(10));
 }
 
+// TODO(bsimmers) Rewrite these exception tests to ensure that the specific
+// bytecodes we care about are being exercised, so we're not be at the mercy of
+// compiler optimizations or changes.
+TEST(InterpreterTest, ExceptCatchesException) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+n = 0
+try:
+    raise RuntimeError("something went wrong")
+    n = 1
+except:
+    if n == 0:
+        n = 2
+)");
+
+  HandleScope scope;
+  Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
+  ASSERT_TRUE(n->isInt());
+  Int n_int(&scope, *n);
+  EXPECT_EQ(n_int->asWord(), 2);
+}
+
+TEST(InterpreterTest, RaiseCrossesFunctions) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+def sub():
+  raise RuntimeError("from sub")
+
+def main():
+  sub()
+
+n = 0
+try:
+  main()
+  n = 1
+except:
+  if n == 0:
+    n = 2
+)");
+
+  HandleScope scope;
+  Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
+  ASSERT_TRUE(n->isInt());
+  Int n_int(&scope, *n);
+  EXPECT_EQ(n_int->asWord(), 2);
+}
+
+TEST(InterpreterTest, RaiseFromSetsCause) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+try:
+  try:
+    raise RuntimeError
+  except Exception as e:
+    raise TypeError from e
+except Exception as e:
+  exc = e
+)");
+
+  HandleScope scope;
+  Object exc_obj(&scope, testing::moduleAt(&runtime, "__main__", "exc"));
+  ASSERT_EQ(exc_obj->layoutId(), LayoutId::kTypeError);
+  BaseException exc(&scope, *exc_obj);
+  EXPECT_EQ(exc->cause()->layoutId(), LayoutId::kRuntimeError);
+}
+
+TEST(InterpreterTest, ExceptWithRightTypeCatches) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+n = 0
+try:
+    raise RuntimeError("whoops")
+    n = 1
+except RuntimeError:
+    if n == 0:
+        n = 2
+)");
+
+  HandleScope scope;
+  Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
+  ASSERT_TRUE(n->isInt());
+  Int n_int(&scope, *n);
+  EXPECT_EQ(n_int->asWord(), 2);
+}
+
+TEST(InterpreterTest, ExceptWithRightTupleTypeCatches) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+n = 0
+try:
+    raise RuntimeError()
+    n = 1
+except (StopIteration, RuntimeError, ImportError):
+    if n == 0:
+        n = 2
+)");
+
+  HandleScope scope;
+  Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
+  ASSERT_TRUE(n->isInt());
+  Int n_int(&scope, *n);
+  EXPECT_EQ(n_int->asWord(), 2);
+}
+
+TEST(InterpreterTest, ExceptWithWrongTypePasses) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+try:
+    raise RuntimeError("something went wrong")
+except StopIteration:
+    pass
+)"),
+               "something went wrong");
+}
+
+TEST(InterpreterTest, ExceptWithWrongTupleTypePasses) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+try:
+    raise RuntimeError("something went wrong")
+except (StopIteration, ImportError):
+    pass
+)"),
+               "something went wrong");
+}
+
+TEST(InterpreterTest, RaiseTypeCreatesException) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+raise StopIteration
+)"),
+               "aborting due to pending exception");
+}
+
+TEST(InterpreterTest, BareRaiseReraises) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+class MyError(Exception):
+  pass
+
+inner = None
+outer = None
+try:
+  try:
+    raise MyError()
+  except Exception as exc:
+    inner = exc
+    raise
+except Exception as exc:
+  outer = exc
+)");
+
+  HandleScope scope;
+  Object my_error(&scope, testing::moduleAt(&runtime, "__main__", "MyError"));
+  EXPECT_EQ(runtime.typeOf(*my_error), runtime.typeAt(LayoutId::kType));
+  Object inner(&scope, testing::moduleAt(&runtime, "__main__", "inner"));
+  EXPECT_EQ(runtime.typeOf(*inner), *my_error);
+  Object outer(&scope, testing::moduleAt(&runtime, "__main__", "outer"));
+  EXPECT_EQ(*inner, *outer);
+}
+
+TEST(InterpreterTest, ExceptWithNonExceptionTypeRaises) {
+  Runtime runtime;
+  EXPECT_DEATH(
+      runtime.runFromCStr(R"(
+try:
+  raise RuntimeError
+except str:
+  pass
+)"),
+      "catching classes that do not inherit from BaseException is not allowed");
+}
+
+TEST(InterpreterTest, ExceptWithNonExceptionTypeInTupleRaises) {
+  Runtime runtime;
+  EXPECT_DEATH(
+      runtime.runFromCStr(R"(
+try:
+  raise RuntimeError
+except (StopIteration, int, RuntimeError):
+  pass
+)"),
+      "catching classes that do not inherit from BaseException is not allowed");
+}
+
+TEST(InterpreterTest, RaiseWithNoActiveExceptionRaises) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr("raise\n"),
+               "No active exception to reraise");
+}
+
 }  // namespace python

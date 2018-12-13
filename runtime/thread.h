@@ -161,14 +161,34 @@ class Thread {
   RawObject raiseZeroDivisionError(RawObject value);
   RawObject raiseZeroDivisionErrorWithCStr(const char* message);
 
-  // Returns true if there is an exception pending.
+  // Exception support
+  //
+  // We track two sets of exception state, a "pending" exception and a "caught"
+  // exception. Each one has a type, value, and traceback.
+  //
+  // An exception is pending from the moment it is raised until it is caught by
+  // a handler. It transitions from pending to caught right before execution of
+  // the handler. If the handler re-raises, the exception transitions back to
+  // pending to resume unwinding; otherwise, the caught exception is cleared
+  // when the handler block is popped.
+  //
+  // The pending exception is stored directly in the Thread, since there is at
+  // most one active at any given time. The caught exception is kept in a stack
+  // of ExceptionState objects, and the Thread holds a pointer to the top of
+  // the stack. When the runtime enters a generator or coroutine, it pushes the
+  // ExceptionState owned by that object onto this stack, allowing that state
+  // to be preserved if we yield in an except block. When there is no generator
+  // or coroutine running, the default ExceptionState created with this Thread
+  // holds the caught exception.
+
+  // Returns true if there is a pending exception.
   bool hasPendingException();
 
   // Returns true if there is a StopIteration exception pending. Special-cased
   // to support generators until we have proper exception support.
   bool hasPendingStopIteration();
 
-  // If there's a pending exception, clear it.
+  // If there's a pending exception, clears it.
   void clearPendingException();
 
   // If there's a pending exception, prints it and ignores it.
@@ -177,23 +197,36 @@ class Thread {
   // If there is a pending exception, prints it and aborts the runtime.
   void abortOnPendingException();
 
-  // Returns the type of the current exception or None if no exception is
-  // pending.
-  RawObject exceptionType() { return exception_type_; }
+  // Gets the type, value, or traceback of the pending exception. No pending
+  // exception is indicated with a type of None.
+  RawObject pendingExceptionType() { return pending_exc_type_; }
+  RawObject pendingExceptionValue() { return pending_exc_value_; }
+  RawObject pendingExceptionTraceback() { return pending_exc_traceback_; }
 
-  void setExceptionType(RawObject new_type) { exception_type_ = new_type; }
-
-  // Returns the value of the current exception.
-  RawObject exceptionValue() { return exception_value_; }
-
-  void setExceptionValue(RawObject new_value) { exception_value_ = new_value; }
-
-  // Returns the traceback of the current exception.
-  RawObject exceptionTraceback() { return exception_traceback_; }
-
-  void setExceptionTraceback(RawObject new_traceback) {
-    exception_traceback_ = new_traceback;
+  // Sets the type, value, or traceback of the pending exception.
+  void setPendingExceptionType(RawObject type) { pending_exc_type_ = type; }
+  void setPendingExceptionValue(RawObject value) { pending_exc_value_ = value; }
+  void setPendingExceptionTraceback(RawObject traceback) {
+    pending_exc_traceback_ = traceback;
   }
+
+  // Returns true if there is a caught exception.
+  bool hasCaughtException();
+
+  // Gets the type, value or traceback of the caught exception. No caught
+  // exception is indicated with a type of None.
+  RawObject caughtExceptionType();
+  RawObject caughtExceptionValue();
+  RawObject caughtExceptionTraceback();
+
+  // Sets the type, value, or traceback of the caught exception.
+  void setCaughtExceptionType(RawObject type);
+  void setCaughtExceptionValue(RawObject value);
+  void setCaughtExceptionTraceback(RawObject traceback);
+
+  // Gets or sets the current caught ExceptionState.
+  RawObject caughtExceptionState();
+  void setCaughtExceptionState(RawObject state);
 
   // Walk all the frames on the stack starting with the top-most frame
   void visitFrames(FrameVisitor* visitor);
@@ -218,15 +251,15 @@ class Thread {
   Thread* next_;
   Runtime* runtime_;
 
-  // The type object corresponding to the pending exception.  If there is no
-  // pending exception this will be set to None.
-  RawObject exception_type_;
+  // State of the pending exception.
+  RawObject pending_exc_type_;
+  RawObject pending_exc_value_;
+  RawObject pending_exc_traceback_;
 
-  // The value of the pending exception.
-  RawObject exception_value_;
-
-  // The traceback of the pending exception.
-  RawObject exception_traceback_;
+  // Stack of ExceptionStates for the current caught exception. Generators push
+  // their private state onto this stack before resuming, and pop it after
+  // suspending.
+  RawObject caught_exc_stack_;
 
   static thread_local Thread* current_thread_;
 

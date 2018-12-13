@@ -137,6 +137,7 @@ class Handle : public T {
   V(Ellipsis)                                                                  \
   V(Error)                                                                     \
   V(Exception)                                                                 \
+  V(ExceptionState)                                                            \
   V(Float)                                                                     \
   V(Function)                                                                  \
   V(Generator)                                                                 \

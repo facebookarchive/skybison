@@ -110,6 +110,26 @@ for i in g:
   EXPECT_EQ(list->at(3), *initial);
 }
 
+TEST(GeneratorTest, ReraiseAfterYield) {
+  Runtime runtime;
+  EXPECT_DEATH(runtime.runFromCStr(R"(
+def gen():
+  try:
+    raise RuntimeError("inside generator")
+  except:
+    yield
+    raise
+
+g = gen()
+g.__next__()
+try:
+  raise RuntimeError("outside generator")
+except:
+  g.__next__()
+)"),
+               "inside generator");
+}
+
 TEST(CoroutineTest, Basic) {
   const char* src = R"(
 async def coro():

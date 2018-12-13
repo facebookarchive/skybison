@@ -2374,8 +2374,8 @@ TEST_P(IntrinsicTypeSetAttrTest, SetAttr) {
   RawObject result = runtime.attributeAtPut(thread, type, attr, value);
 
   EXPECT_TRUE(result->isError());
-  ASSERT_TRUE(thread->exceptionValue()->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(thread->exceptionValue()),
+  ASSERT_TRUE(thread->pendingExceptionValue()->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(thread->pendingExceptionValue()),
                      "can't set attributes of built-in/extension type");
 }
 
@@ -3865,8 +3865,9 @@ TEST(RuntimeTest, SettingNewAttributeOnSealedClassThrows) {
   Thread* thread = Thread::currentThread();
   Object result(&scope, runtime.instanceAtPut(thread, set, attr, value));
   ASSERT_TRUE(result->isError());
-  EXPECT_EQ(thread->exceptionType(), runtime.typeAt(LayoutId::kAttributeError));
-  EXPECT_TRUE(thread->exceptionValue().isStr());
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kAttributeError));
+  EXPECT_TRUE(thread->pendingExceptionValue().isStr());
 }
 
 // Exception attributes can be set on the fly.

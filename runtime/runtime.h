@@ -89,6 +89,9 @@ class Runtime {
   RawObject newBuiltinFunction(SymbolId name, Function::Entry entry,
                                Function::Entry entry_kw,
                                Function::Entry entry_ex);
+
+  RawObject newExceptionState();
+
   RawObject newFunction();
 
   RawObject newGenerator();

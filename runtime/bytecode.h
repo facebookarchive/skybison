@@ -98,7 +98,7 @@ namespace python {
   V(YIELD_VALUE, 86, doInvalidBytecode)                                        \
   V(POP_BLOCK, 87, doPopBlock)                                                 \
   V(END_FINALLY, 88, doEndFinally)                                             \
-  V(POP_EXCEPT, 89, doNotImplemented)                                          \
+  V(POP_EXCEPT, 89, doPopExcept)                                               \
   V(STORE_NAME, 90, doStoreName)                                               \
   V(DELETE_NAME, 91, doDeleteName)                                             \
   V(UNPACK_SEQUENCE, 92, doUnpackSequence)                                     \
@@ -139,7 +139,7 @@ namespace python {
   V(STORE_ANNOTATION, 127, doStoreAnnotation)                                  \
   V(UNUSED_BYTECODE_128, 128, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_129, 129, doInvalidBytecode)                               \
-  V(RAISE_VARARGS, 130, doNotImplemented)                                      \
+  V(RAISE_VARARGS, 130, doRaiseVarargs)                                        \
   V(CALL_FUNCTION, 131, doCallFunction)                                        \
   V(MAKE_FUNCTION, 132, doMakeFunction)                                        \
   V(BUILD_SLICE, 133, doBuildSlice)                                            \

@@ -684,6 +684,10 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
   return *result;
 }
 
+RawObject Runtime::newExceptionState() {
+  return heap()->create<RawExceptionState>();
+}
+
 RawObject Runtime::newFunction() {
   HandleScope scope;
   Function result(&scope, heap()->create<RawFunction>());
@@ -1079,11 +1083,15 @@ RawObject Runtime::createMro(const Layout& subclass_layout,
 void Runtime::initializeHeapTypes() {
   ObjectBuiltins::initialize(this);
 
+  // Runtime-internal classes.
+  addEmptyBuiltinType(SymbolId::kExceptionState, LayoutId::kExceptionState,
+                      LayoutId::kObject);
+
   // Abstract classes.
   StrBuiltins::initialize(this);
   IntBuiltins::initialize(this);
 
-  // Exception hierarchy
+  // Exception hierarchy.
   initializeExceptionTypes();
 
   // Concrete classes.
@@ -1419,7 +1427,9 @@ RawObject Runtime::run(const char* buffer) {
     main = createMainModule();
   }
   Module main_module(&scope, *main);
-  return executeModule(buffer, main_module);
+  Object result(&scope, executeModule(buffer, main_module));
+  Thread::currentThread()->abortOnPendingException();
+  return *result;
 }
 
 RawObject Runtime::runFromCStr(const char* c_str) {
@@ -1482,6 +1492,7 @@ RawObject Runtime::importModuleFromBuffer(const char* buffer,
 
 void Runtime::initializeThreads() {
   auto main_thread = new Thread(Thread::kDefaultStackSize);
+  main_thread->setCaughtExceptionState(heap()->create<RawExceptionState>());
   threads_ = main_thread;
   main_thread->setRuntime(this);
   Thread::setCurrentThread(main_thread);
@@ -3059,7 +3070,16 @@ RawObject Runtime::genSend(Thread* thread, const GeneratorBase& gen,
     live_frame->pushValue(*value);
   }
   thread->linkFrame(live_frame);
-  return Interpreter::execute(thread, live_frame);
+
+  // TODO(T38009294): Improve the compiler to avoid this exception state
+  // overhead on every generator entry.
+  ExceptionState exc_state(&scope, gen->exceptionState());
+  exc_state->setPrevious(thread->caughtExceptionState());
+  thread->setCaughtExceptionState(*exc_state);
+  Object result(&scope, Interpreter::execute(thread, live_frame));
+  thread->setCaughtExceptionState(exc_state->previous());
+  exc_state->setPrevious(NoneType::object());
+  return *result;
 }
 
 // Copy a Frame from the stack back into a HeapFrame.

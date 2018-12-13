@@ -293,4 +293,38 @@ TEST_F(ErrorsExtensionApiTest, NormalizeWithNonExceptionDoesNothing) {
   Py_DECREF(exc);
 }
 
+TEST_F(ErrorsExtensionApiTest, NormalizeWithFailingConstructorReturnsNewError) {
+  // TODO(bsimmers): Once we have PyType_FromSpec() (or PyType_Ready() can
+  // handle base classes), add a similar test to ensure that
+  // PyErr_NormalizeException() doesn't loop infinintely when normalization
+  // keeps failing.
+
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class BadException(Exception):
+  def __init__(self, arg):
+    raise RuntimeError(arg)
+)"),
+            0);
+  PyObject* exc = moduleGet("__main__", "BadException");
+  ASSERT_TRUE(PyType_Check(exc));
+
+  const char* msg = "couldn't construct BadException";
+  PyObject* val = PyUnicode_FromString(msg);
+  Py_INCREF(val);
+  PyObject* tb = nullptr;
+  PyErr_NormalizeException(&exc, &val, &tb);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_GivenExceptionMatches(exc, PyExc_RuntimeError));
+  ASSERT_TRUE(PyErr_GivenExceptionMatches(val, PyExc_RuntimeError));
+  PyObjectPtr args(PyObject_GetAttrString(val, "args"));
+  ASSERT_TRUE(PyTuple_CheckExact(args));
+  ASSERT_EQ(PyTuple_Size(args), 1);
+  PyObject* str = PyTuple_GetItem(args, 0);
+  ASSERT_TRUE(PyUnicode_CheckExact(str));
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(str, msg), 0);
+
+  Py_DECREF(val);
+  Py_DECREF(exc);
+}
+
 }  // namespace python

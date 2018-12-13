@@ -7,6 +7,37 @@
 
 namespace python {
 
+bool givenExceptionMatches(Thread* thread, const Object& given,
+                           const Object& exc) {
+  HandleScope scope(thread);
+  if (exc->isTuple()) {
+    Tuple tuple(&scope, *exc);
+    Object item(&scope, NoneType::object());
+    for (word i = 0; i < tuple->length(); i++) {
+      item = tuple->at(i);
+      if (givenExceptionMatches(thread, given, item)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  Runtime* runtime = thread->runtime();
+  Object given_type(&scope, *given);
+  if (runtime->isInstanceOfBaseException(*given_type)) {
+    given_type = runtime->typeOf(*given);
+  }
+  if (runtime->isInstanceOfType(*given_type) &&
+      runtime->isInstanceOfType(*exc)) {
+    Type subtype(&scope, *given_type);
+    Type supertype(&scope, *exc);
+    if (subtype->isBaseExceptionSubclass() &&
+        supertype->isBaseExceptionSubclass()) {
+      return runtime->isSubclass(subtype, supertype);
+    }
+  }
+  return *given_type == *exc;
+}
+
 RawObject createException(Thread* thread, const Type& type,
                           const Object& value) {
   Frame* caller = thread->currentFrame();
@@ -61,9 +92,9 @@ void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
           "maximum recursion depth exceeded while normalizing an exception");
     }
 
-    *exc = thread->exceptionType();
-    *val = thread->exceptionValue();
-    Object new_tb(&scope, thread->exceptionTraceback());
+    *exc = thread->pendingExceptionType();
+    *val = thread->pendingExceptionValue();
+    Object new_tb(&scope, thread->pendingExceptionTraceback());
     if (!new_tb->isNoneType()) *tb = *new_tb;
     thread->clearPendingException();
   }

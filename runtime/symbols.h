@@ -153,6 +153,7 @@ class Runtime;
   V(Ellipsis, "ellipsis")                                                      \
   V(End, "end")                                                                \
   V(Exception, "Exception")                                                    \
+  V(ExceptionState, "ExceptionState")                                          \
   V(ExecBuiltin, "exec_builtin")                                               \
   V(ExecDynamic, "exec_dynamic")                                               \
   V(Exit, "exit")                                                              \

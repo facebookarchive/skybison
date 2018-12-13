@@ -472,11 +472,11 @@ static RawObject createGenerator(const Code& code, Thread* thread) {
   CHECK(code->hasCoroutineOrGenerator(), "must be a coroutine or generator");
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  HeapFrame heap_frame(&scope, runtime->newHeapFrame(code));
   GeneratorBase gen_base(&scope, code->hasGenerator()
                                      ? runtime->newGenerator()
                                      : runtime->newCoroutine());
-  gen_base->setHeapFrame(*heap_frame);
+  gen_base->setHeapFrame(runtime->newHeapFrame(code));
+  gen_base->setExceptionState(runtime->newExceptionState());
   runtime->genSave(thread, gen_base);
   return *gen_base;
 }

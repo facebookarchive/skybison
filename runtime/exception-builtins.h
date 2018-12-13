@@ -5,6 +5,12 @@
 
 namespace python {
 
+// Internal equivalent to PyErr_GivenExceptionMatches(): Return whether or not
+// given is a subtype of any of the BaseException subtypes in exc, which may
+// contain arbitrarily nested tuples.
+bool givenExceptionMatches(Thread* thread, const Object& given,
+                           const Object& exc);
+
 // Create an exception of the given type, which should derive from
 // BaseException. If value is None, no arguments will be passed to the
 // constructor, if value is a tuple, it will be unpacked as arguments, and

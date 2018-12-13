@@ -34,9 +34,10 @@ Thread::Thread(word size)
       initialFrame_(nullptr),
       next_(nullptr),
       runtime_(nullptr),
-      exception_type_(NoneType::object()),
-      exception_value_(NoneType::object()),
-      exception_traceback_(NoneType::object()) {
+      pending_exc_type_(NoneType::object()),
+      pending_exc_value_(NoneType::object()),
+      pending_exc_traceback_(NoneType::object()),
+      caught_exc_stack_(NoneType::object()) {
   start_ = new byte[size];
   // Stack growns down in order to match machine convention
   end_ = start_ + size;
@@ -48,9 +49,10 @@ Thread::~Thread() { delete[] start_; }
 void Thread::visitRoots(PointerVisitor* visitor) {
   visitStackRoots(visitor);
   handles()->visitPointers(visitor);
-  visitor->visitPointer(&exception_type_);
-  visitor->visitPointer(&exception_value_);
-  visitor->visitPointer(&exception_traceback_);
+  visitor->visitPointer(&pending_exc_type_);
+  visitor->visitPointer(&pending_exc_value_);
+  visitor->visitPointer(&pending_exc_traceback_);
+  visitor->visitPointer(&caught_exc_stack_);
 }
 
 void Thread::visitStackRoots(PointerVisitor* visitor) {
@@ -211,9 +213,9 @@ RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
 }
 
 RawObject Thread::raise(LayoutId type, RawObject value) {
-  setExceptionType(runtime()->typeAt(type));
-  setExceptionValue(value);
-  setExceptionTraceback(NoneType::object());
+  setPendingExceptionType(runtime()->typeAt(type));
+  setPendingExceptionValue(value);
+  setPendingExceptionTraceback(NoneType::object());
   return Error::object();
 }
 
@@ -315,11 +317,11 @@ RawObject Thread::raiseZeroDivisionErrorWithCStr(const char* message) {
   return raiseZeroDivisionError(runtime()->newStrFromCStr(message));
 }
 
-bool Thread::hasPendingException() { return !exception_type_->isNoneType(); }
+bool Thread::hasPendingException() { return !pending_exc_type_->isNoneType(); }
 
 bool Thread::hasPendingStopIteration() {
-  return exception_type_->isType() &&
-         RawType::cast(exception_type_).builtinBase() ==
+  return pending_exc_type_->isType() &&
+         RawType::cast(pending_exc_type_).builtinBase() ==
              LayoutId::kStopIteration;
 }
 
@@ -328,8 +330,8 @@ void Thread::ignorePendingException() {
     return;
   }
   *builtinStderr << "ignore pending exception";
-  if (exceptionValue()->isStr()) {
-    RawStr message = RawStr::cast(exceptionValue());
+  if (pendingExceptionValue()->isStr()) {
+    RawStr message = RawStr::cast(pendingExceptionValue());
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);
@@ -343,9 +345,9 @@ void Thread::ignorePendingException() {
 }
 
 void Thread::clearPendingException() {
-  setExceptionType(NoneType::object());
-  setExceptionValue(NoneType::object());
-  setExceptionTraceback(NoneType::object());
+  setPendingExceptionType(NoneType::object());
+  setPendingExceptionValue(NoneType::object());
+  setPendingExceptionTraceback(NoneType::object());
 }
 
 void Thread::abortOnPendingException() {
@@ -353,19 +355,60 @@ void Thread::abortOnPendingException() {
     return;
   }
   std::cerr << "aborting due to pending exception";
-  if (exceptionValue()->isStr()) {
-    RawStr message = RawStr::cast(exceptionValue());
-    word len = message->length();
-    byte* buffer = new byte[len + 1];
-    message->copyTo(buffer, len);
-    buffer[len] = 0;
-    std::cerr << ": " << buffer;
-    delete[] buffer;
+  HandleScope scope(this);
+  Object value(&scope, pendingExceptionValue());
+
+  // If value is a BaseException, grab the first element of its args tuple.
+  if (runtime()->isInstanceOfBaseException(*value)) {
+    BaseException exc(&scope, *value);
+    value = exc->args();
+    if (runtime()->isInstanceOfTuple(*value)) {
+      Tuple tup(&scope, *value);
+      if (tup->length() >= 1) value = tup->at(0);
+    }
+  }
+  if (value->isStr()) {
+    Str message(&scope, *value);
+    std::cerr << ": " << unique_c_ptr<char>(message.toCStr()).get();
   }
   std::cerr << "\n";
   Utils::printTraceback();
 
   std::abort();
+}
+
+bool Thread::hasCaughtException() {
+  return !caughtExceptionType().isNoneType();
+}
+
+RawObject Thread::caughtExceptionType() {
+  return RawExceptionState::cast(caught_exc_stack_).type();
+}
+
+RawObject Thread::caughtExceptionValue() {
+  return RawExceptionState::cast(caught_exc_stack_).value();
+}
+
+RawObject Thread::caughtExceptionTraceback() {
+  return RawExceptionState::cast(caught_exc_stack_).traceback();
+}
+
+void Thread::setCaughtExceptionType(RawObject type) {
+  RawExceptionState::cast(caught_exc_stack_).setType(type);
+}
+
+void Thread::setCaughtExceptionValue(RawObject value) {
+  RawExceptionState::cast(caught_exc_stack_).setValue(value);
+}
+
+void Thread::setCaughtExceptionTraceback(RawObject tb) {
+  RawExceptionState::cast(caught_exc_stack_).setTraceback(tb);
+}
+
+RawObject Thread::caughtExceptionState() { return caught_exc_stack_; }
+
+void Thread::setCaughtExceptionState(RawObject state) {
+  caught_exc_stack_ = state;
 }
 
 void Thread::visitFrames(FrameVisitor* visitor) {

@@ -16,19 +16,27 @@ namespace python {
  *
  * Name    Size    Description
  * ----------------------------------------------------
- * Kind    8       The kind of block this entry represents. CPython uses the
- *                 raw opcode, but AFAICT, only 4 are actually used.
+ * Kind    2       The kind of block this entry represents.
  * Handler 30      Where to jump to find the handler
  * Level   25      Value stack level to pop to
  */
 class TryBlock {
  public:
+  // cpython stores the opcode that pushed the block as the block kind, but only
+  // 4 opcodes actually push blocks. Store the same information with fewer bits.
+  enum Kind {
+    kLoop,
+    kExceptHandler,
+    kExcept,
+    kFinally,
+  };
+
   explicit TryBlock(RawObject value) {
     DCHECK(value->isSmallInt(), "expected small integer");
     value_ = value.raw();
   }
 
-  TryBlock(word kind, word handler, word level) : value_(0) {
+  TryBlock(Kind kind, word handler, word level) : value_(0) {
     setKind(kind);
     setHandler(handler);
     setLevel(level);
@@ -36,8 +44,8 @@ class TryBlock {
 
   RawObject asSmallInt() const;
 
-  word kind() const;
-  void setKind(word kind);
+  Kind kind() const;
+  void setKind(Kind kind);
 
   word handler() const;
   void setHandler(word handler);
@@ -52,7 +60,7 @@ class TryBlock {
   uword value_;
 
   static const int kKindOffset = RawSmallInt::kTagSize;
-  static const int kKindSize = 8;
+  static const int kKindSize = 2;
   static const uword kKindMask = (1 << kKindSize) - 1;
 
   static const int kHandlerOffset = kKindOffset + kKindSize;  // 9
@@ -78,6 +86,8 @@ class BlockStack {
  public:
   void push(const TryBlock& block);
 
+  word depth();
+
   TryBlock pop();
 
   TryBlock peek();
@@ -91,9 +101,7 @@ class BlockStack {
   uword address();
   RawObject at(int offset);
   void atPut(int offset, RawObject value);
-
-  word top();
-  void setTop(word new_top);
+  void setDepth(word new_top);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(BlockStack);
 };
@@ -502,9 +510,11 @@ inline RawObject TryBlock::asSmallInt() const {
   return obj;
 }
 
-inline word TryBlock::kind() const { return valueBits(kKindOffset, kKindMask); }
+inline TryBlock::Kind TryBlock::kind() const {
+  return static_cast<Kind>(valueBits(kKindOffset, kKindMask));
+}
 
-inline void TryBlock::setKind(word kind) {
+inline void TryBlock::setKind(Kind kind) {
   setValueBits(kKindOffset, kKindMask, kind);
 }
 
@@ -529,6 +539,7 @@ inline word TryBlock::valueBits(uword offset, uword mask) const {
 }
 
 inline void TryBlock::setValueBits(uword offset, uword mask, word value) {
+  DCHECK((value & ~mask) == 0, "Invalid value");
   value_ |= (value & mask) << offset;
 }
 
@@ -542,33 +553,33 @@ inline void BlockStack::atPut(int offset, RawObject value) {
   *reinterpret_cast<RawObject*>(address() + offset) = value;
 }
 
-inline word BlockStack::top() {
+inline word BlockStack::depth() {
   return RawSmallInt::cast(at(kTopOffset))->value();
 }
 
-inline void BlockStack::setTop(word new_top) {
+inline void BlockStack::setDepth(word new_top) {
   DCHECK_INDEX(new_top, kMaxBlockStackDepth);
   atPut(kTopOffset, SmallInt::fromWord(new_top));
 }
 
 inline TryBlock BlockStack::peek() {
-  word stack_top = top() - 1;
+  word stack_top = depth() - 1;
   DCHECK(stack_top > -1, "block stack underflow %ld", stack_top);
   RawObject block = at(kStackOffset + stack_top * kPointerSize);
   return TryBlock(block);
 }
 
 inline void BlockStack::push(const TryBlock& block) {
-  word stack_top = top();
+  word stack_top = depth();
   atPut(kStackOffset + stack_top * kPointerSize, block.asSmallInt());
-  setTop(stack_top + 1);
+  setDepth(stack_top + 1);
 }
 
 inline TryBlock BlockStack::pop() {
-  word stack_top = top() - 1;
+  word stack_top = depth() - 1;
   DCHECK(stack_top > -1, "block stack underflow %ld", stack_top);
   RawObject block = at(kStackOffset + stack_top * kPointerSize);
-  setTop(stack_top);
+  setDepth(stack_top);
   return TryBlock(block);
 }
 

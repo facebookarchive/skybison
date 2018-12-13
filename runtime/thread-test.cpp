@@ -254,8 +254,8 @@ TEST(ThreadTest, OverlappingFrames) {
 }
 
 TEST(ThreadTest, EncodeTryBlock) {
-  TryBlock block(100, 200, 300);
-  EXPECT_EQ(block.kind(), 100);
+  TryBlock block(TryBlock::kExcept, 200, 300);
+  EXPECT_EQ(block.kind(), TryBlock::kExcept);
   EXPECT_EQ(block.handler(), 200);
   EXPECT_EQ(block.level(), 300);
 
@@ -373,10 +373,10 @@ TEST(ThreadTest, ManipulateBlockStack) {
   auto frame = thread->openAndLinkFrame(0, 0, 0);
   BlockStack* block_stack = frame->blockStack();
 
-  TryBlock pushed1(Bytecode::SETUP_LOOP, 100, 10);
+  TryBlock pushed1(TryBlock::kLoop, 100, 10);
   block_stack->push(pushed1);
 
-  TryBlock pushed2(Bytecode::SETUP_EXCEPT, 200, 20);
+  TryBlock pushed2(TryBlock::kExcept, 200, 20);
   block_stack->push(pushed2);
 
   TryBlock popped2 = block_stack->pop();
@@ -1172,7 +1172,7 @@ TEST(ThreadTest, SetupLoop) {
   // SETUP_LOOP should have pushed an entry onto the block stack with a
   // stack depth of 3
   TryBlock block = frame->blockStack()->pop();
-  EXPECT_EQ(block.kind(), Bytecode::SETUP_LOOP);
+  EXPECT_EQ(block.kind(), TryBlock::kLoop);
   EXPECT_EQ(block.handler(), 102);
   EXPECT_EQ(block.level(), 3);
 }
@@ -1197,7 +1197,7 @@ TEST(ThreadTest, PopBlock) {
 
   // Push an entry onto the block stack. When popped, this should set the stack
   // pointer to point to the bottom most element on the stack.
-  frame->blockStack()->push(TryBlock(Bytecode::SETUP_LOOP, 0, 1));
+  frame->blockStack()->push(TryBlock(TryBlock::kLoop, 0, 1));
 
   RawObject result = Interpreter::execute(thread, frame);
 
@@ -1451,14 +1451,21 @@ TEST(ThreadDeathTest, NativeExceptions) {
   consts->atPut(0, *fn);
   code->setConsts(*consts);
 
-  // Call the native function and assert that it causes program termination due
-  // to throwing an exception.
+  // Call the native function and check that a pending exception is left in the
+  // Thread.
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
   code->setStacksize(1);
 
-  ASSERT_DEATH(Thread::currentThread()->run(code),
-               "aborting due to pending exception: test exception");
+  Thread* thread = Thread::currentThread();
+  thread->run(code);
+  EXPECT_TRUE(Thread::currentThread()->hasPendingException());
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kRuntimeError));
+  Object value(&scope, thread->pendingExceptionValue());
+  ASSERT_TRUE(value->isStr());
+  Str str(&scope, *value);
+  EXPECT_TRUE(str->equalsCStr("test exception"));
 }
 
 // MRO tests
@@ -1692,7 +1699,7 @@ INSTANTIATE_TEST_CASE_P(ManipulateLocals, LocalsTest,
 TEST(ThreadDeathTest, RaiseVarargs) {
   Runtime runtime;
   ASSERT_DEATH(runtime.runFromCStr("raise 1"),
-               "unimplemented: bytecode 'RAISE_VARARGS'");
+               "exceptions must derive from BaseException");
 }
 
 TEST(ThreadTest, InheritFromObject) {
@@ -1855,29 +1862,6 @@ print(c[11])
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "3\n4\n11\n");
-}
-
-TEST(ThreadDeathTest, PrintStackTrace) {
-  const char* src = R"(
-def a():
-  raise 'testing 123'
-
-def b():
-  a()
-
-def test():
-  b()
-
-test()
-)";
-  Runtime runtime;
-  const char* re =
-      "Traceback \\(most recent call last\\)\n"
-      "  File '.+', line 11, in <module>\n"
-      "  File '.+', line 9, in test\n"
-      "  File '.+', line 6, in b\n"
-      "  File '.+', line 3, in a\n";
-  EXPECT_DEATH(runtime.runFromCStr(src), re);
 }
 
 TEST(ThreadTest, Closure) {
@@ -2184,7 +2168,7 @@ b = {x for x in a}
   runtime.runFromCStr(src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
-  EXPECT_EQ(b->isSet(), true);
+  ASSERT_TRUE(b->isSet());
   Set set_b(&scope, *b);
   EXPECT_EQ(set_b->numItems(), 3);
 }

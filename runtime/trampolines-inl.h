@@ -19,12 +19,6 @@ RawObject nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
   Object result(&scope, Fn(thread, frame, argc));
   DCHECK(result->isError() == thread->hasPendingException(),
          "error/exception mismatch");
-  // TODO(bsimmers): Allow StopIteration exceptions to pass through here until
-  // we have proper exception support, reying on our caller to specifically
-  // check for it.
-  if (!thread->hasPendingStopIteration()) {
-    thread->abortOnPendingException();
-  }
   thread->popFrame();
   return *result;
 }
@@ -37,12 +31,6 @@ RawObject nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/,
   Object result(&scope, Fn(thread, frame, argc + 1));
   DCHECK(result->isError() == thread->hasPendingException(),
          "error/exception mismatch");
-  // TODO(bsimmers): Allow StopIteration exceptions to pass through here until
-  // we have proper exception support, reying on our caller to specifically
-  // check for it.
-  if (!thread->hasPendingStopIteration()) {
-    thread->abortOnPendingException();
-  }
   thread->popFrame();
   return *result;
 }

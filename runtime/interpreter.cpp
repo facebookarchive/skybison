@@ -4,6 +4,7 @@
 #include <cstdlib>
 
 #include "dict-builtins.h"
+#include "exception-builtins.h"
 #include "frame.h"
 #include "objects.h"
 #include "runtime.h"
@@ -89,7 +90,7 @@ RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
     return callable;
   }
   RawObject result = RawFunction::cast(callable)->entry()(thread, frame, nargs);
-  // Clear the stack of the function object.
+  // Clear the stack of the function object and return.
   frame->setValueStackTop(sp);
   return result;
 }
@@ -541,7 +542,7 @@ RawObject Interpreter::yieldFrom(Thread* thread, Frame* frame) {
   }
   if (result->isError()) {
     if (thread->hasPendingStopIteration()) {
-      frame->setTopValue(thread->exceptionValue());
+      frame->setTopValue(thread->pendingExceptionValue());
       thread->clearPendingException();
       return Error::object();
     }
@@ -552,6 +553,127 @@ RawObject Interpreter::yieldFrom(Thread* thread, Frame* frame) {
   GeneratorBase gen(&scope, thread->runtime()->genFromStackFrame(frame));
   thread->runtime()->genSave(thread, gen);
   return *result;
+}
+
+void Interpreter::raise(Context* ctx, RawObject raw_exc, RawObject raw_cause) {
+  Thread* thread = ctx->thread;
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(ctx->thread);
+  Object exc(&scope, raw_exc);
+  Object cause(&scope, raw_cause);
+  Object type(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+
+  if (runtime->isInstanceOfType(*exc) &&
+      Type(&scope, *exc)->isBaseExceptionSubclass()) {
+    // raise was given a BaseException subtype. Use it as the type, and call
+    // the type object to create the value.
+    type = *exc;
+    value = Interpreter::callFunction0(thread, ctx->frame, type);
+    if (value->isError()) return;
+    if (!runtime->isInstanceOfBaseException(*value)) {
+      // TODO(bsimmers): Include relevant types here once we have better string
+      // formatting.
+      thread->raiseTypeErrorWithCStr(
+          "calling exception type did not return an instance of BaseException");
+      return;
+    }
+  } else if (runtime->isInstanceOfBaseException(*exc)) {
+    // raise was given an instance of a BaseException subtype. Use it as the
+    // value and pull out its type.
+    value = *exc;
+    type = runtime->typeOf(*value);
+  } else {
+    // raise was given some other, unexpected value.
+    ctx->thread->raiseTypeErrorWithCStr(
+        "exceptions must derive from BaseException");
+    return;
+  }
+
+  // Handle the two-arg form of RAISE_VARARGS, corresponding to "raise x from
+  // y". If the cause is a type, call it to create an instance. Either way,
+  // attach the cause the the primary exception.
+  if (!cause->isError()) {  // TODO(T25860930) use Unbound rather than Error.
+    if (runtime->isInstanceOfType(*cause) &&
+        Type(&scope, *cause)->isBaseExceptionSubclass()) {
+      cause = Interpreter::callFunction0(thread, ctx->frame, cause);
+      if (cause->isError()) return;
+    } else if (!runtime->isInstanceOfBaseException(*cause) &&
+               !cause->isNoneType()) {
+      thread->raiseTypeErrorWithCStr(
+          "exception causes must derive from BaseException");
+      return;
+    }
+    BaseException(&scope, *value)->setCause(*cause);
+  }
+
+  // If we made it here, the process didn't fail with a different exception.
+  // Set the pending exception, which is now ready for unwinding. This leaves
+  // the VM in a state similar to API functions like PyErr_SetObject(). The
+  // main difference is that pendingExceptionValue() will always be an
+  // exception instance here, but in the API call case it may be any object
+  // (most commonly a str). This discrepancy is cleaned up by
+  // normalizeException() in unwind().
+  ctx->thread->setPendingExceptionType(*type);
+  ctx->thread->setPendingExceptionValue(*value);
+}
+
+bool Interpreter::unwind(Context* ctx) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Frame* frame = ctx->frame;
+  BlockStack* stack = frame->blockStack();
+
+  // TODO(bsimmers): Record traceback for newly-raised exceptions, like what
+  // CPython does with PyTraceBack_Here().
+
+  // TODO(T31788973): Extend this to unwind more than one Frame before giving
+  // up.
+  while (stack->depth() > 0) {
+    TryBlock block = stack->pop();
+    if (block.kind() == TryBlock::kExceptHandler) {
+      // Drop all dead values except for the 3 that are popped into the caught
+      // exception state.
+      frame->dropValues(frame->valueStackSize() - block.level() - 3);
+      thread->setCaughtExceptionType(frame->popValue());
+      thread->setCaughtExceptionValue(frame->popValue());
+      thread->setCaughtExceptionTraceback(frame->popValue());
+    } else {
+      frame->dropValues(frame->valueStackSize() - block.level());
+    }
+
+    if (block.kind() != TryBlock::kExcept &&
+        block.kind() != TryBlock::kFinally) {
+      continue;
+    }
+
+    // Push a handler block and save the current caught exception, if any.
+    stack->push(TryBlock{TryBlock::kExceptHandler, 0, frame->valueStackSize()});
+    frame->pushValue(thread->caughtExceptionTraceback());
+    frame->pushValue(thread->caughtExceptionValue());
+    frame->pushValue(thread->caughtExceptionType());
+
+    // Load and normalize the pending exception.
+    Object type(&scope, thread->pendingExceptionType());
+    Object value(&scope, thread->pendingExceptionValue());
+    Object traceback(&scope, thread->pendingExceptionTraceback());
+    thread->clearPendingException();
+    normalizeException(thread, &type, &value, &traceback);
+    BaseException(&scope, *value)->setTraceback(*traceback);
+
+    // Promote the normalized exception to caught, push it for the bytecode
+    // handler, and jump to the handler.
+    thread->setCaughtExceptionType(*type);
+    thread->setCaughtExceptionValue(*value);
+    thread->setCaughtExceptionTraceback(*traceback);
+    frame->pushValue(*traceback);
+    frame->pushValue(*value);
+    frame->pushValue(*type);
+    ctx->pc = block.handler();
+    return false;
+  }
+
+  return true;
 }
 
 static Bytecode currentBytecode(const Interpreter::Context* ctx) {
@@ -671,7 +793,7 @@ void Interpreter::doBinarySubtract(Context* ctx, word) {
 }
 
 // opcode 25
-void Interpreter::doBinarySubscr(Context* ctx, word) {
+bool Interpreter::doBinarySubscr(Context* ctx, word) {
   HandleScope scope(ctx->thread);
   Runtime* runtime = ctx->thread->runtime();
   Object key(&scope, ctx->frame->popValue());
@@ -680,12 +802,15 @@ void Interpreter::doBinarySubscr(Context* ctx, word) {
   Object getitem(&scope, runtime->lookupSymbolInMro(ctx->thread, type,
                                                     SymbolId::kDunderGetItem));
   if (getitem->isError()) {
-    ctx->frame->pushValue(ctx->thread->raiseTypeErrorWithCStr(
-        "object does not support indexing"));
-  } else {
-    ctx->frame->pushValue(
-        callMethod2(ctx->thread, ctx->frame, getitem, container, key));
+    ctx->thread->raiseTypeErrorWithCStr("object does not support indexing");
+    return unwind(ctx);
   }
+
+  Object result(&scope,
+                callMethod2(ctx->thread, ctx->frame, getitem, container, key));
+  if (result->isError()) return unwind(ctx);
+  ctx->frame->pushValue(*result);
+  return false;
 }
 
 // opcode 26
@@ -1063,11 +1188,48 @@ void Interpreter::doPopBlock(Context* ctx, word) {
   frame->setValueStackTop(frame->valueStackBase() - block.level());
 }
 
-void Interpreter::doEndFinally(Context* ctx, word) {
-  RawObject status = ctx->frame->popValue();
-  if (!status->isNoneType()) {
-    UNIMPLEMENTED("exception handling in context manager");
+// opcode 88
+bool Interpreter::doEndFinally(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+
+  Object status(&scope, ctx->frame->popValue());
+  if (thread->runtime()->isInstanceOfType(status)) {
+    Type type(&scope, *status);
+    if (type->isBaseExceptionSubclass()) {
+      thread->setPendingExceptionType(*type);
+      thread->setPendingExceptionValue(ctx->frame->popValue());
+      thread->setPendingExceptionTraceback(ctx->frame->popValue());
+      return unwind(ctx);
+    }
   }
+
+  if (!status->isNoneType()) {
+    // status may also be an Int, in which case it indicates the non-exception
+    // reason for executing the finally block (return, break, etc.).
+    UNIMPLEMENTED("unsupported finally case");
+  }
+
+  return false;
+}
+
+// opcode 89
+void Interpreter::doPopExcept(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+
+  TryBlock block = ctx->frame->blockStack()->pop();
+  if (block.kind() != TryBlock::kExceptHandler) {
+    thread->raiseSystemErrorWithCStr("popped block is not an except handler");
+    thread->abortOnPendingException();
+  }
+
+  // Drop all dead values except for the 3 that are popped into the caught
+  // exception state.
+  frame->dropValues(frame->valueStackSize() - block.level() - 3);
+  thread->setCaughtExceptionType(frame->popValue());
+  thread->setCaughtExceptionValue(frame->popValue());
+  thread->setCaughtExceptionTraceback(frame->popValue());
 }
 
 // opcode 90
@@ -1344,8 +1506,8 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
     return;
   }
 
-  // In the module body, globals == implicit_globals, so no need to check twice.
-  // However in class body, it is a different dict.
+  // In the module body, globals == implicit_globals, so no need to check
+  // twice. However in class body, it is a different dict.
   if (frame->implicitGlobals() != frame->globals()) {
     // 2. globals
     Dict globals(&scope, frame->globals());
@@ -1441,9 +1603,34 @@ void Interpreter::doLoadAttr(Context* ctx, word arg) {
   ctx->frame->setTopValue(result);
 }
 
+static RawObject excMatch(Interpreter::Context* ctx, const Object& left,
+                          const Object& right) {
+  Runtime* runtime = ctx->thread->runtime();
+  HandleScope scope(ctx->thread);
+
+  static const char* cannot_catch_msg =
+      "catching classes that do not inherit from BaseException is not allowed";
+  if (runtime->isInstanceOfTuple(*right)) {
+    // TODO(bsimmers): handle tuple subclasses
+    Tuple tuple(&scope, *right);
+    for (word i = 0, length = tuple->length(); i < length; i++) {
+      Object obj(&scope, tuple->at(i));
+      if (!(runtime->isInstanceOfType(*obj) &&
+            Type(&scope, *obj)->isBaseExceptionSubclass())) {
+        return ctx->thread->raiseTypeErrorWithCStr(cannot_catch_msg);
+      }
+    }
+  } else if (!(runtime->isInstanceOfType(*right) &&
+               Type(&scope, *right)->isBaseExceptionSubclass())) {
+    return ctx->thread->raiseTypeErrorWithCStr(cannot_catch_msg);
+  }
+
+  return Bool::fromBool(givenExceptionMatches(ctx->thread, left, right));
+}
+
 // opcode 107
-void Interpreter::doCompareOp(Context* ctx, word arg) {
-  HandleScope scope;
+bool Interpreter::doCompareOp(Context* ctx, word arg) {
+  HandleScope scope(ctx->thread);
   Object right(&scope, ctx->frame->popValue());
   Object left(&scope, ctx->frame->popValue());
   CompareOp op = static_cast<CompareOp>(arg);
@@ -1457,10 +1644,15 @@ void Interpreter::doCompareOp(Context* ctx, word arg) {
   } else if (op == NOT_IN) {
     result =
         Bool::negate(sequenceContains(ctx->thread, ctx->frame, left, right));
+  } else if (op == EXC_MATCH) {
+    result = excMatch(ctx, left, right);
   } else {
     result = compareOperation(ctx->thread, ctx->frame, op, left, right);
   }
+
+  if (result.isError()) return unwind(ctx);
   ctx->frame->pushValue(result);
+  return false;
 }
 
 // opcode 108
@@ -1558,11 +1750,11 @@ void Interpreter::doLoadGlobal(Context* ctx, word arg) {
 void Interpreter::doContinueLoop(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   TryBlock block = frame->blockStack()->peek();
-  word kind = block.kind();
-  while (kind != Bytecode::SETUP_LOOP) {
+  TryBlock::Kind kind = block.kind();
+  while (kind != TryBlock::kLoop) {
     frame->blockStack()->pop();
     kind = frame->blockStack()->peek().kind();
-    if (kind != Bytecode::SETUP_LOOP && kind != Bytecode::SETUP_EXCEPT) {
+    if (kind != TryBlock::kLoop && kind != TryBlock::kExcept) {
       UNIMPLEMENTED("Can only unwind loop and exception blocks");
     }
   }
@@ -1574,16 +1766,15 @@ void Interpreter::doSetupLoop(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
-  block_stack->push(TryBlock(Bytecode::SETUP_LOOP, ctx->pc + arg, stack_depth));
+  block_stack->push(TryBlock(TryBlock::kLoop, ctx->pc + arg, stack_depth));
 }
 
 // opcode 121
 void Interpreter::doSetupExcept(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
-  word stack_depth = frame->valueStackBase() - frame->valueStackTop();
+  word stack_depth = frame->valueStackSize();
   BlockStack* block_stack = frame->blockStack();
-  block_stack->push(
-      TryBlock(Bytecode::SETUP_EXCEPT, ctx->pc + arg, stack_depth));
+  block_stack->push(TryBlock(TryBlock::kExcept, ctx->pc + arg, stack_depth));
 }
 
 // opcode 122
@@ -1591,8 +1782,7 @@ void Interpreter::doSetupFinally(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
-  block_stack->push(
-      TryBlock(Bytecode::SETUP_FINALLY, ctx->pc + arg, stack_depth));
+  block_stack->push(TryBlock(TryBlock::kFinally, ctx->pc + arg, stack_depth));
 }
 
 // opcode 124
@@ -1641,12 +1831,37 @@ void Interpreter::doStoreAnnotation(Context* ctx, word arg) {
   runtime->dictAtPut(anno_dict, key, value);
 }
 
+// opcode 130
+bool Interpreter::doRaiseVarargs(Context* ctx, word arg) {
+  DCHECK(arg >= 0, "Negative argument to RAISE_VARARGS");
+  DCHECK(arg <= 2, "Argument to RAISE_VARARGS too large");
+
+  Thread* thread = ctx->thread;
+  if (arg == 0) {
+    // Re-raise the caught exception.
+    if (thread->hasCaughtException()) {
+      thread->setPendingExceptionType(thread->caughtExceptionType());
+      thread->setPendingExceptionValue(thread->caughtExceptionValue());
+      thread->setPendingExceptionTraceback(thread->caughtExceptionTraceback());
+    } else {
+      thread->raiseRuntimeErrorWithCStr("No active exception to reraise");
+    }
+  } else {
+    Frame* frame = ctx->frame;
+    RawObject cause = (arg >= 2) ? frame->popValue() : Error::object();
+    RawObject exn = (arg >= 1) ? frame->popValue() : NoneType::object();
+    raise(ctx, exn, cause);
+  }
+
+  return unwind(ctx);
+}
+
 // opcode 131
-void Interpreter::doCallFunction(Context* ctx, word arg) {
+bool Interpreter::doCallFunction(Context* ctx, word arg) {
   RawObject result = call(ctx->thread, ctx->frame, arg);
-  // TODO(T31788973): propagate an exception
-  ctx->thread->abortOnPendingException();
+  if (result.isError()) return unwind(ctx);
   ctx->frame->pushValue(result);
+  return false;
 }
 
 // opcode 132
@@ -1793,8 +2008,7 @@ void Interpreter::doSetupWith(Context* ctx, word arg) {
 
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
-  block_stack->push(
-      TryBlock(Bytecode::SETUP_FINALLY, ctx->pc + arg, stack_depth));
+  block_stack->push(TryBlock(TryBlock::kFinally, ctx->pc + arg, stack_depth));
   frame->pushValue(*result);
 }
 
@@ -1872,7 +2086,7 @@ void Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
     if (dictUpdate(thread, dict, obj).isError()) {
-      if (thread->exceptionType() ==
+      if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
         // TODO(bsimmers): Include type name once we have a better formatter.
         thread->clearPendingException();
@@ -1896,13 +2110,13 @@ void Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
     if (dictMergeHard(thread, dict, obj).isError()) {
-      if (thread->exceptionType() ==
+      if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
         thread->clearPendingException();
         thread->raiseTypeErrorWithCStr("object is not a mapping");
-      } else if (thread->exceptionType() ==
+      } else if (thread->pendingExceptionType() ==
                  runtime->typeAt(LayoutId::kKeyError)) {
-        Object value(&scope, thread->exceptionValue());
+        Object value(&scope, thread->pendingExceptionValue());
         thread->clearPendingException();
         // TODO(bsimmers): Make these error messages more informative once
         // we have a better formatter.
@@ -1969,8 +2183,7 @@ void Interpreter::doSetupAsyncWith(Context* ctx, word arg) {
   Object result(&scope, frame->popValue());
   word stack_depth = frame->valueStackSize();
   BlockStack* block_stack = frame->blockStack();
-  block_stack->push(
-      TryBlock(Bytecode::SETUP_FINALLY, ctx->pc + arg, stack_depth));
+  block_stack->push(TryBlock(TryBlock::kFinally, ctx->pc + arg, stack_depth));
   frame->pushValue(*result);
 }
 
@@ -2031,9 +2244,27 @@ void Interpreter::doBuildString(Context* ctx, word arg) {
   }
 }
 
-using Op = void (*)(Interpreter::Context*, word);
-const Op kOpTable[] = {
-#define HANDLER(name, value, handler) Interpreter::handler,
+// Bytecode handlers that might raise an exception return bool rather than
+// void.  These wrappers normalize the calling convention so handlers that
+// never raise can continue returning void.  They will likely be rendered
+// obsolete by future work we have planned to restructure and/or JIT the
+// interpreter dispatch loop.
+using VoidOp = void (*)(Interpreter::Context*, word);
+using BoolOp = bool (*)(Interpreter::Context*, word);
+
+template <VoidOp op>
+bool wrapHandler(Interpreter::Context* ctx, word arg) {
+  op(ctx, arg);
+  return false;
+}
+
+template <BoolOp op>
+bool wrapHandler(Interpreter::Context* ctx, word arg) {
+  return op(ctx, arg);
+}
+
+const BoolOp kOpTable[] = {
+#define HANDLER(name, value, handler) wrapHandler<Interpreter::handler>,
     FOREACH_BYTECODE(HANDLER)
 #undef HANDLER
 };
@@ -2080,8 +2311,12 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
         thread->runtime()->genSave(thread, gen);
         return *result;
       }
-      default:
-        kOpTable[bc](&ctx, arg);
+      default: {
+        if (kOpTable[bc](&ctx, arg)) {
+          thread->popFrame();
+          return Error::object();
+        }
+      }
     }
   }
 }
