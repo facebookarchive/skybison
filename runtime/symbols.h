@@ -132,6 +132,7 @@ class Runtime;
   V(Chr, "chr")                                                                \
   V(Classmethod, "classmethod")                                                \
   V(Code, "code")                                                              \
+  V(Compile, "compile")                                                        \
   V(Complex, "complex")                                                        \
   V(ConnectionAbortedError, "ConnectionAbortedError")                          \
   V(ConnectionError, "ConnectionError")                                        \

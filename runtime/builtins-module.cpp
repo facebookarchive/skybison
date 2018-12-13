@@ -8,6 +8,7 @@
 #include "handles.h"
 #include "int-builtins.h"
 #include "interpreter.h"
+#include "marshal.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
@@ -168,6 +169,57 @@ RawObject builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
   word w = RawSmallInt::cast(arg)->value();
   const char s[2]{static_cast<char>(w), 0};
   return SmallStr::fromCStr(s);
+}
+
+static RawObject compileStr(Thread* thread, const Str& source) {
+  HandleScope scope(thread);
+  unique_c_ptr<char[]> source_str(source->toCStr());
+  std::unique_ptr<char[]> bytecode_str(Runtime::compile(source_str.get()));
+  source_str.reset();
+  Marshal::Reader reader(&scope, thread->runtime(), bytecode_str.get());
+  reader.readLong();  // magic
+  reader.readLong();  // mtime
+  reader.readLong();  // size
+  return reader.readObject();
+}
+
+RawObject builtinCompile(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 3 || nargs > 6) {
+    return thread->raiseTypeErrorWithCStr(
+        "Expected 3 to 6 arguments in 'compile'");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  if (!args.get(0).isStr()) {
+    return thread->raiseTypeErrorWithCStr(
+        "compile() does not yet support non-str source");
+  }
+  Str source_str(&scope, args.get(0));
+  Str filename(&scope, args.get(1));
+  Str mode(&scope, args.get(2));
+  // TODO(emacs): Refactor into sane argument-fetching code
+  if (nargs > 3 && args.get(3) != SmallInt::fromWord(0)) {  // not the default
+    return thread->raiseTypeErrorWithCStr(
+        "compile() does not yet support user-supplied flags");
+  }
+  if (nargs > 4 && args.get(4) != Bool::falseObj()) {  // not the default
+    return thread->raiseTypeErrorWithCStr(
+        "compile() does not yet support user-supplied dont_inherit");
+  }
+  if (nargs > 5 && args.get(5) != SmallInt::fromWord(-1)) {  // not the default
+    return thread->raiseTypeErrorWithCStr(
+        "compile() does not yet support user-supplied optimize");
+  }
+  // Note: mode doesn't actually do anything yet.
+  if (!mode->equalsCStr("exec") && !mode->equalsCStr("eval") &&
+      !mode->equalsCStr("single")) {
+    return thread->raiseValueErrorWithCStr(
+        "Expected mode to be 'exec', 'eval', or 'single' in 'compile'");
+  }
+
+  Code code(&scope, compileStr(thread, source_str));
+  code->setFilename(filename);
+  return *code;
 }
 
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is

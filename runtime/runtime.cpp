@@ -1750,6 +1750,9 @@ void Runtime::createBuiltinsModule() {
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kChr, nativeTrampoline<builtinChr>,
                            unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kCompile,
+                           nativeTrampoline<builtinCompile>,
+                           unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kGetattr,
                            nativeTrampoline<builtinGetattr>,
                            unimplementedTrampoline, unimplementedTrampoline);

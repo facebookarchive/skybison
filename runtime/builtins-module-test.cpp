@@ -541,4 +541,62 @@ d = getattr(list, '__qualname__')
   EXPECT_TRUE(Str::cast(d)->equalsCStr("list"));
 }
 
+TEST(BuiltinsModuleTest, BuiltinCompile) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* program = R"(
+a = 1
+b = 2
+  )";
+  Str code_str(&scope, runtime.newStrFromCStr(program));
+  Str filename(&scope, runtime.newStrFromCStr("<string>"));
+  Str mode(&scope, runtime.newStrFromCStr("eval"));
+  Code code(&scope, runBuiltin(builtinCompile, code_str, filename, mode));
+  ASSERT_TRUE(code->filename().isStr());
+  EXPECT_TRUE(Str::cast(code->filename()).equals(filename));
+
+  ASSERT_TRUE(code->names().isTuple());
+  Tuple names(&scope, code->names());
+  ASSERT_EQ(names->length(), 2);
+  ASSERT_TRUE(names->contains(runtime.newStrFromCStr("a")));
+  ASSERT_TRUE(names->contains(runtime.newStrFromCStr("b")));
+}
+
+TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenTooFewArgs) {
+  Runtime runtime;
+  HandleScope scope;
+  SmallInt one(&scope, RawSmallInt::fromWord(1));
+  Object result(&scope, runBuiltin(builtinCompile, one));
+  ASSERT_TRUE(result->isError());
+  Thread* thread = Thread::currentThread();
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
+  EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
+}
+
+TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenTooManyArgs) {
+  Runtime runtime;
+  HandleScope scope;
+  SmallInt one(&scope, RawSmallInt::fromWord(1));
+  Object result(&scope,
+                runBuiltin(builtinCompile, one, one, one, one, one, one, one));
+  ASSERT_TRUE(result->isError());
+  Thread* thread = Thread::currentThread();
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
+  EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
+}
+
+TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenBadMode) {
+  Runtime runtime;
+  HandleScope scope;
+  Str hello(&scope, RawSmallStr::fromCStr("hello"));
+  Object result(&scope, runBuiltin(builtinCompile, hello, hello, hello));
+  ASSERT_TRUE(result->isError());
+  Thread* thread = Thread::currentThread();
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kValueError));
+  EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
+}
+
 }  // namespace python
