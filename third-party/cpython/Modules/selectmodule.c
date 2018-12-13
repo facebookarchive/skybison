@@ -279,6 +279,10 @@ select_select(PyObject *self, PyObject *args)
         if (tvp) {
             timeout = deadline - _PyTime_GetMonotonicClock();
             if (timeout < 0) {
+                /* bpo-35310: lists were unmodified -- clear them explicitly */
+                FD_ZERO(&ifdset);
+                FD_ZERO(&ofdset);
+                FD_ZERO(&efdset);
                 n = 0;
                 break;
             }
@@ -651,10 +655,7 @@ poll_poll(pollObject *self, PyObject *args)
             goto error;
         }
         PyTuple_SET_ITEM(value, 1, num);
-        if ((PyList_SetItem(result_list, j, value)) == -1) {
-            Py_DECREF(value);
-            goto error;
-        }
+        PyList_SET_ITEM(result_list, j, value);
         i++;
     }
     return result_list;
@@ -980,10 +981,7 @@ devpoll_poll(devpollObject *self, PyObject *args)
         Py_DECREF(num2);
         if (value == NULL)
             goto error;
-        if ((PyList_SetItem(result_list, i, value)) == -1) {
-            Py_DECREF(value);
-            goto error;
-        }
+        PyList_SET_ITEM(result_list, i, value);
     }
 
     return result_list;
@@ -1026,7 +1024,7 @@ Close the devpoll file descriptor. Further operations on the devpoll\n\
 object will raise an exception.");
 
 static PyObject*
-devpoll_get_closed(devpollObject *self)
+devpoll_get_closed(devpollObject *self, void *Py_UNUSED(ignored))
 {
     if (self->fd_devpoll < 0)
         Py_RETURN_TRUE;
@@ -1302,14 +1300,17 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
 static PyObject *
 pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    int flags = 0, sizehint = FD_SETSIZE - 1;
+    int flags = 0, sizehint = -1;
     static char *kwlist[] = {"sizehint", "flags", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii:epoll", kwlist,
                                      &sizehint, &flags))
         return NULL;
-    if (sizehint < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative sizehint");
+    if (sizehint == -1) {
+        sizehint = FD_SETSIZE - 1;
+    }
+    else if (sizehint <= 0) {
+        PyErr_SetString(PyExc_ValueError, "sizehint must be positive or -1");
         return NULL;
     }
 
@@ -1342,7 +1343,7 @@ Close the epoll control file descriptor. Further operations on the epoll\n\
 object will raise an exception.");
 
 static PyObject*
-pyepoll_get_closed(pyEpoll_Object *self)
+pyepoll_get_closed(pyEpoll_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->epfd < 0)
         Py_RETURN_TRUE;
@@ -2088,7 +2089,7 @@ Close the kqueue control file descriptor. Further operations on the kqueue\n\
 object will raise an exception.");
 
 static PyObject*
-kqueue_queue_get_closed(kqueue_queue_Object *self)
+kqueue_queue_get_closed(kqueue_queue_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->kqfd < 0)
         Py_RETURN_TRUE;

@@ -391,11 +391,16 @@ _Py_string_to_number_with_underscores(
     char *dup, *end;
     PyObject *result;
 
+    assert(s[orig_len] == '\0');
+
     if (strchr(s, '_') == NULL) {
         return innerfunc(s, orig_len, arg);
     }
 
     dup = PyMem_Malloc(orig_len + 1);
+    if (dup == NULL) {
+        return PyErr_NoMemory();
+    }
     end = dup;
     prev = '\0';
     last = s + orig_len;
@@ -431,8 +436,8 @@ _Py_string_to_number_with_underscores(
   error:
     PyMem_Free(dup);
     PyErr_Format(PyExc_ValueError,
-		 "could not convert string to %s: "
-		 "%R", what, obj);
+                 "could not convert string to %s: "
+                 "%R", what, obj);
     return NULL;
 }
 
@@ -1059,8 +1064,6 @@ format_float_short(double d, char format_code,
         else {
             /* shouldn't get here: Gay's code should always return
                something starting with a digit, an 'I',  or 'N' */
-            strncpy(p, "ERR", 3);
-            /* p += 3; */
             assert(0);
         }
         goto exit;

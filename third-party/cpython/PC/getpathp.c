@@ -241,6 +241,36 @@ join(wchar_t *buffer, const wchar_t *stuff)
     }
 }
 
+static int _PathCchCanonicalizeEx_Initialized = 0;
+typedef HRESULT(__stdcall *PPathCchCanonicalizeEx) (PWSTR pszPathOut, size_t cchPathOut,
+    PCWSTR pszPathIn, unsigned long dwFlags);
+static PPathCchCanonicalizeEx _PathCchCanonicalizeEx;
+
+static void canonicalize(wchar_t *buffer, const wchar_t *path)
+{
+    if (_PathCchCanonicalizeEx_Initialized == 0) {
+        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
+        if (pathapi) {
+            _PathCchCanonicalizeEx = (PPathCchCanonicalizeEx)GetProcAddress(pathapi, "PathCchCanonicalizeEx");
+        }
+        else {
+            _PathCchCanonicalizeEx = NULL;
+        }
+        _PathCchCanonicalizeEx_Initialized = 1;
+    }
+
+    if (_PathCchCanonicalizeEx) {
+        if (FAILED(_PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, 0))) {
+            Py_FatalError("buffer overflow in getpathp.c's canonicalize()");
+        }
+    }
+    else {
+        if (!PathCanonicalizeW(buffer, path)) {
+            Py_FatalError("buffer overflow in getpathp.c's canonicalize()");
+        }
+    }
+}
+
 /* gotlandmark only called by search_for_prefix, which ensures
    'prefix' is null terminated in bounds.  join() ensures
    'landmark' can not overflow prefix if too long.
@@ -431,6 +461,7 @@ static void
 get_progpath(void)
 {
     extern wchar_t *Py_GetProgramName(void);
+    wchar_t modulepath[MAXPATHLEN];
     wchar_t *path = _wgetenv(L"PATH");
     wchar_t *prog = Py_GetProgramName();
 
@@ -443,8 +474,10 @@ get_progpath(void)
 #else
     dllpath[0] = 0;
 #endif
-    if (GetModuleFileNameW(NULL, progpath, MAXPATHLEN))
+    if (GetModuleFileNameW(NULL, modulepath, MAXPATHLEN)) {
+        canonicalize(progpath, modulepath);
         return;
+    }
     if (prog == NULL || *prog == '\0')
         prog = L"python";
 
@@ -553,6 +586,9 @@ read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
     size_t prefixlen = wcslen(prefix);
 
     wchar_t *buf = (wchar_t*)PyMem_RawMalloc(bufsiz * sizeof(wchar_t));
+    if (buf == NULL) {
+        goto error;
+    }
     buf[0] = '\0';
 
     while (!feof(sp_file)) {
@@ -578,17 +614,22 @@ read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
 
         DWORD wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, NULL, 0);
         wchar_t *wline = (wchar_t*)PyMem_RawMalloc((wn + 1) * sizeof(wchar_t));
+        if (wline == NULL) {
+            goto error;
+        }
         wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, wline, wn + 1);
         wline[wn] = '\0';
 
         size_t usedsiz = wcslen(buf);
         while (usedsiz + wn + prefixlen + 4 > bufsiz) {
             bufsiz += MAXPATHLEN;
-            buf = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) * sizeof(wchar_t));
-            if (!buf) {
+            wchar_t *tmp = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) *
+                                                            sizeof(wchar_t));
+            if (tmp == NULL) {
                 PyMem_RawFree(wline);
                 goto error;
             }
+            buf = tmp;
         }
 
         if (usedsiz) {

@@ -203,6 +203,39 @@ static PyObject *unicode_empty = NULL;
         return unicode_empty;                           \
     } while (0)
 
+#define FILL(kind, data, value, start, length) \
+    do { \
+        assert(0 <= start); \
+        assert(kind != PyUnicode_WCHAR_KIND); \
+        switch (kind) { \
+        case PyUnicode_1BYTE_KIND: { \
+            assert(value <= 0xff); \
+            Py_UCS1 ch = (unsigned char)value; \
+            Py_UCS1 *to = (Py_UCS1 *)data + start; \
+            memset(to, ch, length); \
+            break; \
+        } \
+        case PyUnicode_2BYTE_KIND: { \
+            assert(value <= 0xffff); \
+            Py_UCS2 ch = (Py_UCS2)value; \
+            Py_UCS2 *to = (Py_UCS2 *)data + start; \
+            const Py_UCS2 *end = to + length; \
+            for (; to < end; ++to) *to = ch; \
+            break; \
+        } \
+        case PyUnicode_4BYTE_KIND: { \
+            assert(value <= MAX_UNICODE); \
+            Py_UCS4 ch = value; \
+            Py_UCS4 * to = (Py_UCS4 *)data + start; \
+            const Py_UCS4 *end = to + length; \
+            for (; to < end; ++to) *to = ch; \
+            break; \
+        } \
+        default: assert(0); \
+        } \
+    } while (0)
+
+
 /* Forward declaration */
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
@@ -779,7 +812,6 @@ ensure_unicode(PyObject *obj)
 #include "stringlib/count.h"
 #include "stringlib/find.h"
 #include "stringlib/find_max_char.h"
-#include "stringlib/localeutil.h"
 #include "stringlib/undef.h"
 
 #include "stringlib/ucs1lib.h"
@@ -790,7 +822,6 @@ ensure_unicode(PyObject *obj)
 #include "stringlib/find.h"
 #include "stringlib/replace.h"
 #include "stringlib/find_max_char.h"
-#include "stringlib/localeutil.h"
 #include "stringlib/undef.h"
 
 #include "stringlib/ucs2lib.h"
@@ -801,7 +832,6 @@ ensure_unicode(PyObject *obj)
 #include "stringlib/find.h"
 #include "stringlib/replace.h"
 #include "stringlib/find_max_char.h"
-#include "stringlib/localeutil.h"
 #include "stringlib/undef.h"
 
 #include "stringlib/ucs4lib.h"
@@ -812,7 +842,6 @@ ensure_unicode(PyObject *obj)
 #include "stringlib/find.h"
 #include "stringlib/replace.h"
 #include "stringlib/find_max_char.h"
-#include "stringlib/localeutil.h"
 #include "stringlib/undef.h"
 
 #include "stringlib/unicodedefs.h"
@@ -3439,8 +3468,9 @@ locale_error_handler(const char *errors, int *surrogateescape)
     }
 }
 
-PyObject *
-PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
+static PyObject *
+unicode_encode_locale(PyObject *unicode, const char *errors,
+                      int current_locale)
 {
     Py_ssize_t wlen, wlen2;
     wchar_t *wstr;
@@ -3469,7 +3499,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
         /* "surrogateescape" error handler */
         char *str;
 
-        str = Py_EncodeLocale(wstr, &error_pos);
+        str = _Py_EncodeLocaleEx(wstr, &error_pos, current_locale);
         if (str == NULL) {
             if (error_pos == (size_t)-1) {
                 PyErr_NoMemory();
@@ -3550,6 +3580,12 @@ encode_error:
 }
 
 PyObject *
+PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
+{
+    return unicode_encode_locale(unicode, errors, 1);
+}
+
+PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
 #if defined(__APPLE__)
@@ -3571,7 +3607,8 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
                                          Py_FileSystemDefaultEncodeErrors);
     }
     else {
-        return PyUnicode_EncodeLocale(unicode, Py_FileSystemDefaultEncodeErrors);
+        return unicode_encode_locale(unicode,
+                                     Py_FileSystemDefaultEncodeErrors, 0);
     }
 #endif
 }
@@ -3741,9 +3778,9 @@ mbstowcs_errorpos(const char *str, size_t len)
     return 0;
 }
 
-PyObject*
-PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
-                              const char *errors)
+static PyObject*
+unicode_decode_locale(const char *str, Py_ssize_t len,
+                      const char *errors, int current_locale)
 {
     wchar_t smallbuf[256];
     size_t smallbuf_len = Py_ARRAY_LENGTH(smallbuf);
@@ -3766,7 +3803,7 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
 
     if (surrogateescape) {
         /* "surrogateescape" error handler */
-        wstr = Py_DecodeLocale(str, &wlen);
+        wstr = _Py_DecodeLocaleEx(str, &wlen, current_locale);
         if (wstr == NULL) {
             if (wlen == (size_t)-1)
                 PyErr_NoMemory();
@@ -3845,10 +3882,17 @@ decode_error:
 }
 
 PyObject*
+PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t size,
+                              const char *errors)
+{
+    return unicode_decode_locale(str, size, errors, 1);
+}
+
+PyObject*
 PyUnicode_DecodeLocale(const char *str, const char *errors)
 {
     Py_ssize_t size = (Py_ssize_t)strlen(str);
-    return PyUnicode_DecodeLocaleAndSize(str, size, errors);
+    return unicode_decode_locale(str, size, errors, 1);
 }
 
 
@@ -3880,7 +3924,8 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
                                 Py_FileSystemDefaultEncodeErrors);
     }
     else {
-        return PyUnicode_DecodeLocaleAndSize(s, size, Py_FileSystemDefaultEncodeErrors);
+        return unicode_decode_locale(s, size,
+                                     Py_FileSystemDefaultEncodeErrors, 0);
     }
 #endif
 }
@@ -4413,7 +4458,10 @@ unicode_decode_call_errorhandler_writer(
     Py_ssize_t insize;
     Py_ssize_t newpos;
     Py_ssize_t replen;
+    Py_ssize_t remain;
     PyObject *inputobj = NULL;
+    int need_to_grow = 0;
+    const char *new_inptr;
 
     if (*errorHandler == NULL) {
         *errorHandler = PyCodec_LookupError(errors);
@@ -4447,6 +4495,7 @@ unicode_decode_call_errorhandler_writer(
     if (!PyBytes_Check(inputobj)) {
         PyErr_Format(PyExc_TypeError, "exception attribute object must be bytes");
     }
+    remain = *inend - *input - *endinpos;
     *input = PyBytes_AS_STRING(inputobj);
     insize = PyBytes_GET_SIZE(inputobj);
     *inend = *input + insize;
@@ -4466,8 +4515,21 @@ unicode_decode_call_errorhandler_writer(
     replen = PyUnicode_GET_LENGTH(repunicode);
     if (replen > 1) {
         writer->min_length += replen - 1;
+        need_to_grow = 1;
+    }
+    new_inptr = *input + newpos;
+    if (*inend - new_inptr > remain) {
+        /* We don't know the decoding algorithm here so we make the worst
+           assumption that one byte decodes to one unicode character.
+           If unfortunately one byte could decode to more unicode characters,
+           the decoder may write out-of-bound then.  Is it possible for the
+           algorithms using this function? */
+        writer->min_length += *inend - new_inptr - remain;
+        need_to_grow = 1;
+    }
+    if (need_to_grow) {
         writer->overallocate = 1;
-        if (_PyUnicodeWriter_Prepare(writer, writer->min_length,
+        if (_PyUnicodeWriter_Prepare(writer, writer->min_length - writer->pos,
                             PyUnicode_MAX_CHAR_VALUE(repunicode)) == -1)
             goto onError;
     }
@@ -4475,7 +4537,7 @@ unicode_decode_call_errorhandler_writer(
         goto onError;
 
     *endinpos = newpos;
-    *inptr = *input + newpos;
+    *inptr = new_inptr;
 
     /* we made it! */
     Py_XDECREF(restuple);
@@ -5647,7 +5709,8 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 #endif
 
     /* Note: size will always be longer than the resulting Unicode
-       character count */
+       character count normally.  Error handler will take care of
+       resizing when needed. */
     _PyUnicodeWriter_Init(&writer);
     writer.min_length = (e - q + 1) / 2;
     if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
@@ -6099,7 +6162,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
             }
 
             message = "malformed \\N character escape";
-            if (*s == '{') {
+            if (s < end && *s == '{') {
                 const char *start = ++s;
                 size_t namelen;
                 /* look for the closing brace */
@@ -6142,9 +6205,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
                 &writer)) {
             goto onError;
         }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
-            goto onError;
-        }
+        assert(end - s <= writer.size - writer.pos);
 
 #undef WRITE_ASCII_CHAR
 #undef WRITE_CHAR
@@ -6421,9 +6482,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
                 &writer)) {
             goto onError;
         }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
-            goto onError;
-        }
+        assert(end - s <= writer.size - writer.pos);
 
 #undef WRITE_CHAR
     }
@@ -6873,8 +6932,6 @@ unicode_encode_ucs1(PyObject *unicode,
                     str = _PyBytesWriter_WriteBytes(&writer, str,
                                                     PyBytes_AS_STRING(rep),
                                                     PyBytes_GET_SIZE(rep));
-                    if (str == NULL)
-                        goto onError;
                 }
                 else {
                     assert(PyUnicode_Check(rep));
@@ -6910,6 +6967,9 @@ unicode_encode_ucs1(PyObject *unicode,
                         }
                     }
                 }
+                if (str == NULL)
+                    goto onError;
+
                 pos = newpos;
                 Py_CLEAR(rep);
             }
@@ -7225,7 +7285,7 @@ decode_code_page_errors(UINT code_page,
                          "in the target code page.";
     /* each step cannot decode more than 1 character, but a character can be
        represented as a surrogate pair */
-    wchar_t buffer[2], *startout, *out;
+    wchar_t buffer[2], *out;
     int insize;
     Py_ssize_t outsize;
     PyObject *errorHandler = NULL;
@@ -7262,7 +7322,7 @@ decode_code_page_errors(UINT code_page,
         *v = (PyObject*)_PyUnicode_New(size * Py_ARRAY_LENGTH(buffer));
         if (*v == NULL)
             goto error;
-        startout = PyUnicode_AS_UNICODE(*v);
+        out = PyUnicode_AS_UNICODE(*v);
     }
     else {
         /* Extend unicode object */
@@ -7273,11 +7333,10 @@ decode_code_page_errors(UINT code_page,
         }
         if (unicode_resize(v, n + size * Py_ARRAY_LENGTH(buffer)) < 0)
             goto error;
-        startout = PyUnicode_AS_UNICODE(*v) + n;
+        out = PyUnicode_AS_UNICODE(*v) + n;
     }
 
     /* Decode the byte string character per character */
-    out = startout;
     while (in < endin)
     {
         /* Decode a character */
@@ -7332,7 +7391,7 @@ decode_code_page_errors(UINT code_page,
     *out = 0;
 
     /* Extend unicode object */
-    outsize = out - startout;
+    outsize = out - PyUnicode_AS_UNICODE(*v);
     assert(outsize <= PyUnicode_WSTR_LENGTH(*v));
     if (unicode_resize(v, outsize) < 0)
         goto error;
@@ -9376,87 +9435,149 @@ any_find_slice(PyObject* s1, PyObject* s2,
     return result;
 }
 
+/* _PyUnicode_InsertThousandsGrouping() helper functions */
+#include "stringlib/localeutil.h"
+
+/**
+ * InsertThousandsGrouping:
+ * @writer: Unicode writer.
+ * @n_buffer: Number of characters in @buffer.
+ * @digits: Digits we're reading from. If count is non-NULL, this is unused.
+ * @d_pos: Start of digits string.
+ * @n_digits: The number of digits in the string, in which we want
+ *            to put the grouping chars.
+ * @min_width: The minimum width of the digits in the output string.
+ *             Output will be zero-padded on the left to fill.
+ * @grouping: see definition in localeconv().
+ * @thousands_sep: see definition in localeconv().
+ *
+ * There are 2 modes: counting and filling. If @writer is NULL,
+ *  we are in counting mode, else filling mode.
+ * If counting, the required buffer size is returned.
+ * If filling, we know the buffer will be large enough, so we don't
+ *  need to pass in the buffer size.
+ * Inserts thousand grouping characters (as defined by grouping and
+ *  thousands_sep) into @writer.
+ *
+ * Return value: -1 on error, number of characters otherwise.
+ **/
 Py_ssize_t
 _PyUnicode_InsertThousandsGrouping(
-    PyObject *unicode, Py_ssize_t index,
+    _PyUnicodeWriter *writer,
     Py_ssize_t n_buffer,
-    void *digits, Py_ssize_t n_digits,
+    PyObject *digits,
+    Py_ssize_t d_pos,
+    Py_ssize_t n_digits,
     Py_ssize_t min_width,
-    const char *grouping, PyObject *thousands_sep,
+    const char *grouping,
+    PyObject *thousands_sep,
     Py_UCS4 *maxchar)
 {
-    unsigned int kind, thousands_sep_kind;
-    char *data, *thousands_sep_data;
-    Py_ssize_t thousands_sep_len;
-    Py_ssize_t len;
-
-    if (unicode != NULL) {
-        kind = PyUnicode_KIND(unicode);
-        data = (char *) PyUnicode_DATA(unicode) + index * kind;
+    if (writer) {
+        assert(digits != NULL);
+        assert(maxchar == NULL);
     }
     else {
-        kind = PyUnicode_1BYTE_KIND;
-        data = NULL;
+        assert(digits == NULL);
+        assert(maxchar != NULL);
     }
-    thousands_sep_kind = PyUnicode_KIND(thousands_sep);
-    thousands_sep_data = PyUnicode_DATA(thousands_sep);
-    thousands_sep_len = PyUnicode_GET_LENGTH(thousands_sep);
-    if (unicode != NULL && thousands_sep_kind != kind) {
-        if (thousands_sep_kind < kind) {
-            thousands_sep_data = _PyUnicode_AsKind(thousands_sep, kind);
-            if (!thousands_sep_data)
-                return -1;
-        }
-        else {
-            data = _PyUnicode_AsKind(unicode, thousands_sep_kind);
-            if (!data)
-                return -1;
-        }
-    }
+    assert(0 <= d_pos);
+    assert(0 <= n_digits);
+    assert(0 <= min_width);
+    assert(grouping != NULL);
 
-    switch (kind) {
-    case PyUnicode_1BYTE_KIND:
-        if (unicode != NULL && PyUnicode_IS_ASCII(unicode))
-            len = asciilib_InsertThousandsGrouping(
-                (Py_UCS1 *) data, n_buffer, (Py_UCS1 *) digits, n_digits,
-                min_width, grouping,
-                (Py_UCS1 *) thousands_sep_data, thousands_sep_len);
-        else
-            len = ucs1lib_InsertThousandsGrouping(
-                (Py_UCS1*)data, n_buffer, (Py_UCS1*)digits, n_digits,
-                min_width, grouping,
-                (Py_UCS1 *) thousands_sep_data, thousands_sep_len);
-        break;
-    case PyUnicode_2BYTE_KIND:
-        len = ucs2lib_InsertThousandsGrouping(
-            (Py_UCS2 *) data, n_buffer, (Py_UCS2 *) digits, n_digits,
-            min_width, grouping,
-            (Py_UCS2 *) thousands_sep_data, thousands_sep_len);
-        break;
-    case PyUnicode_4BYTE_KIND:
-        len = ucs4lib_InsertThousandsGrouping(
-            (Py_UCS4 *) data, n_buffer, (Py_UCS4 *) digits, n_digits,
-            min_width, grouping,
-            (Py_UCS4 *) thousands_sep_data, thousands_sep_len);
-        break;
-    default:
-        assert(0);
+    if (digits != NULL) {
+        if (PyUnicode_READY(digits) == -1) {
+            return -1;
+        }
+    }
+    if (PyUnicode_READY(thousands_sep) == -1) {
         return -1;
     }
-    if (unicode != NULL && thousands_sep_kind != kind) {
-        if (thousands_sep_kind < kind)
-            PyMem_Free(thousands_sep_data);
-        else
-            PyMem_Free(data);
+
+    Py_ssize_t count = 0;
+    Py_ssize_t n_zeros;
+    int loop_broken = 0;
+    int use_separator = 0; /* First time through, don't append the
+                              separator. They only go between
+                              groups. */
+    Py_ssize_t buffer_pos;
+    Py_ssize_t digits_pos;
+    Py_ssize_t len;
+    Py_ssize_t n_chars;
+    Py_ssize_t remaining = n_digits; /* Number of chars remaining to
+                                        be looked at */
+    /* A generator that returns all of the grouping widths, until it
+       returns 0. */
+    GroupGenerator groupgen;
+    GroupGenerator_init(&groupgen, grouping);
+    const Py_ssize_t thousands_sep_len = PyUnicode_GET_LENGTH(thousands_sep);
+
+    /* if digits are not grouped, thousands separator
+       should be an empty string */
+    assert(!(grouping[0] == CHAR_MAX && thousands_sep_len != 0));
+
+    digits_pos = d_pos + n_digits;
+    if (writer) {
+        buffer_pos = writer->pos + n_buffer;
+        assert(buffer_pos <= PyUnicode_GET_LENGTH(writer->buffer));
+        assert(digits_pos <= PyUnicode_GET_LENGTH(digits));
     }
-    if (unicode == NULL) {
+    else {
+        buffer_pos = n_buffer;
+    }
+
+    if (!writer) {
         *maxchar = 127;
-        if (len != n_digits) {
-            *maxchar = Py_MAX(*maxchar,
-                                   PyUnicode_MAX_CHAR_VALUE(thousands_sep));
-        }
     }
-    return len;
+
+    while ((len = GroupGenerator_next(&groupgen)) > 0) {
+        len = Py_MIN(len, Py_MAX(Py_MAX(remaining, min_width), 1));
+        n_zeros = Py_MAX(0, len - remaining);
+        n_chars = Py_MAX(0, Py_MIN(remaining, len));
+
+        /* Use n_zero zero's and n_chars chars */
+
+        /* Count only, don't do anything. */
+        count += (use_separator ? thousands_sep_len : 0) + n_zeros + n_chars;
+
+        /* Copy into the writer. */
+        InsertThousandsGrouping_fill(writer, &buffer_pos,
+                                     digits, &digits_pos,
+                                     n_chars, n_zeros,
+                                     use_separator ? thousands_sep : NULL,
+                                     thousands_sep_len, maxchar);
+
+        /* Use a separator next time. */
+        use_separator = 1;
+
+        remaining -= n_chars;
+        min_width -= len;
+
+        if (remaining <= 0 && min_width <= 0) {
+            loop_broken = 1;
+            break;
+        }
+        min_width -= thousands_sep_len;
+    }
+    if (!loop_broken) {
+        /* We left the loop without using a break statement. */
+
+        len = Py_MAX(Py_MAX(remaining, min_width), 1);
+        n_zeros = Py_MAX(0, len - remaining);
+        n_chars = Py_MAX(0, Py_MIN(remaining, len));
+
+        /* Use n_zero zero's and n_chars chars */
+        count += (use_separator ? thousands_sep_len : 0) + n_zeros + n_chars;
+
+        /* Copy into the writer. */
+        InsertThousandsGrouping_fill(writer, &buffer_pos,
+                                     digits, &digits_pos,
+                                     n_chars, n_zeros,
+                                     use_separator ? thousands_sep : NULL,
+                                     thousands_sep_len, maxchar);
+    }
+    return count;
 }
 
 
@@ -10143,36 +10264,12 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject **items, Py_ssize_t seqlen)
     return NULL;
 }
 
-#define FILL(kind, data, value, start, length) \
-    do { \
-        Py_ssize_t i_ = 0; \
-        assert(kind != PyUnicode_WCHAR_KIND); \
-        switch ((kind)) { \
-        case PyUnicode_1BYTE_KIND: { \
-            unsigned char * to_ = (unsigned char *)((data)) + (start); \
-            memset(to_, (unsigned char)value, (length)); \
-            break; \
-        } \
-        case PyUnicode_2BYTE_KIND: { \
-            Py_UCS2 * to_ = (Py_UCS2 *)((data)) + (start); \
-            for (; i_ < (length); ++i_, ++to_) *to_ = (value); \
-            break; \
-        } \
-        case PyUnicode_4BYTE_KIND: { \
-            Py_UCS4 * to_ = (Py_UCS4 *)((data)) + (start); \
-            for (; i_ < (length); ++i_, ++to_) *to_ = (value); \
-            break; \
-        } \
-        default: assert(0); \
-        } \
-    } while (0)
-
 void
 _PyUnicode_FastFill(PyObject *unicode, Py_ssize_t start, Py_ssize_t length,
                     Py_UCS4 fill_char)
 {
     const enum PyUnicode_Kind kind = PyUnicode_KIND(unicode);
-    const void *data = PyUnicode_DATA(unicode);
+    void *data = PyUnicode_DATA(unicode);
     assert(PyUnicode_IS_READY(unicode));
     assert(unicode_modifiable(unicode));
     assert(fill_char <= PyUnicode_MAX_CHAR_VALUE(unicode));
@@ -11201,7 +11298,7 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (PyUnicode_CHECK_INTERNED(left))
         return 0;
 
-    assert(_PyUnicode_HASH(right_uni) != 1);
+    assert(_PyUnicode_HASH(right_uni) != -1);
     hash = _PyUnicode_HASH(left);
     if (hash != -1 && hash != _PyUnicode_HASH(right_uni))
         return 0;

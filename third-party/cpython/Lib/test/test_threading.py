@@ -125,9 +125,10 @@ class ThreadTests(BaseTestCase):
             done.set()
         done = threading.Event()
         ident = []
-        _thread.start_new_thread(f, ())
-        done.wait()
-        self.assertIsNotNone(ident[0])
+        with support.wait_threads_exit():
+            tid = _thread.start_new_thread(f, ())
+            done.wait()
+            self.assertEqual(ident[0], tid)
         # Kill the "immortal" _DummyThread
         del threading._active[ident[0]]
 
@@ -165,9 +166,10 @@ class ThreadTests(BaseTestCase):
 
         mutex = threading.Lock()
         mutex.acquire()
-        tid = _thread.start_new_thread(f, (mutex,))
-        # Wait for the thread to finish.
-        mutex.acquire()
+        with support.wait_threads_exit():
+            tid = _thread.start_new_thread(f, (mutex,))
+            # Wait for the thread to finish.
+            mutex.acquire()
         self.assertIn(tid, threading._active)
         self.assertIsInstance(threading._active[tid], threading._DummyThread)
         #Issue 29376
@@ -542,6 +544,7 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertEqual(data, "Thread-1\nTrue\nTrue\n")
 
+    @requires_type_collecting
     def test_main_thread_during_shutdown(self):
         # bpo-31516: current_thread() should still point to the main thread
         # at shutdown

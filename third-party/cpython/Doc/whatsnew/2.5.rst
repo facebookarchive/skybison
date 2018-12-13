@@ -229,7 +229,7 @@ required packages. ::
         )
 
 Another new enhancement to the Python package index at
-https://pypi.python.org is storing source and binary archives for a
+https://pypi.org is storing source and binary archives for a
 package.  The new :command:`upload` Distutils command will upload a package to
 the repository.
 
@@ -448,8 +448,9 @@ when you're doing something with the returned value, as in the above example.
 The parentheses aren't always necessary, but it's easier to always add them
 instead of having to remember when they're needed.
 
-(:pep:`342` explains the exact rules, which are that a :keyword:`yield`\
--expression must always be parenthesized except when it occurs at the top-level
+(:pep:`342` explains the exact rules, which are that a
+:keyword:`yield`\ -expression must always be parenthesized except when it
+occurs at the top-level
 expression on the right-hand side of an assignment.  This means you can write
 ``val = yield i`` but have to use parentheses when there's an operation, as in
 ``val = (yield i) + 12``.)

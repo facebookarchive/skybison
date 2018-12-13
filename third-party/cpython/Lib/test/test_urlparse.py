@@ -520,6 +520,15 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(result.url, defrag)
             self.assertEqual(result.fragment, frag)
 
+    def test_urlsplit_scoped_IPv6(self):
+        p = urllib.parse.urlsplit('http://[FE80::822a:a8ff:fe49:470c%tESt]:1234')
+        self.assertEqual(p.hostname, "fe80::822a:a8ff:fe49:470c%tESt")
+        self.assertEqual(p.netloc, '[FE80::822a:a8ff:fe49:470c%tESt]:1234')
+
+        p = urllib.parse.urlsplit(b'http://[FE80::822a:a8ff:fe49:470c%tESt]:1234')
+        self.assertEqual(p.hostname, b"fe80::822a:a8ff:fe49:470c%tESt")
+        self.assertEqual(p.netloc, b'[FE80::822a:a8ff:fe49:470c%tESt]:1234')
+
     def test_urlsplit_attributes(self):
         url = "HTTP://WWW.PYTHON.ORG/doc/#frag"
         p = urllib.parse.urlsplit(url)
@@ -869,6 +878,13 @@ class UrlParseTestCase(unittest.TestCase):
         result = urllib.parse.parse_qsl("key=\u0141%E9-", encoding="ascii",
                                                           errors="ignore")
         self.assertEqual(result, [('key', '\u0141-')])
+
+    def test_parse_qsl_max_num_fields(self):
+        with self.assertRaises(ValueError):
+            urllib.parse.parse_qs('&'.join(['a=a']*11), max_num_fields=10)
+        with self.assertRaises(ValueError):
+            urllib.parse.parse_qs(';'.join(['a=a']*11), max_num_fields=10)
+        urllib.parse.parse_qs('&'.join(['a=a']*10), max_num_fields=10)
 
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:

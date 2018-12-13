@@ -192,7 +192,7 @@ EVP_copy(EVPobject *self, PyObject *unused)
 }
 
 PyDoc_STRVAR(EVP_digest__doc__,
-"Return the digest value as a string of binary data.");
+"Return the digest value as a bytes object.");
 
 static PyObject *
 EVP_digest(EVPobject *self, PyObject *unused)
@@ -378,8 +378,8 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    self->name = name_obj;
-    Py_INCREF(self->name);
+    Py_INCREF(name_obj);
+    Py_XSETREF(self->name, name_obj);
 
     if (data_obj) {
         if (view.len >= HASHLIB_GIL_MINSIZE) {
@@ -740,6 +740,10 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
 #if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER)
 #define PY_SCRYPT 1
 
+/* XXX: Parameters salt, n, r and p should be required keyword-only parameters.
+   They are optional in the Argument Clinic declaration only due to a
+   limitation of PyArg_ParseTupleAndKeywords. */
+
 /*[clinic input]
 _hashlib.scrypt
 
@@ -918,7 +922,7 @@ generate_hash_name_list(void)
  *  This macro generates constructor function definitions for specific
  *  hash algorithms.  These constructors are much faster than calling
  *  the generic one passing it a python string and are noticeably
- *  faster than calling a python new() wrapper.  Thats important for
+ *  faster than calling a python new() wrapper.  That is important for
  *  code that wants to make hashes of a bunch of small strings.
  *  The first call will lazy-initialize, which reports an exception
  *  if initialization fails.

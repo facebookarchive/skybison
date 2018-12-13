@@ -35,7 +35,7 @@ is based on the 'action -> assertion' pattern instead of 'record -> replay'
 used by many mocking frameworks.
 
 There is a backport of :mod:`unittest.mock` for earlier versions of Python,
-available as `mock on PyPI <https://pypi.python.org/pypi/mock>`_.
+available as `mock on PyPI <https://pypi.org/project/mock>`_.
 
 
 Quick Guide
@@ -680,6 +680,19 @@ the *new_callable* argument to :func:`patch`.
         unpacked as tuples to get at the individual arguments. See
         :ref:`calls as tuples <calls-as-tuples>`.
 
+        .. note::
+
+            The way :attr:`mock_calls` are recorded means that where nested
+            calls are made, the parameters of ancestor calls are not recorded
+            and so will always compare equal:
+
+                >>> mock = MagicMock()
+                >>> mock.top(a=3).bottom()
+                <MagicMock name='mock.top().bottom()' id='...'>
+                >>> mock.mock_calls
+                [call.top(a=3), call.top().bottom()]
+                >>> mock.mock_calls[-1] == call.top(a=-1).bottom()
+                True
 
     .. attribute:: __class__
 
@@ -1825,12 +1838,12 @@ sentinel
 
 .. data:: sentinel
 
-    The ``sentinel`` object provides a convenient way of providing unique
-    objects for your tests.
+   The ``sentinel`` object provides a convenient way of providing unique
+   objects for your tests.
 
-    Attributes are created on demand when you access them by name. Accessing
-    the same attribute will always return the same object. The objects
-    returned have a sensible repr so that test failure messages are readable.
+   Attributes are created on demand when you access them by name. Accessing
+   the same attribute will always return the same object. The objects
+   returned have a sensible repr so that test failure messages are readable.
 
     The ``sentinel`` attributes don't preserve their identity when they are
     :mod:`copied <copy>` or :mod:`pickled <pickle>`.
@@ -2069,22 +2082,22 @@ mock_open
 
 .. function:: mock_open(mock=None, read_data=None)
 
-    A helper function to create a mock to replace the use of :func:`open`. It works
-    for :func:`open` called directly or used as a context manager.
+   A helper function to create a mock to replace the use of :func:`open`. It works
+   for :func:`open` called directly or used as a context manager.
 
-    The *mock* argument is the mock object to configure. If ``None`` (the
-    default) then a :class:`MagicMock` will be created for you, with the API limited
-    to methods or attributes available on standard file handles.
+   The *mock* argument is the mock object to configure. If ``None`` (the
+   default) then a :class:`MagicMock` will be created for you, with the API limited
+   to methods or attributes available on standard file handles.
 
-    *read_data* is a string for the :meth:`~io.IOBase.read`,
-    :meth:`~io.IOBase.readline`, and :meth:`~io.IOBase.readlines` methods
-    of the file handle to return.  Calls to those methods will take data from
-    *read_data* until it is depleted.  The mock of these methods is pretty
-    simplistic: every time the *mock* is called, the *read_data* is rewound to
-    the start.  If you need more control over the data that you are feeding to
-    the tested code you will need to customize this mock for yourself.  When that
-    is insufficient, one of the in-memory filesystem packages on `PyPI
-    <https://pypi.python.org/pypi>`_ can offer a realistic filesystem for testing.
+   *read_data* is a string for the :meth:`~io.IOBase.read`,
+   :meth:`~io.IOBase.readline`, and :meth:`~io.IOBase.readlines` methods
+   of the file handle to return.  Calls to those methods will take data from
+   *read_data* until it is depleted.  The mock of these methods is pretty
+   simplistic: every time the *mock* is called, the *read_data* is rewound to
+   the start.  If you need more control over the data that you are feeding to
+   the tested code you will need to customize this mock for yourself.  When that
+   is insufficient, one of the in-memory filesystem packages on `PyPI
+   <https://pypi.org>`_ can offer a realistic filesystem for testing.
 
    .. versionchanged:: 3.4
       Added :meth:`~io.IOBase.readline` and :meth:`~io.IOBase.readlines` support.

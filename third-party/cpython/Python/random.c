@@ -20,6 +20,10 @@
 #  endif
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
+#endif
+
 #ifdef Py_DEBUG
 int _Py_HashSecret_Initialized = 0;
 #else
@@ -143,6 +147,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
         else {
             n = syscall(SYS_getrandom, dest, n, flags);
         }
+#  ifdef _Py_MEMORY_SANITIZER
+        if (n > 0) {
+             __msan_unpoison(dest, n);
+        }
+#  endif
 #endif
 
         if (n < 0) {
@@ -301,10 +310,15 @@ dev_urandom(char *buffer, Py_ssize_t size, int raise)
 
     if (raise) {
         struct _Py_stat_struct st;
+        int fstat_result;
 
         if (urandom_cache.fd >= 0) {
+            Py_BEGIN_ALLOW_THREADS
+            fstat_result = _Py_fstat_noraise(urandom_cache.fd, &st);
+            Py_END_ALLOW_THREADS
+
             /* Does the fd point to the same thing as before? (issue #21207) */
-            if (_Py_fstat_noraise(urandom_cache.fd, &st)
+            if (fstat_result
                 || st.st_dev != urandom_cache.st_dev
                 || st.st_ino != urandom_cache.st_ino) {
                 /* Something changed: forget the cached fd (but don't close it,
@@ -565,9 +579,11 @@ _PyRandom_Init(void)
         if (seed == 0) {
             /* disable the randomized hash */
             memset(secret, 0, secret_size);
+            Py_HashRandomizationFlag = 0;
         }
         else {
             lcg_urandom(seed, secret, secret_size);
+            Py_HashRandomizationFlag = 1;
         }
     }
     else {
@@ -582,6 +598,7 @@ _PyRandom_Init(void)
         if (res < 0) {
             Py_FatalError("failed to get random numbers to initialize Python");
         }
+        Py_HashRandomizationFlag = 1;
     }
 }
 

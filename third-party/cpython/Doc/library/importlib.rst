@@ -243,7 +243,7 @@ ABC hierarchy::
 
    .. abstractmethod:: find_module(fullname, path=None)
 
-      An abstact method for finding a :term:`loader` for the specified
+      An abstract method for finding a :term:`loader` for the specified
       module.  Originally specified in :pep:`302`, this method was meant
       for use in :data:`sys.meta_path` and in the path-based import subsystem.
 
@@ -681,7 +681,7 @@ ABC hierarchy::
 
        Concrete implementation of :meth:`Loader.exec_module`.
 
-      .. versionadded:: 3.4
+       .. versionadded:: 3.4
 
     .. method:: load_module(fullname)
 
@@ -799,7 +799,7 @@ find and load modules.
 .. class:: WindowsRegistryFinder
 
    :term:`Finder` for modules declared in the Windows registry.  This class
-   implements the :class:`importlib.abc.Finder` ABC.
+   implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
    instantiation.
@@ -1404,7 +1404,7 @@ Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
 To import a Python source file directly, use the following recipe
-(Python 3.4 and newer only)::
+(Python 3.5 and newer only)::
 
   import importlib.util
   import sys
@@ -1482,7 +1482,7 @@ Python 3.6 and newer for other parts of the code).
       if '.' in absolute_name:
           parent_name, _, child_name = absolute_name.rpartition('.')
           parent_module = import_module(parent_name)
-          path = parent_module.spec.submodule_search_locations
+          path = parent_module.__spec__.submodule_search_locations
       for finder in sys.meta_path:
           spec = finder.find_spec(absolute_name, path)
           if spec is not None:

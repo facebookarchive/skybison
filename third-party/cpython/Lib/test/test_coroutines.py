@@ -1229,7 +1229,9 @@ class CoroutineTest(unittest.TestCase):
                 pass
 
         with self.assertRaisesRegex(
-            TypeError, "object int can't be used in 'await' expression"):
+                TypeError,
+                "'async with' received an object from __aenter__ "
+                "that does not implement __await__: int"):
             # it's important that __aexit__ wasn't called
             run_async(foo())
 
@@ -1241,6 +1243,7 @@ class CoroutineTest(unittest.TestCase):
             def __aexit__(self, *e):
                 return 444
 
+        # Exit with exception
         async def foo():
             async with CM():
                 1/0
@@ -1249,7 +1252,9 @@ class CoroutineTest(unittest.TestCase):
             run_async(foo())
         except TypeError as exc:
             self.assertRegex(
-                exc.args[0], "object int can't be used in 'await' expression")
+                exc.args[0],
+                "'async with' received an object from __aexit__ "
+                "that does not implement __await__: int")
             self.assertTrue(exc.__context__ is not None)
             self.assertTrue(isinstance(exc.__context__, ZeroDivisionError))
         else:
@@ -1266,18 +1271,58 @@ class CoroutineTest(unittest.TestCase):
             def __aexit__(self, *e):
                 return 456
 
+        # Normal exit
         async def foo():
             nonlocal CNT
             async with CM():
                 CNT += 1
-
-
         with self.assertRaisesRegex(
-            TypeError, "object int can't be used in 'await' expression"):
-
+                TypeError,
+                "'async with' received an object from __aexit__ "
+                "that does not implement __await__: int"):
             run_async(foo())
-
         self.assertEqual(CNT, 1)
+
+        # Exit with 'break'
+        async def foo():
+            nonlocal CNT
+            for i in range(2):
+                async with CM():
+                    CNT += 1
+                    break
+        with self.assertRaisesRegex(
+                TypeError,
+                "'async with' received an object from __aexit__ "
+                "that does not implement __await__: int"):
+            run_async(foo())
+        self.assertEqual(CNT, 2)
+
+        # Exit with 'continue'
+        async def foo():
+            nonlocal CNT
+            for i in range(2):
+                async with CM():
+                    CNT += 1
+                    continue
+        with self.assertRaisesRegex(
+                TypeError,
+                "'async with' received an object from __aexit__ "
+                "that does not implement __await__: int"):
+            run_async(foo())
+        self.assertEqual(CNT, 3)
+
+        # Exit with 'return'
+        async def foo():
+            nonlocal CNT
+            async with CM():
+                CNT += 1
+                return
+        with self.assertRaisesRegex(
+                TypeError,
+                "'async with' received an object from __aexit__ "
+                "that does not implement __await__: int"):
+            run_async(foo())
+        self.assertEqual(CNT, 4)
 
 
     def test_with_9(self):
@@ -1891,6 +1936,36 @@ class CoroutineTest(unittest.TestCase):
         self.assertEqual(
             run_async(run_gen()),
             ([], [121]))
+
+    def test_comp_4_2(self):
+        async def f(it):
+            for i in it:
+                yield i
+
+        async def run_list():
+            return [i + 10 async for i in f(range(5)) if 0 < i < 4]
+        self.assertEqual(
+            run_async(run_list()),
+            ([], [11, 12, 13]))
+
+        async def run_set():
+            return {i + 10 async for i in f(range(5)) if 0 < i < 4}
+        self.assertEqual(
+            run_async(run_set()),
+            ([], {11, 12, 13}))
+
+        async def run_dict():
+            return {i + 10: i + 100 async for i in f(range(5)) if 0 < i < 4}
+        self.assertEqual(
+            run_async(run_dict()),
+            ([], {11: 101, 12: 102, 13: 103}))
+
+        async def run_gen():
+            gen = (i + 10 async for i in f(range(5)) if 0 < i < 4)
+            return [g + 100 async for g in gen]
+        self.assertEqual(
+            run_async(run_gen()),
+            ([], [111, 112, 113]))
 
     def test_comp_5(self):
         async def f(it):

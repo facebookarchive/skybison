@@ -294,7 +294,6 @@ actually be smaller than the old one.
 static int
 set_table_resize(PySetObject *so, Py_ssize_t minused)
 {
-    Py_ssize_t newsize;
     setentry *oldtable, *newtable, *entry;
     Py_ssize_t oldfill = so->fill;
     Py_ssize_t oldused = so->used;
@@ -307,13 +306,9 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 
     /* Find the smallest table size > minused. */
     /* XXX speed-up with intrinsics */
-    for (newsize = PySet_MINSIZE;
-         newsize <= minused && newsize > 0;
-         newsize <<= 1)
-        ;
-    if (newsize <= 0) {
-        PyErr_NoMemory();
-        return -1;
+    size_t newsize = PySet_MINSIZE;
+    while (newsize <= (size_t)minused) {
+        newsize <<= 1; // The largest possible value is PY_SSIZE_T_MAX + 1.
     }
 
     /* Get space for a new table. */
@@ -790,6 +785,7 @@ frozenset_hash(PyObject *self)
     hash ^= ((Py_uhash_t)PySet_GET_SIZE(self) + 1) * 1927868237UL;
 
     /* Disperse patterns arising in nested frozensets */
+    hash ^= (hash >> 11) ^ (hash >> 25);
     hash = hash * 69069U + 907133923UL;
 
     /* -1 is reserved as an error code */
@@ -1739,8 +1735,10 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
     if (otherset == NULL)
         return NULL;
     rv = set_symmetric_difference_update(otherset, (PyObject *)so);
-    if (rv == NULL)
+    if (rv == NULL) {
+        Py_DECREF(otherset);
         return NULL;
+    }
     Py_DECREF(rv);
     return (PyObject *)otherset;
 }

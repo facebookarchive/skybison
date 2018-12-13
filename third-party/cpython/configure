@@ -671,17 +671,18 @@ BASECFLAGS
 CFLAGS_ALIASING
 OPT
 LLVM_PROF_FOUND
-target_os
-target_vendor
-target_cpu
-target
 LLVM_PROFDATA
 LLVM_PROF_ERR
 LLVM_PROF_FILE
 LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
-LTOFLAGS
+LLVM_AR_FOUND
+target_os
+target_vendor
+target_cpu
+target
+LLVM_AR
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
 ABIFLAGS
@@ -695,7 +696,6 @@ READELF
 ARFLAGS
 ac_ct_AR
 AR
-RANLIB
 USE_INLINE
 GNULD
 LINKCC
@@ -822,6 +822,8 @@ enable_optimizations
 with_lto
 with_hash_algorithm
 with_address_sanitizer
+with_memory_sanitizer
+with_undefined_behavior_sanitizer
 with_libs
 with_system_expat
 with_system_ffi
@@ -1491,7 +1493,8 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-universal-archs=ARCH
                           select architectures for universal build ("32-bit",
-                          "64-bit", "3-way", "intel", "intel-32", or "all")
+                          "64-bit", "3-way", "intel", "intel-32", "intel-64",
+                          or "all")
   --with-framework-name=FRAMEWORK
                           specify an alternate name of the framework built
                           with --enable-framework
@@ -1503,12 +1506,15 @@ Optional Packages:
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
   --with-assertions       build with C assertions enabled
-  --with-lto              Enable Link Time Optimization in PGO builds.
-                          Disabled by default.
+  --with-lto              Enable Link Time Optimization in any build. Disabled
+                          by default.
   --with-hash-algorithm=[fnv|siphash24]
                           select hash algorithm
   --with-address-sanitizer
-                          enable AddressSanitizer
+                          enable AddressSanitizer (asan)
+  --with-memory-sanitizer enable MemorySanitizer (msan)
+  --with-undefined-behavior-sanitizer
+                          enable UndefinedBehaviorSanitizer (ubsan)
   --with-libs='lib1 ...'  link against additional libs
   --with-system-expat     build pyexpat module using an installed expat
                           library
@@ -2745,9 +2751,9 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git -C \$(srcdir) rev-parse --short HEAD"
-    GITTAG="git -C \$(srcdir) describe --all --always --dirty"
-    GITBRANCH="git -C \$(srcdir) name-rev --name-only HEAD"
+    GITVERSION="git --git-dir \$(srcdir)/.git rev-parse --short HEAD"
+    GITTAG="git --git-dir \$(srcdir)/.git describe --all --always --dirty"
+    GITBRANCH="git --git-dir \$(srcdir)/.git name-rev --name-only HEAD"
 else
     GITVERSION=""
     GITTAG=""
@@ -3002,7 +3008,7 @@ if test "${enable_universalsdk+set}" = set; then :
   enableval=$enable_universalsdk;
 	case $enableval in
 	yes)
-		# Locate the best usable SDK, see Mac/README.txt for more
+		# Locate the best usable SDK, see Mac/README for more
 		# information
 		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
@@ -3526,7 +3532,7 @@ fi
 if test "$ac_sys_system" = "Darwin"
 then
 	# Compiler selection on MacOSX is more complicated than
-	# AC_PROG_CC can handle, see Mac/README.txt for more
+	# AC_PROG_CC can handle, see Mac/README for more
 	# information
 	if test -z "${CC}"
 	then
@@ -6012,98 +6018,6 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 $as_echo "$LDLIBRARY" >&6; }
 
-if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
-set dummy ${ac_tool_prefix}ranlib; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_RANLIB+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$RANLIB"; then
-  ac_cv_prog_RANLIB="$RANLIB" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_RANLIB="${ac_tool_prefix}ranlib"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-RANLIB=$ac_cv_prog_RANLIB
-if test -n "$RANLIB"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RANLIB" >&5
-$as_echo "$RANLIB" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_RANLIB"; then
-  ac_ct_RANLIB=$RANLIB
-  # Extract the first word of "ranlib", so it can be a program name with args.
-set dummy ranlib; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_RANLIB+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_RANLIB"; then
-  ac_cv_prog_ac_ct_RANLIB="$ac_ct_RANLIB" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_RANLIB="ranlib"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_RANLIB=$ac_cv_prog_ac_ct_RANLIB
-if test -n "$ac_ct_RANLIB"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_RANLIB" >&5
-$as_echo "$ac_ct_RANLIB" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_RANLIB" = x; then
-    RANLIB=":"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    RANLIB=$ac_ct_RANLIB
-  fi
-else
-  RANLIB="$ac_cv_prog_RANLIB"
-fi
-
 
 if test -n "$ac_tool_prefix"; then
   for ac_prog in ar aal
@@ -6210,7 +6124,7 @@ fi
 
 if test -z "$ARFLAGS"
 then
-        ARFLAGS="rc"
+        ARFLAGS="rcs"
 fi
 
 if test -n "$ac_tool_prefix"; then
@@ -6570,8 +6484,27 @@ else
   DEF_MAKE_RULE="all"
 fi
 
-# Enable LTO flags
+# Make llvm-relatec checks work on systems where llvm tools are not installed with their
+# normal names in the default $PATH (ie: Ubuntu).  They exist under the
+# non-suffixed name in their versioned llvm directory.
 
+llvm_bin_dir=''
+llvm_path="${PATH}"
+if test "${CC}" = "clang"
+then
+  clang_bin=`which clang`
+  # Some systems install clang elsewhere as a symlink to the real path
+  # which is where the related llvm tools are located.
+  if test -L "${clang_bin}"
+  then
+    clang_dir=`dirname "${clang_bin}"`
+    clang_bin=`readlink "${clang_bin}"`
+    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
+    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
+  fi
+fi
+
+# Enable LTO flags
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-lto" >&5
 $as_echo_n "checking for --with-lto... " >&6; }
 
@@ -6596,55 +6529,8 @@ fi
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
-      case $ac_sys_system in
-        Darwin*)
-          # Any changes made here should be reflected in the GCC+Darwin case below
-          LTOFLAGS="-flto -Wl,-export_dynamic"
-          ;;
-        *)
-          LTOFLAGS="-flto"
-          ;;
-      esac
-      ;;
-    *gcc*)
-      case $ac_sys_system in
-        Darwin*)
-          LTOFLAGS="-flto -Wl,-export_dynamic"
-          ;;
-        *)
-          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none"
-          ;;
-      esac
-      ;;
-  esac
-fi
 
-# Enable PGO flags.
-
-
-
-
-
-# Make this work on systems where llvm tools are not installed with their
-# normal names in the default $PATH (ie: Ubuntu).  They exist under the
-# non-suffixed name in their versioned llvm directory.
-llvm_bin_dir=''
-llvm_path="${PATH}"
-if test "${CC}" = "clang"
-then
-  clang_bin=`which clang`
-  # Some systems install clang elsewhere as a symlink to the real path
-  # which is where the related llvm tools are located.
-  if test -L "${clang_bin}"
-  then
-    clang_dir=`dirname "${clang_bin}"`
-    clang_bin=`readlink "${clang_bin}"`
-    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
-    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
-  fi
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking target system type" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking target system type" >&5
 $as_echo_n "checking target system type... " >&6; }
 if ${ac_cv_target+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6683,6 +6569,163 @@ test -n "$target_alias" &&
   test "$program_prefix$program_suffix$program_transform_name" = \
     NONENONEs,x,x, &&
   program_prefix=${target_alias}-
+# Extract the first word of "$target_alias-llvm-ar", so it can be a program name with args.
+set dummy $target_alias-llvm-ar; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LLVM_AR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LLVM_AR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LLVM_AR="$LLVM_AR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${llvm_path}
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LLVM_AR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LLVM_AR=$ac_cv_path_LLVM_AR
+if test -n "$LLVM_AR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LLVM_AR" >&5
+$as_echo "$LLVM_AR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test -z "$ac_cv_path_LLVM_AR"; then
+  if test "$build" = "$target"; then
+    ac_pt_LLVM_AR=$LLVM_AR
+    # Extract the first word of "llvm-ar", so it can be a program name with args.
+set dummy llvm-ar; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_LLVM_AR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_LLVM_AR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_LLVM_AR="$ac_pt_LLVM_AR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${llvm_path}
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_LLVM_AR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_ac_pt_LLVM_AR" && ac_cv_path_ac_pt_LLVM_AR="''"
+  ;;
+esac
+fi
+ac_pt_LLVM_AR=$ac_cv_path_ac_pt_LLVM_AR
+if test -n "$ac_pt_LLVM_AR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_LLVM_AR" >&5
+$as_echo "$ac_pt_LLVM_AR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+    LLVM_AR=$ac_pt_LLVM_AR
+  else
+    LLVM_AR="''"
+  fi
+else
+  LLVM_AR="$ac_cv_path_LLVM_AR"
+fi
+
+
+      if test -n "${LLVM_AR}" -a -x "${LLVM_AR}"
+      then
+        LLVM_AR_FOUND="found"
+      else
+        LLVM_AR_FOUND="not-found"
+      fi
+      if test "$ac_sys_system" = "Darwin" -a "${LLVM_AR_FOUND}" = "not-found"
+      then
+        found_llvm_ar=`/usr/bin/xcrun -find llvm-ar 2>/dev/null`
+        if test -n "${found_llvm_ar}"
+        then
+          LLVM_AR='/usr/bin/xcrun llvm-ar'
+          LLVM_AR_FOUND=found
+          { $as_echo "$as_me:${as_lineno-$LINENO}: llvm-ar found via xcrun: ${LLVM_AR}" >&5
+$as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
+        fi
+      fi
+      if test $LLVM_AR_FOUND = not-found
+      then
+        LLVM_PROFR_ERR=yes
+        as_fn_error $? "llvm-ar is required for a --with-lto build with clang but could not be found." "$LINENO" 5
+      else
+        LLVM_AR_ERR=no
+      fi
+      AR="${LLVM_AR}"
+      case $ac_sys_system in
+        Darwin*)
+          # Any changes made here should be reflected in the GCC+Darwin case below
+          LTOFLAGS="-flto -Wl,-export_dynamic"
+          ;;
+        *)
+          LTOFLAGS="-flto"
+          ;;
+      esac
+      ;;
+    *gcc*)
+      case $ac_sys_system in
+        Darwin*)
+          LTOFLAGS="-flto -Wl,-export_dynamic"
+          ;;
+        *)
+          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none"
+          ;;
+      esac
+      ;;
+  esac
+
+  if test "$ac_cv_prog_cc_g" = "yes"
+  then
+      # bpo-30345: Add -g to LDFLAGS when compiling with LTO
+      # to get debug symbols.
+      LTOFLAGS="$LTOFLAGS -g"
+  fi
+
+  CFLAGS_NODIST="$CFLAGS_NODIST $LTOFLAGS"
+  LDFLAGS="$LDFLAGS $LTOFLAGS"
+fi
+
+# Enable PGO flags.
+
+
+
+
+
+
 # Extract the first word of "$target_alias-llvm-profdata", so it can be a program name with args.
 set dummy $target_alias-llvm-profdata; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -6864,9 +6907,6 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test "$CC" != 'g++' ; then
-	    STRICT_PROTO="-Wstrict-prototypes"
-	fi
         # For gcc 4.x we need to use -fwrapv so lets check if its supported
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
@@ -6912,8 +6952,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	OPT="$OPT $STRICT_PROTO"
 
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
@@ -7185,6 +7223,47 @@ $as_echo "$ac_cv_disable_missing_field_initializers" >&6; }
       CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn off $CC invalid function cast warning" >&5
+$as_echo_n "checking if we can turn off $CC invalid function cast warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Wcast-function-type -Werror"
+     if ${ac_cv_disable_cast_function_type+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_disable_cast_function_type=yes
+
+else
+
+           ac_cv_disable_cast_function_type=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_cast_function_type" >&5
+$as_echo "$ac_cv_disable_cast_function_type" >&6; }
+
+    if test $ac_cv_disable_cast_function_type = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-cast-function-type"
+    fi
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC mixed sign comparison warning" >&5
 $as_echo_n "checking if we can turn on $CC mixed sign comparison warning... " >&6; }
      ac_save_cc="$CC"
@@ -7282,6 +7361,47 @@ fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_unreachable_code_warning" >&5
 $as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC strict-prototypes warning" >&5
+$as_echo_n "checking if we can turn on $CC strict-prototypes warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Werror -Wstrict-prototypes"
+     if ${ac_cv_enable_enable_strict_prototypes_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+       ac_cv_enable_strict_prototypes_warning=yes
+
+else
+
+       ac_cv_enable_strict_prototypes_warning=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_strict_prototypes_warning" >&5
+$as_echo "$ac_cv_enable_strict_prototypes_warning" >&6; }
+
+    if test $ac_cv_enable_strict_prototypes_warning = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
+    fi
+
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
@@ -7345,6 +7465,11 @@ $as_echo "$CC" >&6; }
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
                ;;
+            intel-64)
+               UNIVERSAL_ARCH_FLAGS="-arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               ARCH_RUN_32BIT="true"
+               ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
@@ -7355,11 +7480,14 @@ $as_echo "$CC" >&6; }
                ;;
             esac
 
-            CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
-            LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
             if test "${UNIVERSALSDK}" != "/"
             then
+                CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
+                LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
                 CPPFLAGS="-isysroot ${UNIVERSALSDK} ${CPPFLAGS}"
+            else
+                CFLAGS="${UNIVERSAL_ARCH_FLAGS} ${CFLAGS}"
+                LDFLAGS="${UNIVERSAL_ARCH_FLAGS} ${LDFLAGS}"
             fi
         fi
 
@@ -7809,7 +7937,7 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 
 fi
 
-for ac_header in asm/types.h conio.h direct.h dlfcn.h errno.h \
+for ac_header in asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
@@ -9820,6 +9948,44 @@ if test "${with_address_sanitizer+set}" = set; then :
 $as_echo "$withval" >&6; }
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
+# ASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-memory-sanitizer" >&5
+$as_echo_n "checking for --with-memory-sanitizer... " >&6; }
+
+# Check whether --with-memory_sanitizer was given.
+if test "${with_memory_sanitizer+set}" = set; then :
+  withval=$with_memory_sanitizer;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+# MSan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-undefined-behavior-sanitizer" >&5
+$as_echo_n "checking for --with-undefined-behavior-sanitizer... " >&6; }
+
+# Check whether --with-undefined_behavior_sanitizer was given.
+if test "${with_undefined_behavior_sanitizer+set}" = set; then :
+  withval=$with_undefined_behavior_sanitizer;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
 
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -11257,7 +11423,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  futimens futimes gai_strerror getentropy \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
- initgroups kill killpg lchmod lchown linkat lstat lutimes mmap \
+ initgroups kill killpg lchown linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
@@ -11283,6 +11449,23 @@ _ACEOF
 fi
 done
 
+
+# Force lchmod off for Linux. Linux disallows changing the mode of symbolic
+# links. Some libc implementations have a stub lchmod implementation that always
+# returns an error.
+if test "$MACHDEP" != linux; then
+  for ac_func in lchmod
+do :
+  ac_fn_c_check_func "$LINENO" "lchmod" "ac_cv_func_lchmod"
+if test "x$ac_cv_func_lchmod" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LCHMOD 1
+_ACEOF
+
+fi
+done
+
+fi
 
 ac_fn_c_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
        #include <dirent.h>
@@ -15578,77 +15761,6 @@ $as_echo "#define HAVE_BROKEN_POLL 1" >>confdefs.h
 
 fi
 
-# Before we can test tzset, we need to check if struct tm has a tm_zone
-# (which is not required by ISO C or UNIX spec) and/or if we support
-# tzname[]
-ac_fn_c_check_member "$LINENO" "struct tm" "tm_zone" "ac_cv_member_struct_tm_tm_zone" "#include <sys/types.h>
-#include <$ac_cv_struct_tm>
-
-"
-if test "x$ac_cv_member_struct_tm_tm_zone" = xyes; then :
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_STRUCT_TM_TM_ZONE 1
-_ACEOF
-
-
-fi
-
-if test "$ac_cv_member_struct_tm_tm_zone" = yes; then
-
-$as_echo "#define HAVE_TM_ZONE 1" >>confdefs.h
-
-else
-  ac_fn_c_check_decl "$LINENO" "tzname" "ac_cv_have_decl_tzname" "#include <time.h>
-"
-if test "x$ac_cv_have_decl_tzname" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_TZNAME $ac_have_decl
-_ACEOF
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for tzname" >&5
-$as_echo_n "checking for tzname... " >&6; }
-if ${ac_cv_var_tzname+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <time.h>
-#if !HAVE_DECL_TZNAME
-extern char *tzname[];
-#endif
-
-int
-main ()
-{
-return tzname[0][0];
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_var_tzname=yes
-else
-  ac_cv_var_tzname=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_var_tzname" >&5
-$as_echo "$ac_cv_var_tzname" >&6; }
-  if test $ac_cv_var_tzname = yes; then
-
-$as_echo "#define HAVE_TZNAME 1" >>confdefs.h
-
-  fi
-fi
-
-
 # check tzset(3) exists and works like we expect it to
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working tzset()" >&5
 $as_echo_n "checking for working tzset()... " >&6; }
@@ -16703,7 +16815,6 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
     #include <stdatomic.h>
     atomic_int value = ATOMIC_VAR_INIT(1);
-    _Atomic void *py_atomic_address = (void*) &value;
     int main() {
       int loaded_value = atomic_load(&value);
       return 0;

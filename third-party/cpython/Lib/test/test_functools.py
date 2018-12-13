@@ -420,7 +420,7 @@ class TestPartialC(TestPartial, unittest.TestCase):
                 p.keywords[self] = ['sth2']
                 return 'astr'
 
-        # Raplacing the value during key formatting should keep the original
+        # Replacing the value during key formatting should keep the original
         # value alive (at least long enough).
         p.keywords[MutatesYourDict()] = ['sth']
         r = repr(p)
@@ -2078,6 +2078,13 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(len(td), 0)
         functools.WeakKeyDictionary = _orig_wkd
 
+    def test_invalid_positional_argument(self):
+        @functools.singledispatch
+        def f(*args):
+            pass
+        msg = 'f requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            f()
 
 if __name__ == '__main__':
     unittest.main()

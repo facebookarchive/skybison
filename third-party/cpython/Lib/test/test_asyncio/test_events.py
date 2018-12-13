@@ -32,21 +32,11 @@ from asyncio import proactor_events
 from asyncio import selector_events
 from asyncio import sslproto
 from asyncio import test_utils
+from asyncio.test_utils import ONLYKEY, ONLYCERT, data_file
 try:
     from test import support
 except ImportError:
     from asyncio import test_support as support
-
-
-def data_file(filename):
-    if hasattr(support, 'TEST_HOME_DIR'):
-        fullname = os.path.join(support.TEST_HOME_DIR, filename)
-        if os.path.isfile(fullname):
-            return fullname
-    fullname = os.path.join(os.path.dirname(__file__), filename)
-    if os.path.isfile(fullname):
-        return fullname
-    raise FileNotFoundError(filename)
 
 
 def osx_tiger():
@@ -67,21 +57,25 @@ def _test_get_event_loop_new_process__sub_proc():
     return loop.run_until_complete(doit())
 
 
-ONLYCERT = data_file('ssl_cert.pem')
-ONLYKEY = data_file('ssl_key.pem')
-SIGNED_CERTFILE = data_file('keycert3.pem')
-SIGNING_CA = data_file('pycacert.pem')
-PEERCERT = {'serialNumber': 'B09264B1F2DA21D1',
-            'version': 1,
-            'subject': ((('countryName', 'XY'),),
-                    (('localityName', 'Castle Anthrax'),),
-                    (('organizationName', 'Python Software Foundation'),),
-                    (('commonName', 'localhost'),)),
-            'issuer': ((('countryName', 'XY'),),
-                    (('organizationName', 'Python Software Foundation CA'),),
-                    (('commonName', 'our-ca-server'),)),
-            'notAfter': 'Nov 13 19:47:07 2022 GMT',
-            'notBefore': 'Jan  4 19:47:07 2013 GMT'}
+SIGNED_CERTFILE = test_utils.data_file('keycert3.pem')
+SIGNING_CA = test_utils.data_file('pycacert.pem')
+PEERCERT = {
+    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
+    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
+    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
+    'issuer': ((('countryName', 'XY'),),
+            (('organizationName', 'Python Software Foundation CA'),),
+            (('commonName', 'our-ca-server'),)),
+    'notAfter': 'Jul  7 14:23:16 2028 GMT',
+    'notBefore': 'Aug 29 14:23:16 2018 GMT',
+    'serialNumber': 'CB2D80995A69525C',
+    'subject': ((('countryName', 'XY'),),
+             (('localityName', 'Castle Anthrax'),),
+             (('organizationName', 'Python Software Foundation'),),
+             (('commonName', 'localhost'),)),
+    'subjectAltName': (('DNS', 'localhost'),),
+    'version': 3
+}
 
 
 class MyBaseProto(asyncio.Protocol):
@@ -361,6 +355,24 @@ class EventLoopTestsMixin:
         res, thread_id = self.loop.run_until_complete(f2)
         self.assertEqual(res, 'yo')
         self.assertNotEqual(thread_id, threading.get_ident())
+
+    def test_run_in_executor_cancel(self):
+        called = False
+
+        def patched_call_soon(*args):
+            nonlocal called
+            called = True
+
+        def run():
+            time.sleep(0.05)
+
+        f2 = self.loop.run_in_executor(None, run)
+        f2.cancel()
+        self.loop.close()
+        self.loop.call_soon = patched_call_soon
+        self.loop.call_soon_threadsafe = patched_call_soon
+        time.sleep(0.4)
+        self.assertFalse(called)
 
     def test_reader_callback(self):
         r, w = test_utils.socketpair()
@@ -1169,7 +1181,11 @@ class EventLoopTestsMixin:
                     self.loop.run_until_complete(f_c)
 
         # close connection
-        proto.transport.close()
+        # transport may be None with TLS 1.3, because connection is
+        # interrupted, server is unable to send session tickets, and
+        # transport is closed.
+        if proto.transport is not None:
+            proto.transport.close()
         server.close()
 
     def test_legacy_create_server_ssl_match_failed(self):
@@ -1533,6 +1549,7 @@ class EventLoopTestsMixin:
         self.assertEqual(5, proto.nbytes)
 
         os.close(slave)
+        proto.transport.close()
         self.loop.run_until_complete(proto.done)
         self.assertEqual(
             ['INITIAL', 'CONNECTED', 'EOF', 'CLOSED'], proto.state)
@@ -2447,6 +2464,28 @@ class HandleTests(test_utils.TestCase):
         # Some coroutines might not have '__name__', such as
         # built-in async_gen.asend().
         self.assertEqual(coroutines._format_coroutine(coro), 'Coro()')
+
+        coro = Coro()
+        coro.__qualname__ = 'AAA'
+        coro.cr_code = None
+        self.assertEqual(coroutines._format_coroutine(coro), 'AAA()')
+
+        coro = Coro()
+        coro.__qualname__ = 'AAA'
+        coro.cr_code = None
+        coro.cr_frame = None
+        self.assertEqual(coroutines._format_coroutine(coro), 'AAA()')
+
+        coro = Coro()
+        coro.__qualname__ = None
+        coro.cr_code = None
+        coro.cr_frame = None
+        self.assertEqual(coroutines._format_coroutine(coro), f'{repr(coro)}()')
+
+        coro = Coro()
+        coro.cr_code = None
+        coro.cr_frame = None
+        self.assertEqual(coroutines._format_coroutine(coro), f'{repr(coro)}()')
 
 
 class TimerTests(unittest.TestCase):

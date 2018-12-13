@@ -75,6 +75,10 @@
 #include <alloca.h>
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#include <sanitizer/msan_interface.h>
+#endif
+
 #if defined(_DEBUG) || defined(__MINGW32__)
 /* Don't use structured exception handling on Windows if this is defined.
    MingW, AFAIK, doesn't support it.
@@ -448,6 +452,12 @@ PyCArg_dealloc(PyCArgObject *self)
     PyObject_Del(self);
 }
 
+static int
+is_literal_char(unsigned char c)
+{
+    return c < 128 && _PyUnicode_IsPrintable(c) && c != '\\' && c != '\'';
+}
+
 static PyObject *
 PyCArg_repr(PyCArgObject *self)
 {
@@ -480,7 +490,7 @@ PyCArg_repr(PyCArgObject *self)
 #ifdef MS_WIN32
             "<cparam '%c' (%I64d)>",
 #else
-            "<cparam '%c' (%qd)>",
+            "<cparam '%c' (%lld)>",
 #endif
             self->tag, self->value.q);
         break;
@@ -494,8 +504,14 @@ PyCArg_repr(PyCArgObject *self)
         break;
 
     case 'c':
-        sprintf(buffer, "<cparam '%c' (%c)>",
-            self->tag, self->value.c);
+        if (is_literal_char((unsigned char)self->value.c)) {
+            sprintf(buffer, "<cparam '%c' ('%c')>",
+                self->tag, self->value.c);
+        }
+        else {
+            sprintf(buffer, "<cparam '%c' ('\\x%02x')>",
+                self->tag, (unsigned char)self->value.c);
+        }
         break;
 
 /* Hm, are these 'z' and 'Z' codes useful at all?
@@ -510,8 +526,14 @@ PyCArg_repr(PyCArgObject *self)
         break;
 
     default:
-        sprintf(buffer, "<cparam '%c' at %p>",
-            self->tag, self);
+        if (is_literal_char((unsigned char)self->tag)) {
+            sprintf(buffer, "<cparam '%c' at %p>",
+                (unsigned char)self->tag, self);
+        }
+        else {
+            sprintf(buffer, "<cparam 0x%02x at %p>",
+                (unsigned char)self->tag, self);
+        }
         break;
     }
     return PyUnicode_FromString(buffer);
@@ -715,9 +737,9 @@ ffi_type *_ctypes_get_ffi_type(PyObject *obj)
        It returns small structures in registers
     */
     if (dict->ffi_type_pointer.type == FFI_TYPE_STRUCT) {
-        if (dict->ffi_type_pointer.size <= 4)
+        if (can_return_struct_as_int(dict->ffi_type_pointer.size))
             return &ffi_type_sint32;
-        else if (dict->ffi_type_pointer.size <= 8)
+        else if (can_return_struct_as_sint64 (dict->ffi_type_pointer.size))
             return &ffi_type_sint64;
     }
 #endif
@@ -1040,6 +1062,13 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 }
 #endif
 
+#if (defined(__x86_64__) && (defined(__MINGW64__) || defined(__CYGWIN__))) || \
+    defined(__aarch64__)
+#define CTYPES_PASS_BY_REF_HACK
+#define POW2(x) (((x & ~(x - 1)) == x) ? x : 0)
+#define IS_PASS_BY_REF(x) (x > 8 || !POW2(x))
+#endif
+
 /*
  * Requirements, must be ensured by the caller:
  * - argtuple is tuple of arguments
@@ -1129,6 +1158,13 @@ PyObject *_ctypes_callproc(PPROC pProc,
     rtype = _ctypes_get_ffi_type(restype);
     resbuf = alloca(max(rtype->size, sizeof(ffi_arg)));
 
+#ifdef _Py_MEMORY_SANITIZER
+    /* ffi_call actually initializes resbuf, but from asm, which
+     * MemorySanitizer can't detect. Avoid false positives from MSan. */
+    if (resbuf != NULL) {
+        __msan_unpoison(resbuf, max(rtype->size, sizeof(ffi_arg)));
+    }
+#endif
     avalues = (void **)alloca(sizeof(void *) * argcount);
     atypes = (ffi_type **)alloca(sizeof(ffi_type *) * argcount);
     if (!resbuf || !avalues || !atypes) {
@@ -1137,8 +1173,20 @@ PyObject *_ctypes_callproc(PPROC pProc,
     }
     for (i = 0; i < argcount; ++i) {
         atypes[i] = args[i].ffi_type;
-        if (atypes[i]->type == FFI_TYPE_STRUCT
-            )
+#ifdef CTYPES_PASS_BY_REF_HACK
+        size_t size = atypes[i]->size;
+        if (IS_PASS_BY_REF(size)) {
+            void *tmp = alloca(size);
+            if (atypes[i]->type == FFI_TYPE_STRUCT)
+                memcpy(tmp, args[i].value.p, size);
+            else
+                memcpy(tmp, (void*)&args[i].value, size);
+
+            avalues[i] = tmp;
+        }
+        else
+#endif
+        if (atypes[i]->type == FFI_TYPE_STRUCT)
             avalues[i] = (void *)args[i].value.p;
         else
             avalues[i] = (void *)&args[i].value;

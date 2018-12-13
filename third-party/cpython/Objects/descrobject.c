@@ -378,7 +378,7 @@ calculate_qualname(PyDescrObject *descr)
 }
 
 static PyObject *
-descr_get_qualname(PyDescrObject *descr)
+descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 {
     if (descr->d_qualname == NULL)
         descr->d_qualname = calculate_qualname(descr);
@@ -389,14 +389,9 @@ descr_get_qualname(PyDescrObject *descr)
 static PyObject *
 descr_reduce(PyDescrObject *descr)
 {
-    PyObject *builtins;
-    PyObject *getattr;
     _Py_IDENTIFIER(getattr);
-
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(OO)", getattr, PyDescr_TYPE(descr),
-                         PyDescr_NAME(descr));
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         PyDescr_TYPE(descr), PyDescr_NAME(descr));
 }
 
 static PyMethodDef descr_methods[] = {
@@ -1098,13 +1093,9 @@ wrapper_repr(wrapperobject *wp)
 static PyObject *
 wrapper_reduce(wrapperobject *wp)
 {
-    PyObject *builtins;
-    PyObject *getattr;
     _Py_IDENTIFIER(getattr);
-
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(OO)", getattr, wp->self, PyDescr_NAME(wp->descr));
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         wp->self, PyDescr_NAME(wp->descr));
 }
 
 static PyMethodDef wrapper_methods[] = {
@@ -1118,7 +1109,7 @@ static PyMemberDef wrapper_members[] = {
 };
 
 static PyObject *
-wrapper_objclass(wrapperobject *wp)
+wrapper_objclass(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     PyObject *c = (PyObject *)PyDescr_TYPE(wp->descr);
 
@@ -1127,7 +1118,7 @@ wrapper_objclass(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_name(wrapperobject *wp)
+wrapper_name(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     const char *s = wp->descr->d_base->name;
 
@@ -1135,21 +1126,21 @@ wrapper_name(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_doc(wrapperobject *wp, void *closure)
+wrapper_doc(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     return _PyType_GetDocFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
 static PyObject *
-wrapper_text_signature(wrapperobject *wp, void *closure)
+wrapper_text_signature(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
 static PyObject *
-wrapper_qualname(wrapperobject *wp)
+wrapper_qualname(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
-    return descr_get_qualname((PyDescrObject *)wp->descr);
+    return descr_get_qualname((PyDescrObject *)wp->descr, NULL);
 }
 
 static PyGetSetDef wrapper_getsets[] = {
@@ -1483,10 +1474,10 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_XINCREF(del);
     Py_XINCREF(doc);
 
-    prop->prop_get = get;
-    prop->prop_set = set;
-    prop->prop_del = del;
-    prop->prop_doc = doc;
+    Py_XSETREF(prop->prop_get, get);
+    Py_XSETREF(prop->prop_set, set);
+    Py_XSETREF(prop->prop_del, del);
+    Py_XSETREF(prop->prop_doc, doc);
     prop->getter_doc = 0;
 
     /* if no docstring given and the getter has one, use that one */

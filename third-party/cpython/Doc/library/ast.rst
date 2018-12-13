@@ -41,6 +41,9 @@ Node classes
    with alternatives (aka "sums"), the left-hand side class is abstract: only
    instances of specific constructor nodes are ever created.
 
+   .. index:: single: ? (question mark); in AST grammar
+   .. index:: single: * (asterisk); in AST grammar
+
    .. attribute:: _fields
 
       Each concrete class has an attribute :attr:`_fields` which gives the names
@@ -113,6 +116,11 @@ and classes for traversing abstract syntax trees:
    Parse the source into an AST node.  Equivalent to ``compile(source,
    filename, mode, ast.PyCF_ONLY_AST)``.
 
+   .. warning::
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string due to stack depth limitations
+      in Python's AST compiler.
+
 
 .. function:: literal_eval(node_or_string)
 
@@ -125,6 +133,11 @@ and classes for traversing abstract syntax trees:
    untrusted sources without the need to parse the values oneself.  It is not
    capable of evaluating arbitrarily complex expressions, for example involving
    operators or indexing.
+
+   .. warning::
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string due to stack depth limitations
+      in Python's AST compiler.
 
    .. versionchanged:: 3.2
       Now allows bytes and set literals.

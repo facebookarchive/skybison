@@ -77,8 +77,6 @@ PyObject *normalizestring(const char *string)
     }
     p[i] = '\0';
     v = PyUnicode_FromString(p);
-    if (v == NULL)
-        return NULL;
     PyMem_Free(p);
     return v;
 }
@@ -131,8 +129,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 
     /* Next, scan the search functions in order of registration */
     args = PyTuple_New(1);
-    if (args == NULL)
-        goto onError;
+    if (args == NULL) {
+        Py_DECREF(v);
+        return NULL;
+    }
     PyTuple_SET_ITEM(args,0,v);
 
     len = PyList_Size(interp->codec_search_path);

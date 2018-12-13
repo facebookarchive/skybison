@@ -414,27 +414,27 @@ PyTypeObject PyCursesWindow_Type;
    PARSESTR - format string for argument parsing
 */
 
-#define Window_NoArgNoReturnFunction(X)                 \
-    static PyObject *PyCursesWindow_ ## X               \
-    (PyCursesWindowObject *self, PyObject *args)        \
+#define Window_NoArgNoReturnFunction(X)                         \
+    static PyObject *PyCursesWindow_ ## X                       \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
     { return PyCursesCheckERR(X(self->win), # X); }
 
 #define Window_NoArgTrueFalseFunction(X)                                \
     static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self)                                        \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
     {                                                                   \
         if (X (self->win) == FALSE) { Py_INCREF(Py_False); return Py_False; } \
         else { Py_INCREF(Py_True); return Py_True; } }
 
 #define Window_NoArgNoReturnVoidFunction(X)                     \
     static PyObject * PyCursesWindow_ ## X                      \
-    (PyCursesWindowObject *self)                                \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
     {                                                           \
         X(self->win); Py_INCREF(Py_None); return Py_None; }
 
 #define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR)               \
     static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self)                                        \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
     {                                                                   \
         TYPE arg1, arg2;                                                \
         X(self->win,arg1,arg2); return Py_BuildValue(ERGSTR, arg1, arg2); }
@@ -1365,7 +1365,7 @@ PyCursesWindow_InsCh(PyCursesWindowObject *self, PyObject *args)
         use_xy = TRUE;
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "insch requires 1 or 4 arguments");
+        PyErr_SetString(PyExc_TypeError, "insch requires 1 to 4 arguments");
         return NULL;
     }
 
@@ -1396,7 +1396,7 @@ PyCursesWindow_InCh(PyCursesWindowObject *self, PyObject *args)
         rtn = mvwinch(self->win,y,x);
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "inch requires 0 or 2 arguments");
+        PyErr_SetString(PyExc_TypeError, "inch requires 0 to 2 arguments");
         return NULL;
     }
     return PyLong_FromUnsignedLong(rtn);
@@ -1976,7 +1976,7 @@ PyCursesWindow_get_encoding(PyCursesWindowObject *self, void *closure)
 }
 
 static int
-PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value)
+PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     PyObject *ascii;
     char *encoding;

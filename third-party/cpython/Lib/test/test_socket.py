@@ -32,6 +32,7 @@ except ImportError:
 
 HOST = support.HOST
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
+MAIN_TIMEOUT = 60.0
 
 try:
     import _thread as thread
@@ -245,6 +246,9 @@ class ThreadableTest:
         self.server_ready.set()
 
     def _setUp(self):
+        self.wait_threads = support.wait_threads_exit()
+        self.wait_threads.__enter__()
+
         self.server_ready = threading.Event()
         self.client_ready = threading.Event()
         self.done = threading.Event()
@@ -271,6 +275,7 @@ class ThreadableTest:
     def _tearDown(self):
         self.__tearDown()
         self.done.wait()
+        self.wait_threads.__exit__(None, None, None)
 
         if self.queue.qsize():
             exc = self.queue.get()
@@ -1357,7 +1362,7 @@ class GeneralModuleTests(unittest.TestCase):
         socket.gethostbyname(domain)
         socket.gethostbyname_ex(domain)
         socket.getaddrinfo(domain,0,socket.AF_UNSPEC,socket.SOCK_STREAM)
-        # this may not work if the forward lookup choses the IPv6 address, as that doesn't
+        # this may not work if the forward lookup chooses the IPv6 address, as that doesn't
         # have a reverse entry yet
         # socket.gethostbyaddr('испытание.python.org')
 
@@ -1768,33 +1773,6 @@ class RDSTest(ThreadedRDSSocketTest):
     def _testSelect(self):
         self.data = b'select'
         self.cli.sendto(self.data, 0, (HOST, self.port))
-
-    def testCongestion(self):
-        # wait until the sender is done
-        self.evt.wait()
-
-    def _testCongestion(self):
-        # test the behavior in case of congestion
-        self.data = b'fill'
-        self.cli.setblocking(False)
-        try:
-            # try to lower the receiver's socket buffer size
-            self.cli.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 16384)
-        except OSError:
-            pass
-        with self.assertRaises(OSError) as cm:
-            try:
-                # fill the receiver's socket buffer
-                while True:
-                    self.cli.sendto(self.data, 0, (HOST, self.port))
-            finally:
-                # signal the receiver we're done
-                self.evt.set()
-        # sendto() should have failed with ENOBUFS
-        self.assertEqual(cm.exception.errno, errno.ENOBUFS)
-        # and we should have received a congestion notification through poll
-        r, w, x = select.select([self.serv], [], [], 3.0)
-        self.assertIn(self.serv, r)
 
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
@@ -2310,9 +2288,18 @@ class SendmsgStreamTests(SendmsgTests):
     def _testSendmsgTimeout(self):
         try:
             self.cli_sock.settimeout(0.03)
-            with self.assertRaises(socket.timeout):
+            try:
                 while True:
                     self.sendmsgToServer([b"a"*512])
+            except socket.timeout:
+                pass
+            except OSError as exc:
+                if exc.errno != errno.ENOMEM:
+                    raise
+                # bpo-33937 the test randomly fails on Travis CI with
+                # "OSError: [Errno 12] Cannot allocate memory"
+            else:
+                self.fail("socket.timeout not raised")
         finally:
             self.misc_event.set()
 
@@ -2335,8 +2322,10 @@ class SendmsgStreamTests(SendmsgTests):
             with self.assertRaises(OSError) as cm:
                 while True:
                     self.sendmsgToServer([b"a"*512], [], socket.MSG_DONTWAIT)
+            # bpo-33937: catch also ENOMEM, the test randomly fails on Travis CI
+            # with "OSError: [Errno 12] Cannot allocate memory"
             self.assertIn(cm.exception.errno,
-                          (errno.EAGAIN, errno.EWOULDBLOCK))
+                          (errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOMEM))
         finally:
             self.misc_event.set()
 
@@ -2870,10 +2859,11 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     def testFDPassSeparateMinSpace(self):
         # Pass two FDs in two separate arrays, receiving them into the
         # minimum space for two arrays.
-        self.checkRecvmsgFDs(2,
+        num_fds = 2
+        self.checkRecvmsgFDs(num_fds,
                              self.doRecvmsg(self.serv_sock, len(MSG),
                                             socket.CMSG_SPACE(SIZEOF_INT) +
-                                            socket.CMSG_LEN(SIZEOF_INT)),
+                                            socket.CMSG_LEN(SIZEOF_INT * num_fds)),
                              maxcmsgs=2, ignoreflags=socket.MSG_CTRUNC)
 
     @testFDPassSeparateMinSpace.client_skip
@@ -3697,7 +3687,6 @@ class InterruptedTimeoutBase(unittest.TestCase):
         orig_alrm_handler = signal.signal(signal.SIGALRM,
                                           lambda signum, frame: 1 / 0)
         self.addCleanup(signal.signal, signal.SIGALRM, orig_alrm_handler)
-        self.addCleanup(self.setAlarm, 0)
 
     # Timeout for socket operations
     timeout = 4.0
@@ -3734,9 +3723,12 @@ class InterruptedRecvTimeoutTest(InterruptedTimeoutBase, UDPTestBase):
     def checkInterruptedRecv(self, func, *args, **kwargs):
         # Check that func(*args, **kwargs) raises
         # errno of EINTR when interrupted by a signal.
-        self.setAlarm(self.alarm_time)
-        with self.assertRaises(ZeroDivisionError) as cm:
-            func(*args, **kwargs)
+        try:
+            self.setAlarm(self.alarm_time)
+            with self.assertRaises(ZeroDivisionError) as cm:
+                func(*args, **kwargs)
+        finally:
+            self.setAlarm(0)
 
     def testInterruptedRecvTimeout(self):
         self.checkInterruptedRecv(self.serv.recv, 1024)
@@ -3792,10 +3784,13 @@ class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
         # Check that func(*args, **kwargs), run in a loop, raises
         # OSError with an errno of EINTR when interrupted by a
         # signal.
-        with self.assertRaises(ZeroDivisionError) as cm:
-            while True:
-                self.setAlarm(self.alarm_time)
-                func(*args, **kwargs)
+        try:
+            with self.assertRaises(ZeroDivisionError) as cm:
+                while True:
+                    self.setAlarm(self.alarm_time)
+                    func(*args, **kwargs)
+        finally:
+            self.setAlarm(0)
 
     # Issue #12958: The following tests have problems on OS X prior to 10.7
     @support.requires_mac_ver(10, 7)
@@ -3876,6 +3871,7 @@ class BasicSocketPairTest(SocketPairTest):
 class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def __init__(self, methodName='runTest'):
+        self.event = threading.Event()
         ThreadedTCPSocketTest.__init__(self, methodName=methodName)
 
     def testSetBlocking(self):
@@ -3950,22 +3946,27 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
     def testAccept(self):
         # Testing non-blocking accept
         self.serv.setblocking(0)
-        try:
+
+        # connect() didn't start: non-blocking accept() fails
+        with self.assertRaises(BlockingIOError):
             conn, addr = self.serv.accept()
-        except OSError:
-            pass
-        else:
-            self.fail("Error trying to do non-blocking accept.")
-        read, write, err = select.select([self.serv], [], [])
-        if self.serv in read:
-            conn, addr = self.serv.accept()
-            self.assertIsNone(conn.gettimeout())
-            conn.close()
-        else:
+
+        self.event.set()
+
+        read, write, err = select.select([self.serv], [], [], MAIN_TIMEOUT)
+        if self.serv not in read:
             self.fail("Error trying to do accept after select.")
 
+        # connect() completed: non-blocking accept() doesn't block
+        conn, addr = self.serv.accept()
+        self.addCleanup(conn.close)
+        self.assertIsNone(conn.gettimeout())
+
     def _testAccept(self):
-        time.sleep(0.1)
+        # don't connect before event is set to check
+        # that non-blocking accept() raises BlockingIOError
+        self.event.wait()
+
         self.cli.connect((HOST, self.port))
 
     def testConnect(self):
@@ -3980,25 +3981,32 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
     def testRecv(self):
         # Testing non-blocking recv
         conn, addr = self.serv.accept()
+        self.addCleanup(conn.close)
         conn.setblocking(0)
-        try:
+
+        # the server didn't send data yet: non-blocking recv() fails
+        with self.assertRaises(BlockingIOError):
             msg = conn.recv(len(MSG))
-        except OSError:
-            pass
-        else:
-            self.fail("Error trying to do non-blocking recv.")
-        read, write, err = select.select([conn], [], [])
-        if conn in read:
-            msg = conn.recv(len(MSG))
-            conn.close()
-            self.assertEqual(msg, MSG)
-        else:
+
+        self.event.set()
+
+        read, write, err = select.select([conn], [], [], MAIN_TIMEOUT)
+        if conn not in read:
             self.fail("Error during select call to non-blocking socket.")
+
+        # the server sent data yet: non-blocking recv() doesn't block
+        msg = conn.recv(len(MSG))
+        self.assertEqual(msg, MSG)
 
     def _testRecv(self):
         self.cli.connect((HOST, self.port))
-        time.sleep(0.1)
-        self.cli.send(MSG)
+
+        # don't send anything before event is set to check
+        # that non-blocking recv() raises BlockingIOError
+        self.event.wait()
+
+        # send data: recv() will no longer block
+        self.cli.sendall(MSG)
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class FileObjectClassTestCase(SocketConnectedTest):
@@ -4239,7 +4247,7 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         self.write_file.write(self.write_msg)
         self.write_file.flush()
         self.evt2.set()
-        # Avoid cloding the socket before the server test has finished,
+        # Avoid closing the socket before the server test has finished,
         # otherwise system recv() will return 0 instead of EWOULDBLOCK.
         self.serv_finished.wait(5.0)
 
@@ -4525,8 +4533,8 @@ class TCPTimeoutTest(SocketTCPTest):
             raise Alarm
         old_alarm = signal.signal(signal.SIGALRM, alarm_handler)
         try:
-            signal.alarm(2)    # POSIX allows alarm to be up to 1 second early
             try:
+                signal.alarm(2)    # POSIX allows alarm to be up to 1 second early
                 foo = self.serv.accept()
             except socket.timeout:
                 self.fail("caught timeout instead of Alarm")
@@ -5481,7 +5489,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                                  op=socket.ALG_OP_ENCRYPT, iv=iv)
                 enc = op.recv(msglen * multiplier)
             self.assertEqual(len(enc), msglen * multiplier)
-            self.assertTrue(enc[:msglen], ciphertext)
+            self.assertEqual(enc[:msglen], ciphertext)
 
             op, _ = algo.accept()
             with op:
@@ -5583,6 +5591,42 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             with self.assertRaises(TypeError):
                 sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=-1)
 
+    def test_length_restriction(self):
+        # bpo-35050, off-by-one error in length check
+        sock = socket.socket(socket.AF_ALG, socket.SOCK_SEQPACKET, 0)
+        self.addCleanup(sock.close)
+
+        # salg_type[14]
+        with self.assertRaises(FileNotFoundError):
+            sock.bind(("t" * 13, "name"))
+        with self.assertRaisesRegex(ValueError, "type too long"):
+            sock.bind(("t" * 14, "name"))
+
+        # salg_name[64]
+        with self.assertRaises(FileNotFoundError):
+            sock.bind(("type", "n" * 63))
+        with self.assertRaisesRegex(ValueError, "name too long"):
+            sock.bind(("type", "n" * 64))
+
+
+@unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
+class TestMSWindowsTCPFlags(unittest.TestCase):
+    knownTCPFlags = {
+                       # available since long time ago
+                       'TCP_MAXSEG',
+                       'TCP_NODELAY',
+                       # available starting with Windows 10 1607
+                       'TCP_FASTOPEN',
+                       # available starting with Windows 10 1703
+                       'TCP_KEEPCNT',
+                       }
+
+    def test_new_tcp_flags(self):
+        provided = [s for s in dir(socket) if s.startswith('TCP')]
+        unknown = [s for s in provided if s not in self.knownTCPFlags]
+
+        self.assertEqual([], unknown,
+            "New TCP flags were discovered. See bpo-32394 for more information")
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
@@ -5639,6 +5683,7 @@ def test_main():
         SendfileUsingSendTest,
         SendfileUsingSendfileTest,
     ])
+    tests.append(TestMSWindowsTCPFlags)
 
     thread_info = support.threading_setup()
     support.run_unittest(*tests)

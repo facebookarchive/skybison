@@ -198,6 +198,7 @@ updates keys found deeper in the chain::
     >>> d['lion'] = 'orange'         # update an existing key two levels down
     >>> d['snake'] = 'red'           # new keys get added to the topmost dict
     >>> del d['elephant']            # remove an existing key one level down
+    >>> d                            # display result
     DeepChainMap({'zebra': 'black', 'snake': 'red'}, {}, {'lion': 'orange'})
 
 
@@ -509,11 +510,14 @@ or subtracting from an empty counter.
         .. versionadded:: 3.2
 
 
-    .. method:: rotate(n)
+    .. method:: rotate(n=1)
 
-        Rotate the deque *n* steps to the right.  If *n* is negative, rotate to
-        the left.  Rotating one step to the right is equivalent to:
-        ``d.appendleft(d.pop())``.
+        Rotate the deque *n* steps to the right.  If *n* is negative, rotate
+        to the left.
+
+        When the deque is not empty, rotating one step to the right is equivalent
+        to ``d.appendleft(d.pop())``, and rotating one step to the left is
+        equivalent to ``d.append(d.popleft())``.
 
 
     Deque objects also provide one read-only attribute:

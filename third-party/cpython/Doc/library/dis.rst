@@ -318,11 +318,15 @@ The Python compiler currently generates the following bytecode instructions.
 
    Duplicates the reference on top of the stack.
 
+   .. versionadded:: 3.2
+
 
 .. opcode:: DUP_TOP_TWO
 
    Duplicates the two references on top of the stack, leaving them in the
    same order.
+
+   .. versionadded:: 3.2
 
 
 **Unary operations**
@@ -534,11 +538,15 @@ the original TOS1.
    the CO_ITERABLE_COROUTINE flag, or resolves
    ``o.__await__``.
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: GET_AITER
 
    Implements ``TOS = get_awaitable(TOS.__aiter__())``.  See ``GET_AWAITABLE``
    for details about ``get_awaitable``
+
+   .. versionadded:: 3.5
 
 
 .. opcode:: GET_ANEXT
@@ -546,16 +554,22 @@ the original TOS1.
    Implements ``PUSH(get_awaitable(TOS.__anext__()))``.  See ``GET_AWAITABLE``
    for details about ``get_awaitable``
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: BEFORE_ASYNC_WITH
 
    Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
    stack.  Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack.
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: SETUP_ASYNC_WITH
 
    Creates a new frame object.
+
+   .. versionadded:: 3.5
 
 
 
@@ -594,6 +608,8 @@ the original TOS1.
    Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
    comprehensions.
 
+   .. versionadded:: 3.1
+
 For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
 instructions, while the added value or key/value pair is popped off, the
 container object remains on the stack so that it is available for further
@@ -616,6 +632,7 @@ iterations of the loop.
 
    .. versionadded:: 3.3
 
+
 .. opcode:: SETUP_ANNOTATIONS
 
    Checks whether ``__annotations__`` is defined in ``locals()``, if not it is
@@ -624,6 +641,7 @@ iterations of the loop.
    statically.
 
    .. versionadded:: 3.6
+
 
 .. opcode:: IMPORT_STAR
 
@@ -669,6 +687,8 @@ iterations of the loop.
    the stack.  The next opcode will either ignore it (:opcode:`POP_TOP`), or
    store it in (a) variable(s) (:opcode:`STORE_FAST`, :opcode:`STORE_NAME`, or
    :opcode:`UNPACK_SEQUENCE`).
+
+   .. versionadded:: 3.2
 
 
 .. opcode:: WITH_CLEANUP_START
@@ -900,10 +920,14 @@ All of the following opcodes use their arguments.
 
    If TOS is true, sets the bytecode counter to *target*.  TOS is popped.
 
+   .. versionadded:: 3.1
+
 
 .. opcode:: POP_JUMP_IF_FALSE (target)
 
    If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
+
+   .. versionadded:: 3.1
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
@@ -911,11 +935,15 @@ All of the following opcodes use their arguments.
    If TOS is true, sets the bytecode counter to *target* and leaves TOS on the
    stack.  Otherwise (TOS is false), TOS is popped.
 
+   .. versionadded:: 3.1
+
 
 .. opcode:: JUMP_IF_FALSE_OR_POP (target)
 
    If TOS is false, sets the bytecode counter to *target* and leaves TOS on the
    stack.  Otherwise (TOS is true), TOS is popped.
+
+   .. versionadded:: 3.1
 
 
 .. opcode:: JUMP_ABSOLUTE (target)
@@ -996,6 +1024,8 @@ All of the following opcodes use their arguments.
    consulting the cell.  This is used for loading free variables in class
    bodies.
 
+   .. versionadded:: 3.4
+
 
 .. opcode:: STORE_DEREF (i)
 
@@ -1008,21 +1038,25 @@ All of the following opcodes use their arguments.
    Empties the cell contained in slot *i* of the cell and free variable storage.
    Used by the :keyword:`del` statement.
 
+   .. versionadded:: 3.2
+
 
 .. opcode:: RAISE_VARARGS (argc)
 
-   Raises an exception. *argc* indicates the number of parameters to the raise
+   Raises an exception. *argc* indicates the number of arguments to the raise
    statement, ranging from 0 to 3.  The handler will find the traceback as TOS2,
    the parameter as TOS1, and the exception as TOS.
 
 
 .. opcode:: CALL_FUNCTION (argc)
 
-   Calls a function.  *argc* indicates the number of positional arguments.
-   The positional arguments are on the stack, with the right-most argument
-   on top.  Below the arguments, the function object to call is on the stack.
-   Pops all function arguments, and the function itself off the stack, and
-   pushes the return value.
+   Calls a callable object with positional arguments.
+   *argc* indicates the number of positional arguments.
+   The top of the stack contains positional arguments, with the right-most
+   argument on top.  Below the arguments is a callable object to call.
+   ``CALL_FUNCTION`` pops all arguments and the callable object off the stack,
+   calls the callable object with those arguments, and pushes the return value
+   returned by the callable object.
 
    .. versionchanged:: 3.6
       This opcode is used only for calls with positional arguments.
@@ -1030,31 +1064,36 @@ All of the following opcodes use their arguments.
 
 .. opcode:: CALL_FUNCTION_KW (argc)
 
-   Calls a function.  *argc* indicates the number of arguments (positional
-   and keyword).  The top element on the stack contains a tuple of keyword
-   argument names.  Below the tuple, keyword arguments are on the stack, in
-   the order corresponding to the tuple.  Below the keyword arguments, the
-   positional arguments are on the stack, with the right-most parameter on
-   top.  Below the arguments, the function object to call is on the stack.
-   Pops all function arguments, and the function itself off the stack, and
-   pushes the return value.
+   Calls a callable object with positional (if any) and keyword arguments.
+   *argc* indicates the total number of positional and keyword arguments.
+   The top element on the stack contains a tuple of keyword argument names.
+   Below that are keyword arguments in the order corresponding to the tuple.
+   Below that are positional arguments, with the right-most parameter on
+   top.  Below the arguments is a callable object to call.
+   ``CALL_FUNCTION_KW`` pops all arguments and the callable object off the stack,
+   calls the callable object with those arguments, and pushes the return value
+   returned by the callable object.
 
    .. versionchanged:: 3.6
       Keyword arguments are packed in a tuple instead of a dictionary,
-      *argc* indicates the total number of arguments
+      *argc* indicates the total number of arguments.
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
 
-   Calls a function. The lowest bit of *flags* indicates whether the
-   var-keyword argument is placed at the top of the stack.  Below the
-   var-keyword argument, the var-positional argument is on the stack.
-   Below the arguments, the function object to call is placed.
-   Pops all function arguments, and the function itself off the stack, and
-   pushes the return value. Note that this opcode pops at most three items
-   from the stack. Var-positional and var-keyword arguments are packed
-   by :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` and
-   :opcode:`BUILD_MAP_UNPACK_WITH_CALL`.
+   Calls a callable object with variable set of positional and keyword
+   arguments.  If the lowest bit of *flags* is set, the top of the stack
+   contains a mapping object containing additional keyword arguments.
+   Below that is an iterable object containing positional arguments and
+   a callable object to call.  :opcode:`BUILD_MAP_UNPACK_WITH_CALL` and
+   :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` can be used for merging multiple
+   mapping objects and iterables containing arguments.
+   Before the callable is called, the mapping object and iterable object
+   are each "unpacked" and their contents passed in as keyword and
+   positional arguments respectively.
+   ``CALL_FUNCTION_EX`` pops all arguments and the callable object off the stack,
+   calls the callable object with those arguments, and pushes the return value
+   returned by the callable object.
 
    .. versionadded:: 3.6
 
@@ -1064,7 +1103,8 @@ All of the following opcodes use their arguments.
    Pushes a new function object on the stack.  From bottom to top, the consumed
    stack must consist of values if the argument carries a specified flag value
 
-   * ``0x01`` a tuple of default argument objects in positional order
+   * ``0x01`` a tuple of default values for positional-only and
+     positional-or-keyword parameters in positional order
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` an annotation dictionary
    * ``0x08`` a tuple containing cells for free variables, making a closure
@@ -1147,7 +1187,7 @@ instructions:
 
 .. data:: hasconst
 
-   Sequence of bytecodes that have a constant parameter.
+   Sequence of bytecodes that access a constant.
 
 
 .. data:: hasfree

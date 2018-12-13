@@ -621,6 +621,42 @@ class BaseTaskTests:
         self.assertFalse(t._must_cancel)  # White-box test.
         self.assertFalse(t.cancel())
 
+    def test_cancel_awaited_task(self):
+        # This tests for a relatively rare condition when
+        # a task cancellation is requested for a task which is not
+        # currently blocked, such as a task cancelling itself.
+        # In this situation we must ensure that whatever next future
+        # or task the cancelled task blocks on is cancelled correctly
+        # as well.  See also bpo-34872.
+        loop = asyncio.new_event_loop()
+        self.addCleanup(lambda: loop.close())
+
+        task = nested_task = None
+        fut = self.new_future(loop)
+
+        async def nested():
+            await fut
+
+        async def coro():
+            nonlocal nested_task
+            # Create a sub-task and wait for it to run.
+            nested_task = self.new_task(loop, nested())
+            await asyncio.sleep(0)
+
+            # Request the current task to be cancelled.
+            task.cancel()
+            # Block on the nested task, which should be immediately
+            # cancelled.
+            await nested_task
+
+        task = self.new_task(loop, coro())
+        with self.assertRaises(asyncio.CancelledError):
+            loop.run_until_complete(task)
+
+        self.assertTrue(task.cancelled())
+        self.assertTrue(nested_task.cancelled())
+        self.assertTrue(fut.cancelled())
+
     def test_stop_while_run_in_complete(self):
 
         def gen():
@@ -1991,7 +2027,7 @@ class BaseTaskTests:
     def test_cancel_wait_for(self):
         self._test_cancel_wait_for(60.0)
 
-    def test_cancel_gather(self):
+    def test_cancel_gather_1(self):
         """Ensure that a gathering future refuses to be cancelled once all
         children are done"""
         loop = asyncio.new_event_loop()
@@ -2021,6 +2057,33 @@ class BaseTaskTests:
         self.assertFalse(gather_task.cancelled())
         self.assertEqual(gather_task.result(), [42])
 
+    def test_cancel_gather_2(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        async def test():
+            time = 0
+            while True:
+                time += 0.05
+                await asyncio.gather(asyncio.sleep(0.05, loop=loop),
+                                     return_exceptions=True,
+                                     loop=loop)
+                if time > 1:
+                    return
+
+        async def main():
+            qwe = self.new_task(loop, test())
+            await asyncio.sleep(0.2, loop=loop)
+            qwe.cancel()
+            try:
+                await qwe
+            except asyncio.CancelledError:
+                pass
+            else:
+                self.fail('gather did not propagate the cancellation request')
+
+        loop.run_until_complete(main())
+
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843
 
@@ -2049,7 +2112,11 @@ class BaseTaskTests:
         self.assertFalse(m_log.error.called)
 
         with self.assertRaises(ValueError):
-            self.new_task(self.loop, coro())
+            gen = coro()
+            try:
+                self.new_task(self.loop, gen)
+            finally:
+                gen.close()
 
         self.assertTrue(m_log.error.called)
         message = m_log.error.call_args[0][0]
@@ -2132,6 +2199,20 @@ def add_subclass_tests(cls):
 class CTask_CFuture_Tests(BaseTaskTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
     Future = getattr(futures, '_CFuture', None)
+
+    @support.refcount_test
+    def test_refleaks_in_task___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        @asyncio.coroutine
+        def coro():
+            pass
+        task = self.new_task(self.loop, coro())
+        self.loop.run_until_complete(task)
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            task.__init__(coro(), loop=self.loop)
+            self.loop.run_until_complete(task)
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),

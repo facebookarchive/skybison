@@ -291,6 +291,8 @@ On top of the core functionality, :class:`ConfigParser` supports
 interpolation.  This means values can be preprocessed before returning them
 from ``get()`` calls.
 
+.. index:: single: % (percent); interpolation in configuration files
+
 .. class:: BasicInterpolation()
 
    The default implementation used by :class:`ConfigParser`.  It enables
@@ -318,6 +320,8 @@ from ``get()`` calls.
    With ``interpolation`` set to ``None``, the parser would simply return
    ``%(my_dir)s/Pictures`` as the value of ``my_pictures`` and
    ``%(home_dir)s/lumberjack`` as the value of ``my_dir``.
+
+.. index:: single: $ (dollar); interpolation in configuration files
 
 .. class:: ExtendedInterpolation()
 
@@ -691,7 +695,7 @@ More advanced customization may be achieved by overriding default values of
 these parser attributes.  The defaults are defined on the classes, so they may
 be overridden by subclasses or by attribute assignment.
 
-.. attribute:: BOOLEAN_STATES
+.. attribute:: ConfigParser.BOOLEAN_STATES
 
   By default when using :meth:`~ConfigParser.getboolean`, config parsers
   consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
@@ -714,7 +718,7 @@ be overridden by subclasses or by attribute assignment.
   Other typical Boolean pairs include ``accept``/``reject`` or
   ``enabled``/``disabled``.
 
-.. method:: optionxform(option)
+.. method:: ConfigParser.optionxform(option)
 
   This method transforms option names on every read, get, or set
   operation.  The default converts the name to lowercase.  This also
@@ -745,7 +749,7 @@ be overridden by subclasses or by attribute assignment.
      >>> list(custom['Section2'].keys())
      ['AnotherKey']
 
-.. attribute:: SECTCRE
+.. attribute:: ConfigParser.SECTCRE
 
   A compiled regular expression used to parse section headers.  The default
   matches ``[section]`` to the name ``"section"``.  Whitespace is considered
@@ -982,15 +986,16 @@ ConfigParser Objects
 
    .. method:: read(filenames, encoding=None)
 
-      Attempt to read and parse a list of filenames, returning a list of
+      Attempt to read and parse an iterable of filenames, returning a list of
       filenames which were successfully parsed.
 
       If *filenames* is a string or :term:`path-like object`, it is treated as
       a single filename.  If a file named in *filenames* cannot be opened, that
-      file will be ignored.  This is designed so that you can specify a list of
-      potential configuration file locations (for example, the current
-      directory, the user's home directory, and some system-wide directory),
-      and all existing configuration files in the list will be read.
+      file will be ignored.  This is designed so that you can specify an
+      iterable of potential configuration file locations (for example, the
+      current directory, the user's home directory, and some system-wide
+      directory), and all existing configuration files in the iterable will be
+      read.
 
       If none of the named files exist, the :class:`ConfigParser`
       instance will contain an empty dataset.  An application which requires
@@ -1106,10 +1111,6 @@ ConfigParser Objects
       given *section*.  Optional arguments have the same meaning as for the
       :meth:`get` method.
 
-      .. versionchanged:: 3.2
-         Items present in *vars* no longer appear in the result.  The previous
-         behaviour mixed actual parser options with variables provided for
-         interpolation.
 
    .. method:: set(section, option, value)
 

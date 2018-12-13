@@ -6,6 +6,7 @@ import sys
 import platform
 import signal
 import io
+import itertools
 import os
 import errno
 import tempfile
@@ -16,6 +17,7 @@ import select
 import shutil
 import gc
 import textwrap
+from test.support import FakePath
 
 try:
     import ctypes
@@ -50,6 +52,8 @@ else:
     SETBINARY = ''
 
 NONEXISTING_CMD = ('nonexisting_i_hope',)
+# Ignore errors that indicate the command was not found
+NONEXISTING_ERRORS = (FileNotFoundError, NotADirectoryError, PermissionError)
 
 
 class BaseTestCase(unittest.TestCase):
@@ -310,9 +314,9 @@ class ProcessTestCase(BaseTestCase):
         # Verify first that the call succeeds without the executable arg.
         pre_args = [sys.executable, "-c"]
         self._assert_python(pre_args)
-        self.assertRaises((FileNotFoundError, PermissionError),
+        self.assertRaises(NONEXISTING_ERRORS,
                           self._assert_python, pre_args,
-                          executable="doesnotexist")
+                          executable=NONEXISTING_CMD[0])
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
     def test_executable_replaces_shell(self):
@@ -361,12 +365,7 @@ class ProcessTestCase(BaseTestCase):
     def test_cwd_with_pathlike(self):
         temp_dir = tempfile.gettempdir()
         temp_dir = self._normalize_cwd(temp_dir)
-
-        class _PathLikeObj:
-            def __fspath__(self):
-                return temp_dir
-
-        self._assert_cwd(temp_dir, sys.executable, cwd=_PathLikeObj())
+        self._assert_cwd(temp_dir, sys.executable, cwd=FakePath(temp_dir))
 
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
@@ -1150,13 +1149,10 @@ class ProcessTestCase(BaseTestCase):
         # value for that limit, but Windows has 2048, so we loop
         # 1024 times (each call leaked two fds).
         for i in range(1024):
-            with self.assertRaises(OSError) as c:
+            with self.assertRaises(NONEXISTING_ERRORS):
                 subprocess.Popen(NONEXISTING_CMD,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
-            # ignore errors that indicate the command was not found
-            if c.exception.errno not in (errno.ENOENT, errno.EACCES):
-                raise c.exception
 
     def test_nonexisting_with_pipes(self):
         # bpo-30121: Popen with pipes must close properly pipes on error.
@@ -1184,7 +1180,7 @@ class ProcessTestCase(BaseTestCase):
                 msvcrt.CrtSetReportFile(report_type, msvcrt.CRTDBG_FILE_STDERR)
 
             try:
-                subprocess.Popen([cmd],
+                subprocess.Popen(cmd,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             except OSError:
@@ -2113,6 +2109,55 @@ class POSIXProcessTestCase(BaseTestCase):
         self.check_swap_fds(2, 0, 1)
         self.check_swap_fds(2, 1, 0)
 
+    def _check_swap_std_fds_with_one_closed(self, from_fds, to_fds):
+        saved_fds = self._save_fds(range(3))
+        try:
+            for from_fd in from_fds:
+                with tempfile.TemporaryFile() as f:
+                    os.dup2(f.fileno(), from_fd)
+
+            fd_to_close = (set(range(3)) - set(from_fds)).pop()
+            os.close(fd_to_close)
+
+            arg_names = ['stdin', 'stdout', 'stderr']
+            kwargs = {}
+            for from_fd, to_fd in zip(from_fds, to_fds):
+                kwargs[arg_names[to_fd]] = from_fd
+
+            code = textwrap.dedent(r'''
+                import os, sys
+                skipped_fd = int(sys.argv[1])
+                for fd in range(3):
+                    if fd != skipped_fd:
+                        os.write(fd, str(fd).encode('ascii'))
+            ''')
+
+            skipped_fd = (set(range(3)) - set(to_fds)).pop()
+
+            rc = subprocess.call([sys.executable, '-c', code, str(skipped_fd)],
+                                 **kwargs)
+            self.assertEqual(rc, 0)
+
+            for from_fd, to_fd in zip(from_fds, to_fds):
+                os.lseek(from_fd, 0, os.SEEK_SET)
+                read_bytes = os.read(from_fd, 1024)
+                read_fds = list(map(int, read_bytes.decode('ascii')))
+                msg = textwrap.dedent(f"""
+                    When testing {from_fds} to {to_fds} redirection,
+                    parent descriptor {from_fd} got redirected
+                    to descriptor(s) {read_fds} instead of descriptor {to_fd}.
+                """)
+                self.assertEqual([to_fd], read_fds, msg)
+        finally:
+            self._restore_fds(saved_fds)
+
+    # Check that subprocess can remap std fds correctly even
+    # if one of them is closed (#32844).
+    def test_swap_std_fds_with_one_closed(self):
+        for from_fds in itertools.combinations(range(3), 2):
+            for to_fds in itertools.permutations(range(3), 2):
+                self._check_swap_std_fds_with_one_closed(from_fds, to_fds)
+
     def test_surrogates_error_message(self):
         def prepare():
             raise ValueError("surrogate:\uDCff")
@@ -2448,6 +2493,36 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertEqual(os.get_inheritable(inheritable), True)
         self.assertEqual(os.get_inheritable(non_inheritable), False)
 
+
+    # bpo-32270: Ensure that descriptors specified in pass_fds
+    # are inherited even if they are used in redirections.
+    # Contributed by @izbyshev.
+    def test_pass_fds_redirected(self):
+        """Regression test for https://bugs.python.org/issue32270."""
+        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+        pass_fds = []
+        for _ in range(2):
+            fd = os.open(os.devnull, os.O_RDWR)
+            self.addCleanup(os.close, fd)
+            pass_fds.append(fd)
+
+        stdout_r, stdout_w = os.pipe()
+        self.addCleanup(os.close, stdout_r)
+        self.addCleanup(os.close, stdout_w)
+        pass_fds.insert(1, stdout_w)
+
+        with subprocess.Popen([sys.executable, fd_status],
+                              stdin=pass_fds[0],
+                              stdout=pass_fds[1],
+                              stderr=pass_fds[2],
+                              close_fds=True,
+                              pass_fds=pass_fds):
+            output = os.read(stdout_r, 1024)
+        fds = {int(num) for num in output.split(b',')}
+
+        self.assertEqual(fds, {0, 1, 2} | frozenset(pass_fds), f"output={output!a}")
+
+
     def test_stdout_stdin_are_single_inout_fd(self):
         with io.open(os.devnull, "r+") as inout:
             p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
@@ -2539,7 +2614,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # let some time for the process to exit, and create a new Popen: this
         # should trigger the wait() of p
         time.sleep(0.2)
-        with self.assertRaises(OSError) as c:
+        with self.assertRaises(OSError):
             with subprocess.Popen(NONEXISTING_CMD,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:
@@ -2978,7 +3053,7 @@ class ContextManagerTests(BaseTestCase):
             self.assertEqual(proc.returncode, 1)
 
     def test_invalid_args(self):
-        with self.assertRaises((FileNotFoundError, PermissionError)) as c:
+        with self.assertRaises(NONEXISTING_ERRORS):
             with subprocess.Popen(NONEXISTING_CMD,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:

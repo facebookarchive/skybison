@@ -128,8 +128,8 @@ Namespace packages
 ------------------
 
 .. index::
-    pair:: package; namespace
-    pair:: package; portion
+    pair: package; namespace
+    pair: package; portion
 
 A namespace package is a composite of various :term:`portions <portion>`,
 where each portion contributes a subpackage to the parent package.  Portions
@@ -617,8 +617,7 @@ the module.
 module.__path__
 ---------------
 
-By definition, if a module has a ``__path__`` attribute, it is a package,
-regardless of its value.
+By definition, if a module has a ``__path__`` attribute, it is a package.
 
 A package's ``__path__`` attribute is used during imports of its subpackages.
 Within the import machinery, it functions much the same as :data:`sys.path`,
@@ -926,7 +925,7 @@ In :ref:`the remaining cases <using-on-interface-options>`
 :mod:`__main__` does not correspond directly with an importable module:
 
 - interactive prompt
-- -c switch
+- :option:`-c` option
 - running from stdin
 - running directly from a source or bytecode file
 

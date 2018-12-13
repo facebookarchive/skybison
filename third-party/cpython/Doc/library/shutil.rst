@@ -166,7 +166,7 @@ Directory and files operations
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
-   also attempts to preserve all file metadata.
+   also attempts to preserve file metadata.
 
    When *follow_symlinks* is false, and *src* is a symbolic
    link, :func:`copy2` attempts to copy all metadata from the
@@ -318,7 +318,8 @@ Directory and files operations
 
    Return disk usage statistics about the given path as a :term:`named tuple`
    with the attributes *total*, *used* and *free*, which are the amount of
-   total, used and free space, in bytes.
+   total, used and free space, in bytes.  On Windows, *path* must be a
+   directory; on Unix, it can be a file or directory.
 
    .. versionadded:: 3.3
 

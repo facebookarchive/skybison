@@ -268,7 +268,7 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
         self->errors = errors;
     }
 
-    self->translate = translate;
+    self->translate = translate ? 1 : 0;
     self->seennl = 0;
     self->pendingcr = 0;
 
@@ -695,6 +695,9 @@ typedef struct
     PyObject *weakreflist;
     PyObject *dict;
 } textio;
+
+static void
+textiowrapper_set_decoded_chars(textio *self, PyObject *chars);
 
 /* A couple of specialized cases in order to bypass the slow incremental
    encoding methods for the most popular encodings. */
@@ -1367,6 +1370,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         Py_DECREF(ret);
     }
 
+    textiowrapper_set_decoded_chars(self, NULL);
     Py_CLEAR(self->snapshot);
 
     if (self->decoder) {
@@ -1536,11 +1540,16 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
          */
         PyObject *next_input = dec_buffer;
         PyBytes_Concat(&next_input, input_chunk);
+        dec_buffer = NULL; /* Reference lost to PyBytes_Concat */
         if (next_input == NULL) {
-            dec_buffer = NULL; /* Reference lost to PyBytes_Concat */
             goto fail;
         }
-        Py_XSETREF(self->snapshot, Py_BuildValue("NN", dec_flags, next_input));
+        PyObject *snapshot = Py_BuildValue("NN", dec_flags, next_input);
+        if (snapshot == NULL) {
+            dec_flags = NULL;
+            goto fail;
+        }
+        Py_XSETREF(self->snapshot, snapshot);
     }
     Py_DECREF(input_chunk);
 
@@ -1602,6 +1611,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (result == NULL)
             goto fail;
 
+        textiowrapper_set_decoded_chars(self, NULL);
         Py_CLEAR(self->snapshot);
         return result;
     }
@@ -2088,6 +2098,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     cookie_type cookie;
     PyObject *res;
     int cmp;
+    PyObject *snapshot;
 
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
@@ -2222,11 +2233,11 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         }
 
-        self->snapshot = Py_BuildValue("iN", cookie.dec_flags, input_chunk);
-        if (self->snapshot == NULL) {
-            Py_DECREF(input_chunk);
+        snapshot = Py_BuildValue("iN", cookie.dec_flags, input_chunk);
+        if (snapshot == NULL) {
             goto fail;
         }
+        Py_XSETREF(self->snapshot, snapshot);
 
         decoded = _PyObject_CallMethodId(self->decoder, &PyId_decode,
             "Oi", input_chunk, (int)cookie.need_eof);
@@ -2244,9 +2255,10 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         self->decoded_chars_used = cookie.chars_to_skip;
     }
     else {
-        self->snapshot = Py_BuildValue("iy", cookie.dec_flags, "");
-        if (self->snapshot == NULL)
+        snapshot = Py_BuildValue("iy", cookie.dec_flags, "");
+        if (snapshot == NULL)
             goto fail;
+        Py_XSETREF(self->snapshot, snapshot);
     }
 
     /* Finally, reset the encoder (merely useful for proper BOM handling) */

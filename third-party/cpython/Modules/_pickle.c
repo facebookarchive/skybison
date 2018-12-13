@@ -200,19 +200,15 @@ _Pickle_ClearState(PickleState *st)
 static int
 _Pickle_InitState(PickleState *st)
 {
-    PyObject *builtins;
     PyObject *copyreg = NULL;
     PyObject *compat_pickle = NULL;
     PyObject *codecs = NULL;
     PyObject *functools = NULL;
+    _Py_IDENTIFIER(getattr);
 
-    builtins = PyEval_GetBuiltins();
-    if (builtins == NULL)
-        goto error;
-    st->getattr = PyDict_GetItemString(builtins, "getattr");
+    st->getattr = _PyEval_GetBuiltinId(&PyId_getattr);
     if (st->getattr == NULL)
         goto error;
-    Py_INCREF(st->getattr);
 
     copyreg = PyImport_ImportModule("copyreg");
     if (!copyreg)
@@ -596,9 +592,9 @@ typedef struct {
 } PyMemoEntry;
 
 typedef struct {
-    Py_ssize_t mt_mask;
-    Py_ssize_t mt_used;
-    Py_ssize_t mt_allocated;
+    size_t mt_mask;
+    size_t mt_used;
+    size_t mt_allocated;
     PyMemoEntry *mt_table;
 } PyMemoTable;
 
@@ -644,8 +640,8 @@ typedef struct UnpicklerObject {
     /* The unpickler memo is just an array of PyObject *s. Using a dict
        is unnecessary, since the keys are contiguous ints. */
     PyObject **memo;
-    Py_ssize_t memo_size;       /* Capacity of the memo array */
-    Py_ssize_t memo_len;        /* Number of objects in the memo */
+    size_t memo_size;       /* Capacity of the memo array */
+    size_t memo_len;        /* Number of objects in the memo */
 
     PyObject *pers_func;        /* persistent_load() method, can be NULL. */
     PyObject *pers_func_self;   /* borrowed reference to self if pers_func
@@ -731,7 +727,6 @@ PyMemoTable_New(void)
 static PyMemoTable *
 PyMemoTable_Copy(PyMemoTable *self)
 {
-    Py_ssize_t i;
     PyMemoTable *new = PyMemoTable_New();
     if (new == NULL)
         return NULL;
@@ -748,7 +743,7 @@ PyMemoTable_Copy(PyMemoTable *self)
         PyErr_NoMemory();
         return NULL;
     }
-    for (i = 0; i < self->mt_allocated; i++) {
+    for (size_t i = 0; i < self->mt_allocated; i++) {
         Py_XINCREF(self->mt_table[i].me_key);
     }
     memcpy(new->mt_table, self->mt_table,
@@ -794,7 +789,7 @@ _PyMemoTable_Lookup(PyMemoTable *self, PyObject *key)
 {
     size_t i;
     size_t perturb;
-    size_t mask = (size_t)self->mt_mask;
+    size_t mask = self->mt_mask;
     PyMemoEntry *table = self->mt_table;
     PyMemoEntry *entry;
     Py_hash_t hash = (Py_hash_t)key >> 3;
@@ -816,21 +811,23 @@ _PyMemoTable_Lookup(PyMemoTable *self, PyObject *key)
 
 /* Returns -1 on failure, 0 on success. */
 static int
-_PyMemoTable_ResizeTable(PyMemoTable *self, Py_ssize_t min_size)
+_PyMemoTable_ResizeTable(PyMemoTable *self, size_t min_size)
 {
     PyMemoEntry *oldtable = NULL;
     PyMemoEntry *oldentry, *newentry;
-    Py_ssize_t new_size = MT_MINSIZE;
-    Py_ssize_t to_process;
+    size_t new_size = MT_MINSIZE;
+    size_t to_process;
 
     assert(min_size > 0);
 
-    /* Find the smallest valid table size >= min_size. */
-    while (new_size < min_size && new_size > 0)
-        new_size <<= 1;
-    if (new_size <= 0) {
+    if (min_size > PY_SSIZE_T_MAX) {
         PyErr_NoMemory();
         return -1;
+    }
+
+    /* Find the smallest valid table size >= min_size. */
+    while (new_size < min_size) {
+        new_size <<= 1;
     }
     /* new_size needs to be a power of two. */
     assert((new_size & (new_size - 1)) == 0);
@@ -904,10 +901,12 @@ PyMemoTable_Set(PyMemoTable *self, PyObject *key, Py_ssize_t value)
      * Very large memo tables (over 50K items) use doubling instead.
      * This may help applications with severe memory constraints.
      */
-    if (!(self->mt_used * 3 >= (self->mt_mask + 1) * 2))
+    if (SIZE_MAX / 3 >= self->mt_used && self->mt_used * 3 < self->mt_allocated * 2) {
         return 0;
-    return _PyMemoTable_ResizeTable(self,
-        (self->mt_used > 50000 ? 2 : 4) * self->mt_used);
+    }
+    // self->mt_used is always < PY_SSIZE_T_MAX, so this can't overflow.
+    size_t desired_size = (self->mt_used > 50000 ? 2 : 4) * self->mt_used;
+    return _PyMemoTable_ResizeTable(self, desired_size);
 }
 
 #undef MT_MINSIZE
@@ -1352,17 +1351,19 @@ _Unpickler_Readline(UnpicklerObject *self, char **result)
 /* Returns -1 (with an exception set) on failure, 0 on success. The memo array
    will be modified in place. */
 static int
-_Unpickler_ResizeMemoList(UnpicklerObject *self, Py_ssize_t new_size)
+_Unpickler_ResizeMemoList(UnpicklerObject *self, size_t new_size)
 {
-    Py_ssize_t i;
+    size_t i;
 
     assert(new_size > self->memo_size);
 
-    PyMem_RESIZE(self->memo, PyObject *, new_size);
-    if (self->memo == NULL) {
+    PyObject **memo_new = self->memo;
+    PyMem_RESIZE(memo_new, PyObject *, new_size);
+    if (memo_new == NULL) {
         PyErr_NoMemory();
         return -1;
     }
+    self->memo = memo_new;
     for (i = self->memo_size; i < new_size; i++)
         self->memo[i] = NULL;
     self->memo_size = new_size;
@@ -1371,9 +1372,9 @@ _Unpickler_ResizeMemoList(UnpicklerObject *self, Py_ssize_t new_size)
 
 /* Returns NULL if idx is out of bounds. */
 static PyObject *
-_Unpickler_MemoGet(UnpicklerObject *self, Py_ssize_t idx)
+_Unpickler_MemoGet(UnpicklerObject *self, size_t idx)
 {
-    if (idx < 0 || idx >= self->memo_size)
+    if (idx >= self->memo_size)
         return NULL;
 
     return self->memo[idx];
@@ -1382,7 +1383,7 @@ _Unpickler_MemoGet(UnpicklerObject *self, Py_ssize_t idx)
 /* Returns -1 (with an exception set) on failure, 0 on success.
    This takes its own reference to `value`. */
 static int
-_Unpickler_MemoPut(UnpicklerObject *self, Py_ssize_t idx, PyObject *value)
+_Unpickler_MemoPut(UnpicklerObject *self, size_t idx, PyObject *value)
 {
     PyObject *old_item;
 
@@ -3347,6 +3348,8 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
             PickleState *st = _Pickle_GetGlobalState();
             PyObject *reduce_value = Py_BuildValue("(O(OO))",
                                         st->getattr, parent, lastname);
+            if (reduce_value == NULL)
+                goto error;
             status = save_reduce(self, reduce_value, NULL);
             Py_DECREF(reduce_value);
             if (status < 0)
@@ -3736,7 +3739,10 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
         if (obj != NULL) {
             obj_class = get_class(obj);
-            p = obj_class != cls;    /* true iff a problem */
+            if (obj_class == NULL) {
+                return -1;
+            }
+            p = obj_class != cls;
             Py_DECREF(obj_class);
             if (p) {
                 PyErr_SetString(st->PicklingError, "args[0] from "
@@ -4061,9 +4067,10 @@ dump(PicklerObject *self, PyObject *obj)
     }
 
     if (save(self, obj, 0) < 0 ||
-        _Pickler_Write(self, &stop_op, 1) < 0)
+        _Pickler_Write(self, &stop_op, 1) < 0 ||
+        _Pickler_CommitFrame(self) < 0)
         return -1;
-
+    self->framing = 0;
     return 0;
 }
 
@@ -4323,14 +4330,13 @@ static PyObject *
 _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
 /*[clinic end generated code: output=bb83a919d29225ef input=b73043485ac30b36]*/
 {
-    Py_ssize_t i;
     PyMemoTable *memo;
     PyObject *new_memo = PyDict_New();
     if (new_memo == NULL)
         return NULL;
 
     memo = self->pickler->memo;
-    for (i = 0; i < memo->mt_allocated; ++i) {
+    for (size_t i = 0; i < memo->mt_allocated; ++i) {
         PyMemoEntry entry = memo->mt_table[i];
         if (entry.me_key != NULL) {
             int status;
@@ -4469,13 +4475,13 @@ PicklerMemoProxy_New(PicklerObject *pickler)
 /*****************************************************************************/
 
 static PyObject *
-Pickler_get_memo(PicklerObject *self)
+Pickler_get_memo(PicklerObject *self, void *Py_UNUSED(ignored))
 {
     return PicklerMemoProxy_New(self);
 }
 
 static int
-Pickler_set_memo(PicklerObject *self, PyObject *obj)
+Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
 {
     PyMemoTable *new_memo = NULL;
 
@@ -4520,7 +4526,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "'memo' attribute must be a PicklerMemoProxy object"
+                     "'memo' attribute must be a PicklerMemoProxy object "
                      "or dict, not %.200s", Py_TYPE(obj)->tp_name);
         return -1;
     }
@@ -4537,7 +4543,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-Pickler_get_persid(PicklerObject *self)
+Pickler_get_persid(PicklerObject *self, void *Py_UNUSED(ignored))
 {
     if (self->pers_func == NULL) {
         PyErr_SetString(PyExc_AttributeError, "persistent_id");
@@ -4547,7 +4553,7 @@ Pickler_get_persid(PicklerObject *self)
 }
 
 static int
-Pickler_set_persid(PicklerObject *self, PyObject *value)
+Pickler_set_persid(PicklerObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -6194,11 +6200,10 @@ load_mark(UnpicklerObject *self)
             return -1;
         }
 
-        if (self->marks == NULL)
-            self->marks = PyMem_NEW(Py_ssize_t, alloc);
-        else
-            PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
+        Py_ssize_t *marks_old = self->marks;
+        PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
         if (self->marks == NULL) {
+            PyMem_FREE(marks_old);
             self->marks_size = 0;
             PyErr_NoMemory();
             return -1;
@@ -6707,7 +6712,7 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
 
     self->stack = (Pdata *)Pdata_New();
     if (self->stack == NULL)
-        return 1;
+        return -1;
 
     self->memo_size = 32;
     self->memo = _Unpickler_NewMemo(self->memo_size);
@@ -6760,7 +6765,7 @@ static PyObject *
 _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self)
 /*[clinic end generated code: output=e12af7e9bc1e4c77 input=97769247ce032c1d]*/
 {
-    Py_ssize_t i;
+    size_t i;
     PyObject *new_memo = PyDict_New();
     if (new_memo == NULL)
         return NULL;
@@ -6902,17 +6907,16 @@ UnpicklerMemoProxy_New(UnpicklerObject *unpickler)
 
 
 static PyObject *
-Unpickler_get_memo(UnpicklerObject *self)
+Unpickler_get_memo(UnpicklerObject *self, void *Py_UNUSED(ignored))
 {
     return UnpicklerMemoProxy_New(self);
 }
 
 static int
-Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
+Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
 {
     PyObject **new_memo;
-    Py_ssize_t new_memo_size = 0;
-    Py_ssize_t i;
+    size_t new_memo_size = 0;
 
     if (obj == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -6929,7 +6933,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
         if (new_memo == NULL)
             return -1;
 
-        for (i = 0; i < new_memo_size; i++) {
+        for (size_t i = 0; i < new_memo_size; i++) {
             Py_XINCREF(unpickler->memo[i]);
             new_memo[i] = unpickler->memo[i];
         }
@@ -6964,7 +6968,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "'memo' attribute must be an UnpicklerMemoProxy object"
+                     "'memo' attribute must be an UnpicklerMemoProxy object "
                      "or dict, not %.200s", Py_TYPE(obj)->tp_name);
         return -1;
     }
@@ -6977,8 +6981,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
 
   error:
     if (new_memo_size) {
-        i = new_memo_size;
-        while (--i >= 0) {
+        for (size_t i = new_memo_size - 1; i != SIZE_MAX; i--) {
             Py_XDECREF(new_memo[i]);
         }
         PyMem_FREE(new_memo);
@@ -6987,7 +6990,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-Unpickler_get_persload(UnpicklerObject *self)
+Unpickler_get_persload(UnpicklerObject *self, void *Py_UNUSED(ignored))
 {
     if (self->pers_func == NULL) {
         PyErr_SetString(PyExc_AttributeError, "persistent_load");
@@ -6997,7 +7000,7 @@ Unpickler_get_persload(UnpicklerObject *self)
 }
 
 static int
-Unpickler_set_persload(UnpicklerObject *self, PyObject *value)
+Unpickler_set_persload(UnpicklerObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,

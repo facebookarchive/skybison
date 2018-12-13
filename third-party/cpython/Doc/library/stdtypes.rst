@@ -123,9 +123,9 @@ Comparisons
    pair: chaining; comparisons
    pair: operator; comparison
    operator: ==
-   operator: <
+   operator: < (less)
    operator: <=
-   operator: >
+   operator: > (greater)
    operator: >=
    operator: !=
    operator: is
@@ -197,8 +197,8 @@ exception.
    operator: not in
 
 Two more operations with the same syntactic priority, :keyword:`in` and
-:keyword:`not in`, are supported only by sequence types (below).
-
+:keyword:`not in`, are supported by types that are :term:`iterable` or
+implement the :meth:`__contains__` method.
 
 .. _typesnumeric:
 
@@ -248,12 +248,16 @@ and imaginary parts.
    builtin: int
    builtin: float
    builtin: complex
-   operator: +
-   operator: -
-   operator: *
-   operator: /
+   single: operator; + (plus)
+   single: + (plus); unary operator
+   single: + (plus); binary operator
+   single: operator; - (minus)
+   single: - (minus); unary operator
+   single: - (minus); binary operator
+   operator: * (asterisk)
+   operator: / (slash)
    operator: //
-   operator: %
+   operator: % (percent)
    operator: **
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
@@ -382,23 +386,23 @@ modules.
 .. _bitstring-ops:
 
 Bitwise Operations on Integer Types
---------------------------------------
+-----------------------------------
 
 .. index::
    triple: operations on; integer; types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
-   operator: |
-   operator: ^
-   operator: &
+   operator: | (vertical bar)
+   operator: ^ (caret)
+   operator: & (ampersand)
    operator: <<
    operator: >>
-   operator: ~
+   operator: ~ (tilde)
 
-Bitwise operations only make sense for integers.  Negative numbers are treated
-as their 2's complement value (this assumes that there are enough bits so that
-no overflow occurs during the operation).
+Bitwise operations only make sense for integers. The result of bitwise
+operations is calculated as though carried out in two's complement with an
+infinite number of sign bits.
 
 The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
@@ -409,13 +413,13 @@ This table lists the bitwise operations sorted in ascending priority:
 +------------+--------------------------------+----------+
 | Operation  | Result                         | Notes    |
 +============+================================+==========+
-| ``x | y``  | bitwise :dfn:`or` of *x* and   |          |
+| ``x | y``  | bitwise :dfn:`or` of *x* and   | \(4)     |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
-| ``x ^ y``  | bitwise :dfn:`exclusive or` of |          |
+| ``x ^ y``  | bitwise :dfn:`exclusive or` of | \(4)     |
 |            | *x* and *y*                    |          |
 +------------+--------------------------------+----------+
-| ``x & y``  | bitwise :dfn:`and` of *x* and  |          |
+| ``x & y``  | bitwise :dfn:`and` of *x* and  | \(4)     |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
 | ``x << n`` | *x* shifted left by *n* bits   | (1)(2)   |
@@ -437,6 +441,12 @@ Notes:
 (3)
    A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
    overflow check.
+
+(4)
+   Performing these calculations with at least one extra sign extension bit in
+   a finite two's complement representation (a working bit-width of
+   ``1 + max(x.bit_length(), y.bit_length())`` or more) is sufficient to get the
+   same result as if there were an infinite number of sign bits.
 
 
 Additional Methods on Integer Types
@@ -973,9 +983,9 @@ Notes:
 
 (8)
    ``index`` raises :exc:`ValueError` when *x* is not found in *s*.
-   When supported, the additional arguments to the index method allow
-   efficient searching of subsections of the sequence. Passing the extra
-   arguments is roughly equivalent to using ``s[i:j].index(x)``, only
+   Not all implementations support passing the additional arguments *i* and *j*.
+   These arguments allow efficient searching of subsections of the sequence. Passing
+   the extra arguments is roughly equivalent to using ``s[i:j].index(x)``, only
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
 
@@ -1059,10 +1069,10 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | sequence (same as              |                     |
 |                              | ``s[len(s):len(s)] = [x]``)    |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.clear()``                | removes all items from ``s``   | \(5)                |
+| ``s.clear()``                | removes all items from *s*     | \(5)                |
 |                              | (same as ``del s[:]``)         |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.copy()``                 | creates a shallow copy of ``s``| \(5)                |
+| ``s.copy()``                 | creates a shallow copy of *s*  | \(5)                |
 |                              | (same as ``s[:]``)             |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.extend(t)`` or           | extends *s* with the           |                     |
@@ -1365,7 +1375,7 @@ objects that compare equal might have different :attr:`~range.start`,
 .. seealso::
 
    * The `linspace recipe <http://code.activestate.com/recipes/579000/>`_
-     shows how to implement a lazy version of range that suitable for floating
+     shows how to implement a lazy version of range suitable for floating
      point applications.
 
 .. index::
@@ -1598,6 +1608,21 @@ expression support in the :mod:`re` module).
 
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
+
+   .. note::
+      When formatting a number (:class:`int`, :class:`float`, :class:`complex`,
+      :class:`decimal.Decimal` and subclasses) with the ``n`` type
+      (ex: ``'{:n}'.format(1234)``), the function temporarily sets the
+      ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale to decode
+      ``decimal_point`` and ``thousands_sep`` fields of :c:func:`localeconv` if
+      they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
+      different than the ``LC_CTYPE`` locale.  This temporary change affects
+      other threads.
+
+   .. versionchanged:: 3.6.5
+      When formatting a number with the ``n`` type, the function sets
+      temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale in some
+      cases.
 
 
 .. method:: str.format_map(mapping)
@@ -2028,7 +2053,7 @@ expression support in the :mod:`re` module).
 .. method:: str.upper()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   uppercase.  Note that ``str.upper().isupper()`` might be ``False`` if ``s``
+   uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
@@ -2066,8 +2091,7 @@ expression support in the :mod:`re` module).
    single: string; interpolation, printf
    single: printf-style formatting
    single: sprintf-style formatting
-   single: % formatting
-   single: % interpolation
+   single: % (percent); printf-style formatting
 
 .. note::
 
@@ -2088,6 +2112,11 @@ If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format string, or a single mapping object (for example, a
 dictionary).
+
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
 
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
@@ -2126,6 +2155,12 @@ In this case no ``*`` specifiers may occur in a format (since they require a
 sequential parameter list).
 
 The conversion flag characters are:
+
+.. index::
+   single: # (hash); in printf-style formatting
+   single: - (minus); in printf-style formatting
+   single: + (plus); in printf-style formatting
+   single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
 | Flag    | Meaning                                                             |
@@ -2291,7 +2326,7 @@ data and are closely related to string objects in a variety of other ways.
    While bytes literals and representations are based on ASCII text, bytes
    objects actually behave like immutable sequences of integers, with each
    value in the sequence restricted such that ``0 <= x < 256`` (attempts to
-   violate this restriction will trigger :exc:`ValueError`. This is done
+   violate this restriction will trigger :exc:`ValueError`). This is done
    deliberately to emphasise that while many binary formats include ASCII based
    elements and can be usefully manipulated with some text-oriented algorithms,
    this is not generally the case for arbitrary binary data (blindly applying
@@ -3138,7 +3173,7 @@ place, and instead produce new objects.
 
    Return a copy of the sequence left filled with ASCII ``b'0'`` digits to
    make a sequence of length *width*. A leading sign prefix (``b'+'``/
-   ``b'-'`` is handled by inserting the padding *after* the sign character
+   ``b'-'``) is handled by inserting the padding *after* the sign character
    rather than before. For :class:`bytes` objects, the original sequence is
    returned if *width* is less than or equal to ``len(seq)``.
 
@@ -3161,18 +3196,17 @@ place, and instead produce new objects.
 ----------------------------------
 
 .. index::
-   single: formatting, bytes (%)
-   single: formatting, bytearray (%)
-   single: interpolation, bytes (%)
-   single: interpolation, bytearray (%)
+   single: formatting; bytes (%)
+   single: formatting; bytearray (%)
+   single: interpolation; bytes (%)
+   single: interpolation; bytearray (%)
    single: bytes; formatting
    single: bytearray; formatting
    single: bytes; interpolation
    single: bytearray; interpolation
    single: printf-style formatting
    single: sprintf-style formatting
-   single: % formatting
-   single: % interpolation
+   single: % (percent); printf-style formatting
 
 .. note::
 
@@ -3192,6 +3226,11 @@ If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format bytes object, or a single mapping object (for
 example, a dictionary).
+
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
 
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
@@ -3230,6 +3269,12 @@ In this case no ``*`` specifiers may occur in a format (since they require a
 sequential parameter list).
 
 The conversion flag characters are:
+
+.. index::
+   single: # (hash); in printf-style formatting
+   single: - (minus); in printf-style formatting
+   single: + (plus); in printf-style formatting
+   single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
 | Flag    | Meaning                                                             |
@@ -3346,7 +3391,10 @@ Notes:
    The bytearray version of this method does *not* operate in place - it
    always produces a new object, even if no changes were made.
 
-.. seealso:: :pep:`461`.
+.. seealso::
+
+   :pep:`461` - Adding % formatting to bytes and bytearray
+
 .. versionadded:: 3.5
 
 .. _typememoryview:
@@ -3691,7 +3739,7 @@ copying.
 
       ``nbytes == product(shape) * itemsize == len(m.tobytes())``. This is
       the amount of space in bytes that the array would use in a contiguous
-      representation. It is not necessarily equal to len(m)::
+      representation. It is not necessarily equal to ``len(m)``::
 
          >>> import array
          >>> a = array.array('i', [1,2,3,4,5])
@@ -4503,6 +4551,7 @@ supports no special operations.  There is exactly one null object, named
 It is written as ``None``.
 
 
+.. index:: single: ...; ellipsis literal
 .. _bltin-ellipsis-object:
 
 The Ellipsis Object

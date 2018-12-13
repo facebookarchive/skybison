@@ -665,14 +665,14 @@ gen_repr(PyGenObject *gen)
 }
 
 static PyObject *
-gen_get_name(PyGenObject *op)
+gen_get_name(PyGenObject *op, void *Py_UNUSED(ignored))
 {
     Py_INCREF(op->gi_name);
     return op->gi_name;
 }
 
 static int
-gen_set_name(PyGenObject *op, PyObject *value)
+gen_set_name(PyGenObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
     /* Not legal to del gen.gi_name or to set it to anything
      * other than a string object. */
@@ -687,14 +687,14 @@ gen_set_name(PyGenObject *op, PyObject *value)
 }
 
 static PyObject *
-gen_get_qualname(PyGenObject *op)
+gen_get_qualname(PyGenObject *op, void *Py_UNUSED(ignored))
 {
     Py_INCREF(op->gi_qualname);
     return op->gi_qualname;
 }
 
 static int
-gen_set_qualname(PyGenObject *op, PyObject *value)
+gen_set_qualname(PyGenObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
     /* Not legal to del gen.__qualname__ or to set it to anything
      * other than a string object. */
@@ -709,7 +709,7 @@ gen_set_qualname(PyGenObject *op, PyObject *value)
 }
 
 static PyObject *
-gen_getyieldfrom(PyGenObject *gen)
+gen_getyieldfrom(PyGenObject *gen, void *Py_UNUSED(ignored))
 {
     PyObject *yf = _PyGen_yf(gen);
     if (yf == NULL)
@@ -944,7 +944,7 @@ coro_await(PyCoroObject *coro)
 }
 
 static PyObject *
-coro_get_cr_await(PyCoroObject *coro)
+coro_get_cr_await(PyCoroObject *coro, void *Py_UNUSED(ignored))
 {
     PyObject *yf = _PyGen_yf((PyGenObject *) coro);
     if (yf == NULL)
@@ -1939,20 +1939,19 @@ yield_close:
     return NULL;
 
 check_error:
-    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
+            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+    {
         o->agt_state = AWAITABLE_STATE_CLOSED;
         if (o->agt_args == NULL) {
             /* when aclose() is called we don't want to propagate
-               StopAsyncIteration; just raise StopIteration, signalling
-               that 'aclose()' is done. */
+               StopAsyncIteration or GeneratorExit; just raise
+               StopIteration, signalling that this 'aclose()' await
+               is done.
+            */
             PyErr_Clear();
             PyErr_SetNone(PyExc_StopIteration);
         }
-    }
-    else if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
-        o->agt_state = AWAITABLE_STATE_CLOSED;
-        PyErr_Clear();          /* ignore these errors */
-        PyErr_SetNone(PyExc_StopIteration);
     }
     return NULL;
 }

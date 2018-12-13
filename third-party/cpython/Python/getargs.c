@@ -363,11 +363,9 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
     for (i = 0; i < len; i++) {
         if (*format == '|')
             format++;
-        // facebook begin - D9835681
-        msg = convertitem(PyTuple_GetItem(args, i), &format, p_va,
+        msg = convertitem(PyTuple_GetItem(args, i), &format, p_va, // facebook D10263950
                           flags, levels, msgbuf,
                           sizeof(msgbuf), &freelist);
-        // facebook end - D9835681
         if (msg) {
             seterror(i+1, msg, levels, fname, message);
             return cleanreturn(0, &freelist);
@@ -1735,7 +1733,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
                 }
             }
             else if (i < nargs)
-                current_arg = PyTuple_GetItem(args, i); // facebook - D9835681
+                current_arg = PyTuple_GetItem(args, i); // facebook D10263950
 
             if (current_arg) {
                 msg = convertitem(current_arg, &format, p_va, flags,
@@ -1773,7 +1771,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
             }
         }
 
-        /* We are into optional args, skip thru to any remaining
+        /* We are into optional args, skip through to any remaining
          * keyword args */
         msg = skipitem(&format, p_va, flags);
         if (msg) {
@@ -1965,7 +1963,7 @@ find_keyword(PyObject *kwnames, PyObject **kwstack, PyObject *key)
 
     nkwargs = PyTuple_GET_SIZE(kwnames);
     for (i=0; i < nkwargs; i++) {
-        PyObject *kwname = PyTuple_GetItem(kwnames, i); // facebook - D9835681
+        PyObject *kwname = PyTuple_GetItem(kwnames, i); // facebook D10263950
 
         /* ptr==ptr should match in most cases since keyword keys
            should be interned strings */
@@ -2132,7 +2130,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
             return cleanreturn(1, &freelist);
         }
 
-        /* We are into optional args, skip thru to any remaining
+        /* We are into optional args, skip through to any remaining
          * keyword args */
         msg = skipitem(&format, p_va, flags);
         assert(msg == NULL);
@@ -2283,7 +2281,9 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                         (void) va_arg(*p_va, int *);
                 }
                 format++;
-            } else if ((c == 's' || c == 'z' || c == 'y') && *format == '*') {
+            } else if ((c == 's' || c == 'z' || c == 'y' || c == 'w')
+                       && *format == '*')
+            {
                 format++;
             }
             break;
@@ -2398,7 +2398,7 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
 #endif
     for (i = 0; i < l; i++) {
         o = va_arg(vargs, PyObject **);
-        *o = PyTuple_GetItem(args, i); // facebook - D9835681
+        *o = PyTuple_GetItem(args, i); // facebook D10263950
     }
     va_end(vargs);
     return 1;

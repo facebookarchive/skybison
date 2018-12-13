@@ -40,21 +40,29 @@ Executor Objects
 
     .. method:: map(func, *iterables, timeout=None, chunksize=1)
 
-       Equivalent to :func:`map(func, *iterables) <map>` except *func* is executed
-       asynchronously and several calls to *func* may be made concurrently.  The
-       returned iterator raises a :exc:`concurrent.futures.TimeoutError` if
-       :meth:`~iterator.__next__` is called and the result isn't available
+       Similar to :func:`map(func, *iterables) <map>` except:
+
+       * the *iterables* are collected immediately rather than lazily;
+
+       * *func* is executed asynchronously and several calls to
+         *func* may be made concurrently.
+
+       The returned iterator raises a :exc:`concurrent.futures.TimeoutError`
+       if :meth:`~iterator.__next__` is called and the result isn't available
        after *timeout* seconds from the original call to :meth:`Executor.map`.
        *timeout* can be an int or a float.  If *timeout* is not specified or
-       ``None``, there is no limit to the wait time.  If a call raises an
-       exception, then that exception will be raised when its value is
-       retrieved from the iterator. When using :class:`ProcessPoolExecutor`, this
-       method chops *iterables* into a number of chunks which it submits to the
-       pool as separate tasks. The (approximate) size of these chunks can be
-       specified by setting *chunksize* to a positive integer. For very long
-       iterables, using a large value for *chunksize* can significantly improve
-       performance compared to the default size of 1. With :class:`ThreadPoolExecutor`,
-       *chunksize* has no effect.
+       ``None``, there is no limit to the wait time.
+
+       If a *func* call raises an exception, then that exception will be
+       raised when its value is retrieved from the iterator.
+
+       When using :class:`ProcessPoolExecutor`, this method chops *iterables*
+       into a number of chunks which it submits to the pool as separate
+       tasks.  The (approximate) size of these chunks can be specified by
+       setting *chunksize* to a positive integer.  For very long iterables,
+       using a large value for *chunksize* can significantly improve
+       performance compared to the default size of 1.  With
+       :class:`ThreadPoolExecutor`, *chunksize* has no effect.
 
        .. versionchanged:: 3.5
           Added the *chunksize* argument.
@@ -129,6 +137,12 @@ And::
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
 
+   *initializer* is an optional callable that is called at the start of
+   each worker thread; *initargs* is a tuple of arguments passed to the
+   initializer.  Should *initializer* raise an exception, all currently
+   pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   as well any attempt to submit more jobs to the pool.
+
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
       not given, it will default to the number of processors on the machine,
@@ -139,7 +153,7 @@ And::
 
    .. versionadded:: 3.6
       The *thread_name_prefix* argument was added to allow users to
-      control the threading.Thread names for worker threads created by
+      control the :class:`threading.Thread` names for worker threads created by
       the pool for easier debugging.
 
 .. _threadpoolexecutor-example:

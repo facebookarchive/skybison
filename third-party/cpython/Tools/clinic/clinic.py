@@ -705,11 +705,6 @@ class CLanguage(Language):
             {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
             """)
 
-        parser_prototype_fastcall = normalize_snippet("""
-            static PyObject *
-            {c_basename}({self_type}{self_name}, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
-            """)
-
         parser_prototype_varargs = normalize_snippet("""
             static PyObject *
             {c_basename}({self_type}{self_name}, PyObject *args)
@@ -749,8 +744,10 @@ class CLanguage(Language):
 
         def insert_keywords(s):
             return linear_format(s, declarations=
-                'static const char * const _keywords[] = {{{keywords}, NULL}};\n'
-                'static _PyArg_Parser _parser = {{"{format_units}:{name}", _keywords, 0}};\n'
+                # facebook start D13364418
+                'static char* _keywords[] = {{{keywords}, NULL}};\n'
+                'static const char * _format = "{format_units}:{name}";\n'
+                # facebook end
                 '{declarations}')
 
         if not parameters:
@@ -850,19 +847,6 @@ class CLanguage(Language):
                 }}
                 """, indent=4))
 
-        elif not new_or_init:
-            flags = "METH_FASTCALL"
-
-            parser_prototype = parser_prototype_fastcall
-
-            body = normalize_snippet("""
-                if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-                    {parse_arguments})) {{
-                    goto exit;
-                }}
-                """, indent=4)
-            parser_definition = parser_body(parser_prototype, body)
-            parser_definition = insert_keywords(parser_definition)
         else:
             # positional-or-keyword arguments
             flags = "METH_VARARGS|METH_KEYWORDS"
@@ -870,11 +854,11 @@ class CLanguage(Language):
             parser_prototype = parser_prototype_keyword
 
             body = normalize_snippet("""
-                if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+                if (!PyArg_ParseTupleAndKeywords(args, kwargs, _format, _keywords,
                     {parse_arguments})) {{
                     goto exit;
                 }}
-                """, indent=4)
+                """, indent=4) # facebook D13364418
             parser_definition = parser_body(parser_prototype, body)
             parser_definition = insert_keywords(parser_definition)
 

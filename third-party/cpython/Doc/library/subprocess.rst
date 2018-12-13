@@ -39,7 +39,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   shell=False, cwd=None, timeout=None, check=False, \
-                  encoding=None, errors=None)
+                  encoding=None, errors=None, env=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -74,6 +74,11 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    file objects for stdin, stdout and stderr are opened in text mode using the
    specified *encoding* and *errors* or the :class:`io.TextIOWrapper` default.
    Otherwise, file objects are opened in binary mode.
+
+   If *env* is not ``None``, it must be a mapping that defines the environment
+   variables for the new process; these are used instead of the default
+   behavior of inheriting the current process' environment. It is passed directly
+   to :class:`Popen`.
 
    Examples::
 
@@ -956,6 +961,9 @@ calls these functions.
    .. versionchanged:: 3.4
       Support for the *input* keyword argument was added.
 
+   .. versionchanged:: 3.6
+      *encoding* and *errors* were added.  See :func:`run` for details.
+
 .. _subprocess-replacements:
 
 Replacing Older Functions with the :mod:`subprocess` Module
@@ -1191,14 +1199,15 @@ handling consistency are valid for these functions.
       Windows support was added.
 
       The function now returns (exitcode, output) instead of (status, output)
-      as it did in Python 3.3.3 and earlier.  See :func:`WEXITSTATUS`.
+      as it did in Python 3.3.3 and earlier.  exitcode has the same value as
+      :attr:`~Popen.returncode`.
 
 
 .. function:: getoutput(cmd)
 
    Return output (stdout and stderr) of executing *cmd* in a shell.
 
-   Like :func:`getstatusoutput`, except the exit status is ignored and the return
+   Like :func:`getstatusoutput`, except the exit code is ignored and the return
    value is a string containing the command's output.  Example::
 
       >>> subprocess.getoutput('ls /bin/ls')
