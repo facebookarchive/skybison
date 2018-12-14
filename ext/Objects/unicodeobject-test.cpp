@@ -309,4 +309,29 @@ TEST_F(UnicodeExtensionApiTest, FromWideCharWithBufferAndZeroSizeReturnsEmpty) {
   EXPECT_EQ(PyUnicode_GetSize(empty), 0);
 }
 
+TEST_F(UnicodeExtensionApiTest, DecodeFSDefaultCreatesString) {
+  PyObjectPtr unicode(PyUnicode_DecodeFSDefault("hello"));
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 5);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "hello"));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, DecodeFSDefaultAndSizeReturnsString) {
+  PyObjectPtr unicode(PyUnicode_DecodeFSDefaultAndSize("hello", 5));
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 5);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "hello"));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeFSDefaultAndSizeWithSmallerSizeReturnsString) {
+  PyObjectPtr unicode(PyUnicode_DecodeFSDefaultAndSize("hello", 2));
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 2);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "he"));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python

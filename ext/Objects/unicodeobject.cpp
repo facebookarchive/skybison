@@ -296,13 +296,17 @@ PY_EXPORT PyObject* PyUnicode_DecodeCodePageStateful(int /* e */,
   UNIMPLEMENTED("PyUnicode_DecodeCodePageStateful");
 }
 
-PY_EXPORT PyObject* PyUnicode_DecodeFSDefault(const char* /* s */) {
-  UNIMPLEMENTED("PyUnicode_DecodeFSDefault");
+PY_EXPORT PyObject* PyUnicode_DecodeFSDefault(const char* c_str) {
+  Thread* thread = Thread::currentThread();
+  return ApiHandle::newReference(thread,
+                                 thread->runtime()->newStrFromCStr(c_str));
 }
 
-PY_EXPORT PyObject* PyUnicode_DecodeFSDefaultAndSize(const char* /* s */,
-                                                     Py_ssize_t /* e */) {
-  UNIMPLEMENTED("PyUnicode_DecodeFSDefaultAndSize");
+PY_EXPORT PyObject* PyUnicode_DecodeFSDefaultAndSize(const char* c_str,
+                                                     Py_ssize_t size) {
+  Thread* thread = Thread::currentThread();
+  View<byte> str(reinterpret_cast<const byte*>(c_str), size);
+  return ApiHandle::newReference(thread, thread->runtime()->newStrWithAll(str));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeLatin1(const char* /* s */,
