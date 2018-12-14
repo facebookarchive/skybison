@@ -19,7 +19,7 @@ namespace python {
 std::ostream* builtInStdout = &std::cout;
 std::ostream* builtinStderr = &std::cerr;
 
-RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::buildClass(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -61,7 +61,7 @@ RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call(thread, frame, 4);
 }
 
-RawObject builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   KwArguments args(frame, nargs);
@@ -136,7 +136,7 @@ RawObject builtinBuildClassKw(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call(thread, frame, 4);
 }
 
-RawObject builtinCallable(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::callable(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("callable expects one argument");
   }
@@ -157,7 +157,7 @@ RawObject builtinCallable(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(!callable->isError());
 }
 
-RawObject builtinChr(Thread* thread, Frame* frame_frame, word nargs) {
+RawObject Builtins::chr(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("Unexpected 1 argumment in 'chr'");
   }
@@ -183,7 +183,7 @@ static RawObject compileStr(Thread* thread, const Str& source) {
   return reader.readObject();
 }
 
-RawObject builtinCompile(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::compile(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 3 || nargs > 6) {
     return thread->raiseTypeErrorWithCStr(
         "Expected 3 to 6 arguments in 'compile'");
@@ -222,7 +222,7 @@ RawObject builtinCompile(Thread* thread, Frame* frame, word nargs) {
   return *code;
 }
 
-RawObject builtinExec(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::exec(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1 || nargs > 3) {
     return thread->raiseTypeErrorWithCStr(
         "Expected 1 to 3 arguments in 'exec'");
@@ -291,7 +291,7 @@ RawObject builtinExec(Thread* thread, Frame* frame, word nargs) {
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is
 // actually far more complicated than one might expect. This is enough to get
 // richards working.
-RawObject builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::isinstance(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("isinstance expected 2 arguments");
   }
@@ -310,7 +310,7 @@ RawObject builtinIsinstance(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(runtime->isInstance(obj, type));
 }
 
-RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::issubclass(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("issubclass expected 2 arguments");
   }
@@ -349,7 +349,7 @@ RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs) {
   return Bool::falseObj();
 }
 
-RawObject builtinLen(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::len(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("len() takes exactly one argument");
   }
@@ -364,7 +364,7 @@ RawObject builtinLen(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::callMethod1(thread, frame, method, self);
 }
 
-RawObject builtinOrd(Thread* thread, Frame* frame_frame, word nargs) {
+RawObject Builtins::ord(Thread* thread, Frame* frame_frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("Unexpected 1 argumment in 'ord'");
   }
@@ -512,14 +512,14 @@ static RawObject doBuiltinPrint(const Arguments& args, word nargs,
   return NoneType::object();
 }
 
-RawObject builtinPrint(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::print(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object end(&scope, NoneType::object());
   Arguments args(frame, nargs);
   return doBuiltinPrint(args, nargs, end, builtInStdout);
 }
 
-RawObject builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::printKw(Thread* thread, Frame* frame, word nargs) {
   KwArguments kw_args(frame, nargs);
   HandleScope scope(thread);
   if (kw_args.numKeywords() > 2) {
@@ -568,7 +568,7 @@ RawObject builtinPrintKw(Thread* thread, Frame* frame, word nargs) {
                         ostream);
 }
 
-RawObject builtinRange(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::range(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1 || nargs > 3) {
     return thread->raiseTypeErrorWithCStr(
         "Incorrect number of arguments to range()");
@@ -606,7 +606,7 @@ RawObject builtinRange(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newRange(start, stop, step);
 }
 
-RawObject builtinRepr(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::repr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("repr() takes exactly one argument");
   }
@@ -629,7 +629,7 @@ RawObject builtinRepr(Thread* thread, Frame* frame, word nargs) {
   return ret;
 }
 
-RawObject builtinGetattr(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::getattr(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2 || nargs > 3) {
     return thread->raiseTypeErrorWithCStr("getattr expected 2 or 3 arguments.");
   }
@@ -650,7 +650,7 @@ RawObject builtinGetattr(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject builtinHasattr(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::hasattr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("hasattr expected 2 arguments.");
   }
@@ -671,7 +671,7 @@ RawObject builtinHasattr(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-RawObject builtinSetattr(Thread* thread, Frame* frame, word nargs) {
+RawObject Builtins::setattr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr("setattr expected 3 arguments.");
   }

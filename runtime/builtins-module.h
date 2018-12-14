@@ -11,22 +11,25 @@ namespace python {
 extern std::ostream* builtInStdout;
 extern std::ostream* builtinStderr;
 
-RawObject builtinBuildClass(Thread* thread, Frame* frame, word nargs);
-RawObject builtinBuildClassKw(Thread* thread, Frame* frame, word nargs);
-RawObject builtinCallable(Thread* thread, Frame* frame, word nargs);
-RawObject builtinChr(Thread* thread, Frame* frame, word nargs);
-RawObject builtinCompile(Thread* thread, Frame* frame, word nargs);
-RawObject builtinExec(Thread* thread, Frame* frame, word nargs);
-RawObject builtinGetattr(Thread* thread, Frame* frame, word nargs);
-RawObject builtinHasattr(Thread* thread, Frame* frame, word nargs);
-RawObject builtinIsinstance(Thread* thread, Frame* frame, word nargs);
-RawObject builtinIssubclass(Thread* thread, Frame* frame, word nargs);
-RawObject builtinLen(Thread* thread, Frame* frame, word nargs);
-RawObject builtinOrd(Thread* thread, Frame* frame, word nargs);
-RawObject builtinPrint(Thread* thread, Frame* frame, word nargs);
-RawObject builtinPrintKw(Thread* thread, Frame* frame, word nargs);
-RawObject builtinRange(Thread* thread, Frame* frame, word nargs);
-RawObject builtinRepr(Thread* thread, Frame* frame, word nargs);
-RawObject builtinSetattr(Thread* thread, Frame* frame, word nargs);
+class Builtins {
+ public:
+  static RawObject buildClass(Thread* thread, Frame* frame, word nargs);
+  static RawObject buildClassKw(Thread* thread, Frame* frame, word nargs);
+  static RawObject callable(Thread* thread, Frame* frame, word nargs);
+  static RawObject chr(Thread* thread, Frame* frame, word nargs);
+  static RawObject compile(Thread* thread, Frame* frame, word nargs);
+  static RawObject exec(Thread* thread, Frame* frame, word nargs);
+  static RawObject getattr(Thread* thread, Frame* frame, word nargs);
+  static RawObject hasattr(Thread* thread, Frame* frame, word nargs);
+  static RawObject isinstance(Thread* thread, Frame* frame, word nargs);
+  static RawObject issubclass(Thread* thread, Frame* frame, word nargs);
+  static RawObject len(Thread* thread, Frame* frame, word nargs);
+  static RawObject ord(Thread* thread, Frame* frame, word nargs);
+  static RawObject print(Thread* thread, Frame* frame, word nargs);
+  static RawObject printKw(Thread* thread, Frame* frame, word nargs);
+  static RawObject range(Thread* thread, Frame* frame, word nargs);
+  static RawObject repr(Thread* thread, Frame* frame, word nargs);
+  static RawObject setattr(Thread* thread, Frame* frame, word nargs);
+};
 
 }  // namespace python

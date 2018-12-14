@@ -1759,47 +1759,51 @@ void Runtime::createBuiltinsModule() {
 
   // Fill in builtins...
   build_class_ = moduleAddBuiltinFunction(
-      module, SymbolId::kDunderBuildClass, nativeTrampoline<builtinBuildClass>,
-      nativeTrampolineKw<builtinBuildClassKw>, unimplementedTrampoline);
+      module, SymbolId::kDunderBuildClass,
+      nativeTrampoline<Builtins::buildClass>,
+      nativeTrampolineKw<Builtins::buildClassKw>, unimplementedTrampoline);
 
   moduleAddBuiltinFunction(module, SymbolId::kCallable,
-                           nativeTrampoline<builtinCallable>,
+                           nativeTrampoline<Builtins::callable>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kChr, nativeTrampoline<builtinChr>,
+  moduleAddBuiltinFunction(module, SymbolId::kChr,
+                           nativeTrampoline<Builtins::chr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kCompile,
-                           nativeTrampoline<builtinCompile>,
+                           nativeTrampoline<Builtins::compile>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kExec,
-                           nativeTrampoline<builtinExec>,
+                           nativeTrampoline<Builtins::exec>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kGetattr,
-                           nativeTrampoline<builtinGetattr>,
+                           nativeTrampoline<Builtins::getattr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kHasattr,
-                           nativeTrampoline<builtinHasattr>,
+                           nativeTrampoline<Builtins::hasattr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kIsInstance,
-                           nativeTrampoline<builtinIsinstance>,
+                           nativeTrampoline<Builtins::isinstance>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kIsSubclass,
-                           nativeTrampoline<builtinIssubclass>,
+                           nativeTrampoline<Builtins::issubclass>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kLen, nativeTrampoline<builtinLen>,
+  moduleAddBuiltinFunction(module, SymbolId::kLen,
+                           nativeTrampoline<Builtins::len>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kOrd, nativeTrampoline<builtinOrd>,
+  moduleAddBuiltinFunction(module, SymbolId::kOrd,
+                           nativeTrampoline<Builtins::ord>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(
-      module, SymbolId::kPrint, nativeTrampoline<builtinPrint>,
-      nativeTrampolineKw<builtinPrintKw>, unimplementedTrampoline);
+      module, SymbolId::kPrint, nativeTrampoline<Builtins::print>,
+      nativeTrampolineKw<Builtins::printKw>, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kRange,
-                           nativeTrampoline<builtinRange>,
+                           nativeTrampoline<Builtins::range>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kRepr,
-                           nativeTrampoline<builtinRepr>,
+                           nativeTrampoline<Builtins::repr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kSetattr,
-                           nativeTrampoline<builtinSetattr>,
+                           nativeTrampoline<Builtins::setattr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   // Add builtin types
   moduleAddBuiltinType(module, SymbolId::kArithmeticError,

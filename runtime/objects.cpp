@@ -200,7 +200,7 @@ void RawTuple::replaceFromWith(word start, RawObject array) {
 
 bool RawRangeIterator::isOutOfRange(word cur, word stop, word step) {
   DCHECK(step != 0,
-         "invalid step");  // should have been checked in builtinRange().
+         "invalid step");  // should have been checked in Builtins::range().
 
   if (step < 0) {
     if (cur <= stop) {

@@ -551,7 +551,7 @@ b = 2
   Str code_str(&scope, runtime.newStrFromCStr(program));
   Str filename(&scope, runtime.newStrFromCStr("<string>"));
   Str mode(&scope, runtime.newStrFromCStr("eval"));
-  Code code(&scope, runBuiltin(builtinCompile, code_str, filename, mode));
+  Code code(&scope, runBuiltin(Builtins::compile, code_str, filename, mode));
   ASSERT_TRUE(code->filename().isStr());
   EXPECT_TRUE(Str::cast(code->filename()).equals(filename));
 
@@ -566,7 +566,7 @@ TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenTooFewArgs) {
   Runtime runtime;
   HandleScope scope;
   SmallInt one(&scope, RawSmallInt::fromWord(1));
-  Object result(&scope, runBuiltin(builtinCompile, one));
+  Object result(&scope, runBuiltin(Builtins::compile, one));
   ASSERT_TRUE(result->isError());
   Thread* thread = Thread::currentThread();
   EXPECT_EQ(thread->pendingExceptionType(),
@@ -578,8 +578,8 @@ TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenTooManyArgs) {
   Runtime runtime;
   HandleScope scope;
   SmallInt one(&scope, RawSmallInt::fromWord(1));
-  Object result(&scope,
-                runBuiltin(builtinCompile, one, one, one, one, one, one, one));
+  Object result(
+      &scope, runBuiltin(Builtins::compile, one, one, one, one, one, one, one));
   ASSERT_TRUE(result->isError());
   Thread* thread = Thread::currentThread();
   EXPECT_EQ(thread->pendingExceptionType(),
@@ -591,7 +591,7 @@ TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenBadMode) {
   Runtime runtime;
   HandleScope scope;
   Str hello(&scope, RawSmallStr::fromCStr("hello"));
-  Object result(&scope, runBuiltin(builtinCompile, hello, hello, hello));
+  Object result(&scope, runBuiltin(Builtins::compile, hello, hello, hello));
   ASSERT_TRUE(result->isError());
   Thread* thread = Thread::currentThread();
   EXPECT_EQ(thread->pendingExceptionType(),
@@ -622,7 +622,7 @@ a = 1337
   Module main(&scope, findModule(&runtime, "__main__"));
   Str code(&scope, runtime.newStrFromCStr("a = 1338"));
   Dict globals(&scope, main->dict());
-  Object result(&scope, runBuiltin(builtinExec, code, globals));
+  Object result(&scope, runBuiltin(Builtins::exec, code, globals));
   ASSERT_TRUE(result->isNoneType());
   Object a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_TRUE(a->isSmallInt());
@@ -637,7 +637,7 @@ a = 1337
   )");
   Str code(&scope, runtime.newStrFromCStr("a = 1338"));
   Dict globals(&scope, runtime.newDict());
-  Object result(&scope, runBuiltin(builtinExec, code, globals));
+  Object result(&scope, runBuiltin(Builtins::exec, code, globals));
   ASSERT_TRUE(result->isNoneType());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a->isSmallInt());
@@ -649,7 +649,7 @@ TEST(BuiltinsModuleTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
   HandleScope scope;
   Str code(&scope, runtime.newStrFromCStr("a = 1338"));
   Object globals_not_a_dict(&scope, SmallInt::fromWord(5));
-  Object result(&scope, runBuiltin(builtinExec, code, globals_not_a_dict));
+  Object result(&scope, runBuiltin(Builtins::exec, code, globals_not_a_dict));
   ASSERT_TRUE(result->isError());
   Thread* thread = Thread::currentThread();
   EXPECT_EQ(thread->pendingExceptionType(),
