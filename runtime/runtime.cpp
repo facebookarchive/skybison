@@ -939,6 +939,33 @@ RawObject Runtime::newStrFromFormat(const char* fmt, ...) {
   return result;
 }
 
+RawObject Runtime::newStrFromUTF32(View<int32> code_units) {
+  word length = code_units.length();
+  if (length <= RawSmallStr::kMaxLength) {
+    byte buffer[SmallStr::kMaxLength];
+    for (word i = 0; i < length; i++) {
+      if (code_units.get(i) > kMaxASCII) {
+        // TODO(T37440792): Support UTF-8
+        UNIMPLEMENTED("PyUnicode currently only supports ASCII characters");
+      }
+      buffer[i] = code_units.get(i);
+    }
+    return SmallStr::fromBytes(View<byte>(buffer, length));
+  }
+  RawObject result = heap()->createLargeStr(length);
+  DCHECK(result != Error::object(), "failed to create large string");
+  byte* dst = reinterpret_cast<byte*>(RawLargeStr::cast(result)->address());
+  for (word i = 0; i < length; ++i) {
+    int32 ch = code_units.get(i);
+    if (ch > kMaxASCII) {
+      // TODO(T37440792): Support UTF-8
+      UNIMPLEMENTED("PyUnicode currently only supports ASCII characters");
+    }
+    dst[i] = ch;
+  }
+  return result;
+}
+
 RawObject Runtime::newStrWithAll(View<byte> code_units) {
   word length = code_units.length();
   if (length <= RawSmallStr::kMaxLength) {

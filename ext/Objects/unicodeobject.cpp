@@ -601,9 +601,29 @@ PY_EXPORT PyObject* PyUnicode_FromKindAndData(int /* d */, const void* /* r */,
   UNIMPLEMENTED("PyUnicode_FromKindAndData");
 }
 
-PY_EXPORT PyObject* PyUnicode_FromUnicode(const Py_UNICODE* /* u */,
-                                          Py_ssize_t /* e */) {
-  UNIMPLEMENTED("PyUnicode_FromUnicode");
+PY_EXPORT PyObject* PyUnicode_FromUnicode(const Py_UNICODE* code_units,
+                                          Py_ssize_t size) {
+  if (code_units == nullptr) {
+    // TODO(T36562134): Implement _PyUnicode_New
+    UNIMPLEMENTED("_PyUnicode_New");
+  }
+
+  if (sizeof(*code_units) * kBitsPerByte == 16) {
+    // TODO(T38042082): Implement newStrFromUTF16
+    UNIMPLEMENTED("newStrFromUTF16");
+  }
+  CHECK(sizeof(*code_units) * kBitsPerByte == 32,
+        "size of Py_UNICODE should be either 16 or 32 bits");
+  Thread* thread = Thread::currentThread();
+  for (Py_ssize_t i = 0; i < size; ++i) {
+    if (code_units[i] > kMaxUnicode) {
+      thread->raiseValueErrorWithCStr("character is not in range");
+      return nullptr;
+    }
+  }
+  return ApiHandle::newReference(
+      thread, thread->runtime()->newStrFromUTF32(
+                  View<int32>(bit_cast<int32*>(code_units), size)));
 }
 
 PY_EXPORT int PyUnicode_KIND_Func(PyObject*) {

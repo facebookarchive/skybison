@@ -142,6 +142,7 @@ class Runtime {
   // Creates a new string constructed from a format and a list of arguments,
   // similar to sprintf.
   RawObject newStrFromFormat(const char* fmt, ...) FORMAT_ATTRIBUTE(2, 3);
+  RawObject newStrFromUTF32(View<int32> code_units);
   RawObject newStrWithAll(View<byte> code_units);
 
   RawObject newStrIterator(const Object& iterable);

@@ -259,4 +259,16 @@ TEST_F(UnicodeExtensionApiTest, GETSIZEAndGetSizeSame) {
   EXPECT_EQ(PyUnicode_GET_SIZE(str.get()), PyUnicode_GetSize(str));
 }
 
+TEST_F(UnicodeExtensionApiTest, FromUnicodeWithASCIIReturnsString) {
+  PyObjectPtr unicode(PyUnicode_FromUnicode(L"abc123-", 7));
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 7);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "abc123-"));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromUnicodeWithNullBufferAbortsPyro) {
+  EXPECT_DEATH(PyUnicode_FromUnicode(nullptr, 2),
+               "unimplemented: _PyUnicode_New");
+}
+
 }  // namespace python

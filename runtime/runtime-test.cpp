@@ -847,6 +847,40 @@ TEST(RuntimeTest, NewStrWithAll) {
   EXPECT_TRUE(str10->equalsCStr("ABCDEFGHIJ"));
 }
 
+TEST(RuntimeTest, NewStrFromUTF32WithZeroSizeReturnsEmpty) {
+  Runtime runtime;
+  HandleScope scope;
+  int32 str[2] = {'a', 's'};
+  Str empty(&scope, runtime.newStrFromUTF32(View<int32>(str, 0)));
+  EXPECT_EQ(empty->length(), 0);
+}
+
+TEST(RuntimeTest, NewStrFromUTF32WithLargeASCIIStringReturnsString) {
+  Runtime runtime;
+  HandleScope scope;
+  int32 str[7] = {'a', 'b', 'c', '1', '2', '3', '-'};
+  Str unicode(&scope, runtime.newStrFromUTF32(View<int32>(str, 7)));
+  EXPECT_EQ(unicode->length(), 7);
+  EXPECT_TRUE(unicode->equalsCStr("abc123-"));
+}
+
+TEST(RuntimeTest, NewStrFromUTF32WithSmallASCIIStringReturnsString) {
+  Runtime runtime;
+  HandleScope scope;
+  int32 str[7] = {'a', 'b'};
+  Str unicode(&scope, runtime.newStrFromUTF32(View<int32>(str, 2)));
+  EXPECT_EQ(unicode->length(), 2);
+  EXPECT_TRUE(unicode->equalsCStr("ab"));
+}
+
+TEST(RuntimeTest, NewStrFromUTF32WithGreaterThanASCIIAborts) {
+  Runtime runtime;
+  int32 str[1] = {0xC4};
+  EXPECT_DEATH(
+      runtime.newStrFromUTF32(View<int32>(str, 1)),
+      "unimplemented: PyUnicode currently only supports ASCII characters");
+}
+
 TEST(RuntimeTest, HashBools) {
   Runtime runtime;
 
