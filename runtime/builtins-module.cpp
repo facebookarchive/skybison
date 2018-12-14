@@ -19,6 +19,25 @@ namespace python {
 std::ostream* builtInStdout = &std::cout;
 std::ostream* builtinStderr = &std::cerr;
 
+RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(name)) {
+    return thread->raiseTypeErrorWithCStr(
+        "getattr(): attribute name must be string.");
+  }
+  return runtime->attributeAt(thread, self, name);
+}
+
+RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
+                       const Object& value) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(name)) {
+    return thread->raiseTypeErrorWithCStr(
+        "setattr(): attribute name must be string.");
+  }
+  return runtime->attributeAtPut(thread, self, name, value);
+}
+
 RawObject Builtins::buildClass(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -637,11 +656,7 @@ RawObject Builtins::getattr(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  if (!name->isStr()) {
-    return thread->raiseTypeErrorWithCStr(
-        "getattr(): attribute name must be string.");
-  }
-  Object result(&scope, thread->runtime()->attributeAt(thread, self, name));
+  Object result(&scope, getAttribute(thread, self, name));
   if (result->isError() && nargs == 3) {
     result = args.get(2);
     // TODO(T32775277) Implement PyErr_ExceptionMatches
@@ -680,17 +695,7 @@ RawObject Builtins::setattr(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
   Object value(&scope, args.get(2));
-  if (!name->isStr()) {
-    return thread->raiseTypeErrorWithCStr(
-        "setattr(): attribute name must be string.");
-  }
-  Object result(&scope,
-                thread->runtime()->attributeAtPut(thread, self, name, value));
-  if (result->isError()) {
-    // populate the exception
-    return *result;
-  }
-  return NoneType::object();
+  return setAttribute(thread, self, name, value);
 }
 
 }  // namespace python

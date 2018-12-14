@@ -11,6 +11,10 @@ namespace python {
 extern std::ostream* builtInStdout;
 extern std::ostream* builtinStderr;
 
+RawObject getAttribute(Thread* thread, const Object& self, const Object& name);
+RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
+                       const Object& value);
+
 class Builtins {
  public:
   static RawObject buildClass(Thread* thread, Frame* frame, word nargs);

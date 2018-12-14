@@ -1,5 +1,6 @@
 // object.c implementation
 
+#include "builtins-module.h"
 #include "cpython-func.h"
 #include "runtime.h"
 
@@ -30,40 +31,23 @@ PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) {
 PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
                                       PyObject* value) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   if (!object->isHeapObject()) return -1;
-
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  runtime->attributeAtPut(thread, object, name_obj, value_obj);
-
-  // An error was produced. No value was set.
-  if (thread->hasPendingException()) {
-    return -1;
-  }
-
-  return 0;
+  Object result(&scope, setAttribute(thread, object, name_obj, value_obj));
+  return result->isError() ? -1 : 0;
 }
 
 PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   if (!object->isHeapObject()) return nullptr;
-
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Object result(&scope, runtime->attributeAt(thread, object, name_obj));
-
-  // An error was produced. No value was returned.
-  if (thread->hasPendingException() || result->isError()) {
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *result);
+  Object result(&scope, getAttribute(thread, object, name_obj));
+  return result->isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* /* f */) {
@@ -110,7 +94,6 @@ PY_EXPORT PyObject* PyObject_GetAttr(PyObject* v, PyObject* name) {
 PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* v, const char* name) {
   PyObject* str = PyUnicode_FromString(name);
   if (str == nullptr) return nullptr;
-
   PyObject* attr = PyObject_GetAttr(v, str);
   Py_DECREF(str);
   return attr;
@@ -126,7 +109,6 @@ PY_EXPORT int PyObject_SetAttrString(PyObject* v, const char* name,
                                      PyObject* w) {
   PyObject* str = PyUnicode_FromString(name);
   if (str == nullptr) return -1;
-
   int result = PyObject_SetAttr(v, str, w);
   Py_DECREF(str);
   return result;
