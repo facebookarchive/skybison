@@ -28,42 +28,6 @@ PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->refcnt();
 }
 
-PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
-                                      PyObject* value) {
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  if (!object->isHeapObject()) return -1;
-  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Object result(&scope, setAttribute(thread, object, name_obj, value_obj));
-  return result->isError() ? -1 : 0;
-}
-
-PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  if (!object->isHeapObject()) return nullptr;
-  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Object result(&scope, getAttribute(thread, object, name_obj));
-  return result->isError() ? nullptr : ApiHandle::newReference(thread, *result);
-}
-
-PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* /* f */) {
-  UNIMPLEMENTED("PyObject_CallFinalizerFromDealloc");
-}
-
-PY_EXPORT PyVarObject* PyObject_InitVar(PyVarObject* /* p */,
-                                        PyTypeObject* /* p */,
-                                        Py_ssize_t /* e */) {
-  UNIMPLEMENTED("PyObject_InitVar");
-}
-
-PY_EXPORT int PyObject_IsTrue(PyObject* /* v */) {
-  UNIMPLEMENTED("PyObject_IsTrue");
-}
-
 PY_EXPORT int PyCallable_Check(PyObject* /* x */) {
   UNIMPLEMENTED("PyCallable_Check");
 }
@@ -76,8 +40,34 @@ PY_EXPORT PyObject* PyObject_Bytes(PyObject* /* v */) {
   UNIMPLEMENTED("PyObject_Bytes");
 }
 
+PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* /* f */) {
+  UNIMPLEMENTED("PyObject_CallFinalizerFromDealloc");
+}
+
 PY_EXPORT PyObject* PyObject_Dir(PyObject* /* j */) {
   UNIMPLEMENTED("PyObject_Dir");
+}
+
+PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  if (!object->isHeapObject()) return nullptr;
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Object result(&scope, getAttribute(thread, object, name_obj));
+  return result->isError() ? nullptr : ApiHandle::newReference(thread, *result);
+}
+
+PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
+                                      PyObject* value) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  if (!object->isHeapObject()) return -1;
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  Object result(&scope, setAttribute(thread, object, name_obj, value_obj));
+  return result->isError() ? -1 : 0;
 }
 
 PY_EXPORT int PyObject_GenericSetDict(PyObject* /* j */, PyObject* /* e */,
@@ -97,21 +87,6 @@ PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* v, const char* name) {
   PyObject* attr = PyObject_GetAttr(v, str);
   Py_DECREF(str);
   return attr;
-}
-
-PY_EXPORT int PyObject_SetAttr(PyObject* v, PyObject* name, PyObject* w) {
-  // TODO(miro): This does not support custom attribute setter set by
-  // __setattr__ or tp_setattro slot
-  return PyObject_GenericSetAttr(v, name, w);
-}
-
-PY_EXPORT int PyObject_SetAttrString(PyObject* v, const char* name,
-                                     PyObject* w) {
-  PyObject* str = PyUnicode_FromString(name);
-  if (str == nullptr) return -1;
-  int result = PyObject_SetAttr(v, str, w);
-  Py_DECREF(str);
-  return result;
 }
 
 PY_EXPORT int PyObject_HasAttr(PyObject* /* v */, PyObject* /* e */) {
@@ -134,7 +109,21 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* /* p */, PyTypeObject* /* p */) {
   UNIMPLEMENTED("PyObject_Init");
 }
 
+PY_EXPORT PyVarObject* PyObject_InitVar(PyVarObject* /* p */,
+                                        PyTypeObject* /* p */,
+                                        Py_ssize_t /* e */) {
+  UNIMPLEMENTED("PyObject_InitVar");
+}
+
+PY_EXPORT int PyObject_IsTrue(PyObject* /* v */) {
+  UNIMPLEMENTED("PyObject_IsTrue");
+}
+
 PY_EXPORT int PyObject_Not(PyObject* /* v */) { UNIMPLEMENTED("PyObject_Not"); }
+
+PY_EXPORT int PyObject_Print(PyObject* /* p */, FILE* /* p */, int /* s */) {
+  UNIMPLEMENTED("PyObject_Print");
+}
 
 PY_EXPORT PyObject* PyObject_Repr(PyObject* /* v */) {
   UNIMPLEMENTED("PyObject_Repr");
@@ -152,6 +141,21 @@ PY_EXPORT int PyObject_RichCompareBool(PyObject* /* v */, PyObject* /* w */,
 
 PY_EXPORT PyObject* PyObject_SelfIter(PyObject* /* j */) {
   UNIMPLEMENTED("PyObject_SelfIter");
+}
+
+PY_EXPORT int PyObject_SetAttr(PyObject* v, PyObject* name, PyObject* w) {
+  // TODO(miro): This does not support custom attribute setter set by
+  // __setattr__ or tp_setattro slot
+  return PyObject_GenericSetAttr(v, name, w);
+}
+
+PY_EXPORT int PyObject_SetAttrString(PyObject* v, const char* name,
+                                     PyObject* w) {
+  PyObject* str = PyUnicode_FromString(name);
+  if (str == nullptr) return -1;
+  int result = PyObject_SetAttr(v, str, w);
+  Py_DECREF(str);
+  return result;
 }
 
 PY_EXPORT PyObject* PyObject_Str(PyObject* /* v */) {
@@ -174,6 +178,15 @@ PY_EXPORT void Py_ReprLeave(PyObject* /* j */) {
   UNIMPLEMENTED("Py_ReprLeave");
 }
 
+PY_EXPORT PyObject* _PyObject_GetAttrId(PyObject* /* v */,
+                                        _Py_Identifier* /* e */) {
+  UNIMPLEMENTED("_PyObject_GetAttrId");
+}
+
+PY_EXPORT int _PyObject_HasAttrId(PyObject* /* v */, _Py_Identifier* /* e */) {
+  UNIMPLEMENTED("_PyObject_HasAttrId");
+}
+
 PY_EXPORT PyObject* _PyObject_New(PyTypeObject* /* p */) {
   UNIMPLEMENTED("_PyObject_New");
 }
@@ -181,6 +194,11 @@ PY_EXPORT PyObject* _PyObject_New(PyTypeObject* /* p */) {
 PY_EXPORT PyVarObject* _PyObject_NewVar(PyTypeObject* /* p */,
                                         Py_ssize_t /* s */) {
   UNIMPLEMENTED("_PyObject_NewVar");
+}
+
+PY_EXPORT int _PyObject_SetAttrId(PyObject* /* v */, _Py_Identifier* /* e */,
+                                  PyObject* /* w */) {
+  UNIMPLEMENTED("_PyObject_SetAttrId");
 }
 
 PY_EXPORT void _PyTrash_deposit_object(PyObject* /* p */) {
@@ -197,24 +215,6 @@ PY_EXPORT void _PyTrash_thread_deposit_object(PyObject* /* p */) {
 
 PY_EXPORT void _PyTrash_thread_destroy_chain() {
   UNIMPLEMENTED("_PyTrash_thread_destroy_chain");
-}
-
-PY_EXPORT int PyObject_Print(PyObject* /* p */, FILE* /* p */, int /* s */) {
-  UNIMPLEMENTED("PyObject_Print");
-}
-
-PY_EXPORT PyObject* _PyObject_GetAttrId(PyObject* /* v */,
-                                        _Py_Identifier* /* e */) {
-  UNIMPLEMENTED("_PyObject_GetAttrId");
-}
-
-PY_EXPORT int _PyObject_HasAttrId(PyObject* /* v */, _Py_Identifier* /* e */) {
-  UNIMPLEMENTED("_PyObject_HasAttrId");
-}
-
-PY_EXPORT int _PyObject_SetAttrId(PyObject* /* v */, _Py_Identifier* /* e */,
-                                  PyObject* /* w */) {
-  UNIMPLEMENTED("_PyObject_SetAttrId");
 }
 
 }  // namespace python
