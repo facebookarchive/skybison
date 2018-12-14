@@ -12,7 +12,7 @@ using namespace testing;
 TEST(ListBuiltinsTest, DunderInitFromList) {
   Runtime runtime;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = list([1, 2])
 )");
   HandleScope scope;
@@ -25,7 +25,7 @@ a = list([1, 2])
 TEST(ListBuiltinsTest, NewListIsNotASingleton) {
   Runtime runtime;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = list() is not list()
 b = list([1, 2]) is not list([1, 2])
 )");
@@ -40,7 +40,7 @@ TEST(ListBuiltinsTest, AddToNonEmptyList) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = [1, 2]
 b = [3, 4, 5]
 c = a + b
@@ -59,7 +59,7 @@ TEST(ListBuiltinsTest, AddToEmptyList) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = []
 b = [1, 2, 3]
 c = a + b
@@ -74,13 +74,13 @@ c = a + b
 
 TEST(ListBuiltinsDeathTest, AddWithNonListSelfThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr("list.__add__(None, [])"),
+  ASSERT_DEATH(runFromCStr(&runtime, "list.__add__(None, [])"),
                "must be called with list instance as first argument");
 }
 
 TEST(ListBuiltinsDeathTest, AddListToTupleThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 a = [1, 2, 3]
 b = (4, 5, 6)
 c = a + b
@@ -115,20 +115,20 @@ print(r is None, len(b) == 3)
 
 TEST(ListBuiltinsDeathTest, ListInsertExcept) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 a = [1, 2]
 a.insert()
 )"),
                "aborting due to pending exception: "
                "insert\\(\\) takes exactly two arguments");
 
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 list.insert(1, 2, 3)
 )"),
                "aborting due to pending exception: "
                "descriptor 'insert' requires a 'list' object");
 
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 a = [1, 2]
 a.insert("i", "val")
 )"),
@@ -157,25 +157,25 @@ print(a.pop(), a.pop(0), a.pop(-2))
 
 TEST(ListBuiltinsDeathTest, ListPopExcept) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 a = [1, 2]
 a.pop(1, 2, 3, 4)
 )"),
                "aborting due to pending exception: "
                "pop\\(\\) takes at most 1 argument");
 
-  ASSERT_DEATH(runtime.runFromCStr("list.pop(1)"),
+  ASSERT_DEATH(runFromCStr(&runtime, "list.pop(1)"),
                "aborting due to pending exception: "
                "descriptor 'pop' requires a 'list' object");
 
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 a = [1, 2]
 a.pop("i")
 )"),
                "aborting due to pending exception: "
                "index object cannot be interpreted as an integer");
 
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 a = [1]
 a.pop()
 a.pop()
@@ -183,7 +183,7 @@ a.pop()
                "unimplemented: "
                "Throw an RawIndexError for an out of range list");
 
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 a = [1]
 a.pop(3)
 )"),
@@ -482,7 +482,7 @@ TEST(ListBuiltinsTest, SetItemWithNegativeIndex) {
 
 TEST(ListBuiltinsDeathTest, GetItemWithInvalidNegativeIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 l[-4]
 )"),
@@ -491,7 +491,7 @@ l[-4]
 
 TEST(ListBuiltinsDeathTest, DelItemWithInvalidNegativeIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 del l[-4]
 )"),
@@ -500,7 +500,7 @@ del l[-4]
 
 TEST(ListBuiltinsDeathTest, SetItemWithInvalidNegativeIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 l[-4] = 0
 )"),
@@ -509,7 +509,7 @@ l[-4] = 0
 
 TEST(ListBuiltinsDeathTest, GetItemWithInvalidIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 l[5]
 )"),
@@ -518,7 +518,7 @@ l[5]
 
 TEST(ListBuiltinsDeathTest, DelItemWithInvalidIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 del l[5]
 )"),
@@ -527,7 +527,7 @@ del l[5]
 
 TEST(ListBuiltinsDeathTest, SetItemWithInvalidIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 l[5] = 4
 )"),
@@ -537,7 +537,7 @@ l[5] = 4
 TEST(ListBuiltinsTest, SetItemSliceBasic) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:5] = ['C', 'D', 'E']
 result = letters
@@ -549,7 +549,7 @@ result = letters
 TEST(ListBuiltinsTest, SetItemSliceGrow) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:5] = ['C', 'D', 'E','X','Y','Z']
 result = letters
@@ -561,7 +561,7 @@ result = letters
 TEST(ListBuiltinsTest, SetItemSliceShrink) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:6] = ['C', 'D']
 result = letters
@@ -573,7 +573,7 @@ result = letters
 TEST(ListBuiltinsTest, SetItemSliceIterable) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:6] = ('x', 'y', 12)
 result = letters
@@ -585,7 +585,7 @@ result = letters
 TEST(ListBuiltinsTest, SetItemSliceSelf) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:5] = letters
 result = letters
@@ -599,7 +599,7 @@ result = letters
 TEST(ListBuiltinsTest, SetItemSliceRevBounds) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = list(range(20))
 a[5:2] = ['a','b','c','d','e']
 result = a
@@ -612,7 +612,7 @@ result = a
 TEST(ListBuiltinsTest, SetItemSliceStep) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = list(range(20))
 a[2:10:3] = ['a', 'b', 'c']
 result = a
@@ -625,7 +625,7 @@ result = a
 TEST(ListBuiltinsTest, SetItemSliceStepNeg) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = list(range(20))
 a[10:2:-3] = ['a', 'b', 'c']
 result = a
@@ -638,7 +638,7 @@ result = a
 TEST(ListBuiltinsTest, SetItemSliceStepSizeErr) {
   Runtime runtime;
   ASSERT_DEATH(
-      runtime.runFromCStr(R"(
+      runFromCStr(&runtime, R"(
 a = list(range(20))
 a[2:10:3] = ['a', 'b', 'c', 'd']
 )"),
@@ -647,7 +647,7 @@ a[2:10:3] = ['a', 'b', 'c', 'd']
 
 TEST(ListBuiltinsTest, SetItemSliceScalarErr) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:6] = 5
 )"),
@@ -657,7 +657,7 @@ letters[2:6] = 5
 TEST(ListBuiltinsTest, SetItemSliceStepTuple) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = list(range(20))
 a[2:10:3] = ('a', 'b', 'c')
 result = a
@@ -671,7 +671,7 @@ TEST(ListBuiltinsTest, SetItemSliceShortValue) {
   Runtime runtime;
   HandleScope scope;
   ASSERT_DEATH(
-      runtime.runFromCStr(R"(
+      runFromCStr(&runtime, R"(
 a = [1,2,3,4,5,6,7,8,9,10]
 b = [0,0,0]
 a[:8:2] = b
@@ -681,7 +681,7 @@ a[:8:2] = b
 TEST(ListBuiltinsTest, SetItemSliceShortStop) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = [1,2,3,4,5,6,7,8,9,10]
 b = [0,0,0]
 a[:1] = b
@@ -694,7 +694,7 @@ result = a
 TEST(ListBuiltinsTest, SetItemSliceLongStop) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = [1,1,1]
 b = [0,0,0,0,0]
 a[:1] = b
@@ -707,7 +707,7 @@ result = a
 TEST(ListBuiltinsTest, SetItemSliceShortStep) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = [1,2,3,4,5,6,7,8,9,10]
 b = [0,0,0]
 a[::1] = b
@@ -719,7 +719,7 @@ result = a
 
 TEST(ListBuiltinsDeathTest, GetItemWithTooFewArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 [].__getitem__()
 )"),
                R"(__getitem__\(\) takes exactly one argument \(0 given\))");
@@ -727,7 +727,7 @@ TEST(ListBuiltinsDeathTest, GetItemWithTooFewArgumentsThrowsTypeError) {
 
 TEST(ListBuiltinsDeathTest, DelItemWithTooFewArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 [].__delitem__()
 )"),
                "expected 1 arguments, got 0");
@@ -735,7 +735,7 @@ TEST(ListBuiltinsDeathTest, DelItemWithTooFewArgumentsThrowsTypeError) {
 
 TEST(ListBuiltinsDeathTest, SetItemWithTooFewArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 [].__setitem__(1)
 )"),
                "expected 2 arguments, got 1");
@@ -743,7 +743,7 @@ TEST(ListBuiltinsDeathTest, SetItemWithTooFewArgumentsThrowsTypeError) {
 
 TEST(ListBuiltinsDeathTest, DelItemWithTooManyArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 [].__delitem__(1, 2)
 )"),
                "expected 1 arguments, got 2");
@@ -751,7 +751,7 @@ TEST(ListBuiltinsDeathTest, DelItemWithTooManyArgumentsThrowsTypeError) {
 
 TEST(ListBuiltinsDeathTest, GetItemWithTooManyArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 [].__getitem__(1, 2)
 )"),
                R"(__getitem__\(\) takes exactly one argument \(2 given\))");
@@ -759,7 +759,7 @@ TEST(ListBuiltinsDeathTest, GetItemWithTooManyArgumentsThrowsTypeError) {
 
 TEST(ListBuiltinsDeathTest, SetItemWithTooManyArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 [].__setitem__(1, 2, 3)
 )"),
                "expected 2 arguments, got 3");
@@ -767,7 +767,7 @@ TEST(ListBuiltinsDeathTest, SetItemWithTooManyArgumentsThrowsTypeError) {
 
 TEST(ListBuiltinsDeathTest, GetItemWithNonIntegralIndexThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 [].__getitem__("test")
 )"),
                "list indices must be integers or slices");
@@ -775,7 +775,7 @@ TEST(ListBuiltinsDeathTest, GetItemWithNonIntegralIndexThrowsTypeError) {
 
 TEST(ListBuiltinsDeathTest, DelItemWithNonIntegralIndexThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 [].__delitem__("test")
 )"),
                "list indices must be integers or slices");
@@ -783,7 +783,7 @@ TEST(ListBuiltinsDeathTest, DelItemWithNonIntegralIndexThrowsTypeError) {
 
 TEST(ListBuiltinsDeathTest, SetItemWithNonIntegralIndexThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 [].__setitem__("test", 1)
 )"),
                "list indices must be integers or slices");
@@ -791,7 +791,7 @@ TEST(ListBuiltinsDeathTest, SetItemWithNonIntegralIndexThrowsTypeError) {
 
 TEST(ListBuiltinsDeathTest, NonTypeInDunderNew) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 list.__new__(1)
 )"),
                "not a type object");
@@ -799,7 +799,7 @@ list.__new__(1)
 
 TEST(ListBuiltinsDeathTest, NonSubclassInDunderNew) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 class Foo: pass
 list.__new__(Foo)
 )"),
@@ -809,7 +809,7 @@ list.__new__(Foo)
 TEST(ListBuiltinsTest, SubclassList) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo():
   def __init__(self):
     self.a = "a"
@@ -841,7 +841,7 @@ test6 = len(a)
 TEST(ListBuiltinsTest, DelItem) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = [42,'foo', 'bar']
 del a[2]
 del a[0]
@@ -865,7 +865,7 @@ TEST(ListBuiltinsTest, DunderIterReturnsListIter) {
 TEST(ListBuiltinsTest, DunderRepr) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 result = [1, 2, 'hello'].__repr__()
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));

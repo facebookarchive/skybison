@@ -34,7 +34,7 @@ TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
 
 TEST(DictBuiltinsTest, InWithExistingKeyReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 d = {"foo": 1}
 foo_in_d = "foo" in d
 )");
@@ -46,7 +46,7 @@ foo_in_d = "foo" in d
 
 TEST(DictBuiltinsTest, InWithNonexistentKeyReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 d = {}
 foo_in_d = "foo" in d
 )");
@@ -84,7 +84,7 @@ TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyThrowsKeyError) {
 
 TEST(DictBuiltinsTest, DelOnExistingKeyDeletesKey) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 d = {"foo": 1}
 del d["foo"]
 )");
@@ -97,7 +97,7 @@ del d["foo"]
 
 TEST(DictBuiltinsDeathTest, DelOnNonexistentKeyThrowsKeyError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 d = {}
 del d["foo"]
 )"),
@@ -136,7 +136,7 @@ TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
 
 TEST(DictBuiltinsDeathTest, NonTypeInDunderNew) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 dict.__new__(1)
 )"),
                "not a type object");
@@ -144,7 +144,7 @@ dict.__new__(1)
 
 TEST(DictBuiltinsDeathTest, NonSubclassInDunderNew) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 class Foo: pass
 dict.__new__(Foo)
 )"),
@@ -162,7 +162,7 @@ TEST(DictBuiltinsTest, DunderNewConstructsDict) {
 TEST(DictBuiltinsTest, DunderSetItemWithDictSubclassSetsItem) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class foo(dict):
   pass
 d = foo()
@@ -250,7 +250,7 @@ TEST(DictBuiltinsDeathTest, UpdateWithNonMappingTypeThrowsTypeError) {
 
 TEST(DictBuiltinsTest, UpdateWithDictReturnsUpdatedDict) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 d1 = {"a": 1, "b": 2}
 d2 = {"c": 3, "d": 4}
 d3 = {"a": 123}

@@ -11,7 +11,7 @@ using namespace testing;
 
 TEST(ObjectBuiltinsTest, ObjectDunderReprReturnsTypeNameAndPointer) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo:
   pass
 
@@ -36,7 +36,7 @@ a = object.__repr__(Foo())
 
 TEST(ObjectBuiltinsTest, DunderStrReturnsDunderRepr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo:
   pass
 
@@ -52,7 +52,7 @@ b = object.__repr__(f)
 
 TEST(ObjectBuiltinsTest, UserDefinedTypeInheritsDunderStr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo:
   pass
 
@@ -68,7 +68,7 @@ b = f.__str__()
 
 TEST(ObjectBuiltinsTest, DunderInitDoesNotThrowIfNewIsDifferentButInitIsSame) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo:
   def __new__(cls):
     return object.__new__(cls)
@@ -81,7 +81,7 @@ Foo.__init__(Foo(), 1)
 
 TEST(ObjectBuiltinsTest, DunderInitWithNonInstanceIsOk) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 object.__init__(object)
 )");
   // It doesn't matter what the output is, just that it doesn't throw a
@@ -91,34 +91,37 @@ object.__init__(object)
 TEST(ObjectBuiltinsDeathTest, DunderInitWithNoArgsThrowsTypeError) {
   Runtime runtime;
   // Passing no args to object.__init__ should throw a type error.
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 object.__init__()
-)"), "aborting due to pending exception");
+)"),
+               "aborting due to pending exception");
 }
 
 TEST(ObjectBuiltinsDeathTest, DunderInitWithArgsThrowsTypeError) {
   Runtime runtime;
   // Passing extra args to object.__init__, without overwriting __new__,
   // should throw a type error.
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
 Foo.__init__(Foo(), 1)
-)"), "aborting due to pending exception");
+)"),
+               "aborting due to pending exception");
 }
 
 TEST(ObjectBuiltinsDeathTest, DunderInitWithNewAndInitThrowsTypeError) {
   Runtime runtime;
   // Passing extra args to object.__init__, and overwriting only __init__,
   // should throw a type error.
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 class Foo:
   def __init__(self):
     object.__init__(self, 1)
 
 Foo()
-)"), "aborting due to pending exception");
+)"),
+               "aborting due to pending exception");
 }
 
 TEST(NoneBuiltinsTest, NewReturnsNone) {

@@ -14,7 +14,7 @@ TEST(TypeBuiltinsTest, DunderCallType) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class C: pass
 c = C()
 )");
@@ -33,7 +33,7 @@ TEST(TypeBuiltinsTest, DunderCallTypeWithInit) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class C:
   def __init__(self):
     global g
@@ -53,7 +53,7 @@ TEST(TypeBuiltinsTest, DunderCallTypeWithInitAndArgs) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class C:
   def __init__(self, x):
     global g
@@ -85,7 +85,7 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
 TEST(TypeBuiltinTest, BuiltinTypeCallInvokeDunderInitAsCallable) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Callable:
   def __call__(self, obj):
     obj.x = 42
@@ -113,7 +113,7 @@ TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {
 
 TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsStr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo:
   pass
 )");
@@ -130,7 +130,7 @@ class Foo:
 TEST(TypeBuiltinTest, DunderNewWithOneArgReturnsTypeOfArg) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = type.__new__(type, 1);
 b = type.__new__(type, "hello");
 )");
@@ -144,7 +144,7 @@ b = type.__new__(type, "hello");
 TEST(TypeBuiltinTest, DunderNewWithOneMetaclassArgReturnsType) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo(type):
   pass
 a = type.__new__(type, Foo);

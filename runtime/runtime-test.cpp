@@ -649,7 +649,7 @@ TEST(RuntimeListTest, ListExtendDict) {
 
 static RawObject iterableWithLengthHint(Runtime* runtime) {
   HandleScope scope;
-  runtime->runFromCStr(R"(
+  runFromCStr(runtime, R"(
 class Iterator:
     def __init__(self):
         self.current = 0
@@ -677,7 +677,7 @@ iterator = Iterator()
 
 static RawObject iterableWithoutLengthHint(Runtime* runtime) {
   HandleScope scope;
-  runtime->runFromCStr(R"(
+  runFromCStr(runtime, R"(
 class Iterator:
     def __init__(self):
         self.current = 0
@@ -1207,7 +1207,7 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr("class MyEmptyClass: pass");
+  runFromCStr(&runtime, "class MyEmptyClass: pass");
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "MyEmptyClass"));
@@ -1233,7 +1233,7 @@ class MyTypeWithAttributes():
     self.b = 2
     self.c = 3
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "MyTypeWithAttributes"));
@@ -1284,8 +1284,8 @@ TEST(RuntimeTest, TypeIds) {
 
 TEST(RuntimeTest, CallRunTwice) {
   Runtime runtime;
-  runtime.runFromCStr("x = 42");
-  runtime.runFromCStr("y = 1764");
+  runFromCStr(&runtime, "x = 42");
+  runFromCStr(&runtime, "y = 1764");
 
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -1613,7 +1613,7 @@ class MyTypeWithNoInitMethod():
 
 c = MyTypeWithNoInitMethod()
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object instance(&scope, moduleAt(&runtime, main, "c"));
@@ -1639,7 +1639,7 @@ class MyTypeWithEmptyInitMethod():
 
 c = MyTypeWithEmptyInitMethod()
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object instance(&scope, moduleAt(&runtime, main, "c"));
@@ -1665,7 +1665,7 @@ class MyTypeWithAttributes():
 
 c = MyTypeWithAttributes(1)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "MyTypeWithAttributes"));
@@ -1696,7 +1696,7 @@ def func():
   b = 2
   print(a, b)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   HandleScope scope;
   Object dunder_main(&scope, runtime.symbols()->DunderMain());
   Module main(&scope, runtime.findModule(dunder_main));
@@ -1745,7 +1745,7 @@ TEST(RuntimeTest, IsInstanceOf) {
   EXPECT_TRUE(runtime.isInstanceOfStr(*str));
   EXPECT_FALSE(runtime.isInstanceOfInt(*str));
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class StopIterationSub(StopIteration):
   pass
 stop_iteration = StopIterationSub()
@@ -2448,7 +2448,7 @@ TEST(ClassAttributeDeathTest, GetMissingAttribute) {
 class A: pass
 print(A.foo)
 )";
-  ASSERT_DEATH(runtime.runFromCStr(src),
+  ASSERT_DEATH(runFromCStr(&runtime, src),
                "aborting due to pending exception: missing attribute");
 }
 
@@ -2476,7 +2476,7 @@ class DataDescriptor:
   def __get__(self, instance, owner):
     pass
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Type descr_type(&scope, moduleAt(&runtime, main, "DataDescriptor"));
@@ -2503,7 +2503,7 @@ class DataDescriptor:
   def __get__(self, instance, owner):
     return (self, instance, owner)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Type descr_type(&scope, moduleAt(&runtime, main, "DataDescriptor"));
@@ -2533,7 +2533,7 @@ class DataDescriptor:
   def __get__(self, instance, owner):
     return (self, instance, owner)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Type descr_type(&scope, moduleAt(&runtime, main, "DataDescriptor"));
@@ -2563,7 +2563,7 @@ class MyMeta(type):
 class Foo(metaclass=MyMeta):
     pass
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
@@ -2584,7 +2584,7 @@ class Foo:
 def test(x):
   print(x.foo)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
@@ -2606,7 +2606,7 @@ class Foo:
 def test(x):
   print(x.attr)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   // Create the instance
   HandleScope scope;
@@ -2632,7 +2632,7 @@ def test(x):
   Foo.__init__(x)
   print(x.attr)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   // Create the instance
   HandleScope scope;
@@ -2661,7 +2661,7 @@ def test(x):
   x.attr = '321 testing'
   print(x.attr)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   // Create the instance
   HandleScope scope;
@@ -2693,7 +2693,7 @@ def test(x):
   x.baz = 'ccc'
   print(x.foo, x.bar, x.baz)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   // Create an instance of Foo
   HandleScope scope;
@@ -2734,7 +2734,7 @@ def test(x):
   Foo.__init__(x)
   x.doit()
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   // Create the instance
   HandleScope scope;
@@ -2762,7 +2762,7 @@ class DataDescr:
 class Foo:
   pass
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
@@ -2795,7 +2795,7 @@ class Descr:
 class Foo:
   pass
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   // Create an instance of the descriptor and store it on the class
   HandleScope scope;
@@ -2836,7 +2836,7 @@ def test(x):
   x.baz = 'ccc'
   print(x.foo, x.bar, x.baz)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   // Create the instance
   HandleScope scope;
@@ -2866,7 +2866,7 @@ class Foo:
 foo = Foo()
 print(foo.bar)
 )";
-  ASSERT_DEATH(runtime.runFromCStr(src),
+  ASSERT_DEATH(runFromCStr(&runtime, src),
                "aborting due to pending exception: missing attribute");
 }
 
@@ -3078,7 +3078,7 @@ class Foo(metaclass=FooMeta):
 
 del Foo.attr
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "args"));
   ASSERT_TRUE(data->isTuple());
@@ -3121,7 +3121,7 @@ class Foo(metaclass=FooMeta):
 
 del Foo.bar
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "args"));
   ASSERT_TRUE(data->isTuple());
@@ -3489,7 +3489,7 @@ class Bar(Foo):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
@@ -3509,7 +3509,7 @@ class Foo(type, metaclass=MyMeta):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
@@ -3526,7 +3526,7 @@ class Bar(Foo):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
@@ -3546,7 +3546,7 @@ class Foo(type, metaclass=MyMeta):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
   EXPECT_TRUE(runtime.isInstanceOfType(*foo));
@@ -3565,7 +3565,7 @@ class ChildMeta(type, metaclass=ParentMeta):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object type(&scope, runtime.typeAt(LayoutId::kType));
 
@@ -3588,7 +3588,7 @@ Foo = MyMeta('Foo', (), {})
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object mymeta(&scope, moduleAt(&runtime, main, "MyMeta"));
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
@@ -3605,7 +3605,7 @@ meta_path = sys.meta_path
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object meta_path(&scope, moduleAt(&runtime, main, "meta_path"));
   ASSERT_TRUE(meta_path->isList());
@@ -3618,7 +3618,7 @@ class Test(Exception):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object value(&scope, moduleAt(&runtime, main, "Test"));
   ASSERT_TRUE(value->isType());
@@ -3666,7 +3666,7 @@ def gen():
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object gen(&scope, moduleAt(&runtime, "__main__", "gen"));
   ASSERT_TRUE(gen->isFunction());
   Code code(&scope, RawFunction::cast(*gen)->code());
@@ -3680,7 +3680,7 @@ extern "C" struct _inittab _PyImport_Inittab[];
 
 TEST(ModuleImportTest, ImportModuleFromInitTab) {
   Runtime runtime;
-  runtime.runFromCStr("import _empty");
+  runFromCStr(&runtime, "import _empty");
   HandleScope scope;
   Object mod(&scope, moduleAt(&runtime, "__main__", "_empty"));
   EXPECT_TRUE(mod->isModule());
@@ -3704,7 +3704,7 @@ TEST(ModuleTest, NewModuleSetsDictValues) {
 
 TEST(FunctionAttrTest, SetAttribute) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 def foo(): pass
 foo.x = 3
 )");
@@ -3719,7 +3719,7 @@ foo.x = 3
 
 TEST(FunctionAttrTest, GetAttribute) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 def foo(): pass
 foo.x = 3
 value = foo.x
@@ -3732,7 +3732,7 @@ value = foo.x
 
 TEST(FunctionAttrTest, GetAttributePrefersBuiltinAttributesOverDict) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 def foo(): pass
 foo.__doc__ = "bar"
 foo.__dict__['__doc__'] = "baz"
@@ -3746,7 +3746,7 @@ value = foo.__doc__
 
 TEST(FunctionAttrDeathTest, GetInvalidAttribute) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 def foo(): pass
 value = foo.x
 )"),
@@ -3884,7 +3884,7 @@ TEST(RuntimeTest, NonSealedClassHasSpaceForOverflowAttrbutes) {
 // User-defined class attributes can be set on the fly.
 TEST(RuntimeTest, UserCanSetOverflowAttributeOnUserDefinedClass) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class C(): pass
 a = C()
 )");
@@ -3921,7 +3921,7 @@ TEST(RuntimeTest, IsMappingReturnsTrueOnList) {
 
 TEST(RuntimeTest, IsMappingReturnsTrueOnCustomClassWithMethod) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class C():
   def __getitem__(self, key):
     pass
@@ -3934,7 +3934,7 @@ o = C()
 
 TEST(RuntimeTest, IsMappingWithClassAttrNotCallableReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class C():
   __getitem__ = 4
 o = C()
@@ -3946,7 +3946,7 @@ o = C()
 
 TEST(RuntimeTest, IsMappingReturnsFalseOnCustomClassWithoutMethod) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class C():
   pass
 o = C()
@@ -3958,7 +3958,7 @@ o = C()
 
 TEST(RuntimeTest, IsMappingWithInstanceAttrReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class C():
   pass
 o = C()

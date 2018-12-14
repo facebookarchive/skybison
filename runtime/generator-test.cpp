@@ -22,7 +22,7 @@ result = [i for i in fib(7)]
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0, 1, 1, 2, 3, 5, 8});
 }
@@ -42,7 +42,7 @@ g.send(7)
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object result(&scope, moduleAt(&runtime, "__main__", "value"));
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_TRUE(RawSmallInt::cast(*result)->value() == 10);
@@ -55,7 +55,7 @@ def gen():
 gen().send(1)
 )";
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(src),
+  EXPECT_DEATH(runFromCStr(&runtime, src),
                "can't send non-None value to a just-started generator");
 }
 
@@ -95,7 +95,7 @@ for i in g:
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(
       result,
@@ -112,7 +112,7 @@ for i in g:
 
 TEST(GeneratorTest, ReraiseAfterYield) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 def gen():
   try:
     raise RuntimeError("inside generator")
@@ -139,7 +139,7 @@ c = coro()
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object result(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_TRUE(result->isCoroutine());
 }
@@ -151,7 +151,7 @@ async def coro():
 coro().send(1)
 )";
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(src),
+  EXPECT_DEATH(runFromCStr(&runtime, src),
                "can't send non-None value to a just-started coroutine");
 }
 

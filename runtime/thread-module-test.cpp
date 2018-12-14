@@ -4,13 +4,14 @@
 #include "test-utils.h"
 
 namespace python {
+using namespace testing;
 
 TEST(ThreadModuleTest, ModuleImporting) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 import _thread
   )");
-  RawObject thread_module = testing::moduleAt(&runtime, "__main__", "_thread");
+  RawObject thread_module = moduleAt(&runtime, "__main__", "_thread");
   EXPECT_TRUE(thread_module->isModule());
 }
 

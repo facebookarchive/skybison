@@ -23,7 +23,7 @@ TEST(TupleBuiltinsTest, SubscriptTupleSlice) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1
 t = (a, 2, 3, 4, 5)
 slice = t[1:3]
@@ -42,7 +42,7 @@ TEST(TupleBuiltinsTest, DunderLen) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = (1, 2, 3)
 a_len = tuple.__len__(a)
 a_len_implicit = a.__len__()
@@ -253,7 +253,7 @@ TEST(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
 TEST(TupleBuiltinsTest, DunderNewWithIterableReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = tuple.__new__(tuple, [1, 2, 3])
 )");
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
@@ -266,7 +266,7 @@ a = tuple.__new__(tuple, [1, 2, 3])
 
 TEST(TupleBuiltinsTest, DunderReprWithManyPrimitives) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = (1, 2, 3).__repr__()
 b = ("hello", 2, "world", 4).__repr__()
 )");
@@ -280,7 +280,7 @@ b = ("hello", 2, "world", 4).__repr__()
 
 TEST(TupleBuiltinsTest, DunderReprWithOnePrimitive) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = (1,).__repr__()
 b = ("foo",).__repr__()
 )");
@@ -294,7 +294,7 @@ b = ("foo",).__repr__()
 
 TEST(TupleBuiltinsTest, DunderReprWithNoElements) {
   Runtime runtime;
-  runtime.runFromCStr("a = ().__repr__()");
+  runFromCStr(&runtime, "a = ().__repr__()");
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -303,7 +303,7 @@ TEST(TupleBuiltinsTest, DunderReprWithNoElements) {
 
 TEST(TupleBuiltinsTest, DunderMulWithOneElement) {
   Runtime runtime;
-  runtime.runFromCStr("a = (1,) * 4");
+  runFromCStr(&runtime, "a = (1,) * 4");
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -316,7 +316,7 @@ TEST(TupleBuiltinsTest, DunderMulWithOneElement) {
 
 TEST(TupleBuiltinsTest, DunderMulWithManyElements) {
   Runtime runtime;
-  runtime.runFromCStr("a = (1,2,3) * 2");
+  runFromCStr(&runtime, "a = (1,2,3) * 2");
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -331,7 +331,7 @@ TEST(TupleBuiltinsTest, DunderMulWithManyElements) {
 
 TEST(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
   Runtime runtime;
-  runtime.runFromCStr("a = () * 5");
+  runFromCStr(&runtime, "a = () * 5");
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -340,7 +340,7 @@ TEST(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
 
 TEST(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
   Runtime runtime;
-  runtime.runFromCStr("a = (1,2,3) * -2");
+  runFromCStr(&runtime, "a = (1,2,3) * -2");
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 

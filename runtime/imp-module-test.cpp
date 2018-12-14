@@ -4,20 +4,21 @@
 #include "test-utils.h"
 
 namespace python {
+using namespace testing;
 
 TEST(ImpModuleTest, ModuleImporting) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 import _imp
   )");
   HandleScope scope;
-  RawObject imp = testing::moduleAt(&runtime, "__main__", "_imp");
+  RawObject imp = moduleAt(&runtime, "__main__", "_imp");
   EXPECT_TRUE(imp->isModule());
 }
 
 TEST(ImportBuiltinsDeathTest, AcquireLock) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 _imp.acquire_lock()
   )"),
@@ -26,7 +27,7 @@ _imp.acquire_lock()
 
 TEST(ImportBuiltinsDeathTest, CreateBuiltin) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 _imp.create_builtin("foo")
   )"),
@@ -35,7 +36,7 @@ _imp.create_builtin("foo")
 
 TEST(ImportBuiltinsDeathTest, ExecBuiltin) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 _imp.exec_builtin("foo")
   )"),
@@ -44,7 +45,7 @@ _imp.exec_builtin("foo")
 
 TEST(ImportBuiltinsDeathTest, ExecDynamic) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 _imp.exec_dynamic("foo")
   )"),
@@ -53,7 +54,7 @@ _imp.exec_dynamic("foo")
 
 TEST(ImportBuiltinsDeathTest, ExtensionSuffixes) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 _imp.extension_suffixes()
   )"),
@@ -62,7 +63,7 @@ _imp.extension_suffixes()
 
 TEST(ImportBuiltinsDeathTest, FixCoFilename) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 code = None
 source_path = None
@@ -73,7 +74,7 @@ _imp._fix_co_filename(code, source_path)
 
 TEST(ImportBuiltinsDeathTest, GetFrozenObject) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 _imp.get_frozen_object("foo")
   )"),
@@ -82,7 +83,7 @@ _imp.get_frozen_object("foo")
 
 TEST(ImportBuiltinsDeathTest, IsBuiltin) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 _imp.is_builtin("foo")
   )"),
@@ -91,7 +92,7 @@ _imp.is_builtin("foo")
 
 TEST(ImportBuiltinsDeathTest, IsFrozen) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 _imp.is_frozen("foo")
   )"),
@@ -100,7 +101,7 @@ _imp.is_frozen("foo")
 
 TEST(ImportBuiltinsDeathTest, IsFrozenPackage) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 _imp.is_frozen_package("foo")
   )"),
@@ -109,7 +110,7 @@ _imp.is_frozen_package("foo")
 
 TEST(ImportBuiltinsDeathTest, ReleaseLock) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 import _imp
 _imp.release_lock()
   )"),

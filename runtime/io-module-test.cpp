@@ -25,7 +25,7 @@ filestr = _io._readbytes(file_bytes)
 )",
                                               filename.get()));
   unique_c_ptr<char> c_pyfile(pyfile->toCStr());
-  runtime.runFromCStr(c_pyfile.get());
+  testing::runFromCStr(&runtime, c_pyfile.get());
 
   Str filestr(&scope, testing::moduleAt(&runtime, "__main__", "filestr"));
   EXPECT_TRUE(filestr->equalsCStr(c_filedata));

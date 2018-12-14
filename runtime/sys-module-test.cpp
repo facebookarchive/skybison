@@ -53,7 +53,7 @@ import sys
 sys.exit()
 )";
   Runtime runtime;
-  ASSERT_EXIT(runtime.runFromCStr(src), ::testing::ExitedWithCode(0), "");
+  ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(0), "");
 }
 
 TEST(SysModuleTest, SysExitCode) {  // pystone dependency
@@ -62,7 +62,7 @@ import sys
 sys.exit(100)
 )";
   Runtime runtime;
-  ASSERT_EXIT(runtime.runFromCStr(src), ::testing::ExitedWithCode(100), "");
+  ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(100), "");
 }
 
 TEST(SysModuleTest, SysStdOutErr) {  // pystone dependency
@@ -78,7 +78,7 @@ print(sys.stdout, sys.stderr)
 TEST(SysModuleTest, Platform) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 import sys
 sysname = sys.platform
 )");
@@ -101,7 +101,7 @@ sysname = sys.platform
 TEST(SysModuleTest, BuiltinModuleNames) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 import sys
 builtin_names = sys.builtin_module_names
 )");

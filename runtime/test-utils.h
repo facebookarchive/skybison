@@ -158,6 +158,10 @@ RawObject runBuiltinImpl(BuiltinMethodType method,
 
 RawObject runBuiltin(BuiltinMethodType method);
 
+// This runFromCStr is different from Runtime::runFromCStr in that it uses disk
+// cache to speed up tests.
+RawObject runFromCStr(Runtime* runtime, const char* c_str);
+
 template <typename... Args>
 RawObject runBuiltin(BuiltinMethodType method, const Args&... args) {
   using ref = std::reference_wrapper<const Object>;

@@ -13,7 +13,7 @@ TEST(TestUtils, PyListEqual) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = [None, False, 100, 200.5, 'hello']
 i = 123456
 )");

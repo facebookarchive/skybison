@@ -53,7 +53,7 @@ else:
 TEST(StrBuiltinsTest, RichCompareSingleCharLE) {
   Runtime runtime;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a_le_b = 'a' <= 'b'
 b_le_a = 'a' >= 'b'
 a_le_a = 'a' <= 'a'
@@ -73,7 +73,7 @@ a_le_a = 'a' <= 'a'
 
 TEST(StrBuiltinsTest, LowerOnASCIILettersReturnsLowerCaseString) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "HELLO".lower()
 b = "HeLLo".lower()
 c = "hellO".lower()
@@ -89,7 +89,7 @@ c = "hellO".lower()
 
 TEST(StrBuiltinsTest, LowerOnLowercaseASCIILettersReturnsSameString) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".lower()
 )");
   HandleScope scope;
@@ -99,7 +99,7 @@ a = "hello".lower()
 
 TEST(StrBuiltinsTest, LowerOnNumbersReturnsSameString) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "foo 123".lower()
 )");
   HandleScope scope;
@@ -109,7 +109,7 @@ a = "foo 123".lower()
 
 TEST(StrBuiltinsTest, DunderNewCallsDunderStr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo:
     def __str__(self):
         return "foo"
@@ -122,7 +122,7 @@ a = str.__new__(str, Foo())
 
 TEST(StrBuiltinsTest, DunderNewCallsReprIfNoDunderStr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo:
   pass
 f = Foo()
@@ -137,7 +137,7 @@ b = repr(f)
 
 TEST(StrBuiltinsTest, DunderNewWithNoArgsExceptTypeReturnsEmptyString) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = str.__new__(str)
 )");
   HandleScope scope;
@@ -147,7 +147,7 @@ a = str.__new__(str)
 
 TEST(StrBuiltinsTest, DunderNewWithStrReturnsSameStr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = str.__new__(str, "hello")
 )");
   HandleScope scope;
@@ -157,25 +157,25 @@ a = str.__new__(str, "hello")
 
 TEST(StrBuiltinsDeathTest, DunderNewWithNoArgsThrows) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr("str.__new__()"),
+  EXPECT_DEATH(runFromCStr(&runtime, "str.__new__()"),
                "aborting due to pending exception");
 }
 
 TEST(StrBuiltinsDeathTest, DunderNewWithTooManyArgsThrows) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr("str.__new__(str, 1, 2, 3, 4)"),
+  EXPECT_DEATH(runFromCStr(&runtime, "str.__new__(str, 1, 2, 3, 4)"),
                "aborting due to pending exception");
 }
 
 TEST(StrBuiltinsDeathTest, DunderNewWithNonTypeArgThrows) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr("str.__new__(1)"),
+  EXPECT_DEATH(runFromCStr(&runtime, "str.__new__(1)"),
                "aborting due to pending exception");
 }
 
 TEST(StrBuiltinsDeathTest, DunderNewWithNonSubtypeArgThrows) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr("str.__new__(object)"),
+  EXPECT_DEATH(runFromCStr(&runtime, "str.__new__(object)"),
                "aborting due to pending exception");
 }
 
@@ -211,7 +211,7 @@ TEST(StrBuiltinsTest, DunderAddWithRightEmptyAndReturnsRight) {
 
 TEST(StrBuiltinsTest, PlusOperatorOnStringsEqualsDunderAdd) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello"
 b = "world"
 c = a + b
@@ -227,7 +227,7 @@ d = a.__add__(b)
 
 TEST(StrBuiltinsTest, StringLen) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l1 = len("aloha")
 l2 = str.__len__("aloha")
 l3 = "aloha".__len__()
@@ -243,7 +243,7 @@ l3 = "aloha".__len__()
 
 TEST(StrBuiltinsTest, StringLenWithEmptyString) {
   Runtime runtime;
-  runtime.runFromCStr("l = len('')");
+  runFromCStr(&runtime, "l = len('')");
   HandleScope scope;
   SmallInt l(&scope, moduleAt(&runtime, "__main__", "l"));
   EXPECT_EQ(0, l->value());
@@ -251,13 +251,13 @@ TEST(StrBuiltinsTest, StringLenWithEmptyString) {
 
 TEST(StrBuiltinsDeathTest, StringLenWithInt) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr("l = str.__len__(3)"),
+  EXPECT_DEATH(runFromCStr(&runtime, "l = str.__len__(3)"),
                "descriptor '__len__' requires a 'str' object");
 }
 
 TEST(StrBuiltinsDeathTest, StringLenWithExtraArgument) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr("l = 'aloha'.__len__('arg')"),
+  EXPECT_DEATH(runFromCStr(&runtime, "l = 'aloha'.__len__('arg')"),
                "expected 0 arguments");
 }
 
@@ -360,7 +360,7 @@ TEST(StrBuiltinsTest, IndexWithSliceWithNegativeTwoStep) {
 
 TEST(StrBuiltinsTest, StartsWithEmptyStringReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".startswith("")
 b = "".startswith("")
 )");
@@ -373,7 +373,7 @@ b = "".startswith("")
 
 TEST(StrBuiltinsTest, StartsWithStringReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".startswith("h")
 b = "hello".startswith("he")
 c = "hello".startswith("hel")
@@ -395,7 +395,7 @@ e = "hello".startswith("hello")
 
 TEST(StrBuiltinsTest, StartsWithTooLongPrefixReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".startswith("hihello")
 )");
   HandleScope scope;
@@ -405,7 +405,7 @@ a = "hello".startswith("hihello")
 
 TEST(StrBuiltinsTest, StartsWithUnrelatedPrefixReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".startswith("bob")
 )");
   HandleScope scope;
@@ -415,7 +415,7 @@ a = "hello".startswith("bob")
 
 TEST(StrBuiltinsTest, StartsWithStart) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".startswith("e", 1)
 b = "hello".startswith("o", 5)
 c = "hello".startswith("ell", 1)
@@ -434,7 +434,7 @@ d = "hello".startswith("llo", 3)
 
 TEST(StrBuiltinsTest, StartsWithStartAndEnd) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".startswith("e", 1, 3)
 b = "hello".startswith("el", 1, 4)
 c = "hello".startswith("ll", 2, 5)
@@ -453,7 +453,7 @@ d = "hello".startswith("ll", 1, 4)
 
 TEST(StrBuiltinsTest, StartsWithStartAndEndNegatives) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".startswith("h", 0, -1)
 b = "hello".startswith("ll", -3)
 )");
@@ -466,7 +466,7 @@ b = "hello".startswith("ll", -3)
 
 TEST(StrBuiltinsTest, StartsWithTupleOfPrefixes) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".startswith(("h", "lo"))
 b = "hello".startswith(("asdf", "foo", "bar"))
 )");
@@ -479,7 +479,7 @@ b = "hello".startswith(("asdf", "foo", "bar"))
 
 TEST(StrBuiltinsTest, EndsWithEmptyStringReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".endswith("")
 b = "".endswith("")
 )");
@@ -492,7 +492,7 @@ b = "".endswith("")
 
 TEST(StrBuiltinsTest, EndsWithStringReturnsTrue) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".endswith("o")
 b = "hello".endswith("lo")
 c = "hello".endswith("llo")
@@ -514,7 +514,7 @@ e = "hello".endswith("hello")
 
 TEST(StrBuiltinsTest, EndsWithTooLongSuffixReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".endswith("hihello")
 )");
   HandleScope scope;
@@ -524,7 +524,7 @@ a = "hello".endswith("hihello")
 
 TEST(StrBuiltinsTest, EndsWithUnrelatedSuffixReturnsFalse) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".endswith("bob")
 )");
   HandleScope scope;
@@ -534,7 +534,7 @@ a = "hello".endswith("bob")
 
 TEST(StrBuiltinsTest, EndsWithStart) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".endswith("o", 1)
 b = "hello".endswith("o", 5)
 c = "hello".endswith("llo", 1)
@@ -553,7 +553,7 @@ d = "hello".endswith("llo", 3)
 
 TEST(StrBuiltinsTest, EndsWithStartAndEnd) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".endswith("l", 1, 3)
 b = "hello".endswith("ll", 1, 4)
 c = "hello".endswith("lo", 2, 5)
@@ -572,7 +572,7 @@ d = "hello".endswith("llo", 1, 4)
 
 TEST(StrBuiltinsTest, EndsWithStartAndEndNegatives) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".endswith("l", 0, -1)
 b = "hello".endswith("o", -1)
 )");
@@ -585,7 +585,7 @@ b = "hello".endswith("o", -1)
 
 TEST(StrBuiltinsTest, EndsWithTupleOfSuffixes) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".endswith(("o", "llo"))
 b = "hello".endswith(("asdf", "foo", "bar"))
 )");
@@ -598,7 +598,7 @@ b = "hello".endswith(("asdf", "foo", "bar"))
 
 TEST(StrBuiltinsTest, StringFormat) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 n = 123
 f = 3.14
 s = "pyros"
@@ -612,7 +612,7 @@ a = "hello %d %g %s" % (n, f, s)
 
 TEST(StrBuiltinsTest, StringFormatSingleString) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 s = "pyro"
 a = "%s" % s
 )");
@@ -624,7 +624,7 @@ a = "%s" % s
 
 TEST(StrBuiltinsTest, StringFormatTwoStrings) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 s = "pyro"
 a = "%s%s" % (s, s)
 )");
@@ -636,7 +636,7 @@ a = "%s%s" % (s, s)
 
 TEST(StrBuiltinsTest, StringFormatMixed) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 s = "pyro"
 a = "1%s,2%s,3%s,4%s,5%s" % (s, s, s, s, s)
 )");
@@ -648,7 +648,7 @@ a = "1%s,2%s,3%s,4%s,5%s" % (s, s, s, s, s)
 
 TEST(StrBuiltinsTest, StringFormatMixed2) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 s = "pyro"
 a = "%d%s,%d%s,%d%s" % (1, s, 2, s, 3, s)
 )");
@@ -663,7 +663,7 @@ TEST(StrBuiltinsDeathTest, StringFormatMalformed) {
   const char* src = R"(
 a = "%" % ("pyro",)
 )";
-  EXPECT_DEATH(runtime.runFromCStr(src), "Incomplete format");
+  EXPECT_DEATH(runFromCStr(&runtime, src), "Incomplete format");
 }
 
 TEST(StrBuiltinsDeathTest, StringFormatMismatch) {
@@ -671,12 +671,12 @@ TEST(StrBuiltinsDeathTest, StringFormatMismatch) {
   const char* src = R"(
 a = "%d%s" % ("pyro",)
 )";
-  EXPECT_DEATH(runtime.runFromCStr(src), "Argument mismatch");
+  EXPECT_DEATH(runFromCStr(&runtime, src), "Argument mismatch");
 }
 
 TEST(StrBuiltinsTest, DunderReprOnASCIIStr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".__repr__()
 )");
   HandleScope scope;
@@ -688,7 +688,7 @@ a = "hello".__repr__()
 TEST(StrBuiltinsTest, DunderReprOnASCIINonPrintable) {
   Runtime runtime;
   // 6 is the ACK character.
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "\x06".__repr__()
 )");
   HandleScope scope;
@@ -699,7 +699,7 @@ a = "\x06".__repr__()
 
 TEST(StrBuiltinsTest, DunderReprOnStrWithDoubleQuotes) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 'hello "world"'.__repr__()
 )");
   HandleScope scope;
@@ -710,7 +710,7 @@ a = 'hello "world"'.__repr__()
 
 TEST(StrBuiltinsTest, DunderReprOnStrWithSingleQuotes) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello 'world'".__repr__()
 )");
   HandleScope scope;
@@ -721,7 +721,7 @@ a = "hello 'world'".__repr__()
 
 TEST(StrBuiltinsTest, DunderReprOnStrWithBothQuotes) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello 'world', I am your \"father\"".__repr__()
 )");
   HandleScope scope;
@@ -732,7 +732,7 @@ a = "hello 'world', I am your \"father\"".__repr__()
 
 TEST(StrBuiltinsTest, DunderReprOnStrWithNestedQuotes) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello 'world, \"I am 'your \"father\"'\"'".__repr__()
 )");
   HandleScope scope;
@@ -743,7 +743,7 @@ a = "hello 'world, \"I am 'your \"father\"'\"'".__repr__()
 
 TEST(StrBuiltinsTest, DunderReprOnCommonEscapeSequences) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "\n \t \r \\".__repr__()
 )");
   HandleScope scope;
@@ -758,7 +758,7 @@ result = 'Hello, World!'.__str__()
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), "Hello, World!");
@@ -766,7 +766,7 @@ result = 'Hello, World!'.__str__()
 
 TEST(StrBuiltinsTest, JoinWithEmptyArray) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = ",".join([])
 )");
   HandleScope scope;
@@ -776,7 +776,7 @@ a = ",".join([])
 
 TEST(StrBuiltinsTest, JoinWithOneElementArray) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = ",".join(["1"])
 )");
   HandleScope scope;
@@ -786,7 +786,7 @@ a = ",".join(["1"])
 
 TEST(StrBuiltinsTest, JoinWithManyElementArray) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = ",".join(["1", "2", "3"])
 )");
   HandleScope scope;
@@ -796,7 +796,7 @@ a = ",".join(["1", "2", "3"])
 
 TEST(StrBuiltinsTest, JoinWithManyElementArrayAndEmptySeparator) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "".join(["1", "2", "3"])
 )");
   HandleScope scope;
@@ -806,7 +806,7 @@ a = "".join(["1", "2", "3"])
 
 TEST(StrBuiltinsTest, JoinWithIterable) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = ",".join(("1", "2", "3"))
 )");
   HandleScope scope;
@@ -816,7 +816,7 @@ a = ",".join(("1", "2", "3"))
 
 TEST(StrBuiltinsDeathTest, JoinWithNonStringInArrayThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = ",".join(["hello", 1])
 )"),
                "aborting due to pending exception");
@@ -824,7 +824,7 @@ a = ",".join(["hello", 1])
 
 TEST(StrBuiltinsDeathTest, JoinWithNonStringSeparatorThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = str.join(1, ["hello", 1])
 )"),
                "aborting due to pending exception");
@@ -832,7 +832,7 @@ a = str.join(1, ["hello", 1])
 
 TEST(StrBuiltinsTest, PartitionOnSingleCharStr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".partition("l")
 )");
   HandleScope scope;
@@ -846,7 +846,7 @@ a = "hello".partition("l")
 
 TEST(StrBuiltinsTest, PartitionOnMultiCharStr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".partition("ll")
 )");
   HandleScope scope;
@@ -860,7 +860,7 @@ a = "hello".partition("ll")
 
 TEST(StrBuiltinsTest, PartitionOnSuffix) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".partition("lo")
 b = "hello".partition("lop")
 )");
@@ -881,7 +881,7 @@ b = "hello".partition("lop")
 
 TEST(StrBuiltinsTest, PartitionOnPrefix) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".partition("he")
 b = "hello".partition("hex")
 )");
@@ -902,7 +902,7 @@ b = "hello".partition("hex")
 
 TEST(StrBuiltinsTest, PartitionLargerStr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".partition("abcdefghijk")
 )");
   HandleScope scope;
@@ -916,7 +916,7 @@ a = "hello".partition("abcdefghijk")
 
 TEST(StrBuiltinsTest, PartitionEmptyStr) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "".partition("a")
 )");
   HandleScope scope;
@@ -930,7 +930,7 @@ a = "".partition("a")
 
 TEST(StrBuiltinsTest, SplitWithOneCharSeparator) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".split("e")
 b = "hello".split("l")
 )");
@@ -950,7 +950,7 @@ b = "hello".split("l")
 
 TEST(StrBuiltinsTest, SplitWithEmptySelfReturnsSingleEmptyString) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "".split("a")
 )");
   HandleScope scope;
@@ -961,7 +961,7 @@ a = "".split("a")
 
 TEST(StrBuiltinsTest, SplitWithMultiCharSeparator) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".split("el")
 b = "hello".split("ll")
 c = "hello".split("hello")
@@ -993,7 +993,7 @@ d = "hellllo".split("ll")
 
 TEST(StrBuiltinsTest, SplitWithMaxSplitBelowNumPartsStopsEarly) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".split("l", 1)
 b = "1,2,3,4".split(",", 2)
 )");
@@ -1013,7 +1013,7 @@ b = "1,2,3,4".split(",", 2)
 
 TEST(StrBuiltinsTest, SplitWithMaxSplitGreaterThanNumParts) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = "hello".split("l", 2)
 b = "1,2,3,4".split(",", 5)
 )");
@@ -1034,7 +1034,7 @@ b = "1,2,3,4".split(",", 5)
 
 TEST(StrBuiltinsTest, RpartitionOnSingleCharStrPartitionsCorrectly) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 t = "hello".rpartition("l")
 )");
   HandleScope scope;
@@ -1047,7 +1047,7 @@ t = "hello".rpartition("l")
 
 TEST(StrBuiltinsTest, RpartitionOnMultiCharStrPartitionsCorrectly) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 t = "hello".rpartition("ll")
 )");
   HandleScope scope;
@@ -1060,7 +1060,7 @@ t = "hello".rpartition("ll")
 
 TEST(StrBuiltinsTest, RpartitionOnSuffixPutsEmptyStrAtEndOfResult) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 t = "hello".rpartition("lo")
 )");
   HandleScope scope;
@@ -1073,7 +1073,7 @@ t = "hello".rpartition("lo")
 
 TEST(StrBuiltinsTest, RpartitionOnNonExistentSuffixPutsStrAtEndOfResult) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 t = "hello".rpartition("lop")
 )");
   HandleScope scope;
@@ -1086,7 +1086,7 @@ t = "hello".rpartition("lop")
 
 TEST(StrBuiltinsTest, RpartitionOnPrefixPutsEmptyStrAtBeginningOfResult) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 t = "hello".rpartition("he")
 )");
   HandleScope scope;
@@ -1099,7 +1099,7 @@ t = "hello".rpartition("he")
 
 TEST(StrBuiltinsTest, RpartitionOnNonExistentPrefixPutsStrAtEndOfResult) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 t = "hello".rpartition("hex")
 )");
   HandleScope scope;
@@ -1112,7 +1112,7 @@ t = "hello".rpartition("hex")
 
 TEST(StrBuiltinsTest, RpartitionLargerStrPutsStrAtEndOfResult) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 t = "hello".rpartition("foobarbaz")
 )");
   HandleScope scope;
@@ -1125,7 +1125,7 @@ t = "hello".rpartition("foobarbaz")
 
 TEST(StrBuiltinsTest, RpartitionEmptyStrReturnsTupleOfEmptyStrings) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 t = "".rpartition("a")
 )");
   HandleScope scope;
@@ -1138,7 +1138,7 @@ t = "".rpartition("a")
 
 TEST(StrBuiltinsTest, RsplitWithOneCharSeparatorSplitsCorrectly) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "hello".rsplit("e")
 )");
   HandleScope scope;
@@ -1150,7 +1150,7 @@ l = "hello".rsplit("e")
 
 TEST(StrBuiltinsTest, RsplitWithRepeatedOneCharSeparatorSplitsCorrectly) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "hello".rsplit("l")
 )");
   HandleScope scope;
@@ -1163,7 +1163,7 @@ l = "hello".rsplit("l")
 
 TEST(StrBuiltinsTest, RsplitWithEmptySelfReturnsSingleEmptyString) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "".rsplit("a")
 )");
   HandleScope scope;
@@ -1174,7 +1174,7 @@ l = "".rsplit("a")
 
 TEST(StrBuiltinsTest, RsplitWithMultiCharSeparatorSplitsFromRight) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "hello".rsplit("el")
 )");
   HandleScope scope;
@@ -1186,7 +1186,7 @@ l = "hello".rsplit("el")
 
 TEST(StrBuiltinsTest, RsplitWithRepeatedCharSeparatorSplitsFromRight) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "hello".rsplit("ll")
 )");
   HandleScope scope;
@@ -1198,7 +1198,7 @@ l = "hello".rsplit("ll")
 
 TEST(StrBuiltinsTest, RsplitWithSeparatorSameAsInputSplitsIntoEmptyComponents) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "hello".rsplit("hello")
 )");
   HandleScope scope;
@@ -1211,7 +1211,7 @@ l = "hello".rsplit("hello")
 TEST(StrBuiltinsTest,
      RsplitWithMultiCharSeparatorWithMultipleAppearancesSplitsCorrectly) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "hellllo".rsplit("ll")
 )");
   HandleScope scope;
@@ -1225,7 +1225,7 @@ l = "hellllo".rsplit("ll")
 TEST(StrBuiltinsTest,
      RsplitWithRepeatedCharAndMaxSplitBelowNumPartsStopsEarly) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "hello".rsplit("l", 1)
 )");
   HandleScope scope;
@@ -1237,7 +1237,7 @@ l = "hello".rsplit("l", 1)
 
 TEST(StrBuiltinsTest, RsplitWithMaxSplitBelowNumPartsStopsEarly) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "1,2,3,4".rsplit(",", 2)
 )");
   HandleScope scope;
@@ -1251,7 +1251,7 @@ l = "1,2,3,4".rsplit(",", 2)
 TEST(StrBuiltinsTest,
      RsplitWithRepeatedCharAndMaxSplitGreaterThanNumPartsSplitsCorrectly) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "hello".rsplit("l", 2)
 )");
   HandleScope scope;
@@ -1264,7 +1264,7 @@ l = "hello".rsplit("l", 2)
 
 TEST(StrBuiltinsTest, RsplitWithMaxSplitGreaterThanNumPartsSplitsCorrectly) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = "1,2,3,4".rsplit(",", 5)
 )");
   HandleScope scope;
@@ -1278,7 +1278,7 @@ l = "1,2,3,4".rsplit(",", 5)
 
 TEST(StrBuiltinsDeathTest, StrStripWithNoArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 str.strip()
 )"),
                R"(str.strip\(\) needs an argument)");
@@ -1286,7 +1286,7 @@ str.strip()
 
 TEST(StrBuiltinsDeathTest, StrLStripWithNoArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 str.lstrip()
 )"),
                R"(str.lstrip\(\) needs an argument)");
@@ -1294,7 +1294,7 @@ str.lstrip()
 
 TEST(StrBuiltinsDeathTest, StrRStripWithNoArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 str.rstrip()
 )"),
                R"(str.rstrip\(\) needs an argument)");
@@ -1302,7 +1302,7 @@ str.rstrip()
 
 TEST(StrBuiltinsDeathTest, StrStripTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 "test".strip(None, "test")
 )"),
                R"(str.strip\(\) takes at most 1 argument \(2 given\))");
@@ -1310,7 +1310,7 @@ TEST(StrBuiltinsDeathTest, StrStripTooManyArgsThrowsTypeError) {
 
 TEST(StrBuiltinsDeathTest, StrLStripTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 "test".lstrip(None, "test")
 )"),
                R"(str.lstrip\(\) takes at most 1 argument \(2 given\))");
@@ -1318,7 +1318,7 @@ TEST(StrBuiltinsDeathTest, StrLStripTooManyArgsThrowsTypeError) {
 
 TEST(StrBuiltinsDeathTest, StrRStripTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 "test".rstrip(None, "test")
 )"),
                R"(str.rstrip\(\) takes at most 1 argument \(2 given\))");
@@ -1326,7 +1326,7 @@ TEST(StrBuiltinsDeathTest, StrRStripTooManyArgsThrowsTypeError) {
 
 TEST(StrBuiltinsDeathTest, StrStripWithNonStrThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 str.strip(None)
 )"),
                R"(str.strip\(\) requires a str object)");
@@ -1334,7 +1334,7 @@ str.strip(None)
 
 TEST(StrBuiltinsDeathTest, StrLStripWithNonStrThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 str.lstrip(None)
 )"),
                R"(str.lstrip\(\) requires a str object)");
@@ -1342,7 +1342,7 @@ str.lstrip(None)
 
 TEST(StrBuiltinsDeathTest, StrRStripWithNonStrThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 str.rstrip(None)
 )"),
                R"(str.rstrip\(\) requires a str object)");
@@ -1350,7 +1350,7 @@ str.rstrip(None)
 
 TEST(StrBuiltinsDeathTest, StrStripWithInvalidCharsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 "test".strip(1)
 )"),
                R"(str.strip\(\) arg must be None or str)");
@@ -1358,7 +1358,7 @@ TEST(StrBuiltinsDeathTest, StrStripWithInvalidCharsThrowsTypeError) {
 
 TEST(StrBuiltinsDeathTest, StrLStripWithInvalidCharsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 "test".lstrip(1)
 )"),
                R"(str.lstrip\(\) arg must be None or str)");
@@ -1366,7 +1366,7 @@ TEST(StrBuiltinsDeathTest, StrLStripWithInvalidCharsThrowsTypeError) {
 
 TEST(StrBuiltinsDeathTest, StrRStripWithInvalidCharsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 "test".rstrip(1)
 )"),
                R"(str.rstrip\(\) arg must be None or str)");

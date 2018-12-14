@@ -16,7 +16,7 @@ TEST(FloatBuiltinsTest, CompareDoubleEq) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1.0
 b = 2.0
 a_eq_b = a == b
@@ -36,7 +36,7 @@ TEST(FloatBuiltinsTest, CompareDoubleGe) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1.0
 b = 2.0
 a_ge_a = a >= a
@@ -59,7 +59,7 @@ TEST(FloatBuiltinsTest, CompareDoubleGt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1.0
 b = 2.0
 a_gt_a = a > a
@@ -82,7 +82,7 @@ TEST(FloatBuiltinsTest, CompareDoubleLe) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1.0
 b = 2.0
 a_le_a = a <= a
@@ -105,7 +105,7 @@ TEST(FloatBuiltinsTest, CompareDoubleLt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1.0
 b = 2.0
 a_lt_a = a < a
@@ -128,7 +128,7 @@ TEST(FloatBuiltinsTest, CompareDoubleNe) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1.0
 b = 2.0
 a_ne_b = a != b
@@ -148,7 +148,7 @@ TEST(FloatBuiltinsTest, BinaryAddDouble) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 2.0
 b = 1.5
 c = a + b
@@ -163,7 +163,7 @@ TEST(FloatBuiltinsTest, BinaryAddSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 2.5
 b = 1
 c = a + b
@@ -179,7 +179,7 @@ TEST(FloatBuiltinsDeathTest, AddWithNonFloatSelfThrows) {
 float.__add__(None, 1.0)
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(src),
+  ASSERT_DEATH(runFromCStr(&runtime, src),
                "must be called with float instance as first argument");
 }
 
@@ -188,14 +188,14 @@ TEST(FloatBuiltinsDeathTest, AddWithNonFloatOtherThrows) {
 1.0 + None
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(src), "unimplemented");
+  ASSERT_DEATH(runFromCStr(&runtime, src), "unimplemented");
 }
 
 TEST(FloatBuiltinsTest, BinarySubtractDouble) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 2.0
 b = 1.5
 c = a - b
@@ -210,7 +210,7 @@ TEST(FloatBuiltinsTest, BinarySubtractSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 2.5
 b = 1
 c = a - b
@@ -225,7 +225,7 @@ TEST(FloatBuiltinsTest, DunderNewWithNoArgsReturnsZero) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = float.__new__(float)
 )");
 
@@ -238,7 +238,7 @@ TEST(FloatBuiltinsTest, DunderNewWithFloatArgReturnsSameValue) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = float.__new__(float, 1.0)
 )");
 
@@ -251,7 +251,7 @@ TEST(FloatBuiltinsTest, DunderNewWithUserDefinedTypeReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo:
   def __float__(self):
     return 1.0
@@ -266,7 +266,7 @@ TEST(FloatBuiltinsTest, DunderNewWithStringReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = float.__new__(float, "1.5")
 )");
 
@@ -278,7 +278,7 @@ TEST(FloatBuiltinsTest, FloatSubclassReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class SubFloat(float):
   def __new__(self, value):
     self.foo = 3
@@ -309,7 +309,7 @@ class Test(float):
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object value(&scope, moduleAt(&runtime, "__main__", "Test"));
   ASSERT_TRUE(value->isType());
 
@@ -327,7 +327,7 @@ TEST(FloatBuiltinsTest, DunderNewWithStringOfHugeNumberReturnsInf) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = float.__new__(float, "1.18973e+4932")
 b = float.__new__(float, "-1.18973e+4932")
 
@@ -343,7 +343,7 @@ TEST(FloatBuiltinsDeathTest, SubWithNonFloatSelfThrows) {
 float.__sub__(None, 1.0)
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(src),
+  ASSERT_DEATH(runFromCStr(&runtime, src),
                "must be called with float instance as first argument");
 }
 
@@ -351,7 +351,7 @@ TEST(FloatBuiltinsTest, PowFloatAndFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 base = 2.0
 x = base ** 4.0
 )");
@@ -363,7 +363,7 @@ TEST(FloatBuiltinsTest, PowFloatAndInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 base = 2.0
 x = base ** 4
 )");
@@ -375,7 +375,7 @@ TEST(FloatBuiltinsTest, InplacePowFloatAndFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 x = 2.0
 x **= 4.0
 )");
@@ -387,7 +387,7 @@ TEST(FloatBuiltinsTest, InplacePowFloatAndInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 x = 2.0
 x **= 4
 )");
@@ -403,14 +403,14 @@ class Foo:
 a = float.__new__(Foo)
 )";
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(src), "aborting due to pending exception");
+  EXPECT_DEATH(runFromCStr(&runtime, src), "aborting due to pending exception");
 }
 
 TEST(FloatBuiltinsDeathTest, DunderNewWithInvalidStringThrows) {
   Runtime runtime;
   HandleScope scope;
 
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = float.__new__(float, "abc")
 )"),
                "aborting due to pending exception");
@@ -421,12 +421,12 @@ TEST(FloatBuiltinsDeathTest, SubWithNonFloatOtherThrows) {
 1.0 - None
 )";
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(src), "unimplemented");
+  ASSERT_DEATH(runFromCStr(&runtime, src), "unimplemented");
 }
 
 TEST(FloatBuiltins, NanIsNeqNan) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 nan = float("nan")
 )");
   HandleScope scope;

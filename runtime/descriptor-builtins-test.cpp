@@ -65,7 +65,7 @@ x = property()
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isProperty());
   Property prop(&scope, *x);
@@ -84,7 +84,7 @@ x = property(get_foo, set_foo)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isProperty());
   Property prop(&scope, *x);
@@ -104,7 +104,7 @@ y = x.getter(get_foo)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isProperty());
   Property x_prop(&scope, *x);
@@ -131,7 +131,7 @@ y = x.setter(set_foo)
 )";
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isProperty());
   Property x_prop(&scope, *x);
@@ -185,7 +185,7 @@ c1.x
 )";
 
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(src), "unreadable attribute");
+  EXPECT_DEATH(runFromCStr(&runtime, src), "unreadable attribute");
 }
 
 TEST(DescriptorBuiltinsDeathTest,
@@ -205,7 +205,7 @@ c1.x = 42
 )";
 
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(src), "can't set attribute");
+  EXPECT_DEATH(runFromCStr(&runtime, src), "can't set attribute");
 }
 
 TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaClass) {
@@ -224,7 +224,7 @@ x = C.x
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isProperty());
 }
@@ -251,7 +251,7 @@ x2 = c1.x
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object x1(&scope, moduleAt(&runtime, "__main__", "x1"));
   ASSERT_TRUE(x1->isInt());
   EXPECT_EQ(RawSmallInt::cast(*x1)->value(), 24);
@@ -281,7 +281,7 @@ x = c1.x
 
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(x->isInt());
   EXPECT_EQ(RawSmallInt::cast(*x)->value(), 42);

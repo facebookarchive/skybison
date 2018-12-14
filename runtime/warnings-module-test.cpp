@@ -4,14 +4,15 @@
 #include "test-utils.h"
 
 namespace python {
+using namespace testing;
 
 TEST(WarningsModuleTest, ModuleImporting) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 import _warnings
   )");
   HandleScope scope;
-  RawObject warnings = testing::moduleAt(&runtime, "__main__", "_warnings");
+  RawObject warnings = moduleAt(&runtime, "__main__", "_warnings");
   EXPECT_TRUE(warnings->isModule());
 }
 

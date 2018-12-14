@@ -31,7 +31,7 @@ TEST(IntBuiltinsTest, BuiltinBases) {
 
 TEST(IntBuiltinsTest, NewWithStringReturnsInt) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = int("123")
 b = int("-987")
 )");
@@ -44,7 +44,7 @@ b = int("-987")
 
 TEST(IntBuiltinsTest, NewWithStringAndIntBaseReturnsInt) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = int("23", 8)
 b = int("abc", 16)
 c = int("023", 0)
@@ -65,7 +65,7 @@ TEST(IntBuiltinsTest, CompareSmallIntEq) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_eq_b = a == b
@@ -85,7 +85,7 @@ TEST(IntBuiltinsTest, CompareSmallIntGe) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_ge_a = a >= a
@@ -108,7 +108,7 @@ TEST(IntBuiltinsTest, CompareSmallIntGt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_gt_a = a > a
@@ -131,7 +131,7 @@ TEST(IntBuiltinsTest, CompareSmallIntLe) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_le_a = a <= a
@@ -154,7 +154,7 @@ TEST(IntBuiltinsTest, CompareSmallIntLt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_lt_a = a < a
@@ -177,7 +177,7 @@ TEST(IntBuiltinsTest, CompareSmallIntNe) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_ne_b = a != b
@@ -197,7 +197,7 @@ TEST(IntBuiltinsTest, CompareOpSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1
 b = 2
 c = 1
@@ -237,7 +237,7 @@ neg = -456
 invert_neg = ~neg
 )";
 
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   Object invert_pos(&scope, moduleAt(&runtime, "__main__", "invert_pos"));
   ASSERT_TRUE(invert_pos->isSmallInt());
@@ -259,7 +259,7 @@ neg = -123
 plus_neg = +neg
 )";
 
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   Object plus_pos(&scope, moduleAt(&runtime, "__main__", "plus_pos"));
   ASSERT_TRUE(plus_pos->isSmallInt());
@@ -281,7 +281,7 @@ neg = -123
 minus_neg = -neg
 )";
 
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   Object minus_pos(&scope, moduleAt(&runtime, "__main__", "minus_pos"));
   ASSERT_TRUE(minus_pos->isSmallInt());
@@ -366,7 +366,7 @@ TEST(IntBuiltinsTest, BinaryMulOverflowCheck) {
   Runtime runtime;
 
   // Overflows in the multiplication itself.
-  EXPECT_DEBUG_ONLY_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEBUG_ONLY_DEATH(runFromCStr(&runtime, R"(
 a = 268435456
 a = a * a * a
 )"),
@@ -388,7 +388,7 @@ TEST(IntBuiltinsTest, InplaceAdd) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1
 a += 0
 b = a
@@ -406,7 +406,7 @@ TEST(IntBuiltinsTest, InplaceMultiply) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 5
 a *= 1
 b = a
@@ -424,7 +424,7 @@ TEST(IntBuiltinsTest, InplaceFloorDiv) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 5
 a //= 1
 b = a
@@ -442,7 +442,7 @@ TEST(IntBuiltinsTest, InplaceModulo) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 10
 a %= 7
 b = a
@@ -460,7 +460,7 @@ TEST(IntBuiltinsTest, InplaceSub) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 10
 a -= 0
 b = a
@@ -478,7 +478,7 @@ TEST(IntBuiltinsTest, InplaceXor) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 0xFE
 a ^= 0
 b = a
@@ -495,7 +495,7 @@ a ^= 0x03
 TEST(IntBuiltinsDeathTest, DunderOr) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 0b010101
 b = 0b111000
 c = a | b
@@ -508,22 +508,22 @@ c = a | b
 TEST(IntBuiltinsDeathTest, DunderOrWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr("a = int.__or__(10, '')");
+  runFromCStr(&runtime, "a = int.__or__(10, '')");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(a->isNotImplemented());
 }
 
 TEST(IntBuiltinsDeathTest, DunderOrWithInvalidArgumentThrowsException) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr("a = 10 | ''"), "Cannot do binary op");
-  EXPECT_DEATH(runtime.runFromCStr("a = int.__or__('', 3)"),
+  EXPECT_DEATH(runFromCStr(&runtime, "a = 10 | ''"), "Cannot do binary op");
+  EXPECT_DEATH(runFromCStr(&runtime, "a = int.__or__('', 3)"),
                "descriptor '__or__' requires a 'int' object");
 }
 
 TEST(IntBuiltinsDeathTest, DunderLshift) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 0b1101
 b = a << 3
 )");
@@ -535,18 +535,18 @@ b = a << 3
 TEST(IntBuiltinsDeathTest, DunderLshiftWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr("a = int.__lshift__(10, '')");
+  runFromCStr(&runtime, "a = int.__lshift__(10, '')");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(a->isNotImplemented());
 }
 
 TEST(IntBuiltinsDeathTest, DunderLshiftWithInvalidArgumentThrowsException) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr("a = 10 << ''"), "Cannot do binary op");
-  EXPECT_DEATH(runtime.runFromCStr("a = int.__lshift__('', 3)"),
+  EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << ''"), "Cannot do binary op");
+  EXPECT_DEATH(runFromCStr(&runtime, "a = int.__lshift__('', 3)"),
                "'__lshift__' requires a 'int' object");
-  EXPECT_DEATH(runtime.runFromCStr("a = 10 << -3"), "negative shift count");
-  EXPECT_DEATH(runtime.runFromCStr("a = 10 << (1 << 100)"),
+  EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << -3"), "negative shift count");
+  EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << (1 << 100)"),
                "shift count too large");
 }
 
@@ -554,7 +554,7 @@ TEST(IntBuiltinsTest, BinaryAddSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 2
 b = 1
 c = a + b
@@ -969,7 +969,7 @@ TEST(IntBuiltinsTest, DunderIndexReturnsSameValue) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = (7).__index__()
 b = int.__index__(7)
 )");
@@ -986,7 +986,7 @@ TEST(IntBuiltinsTest, DunderIntReturnsSameValue) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = (7).__int__()
 b = int.__int__(7)
 )");
@@ -1244,7 +1244,7 @@ TEST(BoolBuiltinsTest, NewFromNoneIsFalse) {
 
 TEST(BoolBuiltinsTest, NewFromUserDefinedType) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class Foo:
   def __bool__(self):
     return True
@@ -1274,21 +1274,21 @@ bar = Bar()
 
 TEST(SmallIntBuiltinsDeathTest, DunderModZeroDivision) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = 10
 b = 0.0
 a % b
 )"),
                "float modulo");
 
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = 10
 b = False
 a % b
 )"),
                "integer division or modulo by zero");
 
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = 10
 b = 0
 a % b
@@ -1298,21 +1298,21 @@ a % b
 
 TEST(SmallIntBuiltinsDeathTest, DunderFloorDivZeroDivision) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = 10
 b = 0.0
 a // b
 )"),
                "float divmod()");
 
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = 10
 b = False
 a // b
 )"),
                "integer division or modulo by zero");
 
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = 10
 b = 0
 a // b
@@ -1322,21 +1322,21 @@ a // b
 
 TEST(SmallIntBuiltinsDeathTest, DunderTrueDivZeroDivision) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = 10
 b = 0.0
 a / b
 )"),
                "float division by zero");
 
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = 10
 b = False
 a / b
 )"),
                "division by zero");
 
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 a = 10
 b = 0
 a / b

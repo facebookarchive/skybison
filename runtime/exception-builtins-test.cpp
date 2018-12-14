@@ -11,7 +11,7 @@ TEST(ExceptionBuiltinsTest, BaseExceptionNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = BaseException()
 )");
 
@@ -28,7 +28,7 @@ TEST(ExceptionBuiltinsTest, BaseExceptionManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = BaseException(1,2,3)
 )");
 
@@ -48,7 +48,7 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionNoArgs) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = BaseException().__str__()
 )");
 
@@ -60,7 +60,7 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionOneArg) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = BaseException("hello").__str__()
 )");
 
@@ -72,7 +72,7 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionManyArgs) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = BaseException("hello", "world").__str__()
 )");
 
@@ -84,7 +84,7 @@ TEST(ExceptionBuiltinsTest, ExceptionManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = Exception(1,2,3)
 )");
 
@@ -104,7 +104,7 @@ TEST(ExceptionBuiltinsTest, SimpleExceptionTypesCanBeConstructed) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 attr_error = AttributeError()
 name_error = NameError()
 value_error = ValueError()
@@ -133,7 +133,7 @@ TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesHaveCorrectHierarchy) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 lookup_is_exc = issubclass(LookupError, Exception)
 index_is_lookup = issubclass(IndexError, LookupError)
 key_is_lookup = issubclass(KeyError, LookupError)
@@ -153,7 +153,7 @@ TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesCanBeConstructed) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 l = LookupError()
 i = IndexError()
 k = KeyError()
@@ -172,7 +172,7 @@ TEST(ExceptionBuiltinsTest, KeyErrorStrPrintsMissingKey) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 s = KeyError("key").__str__()
 )");
 
@@ -185,7 +185,7 @@ TEST(ExceptionBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 s = KeyError("key", "key2").__str__()
 b = BaseException("key", "key2").__str__()
 )");
@@ -199,7 +199,7 @@ TEST(ExceptionBuiltinsTest, TypeErrorReturnsTypeError) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = TypeError()
 )");
 
@@ -216,7 +216,7 @@ TEST(ExceptionBuiltinsTest, StopIterationNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = StopIteration()
 )");
 
@@ -237,7 +237,7 @@ TEST(ExceptionBuiltinsTest, StopIterationOneArgument) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = StopIteration(1)
 )");
 
@@ -259,7 +259,7 @@ TEST(ExceptionBuiltinsTest, StopIterationManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = StopIteration(4, 5, 6)
 )");
 
@@ -283,7 +283,7 @@ TEST(ExceptionBuiltinsTest, NotImplementedErrorNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = NotImplementedError()
 exc_is_rt_error = issubclass(NotImplementedError, RuntimeError)
 )");
@@ -301,7 +301,7 @@ TEST(ExceptionBuiltinsTest, SystemExitNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = SystemExit()
 )");
 
@@ -322,7 +322,7 @@ TEST(ExceptionBuiltinsTest, SystemExitOneArgument) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = SystemExit(1)
 )");
 
@@ -344,7 +344,7 @@ TEST(ExceptionBuiltinsTest, SystemExitManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = SystemExit(4, 5, 6)
 )");
 
@@ -368,7 +368,7 @@ TEST(ExceptionBuiltinsTest, SystemExitGetValue) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = SystemExit(1111)
 result = exc.value
 )");
@@ -382,7 +382,7 @@ result = exc.value
 TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr("x = ImportError()");
+  runFromCStr(&runtime, "x = ImportError()");
   Object data(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(data->isImportError());
 
@@ -407,7 +407,7 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr("x = ImportError(1111)");
+  runFromCStr(&runtime, "x = ImportError(1111)");
   Object data(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(data->isImportError());
 
@@ -421,7 +421,7 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr("x = ImportError(1111, name=2222, path=3333)");
+  runFromCStr(&runtime, "x = ImportError(1111, name=2222, path=3333)");
   Object data(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(data->isImportError());
 
@@ -437,7 +437,7 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
 TEST(ExceptionBuiltinsDeathTest, ImportErrorConstructWithInvalidKwargs) {
   Runtime runtime;
   HandleScope scope;
-  EXPECT_DEATH(runtime.runFromCStr("x = ImportError(foo=123)"),
+  EXPECT_DEATH(runFromCStr(&runtime, "x = ImportError(foo=123)"),
                "invalid keyword arguments supplied");
 }
 
@@ -445,7 +445,7 @@ TEST(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 exc = ModuleNotFoundError(1111, name=2222, path=3333)
 )");
 

@@ -179,9 +179,8 @@ class Runtime {
 
   void collectGarbage();
 
+  RawObject runFromCStr(const char* buffer);
   RawObject run(const char* buffer);
-
-  RawObject runFromCStr(const char* c_str);
 
   RawObject hash(RawObject object);
   word siphash24(View<byte> array);
@@ -403,6 +402,7 @@ class Runtime {
   }
 
   static char* compile(const char* src);
+  static char* compileWithLen(const char* src, word* len);
 
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.

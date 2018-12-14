@@ -20,7 +20,7 @@ def func(self):
 def test(callable):
   return callable()
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
@@ -51,7 +51,7 @@ def func(self, a, b):
 def test(callable):
   return callable(2222, 3333)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
@@ -89,7 +89,7 @@ def func(self, a, b):
 def test(callable):
   return callable(a=2222, b=3333)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
@@ -137,7 +137,7 @@ def test(callable):
   args = (2222, 3333)
   return callable(*args)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
@@ -185,7 +185,7 @@ def test(callable):
   kwargs = {'a': 2222, 'b': 3333}
   return callable(**kwargs)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
@@ -234,7 +234,7 @@ def test(callable):
   kwargs = {'b': 3333}
   return callable(*args, **kwargs)
 )";
-  runtime.runFromCStr(src);
+  runFromCStr(&runtime, src);
 
   HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
@@ -802,7 +802,7 @@ TEST(TrampolineTest, InterpreterClosureUsesArgOverCellValue) {
   ASSERT_TRUE(!code->cell2arg()->isNoneType());
 
   // Create a function
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 def foo(bar): pass
 )");
   Function foo(&scope, moduleAt(&runtime, "__main__", "foo"));
@@ -810,7 +810,7 @@ def foo(bar): pass
   foo->setCode(*code);
 
   // Run function
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 result = foo(1)
 )");
   Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
@@ -846,7 +846,7 @@ TEST(TrampolineTest, InterpreterClosureUsesCellValue) {
   ASSERT_TRUE(!code->cell2arg()->isNoneType());
 
   // Create a function
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 def foo(bar): pass
 )");
   Function foo(&scope, moduleAt(&runtime, "__main__", "foo"));
@@ -854,7 +854,7 @@ def foo(bar): pass
   foo->setCode(*code);
 
   // Run function
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 result = foo(1)
 )");
   Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
@@ -864,7 +864,7 @@ result = foo(1)
 
 TEST(TrampolineTest, ExplodeCallWithBadKeywordFails) {
   Runtime runtime;
-  EXPECT_DEATH(runtime.runFromCStr(R"(
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
 def take_kwargs(a): pass
 
 kwargs = {12: 34}

@@ -139,11 +139,11 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
 
 TEST(SuperDeathTest, NoArugmentThrow) {
   Runtime runtime;
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 a = super()
 )"),
                "aborting due to pending exception: super\\(\\): no arguments");
-  ASSERT_DEATH(runtime.runFromCStr(R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 def f(a):
     super()
 f(1)

@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -10,7 +11,9 @@
 #include "builtins-module.h"
 #include "frame.h"
 #include "handles.h"
+#include "os.h"
 #include "runtime.h"
+#include "siphash.h"
 #include "thread.h"
 #include "utils.h"
 
@@ -199,8 +202,7 @@ static std::string compileAndRunImpl(Runtime* runtime, const char* src,
   std::stringstream tmp_ostream;
   std::ostream* saved_ostream = *ostream;
   *ostream = &tmp_ostream;
-  RawObject result = runtime->runFromCStr(src);
-  (void)result;
+  RawObject result = runFromCStr(runtime, src);
   CHECK(result == NoneType::object(), "unexpected result");
   *ostream = saved_ostream;
   return tmp_ostream.str();
@@ -335,6 +337,53 @@ RawObject newEmptyCode(Runtime* runtime) {
                           0,            // firlineno
                           none          // lnotab
   );
+}
+
+static std::unique_ptr<char[]> compileWithCache(const char* src) {
+  // increment this if you change the caching code, to invalidate existing
+  // cache entries.
+  uint64_t seed[2] = {0, 1};
+  word hash = 0;
+
+  // Hash the input.
+  ::siphash(reinterpret_cast<const uint8_t*>(src), strlen(src),
+            reinterpret_cast<const uint8_t*>(seed),
+            reinterpret_cast<uint8_t*>(&hash), sizeof(hash));
+
+  const char* cache_env = OS::getenv("PYRO_CACHE_DIR");
+  std::string cache_dir;
+  if (cache_env != nullptr) {
+    cache_dir = cache_env;
+  } else {
+    const char* home_env = OS::getenv("HOME");
+    if (home_env != nullptr) {
+      cache_dir = home_env;
+      cache_dir += "/.pyro-compile-cache";
+    }
+  }
+
+  char filename_buf[512] = {};
+  snprintf(filename_buf, 512, "%s/%016zx", cache_dir.c_str(), hash);
+
+  // Read compiled code from the cache
+  if (!cache_dir.empty() && OS::fileExists(filename_buf)) {
+    return std::unique_ptr<char[]>(OS::readFile(filename_buf));
+  }
+
+  // Cache miss, must run the compiler.
+  word len;
+  char* result = Runtime::compileWithLen(src, &len);
+
+  // Cache the output if possible.
+  if (!cache_dir.empty() && OS::dirExists(cache_dir.c_str())) {
+    OS::writeFileExcl(filename_buf, result, len);
+  }
+
+  return std::unique_ptr<char[]>(result);
+}
+
+RawObject runFromCStr(Runtime* runtime, const char* c_str) {
+  return runtime->run(compileWithCache(c_str).get());
 }
 
 }  // namespace testing
