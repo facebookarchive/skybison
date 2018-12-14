@@ -89,12 +89,24 @@ PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* v, const char* name) {
   return attr;
 }
 
-PY_EXPORT int PyObject_HasAttr(PyObject* /* v */, PyObject* /* e */) {
-  UNIMPLEMENTED("PyObject_HasAttr");
+PY_EXPORT int PyObject_HasAttr(PyObject* pyobj, PyObject* pyname) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object name(&scope, ApiHandle::fromPyObject(pyname)->asObject());
+  Bool result(&scope, hasAttribute(thread, obj, name));
+  return result->value();
 }
 
-PY_EXPORT int PyObject_HasAttrString(PyObject* /* v */, const char* /* e */) {
-  UNIMPLEMENTED("PyObject_HasAttrString");
+PY_EXPORT int PyObject_HasAttrString(PyObject* pyobj, const char* name) {
+  PyObject* pyname = PyUnicode_FromString(name);
+  if (pyname == nullptr) {
+    PyErr_Clear();
+    return 0;
+  }
+  int result = PyObject_HasAttr(pyobj, pyname);
+  Py_DECREF(pyname);
+  return result;
 }
 
 PY_EXPORT Py_hash_t PyObject_Hash(PyObject* /* v */) {

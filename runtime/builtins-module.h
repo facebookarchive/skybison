@@ -12,6 +12,7 @@ extern std::ostream* builtInStdout;
 extern std::ostream* builtinStderr;
 
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name);
+RawObject hasAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
                        const Object& value);
 

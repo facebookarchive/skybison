@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <iostream>
 
+#include "exception-builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
@@ -26,6 +27,23 @@ RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
         "getattr(): attribute name must be string.");
   }
   return runtime->attributeAt(thread, self, name);
+}
+
+RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(name)) {
+    return thread->raiseTypeErrorWithCStr(
+        "hasattr(): attribute name must be string.");
+  }
+
+  HandleScope scope(thread);
+  Object result(&scope, runtime->attributeAt(thread, self, name));
+  if (result->isError()) {
+    // TODO(T32775277) Implement PyErr_ExceptionMatches
+    thread->clearPendingException();
+    return Bool::falseObj();
+  }
+  return Bool::trueObj();
 }
 
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
@@ -673,17 +691,7 @@ RawObject Builtins::hasattr(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  if (!name->isStr()) {
-    return thread->raiseTypeErrorWithCStr(
-        "hasattr(): attribute name must be string.");
-  }
-  Object result(&scope, thread->runtime()->attributeAt(thread, self, name));
-  if (result->isError()) {
-    // TODO(T32775277) Implement PyErr_ExceptionMatches
-    thread->clearPendingException();
-    return Bool::falseObj();
-  }
-  return Bool::trueObj();
+  return hasAttribute(thread, self, name);
 }
 
 RawObject Builtins::setattr(Thread* thread, Frame* frame, word nargs) {

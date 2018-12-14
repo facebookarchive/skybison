@@ -122,6 +122,65 @@ TEST_F(ObjectExtensionApiTest, GetAttrStringReturnsCorrectValue) {
   EXPECT_EQ(PyLong_AsLong(dict_result), expected_int);
 }
 
+TEST_F(ObjectExtensionApiTest, HasAttrWithImmediateWithAttributeReturnsTrue) {
+  PyObjectPtr num(PyLong_FromLong(6));
+  PyObjectPtr name(PyUnicode_FromString("__int__"));
+  EXPECT_TRUE(PyObject_HasAttr(num, name));
+}
+
+TEST_F(ObjectExtensionApiTest,
+       HasAttrStringWithImmediateWithoutAttributeReturnsFalse) {
+  PyObjectPtr str(PyUnicode_FromString(""));
+  EXPECT_FALSE(PyObject_HasAttrString(str, "foo"));
+}
+
+TEST_F(ObjectExtensionApiTest, HasAttrWithoutAttrReturnsFalse) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "test",
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  PyObjectPtr name(PyUnicode_FromString("foo"));
+  EXPECT_FALSE(PyObject_HasAttr(module, name));
+}
+
+TEST_F(ObjectExtensionApiTest, HasAttrStringWithoutAttrReturnsFalse) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "test",
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  EXPECT_FALSE(PyObject_HasAttrString(module, "foo"));
+}
+
+TEST_F(ObjectExtensionApiTest, HasAttrWithAttrReturnsTrue) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "test",
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  PyObjectPtr name(PyUnicode_FromString("foo"));
+  PyObjectPtr val(PyLong_FromLong(2));
+  ASSERT_EQ(PyObject_GenericSetAttr(module, name, val), 0);
+  EXPECT_TRUE(PyObject_HasAttr(module, name));
+}
+
+TEST_F(ObjectExtensionApiTest, HasAttrStringWithAttrReturnsTrue) {
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "test",
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  PyObjectPtr name(PyUnicode_FromString("foo"));
+  PyObjectPtr val(PyLong_FromLong(2));
+  ASSERT_EQ(PyObject_GenericSetAttr(module, name, val), 0);
+  EXPECT_TRUE(PyObject_HasAttrString(module, "foo"));
+}
+
 TEST_F(ObjectExtensionApiTest, RefCountDecreaseDeallocsHandle) {
   long value = 10;
   PyObject* o = PyLong_FromLong(value);
