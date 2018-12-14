@@ -156,6 +156,7 @@ class Runtime;
   V(End, "end")                                                                \
   V(Exception, "Exception")                                                    \
   V(ExceptionState, "ExceptionState")                                          \
+  V(Exec, "exec")                                                              \
   V(ExecBuiltin, "exec_builtin")                                               \
   V(ExecDynamic, "exec_dynamic")                                               \
   V(Exit, "exit")                                                              \

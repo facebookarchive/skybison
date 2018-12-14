@@ -599,4 +599,62 @@ TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenBadMode) {
   EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
 }
 
+TEST(BuiltinsModuleTest, BuiltinExecSetsGlobal) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+a = 1337
+exec("a = 1338")
+  )");
+  // We can't use runBuiltin here because it does not set up the frame properly
+  // for functions that need globals, implicitGlobals, etc
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(a)->value(), 1338);
+}
+
+TEST(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+a = 1337
+  )");
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Str code(&scope, runtime.newStrFromCStr("a = 1338"));
+  Dict globals(&scope, main->dict());
+  Object result(&scope, runBuiltin(builtinExec, code, globals));
+  ASSERT_TRUE(result->isNoneType());
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(a)->value(), 1338);
+}
+
+TEST(BuiltinsModuleTest, BuiltinExecWithEmptyGlobalsFailsToSetGlobal) {
+  Runtime runtime;
+  HandleScope scope;
+  runtime.runFromCStr(R"(
+a = 1337
+  )");
+  Str code(&scope, runtime.newStrFromCStr("a = 1338"));
+  Dict globals(&scope, runtime.newDict());
+  Object result(&scope, runBuiltin(builtinExec, code, globals));
+  ASSERT_TRUE(result->isNoneType());
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(a)->value(), 1337);
+}
+
+TEST(BuiltinsModuleTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Str code(&scope, runtime.newStrFromCStr("a = 1338"));
+  Object globals_not_a_dict(&scope, SmallInt::fromWord(5));
+  Object result(&scope, runBuiltin(builtinExec, code, globals_not_a_dict));
+  ASSERT_TRUE(result->isError());
+  Thread* thread = Thread::currentThread();
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
+  EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
+}
+
 }  // namespace python

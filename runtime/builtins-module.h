@@ -16,6 +16,7 @@ RawObject builtinBuildClassKw(Thread* thread, Frame* frame, word nargs);
 RawObject builtinCallable(Thread* thread, Frame* frame, word nargs);
 RawObject builtinChr(Thread* thread, Frame* frame, word nargs);
 RawObject builtinCompile(Thread* thread, Frame* frame, word nargs);
+RawObject builtinExec(Thread* thread, Frame* frame, word nargs);
 RawObject builtinGetattr(Thread* thread, Frame* frame, word nargs);
 RawObject builtinHasattr(Thread* thread, Frame* frame, word nargs);
 RawObject builtinIsinstance(Thread* thread, Frame* frame, word nargs);

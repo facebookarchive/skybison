@@ -222,6 +222,72 @@ RawObject builtinCompile(Thread* thread, Frame* frame, word nargs) {
   return *code;
 }
 
+RawObject builtinExec(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1 || nargs > 3) {
+    return thread->raiseTypeErrorWithCStr(
+        "Expected 1 to 3 arguments in 'exec'");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object source_obj(&scope, args.get(0));
+  if (!source_obj->isCode() && !source_obj->isStr()) {
+    return thread->raiseTypeErrorWithCStr(
+        "Expected 'source' to be str or code in 'exec'");
+  }
+  // Per the docs:
+  //   In all cases, if the optional parts are omitted, the code is executed in
+  //   the current scope. If only globals is provided, it must be a dictionary,
+  //   which will be used for both the global and the local variables.
+  Object globals_obj(&scope, NoneType::object());
+  Object locals(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
+  if (nargs == 1) {  // neither globals nor locals are provided
+    Frame* caller_frame = frame->previousFrame();
+    globals_obj = caller_frame->globals();
+    DCHECK(globals_obj->isDict(),
+           "Expected caller_frame->globals() to be dict in 'exec'");
+    if (caller_frame->globals() != caller_frame->implicitGlobals()) {
+      // TODO(T37888835): Fix 1 argument case
+      // globals == implicitGlobals when code is being executed in a module
+      // context. If we're not in a module context, this case is unimplemented.
+      UNIMPLEMENTED("exec() with 1 argument not at the module level");
+    }
+    locals = *globals_obj;
+  } else if (nargs == 2) {  // only globals is provided
+    globals_obj = args.get(1);
+    if (!runtime->isInstanceOfDict(*globals_obj)) {
+      return thread->raiseTypeErrorWithCStr(
+          "Expected 'globals' to be dict in 'exec'");
+    }
+    locals = *globals_obj;
+  } else {  // nargs == 3, both globals and locals are provided
+    globals_obj = args.get(1);
+    if (!runtime->isInstanceOfDict(*globals_obj)) {
+      return thread->raiseTypeErrorWithCStr(
+          "Expected 'globals' to be dict in 'exec'");
+    }
+    locals = args.get(2);
+    if (!runtime->isMapping(thread, locals)) {
+      return thread->raiseTypeErrorWithCStr(
+          "Expected 'locals' to be a mapping in 'exec'");
+    }
+    // TODO(T37888835): Fix 3 argument case
+    UNIMPLEMENTED("exec() with both globals and locals");
+  }
+  if (source_obj->isStr()) {
+    Str source(&scope, *source_obj);
+    source_obj = compileStr(thread, source);
+    DCHECK(source_obj->isCode(), "compileStr must return code object");
+  }
+  Code code(&scope, *source_obj);
+  if (code->numFreevars() != 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "Expected 'source' not to have free variables in 'exec'");
+  }
+  Dict globals(&scope, *globals_obj);
+  return thread->exec(code, globals, locals);
+}
+
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is
 // actually far more complicated than one might expect. This is enough to get
 // richards working.
