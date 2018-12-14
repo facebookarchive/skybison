@@ -1,4 +1,5 @@
 // unicodeobject.c implementation
+#include <cwchar>
 
 #include "handles.h"
 #include "objects.h"
@@ -457,9 +458,32 @@ PY_EXPORT PyObject* PyUnicode_FromOrdinal(int /* l */) {
   UNIMPLEMENTED("PyUnicode_FromOrdinal");
 }
 
-PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* /* u */,
-                                           Py_ssize_t /* e */) {
-  UNIMPLEMENTED("PyUnicode_FromWideChar");
+PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* buffer,
+                                           Py_ssize_t size) {
+  Thread* thread = Thread::currentThread();
+  if (buffer == nullptr && size != 0) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  if (size == -1) {
+    size = std::wcslen(buffer);
+  }
+
+  if (sizeof(*buffer) * kBitsPerByte == 16) {
+    // TODO(T38042082): Implement newStrFromUTF16
+    UNIMPLEMENTED("newStrFromUTF16");
+  }
+  CHECK(sizeof(*buffer) * kBitsPerByte == 32,
+        "size of wchar_t should be either 16 or 32 bits");
+  for (Py_ssize_t i = 0; i < size; ++i) {
+    if (buffer[i] > kMaxUnicode) {
+      thread->raiseValueErrorWithCStr("character is not in range");
+      return nullptr;
+    }
+  }
+  return ApiHandle::newReference(
+      thread, thread->runtime()->newStrFromUTF32(
+                  View<int32>(bit_cast<int32*>(buffer), size)));
 }
 
 PY_EXPORT const char* PyUnicode_GetDefaultEncoding() {

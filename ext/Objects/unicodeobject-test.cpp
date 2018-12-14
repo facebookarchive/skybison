@@ -271,4 +271,42 @@ TEST_F(UnicodeExtensionApiTest, FromUnicodeWithNullBufferAbortsPyro) {
                "unimplemented: _PyUnicode_New");
 }
 
+TEST_F(UnicodeExtensionApiTest,
+       FromWideCharWithNullBufferAndZeroSizeReturnsEmpty) {
+  PyObjectPtr empty(PyUnicode_FromWideChar(nullptr, 0));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(empty));
+  EXPECT_EQ(PyUnicode_GetSize(empty), 0);
+}
+
+TEST_F(UnicodeExtensionApiTest, FromWideCharWithNullBufferReturnsError) {
+  PyObjectPtr empty(PyUnicode_FromWideChar(nullptr, 1));
+  ASSERT_EQ(empty, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromWideCharWithUnknownSizeReturnsString) {
+  PyObjectPtr unicode(PyUnicode_FromWideChar(L"abc123-", -1));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 7);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "abc123-"));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromWideCharWithGivenSizeReturnsString) {
+  PyObjectPtr unicode(PyUnicode_FromWideChar(L"abc123-", 6));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 6);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "abc123"));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromWideCharWithBufferAndZeroSizeReturnsEmpty) {
+  PyObjectPtr empty(PyUnicode_FromWideChar(L"abc", 0));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(empty));
+  EXPECT_EQ(PyUnicode_GetSize(empty), 0);
+}
+
 }  // namespace python
