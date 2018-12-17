@@ -416,27 +416,66 @@ a = repr(Foo())
   EXPECT_TRUE(RawStr::cast(*a)->equalsCStr("foo"));
 }
 
-TEST(BuiltinsModuleTest, BuiltInGetAttr) {
+TEST(BuiltinsModuleTest, GetAttrFromClassReturnsValue) {
   const char* src = R"(
 class Foo:
   bar = 1
-a = getattr(Foo, 'bar')
-b = getattr(Foo(), 'bar')
-c = getattr(Foo(), 'foo', 2)
+obj = getattr(Foo, 'bar')
 )";
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
-  Object a(&scope, moduleAt(&runtime, main, "a"));
-  Object b(&scope, moduleAt(&runtime, main, "b"));
-  Object c(&scope, moduleAt(&runtime, main, "c"));
-  EXPECT_EQ(*a, SmallInt::fromWord(1));
-  EXPECT_EQ(*b, SmallInt::fromWord(1));
-  EXPECT_EQ(*c, SmallInt::fromWord(2));
+  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  EXPECT_EQ(*obj, SmallInt::fromWord(1));
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltInGetAttrThrow) {
+TEST(BuiltinsModuleTest, GetAttrFromInstanceReturnsValue) {
+  const char* src = R"(
+class Foo:
+  bar = 1
+obj = getattr(Foo(), 'bar')
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  EXPECT_EQ(*obj, SmallInt::fromWord(1));
+}
+
+TEST(BuiltinsModuleTest, GetAttrFromInstanceWithMissingAttrReturnsDefault) {
+  const char* src = R"(
+class Foo: pass
+obj = getattr(Foo(), 'bar', 2)
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  EXPECT_EQ(*obj, SmallInt::fromWord(2));
+}
+
+TEST(BuiltinsModuleDeathTest, GetAttrWithNonStringAttrThrows) {
+  const char* src = R"(
+class Foo: pass
+getattr(Foo(), 1)
+)";
+  Runtime runtime;
+  EXPECT_DEATH(runFromCStr(&runtime, src), "attribute name must be string");
+}
+
+TEST(BuiltinsModuleDeathTest, GetAttrWithNonStringAttrAndDefaultThrows) {
+  const char* src = R"(
+class Foo: pass
+getattr(Foo(), 1, 2)
+)";
+  Runtime runtime;
+  EXPECT_DEATH(runFromCStr(&runtime, src), "attribute name must be string");
+}
+
+TEST(BuiltinsModuleDeathTest, GetAttrFromClassMissingAttrWithoutDefaultThrows) {
   const char* src = R"(
 class Foo:
   bar = 1
@@ -446,21 +485,68 @@ getattr(Foo, 'foo')
   EXPECT_DEATH(runFromCStr(&runtime, src), "missing attribute");
 }
 
-TEST(BuiltinsModuleTest, BuiltInHasAttr) {
+TEST(BuiltinsModuleTest, HasAttrFromClassMissingAttrReturnsFalse) {
   const char* src = R"(
-class Foo:
-  bar = 1
-a = hasattr(Foo, 'foo')
-b = hasattr(Foo, 'bar')
+class Foo: pass
+obj = hasattr(Foo, 'bar')
 )";
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
-  Object a(&scope, moduleAt(&runtime, main, "a"));
-  Object b(&scope, moduleAt(&runtime, main, "b"));
-  EXPECT_EQ(*a, Bool::falseObj());
-  EXPECT_EQ(*b, Bool::trueObj());
+  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  EXPECT_EQ(*obj, Bool::falseObj());
+}
+
+TEST(BuiltinsModuleTest, HasAttrFromClassWithAttrReturnsTrue) {
+  const char* src = R"(
+class Foo:
+  bar = 1
+obj = hasattr(Foo, 'bar')
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  EXPECT_EQ(*obj, Bool::trueObj());
+}
+
+TEST(BuiltinsModuleDeathTest, HasAttrWithNonStringAttrThrows) {
+  const char* src = R"(
+class Foo:
+  bar = 1
+hasattr(Foo, 1)
+)";
+  Runtime runtime;
+  EXPECT_DEATH(runFromCStr(&runtime, src), "attribute name must be string");
+}
+
+TEST(BuiltinsModuleTest, HasAttrFromInstanceMissingAttrReturnsFalse) {
+  const char* src = R"(
+class Foo: pass
+obj = hasattr(Foo(), 'bar')
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  EXPECT_EQ(*obj, Bool::falseObj());
+}
+
+TEST(BuiltinsModuleTest, HasAttrFromInstanceWithAttrReturnsTrue) {
+  const char* src = R"(
+class Foo:
+  bar = 1
+obj = hasattr(Foo(), 'bar')
+)";
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, src);
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  EXPECT_EQ(*obj, Bool::trueObj());
 }
 
 TEST(BuiltinsModuleTest, BuiltInSetAttr) {

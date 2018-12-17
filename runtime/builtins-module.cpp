@@ -38,12 +38,18 @@ RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
 
   HandleScope scope(thread);
   Object result(&scope, runtime->attributeAt(thread, self, name));
-  if (result->isError()) {
-    // TODO(T32775277) Implement PyErr_ExceptionMatches
+  if (!result->isError()) {
+    return Bool::trueObj();
+  }
+
+  Type given(&scope, thread->pendingExceptionType());
+  Type exc(&scope, runtime->typeAt(LayoutId::kAttributeError));
+  if (givenExceptionMatches(thread, given, exc)) {
     thread->clearPendingException();
     return Bool::falseObj();
   }
-  return Bool::trueObj();
+
+  return Error::object();
 }
 
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
@@ -676,9 +682,12 @@ RawObject Builtins::getattr(Thread* thread, Frame* frame, word nargs) {
   Object name(&scope, args.get(1));
   Object result(&scope, getAttribute(thread, self, name));
   if (result->isError() && nargs == 3) {
-    result = args.get(2);
-    // TODO(T32775277) Implement PyErr_ExceptionMatches
-    thread->clearPendingException();
+    Type given(&scope, thread->pendingExceptionType());
+    Type exc(&scope, thread->runtime()->typeAt(LayoutId::kAttributeError));
+    if (givenExceptionMatches(thread, given, exc)) {
+      thread->clearPendingException();
+      result = args.get(2);
+    }
   }
   return *result;
 }

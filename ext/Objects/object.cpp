@@ -94,8 +94,10 @@ PY_EXPORT int PyObject_HasAttr(PyObject* pyobj, PyObject* pyname) {
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object name(&scope, ApiHandle::fromPyObject(pyname)->asObject());
-  Bool result(&scope, hasAttribute(thread, obj, name));
-  return result->value();
+  Object result(&scope, hasAttribute(thread, obj, name));
+  if (result->isBool()) return Bool::cast(*result)->value();
+  thread->clearPendingException();
+  return false;
 }
 
 PY_EXPORT int PyObject_HasAttrString(PyObject* pyobj, const char* name) {

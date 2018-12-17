@@ -134,6 +134,13 @@ TEST_F(ObjectExtensionApiTest,
   EXPECT_FALSE(PyObject_HasAttrString(str, "foo"));
 }
 
+TEST_F(ObjectExtensionApiTest, HasAttrWithNonStringAttrReturnsFalse) {
+  PyObjectPtr set(PySet_New(nullptr));
+  PyObjectPtr num(PyLong_FromLong(1));
+  EXPECT_FALSE(PyObject_HasAttr(set, num));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(ObjectExtensionApiTest, HasAttrWithoutAttrReturnsFalse) {
   static PyModuleDef def;
   def = {
