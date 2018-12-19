@@ -848,6 +848,7 @@ PyAPI_FUNC(int) PyLong_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyLong_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyModule_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyModule_Check_Func(PyObject*);
+PyAPI_FUNC(int) PyObject_CheckBuffer_Func(PyObject*);
 PyAPI_FUNC(int) PyTuple_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyTuple_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject*);
@@ -889,6 +890,7 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
 #define PyLong_CheckExact(op) (PyLong_CheckExact_Func((PyObject*)(op)))
 #define PyModule_Check(op) (PyModule_Check_Func((PyObject*)(op)))
 #define PyModule_CheckExact(op) (PyModule_CheckExact_Func((PyObject*)(op)))
+#define PyObject_CheckBuffer(op) (PyObject_CheckBuffer_Func((PyObject*)(op)))
 #define PyTuple_Check(op) (PyTuple_Check_Func((PyObject*)(op)))
 #define PyTuple_CheckExact(op) (PyTuple_CheckExact_Func((PyObject*)(op)))
 #define PyType_Check(op) (PyType_Check_Func((PyObject*)(op)))

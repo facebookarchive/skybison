@@ -183,6 +183,18 @@ i = IntLikeClass();
   EXPECT_NE(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectCheckBufferWithBytesReturnsTrue) {
+  PyObject* obj(PyBytes_FromString("foo"));
+  EXPECT_TRUE(PyObject_CheckBuffer(obj));
+  Py_DECREF(obj);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectCheckBufferWithNonBytesReturnsFalse) {
+  PyObject* obj(PyLong_FromLong(2));
+  EXPECT_FALSE(PyObject_CheckBuffer(obj));
+  Py_DECREF(obj);
+}
+
 TEST_F(AbstractExtensionApiTest,
        PyObjectLengthWithoutDunderLenRaisesTypeError) {
   PyObjectPtr num(PyLong_FromLong(3));

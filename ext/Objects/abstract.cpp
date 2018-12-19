@@ -441,6 +441,11 @@ PY_EXPORT PyObject* PyObject_CallObject(PyObject* /* e */, PyObject* /* s */) {
   UNIMPLEMENTED("PyObject_CallObject");
 }
 
+PY_EXPORT int PyObject_CheckBuffer_Func(PyObject* pyobj) {
+  // TODO(T38246066): investigate the use of PyObjects as Buffers
+  return PyBytes_Check(pyobj);
+}
+
 PY_EXPORT int PyObject_CheckReadBuffer(PyObject* /* j */) {
   UNIMPLEMENTED("PyObject_CheckReadBuffer");
 }
