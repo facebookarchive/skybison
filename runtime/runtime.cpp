@@ -1620,32 +1620,33 @@ RawObject Runtime::findModule(const Object& name) {
   return value;
 }
 
-RawObject Runtime::moduleAt(const Module& module, const Object& key) {
-  HandleScope scope;
-  Dict dict(&scope, module->dict());
-  Object value_cell(&scope, dictAt(dict, key));
-  if (value_cell->isError()) {
-    return Error::object();
-  }
-  return RawValueCell::cast(*value_cell)->value();
-}
-
-void Runtime::moduleAtPut(const Module& module, const Object& key,
-                          const Object& value) {
-  HandleScope scope;
-  Dict dict(&scope, module->dict());
-  dictAtPutInValueCell(dict, key, value);
-}
-
-RawObject Runtime::typeDictAt(const Dict& dict, const Object& key) {
+RawObject Runtime::moduleDictAt(const Dict& dict, const Object& key) {
   HandleScope scope;
   Object value_cell(&scope, dictAt(dict, key));
   if (value_cell->isError()) {
     return Error::object();
   }
   CHECK(value_cell->isValueCell(),
-        "dict in typeDictAt should return ValueCell");
+        "dict in moduleDictAt should return ValueCell");
   return RawValueCell::cast(*value_cell)->value();
+}
+
+RawObject Runtime::moduleAt(const Module& module, const Object& key) {
+  HandleScope scope;
+  Dict dict(&scope, module->dict());
+  return moduleDictAt(dict, key);
+}
+
+RawObject Runtime::moduleDictAtPut(const Dict& dict, const Object& key,
+                                   const Object& value) {
+  return dictAtPutInValueCell(dict, key, value);
+}
+
+void Runtime::moduleAtPut(const Module& module, const Object& key,
+                          const Object& value) {
+  HandleScope scope;
+  Dict dict(&scope, module->dict());
+  moduleDictAtPut(dict, key, value);
 }
 
 struct {
@@ -1690,6 +1691,22 @@ void Runtime::layoutAtPut(LayoutId layout_id, RawObject object) {
 
 RawObject Runtime::typeAt(LayoutId layout_id) {
   return RawLayout::cast(layoutAt(layout_id))->describedType();
+}
+
+RawObject Runtime::typeDictAt(const Dict& dict, const Object& key) {
+  HandleScope scope;
+  Object value_cell(&scope, dictAt(dict, key));
+  if (value_cell->isError()) {
+    return Error::object();
+  }
+  CHECK(value_cell->isValueCell(),
+        "dict in typeDictAt should return ValueCell");
+  return RawValueCell::cast(*value_cell)->value();
+}
+
+RawObject Runtime::typeDictAtPut(const Dict& dict, const Object& key,
+                                 const Object& value) {
+  return dictAtPutInValueCell(dict, key, value);
 }
 
 LayoutId Runtime::reserveLayoutId() {

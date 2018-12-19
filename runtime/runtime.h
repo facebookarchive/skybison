@@ -205,11 +205,12 @@ class Runtime {
 
   RawObject findModule(const Object& name);
 
+  RawObject moduleDictAt(const Dict& module_dict, const Object& key);
+  RawObject moduleDictAtPut(const Dict& dict, const Object& key,
+                            const Object& value);
   RawObject moduleAt(const Module& module, const Object& key);
   void moduleAtPut(const Module& module, const Object& key,
                    const Object& value);
-
-  RawObject typeDictAt(const Dict& dict, const Object& key);
 
   RawObject importModule(const Object& name);
 
@@ -219,6 +220,9 @@ class Runtime {
 
   RawObject typeOf(RawObject object);
 
+  RawObject typeDictAt(const Dict& dict, const Object& key);
+  RawObject typeDictAtPut(const Dict& dict, const Object& key,
+                          const Object& value);
   RawObject typeAt(LayoutId layout_id);
   RawObject layoutAt(LayoutId layout_id);
   void layoutAtPut(LayoutId layout_id, RawObject object);
