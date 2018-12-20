@@ -188,4 +188,11 @@ TEST_F(LongExtensionApiTest, AsUnsignedLongMaskWithNegative) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(LongExtensionApiTest, FromLongWithZeroReturnsZero) {
+  PyObjectPtr pylong(PyLong_FromLong(0));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(pylong));
+  EXPECT_EQ(PyLong_AsLong(pylong), 0);
+}
+
 }  // namespace python

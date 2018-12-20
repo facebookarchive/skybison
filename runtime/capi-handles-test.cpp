@@ -172,9 +172,11 @@ TEST(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
   // Create type
   PyObject extension_type;
   Type type(&scope, initializeExtensionType(&extension_type));
+  PyObject* extension_type_ref =
+      ApiHandle::newReference(Thread::currentThread(), *type);
 
   PyObject pyobj = {nullptr, 1,
-                    reinterpret_cast<PyTypeObject*>(&extension_type)};
+                    reinterpret_cast<PyTypeObject*>(extension_type_ref)};
   Object handle_obj(&scope, ApiHandle::fromPyObject(&pyobj)->asObject());
   EXPECT_TRUE(handle_obj->isInstance());
 }

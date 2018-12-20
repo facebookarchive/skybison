@@ -87,15 +87,10 @@ RawObject ApiHandle::asInstance(RawObject obj) {
 
 RawObject ApiHandle::asObject() {
   // Fast path: All builtin objects except Types
-  // TODO(T32474474): Handle the special case of Int values
-  if (reference_ != nullptr) {
-    return RawObject{reinterpret_cast<uword>(reference_)};
-  }
-
-  DCHECK(type(), "ApiHandles must contain a type pointer");
-  // TODO(eelizondo): Add a way to check for builtin objects
+  if (isManaged()) return RawObject{reinterpret_cast<uword>(reference_)};
 
   // Create a runtime instance to hold the PyObject pointer
+  DCHECK(type(), "ApiHandles must have a type to create an instance");
   return asInstance(type()->asObject());
 }
 
@@ -109,6 +104,9 @@ ApiHandle* ApiHandle::type() {
 }
 
 void* ApiHandle::cache() {
+  // Only managed objects can have a cached value
+  if (!isManaged()) return nullptr;
+
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
