@@ -89,7 +89,7 @@ RawObject Builtins::buildClass(Thread* thread, Frame* frame, word nargs) {
   runtime->dictAtPutInValueCell(dict, key, name);
   // TODO(cshapiro): might need to do some kind of callback here and we want
   // backtraces to work correctly.  The key to doing that would be to put some
-  // state on the stack in between the the incoming arguments from the builtin'
+  // state on the stack in between the the incoming arguments from the builtin
   // caller and the on-stack state for the class body function call.
   thread->runClassFunction(body, dict);
 
@@ -104,6 +104,86 @@ RawObject Builtins::buildClass(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call(thread, frame, 4);
 }
 
+static bool isPass(const Code& code) {
+  HandleScope scope;
+  Bytes bytes(&scope, code->code());
+  // const_loaded is the index into the consts array that is returned
+  word const_loaded = bytes->byteAt(1);
+  return bytes->length() == 4 && bytes->byteAt(0) == LOAD_CONST &&
+         RawTuple::cast(code->consts()).at(const_loaded).isNoneType() &&
+         bytes->byteAt(2) == RETURN_VALUE && bytes->byteAt(3) == 0;
+}
+
+// Given a native implementation of a class method and an annotated
+// counterpart, merge the two definitions. This is handy for allowing type
+// annotations from declarations in managed code to supplement methods defined
+// in the runtime.
+void patchFunctionAttrs(Thread* thread, const Dict& type_dict,
+                        const Function& patch) {
+  HandleScope scope(thread);
+  Object code_obj(&scope, patch->code());
+  if (!code_obj->isCode()) {
+    return;
+  }
+
+  Str method_name(&scope, patch->name());
+  Code code(&scope, *code_obj);
+  CHECK(isPass(code), "Redefinition of native code method %s in managed code",
+        method_name->toCStr());
+
+  Runtime* runtime = thread->runtime();
+  Object base_obj(&scope, runtime->typeDictAt(type_dict, method_name));
+  CHECK(base_obj->isFunction(),
+        "Python annotation of non-function native object");
+  Function base(&scope, *base_obj);
+
+  // The Python implementation will be used only for its attributes, and
+  // not for its code.
+  if (base->annotations()->isNoneType() &&
+      !patch->annotations()->isNoneType()) {
+    base->setAnnotations(patch->annotations());
+  }
+  if (base->defaults()->isNoneType() && !patch->defaults()->isNoneType()) {
+    base->setDefaults(patch->defaults());
+  }
+  if (base->doc()->isNoneType() && !patch->doc()->isNoneType()) {
+    base->setDoc(patch->doc());
+  }
+  if (base->kwDefaults()->isNoneType() && !patch->kwDefaults()->isNoneType()) {
+    base->setKwDefaults(patch->kwDefaults());
+  }
+  if (base->qualname()->isNoneType() && !patch->qualname()->isNoneType()) {
+    base->setQualname(patch->qualname());
+  }
+}
+
+void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Tuple patch_data(&scope, patch->data());
+  for (word i = 0; i < patch_data->length(); i += Dict::Bucket::kNumPointers) {
+    if (!Dict::Bucket::isFilled(*patch_data, i)) {
+      continue;
+    }
+
+    Str key(&scope, Dict::Bucket::key(*patch_data, i));
+    Object patch_value_cell(&scope, Dict::Bucket::value(*patch_data, i));
+    DCHECK(patch_value_cell->isValueCell(),
+           "Values in type dict should be ValueCell");
+    Object patch_obj(&scope, RawValueCell::cast(patch_value_cell).value());
+
+    if (runtime->dictIncludes(base, key)) {
+      // Key is present in the base, so patch the base.
+      CHECK(patch_obj->isFunction(), "Python should only annotate functions");
+      Function patch_fn(&scope, *patch_obj);
+      patchFunctionAttrs(thread, base, patch_fn);
+    } else {
+      // Key is not present in the base, so copy the value into the base.
+      runtime->typeDictAtPut(base, key, patch_obj);
+    }
+  }
+}
+
 RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -114,12 +194,10 @@ RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
   if (!args.get(0)->isFunction()) {
     return thread->raiseTypeErrorWithCStr("class body is not function.");
   }
+
   if (!args.get(1)->isStr()) {
     return thread->raiseTypeErrorWithCStr("class name is not string.");
   }
-
-  Function body(&scope, args.get(0));
-  Object name(&scope, args.get(1));
 
   Object bootstrap(&scope, args.getKw(runtime->symbols()->Bootstrap()));
   if (bootstrap->isError()) {
@@ -137,35 +215,31 @@ RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
     bases->atPut(i, args.get(j));
   }
 
-  Object dict_obj(&scope, NoneType::object());
-  Object type_obj(&scope, NoneType::object());
+  Dict type_dict(&scope, runtime->newDict());
+  Function body(&scope, args.get(0));
+  Str name(&scope, args.get(1));
   if (*bootstrap == Bool::falseObj()) {
     // An ordinary class initialization creates a new class dictionary.
-    dict_obj = runtime->newDict();
+    thread->runClassFunction(body, type_dict);
   } else {
     // A bootstrap class initialization uses the existing class dictionary.
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
     Dict globals(&scope, frame->previousFrame()->globals());
-    ValueCell value_cell(&scope, runtime->dictAt(globals, name));
-    CHECK(value_cell->value()->isType(), "name is not bound to a type object");
-    Type type(&scope, value_cell->value());
-    type_obj = *type;
-    dict_obj = type->dict();
-  }
+    Object type_obj(&scope, runtime->moduleDictAt(globals, name));
+    CHECK(type_obj->isType(), "name '%s' is not bound to a type object",
+          name->toCStr());
+    Type type(&scope, *type_obj);
+    type_dict = type->dict();
 
-  // TODO(zekun): might need to do some kind of callback here and we want
-  // backtraces to work correctly.  The key to doing that would be to put some
-  // state on the stack in between the the incoming arguments from the builtin'
-  // caller and the on-stack state for the class body function call.
-  Dict dict(&scope, *dict_obj);
-  thread->runClassFunction(body, dict);
+    Dict patch_type(&scope, runtime->newDict());
+    thread->runClassFunction(body, patch_type);
+    patchTypeDict(thread, type_dict, patch_type);
 
-  // A bootstrap class initialization is complete at this point.  Add a type
-  // name to the type dictionary and return the initialized type object.
-  if (*bootstrap == Bool::trueObj()) {
+    // A bootstrap type initialization is complete at this point.  Add a type
+    // name to the type dictionary and return the initialized type object.
     Object key(&scope, runtime->symbols()->DunderName());
-    runtime->dictAtPutInValueCell(dict, key, name);
-    return *type_obj;
+    runtime->typeDictAtPut(type_dict, key, name);
+    return *type;
   }
 
   Type type(&scope, *metaclass);
@@ -175,7 +249,7 @@ RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
   frame->pushValue(*type);
   frame->pushValue(*name);
   frame->pushValue(*bases);
-  frame->pushValue(*dict_obj);
+  frame->pushValue(*type_dict);
   return Interpreter::call(thread, frame, 4);
 }
 

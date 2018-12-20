@@ -743,4 +743,133 @@ TEST(BuiltinsModuleTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
   EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
 }
 
+TEST(BuiltinsModuleTest, PythonBuiltinAnnotationSetsFunctionSignature) {
+  Runtime runtime;
+  HandleScope scope;
+  // Since runtime.createMainModule is private, we have to create and add
+  // __main__ ourselves
+  Str main_sym(&scope, runtime.symbols()->DunderMain());
+  Module main(&scope, runtime.newModule(main_sym));
+  runtime.addModule(main);
+
+  // A little dance to bring the builtins.str into the globals so that
+  // buildClassKw can find it when bootstrapping.
+  Module builtins(&scope, findModule(&runtime, "builtins"));
+  Str str_sym(&scope, runtime.symbols()->Str());
+  Type str_type(&scope, runtime.moduleAt(builtins, str_sym));
+  runtime.moduleAtPut(main, str_sym, str_type);
+
+  // We can't run buildClassKw on str because there's already a bunch of junk
+  // defined on str that we don't want to try and re-patch. So we'll take a
+  // method from a new class and patch str with that. Gross.
+  runtime.runFromCStr(R"(
+class bumble():
+  def __lt__(self, other: str) -> bool:
+    """O, Canada"""
+    pass
+)");
+
+  Type bumble_type(&scope, moduleAt(&runtime, main, "bumble"));
+  Str dunder_lt_sym(&scope, runtime.symbols()->DunderLt());
+  Dict str_dict(&scope, str_type->dict());
+
+  // Clear the annotations so that we can meaningfully test the patch
+  Function str_lt(&scope, runtime.typeDictAt(str_dict, dunder_lt_sym));
+  str_lt->setAnnotations(RawNoneType::object());
+  ASSERT_TRUE(RawFunction::cast(runtime.typeDictAt(str_dict, dunder_lt_sym))
+                  .annotations()
+                  .isNoneType());
+
+  Dict bumble_dict(&scope, bumble_type->dict());
+  Function bumble_lt(&scope, runtime.typeDictAt(bumble_dict, dunder_lt_sym));
+  patchFunctionAttrs(Thread::currentThread(), str_dict, bumble_lt);
+
+  Dict annotations(&scope, str_lt->annotations());
+  EXPECT_EQ(annotations->numItems(), 2);
+  Str other_name(&scope, runtime.newStrFromCStr("other"));
+  Object other_ann(&scope, runtime.dictAt(annotations, other_name));
+  ASSERT_TRUE(other_ann->isType());
+  EXPECT_EQ(RawType::cast(*other_ann), *str_type);
+  Str return_name(&scope, runtime.newStrFromCStr("return"));
+  Object return_ann(&scope, runtime.dictAt(annotations, return_name));
+  ASSERT_TRUE(return_ann->isType());
+  EXPECT_EQ(RawType::cast(*return_ann), moduleAt(&runtime, builtins, "bool"));
+}
+
+TEST(BuiltinsModuleTest, PythonBuiltinAnnotationSetsFunctionDocString) {
+  Runtime runtime;
+  HandleScope scope;
+  // Since runtime.createMainModule is private, we have to create and add
+  // __main__ ourselves
+  Str main_sym(&scope, runtime.symbols()->DunderMain());
+  Module main(&scope, runtime.newModule(main_sym));
+  runtime.addModule(main);
+
+  // A little dance to bring the builtins.str into the globals so that
+  // buildClassKw can find it when bootstrapping.
+  Module builtins(&scope, findModule(&runtime, "builtins"));
+  Str str_sym(&scope, runtime.symbols()->Str());
+  Type str_type(&scope, runtime.moduleAt(builtins, str_sym));
+  runtime.moduleAtPut(main, str_sym, str_type);
+
+  // We can't run buildClassKw on str because there's already a bunch of junk
+  // defined on str that we don't want to try and re-patch. So we'll take a
+  // method from a new class and patch str with that. Gross.
+  runtime.runFromCStr(R"(
+class bumble():
+  def __lt__(self, other):
+    """O, Canada"""
+    pass
+)");
+
+  Type bumble_type(&scope, moduleAt(&runtime, main, "bumble"));
+  Str dunder_lt_sym(&scope, runtime.symbols()->DunderLt());
+  Dict bumble_dict(&scope, bumble_type->dict());
+  Function bumble_lt(&scope, runtime.typeDictAt(bumble_dict, dunder_lt_sym));
+  Dict str_dict(&scope, str_type->dict());
+  patchFunctionAttrs(Thread::currentThread(), str_dict, bumble_lt);
+
+  Function dunder_lt(&scope, runtime.typeDictAt(str_dict, dunder_lt_sym));
+  ASSERT_TRUE(dunder_lt->isFunction());
+  Object doc_object(&scope, dunder_lt->doc());
+  ASSERT_TRUE(doc_object->isStr());
+  Str doc(&scope, *doc_object);
+  EXPECT_PYSTRING_EQ(doc, "O, Canada");
+}
+
+TEST(BuiltinsModuleDeathTest,
+     PythonBuiltinAnnotationCannotOverrideNativeDefinition) {
+  Runtime runtime;
+  HandleScope scope;
+  // Since runtime.createMainModule is private, we have to create and add
+  // __main__ ourselves
+  Str main_sym(&scope, runtime.symbols()->DunderMain());
+  Module main(&scope, runtime.newModule(main_sym));
+  runtime.addModule(main);
+
+  // A little dance to bring the builtins.str into the globals so that
+  // buildClassKw can find it when bootstrapping.
+  Module builtins(&scope, findModule(&runtime, "builtins"));
+  Str str_sym(&scope, runtime.symbols()->Str());
+  Type str_type(&scope, runtime.moduleAt(builtins, str_sym));
+  runtime.moduleAtPut(main, str_sym, str_type);
+
+  // We can't run buildClassKw on str because there's already a bunch of junk
+  // defined on str that we don't want to try and re-patch. So we'll take a
+  // method from a new class and patch str with that. Gross.
+  runtime.runFromCStr(R"(
+class bumble():
+  def __lt__(self, other):
+    return "moose"
+)");
+
+  Type bumble_type(&scope, moduleAt(&runtime, main, "bumble"));
+  Str dunder_lt_sym(&scope, runtime.symbols()->DunderLt());
+  Dict bumble_dict(&scope, bumble_type->dict());
+  Function bumble_lt(&scope, runtime.typeDictAt(bumble_dict, dunder_lt_sym));
+  Dict str_dict(&scope, str_type->dict());
+  ASSERT_DEATH(patchFunctionAttrs(Thread::currentThread(), str_dict, bumble_lt),
+               "Redefinition of native code method __lt__ in managed code");
+}
+
 }  // namespace python

@@ -13,6 +13,8 @@ extern std::ostream* builtinStderr;
 
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject hasAttribute(Thread* thread, const Object& self, const Object& name);
+void patchFunctionAttrs(Thread* thread, const Dict& type_dict,
+                        const Function& patch);
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
                        const Object& value);
 

@@ -6,6 +6,9 @@ class object(bootstrap=True):  # noqa: E999
     def __str__(self):
         return self.__repr__()
 
+    def __hash__(self) -> int:
+        pass
+
 
 class ImportError(bootstrap=True):
     def __init__(self, *args, name=None, path=None, **kwargs):
@@ -50,6 +53,9 @@ class tuple(bootstrap=True):
             output += repr(self[i])
             i += 1
         return output + ")"
+
+    def __eq__(self, other) -> bool:
+        pass
 
 
 class list(bootstrap=True):
@@ -237,3 +243,51 @@ class str(bootstrap=True):
 
     def __str__(self):
         return self
+
+    def __add__(self, s: str) -> str:
+        pass
+
+    def __mul__(self, n: int) -> str:
+        pass
+
+    def __rmul__(self, n: int) -> str:
+        pass
+
+    def __eq__(self, x) -> bool:
+        pass
+
+    def __ne__(self, x) -> bool:
+        pass
+
+    def __lt__(self, x: str) -> bool:
+        pass
+
+    def __le__(self, x: str) -> bool:
+        pass
+
+    def __gt__(self, x: str) -> bool:
+        pass
+
+    def __ge__(self, x: str) -> bool:
+        pass
+
+    def __len__(self) -> int:
+        pass
+
+    def __contains__(self, s: object) -> bool:
+        pass
+
+    # This method requires a non-primitive type for its annotation and cannot
+    # yet be typed here.
+    def __iter__(self):
+        pass
+
+    # This method requires a non-primitive type for its annotation and cannot
+    # yet be typed here.
+    def __mod__(self, value):
+        pass
+
+    # This method requires a non-primitive type for its annotation and cannot
+    # yet be typed here.
+    def __getitem__(self, i):
+        pass
