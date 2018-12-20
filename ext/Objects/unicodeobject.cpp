@@ -275,10 +275,13 @@ PY_EXPORT PyObject* PyUnicode_Decode(const char* /* s */, Py_ssize_t /* e */,
   UNIMPLEMENTED("PyUnicode_Decode");
 }
 
-PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* /* s */,
-                                          Py_ssize_t /* e */,
-                                          const char* /* s */) {
-  UNIMPLEMENTED("PyUnicode_DecodeASCII");
+PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* c_str, Py_ssize_t size,
+                                          const char* /* errors */) {
+  // TODO(T38200137): Make use of the errors handler
+  Thread* thread = Thread::currentThread();
+  return ApiHandle::newReference(
+      thread, thread->runtime()->newStrWithAll(
+                  View<byte>(reinterpret_cast<const byte*>(c_str), size)));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeCharmap(const char* /* s */,

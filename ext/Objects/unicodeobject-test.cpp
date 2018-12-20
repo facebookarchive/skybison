@@ -334,4 +334,12 @@ TEST_F(UnicodeExtensionApiTest,
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(UnicodeExtensionApiTest, DecodeASCIIReturnsString) {
+  PyObjectPtr str(PyUnicode_DecodeASCII("hello world", 11, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello world"));
+}
+
 }  // namespace python
