@@ -40,18 +40,19 @@ class Marshal {
     RawObject readTypeCode();
     RawObject readTypeRef();
 
-    RawObject doTupleElements(int32 length);
-
-    word addRef(RawObject value);
-    void setRef(word index, RawObject value);
-    RawObject getRef(word index);
     word numRefs();
+    RawObject getRef(word index);
 
    private:
+    word addRef(RawObject value);
+    void setRef(word index, RawObject value);
+
     RawObject readStr(word length);
     RawObject readAndInternStr(word length);
     RawObject readLongObject();
+
     RawObject doSetElements(int32 length, RawObject set);
+    RawObject doTupleElements(int32 length);
 
     Runtime* runtime_;
     List refs_;
