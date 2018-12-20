@@ -386,5 +386,18 @@ RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   return runtime->run(compileWithCache(c_str).get());
 }
 
+// Equivalent to evaluating "list(range(start, stop))" in Python
+RawObject listFromRange(word start, word stop) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  List result(&scope, thread->runtime()->newList());
+  Object value(&scope, NoneType::object());
+  for (word i = start; i < stop; i++) {
+    value = SmallInt::fromWord(i);
+    thread->runtime()->listAdd(result, value);
+  }
+  return *result;
+}
+
 }  // namespace testing
 }  // namespace python

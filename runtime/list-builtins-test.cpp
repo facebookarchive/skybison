@@ -235,19 +235,6 @@ print(l[0], l[3], l[5])
   ASSERT_EQ(output, "1 4 6\n6 4 1\n");
 }
 
-// Equivalent to evaluating "list(range(start, stop))" in Python
-static RawObject listFromRange(word start, word stop) {
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-  List result(&scope, thread->runtime()->newList());
-  Object value(&scope, NoneType::object());
-  for (word i = start; i < stop; i++) {
-    value = SmallInt::fromWord(i);
-    thread->runtime()->listAdd(result, value);
-  }
-  return *result;
-}
-
 TEST(ListBuiltinsTest, SlicePositiveStartIndex) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();

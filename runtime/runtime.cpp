@@ -1533,6 +1533,7 @@ void Runtime::initializeThreads() {
 
 void Runtime::initializePrimitiveInstances() {
   empty_object_array_ = heap()->createTuple(0, NoneType::object());
+  empty_frozen_set_ = newFrozenSet();
   empty_byte_array_ = heap()->createBytes(0);
   ellipsis_ = heap()->createEllipsis();
   not_implemented_ = heap()->create<RawNotImplemented>();
@@ -1571,6 +1572,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
   // Visit instances
   visitor->visitPointer(&empty_byte_array_);
+  visitor->visitPointer(&empty_frozen_set_);
   visitor->visitPointer(&empty_object_array_);
   visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&not_implemented_);
@@ -2758,7 +2760,7 @@ RawObject Runtime::setAdd(const SetBase& set, const Object& value) {
 RawObject Runtime::setCopy(const SetBase& set) {
   word num_items = set->numItems();
   if (num_items == 0) {
-    return isInstanceOfSet(*set) ? newSet() : newFrozenSet();
+    return isInstanceOfSet(*set) ? newSet() : emptyFrozenSet();
   }
 
   HandleScope scope;
@@ -2828,7 +2830,7 @@ bool Runtime::setIncludes(const SetBase& set, const Object& value) {
 
 RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
                                    const Object& iterable) {
-  HandleScope scope;
+  HandleScope scope(thread);
   SetBase dst(&scope, isInstanceOfSet(*set) ? Runtime::newSet()
                                             : Runtime::newFrozenSet());
   Object key(&scope, NoneType::object());
@@ -3467,6 +3469,8 @@ RawObject Runtime::newTupleIterator(const Object& tuple) {
   result->setTuple(*tuple);
   return *result;
 }
+
+RawObject Runtime::emptyFrozenSet() { return empty_frozen_set_; }
 
 RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
   // The base class can only be one of the builtin bases including object.

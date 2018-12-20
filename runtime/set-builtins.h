@@ -22,7 +22,6 @@ class SetBaseBuiltins {
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject intersection(Thread* thread, Frame* frame, word nargs);
   static RawObject isDisjoint(Thread* thread, Frame* frame, word nargs);
 };
@@ -33,6 +32,7 @@ class SetBuiltins : public SetBaseBuiltins {
 
   static RawObject dunderIand(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject add(Thread* thread, Frame* frame, word nargs);
   static RawObject pop(Thread* thread, Frame* frame, word nargs);
 
@@ -46,6 +46,8 @@ class SetBuiltins : public SetBaseBuiltins {
 class FrozenSetBuiltins : public SetBaseBuiltins {
  public:
   static void initialize(Runtime* runtime);
+
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinAttribute kAttributes[];

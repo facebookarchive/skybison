@@ -260,7 +260,7 @@ TEST(SetBuiltinsTest, SetIntersectionWithFrozenSetReturnsSet) {
   Runtime runtime;
   HandleScope scope;
   Set set(&scope, runtime.newSet());
-  FrozenSet frozen_set(&scope, runtime.newFrozenSet());
+  FrozenSet frozen_set(&scope, runtime.emptyFrozenSet());
   Object result(&scope, runBuiltin(SetBuiltins::intersection, set, frozen_set));
   ASSERT_TRUE(result->isSet());
 }
@@ -268,7 +268,7 @@ TEST(SetBuiltinsTest, SetIntersectionWithFrozenSetReturnsSet) {
 TEST(SetBuiltinsTest, FrozenSetIntersectionWithSetReturnsFrozenSet) {
   Runtime runtime;
   HandleScope scope;
-  FrozenSet frozen_set(&scope, runtime.newFrozenSet());
+  FrozenSet frozen_set(&scope, runtime.emptyFrozenSet());
   Set set(&scope, runtime.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::intersection, frozen_set, set));
   ASSERT_TRUE(result->isFrozenSet());
@@ -278,7 +278,7 @@ TEST(SetBuiltinsTest, SetAndWithFrozenSetReturnsSet) {
   Runtime runtime;
   HandleScope scope;
   Set set(&scope, runtime.newSet());
-  FrozenSet frozen_set(&scope, runtime.newFrozenSet());
+  FrozenSet frozen_set(&scope, runtime.emptyFrozenSet());
   Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, set, frozen_set));
   ASSERT_TRUE(result->isSet());
 }
@@ -286,7 +286,7 @@ TEST(SetBuiltinsTest, SetAndWithFrozenSetReturnsSet) {
 TEST(SetBuiltinsTest, FrozenSetAndWithSetReturnsFrozenSet) {
   Runtime runtime;
   HandleScope scope;
-  FrozenSet frozen_set(&scope, runtime.newFrozenSet());
+  FrozenSet frozen_set(&scope, runtime.emptyFrozenSet());
   Set set(&scope, runtime.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, frozen_set, set));
   ASSERT_TRUE(result->isFrozenSet());
@@ -1083,6 +1083,93 @@ s = Set([0, 1, 2])
   Object result(&scope, runBuiltin(SetBuiltins::dunderLen, s));
   ASSERT_TRUE(result.isInt());
   EXPECT_EQ(RawSmallInt::cast(*result).value(), 3);
+}
+
+TEST(SetBuiltinsTest, FrozenSetDunderNewReturnsSingleton) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
+  Object obj(&scope, runBuiltin(FrozenSetBuiltins::dunderNew, type));
+  EXPECT_TRUE(obj->isFrozenSet());
+  EXPECT_EQ(*obj, runtime.emptyFrozenSet());
+}
+
+TEST(SetBuiltinsTest, SubclassOfFrozenSetDunderNewDoesNotReturnSingleton) {
+  Runtime runtime;
+  runtime.runFromCStr(R"(
+class C(frozenset):
+    pass
+o = C()
+)");
+  HandleScope scope;
+  Object o(&scope, moduleAt(&runtime, "__main__", "o"));
+  EXPECT_NE(*o, runtime.emptyFrozenSet());
+}
+
+TEST(SetBuiltinsTest, FrozenSetDunderNewFromEmptyIterableReturnsSingleton) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
+  List empty_iterable(&scope, runtime.newList());
+  Object result(&scope,
+                runBuiltin(FrozenSetBuiltins::dunderNew, type, empty_iterable));
+  EXPECT_EQ(*result, runtime.emptyFrozenSet());
+}
+
+TEST(SetBuiltinsTest, FrozenSetDunderNewFromFrozenSetIsIdempotent) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
+  List nonempty_list(&scope, listFromRange(1, 5));
+  FrozenSet frozenset(&scope, runtime.newFrozenSet());
+  frozenset =
+      runtime.setUpdate(Thread::currentThread(), frozenset, nonempty_list);
+  Object result(&scope,
+                runBuiltin(FrozenSetBuiltins::dunderNew, type, frozenset));
+  EXPECT_EQ(*result, *frozenset);
+}
+
+TEST(SetBuiltinsTest, FrozenSetDunderNewFromIterableContainsIterableElements) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
+  List nonempty_list(&scope, listFromRange(1, 5));
+  Object result_obj(
+      &scope, runBuiltin(FrozenSetBuiltins::dunderNew, type, nonempty_list));
+  ASSERT_TRUE(result_obj->isFrozenSet());
+  FrozenSet result(&scope, *result_obj);
+  EXPECT_EQ(result->numItems(), 4);
+  Int one(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(runtime.setIncludes(result, one));
+  Int two(&scope, SmallInt::fromWord(2));
+  EXPECT_TRUE(runtime.setIncludes(result, two));
+  Int three(&scope, SmallInt::fromWord(3));
+  EXPECT_TRUE(runtime.setIncludes(result, three));
+  Int four(&scope, SmallInt::fromWord(4));
+  EXPECT_TRUE(runtime.setIncludes(result, four));
+}
+
+TEST(SetBuiltinsTest, FrozenSetFromIterableIsNotSingleton) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
+  List nonempty_list(&scope, listFromRange(1, 5));
+  Object result1(&scope,
+                 runBuiltin(FrozenSetBuiltins::dunderNew, type, nonempty_list));
+  ASSERT_TRUE(result1->isFrozenSet());
+  Object result2(&scope,
+                 runBuiltin(FrozenSetBuiltins::dunderNew, type, nonempty_list));
+  ASSERT_TRUE(result2->isFrozenSet());
+  ASSERT_NE(*result1, *result2);
+}
+
+TEST(SetBuiltinsTest, FrozenSetDunderNewWithNonIterableThrowsTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
+  Object none(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(FrozenSetBuiltins::dunderNew, type, none));
+  ASSERT_TRUE(result->isError());
 }
 
 }  // namespace python

@@ -41,27 +41,6 @@ RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
   return Bool::fromBool(thread->runtime()->setIncludes(set, value));
 }
 
-RawObject SetBaseBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1) {
-    return thread->raiseTypeErrorWithCStr("not enough arguments");
-  }
-  Arguments args(frame, nargs);
-  if (!args.get(0)->isType()) {
-    return thread->raiseTypeErrorWithCStr("not a type object");
-  }
-  HandleScope scope(thread);
-  Type type(&scope, args.get(0));
-  if (type->builtinBase() != LayoutId::kSet &&
-      type->builtinBase() != LayoutId::kFrozenSet) {
-    return thread->raiseTypeErrorWithCStr("not a subtype of set or frozenset");
-  }
-  Layout layout(&scope, type->instanceLayout());
-  SetBase result(&scope, thread->runtime()->newInstance(layout));
-  result->setNumItems(0);
-  result->setData(thread->runtime()->newTuple(0));
-  return *result;
-}
-
 RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs != 1) {
@@ -396,6 +375,52 @@ void FrozenSetBuiltins::initialize(Runtime* runtime) {
   frozen_set->sealAttributes();
 }
 
+RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
+                                       word nargs) {
+  if (nargs < 1 || nargs > 2) {
+    return thread->raiseTypeErrorWithCStr(
+        "frozenset.__new__ expects 1-2 arguments");
+  }
+  Arguments args(frame, nargs);
+  if (!args.get(0)->isType()) {
+    return thread->raiseTypeErrorWithCStr("not a type object");
+  }
+  HandleScope scope(thread);
+  Type type(&scope, args.get(0));
+  if (type->builtinBase() != LayoutId::kFrozenSet) {
+    return thread->raiseTypeErrorWithCStr("not a subtype of frozenset");
+  }
+  if (nargs == 1 && type->isBuiltin() &&
+      type->builtinBase() == LayoutId::kFrozenSet) {
+    return thread->runtime()->emptyFrozenSet();
+  }
+  if (nargs > 1) {
+    Object iterable(&scope, args.get(1));
+    // frozenset(f) where f is a frozenset is idempotent
+    if (iterable->isFrozenSet()) {
+      return *iterable;
+    }
+    Object dunder_iter(
+        &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                          iterable, SymbolId::kDunderIter));
+    if (dunder_iter->isError()) {
+      return thread->raiseTypeErrorWithCStr(
+          "frozenset.__new__ must be called with an iterable");
+    }
+    FrozenSet result(&scope, thread->runtime()->newFrozenSet());
+    result = thread->runtime()->setUpdate(thread, result, iterable);
+    if (result->numItems() == 0) {
+      return thread->runtime()->emptyFrozenSet();
+    }
+    return *result;
+  }
+  Layout layout(&scope, type->instanceLayout());
+  FrozenSet result(&scope, thread->runtime()->newInstance(layout));
+  result->setNumItems(0);
+  result->setData(thread->runtime()->newTuple(0));
+  return *result;
+}
+
 const BuiltinAttribute SetBuiltins::kAttributes[] = {
     {SymbolId::kItems, Set::kDataOffset},
     {SymbolId::kAllocated, Set::kNumItemsOffset},
@@ -535,6 +560,27 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   }
   // num_items == 0 or all buckets were found empty
   return thread->raiseKeyErrorWithCStr("pop from an empty set");
+}
+
+RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1) {
+    return thread->raiseTypeErrorWithCStr(
+        "set.__new__ expects at least 1 argument");
+  }
+  Arguments args(frame, nargs);
+  if (!args.get(0)->isType()) {
+    return thread->raiseTypeErrorWithCStr("not a type object");
+  }
+  HandleScope scope(thread);
+  Type type(&scope, args.get(0));
+  if (type->builtinBase() != LayoutId::kSet) {
+    return thread->raiseTypeErrorWithCStr("not a subtype of set");
+  }
+  Layout layout(&scope, type->instanceLayout());
+  Set result(&scope, thread->runtime()->newInstance(layout));
+  result->setNumItems(0);
+  result->setData(thread->runtime()->newTuple(0));
+  return *result;
 }
 
 const BuiltinMethod SetIteratorBuiltins::kMethods[] = {

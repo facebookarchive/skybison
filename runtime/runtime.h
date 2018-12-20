@@ -84,6 +84,7 @@ class Runtime {
 
   RawObject newSet();
 
+  RawObject emptyFrozenSet();
   RawObject newFrozenSet();
 
   RawObject newBuiltinFunction(SymbolId name, Function::Entry entry,
@@ -800,6 +801,7 @@ class Runtime {
 
   // Cached instances
   RawObject empty_byte_array_;
+  RawObject empty_frozen_set_;
   RawObject empty_object_array_;
   RawObject ellipsis_;
   RawObject not_implemented_;

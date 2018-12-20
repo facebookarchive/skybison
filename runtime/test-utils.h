@@ -180,5 +180,7 @@ using unique_file_ptr = std::unique_ptr<char, FileDeleter>;
 // Create an empty code object for testing purposes
 RawObject newEmptyCode(Runtime* runtime);
 
+RawObject listFromRange(word start, word stop);
+
 }  // namespace testing
 }  // namespace python
