@@ -508,4 +508,75 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   EXPECT_EQ(RawBytes::cast(code->lnotab())->length(), 0);
 }
 
+TEST(MarshalReaderTest, ReadObjectSetOnEmptySetReturnsEmptySet) {
+  Runtime runtime;
+  HandleScope scope;
+  // marshal.dumps(set())
+  Marshal::Reader reader(&scope, &runtime, "\xbc\x00\x00\x00\x00");
+  Object obj(&scope, reader.readObject());
+  ASSERT_TRUE(obj->isSet());
+  EXPECT_EQ(RawSet::cast(*obj).numItems(), 0);
+}
+
+TEST(MarshalReaderTest, ReadObjectSetOnNonEmptySetReturnsCorrectNonEmptySet) {
+  Runtime runtime;
+  HandleScope scope;
+  // marshal.dumps(set([1,2,3]))
+  const char* buffer =
+      "\xbc\x03\x00\x00\x00\xe9\x01\x00\x00\x00\xe9\x02\x00\x00\x00\xe9\x03\x00"
+      "\x00\x00";
+  Marshal::Reader reader(&scope, &runtime, buffer);
+  Object obj(&scope, reader.readObject());
+  ASSERT_TRUE(obj->isSet());
+  Set set(&scope, *obj);
+  EXPECT_EQ(set->numItems(), 3);
+  Int one(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(runtime.setIncludes(set, one));
+  Int two(&scope, SmallInt::fromWord(2));
+  EXPECT_TRUE(runtime.setIncludes(set, two));
+  Int three(&scope, SmallInt::fromWord(3));
+  EXPECT_TRUE(runtime.setIncludes(set, three));
+}
+
+TEST(MarshalReaderTest, ReadObjectFrozenSetOnEmptySetReturnsEmptyFrozenSet) {
+  Runtime runtime;
+  HandleScope scope;
+  // marshal.dumps(frozenset())
+  Marshal::Reader reader(&scope, &runtime, "\xbe\x00\x00\x00\x00");
+  Object obj(&scope, reader.readObject());
+  ASSERT_TRUE(obj->isFrozenSet());
+  EXPECT_EQ(RawFrozenSet::cast(*obj).numItems(), 0);
+}
+
+TEST(MarshalReaderTest,
+     ReadObjectFrozenSetOnEmptySetReturnsEmptyFrozenSetSingleton) {
+  Runtime runtime;
+  HandleScope scope;
+  // marshal.dumps(frozenset())
+  Marshal::Reader reader(&scope, &runtime, "\xbe\x00\x00\x00\x00");
+  Object obj(&scope, reader.readObject());
+  ASSERT_EQ(*obj, runtime.emptyFrozenSet());
+}
+
+TEST(MarshalReaderTest,
+     ReadObjectFrozenSetOnNonEmptySetReturnsCorrectNonEmptyFrozenSet) {
+  Runtime runtime;
+  HandleScope scope;
+  // marshal.dumps(frozenset([1,2,3]))
+  const char* buffer =
+      "\xbe\x03\x00\x00\x00\xe9\x01\x00\x00\x00\xe9\x02\x00\x00\x00\xe9\x03\x00"
+      "\x00\x00";
+  Marshal::Reader reader(&scope, &runtime, buffer);
+  Object obj(&scope, reader.readObject());
+  ASSERT_TRUE(obj->isFrozenSet());
+  FrozenSet set(&scope, *obj);
+  EXPECT_EQ(set->numItems(), 3);
+  Int one(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(runtime.setIncludes(set, one));
+  Int two(&scope, SmallInt::fromWord(2));
+  EXPECT_TRUE(runtime.setIncludes(set, two));
+  Int three(&scope, SmallInt::fromWord(3));
+  EXPECT_TRUE(runtime.setIncludes(set, three));
+}
+
 }  // namespace python

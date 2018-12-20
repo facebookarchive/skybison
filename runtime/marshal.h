@@ -35,6 +35,8 @@ class Marshal {
     RawObject readTypeShortAsciiInterned();
     RawObject readTypeSmallTuple();
     RawObject readTypeTuple();
+    RawObject readTypeSet();
+    RawObject readTypeFrozenSet();
     RawObject readTypeCode();
     RawObject readTypeRef();
 
@@ -49,6 +51,7 @@ class Marshal {
     RawObject readStr(word length);
     RawObject readAndInternStr(word length);
     RawObject readLongObject();
+    RawObject doSetElements(int32 length, RawObject set);
 
     Runtime* runtime_;
     List refs_;

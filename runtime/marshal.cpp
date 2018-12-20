@@ -223,11 +223,11 @@ RawObject Marshal::Reader::readObject() {
       break;
 
     case TYPE_SET:
-      UNIMPLEMENTED("TYPE_SET");
+      result = readTypeSet();
       break;
 
     case TYPE_FROZENSET:
-      UNIMPLEMENTED("TYPE_FROZENSET");
+      result = readTypeFrozenSet();
       break;
 
     case TYPE_CODE:
@@ -344,6 +344,35 @@ RawObject Marshal::Reader::doTupleElements(int32 length) {
     RawTuple::cast(result)->atPut(i, value);
   }
   return result;
+}
+
+RawObject Marshal::Reader::readTypeSet() {
+  int32 n = readLong();
+  return doSetElements(n, runtime_->newSet());
+}
+
+RawObject Marshal::Reader::readTypeFrozenSet() {
+  int32 n = readLong();
+  if (n == 0) {
+    return runtime_->emptyFrozenSet();
+  }
+  return doSetElements(n, runtime_->newFrozenSet());
+}
+
+RawObject Marshal::Reader::doSetElements(int32 n, RawObject raw_set) {
+  if (isRef_) {
+    addRef(raw_set);
+  }
+  HandleScope scope;
+  SetBase set(&scope, raw_set);
+  for (int32 i = 0; i < n; i++) {
+    Object value(&scope, readObject());
+    RawObject result = runtime_->setAdd(set, value);
+    if (result.isError()) {
+      return result;
+    }
+  }
+  return *set;
 }
 
 RawObject Marshal::Reader::readTypeCode() {
