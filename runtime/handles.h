@@ -188,7 +188,8 @@ class Handle : public T {
   V(StopIteration)                                                             \
   V(SystemExit)                                                                \
   V(Type)                                                                      \
-  V(UserFloatBase)
+  V(UserFloatBase)                                                             \
+  V(UserTupleBase)
 
 #define HANDLE_ALIAS(ty) using ty = Handle<class Raw##ty>;
 HANDLE_TYPES(HANDLE_ALIAS)

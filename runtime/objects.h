@@ -865,6 +865,19 @@ class RawTuple : public RawArray {
   RAW_OBJECT_COMMON(Tuple);
 };
 
+class RawUserTupleBase : public RawHeapObject {
+ public:
+  // Getters and setters.
+  RawObject tupleValue();
+  void setTupleValue(RawObject value);
+
+  // RawLayout.
+  static const int kTupleOffset = RawHeapObject::kSize;
+  static const int kSize = kTupleOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(UserTupleBase);
+};
+
 class RawLargeStr : public RawArray {
  public:
   // Sizing.
@@ -3017,6 +3030,17 @@ inline RawObject RawTuple::at(word index) {
 inline void RawTuple::atPut(word index, RawObject value) {
   DCHECK_INDEX(index, length());
   instanceVariableAtPut(index * kPointerSize, value);
+}
+
+// RawUserTupleBase
+
+inline RawObject RawUserTupleBase::tupleValue() {
+  return instanceVariableAt(kTupleOffset);
+}
+
+inline void RawUserTupleBase::setTupleValue(RawObject value) {
+  DCHECK(value->isTuple(), "Only tuple type is permitted as a value");
+  instanceVariableAtPut(kTupleOffset, value);
 }
 
 // RawCode

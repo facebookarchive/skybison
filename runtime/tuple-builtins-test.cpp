@@ -38,6 +38,37 @@ slice = t[1:3]
   EXPECT_EQ(RawSmallInt::cast(tuple->at(1))->value(), 3);
 }
 
+TEST(TupleBuiltinsTest, SubscriptWithTupleSubclassReturnsValue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo(tuple): pass
+obj = Foo((0, 1))
+item = obj[0]
+)");
+  HandleScope scope;
+  Object item(&scope, moduleAt(&runtime, "__main__", "item"));
+  ASSERT_TRUE(item->isInt());
+  Int num(&scope, *item);
+  EXPECT_EQ(num->asWord(), 0);
+}
+
+TEST(TupleBuiltinsTest, SubscriptWithTupleSubclassReturnsSliceValue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo(tuple): pass
+obj = Foo((0, 1, 2, 3, 4))
+slice = obj[1:3]
+)");
+  HandleScope scope;
+  Object slice(&scope, moduleAt(&runtime, "__main__", "slice"));
+  ASSERT_TRUE(slice->isTuple());
+
+  Tuple tuple(&scope, *slice);
+  ASSERT_EQ(tuple->length(), 2);
+  EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(tuple->at(1))->value(), 2);
+}
+
 TEST(TupleBuiltinsTest, DunderLen) {
   Runtime runtime;
   HandleScope scope;
@@ -51,6 +82,30 @@ b_len = tuple.__len__(b)
 b_len_implicit = b.__len__()
 )");
 
+  Int a_len(&scope, moduleAt(&runtime, "__main__", "a_len"));
+  Int a_len_implicit(&scope, moduleAt(&runtime, "__main__", "a_len_implicit"));
+  Int b_len(&scope, moduleAt(&runtime, "__main__", "b_len"));
+  Int b_len_implicit(&scope, moduleAt(&runtime, "__main__", "b_len_implicit"));
+
+  EXPECT_EQ(a_len->asWord(), 3);
+  EXPECT_EQ(a_len->asWord(), a_len_implicit->asWord());
+  EXPECT_EQ(b_len->asWord(), 0);
+  EXPECT_EQ(b_len->asWord(), b_len_implicit->asWord());
+}
+
+TEST(TupleBuiltinsTest, DunderLenWithTupleSubclassReturnsLen) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo(tuple): pass
+a = Foo((1, 2, 3))
+a_len = tuple.__len__(a)
+a_len_implicit = a.__len__()
+b = Foo(())
+b_len = tuple.__len__(b)
+b_len_implicit = b.__len__()
+)");
+
+  HandleScope scope;
   Int a_len(&scope, moduleAt(&runtime, "__main__", "a_len"));
   Int a_len_implicit(&scope, moduleAt(&runtime, "__main__", "a_len_implicit"));
   Int b_len(&scope, moduleAt(&runtime, "__main__", "b_len"));
@@ -301,6 +356,17 @@ TEST(TupleBuiltinsTest, DunderReprWithNoElements) {
   EXPECT_PYSTRING_EQ(*a, "()");
 }
 
+TEST(TupleBuiltinsTest, DunderReprWithTupleSubclassReturnsTupleRepr) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo(tuple): pass
+repr = Foo((1, 2, 3)).__repr__()
+)");
+  HandleScope scope;
+  Str repr(&scope, moduleAt(&runtime, "__main__", "repr"));
+  EXPECT_PYSTRING_EQ(*repr, "(1, 2, 3)");
+}
+
 TEST(TupleBuiltinsTest, DunderMulWithOneElement) {
   Runtime runtime;
   runFromCStr(&runtime, "a = (1,) * 4");
@@ -347,11 +413,34 @@ TEST(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
   EXPECT_EQ(a->length(), 0);
 }
 
+TEST(TupleBuiltinsTest, DunderMulWithTupleSubclassReturnsTuple) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo(tuple): pass
+a = Foo((1, 2, 3)) * 2
+)");
+  HandleScope scope;
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(a->isTuple());
+}
+
 TEST(TupleBuiltinsTest, DunderIterReturnsTupleIter) {
   Runtime runtime;
   HandleScope scope;
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
   Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, empty_tuple));
+  ASSERT_TRUE(iter->isTupleIterator());
+}
+
+TEST(TupleBuiltinsTest, DunderIterWithTupleSubclassReturnsTupleIter) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo(tuple): pass
+a = Foo()
+)");
+  HandleScope scope;
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, a));
   ASSERT_TRUE(iter->isTupleIterator());
 }
 

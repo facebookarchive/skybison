@@ -562,13 +562,6 @@ class Runtime {
     return RawType::cast(typeOf(obj)).isBaseExceptionSubclass();
   }
 
-  // UserFloatBase has no corresponding LayoutId, so we detect it by looking
-  // for an object that is a float subclass but not exactly float.
-  bool isInstanceOfUserFloatBase(RawObject obj) {
-    return !obj.isFloat() &&
-           RawType::cast(typeOf(obj)).builtinBase() == LayoutId::kFloat;
-  }
-
   // SetBase must also be handled specially because many builtin functions
   // accept set or frozenset, despite them not having a common ancestor.
   bool isInstanceOfSetBase(RawObject instance) {
@@ -578,6 +571,20 @@ class Runtime {
     LayoutId builtin_base = RawType::cast(typeOf(instance)).builtinBase();
     return builtin_base == LayoutId::kSet ||
            builtin_base == LayoutId::kFrozenSet;
+  }
+
+  // UserFloatBase has no corresponding LayoutId, so we detect it by looking
+  // for an object that is a float subclass but not exactly float.
+  bool isInstanceOfUserFloatBase(RawObject obj) {
+    return !obj.isFloat() &&
+           RawType::cast(typeOf(obj)).builtinBase() == LayoutId::kFloat;
+  }
+
+  // UserTupleBase has no corresponding LayoutId, so we detect it by looking
+  // for an object that is a tuple subclass but not exactly tuple.
+  bool isInstanceOfUserTupleBase(RawObject obj) {
+    return !obj.isTuple() &&
+           RawType::cast(typeOf(obj)).builtinBase() == LayoutId::kTuple;
   }
 
   // Clear the allocated memory from all extension related objects

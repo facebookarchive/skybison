@@ -10,6 +10,10 @@
 
 namespace python {
 
+const BuiltinAttribute TupleBuiltins::kAttributes[] = {
+    {SymbolId::kInvalid, RawUserTupleBase::kTupleOffset},
+};
+
 const BuiltinMethod TupleBuiltins::kMethods[] = {
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
@@ -30,29 +34,42 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
   Arguments args(frame, nargs);
-  if (args.get(0)->isTuple() && args.get(1)->isTuple()) {
-    HandleScope scope(thread);
-    Tuple self(&scope, args.get(0));
-    Tuple other(&scope, args.get(1));
-    if (self->length() != other->length()) {
-      return Bool::falseObj();
-    }
-    Object left(&scope, NoneType::object());
-    Object right(&scope, NoneType::object());
-    word length = self->length();
-    for (word i = 0; i < length; i++) {
-      left = self->at(i);
-      right = other->at(i);
-      RawObject result =
-          Interpreter::compareOperation(thread, frame, EQ, left, right);
-      if (result == Bool::falseObj()) {
-        return result;
-      }
-    }
-    return Bool::trueObj();
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfTuple(self_obj) ||
+      !runtime->isInstanceOfTuple(other_obj)) {
+    return runtime->notImplemented();
   }
-  // TODO(cshapiro): handle user-defined subtypes of tuple.
-  return thread->runtime()->notImplemented();
+
+  if (!self_obj->isTuple()) {
+    UserTupleBase user_self(&scope, *self_obj);
+    self_obj = user_self->tupleValue();
+  }
+  if (!other_obj->isTuple()) {
+    UserTupleBase user_other(&scope, *other_obj);
+    other_obj = user_other->tupleValue();
+  }
+
+  Tuple self(&scope, *self_obj);
+  Tuple other(&scope, *other_obj);
+  if (self->length() != other->length()) {
+    return Bool::falseObj();
+  }
+  Object left(&scope, NoneType::object());
+  Object right(&scope, NoneType::object());
+  word length = self->length();
+  for (word i = 0; i < length; i++) {
+    left = self->at(i);
+    right = other->at(i);
+    RawObject result =
+        Interpreter::compareOperation(thread, frame, EQ, left, right);
+    if (result == Bool::falseObj()) {
+      return result;
+    }
+  }
+  return Bool::trueObj();
 }
 
 RawObject TupleBuiltins::slice(Thread* thread, const Tuple& tuple,
@@ -80,30 +97,36 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (self->isTuple()) {
-    Tuple tuple(&scope, *self);
-    Object index(&scope, args.get(1));
-    if (index->isSmallInt()) {
-      word idx = RawSmallInt::cast(index)->value();
-      if (idx < 0) {
-        idx = tuple->length() - idx;
-      }
-      if (idx < 0 || idx >= tuple->length()) {
-        return thread->raiseIndexErrorWithCStr("tuple index out of range");
-      }
-      return tuple->at(idx);
-    }
-    if (index->isSlice()) {
-      Slice tuple_slice(&scope, *index);
-      return slice(thread, tuple, tuple_slice);
-    }
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfTuple(self)) {
     return thread->raiseTypeErrorWithCStr(
-        "tuple indices must be integers or slices");
+        "__getitem__() must be called with a tuple instance as the first "
+        "argument");
   }
-  // TODO(jeethu): handle user-defined subtypes of tuple.
+
+  if (!self->isTuple()) {
+    UserTupleBase user_tuple(&scope, *self);
+    self = user_tuple->tupleValue();
+  }
+
+  Tuple tuple(&scope, *self);
+  Object index(&scope, args.get(1));
+  if (index->isSmallInt()) {
+    word idx = RawSmallInt::cast(*index)->value();
+    if (idx < 0) {
+      idx = tuple->length() - idx;
+    }
+    if (idx < 0 || idx >= tuple->length()) {
+      return thread->raiseIndexErrorWithCStr("tuple index out of range");
+    }
+    return tuple->at(idx);
+  }
+  if (index->isSlice()) {
+    Slice tuple_slice(&scope, *index);
+    return slice(thread, tuple, tuple_slice);
+  }
   return thread->raiseTypeErrorWithCStr(
-      "__getitem__() must be called with a tuple instance as the first "
-      "argument");
+      "tuple indices must be integers or slices");
 }
 
 RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
@@ -114,12 +137,17 @@ RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
-  if (!obj->isTuple()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfTuple(obj)) {
     return thread->raiseTypeErrorWithCStr(
         "tuple.__len__(self): self is not a tuple");
   }
+  if (!obj->isTuple()) {
+    UserTupleBase user_tuple(&scope, *obj);
+    obj = user_tuple->tupleValue();
+  }
   Tuple self(&scope, *obj);
-  return thread->runtime()->newInt(self->length());
+  return runtime->newInt(self->length());
 }
 
 RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
@@ -133,7 +161,12 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Tuple self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj->isTuple()) {
+    UserTupleBase user_tuple(&scope, *self_obj);
+    self_obj = user_tuple->tupleValue();
+  }
+  Tuple self(&scope, *self_obj);
   Object rhs(&scope, args.get(1));
   if (!rhs->isInt()) {
     return thread->raiseTypeErrorWithCStr("can't multiply sequence by non-int");
@@ -168,6 +201,16 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   return *new_tuple;
 }
 
+static RawObject newTupleOrUserSubclass(Thread* thread, const Tuple& tuple,
+                                        const Type& type) {
+  if (type->isBuiltin()) return *tuple;
+  HandleScope scope(thread);
+  Layout layout(&scope, type->instanceLayout());
+  UserTupleBase instance(&scope, thread->runtime()->newInstance(layout));
+  instance->setTupleValue(*tuple);
+  return *instance;
+}
+
 RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 1) {
     return thread->raiseTypeErrorWithCStr(
@@ -195,7 +238,8 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   // If no iterable is given as an argument, return an empty zero tuple.
   if (nargs == 1) {
-    return runtime->newTuple(0);
+    Tuple tuple(&scope, runtime->newTuple(0));
+    return newTupleOrUserSubclass(thread, tuple, type);
   }
 
   // Construct a new tuple from the iterable.
@@ -242,7 +286,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   // If the result is perfectly sized, return it.
   if (curr == max_len) {
-    return *result;
+    return newTupleOrUserSubclass(thread, result, type);
   }
 
   // The result was over-allocated, shrink it.
@@ -250,7 +294,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   for (word i = 0; i < curr; i++) {
     new_tuple->atPut(i, result->at(i));
   }
-  return *new_tuple;
+  return newTupleOrUserSubclass(thread, new_tuple, type);
 }
 
 RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
@@ -261,12 +305,17 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
 
-  if (!self->isTuple()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfTuple(self)) {
     return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a tuple instance as the first "
         "argument");
   }
-  return thread->runtime()->newTupleIterator(self);
+  if (!self->isTuple()) {
+    UserTupleBase user_tuple(&scope, *self);
+    self = user_tuple->tupleValue();
+  }
+  return runtime->newTupleIterator(self);
 }
 
 const BuiltinMethod TupleIteratorBuiltins::kMethods[] = {

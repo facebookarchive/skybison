@@ -23,6 +23,7 @@ class TupleBuiltins {
                          const Slice& slice);
 
  private:
+  static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleBuiltins);

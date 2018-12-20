@@ -6,7 +6,27 @@
 
 namespace python {
 
+using namespace testing;
+
 using TupleExtensionApiTest = ExtensionApi;
+
+TEST_F(TupleExtensionApiTest, CheckWithTupleSubclassReturnsTrue) {
+  PyRun_SimpleString(R"(
+class Foo(tuple): pass
+obj = Foo((1, 2));
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_TRUE(PyTuple_Check(obj));
+}
+
+TEST_F(TupleExtensionApiTest, CheckExactWithTupleSubclassReturnsFalse) {
+  PyRun_SimpleString(R"(
+class Foo(tuple): pass
+obj = Foo((1, 2));
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_FALSE(PyTuple_CheckExact(obj));
+}
 
 TEST_F(TupleExtensionApiTest, NewAndSize) {
   Py_ssize_t length = 5;
@@ -36,6 +56,17 @@ TEST_F(TupleExtensionApiTest, SetItemReturnsZero) {
   PyObject* pytuple = PyTuple_New(1);
   int result = PyTuple_SetItem(pytuple, 0, Py_None);
   EXPECT_EQ(result, 0);
+}
+
+TEST_F(TupleExtensionApiTest, SetItemWithTupleSubclassRaisesSystemError) {
+  PyRun_SimpleString(R"(
+class Foo(tuple): pass
+obj = Foo((1, 2));
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyTuple_SetItem(obj, 0, Py_None), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(TupleExtensionApiTest, GetItemFromNonTupleReturnsNull) {
@@ -84,6 +115,18 @@ TEST_F(TupleExtensionApiTest, GetItemReturnsBorrowedReference) {
   // PyTuple_GetItem "borrows" a reference for the return value.  Verify the
   // reference count did not change.
   EXPECT_EQ(Py_REFCNT(pyresult), refcnt);
+}
+
+TEST_F(TupleExtensionApiTest, GetItemWithTupleSubclassReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo(tuple): pass
+obj = Foo((1, 2));
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr first(PyTuple_GetItem(obj, 0));
+  PyObjectPtr second(PyTuple_GetItem(obj, 1));
+  EXPECT_EQ(PyLong_AsLong(first), 1);
+  EXPECT_EQ(PyLong_AsLong(second), 2);
 }
 
 TEST_F(TupleExtensionApiTest, PackZeroReturnsEmptyTuple) {
