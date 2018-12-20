@@ -1,3 +1,5 @@
+#include <cerrno>
+
 #include "cpython-data.h"
 #include "cpython-func.h"
 
@@ -178,24 +180,60 @@ PY_EXPORT void PyErr_SetExcInfo(PyObject* /* e */, PyObject* /* e */,
   UNIMPLEMENTED("PyErr_SetExcInfo");
 }
 
-PY_EXPORT PyObject* PyErr_SetFromErrno(PyObject* /* c */) {
-  UNIMPLEMENTED("PyErr_SetFromErrno");
+static void setFromErrno(PyObject* type, PyObject* name1, PyObject* name2) {
+  int saved_errno = errno;
+  if (saved_errno == EINTR) {
+    UNIMPLEMENTED("&& PyErr_CheckSignals() != 0) return;");
+  }
+
+  const char* str = saved_errno ? strerror(saved_errno) : "Error";
+  DCHECK(str != nullptr);
+  PyObject* msg = PyUnicode_FromString(str);
+  PyObject* err = PyLong_FromLong(saved_errno);
+  PyObject* result;
+  if (name1 == nullptr) {
+    DCHECK(name2 == nullptr);
+    result = PyObject_CallFunctionObjArgs(type, err, msg, nullptr);
+  } else if (name2 == nullptr) {
+    result = PyObject_CallFunctionObjArgs(type, err, msg, name1, nullptr);
+  } else {
+    PyObject* zero = PyLong_FromLong(0);
+    result = PyObject_CallFunctionObjArgs(type, err, msg, name1, zero, name2,
+                                          nullptr);
+    Py_DECREF(zero);
+  }
+
+  Py_DECREF(msg);
+  Py_DECREF(err);
+  DCHECK(result != nullptr);
+  PyErr_SetObject(type, result);
+  Py_DECREF(result);
 }
 
-PY_EXPORT PyObject* PyErr_SetFromErrnoWithFilename(PyObject* /* c */,
-                                                   const char* /* e */) {
-  UNIMPLEMENTED("PyErr_SetFromErrnoWithFilename");
+PY_EXPORT PyObject* PyErr_SetFromErrno(PyObject* type) {
+  setFromErrno(type, nullptr, nullptr);
+  return nullptr;
 }
 
-PY_EXPORT PyObject* PyErr_SetFromErrnoWithFilenameObject(PyObject* /* c */,
-                                                         PyObject* /* t */) {
-  UNIMPLEMENTED("PyErr_SetFromErrnoWithFilenameObject");
+PY_EXPORT PyObject* PyErr_SetFromErrnoWithFilename(PyObject* type,
+                                                   const char* filename) {
+  PyObject* name = filename ? PyUnicode_FromString(filename) : nullptr;
+  setFromErrno(type, name, nullptr);
+  Py_XDECREF(name);
+  return nullptr;
 }
 
-PY_EXPORT PyObject* PyErr_SetFromErrnoWithFilenameObjects(PyObject* /* c */,
-                                                          PyObject* /* t */,
-                                                          PyObject* /* 2 */) {
-  UNIMPLEMENTED("PyErr_SetFromErrnoWithFilenameObjects");
+PY_EXPORT PyObject* PyErr_SetFromErrnoWithFilenameObject(PyObject* type,
+                                                         PyObject* name) {
+  setFromErrno(type, name, nullptr);
+  return nullptr;
+}
+
+PY_EXPORT PyObject* PyErr_SetFromErrnoWithFilenameObjects(PyObject* type,
+                                                          PyObject* name1,
+                                                          PyObject* name2) {
+  setFromErrno(type, name1, name2);
+  return nullptr;
 }
 
 PY_EXPORT PyObject* PyErr_SetFromWindowsErr(int /* r */) {

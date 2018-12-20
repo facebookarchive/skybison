@@ -1,3 +1,5 @@
+#include <cerrno>
+
 #include "gtest/gtest.h"
 
 #include "Python.h"
@@ -325,6 +327,46 @@ class BadException(Exception):
 
   Py_DECREF(val);
   Py_DECREF(exc);
+}
+
+TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithZeroSetsError) {
+  errno = 0;
+  ASSERT_EQ(PyErr_SetFromErrno(PyExc_TypeError), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithNonZeroSetsError) {
+  errno = 1;
+  ASSERT_EQ(PyErr_SetFromErrno(PyExc_SystemError), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithFilenameSetsError) {
+  errno = 1;
+  ASSERT_EQ(PyErr_SetFromErrnoWithFilename(PyExc_NameError, "foo"), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_NameError));
+}
+
+TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithFilenameObjectSetsError) {
+  errno = 1;
+  PyObjectPtr foo(PyUnicode_FromString("foo"));
+  ASSERT_EQ(PyErr_SetFromErrnoWithFilenameObject(PyExc_KeyError, foo), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyError));
+}
+
+TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithFilenameObjectsSetsError) {
+  errno = 1;
+  PyObjectPtr foo(PyUnicode_FromString("foo"));
+  PyObjectPtr bar(PyUnicode_FromString("bar"));
+  ASSERT_EQ(
+      PyErr_SetFromErrnoWithFilenameObjects(PyExc_ChildProcessError, foo, bar),
+      nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ChildProcessError));
 }
 
 }  // namespace python
