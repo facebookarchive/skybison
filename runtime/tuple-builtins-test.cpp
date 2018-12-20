@@ -84,7 +84,7 @@ TEST(TupleBuiltinsTest, SlicePositiveStartIndex) {
   Object stop(&scope, NoneType::object());
   Object step(&scope, NoneType::object());
   Slice slice(&scope, runtime.newSlice(start, stop, step));
-  Tuple test(&scope, TupleBuiltins::slice(thread, *tuple1, *slice));
+  Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test->length(), 3);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 3);
   EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 4);
@@ -102,7 +102,7 @@ TEST(TupleBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
   Object stop(&scope, NoneType::object());
   Object step(&scope, NoneType::object());
   Slice slice(&scope, runtime.newSlice(start, stop, step));
-  Tuple test(&scope, TupleBuiltins::slice(thread, *tuple1, *slice));
+  Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test->length(), 2);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 4);
   EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 5);
@@ -119,7 +119,7 @@ TEST(TupleBuiltinsTest, SlicePositiveStopIndex) {
   Object stop(&scope, SmallInt::fromWord(2));
   Object step(&scope, NoneType::object());
   Slice slice(&scope, runtime.newSlice(start, stop, step));
-  Tuple test(&scope, TupleBuiltins::slice(thread, *tuple1, *slice));
+  Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test->length(), 2);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
   EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 2);
@@ -136,7 +136,7 @@ TEST(TupleBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
   Object stop(&scope, SmallInt::fromWord(-2));
   Object step(&scope, NoneType::object());
   Slice slice(&scope, runtime.newSlice(start, stop, step));
-  Tuple test(&scope, TupleBuiltins::slice(thread, *tuple1, *slice));
+  Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test->length(), 3);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
   EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 2);
@@ -154,7 +154,7 @@ TEST(TupleBuiltinsTest, SlicePositiveStep) {
   Object stop(&scope, NoneType::object());
   Object step(&scope, SmallInt::fromWord(2));
   Slice slice(&scope, runtime.newSlice(start, stop, step));
-  Tuple test(&scope, TupleBuiltins::slice(thread, *tuple1, *slice));
+  Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test->length(), 3);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
   EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 3);
@@ -172,7 +172,7 @@ TEST(TupleBuiltinsTest, SliceNegativeStepReversesOrder) {
   Object stop(&scope, NoneType::object());
   Object step(&scope, SmallInt::fromWord(-2));
   Slice slice(&scope, runtime.newSlice(start, stop, step));
-  Tuple test(&scope, TupleBuiltins::slice(thread, *tuple1, *slice));
+  Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test->length(), 3);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 5);
   EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 3);
@@ -190,7 +190,7 @@ TEST(TupleBuiltinsTest, SliceStartIndexOutOfBounds) {
   Object stop(&scope, NoneType::object());
   Object step(&scope, NoneType::object());
   Slice slice(&scope, runtime.newSlice(start, stop, step));
-  Tuple test(&scope, TupleBuiltins::slice(thread, *tuple1, *slice));
+  Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test->length(), 0);
 }
 
@@ -205,7 +205,7 @@ TEST(TupleBuiltinsTest, SliceStopIndexOutOfBounds) {
   Object stop(&scope, SmallInt::fromWord(10));
   Object step(&scope, NoneType::object());
   Slice slice(&scope, runtime.newSlice(start, stop, step));
-  Tuple test(&scope, TupleBuiltins::slice(thread, *tuple1, *slice));
+  Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test->length(), 5);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
   EXPECT_EQ(RawSmallInt::cast(test->at(4))->value(), 5);
@@ -222,7 +222,7 @@ TEST(TupleBuiltinsTest, SliceStepOutOfBounds) {
   Object stop(&scope, NoneType::object());
   Object step(&scope, SmallInt::fromWord(10));
   Slice slice(&scope, runtime.newSlice(start, stop, step));
-  Tuple test(&scope, TupleBuiltins::slice(thread, *tuple1, *slice));
+  Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test->length(), 1);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
 }
@@ -238,7 +238,7 @@ TEST(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
   Object stop(&scope, NoneType::object());
   Object step(&scope, NoneType::object());
   Slice slice(&scope, runtime.newSlice(start, stop, step));
-  Tuple test1(&scope, TupleBuiltins::slice(thread, *tuple1, *slice));
+  Tuple test1(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(*test1, *tuple1);
 }
 

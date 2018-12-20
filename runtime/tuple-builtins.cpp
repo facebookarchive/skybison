@@ -55,7 +55,8 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-RawObject TupleBuiltins::slice(Thread* thread, RawTuple tuple, RawSlice slice) {
+RawObject TupleBuiltins::slice(Thread* thread, const Tuple& tuple,
+                               const Slice& slice) {
   word start, stop, step;
   slice->unpack(&start, &stop, &step);
   word length = Slice::adjustIndices(tuple->length(), &start, &stop, step);
@@ -81,7 +82,7 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   Object self(&scope, args.get(0));
   if (self->isTuple()) {
     Tuple tuple(&scope, *self);
-    RawObject index = args.get(1);
+    Object index(&scope, args.get(1));
     if (index->isSmallInt()) {
       word idx = RawSmallInt::cast(index)->value();
       if (idx < 0) {
@@ -93,8 +94,8 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
       return tuple->at(idx);
     }
     if (index->isSlice()) {
-      Slice tuple_slice(&scope, RawSlice::cast(index));
-      return slice(thread, *tuple, *tuple_slice);
+      Slice tuple_slice(&scope, *index);
+      return slice(thread, tuple, tuple_slice);
     }
     return thread->raiseTypeErrorWithCStr(
         "tuple indices must be integers or slices");
