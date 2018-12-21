@@ -4021,6 +4021,33 @@ RawObject Runtime::strIteratorNext(Thread* thread, StrIterator& iter) {
   return RawSmallStr::fromCStr(buffer);
 }
 
+RawObject Runtime::normalizeLargeInt(const LargeInt& large_int) {
+  word shrink_to_digits = large_int->numDigits();
+  for (word digit = large_int->digitAt(shrink_to_digits - 1), next_digit;
+       shrink_to_digits > 1; --shrink_to_digits, digit = next_digit) {
+    next_digit = large_int->digitAt(shrink_to_digits - 2);
+    // break if we have neither a redundant sign-extension nor a redundnant
+    // zero-extension.
+    if ((digit != -1 || next_digit >= 0) && (digit != 0 || next_digit < 0)) {
+      break;
+    }
+  }
+  if (shrink_to_digits == 1 && RawSmallInt::isValid(large_int->digitAt(0))) {
+    return RawSmallInt::fromWord(large_int->digitAt(0));
+  }
+  if (shrink_to_digits == large_int->numDigits()) {
+    return *large_int;
+  }
+
+  // Shrink.  Future Optimization: Shrink in-place instead of copying.
+  RawLargeInt result =
+      RawLargeInt::cast(heap()->createLargeInt(shrink_to_digits));
+  for (word i = 0; i < shrink_to_digits; ++i) {
+    result->digitAtPut(i, large_int->digitAt(i));
+  }
+  return result;
+}
+
 RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
                                const Int& right) {
   word left_digits = left->numDigits();
@@ -4032,14 +4059,21 @@ RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
   HandleScope scope(thread);
   Int longer(&scope, left_digits > right_digits ? *left : *right);
   Int shorter(&scope, left_digits <= right_digits ? *left : *right);
-  LargeInt result(&scope, heap()->createLargeInt(longer->numDigits()));
-  for (word i = 0; i < shorter->numDigits(); i++) {
+  word num_digits = longer->numDigits();
+  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  for (word i = 0; i < shorter->numDigits(); ++i) {
     result->digitAtPut(i, longer->digitAt(i) | shorter->digitAt(i));
   }
-  for (word i = shorter->numDigits(); i < longer->numDigits(); i++) {
-    result->digitAtPut(i, longer->digitAt(i));
+  if (shorter.isNegative()) {
+    for (word i = shorter->numDigits(); i < num_digits; ++i) {
+      result->digitAtPut(i, kMaxUword);
+    }
+  } else {
+    for (word i = shorter->numDigits(); i < num_digits; ++i) {
+      result->digitAtPut(i, longer->digitAt(i));
+    }
   }
-  return *result;
+  return normalizeLargeInt(result);
 }
 
 RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num, word shift) {

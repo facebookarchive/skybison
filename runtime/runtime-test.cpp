@@ -3303,6 +3303,92 @@ TEST(RuntimeIntTest, BinaryOrWithLargeInts) {
   EXPECT_EQ(expected->compare(Int::cast(result)), 0);
 }
 
+TEST(RuntimeIntTest, NormalizeLargeIntToSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  LargeInt lint_42(&scope, newLargeIntWithDigits({42}));
+  Object norm_42(&scope, runtime.normalizeLargeInt(lint_42));
+  ASSERT_TRUE(norm_42->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(norm_42)->value(), 42);
+
+  LargeInt lint_neg1(&scope, newLargeIntWithDigits({uword(-1)}));
+  Object norm_neg1(&scope, runtime.normalizeLargeInt(lint_neg1));
+  ASSERT_TRUE(norm_neg1->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(norm_neg1)->value(), -1);
+
+  LargeInt lint_min(&scope,
+                    newLargeIntWithDigits({uword(RawSmallInt::kMinValue)}));
+  Object norm_min(&scope, runtime.normalizeLargeInt(lint_min));
+  ASSERT_TRUE(norm_min->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(norm_min)->value(), RawSmallInt::kMinValue);
+
+  LargeInt lint_max(&scope, newLargeIntWithDigits({RawSmallInt::kMaxValue}));
+  Object norm_max(&scope, runtime.normalizeLargeInt(lint_max));
+  ASSERT_TRUE(norm_max->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(norm_max)->value(), RawSmallInt::kMaxValue);
+
+  LargeInt lint_sext_neg_4(&scope,
+                           newLargeIntWithDigits({uword(-4), kMaxUword}));
+  Object norm_neg_4(&scope, runtime.normalizeLargeInt(lint_sext_neg_4));
+  ASSERT_TRUE(norm_neg_4->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(norm_neg_4)->value(), -4);
+
+  LargeInt lint_sext_neg_13(
+      &scope,
+      newLargeIntWithDigits({uword(-13), kMaxUword, kMaxUword, kMaxUword}));
+  Object norm_neg_13(&scope, runtime.normalizeLargeInt(lint_sext_neg_13));
+  ASSERT_TRUE(norm_neg_13->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(norm_neg_13)->value(), -13);
+
+  LargeInt lint_zext_66(&scope, newLargeIntWithDigits({66, 0}));
+  Object norm_66(&scope, runtime.normalizeLargeInt(lint_zext_66));
+  ASSERT_TRUE(norm_66->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(norm_66)->value(), 66);
+}
+
+TEST(RuntimeIntTest, NormalizeLargeIntToLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  LargeInt lint_max(&scope, newLargeIntWithDigits({kMaxWord}));
+  Object norm_max(&scope, runtime.normalizeLargeInt(lint_max));
+  ASSERT_TRUE(norm_max->isLargeInt());
+  EXPECT_EQ(RawLargeInt::cast(norm_max)->asWord(), kMaxWord);
+
+  LargeInt lint_min(&scope, newLargeIntWithDigits({uword(kMinWord)}));
+  Object norm_min(&scope, runtime.normalizeLargeInt(lint_min));
+  ASSERT_TRUE(norm_min->isLargeInt());
+  EXPECT_EQ(RawLargeInt::cast(norm_min)->asWord(), kMinWord);
+
+  LargeInt lint_max_sub_7_zext(&scope,
+                               newLargeIntWithDigits({kMaxWord - 7, 0, 0}));
+  Object norm_max_sub_7(&scope, runtime.normalizeLargeInt(lint_max_sub_7_zext));
+  ASSERT_TRUE(norm_max_sub_7->isLargeInt());
+  EXPECT_EQ(RawLargeInt::cast(norm_max_sub_7)->asWord(), kMaxWord - 7);
+
+  LargeInt lint_min_plus_9_sext(
+      &scope, newLargeIntWithDigits({uword(kMinWord) + 9, kMaxUword}));
+  Object norm_min_plus_9(&scope,
+                         runtime.normalizeLargeInt(lint_min_plus_9_sext));
+  ASSERT_TRUE(norm_min_plus_9->isLargeInt());
+  EXPECT_EQ(RawLargeInt::cast(norm_min_plus_9)->asWord(), kMinWord + 9);
+
+  LargeInt lint_no_sext(&scope, newLargeIntWithDigits({0, kMaxUword}));
+  Object norm_no_sext(&scope, runtime.normalizeLargeInt(lint_no_sext));
+  ASSERT_TRUE(norm_no_sext->isLargeInt());
+  EXPECT_EQ(RawLargeInt::cast(norm_no_sext)->numDigits(), 2);
+  EXPECT_EQ(RawLargeInt::cast(norm_no_sext)->digitAt(0), uword{0});
+  EXPECT_EQ(RawLargeInt::cast(norm_no_sext)->digitAt(1), kMaxUword);
+
+  LargeInt lint_no_zext(&scope, newLargeIntWithDigits({kMaxUword, 0}));
+  Object norm_no_zext(&scope, runtime.normalizeLargeInt(lint_no_zext));
+  ASSERT_TRUE(norm_no_zext->isLargeInt());
+  EXPECT_EQ(RawLargeInt::cast(norm_no_zext)->numDigits(), 2);
+  EXPECT_EQ(RawLargeInt::cast(norm_no_zext)->digitAt(0), kMaxUword);
+  EXPECT_EQ(RawLargeInt::cast(norm_no_zext)->digitAt(1), uword{0});
+}
+
 TEST(RuntimeIntTest, BinaryLshiftWithPositive) {
   Runtime runtime;
   HandleScope scope;

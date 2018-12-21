@@ -287,6 +287,17 @@ RawObject newIntWithDigits(Runtime* runtime, const std::vector<uword>& digits) {
   return runtime->newIntWithDigits(View<uword>(digits.data(), digits.size()));
 }
 
+RawLargeInt newLargeIntWithDigits(const std::vector<uword>& digits) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  LargeInt result(&scope,
+                  thread->runtime()->heap()->createLargeInt(digits.size()));
+  for (word i = 0, e = digits.size(); i < e; ++i) {
+    result.digitAtPut(i, digits[i]);
+  }
+  return *result;
+}
+
 RawObject setFromRange(word start, word stop) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
