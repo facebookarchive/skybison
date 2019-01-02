@@ -983,7 +983,7 @@ class RawUserFloatBase : public RawHeapObject {
 
   // RawLayout.
   static const int kFloatOffset = RawHeapObject::kSize;
-  static const int kSize = kFloatOffset + kDoubleSize;
+  static const int kSize = kFloatOffset + kPointerSize;
 
   RAW_OBJECT_COMMON_NO_CAST(UserFloatBase);
 };
