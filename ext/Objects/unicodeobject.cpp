@@ -389,7 +389,8 @@ PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
   Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
   if (runtime->isInstanceOfStr(*left_obj) &&
       runtime->isInstanceOfStr(*right_obj)) {
-    return RawStr::cast(*left_obj)->compare(*right_obj);
+    Str left_str(&scope, *left_obj);
+    return left_str->compare(*right_obj);
   }
 
   Str ltype(&scope, Type::cast(runtime->typeOf(*left_obj))->name());
