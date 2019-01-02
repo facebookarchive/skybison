@@ -342,4 +342,168 @@ TEST_F(UnicodeExtensionApiTest, DecodeASCIIReturnsString) {
   EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello world"));
 }
 
+TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterPrepareWithLenZeroReturnsZero) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  ASSERT_EQ(_PyUnicodeWriter_Prepare(&writer, 0, 127), 0);
+  PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
+
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 0);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, ""));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       PyUnicodeWriterWithOverallocateSetOverallocates) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  writer.overallocate = 0;
+  ASSERT_EQ(_PyUnicodeWriter_Prepare(&writer, 5, 127), 0);
+  ASSERT_EQ(writer.size, 5);
+  _PyUnicodeWriter_Dealloc(&writer);
+
+  _PyUnicodeWriter_Init(&writer);
+  writer.overallocate = 1;
+  ASSERT_EQ(_PyUnicodeWriter_Prepare(&writer, 5, 127), 0);
+  ASSERT_GT(writer.size, 5);
+  PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
+
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 0);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, ""));
+}
+
+TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterCreatesEmptyString) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  PyObjectPtr empty(_PyUnicodeWriter_Finish(&writer));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(empty));
+  EXPECT_EQ(PyUnicode_GetSize(empty), 0);
+}
+
+TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterWritesASCIIStrings) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  ASSERT_EQ(_PyUnicodeWriter_WriteASCIIString(&writer, "hello", 5), 0);
+  ASSERT_EQ(_PyUnicodeWriter_WriteASCIIString(&writer, " world", 6), 0);
+  PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
+
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "hello world"));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       WriteASCIIStringWithNegativeLengthReturnsString) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  ASSERT_EQ(_PyUnicodeWriter_WriteASCIIString(&writer, "hello world", -1), 0);
+  PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
+
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "hello world"));
+}
+
+TEST_F(UnicodeExtensionApiTest, WriteASCIIStringWithNonASCIIDeathTestPyro) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  EXPECT_DEATH(_PyUnicodeWriter_WriteASCIIString(&writer, "\xA0", 1),
+               "_PyUnicodeWriter_WriteASCIIString only takes ASCII");
+  _PyUnicodeWriter_Dealloc(&writer);
+}
+
+TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterWritesChars) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  ASSERT_EQ(_PyUnicodeWriter_WriteChar(&writer, 'a'), 0);
+  ASSERT_EQ(_PyUnicodeWriter_WriteChar(&writer, 'b'), 0);
+  PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
+
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 2);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "ab"));
+}
+
+TEST_F(UnicodeExtensionApiTest, WriteCharWithNonASCIIDeathTestPyro) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  ASSERT_EQ(_PyUnicodeWriter_WriteChar(&writer, 0xA0), 0);
+  EXPECT_DEATH(
+      _PyUnicodeWriter_Finish(&writer),
+      "unimplemented: PyUnicode currently only supports ASCII characters");
+  _PyUnicodeWriter_Dealloc(&writer);
+}
+
+TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterWritesLatin1String) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  ASSERT_EQ(_PyUnicodeWriter_WriteLatin1String(&writer, "hello", 5), 0);
+  ASSERT_EQ(_PyUnicodeWriter_WriteLatin1String(&writer, " world", 6), 0);
+  PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
+
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "hello world"));
+}
+
+TEST_F(UnicodeExtensionApiTest, WriteLatin1WithNonASCIIDeathTestPyro) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  ASSERT_EQ(_PyUnicodeWriter_WriteLatin1String(&writer, "\xA0", 1), 0);
+  EXPECT_DEATH(
+      _PyUnicodeWriter_Finish(&writer),
+      "unimplemented: PyUnicode currently only supports ASCII characters");
+  _PyUnicodeWriter_Dealloc(&writer);
+}
+
+TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterWritesStringObject) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  PyObjectPtr hello_str(PyUnicode_FromString("hello"));
+  PyObjectPtr world_str(PyUnicode_FromString(" world"));
+  ASSERT_EQ(_PyUnicodeWriter_WriteStr(&writer, hello_str), 0);
+  ASSERT_EQ(_PyUnicodeWriter_WriteStr(&writer, world_str), 0);
+  PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
+
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "hello world"));
+}
+
+TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterWritesSubStringObject) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  PyObjectPtr str(PyUnicode_FromString("hello world"));
+  ASSERT_EQ(_PyUnicodeWriter_WriteSubstring(&writer, str, 0, 5), 0);
+  ASSERT_EQ(_PyUnicodeWriter_WriteSubstring(&writer, str, 5, 11), 0);
+  PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
+
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, "hello world"));
+}
+
+TEST_F(UnicodeExtensionApiTest, WriteSubstringWithZeroEndReturnsString) {
+  _PyUnicodeWriter writer;
+  _PyUnicodeWriter_Init(&writer);
+  PyObjectPtr str(PyUnicode_FromString("hello"));
+  ASSERT_EQ(_PyUnicodeWriter_WriteSubstring(&writer, str, 0, 0), 0);
+  PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
+
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(unicode));
+  EXPECT_EQ(PyUnicode_GetSize(unicode), 0);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, ""));
+}
+
 }  // namespace python

@@ -869,6 +869,8 @@ PyAPI_FUNC(int) PyUnicode_KIND_Func(PyObject*);
 PyAPI_FUNC(void*) PyUnicode_DATA_Func(PyObject*);
 PyAPI_FUNC(Py_UCS4) PyUnicode_READ_Func(int, void*, Py_ssize_t);
 PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
+PyAPI_FUNC(void)
+    PyUnicode_WRITE_Func(enum PyUnicode_Kind, void*, Py_ssize_t, Py_UCS4);
 
 /* Macros */
 #define _Py_Dealloc (*_Py_Dealloc_Func)
@@ -924,6 +926,8 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
 #define PyUnicode_READ_CHAR(op, index)                                         \
   PyUnicode_READ_CHAR_Func((PyObject*)op, index)
 #define PyUnicode_READY(op) 0
+#define PyUnicode_WRITE(kind, data, index, value)                              \
+  PyUnicode_WRITE_Func(kind, data, index, value)
 
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))

@@ -29,6 +29,7 @@ HEADER_SYMBOL_REGEX = {
     "pyexc_macro": [
         SymbolRegex(regex=re.compile("^#define PyExc_\w+ ", re.MULTILINE), pos=1)
     ],
+    "enum": [SymbolRegex(regex=re.compile("^enum.*{", re.MULTILINE), pos=1)],
 }
 
 SOURCE_SYMBOL_REGEX = {
@@ -73,6 +74,7 @@ HEADER_DEFINITIONS_REGEX = {
             pos=2,
         )
     ],
+    "enum": [SymbolRegex(regex=re.compile("^enum(.|\n)*?};", re.MULTILINE), pos=1)],
 }
 
 SOURCE_DEFINITIONS_REGEX = {

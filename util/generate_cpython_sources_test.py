@@ -44,6 +44,25 @@ struct Bar {
         res = symbols_dict["struct"]
         self.assertListEqual(res, ["Foo", "Bar"])
 
+    def test_enum_regex_returns_multiple_symbols(self):
+        lines = """
+enum Foo {
+  baz1 = 0, /* Comment */
+  baz2 = 1,
+};
+
+typedef int FooBar;
+
+#define FooBaz 1,
+
+enum Bar {
+  baz3 = 0;
+};
+"""
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
+        res = symbols_dict["enum"]
+        self.assertListEqual(res, ["Foo", "Bar"])
+
     def test_macro_regex_returns_multiple_symbols(self):
         lines = """
 #define Foo 0, // Comment

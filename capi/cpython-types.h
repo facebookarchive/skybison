@@ -272,6 +272,13 @@ typedef struct PyStructSequence_Desc {
   int n_in_sequence;
 } PyStructSequence_Desc;
 
+enum PyUnicode_Kind {
+  PyUnicode_WCHAR_KIND = 0,
+  PyUnicode_1BYTE_KIND = 1,
+  PyUnicode_2BYTE_KIND = 2,
+  PyUnicode_4BYTE_KIND = 4
+};
+
 struct _Py_Identifier;
 struct _node;
 

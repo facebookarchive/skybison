@@ -1,12 +1,169 @@
 // unicodeobject.c implementation
+#include <cstring>
 #include <cwchar>
 
+#include "cpython-func.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
 #include "utils.h"
 
 namespace python {
+
+typedef byte Py_UCS1;
+typedef uint16_t Py_UCS2;
+
+static const int kOverallocateFactor = 4;
+
+struct _PyUnicodeWriter {  // NOLINT
+  PyObject* buffer;
+  void* data;
+  enum PyUnicode_Kind kind;
+  Py_UCS4 maxchar;
+  Py_ssize_t size;
+  Py_ssize_t pos;
+  Py_ssize_t min_length;
+  Py_UCS4 min_char;
+  unsigned char overallocate;
+  unsigned char readonly;
+};  // NOLINT
+
+PY_EXPORT void PyUnicode_WRITE_Func(enum PyUnicode_Kind kind, void* data,
+                                    Py_ssize_t index, Py_UCS4 value) {
+  if (kind == PyUnicode_1BYTE_KIND) {
+    static_cast<Py_UCS1*>(data)[index] = static_cast<Py_UCS1>(value);
+  } else if (kind == PyUnicode_2BYTE_KIND) {
+    static_cast<Py_UCS2*>(data)[index] = static_cast<Py_UCS2>(value);
+  } else {
+    DCHECK(kind == PyUnicode_4BYTE_KIND);
+    static_cast<Py_UCS4*>(data)[index] = static_cast<Py_UCS4>(value);
+  }
+}
+
+PY_EXPORT void _PyUnicodeWriter_Dealloc(_PyUnicodeWriter* writer) {
+  PyMem_Free(writer->data);
+}
+
+PY_EXPORT PyObject* _PyUnicodeWriter_Finish(_PyUnicodeWriter* writer) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Str str(&scope, thread->runtime()->newStrFromUTF32(View<int32>(
+                      static_cast<int32*>(writer->data), writer->pos)));
+  PyMem_Free(writer->data);
+  return ApiHandle::newReference(thread, *str);
+}
+
+PY_EXPORT void _PyUnicodeWriter_Init(_PyUnicodeWriter* writer) {
+  std::memset(writer, 0, sizeof(*writer));
+  writer->kind = PyUnicode_4BYTE_KIND;
+}
+
+PY_EXPORT int _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter* writer,
+                                               Py_ssize_t length,
+                                               Py_UCS4 /* maxchar */) {
+  writer->maxchar = kMaxUnicode;
+  if (length > kMaxWord - writer->pos) {
+    Thread::currentThread()->raiseMemoryError();
+    return -1;
+  }
+  Py_ssize_t newlen = writer->pos + length;
+  if (writer->data == nullptr) {
+    if (writer->overallocate &&
+        newlen <= (kMaxWord - newlen / kOverallocateFactor)) {
+      // overallocate to limit the number of realloc()
+      newlen += newlen / kOverallocateFactor;
+    }
+    writer->data = PyMem_Malloc(newlen * sizeof(int32));
+    if (writer->data == nullptr) return -1;
+  } else if (newlen > writer->size) {
+    if (writer->overallocate &&
+        newlen <= (kMaxWord - newlen / kOverallocateFactor)) {
+      // overallocate to limit the number of realloc()
+      newlen += newlen / kOverallocateFactor;
+    }
+    writer->data = PyMem_Realloc(writer->data, newlen * sizeof(int32));
+    if (writer->data == nullptr) return -1;
+  }
+  writer->size = newlen;
+  return 0;
+}
+
+PY_EXPORT int _PyUnicodeWriter_Prepare(_PyUnicodeWriter* writer,
+                                       Py_ssize_t length, Py_UCS4 maxchar) {
+  if (length <= writer->size - writer->pos || length == 0) return 0;
+  return _PyUnicodeWriter_PrepareInternal(writer, length, maxchar);
+}
+
+PY_EXPORT int _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter* writer,
+                                                const char* ascii,
+                                                Py_ssize_t len) {
+  if (len == -1) len = std::strlen(ascii);
+  if (writer->data == nullptr && !writer->overallocate) {
+    writer->data = PyMem_Malloc(len * sizeof(int32));
+    writer->size = len;
+  }
+
+  if (_PyUnicodeWriter_Prepare(writer, len, kMaxUnicode) == -1) return -1;
+  for (Py_ssize_t i = 0; i < len; ++i, writer->pos++) {
+    CHECK(ascii[i] >= 0, "_PyUnicodeWriter_WriteASCIIString only takes ASCII");
+    PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos, ascii[i]);
+  }
+  return 0;
+}
+
+PY_EXPORT int _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter* writer,
+                                               Py_UCS4 ch) {
+  if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0) return -1;
+  PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos, ch);
+  writer->pos++;
+  return 0;
+}
+
+PY_EXPORT int _PyUnicodeWriter_WriteChar(_PyUnicodeWriter* writer, Py_UCS4 ch) {
+  return _PyUnicodeWriter_WriteCharInline(writer, ch);
+}
+
+PY_EXPORT int _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter* writer,
+                                                 const char* str,
+                                                 Py_ssize_t len) {
+  if (_PyUnicodeWriter_Prepare(writer, len, kMaxUnicode) == -1) return -1;
+  for (Py_ssize_t i = 0; i < len; ++i, writer->pos++) {
+    PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos,
+                    str[i] & 0xFF);
+  }
+  return 0;
+}
+
+PY_EXPORT int _PyUnicodeWriter_WriteStr(_PyUnicodeWriter* writer,
+                                        PyObject* str) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Str src(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Py_ssize_t len = src->length();
+  if (_PyUnicodeWriter_Prepare(writer, len, kMaxUnicode) == -1) return -1;
+  for (Py_ssize_t i = 0; i < len; ++i, writer->pos++) {
+    PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos,
+                    src->charAt(i));
+  }
+  return 0;
+}
+
+PY_EXPORT int _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter* writer,
+                                              PyObject* str, Py_ssize_t start,
+                                              Py_ssize_t end) {
+  if (end == 0) return 0;
+  Py_ssize_t len = end - start;
+  if (_PyUnicodeWriter_Prepare(writer, len, kMaxUnicode) < 0) return -1;
+
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Str src(&scope, ApiHandle::fromPyObject(str)->asObject());
+  for (Py_ssize_t i = start; i < end; ++i, writer->pos++) {
+    PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos,
+                    src->charAt(i));
+  }
+  return 0;
+}
 
 PY_EXPORT int _PyUnicode_EqualToASCIIString(PyObject* unicode,
                                             const char* c_str) {
