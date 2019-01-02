@@ -546,17 +546,25 @@ PY_EXPORT PyObject* PyUnicode_DecodeUTF7Stateful(const char* /* s */,
   UNIMPLEMENTED("PyUnicode_DecodeUTF7Stateful");
 }
 
-PY_EXPORT PyObject* PyUnicode_DecodeUTF8(const char* /* s */,
-                                         Py_ssize_t /* e */,
-                                         const char* /* s */) {
-  UNIMPLEMENTED("PyUnicode_DecodeUTF8");
+PY_EXPORT PyObject* PyUnicode_DecodeUTF8(const char* c_str, Py_ssize_t size,
+                                         const char* /* errors */) {
+  // TODO(T38200137): Make use of the error_handler argument
+  Thread* thread = Thread::currentThread();
+  return ApiHandle::newReference(
+      thread, thread->runtime()->newStrWithAll(
+                  View<byte>(reinterpret_cast<const byte*>(c_str), size)));
 }
 
-PY_EXPORT PyObject* PyUnicode_DecodeUTF8Stateful(const char* /* s */,
-                                                 Py_ssize_t /* e */,
-                                                 const char* /* s */,
-                                                 Py_ssize_t* /* d */) {
-  UNIMPLEMENTED("PyUnicode_DecodeUTF8Stateful");
+PY_EXPORT PyObject* PyUnicode_DecodeUTF8Stateful(const char* c_str,
+                                                 Py_ssize_t size,
+                                                 const char* /* errors */,
+                                                 Py_ssize_t* /* consumed */) {
+  // TODO(T38200137): Make use of the errors argument
+  // TODO(T38320199): Make use of the consumed argument
+  Thread* thread = Thread::currentThread();
+  return ApiHandle::newReference(
+      thread, thread->runtime()->newStrWithAll(
+                  View<byte>(reinterpret_cast<const byte*>(c_str), size)));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeUnicodeEscape(const char* /* s */,

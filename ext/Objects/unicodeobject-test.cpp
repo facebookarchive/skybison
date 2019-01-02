@@ -506,4 +506,21 @@ TEST_F(UnicodeExtensionApiTest, WriteSubstringWithZeroEndReturnsString) {
   EXPECT_TRUE(_PyUnicode_EqualToASCIIString(unicode, ""));
 }
 
+TEST_F(UnicodeExtensionApiTest, DecodeUTF8ReturnsString) {
+  PyObjectPtr str(PyUnicode_DecodeUTF8("hello world", 11, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello world"));
+}
+
+TEST_F(UnicodeExtensionApiTest, DecodeUTF8StatefulReturnsString) {
+  PyObjectPtr str(
+      PyUnicode_DecodeUTF8Stateful("hello world", 11, nullptr, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello world"));
+}
+
 }  // namespace python
