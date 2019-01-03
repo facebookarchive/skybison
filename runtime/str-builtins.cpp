@@ -316,7 +316,7 @@ RawObject StrBuiltins::strFormat(Thread* thread, const Str& fmt,
   HandleScope scope(thread);
   Object result(&scope, thread->runtime()->newStrFromCStr(dst));
   std::free(dst);
-  return result;
+  return *result;
 }
 
 RawObject StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
@@ -408,7 +408,7 @@ RawObject StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (!ret->isError() && !runtime->isInstanceOfStr(ret)) {
     return thread->raiseTypeErrorWithCStr("__str__ returned non-string");
   }
-  return ret;
+  return *ret;
 }
 
 RawObject StrBuiltins::slice(Thread* thread, const Str& str,
