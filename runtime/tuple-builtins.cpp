@@ -24,9 +24,9 @@ const BuiltinMethod TupleBuiltins::kMethods[] = {
 
 void TupleBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithMethods(
-                        SymbolId::kTuple, LayoutId::kTuple, LayoutId::kObject,
-                        kMethods));
+  Type type(&scope,
+            runtime->addBuiltinType(SymbolId::kTuple, LayoutId::kTuple,
+                                    LayoutId::kObject, kAttributes, kMethods));
 }
 
 RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {

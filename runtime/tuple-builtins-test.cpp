@@ -9,6 +9,29 @@ namespace python {
 
 using namespace testing;
 
+TEST(TupleBuiltinsTest, TupleSubclassIsInstanceOfTuple) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo(tuple): pass
+a = Foo()
+)");
+  HandleScope scope;
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(runtime.isInstanceOfTuple(*a));
+}
+
+TEST(TupleBuiltinsTest, TupleSubclassHasTupleAttribute) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo(tuple): pass
+a = Foo()
+)");
+  HandleScope scope;
+  UserTupleBase a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object obj(&scope, a->tupleValue());
+  EXPECT_TRUE(obj->isTuple());
+}
+
 TEST(TupleBuiltinsTest, SubscriptTuple) {
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, R"(
