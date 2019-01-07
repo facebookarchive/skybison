@@ -14,6 +14,7 @@ const BuiltinMethod FunctionBuiltins::kMethods[] = {
 };
 
 const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
+    {SymbolId::kDunderCode, RawFunction::kCodeOffset},
     {SymbolId::kDunderDoc, RawFunction::kDocOffset},
     {SymbolId::kDunderModule, RawFunction::kModuleOffset},
     {SymbolId::kDunderName, RawFunction::kNameOffset},

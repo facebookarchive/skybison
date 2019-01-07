@@ -333,6 +333,7 @@ add_library(
   runtime/dict-builtins-test.cpp
   runtime/exception-builtins-test.cpp
   runtime/float-builtins-test.cpp
+  runtime/function-builtins-test.cpp
   runtime/generator-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
