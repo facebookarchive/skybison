@@ -540,6 +540,18 @@ class Runtime {
   DEFINE_IS_INSTANCE(Type)
 #undef DEFINE_IS_INSTANCE
 
+  // User-defined subclasses of immediate types have no corresponding LayoutId,
+  // so we detect them by looking for an object that is a subclass of a
+  // particular immediate type but not exactly that type.
+#define DEFINE_IS_USER_INSTANCE(ty)                                            \
+  bool isInstanceOfUser##ty##Base(RawObject obj) {                             \
+    return !obj.is##ty() &&                                                    \
+           RawType::cast(typeOf(obj)).builtinBase() == LayoutId::k##ty;        \
+  }
+  DEFINE_IS_USER_INSTANCE(Float)
+  DEFINE_IS_USER_INSTANCE(Tuple)
+#undef DEFINE_IS_USER_INSTANCE
+
   // BaseException must be handled specially because it has builtin subclasses
   // that are visible to managed code.
   bool isInstanceOfBaseException(RawObject obj) {
@@ -555,20 +567,6 @@ class Runtime {
     LayoutId builtin_base = RawType::cast(typeOf(instance)).builtinBase();
     return builtin_base == LayoutId::kSet ||
            builtin_base == LayoutId::kFrozenSet;
-  }
-
-  // UserFloatBase has no corresponding LayoutId, so we detect it by looking
-  // for an object that is a float subclass but not exactly float.
-  bool isInstanceOfUserFloatBase(RawObject obj) {
-    return !obj.isFloat() &&
-           RawType::cast(typeOf(obj)).builtinBase() == LayoutId::kFloat;
-  }
-
-  // UserTupleBase has no corresponding LayoutId, so we detect it by looking
-  // for an object that is a tuple subclass but not exactly tuple.
-  bool isInstanceOfUserTupleBase(RawObject obj) {
-    return !obj.isTuple() &&
-           RawType::cast(typeOf(obj)).builtinBase() == LayoutId::kTuple;
   }
 
   // Clear the allocated memory from all extension related objects
