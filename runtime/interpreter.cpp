@@ -365,9 +365,10 @@ RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
 
   Type self_type(&scope, runtime->typeOf(*self));
   Type other_type(&scope, runtime->typeOf(*other));
-  UNIMPLEMENTED("Cannot do binary op %ld for types '%s' and '%s'",
-                static_cast<word>(op),
-                RawStr::cast(self_type->name())->toCStr(),
+  SymbolId op_sym = runtime->binaryOperationSelector(op);
+  Str op_str(&scope, runtime->symbols()->at(op_sym));
+  UNIMPLEMENTED("Cannot do binary op '%s' for types '%s' and '%s'",
+                op_str->toCStr(), RawStr::cast(self_type->name())->toCStr(),
                 RawStr::cast(other_type->name())->toCStr());
 }
 
