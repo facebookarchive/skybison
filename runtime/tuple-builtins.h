@@ -12,6 +12,7 @@ class TupleBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
+  static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);

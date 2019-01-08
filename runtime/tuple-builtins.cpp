@@ -15,6 +15,7 @@ const BuiltinAttribute TupleBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod TupleBuiltins::kMethods[] = {
+    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
@@ -27,6 +28,55 @@ void TupleBuiltins::initialize(Runtime* runtime) {
   Type type(&scope,
             runtime->addBuiltinType(SymbolId::kTuple, LayoutId::kTuple,
                                     LayoutId::kObject, kAttributes, kMethods));
+}
+
+RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+  if (nargs == 0) {
+    return thread->raiseTypeErrorWithCStr("'__add__' of 'tuple' missing self");
+  }
+  Runtime* runtime = thread->runtime();
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object lhs(&scope, args.get(0));
+  if (!runtime->isInstanceOfTuple(lhs)) {
+    return thread->raiseTypeErrorWithCStr("'__add__' requires a tuple");
+  }
+  if (!lhs->isTuple()) {
+    UserTupleBase lhs_user(&scope, *lhs);
+    lhs = lhs_user->tupleValue();
+  }
+  Tuple left(&scope, *lhs);
+  Object rhs(&scope, args.get(1));
+  if (!runtime->isInstanceOfTuple(rhs)) {
+    return thread->raiseTypeErrorWithCStr(
+        "can only concatenate tuple to tuple");
+  }
+  if (!rhs->isTuple()) {
+    UserTupleBase rhs_user(&scope, *rhs);
+    rhs = rhs_user->tupleValue();
+  }
+  Tuple right(&scope, *rhs);
+  word llength = left->length();
+  word rlength = right->length();
+
+  word new_length = llength + rlength;
+  if (new_length > kMaxWord) {
+    return thread->raiseOverflowErrorWithCStr(
+        "cannot fit 'int' into an index-sized integer");
+  }
+
+  Tuple new_tuple(&scope, thread->runtime()->newTuple(new_length));
+  for (word i = 0; i < llength; ++i) {
+    new_tuple->atPut(i, left->at(i));
+  }
+  for (word j = 0; j < rlength; ++j) {
+    new_tuple->atPut(llength + j, right->at(j));
+  }
+  return *new_tuple;
 }
 
 RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
