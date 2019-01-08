@@ -1378,7 +1378,7 @@ TEST(StrBuiltinsTest, StrStripWithNoneArgStripsBoth) {
   Object str(&scope, runtime.newStrFromCStr(" Hello World "));
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(StrBuiltins::strip, str, none));
-  ASSERT_TRUE(str->isStr());
+  ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), "Hello World");
 }
 
@@ -1388,7 +1388,7 @@ TEST(StrBuiltinsTest, StrLStripWithNoneArgStripsLeft) {
   Object str(&scope, runtime.newStrFromCStr(" Hello World "));
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(StrBuiltins::lstrip, str, none));
-  ASSERT_TRUE(str->isStr());
+  ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), "Hello World ");
 }
 
@@ -1398,7 +1398,7 @@ TEST(StrBuiltinsTest, StrRStripWithNoneArgStripsRight) {
   Object str(&scope, runtime.newStrFromCStr(" Hello World "));
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(StrBuiltins::rstrip, str, none));
-  ASSERT_TRUE(str->isStr());
+  ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), " Hello World");
 }
 
@@ -1407,7 +1407,7 @@ TEST(StrBuiltinsTest, StrStripWithoutArgsStripsBoth) {
   HandleScope scope;
   Object str(&scope, runtime.newStrFromCStr(" \n\tHello World\n\t "));
   Object result(&scope, runBuiltin(StrBuiltins::strip, str));
-  ASSERT_TRUE(str->isStr());
+  ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), "Hello World");
 }
 
@@ -1416,7 +1416,7 @@ TEST(StrBuiltinsTest, StrLStripWithoutArgsStripsLeft) {
   HandleScope scope;
   Object str(&scope, runtime.newStrFromCStr(" \n\tHello World\n\t "));
   Object result(&scope, runBuiltin(StrBuiltins::lstrip, str));
-  ASSERT_TRUE(str->isStr());
+  ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), "Hello World\n\t ");
 }
 
@@ -1425,7 +1425,7 @@ TEST(StrBuiltinsTest, StrRStripWithoutArgsStripsRight) {
   HandleScope scope;
   Object str(&scope, runtime.newStrFromCStr(" \n\tHello World\n\t "));
   Object result(&scope, runBuiltin(StrBuiltins::rstrip, str));
-  ASSERT_TRUE(str->isStr());
+  ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), " \n\tHello World");
 }
 
@@ -1435,7 +1435,7 @@ TEST(StrBuiltinsTest, StrStripWithCharsStripsChars) {
   Object str(&scope, runtime.newStrFromCStr("bcaHello Worldcab"));
   Object chars(&scope, runtime.newStrFromCStr("abc"));
   Object result(&scope, runBuiltin(StrBuiltins::strip, str, chars));
-  ASSERT_TRUE(str->isStr());
+  ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), "Hello World");
 }
 
@@ -1445,7 +1445,7 @@ TEST(StrBuiltinsTest, StrLStripWithCharsStripsCharsToLeft) {
   Object str(&scope, runtime.newStrFromCStr("bcaHello Worldcab"));
   Object chars(&scope, runtime.newStrFromCStr("abc"));
   Object result(&scope, runBuiltin(StrBuiltins::lstrip, str, chars));
-  ASSERT_TRUE(str->isStr());
+  ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), "Hello Worldcab");
 }
 
@@ -1455,7 +1455,7 @@ TEST(StrBuiltinsTest, StrRStripWithCharsStripsCharsToRight) {
   Object str(&scope, runtime.newStrFromCStr("bcaHello Worldcab"));
   Object chars(&scope, runtime.newStrFromCStr("abc"));
   Object result(&scope, runBuiltin(StrBuiltins::rstrip, str, chars));
-  ASSERT_TRUE(str->isStr());
+  ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), "bcaHello World");
 }
 

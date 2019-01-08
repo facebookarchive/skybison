@@ -56,7 +56,7 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8ReturnsCString) {
 
   // Make sure repeated calls on the same object return the same buffer.
   char* cstring2 = PyUnicode_AsUTF8(pyobj);
-  ASSERT_NE(cstring, nullptr);
+  ASSERT_NE(cstring2, nullptr);
   EXPECT_EQ(cstring2, cstring);
 }
 
