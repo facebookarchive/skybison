@@ -1172,4 +1172,139 @@ TEST(SetBuiltinsTest, FrozenSetDunderNewWithNonIterableThrowsTypeError) {
   ASSERT_TRUE(result->isError());
 }
 
+TEST(SetBuiltinsTest, SetCopy) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, runtime.newSet());
+  Object set_copy(&scope, setCopy(thread, set));
+  ASSERT_TRUE(set_copy->isSet());
+  EXPECT_EQ(RawSet::cast(*set_copy)->numItems(), 0);
+
+  Object key(&scope, SmallInt::fromWord(0));
+  runtime.setAdd(set, key);
+  key = SmallInt::fromWord(1);
+  runtime.setAdd(set, key);
+  key = SmallInt::fromWord(2);
+  runtime.setAdd(set, key);
+
+  Object set_copy1(&scope, setCopy(thread, set));
+  ASSERT_TRUE(set_copy1->isSet());
+  EXPECT_EQ(RawSet::cast(*set_copy1)->numItems(), 3);
+  set = *set_copy1;
+  key = SmallInt::fromWord(0);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(1);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+  key = SmallInt::fromWord(2);
+  EXPECT_TRUE(runtime.setIncludes(set, key));
+}
+
+TEST(SetBuiltinsTest, SetEqualsWithSameSetReturnsTrue) {
+  // s = {0, 1, 2}; (s == s) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  ASSERT_TRUE(setEquals(thread, set, set));
+}
+
+TEST(SetBuiltinsTest, SetIsSubsetWithEmptySetsReturnsTrue) {
+  // (set() <= set()) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, runtime.newSet());
+  Set set1(&scope, runtime.newSet());
+  ASSERT_TRUE(setIsSubset(thread, set, set1));
+}
+
+TEST(SetBuiltinsTest, SetIsSubsetWithEmptySetAndNonEmptySetReturnsTrue) {
+  // (set() <= {0, 1, 2}) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, runtime.newSet());
+  Set set1(&scope, setFromRange(0, 3));
+  ASSERT_TRUE(setIsSubset(thread, set, set1));
+}
+
+TEST(SetBuiltinsTest, SetIsSubsetWithEqualsetReturnsTrue) {
+  // ({0, 1, 2} <= {0, 1, 2}) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  Set set1(&scope, setFromRange(0, 3));
+  ASSERT_TRUE(setIsSubset(thread, set, set1));
+}
+
+TEST(SetBuiltinsTest, SetIsSubsetWithSubsetReturnsTrue) {
+  // ({1, 2, 3} <= {1, 2, 3, 4}) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(1, 4));
+  Set set1(&scope, setFromRange(1, 5));
+  ASSERT_TRUE(setIsSubset(thread, set, set1));
+}
+
+TEST(SetBuiltinsTest, SetIsSubsetWithSupersetReturnsFalse) {
+  // ({1, 2, 3, 4} <= {1, 2, 3}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(1, 5));
+  Set set1(&scope, setFromRange(1, 4));
+  ASSERT_FALSE(setIsSubset(thread, set, set1));
+}
+
+TEST(SetBuiltinsTest, SetIsSubsetWithSameSetReturnsTrue) {
+  // s = {0, 1, 2}; (s <= s) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 4));
+  ASSERT_TRUE(setIsSubset(thread, set, set));
+}
+
+TEST(SetBuiltinsTest, SetIsProperSubsetWithSupersetReturnsTrue) {
+  // ({0, 1, 2, 3} < {0, 1, 2, 3, 4}) is True
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 4));
+  Set set1(&scope, setFromRange(0, 5));
+  ASSERT_TRUE(setIsProperSubset(thread, set, set1));
+}
+
+TEST(SetBuiltinsTest, SetIsProperSubsetWithUnequalSetsReturnsFalse) {
+  // ({1, 2, 3} < {0, 1, 2}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(1, 4));
+  Set set1(&scope, setFromRange(0, 3));
+  ASSERT_FALSE(setIsProperSubset(thread, set, set1));
+}
+
+TEST(SetBuiltinsTest, SetIsProperSubsetWithSameSetReturnsFalse) {
+  // s = {0, 1, 2}; (s < s) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(0, 3));
+  ASSERT_FALSE(setIsProperSubset(thread, set, set));
+}
+
+TEST(SetBuiltinsTest, SetIsProperSubsetWithSubsetReturnsFalse) {
+  // ({1, 2, 3, 4} < {1, 2, 3}) is False
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Set set(&scope, setFromRange(1, 5));
+  Set set1(&scope, setFromRange(1, 4));
+  ASSERT_FALSE(setIsProperSubset(thread, set, set));
+}
+
 }  // namespace python

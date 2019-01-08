@@ -166,7 +166,7 @@ RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
   SetBase set(&scope, *self);
   if (nargs == 1) {
     // Return a copy of the set
-    return thread->runtime()->setCopy(set);
+    return setCopy(thread, set);
   }
   // nargs is at least 2
   Object other(&scope, args.get(1));
@@ -214,7 +214,7 @@ RawObject SetBaseBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
-  return Bool::fromBool(runtime->setEquals(thread, set, other_set));
+  return Bool::fromBool(setEquals(thread, set, other_set));
 }
 
 RawObject SetBaseBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
@@ -240,7 +240,7 @@ RawObject SetBaseBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
-  return Bool::fromBool(!runtime->setEquals(thread, set, other_set));
+  return Bool::fromBool(!setEquals(thread, set, other_set));
 }
 
 RawObject SetBaseBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
@@ -266,7 +266,7 @@ RawObject SetBaseBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
-  return Bool::fromBool(runtime->setIsSubset(thread, set, other_set));
+  return Bool::fromBool(setIsSubset(thread, set, other_set));
 }
 
 RawObject SetBaseBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
@@ -292,7 +292,7 @@ RawObject SetBaseBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
-  return Bool::fromBool(runtime->setIsProperSubset(thread, set, other_set));
+  return Bool::fromBool(setIsProperSubset(thread, set, other_set));
 }
 
 RawObject SetBaseBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
@@ -318,7 +318,7 @@ RawObject SetBaseBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
-  return Bool::fromBool(runtime->setIsSubset(thread, other_set, set));
+  return Bool::fromBool(setIsSubset(thread, other_set, set));
 }
 
 RawObject SetBaseBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
@@ -344,7 +344,7 @@ RawObject SetBaseBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
-  return Bool::fromBool(runtime->setIsProperSubset(thread, other_set, set));
+  return Bool::fromBool(setIsProperSubset(thread, other_set, set));
 }
 
 const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
@@ -459,6 +459,70 @@ RawObject setAdd(Thread* thread, const Set& set, const Object& key) {
   // TODO(T36756972): raise MemoryError when heap is full
   // TODO(T36757907): raise TypeError if key is unhashable
   return thread->runtime()->setAdd(set, key);
+}
+
+RawObject setCopy(Thread* thread, const SetBase& set) {
+  word num_items = set->numItems();
+  Runtime* runtime = thread->runtime();
+  if (num_items == 0) {
+    return runtime->isInstanceOfSet(*set) ? runtime->newSet()
+                                          : runtime->emptyFrozenSet();
+  }
+
+  HandleScope scope;
+  SetBase new_set(&scope, runtime->isInstanceOfSet(*set)
+                              ? runtime->newSet()
+                              : runtime->newFrozenSet());
+  Tuple data(&scope, set->data());
+  Tuple new_data(&scope, runtime->newTuple(data->length()));
+  Object key(&scope, NoneType::object());
+  Object key_hash(&scope, NoneType::object());
+  for (word i = 0, data_len = data->length(); i < data_len;
+       i += SetBase::Bucket::kNumPointers) {
+    if (!SetBase::Bucket::isFilled(*data, i)) {
+      continue;
+    }
+    key = SetBase::Bucket::key(*data, i);
+    key_hash = SetBase::Bucket::hash(*data, i);
+    SetBase::Bucket::set(*new_data, i, *key_hash, *key);
+  }
+  new_set->setData(*new_data);
+  new_set->setNumItems(set->numItems());
+  return *new_set;
+}
+
+bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other) {
+  HandleScope scope(thread);
+  Tuple data(&scope, set->data());
+  Object key(&scope, NoneType::object());
+  for (word i = 0; i < data->length(); i += SetBase::Bucket::kNumPointers) {
+    if (!RawSetBase::Bucket::isFilled(*data, i)) {
+      continue;
+    }
+    key = RawSetBase::Bucket::key(*data, i);
+    if (!thread->runtime()->setIncludes(other, key)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool setIsProperSubset(Thread* thread, const SetBase& set,
+                       const SetBase& other) {
+  if (set->numItems() == other->numItems()) {
+    return false;
+  }
+  return setIsSubset(thread, set, other);
+}
+
+bool setEquals(Thread* thread, const SetBase& set, const SetBase& other) {
+  if (set->numItems() != other->numItems()) {
+    return false;
+  }
+  if (*set == *other) {
+    return true;
+  }
+  return setIsSubset(thread, set, other);
 }
 
 RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {

@@ -358,12 +358,6 @@ class Runtime {
   RawObject setAddWithHash(const SetBase& set, const Object& value,
                            const Object& key_hash);
 
-  // Return a shallow copy of a set
-  RawObject setCopy(const SetBase& set);
-
-  // Returns true if set and other contain the same set of values
-  bool setEquals(Thread* thread, const SetBase& set, const SetBase& other);
-
   // Returns true if the set contains the specified value.
   bool setIncludes(const SetBase& set, const Object& value);
 
@@ -371,16 +365,6 @@ class Runtime {
   // Returns either a new set with the intersection or an Error object.
   RawObject setIntersection(Thread* thread, const SetBase& set,
                             const Object& iterable);
-
-  // Returns true if every element of set is in other
-  // and the elements in set and other are not the same.
-  // This is analogous to the < operator on Python sets.
-  bool setIsProperSubset(Thread* thread, const SetBase& set,
-                         const SetBase& other);
-
-  // Returns true if every element of set is in other.
-  // This is analogous to the <= operator on Python sets.
-  bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other);
 
   // Delete a key from the set, returns true if the key existed.
   bool setRemove(const Set& set, const Object& value);

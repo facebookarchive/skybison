@@ -10,6 +10,22 @@ namespace python {
 
 RawObject setAdd(Thread* thread, const Set& set, const Object& key);
 
+// Return a shallow copy of a set
+RawObject setCopy(Thread* thread, const SetBase& set);
+
+// Returns true if set and other contain the same set of values
+bool setEquals(Thread* thread, const SetBase& set, const SetBase& other);
+
+// Returns true if every element of set is in other
+// and the elements in set and other are not the same.
+// This is analogous to the < operator on Python sets.
+bool setIsProperSubset(Thread* thread, const SetBase& set,
+                       const SetBase& other);
+
+// Returns true if every element of set is in other.
+// This is analogous to the <= operator on Python sets.
+bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other);
+
 class SetBaseBuiltins {
  public:
   static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
