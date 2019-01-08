@@ -715,6 +715,59 @@ TEST(IntBuiltinsTest, CompareLargeIntNe) {
   EXPECT_EQ(*cmp_6, Bool::falseObj());
 }
 
+TEST(IntBuiltinsTest, DunderFloatWithBoolReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Object a(&scope, Bool::trueObj());
+  Object a_float(&scope, runBuiltin(IntBuiltins::dunderFloat, a));
+  ASSERT_TRUE(a_float->isFloat());
+  EXPECT_EQ(RawFloat::cast(*a_float)->value(), 1.0);
+
+  Object b(&scope, Bool::falseObj());
+  Object b_float(&scope, runBuiltin(IntBuiltins::dunderFloat, b));
+  ASSERT_TRUE(b_float->isFloat());
+  EXPECT_EQ(RawFloat::cast(*b_float)->value(), 0.0);
+}
+
+TEST(IntBuiltinsTest, DunderFloatWithIntLiteralReturnsSameValue) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime, "a = (7).__float__()");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  ASSERT_TRUE(a->isFloat());
+  EXPECT_EQ(RawFloat::cast(*a)->value(), 7.0);
+}
+
+TEST(IntBuiltinsTest, DunderFloatFromIntClassReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int b_int(&scope, runtime.newInt(7));
+  Object b(&scope, runBuiltin(IntBuiltins::dunderFloat, b_int));
+  ASSERT_TRUE(b->isFloat());
+  EXPECT_EQ(RawFloat::cast(*b)->value(), 7.0);
+}
+
+TEST(IntBuiltinsTest, DunderFloatWithNonIntReturnsError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str str(&scope, runtime.newStrFromCStr("python"));
+  Object str_res(&scope, runBuiltin(IntBuiltins::dunderInt, str));
+  EXPECT_TRUE(str_res->isError());
+  Thread* thread = Thread::currentThread();
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
+
+  Float flt(&scope, runtime.newFloat(1.0));
+  Object flt_res(&scope, runBuiltin(IntBuiltins::dunderInt, flt));
+  EXPECT_TRUE(flt_res->isError());
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
+}
+
 TEST(LargeIntBuiltinsTest, UnaryPositive) {
   Runtime runtime;
   HandleScope scope;

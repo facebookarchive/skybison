@@ -22,6 +22,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kBitLength, nativeTrampoline<bitLength>},
     {SymbolId::kDunderBool, nativeTrampoline<dunderBool>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
+    {SymbolId::kDunderFloat, nativeTrampoline<dunderFloat>},
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
     {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
@@ -288,6 +289,32 @@ RawObject IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(left->compare(RawInt::cast(other)) == 0);
   }
   return thread->runtime()->notImplemented();
+}
+
+RawObject IntBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 1) {
+    return thread->raiseTypeErrorWithCStr("missing self");
+  }
+  if (nargs > 1) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "expected 0 arguments, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (self->isBool()) {
+    return runtime->newFloat(*self == Bool::trueObj() ? 1 : 0);
+  }
+  if (self->isInt()) {
+    Int self_int(&scope, *self);
+    return runtime->newFloat(self_int->floatValue());
+  }
+  if (runtime->isInstanceOfInt(*self)) {
+    UNIMPLEMENTED("Strict subclass of int");
+  }
+  return thread->raiseTypeErrorWithCStr(
+      "object cannot be interpreted as an integer");
 }
 
 RawObject SmallIntBuiltins::dunderInvert(Thread* thread, Frame* frame,
