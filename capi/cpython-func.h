@@ -838,6 +838,8 @@ PyAPI_FUNC(int) PyBool_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyByteArray_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyBytes_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyBytes_Check_Func(PyObject*);
+PyAPI_FUNC(int) PyComplex_CheckExact_Func(PyObject*);
+PyAPI_FUNC(int) PyComplex_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyDict_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyDict_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyFloat_CheckExact_Func(PyObject*);
@@ -882,6 +884,8 @@ PyAPI_FUNC(void)
 #define PyByteArray_Check(op) (PyByteArray_Check_Func((PyObject*)(op)))
 #define PyBytes_Check(op) (PyBytes_Check_Func((PyObject*)(op)))
 #define PyBytes_CheckExact(op) (PyBytes_CheckExact_Func((PyObject*)(op)))
+#define PyComplex_Check(op) (PyComplex_Check_Func((PyObject*)(op)))
+#define PyComplex_CheckExact(op) (PyComplex_CheckExact_Func((PyObject*)(op)))
 #define PyDict_Check(op) (PyDict_Check_Func((PyObject*)(op)))
 #define PyDict_CheckExact(op) (PyDict_CheckExact_Func((PyObject*)(op)))
 #define PyFloat_Check(op) (PyFloat_Check_Func((PyObject*)(op)))
