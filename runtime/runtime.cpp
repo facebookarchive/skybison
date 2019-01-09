@@ -608,6 +608,14 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   return NoneType::object();
 }
 
+void Runtime::seedRandom(const uword random_state[2],
+                         const uword hash_secret[2]) {
+  random_state_[0] = random_state[0];
+  random_state_[1] = random_state[1];
+  hash_secret_[0] = hash_secret[0];
+  hash_secret_[1] = hash_secret[1];
+}
+
 bool Runtime::isDataDescriptor(Thread* thread, const Object& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
