@@ -338,56 +338,6 @@ TEST(RuntimeDictTest, CanCreateDictItems) {
   ASSERT_TRUE(iter->isDictItemIterator());
 }
 
-TEST(RuntimeDictItemIteratorTest, NextOnOneElementDictReturnsElement) {
-  Runtime runtime;
-  HandleScope scope;
-  Dict dict(&scope, runtime.newDict());
-  Object key(&scope, runtime.newStrFromCStr("hello"));
-  Object value(&scope, runtime.newStrFromCStr("world"));
-  runtime.dictAtPut(dict, key, value);
-  DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
-  Object next(&scope,
-              runtime.dictItemIteratorNext(Thread::currentThread(), iter));
-  ASSERT_TRUE(next->isTuple());
-  EXPECT_EQ(Tuple::cast(next)->at(0), key);
-  EXPECT_EQ(Tuple::cast(next)->at(1), value);
-
-  next = runtime.dictItemIteratorNext(Thread::currentThread(), iter);
-  ASSERT_TRUE(next->isError());
-}
-
-TEST(RuntimeDictKeyIteratorTest, NextOnOneElementDictReturnsElement) {
-  Runtime runtime;
-  HandleScope scope;
-  Dict dict(&scope, runtime.newDict());
-  Object key(&scope, runtime.newStrFromCStr("hello"));
-  Object value(&scope, runtime.newStrFromCStr("world"));
-  runtime.dictAtPut(dict, key, value);
-  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(dict));
-  Object next(&scope,
-              runtime.dictKeyIteratorNext(Thread::currentThread(), iter));
-  EXPECT_EQ(next, key);
-
-  next = runtime.dictKeyIteratorNext(Thread::currentThread(), iter);
-  ASSERT_TRUE(next->isError());
-}
-
-TEST(RuntimeDictValueIteratorTest, NextOnOneElementDictReturnsElement) {
-  Runtime runtime;
-  HandleScope scope;
-  Dict dict(&scope, runtime.newDict());
-  Object key(&scope, runtime.newStrFromCStr("hello"));
-  Object value(&scope, runtime.newStrFromCStr("world"));
-  runtime.dictAtPut(dict, key, value);
-  DictValueIterator iter(&scope, runtime.newDictValueIterator(dict));
-  Object next(&scope,
-              runtime.dictValueIteratorNext(Thread::currentThread(), iter));
-  EXPECT_EQ(next, value);
-
-  next = runtime.dictValueIteratorNext(Thread::currentThread(), iter);
-  ASSERT_TRUE(next->isError());
-}
-
 TEST(RuntimeListTest, ListGrowth) {
   Runtime runtime;
   HandleScope scope;

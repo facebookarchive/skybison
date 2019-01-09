@@ -339,18 +339,6 @@ class Runtime {
 
   RawTuple dictKeys(const Dict& dict);
 
-  // Returns next item in the dict as (key, value) tuple (Tuple)
-  // Returns Error::object() if there are no more objects
-  RawObject dictItemIteratorNext(Thread* thread, DictItemIterator& iter);
-
-  // Returns next key in the dict
-  // Returns Error::object() if there are no more objects
-  RawObject dictKeyIteratorNext(Thread* thread, DictKeyIterator& iter);
-
-  // Returns next value in the dict
-  // Returns Error::object() if there are no more objects
-  RawObject dictValueIteratorNext(Thread* thread, DictValueIterator& iter);
-
   // Set related function, based on dict.
   // Add a value to set and return the object in set.
   RawObject setAdd(const SetBase& set, const Object& value);

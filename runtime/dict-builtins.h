@@ -21,6 +21,18 @@ RawObject dictUpdate(Thread* thread, const Dict& dict, const Object& mapping);
 RawObject dictMergeHard(Thread* thread, const Dict& dict,
                         const Object& mapping);
 
+// Returns next item in the dict as (key, value) tuple (Tuple)
+// Returns Error::object() if there are no more objects
+RawObject dictItemIteratorNext(Thread* thread, DictItemIterator& iter);
+
+// Returns next key in the dict
+// Returns Error::object() if there are no more objects
+RawObject dictKeyIteratorNext(Thread* thread, DictKeyIterator& iter);
+
+// Returns next value in the dict
+// Returns Error::object() if there are no more objects
+RawObject dictValueIteratorNext(Thread* thread, DictValueIterator& iter);
+
 class DictBuiltins {
  public:
   static void initialize(Runtime* runtime);

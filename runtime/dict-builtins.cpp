@@ -152,6 +152,80 @@ RawObject dictMergeHard(Thread* thread, const Dict& dict,
   return dictMergeImpl(thread, dict, mapping, Override::kError);
 }
 
+RawObject dictItemIteratorNext(Thread* thread, DictItemIterator& iter) {
+  HandleScope scope(thread);
+  Dict dict(&scope, iter.dict());
+  Tuple buckets(&scope, dict.data());
+  word jump = Dict::Bucket::kNumPointers;
+
+  word i = iter.index();
+  for (; i < buckets->length() && Dict::Bucket::isEmpty(*buckets, i);
+       i += jump) {
+  }
+
+  if (i < buckets->length()) {
+    // At this point, we have found a valid index in the buckets.
+    Object key(&scope, Dict::Bucket::key(*buckets, i));
+    Object value(&scope, Dict::Bucket::value(*buckets, i));
+    Tuple kv_pair(&scope, thread->runtime()->newTuple(2));
+    kv_pair->atPut(0, *key);
+    kv_pair->atPut(1, *value);
+    iter.setIndex(i + jump);
+    iter.setNumFound(iter.numFound() + 1);
+    return *kv_pair;
+  }
+
+  // We hit the end.
+  iter.setIndex(i);
+  return Error::object();
+}
+
+RawObject dictKeyIteratorNext(Thread* thread, DictKeyIterator& iter) {
+  HandleScope scope(thread);
+  Dict dict(&scope, iter.dict());
+  Tuple buckets(&scope, dict.data());
+  word jump = Dict::Bucket::kNumPointers;
+
+  word i = iter.index();
+  for (; i < buckets->length() && Dict::Bucket::isEmpty(*buckets, i);
+       i += jump) {
+  }
+
+  if (i < buckets->length()) {
+    // At this point, we have found a valid index in the buckets.
+    iter.setIndex(i + jump);
+    iter.setNumFound(iter.numFound() + 1);
+    return Dict::Bucket::key(*buckets, i);
+  }
+
+  // We hit the end.
+  iter.setIndex(i);
+  return Error::object();
+}
+
+RawObject dictValueIteratorNext(Thread* thread, DictValueIterator& iter) {
+  HandleScope scope(thread);
+  Dict dict(&scope, iter.dict());
+  Tuple buckets(&scope, dict.data());
+  word jump = Dict::Bucket::kNumPointers;
+
+  word i = iter.index();
+  for (; i < buckets->length() && Dict::Bucket::isEmpty(*buckets, i);
+       i += jump) {
+  }
+
+  if (i < buckets->length()) {
+    // At this point, we have found a valid index in the buckets.
+    iter.setIndex(i + jump);
+    iter.setNumFound(iter.numFound() + 1);
+    return Dict::Bucket::value(*buckets, i);
+  }
+
+  // We hit the end.
+  iter.setIndex(i);
+  return Error::object();
+}
+
 const BuiltinAttribute DictBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, RawDict::kNumItemsOffset},
     {SymbolId::kInvalid, RawDict::kDataOffset},
@@ -495,7 +569,7 @@ RawObject DictItemIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
         "first argument");
   }
   DictItemIterator iter(&scope, *self);
-  Object value(&scope, thread->runtime()->dictItemIteratorNext(thread, iter));
+  Object value(&scope, dictItemIteratorNext(thread, iter));
   if (value->isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
@@ -588,7 +662,7 @@ RawObject DictKeyIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
         "first argument");
   }
   DictKeyIterator iter(&scope, *self);
-  Object value(&scope, thread->runtime()->dictKeyIteratorNext(thread, iter));
+  Object value(&scope, dictKeyIteratorNext(thread, iter));
   if (value->isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
@@ -681,7 +755,7 @@ RawObject DictValueIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
         "first argument");
   }
   DictValueIterator iter(&scope, *self);
-  Object value(&scope, thread->runtime()->dictValueIteratorNext(thread, iter));
+  Object value(&scope, dictValueIteratorNext(thread, iter));
   if (value->isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
