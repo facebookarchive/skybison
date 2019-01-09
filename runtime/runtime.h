@@ -157,7 +157,7 @@ class Runtime {
   RawObject strConcat(const Str& left, const Str& right);
   RawObject strJoin(Thread* thread, const Str& sep, const Tuple& items,
                     word allocated);
-  RawObject strStripSpace(const Str& src, const StrStripDirection direction);
+  RawObject strStripSpace(const Str& src, StrStripDirection direction);
   RawObject strStrip(const Str& src, const Str& str,
                      StrStripDirection direction);
 
@@ -620,7 +620,6 @@ class Runtime {
   void initializeSymbols();
 
   void initializeClassMethodType();
-  void initializeObjectType();
   void initializePropertyType();
   void initializeRefType();
 

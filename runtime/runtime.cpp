@@ -1796,9 +1796,9 @@ RawObject Runtime::moduleAddGlobal(const Module& module, SymbolId name,
 }
 
 RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
-                                            const Function::Entry entry,
-                                            const Function::Entry entry_kw,
-                                            const Function::Entry entry_ex) {
+                                            Function::Entry entry,
+                                            Function::Entry entry_kw,
+                                            Function::Entry entry_ex) {
   HandleScope scope;
   Object key(&scope, symbols()->at(name));
   Dict dict(&scope, module->dict());
