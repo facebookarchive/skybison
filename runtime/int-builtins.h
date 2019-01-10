@@ -28,8 +28,7 @@ class IntBuiltins {
   static RawObject intFromBool(RawObject bool_obj);
 
  private:
-  static RawObject negateLargeInteger(Runtime* runtime,
-                                      const Object& large_integer);
+  static RawObject negateLargeInt(Runtime* runtime, const Object& large_int);
   static const BuiltinMethod kMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntBuiltins);

@@ -198,10 +198,10 @@ static bool negationOverflows(const LargeInt& value) {
   return value->digitAt(num_digits - 1) == uword{1} << (kBitsPerWord - 1);
 }
 
-RawObject IntBuiltins::negateLargeInteger(Runtime* runtime,
-                                          const Object& large_int_obj) {
+RawObject IntBuiltins::negateLargeInt(Runtime* runtime,
+                                      const Object& large_int) {
   HandleScope scope;
-  LargeInt src(&scope, *large_int_obj);
+  LargeInt src(&scope, *large_int);
 
   word num_digits = src->numDigits();
   // -i needs more digits than i if negating it overflows.
@@ -612,7 +612,7 @@ RawObject IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
     return thread->runtime()->newInt(neg);
   }
   if (self->isLargeInt()) {
-    return negateLargeInteger(thread->runtime(), self);
+    return negateLargeInt(thread->runtime(), self);
   }
   if (self->isBool()) {
     return SmallInt::fromWord(*self == Bool::trueObj() ? -1 : 0);
