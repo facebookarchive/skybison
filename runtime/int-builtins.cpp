@@ -501,13 +501,13 @@ RawObject IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-RawObject SmallIntBuiltins::dunderMod(Thread* thread, Frame* caller,
+RawObject SmallIntBuiltins::dunderMod(Thread* thread, Frame* frame,
                                       word nargs) {
   Runtime* runtime = thread->runtime();
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
   if (!self->isSmallInt()) {
@@ -546,12 +546,12 @@ RawObject SmallIntBuiltins::dunderMod(Thread* thread, Frame* caller,
   return runtime->notImplemented();
 }
 
-RawObject SmallIntBuiltins::dunderMul(Thread* thread, Frame* caller,
+RawObject SmallIntBuiltins::dunderMul(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
   if (!self->isSmallInt()) {
@@ -695,13 +695,13 @@ RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-RawObject SmallIntBuiltins::dunderAdd(Thread* thread, Frame* caller,
+RawObject SmallIntBuiltins::dunderAdd(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
 
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
 
@@ -718,13 +718,13 @@ RawObject SmallIntBuiltins::dunderAdd(Thread* thread, Frame* caller,
   return thread->runtime()->notImplemented();
 }
 
-RawObject SmallIntBuiltins::dunderAnd(Thread* thread, Frame* caller,
+RawObject SmallIntBuiltins::dunderAnd(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
   }
 
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
