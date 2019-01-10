@@ -187,5 +187,8 @@ RawObject newEmptyCode(Runtime* runtime);
 
 RawObject listFromRange(word start, word stop);
 
+// Expect that the current thread has a specific exception pending.
+::testing::AssertionResult hasPendingExceptionWithLayout(LayoutId layout_id);
+
 }  // namespace testing
 }  // namespace python

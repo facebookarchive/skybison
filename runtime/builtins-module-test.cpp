@@ -655,8 +655,7 @@ TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenTooFewArgs) {
   Object result(&scope, runBuiltin(Builtins::compile, one));
   ASSERT_TRUE(result->isError());
   Thread* thread = Thread::currentThread();
-  EXPECT_EQ(thread->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kTypeError));
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
   EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
 }
 
@@ -668,8 +667,7 @@ TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenTooManyArgs) {
       &scope, runBuiltin(Builtins::compile, one, one, one, one, one, one, one));
   ASSERT_TRUE(result->isError());
   Thread* thread = Thread::currentThread();
-  EXPECT_EQ(thread->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kTypeError));
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
   EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
 }
 
@@ -680,8 +678,7 @@ TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenBadMode) {
   Object result(&scope, runBuiltin(Builtins::compile, hello, hello, hello));
   ASSERT_TRUE(result->isError());
   Thread* thread = Thread::currentThread();
-  EXPECT_EQ(thread->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kValueError));
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kValueError));
   EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
 }
 
@@ -738,8 +735,7 @@ TEST(BuiltinsModuleTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
   Object result(&scope, runBuiltin(Builtins::exec, code, globals_not_a_dict));
   ASSERT_TRUE(result->isError());
   Thread* thread = Thread::currentThread();
-  EXPECT_EQ(thread->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kTypeError));
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
   EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
 }
 

@@ -3800,8 +3800,7 @@ TEST(RuntimeTest, SettingNewAttributeOnSealedClassThrows) {
   Thread* thread = Thread::currentThread();
   Object result(&scope, runtime.instanceAtPut(thread, set, attr, value));
   ASSERT_TRUE(result->isError());
-  EXPECT_EQ(thread->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kAttributeError));
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kAttributeError));
   EXPECT_TRUE(thread->pendingExceptionValue().isStr());
 }
 

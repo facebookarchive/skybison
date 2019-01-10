@@ -1459,9 +1459,7 @@ TEST(ThreadDeathTest, NativeExceptions) {
 
   Thread* thread = Thread::currentThread();
   thread->run(code);
-  EXPECT_TRUE(Thread::currentThread()->hasPendingException());
-  EXPECT_EQ(thread->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kRuntimeError));
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kRuntimeError));
   Object value(&scope, thread->pendingExceptionValue());
   ASSERT_TRUE(value->isStr());
   Str str(&scope, *value);

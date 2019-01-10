@@ -410,5 +410,25 @@ RawObject listFromRange(word start, word stop) {
   return *result;
 }
 
+::testing::AssertionResult hasPendingExceptionWithLayout(
+    LayoutId error_layout) {
+  Thread* thread = Thread::currentThread();
+  if (!thread->hasPendingException()) {
+    return ::testing::AssertionFailure() << "no exception pending";
+  }
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object expected_type(&scope, runtime->typeAt(error_layout));
+  Object exception_type(&scope, thread->pendingExceptionType());
+  if (exception_type != expected_type) {
+    return ::testing::AssertionFailure()
+           << "pending exception has type '"
+           << typeName(runtime, exception_type) << "'";
+  }
+
+  return ::testing::AssertionSuccess();
+}
+
 }  // namespace testing
 }  // namespace python
