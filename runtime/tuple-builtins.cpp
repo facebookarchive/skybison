@@ -88,8 +88,10 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(self_obj) ||
-      !runtime->isInstanceOfTuple(other_obj)) {
+  if (!runtime->isInstanceOfTuple(self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__eq__' requires a 'tuple' object");
+  }
+  if (!runtime->isInstanceOfTuple(other_obj)) {
     return runtime->notImplemented();
   }
 

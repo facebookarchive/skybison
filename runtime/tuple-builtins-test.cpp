@@ -546,6 +546,69 @@ a = Foo((1, 2)) + (3, 4)
   EXPECT_EQ(RawSmallInt::cast(a->at(3))->value(), 4);
 }
 
+TEST(TupleBuiltinsTest, DunderEqWithDifferentSizeTuplesReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newTuple(0));
+  Object right(&scope, runtime.newTuple(3));
+  Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
+  ASSERT_TRUE(a->isBool());
+  EXPECT_FALSE(Bool::cast(*a)->value());
+}
+
+TEST(TupleBuiltinsTest, DunderEqWithDifferentValueTuplesReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Tuple left(&scope, runtime.newTuple(2));
+  left->atPut(0, runtime.newInt(1));
+  left->atPut(1, runtime.newInt(2));
+  Tuple right(&scope, runtime.newTuple(2));
+  right->atPut(0, runtime.newInt(1));
+  right->atPut(1, runtime.newInt(3));
+  Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
+  ASSERT_TRUE(a->isBool());
+  EXPECT_FALSE(Bool::cast(*a)->value());
+}
+
+TEST(TupleBuiltinsTest, DunderEqWithTupleSubclassReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Tuple left(&scope, runtime.newTuple(2));
+  left->atPut(0, runtime.newInt(1));
+  left->atPut(1, runtime.newInt(2));
+  runFromCStr(&runtime, R"(
+class Foo(tuple): pass
+right = Foo((1, 2))
+)");
+  Object right(&scope, moduleAt(&runtime, "__main__", "right"));
+  ASSERT_FALSE(right->isTuple());
+  ASSERT_TRUE(runtime.isInstanceOfTuple(right));
+  Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
+  ASSERT_TRUE(a->isBool());
+  EXPECT_TRUE(Bool::cast(*a)->value());
+}
+
+TEST(TupleBuiltinsTest, DunderEqWithNonTupleSecondArgReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newTuple(0));
+  Object right(&scope, runtime.newInt(1));
+  Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
+  EXPECT_TRUE(a->isNotImplemented());
+}
+
+TEST(TupleBuiltinsTest, DunderEqWithNonTupleFirstArgRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(1));
+  Object right(&scope, runtime.newTuple(0));
+  Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
+  ASSERT_TRUE(a->isError());
+  Thread* thread = Thread::currentThread();
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
+}
+
 TEST(TupleBuiltinsTest, DunderIterReturnsTupleIter) {
   Runtime runtime;
   HandleScope scope;
