@@ -236,11 +236,11 @@ const BuiltinMethod DictBuiltins::kMethods[] = {
     {SymbolId::kDunderDelItem, nativeTrampoline<dunderDelItem>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
-    {SymbolId::kDunderItems, nativeTrampoline<dunderItems>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
+    {SymbolId::kItems, nativeTrampoline<items>},
     {SymbolId::kKeys, nativeTrampoline<keys>},
     {SymbolId::kUpdate, nativeTrampoline<update>},
     {SymbolId::kValues, nativeTrampoline<values>},
@@ -405,24 +405,6 @@ RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject DictBuiltins::dunderItems(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__items__() takes no arguments");
-  }
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__items__() must be called with a dict instance as the first "
-        "argument");
-  }
-
-  Dict dict(&scope, *self);
-  return runtime->newDictItems(dict);
-}
-
 RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
@@ -440,6 +422,24 @@ RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   Dict dict(&scope, *self);
   // .iter() on a dict returns a keys iterator
   return runtime->newDictKeyIterator(dict);
+}
+
+RawObject DictBuiltins::items(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("items() takes no arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "items() must be called with a dict instance as the first "
+        "argument");
+  }
+
+  Dict dict(&scope, *self);
+  return runtime->newDictItems(dict);
 }
 
 RawObject DictBuiltins::keys(Thread* thread, Frame* frame, word nargs) {

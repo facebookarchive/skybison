@@ -58,7 +58,6 @@ class Runtime;
   V(DunderIpow, "__ipow__")                                                    \
   V(DunderIrshift, "__irshift__")                                              \
   V(DunderIsub, "__isub__")                                                    \
-  V(DunderItems, "__items__")                                                  \
   V(DunderIter, "__iter__")                                                    \
   V(DunderItruediv, "__itruediv__")                                            \
   V(DunderIxor, "__ixor__")                                                    \

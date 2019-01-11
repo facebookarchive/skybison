@@ -190,7 +190,7 @@ TEST(DictBuiltinsTest, DunderItemsReturnsDictItems) {
   Runtime runtime;
   HandleScope scope;
   Dict dict(&scope, runtime.newDict());
-  Object items(&scope, runBuiltin(DictBuiltins::dunderItems, dict));
+  Object items(&scope, runBuiltin(DictBuiltins::items, dict));
   ASSERT_TRUE(items->isDictItems());
 }
 
