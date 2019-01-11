@@ -492,34 +492,6 @@ a ^= 0x03
   EXPECT_EQ(RawSmallInt::cast(*b)->value(), 0xFE);
 }
 
-TEST(IntBuiltinsDeathTest, DunderOr) {
-  Runtime runtime;
-  HandleScope scope;
-  runFromCStr(&runtime, R"(
-a = 0b010101
-b = 0b111000
-c = a | b
-)");
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  ASSERT_TRUE(c->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*c)->value(), 0x3D);  // 0b111101
-}
-
-TEST(IntBuiltinsDeathTest, DunderOrWithNonIntReturnsNotImplemented) {
-  Runtime runtime;
-  HandleScope scope;
-  runFromCStr(&runtime, "a = int.__or__(10, '')");
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_TRUE(a->isNotImplemented());
-}
-
-TEST(IntBuiltinsDeathTest, DunderOrWithInvalidArgumentThrowsException) {
-  Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "a = 10 | ''"), "Cannot do binary op");
-  EXPECT_DEATH(runFromCStr(&runtime, "a = int.__or__('', 3)"),
-               "descriptor '__or__' requires a 'int' object");
-}
-
 TEST(IntBuiltinsDeathTest, DunderLshift) {
   Runtime runtime;
   HandleScope scope;
@@ -548,6 +520,65 @@ TEST(IntBuiltinsDeathTest, DunderLshiftWithInvalidArgumentThrowsException) {
   EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << -3"), "negative shift count");
   EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << (1 << 100)"),
                "shift count too large");
+}
+
+TEST(IntBuiltinsTest, DunderOrWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, SmallInt::fromWord(0x15));   // 0b010101
+  Int right(&scope, SmallInt::fromWord(0x38));  // 0b111000
+  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(result)->value(), 0x3D);  // 0b111101
+}
+
+TEST(IntBuiltinsTest, DunderOrWithLargeIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, testing::newIntWithDigits(&runtime, {0x0C, 0xB0, 0xCAFE}));
+  Int right(&scope, testing::newIntWithDigits(&runtime, {0x03, 0xD0}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(&scope,
+               testing::newIntWithDigits(&runtime, {0x0F, 0xF0, 0xCAFE}));
+  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderOrWithNonIntReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, testing::newIntWithDigits(&runtime, {1, 2}));
+  Object right(&scope, runtime.newStrFromCStr(""));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
+  EXPECT_TRUE(result->isNotImplemented());
+}
+
+TEST(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftThrowsException) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newStrFromCStr(""));
+  LargeInt right(&scope, testing::newIntWithDigits(&runtime, {1, 2}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderOrWithTooFewArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Int i(&scope, testing::newIntWithDigits(&runtime, {1, 2}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, i));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderOrWithTooManyArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Int i(&scope, testing::newIntWithDigits(&runtime, {1, 2}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, i, i, i));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, BinaryAddSmallInt) {
