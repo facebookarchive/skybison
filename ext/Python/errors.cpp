@@ -262,6 +262,7 @@ PY_EXPORT void PyErr_SetNone(PyObject* type) { PyErr_SetObject(type, Py_None); }
 PY_EXPORT void PyErr_SetObject(PyObject* exc, PyObject* val) {
   // TODO(cshapiro): chain exception when val is an exception instance
   Py_XINCREF(exc);
+  Py_XINCREF(val);
   PyErr_Restore(exc, val, nullptr);
 }
 

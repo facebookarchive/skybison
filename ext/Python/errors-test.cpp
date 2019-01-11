@@ -369,4 +369,16 @@ TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithFilenameObjectsSetsError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ChildProcessError));
 }
 
+TEST_F(ErrorsExtensionApiTest, SetStringSetsValue) {
+  PyErr_SetString(PyExc_Exception, "An exception occured");
+  PyObject* type = nullptr;
+  PyObject* value = nullptr;
+  PyObject* traceback = nullptr;
+  PyErr_Fetch(&type, &value, &traceback);
+  EXPECT_EQ(traceback, nullptr);
+  EXPECT_EQ(type, PyExc_Exception);
+  ASSERT_TRUE(PyUnicode_Check(value));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(value, "An exception occured"));
+}
+
 }  // namespace python
