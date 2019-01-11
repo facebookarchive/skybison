@@ -685,7 +685,7 @@ TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenBadMode) {
 TEST(BuiltinsModuleTest, BuiltinExecSetsGlobal) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1337
 exec("a = 1338")
   )");
@@ -699,7 +699,7 @@ exec("a = 1338")
 TEST(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1337
   )");
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -715,7 +715,7 @@ a = 1337
 TEST(BuiltinsModuleTest, BuiltinExecWithEmptyGlobalsFailsToSetGlobal) {
   Runtime runtime;
   HandleScope scope;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 a = 1337
   )");
   Str code(&scope, runtime.newStrFromCStr("a = 1338"));
@@ -758,7 +758,7 @@ TEST(BuiltinsModuleTest, PythonBuiltinAnnotationSetsFunctionSignature) {
   // We can't run buildClassKw on str because there's already a bunch of junk
   // defined on str that we don't want to try and re-patch. So we'll take a
   // method from a new class and patch str with that. Gross.
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class bumble():
   def __lt__(self, other: str) -> bool:
     """O, Canada"""
@@ -811,7 +811,7 @@ TEST(BuiltinsModuleTest, PythonBuiltinAnnotationSetsFunctionDocString) {
   // We can't run buildClassKw on str because there's already a bunch of junk
   // defined on str that we don't want to try and re-patch. So we'll take a
   // method from a new class and patch str with that. Gross.
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class bumble():
   def __lt__(self, other):
     """O, Canada"""
@@ -853,7 +853,7 @@ TEST(BuiltinsModuleDeathTest,
   // We can't run buildClassKw on str because there's already a bunch of junk
   // defined on str that we don't want to try and re-patch. So we'll take a
   // method from a new class and patch str with that. Gross.
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class bumble():
   def __lt__(self, other):
     return "moose"

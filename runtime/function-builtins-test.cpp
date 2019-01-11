@@ -10,7 +10,7 @@ namespace testing {
 
 TEST(FunctionBuiltinsTest, NativeFunctionObjectsExposeNoneDunderCode) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 code = len.__code__
 )");
   HandleScope scope;
@@ -20,7 +20,7 @@ code = len.__code__
 
 TEST(FunctionBuiltinsTest, ManagedFunctionObjectsExposeDunderCode) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 def foo(x):
   return x + 1
 code = foo.__code__
@@ -33,7 +33,7 @@ code = foo.__code__
 TEST(FunctionBuiltinsTest,
      ChangingCodeOfFunctionObjectChangesFunctionBehavior) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 def foo(x):
   return x + 1
 def bar(x):

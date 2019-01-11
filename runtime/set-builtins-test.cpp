@@ -1096,7 +1096,7 @@ TEST(SetBuiltinsTest, FrozenSetDunderNewReturnsSingleton) {
 
 TEST(SetBuiltinsTest, SubclassOfFrozenSetDunderNewDoesNotReturnSingleton) {
   Runtime runtime;
-  runtime.runFromCStr(R"(
+  runFromCStr(&runtime, R"(
 class C(frozenset):
     pass
 o = C()
