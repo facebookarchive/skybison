@@ -1,7 +1,9 @@
 // unicodeobject.c implementation
+#include <cstdarg>
 #include <cstring>
 #include <cwchar>
 
+#include "cpython-data.h"
 #include "cpython-func.h"
 #include "handles.h"
 #include "objects.h"
@@ -13,6 +15,7 @@ namespace python {
 typedef byte Py_UCS1;
 typedef uint16_t Py_UCS2;
 
+static const int kMaxLongLongChars = 19;  // len(str(2**63-1))
 static const int kOverallocateFactor = 4;
 
 struct _PyUnicodeWriter {  // NOLINT
@@ -163,6 +166,332 @@ PY_EXPORT int _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter* writer,
                     src->charAt(i));
   }
   return 0;
+}
+
+// Facebook: D13491655
+// Most of the following helper functions, along with PyUnicode_FromFormat and
+// PyUnicode_FromFormatV are directly imported from CPython. The following
+// modifications have been made:
+//
+// - Since our internal strings are always UTF-8, we don't need maxchar or any
+// of the helper functions required to calculate it
+//
+// - Since our strings are immutable, we can't use PyUnicode_Fill. However,
+// since the helper functions always use it to append to strings, we can get
+// away with just writing characters in a loop.
+//
+// - Since our internal strings are always UTF-8, there is no need to check
+// a character's 'Kind' before writing it to a string
+static int writeStr(_PyUnicodeWriter* writer, PyObject* str, Py_ssize_t width,
+                    Py_ssize_t precision) {
+  if (PyUnicode_READY(str) == -1) return -1;
+
+  Py_ssize_t length = PyUnicode_GET_LENGTH(str);
+  if ((precision == -1 || precision >= length) && width <= length) {
+    return _PyUnicodeWriter_WriteStr(writer, str);
+  }
+
+  if (precision != -1) length = Py_MIN(precision, length);
+
+  Py_ssize_t arglen = Py_MAX(length, width);
+  // Facebook: Our internal strings are always UTF-8, don't need maxchar
+  // (D13491655)
+  if (_PyUnicodeWriter_Prepare(writer, arglen, 0) == -1) return -1;
+
+  if (width > length) {
+    Py_ssize_t fill = width - length;
+    // Facebook: Our internal strings are immutable, can't use PyUnicode_Fill
+    // (D13491655)
+    for (Py_ssize_t i = 0; i < fill; ++i) {
+      if (_PyUnicodeWriter_WriteCharInline(writer, ' ') == -1) return -1;
+    }
+  }
+  // Facebook: Since we only have one internal representation, we don't have
+  // to worry about changing a string's 'Kind' (D13491655)
+  return _PyUnicodeWriter_WriteSubstring(writer, str, 0, length);
+}
+
+static int writeCStr(_PyUnicodeWriter* writer, const char* str,
+                     Py_ssize_t width, Py_ssize_t precision) {
+  Py_ssize_t length = std::strlen(str);
+  if (precision != -1) length = Py_MIN(length, precision);
+  PyObject* unicode =
+      PyUnicode_DecodeUTF8Stateful(str, length, "replace", nullptr);
+  if (unicode == nullptr) return -1;
+
+  int res = writeStr(writer, unicode, width, -1);
+  Py_DECREF(unicode);
+  return res;
+}
+
+static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
+                            va_list* vargs) {
+  const char* p = f;
+  f++;
+  int zeropad = 0;
+  if (*f == '0') {
+    zeropad = 1;
+    f++;
+  }
+
+  // parse the width.precision part, e.g. "%2.5s" => width=2, precision=5
+  Py_ssize_t width = -1;
+  if (Py_ISDIGIT(static_cast<unsigned>(*f))) {
+    width = *f - '0';
+    f++;
+    while (Py_ISDIGIT(static_cast<unsigned>(*f))) {
+      if (width > (kMaxWord - (static_cast<int>(*f) - '0')) / 10) {
+        PyErr_SetString(PyExc_ValueError, "width too big");
+        return nullptr;
+      }
+      width = (width * 10) + (*f - '0');
+      f++;
+    }
+  }
+  Py_ssize_t precision = -1;
+  if (*f == '.') {
+    f++;
+    if (Py_ISDIGIT(static_cast<unsigned>(*f))) {
+      precision = (*f - '0');
+      f++;
+      while (Py_ISDIGIT(static_cast<unsigned>(*f))) {
+        if (precision > (kMaxWord - (static_cast<int>(*f) - '0')) / 10) {
+          PyErr_SetString(PyExc_ValueError, "precision too big");
+          return nullptr;
+        }
+        precision = (precision * 10) + (*f - '0');
+        f++;
+      }
+    }
+    if (*f == '%') {
+      // "%.3%s" => f points to "3"
+      f--;
+    }
+  }
+  if (*f == '\0') {
+    // bogus format "%.123" => go backward, f points to "3"
+    f--;
+  }
+
+  // Handle %ld, %lu, %lld and %llu.
+  int longflag = 0;
+  int longlongflag = 0;
+  int size_tflag = 0;
+  if (*f == 'l') {
+    if (f[1] == 'd' || f[1] == 'u' || f[1] == 'i') {
+      longflag = 1;
+      ++f;
+    } else if (f[1] == 'l' && (f[2] == 'd' || f[2] == 'u' || f[2] == 'i')) {
+      longlongflag = 1;
+      f += 2;
+    }
+  }
+  // handle the size_t flag.
+  else if (*f == 'z' && (f[1] == 'd' || f[1] == 'u' || f[1] == 'i')) {
+    size_tflag = 1;
+    ++f;
+  }
+
+  if (f[1] == '\0') writer->overallocate = 0;
+
+  switch (*f) {
+    case 'c': {
+      int ordinal = va_arg(*vargs, int);
+      if (ordinal < 0 || ordinal > kMaxUnicode) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "character argument not in range(0x110000)");
+        return nullptr;
+      }
+      if (_PyUnicodeWriter_WriteCharInline(writer, ordinal) < 0) return nullptr;
+      break;
+    }
+
+    case 'i':
+    case 'd':
+    case 'u':
+    case 'x': {
+      // used by sprintf
+      char buffer[kMaxLongLongChars];
+      Py_ssize_t len;
+
+      if (*f == 'u') {
+        if (longflag) {
+          len = std::sprintf(buffer, "%lu", va_arg(*vargs, unsigned long));
+        } else if (longlongflag) {
+          len =
+              std::sprintf(buffer, "%llu", va_arg(*vargs, unsigned long long));
+        } else if (size_tflag) {
+          len = std::sprintf(buffer, "%" PY_FORMAT_SIZE_T "u",
+                             va_arg(*vargs, size_t));
+        } else {
+          len = std::sprintf(buffer, "%u", va_arg(*vargs, unsigned int));
+        }
+      } else if (*f == 'x') {
+        len = std::sprintf(buffer, "%x", va_arg(*vargs, int));
+      } else {
+        if (longflag) {
+          len = std::sprintf(buffer, "%li", va_arg(*vargs, long));
+        } else if (longlongflag) {
+          len = std::sprintf(buffer, "%lli", va_arg(*vargs, long long));
+        } else if (size_tflag) {
+          len = std::sprintf(buffer, "%" PY_FORMAT_SIZE_T "i",
+                             va_arg(*vargs, Py_ssize_t));
+        } else {
+          len = std::sprintf(buffer, "%i", va_arg(*vargs, int));
+        }
+      }
+      DCHECK(len >= 0);
+
+      if (precision < len) precision = len;
+
+      Py_ssize_t arglen = Py_MAX(precision, width);
+      if (_PyUnicodeWriter_Prepare(writer, arglen, 127) == -1) return nullptr;
+
+      if (width > precision) {
+        Py_ssize_t fill = width - precision;
+        Py_UCS4 fillchar = zeropad ? '0' : ' ';
+        // Facebook: Our internal strings are immutable, can't use
+        // PyUnicode_Fill (D13491655)
+        for (Py_ssize_t i = 0; i < fill; ++i) {
+          if (_PyUnicodeWriter_WriteCharInline(writer, fillchar) == -1) {
+            return nullptr;
+          }
+        }
+      }
+      if (precision > len) {
+        Py_ssize_t fill = precision - len;
+        // Facebook: Our internal strings are immutable, can't use
+        // PyUnicode_Fill (D13491655)
+        for (Py_ssize_t i = 0; i < fill; ++i) {
+          if (_PyUnicodeWriter_WriteCharInline(writer, '0') == -1) {
+            return nullptr;
+          }
+        }
+      }
+
+      if (_PyUnicodeWriter_WriteASCIIString(writer, buffer, len) < 0) {
+        return nullptr;
+      }
+      break;
+    }
+
+    case 'p': {
+      char number[kMaxLongLongChars];
+
+      Py_ssize_t len = std::sprintf(number, "%p", va_arg(*vargs, void*));
+      DCHECK(len >= 0);
+
+      // %p is ill-defined:  ensure leading 0x.
+      if (number[1] == 'X') {
+        number[1] = 'x';
+      } else if (number[1] != 'x') {
+        std::memmove(number + 2, number, strlen(number) + 1);
+        number[0] = '0';
+        number[1] = 'x';
+        len += 2;
+      }
+
+      if (_PyUnicodeWriter_WriteASCIIString(writer, number, len) < 0) {
+        return nullptr;
+      }
+      break;
+    }
+
+    case 's': {
+      // UTF-8
+      const char* s = va_arg(*vargs, const char*);
+      if (writeCStr(writer, s, width, precision) < 0) {
+        return nullptr;
+      }
+      break;
+    }
+
+    case 'U': {
+      PyObject* obj = va_arg(*vargs, PyObject*);
+      DCHECK(obj && _PyUnicode_CHECK(obj));
+
+      if (writeStr(writer, obj, width, precision) == -1) {
+        return nullptr;
+      }
+      break;
+    }
+
+    case 'V': {
+      PyObject* obj = va_arg(*vargs, PyObject*);
+      const char* str = va_arg(*vargs, const char*);
+      if (obj) {
+        DCHECK(_PyUnicode_CHECK(obj));
+        if (writeStr(writer, obj, width, precision) == -1) {
+          return nullptr;
+        }
+      } else {
+        DCHECK(str != nullptr);
+        if (writeCStr(writer, str, width, precision) < 0) {
+          return nullptr;
+        }
+      }
+      break;
+    }
+
+    case 'S': {
+      PyObject* obj = va_arg(*vargs, PyObject*);
+      DCHECK(obj);
+      PyObject* str = PyObject_Str(obj);
+      if (!str) return nullptr;
+      if (writeStr(writer, str, width, precision) == -1) {
+        Py_DECREF(str);
+        return nullptr;
+      }
+      Py_DECREF(str);
+      break;
+    }
+
+    case 'R': {
+      PyObject* obj = va_arg(*vargs, PyObject*);
+      DCHECK(obj);
+      PyObject* repr = PyObject_Repr(obj);
+      if (!repr) return nullptr;
+      if (writeStr(writer, repr, width, precision) == -1) {
+        Py_DECREF(repr);
+        return nullptr;
+      }
+      Py_DECREF(repr);
+      break;
+    }
+
+    case 'A': {
+      PyObject* obj = va_arg(*vargs, PyObject*);
+      DCHECK(obj);
+      PyObject* ascii = PyObject_ASCII(obj);
+      if (!ascii) return nullptr;
+      if (writeStr(writer, ascii, width, precision) == -1) {
+        Py_DECREF(ascii);
+        return nullptr;
+      }
+      Py_DECREF(ascii);
+      break;
+    }
+
+    case '%':
+      if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0) return nullptr;
+      break;
+
+    default: {
+      // if we stumble upon an unknown formatting code, copy the rest
+      // of the format string to the output string. (we cannot just
+      // skip the code, since there's no way to know what's in the
+      // argument list)
+      Py_ssize_t len = strlen(p);
+      if (_PyUnicodeWriter_WriteLatin1String(writer, p, len) == -1) {
+        return nullptr;
+      }
+      f = p + len;
+      return f;
+    }
+  }
+
+  f++;
+  return f;
 }
 
 PY_EXPORT int _PyUnicode_EqualToASCIIString(PyObject* unicode,
@@ -614,13 +943,60 @@ PY_EXPORT PyObject* PyUnicode_FromEncodedObject(PyObject* /* j */,
   UNIMPLEMENTED("PyUnicode_FromEncodedObject");
 }
 
-PY_EXPORT PyObject* PyUnicode_FromFormat(const char* /* t */, ...) {
-  UNIMPLEMENTED("PyUnicode_FromFormat");
+PY_EXPORT PyObject* PyUnicode_FromFormat(const char* format, ...) {
+  va_list vargs;
+
+  va_start(vargs, format);
+  PyObject* ret = PyUnicode_FromFormatV(format, vargs);
+  va_end(vargs);
+  return ret;
 }
 
-PY_EXPORT PyObject* PyUnicode_FromFormatV(const char* /* t */,
-                                          va_list /* s */) {
-  UNIMPLEMENTED("PyUnicode_FromFormatV");
+PY_EXPORT PyObject* PyUnicode_FromFormatV(const char* format, va_list vargs) {
+  va_list vargs2;
+  _PyUnicodeWriter writer;
+
+  _PyUnicodeWriter_Init(&writer);
+  writer.min_length = strlen(format) + 100;
+  writer.overallocate = 1;
+
+  // This copy seems unnecessary but it may have been needed by CPython for
+  // historical reasons.
+  va_copy(vargs2, vargs);
+
+  for (const char* f = format; *f;) {
+    if (*f == '%') {
+      f = writeArg(&writer, f, &vargs2);
+      if (f == nullptr) goto fail;
+    } else {
+      const char* p = f;
+      do {
+        if (static_cast<unsigned char>(*p) > 127) {
+          PyErr_Format(
+              PyExc_ValueError,
+              "PyUnicode_FromFormatV() expects an ASCII-encoded format "
+              "string, got a non-ASCII byte: 0x%02x",
+              static_cast<unsigned char>(*p));
+          goto fail;
+        }
+        p++;
+      } while (*p != '\0' && *p != '%');
+      Py_ssize_t len = p - f;
+
+      if (*p == '\0') writer.overallocate = 0;
+
+      if (_PyUnicodeWriter_WriteASCIIString(&writer, f, len) < 0) goto fail;
+
+      f = p;
+    }
+  }
+  va_end(vargs2);
+  return _PyUnicodeWriter_Finish(&writer);
+
+fail:
+  va_end(vargs2);
+  _PyUnicodeWriter_Dealloc(&writer);
+  return nullptr;
 }
 
 PY_EXPORT PyObject* PyUnicode_FromObject(PyObject* /* j */) {

@@ -523,4 +523,135 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8StatefulReturnsString) {
   EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello world"));
 }
 
+TEST_F(UnicodeExtensionApiTest, FromFormatWithNoArgsReturnsString) {
+  PyObjectPtr str(PyUnicode_FromFormat("hello world"));
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello world"));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromFormatWithManyArgsReturnsString) {
+  PyObjectPtr str(PyUnicode_FromFormat("h%c%s%%%2.i", 'e', "llo world", 2));
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), 14);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello world% 2"));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromFormatParsesNumberTypes) {
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%x", 123));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "7b"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%d", 124));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "124"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%i", 125));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "125"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%ld", 126));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "126"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%li", 127));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "127"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%lld", 128));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "128"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%lli", 129));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "129"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%u", 130));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "130"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%lu", 131));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "131"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%llu", 132));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "132"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%zd", 133));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "133"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%zu", 134));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "134"));
+  }
+
+  {
+    PyObjectPtr str(PyUnicode_FromFormat("%zi", 135));
+    EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "135"));
+  }
+}
+
+TEST_F(UnicodeExtensionApiTest, FromFormatParsesCharacters) {
+  PyObjectPtr str(PyUnicode_FromFormat("%c%c", 'h', 'w'));
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), 2);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hw"));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromFormatParsesPointer) {
+  long value = 0;
+  void* test = &value;
+  char buff[18];
+  std::snprintf(buff, 18, "%p", test);
+  PyObjectPtr str(PyUnicode_FromFormat("%p", test));
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), static_cast<const long>(std::strlen(buff)));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, buff));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromFormatParsesString) {
+  PyObjectPtr str(PyUnicode_FromFormat("%s", "UTF-8"));
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), 5);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "UTF-8"));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromFormatParsesStringObject) {
+  PyObject* unicode = PyUnicode_FromString("hello");
+  PyObjectPtr str(PyUnicode_FromFormat("%U", unicode));
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), 5);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello"));
+  Py_DECREF(unicode);
+}
+
+TEST_F(UnicodeExtensionApiTest, FromFormatParsesStringObjectAndString) {
+  PyObject* unicode = PyUnicode_FromString("hello");
+  PyObjectPtr str(PyUnicode_FromFormat("%V", unicode, "world"));
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), 5);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello"));
+  Py_DECREF(unicode);
+}
+
+TEST_F(UnicodeExtensionApiTest, FromFormatParsesNullAndString) {
+  PyObjectPtr str(PyUnicode_FromFormat("%V", nullptr, "world"));
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_EQ(PyUnicode_GetSize(str), 5);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "world"));
+}
+
 }  // namespace python
