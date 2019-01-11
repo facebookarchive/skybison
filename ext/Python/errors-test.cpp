@@ -381,4 +381,31 @@ TEST_F(ErrorsExtensionApiTest, SetStringSetsValue) {
   EXPECT_TRUE(_PyUnicode_EqualToASCIIString(value, "An exception occured"));
 }
 
+TEST_F(ErrorsExtensionApiTest, FormatWithNoArgsSetsAppropriateFields) {
+  ASSERT_EQ(PyErr_Format(PyExc_TypeError, "hello error"), nullptr);
+  PyObject* type = nullptr;
+  PyObject* value = nullptr;
+  PyObject* traceback = nullptr;
+  PyErr_Fetch(&type, &value, &traceback);
+  EXPECT_EQ(type, PyExc_TypeError);
+  ASSERT_TRUE(PyUnicode_Check(value));
+  ASSERT_TRUE(PyUnicode_CheckExact(value));
+  EXPECT_EQ(PyUnicode_GetSize(value), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(value, "hello error"));
+  EXPECT_EQ(traceback, nullptr);
+}
+
+TEST_F(ErrorsExtensionApiTest, FormatWithManyArgsSetsAppropriateFields) {
+  ASSERT_EQ(PyErr_Format(PyExc_MemoryError, "h%c%s", 'e', "llo world"),
+            nullptr);
+  PyObject* type = nullptr;
+  PyObject* value = nullptr;
+  PyObject* traceback = nullptr;
+  PyErr_Fetch(&type, &value, &traceback);
+  EXPECT_EQ(type, PyExc_MemoryError);
+  ASSERT_TRUE(PyUnicode_Check(value));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(value, "hello world"));
+  EXPECT_EQ(traceback, nullptr);
+}
+
 }  // namespace python

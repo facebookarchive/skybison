@@ -1,4 +1,5 @@
 #include <cerrno>
+#include <cstdarg>
 
 #include "cpython-data.h"
 #include "cpython-func.h"
@@ -22,8 +23,12 @@ PY_EXPORT PyObject* PyErr_Occurred() {
   return ApiHandle::newReference(thread, thread->pendingExceptionType());
 }
 
-PY_EXPORT PyObject* PyErr_Format(PyObject*, const char*, ...) {
-  UNIMPLEMENTED("PyErr_Format");
+PY_EXPORT PyObject* PyErr_Format(PyObject* exception, const char* format, ...) {
+  va_list vargs;
+  va_start(vargs, format);
+  PyErr_FormatV(exception, format, vargs);
+  va_end(vargs);
+  return nullptr;
 }
 
 PY_EXPORT void PyErr_Clear() {
@@ -86,9 +91,14 @@ PY_EXPORT void PyErr_Fetch(PyObject** pexc, PyObject** pval, PyObject** ptb) {
   thread->clearPendingException();
 }
 
-PY_EXPORT PyObject* PyErr_FormatV(PyObject* /* n */, const char* /* t */,
-                                  va_list /* s */) {
-  UNIMPLEMENTED("PyErr_FormatV");
+PY_EXPORT PyObject* PyErr_FormatV(PyObject* exception, const char* format,
+                                  va_list vargs) {
+  PyErr_Clear();  // Cannot call PyUnicode_FromFormatV with an exception set
+
+  PyObject* string = PyUnicode_FromFormatV(format, vargs);
+  PyErr_SetObject(exception, string);
+  Py_XDECREF(string);
+  return nullptr;
 }
 
 PY_EXPORT void PyErr_GetExcInfo(PyObject** /* p_type */,
