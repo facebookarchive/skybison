@@ -104,7 +104,7 @@ TEST_F(TupleExtensionApiTest, GetItemReturnsBorrowedReference) {
   Py_ssize_t length = 5;
   Py_ssize_t pos = 3;
   PyObject* pytuple = PyTuple_New(length);
-  PyObject* pyitem = testing::createUniqueObject();
+  PyObject* pyitem = PyLong_FromLong(0);
   long refcnt = Py_REFCNT(pyitem);
   ASSERT_EQ(PyTuple_SetItem(pytuple, pos, pyitem), 0);
   // PyTuple_SetItem "steals" a reference to the item.  Verify that the

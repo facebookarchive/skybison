@@ -35,12 +35,6 @@ int moduleSet(const char* module, const char* name, PyObject* value) {
   return ret;
 }
 
-PyObject* createUniqueObject() {
-  PyObject* pytuple = PyTuple_New(1);
-  PyTuple_SetItem(pytuple, 0, Py_None);
-  return pytuple;
-}
-
 PyObject* importGetModule(PyObject* name) {
   PyObject* modules_dict = PyImport_GetModuleDict();
   PyObject* module = PyDict_GetItem(modules_dict, name);

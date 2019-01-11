@@ -32,7 +32,7 @@ TEST_F(DictExtensionApiTest, GetItemNonExistingKeyReturnsNull) {
 TEST_F(DictExtensionApiTest, GetItemReturnsBorrowedValue) {
   PyObject* dict = PyDict_New();
   PyObject* key = PyLong_FromLong(10);
-  PyObject* value = createUniqueObject();
+  PyObject* value = PyLong_FromLong(0);
 
   // Insert the value into the dictionary
   ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
@@ -75,7 +75,7 @@ TEST_F(DictExtensionApiTest, GetItemStringReturnsValue) {
   PyObjectPtr dict(PyDict_New());
   const char* key_cstr = "key";
   PyObjectPtr key(PyUnicode_FromString(key_cstr));
-  PyObjectPtr value(createUniqueObject());
+  PyObjectPtr value(PyLong_FromLong(0));
   ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
 
   PyObject* item = PyDict_GetItemString(dict, key_cstr);
@@ -84,8 +84,8 @@ TEST_F(DictExtensionApiTest, GetItemStringReturnsValue) {
 
 TEST_F(DictExtensionApiTest, SetItemWithNonDictRaisesSystemError) {
   PyObjectPtr set(PySet_New(nullptr));
-  PyObjectPtr key(createUniqueObject());
-  PyObjectPtr val(createUniqueObject());
+  PyObjectPtr key(PyLong_FromLong(0));
+  PyObjectPtr val(PyLong_FromLong(0));
 
   ASSERT_EQ(PyDict_SetItem(set, key, val), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -94,8 +94,8 @@ TEST_F(DictExtensionApiTest, SetItemWithNonDictRaisesSystemError) {
 
 TEST_F(DictExtensionApiTest, SetItemWithNewDictReturnsZero) {
   PyObjectPtr dict(PyDict_New());
-  PyObjectPtr key(createUniqueObject());
-  PyObjectPtr val(createUniqueObject());
+  PyObjectPtr key(PyLong_FromLong(0));
+  PyObjectPtr val(PyLong_FromLong(0));
 
   EXPECT_EQ(PyDict_SetItem(dict, key, val), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -108,8 +108,8 @@ obj = Foo()
   )");
 
   PyObjectPtr obj(moduleGet("__main__", "obj"));
-  PyObjectPtr key(createUniqueObject());
-  PyObjectPtr val(createUniqueObject());
+  PyObjectPtr key(PyLong_FromLong(0));
+  PyObjectPtr val(PyLong_FromLong(0));
 
   EXPECT_EQ(PyDict_SetItem(obj, key, val), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -134,9 +134,9 @@ TEST_F(DictExtensionApiTest, SizeWithNonEmptyDict) {
   PyObject* dict = PyDict_New();
   PyObject* key1 = PyLong_FromLong(1);
   PyObject* key2 = PyLong_FromLong(2);
-  PyObject* value1 = createUniqueObject();
-  PyObject* value2 = createUniqueObject();
-  PyObject* value3 = createUniqueObject();
+  PyObject* value1 = PyLong_FromLong(0);
+  PyObject* value2 = PyLong_FromLong(0);
+  PyObject* value3 = PyLong_FromLong(0);
 
   // Dict starts out empty
   EXPECT_EQ(PyDict_Size(dict), 0);

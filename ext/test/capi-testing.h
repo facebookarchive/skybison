@@ -37,10 +37,6 @@ class PyObjectPtr {
 PyObject* moduleGet(const char* module, const char* name);
 int moduleSet(const char* module, const char* name, PyObject*);
 
-// Create an object that is guaranteed to have reference count one. Used when
-// the type and value does not matter but reference count does.
-PyObject* createUniqueObject();
-
 // Returns a new reference to the already imported module with the given name.
 // If no module is found, return a nullptr
 PyObject* importGetModule(PyObject* name);

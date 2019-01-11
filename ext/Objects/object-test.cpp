@@ -195,7 +195,7 @@ TEST_F(ObjectExtensionApiTest, RefCountDecreaseDeallocsHandle) {
 }
 
 TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCount) {
-  PyObject* o = testing::createUniqueObject();
+  PyObject* o = PyLong_FromLong(0);
   long refcnt = Py_REFCNT(o);
   EXPECT_GE(Py_REFCNT(o), 1);
   Py_INCREF(o);
@@ -205,7 +205,7 @@ TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCount) {
 }
 
 TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCountWithPyObjectPtr) {
-  PyObject* o = testing::createUniqueObject();
+  PyObject* o = PyLong_FromLong(0);
   long refcnt = Py_REFCNT(o);
   {
     Py_INCREF(o);
@@ -230,7 +230,7 @@ TEST_F(ObjectExtensionApiTest, GetAttrIncrementsReferenceCount) {
   };
   PyObjectPtr module(PyModule_Create(&def));
   PyObjectPtr key(PyUnicode_FromString("test"));
-  PyObject* value = testing::createUniqueObject();
+  PyObject* value = PyLong_FromLong(0);
   ASSERT_EQ(PyObject_SetAttr(module, key, value), 0);
 
   long refcnt = Py_REFCNT(value);

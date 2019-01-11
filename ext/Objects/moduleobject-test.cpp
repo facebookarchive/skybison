@@ -141,7 +141,7 @@ TEST_F(ModuleExtensionApiTest, GetStateAllocatesAndAllowsMutation) {
   mod_state->letter = 'a';
   mod_state->number = 2;
   mod_state->big_number = 2.1;
-  testing::PyObjectPtr unique_obj(testing::createUniqueObject());
+  testing::PyObjectPtr unique_obj(PyTuple_New(0));
   mod_state->object = unique_obj;
 
   ASSERT_EQ(PyModule_GetState(module), state);
@@ -154,7 +154,7 @@ TEST_F(ModuleExtensionApiTest, GetStateAllocatesAndAllowsMutation) {
 }
 
 TEST_F(ModuleExtensionApiTest, GetStateFailsOnNonModule) {
-  testing::PyObjectPtr not_a_module(testing::createUniqueObject());
+  testing::PyObjectPtr not_a_module(PyLong_FromLong(0));
 
   EXPECT_EQ(PyModule_GetState(not_a_module), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
