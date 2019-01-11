@@ -12,6 +12,35 @@
 
 namespace python {
 
+RawObject asFloatObject(Thread* thread, const Object& obj) {
+  // Object is float
+  if (obj->isFloat()) return *obj;
+
+  // Object is subclass of float
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  if (runtime->isInstanceOfFloat(*obj)) {
+    UserFloatBase user_float(&scope, *obj);
+    return user_float->floatValue();
+  }
+
+  // Try calling __float__
+  Frame* frame = thread->currentFrame();
+  Object fltmethod(&scope, Interpreter::lookupMethod(thread, frame, obj,
+                                                     SymbolId::kDunderFloat));
+  if (fltmethod->isError()) {
+    return thread->raiseTypeErrorWithCStr("must be a real number");
+  }
+  Object flt_obj(&scope,
+                 Interpreter::callMethod1(thread, frame, fltmethod, obj));
+  if (flt_obj->isError() || flt_obj->isFloat()) return *flt_obj;
+  if (!runtime->isInstanceOfFloat(*flt_obj)) {
+    return thread->raiseTypeErrorWithCStr("__float__ returned non-float");
+  }
+  UserFloatBase user_float(&scope, *obj);
+  return user_float->floatValue();
+}
+
 const BuiltinMethod FloatBuiltins::kMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},

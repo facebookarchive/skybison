@@ -2,6 +2,7 @@
 
 #include <cfloat>
 
+#include "float-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 
@@ -25,33 +26,9 @@ PY_EXPORT double PyFloat_AsDouble(PyObject* op) {
   // Object is float
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(op)->asObject());
-  if (obj->isFloat()) {
-    return Float::cast(*obj)->value();
-  }
-
-  // Object is subclass of float
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfFloat(*obj)) {
-    UserFloatBase user_float(&scope, *obj);
-    return Float::cast(user_float->floatValue())->value();
-  }
-
-  // Try calling __float__
-  Frame* frame = thread->currentFrame();
-  Object fltmethod(&scope, Interpreter::lookupMethod(thread, frame, obj,
-                                                     SymbolId::kDunderFloat));
-  if (fltmethod->isError()) {
-    thread->raiseTypeErrorWithCStr("must be a real number");
-    return -1;
-  }
-  Object flt_obj(&scope,
-                 Interpreter::callMethod1(thread, frame, fltmethod, obj));
-  if (!runtime->isInstanceOfFloat(*flt_obj)) {
-    thread->raiseTypeErrorWithCStr("__float__ returned non-float");
-    return -1;
-  }
-  Float flt(&scope, *flt_obj);
-  return flt->value();
+  Object float_or_err(&scope, asFloatObject(thread, obj));
+  if (float_or_err->isError()) return -1;
+  return RawFloat::cast(*float_or_err)->value();
 }
 
 PY_EXPORT int PyFloat_CheckExact_Func(PyObject* obj) {

@@ -7,6 +7,15 @@
 
 namespace python {
 
+/* Attempts to get a float value out of obj.
+ * If obj is already a RawFloat, return it immediately.
+ * Otherwise, check if obj has a __float__ method.
+ * If the result of __float__ is RawFloat, then return it.
+ * Returns Error::object() and sets an exception if obj is not a float and does
+ * not have __float__, or if __float__ returns some non-float value.
+ */
+RawObject asFloatObject(Thread* thread, const Object& obj);
+
 class FloatBuiltins {
  public:
   static void initialize(Runtime* runtime);

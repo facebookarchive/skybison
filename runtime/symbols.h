@@ -24,6 +24,7 @@ class Runtime;
   V(DunderClass, "__class__")                                                  \
   V(DunderClassCell, "__classcell__")                                          \
   V(DunderCode, "__code__")                                                    \
+  V(DunderComplex, "__complex__")                                              \
   V(DunderContains, "__contains__")                                            \
   V(DunderContext, "__context__")                                              \
   V(DunderDelItem, "__delitem__")                                              \
