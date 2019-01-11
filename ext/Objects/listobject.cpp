@@ -36,8 +36,25 @@ PY_EXPORT int PyList_Check_Func(PyObject* obj) {
                                                   LayoutId::kList);
 }
 
-PY_EXPORT PyObject* PyList_AsTuple(PyObject* /* v */) {
-  UNIMPLEMENTED("PyList_AsTuple");
+PY_EXPORT PyObject* PyList_AsTuple(PyObject* pylist) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  if (pylist == nullptr) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
+  if (!runtime->isInstanceOfList(*list_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  List list(&scope, *list_obj);
+  Tuple tuple(&scope, runtime->newTuple(list->numItems()));
+  for (Py_ssize_t i = 0; i < list->numItems(); i++) {
+    tuple->atPut(i, list->at(i));
+  }
+  return ApiHandle::newReference(thread, *tuple);
 }
 
 PY_EXPORT PyObject* PyList_GetItem(PyObject* /* p */, Py_ssize_t /* i */) {

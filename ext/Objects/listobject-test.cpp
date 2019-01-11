@@ -6,6 +6,8 @@
 
 namespace python {
 
+using namespace testing;
+
 using ListExtensionApiTest = ExtensionApi;
 
 TEST_F(ListExtensionApiTest, NewWithBadLengthReturnsNull) {
@@ -82,6 +84,36 @@ TEST_F(ListExtensionApiTest, SizeWithNonListReturnsNegative) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 
   Py_DECREF(dict);
+}
+
+TEST_F(ListExtensionApiTest, AsTupleWithNullRaisesSystemError) {
+  ASSERT_EQ(PyList_AsTuple(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, AsTupleWithNonListRaisesSystemError) {
+  ASSERT_EQ(PyList_AsTuple(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, AsTupleWithListReturnsAllElementsFromList) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyList_Append(list, one);
+  PyList_Append(list, two);
+  PyList_Append(list, three);
+
+  PyObjectPtr tuple(PyList_AsTuple(list));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyTuple_CheckExact(tuple));
+  ASSERT_EQ(PyTuple_Size(tuple), 3);
+  EXPECT_EQ(PyTuple_GetItem(tuple, 0), one);
+  EXPECT_EQ(PyTuple_GetItem(tuple, 1), two);
+  EXPECT_EQ(PyTuple_GetItem(tuple, 2), three);
 }
 
 }  // namespace python
