@@ -55,9 +55,6 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
       }
       return len_or_error.value;
     case CastError::Overflow:
-      thread->raiseOverflowErrorWithCStr(
-          "cannot fit 'int' into an index-sized integer");
-      return -1;
     case CastError::Underflow:
       thread->raiseOverflowErrorWithCStr(
           "cannot fit 'int' into an index-sized integer");
