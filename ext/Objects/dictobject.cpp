@@ -90,8 +90,14 @@ PY_EXPORT void PyDict_Clear(PyObject* /* p */) {
 
 PY_EXPORT int PyDict_ClearFreeList() { return 0; }
 
-PY_EXPORT int PyDict_Contains(PyObject* /* p */, PyObject* /* y */) {
-  UNIMPLEMENTED("PyDict_Contains");
+PY_EXPORT int PyDict_Contains(PyObject* pydict, PyObject* key) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Dict dict(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  // TODO(T36757907): Return -1 when dictIncludes fails to hash the key
+  return runtime->dictIncludes(dict, key_obj);
 }
 
 PY_EXPORT PyObject* PyDict_Copy(PyObject* /* o */) {

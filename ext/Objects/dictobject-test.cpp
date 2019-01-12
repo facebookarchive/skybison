@@ -158,4 +158,24 @@ TEST_F(DictExtensionApiTest, SizeWithNonEmptyDict) {
   Py_DECREF(value3);
 }
 
+TEST_F(DictExtensionApiTest, ContainsWithKeyInDictReturnsOne) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key(PyLong_FromLong(10));
+  PyObjectPtr value(PyLong_FromLong(11));
+  ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+  EXPECT_EQ(PyDict_Contains(dict, key), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, ContainsWithKeyNotInDictReturnsZero) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key(PyLong_FromLong(10));
+  PyObjectPtr value(PyLong_FromLong(11));
+  ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr key2(PyLong_FromLong(666));
+  EXPECT_EQ(PyDict_Contains(dict, key2), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python
