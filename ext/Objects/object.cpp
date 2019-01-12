@@ -139,8 +139,28 @@ PY_EXPORT int PyObject_Print(PyObject* /* p */, FILE* /* p */, int /* s */) {
   UNIMPLEMENTED("PyObject_Print");
 }
 
-PY_EXPORT PyObject* PyObject_Repr(PyObject* /* v */) {
-  UNIMPLEMENTED("PyObject_Repr");
+// TODO(T38571506): Handle recursive objects safely.
+PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr) {
+    return ApiHandle::newReference(thread,
+                                   thread->runtime()->symbols()->Null());
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  // Only one argument, the value to be repr'ed.
+  Frame* frame = thread->currentFrame();
+  Object method(&scope, Interpreter::lookupMethod(thread, frame, object,
+                                                  SymbolId::kDunderRepr));
+  Object result(&scope,
+                Interpreter::callMethod1(thread, frame, method, object));
+  if (result->isError() || !thread->runtime()->isInstanceOfStr(result)) {
+    // If __repr__ doesn't return a string or error, throw a type error
+    thread->raiseTypeErrorWithCStr(
+        "__repr__ not callable or returned non-string");
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyObject_RichCompare(PyObject* /* v */, PyObject* /* w */,

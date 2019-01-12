@@ -244,4 +244,35 @@ TEST_F(ObjectExtensionApiTest, GetAttrIncrementsReferenceCount) {
   Py_DECREF(result);
 }
 
+TEST_F(ObjectExtensionApiTest, ReprOnNullReturnsSpecialNullString) {
+  PyObjectPtr repr(PyObject_Repr(nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(repr, "<NULL>"), 0);
+}
+
+TEST_F(ObjectExtensionApiTest, ReprWithObjectWithBadDunderReprRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __repr__ = None
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  PyObjectPtr repr(PyObject_Repr(pyc));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest, ReprIsCorrectForObjectWithDunderRepr) {
+  PyRun_SimpleString(R"(
+class C:
+  def __repr__(self):
+    return "bongo"
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  PyObjectPtr repr(PyObject_Repr(pyc));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(repr, "bongo"), 0);
+}
+
 }  // namespace python

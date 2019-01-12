@@ -225,6 +225,7 @@ class Runtime;
   V(NotImplemented, "NotImplemented")                                          \
   V(NotImplementedError, "NotImplementedError")                                \
   V(NotImplementedType, "NotImplementedType")                                  \
+  V(Null, "<NULL>")                                                            \
   V(OSError, "OSError")                                                        \
   V(ObjectTypename, "object")                                                  \
   V(Ord, "ord")                                                                \
