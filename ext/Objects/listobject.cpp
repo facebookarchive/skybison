@@ -57,8 +57,22 @@ PY_EXPORT PyObject* PyList_AsTuple(PyObject* pylist) {
   return ApiHandle::newReference(thread, *tuple);
 }
 
-PY_EXPORT PyObject* PyList_GetItem(PyObject* /* p */, Py_ssize_t /* i */) {
-  UNIMPLEMENTED("PyList_GetItem");
+PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
+  if (!runtime->isInstanceOfList(*list_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  List list(&scope, *list_obj);
+  if (i >= list->numItems()) {
+    thread->raiseIndexErrorWithCStr("index out of bounds in PyList_GetItem");
+    return nullptr;
+  }
+  Object value(&scope, list->at(i));
+  return ApiHandle::borrowedReference(thread, *value);
 }
 
 PY_EXPORT int PyList_Reverse(PyObject* /* v */) {
