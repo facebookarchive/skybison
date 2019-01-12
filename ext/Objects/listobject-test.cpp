@@ -260,4 +260,87 @@ TEST_F(ListExtensionApiTest, GetSliceWithOutOfBoundsHighEndsAtLength) {
   EXPECT_EQ(PyList_GetItem(result, 2), two);
 }
 
+TEST_F(ListExtensionApiTest, InsertWithNonListRaisesSystemError) {
+  ASSERT_EQ(PyList_Insert(Py_None, 0, Py_None), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, InsertWithNullItemRaisesSystemError) {
+  ASSERT_EQ(PyList_Insert(PyList_New(0), 0, nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, InsertIncreasesSizeByOne) {
+  Py_ssize_t num_items = 0;
+  PyObjectPtr list(PyList_New(num_items));
+  PyObjectPtr val(PyLong_FromLong(666));
+  ASSERT_EQ(PyList_Insert(list, 0, val), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyList_Size(list), num_items + 1);
+  EXPECT_EQ(PyList_GetItem(list, 0), val);
+}
+
+TEST_F(ListExtensionApiTest, InsertIntoListAtFrontShiftsItems) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+
+  PyObjectPtr val(PyLong_FromLong(666));
+  ASSERT_EQ(PyList_Insert(list, 0, val), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyList_Size(list), 3);
+  EXPECT_EQ(PyList_GetItem(list, 0), val);
+  EXPECT_EQ(PyList_GetItem(list, 1), one);
+  EXPECT_EQ(PyList_GetItem(list, 2), two);
+}
+
+TEST_F(ListExtensionApiTest, InsertIntoListPastRearInsertsAtEnd) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+
+  PyObjectPtr val(PyLong_FromLong(666));
+  ASSERT_EQ(PyList_Insert(list, 100, val), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyList_GetItem(list, 0), one);
+  EXPECT_EQ(PyList_GetItem(list, 1), two);
+  ASSERT_EQ(PyList_GetItem(list, 2), val);
+}
+
+TEST_F(ListExtensionApiTest, InsertIntoListNegativeInsertsIndexingFromEnd) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+
+  PyObjectPtr val(PyLong_FromLong(666));
+  ASSERT_EQ(PyList_Insert(list, -1, val), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyList_GetItem(list, 0), one);
+  EXPECT_EQ(PyList_GetItem(list, 1), val);
+  ASSERT_EQ(PyList_GetItem(list, 2), two);
+}
+
+TEST_F(ListExtensionApiTest, InsertIntoListWayNegativeInsertsAtBeginning) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+
+  PyObjectPtr val(PyLong_FromLong(666));
+  ASSERT_EQ(PyList_Insert(list, -100, val), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyList_GetItem(list, 0), val);
+  EXPECT_EQ(PyList_GetItem(list, 1), one);
+  ASSERT_EQ(PyList_GetItem(list, 2), two);
+}
+
 }  // namespace python

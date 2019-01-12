@@ -152,9 +152,28 @@ PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
                                  ListBuiltins::slice(thread, *list, *slice));
 }
 
-PY_EXPORT int PyList_Insert(PyObject* /* p */, Py_ssize_t /* e */,
-                            PyObject* /* m */) {
-  UNIMPLEMENTED("PyList_Insert");
+PY_EXPORT int PyList_Insert(PyObject* pylist, Py_ssize_t where,
+                            PyObject* item) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  if (item == nullptr) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
+  if (!runtime->isInstanceOfList(*list_obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  List list(&scope, *list_obj);
+  if (list->numItems() == kMaxWord) {
+    thread->raiseSystemErrorWithCStr("cannot add more objects to list");
+    return -1;
+  }
+  Object item_obj(&scope, ApiHandle::fromPyObject(item)->asObject());
+  runtime->listInsert(list, item_obj, where);
+  return 0;
 }
 
 PY_EXPORT int PyList_SetSlice(PyObject* /* a */, Py_ssize_t /* w */,
