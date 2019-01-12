@@ -132,4 +132,74 @@ TEST_F(SetExtensionApiTest, SizeOfNonSetReturnsNegative) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
+TEST_F(SetExtensionApiTest, FrozenSetNewWithDictCopiesKeys) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr value(PyLong_FromLong(4));
+  PyObjectPtr key1(PyLong_FromLong(1));
+  PyDict_SetItem(dict, key1, value);
+  PyObjectPtr key2(PyLong_FromLong(2));
+  PyDict_SetItem(dict, key2, value);
+  PyObjectPtr key3(PyLong_FromLong(3));
+  PyDict_SetItem(dict, key3, value);
+
+  PyObjectPtr set(PyFrozenSet_New(dict));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PySet_Contains(set, key1), 1);
+  EXPECT_EQ(PySet_Contains(set, key2), 1);
+  EXPECT_EQ(PySet_Contains(set, key3), 1);
+}
+
+TEST_F(SetExtensionApiTest, FrozenSetNewFromSetContainsElementsOfSet) {
+  PyObjectPtr set(PySet_New(nullptr));
+  PyObjectPtr one(PyLong_FromLong(1));
+  ASSERT_EQ(PySet_Add(set, one), 0);
+  PyObjectPtr two(PyLong_FromLong(2));
+  ASSERT_EQ(PySet_Add(set, two), 0);
+
+  PyObjectPtr set_copy(PyFrozenSet_New(set));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PySet_Contains(set_copy, one), 1);
+  EXPECT_EQ(PySet_Contains(set_copy, two), 1);
+  EXPECT_EQ(PySet_Size(set_copy), 2);
+}
+
+TEST_F(SetExtensionApiTest, FrozenSetNewWithListContainsElementsOfList) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+
+  PyObjectPtr set(PyFrozenSet_New(list));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PySet_Contains(set, one), 1);
+  EXPECT_EQ(PySet_Contains(set, two), 1);
+  EXPECT_EQ(PySet_Size(set), 2);
+}
+
+TEST_F(SetExtensionApiTest, FrozenSetNewWithNonIterableRaisesTypeError) {
+  PyObjectPtr num(PyLong_FromLong(1));
+  EXPECT_EQ(PyFrozenSet_New(num), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(SetExtensionApiTest, FrozenSetNewWithNullReturnsEmpty) {
+  PyObjectPtr set(PyFrozenSet_New(nullptr));
+  ASSERT_NE(set, nullptr);
+  EXPECT_EQ(PySet_Size(set), 0);
+}
+
+TEST_F(SetExtensionApiTest, ContainsWithFrozenSetDoesNotRaiseSystemError) {
+  PyObjectPtr set(PyFrozenSet_New(nullptr));
+  EXPECT_EQ(PySet_Contains(set, Py_None), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(SetExtensionApiTest, SizeWithFrozenSetDoesNotRaiseSystemError) {
+  PyObjectPtr set(PyFrozenSet_New(nullptr));
+  EXPECT_EQ(PySet_Size(set), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python
