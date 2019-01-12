@@ -275,4 +275,48 @@ c = C()
   EXPECT_EQ(PyUnicode_CompareWithASCIIString(repr, "bongo"), 0);
 }
 
+TEST_F(ObjectExtensionApiTest, StrOnNullReturnsSpecialNullString) {
+  PyObjectPtr str(PyObject_Str(nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyUnicode_CompareWithASCIIString(str, "<NULL>"), 0);
+}
+
+TEST_F(ObjectExtensionApiTest, StrCallsClassDunderReprWhenProvided) {
+  PyRun_SimpleString(R"(
+class C:
+  def __repr__(self):
+    return "bongo"
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  PyObjectPtr str(PyObject_Str(pyc));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyUnicode_CompareWithASCIIString(str, "bongo"), 0);
+}
+
+TEST_F(ObjectExtensionApiTest, StrWithObjectWithBadDunderStrRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __str__ = None
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  PyObjectPtr repr(PyObject_Str(pyc));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest, StrCallsClassDunderStrWhenProvided) {
+  PyRun_SimpleString(R"(
+class C:
+  def __str__(self):
+    return "bongo"
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  PyObjectPtr str(PyObject_Str(pyc));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyUnicode_CompareWithASCIIString(str, "bongo"), 0);
+}
+
 }  // namespace python

@@ -3,6 +3,7 @@
 #include "builtins-module.h"
 #include "cpython-func.h"
 #include "runtime.h"
+#include "str-builtins.h"
 
 namespace python {
 
@@ -192,8 +193,28 @@ PY_EXPORT int PyObject_SetAttrString(PyObject* v, const char* name,
   return result;
 }
 
-PY_EXPORT PyObject* PyObject_Str(PyObject* /* v */) {
-  UNIMPLEMENTED("PyObject_Str");
+// TODO(T38571506): Handle recursive objects safely.
+PY_EXPORT PyObject* PyObject_Str(PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr) {
+    return ApiHandle::newReference(thread,
+                                   thread->runtime()->symbols()->Null());
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  // Only one argument, the value to be str'ed.
+  Frame* frame = thread->currentFrame();
+  Object method(&scope, Interpreter::lookupMethod(thread, frame, object,
+                                                  SymbolId::kDunderStr));
+  Object result(&scope,
+                Interpreter::callMethod1(thread, frame, method, object));
+  if (result->isError() || !thread->runtime()->isInstanceOfStr(result)) {
+    // If __str__ doesn't return a string or error, throw a type error
+    thread->raiseTypeErrorWithCStr(
+        "__str__ not callable or returned non-string");
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT void Py_DecRef(PyObject* obj) {
