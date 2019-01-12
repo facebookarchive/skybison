@@ -177,4 +177,87 @@ TEST_F(ListExtensionApiTest, SetItemWithListSetsItemAtIndex) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(ListExtensionApiTest, GetSliceOnNonListRaisesSystemError) {
+  ASSERT_EQ(PyList_GetSlice(Py_None, 0, 0), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, GetSliceOnEmptyListReturnsEmptyList) {
+  PyObjectPtr result(PyList_GetSlice(PyList_New(0), 0, 0));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyList_Size(result), 0);
+}
+
+TEST_F(ListExtensionApiTest, GetSliceWithNegativeOutOfBoundsLowStartsAtZero) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr zero(PyLong_FromLong(0));
+  PyList_Append(list, zero);
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+
+  PyObjectPtr result(PyList_GetSlice(list, -5, 3));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 3);
+  EXPECT_EQ(PyList_GetItem(result, 0), zero);
+  EXPECT_EQ(PyList_GetItem(result, 1), one);
+  EXPECT_EQ(PyList_GetItem(result, 2), two);
+}
+
+TEST_F(ListExtensionApiTest, GetSliceWithPositiveOutOfBoundsLowStartsAtLength) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr zero(PyLong_FromLong(0));
+  PyList_Append(list, zero);
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+
+  PyObjectPtr result(PyList_GetSlice(list, 15, 3));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 0);
+}
+
+TEST_F(ListExtensionApiTest, GetSliceOutOfBoundsHighStartsAtLow) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr zero(PyLong_FromLong(0));
+  PyList_Append(list, zero);
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+
+  PyObjectPtr result(PyList_GetSlice(list, 5, 0));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 0);
+}
+
+TEST_F(ListExtensionApiTest, GetSliceWithOutOfBoundsHighEndsAtLength) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr zero(PyLong_FromLong(0));
+  PyList_Append(list, zero);
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+
+  PyObjectPtr result(PyList_GetSlice(list, 0, 20));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 3);
+  EXPECT_EQ(PyList_GetItem(result, 0), zero);
+  EXPECT_EQ(PyList_GetItem(result, 1), one);
+  EXPECT_EQ(PyList_GetItem(result, 2), two);
+}
+
 }  // namespace python

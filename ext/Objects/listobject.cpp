@@ -2,6 +2,7 @@
 
 #include "cpython-func.h"
 #include "handles.h"
+#include "list-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 
@@ -122,9 +123,33 @@ PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
 
 PY_EXPORT int PyList_ClearFreeList() { return 0; }
 
-PY_EXPORT PyObject* PyList_GetSlice(PyObject* /* a */, Py_ssize_t /* w */,
-                                    Py_ssize_t /* h */) {
-  UNIMPLEMENTED("PyList_GetSlice");
+PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
+                                    Py_ssize_t high) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
+  if (!runtime->isInstanceOfList(*list_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  List list(&scope, *list_obj);
+  if (low < 0) {
+    low = 0;
+  } else if (low > list->numItems()) {
+    low = list->numItems();
+  }
+  if (high < low) {
+    high = low;
+  } else if (high > list->numItems()) {
+    high = list->numItems();
+  }
+  Object low_obj(&scope, runtime->newInt(low));
+  Object high_obj(&scope, runtime->newInt(high));
+  Object step_obj(&scope, runtime->newInt(1));
+  Slice slice(&scope, runtime->newSlice(low_obj, high_obj, step_obj));
+  return ApiHandle::newReference(thread,
+                                 ListBuiltins::slice(thread, *list, *slice));
 }
 
 PY_EXPORT int PyList_Insert(PyObject* /* p */, Py_ssize_t /* e */,
