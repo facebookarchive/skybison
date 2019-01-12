@@ -37,11 +37,22 @@ RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  Object instance(&scope, args.get(1));
-  if (instance->isNoneType()) {
-    return *self;
+  if (!self->isFunction()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__get__ must be called with function instance as first argument");
   }
-  return thread->runtime()->newBoundMethod(self, instance);
+  Object instance(&scope, args.get(1));
+  if (!instance->isNoneType()) {
+    return thread->runtime()->newBoundMethod(self, instance);
+  }
+  Object type_obj(&scope, args.get(2));
+  if (thread->runtime()->isInstanceOfType(*type_obj)) {
+    Type type(&scope, *type_obj);
+    if (RawLayout::cast(type->instanceLayout()).id() == LayoutId::kNoneType) {
+      return thread->runtime()->newBoundMethod(self, instance);
+    }
+  }
+  return *self;
 }
 
 }  // namespace python

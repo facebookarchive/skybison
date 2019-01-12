@@ -48,5 +48,50 @@ a = foo(5)
   ASSERT_EQ(a->value(), 10);
 }
 
+TEST(FunctionBuiltinsTest, DunderGetWithNonFunctionSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object none(&scope, NoneType::object());
+  ASSERT_TRUE(
+      runBuiltin(FunctionBuiltins::dunderGet, none, none, none).isError());
+  Thread* thread = Thread::currentThread();
+  EXPECT_EQ(thread->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
+  EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
+}
+
+TEST(FunctionBuiltinsTest, DunderGetWithNonNoneInstanceReturnsBoundMethod) {
+  Runtime runtime;
+  HandleScope scope;
+  Object func(&scope, runtime.newFunction());
+  Object not_none(&scope, SmallInt::fromWord(1));
+  Object result(&scope, runBuiltin(FunctionBuiltins::dunderGet, func, not_none,
+                                   not_none));
+  EXPECT_TRUE(result->isBoundMethod());
+}
+
+TEST(FunctionBuiltinsTest,
+     DunderGetWithNoneInstanceAndNoneTypeReturnsBoundMethod) {
+  Runtime runtime;
+  HandleScope scope;
+  Object func(&scope, runtime.newFunction());
+  Object none(&scope, NoneType::object());
+  Type none_type(&scope, runtime.typeOf(none));
+  Object result(&scope,
+                runBuiltin(FunctionBuiltins::dunderGet, func, none, none_type));
+  EXPECT_TRUE(result->isBoundMethod());
+}
+
+TEST(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
+  Runtime runtime;
+  HandleScope scope;
+  Object func(&scope, runtime.newFunction());
+  Object none(&scope, NoneType::object());
+  Type some_type(&scope, runtime.typeOf(func));
+  Object result(&scope,
+                runBuiltin(FunctionBuiltins::dunderGet, func, none, some_type));
+  EXPECT_EQ(result, func);
+}
+
 }  // namespace testing
 }  // namespace python

@@ -142,4 +142,21 @@ TEST(NoneBuiltinsTest, NewWithExtraArgsThrows) {
       runBuiltin(NoneBuiltins::dunderNew, type, num1, num2, num3)->isError());
 }
 
+TEST(NoneBuiltinsTest, DunderReprIsBoundMethod) {
+  Runtime runtime;
+  runtime.runFromCStr("a = None.__repr__");
+  HandleScope scope;
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(a->isBoundMethod());
+}
+
+TEST(NoneBuiltinsTest, DunderReprReturnsNone) {
+  Runtime runtime;
+  runtime.runFromCStr("a = None.__repr__()");
+  HandleScope scope;
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
+  ASSERT_TRUE(a_obj->isStr());
+  // TODO(emacs): Compare with "None" when NoneType has a proper __repr__
+}
+
 }  // namespace python
