@@ -2848,6 +2848,7 @@ bool Runtime::setRemove(const Set& set, const Object& value) {
   HandleScope scope;
   Tuple data(&scope, set->data());
   Object key_hash(&scope, hash(*value));
+  // TODO(T36757907): Raise TypeError if key is unhashable
   word index = setLookup<SetLookupType::Lookup>(data, value, key_hash);
   if (index != -1) {
     SetBase::Bucket::setTombstone(*data, index);

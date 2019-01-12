@@ -79,8 +79,19 @@ PY_EXPORT int PySet_Contains(PyObject* anyset, PyObject* key) {
   return runtime->setIncludes(set, key_obj);
 }
 
-PY_EXPORT int PySet_Discard(PyObject* /* t */, PyObject* /* y */) {
-  UNIMPLEMENTED("PySet_Discard");
+PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object set_obj(&scope, ApiHandle::fromPyObject(pyset)->asObject());
+  if (!runtime->isInstanceOfSet(set_obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  Set set(&scope, *set_obj);
+  Object key(&scope, ApiHandle::fromPyObject(pykey)->asObject());
+  // TODO(T36757907): Create and use setRemoveWithHash
+  return runtime->setRemove(set, key);
 }
 
 PY_EXPORT PyObject* PySet_New(PyObject* iterable) {

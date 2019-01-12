@@ -252,4 +252,20 @@ TEST_F(SetExtensionApiTest, PopWithSetContainingErrorsRemovesItem) {
   EXPECT_EQ(PySet_Size(set), 0);
 }
 
+TEST_F(SetExtensionApiTest, DiscardWithNonSetRaisesSystemError) {
+  ASSERT_EQ(PySet_Discard(Py_None, Py_None), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(SetExtensionApiTest, DiscardWithSetRemovesItem) {
+  PyObjectPtr set(PySet_New(nullptr));
+  PyObjectPtr elt(PyLong_FromLong(5));
+  ASSERT_EQ(PySet_Add(set, elt), 0);
+  ASSERT_EQ(PySet_Size(set), 1);
+  ASSERT_EQ(PySet_Discard(set, elt), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PySet_Size(set), 0);
+}
+
 }  // namespace python
