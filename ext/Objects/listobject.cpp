@@ -76,8 +76,22 @@ PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
   return ApiHandle::borrowedReference(thread, *value);
 }
 
-PY_EXPORT int PyList_Reverse(PyObject* /* v */) {
-  UNIMPLEMENTED("PyList_Reverse");
+PY_EXPORT int PyList_Reverse(PyObject* pylist) {
+  Thread* thread = Thread::currentThread();
+  if (pylist == nullptr) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
+  if (!runtime->isInstanceOfList(*list_obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  List list(&scope, *list_obj);
+  listReverse(thread, list);
+  return 0;
 }
 
 PY_EXPORT int PyList_SetItem(PyObject* pylist, Py_ssize_t i, PyObject* item) {

@@ -9,6 +9,19 @@
 
 namespace python {
 
+void listReverse(Thread* thread, const List& list) {
+  if (list->numItems() == 0) {
+    return;
+  }
+  HandleScope scope(thread);
+  Object elt(&scope, NoneType::object());
+  for (word low = 0, high = list->numItems() - 1; low < high; ++low, --high) {
+    elt = list->at(low);
+    list->atPut(low, list->at(high));
+    list->atPut(high, *elt);
+  }
+}
+
 const BuiltinAttribute ListBuiltins::kAttributes[] = {
     {SymbolId::kItems, RawList::kItemsOffset},
     {SymbolId::kAllocated, RawList::kAllocatedOffset},

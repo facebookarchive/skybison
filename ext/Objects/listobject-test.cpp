@@ -343,4 +343,45 @@ TEST_F(ListExtensionApiTest, InsertIntoListWayNegativeInsertsAtBeginning) {
   ASSERT_EQ(PyList_GetItem(list, 2), two);
 }
 
+TEST_F(ListExtensionApiTest, ReverseWithNullRaisesSystemError) {
+  ASSERT_EQ(PyList_Reverse(nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, ReverseWithNonListRaisesSystemError) {
+  ASSERT_EQ(PyList_Reverse(Py_None), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, ReverseWithZeroLengthListSucceeds) {
+  PyObjectPtr list(PyList_New(0));
+  ASSERT_EQ(PyList_Reverse(list), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ListExtensionApiTest, ReverseWithNonZeroLengthListSucceeds) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr val0(PyLong_FromLong(0));
+  PyList_Append(list, val0);
+  PyObjectPtr val1(PyLong_FromLong(1));
+  PyList_Append(list, val1);
+  PyObjectPtr val2(PyLong_FromLong(2));
+  PyList_Append(list, val2);
+  PyObjectPtr val3(PyLong_FromLong(3));
+  PyList_Append(list, val3);
+  PyObjectPtr val4(PyLong_FromLong(4));
+  PyList_Append(list, val4);
+
+  ASSERT_EQ(PyList_Reverse(list), 0);
+  ASSERT_EQ(PyList_Size(list), 5);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyList_GetItem(list, 0), val4);
+  EXPECT_EQ(PyList_GetItem(list, 1), val3);
+  EXPECT_EQ(PyList_GetItem(list, 2), val2);
+  EXPECT_EQ(PyList_GetItem(list, 3), val1);
+  EXPECT_EQ(PyList_GetItem(list, 4), val0);
+}
+
 }  // namespace python

@@ -8,6 +8,8 @@
 
 namespace python {
 
+void listReverse(Thread* thread, const List& list);
+
 class ListBuiltins {
  public:
   static void initialize(Runtime* runtime);
