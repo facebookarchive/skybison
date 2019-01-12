@@ -320,8 +320,7 @@ target_link_libraries(
   python
   PRIVATE
   runtime
-  modules
-  siphash)
+  modules)
 
 add_library(
   runtime-tests
@@ -379,8 +378,7 @@ target_link_libraries(
   gtest
   PRIVATE
   runtime
-  modules
-  siphash)
+  modules)
 
 set(
   EXTENSION_TESTS

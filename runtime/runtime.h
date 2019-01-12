@@ -181,7 +181,6 @@ class Runtime {
 
   void collectGarbage();
 
-  RawObject runFromCStr(const char* buffer);
   RawObject run(const char* buffer);
 
   RawObject hash(RawObject object);
@@ -378,8 +377,15 @@ class Runtime {
     return &new_value_cell_callback_;
   }
 
-  static char* compile(const char* src);
-  static char* compileWithLen(const char* src, word* len);
+  // Compile the given source code string into a marshaled code object. If
+  // PYRO_COMPILE_CACHE is set in the environment or ~/.pyro-compile-cache is a
+  // writable directory, the result will be cached on disk to speed up future
+  // calls with the same source.
+  static std::unique_ptr<char[]> compile(const char* src);
+
+  // Like compile(), but bypass the cache and return the length of the resuling
+  // buffer in len.
+  static std::unique_ptr<char[]> compileWithLen(const char* src, word* len);
 
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.

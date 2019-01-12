@@ -163,8 +163,7 @@ RawObject runBuiltinImpl(BuiltinMethodType method,
 
 RawObject runBuiltin(BuiltinMethodType method);
 
-// This runFromCStr is different from Runtime::runFromCStr in that it uses disk
-// cache to speed up tests.
+// Helper to compile and run a snippet of Python code.
 RawObject runFromCStr(Runtime* runtime, const char* c_str);
 
 template <typename... Args>

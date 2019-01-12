@@ -1473,13 +1473,6 @@ RawObject Runtime::run(const char* buffer) {
   return *result;
 }
 
-RawObject Runtime::runFromCStr(const char* c_str) {
-  const char* buffer = compile(c_str);
-  RawObject result = run(buffer);
-  delete[] buffer;
-  return result;
-}
-
 RawObject Runtime::executeModule(const char* buffer, const Module& module) {
   HandleScope scope;
   Marshal::Reader reader(&scope, this, buffer);
@@ -2380,12 +2373,50 @@ RawObject Runtime::listReplicate(Thread* thread, const List& list,
   return *result;
 }
 
-char* Runtime::compile(const char* src) {
+std::unique_ptr<char[]> Runtime::compile(const char* src) {
+  // increment this if you change the caching code, to invalidate existing
+  // cache entries.
+  uint64_t seed[2] = {0, 1};
+  word hash = 0;
+
+  // Hash the input.
+  ::siphash(reinterpret_cast<const uint8_t*>(src), strlen(src),
+            reinterpret_cast<const uint8_t*>(seed),
+            reinterpret_cast<uint8_t*>(&hash), sizeof(hash));
+
+  const char* cache_env = OS::getenv("PYRO_CACHE_DIR");
+  std::string cache_dir;
+  if (cache_env != nullptr) {
+    cache_dir = cache_env;
+  } else {
+    const char* home_env = OS::getenv("HOME");
+    if (home_env != nullptr) {
+      cache_dir = home_env;
+      cache_dir += "/.pyro-compile-cache";
+    }
+  }
+
+  char filename_buf[512] = {};
+  snprintf(filename_buf, 512, "%s/%016zx", cache_dir.c_str(), hash);
+
+  // Read compiled code from the cache
+  if (!cache_dir.empty() && OS::fileExists(filename_buf)) {
+    return std::unique_ptr<char[]>(OS::readFile(filename_buf));
+  }
+
+  // Cache miss, must run the compiler.
   word len;
-  return compileWithLen(src, &len);
+  std::unique_ptr<char[]> result = compileWithLen(src, &len);
+
+  // Cache the output if possible.
+  if (!cache_dir.empty() && OS::dirExists(cache_dir.c_str())) {
+    OS::writeFileExcl(filename_buf, result.get(), len);
+  }
+
+  return result;
 }
 
-char* Runtime::compileWithLen(const char* src, word* len) {
+std::unique_ptr<char[]> Runtime::compileWithLen(const char* src, word* len) {
   std::unique_ptr<char[]> tmp_dir(OS::temporaryDirectory("python-tests"));
   const std::string dir(tmp_dir.get());
   const std::string py = dir + "/foo.py";
@@ -2398,7 +2429,7 @@ char* Runtime::compileWithLen(const char* src, word* len) {
       "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6 -m compileall -q -b " +
       py;
   CHECK(system(command.c_str()) == 0, "Bytecode compilation failed");
-  char* result = OS::readFile(pyc.c_str(), len);
+  std::unique_ptr<char[]> result(OS::readFile(pyc.c_str(), len));
   CHECK(system(cleanup.c_str()) == 0, "Bytecode compilation cleanup failed");
   return result;
 }
