@@ -125,10 +125,13 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   if (next_method->isError()) {
     return thread->raiseTypeErrorWithCStr("keys() is not iterable");
   }
-  while (!runtime->isIteratorExhausted(thread, iterator)) {
+  for (;;) {
     key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
                                    iterator);
-    if (key->isError()) return *key;
+    if (key->isError()) {
+      if (thread->clearPendingStopIteration()) break;
+      return *key;
+    }
     if (do_override == Override::kOverride ||
         !runtime->dictIncludes(dict, key)) {
       value =

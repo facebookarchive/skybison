@@ -182,9 +182,9 @@ class Interpreter {
   static void doPopExcept(Context* ctx, word arg);
   static void doStoreName(Context* ctx, word arg);
   static void doDeleteName(Context* ctx, word arg);
-  static void doUnpackSequence(Context* ctx, word arg);
-  static void doForIter(Context* ctx, word arg);
-  static void doUnpackEx(Context* ctx, word arg);
+  static bool doUnpackSequence(Context* ctx, word arg);
+  static bool doForIter(Context* ctx, word arg);
+  static bool doUnpackEx(Context* ctx, word arg);
   static void doStoreAttr(Context* ctx, word arg);
   static void doStoreGlobal(Context* ctx, word arg);
   static void doDeleteGlobal(Context* ctx, word arg);

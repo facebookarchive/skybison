@@ -319,10 +319,13 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   word curr = 0;
   Tuple result(&scope, runtime->newTuple(max_len));
   // Iterate through the iterable, copying elements into the tuple.
-  while (!runtime->isIteratorExhausted(thread, iterator)) {
+  for (;;) {
     Object elem(&scope,
                 Interpreter::callMethod1(thread, frame, dunder_next, iterator));
-    DCHECK(!elem->isError(), "__next__ raised exception");
+    if (elem->isError()) {
+      if (thread->clearPendingStopIteration()) break;
+      return *elem;
+    }
     // If the capacity of the current result is reached, create a new larger
     // tuple and copy over the contents.
     if (curr == max_len) {

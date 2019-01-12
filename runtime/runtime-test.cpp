@@ -597,78 +597,14 @@ TEST(RuntimeListTest, ListExtendDict) {
   ASSERT_EQ(sum, 0);
 }
 
-static RawObject iterableWithLengthHint(Runtime* runtime) {
-  HandleScope scope;
-  runFromCStr(runtime, R"(
-class Iterator:
-    def __init__(self):
-        self.current = 0
-        self.list = [1, 2, 3]
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.current < len(self.list):
-            value = self.list[self.current]
-            self.current += 1
-            return value
-        raise StopIteration()
-
-    def __length_hint__(self):
-        return len(self.list) - self.current
-
-iterator = Iterator()
-)");
-  Module main(&scope, testing::findModule(runtime, "__main__"));
-  Object iterator(&scope, testing::moduleAt(runtime, main, "iterator"));
-  return *iterator;
-}
-
-static RawObject iterableWithoutLengthHint(Runtime* runtime) {
-  HandleScope scope;
-  runFromCStr(runtime, R"(
-class Iterator:
-    def __init__(self):
-        self.current = 0
-        self.list = [1, 2, 3]
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.current < len(self.list):
-            value = self.list[self.current]
-            self.current += 1
-            return value
-        raise StopIteration()
-
-iterator = Iterator()
-)");
-  Module main(&scope, testing::findModule(runtime, "__main__"));
-  Object iterator(&scope, testing::moduleAt(runtime, main, "iterator"));
-  return *iterator;
-}
-
 TEST(RuntimeListTest, ListExtendIterator) {
   Runtime runtime;
   HandleScope scope;
   List list(&scope, runtime.newList());
-  Object iterator(&scope, iterableWithLengthHint(&runtime));
-  runtime.listExtend(Thread::currentThread(), list, iterator);
+  Object iterable(&scope, runtime.newRange(1, 4, 1));
+  runtime.listExtend(Thread::currentThread(), list, iterable);
 
   EXPECT_PYLIST_EQ(list, {1, 2, 3});
-}
-
-TEST(RuntimeListTest, ListExtendIteratorWithoutDunderLengthHint) {
-  Runtime runtime;
-  HandleScope scope;
-  List list(&scope, runtime.newList());
-  Object iterator(&scope, iterableWithoutLengthHint(&runtime));
-  runtime.listExtend(Thread::currentThread(), list, iterator);
-
-  // An iterator with no __length_hint__ should not be consumed
-  ASSERT_EQ(list->numItems(), 0);
 }
 
 TEST(RuntimeTest, NewBytes) {
@@ -1948,21 +1884,10 @@ TEST(RuntimeSetTest, UpdateIterator) {
   Runtime runtime;
   HandleScope scope;
   Set set(&scope, runtime.newSet());
-  Object iterator(&scope, iterableWithLengthHint(&runtime));
-  runtime.setUpdate(Thread::currentThread(), set, iterator);
+  Object iterable(&scope, runtime.newRange(1, 4, 1));
+  runtime.setUpdate(Thread::currentThread(), set, iterable);
 
   ASSERT_EQ(set->numItems(), 3);
-}
-
-TEST(RuntimeSetTest, UpdateIteratorWithoutDunderLengthHint) {
-  Runtime runtime;
-  HandleScope scope;
-  Set set(&scope, runtime.newSet());
-  Object iterator(&scope, iterableWithoutLengthHint(&runtime));
-  runtime.setUpdate(Thread::currentThread(), set, iterator);
-
-  // An iterator with no __length_hint__ should not be consumed
-  ASSERT_EQ(set->numItems(), 0);
 }
 
 TEST(RuntimeSetTest, UpdateWithNonIterable) {
@@ -2059,36 +1984,20 @@ TEST(RuntimeSetTest, IntersectIterator) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
-  Object iterator(&scope, iterableWithLengthHint(&runtime));
-  Set result(&scope, runtime.setIntersection(thread, set, iterator));
+  Object iterable(&scope, runtime.newRange(1, 4, 1));
+  Set result(&scope, runtime.setIntersection(thread, set, iterable));
   EXPECT_EQ(result->numItems(), 0);
 
   Object key(&scope, SmallInt::fromWord(1));
   runtime.setAdd(set, key);
   key = SmallInt::fromWord(2);
   runtime.setAdd(set, key);
-  Object iterator1(&scope, iterableWithLengthHint(&runtime));
-  Set result1(&scope, runtime.setIntersection(thread, set, iterator1));
+  Object iterable1(&scope, runtime.newRange(1, 4, 1));
+  Set result1(&scope, runtime.setIntersection(thread, set, iterable1));
   EXPECT_EQ(result1->numItems(), 2);
   EXPECT_TRUE(runtime.setIncludes(result1, key));
   key = SmallInt::fromWord(1);
   EXPECT_TRUE(runtime.setIncludes(result1, key));
-}
-
-TEST(RuntimeSetTest, IntersectIteratorWithoutDunderLengthHint) {
-  Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
-  Object key(&scope, SmallInt::fromWord(0));
-  runtime.setAdd(set, key);
-  key = SmallInt::fromWord(1);
-  runtime.setAdd(set, key);
-  Object iterator(&scope, iterableWithoutLengthHint(&runtime));
-  Set result(&scope, runtime.setIntersection(thread, set, iterator));
-
-  // An iterator with no __length_hint__ should not be consumed
-  ASSERT_EQ(result->numItems(), 0);
 }
 
 TEST(RuntimeSetTest, IntersectWithNonIterable) {

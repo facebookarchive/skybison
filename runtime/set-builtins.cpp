@@ -118,10 +118,11 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
   if (next_method->isError()) {
     return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
   }
-  while (!runtime->isIteratorExhausted(thread, iterator)) {
+  for (;;) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
                                      next_method, iterator);
     if (value->isError()) {
+      if (thread->clearPendingStopIteration()) break;
       return *value;
     }
     if (runtime->setIncludes(a, value)) {

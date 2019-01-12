@@ -1261,10 +1261,9 @@ void Interpreter::doDeleteName(Context* ctx, word arg) {
 }
 
 // opcode 92
-void Interpreter::doUnpackSequence(Context* ctx, word arg) {
+bool Interpreter::doUnpackSequence(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object iterable(&scope, frame->popValue());
   Object iter_method(
@@ -1282,27 +1281,22 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
     thread->abortOnPendingException();
   }
   word num_pushed = 0;
-  for (; num_pushed < arg && !runtime->isIteratorExhausted(thread, iterator);
-       ++num_pushed) {
-    Object value(&scope, callMethod1(thread, frame, next_method, iterator));
+  Object value(&scope, RawNoneType::object());
+  for (;;) {
+    value = callMethod1(thread, frame, next_method, iterator);
     if (value->isError()) {
-      thread->abortOnPendingException();
-      return;
+      if (thread->clearPendingStopIteration()) {
+        if (num_pushed == arg) break;
+        thread->raiseValueErrorWithCStr("not enough values to unpack");
+      }
+      return unwind(ctx);
+    }
+    if (num_pushed == arg) {
+      thread->raiseValueErrorWithCStr("too many values to unpack");
+      return unwind(ctx);
     }
     frame->pushValue(*value);
-  }
-
-  if (num_pushed < arg) {
-    frame->dropValues(num_pushed);
-    thread->raiseValueErrorWithCStr("not enough values to unpack");
-    thread->abortOnPendingException();
-    return;
-  }
-  if (!runtime->isIteratorExhausted(thread, iterator)) {
-    frame->dropValues(num_pushed);
-    thread->raiseValueErrorWithCStr("too many values to unpack");
-    thread->abortOnPendingException();
-    return;
+    ++num_pushed;
   }
 
   // swap values on the stack
@@ -1313,10 +1307,11 @@ void Interpreter::doUnpackSequence(Context* ctx, word arg) {
     frame->setValueAt(frame->peek(j), i);
     frame->setValueAt(*tmp, j);
   }
+  return false;
 }
 
 // opcode 93
-void Interpreter::doForIter(Context* ctx, word arg) {
+bool Interpreter::doForIter(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object iterator(&scope, ctx->frame->topValue());
@@ -1327,20 +1322,20 @@ void Interpreter::doForIter(Context* ctx, word arg) {
     thread->abortOnPendingException();
   }
   Object value(&scope, callMethod1(thread, ctx->frame, next_method, iterator));
-  if (value->isError() && !thread->hasPendingStopIteration()) {
-    thread->abortOnPendingException();
-  }
-  if (thread->hasPendingStopIteration()) {
-    thread->clearPendingException();
-    ctx->frame->popValue();
-    ctx->pc += arg;
-    return;
+  if (value->isError()) {
+    if (thread->clearPendingStopIteration()) {
+      ctx->frame->popValue();
+      ctx->pc += arg;
+      return false;
+    }
+    return unwind(ctx);
   }
   ctx->frame->pushValue(*value);
+  return false;
 }
 
 // opcode 94
-void Interpreter::doUnpackEx(Context* ctx, word arg) {
+bool Interpreter::doUnpackEx(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
   Runtime* runtime = thread->runtime();
@@ -1350,7 +1345,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
       &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
     thread->raiseTypeErrorWithCStr("object is not iterable");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
   Object iterator(&scope, callMethod1(thread, frame, iter_method, iterable));
   thread->abortOnPendingException();
@@ -1358,39 +1353,33 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
       &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
     thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
 
   word before = arg & kMaxByte;
   word after = (arg >> kBitsPerByte) & kMaxByte;
   word num_pushed = 0;
-
-  for (; num_pushed < before &&
-         !thread->runtime()->isIteratorExhausted(thread, iterator);
-       ++num_pushed) {
-    Object value(&scope, callMethod1(thread, frame, next_method, iterator));
+  Object value(&scope, RawNoneType::object());
+  for (; num_pushed < before; ++num_pushed) {
+    value = callMethod1(thread, frame, next_method, iterator);
     if (value->isError()) {
-      frame->dropValues(num_pushed);
-      thread->abortOnPendingException();
-      return;
+      if (thread->clearPendingStopIteration()) break;
+      return unwind(ctx);
     }
     frame->pushValue(*value);
   }
 
   if (num_pushed < before) {
-    frame->dropValues(num_pushed);
     thread->raiseValueErrorWithCStr("not enough values to unpack");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
 
   List list(&scope, runtime->newList());
-  Object value(&scope, NoneType::object());
-  while (!runtime->isIteratorExhausted(thread, iterator)) {
-    value = Interpreter::callMethod1(thread, frame, next_method, iterator);
+  for (;;) {
+    value = callMethod1(thread, frame, next_method, iterator);
     if (value->isError()) {
-      frame->dropValues(num_pushed);
-      thread->abortOnPendingException();
-      return;
+      if (thread->clearPendingStopIteration()) break;
+      return unwind(ctx);
     }
     runtime->listAdd(list, value);
   }
@@ -1399,9 +1388,8 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
   num_pushed++;
 
   if (list->numItems() < after) {
-    frame->dropValues(num_pushed);
     thread->raiseValueErrorWithCStr("not enough values to unpack");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
 
   if (after > 0) {
@@ -1422,6 +1410,7 @@ void Interpreter::doUnpackEx(Context* ctx, word arg) {
     frame->setValueAt(frame->peek(j), i);
     frame->setValueAt(*tmp, j);
   }
+  return false;
 }
 
 // opcode 95

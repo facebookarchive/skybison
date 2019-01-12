@@ -2326,10 +2326,11 @@ RawObject Runtime::listExtend(Thread* thread, const List& dst,
     return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
   }
   Object value(&scope, NoneType::object());
-  while (!isIteratorExhausted(thread, iterator)) {
+  for (;;) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
                                      next_method, iterator);
     if (value->isError()) {
+      if (thread->clearPendingStopIteration()) break;
       return *value;
     }
     listAdd(dst, value);
@@ -2828,10 +2829,11 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
     return *dst;
   }
   Tuple data(&scope, set->data());
-  while (!isIteratorExhausted(thread, iterator)) {
+  for (;;) {
     key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
                                    iterator);
     if (key->isError()) {
+      if (thread->clearPendingStopIteration()) break;
       return *key;
     }
     key_hash = hash(*key);
@@ -2938,10 +2940,11 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
   }
   Object value(&scope, NoneType::object());
-  while (!isIteratorExhausted(thread, iterator)) {
+  for (;;) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
                                      next_method, iterator);
     if (value->isError()) {
+      if (thread->clearPendingStopIteration()) break;
       return *value;
     }
     setAdd(dst, value);
@@ -3742,15 +3745,6 @@ RawObject Runtime::iteratorLengthHint(Thread* thread, const Object& iterator) {
         "__length_hint__ returned non-integer value");
   }
   return *result;
-}
-
-bool Runtime::isIteratorExhausted(Thread* thread, const Object& iterator) {
-  HandleScope scope(thread);
-  Object result(&scope, iteratorLengthHint(thread, iterator));
-  if (result->isError()) {
-    return true;
-  }
-  return (RawSmallInt::cast(*result)->value() == 0);
 }
 
 inline bool Runtime::isAsciiSpace(byte ch) {

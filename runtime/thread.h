@@ -191,9 +191,12 @@ class Thread {
   // Returns true if there is a pending exception.
   bool hasPendingException();
 
-  // Returns true if there is a StopIteration exception pending. Special-cased
-  // to support generators until we have proper exception support.
+  // Returns true if there is a StopIteration exception pending.
   bool hasPendingStopIteration();
+
+  // If there is a StopIteration exception pending, clear it and return
+  // true. Otherwise, return false.
+  bool clearPendingStopIteration();
 
   // If there's a pending exception, clears it.
   void clearPendingException();

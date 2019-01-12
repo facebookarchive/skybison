@@ -257,7 +257,6 @@ class Runtime {
   SymbolId swappedComparisonSelector(CompareOp op);
 
   RawObject iteratorLengthHint(Thread* thread, const Object& iterator);
-  bool isIteratorExhausted(Thread* thread, const Object& iterator);
 
   // Return true if the selector does not appear in the MRO object below object.
   bool isMethodOverloaded(Thread* thread, const Type& type, SymbolId selector);

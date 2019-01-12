@@ -1238,12 +1238,11 @@ class KeysIter:
         return self
 
     def __next__(self):
+        if self.idx == len(self.keys):
+            raise StopIteration
         r = self.keys[self.idx]
         self.idx += 1
         return r
-
-    def __length_hint__(self):
-        return len(self.keys) - self.idx
 
 class Foo:
     def __init__(self):

@@ -338,6 +338,14 @@ bool Thread::hasPendingStopIteration() {
              LayoutId::kStopIteration;
 }
 
+bool Thread::clearPendingStopIteration() {
+  if (hasPendingStopIteration()) {
+    clearPendingException();
+    return true;
+  }
+  return false;
+}
+
 void Thread::ignorePendingException() {
   if (!hasPendingException()) {
     return;
