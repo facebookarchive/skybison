@@ -222,4 +222,34 @@ TEST_F(SetExtensionApiTest, ClearRemovesAllItems) {
   EXPECT_EQ(PySet_Size(set), 0);
 }
 
+TEST_F(SetExtensionApiTest, PopWithNonSetRaisesSystemError) {
+  ASSERT_EQ(PySet_Pop(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(SetExtensionApiTest, PopWithEmptySetRaisesKeyError) {
+  ASSERT_EQ(PySet_Pop(PySet_New(nullptr)), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyError));
+}
+
+TEST_F(SetExtensionApiTest, PopWithNonEmptySetRemovesItem) {
+  PyObjectPtr set(PySet_New(nullptr));
+  PyObjectPtr elt(PyLong_FromLong(5));
+  ASSERT_EQ(PySet_Add(set, elt), 0);
+  ASSERT_EQ(PySet_Size(set), 1);
+  ASSERT_EQ(PySet_Pop(set), elt);
+  EXPECT_EQ(PySet_Size(set), 0);
+}
+
+TEST_F(SetExtensionApiTest, PopWithSetContainingErrorsRemovesItem) {
+  PyObjectPtr set(PySet_New(nullptr));
+  PyObjectPtr elt(PyExc_KeyError);
+  ASSERT_EQ(PySet_Add(set, elt), 0);
+  ASSERT_EQ(PySet_Size(set), 1);
+  ASSERT_EQ(PySet_Pop(set), elt);
+  EXPECT_EQ(PySet_Size(set), 0);
+}
+
 }  // namespace python

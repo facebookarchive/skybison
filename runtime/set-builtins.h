@@ -26,6 +26,10 @@ bool setIsProperSubset(Thread* thread, const SetBase& set,
 // This is analogous to the <= operator on Python sets.
 bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other);
 
+// Remove an arbitrary object from the set and return a reference to it.
+// Returns None on success and raises + returns KeyError if the set is empty.
+RawObject setPop(Thread* thread, const Set& set);
+
 class SetBaseBuiltins {
  public:
   static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);

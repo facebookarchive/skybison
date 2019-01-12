@@ -104,7 +104,22 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
   return ApiHandle::newReference(thread, *set);
 }
 
-PY_EXPORT PyObject* PySet_Pop(PyObject* /* t */) { UNIMPLEMENTED("PySet_Pop"); }
+PY_EXPORT PyObject* PySet_Pop(PyObject* pyset) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object set_obj(&scope, ApiHandle::fromPyObject(pyset)->asObject());
+  if (!runtime->isInstanceOfSet(set_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Set set(&scope, *set_obj);
+  Object result(&scope, setPop(thread, set));
+  if (thread->hasPendingException()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
+}
 
 PY_EXPORT Py_ssize_t PySet_Size(PyObject* anyset) {
   Thread* thread = Thread::currentThread();

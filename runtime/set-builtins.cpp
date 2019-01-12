@@ -526,6 +526,25 @@ bool setEquals(Thread* thread, const SetBase& set, const SetBase& other) {
   return setIsSubset(thread, set, other);
 }
 
+RawObject setPop(Thread* thread, const Set& set) {
+  HandleScope scope(thread);
+  Tuple data(&scope, set->data());
+  word num_items = set->numItems();
+  if (num_items != 0) {
+    for (word i = 0, length = data->length(); i < length;
+         i += Set::Bucket::kNumPointers) {
+      if (Set::Bucket::isFilled(*data, i)) {
+        Object value(&scope, Set::Bucket::key(*data, i));
+        Set::Bucket::setTombstone(*data, i);
+        set->setNumItems(num_items - 1);
+        return *value;
+      }
+    }
+  }
+  // num_items == 0 or all buckets were found empty
+  return thread->raiseKeyErrorWithCStr("pop from an empty set");
+}
+
 RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("add() takes exactly one argument");
@@ -610,21 +629,7 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("pop() requires a 'set' object");
   }
   Set set(&scope, args.get(0));
-  Tuple data(&scope, set->data());
-  word num_items = set->numItems();
-  if (num_items != 0) {
-    for (word i = 0, length = data->length(); i < length;
-         i += Set::Bucket::kNumPointers) {
-      if (Set::Bucket::isFilled(*data, i)) {
-        Object value(&scope, Set::Bucket::key(*data, i));
-        Set::Bucket::setTombstone(*data, i);
-        set->setNumItems(num_items - 1);
-        return *value;
-      }
-    }
-  }
-  // num_items == 0 or all buckets were found empty
-  return thread->raiseKeyErrorWithCStr("pop from an empty set");
+  return setPop(thread, set);
 }
 
 RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
