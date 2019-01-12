@@ -10,6 +10,11 @@ class object(bootstrap=True):  # noqa: E999
         pass
 
 
+class bool(bootstrap=True):
+    def __repr__(self):
+        return "True" if self else "False"
+
+
 class ImportError(bootstrap=True):
     def __init__(self, *args, name=None, path=None, **kwargs):
         if len(kwargs) > 0:
@@ -53,9 +58,6 @@ class tuple(bootstrap=True):
             output += repr(self[i])
             i += 1
         return output + ")"
-
-    def __eq__(self, other) -> bool:
-        pass
 
 
 class list(bootstrap=True):
@@ -253,12 +255,6 @@ class str(bootstrap=True):
     def __rmul__(self, n: int) -> str:
         pass
 
-    def __eq__(self, x) -> bool:
-        pass
-
-    def __ne__(self, x) -> bool:
-        pass
-
     def __lt__(self, x: str) -> bool:
         pass
 
@@ -291,3 +287,9 @@ class str(bootstrap=True):
     # yet be typed here.
     def __getitem__(self, i):
         pass
+
+
+class dict(bootstrap=True):
+    def __repr__(self):
+        kwpairs = [f"{repr(key)}: {repr(self[key])}" for key in self.keys()]
+        return "{" + ", ".join(kwpairs) + "}"

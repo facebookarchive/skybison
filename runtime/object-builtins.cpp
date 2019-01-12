@@ -101,7 +101,8 @@ RawObject ObjectBuiltins::dunderNewKw(Thread* thread, Frame* frame,
 
 RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected 0 arguments");
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "__repr__ expected 0 arguments, %ld given", nargs - 1));
   }
   Arguments args(frame, nargs);
 
@@ -123,6 +124,7 @@ RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
 
 const BuiltinMethod NoneBuiltins::kMethods[] = {
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
 
 void NoneBuiltins::initialize(Runtime* runtime) {
@@ -134,9 +136,22 @@ void NoneBuiltins::initialize(Runtime* runtime) {
 
 RawObject NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {
   if (nargs > 1) {
-    return thread->raiseTypeErrorWithCStr("None.__new__ takes no arguments");
+    return thread->raiseTypeErrorWithCStr("__new__ takes no arguments");
   }
   return NoneType::object();
+}
+
+RawObject NoneBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "__repr__ takes 0 arguments (%ld given)", nargs - 1));
+  }
+  Arguments args(frame, nargs);
+  if (!args.get(0).isNoneType()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__repr__ expects None as first argument");
+  }
+  return thread->runtime()->symbols()->None();
 }
 
 }  // namespace python

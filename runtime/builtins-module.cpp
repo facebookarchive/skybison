@@ -12,6 +12,7 @@
 #include "marshal.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 #include "type-builtins.h"
 
@@ -504,115 +505,27 @@ static void printStr(RawStr str, std::ostream* ostream) {
   }
 }
 
-static void printQuotedStr(RawStr str, std::ostream* ostream) {
-  *ostream << "'";
-  for (word i = 0; i < str->length(); i++) {
-    *ostream << str->charAt(i);
-  }
-  *ostream << "'";
-}
-
-// Print a scalar value to ostream.
-static void printScalarTypes(RawObject arg, std::ostream* ostream) {
-  if (arg->isBool()) {
-    *ostream << (RawBool::cast(arg)->value() ? "True" : "False");
-  } else if (arg->isFloat()) {
-    *ostream << RawFloat::cast(arg)->value();
-  } else if (arg->isSmallInt()) {
-    *ostream << RawSmallInt::cast(arg)->value();
-  } else if (arg->isStr()) {
-    printStr(RawStr::cast(arg), ostream);
-  } else {
-    UNIMPLEMENTED("Custom print unsupported");
-  }
-}
-
-// Print a scalar value to ostream, quoting it if it's a string.
-static void printQuotedScalarTypes(RawObject arg, std::ostream* ostream) {
-  if (arg->isStr()) {
-    printQuotedStr(RawStr::cast(arg), ostream);
-  } else {
-    printScalarTypes(arg, ostream);
-  }
-}
-
-static bool supportedScalarType(RawObject arg) {
-  return (arg->isBool() || arg->isFloat() || arg->isSmallInt() || arg->isStr());
-}
-
 // NB: The print functions do not represent the final state of builtin functions
 // and should not be emulated when creating new builtins. They are minimal
 // implementations intended to get the Richards & Pystone benchmark working.
-static RawObject doBuiltinPrint(const Arguments& args, word nargs,
-                                const Object& end, std::ostream* ostream) {
+static RawObject doBuiltinPrint(Thread* thread, const Arguments& args,
+                                word nargs, const Object& end,
+                                std::ostream* ostream) {
   const char separator = ' ';
-
   for (word i = 0; i < nargs; i++) {
-    RawObject arg = args.get(i);
-    if (supportedScalarType(arg)) {
-      printScalarTypes(arg, ostream);
-    } else if (arg->isList()) {
-      *ostream << "[";
-      HandleScope scope;
-      List list(&scope, arg);
-      for (word j = 0; j < list->numItems(); j++) {
-        if (supportedScalarType(list->at(j))) {
-          printQuotedScalarTypes(list->at(j), ostream);
-        } else {
-          UNIMPLEMENTED("Custom print unsupported");
-        }
-        if (j != list->numItems() - 1) {
-          *ostream << ", ";
-        }
-      }
-      *ostream << "]";
-    } else if (arg->isTuple()) {
-      *ostream << "(";
-      HandleScope scope;
-      Tuple array(&scope, arg);
-      for (word j = 0; j < array->length(); j++) {
-        if (supportedScalarType(array->at(j))) {
-          printScalarTypes(array->at(j), ostream);
-        } else {
-          UNIMPLEMENTED("Custom print unsupported");
-        }
-        if (j != array->length() - 1) {
-          *ostream << ", ";
-        }
-      }
-      *ostream << ")";
-    } else if (arg->isDict()) {
-      *ostream << "{";
-      HandleScope scope;
-      Dict dict(&scope, arg);
-      Tuple data(&scope, dict->data());
-      word items = dict->numItems();
-      for (word j = 0; j < data->length(); j += 3) {
-        if (!data->at(j)->isNoneType()) {
-          Object key(&scope, Dict::Bucket::key(*data, j));
-          Object value(&scope, Dict::Bucket::value(*data, j));
-          if (supportedScalarType(*key)) {
-            printQuotedScalarTypes(*key, ostream);
-          } else {
-            UNIMPLEMENTED("Custom print unsupported");
-          }
-          *ostream << ": ";
-          if (supportedScalarType(*value)) {
-            printQuotedScalarTypes(*value, ostream);
-          } else {
-            UNIMPLEMENTED("Custom print unsupported");
-          }
-          if (items-- != 1) {
-            *ostream << ", ";
-          }
-        }
-      }
-      *ostream << "}";
-    } else if (arg->isNoneType()) {
-      *ostream << "None";
-    } else {
-      UNIMPLEMENTED("Custom print unsupported");
+    word str_nargs = 2;
+    Frame* frame = thread->openAndLinkFrame(0, str_nargs, 0);
+    frame->setLocal(0, thread->runtime()->typeAt(LayoutId::kStr));
+    frame->setLocal(1, args.get(i));
+    RawObject result = StrBuiltins::dunderNew(thread, frame, str_nargs);
+    thread->popFrame();
+    if (result.isError()) {
+      return result;
     }
+    if (!result.isStr()) {
+      return thread->raiseTypeErrorWithCStr("str() returned non-str");
+    }
+    printStr(RawStr::cast(result), ostream);
     if ((i + 1) != nargs) {
       *ostream << separator;
     }
@@ -633,7 +546,7 @@ RawObject Builtins::print(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object end(&scope, NoneType::object());
   Arguments args(frame, nargs);
-  return doBuiltinPrint(args, nargs, end, builtInStdout);
+  return doBuiltinPrint(thread, args, nargs, end, builtInStdout);
 }
 
 RawObject Builtins::printKw(Thread* thread, Frame* frame, word nargs) {
@@ -681,8 +594,8 @@ RawObject Builtins::printKw(Thread* thread, Frame* frame, word nargs) {
   // Remove kw arg tuple and the value for the end keyword argument
   Arguments rest(frame, nargs - kw_args.numKeywords() - 1);
   Object end_val(&scope, end);
-  return doBuiltinPrint(rest, nargs - kw_args.numKeywords() - 1, end_val,
-                        ostream);
+  return doBuiltinPrint(thread, rest, nargs - kw_args.numKeywords() - 1,
+                        end_val, ostream);
 }
 
 RawObject Builtins::range(Thread* thread, Frame* frame, word nargs) {

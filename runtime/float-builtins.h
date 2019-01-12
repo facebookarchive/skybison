@@ -29,6 +29,7 @@ class FloatBuiltins {
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderPow(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSub(Thread* thread, Frame* frame, word nargs);
 
  private:

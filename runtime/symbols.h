@@ -219,6 +219,7 @@ class Runtime;
   V(Msg, "msg")                                                                \
   V(Name, "name")                                                              \
   V(NameError, "NameError")                                                    \
+  V(None, "None")                                                              \
   V(NoneType, "NoneType")                                                      \
   V(NotADirectoryError, "NotADirectoryError")                                  \
   V(NotImplemented, "NotImplemented")                                          \

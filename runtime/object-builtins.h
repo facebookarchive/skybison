@@ -26,6 +26,7 @@ class NoneBuiltins {
   static void initialize(Runtime* runtime);
 
   static RawObject dunderNew(Thread*, Frame*, word);
+  static RawObject dunderRepr(Thread*, Frame*, word);
 
  private:
   static const BuiltinMethod kMethods[];

@@ -51,6 +51,7 @@ const BuiltinMethod FloatBuiltins::kMethods[] = {
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderPow, nativeTrampoline<dunderPow>},
+    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
     {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
 };
 
@@ -300,6 +301,24 @@ RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
     return thread->runtime()->newFloat(left + right);
   }
   return thread->runtime()->notImplemented();
+}
+
+RawObject FloatBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("expected no arguments");
+  }
+  Arguments args(frame, nargs);
+  RawObject self_obj = args.get(0);
+  if (!self_obj.isFloat()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__repr__() must be called with float instance as first argument");
+  }
+  double value = RawFloat::cast(self_obj).value();
+  int required_size = std::snprintf(nullptr, 0, "%g", value) + 1;  // NUL
+  std::unique_ptr<char[]> buffer(new char[required_size]);
+  int size = std::snprintf(buffer.get(), required_size, "%g", value);
+  CHECK(size < int{required_size}, "buffer too small");
+  return thread->runtime()->newStrFromCStr(buffer.get());
 }
 
 RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {

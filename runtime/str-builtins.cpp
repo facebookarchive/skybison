@@ -551,16 +551,16 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   }
   output_size += 2;  // quotes
 
-  byte* buf = new byte[output_size];
+  std::unique_ptr<byte[]> buf(new byte[output_size]);
   // Write in the quotes.
   buf[0] = quote;
   buf[output_size - 1] = quote;
   if (unchanged) {
     // Rest of the characters were all unmodified, copy them directly into the
     // buffer.
-    self->copyTo(buf + 1, self_len);
+    self->copyTo(buf.get() + 1, self_len);
   } else {
-    byte* curr = buf + 1;
+    byte* curr = buf.get() + 1;
     for (word i = 0; i < self_len; ++i) {
       byte ch = self->charAt(i);
       // quote can't be handled in the switch case because it's not a constant.
@@ -598,12 +598,10 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
           break;
       }
     }
-    DCHECK(curr == buf + output_size - 1,
+    DCHECK(curr == buf.get() + output_size - 1,
            "Didn't write the correct number of characters out");
   }
-  Str output(&scope, runtime->newStrWithAll(View<byte>{buf, output_size}));
-  delete[] buf;
-  return *output;
+  return runtime->newStrWithAll(View<byte>{buf.get(), output_size});
 }
 
 RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {

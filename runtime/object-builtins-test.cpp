@@ -156,7 +156,8 @@ TEST(NoneBuiltinsTest, DunderReprReturnsNone) {
   HandleScope scope;
   Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a_obj->isStr());
-  // TODO(emacs): Compare with "None" when NoneType has a proper __repr__
+  Str a(&scope, *a_obj);
+  EXPECT_PYSTRING_EQ(a, "None");
 }
 
 }  // namespace python
