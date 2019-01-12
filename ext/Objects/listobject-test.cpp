@@ -147,4 +147,34 @@ TEST_F(ListExtensionApiTest, GetItemWithListReturnsElementAtIndex) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(ListExtensionApiTest, SetItemWithNonListReturnsNegativeOne) {
+  ASSERT_EQ(PyList_SetItem(Py_None, 0, nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, SetItemWithBadIndexThrowsIndexError) {
+  Py_ssize_t size = 0;
+  ASSERT_EQ(PyList_SetItem(PyList_New(size), size + 1, nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
+TEST_F(ListExtensionApiTest, SetItemWithListSetsItemAtIndex) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyList_Append(list, one);
+  PyList_Append(list, two);
+  PyList_Append(list, three);
+
+  Py_ssize_t idx = 2;
+  PyObjectPtr four(PyLong_FromLong(4));
+  EXPECT_EQ(PyList_SetItem(list, idx, four), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyList_GetItem(list, idx), four);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python
