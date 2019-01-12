@@ -202,4 +202,24 @@ TEST_F(SetExtensionApiTest, SizeWithFrozenSetDoesNotRaiseSystemError) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(SetExtensionApiTest, ClearWithNonSetThrows) {
+  ASSERT_EQ(PySet_Clear(Py_None), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(SetExtensionApiTest, ClearRemovesAllItems) {
+  PyObjectPtr set(PySet_New(nullptr));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PySet_Add(set, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PySet_Add(set, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PySet_Add(set, three);
+
+  ASSERT_EQ(PySet_Clear(set), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PySet_Size(set), 0);
+}
+
 }  // namespace python

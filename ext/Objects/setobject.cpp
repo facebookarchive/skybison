@@ -44,7 +44,20 @@ PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
   return 0;
 }
 
-PY_EXPORT int PySet_Clear(PyObject* /* t */) { UNIMPLEMENTED("PySet_Clear"); }
+PY_EXPORT int PySet_Clear(PyObject* anyset) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object set_obj(&scope, ApiHandle::fromPyObject(anyset)->asObject());
+  if (!runtime->isInstanceOfSetBase(set_obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  SetBase set(&scope, *set_obj);
+  set->setNumItems(0);
+  set->setData(runtime->newTuple(0));
+  return 0;
+}
 
 PY_EXPORT int PySet_ClearFreeList() { return 0; }
 
