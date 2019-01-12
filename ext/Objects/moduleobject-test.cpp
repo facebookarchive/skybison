@@ -6,6 +6,8 @@
 
 namespace python {
 
+using namespace testing;
+
 using ModuleExtensionApiTest = ExtensionApi;
 // Used to convert non-capturing closures into function pointers.
 using slot_func = int (*)(PyObject*);
@@ -617,6 +619,44 @@ TEST_F(ModuleExtensionApiTest, GetNameDoesNotIncrementModuleNameRefcount) {
   EXPECT_STREQ(PyModule_GetName(module), mod_name);
   EXPECT_EQ(Py_REFCNT(name), name_count);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, MethodNoArgsReturnsPyLong) {
+  binaryfunc func = [](PyObject*, PyObject*) { return PyLong_FromLong(10); };
+  PyMethodDef foo_methods[] = {{"noargs", func, METH_NOARGS}, {nullptr}};
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "foo", nullptr, 0, foo_methods,
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  moduleSet("__main__", "foo", module);
+  ASSERT_TRUE(PyModule_CheckExact(module));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  PyRun_SimpleString(R"(
+x = foo.noargs()
+)");
+
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  int result = PyLong_AsLong(x);
+  ASSERT_EQ(result, 10);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, MethodWithClassFlagThrowsException) {
+  binaryfunc foo_func = [](PyObject*, PyObject*) {
+    return PyLong_FromLong(10);
+  };
+  PyMethodDef foo_methods[] = {
+      {"longValue", foo_func, METH_NOARGS | METH_CLASS}, {nullptr}};
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "foo", nullptr, 0, foo_methods,
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  EXPECT_EQ(module, nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
 }  // namespace python

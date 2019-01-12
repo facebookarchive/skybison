@@ -656,6 +656,57 @@ RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* caller,
   return Interpreter::execute(thread, callee_frame);
 }
 
+static RawObject callMethNoArgs(Thread* thread, const Function& function) {
+  HandleScope scope(thread);
+  Int address(&scope, function->code());
+  binaryfunc method = bit_cast<binaryfunc>(address->asCPtr());
+  DCHECK(function->module()->isModule(), "Function must have a module");
+  PyObject* module = ApiHandle::borrowedReference(thread, function->module());
+  PyObject* result = (*method)(module, nullptr);
+  if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
+  if (thread->hasPendingException()) return Error::object();
+  return thread->raiseSystemErrorWithCStr("NULL return without exception set");
+}
+
+RawObject moduleTrampolineNoArgs(Thread* thread, Frame* caller, word argc) {
+  if (argc != 0) {
+    return thread->raiseTypeErrorWithCStr("function takes no arguments");
+  }
+  HandleScope scope(thread);
+  Function function(&scope, caller->peek(0));
+  return callMethNoArgs(thread, function);
+}
+
+RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* caller, word argc) {
+  if (argc != 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "function takes no keyword arguments");
+  }
+  HandleScope scope(thread);
+  Function function(&scope, caller->peek(1));
+  return callMethNoArgs(thread, function);
+}
+
+RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* caller, word argc) {
+  HandleScope scope(thread);
+  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  // TODO(eelizondo): Support positional args from a generic iterable object
+  Tuple pos_args(&scope, caller->peek(has_varkeywords));
+  if (pos_args->length() != 0) {
+    return thread->raiseTypeErrorWithCStr("function takes no arguments");
+  }
+  if (has_varkeywords) {
+    // TODO(eelizondo): Support positional args from a generic mapping object
+    Dict kw_args(&scope, caller->topValue());
+    if (kw_args->numItems() != 0) {
+      return thread->raiseTypeErrorWithCStr(
+          "function takes no keyword arguments");
+    }
+  }
+  Function function(&scope, caller->peek(has_varkeywords + 1));
+  return callMethNoArgs(thread, function);
+}
+
 typedef PyObject* (*PyCFunction)(PyObject*, PyObject*, PyObject*);
 
 RawObject extensionTrampoline(Thread* thread, Frame* caller, word argc) {

@@ -1,9 +1,11 @@
 // moduleobject.c implementation
 
+#include "cpython-data.h"
 #include "cpython-func.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
+#include "trampolines.h"
 
 namespace python {
 
@@ -28,6 +30,42 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   Module module(&scope, runtime->newModule(name));
   module->setDef(runtime->newIntFromCPtr(def));
 
+  if (def->m_methods != nullptr) {
+    for (PyMethodDef* fdef = def->m_methods; fdef->ml_name != nullptr; fdef++) {
+      if (fdef->ml_flags & METH_CLASS || fdef->ml_flags & METH_STATIC) {
+        thread->raiseValueErrorWithCStr(
+            "module functions cannot set METH_CLASS or METH_STATIC");
+        return nullptr;
+      }
+      Function function(&scope, runtime->newFunction());
+      Str function_name(&scope, runtime->newStrFromCStr(fdef->ml_name));
+      function->setName(*function_name);
+      function->setCode(
+          runtime->newIntFromCPtr(bit_cast<void*>(fdef->ml_meth)));
+      switch (fdef->ml_flags) {
+        case METH_NOARGS:
+          function->setEntry(moduleTrampolineNoArgs);
+          function->setEntryKw(moduleTrampolineNoArgsKw);
+          function->setEntryEx(moduleTrampolineNoArgsEx);
+          break;
+        case METH_O:
+          UNIMPLEMENTED("METH_O");
+        case METH_VARARGS:
+          UNIMPLEMENTED("METH_VARARGS");
+        case METH_VARARGS | METH_KEYWORDS:
+          UNIMPLEMENTED("METH_VARARGS | METH_KEYWORDS");
+        case METH_FASTCALL:
+          UNIMPLEMENTED("METH_FASTCALL");
+        default:
+          UNIMPLEMENTED(
+              "Bad call flags in PyCFunction_Call. METH_OLDARGS is no longer "
+              "supported!");
+      }
+      function->setModule(*module);
+      runtime->attributeAtPut(thread, module, function_name, function);
+    }
+  }
+
   if (def->m_doc != nullptr) {
     Object doc(&scope, runtime->newStrFromCStr(def->m_doc));
     Object key(&scope, runtime->symbols()->DunderDoc());
@@ -41,8 +79,6 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
 
   // TODO(eelizondo): Check m_slots
   // TODO(eelizondo): Set md_state
-  // TODO(eelizondo): Validate m_methods
-  // TODO(eelizondo): Add methods
 
   return result;
 }

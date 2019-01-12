@@ -53,6 +53,13 @@ template <RawObject (*Fn)(Thread*, Frame*, word)>
 RawObject nativeTrampolineKw(Thread* thread, Frame* caller, word argc)
     __attribute__((aligned(16)));
 
+RawObject moduleTrampolineNoArgs(Thread* thread, Frame* caller, word argc)
+    __attribute__((aligned(16)));
+RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* caller, word argc)
+    __attribute__((aligned(16)));
+RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* caller, word argc)
+    __attribute__((aligned(16)));
+
 RawObject extensionTrampoline(Thread* thread, Frame* caller, word argc)
     __attribute__((aligned(16)));
 RawObject extensionTrampolineKw(Thread* thread, Frame* caller, word argc)

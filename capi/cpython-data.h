@@ -216,6 +216,16 @@ extern const unsigned char _Py_ctype_toupper[256];
 #define Py_am_anext 79
 #define Py_tp_finalize 80
 
+/* Method Types */
+#define METH_VARARGS 0x0001
+#define METH_KEYWORDS 0x0002
+#define METH_NOARGS 0x0004
+#define METH_O 0x0008
+#define METH_CLASS 0x0010
+#define METH_STATIC 0x0020
+#define METH_COEXIST 0x0040
+#define METH_FASTCALL 0x0080
+
 #ifdef __cplusplus
 }
 #endif
