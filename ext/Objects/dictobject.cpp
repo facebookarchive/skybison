@@ -119,9 +119,36 @@ PY_EXPORT int PyDict_DelItemString(PyObject* /* v */, const char* /* y */) {
   UNIMPLEMENTED("PyDict_DelItemString");
 }
 
-PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* /* p */,
-                                            PyObject* /* y */) {
-  UNIMPLEMENTED("PyDict_GetItemWithError");
+PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* pydict, PyObject* key) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*dict_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+
+  Frame* frame = thread->currentFrame();
+  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key_obj,
+                                                       SymbolId::kDunderHash));
+  if (dunder_hash->isNoneType()) {
+    thread->raiseTypeErrorWithCStr("unhashable object");
+    return nullptr;
+  }
+  Object key_hash(
+      &scope, Interpreter::callMethod1(thread, frame, dunder_hash, key_obj));
+  if (key_hash->isError()) {
+    thread->raiseTypeErrorWithCStr("key is not hashable");
+    return nullptr;
+  }
+  Dict dict(&scope, *dict_obj);
+  Object value(&scope, runtime->dictAtWithHash(dict, key_obj, key_hash));
+  if (value->isError()) {
+    return nullptr;
+  }
+  return ApiHandle::borrowedReference(thread, *value);
 }
 
 PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {

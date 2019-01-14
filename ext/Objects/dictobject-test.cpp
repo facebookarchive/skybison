@@ -275,4 +275,66 @@ TEST_F(DictExtensionApiTest, ClearRemovesAllItems) {
   EXPECT_EQ(PyDict_Size(dict), 0);
 }
 
+TEST_F(DictExtensionApiTest, GetItemWithErrorNonExistingKeyReturnsNull) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key(PyLong_FromLong(666));
+  PyObjectPtr result(PyDict_GetItemWithError(dict, key));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, GetItemWithErrorReturnsBorrowedValue) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key(PyLong_FromLong(10));
+  PyObjectPtr value(PyLong_FromLong(666));
+
+  // Insert the value into the dictionary
+  ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+
+  // Record the reference count of the value
+  long refcnt = Py_REFCNT(value);
+
+  // Get a new reference to the value from the dictionary
+  PyObject* value2 = PyDict_GetItemWithError(dict, key);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  // The new reference should be equal to the original reference
+  EXPECT_EQ(value2, value);
+
+  // The reference count should not be affected
+  EXPECT_EQ(Py_REFCNT(value), refcnt);
+}
+
+TEST_F(DictExtensionApiTest, GetItemWithErrorWithDictSubclassReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo(dict): pass
+obj = Foo()
+  )");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr key(PyLong_FromLong(1));
+  PyObjectPtr val(PyLong_FromLong(2));
+  ASSERT_EQ(PyDict_SetItem(obj, key, val), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr result(PyDict_GetItemWithError(obj, key));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, val);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest,
+       GetItemWithErrorWithUnhashableObjectRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __hash__ = None
+obj = C()
+)");
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyDict_GetItemWithError(dict, key), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 }  // namespace python
