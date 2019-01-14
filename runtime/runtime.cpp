@@ -2620,6 +2620,25 @@ bool Runtime::dictLookup(const Tuple& data, const Object& key,
   return false;
 }
 
+RawObject Runtime::dictItems(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
+  Tuple data(&scope, dict->data());
+  Tuple items(&scope, newTuple(dict->numItems()));
+  word num_items = 0;
+  for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
+    if (!Dict::Bucket::isFilled(*data, i)) {
+      continue;
+    }
+    Tuple kvpair(&scope, newTuple(2));
+    kvpair->atPut(0, Dict::Bucket::key(*data, i));
+    kvpair->atPut(1, Dict::Bucket::value(*data, i));
+    items->atPut(num_items++, kvpair);
+  }
+  DCHECK(num_items == items->length(), "%ld != %ld", num_items,
+         items->length());
+  return *items;
+}
+
 RawTuple Runtime::dictKeys(const Dict& dict) {
   HandleScope scope;
   Tuple data(&scope, dict->data());

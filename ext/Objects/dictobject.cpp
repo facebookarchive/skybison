@@ -1,5 +1,6 @@
 // dictobject.c implementation
 
+#include "dict-builtins.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
@@ -114,8 +115,20 @@ PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* /* p */,
   UNIMPLEMENTED("PyDict_GetItemWithError");
 }
 
-PY_EXPORT PyObject* PyDict_Items(PyObject* /* p */) {
-  UNIMPLEMENTED("PyDict_Items");
+PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(dict_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Dict dict(&scope, *dict_obj);
+  List items(&scope, runtime->newList());
+  items->setNumItems(dict->numItems());
+  items->setItems(runtime->dictItems(thread, dict));
+  return ApiHandle::newReference(thread, *items);
 }
 
 PY_EXPORT PyObject* PyDict_Keys(PyObject* /* p */) {

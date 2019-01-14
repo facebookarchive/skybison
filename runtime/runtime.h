@@ -335,6 +335,7 @@ class Runtime {
   RawObject dictAtWithHash(const Dict& dict, const Object& key,
                            const Object& key_hash);
 
+  RawObject dictItems(Thread* thread, const Dict& dict);
   RawTuple dictKeys(const Dict& dict);
 
   // Set related function, based on dict.

@@ -178,4 +178,29 @@ TEST_F(DictExtensionApiTest, ContainsWithKeyNotInDictReturnsZero) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(DictExtensionApiTest, ItemsWithNonDictRaisesSystemError) {
+  ASSERT_EQ(PyDict_Items(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, ItemsWithDictReturnsList) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key(PyLong_FromLong(10));
+  PyObjectPtr value(PyLong_FromLong(11));
+  ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+
+  PyObjectPtr result(PyDict_Items(dict));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 1);
+
+  PyObjectPtr kv(PyList_GetItem(result, 0));
+  ASSERT_TRUE(PyTuple_CheckExact(kv));
+  ASSERT_EQ(PyTuple_Size(kv), 2);
+  EXPECT_EQ(PyTuple_GetItem(kv, 0), key);
+  EXPECT_EQ(PyTuple_GetItem(kv, 1), value);
+}
+
 }  // namespace python
