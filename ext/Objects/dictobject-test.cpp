@@ -224,4 +224,34 @@ TEST_F(DictExtensionApiTest, KeysWithDictReturnsList) {
   EXPECT_EQ(PyList_GetItem(result, 0), key);
 }
 
+TEST_F(DictExtensionApiTest, ValuesWithNonDictReturnsNull) {
+  EXPECT_EQ(PyDict_Values(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, ValuesWithEmptyDictReturnsEmptyList) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr result(PyDict_Values(dict));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 0);
+}
+
+TEST_F(DictExtensionApiTest, ValuesWithNonEmptyDictReturnsNonEmptyList) {
+  PyObjectPtr dict(PyDict_New());
+
+  PyObjectPtr key(PyLong_FromLong(10));
+  PyObjectPtr value(PyLong_FromLong(11));
+  ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+
+  PyObjectPtr result(PyDict_Values(dict));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 1);
+  EXPECT_EQ(PyList_GetItem(result, 0), value);
+}
+
 }  // namespace python

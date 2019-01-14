@@ -181,8 +181,20 @@ PY_EXPORT int PyDict_Update(PyObject* /* a */, PyObject* /* b */) {
   UNIMPLEMENTED("PyDict_Update");
 }
 
-PY_EXPORT PyObject* PyDict_Values(PyObject* /* p */) {
-  UNIMPLEMENTED("PyDict_Values");
+PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(dict_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Dict dict(&scope, *dict_obj);
+  List values(&scope, runtime->newList());
+  values->setNumItems(dict->numItems());
+  values->setItems(runtime->dictValues(thread, dict));
+  return ApiHandle::newReference(thread, *values);
 }
 
 PY_EXPORT PyObject* PyObject_GenericGetDict(PyObject* /* j */, void* /* t */) {

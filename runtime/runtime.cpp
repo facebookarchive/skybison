@@ -2653,6 +2653,20 @@ RawObject Runtime::dictKeys(const Dict& dict) {
   return *keys;
 }
 
+RawObject Runtime::dictValues(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
+  Tuple data(&scope, dict->data());
+  Tuple values(&scope, newTuple(dict->numItems()));
+  word num_values = 0;
+  for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
+    if (!Dict::Bucket::isFilled(*data, i)) {
+      continue;
+    }
+    values->atPut(num_values++, Dict::Bucket::value(*data, i));
+  }
+  return *values;
+}
+
 // DictItemIterator
 
 RawObject Runtime::newDictItemIterator(const Dict& dict) {
