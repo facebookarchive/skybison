@@ -1867,6 +1867,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kBrokenPipeError,
                        LayoutId::kBrokenPipeError);
   moduleAddBuiltinType(module, SymbolId::kBufferError, LayoutId::kBufferError);
+  moduleAddBuiltinType(module, SymbolId::kBytes, LayoutId::kBytes);
   moduleAddBuiltinType(module, SymbolId::kBytesWarning,
                        LayoutId::kBytesWarning);
   moduleAddBuiltinType(module, SymbolId::kChildProcessError,
