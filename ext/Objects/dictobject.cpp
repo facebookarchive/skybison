@@ -82,8 +82,17 @@ PY_EXPORT PyObject* PyDict_GetItemString(PyObject* pydict, const char* key) {
   return getItem(thread, dict, key_obj);
 }
 
-PY_EXPORT void PyDict_Clear(PyObject* /* p */) {
-  UNIMPLEMENTED("PyDict_Clear");
+PY_EXPORT void PyDict_Clear(PyObject* pydict) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  if (!runtime->isInstanceOfDict(*dict_obj)) {
+    return;
+  }
+  Dict dict(&scope, *dict_obj);
+  dict->setNumItems(0);
+  dict->setData(runtime->newTuple(0));
 }
 
 PY_EXPORT int PyDict_ClearFreeList() { return 0; }

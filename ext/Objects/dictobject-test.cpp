@@ -254,4 +254,25 @@ TEST_F(DictExtensionApiTest, ValuesWithNonEmptyDictReturnsNonEmptyList) {
   EXPECT_EQ(PyList_GetItem(result, 0), value);
 }
 
+TEST_F(DictExtensionApiTest, ClearWithNonDictDoesNotThrow) {
+  PyDict_Clear(Py_None);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, ClearRemovesAllItems) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(1));
+  PyDict_SetItem(dict, one, two);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr three(PyLong_FromLong(1));
+  PyObjectPtr four(PyLong_FromLong(1));
+  PyDict_SetItem(dict, three, four);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyDict_Clear(dict);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyDict_Size(dict), 0);
+}
+
 }  // namespace python
