@@ -764,8 +764,8 @@ PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
     thread->raiseOverflowErrorWithCStr("strings are too large to concat");
     return nullptr;
   }
-  return ApiHandle::newReference(
-      thread, thread->runtime()->strConcat(left_str, right_str));
+  return ApiHandle::newReference(thread,
+                                 runtime->strConcat(left_str, right_str));
 }
 
 PY_EXPORT int PyUnicode_Contains(PyObject* /* r */, PyObject* /* r */) {
