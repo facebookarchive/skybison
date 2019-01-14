@@ -3943,6 +3943,35 @@ RawObject Runtime::normalizeLargeInt(const LargeInt& large_int) {
   return result;
 }
 
+RawObject Runtime::intBinaryAnd(Thread* thread, const Int& left,
+                                const Int& right) {
+  word left_digits = left->numDigits();
+  word right_digits = right->numDigits();
+  if (left_digits == 1 && right_digits == 1) {
+    return newInt(left->asWord() & right->asWord());
+  }
+
+  HandleScope scope(thread);
+  Int longer(&scope, left_digits > right_digits ? *left : *right);
+  Int shorter(&scope, left_digits <= right_digits ? *left : *right);
+
+  word num_digits = longer->numDigits();
+  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  for (word i = 0, e = shorter->numDigits(); i < e; ++i) {
+    result->digitAtPut(i, longer->digitAt(i) & shorter->digitAt(i));
+  }
+  if (shorter.isNegative()) {
+    for (word i = shorter->numDigits(); i < num_digits; ++i) {
+      result->digitAtPut(i, longer->digitAt(i));
+    }
+  } else {
+    for (word i = shorter->numDigits(); i < num_digits; ++i) {
+      result->digitAtPut(i, 0);
+    }
+  }
+  return normalizeLargeInt(result);
+}
+
 RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
                                const Int& right) {
   word left_digits = left->numDigits();

@@ -492,6 +492,64 @@ a ^= 0x03
   EXPECT_EQ(RawSmallInt::cast(*b)->value(), 0xFE);
 }
 
+TEST(IntBuiltinsTest, DunderAndWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, SmallInt::fromWord(0x15));   // 0b010101
+  Int right(&scope, SmallInt::fromWord(0x38));  // 0b111000
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(result)->value(), 0x10);  // 0b10000
+}
+
+TEST(IntBuiltinsTest, DunderAndWithLargeIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, newIntWithDigits(&runtime, {0x0f, 0x30, 0x1}));
+  Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xf0, 0x2, 7}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(&scope, newIntWithDigits(&runtime, {0x03, 0x30}));
+  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderAndWithNonIntReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, newIntWithDigits(&runtime, {1, 2}));
+  Object right(&scope, runtime.newStrFromCStr(""));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
+  EXPECT_TRUE(result->isNotImplemented());
+}
+
+TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftThrowsException) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newStrFromCStr(""));
+  LargeInt right(&scope, newIntWithDigits(&runtime, {1, 2}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderAndWithTooFewArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, i));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderAndWithTooManyArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, i, i, i));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
 TEST(IntBuiltinsDeathTest, DunderLshift) {
   Runtime runtime;
   HandleScope scope;

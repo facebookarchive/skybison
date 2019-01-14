@@ -2982,6 +2982,52 @@ TEST(RuntimeIntTest, NewLargeIntWithDigits) {
   EXPECT_EQ(positive_largeint->asWord(), positive_large_int);
 }
 
+TEST(RuntimeIntTest, BinaryAndWithSmallInts) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, SmallInt::fromWord(0xEA));   // 0b11101010
+  Int right(&scope, SmallInt::fromWord(0xDC));  // 0b11011100
+  Object result(&scope,
+                runtime.intBinaryAnd(Thread::currentThread(), left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 0xC8);  // 0b11001000
+}
+
+TEST(RuntimeIntTest, BinaryAndWithLargeInts) {
+  Runtime runtime;
+  HandleScope scope;
+  // {0b00001111, 0b00110000, 0b00000001}
+  Int left(&scope, newIntWithDigits(&runtime, {0x0F, 0x30, 0x1}));
+  // {0b00000011, 0b11110000, 0b00000010, 0b00000111}
+  Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xF0, 0x2, 0x7}));
+  Object result(&scope,
+                runtime.intBinaryAnd(Thread::currentThread(), left, right));
+  // {0b00000111, 0b01110000}
+  Int expected(&scope, newIntWithDigits(&runtime, {0x03, 0x30}));
+  ASSERT_TRUE(result->isLargeInt());
+  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+
+  Object result_commuted(
+      &scope, runtime.intBinaryAnd(Thread::currentThread(), right, left));
+  ASSERT_TRUE(result_commuted->isLargeInt());
+  EXPECT_EQ(Int::cast(result)->compare(Int::cast(result_commuted)), 0);
+}
+
+TEST(RuntimeIntTest, BinaryAndWithNegativeLargeInts) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
+  Int right(&scope, newIntWithDigits(&runtime,
+                                     {static_cast<uword>(-1), 0xF0, 0x2, 0x7}));
+  Object result(&scope,
+                runtime.intBinaryAnd(Thread::currentThread(), left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(&scope, newIntWithDigits(&runtime, {static_cast<uword>(-42),
+                                                   0xF0, 0x2, 0x7}));
+  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+}
+
 TEST(RuntimeIntTest, BinaryOrWithSmallInts) {
   Runtime runtime;
   HandleScope scope;
