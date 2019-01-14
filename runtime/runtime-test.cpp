@@ -2982,49 +2982,48 @@ TEST(RuntimeIntTest, NewLargeIntWithDigits) {
   EXPECT_EQ(positive_largeint->asWord(), positive_large_int);
 }
 
-TEST(RuntimeIntTest, BinaryOrWithPositiveInts) {
+TEST(RuntimeIntTest, BinaryOrWithSmallInts) {
   Runtime runtime;
   HandleScope scope;
-  Int left(&scope, SmallInt::fromWord(0x2A));   // 0b00101010
-  Int right(&scope, SmallInt::fromWord(0x15));  // 0b00010101
+  Int left(&scope, SmallInt::fromWord(0xAA));   // 0b10101010
+  Int right(&scope, SmallInt::fromWord(0x9C));  // 0b10011100
   Object result(&scope,
                 runtime.intBinaryOr(Thread::currentThread(), left, right));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result)->value(), 0x3F);  // 0b00111111;
-}
-
-TEST(RuntimeIntTest, BinaryOrWithPositiveAndNegativeInt) {
-  Runtime runtime;
-  HandleScope scope;
-  Int left(&scope, SmallInt::fromWord(-8));
-  Int right(&scope, SmallInt::fromWord(2));
-  Object result(&scope,
-                runtime.intBinaryOr(Thread::currentThread(), left, right));
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result)->value(), -6);
-}
-
-TEST(RuntimeIntTest, BinaryOrWithNegativeInts) {
-  Runtime runtime;
-  HandleScope scope;
-  Int left(&scope, SmallInt::fromWord(-4));
-  Int right(&scope, SmallInt::fromWord(-7));
-  Object result(&scope,
-                runtime.intBinaryOr(Thread::currentThread(), left, right));
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*result)->value(), -3);
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 0xBE);  // 0b10111110
 }
 
 TEST(RuntimeIntTest, BinaryOrWithLargeInts) {
   Runtime runtime;
   HandleScope scope;
-  Int left(&scope, testing::newIntWithDigits(&runtime, {8, 8}));
-  Int right(&scope, testing::newIntWithDigits(&runtime, {7, 7, 7}));
+  // {0b00001100, 0b00110000, 0b00000001}
+  Int left(&scope, newIntWithDigits(&runtime, {0x0C, 0x30, 0x1}));
+  // {0b00000011, 0b11010000, 0b00000010, 0b00000111}
+  Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xD0, 0x2, 0x7}));
   Object result(&scope,
                 runtime.intBinaryOr(Thread::currentThread(), left, right));
-  Int expected(&scope, testing::newIntWithDigits(&runtime, {15, 15, 7}));
+  // {0b00001111, 0b11110000, 0b00000011, 0b00000111}
+  Int expected(&scope, newIntWithDigits(&runtime, {0x0F, 0xF0, 0x3, 0x7}));
   ASSERT_TRUE(result->isLargeInt());
   EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+
+  Object result_commuted(
+      &scope, runtime.intBinaryOr(Thread::currentThread(), right, left));
+  ASSERT_TRUE(result_commuted->isLargeInt());
+  EXPECT_EQ(Int::cast(result)->compare(Int::cast(result_commuted)), 0);
+}
+
+TEST(RuntimeIntTest, BinaryOrWithNegativeLargeInts) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
+  Int right(&scope, newIntWithDigits(&runtime, {static_cast<uword>(-4), 0xF0,
+                                                0x2, static_cast<uword>(-1)}));
+  Object result(&scope,
+                runtime.intBinaryOr(Thread::currentThread(), left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(result)->value(), -2);
 }
 
 TEST(RuntimeIntTest, NormalizeLargeIntToSmallInt) {
