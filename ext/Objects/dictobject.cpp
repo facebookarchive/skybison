@@ -131,8 +131,21 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
   return ApiHandle::newReference(thread, *items);
 }
 
-PY_EXPORT PyObject* PyDict_Keys(PyObject* /* p */) {
-  UNIMPLEMENTED("PyDict_Keys");
+PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(dict_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Dict dict(&scope, *dict_obj);
+  Tuple keys_tuple(&scope, runtime->dictKeys(dict));
+  List keys(&scope, runtime->newList());
+  keys->setItems(*keys_tuple);
+  keys->setNumItems(keys_tuple->length());
+  return ApiHandle::newReference(thread, *keys);
 }
 
 PY_EXPORT int PyDict_Merge(PyObject* /* a */, PyObject* /* b */, int /* e */) {

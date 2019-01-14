@@ -336,7 +336,7 @@ class Runtime {
                            const Object& key_hash);
 
   RawObject dictItems(Thread* thread, const Dict& dict);
-  RawTuple dictKeys(const Dict& dict);
+  RawObject dictKeys(const Dict& dict);
 
   // Set related function, based on dict.
   // Add a value to set and return the object in set.

@@ -203,4 +203,25 @@ TEST_F(DictExtensionApiTest, ItemsWithDictReturnsList) {
   EXPECT_EQ(PyTuple_GetItem(kv, 1), value);
 }
 
+TEST_F(DictExtensionApiTest, KeysWithNonDictRaisesSystemError) {
+  EXPECT_EQ(PyDict_Keys(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, KeysWithDictReturnsList) {
+  PyObjectPtr dict(PyDict_New());
+
+  PyObjectPtr key(PyLong_FromLong(10));
+  PyObjectPtr value(PyLong_FromLong(11));
+  ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+
+  PyObjectPtr result(PyDict_Keys(dict));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 1);
+  EXPECT_EQ(PyList_GetItem(result, 0), key);
+}
+
 }  // namespace python

@@ -2634,12 +2634,10 @@ RawObject Runtime::dictItems(Thread* thread, const Dict& dict) {
     kvpair->atPut(1, Dict::Bucket::value(*data, i));
     items->atPut(num_items++, kvpair);
   }
-  DCHECK(num_items == items->length(), "%ld != %ld", num_items,
-         items->length());
   return *items;
 }
 
-RawTuple Runtime::dictKeys(const Dict& dict) {
+RawObject Runtime::dictKeys(const Dict& dict) {
   HandleScope scope;
   Tuple data(&scope, dict->data());
   Tuple keys(&scope, newTuple(dict->numItems()));
@@ -2652,7 +2650,6 @@ RawTuple Runtime::dictKeys(const Dict& dict) {
       num_keys++;
     }
   }
-  DCHECK(num_keys == keys->length(), "%ld != %ld", num_keys, keys->length());
   return *keys;
 }
 
