@@ -436,4 +436,66 @@ nan = float("nan")
   EXPECT_EQ(*result, RawBool::falseObj());
 }
 
+TEST(FloatBuiltinsTest, DunderFloatWithFloatLiteralReturnsSameObject) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime, "a = (7.0).__float__()");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  ASSERT_TRUE(a->isFloat());
+  EXPECT_EQ(RawFloat::cast(*a)->value(), 7.0);
+}
+
+TEST(FloatBuiltinsTest, DunderFloatFromFloatClassReturnsSameValue) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Float a_float(&scope, runtime.newFloat(7.0));
+  Object a(&scope, runBuiltin(FloatBuiltins::dunderFloat, a_float));
+  ASSERT_TRUE(a->isFloat());
+  EXPECT_EQ(RawFloat::cast(*a)->value(), 7.0);
+}
+
+TEST(FloatBuiltinsTest, DunderFloatWithFloatSubclassReturnsSameValue) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime, R"(
+class FloatSub(float):
+  pass
+a = FloatSub(1.0).__float__())");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  ASSERT_TRUE(a->isFloat());
+  EXPECT_EQ(RawFloat::cast(*a)->value(), 1.0);
+}
+
+TEST(FloatBuiltinsTest, DunderFloatWithNonFloatReturnsError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int i(&scope, runtime.newInt(1));
+  Object i_res(&scope, runBuiltin(FloatBuiltins::dunderFloat, i));
+  EXPECT_TRUE(i_res->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(FloatBuiltinsTest, DunderFloatWithMissingSelfReturnsError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Object error(&scope, runBuiltin(FloatBuiltins::dunderFloat));
+  EXPECT_TRUE(error->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(FloatBuiltinsTest, DunderFloatWithTooManyArgumentsReturnsError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Float flt(&scope, runtime.newFloat(7.0));
+  Object error(&scope, runBuiltin(FloatBuiltins::dunderFloat, flt, flt));
+  EXPECT_TRUE(error->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
 }  // namespace python

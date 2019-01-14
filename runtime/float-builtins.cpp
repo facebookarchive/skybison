@@ -44,6 +44,7 @@ RawObject asFloatObject(Thread* thread, const Object& obj) {
 const BuiltinMethod FloatBuiltins::kMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
+    {SymbolId::kDunderFloat, nativeTrampoline<dunderFloat>},
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
     {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
@@ -153,6 +154,25 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("integer to float conversion");
   }
   return thread->runtime()->notImplemented();
+}
+
+RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "expected 0 arguments, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (self->isFloat()) {
+    return *self;
+  }
+  if (runtime->isInstanceOfFloat(*self)) {
+    UserFloatBase user_float(&scope, *self);
+    return user_float->floatValue();
+  }
+  return thread->raiseTypeErrorWithCStr("'float' object expected");
 }
 
 RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
