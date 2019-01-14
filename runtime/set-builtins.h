@@ -10,7 +10,7 @@ namespace python {
 
 RawObject setAdd(Thread* thread, const Set& set, const Object& key);
 
-// Return a shallow copy of a set
+// Returns a shallow copy of a set
 RawObject setCopy(Thread* thread, const SetBase& set);
 
 // Returns true if set and other contain the same set of values
