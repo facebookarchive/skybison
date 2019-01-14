@@ -249,8 +249,24 @@ PY_EXPORT PyObject* PyNumber_Xor(PyObject* v, PyObject* w) {
   return doBinaryOp(v, w, Interpreter::BinaryOp::XOR);
 }
 
-PY_EXPORT int PyNumber_Check(PyObject* /* o */) {
-  UNIMPLEMENTED("PyNumber_Check");
+PY_EXPORT int PyNumber_Check(PyObject* obj) {
+  if (obj == nullptr) {
+    return 0;
+  }
+
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  if (!Interpreter::lookupMethod(thread, frame, num, SymbolId::kDunderInt)
+           .isError()) {
+    return true;
+  }
+  if (!Interpreter::lookupMethod(thread, frame, num, SymbolId::kDunderFloat)
+           .isError()) {
+    return true;
+  }
+  return false;
 }
 
 PY_EXPORT PyObject* PyNumber_Float(PyObject* /* o */) {

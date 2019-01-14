@@ -546,4 +546,62 @@ def func(a, b, c, d, e, f):
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest, PyNumberCheckWithFloatReturnsTrue) {
+  PyObjectPtr float_num(PyFloat_FromDouble(1.1));
+  EXPECT_EQ(PyNumber_Check(float_num), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberCheckWithIntReturnsTrue) {
+  PyObjectPtr int_num(PyLong_FromLong(1));
+  EXPECT_EQ(PyNumber_Check(int_num), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberCheckWithFloatSubclassReturnsTrue) {
+  PyRun_SimpleString(R"(
+class SubFloat(float):
+  pass
+sub = SubFloat()
+  )");
+  PyObjectPtr sub(moduleGet("__main__", "sub"));
+  EXPECT_EQ(PyNumber_Check(sub), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberCheckWithDunderIntClassReturnsTrue) {
+  PyRun_SimpleString(R"(
+class DunderIntClass():
+  def __int__(self):
+    return 5
+i = DunderIntClass()
+  )");
+  PyObjectPtr i(moduleGet("__main__", "i"));
+  EXPECT_EQ(PyNumber_Check(i), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberCheckWithDunderFloatClassReturnsTrue) {
+  PyRun_SimpleString(R"(
+class DunderFloatClass():
+  def __float__(self):
+    return 5.0
+f = DunderFloatClass()
+  )");
+  PyObjectPtr f(moduleGet("__main__", "f"));
+  EXPECT_EQ(PyNumber_Check(f), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberCheckWithNonNumberReturnsFalse) {
+  PyObjectPtr str(PyUnicode_FromString(""));
+  EXPECT_EQ(PyNumber_Check(str), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberCheckWithNullReturnsFalse) {
+  EXPECT_EQ(PyNumber_Check(nullptr), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python
