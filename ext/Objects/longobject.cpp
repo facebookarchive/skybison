@@ -1,6 +1,7 @@
 // longobject.c implementation
 
 #include "handles.h"
+#include "int-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 
@@ -73,10 +74,10 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
     thread->raiseBadInternalCall();
     return -1;
   }
+  Object object(&scope, ApiHandle::fromPyObject(pylong)->asObject());
 
-  Object longobj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
-  if (!longobj->isInt()) {
-    // TODO(T29753730): Handle calling __int__ on pylong when appropriate.
+  Object longobj(&scope, asIntObject(thread, object));
+  if (longobj->isError()) {
     return -1;
   }
 
@@ -108,10 +109,10 @@ static T asIntWithoutOverflowCheck(PyObject* pylong) {
     thread->raiseBadInternalCall();
     return -1;
   }
+  Object object(&scope, ApiHandle::fromPyObject(pylong)->asObject());
 
-  Object longobj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
-  if (!longobj->isInt()) {
-    // TODO(T29753730): Handle calling __int__ on pylong when appropriate.
+  Object longobj(&scope, asIntObject(thread, object));
+  if (longobj->isError()) {
     return -1;
   }
   static_assert(sizeof(T) <= sizeof(word), "T requires multiple digits");

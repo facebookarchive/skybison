@@ -858,4 +858,31 @@ void BoolBuiltins::initialize(Runtime* runtime) {
   type->setBuiltinBase(LayoutId::kInt);
 }
 
+RawObject asIntObject(Thread* thread, const Object& object) {
+  if (object->isInt()) {
+    return *object;
+  }
+
+  // TODO(T38780562): Handle Int subclasses
+
+  // Try calling __int__
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Object int_method(&scope, Interpreter::lookupMethod(thread, frame, object,
+                                                      SymbolId::kDunderInt));
+  if (int_method->isError()) {
+    return thread->raiseTypeErrorWithCStr("an integer is required");
+  }
+  Object int_res(&scope,
+                 Interpreter::callMethod1(thread, frame, int_method, object));
+  if (int_res->isError()) return *int_res;
+  if (!thread->runtime()->isInstanceOfInt(int_res)) {
+    return thread->raiseTypeErrorWithCStr("__int__ returned non-int");
+  }
+
+  // TODO(T38780562): Handle Int subclasses
+
+  return *int_res;
+}
+
 }  // namespace python

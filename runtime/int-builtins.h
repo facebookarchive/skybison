@@ -5,6 +5,12 @@
 
 namespace python {
 
+// Convert object to a RawInt.
+// - If the object is an Int return it unchanged.
+// - If object has an __int__ method call it and return the result.
+// Throws if the conversion isn't possible.
+RawObject asIntObject(Thread* thread, const Object& object);
+
 class IntBuiltins {
  public:
   static void initialize(Runtime* runtime);

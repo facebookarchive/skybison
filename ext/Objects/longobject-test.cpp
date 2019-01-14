@@ -50,8 +50,33 @@ TEST_F(LongExtensionApiTest, AsLongWithNullReturnsNegative) {
 TEST_F(LongExtensionApiTest, AsLongWithNonIntegerReturnsNegative) {
   long res = PyLong_AsLong(Py_None);
   EXPECT_EQ(res, -1);
-  // TODO(eelizondo): Add exception checks once PyLong_AsLong is fully
-  // implemented
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest, AsLongWithInvalidDunderInt) {
+  PyRun_SimpleString(R"(
+class X:
+    def __int__(self):
+        return "not an int"
+x = X()
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  EXPECT_EQ(PyLong_AsLong(x), -1l);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest, AsLongWithValidDunderInt) {
+  PyRun_SimpleString(R"(
+class X:
+    def __int__(self):
+        return -7
+x = X()
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  EXPECT_EQ(PyLong_AsLong(x), -7);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(LongExtensionApiTest, FromLongReturnsLong) {
