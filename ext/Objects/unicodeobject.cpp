@@ -744,8 +744,28 @@ PY_EXPORT int PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str) {
   return str_obj->compareCStr(str);
 }
 
-PY_EXPORT PyObject* PyUnicode_Concat(PyObject* /* t */, PyObject* /* t */) {
-  UNIMPLEMENTED("PyUnicode_Concat");
+PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  Object left_obj(&scope, ApiHandle::fromPyObject(left)->asObject());
+  Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
+  if (!runtime->isInstanceOfStr(left_obj) ||
+      !runtime->isInstanceOfStr(right_obj)) {
+    thread->raiseTypeErrorWithCStr("can only concatenate str to str");
+    return nullptr;
+  }
+  // TODO(T36619828): Implement Str subclass support
+  Str left_str(&scope, *left_obj);
+  Str right_str(&scope, *right_obj);
+  word dummy;
+  if (__builtin_add_overflow(left_str->length(), right_str->length(), &dummy)) {
+    thread->raiseOverflowErrorWithCStr("strings are too large to concat");
+    return nullptr;
+  }
+  return ApiHandle::newReference(
+      thread, thread->runtime()->strConcat(left_str, right_str));
 }
 
 PY_EXPORT int PyUnicode_Contains(PyObject* /* r */, PyObject* /* r */) {

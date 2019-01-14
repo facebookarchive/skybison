@@ -654,4 +654,40 @@ TEST_F(UnicodeExtensionApiTest, FromFormatParsesNullAndString) {
   EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "world"));
 }
 
+TEST_F(UnicodeExtensionApiTest, ConcatWithNonStringFails) {
+  PyObjectPtr i(PyLong_FromLong(1));
+  EXPECT_EQ(PyUnicode_Concat(i, i), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, ConcatWithEmptyArgumentReturnsString) {
+  PyObjectPtr hello(PyUnicode_FromString("hello"));
+  PyObjectPtr empty(PyUnicode_FromString(""));
+  PyObjectPtr empty_right(PyUnicode_Concat(hello, empty));
+  ASSERT_NE(empty_right, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(empty_right));
+  EXPECT_EQ(PyUnicode_GetLength(empty_right), 5);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(empty_right, "hello"));
+
+  PyObjectPtr empty_left(PyUnicode_Concat(empty, hello));
+  ASSERT_NE(empty_left, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(empty_left));
+  EXPECT_EQ(PyUnicode_GetLength(empty_left), 5);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(empty_left, "hello"));
+}
+
+TEST_F(UnicodeExtensionApiTest, ConcatWithTwoStringsReturnsString) {
+  PyObjectPtr hello(PyUnicode_FromString("hello "));
+  PyObjectPtr world(PyUnicode_FromString("world"));
+  PyObjectPtr result(PyUnicode_Concat(hello, world));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(result));
+  EXPECT_EQ(PyUnicode_GetLength(result), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(result, "hello world"));
+}
+
 }  // namespace python
