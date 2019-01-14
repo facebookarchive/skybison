@@ -609,6 +609,9 @@ class Runtime {
   // Returns the result of bitwise logical OR of the arguments
   RawObject intBinaryOr(Thread* thread, const Int& left, const Int& right);
 
+  // Returns the result of bitwise XOR of the arguments
+  RawObject intBinaryXor(Thread* thread, const Int& left, const Int& right);
+
   // Given a possibly invalid LargeInt remove redundant sign- and
   // zero-extension and convert to a SmallInt when possible.
   RawObject normalizeLargeInt(const LargeInt& large_int);

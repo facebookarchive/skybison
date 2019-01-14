@@ -3072,6 +3072,53 @@ TEST(RuntimeIntTest, BinaryOrWithNegativeLargeInts) {
   EXPECT_EQ(RawSmallInt::cast(result)->value(), -2);
 }
 
+TEST(RuntimeIntTest, BinaryXorWithSmallInts) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, SmallInt::fromWord(0xAA));   // 0b10101010
+  Int right(&scope, SmallInt::fromWord(0x9C));  // 0b10011100
+  Object result(&scope,
+                runtime.intBinaryXor(Thread::currentThread(), left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 0x36);  // 0b00110110
+}
+
+TEST(RuntimeIntTest, BinaryXorWithLargeInts) {
+  Runtime runtime;
+  HandleScope scope;
+  // {0b00001100, 0b00110000, 0b00000001}
+  Int left(&scope, newIntWithDigits(&runtime, {0x0C, 0x30, 0x1}));
+  // {0b00000011, 0b11010000, 0b00000010, 0b00000111}
+  Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xD0, 0x2, 0x7}));
+  Object result(&scope,
+                runtime.intBinaryXor(Thread::currentThread(), left, right));
+  // {0b00001111, 0b11100000, 0b00000011, 0b00000111}
+  Int expected(&scope, newIntWithDigits(&runtime, {0x0F, 0xE0, 0x3, 0x7}));
+  ASSERT_TRUE(result->isLargeInt());
+  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+
+  Object result_commuted(
+      &scope, runtime.intBinaryXor(Thread::currentThread(), right, left));
+  ASSERT_TRUE(result_commuted->isLargeInt());
+  EXPECT_EQ(Int::cast(result)->compare(Int::cast(result_commuted)), 0);
+}
+
+TEST(RuntimeIntTest, BinaryXorWithNegativeLargeInts) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
+  Int right(&scope, newIntWithDigits(&runtime, {static_cast<uword>(-1), 0xf0,
+                                                0x2, static_cast<uword>(-1)}));
+  Object result(&scope,
+                runtime.intBinaryXor(Thread::currentThread(), left, right));
+  Int expected(&scope,
+               newIntWithDigits(&runtime, {0x29, ~static_cast<uword>(0xF0),
+                                           ~static_cast<uword>(0x2), 0}));
+  ASSERT_TRUE(result->isLargeInt());
+  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+}
+
 TEST(RuntimeIntTest, NormalizeLargeIntToSmallInt) {
   Runtime runtime;
   HandleScope scope;

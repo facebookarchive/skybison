@@ -33,6 +33,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderNeg, nativeTrampoline<dunderNeg>},
     {SymbolId::kDunderOr, nativeTrampoline<dunderOr>},
     {SymbolId::kDunderPos, nativeTrampoline<dunderPos>},
+    {SymbolId::kDunderXor, nativeTrampoline<dunderXor>},
 };
 
 void IntBuiltins::initialize(Runtime* runtime) {
@@ -166,7 +167,6 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
     {SymbolId::kDunderTruediv, nativeTrampoline<dunderTrueDiv>},
-    {SymbolId::kDunderXor, nativeTrampoline<dunderXor>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
 
@@ -643,6 +643,28 @@ RawObject IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
       "__neg__() must be called with int instance as the first argument");
 }
 
+RawObject IntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
+  }
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfInt(self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__xor__() must be called with int instance as the first argument");
+  }
+  if (thread->runtime()->isInstanceOfInt(other)) {
+    Int self_int(&scope, *self);
+    Int other_int(&scope, *other);
+    return runtime->intBinaryXor(thread, self_int, other_int);
+  }
+  // signal to binary dispatch to try another method
+  return thread->runtime()->notImplemented();
+}
+
 RawObject IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("expected no arguments");
@@ -762,26 +784,6 @@ RawObject SmallIntBuiltins::dunderSub(Thread* thread, Frame* frame,
   }
 
   // TODO(T30610701): Handle LargeIntegers
-  return thread->runtime()->notImplemented();
-}
-
-RawObject SmallIntBuiltins::dunderXor(Thread* thread, Frame* frame,
-                                      word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (!self->isSmallInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__xor__() must be called with int instance as first argument");
-  }
-  word left = RawSmallInt::cast(self)->value();
-  if (other->isInt()) {
-    word right = RawInt::cast(other)->asWord();
-    return thread->runtime()->newInt(left ^ right);
-  }
   return thread->runtime()->notImplemented();
 }
 

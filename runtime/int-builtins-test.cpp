@@ -1333,6 +1333,64 @@ TEST(IntBuiltinsTest, SmallIntDunderRepr) {
   EXPECT_PYSTRING_EQ(*str, "3735928559");
 }
 
+TEST(IntBuiltinsTest, DunderXorWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, SmallInt::fromWord(0x15));   // 0b010101
+  Int right(&scope, SmallInt::fromWord(0x38));  // 0b111000
+  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(result)->value(), 0x2D);  // 0b101101
+}
+
+TEST(IntBuiltinsTest, DunderXorWithLargeIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, newIntWithDigits(&runtime, {0x0f, 0x30, 0xCAFE}));
+  Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xf0}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(&scope, newIntWithDigits(&runtime, {0x0C, 0xC0, 0xCAFE}));
+  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderXorWithNonIntReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Int left(&scope, newIntWithDigits(&runtime, {1, 2}));
+  Object right(&scope, runtime.newStrFromCStr(""));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
+  EXPECT_TRUE(result->isNotImplemented());
+}
+
+TEST(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftThrowsException) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newStrFromCStr(""));
+  LargeInt right(&scope, newIntWithDigits(&runtime, {1, 2}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderXorWithTooFewArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, i));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderXorWithTooManyArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, i, i, i));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
 TEST(BoolBuiltinsTest, NewFromNonZeroIntegerReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
