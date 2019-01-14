@@ -293,3 +293,10 @@ class dict(bootstrap=True):
     def __repr__(self):
         kwpairs = [f"{repr(key)}: {repr(self[key])}" for key in self.keys()]
         return "{" + ", ".join(kwpairs) + "}"
+
+
+def all(iterable):
+    for element in iterable:
+        if not element:
+            return False
+    return True

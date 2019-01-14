@@ -868,4 +868,24 @@ class bumble():
                "Redefinition of native code method __lt__ in managed code");
 }
 
+TEST(BuiltinsModuleTest, AllOnListWithOnlyTrueReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = all([True, True])
+  )");
+  HandleScope scope;
+  Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result->value());
+}
+
+TEST(BuiltinsModuleTest, AllOnListWithFalseReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = all([True, False, True])
+  )");
+  HandleScope scope;
+  Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_FALSE(result->value());
+}
+
 }  // namespace python
