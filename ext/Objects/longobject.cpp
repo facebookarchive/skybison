@@ -12,11 +12,8 @@ PY_EXPORT int PyLong_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyLong_Check_Func(PyObject* obj) {
-  if (PyLong_CheckExact_Func(obj)) {
-    return true;
-  }
-  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
-                                                  LayoutId::kInt);
+  return Thread::currentThread()->runtime()->isInstanceOfInt(
+      ApiHandle::fromPyObject(obj)->asObject());
 }
 
 // Converting from signed ints.

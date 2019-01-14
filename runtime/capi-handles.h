@@ -35,10 +35,6 @@ class ApiHandle : public PyObject {
   // Remove the ApiHandle from the dictionary and free its memory
   void dispose();
 
-  // Check if the object is subtype of a type at given layout. This is used as a
-  // helper for PyXyz_Check functions
-  bool isSubclass(Thread* thread, LayoutId layout_id);
-
   // Check if the type is PyType_Type
   bool isType();
 

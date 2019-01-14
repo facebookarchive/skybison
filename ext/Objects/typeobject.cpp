@@ -18,11 +18,8 @@ PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyType_Check_Func(PyObject* obj) {
-  if (PyType_CheckExact_Func(obj)) {
-    return true;
-  }
-  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
-                                                  LayoutId::kType);
+  return Thread::currentThread()->runtime()->isInstanceOfType(
+      ApiHandle::fromPyObject(obj)->asObject());
 }
 
 static RawObject extensionSlot(const Type& type, Type::ExtensionSlot slot_id) {

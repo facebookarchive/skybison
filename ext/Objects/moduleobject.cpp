@@ -14,11 +14,8 @@ PY_EXPORT int PyModule_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyModule_Check_Func(PyObject* obj) {
-  if (PyModule_CheckExact_Func(obj)) {
-    return true;
-  }
-  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
-                                                  LayoutId::kModule);
+  return Thread::currentThread()->runtime()->isInstanceOfModule(
+      ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {

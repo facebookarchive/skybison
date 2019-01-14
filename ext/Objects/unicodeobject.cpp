@@ -526,11 +526,8 @@ PY_EXPORT int PyUnicode_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyUnicode_Check_Func(PyObject* obj) {
-  if (PyUnicode_CheckExact_Func(obj)) {
-    return true;
-  }
-  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
-                                                  LayoutId::kStr);
+  return Thread::currentThread()->runtime()->isInstanceOfStr(
+      ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT PyObject* PyUnicode_FromString(const char* c_string) {

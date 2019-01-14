@@ -30,11 +30,8 @@ PY_EXPORT int PyList_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyList_Check_Func(PyObject* obj) {
-  if (PyList_CheckExact_Func(obj)) {
-    return true;
-  }
-  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
-                                                  LayoutId::kList);
+  return Thread::currentThread()->runtime()->isInstanceOfList(
+      ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT PyObject* PyList_AsTuple(PyObject* pylist) {

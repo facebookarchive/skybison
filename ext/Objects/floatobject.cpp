@@ -36,11 +36,8 @@ PY_EXPORT int PyFloat_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyFloat_Check_Func(PyObject* obj) {
-  if (PyFloat_CheckExact_Func(obj)) {
-    return true;
-  }
-  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
-                                                  LayoutId::kFloat);
+  return Thread::currentThread()->runtime()->isInstanceOfFloat(
+      ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT int PyFloat_ClearFreeList() { return 0; }

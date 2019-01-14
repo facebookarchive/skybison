@@ -11,11 +11,8 @@ PY_EXPORT int PyDict_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyDict_Check_Func(PyObject* obj) {
-  if (PyDict_CheckExact_Func(obj)) {
-    return true;
-  }
-  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
-                                                  LayoutId::kDict);
+  return Thread::currentThread()->runtime()->isInstanceOfDict(
+      ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {

@@ -130,14 +130,6 @@ void ApiHandle::setCache(void* value) {
   runtime->dictAtPut(caches, key, cache);
 }
 
-bool ApiHandle::isSubclass(Thread* thread, LayoutId layout_id) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Type superclass(&scope, runtime->typeAt(layout_id));
-  Type subclass(&scope, type()->asObject());
-  return runtime->isSubclass(subclass, superclass);
-}
-
 void ApiHandle::dispose() {
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();

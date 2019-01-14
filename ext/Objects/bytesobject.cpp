@@ -7,11 +7,8 @@ PY_EXPORT int PyBytes_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyBytes_Check_Func(PyObject* obj) {
-  if (PyBytes_CheckExact_Func(obj)) {
-    return true;
-  }
-  return ApiHandle::fromPyObject(obj)->isSubclass(Thread::currentThread(),
-                                                  LayoutId::kBytes);
+  return Thread::currentThread()->runtime()->isInstanceOfBytes(
+      ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT char* PyBytes_AsString(PyObject* /* p */) {
