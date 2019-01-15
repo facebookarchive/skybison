@@ -1140,4 +1140,61 @@ TEST(ListBuiltinsTest, ExtendIterator) {
   EXPECT_PYLIST_EQ(list, {1, 2, 3});
 }
 
+TEST(ListBuiltinsTest, SortEmptyListSucceeds) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  List empty(&scope, runtime.newList());
+  ASSERT_EQ(listSort(thread, empty), NoneType::object());
+}
+
+TEST(ListBuiltinsTest, SortSingleElementListSucceeds) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  List list(&scope, runtime.newList());
+  Object elt(&scope, SmallInt::fromWord(5));
+  runtime.listAdd(list, elt);
+  ASSERT_EQ(listSort(thread, list), NoneType::object());
+  EXPECT_EQ(list->numItems(), 1);
+  EXPECT_EQ(list->at(0), *elt);
+}
+
+TEST(ListBuiltinsTest, SortMultiElementListSucceeds) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  List list(&scope, runtime.newList());
+  Object elt3(&scope, SmallInt::fromWord(3));
+  runtime.listAdd(list, elt3);
+  Object elt2(&scope, SmallInt::fromWord(2));
+  runtime.listAdd(list, elt2);
+  Object elt1(&scope, SmallInt::fromWord(1));
+  runtime.listAdd(list, elt1);
+  ASSERT_EQ(listSort(thread, list), NoneType::object());
+  EXPECT_EQ(list->numItems(), 3);
+  EXPECT_PYLIST_EQ(list, {1, 2, 3});
+}
+
+TEST(ListBuiltinsTest, SortIsStable) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  List list(&scope, runtime.newList());
+  Object elt4(&scope, runtime.newStrFromCStr("q"));
+  runtime.listAdd(list, elt4);
+  Object elt3(&scope, runtime.newStrFromCStr("world"));
+  runtime.listAdd(list, elt3);
+  Object elt2(&scope, runtime.newStrFromCStr("hello"));
+  runtime.listAdd(list, elt2);
+  Object elt1(&scope, runtime.newStrFromCStr("hello"));
+  runtime.listAdd(list, elt1);
+  ASSERT_EQ(listSort(thread, list), NoneType::object());
+  EXPECT_EQ(list->numItems(), 4);
+  EXPECT_EQ(list->at(0), *elt2);
+  EXPECT_EQ(list->at(1), *elt1);
+  EXPECT_EQ(list->at(2), *elt4);
+  EXPECT_EQ(list->at(3), *elt3);
+}
+
 }  // namespace python

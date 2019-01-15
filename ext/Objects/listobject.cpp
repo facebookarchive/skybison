@@ -207,6 +207,24 @@ PY_EXPORT Py_ssize_t PyList_Size(PyObject* p) {
   return list->numItems();
 }
 
-PY_EXPORT int PyList_Sort(PyObject* /* v */) { UNIMPLEMENTED("PyList_Sort"); }
+PY_EXPORT int PyList_Sort(PyObject* pylist) {
+  Thread* thread = Thread::currentThread();
+  if (pylist == nullptr) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfList(*list_obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  List list(&scope, *list_obj);
+  if (listSort(thread, list).isError()) {
+    return -1;
+  }
+  return 0;
+}
 
 }  // namespace python

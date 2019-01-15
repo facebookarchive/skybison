@@ -384,4 +384,53 @@ TEST_F(ListExtensionApiTest, ReverseWithNonZeroLengthListSucceeds) {
   EXPECT_EQ(PyList_GetItem(list, 4), val0);
 }
 
+TEST_F(ListExtensionApiTest, SortWithNullListRaisesSystemError) {
+  ASSERT_EQ(PyList_Sort(nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, SortWithNonListRaisesSystemError) {
+  ASSERT_EQ(PyList_Sort(Py_None), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, SortSortsList) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr five(PyLong_FromLong(5));
+  PyList_Append(list, five);
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyList_Append(list, four);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyList_Append(list, three);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  ASSERT_EQ(PyList_Size(list), 5);
+  ASSERT_EQ(PyList_Sort(list), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyList_GetItem(list, 0), one);
+  EXPECT_EQ(PyList_GetItem(list, 1), two);
+  EXPECT_EQ(PyList_GetItem(list, 2), three);
+  EXPECT_EQ(PyList_GetItem(list, 3), four);
+  EXPECT_EQ(PyList_GetItem(list, 4), five);
+}
+
+TEST_F(ListExtensionApiTest, SortWithNonComparableElementsRaisesTypeError) {
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyList_Append(list, three);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(list, two);
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(list, one);
+  PyList_Append(list, PyUnicode_FromString("bar"));
+  ASSERT_EQ(PyList_Size(list), 4);
+  ASSERT_EQ(PyList_Sort(list), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 }  // namespace python

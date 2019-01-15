@@ -175,6 +175,37 @@ void listReverse(Thread* thread, const List& list) {
   }
 }
 
+// TODO(T39107329): We should have a faster sorting algorithm than insertion
+// sort. Re-write as Timsort.
+RawObject listSort(Thread* thread, const List& list) {
+  word length = list->numItems();
+  Frame* frame = thread->currentFrame();
+  HandleScope scope(thread);
+  Object cur(&scope, NoneType::object());
+  Object tmp(&scope, NoneType::object());
+  Object compare_result(&scope, NoneType::object());
+  for (word i = 1; i < length; i++) {
+    tmp = list->at(i);
+    word j = i - 1;
+    cur = list->at(j);
+    for (; j >= 0; j--) {
+      compare_result =
+          Interpreter::compareOperation(thread, frame, GT, cur, tmp);
+      if (compare_result->isError()) {
+        return *compare_result;
+      }
+      DCHECK(compare_result->isBool(), "comparison should be boolean");
+      if (!RawBool::cast(*compare_result).value()) {
+        break;
+      }
+      cur = list->at(j);
+      list->atPut(j + 1, cur);
+    }
+    list->atPut(j + 1, tmp);
+  }
+  return NoneType::object();
+}
+
 const BuiltinAttribute ListBuiltins::kAttributes[] = {
     {SymbolId::kItems, RawList::kItemsOffset},
     {SymbolId::kAllocated, RawList::kAllocatedOffset},

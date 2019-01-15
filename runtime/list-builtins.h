@@ -26,6 +26,11 @@ RawObject listReplicate(Thread* thread, const List& list, word ntimes);
 
 void listReverse(Thread* thread, const List& list);
 
+// Sort a list in place.
+// Returns None when there has been no error, or throws a TypeError and returns
+// Error otherwise.
+RawObject listSort(Thread* thread, const List& list);
+
 class ListBuiltins {
  public:
   static void initialize(Runtime* runtime);
