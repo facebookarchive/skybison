@@ -1,5 +1,6 @@
 // dictobject.c implementation
 
+#include "cpython-func.h"
 #include "dict-builtins.h"
 #include "handles.h"
 #include "objects.h"
@@ -142,8 +143,12 @@ PY_EXPORT int PyDict_DelItem(PyObject* pydict, PyObject* key) {
   return 0;
 }
 
-PY_EXPORT int PyDict_DelItemString(PyObject* /* v */, const char* /* y */) {
-  UNIMPLEMENTED("PyDict_DelItemString");
+PY_EXPORT int PyDict_DelItemString(PyObject* pydict, const char* key) {
+  PyObject* str = PyUnicode_FromString(key);
+  if (str == nullptr) return -1;
+  int result = PyDict_DelItem(pydict, str);
+  Py_DECREF(str);
+  return result;
 }
 
 PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* pydict, PyObject* key) {

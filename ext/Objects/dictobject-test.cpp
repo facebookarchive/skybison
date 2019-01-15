@@ -374,4 +374,27 @@ c = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(DictExtensionApiTest, DelItemStringWithNonDictReturnsNegativeOne) {
+  EXPECT_EQ(PyDict_DelItemString(Py_None, "hello, there"), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, DelItemStringWithKeyInDictReturnsZero) {
+  PyObjectPtr dict(PyDict_New());
+  const char* strkey = "hello, there";
+  PyObjectPtr key(PyUnicode_FromString(strkey));
+  PyObjectPtr value(PyLong_FromLong(666));
+  ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+  EXPECT_EQ(PyDict_DelItemString(dict, strkey), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, DelItemStringWithKeyNotInDictReturnsNegativeOne) {
+  PyObjectPtr dict(PyDict_New());
+  EXPECT_EQ(PyDict_DelItemString(dict, "hello, there"), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyError));
+}
+
 }  // namespace python
