@@ -572,7 +572,8 @@ TEST(IntBuiltinsDeathTest, DunderLshiftWithNonIntReturnsNotImplemented) {
 
 TEST(IntBuiltinsDeathTest, DunderLshiftWithInvalidArgumentThrowsException) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << ''"), "Cannot do binary op");
+  EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << ''"),
+               "'__lshift__' is not supported");
   EXPECT_DEATH(runFromCStr(&runtime, "a = int.__lshift__('', 3)"),
                "'__lshift__' requires a 'int' object");
   EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << -3"), "negative shift count");

@@ -164,9 +164,26 @@ PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PyObject_RichCompare(PyObject* /* v */, PyObject* /* w */,
-                                         int /* p */) {
-  UNIMPLEMENTED("PyObject_RichCompare");
+PY_EXPORT PyObject* PyObject_RichCompare(PyObject* v, PyObject* w, int op) {
+  DCHECK(CompareOp::LT <= op && op <= CompareOp::GE, "Bad op");
+  Thread* thread = Thread::currentThread();
+  if (v == nullptr || w == nullptr) {
+    if (!thread->hasPendingException()) {
+      thread->raiseBadInternalCall();
+    }
+    return nullptr;
+  }
+  // TODO(emacs): Recursive call check
+  HandleScope scope(thread);
+  Object left(&scope, ApiHandle::fromPyObject(v)->asObject());
+  Object right(&scope, ApiHandle::fromPyObject(w)->asObject());
+  Object result(&scope, Interpreter::compareOperation(
+                            thread, thread->currentFrame(),
+                            static_cast<CompareOp>(op), left, right));
+  if (result->isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyObject_RichCompareBool(PyObject* /* v */, PyObject* /* w */,

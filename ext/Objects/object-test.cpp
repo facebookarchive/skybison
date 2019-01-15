@@ -319,4 +319,32 @@ c = C()
   ASSERT_EQ(PyUnicode_CompareWithASCIIString(str, "bongo"), 0);
 }
 
+TEST_F(ObjectExtensionApiTest, RichCompareWithNullLhsRaisesSystemError) {
+  ASSERT_EQ(PyObject_RichCompare(nullptr, Py_None, 0), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ObjectExtensionApiTest, RichCompareWithNullRhsRaisesSystemError) {
+  ASSERT_EQ(PyObject_RichCompare(Py_None, nullptr, 0), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ObjectExtensionApiTest, RichCompareWithSameType) {
+  PyObjectPtr left(PyLong_FromLong(2));
+  PyObjectPtr right(PyLong_FromLong(3));
+  PyObjectPtr result(PyObject_RichCompare(left, right, Py_LT));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(result, Py_True);
+}
+
+TEST_F(ObjectExtensionApiTest, RichCompareNotComparableRaisesTypeError) {
+  PyObjectPtr left(PyLong_FromLong(2));
+  PyObjectPtr right(PyUnicode_FromString("hello"));
+  PyObjectPtr result(PyObject_RichCompare(left, right, Py_LT));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 }  // namespace python

@@ -365,13 +365,9 @@ RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
     if (!result->isNotImplemented()) return *result;
   }
 
-  Type self_type(&scope, runtime->typeOf(*self));
-  Type other_type(&scope, runtime->typeOf(*other));
-  SymbolId op_sym = runtime->binaryOperationSelector(op);
-  Str op_str(&scope, runtime->symbols()->at(op_sym));
-  UNIMPLEMENTED("Cannot do binary op '%s' for types '%s' and '%s'",
-                op_str->toCStr(), RawStr::cast(self_type->name())->toCStr(),
-                RawStr::cast(other_type->name())->toCStr());
+  Str op_name(&scope,
+              runtime->symbols()->at(runtime->binaryOperationSelector(op)));
+  return thread->raiseUnsupportedBinaryOperation(*self, *other, *op_name);
 }
 
 void Interpreter::doBinaryOperation(BinaryOp op, Context* ctx) {
@@ -456,7 +452,9 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
   if (op == CompareOp::NE) {
     return Bool::fromBool(*left != *right);
   }
-  UNIMPLEMENTED("throw");
+
+  Str op_name(&scope, runtime->symbols()->at(runtime->comparisonSelector(op)));
+  return thread->raiseUnsupportedBinaryOperation(*left, *right, *op_name);
 }
 
 RawObject Interpreter::sequenceContains(Thread* thread, Frame* caller,

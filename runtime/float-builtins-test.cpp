@@ -188,7 +188,7 @@ TEST(FloatBuiltinsDeathTest, AddWithNonFloatOtherThrows) {
 1.0 + None
 )";
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, src), "unimplemented");
+  ASSERT_DEATH(runFromCStr(&runtime, src), "'__add__' is not supported");
 }
 
 TEST(FloatBuiltinsTest, BinarySubtractDouble) {
@@ -421,7 +421,7 @@ TEST(FloatBuiltinsDeathTest, SubWithNonFloatOtherThrows) {
 1.0 - None
 )";
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, src), "unimplemented");
+  ASSERT_DEATH(runFromCStr(&runtime, src), "'__sub__' is not supported");
 }
 
 TEST(FloatBuiltins, NanIsNeqNan) {
