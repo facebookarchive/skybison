@@ -10,6 +10,212 @@
 
 namespace python {
 
+RawObject strConcat(Thread* thread, const Str& left, const Str& right) {
+  HandleScope scope;
+  word left_len = left->length();
+  word right_len = right->length();
+  word result_len = left_len + right_len;
+  // Small result
+  if (result_len <= RawSmallStr::kMaxLength) {
+    byte buffer[RawSmallStr::kMaxLength];
+    left->copyTo(buffer, left_len);
+    right->copyTo(buffer + left_len, right_len);
+    return SmallStr::fromBytes(View<byte>(buffer, result_len));
+  }
+  // Large result
+  LargeStr result(&scope,
+                  thread->runtime()->heap()->createLargeStr(result_len));
+  left->copyTo(reinterpret_cast<byte*>(result->address()), left_len);
+  right->copyTo(reinterpret_cast<byte*>(result->address() + left_len),
+                right_len);
+  return *result;
+}
+
+RawObject strJoin(Thread* thread, const Str& sep, const Tuple& items,
+                  word allocated) {
+  HandleScope scope(thread);
+  word result_len = 0;
+  Runtime* runtime = thread->runtime();
+  for (word i = 0; i < allocated; ++i) {
+    Object elt(&scope, items->at(i));
+    if (!elt->isStr() && !runtime->isInstanceOfStr(*elt)) {
+      return thread->raiseTypeError(runtime->newStrFromFormat(
+          "sequence item %ld: expected str instance", i));
+    }
+    Str str(&scope, items->at(i));
+    result_len += str->length();
+  }
+  if (allocated > 1) {
+    result_len += sep->length() * (allocated - 1);
+  }
+  // Small result
+  if (result_len <= RawSmallStr::kMaxLength) {
+    byte buffer[RawSmallStr::kMaxLength];
+    for (word i = 0, offset = 0; i < allocated; ++i) {
+      Str str(&scope, items->at(i));
+      word str_len = str->length();
+      str->copyTo(&buffer[offset], str_len);
+      offset += str_len;
+      if ((i + 1) < allocated) {
+        word sep_len = sep->length();
+        sep->copyTo(&buffer[offset], sep_len);
+        offset += sep->length();
+      }
+    }
+    return SmallStr::fromBytes(View<byte>(buffer, result_len));
+  }
+  // Large result
+  LargeStr result(&scope, runtime->heap()->createLargeStr(result_len));
+  for (word i = 0, offset = 0; i < allocated; ++i) {
+    Str str(&scope, items->at(i));
+    word str_len = str->length();
+    str->copyTo(reinterpret_cast<byte*>(result->address() + offset), str_len);
+    offset += str_len;
+    if ((i + 1) < allocated) {
+      word sep_len = sep->length();
+      sep->copyTo(reinterpret_cast<byte*>(result->address() + offset), sep_len);
+      offset += sep_len;
+    }
+  }
+  return *result;
+}
+
+RawObject strSubstr(Thread* thread, const Str& str, word start, word length) {
+  DCHECK(start >= 0, "from should be > 0");
+  if (length <= 0) {
+    return SmallStr::fromCStr("");
+  }
+  word str_len = str->length();
+  DCHECK(start + length <= str_len, "overflow");
+  if (start == 0 && length == str_len) {
+    return *str;
+  }
+  // SmallStr result
+  if (length <= RawSmallStr::kMaxLength) {
+    byte buffer[RawSmallStr::kMaxLength];
+    for (word i = 0; i < length; i++) {
+      buffer[i] = str->charAt(start + i);
+    }
+    return SmallStr::fromBytes(View<byte>(buffer, length));
+  }
+  // LargeStr result
+  HandleScope scope;
+  LargeStr source(&scope, *str);
+  LargeStr result(&scope, thread->runtime()->heap()->createLargeStr(length));
+  std::memcpy(reinterpret_cast<void*>(result->address()),
+              reinterpret_cast<void*>(source->address() + start), length);
+  return *result;
+}
+
+word strSpan(const Str& src, const Str& str) {
+  word length = src->length();
+  word str_length = str->length();
+  word first = 0;
+  for (; first < length; first++) {
+    bool has_match = false;
+    byte ch = src->charAt(first);
+    for (word j = 0; j < str_length; j++) {
+      if (ch == str->charAt(j)) {
+        has_match = true;
+        break;
+      }
+    }
+    if (!has_match) {
+      break;
+    }
+  }
+  return first;
+}
+
+word strRSpan(const Str& src, const Str& str, word rend) {
+  DCHECK(rend >= 0, "string index underflow");
+  word length = src->length();
+  word str_length = str->length();
+  word result = 0;
+  for (word i = length - 1; i >= rend; i--, result++) {
+    byte ch = src->charAt(i);
+    bool has_match = false;
+    for (word j = 0; j < str_length; j++) {
+      if (ch == str->charAt(j)) {
+        has_match = true;
+        break;
+      }
+    }
+    if (!has_match) {
+      break;
+    }
+  }
+  return result;
+}
+
+static bool isAsciiSpace(byte ch) {
+  return ((ch >= 0x09) && (ch <= 0x0D)) || ((ch >= 0x1C) && (ch <= 0x1F)) ||
+         ch == 0x20;
+}
+
+RawObject strStripSpace(Thread* thread, const Str& src,
+                        const StrStripDirection direction) {
+  word length = src->length();
+  if (length == 0) {
+    return *src;
+  }
+  if (length == 1 && isAsciiSpace(src->charAt(0))) {
+    return SmallStr::fromCStr("");
+  }
+
+  word first = 0;
+  if (direction == StrStripDirection::Left ||
+      direction == StrStripDirection::Both) {
+    while (first < length && isAsciiSpace(src->charAt(first))) {
+      ++first;
+    }
+  }
+
+  word last = 0;
+  if (direction == StrStripDirection::Right ||
+      direction == StrStripDirection::Both) {
+    for (word i = length - 1; i >= first && isAsciiSpace(src->charAt(i)); i--) {
+      last++;
+    }
+  }
+  return strSubstr(thread, src, first, length - first - last);
+}
+
+RawObject strStrip(Thread* thread, const Str& src, const Str& str,
+                   StrStripDirection direction) {
+  word length = src->length();
+  if (length == 0 || str->length() == 0) {
+    return *src;
+  }
+  word first = 0;
+  word last = 0;
+  // TODO(jeethu): Use set lookup if chars is a LargeStr
+  if (direction == StrStripDirection::Left ||
+      direction == StrStripDirection::Both) {
+    first = strSpan(src, str);
+  }
+
+  if (direction == StrStripDirection::Right ||
+      direction == StrStripDirection::Both) {
+    last = strRSpan(src, str, first);
+  }
+  return strSubstr(thread, src, first, length - first - last);
+}
+
+RawObject strIteratorNext(Thread* thread, StrIterator& iter) {
+  HandleScope scope(thread);
+  word idx = iter.index();
+  Str underlying(&scope, iter.str());
+  if (idx >= underlying->length()) {
+    return Error::object();
+  }
+
+  char item = underlying->charAt(idx);
+  char buffer[] = {item, '\0'};
+  iter.setIndex(idx + 1);
+  return RawSmallStr::fromCStr(buffer);
+}
+
 void SmallStrBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
@@ -79,7 +285,7 @@ RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   }
   Str self_str(&scope, *self);
   Str other_str(&scope, *other);
-  return runtime->strConcat(self_str, other_str);
+  return strConcat(thread, self_str, other_str);
 }
 
 RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
@@ -142,19 +348,19 @@ RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   // Tuples of strings
   if (iterable->isTuple()) {
     Tuple tuple(&scope, *iterable);
-    return thread->runtime()->strJoin(thread, sep, tuple, tuple->length());
+    return strJoin(thread, sep, tuple, tuple->length());
   }
   // Lists of strings
   if (iterable->isList()) {
     List list(&scope, *iterable);
     Tuple tuple(&scope, list->items());
-    return thread->runtime()->strJoin(thread, sep, tuple, list->numItems());
+    return strJoin(thread, sep, tuple, list->numItems());
   }
   // Iterators of strings
   List list(&scope, runtime->newList());
   listExtend(thread, list, iterable);
   Tuple tuple(&scope, list->items());
-  return thread->runtime()->strJoin(thread, sep, tuple, list->numItems());
+  return strJoin(thread, sep, tuple, list->numItems());
 }
 
 RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
@@ -625,12 +831,12 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   }
   Str str(&scope, *self);
   if (nargs == 1) {
-    return runtime->strStripSpace(str, StrStripDirection::Left);
+    return strStripSpace(thread, str, StrStripDirection::Left);
   }
   // nargs == 2
   Object other(&scope, args.get(1));
   if (other->isNoneType()) {
-    return runtime->strStripSpace(str, StrStripDirection::Left);
+    return strStripSpace(thread, str, StrStripDirection::Left);
   }
   if (!runtime->isInstanceOfStr(other)) {
     return thread->raiseTypeErrorWithCStr(
@@ -640,7 +846,7 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Strict subclass of string");
   }
   Str chars(&scope, *other);
-  return runtime->strStrip(str, chars, StrStripDirection::Left);
+  return strStrip(thread, str, chars, StrStripDirection::Left);
 }
 
 RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
@@ -663,12 +869,12 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   }
   Str str(&scope, *self);
   if (nargs == 1) {
-    return runtime->strStripSpace(str, StrStripDirection::Right);
+    return strStripSpace(thread, str, StrStripDirection::Right);
   }
   // nargs == 2
   Object other(&scope, args.get(1));
   if (other->isNoneType()) {
-    return runtime->strStripSpace(str, StrStripDirection::Right);
+    return strStripSpace(thread, str, StrStripDirection::Right);
   }
   if (!runtime->isInstanceOfStr(other)) {
     return thread->raiseTypeErrorWithCStr(
@@ -678,7 +884,7 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Strict subclass of string");
   }
   Str chars(&scope, *other);
-  return runtime->strStrip(str, chars, StrStripDirection::Right);
+  return strStrip(thread, str, chars, StrStripDirection::Right);
 }
 
 RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
@@ -701,12 +907,12 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   }
   Str str(&scope, *self);
   if (nargs == 1) {
-    return runtime->strStripSpace(str, StrStripDirection::Both);
+    return strStripSpace(thread, str, StrStripDirection::Both);
   }
   // nargs == 2
   Object other(&scope, args.get(1));
   if (other->isNoneType()) {
-    return runtime->strStripSpace(str, StrStripDirection::Both);
+    return strStripSpace(thread, str, StrStripDirection::Both);
   }
   if (!runtime->isInstanceOfStr(other)) {
     return thread->raiseTypeErrorWithCStr(
@@ -716,7 +922,7 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Strict subclass of string");
   }
   Str chars(&scope, *other);
-  return runtime->strStrip(str, chars, StrStripDirection::Both);
+  return strStrip(thread, str, chars, StrStripDirection::Both);
 }
 
 const BuiltinMethod StrIteratorBuiltins::kMethods[] = {
@@ -764,7 +970,7 @@ RawObject StrIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
         "argument");
   }
   StrIterator iter(&scope, *self);
-  Object value(&scope, thread->runtime()->strIteratorNext(thread, iter));
+  Object value(&scope, strIteratorNext(thread, iter));
   if (value->isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }

@@ -34,8 +34,6 @@ struct BuiltinMethod {
 
 enum class SetLookupType { Lookup, Insertion };
 
-enum class StrStripDirection { Left, Right, Both };
-
 class Runtime {
  public:
   class NewValueCellCallback : public Callback<RawObject> {
@@ -153,15 +151,6 @@ class Runtime {
   RawObject newTupleIterator(const Object& iterable);
 
   void processCallbacks();
-
-  RawObject strConcat(const Str& left, const Str& right);
-  RawObject strJoin(Thread* thread, const Str& sep, const Tuple& items,
-                    word allocated);
-  RawObject strStripSpace(const Str& src, StrStripDirection direction);
-  RawObject strStrip(const Str& src, const Str& str,
-                     StrStripDirection direction);
-
-  RawObject strIteratorNext(Thread* thread, StrIterator& iter);
 
   RawObject newValueCell();
 
@@ -631,8 +620,6 @@ class Runtime {
   void initializeSuperType();
   void initializeTypeType();
 
-  static bool isAsciiSpace(byte ch);
-
   RawObject createMainModule();
 
   RawObject executeModule(const char* buffer, const Module& module);
@@ -756,19 +743,6 @@ class Runtime {
   // The new layout shares the in-object and overflow attributes with the
   // parent and contains no outgoing edges.
   RawObject layoutCreateChild(Thread* thread, const Layout& parent);
-
-  RawObject strSubstr(const Str& str, word start, word length);
-
-  // Returns the length of the maximum initial span of src composed
-  // of code points found in str. Analogous to the C string API function
-  // strspn().
-  word strSpan(const Str& src, const Str& str);
-
-  // Returns the length of the maximum final span of src composed
-  // of code points found in str. Right handed version of
-  // Runtime::strSpan(). The rend argument is the index at which to stop
-  // scanning left, and could be set to 0 to scan the whole string.
-  word strRSpan(const Str& src, const Str& str, word rend);
 
   // The size listEnsureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;

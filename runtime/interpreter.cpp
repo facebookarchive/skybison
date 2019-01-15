@@ -9,6 +9,7 @@
 #include "list-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 #include "trampolines.h"
 
@@ -2197,7 +2198,8 @@ void Interpreter::doFormatValue(Context* ctx, word flags) {
   if (have_fmt_spec) {
     Str fmt_str(&scope, ctx->frame->popValue());
     Str value(&scope, ctx->frame->popValue());
-    ctx->frame->pushValue(thread->runtime()->strConcat(fmt_str, value));
+    // TODO(T38930359): Handle out of memory error
+    ctx->frame->pushValue(strConcat(thread, fmt_str, value));
   }  // else no-op
 }
 
