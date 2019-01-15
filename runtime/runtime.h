@@ -307,6 +307,13 @@ class Runtime {
   // Returns false otherwise.
   RawObject dictRemove(const Dict& dict, const Object& key);
 
+  // Delete a key from the dict.
+  //
+  // Returns true if the key existed and sets the previous value in value.
+  // Returns false otherwise.
+  RawObject dictRemoveWithHash(const Dict& dict, const Object& key,
+                               const Object& key_hash);
+
   // Support explicit hash value of key to do dictAtPut.
   void dictAtPutWithHash(const Dict& dict, const Object& key,
                          const Object& value, const Object& key_hash);

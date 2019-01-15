@@ -337,4 +337,41 @@ obj = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(DictExtensionApiTest, DelItemWithNonDictReturnsNegativeOne) {
+  EXPECT_EQ(PyDict_DelItem(Py_None, Py_None), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, DelItemWithKeyInDictReturnsZero) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key(PyLong_FromLong(10));
+  PyObjectPtr value(PyLong_FromLong(11));
+  ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+  EXPECT_EQ(PyDict_DelItem(dict, key), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, DelItemWithKeyNotInDictRaisesKeyError) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key(PyLong_FromLong(10));
+  EXPECT_EQ(PyDict_DelItem(dict, key), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyError));
+}
+
+TEST_F(DictExtensionApiTest, DelItemWithUnhashableObjectRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __hash__ = None
+c = C()
+)");
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr main(PyImport_AddModule("__main__"));
+  PyObjectPtr key(PyObject_GetAttrString(main, "c"));
+  EXPECT_EQ(PyDict_DelItem(dict, key), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 }  // namespace python

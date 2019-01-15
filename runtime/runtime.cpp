@@ -2440,9 +2440,15 @@ bool Runtime::dictIncludesWithHash(const Dict& dict, const Object& key,
 
 RawObject Runtime::dictRemove(const Dict& dict, const Object& key) {
   HandleScope scope;
+  Object key_hash(&scope, hash(*key));
+  return dictRemoveWithHash(dict, key, key_hash);
+}
+
+RawObject Runtime::dictRemoveWithHash(const Dict& dict, const Object& key,
+                                      const Object& key_hash) {
+  HandleScope scope;
   Tuple data(&scope, dict->data());
   word index = -1;
-  Object key_hash(&scope, hash(*key));
   Object result(&scope, Error::object());
   bool found = dictLookup(data, key, key_hash, &index);
   if (found) {
