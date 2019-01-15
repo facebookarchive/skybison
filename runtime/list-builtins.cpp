@@ -11,7 +11,6 @@ namespace python {
 
 RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
   HandleScope scope(thread);
-  Object elt(&scope, NoneType::object());
   word index = dst->numItems();
   Runtime* runtime = thread->runtime();
   // Special case for lists
@@ -34,6 +33,7 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
     word new_capacity = index + src->numItems();
     runtime->listEnsureCapacity(dst, new_capacity);
     dst->setNumItems(new_capacity);
+    Object elt(&scope, NoneType::object());
     for (word i = 0; i < src->numItems(); i++) {
       elt = list_iter->next();
       if (elt->isError()) {
