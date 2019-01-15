@@ -11,6 +11,7 @@
 
 #include "builtins-module.h"
 #include "bytecode.h"
+#include "bytes-builtins.h"
 #include "callback.h"
 #include "complex-builtins.h"
 #include "descriptor-builtins.h"
@@ -1137,7 +1138,7 @@ void Runtime::initializeHeapTypes() {
   initializeExceptionTypes();
 
   // Concrete classes.
-  addEmptyBuiltinType(SymbolId::kBytes, LayoutId::kBytes, LayoutId::kObject);
+  BytesBuiltins::initialize(this);
   initializeClassMethodType();
   addEmptyBuiltinType(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   ComplexBuiltins::initialize(this);
