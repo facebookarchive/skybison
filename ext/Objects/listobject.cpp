@@ -183,7 +183,7 @@ PY_EXPORT int PyList_Insert(PyObject* pylist, Py_ssize_t where,
     return -1;
   }
   Object item_obj(&scope, ApiHandle::fromPyObject(item)->asObject());
-  runtime->listInsert(list, item_obj, where);
+  listInsert(thread, list, item_obj, where);
   return 0;
 }
 

@@ -284,21 +284,6 @@ class Runtime {
   // Appends an element to the end of the list.
   void listAdd(const List& list, const Object& value);
 
-  // Extends a list from an iterator.
-  // Returns either the extended list or an Error object.
-  RawObject listExtend(Thread* thread, const List& dst, const Object& iterable);
-
-  // Inserts an element to the specified index of the list.
-  // When index >= len(list) it is equivalent to appending to the list.
-  void listInsert(const List& list, const Object& value, word index);
-
-  // Removes and returns an element from the specified list index.
-  // Expects index to be within [0, len(list)]
-  RawObject listPop(const List& list, word index);
-
-  // Return a new list that is composed of list repeated ntimes
-  RawObject listReplicate(Thread* thread, const List& list, word ntimes);
-
   // Associate a value with the supplied key.
   //
   // This handles growing the backing Tuple if needed.

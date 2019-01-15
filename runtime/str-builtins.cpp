@@ -2,6 +2,7 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "list-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
@@ -151,7 +152,7 @@ RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   }
   // Iterators of strings
   List list(&scope, runtime->newList());
-  runtime->listExtend(thread, list, iterable);
+  listExtend(thread, list, iterable);
   Tuple tuple(&scope, list->items());
   return thread->runtime()->strJoin(thread, sep, tuple, list->numItems());
 }

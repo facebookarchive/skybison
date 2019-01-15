@@ -6,6 +6,7 @@
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
+#include "list-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
@@ -2056,7 +2057,7 @@ void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (runtime->listExtend(thread, list, obj)->isError()) {
+    if (listExtend(thread, list, obj)->isError()) {
       frame->dropValues(arg);
       thread->abortOnPendingException();
     }
@@ -2134,7 +2135,7 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (runtime->listExtend(thread, list, obj)->isError()) {
+    if (listExtend(thread, list, obj)->isError()) {
       frame->dropValues(arg);
       thread->abortOnPendingException();
     }

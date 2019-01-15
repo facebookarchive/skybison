@@ -9,6 +9,159 @@
 
 namespace python {
 
+RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
+  HandleScope scope(thread);
+  Object elt(&scope, NoneType::object());
+  word index = dst->numItems();
+  Runtime* runtime = thread->runtime();
+  // Special case for lists
+  if (runtime->isInstanceOfList(*iterable)) {
+    List src(&scope, *iterable);
+    if (src->numItems() > 0) {
+      word new_capacity = index + src->numItems();
+      runtime->listEnsureCapacity(dst, new_capacity);
+      dst->setNumItems(new_capacity);
+      for (word i = 0; i < src->numItems(); i++) {
+        dst->atPut(index++, src->at(i));
+      }
+    }
+    return *dst;
+  }
+  // Special case for list iterators
+  if (iterable->isListIterator()) {
+    ListIterator list_iter(&scope, *iterable);
+    List src(&scope, list_iter->list());
+    word new_capacity = index + src->numItems();
+    runtime->listEnsureCapacity(dst, new_capacity);
+    dst->setNumItems(new_capacity);
+    for (word i = 0; i < src->numItems(); i++) {
+      elt = list_iter->next();
+      if (elt->isError()) {
+        break;
+      }
+      dst->atPut(index++, src->at(i));
+    }
+    return *dst;
+  }
+  // Special case for tuples
+  if (iterable->isTuple()) {
+    Tuple tuple(&scope, *iterable);
+    if (tuple->length() > 0) {
+      word new_capacity = index + tuple->length();
+      runtime->listEnsureCapacity(dst, new_capacity);
+      dst->setNumItems(new_capacity);
+      for (word i = 0; i < tuple->length(); i++) {
+        dst->atPut(index++, tuple->at(i));
+      }
+    }
+    return *dst;
+  }
+  // Special case for sets
+  if (runtime->isInstanceOfSetBase(*iterable)) {
+    SetBase set(&scope, *iterable);
+    if (set->numItems() > 0) {
+      Tuple data(&scope, set->data());
+      word new_capacity = index + set->numItems();
+      runtime->listEnsureCapacity(dst, new_capacity);
+      dst->setNumItems(new_capacity);
+      for (word i = 0; i < data->length(); i += SetBase::Bucket::kNumPointers) {
+        if (!SetBase::Bucket::isFilled(data, i)) {
+          continue;
+        }
+        dst->atPut(index++, SetBase::Bucket::key(*data, i));
+      }
+    }
+    return *dst;
+  }
+  // Special case for dicts
+  if (iterable->isDict()) {
+    Dict dict(&scope, *iterable);
+    if (dict->numItems() > 0) {
+      Tuple keys(&scope, runtime->dictKeys(dict));
+      word new_capacity = index + dict->numItems();
+      runtime->listEnsureCapacity(dst, new_capacity);
+      dst->setNumItems(new_capacity);
+      for (word i = 0; i < keys->length(); i++) {
+        dst->atPut(index++, keys->at(i));
+      }
+    }
+    return *dst;
+  }
+  // Generic case
+  Object iter_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterable, SymbolId::kDunderIter));
+  if (iter_method->isError()) {
+    return thread->raiseTypeErrorWithCStr("object is not iterable");
+  }
+  Object iterator(&scope,
+                  Interpreter::callMethod1(thread, thread->currentFrame(),
+                                           iter_method, iterable));
+  if (iterator->isError()) {
+    return thread->raiseTypeErrorWithCStr("object is not iterable");
+  }
+  Object next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterator, SymbolId::kDunderNext));
+  if (next_method->isError()) {
+    return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
+  }
+  Object value(&scope, NoneType::object());
+  for (;;) {
+    value = Interpreter::callMethod1(thread, thread->currentFrame(),
+                                     next_method, iterator);
+    if (value->isError()) {
+      if (thread->clearPendingStopIteration()) break;
+      return *value;
+    }
+    runtime->listAdd(dst, value);
+  }
+  return *dst;
+}
+
+void listInsert(Thread* thread, const List& list, const Object& value,
+                word index) {
+  thread->runtime()->listAdd(list, value);
+  word last_index = list->numItems() - 1;
+  if (index < 0) {
+    index = last_index + index;
+  }
+  index =
+      Utils::maximum(static_cast<word>(0), Utils::minimum(last_index, index));
+  for (word i = last_index; i > index; i--) {
+    list->atPut(i, list->at(i - 1));
+  }
+  list->atPut(index, *value);
+}
+
+RawObject listPop(const List& list, word index) {
+  HandleScope scope;
+  Object popped(&scope, list->at(index));
+  list->atPut(index, NoneType::object());
+  word last_index = list->numItems() - 1;
+  for (word i = index; i < last_index; i++) {
+    list->atPut(i, list->at(i + 1));
+  }
+  list->setNumItems(list->numItems() - 1);
+  return *popped;
+}
+
+RawObject listReplicate(Thread* thread, const List& list, word ntimes) {
+  HandleScope scope(thread);
+  word len = list->numItems();
+  Runtime* runtime = thread->runtime();
+  Tuple items(&scope, runtime->newTuple(ntimes * len));
+  for (word i = 0; i < ntimes; i++) {
+    for (word j = 0; j < len; j++) {
+      items->atPut((i * len) + j, list->at(j));
+    }
+  }
+  List result(&scope, runtime->newList());
+  result->setItems(*items);
+  result->setNumItems(items->length());
+  return *result;
+}
+
 void listReverse(Thread* thread, const List& list) {
   if (list->numItems() == 0) {
     return;
@@ -90,9 +243,9 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
         RawList::cast(*self)->numItems() + RawList::cast(*other)->numItems();
     List new_list(&scope, runtime->newList());
     runtime->listEnsureCapacity(new_list, new_capacity);
-    new_list = runtime->listExtend(thread, new_list, self);
+    new_list = listExtend(thread, new_list, self);
     if (!new_list->isError()) {
-      new_list = runtime->listExtend(thread, new_list, other);
+      new_list = listExtend(thread, new_list, other);
     }
     return *new_list;
   }
@@ -131,7 +284,7 @@ RawObject ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   }
   List list(&scope, *self);
   Object value(&scope, args.get(1));
-  list = thread->runtime()->listExtend(thread, list, value);
+  list = listExtend(thread, list, value);
   if (list->isError()) {
     return *list;
   }
@@ -173,7 +326,7 @@ RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   List list(&scope, *self);
   word index = RawSmallInt::cast(args.get(1))->value();
   Object value(&scope, args.get(2));
-  thread->runtime()->listInsert(list, value, index);
+  listInsert(thread, list, value, index);
   return NoneType::object();
 }
 
@@ -192,7 +345,7 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (other->isSmallInt()) {
     word ntimes = RawSmallInt::cast(other)->value();
     List list(&scope, *self);
-    return thread->runtime()->listReplicate(thread, list, ntimes);
+    return listReplicate(thread, list, ntimes);
   }
   return thread->raiseTypeErrorWithCStr("can't multiply list by non-int");
 }
@@ -231,7 +384,7 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Throw an RawIndexError for an out of range list index.");
   }
 
-  return thread->runtime()->listPop(list, index);
+  return listPop(list, index);
 }
 
 RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
@@ -253,7 +406,7 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
     if (RawBool::cast(Interpreter::compareOperation(thread, frame,
                                                     CompareOp::EQ, item, value))
             ->value()) {
-      thread->runtime()->listPop(list, i);
+      listPop(list, i);
       return NoneType::object();
     }
   }
@@ -431,7 +584,7 @@ static RawObject setItemSlice(Thread* thread, List& list, Object& slice_index,
     result_list->atPut(i, list->at(i));
   }
   if (step == 1) {
-    Object extend_result(&scope, runtime->listExtend(thread, result_list, src));
+    Object extend_result(&scope, listExtend(thread, result_list, src));
     if (extend_result->isError()) {
       return thread->raiseTypeErrorWithCStr("can only assign an iterable");
     }
@@ -572,7 +725,7 @@ RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
       return thread->raiseIndexErrorWithCStr(
           "list assignment index out of range");
     }
-    thread->runtime()->listPop(list, idx);
+    listPop(list, idx);
     return NoneType::object();
   }
   // TODO(T31826482): Add support for slices
