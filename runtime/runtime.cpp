@@ -33,6 +33,7 @@
 #include "list-builtins.h"
 #include "marshal-module.h"
 #include "marshal.h"
+#include "module-builtins.h"
 #include "object-builtins.h"
 #include "os.h"
 #include "range-builtins.h"
@@ -1162,6 +1163,7 @@ void Runtime::initializeHeapTypes() {
   addEmptyBuiltinType(SymbolId::kMethod, LayoutId::kBoundMethod,
                       LayoutId::kObject);
   addEmptyBuiltinType(SymbolId::kModule, LayoutId::kModule, LayoutId::kObject);
+  ModuleBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
                       LayoutId::kObject);
   TupleBuiltins::initialize(this);
