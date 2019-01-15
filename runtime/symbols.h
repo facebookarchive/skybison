@@ -176,6 +176,7 @@ class Runtime;
   V(FutureWarning, "FutureWarning")                                            \
   V(Generator, "generator")                                                    \
   V(GeneratorExit, "GeneratorExit")                                            \
+  V(Get, "get")                                                                \
   V(GetFrozenObject, "get_frozen_object")                                      \
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \

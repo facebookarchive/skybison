@@ -595,4 +595,80 @@ TEST(DictBuiltinsTest, ValueIteratorNextOnOneElementDictReturnsElement) {
   ASSERT_TRUE(next->isError());
 }
 
+TEST(DictBuiltinsTest, GetWithNotEnoughArgumentsThrowsTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  EXPECT_TRUE(runBuiltin(DictBuiltins::get).isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(DictBuiltinsTest, GetWithTooManyArgumentsThrowsTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Dict dict(&scope, runtime.newDict());
+  Object foo(&scope, runtime.newInt(123));
+  Object bar(&scope, runtime.newInt(456));
+  Object baz(&scope, runtime.newInt(789));
+  EXPECT_TRUE(runBuiltin(DictBuiltins::get, dict, foo, bar, baz).isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(DictBuiltinsTest, GetWithNonDictThrowsTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object foo(&scope, runtime.newInt(123));
+  Object bar(&scope, runtime.newInt(456));
+  Object baz(&scope, runtime.newInt(789));
+  EXPECT_TRUE(runBuiltin(DictBuiltins::get, foo, bar, baz).isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(DictBuiltinsTest, GetWithUnhashableTypeThrowsTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  __hash__ = 2
+key = Foo()
+)");
+  Dict dict(&scope, runtime.newDict());
+  Object key(&scope, moduleAt(&runtime, "__main__", "key"));
+  Object result(&scope, runBuiltin(DictBuiltins::get, dict, key));
+  ASSERT_TRUE(result->isError());
+  ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(DictBuiltinsTest, GetReturnsDefaultValue) {
+  Runtime runtime;
+  HandleScope scope;
+  Dict dict(&scope, runtime.newDict());
+  Object key(&scope, runtime.newInt(123));
+  Object dflt(&scope, runtime.newInt(456));
+  Object result(&scope, runBuiltin(DictBuiltins::get, dict, key, dflt));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(Int::cast(result)->asWord(), 456);
+}
+
+TEST(DictBuiltinsTest, GetReturnsNone) {
+  Runtime runtime;
+  HandleScope scope;
+  Dict dict(&scope, runtime.newDict());
+  Object key(&scope, runtime.newInt(123));
+  Object result(&scope, runBuiltin(DictBuiltins::get, dict, key));
+  EXPECT_TRUE(result->isNoneType());
+}
+
+TEST(DictBuiltinsTest, GetReturnsValue) {
+  Runtime runtime;
+  HandleScope scope;
+  Dict dict(&scope, runtime.newDict());
+  Object key(&scope, runtime.newInt(123));
+  Object value(&scope, runtime.newInt(456));
+  runtime.dictAtPut(dict, key, value);
+  Object dflt(&scope, runtime.newInt(789));
+  Object result(&scope, runBuiltin(DictBuiltins::get, dict, key, dflt));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(Int::cast(result)->asWord(), 456);
+}
+
 }  // namespace python

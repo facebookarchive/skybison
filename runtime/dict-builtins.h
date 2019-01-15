@@ -53,6 +53,7 @@ class DictBuiltins {
   static RawObject keys(Thread* thread, Frame* frame, word nargs);
   static RawObject update(Thread* thread, Frame* frame, word nargs);
   static RawObject values(Thread* thread, Frame* frame, word nargs);
+  static RawObject get(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinAttribute kAttributes[];

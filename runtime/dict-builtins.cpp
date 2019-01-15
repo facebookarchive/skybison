@@ -255,6 +255,7 @@ const BuiltinMethod DictBuiltins::kMethods[] = {
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
+    {SymbolId::kGet, nativeTrampoline<get>},
     {SymbolId::kItems, nativeTrampoline<items>},
     {SymbolId::kKeys, nativeTrampoline<keys>},
     {SymbolId::kUpdate, nativeTrampoline<update>},
@@ -504,6 +505,47 @@ RawObject DictBuiltins::values(Thread* thread, Frame* frame, word nargs) {
 
   Dict dict(&scope, *self);
   return runtime->newDictValues(dict);
+}
+
+RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
+  if (nargs < 2) {
+    return thread->raiseTypeErrorWithCStr("get expected at least one argument");
+  }
+  if (nargs > 3) {
+    return thread->raiseTypeErrorWithCStr("get expected at most 2 arguments");
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "get() must be called with a dict instance as the first "
+        "argument");
+  }
+  Dict dict(&scope, *self);
+
+  // Check key hash
+  Object key(&scope, args.get(1));
+  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key,
+                                                       SymbolId::kDunderHash));
+  if (dunder_hash->isNoneType()) {
+    return thread->raiseTypeErrorWithCStr("unhashable type");
+  }
+  Object key_hash(&scope,
+                  Interpreter::callMethod1(thread, frame, dunder_hash, key));
+  if (key_hash->isError()) {
+    return *key_hash;
+  }
+  if (!runtime->isInstanceOfInt(key_hash)) {
+    return thread->raiseTypeErrorWithCStr("__hash__ must return 'int'");
+  }
+
+  // Return results
+  Object result(&scope, runtime->dictAtWithHash(dict, key, key_hash));
+  if (!result->isError()) return *result;
+  if (nargs == 3) return args.get(2);
+  return NoneType::object();
 }
 
 RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
