@@ -1179,7 +1179,7 @@ void Runtime::initializeHeapTypes() {
   initializeSuperType();
   addEmptyBuiltinType(SymbolId::kTraceback, LayoutId::kTraceback,
                       LayoutId::kObject);
-  initializeTypeType();
+  TypeBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kValueCell, LayoutId::kValueCell,
                       LayoutId::kObject);
 }
@@ -1370,22 +1370,6 @@ void Runtime::initializeClassMethodType() {
 
   typeAddBuiltinFunction(classmethod, SymbolId::kDunderNew,
                          nativeTrampoline<builtinClassMethodNew>);
-}
-
-void Runtime::initializeTypeType() {
-  HandleScope scope;
-  Type type(&scope, addEmptyBuiltinType(SymbolId::kType, LayoutId::kType,
-                                        LayoutId::kObject));
-
-  typeAddBuiltinFunctionKw(type, SymbolId::kDunderCall,
-                           nativeTrampoline<builtinTypeCall>,
-                           nativeTrampolineKw<builtinTypeCallKw>);
-
-  typeAddBuiltinFunction(type, SymbolId::kDunderInit,
-                         nativeTrampoline<builtinTypeInit>);
-
-  typeAddBuiltinFunction(type, SymbolId::kDunderNew,
-                         nativeTrampoline<builtinTypeNew>);
 }
 
 void Runtime::initializeImmediateTypes() {

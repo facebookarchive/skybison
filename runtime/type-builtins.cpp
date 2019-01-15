@@ -1,4 +1,4 @@
-#include "function-builtins.h"
+#include "type-builtins.h"
 
 #include "frame.h"
 #include "globals.h"
@@ -6,10 +6,27 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "trampolines-inl.h"
 
 namespace python {
 
-RawObject builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod TypeBuiltins::kMethods[] = {
+    {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
+    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
+};
+
+void TypeBuiltins::initialize(Runtime* runtime) {
+  HandleScope scope;
+  Type type(&scope,
+            runtime->addBuiltinTypeWithMethods(SymbolId::kType, LayoutId::kType,
+                                               LayoutId::kObject, kMethods));
+  runtime->typeAddBuiltinFunctionKw(
+      type, SymbolId::kDunderCall, nativeTrampoline<TypeBuiltins::dunderCall>,
+      nativeTrampolineKw<TypeBuiltins::dunderCallKw>);
+}
+
+RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
 
@@ -52,7 +69,7 @@ RawObject builtinTypeCall(Thread* thread, Frame* frame, word nargs) {
   return *instance;
 }
 
-RawObject builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
+RawObject TypeBuiltins::dunderCallKw(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -87,7 +104,7 @@ RawObject builtinTypeCallKw(Thread* thread, Frame* frame, word nargs) {
   return *new_obj;
 }
 
-RawObject builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
+RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2) {
     return thread->raiseTypeErrorWithCStr("type() takes 1 or 3 arguments");
   }
@@ -159,9 +176,12 @@ RawObject builtinTypeNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject builtinTypeInit(Thread*, Frame*, word) { return NoneType::object(); }
+RawObject TypeBuiltins::dunderInit(Thread* /* thread */, Frame* /* frame */,
+                                   word /* nargs */) {
+  return NoneType::object();
+}
 
-RawObject builtinTypeRepr(Thread* thread, Frame* frame, word nargs) {
+RawObject TypeBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
     return thread->raiseTypeErrorWithCStr(
         "type.__repr__(): Need a self argument");

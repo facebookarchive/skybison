@@ -77,7 +77,7 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);
   frame->pushValue(runtime.newStrFromCStr("not_a_cls"));
-  RawObject result = builtinTypeCall(thread, frame, 1);
+  RawObject result = TypeBuiltins::dunderCall(thread, frame, 1);
   ASSERT_TRUE(result->isError());
   ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
@@ -106,7 +106,7 @@ TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {
   Runtime runtime;
   HandleScope scope;
   Type type(&scope, runtime.typeAt(LayoutId::kObject));
-  Object result(&scope, runBuiltin(builtinTypeRepr, type));
+  Object result(&scope, runBuiltin(TypeBuiltins::dunderRepr, type));
   ASSERT_TRUE(result->isStr());
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), "<class 'object'>");
 }
@@ -120,7 +120,7 @@ class Foo:
   HandleScope scope;
   Object type(&scope, moduleAt(&runtime, "__main__", "Foo"));
 
-  Object result(&scope, runBuiltin(builtinTypeRepr, type));
+  Object result(&scope, runBuiltin(TypeBuiltins::dunderRepr, type));
   ASSERT_TRUE(result->isStr());
   // TODO(T32810595): Once module names are supported, this should become
   // "<class '__main__.Foo'>".

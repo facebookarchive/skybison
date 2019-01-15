@@ -626,7 +626,6 @@ class Runtime {
 
   void initializeStaticMethodType();
   void initializeSuperType();
-  void initializeTypeType();
 
   RawObject createMainModule();
 
