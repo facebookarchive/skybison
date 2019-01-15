@@ -1,3 +1,4 @@
+#include "cpython-func.h"
 #include "runtime.h"
 
 namespace python {
@@ -20,12 +21,40 @@ PY_EXPORT int PyBytes_AsStringAndSize(PyObject* /* j */, char** /* s */,
   UNIMPLEMENTED("PyBytes_AsStringAndSize");
 }
 
-PY_EXPORT void PyBytes_Concat(PyObject** /* pv */, PyObject* /* w */) {
-  UNIMPLEMENTED("PyBytes_Concat");
+PY_EXPORT void PyBytes_Concat(PyObject** pyobj, PyObject* newpart) {
+  CHECK(pyobj != nullptr, "reference to bytes object must be non-null");
+  if (*pyobj == nullptr) return;
+  if (newpart == nullptr) {
+    PyObject* tmp = *pyobj;
+    *pyobj = nullptr;
+    Py_DECREF(tmp);
+    return;
+  }
+
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ApiHandle* obj_handle = ApiHandle::fromPyObject(*pyobj);
+  Object obj(&scope, obj_handle->asObject());
+  Object newpart_obj(&scope, ApiHandle::fromPyObject(newpart)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*obj) ||
+      !runtime->isInstanceOfBytes(*newpart_obj)) {
+    thread->raiseBadArgument();
+    *pyobj = nullptr;
+    obj_handle->decref();
+    return;
+  }
+
+  Bytes self(&scope, *obj);
+  Bytes other(&scope, *newpart_obj);
+  Bytes result(&scope, runtime->bytesConcat(thread, self, other));
+  *pyobj = ApiHandle::newReference(thread, *result);
+  obj_handle->decref();
 }
 
-PY_EXPORT void PyBytes_ConcatAndDel(PyObject** /* pv */, PyObject* /* w */) {
-  UNIMPLEMENTED("PyBytes_ConcatAndDel");
+PY_EXPORT void PyBytes_ConcatAndDel(PyObject** pyobj, PyObject* newpart) {
+  PyBytes_Concat(pyobj, newpart);
+  Py_XDECREF(newpart);
 }
 
 PY_EXPORT PyObject* PyBytes_DecodeEscape(const char* /* s */,

@@ -10,6 +10,82 @@ using namespace testing;
 
 using BytesExtensionApiTest = ExtensionApi;
 
+TEST_F(BytesExtensionApiTest, ConcatWithPointerToNullIsNoop) {
+  PyObject* foo = nullptr;
+  PyObjectPtr bar(PyLong_FromLong(0));
+  PyBytes_Concat(&foo, bar);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(BytesExtensionApiTest, ConcatWithNullSetsFirstArgNull) {
+  PyObject* foo = PyBytes_FromString("foo");
+  PyBytes_Concat(&foo, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(foo, nullptr);
+}
+
+TEST_F(BytesExtensionApiTest, ConcatWithNonBytesFirstArgSetsFirstArgNull) {
+  PyObject* foo = PyLong_FromLong(0);
+  PyObjectPtr bar(PyBytes_FromString("bar"));
+  PyBytes_Concat(&foo, bar);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(foo, nullptr);
+}
+
+TEST_F(BytesExtensionApiTest, ConcatWithNonBytesFirstArgRaisesTypeError) {
+  PyObject* foo = PyLong_FromLong(0);
+  PyObjectPtr bar(PyBytes_FromString("bar"));
+  PyBytes_Concat(&foo, bar);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, ConcatWithNonBytesSecondArgSetsFirstArgNull) {
+  PyObject* foo = PyBytes_FromString("foo");
+  PyObjectPtr bar(PyLong_FromLong(0));
+  PyBytes_Concat(&foo, bar);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(foo, nullptr);
+}
+
+TEST_F(BytesExtensionApiTest, ConcatWithNonBytesSecondArgRaisesTypeError) {
+  PyObject* foo = PyBytes_FromString("foo");
+  PyObjectPtr bar(PyLong_FromLong(0));
+  PyBytes_Concat(&foo, bar);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, ConcatWithBytesConcatenatesByteStrings) {
+  PyObject* foo = PyBytes_FromString("foo");
+  PyObjectPtr bar(PyBytes_FromString("bar"));
+  PyBytes_Concat(&foo, bar);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyBytes_Size(foo), 6);
+}
+
+TEST_F(BytesExtensionApiTest, ConcatDoesNotDecrefSecondArg) {
+  PyObject* foo = PyBytes_FromString("foo");
+  PyObjectPtr bar(PyBytes_FromString("bar"));
+  long refcnt = Py_REFCNT(bar);
+  ASSERT_GE(refcnt, 1);
+  PyBytes_Concat(&foo, bar);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(Py_REFCNT(bar), refcnt);
+}
+
+TEST_F(BytesExtensionApiTest, ConcatAndDelDecrefsSecondArg) {
+  PyObject* foo = nullptr;
+  PyObject* bar = PyBytes_FromString("bar");
+  long refcnt = Py_REFCNT(bar);
+  ASSERT_GE(refcnt, 1);
+  Py_INCREF(bar);  // prevent bar from being deallocated
+  PyBytes_ConcatAndDel(&foo, bar);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(Py_REFCNT(bar), refcnt);
+  Py_DECREF(bar);
+}
+
 TEST_F(BytesExtensionApiTest, FromStringAndSizeIncrementsRefCount) {
   PyObject* bytes = PyBytes_FromStringAndSize("foo", 3);
   ASSERT_NE(bytes, nullptr);
