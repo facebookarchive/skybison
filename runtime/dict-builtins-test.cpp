@@ -32,6 +32,59 @@ TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
   EXPECT_FALSE(RawBool::cast(result)->value());
 }
 
+TEST(DictBuiltinsTest, DunderContainsWithUnhashableTypeRaisesTypeError) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  __hash__ = None
+c = C()
+)");
+  HandleScope scope;
+  Object dict(&scope, runtime.newDictWithSize(0));
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object result(&scope, runBuiltin(DictBuiltins::dunderContains, dict, c));
+  ASSERT_TRUE(result->isError());
+  Thread* thread = Thread::currentThread();
+  ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(thread->pendingExceptionValue().isStr());
+}
+
+TEST(DictBuiltinsTest, DunderContainsWithNonCallableDunderHashRaisesTypeError) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  __hash__ = 4
+c = C()
+)");
+  HandleScope scope;
+  Object dict(&scope, runtime.newDictWithSize(0));
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object result(&scope, runBuiltin(DictBuiltins::dunderContains, dict, c));
+  ASSERT_TRUE(result->isError());
+  Thread* thread = Thread::currentThread();
+  ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(thread->pendingExceptionValue().isStr());
+}
+
+TEST(DictBuiltinsTest,
+     DunderContainsWithTypeWithDunderHashReturningNonIntRaisesTypeError) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  def __hash__(self):
+    return "boo"
+c = C()
+)");
+  HandleScope scope;
+  Object dict(&scope, runtime.newDictWithSize(0));
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object result(&scope, runBuiltin(DictBuiltins::dunderContains, dict, c));
+  ASSERT_TRUE(result->isError());
+  Thread* thread = Thread::currentThread();
+  ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(thread->pendingExceptionValue().isStr());
+}
+
 TEST(DictBuiltinsTest, InWithExistingKeyReturnsTrue) {
   Runtime runtime;
   runFromCStr(&runtime, R"(

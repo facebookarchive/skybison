@@ -2414,6 +2414,13 @@ bool Runtime::dictIncludes(const Dict& dict, const Object& key) {
   Tuple data(&scope, dict->data());
   // TODO(T36757907): Check if key is hashable
   Object key_hash(&scope, hash(*key));
+  return dictIncludesWithHash(dict, key, key_hash);
+}
+
+bool Runtime::dictIncludesWithHash(const Dict& dict, const Object& key,
+                                   const Object& key_hash) {
+  HandleScope scope;
+  Tuple data(&scope, dict->data());
   word ignore;
   return dictLookup(data, key, key_hash, &ignore);
 }

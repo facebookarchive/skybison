@@ -271,7 +271,20 @@ RawObject DictBuiltins::dunderContains(Thread* thread, Frame* frame,
         "dict.__contains__(self): self must be a dict");
   }
   Dict dict(&scope, *self);
-  return Bool::fromBool(runtime->dictIncludes(dict, key));
+  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key,
+                                                       SymbolId::kDunderHash));
+  if (dunder_hash->isNoneType()) {
+    return thread->raiseTypeErrorWithCStr("unhashable type");
+  }
+  Object key_hash(&scope,
+                  Interpreter::callMethod1(thread, frame, dunder_hash, key));
+  if (key_hash->isError()) {
+    return *key_hash;
+  }
+  if (!runtime->isInstanceOfInt(key_hash)) {
+    return thread->raiseTypeErrorWithCStr("__hash__ must return 'int'");
+  }
+  return Bool::fromBool(runtime->dictIncludesWithHash(dict, key, key_hash));
 }
 
 RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
