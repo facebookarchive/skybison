@@ -397,4 +397,68 @@ TEST_F(DictExtensionApiTest, DelItemStringWithKeyNotInDictReturnsNegativeOne) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyError));
 }
 
+TEST_F(DictExtensionApiTest, NextWithEmptyDictReturnsFalse) {
+  PyObject* key = nullptr;
+  PyObject* value = nullptr;
+  Py_ssize_t pos = 0;
+  EXPECT_EQ(PyDict_Next(PyDict_New(), &pos, &key, &value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, NextWithNonEmptyDictReturnsKeysAndValues) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyDict_SetItem(dict, one, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyDict_SetItem(dict, three, four);
+
+  Py_ssize_t pos = 0;
+  PyObject* key = nullptr;
+  PyObject* value = nullptr;
+  ASSERT_EQ(PyDict_Next(dict, &pos, &key, &value), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(key, one);
+  EXPECT_EQ(value, two);
+
+  ASSERT_EQ(PyDict_Next(dict, &pos, &key, &value), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(key, three);
+  EXPECT_EQ(value, four);
+
+  ASSERT_EQ(PyDict_Next(dict, &pos, &key, &value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, NextWithNullKeyPtrDoesNotDie) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyDict_SetItem(dict, one, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyDict_SetItem(dict, three, four);
+
+  Py_ssize_t pos = 0;
+  PyObject* value = nullptr;
+  ASSERT_EQ(PyDict_Next(dict, &pos, nullptr, &value), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, NextWithNullValuePtrDoesNotDie) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyDict_SetItem(dict, one, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyDict_SetItem(dict, three, four);
+
+  Py_ssize_t pos = 0;
+  PyObject* key = nullptr;
+  ASSERT_EQ(PyDict_Next(dict, &pos, &key, nullptr), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python

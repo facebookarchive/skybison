@@ -225,9 +225,33 @@ PY_EXPORT int PyDict_MergeFromSeq2(PyObject* /* d */, PyObject* /* 2 */,
   UNIMPLEMENTED("PyDict_MergeFromSeq2");
 }
 
-PY_EXPORT int PyDict_Next(PyObject* /* p */, Py_ssize_t* /* s */,
-                          PyObject** /* pkey */, PyObject** /* pvalue */) {
-  UNIMPLEMENTED("PyDict_Next");
+PY_EXPORT int PyDict_Next(PyObject* pydict, Py_ssize_t* ppos, PyObject** pkey,
+                          PyObject** pvalue) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  if (!thread->runtime()->isInstanceOfDict(dict_obj)) {
+    return 0;
+  }
+  Dict dict(&scope, *dict_obj);
+  Tuple dict_data(&scope, dict->data());
+  while (*ppos < dict_data->length() &&
+         !Dict::Bucket::isFilled(*dict_data, *ppos)) {
+    *ppos += Dict::Bucket::kNumPointers;
+  }
+  if (*ppos >= dict_data->length()) {
+    return false;
+  }
+  if (pkey != nullptr) {
+    *pkey = ApiHandle::borrowedReference(thread,
+                                         Dict::Bucket::key(*dict_data, *ppos));
+  }
+  if (pvalue != nullptr) {
+    *pvalue = ApiHandle::borrowedReference(
+        thread, Dict::Bucket::value(*dict_data, *ppos));
+  }
+  *ppos += Dict::Bucket::kNumPointers;
+  return true;
 }
 
 PY_EXPORT Py_ssize_t PyDict_Size(PyObject* p) {
