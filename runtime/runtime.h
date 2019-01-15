@@ -266,6 +266,9 @@ class Runtime {
 
   Symbols* symbols() { return symbols_; }
 
+  // Returns a new Bytes containing the elements of self and then other.
+  RawObject bytesConcat(Thread* thread, const Bytes& self, const Bytes& other);
+
   // Ensures that array has enough space for an atPut at index. If so, returns
   // array. If not, allocates and returns a new array with sufficient capacity
   // and identical contents.

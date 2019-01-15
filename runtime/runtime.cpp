@@ -2195,6 +2195,22 @@ void Runtime::createMarshalModule() {
   addModule(module);
 }
 
+// Bytes
+
+RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
+                               const Bytes& other) {
+  word self_len = self->length();
+  word other_len = other->length();
+  word len = self_len + other_len;
+  // TODO(T36997048): intern 1-element byte arrays
+  HandleScope scope(thread);
+  Bytes result(&scope, heap()->createBytes(len));
+  byte* buffer = reinterpret_cast<byte*>(result->address());
+  self->copyTo(buffer, self_len);
+  other->copyTo(buffer + self_len, other_len);
+  return *result;
+}
+
 // List
 
 void Runtime::listEnsureCapacity(const List& list, word index) {

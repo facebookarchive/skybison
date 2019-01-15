@@ -840,6 +840,7 @@ class RawBytes : public RawArray {
   // Getters and setters.
   byte byteAt(word index);
   void byteAtPut(word index, byte value);
+  void copyTo(byte* dst, word length);
 
   // Sizing.
   static word allocationSize(word length);
@@ -3012,6 +3013,11 @@ inline byte RawBytes::byteAt(word index) {
 inline void RawBytes::byteAtPut(word index, byte value) {
   DCHECK_INDEX(index, length());
   *reinterpret_cast<byte*>(address() + index) = value;
+}
+
+inline void RawBytes::copyTo(byte* dst, word length) {
+  DCHECK_BOUND(length, this->length());
+  std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
 // RawTuple
