@@ -158,6 +158,7 @@ class Runtime {
 
   void createBuiltinsModule();
   void createImportModule();
+  void createMarshalModule();
   void createSysModule();
   void createThreadModule();
   void createTimeModule();

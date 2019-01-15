@@ -13,6 +13,8 @@ class Marshal {
  public:
   class Reader {
    public:
+    // TODO(T38902583): Generalize Marshal::Reader to take a Bytes or buffer
+    // protocol object
     Reader(HandleScope* scope, Runtime* runtime, const char* buffer);
 
     double readBinaryFloat();

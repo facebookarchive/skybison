@@ -224,6 +224,8 @@ add_library(
   runtime/list-builtins.h
   runtime/marshal.cpp
   runtime/marshal.h
+  runtime/marshal-module.h
+  runtime/marshal-module.cpp
   runtime/mro.cpp
   runtime/mro.h
   runtime/object-builtins.cpp
@@ -343,6 +345,7 @@ add_library(
   runtime/layout-test.cpp
   runtime/list-builtins-test.cpp
   runtime/marshal-test.cpp
+  runtime/marshal-module-test.cpp
   runtime/object-builtins-test.cpp
   runtime/objects-test.cpp
   runtime/os-test.cpp

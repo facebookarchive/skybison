@@ -207,8 +207,10 @@ class Runtime;
   V(Len, "len")                                                                \
   V(List, "list")                                                              \
   V(ListIterator, "list_iterator")                                             \
+  V(Loads, "loads")                                                            \
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
+  V(Marshal, "marshal")                                                        \
   V(MemoryError, "MemoryError")                                                \
   V(MetaPath, "meta_path")                                                     \
   V(Metaclass, "metaclass")                                                    \
@@ -300,6 +302,7 @@ class Runtime;
   V(Values, "values")                                                          \
   V(ValueCell, "valuecell")                                                    \
   V(ValueError, "ValueError")                                                  \
+  V(Version, "version")                                                        \
   V(Warning, "Warning")                                                        \
   V(ZeroDivisionError, "ZeroDivisionError")
 

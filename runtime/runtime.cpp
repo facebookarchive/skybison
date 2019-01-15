@@ -30,6 +30,7 @@
 #include "io-module.h"
 #include "layout.h"
 #include "list-builtins.h"
+#include "marshal-module.h"
 #include "marshal.h"
 #include "object-builtins.h"
 #include "os.h"
@@ -1661,6 +1662,7 @@ struct {
     {SymbolId::kTime, &Runtime::createTimeModule},
     {SymbolId::kUnderImp, &Runtime::createImportModule},
     {SymbolId::kUnderIo, &Runtime::createUnderIoModule},
+    {SymbolId::kMarshal, &Runtime::createMarshalModule},
     {SymbolId::kUnderThread, &Runtime::createThreadModule},
     {SymbolId::kUnderWarnings, &Runtime::createWarningsModule},
     {SymbolId::kUnderWeakRef, &Runtime::createWeakRefModule},
@@ -2193,6 +2195,17 @@ RawObject Runtime::createMainModule() {
   addModule(module);
 
   return *module;
+}
+
+void Runtime::createMarshalModule() {
+  HandleScope scope;
+  Object name(&scope, symbols()->Marshal());
+  Module module(&scope, newModule(name));
+  // marshal.loads
+  moduleAddBuiltinFunction(module, SymbolId::kLoads,
+                           nativeTrampoline<MarshalModule::loads>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+  addModule(module);
 }
 
 // List
