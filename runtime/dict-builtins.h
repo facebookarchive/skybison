@@ -8,6 +8,9 @@
 
 namespace python {
 
+// Creates a new dict with shallow copies of the given dict's elements.
+RawObject dictCopy(Thread* thread, const Dict& dict);
+
 // Update a dict from another dict or an iterator, overwriting existing keys if
 // duplicates exist.
 //

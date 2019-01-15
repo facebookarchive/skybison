@@ -296,7 +296,7 @@ class Runtime {
   // Returns true if the dict contains the specified key.
   bool dictIncludes(const Dict& dict, const Object& key);
 
-  // Returns true if the dict contains the specified key with the spceified
+  // Returns true if the dict contains the specified key with the specified
   // hash.
   bool dictIncludesWithHash(const Dict& dict, const Object& key,
                             const Object& key_hash);

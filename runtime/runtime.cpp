@@ -2411,7 +2411,6 @@ RawObject Runtime::dictAtPutInValueCell(const Dict& dict, const Object& key,
 
 bool Runtime::dictIncludes(const Dict& dict, const Object& key) {
   HandleScope scope;
-  Tuple data(&scope, dict->data());
   // TODO(T36757907): Check if key is hashable
   Object key_hash(&scope, hash(*key));
   return dictIncludesWithHash(dict, key, key_hash);

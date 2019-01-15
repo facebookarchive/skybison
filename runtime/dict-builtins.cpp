@@ -10,6 +10,16 @@
 
 namespace python {
 
+RawObject dictCopy(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
+  Dict copy(&scope, thread->runtime()->newDict());
+  Object result(&scope, dictUpdate(thread, copy, dict));
+  if (result->isError()) {
+    return *result;
+  }
+  return *copy;
+}
+
 namespace {
 enum class Override {
   kIgnore,
@@ -25,15 +35,17 @@ RawObject dictMergeDict(Thread* thread, const Dict& dict, const Object& mapping,
 
   Object key(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
+  Object hash(&scope, NoneType::object());
   Dict other(&scope, *mapping);
   Tuple other_data(&scope, other->data());
   for (word i = 0; i < other_data->length(); i += Dict::Bucket::kNumPointers) {
     if (Dict::Bucket::isFilled(*other_data, i)) {
       key = Dict::Bucket::key(*other_data, i);
       value = Dict::Bucket::value(*other_data, i);
+      hash = Dict::Bucket::hash(*other_data, i);
       if (do_override == Override::kOverride ||
-          !runtime->dictIncludes(dict, key)) {
-        runtime->dictAtPut(dict, key, value);
+          !runtime->dictIncludesWithHash(dict, key, hash)) {
+        runtime->dictAtPutWithHash(dict, key, value, hash);
       } else if (do_override == Override::kError) {
         return thread->raiseKeyError(*key);
       }

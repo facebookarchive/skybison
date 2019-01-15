@@ -461,4 +461,34 @@ TEST_F(DictExtensionApiTest, NextWithNullValuePtrDoesNotDie) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(DictExtensionApiTest, CopyWithNullRaisesSystemError) {
+  EXPECT_EQ(PyDict_Copy(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, CopyWithNonDictInstanceRaisesSystemError) {
+  EXPECT_EQ(PyDict_Copy(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, CopyMakesShallowCopyOfDictElements) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr val1(PyTuple_New(0));
+  PyDict_SetItem(dict, one, val1);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr val2(PyTuple_New(0));
+  PyDict_SetItem(dict, three, val2);
+
+  PyObjectPtr copy(PyDict_Copy(dict));
+  ASSERT_NE(copy, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyDict_CheckExact(copy));
+  EXPECT_EQ(PyDict_Size(copy), 2);
+  EXPECT_EQ(PyDict_GetItem(copy, one), val1);
+  EXPECT_EQ(PyDict_GetItem(copy, three), val2);
+}
+
 }  // namespace python

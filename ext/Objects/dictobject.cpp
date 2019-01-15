@@ -108,8 +108,20 @@ PY_EXPORT int PyDict_Contains(PyObject* pydict, PyObject* key) {
   return runtime->dictIncludes(dict, key_obj);
 }
 
-PY_EXPORT PyObject* PyDict_Copy(PyObject* /* o */) {
-  UNIMPLEMENTED("PyDict_Copy");
+PY_EXPORT PyObject* PyDict_Copy(PyObject* pydict) {
+  Thread* thread = Thread::currentThread();
+  if (pydict == nullptr) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  HandleScope scope(thread);
+  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  if (!thread->runtime()->isInstanceOfDict(dict_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Dict dict(&scope, *dict_obj);
+  return ApiHandle::newReference(thread, dictCopy(thread, dict));
 }
 
 PY_EXPORT int PyDict_DelItem(PyObject* pydict, PyObject* key) {
