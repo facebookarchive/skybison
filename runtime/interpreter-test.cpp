@@ -2385,4 +2385,25 @@ TEST(InterpreterTest, RaiseWithNoActiveExceptionRaises) {
                "No active exception to reraise");
 }
 
+TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Set up a code object that runs: {}.foo
+  Code code(&scope, testing::newEmptyCode(&runtime));
+  Tuple names(&scope, runtime.newTuple(1));
+  Str foo(&scope, runtime.newStrFromCStr("foo"));
+  names->atPut(0, *foo);
+  code->setNames(*names);
+
+  // load arguments and execute the code
+  const byte bytecode[] = {BUILD_MAP, 0, LOAD_ATTR, 0};
+  code->setCode(runtime.newBytesWithAll(bytecode));
+  code->setStacksize(1);
+
+  // Execute the code and make sure to get the unwinded Error
+  RawObject result = Thread::currentThread()->run(code);
+  ASSERT_TRUE(result->isError());
+}
+
 }  // namespace python

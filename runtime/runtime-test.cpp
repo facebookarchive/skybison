@@ -1864,26 +1864,19 @@ class Foo(metaclass=MyMeta):
   EXPECT_PYSTRING_EQ(RawStr::cast(*result), "foo");
 }
 
-// Fetch an unknown attribute
-TEST(InstanceAttributeDeathTest, GetMissing) {
+TEST(InstanceAttributeTest, GetMissingAttributeThrowsAttributeError) {
   Runtime runtime;
-  const char* src = R"(
-class Foo:
-  pass
-
-def test(x):
-  print(x.foo)
-)";
-  runFromCStr(&runtime, src);
+  runFromCStr(&runtime, R"(
+class Foo: pass
+caught_attribute_error = False
+try:
+  Foo().non_existant_attribute
+except AttributeError:
+  caught_attribute_error = True
+)");
   HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Function test(&scope, moduleAt(&runtime, main, "test"));
-  Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  Tuple args(&scope, runtime.newTuple(1));
-  Layout layout(&scope, type->instanceLayout());
-  args->atPut(0, runtime.newInstance(layout));
-
-  ASSERT_DEATH(callFunctionToString(test, args), "missing attribute");
+  Object res(&scope, moduleAt(&runtime, "__main__", "caught_attribute_error"));
+  EXPECT_EQ(*res, Bool::trueObj());
 }
 
 // Fetch an attribute defined on the class

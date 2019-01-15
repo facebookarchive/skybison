@@ -1581,16 +1581,16 @@ void Interpreter::doBuildMap(Context* ctx, word arg) {
 }
 
 // opcode 106
-void Interpreter::doLoadAttr(Context* ctx, word arg) {
+bool Interpreter::doLoadAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Object receiver(&scope, ctx->frame->topValue());
   auto names = RawCode::cast(ctx->frame->code())->names();
   Object name(&scope, RawTuple::cast(names)->at(arg));
   RawObject result = thread->runtime()->attributeAt(thread, receiver, name);
-  // TODO(T31788973): propagate an exception
-  thread->abortOnPendingException();
+  if (result.isError()) return unwind(ctx);
   ctx->frame->setTopValue(result);
+  return false;
 }
 
 static RawObject excMatch(Interpreter::Context* ctx, const Object& left,

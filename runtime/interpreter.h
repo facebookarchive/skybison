@@ -194,7 +194,7 @@ class Interpreter {
   static void doBuildList(Context* ctx, word arg);
   static void doBuildSet(Context* ctx, word arg);
   static void doBuildMap(Context* ctx, word arg);
-  static void doLoadAttr(Context* ctx, word arg);
+  static bool doLoadAttr(Context* ctx, word arg);
   static bool doCompareOp(Context* ctx, word arg);
   static void doImportName(Context* ctx, word arg);
   static void doImportFrom(Context* ctx, word arg);
