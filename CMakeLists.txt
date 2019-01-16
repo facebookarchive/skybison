@@ -413,6 +413,7 @@ set(
   ext/Python/import-test.cpp
   ext/Python/modsupport-test.cpp
   ext/Python/mysnprintf-test.cpp
+  ext/Python/pylifecycle-test.cpp
   ext/Python/pythonrun-test.cpp
   ext/test/capi-fixture.h
   ext/test/capi-testing-test.cpp

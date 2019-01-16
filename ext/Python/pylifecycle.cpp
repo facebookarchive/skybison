@@ -1,3 +1,5 @@
+#include <cstdio>
+
 #include "runtime.h"
 
 int Py_BytesWarningFlag = 0;
@@ -47,8 +49,11 @@ PY_EXPORT void Py_EndInterpreter(PyThreadState* /* e */) {
 
 PY_EXPORT void Py_Exit(int /* s */) { UNIMPLEMENTED("Py_Exit"); }
 
-PY_EXPORT void Py_FatalError(const char* /* g */) {
-  UNIMPLEMENTED("Py_FatalError");
+PY_EXPORT void Py_FatalError(const char* msg) {
+  std::fprintf(stderr, "Fatal Python error: %s\n", msg);
+  // TODO(T39151288): Correctly print exceptions when the current thread holds
+  // the GIL
+  std::abort();
 }
 
 PY_EXPORT void Py_Finalize() { UNIMPLEMENTED("Py_Finalize"); }
