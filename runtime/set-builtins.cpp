@@ -478,11 +478,8 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
   Tuple new_data(&scope, runtime->newTuple(data->length()));
   Object key(&scope, NoneType::object());
   Object key_hash(&scope, NoneType::object());
-  for (word i = 0, data_len = data->length(); i < data_len;
-       i += SetBase::Bucket::kNumPointers) {
-    if (!SetBase::Bucket::isFilled(*data, i)) {
-      continue;
-    }
+  for (word i = SetBase::Bucket::kFirst;
+       SetBase::Bucket::nextItem(*data, &i);) {
     key = SetBase::Bucket::key(*data, i);
     key_hash = SetBase::Bucket::hash(*data, i);
     SetBase::Bucket::set(*new_data, i, *key_hash, *key);
@@ -496,10 +493,8 @@ bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other) {
   HandleScope scope(thread);
   Tuple data(&scope, set->data());
   Object key(&scope, NoneType::object());
-  for (word i = 0; i < data->length(); i += SetBase::Bucket::kNumPointers) {
-    if (!RawSetBase::Bucket::isFilled(*data, i)) {
-      continue;
-    }
+  for (word i = SetBase::Bucket::kFirst;
+       SetBase::Bucket::nextItem(*data, &i);) {
     key = RawSetBase::Bucket::key(*data, i);
     if (!thread->runtime()->setIncludes(other, key)) {
       return false;
@@ -531,14 +526,12 @@ RawObject setPop(Thread* thread, const Set& set) {
   Tuple data(&scope, set->data());
   word num_items = set->numItems();
   if (num_items != 0) {
-    for (word i = 0, length = data->length(); i < length;
-         i += Set::Bucket::kNumPointers) {
-      if (Set::Bucket::isFilled(*data, i)) {
-        Object value(&scope, Set::Bucket::key(*data, i));
-        Set::Bucket::setTombstone(*data, i);
-        set->setNumItems(num_items - 1);
-        return *value;
-      }
+    for (word i = SetBase::Bucket::kFirst;
+         SetBase::Bucket::nextItem(*data, &i);) {
+      Object value(&scope, Set::Bucket::key(*data, i));
+      Set::Bucket::setTombstone(*data, i);
+      set->setNumItems(num_items - 1);
+      return *value;
     }
   }
   // num_items == 0 or all buckets were found empty

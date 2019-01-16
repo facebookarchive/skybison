@@ -1543,10 +1543,6 @@ class RawDict::Bucket {
     return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
   }
 
-  static bool isFilled(RawTuple data, word index) {
-    return !hash(data, index)->isNoneType();
-  }
-
   static RawObject key(RawTuple data, word index) {
     return data->at(index + kKeyOffset);
   }
@@ -1567,13 +1563,29 @@ class RawDict::Bucket {
     return data->at(index + kValueOffset);
   }
 
+  static bool nextItem(RawTuple data, word* idx) {
+    // Calling next on an invalid index should not advance that index.
+    if (*idx >= data.length()) {
+      return false;
+    }
+    do {
+      *idx += kNumPointers;
+    } while (*idx < data.length() && isEmptyOrTombstone(data, *idx));
+    return *idx < data.length();
+  }
+
   // Layout.
   static const word kHashOffset = 0;
   static const word kKeyOffset = kHashOffset + 1;
   static const word kValueOffset = kKeyOffset + 1;
   static const word kNumPointers = kValueOffset + 1;
+  static const word kFirst = -kNumPointers;
 
  private:
+  static bool isEmptyOrTombstone(RawTuple data, word index) {
+    return isEmpty(data, index) || isTombstone(data, index);
+  }
+
   DISALLOW_HEAP_ALLOCATION();
 };
 
@@ -1708,10 +1720,6 @@ class RawSetBase::Bucket {
     return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
   }
 
-  static bool isFilled(RawTuple data, word index) {
-    return !hash(data, index)->isNoneType();
-  }
-
   static RawObject key(RawTuple data, word index) {
     return data->at(index + kKeyOffset);
   }
@@ -1725,12 +1733,28 @@ class RawSetBase::Bucket {
     set(data, index, RawNoneType::object(), RawError::object());
   }
 
+  static bool nextItem(RawTuple data, word* idx) {
+    // Calling next on an invalid index should not advance that index.
+    if (*idx >= data.length()) {
+      return false;
+    }
+    do {
+      *idx += kNumPointers;
+    } while (*idx < data.length() && isEmptyOrTombstone(data, *idx));
+    return *idx < data.length();
+  }
+
   // Layout.
   static const word kHashOffset = 0;
   static const word kKeyOffset = kHashOffset + 1;
   static const word kNumPointers = kKeyOffset + 1;
+  static const word kFirst = -kNumPointers;
 
  private:
+  static bool isEmptyOrTombstone(RawTuple data, word index) {
+    return isEmpty(data, index) || isTombstone(data, index);
+  }
+
   DISALLOW_HEAP_ALLOCATION();
 };
 

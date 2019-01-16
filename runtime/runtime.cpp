@@ -910,7 +910,7 @@ RawObject Runtime::newSetIterator(const Object& set) {
   HandleScope scope;
   SetIterator result(&scope, heap()->create<RawSetIterator>());
   result->setSet(*set);
-  result->setIndex(0);
+  result->setIndex(SetBase::Bucket::kFirst);
   result->setConsumedCount(0);
   return *result;
 }
@@ -2358,10 +2358,7 @@ RawTuple Runtime::dictGrow(const Tuple& data) {
   }
   Tuple new_data(&scope, newTuple(new_length));
   // Re-insert items
-  for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
-    if (!Dict::Bucket::isFilled(*data, i)) {
-      continue;
-    }
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     Object key(&scope, Dict::Bucket::key(*data, i));
     Object hash(&scope, Dict::Bucket::hash(*data, i));
     word index = -1;
@@ -2501,10 +2498,7 @@ RawObject Runtime::dictItems(Thread* thread, const Dict& dict) {
   Tuple data(&scope, dict->data());
   Tuple items(&scope, newTuple(dict->numItems()));
   word num_items = 0;
-  for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
-    if (!Dict::Bucket::isFilled(*data, i)) {
-      continue;
-    }
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     Tuple kvpair(&scope, newTuple(2));
     kvpair->atPut(0, Dict::Bucket::key(*data, i));
     kvpair->atPut(1, Dict::Bucket::value(*data, i));
@@ -2518,13 +2512,10 @@ RawObject Runtime::dictKeys(const Dict& dict) {
   Tuple data(&scope, dict->data());
   Tuple keys(&scope, newTuple(dict->numItems()));
   word num_keys = 0;
-  for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
-    if (Dict::Bucket::isFilled(*data, i)) {
-      DCHECK(num_keys < keys->length(), "%ld ! < %ld", num_keys,
-             keys->length());
-      keys->atPut(num_keys, Dict::Bucket::key(*data, i));
-      num_keys++;
-    }
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+    DCHECK(num_keys < keys->length(), "%ld ! < %ld", num_keys, keys->length());
+    keys->atPut(num_keys, Dict::Bucket::key(*data, i));
+    num_keys++;
   }
   return *keys;
 }
@@ -2534,10 +2525,7 @@ RawObject Runtime::dictValues(Thread* thread, const Dict& dict) {
   Tuple data(&scope, dict->data());
   Tuple values(&scope, newTuple(dict->numItems()));
   word num_values = 0;
-  for (word i = 0; i < data->length(); i += Dict::Bucket::kNumPointers) {
-    if (!Dict::Bucket::isFilled(*data, i)) {
-      continue;
-    }
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     values->atPut(num_values++, Dict::Bucket::value(*data, i));
   }
   return *values;
@@ -2548,7 +2536,7 @@ RawObject Runtime::dictValues(Thread* thread, const Dict& dict) {
 RawObject Runtime::newDictItemIterator(const Dict& dict) {
   HandleScope scope;
   DictItemIterator result(&scope, heap()->create<RawDictItemIterator>());
-  result->setIndex(0);
+  result->setIndex(Dict::Bucket::kFirst);
   result->setDict(*dict);
   result->setNumFound(0);
   return *result;
@@ -2568,7 +2556,7 @@ RawObject Runtime::newDictItems(const Dict& dict) {
 RawObject Runtime::newDictKeyIterator(const Dict& dict) {
   HandleScope scope;
   DictKeyIterator result(&scope, heap()->create<RawDictKeyIterator>());
-  result->setIndex(0);
+  result->setIndex(Dict::Bucket::kFirst);
   result->setDict(*dict);
   result->setNumFound(0);
   return *result;
@@ -2588,7 +2576,7 @@ RawObject Runtime::newDictKeys(const Dict& dict) {
 RawObject Runtime::newDictValueIterator(const Dict& dict) {
   HandleScope scope;
   DictValueIterator result(&scope, heap()->create<RawDictValueIterator>());
-  result->setIndex(0);
+  result->setIndex(Dict::Bucket::kFirst);
   result->setDict(*dict);
   result->setNumFound(0);
   return *result;
@@ -2666,15 +2654,13 @@ RawTuple Runtime::setGrow(const Tuple& data) {
   }
   Tuple new_data(&scope, newTuple(new_length));
   // Re-insert items
-  for (word i = 0, length = data->length(); i < length;
-       i += SetBase::Bucket::kNumPointers) {
-    if (SetBase::Bucket::isFilled(*data, i)) {
-      Object key(&scope, SetBase::Bucket::key(*data, i));
-      Object hash(&scope, SetBase::Bucket::hash(*data, i));
-      word index = setLookup<SetLookupType::Insertion>(new_data, key, hash);
-      DCHECK(index != -1, "unexpected index %ld", index);
-      SetBase::Bucket::set(*new_data, index, *hash, *key);
-    }
+  for (word i = SetBase::Bucket::kFirst;
+       SetBase::Bucket::nextItem(*data, &i);) {
+    Object key(&scope, SetBase::Bucket::key(*data, i));
+    Object hash(&scope, SetBase::Bucket::hash(*data, i));
+    word index = setLookup<SetLookupType::Insertion>(new_data, key, hash);
+    DCHECK(index != -1, "unexpected index %ld", index);
+    SetBase::Bucket::set(*new_data, index, *hash, *key);
   }
   return *new_data;
 }
@@ -2733,10 +2719,8 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
     }
     Tuple data(&scope, self->data());
     Tuple other_data(&scope, other->data());
-    for (word i = 0; i < data->length(); i += SetBase::Bucket::kNumPointers) {
-      if (!SetBase::Bucket::isFilled(*data, i)) {
-        continue;
-      }
+    for (word i = SetBase::Bucket::kFirst;
+         SetBase::Bucket::nextItem(*data, &i);) {
       key = SetBase::Bucket::key(*data, i);
       key_hash = SetBase::Bucket::hash(*data, i);
       if (setLookup<SetLookupType::Lookup>(other_data, key, key_hash) != -1) {
@@ -2836,13 +2820,12 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     Tuple data(&scope, src->data());
     if (src->numItems() > 0) {
       Object hash(&scope, NoneType::object());
-      for (word i = 0; i < data->length(); i += SetBase::Bucket::kNumPointers) {
-        if (SetBase::Bucket::isFilled(*data, i)) {
-          elt = SetBase::Bucket::key(*data, i);
-          // take hash from data to avoid recomputing it.
-          hash = SetBase::Bucket::hash(*data, i);
-          setAddWithHash(dst, elt, hash);
-        }
+      for (word i = SetBase::Bucket::kFirst;
+           SetBase::Bucket::nextItem(*data, &i);) {
+        elt = SetBase::Bucket::key(*data, i);
+        // take hash from data to avoid recomputing it.
+        hash = SetBase::Bucket::hash(*data, i);
+        setAddWithHash(dst, elt, hash);
       }
     }
     return *dst;

@@ -162,11 +162,8 @@ void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Tuple patch_data(&scope, patch->data());
-  for (word i = 0; i < patch_data->length(); i += Dict::Bucket::kNumPointers) {
-    if (!Dict::Bucket::isFilled(*patch_data, i)) {
-      continue;
-    }
-
+  for (word i = Dict::Bucket::kFirst;
+       Dict::Bucket::nextItem(*patch_data, &i);) {
     Str key(&scope, Dict::Bucket::key(*patch_data, i));
     Object patch_value_cell(&scope, Dict::Bucket::value(*patch_data, i));
     DCHECK(patch_value_cell->isValueCell(),

@@ -671,4 +671,17 @@ TEST(DictBuiltinsTest, GetReturnsValue) {
   EXPECT_EQ(Int::cast(result)->asWord(), 456);
 }
 
+TEST(DictBuiltinsTest, NextOnDictWithOnlyTombstonesReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Dict dict(&scope, runtime.newDict());
+  Object key(&scope, runtime.newStrFromCStr("hello"));
+  Object value(&scope, runtime.newStrFromCStr("world"));
+  runtime.dictAtPut(dict, key, value);
+  ASSERT_FALSE(runtime.dictRemove(dict, key).isError());
+  Tuple data(&scope, dict->data());
+  word i = Dict::Bucket::kFirst;
+  ASSERT_FALSE(Dict::Bucket::nextItem(*data, &i));
+}
+
 }  // namespace python

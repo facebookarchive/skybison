@@ -252,17 +252,12 @@ RawObject RawSetIterator::next() {
   word idx = index();
   RawSet underlying = RawSet::cast(set());
   RawTuple data = RawTuple::cast(underlying->data());
-  word length = data->length();
   // Find the next non empty bucket
-  while (idx < length && !RawSet::Bucket::isFilled(data, idx)) {
-    idx += RawSet::Bucket::kNumPointers;
-  }
-  if (idx >= length) {
-    return RawError::object();
+  if (!SetBase::Bucket::nextItem(data, &idx)) {
+    return Error::object();
   }
   setConsumedCount(consumedCount() + 1);
-  word new_idx = (idx + RawSet::Bucket::kNumPointers);
-  setIndex(new_idx);
+  setIndex(idx);
   return RawSet::Bucket::key(data, idx);
 }
 

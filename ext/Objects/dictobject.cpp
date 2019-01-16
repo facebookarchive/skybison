@@ -266,11 +266,7 @@ PY_EXPORT int PyDict_Next(PyObject* pydict, Py_ssize_t* ppos, PyObject** pkey,
   }
   Dict dict(&scope, *dict_obj);
   Tuple dict_data(&scope, dict->data());
-  while (*ppos < dict_data->length() &&
-         !Dict::Bucket::isFilled(*dict_data, *ppos)) {
-    *ppos += Dict::Bucket::kNumPointers;
-  }
-  if (*ppos >= dict_data->length()) {
+  if (!Dict::Bucket::nextItem(*dict_data, ppos)) {
     return false;
   }
   if (pkey != nullptr) {

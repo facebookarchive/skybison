@@ -38,17 +38,16 @@ RawObject dictMergeDict(Thread* thread, const Dict& dict, const Object& mapping,
   Object hash(&scope, NoneType::object());
   Dict other(&scope, *mapping);
   Tuple other_data(&scope, other->data());
-  for (word i = 0; i < other_data->length(); i += Dict::Bucket::kNumPointers) {
-    if (Dict::Bucket::isFilled(*other_data, i)) {
-      key = Dict::Bucket::key(*other_data, i);
-      value = Dict::Bucket::value(*other_data, i);
-      hash = Dict::Bucket::hash(*other_data, i);
-      if (do_override == Override::kOverride ||
-          !runtime->dictIncludesWithHash(dict, key, hash)) {
-        runtime->dictAtPutWithHash(dict, key, value, hash);
-      } else if (do_override == Override::kError) {
-        return thread->raiseKeyError(*key);
-      }
+  for (word i = Dict::Bucket::kFirst;
+       Dict::Bucket::nextItem(*other_data, &i);) {
+    key = Dict::Bucket::key(*other_data, i);
+    value = Dict::Bucket::value(*other_data, i);
+    hash = Dict::Bucket::hash(*other_data, i);
+    if (do_override == Override::kOverride ||
+        !runtime->dictIncludesWithHash(dict, key, hash)) {
+      runtime->dictAtPutWithHash(dict, key, value, hash);
+    } else if (do_override == Override::kError) {
+      return thread->raiseKeyError(*key);
     }
   }
   return NoneType::object();
@@ -177,21 +176,16 @@ RawObject dictItemIteratorNext(Thread* thread, DictItemIterator& iter) {
   HandleScope scope(thread);
   Dict dict(&scope, iter.dict());
   Tuple buckets(&scope, dict.data());
-  word jump = Dict::Bucket::kNumPointers;
 
   word i = iter.index();
-  for (; i < buckets->length() && Dict::Bucket::isEmpty(*buckets, i);
-       i += jump) {
-  }
-
-  if (i < buckets->length()) {
+  if (Dict::Bucket::nextItem(*buckets, &i)) {
     // At this point, we have found a valid index in the buckets.
     Object key(&scope, Dict::Bucket::key(*buckets, i));
     Object value(&scope, Dict::Bucket::value(*buckets, i));
     Tuple kv_pair(&scope, thread->runtime()->newTuple(2));
     kv_pair->atPut(0, *key);
     kv_pair->atPut(1, *value);
-    iter.setIndex(i + jump);
+    iter.setIndex(i);
     iter.setNumFound(iter.numFound() + 1);
     return *kv_pair;
   }
@@ -205,16 +199,11 @@ RawObject dictKeyIteratorNext(Thread* thread, DictKeyIterator& iter) {
   HandleScope scope(thread);
   Dict dict(&scope, iter.dict());
   Tuple buckets(&scope, dict.data());
-  word jump = Dict::Bucket::kNumPointers;
 
   word i = iter.index();
-  for (; i < buckets->length() && Dict::Bucket::isEmpty(*buckets, i);
-       i += jump) {
-  }
-
-  if (i < buckets->length()) {
+  if (Dict::Bucket::nextItem(*buckets, &i)) {
     // At this point, we have found a valid index in the buckets.
-    iter.setIndex(i + jump);
+    iter.setIndex(i);
     iter.setNumFound(iter.numFound() + 1);
     return Dict::Bucket::key(*buckets, i);
   }
@@ -228,16 +217,11 @@ RawObject dictValueIteratorNext(Thread* thread, DictValueIterator& iter) {
   HandleScope scope(thread);
   Dict dict(&scope, iter.dict());
   Tuple buckets(&scope, dict.data());
-  word jump = Dict::Bucket::kNumPointers;
 
   word i = iter.index();
-  for (; i < buckets->length() && Dict::Bucket::isEmpty(*buckets, i);
-       i += jump) {
-  }
-
-  if (i < buckets->length()) {
+  if (Dict::Bucket::nextItem(*buckets, &i)) {
     // At this point, we have found a valid index in the buckets.
-    iter.setIndex(i + jump);
+    iter.setIndex(i);
     iter.setNumFound(iter.numFound() + 1);
     return Dict::Bucket::value(*buckets, i);
   }

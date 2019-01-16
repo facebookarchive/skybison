@@ -64,10 +64,8 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
       word new_capacity = index + set->numItems();
       runtime->listEnsureCapacity(dst, new_capacity);
       dst->setNumItems(new_capacity);
-      for (word i = 0; i < data->length(); i += SetBase::Bucket::kNumPointers) {
-        if (!SetBase::Bucket::isFilled(data, i)) {
-          continue;
-        }
+      for (word i = SetBase::Bucket::kFirst;
+           SetBase::Bucket::nextItem(*data, &i);) {
         dst->atPut(index++, SetBase::Bucket::key(*data, i));
       }
     }
