@@ -130,8 +130,17 @@ PY_EXPORT PyVarObject* PyObject_InitVar(PyVarObject* /* p */,
   UNIMPLEMENTED("PyObject_InitVar");
 }
 
-PY_EXPORT int PyObject_IsTrue(PyObject* /* v */) {
-  UNIMPLEMENTED("PyObject_IsTrue");
+PY_EXPORT int PyObject_IsTrue(PyObject* obj) {
+  DCHECK(obj != nullptr, "nullptr passed into PyObject_IsTrue");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Frame* frame = thread->currentFrame();
+  Object result(&scope, Interpreter::isTrue(thread, frame, obj_obj));
+  if (result->isError()) {
+    return -1;
+  }
+  return RawBool::cast(*result).value();
 }
 
 PY_EXPORT int PyObject_Not(PyObject* /* v */) { UNIMPLEMENTED("PyObject_Not"); }

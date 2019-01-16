@@ -39,7 +39,7 @@ class Interpreter {
   // batch concat/join <num> string objects on the stack (no conversion)
   static RawObject stringJoin(Thread* thread, RawObject* sp, word num);
 
-  static RawObject isTrue(Thread* thread, Frame* caller);
+  static RawObject isTrue(Thread* thread, Frame* caller, const Object& self);
 
   static RawObject callDescriptorGet(Thread* thread, Frame* caller,
                                      const Object& descriptor,

@@ -25,12 +25,10 @@ TEST(InterpreterTest, IsTrueBool) {
   ASSERT_TRUE(frame->isSentinelFrame());
 
   Object true_value(&scope, Bool::trueObj());
-  frame->pushValue(*true_value);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame, true_value), Bool::trueObj());
 
   Object false_object(&scope, Bool::falseObj());
-  frame->pushValue(*false_object);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::falseObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame, false_object), Bool::falseObj());
 }
 
 TEST(InterpreterTest, IsTrueInt) {
@@ -43,12 +41,10 @@ TEST(InterpreterTest, IsTrueInt) {
   ASSERT_TRUE(frame->isSentinelFrame());
 
   Object true_value(&scope, runtime.newInt(1234));
-  frame->pushValue(*true_value);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame, true_value), Bool::trueObj());
 
   Object false_value(&scope, runtime.newInt(0));
-  frame->pushValue(*false_value);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::falseObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame, false_value), Bool::falseObj());
 }
 
 TEST(InterpreterTest, IsTrueDunderLen) {
@@ -64,14 +60,10 @@ TEST(InterpreterTest, IsTrueDunderLen) {
   Object elt(&scope, NoneType::object());
   runtime.listAdd(nonempty_list, elt);
 
-  Object true_value(&scope, *nonempty_list);
-  frame->pushValue(*true_value);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame, nonempty_list), Bool::trueObj());
 
   List empty_list(&scope, runtime.newList());
-  Object false_value(&scope, *empty_list);
-  frame->pushValue(*false_value);
-  EXPECT_EQ(Interpreter::isTrue(thread, frame), Bool::falseObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame, empty_list), Bool::falseObj());
 }
 
 TEST(InterpreterTest, BinaryOpInvokesSelfMethod) {

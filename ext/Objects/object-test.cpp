@@ -347,4 +347,101 @@ TEST_F(ObjectExtensionApiTest, RichCompareNotComparableRaisesTypeError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(ObjectExtensionApiTest, IsTrueReturnsTrueOnTrue) {
+  EXPECT_EQ(PyObject_IsTrue(Py_True), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, IsTrueReturnsFalseOnFalse) {
+  EXPECT_EQ(PyObject_IsTrue(Py_False), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, IsTrueReturnsFalseOnNone) {
+  EXPECT_EQ(PyObject_IsTrue(Py_None), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       IsTrueWithObjectWithNonCallableDunderBoolRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __bool__ = 4
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  ASSERT_EQ(PyObject_IsTrue(pyc), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest,
+       IsTrueWithObjectWithNonCallableDunderLenRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __len__ = 4
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  ASSERT_EQ(PyObject_IsTrue(pyc), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest,
+       IsTrueWithObjectWithDunderBoolThatReturnsNonIntRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  def __bool__(self):
+    return "bongo"
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  ASSERT_EQ(PyObject_IsTrue(pyc), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest,
+       IsTrueWithDunderLenThatReturnsNonIntRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  def __len__(self):
+    return "bongo"
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  ASSERT_EQ(PyObject_IsTrue(pyc), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest, IsTrueWithEmptyListReturnsFalse) {
+  PyObjectPtr empty_list(PyList_New(0));
+  ASSERT_EQ(PyObject_IsTrue(empty_list), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, IsTrueWithNonEmptyListReturnsTrue) {
+  PyObjectPtr list(PyList_New(0));
+  PyList_Append(list, Py_None);
+
+  ASSERT_EQ(PyObject_IsTrue(list), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       IsTrueWithObjectWithDunderLenReturningNegativeOneRaisesValueError) {
+  PyRun_SimpleString(R"(
+class C:
+  def __len__(self):
+    return -1
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  ASSERT_EQ(PyObject_IsTrue(pyc), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
 }  // namespace python

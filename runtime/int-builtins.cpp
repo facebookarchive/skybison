@@ -838,12 +838,7 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   Object arg(&scope, args.get(1));
-  // The interpreter reads the value from the frame, so add it on first.
-  frame->pushValue(*arg);
-  RawObject result = Interpreter::isTrue(thread, frame);
-  // Pop off the arg to isTrue before returning.
-  frame->popValue();
-  return result;
+  return Interpreter::isTrue(thread, frame, arg);
 }
 
 const BuiltinMethod BoolBuiltins::kMethods[] = {
