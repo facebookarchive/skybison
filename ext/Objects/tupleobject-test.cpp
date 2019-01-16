@@ -163,4 +163,138 @@ TEST_F(TupleExtensionApiTest, ClearFreeListReturnsZeroPyro) {
   EXPECT_EQ(PyTuple_ClearFreeList(), 0);
 }
 
+TEST_F(TupleExtensionApiTest, GetSliceWithNullRaisesSystemError) {
+  ASSERT_EQ(PyTuple_GetSlice(nullptr, 0, 0), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(TupleExtensionApiTest, GetSliceWithNonTupleRaisesSystemError) {
+  ASSERT_EQ(PyTuple_GetSlice(Py_None, 0, 0), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(TupleExtensionApiTest, GetSliceWithLowSmallerThanZeroStartsAtZero) {
+  PyObjectPtr tuple(PyTuple_New(3));
+  PyObjectPtr zero(PyLong_FromLong(0));
+  // The calls to Py_INCREF in this function exist because SetItem steals
+  // references and these items need to be kept alive for later checking.
+  Py_INCREF(zero);
+  PyTuple_SetItem(tuple, 0, zero);
+  PyObjectPtr one(PyLong_FromLong(1));
+  Py_INCREF(one);
+  PyTuple_SetItem(tuple, 1, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  Py_INCREF(two);
+  PyTuple_SetItem(tuple, 2, two);
+
+  PyObjectPtr result(PyTuple_GetSlice(tuple, -5, 3));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  EXPECT_EQ(tuple, result);
+  EXPECT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), zero);
+  EXPECT_EQ(PyTuple_GetItem(result, 1), one);
+  EXPECT_EQ(PyTuple_GetItem(result, 2), two);
+}
+
+TEST_F(TupleExtensionApiTest,
+       GetSliceWithLowLargerThanLengthReturnsEmptyTuple) {
+  PyObjectPtr tuple(PyTuple_New(3));
+  PyTuple_SetItem(tuple, 0, PyLong_FromLong(0));
+  PyTuple_SetItem(tuple, 1, PyLong_FromLong(1));
+  PyTuple_SetItem(tuple, 2, PyLong_FromLong(2));
+
+  PyObjectPtr result(PyTuple_GetSlice(tuple, 15, 3));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  EXPECT_NE(tuple, result);
+  EXPECT_EQ(PyTuple_Size(result), 0);
+}
+
+TEST_F(TupleExtensionApiTest,
+       GetSliceWithOutOfBoundsHighStartsAtLowAndReturnsEmptyTuple) {
+  PyObjectPtr tuple(PyTuple_New(3));
+  PyTuple_SetItem(tuple, 0, PyLong_FromLong(0));
+  PyTuple_SetItem(tuple, 1, PyLong_FromLong(1));
+  PyTuple_SetItem(tuple, 2, PyLong_FromLong(2));
+
+  PyObjectPtr result(PyTuple_GetSlice(tuple, 1, 0));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  EXPECT_NE(tuple, result);
+  EXPECT_EQ(PyTuple_Size(result), 0);
+}
+
+TEST_F(TupleExtensionApiTest, GetSliceWithHighLargerThanLengthEndsAtLength) {
+  PyObjectPtr tuple(PyTuple_New(3));
+  PyObjectPtr zero(PyLong_FromLong(0));
+  Py_INCREF(zero);
+  PyTuple_SetItem(tuple, 0, zero);
+  PyObjectPtr one(PyLong_FromLong(1));
+  Py_INCREF(one);
+  PyTuple_SetItem(tuple, 1, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  Py_INCREF(two);
+  PyTuple_SetItem(tuple, 2, two);
+
+  PyObjectPtr result(PyTuple_GetSlice(tuple, 0, 20));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  EXPECT_EQ(tuple, result);
+  EXPECT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), zero);
+  EXPECT_EQ(PyTuple_GetItem(result, 1), one);
+  EXPECT_EQ(PyTuple_GetItem(result, 2), two);
+}
+
+TEST_F(TupleExtensionApiTest,
+       GetSliceWithZeroLowAndLengthHighReturnsOriginalTuple) {
+  PyObjectPtr tuple(PyTuple_New(3));
+  PyObjectPtr zero(PyLong_FromLong(0));
+  Py_INCREF(zero);
+  PyTuple_SetItem(tuple, 0, zero);
+  PyObjectPtr one(PyLong_FromLong(1));
+  Py_INCREF(one);
+  PyTuple_SetItem(tuple, 1, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  Py_INCREF(two);
+  PyTuple_SetItem(tuple, 2, two);
+
+  PyObjectPtr result(PyTuple_GetSlice(tuple, 0, 3));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  EXPECT_EQ(tuple, result);
+  EXPECT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), zero);
+  EXPECT_EQ(PyTuple_GetItem(result, 1), one);
+  EXPECT_EQ(PyTuple_GetItem(result, 2), two);
+}
+
+TEST_F(TupleExtensionApiTest, GetSliceReturnsSmallerTuple) {
+  PyObjectPtr tuple(PyTuple_New(4));
+  PyTuple_SetItem(tuple, 0, PyLong_FromLong(0));
+  PyObjectPtr one(PyLong_FromLong(1));
+  Py_INCREF(one);
+  PyTuple_SetItem(tuple, 1, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  Py_INCREF(two);
+  PyTuple_SetItem(tuple, 2, two);
+  PyTuple_SetItem(tuple, 3, PyLong_FromLong(3));
+
+  PyObjectPtr result(PyTuple_GetSlice(tuple, 1, 3));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  EXPECT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), one);
+  EXPECT_EQ(PyTuple_GetItem(result, 1), two);
+}
+
 }  // namespace python

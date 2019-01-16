@@ -22,6 +22,8 @@ class TupleBuiltins {
 
   static RawObject slice(Thread* thread, const Tuple& tuple,
                          const Slice& slice);
+  static RawObject sliceWithWords(Thread* thread, const Tuple& tuple,
+                                  word start, word stop, word step);
 
  private:
   static const BuiltinAttribute kAttributes[];

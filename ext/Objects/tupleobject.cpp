@@ -4,6 +4,7 @@
 
 #include "objects.h"
 #include "runtime.h"
+#include "tuple-builtins.h"
 
 namespace python {
 
@@ -109,9 +110,36 @@ PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
 
 PY_EXPORT int PyTuple_ClearFreeList() { return 0; }
 
-PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* /* p */, Py_ssize_t /* i */,
-                                     Py_ssize_t /* j */) {
-  UNIMPLEMENTED("PyTuple_GetSlice");
+PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
+                                     Py_ssize_t high) {
+  Thread* thread = Thread::currentThread();
+  if (pytuple == nullptr) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object tuple_obj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
+  if (!runtime->isInstanceOfTuple(*tuple_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Tuple tuple(&scope, *tuple_obj);
+  if (low < 0) {
+    low = 0;
+  } else if (low > tuple->length()) {
+    low = tuple->length();
+  }
+  if (high < low) {
+    high = low;
+  } else if (high > tuple->length()) {
+    high = tuple->length();
+  }
+  if (low == 0 && high == tuple->length() && tuple->isTuple()) {
+    return ApiHandle::newReference(thread, *tuple);
+  }
+  return ApiHandle::newReference(
+      thread, TupleBuiltins::sliceWithWords(thread, tuple, low, high, 1));
 }
 
 }  // namespace python

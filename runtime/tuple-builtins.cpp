@@ -128,6 +128,11 @@ RawObject TupleBuiltins::slice(Thread* thread, const Tuple& tuple,
                                const Slice& slice) {
   word start, stop, step;
   slice->unpack(&start, &stop, &step);
+  return sliceWithWords(thread, tuple, start, stop, step);
+}
+
+RawObject TupleBuiltins::sliceWithWords(Thread* thread, const Tuple& tuple,
+                                        word start, word stop, word step) {
   word length = Slice::adjustIndices(tuple->length(), &start, &stop, step);
   if (start == 0 && stop >= tuple->length() && step == 1) {
     return tuple;
