@@ -226,6 +226,8 @@ extern const unsigned char _Py_ctype_toupper[256];
 #define METH_COEXIST 0x0040
 #define METH_FASTCALL 0x0080
 
+extern char* PyStructSequence_UnnamedField;
+
 #ifdef __cplusplus
 }
 #endif

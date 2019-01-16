@@ -10,6 +10,60 @@
 
 namespace python {
 
+RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
+                  const Tuple& bases, const Dict& dict) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
+  type->setName(*name);
+
+  // Compute MRO
+  Object maybe_mro(&scope, computeMro(thread, type, bases));
+  if (maybe_mro->isError()) {
+    return *maybe_mro;
+  }
+  type->setMro(*maybe_mro);
+
+  // Initialize dict
+  Object class_cell_key(&scope, runtime->symbols()->DunderClassCell());
+  Object class_cell(&scope, runtime->dictAt(dict, class_cell_key));
+  if (!class_cell->isError()) {
+    RawValueCell::cast(RawValueCell::cast(*class_cell)->value())
+        ->setValue(*type);
+    runtime->dictRemove(dict, class_cell_key);
+  }
+  Object name_key(&scope, runtime->symbols()->DunderName());
+  runtime->dictAtPutInValueCell(dict, name_key, name);
+  type->setDict(*dict);
+
+  // Compute builtin base class
+  Object builtin_base(&scope, runtime->computeBuiltinBase(thread, type));
+  if (builtin_base->isError()) {
+    return *builtin_base;
+  }
+  Type builtin_base_type(&scope, *builtin_base);
+  LayoutId base_layout_id =
+      RawLayout::cast(builtin_base_type->instanceLayout())->id();
+
+  // Initialize instance layout
+  Layout layout(&scope,
+                runtime->computeInitialLayout(thread, type, base_layout_id));
+  layout->setDescribedType(*type);
+  type->setInstanceLayout(*layout);
+
+  // Copy down class flags from bases
+  Tuple mro(&scope, *maybe_mro);
+  word flags = 0;
+  for (word i = 1; i < mro->length(); i++) {
+    Type cur(&scope, mro->at(i));
+    flags |= cur->flags();
+  }
+  type->setFlagsAndBuiltinBase(static_cast<RawType::Flag>(flags),
+                               base_layout_id);
+
+  return *type;
+}
+
 const BuiltinMethod TypeBuiltins::kMethods[] = {
     {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
@@ -111,69 +165,22 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Type metatype(&scope, args.get(0));
-  LayoutId class_layout_id = RawLayout::cast(metatype->instanceLayout())->id();
+  Type metaclass(&scope, args.get(0));
+  LayoutId metaclass_id = RawLayout::cast(metaclass->instanceLayout())->id();
   // If the first argument is exactly type, and there are no other arguments,
   // then this call acts like a "typeof" operator, and returns the type of the
   // argument.
-  if (nargs == 2 && class_layout_id == LayoutId::kType) {
+  if (nargs == 2 && metaclass_id == LayoutId::kType) {
     Object arg(&scope, args.get(1));
     // TODO(dulinr): In the future, types that should be visible only to the
     // runtime should be shown here, and things like SmallInt should return Int
     // instead.
     return runtime->typeOf(*arg);
   }
-  Object name(&scope, args.get(1));
-  Type result(&scope, runtime->newTypeWithMetaclass(class_layout_id));
-  result->setName(*name);
-
-  // Compute MRO
-  Tuple parents(&scope, args.get(2));
-  Object maybe_mro(&scope, computeMro(thread, result, parents));
-  if (maybe_mro->isError()) {
-    return *maybe_mro;
-  }
-  result->setMro(*maybe_mro);
-
+  Str name(&scope, args.get(1));
+  Tuple bases(&scope, args.get(2));
   Dict dict(&scope, args.get(3));
-  Object class_cell_key(&scope, runtime->symbols()->DunderClassCell());
-  Object class_cell(&scope, runtime->dictAt(dict, class_cell_key));
-  if (!class_cell->isError()) {
-    RawValueCell::cast(RawValueCell::cast(*class_cell)->value())
-        ->setValue(*result);
-    runtime->dictRemove(dict, class_cell_key);
-  }
-  Object name_key(&scope, runtime->symbols()->DunderName());
-  runtime->dictAtPutInValueCell(dict, name_key, name);
-
-  result->setDict(*dict);
-
-  // Compute builtin base class
-  Object builtin_base(&scope, runtime->computeBuiltinBase(thread, result));
-  if (builtin_base->isError()) {
-    return *builtin_base;
-  }
-  Type builtin_base_type(&scope, *builtin_base);
-  LayoutId base_layout_id =
-      RawLayout::cast(builtin_base_type->instanceLayout())->id();
-
-  // Initialize instance layout
-  Layout layout(&scope,
-                runtime->computeInitialLayout(thread, result, base_layout_id));
-  layout->setDescribedType(*result);
-  result->setInstanceLayout(*layout);
-
-  // Copy down class flags from bases
-  Tuple mro(&scope, *maybe_mro);
-  word flags = 0;
-  for (word i = 1; i < mro->length(); i++) {
-    Type cur(&scope, mro->at(i));
-    flags |= cur->flags();
-  }
-  result->setFlagsAndBuiltinBase(static_cast<RawType::Flag>(flags),
-                                 base_layout_id);
-
-  return *result;
+  return typeNew(thread, metaclass_id, name, bases, dict);
 }
 
 RawObject TypeBuiltins::dunderInit(Thread* /* thread */, Frame* /* frame */,

@@ -8,6 +8,9 @@
 
 namespace python {
 
+RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
+                  const Tuple& bases, const Dict& dict);
+
 class TypeBuiltins {
  public:
   static void initialize(Runtime* runtime);

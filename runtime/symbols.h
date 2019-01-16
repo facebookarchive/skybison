@@ -220,6 +220,9 @@ class Runtime;
   V(ModuleNotFoundError, "ModuleNotFoundError")                                \
   V(Modules, "modules")                                                        \
   V(Msg, "msg")                                                                \
+  V(NFields, "n_fields")                                                       \
+  V(NSequenceFields, "n_sequence_fields")                                      \
+  V(NUnnamedFields, "n_unnamed_fields")                                        \
   V(Name, "name")                                                              \
   V(NameError, "NameError")                                                    \
   V(None, "None")                                                              \

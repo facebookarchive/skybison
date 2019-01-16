@@ -403,12 +403,13 @@ set(
   ext/Objects/moduleobject-test.cpp
   ext/Objects/object-test.cpp
   ext/Objects/setobject-test.cpp
+  ext/Objects/structseq-test.cpp
   ext/Objects/tupleobject-test.cpp
   ext/Objects/typeobject-test.cpp
   ext/Objects/unicodeobject-test.cpp
   ext/Python/errors-test.cpp
-  ext/Python/getargs-test.cpp
   ext/Python/getargs-ssizet-test.cpp
+  ext/Python/getargs-test.cpp
   ext/Python/import-test.cpp
   ext/Python/modsupport-test.cpp
   ext/Python/mysnprintf-test.cpp
