@@ -10,6 +10,93 @@ using namespace testing;
 
 using BytesExtensionApiTest = ExtensionApi;
 
+TEST_F(BytesExtensionApiTest,
+       AsStringFromNonBytesReturnsNullAndRaisesTypeError) {
+  PyObjectPtr num(PyLong_FromLong(0));
+  EXPECT_EQ(PyBytes_AsString(num), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, AsStringWithBytesReturnsByteString) {
+  const char* str = "foo";
+  PyObjectPtr bytes(PyBytes_FromString(str));
+  EXPECT_STREQ(PyBytes_AsString(bytes), str);
+}
+
+TEST_F(BytesExtensionApiTest, AsStringWithZeroByteReturnsByteString) {
+  const char* str = "foo \0 bar";
+  PyObjectPtr bytes(PyBytes_FromStringAndSize(str, 9));
+  char* result = PyBytes_AsString(bytes);
+  std::vector<char> expected(str, str + 9);
+  std::vector<char> actual(result, result + 9);
+  EXPECT_EQ(actual, expected);
+}
+
+TEST_F(BytesExtensionApiTest, AsStringReturnsSameBufferTwice) {
+  const char* str = "foo";
+  PyObjectPtr bytes(PyBytes_FromString(str));
+  char* buffer1 = PyBytes_AsString(bytes);
+  char* buffer2 = PyBytes_AsString(bytes);
+  EXPECT_EQ(buffer1, buffer2);
+}
+
+TEST_F(BytesExtensionApiTest,
+       AsStringAndSizeWithNullBufferReturnsNegativeAndRaisesSystemError) {
+  PyObjectPtr bytes(PyBytes_FromString(""));
+  Py_ssize_t length;
+  EXPECT_EQ(PyBytes_AsStringAndSize(bytes, nullptr, &length), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(BytesExtensionApiTest,
+       AsStringAndSizeWithNonBytesReturnsNegativeAndRaisesTypeError) {
+  PyObjectPtr num(PyLong_FromLong(0));
+  char* buffer;
+  EXPECT_EQ(PyBytes_AsStringAndSize(num, &buffer, nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, AsStringAndSizeWithBytesReturnsStringAndSize) {
+  const char* str = "foo";
+  PyObjectPtr bytes(PyBytes_FromString(str));
+  char* buffer;
+  Py_ssize_t length;
+  ASSERT_EQ(PyBytes_AsStringAndSize(bytes, &buffer, &length), 0);
+  EXPECT_STREQ(buffer, str);
+  EXPECT_EQ(length, 3);
+}
+
+TEST_F(BytesExtensionApiTest,
+       AsStringAndSizeWithBytesAndNullLengthReturnsString) {
+  const char* str = "foo";
+  PyObjectPtr bytes(PyBytes_FromString(str));
+  char* buffer;
+  ASSERT_EQ(PyBytes_AsStringAndSize(bytes, &buffer, nullptr), 0);
+  EXPECT_STREQ(buffer, str);
+}
+
+TEST_F(BytesExtensionApiTest,
+       AsStringAndSizeWithZeroByteAndNullLengthRaisesValueError) {
+  PyObjectPtr bytes(PyBytes_FromStringAndSize("foo \0 bar", 9));
+  char* buffer;
+  EXPECT_EQ(PyBytes_AsStringAndSize(bytes, &buffer, nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(BytesExtensionApiTest, AsStringAndSizeReturnsSameBufferTwice) {
+  const char* str = "foo";
+  PyObjectPtr bytes(PyBytes_FromString(str));
+  char* buffer1;
+  char* buffer2;
+  ASSERT_EQ(PyBytes_AsStringAndSize(bytes, &buffer1, nullptr), 0);
+  ASSERT_EQ(PyBytes_AsStringAndSize(bytes, &buffer2, nullptr), 0);
+  EXPECT_EQ(buffer1, buffer2);
+}
+
 TEST_F(BytesExtensionApiTest, ConcatWithPointerToNullIsNoop) {
   PyObject* foo = nullptr;
   PyObjectPtr bar(PyLong_FromLong(0));

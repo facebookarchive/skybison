@@ -1,3 +1,4 @@
+#include "cpython-data.h"
 #include "cpython-func.h"
 #include "runtime.h"
 
@@ -12,13 +13,43 @@ PY_EXPORT int PyBytes_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
-PY_EXPORT char* PyBytes_AsString(PyObject* /* p */) {
-  UNIMPLEMENTED("PyBytes_AsString");
+PY_EXPORT char* PyBytes_AsString(PyObject* pyobj) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
+  Object obj(&scope, handle->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*obj)) {
+    thread->raiseBadArgument();
+    return nullptr;
+  }
+  if (void* cache = handle->cache()) return static_cast<char*>(cache);
+  Bytes bytes(&scope, *obj);
+  word len = bytes->length();
+  auto cache = static_cast<byte*>(std::malloc(len + 1));
+  bytes->copyTo(cache, len);
+  cache[len] = '\0';
+  handle->setCache(cache);
+  return reinterpret_cast<char*>(cache);
 }
 
-PY_EXPORT int PyBytes_AsStringAndSize(PyObject* /* j */, char** /* s */,
-                                      Py_ssize_t* /* n */) {
-  UNIMPLEMENTED("PyBytes_AsStringAndSize");
+PY_EXPORT int PyBytes_AsStringAndSize(PyObject* pybytes, char** buffer,
+                                      Py_ssize_t* length) {
+  if (buffer == nullptr) {
+    PyErr_BadInternalCall();
+    return -1;
+  }
+  char* str = PyBytes_AsString(pybytes);
+  if (str == nullptr) return -1;
+  Py_ssize_t len = PyBytes_Size(pybytes);
+  if (length != nullptr) {
+    *length = len;
+  } else if (std::strlen(str) != static_cast<size_t>(len)) {
+    PyErr_SetString(PyExc_ValueError, "embedded null byte");
+    return -1;
+  }
+  *buffer = str;
+  return 0;
 }
 
 PY_EXPORT void PyBytes_Concat(PyObject** pyobj, PyObject* newpart) {
