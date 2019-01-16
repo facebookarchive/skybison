@@ -15,14 +15,22 @@ RawObject dictCopy(Thread* thread, const Dict& dict);
 // duplicates exist.
 //
 // Returns None on success, or an Error object if an exception was raised.
-RawObject dictUpdate(Thread* thread, const Dict& dict, const Object& mapping);
+RawObject dictMergeOverride(Thread* thread, const Dict& dict,
+                            const Object& mapping);
 
 // Merges a dict with another dict or a mapping, raising an exception on
 // duplicate keys.
 //
 // Returns None on success, or an Error object if an exception was raised.
-RawObject dictMergeHard(Thread* thread, const Dict& dict,
-                        const Object& mapping);
+RawObject dictMergeError(Thread* thread, const Dict& dict,
+                         const Object& mapping);
+
+// Update a dict from another dict or a mapping, ignoring existing keys if
+// duplicates exist.
+//
+// Returns None on success, or an Error object if an exception was raised.
+RawObject dictMergeIgnore(Thread* thread, const Dict& dict,
+                          const Object& mapping);
 
 // Returns next item in the dict as (key, value) tuple (Tuple)
 // Returns Error::object() if there are no more objects

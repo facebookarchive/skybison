@@ -13,7 +13,7 @@ namespace python {
 RawObject dictCopy(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
   Dict copy(&scope, thread->runtime()->newDict());
-  Object result(&scope, dictUpdate(thread, copy, dict));
+  Object result(&scope, dictMergeError(thread, copy, dict));
   if (result->isError()) {
     return *result;
   }
@@ -158,13 +158,19 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
 }
 }  // namespace
 
-RawObject dictUpdate(Thread* thread, const Dict& dict, const Object& mapping) {
+RawObject dictMergeOverride(Thread* thread, const Dict& dict,
+                            const Object& mapping) {
   return dictMergeImpl(thread, dict, mapping, Override::kOverride);
 }
 
-RawObject dictMergeHard(Thread* thread, const Dict& dict,
-                        const Object& mapping) {
+RawObject dictMergeError(Thread* thread, const Dict& dict,
+                         const Object& mapping) {
   return dictMergeImpl(thread, dict, mapping, Override::kError);
+}
+
+RawObject dictMergeIgnore(Thread* thread, const Dict& dict,
+                          const Object& mapping) {
+  return dictMergeImpl(thread, dict, mapping, Override::kIgnore);
 }
 
 RawObject dictItemIteratorNext(Thread* thread, DictItemIterator& iter) {
@@ -588,7 +594,7 @@ RawObject DictBuiltins::update(Thread* thread, Frame* frame, word nargs) {
   Type other_type(&scope, runtime->typeOf(*other));
   if (!runtime->lookupSymbolInMro(thread, other_type, SymbolId::kKeys)
            .isError()) {
-    return dictUpdate(thread, dict, other);
+    return dictMergeOverride(thread, dict, other);
   }
 
   // TODO(bsimmers): Support iterables of pairs, like PyDict_MergeFromSeq2().

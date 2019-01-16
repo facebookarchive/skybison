@@ -228,8 +228,27 @@ PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
   return ApiHandle::newReference(thread, *keys);
 }
 
-PY_EXPORT int PyDict_Merge(PyObject* /* a */, PyObject* /* b */, int /* e */) {
-  UNIMPLEMENTED("PyDict_Merge");
+PY_EXPORT int PyDict_Merge(PyObject* left, PyObject* right,
+                           int override_matching) {
+  CHECK_BOUND(override_matching, 2);
+  Thread* thread = Thread::currentThread();
+  if (left == nullptr || right == nullptr) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object left_obj(&scope, ApiHandle::fromPyObject(left)->asObject());
+  if (!thread->runtime()->isInstanceOfDict(left_obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  Dict left_dict(&scope, *left_obj);
+  Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
+  auto merge_func = override_matching ? dictMergeOverride : dictMergeIgnore;
+  if ((*merge_func)(thread, left_dict, right_obj).isError()) {
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT int PyDict_MergeFromSeq2(PyObject* /* d */, PyObject* /* 2 */,

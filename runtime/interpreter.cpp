@@ -2075,7 +2075,7 @@ void Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (dictUpdate(thread, dict, obj).isError()) {
+    if (dictMergeOverride(thread, dict, obj).isError()) {
       if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
         // TODO(bsimmers): Include type name once we have a better formatter.
@@ -2099,7 +2099,7 @@ void Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (dictMergeHard(thread, dict, obj).isError()) {
+    if (dictMergeError(thread, dict, obj).isError()) {
       if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
         thread->clearPendingException();
