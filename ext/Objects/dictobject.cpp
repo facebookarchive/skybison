@@ -300,8 +300,8 @@ PY_EXPORT Py_ssize_t PyDict_Size(PyObject* p) {
   return dict->numItems();
 }
 
-PY_EXPORT int PyDict_Update(PyObject* /* a */, PyObject* /* b */) {
-  UNIMPLEMENTED("PyDict_Update");
+PY_EXPORT int PyDict_Update(PyObject* left, PyObject* right) {
+  return PyDict_Merge(left, right, 1);
 }
 
 PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {

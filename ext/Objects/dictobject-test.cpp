@@ -618,4 +618,99 @@ m = Mapping()
   EXPECT_EQ(PyLong_AsLong(four), 4);
 }
 
+TEST_F(DictExtensionApiTest, UpdateWithNullLhsRaisesSystemError) {
+  PyObjectPtr rhs(PyDict_New());
+  ASSERT_EQ(PyDict_Update(nullptr, rhs), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, UpdateWithNonListLhsRaisesSystemError) {
+  PyObjectPtr rhs(PyDict_New());
+  ASSERT_EQ(PyDict_Update(Py_None, rhs), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, UpdateWithNullRhsRaisesSystemError) {
+  PyObjectPtr lhs(PyDict_New());
+  ASSERT_EQ(PyDict_Update(lhs, nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, UpdateWithLhsEqualRhsDoesNothing) {
+  PyObjectPtr lhs(PyDict_New());
+  PyObject* rhs = lhs;
+  ASSERT_EQ(PyDict_Update(lhs, rhs), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(lhs, rhs);
+}
+
+TEST_F(DictExtensionApiTest, UpdateWithEmptyRhsDoesNothing) {
+  PyObjectPtr lhs(PyDict_New());
+
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyDict_SetItem(lhs, one, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyDict_SetItem(lhs, three, four);
+  ASSERT_EQ(PyDict_Size(lhs), 2);
+
+  PyObjectPtr rhs(PyDict_New());
+  ASSERT_EQ(PyDict_Update(lhs, rhs), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyDict_Size(lhs), 2);
+  EXPECT_EQ(PyDict_GetItem(lhs, one), two);
+  EXPECT_EQ(PyDict_GetItem(lhs, three), four);
+}
+
+TEST_F(DictExtensionApiTest, UpdateWithEmptyLhsAddsKeysToLhs) {
+  PyObjectPtr rhs(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyDict_SetItem(rhs, one, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyDict_SetItem(rhs, three, four);
+  ASSERT_EQ(PyDict_Size(rhs), 2);
+
+  PyObjectPtr lhs(PyDict_New());
+  ASSERT_EQ(PyDict_Update(lhs, rhs), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyDict_Size(lhs), 2);
+
+  EXPECT_TRUE(PyDict_Contains(lhs, one));
+  EXPECT_EQ(PyDict_GetItem(lhs, one), two);
+  EXPECT_TRUE(PyDict_Contains(lhs, three));
+  EXPECT_EQ(PyDict_GetItem(lhs, three), four);
+}
+
+TEST_F(DictExtensionApiTest, UpdateOverwritesKeys) {
+  PyObjectPtr rhs(PyDict_New());
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyDict_SetItem(rhs, one, two);
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyDict_SetItem(rhs, three, four);
+  ASSERT_EQ(PyDict_Size(rhs), 2);
+
+  PyObjectPtr lhs(PyDict_New());
+  PyObjectPtr not_in_rhs(PyLong_FromLong(666));
+  ASSERT_EQ(PyDict_SetItem(lhs, one, not_in_rhs), 0);
+  ASSERT_EQ(PyDict_GetItem(lhs, one), not_in_rhs);
+
+  ASSERT_EQ(PyDict_Update(lhs, rhs), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyDict_Size(lhs), 2);
+
+  EXPECT_TRUE(PyDict_Contains(lhs, one));
+  EXPECT_EQ(PyDict_GetItem(lhs, one), two);
+
+  EXPECT_TRUE(PyDict_Contains(lhs, three));
+  EXPECT_EQ(PyDict_GetItem(lhs, three), four);
+}
+
 }  // namespace python
