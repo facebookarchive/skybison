@@ -41,6 +41,19 @@ char* RawSmallStr::toCStr() {
 const word RawSmallInt::kMinValue;
 const word RawSmallInt::kMaxValue;
 
+// RawBytes
+
+word RawBytes::compare(RawBytes that) {
+  word this_len = this->length();
+  word that_len = that->length();
+  word len = Utils::minimum(this_len, that_len);
+  auto b1 = reinterpret_cast<void*>(this->address());
+  auto b2 = reinterpret_cast<void*>(that->address());
+  word diff = std::memcmp(b1, b2, len);
+  if (diff != 0 || this_len == that_len) return diff;
+  return this_len < that_len ? -1 : 1;
+}
+
 // RawLargeStr
 
 bool RawLargeStr::equals(RawObject that) {

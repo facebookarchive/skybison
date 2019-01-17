@@ -8,7 +8,13 @@ namespace python {
 
 const BuiltinMethod BytesBuiltins::kMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
+    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
+    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
+    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
+    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
+    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
+    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
 };
 
 void BytesBuiltins::initialize(Runtime* runtime) {
@@ -41,6 +47,90 @@ RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   return runtime->bytesConcat(thread, self, other);
 }
 
+RawObject BytesBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__eq__' requires a 'bytes' object");
+  }
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfBytes(*other_obj)) {
+    return runtime->notImplemented();
+  }
+  Bytes self(&scope, *self_obj);
+  Bytes other(&scope, *other_obj);
+  return Bool::fromBool(self->compare(*other) == 0);
+}
+
+RawObject BytesBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__ge__' requires a 'bytes' object");
+  }
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfBytes(*other_obj)) {
+    return runtime->notImplemented();
+  }
+  Bytes self(&scope, *self_obj);
+  Bytes other(&scope, *other_obj);
+  return Bool::fromBool(self->compare(*other) >= 0);
+}
+
+RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__gt__' requires a 'bytes' object");
+  }
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfBytes(*other_obj)) {
+    return runtime->notImplemented();
+  }
+  Bytes self(&scope, *self_obj);
+  Bytes other(&scope, *other_obj);
+  return Bool::fromBool(self->compare(*other) > 0);
+}
+
+RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__le__' requires a 'bytes' object");
+  }
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfBytes(*other_obj)) {
+    return runtime->notImplemented();
+  }
+  Bytes self(&scope, *self_obj);
+  Bytes other(&scope, *other_obj);
+  return Bool::fromBool(self->compare(*other) <= 0);
+}
+
 RawObject BytesBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   if (nargs != 1) {
@@ -57,6 +147,48 @@ RawObject BytesBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 
   Bytes self(&scope, *self_obj);
   return SmallInt::fromWord(self->length());
+}
+
+RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__lt__' requires a 'bytes' object");
+  }
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfBytes(*other_obj)) {
+    return runtime->notImplemented();
+  }
+  Bytes self(&scope, *self_obj);
+  Bytes other(&scope, *other_obj);
+  return Bool::fromBool(self->compare(*other) < 0);
+}
+
+RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  if (nargs != 2) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__ne__' requires a 'bytes' object");
+  }
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfBytes(*other_obj)) {
+    return runtime->notImplemented();
+  }
+  Bytes self(&scope, *self_obj);
+  Bytes other(&scope, *other_obj);
+  return Bool::fromBool(self->compare(*other) != 0);
 }
 
 }  // namespace python

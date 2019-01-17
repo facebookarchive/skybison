@@ -59,6 +59,294 @@ TEST(BytesBuiltinsTest, DunderAddWithTwoBytesReturnsConcatenatedBytes) {
   EXPECT_EQ(result->byteAt(2), '2');
 }
 
+TEST(BytesBuiltinsTest, DunderEqWithWrongNumberOfArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq));
+  ASSERT_TRUE(eq->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderEqWithNonBytesSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, SmallInt::fromWord(0));
+  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
+  ASSERT_TRUE(eq->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, SmallInt::fromWord(0));
+  Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
+  EXPECT_TRUE(eq->isNotImplemented());
+}
+
+TEST(BytesBuiltinsTest, DunderEqWithEqualBytesReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(5, 'a'));
+  Object other(&scope, runtime.newBytes(5, 'a'));
+  Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
+  ASSERT_TRUE(eq->isBool());
+  EXPECT_TRUE(RawBool::cast(eq)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderEqWithDifferentLengthsReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, runtime.newBytes(4, 'a'));
+  Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
+  ASSERT_TRUE(eq->isBool());
+  EXPECT_FALSE(RawBool::cast(eq)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(3, 'b'));
+  Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
+  ASSERT_TRUE(eq->isBool());
+  EXPECT_FALSE(RawBool::cast(eq)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderGeWithWrongNumberOfArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe));
+  ASSERT_TRUE(ge->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderGeWithNonBytesSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, SmallInt::fromWord(0));
+  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self));
+  ASSERT_TRUE(ge->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, SmallInt::fromWord(0));
+  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
+  ASSERT_TRUE(ge->isNotImplemented());
+}
+
+TEST(BytesBuiltinsTest, DunderGeWithEqualBytesReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(5, 'a'));
+  Object other(&scope, runtime.newBytes(5, 'a'));
+  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
+  ASSERT_TRUE(ge->isBool());
+  EXPECT_TRUE(RawBool::cast(ge)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderGeWithShorterOtherReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(2, 'a'));
+  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
+  ASSERT_TRUE(ge->isBool());
+  EXPECT_TRUE(RawBool::cast(ge)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderGeWithLongerOtherReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(4, 'a'));
+  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
+  ASSERT_TRUE(ge->isBool());
+  EXPECT_FALSE(RawBool::cast(ge)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyEarlierOtherReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'b'));
+  Object other(&scope, runtime.newBytes(3, 'a'));
+  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
+  ASSERT_TRUE(ge->isBool());
+  EXPECT_TRUE(RawBool::cast(ge)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyLaterOtherReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(3, 'b'));
+  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
+  ASSERT_TRUE(ge->isBool());
+  EXPECT_FALSE(RawBool::cast(ge)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderGtWithWrongNumberOfArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt));
+  ASSERT_TRUE(gt->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderGtWithNonBytesSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, SmallInt::fromWord(0));
+  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self));
+  ASSERT_TRUE(gt->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, SmallInt::fromWord(0));
+  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
+  ASSERT_TRUE(gt->isNotImplemented());
+}
+
+TEST(BytesBuiltinsTest, DunderGtWithEqualBytesReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(5, 'a'));
+  Object other(&scope, runtime.newBytes(5, 'a'));
+  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
+  ASSERT_TRUE(gt->isBool());
+  EXPECT_FALSE(RawBool::cast(gt)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderGtWithShorterOtherReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(2, 'a'));
+  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
+  ASSERT_TRUE(gt->isBool());
+  EXPECT_TRUE(RawBool::cast(gt)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderGtWithLongerOtherReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(4, 'a'));
+  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
+  ASSERT_TRUE(gt->isBool());
+  EXPECT_FALSE(RawBool::cast(gt)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyEarlierOtherReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'b'));
+  Object other(&scope, runtime.newBytes(3, 'a'));
+  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
+  ASSERT_TRUE(gt->isBool());
+  EXPECT_TRUE(RawBool::cast(gt)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyLaterOtherReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(3, 'b'));
+  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
+  ASSERT_TRUE(gt->isBool());
+  EXPECT_FALSE(RawBool::cast(gt)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderLeWithWrongNumberOfArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe));
+  ASSERT_TRUE(le->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderLeWithNonBytesSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, SmallInt::fromWord(0));
+  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self));
+  ASSERT_TRUE(le->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, SmallInt::fromWord(0));
+  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
+  ASSERT_TRUE(le->isNotImplemented());
+}
+
+TEST(BytesBuiltinsTest, DunderLeWithEqualBytesReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(5, 'a'));
+  Object other(&scope, runtime.newBytes(5, 'a'));
+  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
+  ASSERT_TRUE(le->isBool());
+  EXPECT_TRUE(RawBool::cast(le)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderLeWithShorterOtherReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(2, 'a'));
+  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
+  ASSERT_TRUE(le->isBool());
+  EXPECT_FALSE(RawBool::cast(le)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderLeWithLongerOtherReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(4, 'a'));
+  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
+  ASSERT_TRUE(le->isBool());
+  EXPECT_TRUE(RawBool::cast(le)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderLeWithLexicographicallyEarlierOtherReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'b'));
+  Object other(&scope, runtime.newBytes(3, 'a'));
+  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
+  ASSERT_TRUE(le->isBool());
+  EXPECT_FALSE(RawBool::cast(le)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderLeWithLexicographicallyLaterOtherReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(3, 'b'));
+  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
+  ASSERT_TRUE(le->isBool());
+  EXPECT_TRUE(RawBool::cast(le)->value());
+}
+
 TEST(BytesBuiltinsTest, DunderLenWithZeroArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
@@ -100,6 +388,140 @@ TEST(BytesBuiltinsTest, DunderLenWithNonEmptyBytesReturnsLength) {
   Object self(&scope, runtime.newBytes(4, 'a'));
   Object len(&scope, runBuiltin(BytesBuiltins::dunderLen, self));
   EXPECT_EQ(len, SmallInt::fromWord(4));
+}
+
+TEST(BytesBuiltinsTest, DunderLtWithWrongNumberOfArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt));
+  ASSERT_TRUE(lt->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderLtWithNonBytesSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, SmallInt::fromWord(0));
+  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self));
+  ASSERT_TRUE(lt->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, SmallInt::fromWord(0));
+  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
+  ASSERT_TRUE(lt->isNotImplemented());
+}
+
+TEST(BytesBuiltinsTest, DunderLtWithEqualBytesReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(5, 'a'));
+  Object other(&scope, runtime.newBytes(5, 'a'));
+  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
+  ASSERT_TRUE(lt->isBool());
+  EXPECT_FALSE(RawBool::cast(lt)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderLtWithShorterOtherReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(2, 'a'));
+  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
+  ASSERT_TRUE(lt->isBool());
+  EXPECT_FALSE(RawBool::cast(lt)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderLtWithLongerOtherReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(4, 'a'));
+  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
+  ASSERT_TRUE(lt->isBool());
+  EXPECT_TRUE(RawBool::cast(lt)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyEarlierOtherReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'b'));
+  Object other(&scope, runtime.newBytes(3, 'a'));
+  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
+  ASSERT_TRUE(lt->isBool());
+  EXPECT_FALSE(RawBool::cast(lt)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(3, 'b'));
+  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
+  ASSERT_TRUE(lt->isBool());
+  EXPECT_TRUE(RawBool::cast(lt)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderNeWithWrongNumberOfArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe));
+  ASSERT_TRUE(ne->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderNeWithNonBytesSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, SmallInt::fromWord(0));
+  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
+  ASSERT_TRUE(ne->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, SmallInt::fromWord(0));
+  Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
+  EXPECT_TRUE(ne->isNotImplemented());
+}
+
+TEST(BytesBuiltinsTest, DunderNeWithEqualBytesReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(5, 'a'));
+  Object other(&scope, runtime.newBytes(5, 'a'));
+  Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
+  ASSERT_TRUE(ne->isBool());
+  EXPECT_FALSE(RawBool::cast(ne)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderNeWithDifferentLengthsReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, runtime.newBytes(4, 'a'));
+  Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
+  ASSERT_TRUE(ne->isBool());
+  EXPECT_TRUE(RawBool::cast(ne)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderNeWithDifferentContentsReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object other(&scope, runtime.newBytes(3, 'b'));
+  Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
+  ASSERT_TRUE(ne->isBool());
+  EXPECT_TRUE(RawBool::cast(ne)->value());
 }
 
 }  // namespace python

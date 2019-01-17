@@ -842,6 +842,11 @@ class RawBytes : public RawArray {
   void byteAtPut(word index, byte value);
   void copyTo(byte* dst, word length);
 
+  // Returns a positive value if 'this' is greater that 'other', a negative
+  // value if 'this' is less that 'other', and zero if they are the same.
+  // Does not guarantee to return -1, 0, or 1.
+  word compare(RawBytes other);
+
   // Sizing.
   static word allocationSize(word length);
 
