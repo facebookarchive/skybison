@@ -261,6 +261,46 @@ TEST(StrBuiltinsDeathTest, StringLenWithExtraArgument) {
                "expected 0 arguments");
 }
 
+TEST(StrBuiltinsTest, IndexWithLargeIntRaisesIndexError) {
+  Runtime runtime;
+  HandleScope scope;
+  Str hello(&scope, runtime.newStrFromCStr("hello"));
+  Int index(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, index));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kIndexError));
+}
+
+TEST(StrBuiltinsTest, IndexWithNegativeIntIndexesFromEnd) {
+  Runtime runtime;
+  HandleScope scope;
+  Str hello(&scope, runtime.newStrFromCStr("hello"));
+  Int index(&scope, RawSmallInt::fromWord(-5));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, index));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "h");
+}
+
+TEST(StrBuiltinsTest, IndexWithLessThanNegativeLenRaisesIndexError) {
+  Runtime runtime;
+  HandleScope scope;
+  Str hello(&scope, runtime.newStrFromCStr("hello"));
+  Int index(&scope, RawSmallInt::fromWord(-6));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, index));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kIndexError));
+}
+
+TEST(StrBuiltinsTest, IndexWithNonNegativeIntIndexesFromBeginning) {
+  Runtime runtime;
+  HandleScope scope;
+  Str hello(&scope, runtime.newStrFromCStr("hello"));
+  Int index(&scope, RawSmallInt::fromWord(4));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, index));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "o");
+}
+
 TEST(StrBuiltinsTest, IndexWithSliceWithPositiveInts) {
   Runtime runtime;
   HandleScope scope;

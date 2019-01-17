@@ -638,32 +638,38 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-
-  if (self->isStr()) {
-    Str string(&scope, *self);
-    Object index(&scope, args.get(1));
-    if (index->isSmallInt()) {
-      word idx = RawSmallInt::cast(index)->value();
-      if (idx < 0) {
-        idx = string->length() - idx;
-      }
-      if (idx < 0 || idx >= string->length()) {
-        return thread->raiseIndexErrorWithCStr("string index out of range");
-      }
-      byte c = string->charAt(idx);
-      return SmallStr::fromBytes(View<byte>(&c, 1));
-    }
-    if (index->isSlice()) {
-      Slice str_slice(&scope, *index);
-      return slice(thread, string, str_slice);
-    }
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseTypeErrorWithCStr(
-        "string indices must be integers or slices");
+        "'__getitem__' requires a 'str' instance");
   }
-  // TODO(jeethu): handle user-defined subtypes of string.
+
+  // TODO(T36619828): strict subclass of str
+  Str string(&scope, *self);
+  Object index(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*index)) {
+    // TODO(T38780562): strict subclass of int
+    if (!index->isSmallInt()) {
+      return thread->raiseIndexErrorWithCStr(
+          "cannot fit index into an index-sized integer");
+    }
+    word idx = RawSmallInt::cast(index)->value();
+    if (idx < 0) {
+      idx += string->length();
+    }
+    if (idx < 0 || idx >= string->length()) {
+      return thread->raiseIndexErrorWithCStr("string index out of range");
+    }
+    byte c = string->charAt(idx);
+    return SmallStr::fromBytes(View<byte>(&c, 1));
+  }
+  if (index->isSlice()) {
+    Slice str_slice(&scope, *index);
+    return slice(thread, string, str_slice);
+  }
+  // TODO(T27897506): use __index__ to get index
   return thread->raiseTypeErrorWithCStr(
-      "__getitem__() must be called with a string instance as the first "
-      "argument");
+      "string indices must be integers or slices");
 }
 
 RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
