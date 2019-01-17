@@ -888,4 +888,24 @@ result = all([True, False, True])
   EXPECT_FALSE(result->value());
 }
 
+TEST(BuiltinsModuleTest, AnyOnListWithOnlyFalseReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = any([False, False])
+  )");
+  HandleScope scope;
+  Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_FALSE(result->value());
+}
+
+TEST(BuiltinsModuleTest, AnyOnListWithTrueReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = any([False, True, False])
+  )");
+  HandleScope scope;
+  Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result->value());
+}
+
 }  // namespace python
