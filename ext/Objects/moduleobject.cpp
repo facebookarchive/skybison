@@ -48,7 +48,10 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
         case METH_O:
           UNIMPLEMENTED("METH_O");
         case METH_VARARGS:
-          UNIMPLEMENTED("METH_VARARGS");
+          function->setEntry(moduleTrampolineVarArgs);
+          function->setEntryKw(moduleTrampolineVarArgsKw);
+          function->setEntryEx(moduleTrampolineVarArgsEx);
+          break;
         case METH_VARARGS | METH_KEYWORDS:
           UNIMPLEMENTED("METH_VARARGS | METH_KEYWORDS");
         case METH_FASTCALL:

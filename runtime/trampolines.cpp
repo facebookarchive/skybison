@@ -690,21 +690,78 @@ RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* caller, word argc) {
 RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* caller, word argc) {
   HandleScope scope(thread);
   bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
-  // TODO(eelizondo): Support positional args from a generic iterable object
-  Tuple pos_args(&scope, caller->peek(has_varkeywords));
-  if (pos_args->length() != 0) {
+  Object varargs(&scope, caller->peek(has_varkeywords));
+  if (!varargs->isTuple()) UNIMPLEMENTED("sequence varargs");
+  if (Tuple::cast(varargs)->length() != 0) {
     return thread->raiseTypeErrorWithCStr("function takes no arguments");
   }
   if (has_varkeywords) {
-    // TODO(eelizondo): Support positional args from a generic mapping object
-    Dict kw_args(&scope, caller->topValue());
-    if (kw_args->numItems() != 0) {
+    Object kw_args(&scope, caller->topValue());
+    if (!kw_args->isDict()) UNIMPLEMENTED("mapping kwargs");
+    if (Dict::cast(kw_args)->numItems() != 0) {
       return thread->raiseTypeErrorWithCStr(
           "function takes no keyword arguments");
     }
   }
   Function function(&scope, caller->peek(has_varkeywords + 1));
   return callMethNoArgs(thread, function);
+}
+
+static RawObject callMethVarArgs(Thread* thread, const Function& function,
+                                 const Tuple& varargs) {
+  HandleScope scope(thread);
+  Int address(&scope, function->code());
+  binaryfunc method = bit_cast<binaryfunc>(address->asCPtr());
+  DCHECK(function->module()->isModule(), "Function must have a module");
+  PyObject* module = ApiHandle::borrowedReference(thread, function->module());
+  PyObject* args = ApiHandle::borrowedReference(thread, *varargs);
+  PyObject* result = (*method)(module, args);
+  if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
+  if (thread->hasPendingException()) return Error::object();
+  return thread->raiseSystemErrorWithCStr("NULL return without exception set");
+}
+
+RawObject moduleTrampolineVarArgs(Thread* thread, Frame* caller, word argc) {
+  HandleScope scope(thread);
+  Function function(&scope, caller->peek(argc));
+  Tuple varargs(&scope, thread->runtime()->newTuple(argc));
+  for (word i = 0; i < argc; i++) {
+    varargs->atPut(argc - i - 1, caller->peek(i));
+  }
+  return callMethVarArgs(thread, function, varargs);
+}
+
+RawObject moduleTrampolineVarArgsKw(Thread* thread, Frame* caller, word argc) {
+  HandleScope scope(thread);
+  Tuple kwargs(&scope, caller->peek(0));
+  if (kwargs->length() != 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "function takes no keyword arguments");
+  }
+  Function function(&scope, caller->peek(argc + 1));
+  Tuple varargs(&scope, thread->runtime()->newTuple(argc));
+  for (word i = 0; i < argc; i++) {
+    varargs->atPut(argc - i - 1, caller->peek(i + 1));
+  }
+  return callMethVarArgs(thread, function, varargs);
+}
+
+RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* caller, word argc) {
+  HandleScope scope(thread);
+  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  if (has_varkeywords) {
+    Object kw_args(&scope, caller->topValue());
+    if (!kw_args->isDict()) UNIMPLEMENTED("mapping kwargs");
+    if (Dict::cast(kw_args)->numItems() != 0) {
+      return thread->raiseTypeErrorWithCStr(
+          "function takes no keyword arguments");
+    }
+  }
+  Object varargs(&scope, caller->peek(has_varkeywords));
+  if (!varargs->isTuple()) UNIMPLEMENTED("sequence varargs");
+  Tuple args(&scope, *varargs);
+  Function function(&scope, caller->peek(has_varkeywords + 1));
+  return callMethVarArgs(thread, function, args);
 }
 
 typedef PyObject* (*PyCFunction)(PyObject*, PyObject*, PyObject*);

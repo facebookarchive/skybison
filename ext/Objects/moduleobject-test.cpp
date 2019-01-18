@@ -659,4 +659,30 @@ TEST_F(ModuleExtensionApiTest, MethodWithClassFlagThrowsException) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
+TEST_F(ModuleExtensionApiTest, MethodWithVariableArgsReturnsArg) {
+  binaryfunc foo_func = [](PyObject*, PyObject* args) -> PyObject* {
+    int value;
+    EXPECT_EQ(PyArg_ParseTuple(args, "i", &value), 1);
+    return PyLong_FromLong(value);
+  };
+  PyMethodDef foo_methods[] = {{"varargs", foo_func, METH_VARARGS}, {nullptr}};
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "foo", nullptr, 0, foo_methods,
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  moduleSet("__main__", "foo", module);
+  ASSERT_TRUE(PyModule_CheckExact(module));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  PyRun_SimpleString(R"(
+x = foo.varargs(10)
+)");
+
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  int result = PyLong_AsLong(x);
+  ASSERT_EQ(result, 10);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python
