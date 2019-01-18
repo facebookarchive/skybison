@@ -193,6 +193,105 @@ TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyLaterOtherReturnsFalse) {
   EXPECT_FALSE(RawBool::cast(ge)->value());
 }
 
+TEST(BytesBuiltinsTest, DunderGetItemWithWrongNumberOfArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem));
+  ASSERT_TRUE(item->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, SmallInt::fromWord(0));
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self));
+  ASSERT_TRUE(item->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, DunderGetItemWithLargeIntRaisesIndexError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  uword idx[] = {1, 1};
+  Object index(&scope, runtime.newIntWithDigits(View<uword>(idx, 2)));
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
+  ASSERT_TRUE(item->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kIndexError));
+}
+
+TEST(BytesBuiltinsTest, DunderGetItemWithIntGreaterOrEqualLenRaisesIndexError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object index(&scope, RawSmallInt::fromWord(4));
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
+  ASSERT_TRUE(item->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kIndexError));
+}
+
+TEST(BytesBuiltinsTest,
+     DunderGetItemWithNegativeIntGreaterThanLenRaisesIndexError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object index(&scope, runtime.newInt(-4));
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
+  ASSERT_TRUE(item->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kIndexError));
+}
+
+TEST(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
+  Runtime runtime;
+  HandleScope scope;
+  byte hello[] = "hello";
+  Object self(&scope, runtime.newBytesWithAll(View<byte>(hello, 5)));
+  Object index(&scope, runtime.newInt(-5));
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
+  ASSERT_TRUE(item->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*item), RawSmallInt::fromWord('h'));
+}
+
+TEST(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
+  Runtime runtime;
+  HandleScope scope;
+  byte hello[] = "hello";
+  Object self(&scope, runtime.newBytesWithAll(View<byte>(hello, 5)));
+  Object index(&scope, RawSmallInt::fromWord(0));
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
+  ASSERT_TRUE(item->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*item), RawSmallInt::fromWord('h'));
+}
+
+TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  byte hello[] = "hello world";
+  Bytes self(&scope, runtime.newBytesWithAll(View<byte>(hello, 11)));
+  Object one(&scope, RawSmallInt::fromWord(1));
+  Object two(&scope, RawSmallInt::fromWord(2));
+  Object six(&scope, RawSmallInt::fromWord(6));
+  Object index(&scope, runtime.newSlice(one, six, two));
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
+  ASSERT_TRUE(item->isBytes());
+  Bytes result(&scope, *item);
+  EXPECT_EQ(result->length(), 3);
+  EXPECT_EQ(result->byteAt(0), 'e');
+  EXPECT_EQ(result->byteAt(1), 'l');
+  EXPECT_EQ(result->byteAt(2), ' ');
+}
+
+TEST(BytesBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, runtime.newFloat(1.5));
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, other));
+  ASSERT_TRUE(item->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
 TEST(BytesBuiltinsTest, DunderGtWithWrongNumberOfArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
