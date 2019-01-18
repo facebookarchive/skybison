@@ -2905,7 +2905,8 @@ foo(1, 2, 3)
 )";
   Runtime runtime;
   HandleScope scope;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "unbound local a");
+  EXPECT_DEATH(runFromCStr(&runtime, src),
+               "local variable 'a' referenced before assignment");
 }
 
 TEST(ThreadTest, DeleteFastThrow) {

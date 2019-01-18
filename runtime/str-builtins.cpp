@@ -437,7 +437,8 @@ RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-word StrBuiltins::strFormatBufferLength(const Str& fmt, const Tuple& args) {
+RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
+                                             const Tuple& args) {
   word arg_idx = 0;
   word len = 0;
   for (word fmt_idx = 0; fmt_idx < fmt->length(); fmt_idx++, len++) {
@@ -445,25 +446,33 @@ word StrBuiltins::strFormatBufferLength(const Str& fmt, const Tuple& args) {
     if (ch != '%') {
       continue;
     }
-    CHECK(++fmt_idx < fmt->length(), "Incomplete format");
+    if (++fmt_idx >= fmt->length()) {
+      return thread->raiseValueErrorWithCStr("Incomplete format");
+    }
     switch (fmt->charAt(fmt_idx)) {
       case 'd': {
         len--;
-        CHECK(args->at(arg_idx)->isInt(), "Argument mismatch");
+        if (!args->at(arg_idx)->isInt()) {
+          return thread->raiseTypeErrorWithCStr("Argument mismatch");
+        }
         len += snprintf(nullptr, 0, "%ld",
                         RawInt::cast(args->at(arg_idx))->asWord());
         arg_idx++;
       } break;
       case 'g': {
         len--;
-        CHECK(args->at(arg_idx)->isFloat(), "Argument mismatch");
+        if (!args->at(arg_idx)->isFloat()) {
+          return thread->raiseTypeErrorWithCStr("Argument mismatch");
+        }
         len += snprintf(nullptr, 0, "%g",
                         RawFloat::cast(args->at(arg_idx))->value());
         arg_idx++;
       } break;
       case 's': {
         len--;
-        CHECK(args->at(arg_idx)->isStr(), "Argument mismatch");
+        if (!args->at(arg_idx)->isStr()) {
+          return thread->raiseTypeErrorWithCStr("Argument mismatch");
+        }
         len += RawStr::cast(args->at(arg_idx))->length();
         arg_idx++;
       } break;
@@ -473,7 +482,12 @@ word StrBuiltins::strFormatBufferLength(const Str& fmt, const Tuple& args) {
         UNIMPLEMENTED("Unsupported format specifier");
     }
   }
-  return len;
+
+  if (!SmallInt::isValid(len)) {
+    return thread->raiseOverflowErrorWithCStr(
+        "Output of format string is too long");
+  }
+  return SmallInt::fromWord(len);
 }
 
 static void stringFormatToBuffer(const Str& fmt, const Tuple& args, char* dst,
@@ -516,7 +530,9 @@ RawObject StrBuiltins::strFormat(Thread* thread, const Str& fmt,
   if (fmt->length() == 0) {
     return *fmt;
   }
-  word len = strFormatBufferLength(fmt, args);
+  RawObject raw_len = strFormatBufferLength(thread, fmt, args);
+  if (raw_len.isError()) return raw_len;
+  word len = RawSmallInt::cast(raw_len).value();
   char* dst = static_cast<char*>(std::malloc(len + 1));
   CHECK(dst != nullptr, "Buffer allocation failure");
   stringFormatToBuffer(fmt, args, dst, len);

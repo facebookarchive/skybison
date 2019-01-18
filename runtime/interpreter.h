@@ -145,47 +145,47 @@ class Interpreter {
   static void doDupTop(Context* ctx, word arg);
   static void doDupTopTwo(Context* ctx, word arg);
   static void doNop(Context* ctx, word arg);
-  static void doUnaryPositive(Context* ctx, word arg);
-  static void doUnaryNegative(Context* ctx, word arg);
-  static void doUnaryNot(Context* ctx, word arg);
-  static void doUnaryInvert(Context* ctx, word arg);
-  static void doBinaryMatrixMultiply(Context* ctx, word arg);
-  static void doInplaceMatrixMultiply(Context* ctx, word arg);
-  static void doBinaryPower(Context* ctx, word arg);
-  static void doBinaryMultiply(Context* ctx, word arg);
-  static void doBinaryModulo(Context* ctx, word arg);
-  static void doBinaryAdd(Context* ctx, word arg);
-  static void doBinarySubtract(Context* ctx, word arg);
+  static bool doUnaryPositive(Context* ctx, word arg);
+  static bool doUnaryNegative(Context* ctx, word arg);
+  static bool doUnaryNot(Context* ctx, word arg);
+  static bool doUnaryInvert(Context* ctx, word arg);
+  static bool doBinaryMatrixMultiply(Context* ctx, word arg);
+  static bool doInplaceMatrixMultiply(Context* ctx, word arg);
+  static bool doBinaryPower(Context* ctx, word arg);
+  static bool doBinaryMultiply(Context* ctx, word arg);
+  static bool doBinaryModulo(Context* ctx, word arg);
+  static bool doBinaryAdd(Context* ctx, word arg);
+  static bool doBinarySubtract(Context* ctx, word arg);
   static bool doBinarySubscr(Context* ctx, word arg);
-  static void doBinaryFloorDivide(Context* ctx, word arg);
-  static void doBinaryTrueDivide(Context* ctx, word arg);
-  static void doInplaceFloorDivide(Context* ctx, word arg);
-  static void doInplaceTrueDivide(Context* ctx, word arg);
+  static bool doBinaryFloorDivide(Context* ctx, word arg);
+  static bool doBinaryTrueDivide(Context* ctx, word arg);
+  static bool doInplaceFloorDivide(Context* ctx, word arg);
+  static bool doInplaceTrueDivide(Context* ctx, word arg);
   static bool doGetAiter(Context* ctx, word arg);
   static bool doGetAnext(Context* ctx, word arg);
   static bool doBeforeAsyncWith(Context* ctx, word arg);
-  static void doInplaceAdd(Context* ctx, word arg);
-  static void doInplaceSubtract(Context* ctx, word arg);
-  static void doInplaceMultiply(Context* ctx, word arg);
-  static void doInplaceModulo(Context* ctx, word arg);
+  static bool doInplaceAdd(Context* ctx, word arg);
+  static bool doInplaceSubtract(Context* ctx, word arg);
+  static bool doInplaceMultiply(Context* ctx, word arg);
+  static bool doInplaceModulo(Context* ctx, word arg);
   static bool doStoreSubscr(Context* ctx, word arg);
   static bool doDeleteSubscr(Context* ctx, word arg);
-  static void doBinaryLshift(Context* ctx, word arg);
-  static void doBinaryRshift(Context* ctx, word arg);
-  static void doBinaryAnd(Context* ctx, word arg);
-  static void doBinaryXor(Context* ctx, word arg);
-  static void doBinaryOr(Context* ctx, word arg);
-  static void doInplacePower(Context* ctx, word arg);
+  static bool doBinaryLshift(Context* ctx, word arg);
+  static bool doBinaryRshift(Context* ctx, word arg);
+  static bool doBinaryAnd(Context* ctx, word arg);
+  static bool doBinaryXor(Context* ctx, word arg);
+  static bool doBinaryOr(Context* ctx, word arg);
+  static bool doInplacePower(Context* ctx, word arg);
   static bool doGetIter(Context* ctx, word arg);
   static bool doGetYieldFromIter(Context* ctx, word arg);
   static void doPrintExpr(Context* ctx, word);
   static void doLoadBuildClass(Context* ctx, word arg);
   static bool doGetAwaitable(Context* ctx, word arg);
-  static void doInplaceLshift(Context* ctx, word arg);
-  static void doInplaceRshift(Context* ctx, word arg);
-  static void doInplaceAnd(Context* ctx, word arg);
-  static void doInplaceXor(Context* ctx, word arg);
-  static void doInplaceOr(Context* ctx, word arg);
+  static bool doInplaceLshift(Context* ctx, word arg);
+  static bool doInplaceRshift(Context* ctx, word arg);
+  static bool doInplaceAnd(Context* ctx, word arg);
+  static bool doInplaceXor(Context* ctx, word arg);
+  static bool doInplaceOr(Context* ctx, word arg);
   static void doBreakLoop(Context* ctx, word arg);
   static void doWithCleanupStart(Context* ctx, word arg);
   static void doWithCleanupFinish(Context* ctx, word arg);
@@ -203,7 +203,7 @@ class Interpreter {
   static void doStoreGlobal(Context* ctx, word arg);
   static void doDeleteGlobal(Context* ctx, word arg);
   static void doLoadConst(Context* ctx, word arg);
-  static void doLoadName(Context* ctx, word arg);
+  static bool doLoadName(Context* ctx, word arg);
   static void doBuildTuple(Context* ctx, word arg);
   static void doBuildList(Context* ctx, word arg);
   static void doBuildSet(Context* ctx, word arg);
@@ -211,7 +211,7 @@ class Interpreter {
   static bool doLoadAttr(Context* ctx, word arg);
   static bool doCompareOp(Context* ctx, word arg);
   static bool doImportName(Context* ctx, word arg);
-  static void doImportFrom(Context* ctx, word arg);
+  static bool doImportFrom(Context* ctx, word arg);
   static void doJumpForward(Context* ctx, word arg);
   static void doJumpIfFalseOrPop(Context* ctx, word arg);
   static void doJumpIfTrueOrPop(Context* ctx, word arg);
@@ -223,7 +223,7 @@ class Interpreter {
   static void doSetupLoop(Context* ctx, word arg);
   static void doSetupExcept(Context* ctx, word arg);
   static void doSetupFinally(Context* ctx, word arg);
-  static void doLoadFast(Context* ctx, word arg);
+  static bool doLoadFast(Context* ctx, word arg);
   static void doStoreFast(Context* ctx, word arg);
   static void doDeleteFast(Context* ctx, word arg);
   static void doStoreAnnotation(Context* ctx, word arg);
@@ -232,7 +232,7 @@ class Interpreter {
   static void doMakeFunction(Context* ctx, word arg);
   static void doBuildSlice(Context* ctx, word arg);
   static void doLoadClosure(Context* ctx, word arg);
-  static void doLoadDeref(Context* ctx, word arg);
+  static bool doLoadDeref(Context* ctx, word arg);
   static void doStoreDeref(Context* ctx, word arg);
   static void doDeleteDeref(Context* ctx, word arg);
   static bool doCallFunctionKw(Context* ctx, word arg);
@@ -268,11 +268,11 @@ class Interpreter {
 
   // Common functionality for opcode handlers that dispatch to binary and
   // inplace operations
-  static void doBinaryOperation(BinaryOp op, Context* ctx);
+  static bool doBinaryOperation(BinaryOp op, Context* ctx);
 
-  static void doInplaceOperation(BinaryOp op, Context* ctx);
+  static bool doInplaceOperation(BinaryOp op, Context* ctx);
 
-  static void doUnaryOperation(SymbolId selector, Context* ctx);
+  static bool doUnaryOperation(SymbolId selector, Context* ctx);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };

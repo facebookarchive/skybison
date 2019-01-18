@@ -146,13 +146,13 @@ a.pop(0)
 a.pop(-1)
 print(len(a), a[0], a[1])
 )");
-  EXPECT_EQ(output, "4\n2 2 4\n");
+  EXPECT_EQ(output, "4\n2 2 3\n");
 
   std::string output2 = compileAndRunToString(&runtime, R"(
 a = [1,2,3,4,5]
 print(a.pop(), a.pop(0), a.pop(-2))
 )");
-  EXPECT_EQ(output2, "5 1 2\n");
+  EXPECT_EQ(output2, "5 1 3\n");
 }
 
 TEST(ListBuiltinsDeathTest, ListPopExcept) {
@@ -180,15 +180,13 @@ a = [1]
 a.pop()
 a.pop()
 )"),
-               "unimplemented: "
-               "Throw an RawIndexError for an out of range list");
+               "pop from empty list");
 
   ASSERT_DEATH(runFromCStr(&runtime, R"(
 a = [1]
 a.pop(3)
 )"),
-               "unimplemented: "
-               "Throw an RawIndexError for an out of range list");
+               "pop index out of range");
 }
 
 TEST(ListBuiltinsTest, ListRemove) {

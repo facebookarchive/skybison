@@ -323,12 +323,14 @@ RawObject Interpreter::unaryOperation(Thread* thread, Frame* caller,
   return callMethod1(thread, caller, method, self);
 }
 
-void Interpreter::doUnaryOperation(SymbolId selector, Context* ctx) {
+bool Interpreter::doUnaryOperation(SymbolId selector, Context* ctx) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object receiver(&scope, ctx->frame->topValue());
   RawObject result = unaryOperation(thread, ctx->frame, receiver, selector);
+  if (result.isError()) return unwind(ctx);
   ctx->frame->setTopValue(result);
+  return false;
 }
 
 RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
@@ -370,14 +372,16 @@ RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
   return thread->raiseUnsupportedBinaryOperation(*self, *other, *op_name);
 }
 
-void Interpreter::doBinaryOperation(BinaryOp op, Context* ctx) {
+bool Interpreter::doBinaryOperation(BinaryOp op, Context* ctx) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
   Object other(&scope, frame->popValue());
   Object self(&scope, frame->popValue());
   RawObject result = binaryOperation(thread, frame, op, self, other);
+  if (result.isError()) return unwind(ctx);
   ctx->frame->pushValue(result);
+  return false;
 }
 
 RawObject Interpreter::inplaceOperation(Thread* thread, Frame* caller,
@@ -396,13 +400,15 @@ RawObject Interpreter::inplaceOperation(Thread* thread, Frame* caller,
   return binaryOperation(thread, caller, op, self, other);
 }
 
-void Interpreter::doInplaceOperation(BinaryOp op, Context* ctx) {
+bool Interpreter::doInplaceOperation(BinaryOp op, Context* ctx) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object other(&scope, ctx->frame->popValue());
   Object self(&scope, ctx->frame->popValue());
   RawObject result = inplaceOperation(thread, ctx->frame, op, self, other);
+  if (result.isError()) return unwind(ctx);
   ctx->frame->pushValue(result);
+  return false;
 }
 
 RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
@@ -518,39 +524,29 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* caller,
 RawObject Interpreter::isTrue(Thread* thread, Frame* caller,
                               const Object& self) {
   HandleScope scope(thread);
-  if (self->isBool()) {
-    return *self;
-  }
-  if (self->isNoneType()) {
-    return Bool::falseObj();
-  }
+  if (self->isBool()) return *self;
+  if (self->isNoneType()) return Bool::falseObj();
+
   Object method(&scope,
                 lookupMethod(thread, caller, self, SymbolId::kDunderBool));
   if (!method->isError()) {
     Object result(&scope, callMethod1(thread, caller, method, self));
-    if (result->isBool()) {
-      return *result;
-    }
-    if (result->isInt()) {
-      Int integer(&scope, *result);
-      return Bool::fromBool(integer->asWord() > 0);
-    }
-    return thread->raiseTypeErrorWithCStr("__bool__ must return 'bool'");
+    if (result->isError() || result->isBool()) return *result;
+    return thread->raiseTypeErrorWithCStr("__bool__ should return bool");
   }
+
   method = lookupMethod(thread, caller, self, SymbolId::kDunderLen);
   if (!method->isError()) {
     Object result(&scope, callMethod1(thread, caller, method, self));
+    if (result->isError()) return *result;
     if (result->isInt()) {
       Int integer(&scope, *result);
-      if (integer->isPositive()) {
-        return Bool::trueObj();
-      }
-      if (integer->isZero()) {
-        return Bool::falseObj();
-      }
-      return thread->raiseValueErrorWithCStr("__len__ must return >= 0");
+      if (integer->isPositive()) return Bool::trueObj();
+      if (integer->isZero()) return Bool::falseObj();
+      return thread->raiseValueErrorWithCStr("__len__() should return >= 0");
     }
-    return thread->raiseTypeErrorWithCStr("__len__ must return 'int'");
+    return thread->raiseTypeErrorWithCStr(
+        "object cannot be interpreted as an integer");
   }
   return Bool::trueObj();
 }
@@ -769,64 +765,63 @@ void Interpreter::doDupTopTwo(Context* ctx, word) {
 void Interpreter::doNop(Context*, word) {}
 
 // opcode 10
-void Interpreter::doUnaryPositive(Context* ctx, word) {
-  doUnaryOperation(SymbolId::kDunderPos, ctx);
+bool Interpreter::doUnaryPositive(Context* ctx, word) {
+  return doUnaryOperation(SymbolId::kDunderPos, ctx);
 }
 
 // opcode 11
-void Interpreter::doUnaryNegative(Context* ctx, word) {
-  doUnaryOperation(SymbolId::kDunderNeg, ctx);
+bool Interpreter::doUnaryNegative(Context* ctx, word) {
+  return doUnaryOperation(SymbolId::kDunderNeg, ctx);
 }
 
 // opcode 12
-void Interpreter::doUnaryNot(Context* ctx, word) {
+bool Interpreter::doUnaryNot(Context* ctx, word) {
   HandleScope scope(ctx->thread);
   Object self(&scope, ctx->frame->topValue());
-  if (isTrue(ctx->thread, ctx->frame, self) == Bool::trueObj()) {
-    ctx->frame->setTopValue(Bool::falseObj());
-  } else {
-    ctx->frame->setTopValue(Bool::trueObj());
-  }
+  RawObject result = isTrue(ctx->thread, ctx->frame, self);
+  if (result.isError()) return unwind(ctx);
+  ctx->frame->setTopValue(Bool::fromBool(result != Bool::trueObj()));
+  return false;
 }
 
 // opcode 15
-void Interpreter::doUnaryInvert(Context* ctx, word) {
-  doUnaryOperation(SymbolId::kDunderInvert, ctx);
+bool Interpreter::doUnaryInvert(Context* ctx, word) {
+  return doUnaryOperation(SymbolId::kDunderInvert, ctx);
 }
 
 // opcode 16
-void Interpreter::doBinaryMatrixMultiply(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::MATMUL, ctx);
+bool Interpreter::doBinaryMatrixMultiply(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::MATMUL, ctx);
 }
 
 // opcode 17
-void Interpreter::doInplaceMatrixMultiply(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::MATMUL, ctx);
+bool Interpreter::doInplaceMatrixMultiply(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::MATMUL, ctx);
 }
 
 // opcode 19
-void Interpreter::doBinaryPower(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::POW, ctx);
+bool Interpreter::doBinaryPower(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::POW, ctx);
 }
 
 // opcode 20
-void Interpreter::doBinaryMultiply(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::MUL, ctx);
+bool Interpreter::doBinaryMultiply(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::MUL, ctx);
 }
 
 // opcode 22
-void Interpreter::doBinaryModulo(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::MOD, ctx);
+bool Interpreter::doBinaryModulo(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::MOD, ctx);
 }
 
 // opcode 23
-void Interpreter::doBinaryAdd(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::ADD, ctx);
+bool Interpreter::doBinaryAdd(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::ADD, ctx);
 }
 
 // opcode 24
-void Interpreter::doBinarySubtract(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::SUB, ctx);
+bool Interpreter::doBinarySubtract(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::SUB, ctx);
 }
 
 // opcode 25
@@ -851,23 +846,23 @@ bool Interpreter::doBinarySubscr(Context* ctx, word) {
 }
 
 // opcode 26
-void Interpreter::doBinaryFloorDivide(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::FLOORDIV, ctx);
+bool Interpreter::doBinaryFloorDivide(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::FLOORDIV, ctx);
 }
 
 // opcode 27
-void Interpreter::doBinaryTrueDivide(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::TRUEDIV, ctx);
+bool Interpreter::doBinaryTrueDivide(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::TRUEDIV, ctx);
 }
 
 // opcode 28
-void Interpreter::doInplaceFloorDivide(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::FLOORDIV, ctx);
+bool Interpreter::doInplaceFloorDivide(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::FLOORDIV, ctx);
 }
 
 // opcode 29
-void Interpreter::doInplaceTrueDivide(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::TRUEDIV, ctx);
+bool Interpreter::doInplaceTrueDivide(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::TRUEDIV, ctx);
 }
 
 // opcode 50
@@ -948,23 +943,23 @@ bool Interpreter::doBeforeAsyncWith(Context* ctx, word) {
 }
 
 // opcode 55
-void Interpreter::doInplaceAdd(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::ADD, ctx);
+bool Interpreter::doInplaceAdd(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::ADD, ctx);
 }
 
 // opcode 56
-void Interpreter::doInplaceSubtract(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::SUB, ctx);
+bool Interpreter::doInplaceSubtract(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::SUB, ctx);
 }
 
 // opcode 57
-void Interpreter::doInplaceMultiply(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::MUL, ctx);
+bool Interpreter::doInplaceMultiply(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::MUL, ctx);
 }
 
 // opcode 59
-void Interpreter::doInplaceModulo(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::MOD, ctx);
+bool Interpreter::doInplaceModulo(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::MOD, ctx);
 }
 
 // opcode 60
@@ -1005,39 +1000,33 @@ bool Interpreter::doDeleteSubscr(Context* ctx, word) {
 }
 
 // opcode 62
-void Interpreter::doBinaryLshift(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::LSHIFT, ctx);
+bool Interpreter::doBinaryLshift(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::LSHIFT, ctx);
 }
 
 // opcode 63
-void Interpreter::doBinaryRshift(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::RSHIFT, ctx);
+bool Interpreter::doBinaryRshift(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::RSHIFT, ctx);
 }
 
 // opcode 64
-void Interpreter::doBinaryAnd(Context* ctx, word) {
-  Thread* thread = ctx->thread;
-  HandleScope scope(thread);
-  Object other(&scope, ctx->frame->popValue());
-  Object self(&scope, ctx->frame->popValue());
-  RawObject result =
-      binaryOperation(thread, ctx->frame, BinaryOp::AND, self, other);
-  ctx->frame->pushValue(result);
+bool Interpreter::doBinaryAnd(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::AND, ctx);
 }
 
 // opcode 65
-void Interpreter::doBinaryXor(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::XOR, ctx);
+bool Interpreter::doBinaryXor(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::XOR, ctx);
 }
 
 // opcode 66
-void Interpreter::doBinaryOr(Context* ctx, word) {
-  doBinaryOperation(BinaryOp::OR, ctx);
+bool Interpreter::doBinaryOr(Context* ctx, word) {
+  return doBinaryOperation(BinaryOp::OR, ctx);
 }
 
 // opcode 67
-void Interpreter::doInplacePower(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::POW, ctx);
+bool Interpreter::doInplacePower(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::POW, ctx);
 }
 
 // opcode 68
@@ -1134,28 +1123,28 @@ bool Interpreter::doGetAwaitable(Context* ctx, word) {
 }
 
 // opcode 75
-void Interpreter::doInplaceLshift(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::LSHIFT, ctx);
+bool Interpreter::doInplaceLshift(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::LSHIFT, ctx);
 }
 
 // opcode 76
-void Interpreter::doInplaceRshift(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::RSHIFT, ctx);
+bool Interpreter::doInplaceRshift(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::RSHIFT, ctx);
 }
 
 // opcode 77
-void Interpreter::doInplaceAnd(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::AND, ctx);
+bool Interpreter::doInplaceAnd(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::AND, ctx);
 }
 
 // opcode 78
-void Interpreter::doInplaceXor(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::XOR, ctx);
+bool Interpreter::doInplaceXor(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::XOR, ctx);
 }
 
 // opcode 79
-void Interpreter::doInplaceOr(Context* ctx, word) {
-  doInplaceOperation(BinaryOp::OR, ctx);
+bool Interpreter::doInplaceOr(Context* ctx, word) {
+  return doInplaceOperation(BinaryOp::OR, ctx);
 }
 
 // opcode 80
@@ -1522,14 +1511,21 @@ void Interpreter::doLoadConst(Context* ctx, word arg) {
   ctx->frame->pushValue(RawTuple::cast(consts)->at(arg));
 }
 
+static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
+  return thread->raise(LayoutId::kNameError,
+                       thread->runtime()->newStrFromFormat(
+                           "name '%s' is not defined",
+                           unique_c_ptr<char[]>(name->toCStr()).get()));
+}
+
 // opcode 101
-void Interpreter::doLoadName(Context* ctx, word arg) {
+bool Interpreter::doLoadName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Runtime* runtime = ctx->thread->runtime();
   HandleScope scope(ctx->thread);
 
   Object names(&scope, RawCode::cast(frame->code())->names());
-  Object key(&scope, RawTuple::cast(*names)->at(arg));
+  Str key(&scope, RawTuple::cast(*names)->at(arg));
 
   // 1. implicitGlobals
   Dict implicit_globals(&scope, frame->implicitGlobals());
@@ -1543,7 +1539,7 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
       value = RawValueCell::cast(value)->value();
     }
     frame->pushValue(value);
-    return;
+    return false;
   }
 
   // In the module body, globals == implicit_globals, so no need to check
@@ -1562,7 +1558,7 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
       value = RawValueCell::cast(value)->value();
     }
     frame->pushValue(value);
-    return;
+    return false;
   }
 
   // 3b. not found; check builtins -- one layer of indirection
@@ -1574,9 +1570,11 @@ void Interpreter::doLoadName(Context* ctx, word arg) {
   }
 
   if (value->isError()) {
-    UNIMPLEMENTED("Unbound variable '%s'", RawStr::cast(*key)->toCStr());
+    raiseUndefinedName(ctx->thread, key);
+    return unwind(ctx);
   }
   frame->pushValue(value);
+  return false;
 }
 
 // opcode 102
@@ -1711,7 +1709,7 @@ bool Interpreter::doImportName(Context* ctx, word arg) {
 }
 
 // opcode 109
-void Interpreter::doImportFrom(Context* ctx, word arg) {
+bool Interpreter::doImportFrom(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Code code(&scope, ctx->frame->code());
@@ -1721,8 +1719,12 @@ void Interpreter::doImportFrom(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   CHECK(module->isModule(), "Unexpected type to import from");
   RawObject value = runtime->moduleAt(module, name);
-  CHECK(!value->isError(), "cannot import name");
+  if (value.isError()) {
+    thread->raiseWithCStr(LayoutId::kImportError, "cannot import name");
+    return unwind(ctx);
+  }
   ctx->frame->pushValue(value);
+  return false;
 }
 
 // opcode 110
@@ -1834,15 +1836,23 @@ void Interpreter::doSetupFinally(Context* ctx, word arg) {
 }
 
 // opcode 124
-void Interpreter::doLoadFast(Context* ctx, word arg) {
+bool Interpreter::doLoadFast(Context* ctx, word arg) {
   // TODO(cshapiro): Need to handle unbound local error
   RawObject value = ctx->frame->getLocal(arg);
   if (value->isError()) {
-    RawObject name =
-        RawTuple::cast(RawCode::cast(ctx->frame->code())->varnames())->at(arg);
-    UNIMPLEMENTED("unbound local %s", RawStr::cast(name)->toCStr());
+    Thread* thread = ctx->thread;
+    HandleScope scope(thread);
+    Str name(
+        &scope,
+        RawTuple::cast(RawCode::cast(ctx->frame->code())->varnames())->at(arg));
+    Str msg(&scope, thread->runtime()->newStrFromFormat(
+                        "local variable '%.200s' referenced before assignment",
+                        unique_c_ptr<char[]>(name->toCStr()).get()));
+    thread->raise(LayoutId::kUnboundLocalError, msg);
+    return unwind(ctx);
   }
   ctx->frame->pushValue(ctx->frame->getLocal(arg));
+  return false;
 }
 
 // opcode 125
@@ -1998,16 +2008,40 @@ void Interpreter::doLoadClosure(Context* ctx, word arg) {
   ctx->frame->pushValue(ctx->frame->getLocal(code->nlocals() + arg));
 }
 
+static RawObject raiseUnboundCellFreeVar(Thread* thread, const Code& code,
+                                         word idx) {
+  HandleScope scope(thread);
+  Object names_obj(&scope, NoneType::object());
+  const char* fmt;
+  if (idx < code->numCellvars()) {
+    names_obj = code->cellvars();
+    fmt = "local variable '%.200s' referenced before assignment";
+  } else {
+    idx -= code->numCellvars();
+    names_obj = code->freevars();
+    fmt =
+        "free variable '%.200s' referenced before assignment in enclosing "
+        "scope";
+  }
+  Tuple names(&scope, *names_obj);
+  Str name(&scope, names->at(idx));
+  return thread->raise(LayoutId::kUnboundLocalError,
+                       thread->runtime()->newStrFromFormat(
+                           fmt, unique_c_ptr<char[]>(name->toCStr()).get()));
+}
+
 // opcode 136
-void Interpreter::doLoadDeref(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
-  RawCode code = RawCode::cast(ctx->frame->code());
+bool Interpreter::doLoadDeref(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Code code(&scope, ctx->frame->code());
   ValueCell value(&scope, ctx->frame->getLocal(code->nlocals() + arg));
   if (value->isUnbound()) {
-    UNIMPLEMENTED(
-        "UnboundLocalError: local variable referenced before assignment");
+    raiseUnboundCellFreeVar(thread, code, arg);
+    return unwind(ctx);
   }
   ctx->frame->pushValue(value->value());
+  return false;
 }
 
 // opcode 137

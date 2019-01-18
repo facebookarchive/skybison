@@ -396,21 +396,17 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
         "descriptor 'pop' requires a 'list' object");
   }
   List list(&scope, *self);
-  word index = list->numItems() - 1;
-  if (nargs == 2) {
-    word last_index = index;
-    index = RawSmallInt::cast(args.get(1))->value();
-    index = index < 0 ? last_index + index : index;
-    // Pop out of bounds
-    if (index > last_index) {
-      // TODO(T27365047): Throw an IndexError exception
-      UNIMPLEMENTED("Throw an RawIndexError for an out of range list index.");
-    }
+  word length = list->numItems();
+  if (length == 0) {
+    return thread->raiseIndexErrorWithCStr("pop from empty list");
   }
-  // Pop empty, or negative out of bounds
-  if (index < 0) {
-    // TODO(T27365047): Throw an IndexError exception
-    UNIMPLEMENTED("Throw an RawIndexError for an out of range list index.");
+  word index = length - 1;
+  if (nargs == 2) {
+    index = RawSmallInt::cast(args.get(1)).value();
+    if (index < 0) index += length;
+  }
+  if (index < 0 || index >= length) {
+    return thread->raiseIndexErrorWithCStr("pop index out of range");
   }
 
   return listPop(list, index);

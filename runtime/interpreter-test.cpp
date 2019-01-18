@@ -1549,9 +1549,8 @@ def outer():
 v = outer()
   )";
 
-  ASSERT_DEATH(
-      runFromCStr(&runtime, src),
-      "UnboundLocalError: local variable referenced before assignment");
+  ASSERT_DEATH(runFromCStr(&runtime, src),
+               "local variable 'var' referenced before assignment");
 }
 
 TEST(InterpreterTest, ImportStarImportsPublicSymbols) {
@@ -1611,7 +1610,7 @@ b = _private_symbol()
 )";
 
   ASSERT_DEATH(compileAndRunToString(&runtime, main_src),
-               "unimplemented: Unbound variable '_private_symbol'");
+               "name '_private_symbol' is not defined");
 }
 
 TEST(InterpreterTest, GetAnextCallsAnextAndAwait) {
