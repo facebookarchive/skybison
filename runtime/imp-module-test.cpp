@@ -53,13 +53,22 @@ _imp.exec_dynamic("foo")
                "unimplemented: exec_dynamic");
 }
 
-TEST(ImportBuiltinsDeathTest, ExtensionSuffixes) {
+TEST(ImportBuiltinsTest, ExtensionSuffixesWithoutArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
-import _imp
-_imp.extension_suffixes()
-  )"),
-               "unimplemented: extension_suffixes");
+  HandleScope scope;
+  Object module_name(&scope, runtime.newStrFromCStr("foo"));
+  Object result(&scope, runBuiltin(builtinImpExtensionSuffixes, module_name));
+  ASSERT_TRUE(result->isError());
+  EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
+            runtime.typeAt(LayoutId::kTypeError));
+}
+
+TEST(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {
+  Runtime runtime;
+  HandleScope scope;
+  Object result(&scope, runBuiltin(builtinImpExtensionSuffixes));
+  ASSERT_TRUE(result->isList());
+  EXPECT_PYLIST_EQ(result, {".so"});
 }
 
 TEST(ImportBuiltinsDeathTest, FixCoFilename) {

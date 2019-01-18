@@ -27,9 +27,18 @@ RawObject builtinImpExecDynamic(Thread* /* thread */, Frame* /* frame */,
   UNIMPLEMENTED("exec_dynamic");
 }
 
-RawObject builtinImpExtensionSuffixes(Thread* /* thread */, Frame* /* frame */,
-                                      word /* nargs */) {
-  UNIMPLEMENTED("extension_suffixes");
+RawObject builtinImpExtensionSuffixes(Thread* thread, Frame* /* frame */,
+                                      word nargs) {
+  if (nargs != 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "extension_suffixes takes no arguments");
+  }
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  List list(&scope, runtime->newList());
+  Object so(&scope, runtime->symbols()->DotSo());
+  runtime->listAdd(list, so);
+  return *list;
 }
 
 RawObject builtinImpFixCoFilename(Thread* /* thread */, Frame* /* frame */,
