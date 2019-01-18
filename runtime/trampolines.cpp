@@ -271,7 +271,7 @@ static RawObject processKeywordArguments(Thread* thread, Frame* caller,
   // Destructively pop the tuple of kwarg names
   Tuple keywords(&scope, caller->topValue());
   caller->popValue();
-  DCHECK(keywords->length() > 0, "Invalid keyword name tuple");
+  DCHECK(keywords->length() >= 0, "Invalid keyword name tuple");
   Function function(&scope, caller->peek(argc));
   Code code(&scope, function->code());
   word expected_args = code->argcount() + code->kwonlyargcount();

@@ -873,6 +873,17 @@ take_kwargs(**kwargs)
                "keywords must be strings");
 }
 
+TEST(TrampolineTest, ExplodeCallWithZeroKeywords) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+def foo(a=10): return a
+result = foo(**{})
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result, SmallInt::fromWord(10));
+}
+
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
     return ApiHandle::newReference(Thread::currentThread(),
