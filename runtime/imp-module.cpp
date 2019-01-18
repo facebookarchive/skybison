@@ -3,6 +3,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
+#include "runtime.h"
 
 namespace python {
 
@@ -46,9 +47,19 @@ RawObject builtinImpIsBuiltin(Thread* /* thread */, Frame* /* frame */,
   UNIMPLEMENTED("is_builtin");
 }
 
-RawObject builtinImpIsFrozen(Thread* /* thread */, Frame* /* frame */,
-                             word /* nargs */) {
-  UNIMPLEMENTED("is_frozen");
+RawObject builtinImpIsFrozen(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "expected 1 argument, got %ld", nargs - 1));
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object name(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(name)) {
+    return thread->raiseTypeErrorWithCStr("is_frozen requires a str object");
+  }
+  // Always return False
+  return RawBool::falseObj();
 }
 
 RawObject builtinImpIsFrozenPackage(Thread* /* thread */, Frame* /* frame */,

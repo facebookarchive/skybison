@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "imp-module.h"
 #include "runtime.h"
 #include "test-utils.h"
 
@@ -90,13 +91,21 @@ _imp.is_builtin("foo")
                "unimplemented: is_builtin");
 }
 
-TEST(ImportBuiltinsDeathTest, IsFrozen) {
+TEST(ImportBuiltinsDeathTest, IsFrozenWithNoArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
-import _imp
-_imp.is_frozen("foo")
-  )"),
-               "unimplemented: is_frozen");
+  HandleScope scope;
+  Object result(&scope, runBuiltin(builtinImpIsFrozen));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(ImportBuiltinsTest, IsFrozenReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object module_name(&scope, runtime.newStrFromCStr("foo"));
+  Object result(&scope, runBuiltin(builtinImpIsFrozen, module_name));
+  ASSERT_TRUE(result->isBool());
+  EXPECT_FALSE(Bool::cast(*result)->value());
 }
 
 TEST(ImportBuiltinsDeathTest, IsFrozenPackage) {
