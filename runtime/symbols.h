@@ -296,6 +296,7 @@ class Runtime;
   V(UnderThread, "_thread")                                                    \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
+  V(Anonymous, "<anonymous>")                                                  \
   V(UnicodeDecodeError, "UnicodeDecodeError")                                  \
   V(UnicodeEncodeError, "UnicodeEncodeError")                                  \
   V(UnicodeError, "UnicodeError")                                              \

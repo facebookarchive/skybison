@@ -10,9 +10,9 @@ namespace python {
 
 // Template for entry points for native functions (e.g. builtins), invoked via
 // CALL_FUNCTION
-// TODO(t24656189) - replace with JITed code once we have the facilities for
+// TODO(T24656189) - replace with JITed code once we have the facilities for
 // that.
-template <RawObject (*Fn)(Thread*, Frame*, word)>
+template <Function::Entry Fn>
 RawObject nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
   HandleScope scope(thread);
   Frame* frame = thread->pushNativeFrame(bit_cast<void*>(Fn), argc);
@@ -23,7 +23,7 @@ RawObject nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
   return *result;
 }
 
-template <RawObject (*Fn)(Thread*, Frame*, word)>
+template <Function::Entry Fn>
 RawObject nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/,
                              word argc) {
   HandleScope scope(thread);
@@ -33,6 +33,18 @@ RawObject nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/,
          "error/exception mismatch");
   thread->popFrame();
   return *result;
+}
+
+// Template for entry points for native functions (e.g. builtins), invoked via
+// CALL_FUNCTION, whose positional arguments are checked before entering the
+// body.
+// TODO(T24656189) - replace with JITed code once we have the facilities for
+// that.
+// TODO(T39316450): Kill this in favor of storing the fn pointer in the
+// Function->Code->code
+template <Function::Entry Fn>
+RawObject builtinTrampolineWrapper(Thread* thread, Frame* caller, word argc) {
+  return builtinTrampoline(thread, caller, argc, Fn);
 }
 
 }  // namespace python

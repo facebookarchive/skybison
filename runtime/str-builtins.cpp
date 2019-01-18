@@ -233,7 +233,7 @@ const BuiltinMethod StrBuiltins::kMethods[] = {
     {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
-    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
+    {SymbolId::kDunderLen, builtinTrampolineWrapper<dunderLen>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
@@ -379,9 +379,6 @@ RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected 0 arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

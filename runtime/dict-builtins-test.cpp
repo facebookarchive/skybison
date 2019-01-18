@@ -272,10 +272,10 @@ TEST(DictBuiltinsTest, DunderEqWithNonDict) {
             runtime.notImplemented());
 }
 
-TEST(DictBuiltinsTest, UpdateWithNoArgumentsThrowsTypeError) {
+TEST(DictBuiltinsDeathTest, UpdateWithNoArgumentsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(runBuiltin(DictBuiltins::update).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_DEATH(runFromCStr(&runtime, "dict.update()"),
+               "'update' takes 2 arguments but 0 given");
 }
 
 TEST(DictBuiltinsTest, UpdateWithNonDictThrowsTypeError) {
@@ -283,7 +283,8 @@ TEST(DictBuiltinsTest, UpdateWithNonDictThrowsTypeError) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
-  EXPECT_TRUE(runBuiltin(DictBuiltins::update, list).isError());
+  Object none(&scope, NoneType::object());
+  EXPECT_TRUE(runBuiltin(DictBuiltins::update, list, none).isError());
   EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
@@ -595,22 +596,16 @@ TEST(DictBuiltinsTest, ValueIteratorNextOnOneElementDictReturnsElement) {
   ASSERT_TRUE(next->isError());
 }
 
-TEST(DictBuiltinsTest, GetWithNotEnoughArgumentsThrowsTypeError) {
+TEST(DictBuiltinsDeathTest, GetWithNotEnoughArgumentsThrowsTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  EXPECT_TRUE(runBuiltin(DictBuiltins::get).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_DEATH(runFromCStr(&runtime, "dict.get()"),
+               "'get' takes 3 positional arguments but 1 given");
 }
 
-TEST(DictBuiltinsTest, GetWithTooManyArgumentsThrowsTypeError) {
+TEST(DictBuiltinsDeathTest, GetWithTooManyArgumentsThrowsTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Dict dict(&scope, runtime.newDict());
-  Object foo(&scope, runtime.newInt(123));
-  Object bar(&scope, runtime.newInt(456));
-  Object baz(&scope, runtime.newInt(789));
-  EXPECT_TRUE(runBuiltin(DictBuiltins::get, dict, foo, bar, baz).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_DEATH(runFromCStr(&runtime, "dict.get({}, 123, 456, 789)"),
+               "'get' takes 3 positional arguments but 4 given");
 }
 
 TEST(DictBuiltinsTest, GetWithNonDictThrowsTypeError) {
@@ -633,29 +628,21 @@ key = Foo()
 )");
   Dict dict(&scope, runtime.newDict());
   Object key(&scope, moduleAt(&runtime, "__main__", "key"));
-  Object result(&scope, runBuiltin(DictBuiltins::get, dict, key));
-  ASSERT_TRUE(result->isError());
+  Object default_obj(&scope, NoneType::object());
+  EXPECT_TRUE(runBuiltin(DictBuiltins::get, dict, key, default_obj).isError());
   ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, GetReturnsDefaultValue) {
   Runtime runtime;
-  HandleScope scope;
-  Dict dict(&scope, runtime.newDict());
-  Object key(&scope, runtime.newInt(123));
-  Object dflt(&scope, runtime.newInt(456));
-  Object result(&scope, runBuiltin(DictBuiltins::get, dict, key, dflt));
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 456);
+  runFromCStr(&runtime, "res = {}.get(123, 456)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "res"), RawSmallInt::fromWord(456));
 }
 
 TEST(DictBuiltinsTest, GetReturnsNone) {
   Runtime runtime;
-  HandleScope scope;
-  Dict dict(&scope, runtime.newDict());
-  Object key(&scope, runtime.newInt(123));
-  Object result(&scope, runBuiltin(DictBuiltins::get, dict, key));
-  EXPECT_TRUE(result->isNoneType());
+  runFromCStr(&runtime, "result = {}.get(123)");
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNoneType());
 }
 
 TEST(DictBuiltinsTest, GetReturnsValue) {

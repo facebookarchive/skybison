@@ -711,6 +711,7 @@ RawObject Runtime::newFunction() {
   result->setEntry(unimplementedTrampoline);
   result->setEntryKw(unimplementedTrampoline);
   result->setEntryEx(unimplementedTrampoline);
+  result->setName(symbols()->Anonymous());
   return *result;
 }
 

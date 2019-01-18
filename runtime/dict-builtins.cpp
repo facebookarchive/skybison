@@ -237,19 +237,19 @@ const BuiltinAttribute DictBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod DictBuiltins::kMethods[] = {
-    {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
-    {SymbolId::kDunderDelItem, nativeTrampoline<dunderDelItem>},
-    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
-    {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
-    {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
-    {SymbolId::kGet, nativeTrampoline<get>},
-    {SymbolId::kItems, nativeTrampoline<items>},
-    {SymbolId::kKeys, nativeTrampoline<keys>},
-    {SymbolId::kUpdate, nativeTrampoline<update>},
-    {SymbolId::kValues, nativeTrampoline<values>},
+    {SymbolId::kDunderContains, builtinTrampolineWrapper<dunderContains>},
+    {SymbolId::kDunderDelItem, builtinTrampolineWrapper<dunderDelItem>},
+    {SymbolId::kDunderEq, builtinTrampolineWrapper<dunderEq>},
+    {SymbolId::kDunderGetItem, builtinTrampolineWrapper<dunderGetItem>},
+    {SymbolId::kDunderIter, builtinTrampolineWrapper<dunderIter>},
+    {SymbolId::kDunderLen, builtinTrampolineWrapper<dunderLen>},
+    {SymbolId::kDunderNew, builtinTrampolineWrapper<dunderNew>},
+    {SymbolId::kDunderSetItem, builtinTrampolineWrapper<dunderSetItem>},
+    {SymbolId::kGet, builtinTrampolineWrapper<get>},
+    {SymbolId::kItems, builtinTrampolineWrapper<items>},
+    {SymbolId::kKeys, builtinTrampolineWrapper<keys>},
+    {SymbolId::kUpdate, builtinTrampolineWrapper<update>},
+    {SymbolId::kValues, builtinTrampolineWrapper<values>},
 };
 
 void DictBuiltins::initialize(Runtime* runtime) {
@@ -261,9 +261,6 @@ void DictBuiltins::initialize(Runtime* runtime) {
 
 RawObject DictBuiltins::dunderContains(Thread* thread, Frame* frame,
                                        word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -292,9 +289,6 @@ RawObject DictBuiltins::dunderContains(Thread* thread, Frame* frame,
 
 RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -314,9 +308,6 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
 }
 
 RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(args.get(0))) {
@@ -355,9 +346,6 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__len__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -371,9 +359,6 @@ RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 
 RawObject DictBuiltins::dunderGetItem(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -398,9 +383,6 @@ RawObject DictBuiltins::dunderGetItem(Thread* thread, Frame* frame,
 
 RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs != 3) {
-    return thread->raiseTypeErrorWithCStr("expected 2 arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -425,9 +407,6 @@ RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
 }
 
 RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -444,9 +423,6 @@ RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject DictBuiltins::items(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("items() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -462,9 +438,6 @@ RawObject DictBuiltins::items(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject DictBuiltins::keys(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("keys() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -480,9 +453,6 @@ RawObject DictBuiltins::keys(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject DictBuiltins::values(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("values() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -498,15 +468,11 @@ RawObject DictBuiltins::values(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 2) {
-    return thread->raiseTypeErrorWithCStr("get expected at least one argument");
-  }
-  if (nargs > 3) {
-    return thread->raiseTypeErrorWithCStr("get expected at most 2 arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
+  Object default_obj(&scope, args.get(2));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self)) {
     return thread->raiseTypeErrorWithCStr(
@@ -516,7 +482,6 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
   Dict dict(&scope, *self);
 
   // Check key hash
-  Object key(&scope, args.get(1));
   Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key,
                                                        SymbolId::kDunderHash));
   if (dunder_hash->isNoneType()) {
@@ -534,14 +499,10 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
   // Return results
   Object result(&scope, runtime->dictAtWithHash(dict, key, key_hash));
   if (!result->isError()) return *result;
-  if (nargs == 3) return args.get(2);
-  return NoneType::object();
+  return *default_obj;
 }
 
 RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1) {
-    return thread->raiseTypeErrorWithCStr("not enough arguments");
-  }
   Arguments args(frame, nargs);
   if (!args.get(0)->isType()) {
     return thread->raiseTypeErrorWithCStr("not a type object");
@@ -559,22 +520,15 @@ RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject DictBuiltins::update(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1) {
-    return thread->raiseTypeErrorWithCStr("dict.update: not enough arguments");
-  }
-  if (nargs > 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "update expected at most 1 arguments, got %ld", nargs));
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(self)) {
     return thread->raiseTypeErrorWithCStr("'update' requires a 'dict' object");
   }
   Dict dict(&scope, *self);
-  Object other(&scope, args.get(1));
   Type other_type(&scope, runtime->typeOf(*other));
   if (!runtime->lookupSymbolInMro(thread, other_type, SymbolId::kKeys)
            .isError()) {

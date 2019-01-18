@@ -122,14 +122,15 @@ static bool isPass(const Code& code) {
 void patchFunctionAttrs(Thread* thread, const Dict& type_dict,
                         const Function& patch) {
   HandleScope scope(thread);
-  Object code_obj(&scope, patch->code());
-  if (!code_obj->isCode()) {
+  Object patch_code_obj(&scope, patch->code());
+  if (!patch_code_obj->isCode()) {
     return;
   }
 
   Str method_name(&scope, patch->name());
-  Code code(&scope, *code_obj);
-  CHECK(isPass(code), "Redefinition of native code method %s in managed code",
+  Code patch_code(&scope, *patch_code_obj);
+  CHECK(isPass(patch_code),
+        "Redefinition of native code method %s in managed code",
         method_name->toCStr());
 
   Runtime* runtime = thread->runtime();
@@ -137,6 +138,8 @@ void patchFunctionAttrs(Thread* thread, const Dict& type_dict,
   CHECK(base_obj->isFunction(),
         "Python annotation of non-function native object");
   Function base(&scope, *base_obj);
+  patch_code->setCode(NoneType::object());
+  base->setCode(*patch_code);
 
   // The Python implementation will be used only for its attributes, and
   // not for its code.

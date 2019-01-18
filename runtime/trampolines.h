@@ -1,12 +1,16 @@
 #pragma once
 
 #include "globals.h"
+#include "handles.h"
 #include "objects.h"
 
 namespace python {
 
 class Frame;
 class Thread;
+
+RawObject preparePositionalCall(Thread* thread, const Function& function,
+                                const Code& code, Frame* caller, word argc);
 
 // Entry points for ordinary interpreted functions
 RawObject interpreterTrampoline(Thread* thread, Frame* caller, word argc)
@@ -53,6 +57,10 @@ template <RawObject (*Fn)(Thread*, Frame*, word)>
 RawObject nativeTrampolineKw(Thread* thread, Frame* caller, word argc)
     __attribute__((aligned(16)));
 
+template <RawObject (*Fn)(Thread*, Frame*, word)>
+RawObject builtinTrampolineWrapper(Thread* thread, Frame* caller, word argc)
+    __attribute__((aligned(16)));
+
 RawObject moduleTrampolineNoArgs(Thread* thread, Frame* caller, word argc)
     __attribute__((aligned(16)));
 RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* caller, word argc)
@@ -77,5 +85,8 @@ RawObject extensionTrampolineEx(Thread* thread, Frame* caller, word argc)
 // Aborts immediately when called
 RawObject unimplementedTrampoline(Thread* thread, Frame* caller_frame,
                                   word argc) __attribute__((aligned(16)));
+
+RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc,
+                            Function::Entry fn);
 
 }  // namespace python

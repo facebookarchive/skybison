@@ -290,9 +290,48 @@ class str(bootstrap=True):
 
 
 class dict(bootstrap=True):
+    def __contains__(self, obj) -> bool:
+        pass
+
+    def __delitem__(self, key):
+        pass
+
+    def __eq__(self, other):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __new__(cls):
+        pass
+
+    def __getitem__(self, key):
+        pass
+
+    def __setitem__(self, key, value):
+        pass
+
+    def __iter__(self):
+        pass
+
     def __repr__(self):
         kwpairs = [f"{repr(key)}: {repr(self[key])}" for key in self.keys()]
         return "{" + ", ".join(kwpairs) + "}"
+
+    def get(self, key, default=None):
+        pass
+
+    def item(self):
+        pass
+
+    def keys(self):
+        pass
+
+    def update(self, other):
+        pass
+
+    def values(self):
+        pass
 
 
 def all(iterable):

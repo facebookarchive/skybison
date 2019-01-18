@@ -86,12 +86,17 @@ static RawObject processDefaultArguments(Thread* thread,
                                          word argc) {
   HandleScope scope(thread);
   Object tmp_varargs(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
   if (argc < code->argcount() && function->hasDefaults()) {
     // Add default positional args
     Tuple default_args(&scope, function->defaults());
     if (default_args->length() < (code->argcount() - argc)) {
-      return thread->raiseTypeErrorWithCStr(
-          "TypeError: not enough positional arguments");
+      // TODO(T39316354): Fix this up to remove the toCStr grossness.
+      Str fn_name_str(&scope, function->name());
+      unique_c_ptr<char> fn_name(fn_name_str->toCStr());
+      return thread->raiseTypeError(runtime->newStrFromFormat(
+          "TypeError: '%s' takes %ld positional arguments but %ld given",
+          fn_name.get(), code->argcount() - argc, default_args->length()));
     }
     const word positional_only = code->argcount() - default_args->length();
     for (; argc < code->argcount(); argc++) {
@@ -110,7 +115,12 @@ static RawObject processDefaultArguments(Thread* thread,
       }
       tmp_varargs = *varargs;
     } else {
-      return thread->raiseTypeErrorWithCStr("TypeError: too many arguments");
+      // TODO(T39316354): Fix this up to remove the toCStr grossness.
+      Str fn_name_str(&scope, function->name());
+      unique_c_ptr<char> fn_name(fn_name_str->toCStr());
+      return thread->raiseTypeError(runtime->newStrFromFormat(
+          "TypeError: '%s' takes %ld positional arguments but %ld given",
+          fn_name.get(), code->argcount(), argc));
     }
   }
 
@@ -155,8 +165,12 @@ static RawObject processDefaultArguments(Thread* thread,
   // At this point, we should have the correct number of arguments.  Throw if
   // not.
   if (argc != code->totalArgs()) {
-    return thread->raiseTypeErrorWithCStr(
-        "TypeError: incorrect argument count");
+    // TODO(T39316354): Fix this up to remove the toCStr grossness.
+    Str fn_name_str(&scope, function->name());
+    unique_c_ptr<char> fn_name(fn_name_str->toCStr());
+    return thread->raiseTypeError(runtime->newStrFromFormat(
+        "TypeError: '%s' takes %ld arguments but %ld given", fn_name.get(),
+        code->totalArgs(), argc));
   }
   return NoneType::object();  // value not significant, it's just not an error
 }
@@ -806,6 +820,31 @@ RawObject extensionTrampolineEx(Thread*, Frame*, word) {
 
 RawObject unimplementedTrampoline(Thread*, Frame*, word) {
   UNIMPLEMENTED("Trampoline");
+}
+
+RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc,
+                            Function::Entry fn) {
+  HandleScope scope(thread);
+  Function function(&scope, caller->peek(argc));
+  DCHECK(!function->code().isNoneType(),
+         "builtin functions should have annotated code objects");
+  Code code(&scope, function->code());
+  DCHECK(code->code().isNoneType(),
+         "builtin functions should not have bytecode");
+  // The native function has been annotated in managed code, so do some more
+  // advanced argument checking.
+  Object result(&scope,
+                preparePositionalCall(thread, function, code, caller, argc));
+  if (result->isError()) {
+    return *result;
+  }
+  argc = code->argcount();
+  Frame* frame = thread->pushNativeFrame(bit_cast<void*>(fn), argc);
+  result = fn(thread, frame, argc);
+  DCHECK(result->isError() == thread->hasPendingException(),
+         "error/exception mismatch");
+  thread->popFrame();
+  return *result;
 }
 
 }  // namespace python
