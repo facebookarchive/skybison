@@ -7,9 +7,21 @@
 
 namespace python {
 
-RawObject builtinImpAcquireLock(Thread* /* thread */, Frame* /* frame */,
+static Thread* import_lock_holder;
+static word import_lock_count;
+
+RawObject builtinImpAcquireLock(Thread* thread, Frame* /* frame */,
                                 word /* nargs */) {
-  UNIMPLEMENTED("acquire_lock");
+  if (import_lock_holder == nullptr) {
+    import_lock_holder = thread;
+    DCHECK(import_lock_count == 0, "count should be zero");
+  }
+  if (import_lock_holder == thread) {
+    ++import_lock_count;
+  } else {
+    UNIMPLEMENTED("builtinImpAcquireLock(): thread switching not implemented");
+  }
+  return RawNoneType::object();
 }
 
 RawObject builtinImpCreateBuiltin(Thread* /* thread */, Frame* /* frame */,
@@ -103,9 +115,17 @@ RawObject builtinImpIsFrozenPackage(Thread* /* thread */, Frame* /* frame */,
   UNIMPLEMENTED("is_frozen_package");
 }
 
-RawObject builtinImpReleaseLock(Thread* /* thread */, Frame* /* frame */,
+RawObject builtinImpReleaseLock(Thread* thread, Frame* /* frame */,
                                 word /* nargs */) {
-  UNIMPLEMENTED("release_lock");
+  if (import_lock_holder == nullptr) {
+    return thread->raiseRuntimeErrorWithCStr("not holding the import lock");
+  }
+  DCHECK(import_lock_count > 0, "count should be bigger than zero");
+  --import_lock_count;
+  if (import_lock_count == 0) {
+    import_lock_holder = nullptr;
+  }
+  return RawNoneType::object();
 }
 
 }  // namespace python

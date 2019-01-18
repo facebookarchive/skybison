@@ -17,13 +17,10 @@ import _imp
   EXPECT_TRUE(imp->isModule());
 }
 
-TEST(ImportBuiltinsDeathTest, AcquireLock) {
+TEST(ImportBuiltins, AcquireLockAndReleaseLockWorks) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
-import _imp
-_imp.acquire_lock()
-  )"),
-               "unimplemented: acquire_lock");
+  runBuiltin(builtinImpAcquireLock);
+  runBuiltin(builtinImpReleaseLock);
 }
 
 TEST(ImportBuiltinsDeathTest, CreateBuiltin) {
@@ -152,13 +149,24 @@ _imp.is_frozen_package("foo")
                "unimplemented: is_frozen_package");
 }
 
-TEST(ImportBuiltinsDeathTest, ReleaseLock) {
+TEST(ImportBuiltinsTest, ReleaseLockWithoutAcquireRaisesRuntimeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
-import _imp
-_imp.release_lock()
-  )"),
-               "unimplemented: release_lock");
+  HandleScope scope;
+  Object result(&scope, runBuiltin(builtinImpReleaseLock));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kRuntimeError));
+}
+
+TEST(ImportBuiltins, AcquireLockCheckRecursiveCallsWorks) {
+  Runtime runtime;
+  HandleScope scope;
+  runBuiltin(builtinImpAcquireLock);
+  runBuiltin(builtinImpAcquireLock);
+  runBuiltin(builtinImpReleaseLock);
+  runBuiltin(builtinImpReleaseLock);
+  // Make sure that additional releases raise.
+  Object result(&scope, runBuiltin(builtinImpReleaseLock));
+  EXPECT_TRUE(result->isError());
 }
 
 }  // namespace python
