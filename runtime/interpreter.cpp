@@ -564,32 +564,23 @@ RawObject Interpreter::yieldFrom(Thread* thread, Frame* frame) {
     Object next_method(
         &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
     if (next_method->isError()) {
-      thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
-      thread->abortOnPendingException();
+      return thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
     }
     result = callMethod1(thread, frame, next_method, iterator);
-    if (result->isError() && !thread->hasPendingStopIteration()) {
-      thread->abortOnPendingException();
-    }
   } else {
     Object send_method(&scope,
                        lookupMethod(thread, frame, iterator, SymbolId::kSend));
     if (send_method->isError()) {
-      thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
-      thread->abortOnPendingException();
+      return thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
     }
     result = callMethod2(thread, frame, send_method, iterator, value);
-    if (result->isError() && !thread->hasPendingStopIteration()) {
-      thread->abortOnPendingException();
-    }
   }
   if (result->isError()) {
     if (thread->hasPendingStopIteration()) {
       frame->setTopValue(thread->pendingExceptionValue());
       thread->clearPendingException();
-      return Error::object();
     }
-    thread->abortOnPendingException();
+    return *result;
   }
   // Unlike YIELD_VALUE, don't update PC in the frame: we want this
   // instruction to re-execute until the subiterator is exhausted.
@@ -716,6 +707,7 @@ bool Interpreter::unwind(Context* ctx) {
     return false;
   }
 
+  thread->popFrame();
   return true;
 }
 
@@ -879,7 +871,7 @@ void Interpreter::doInplaceTrueDivide(Context* ctx, word) {
 }
 
 // opcode 50
-void Interpreter::doGetAiter(Context* ctx, word) {
+bool Interpreter::doGetAiter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object obj(&scope, ctx->frame->topValue());
@@ -888,15 +880,16 @@ void Interpreter::doGetAiter(Context* ctx, word) {
   if (method->isError()) {
     thread->raiseTypeErrorWithCStr(
         "'async for' requires an object with __aiter__ method");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
   Object aiter(&scope, callMethod1(thread, ctx->frame, method, obj));
-  thread->abortOnPendingException();
+  if (aiter->isError()) return unwind(ctx);
   ctx->frame->setTopValue(*aiter);
+  return false;
 }
 
 // opcode 51
-void Interpreter::doGetAnext(Context* ctx, word) {
+bool Interpreter::doGetAnext(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object obj(&scope, ctx->frame->topValue());
@@ -905,10 +898,10 @@ void Interpreter::doGetAnext(Context* ctx, word) {
   if (anext->isError()) {
     thread->raiseTypeErrorWithCStr(
         "'async for' requires an iterator with __anext__ method");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
   Object awaitable(&scope, callMethod1(thread, ctx->frame, anext, obj));
-  thread->abortOnPendingException();
+  if (awaitable->isError()) return unwind(ctx);
 
   // TODO(T33628943): Check if `awaitable` is a native or generator-based
   // coroutine and if it is, no need to call __await__
@@ -917,16 +910,17 @@ void Interpreter::doGetAnext(Context* ctx, word) {
   if (await->isError()) {
     thread->raiseTypeErrorWithCStr(
         "'async for' received an invalid object from __anext__");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
   Object aiter(&scope, callMethod1(thread, ctx->frame, await, awaitable));
-  thread->abortOnPendingException();
+  if (aiter->isError()) return unwind(ctx);
 
   ctx->frame->setTopValue(*aiter);
+  return false;
 }
 
 // opcode 52
-void Interpreter::doBeforeAsyncWith(Context* ctx, word) {
+bool Interpreter::doBeforeAsyncWith(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Frame* frame = ctx->frame;
@@ -947,9 +941,10 @@ void Interpreter::doBeforeAsyncWith(Context* ctx, word) {
   if (enter->isError()) {
     UNIMPLEMENTED("throw TypeError");
   }
-  RawObject result = callMethod1(thread, frame, enter, manager);
-  thread->abortOnPendingException();
-  frame->pushValue(result);
+  Object result(&scope, callMethod1(thread, frame, enter, manager));
+  if (result->isError()) return unwind(ctx);
+  frame->pushValue(*result);
+  return false;
 }
 
 // opcode 55
@@ -973,7 +968,7 @@ void Interpreter::doInplaceModulo(Context* ctx, word) {
 }
 
 // opcode 60
-void Interpreter::doStoreSubscr(Context* ctx, word) {
+bool Interpreter::doStoreSubscr(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object key(&scope, ctx->frame->popValue());
@@ -984,13 +979,15 @@ void Interpreter::doStoreSubscr(Context* ctx, word) {
     UNIMPLEMENTED("throw TypeError");
   }
   Object value(&scope, ctx->frame->popValue());
-  callMethod3(thread, ctx->frame, setitem, container, key, value);
-  // TODO(T31788973): propagate an exception
-  thread->abortOnPendingException();
+  if (callMethod3(thread, ctx->frame, setitem, container, key, value)
+          .isError()) {
+    return unwind(ctx);
+  }
+  return false;
 }
 
 // opcode 61
-void Interpreter::doDeleteSubscr(Context* ctx, word) {
+bool Interpreter::doDeleteSubscr(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object key(&scope, ctx->frame->popValue());
@@ -1000,10 +997,11 @@ void Interpreter::doDeleteSubscr(Context* ctx, word) {
   if (delitem->isError()) {
     UNIMPLEMENTED("throw TypeError");
   }
-  RawObject result = callMethod2(thread, ctx->frame, delitem, container, key);
-  // TODO(T31788973): propagate an exception
-  thread->abortOnPendingException();
+  Object result(&scope,
+                callMethod2(thread, ctx->frame, delitem, container, key));
+  if (result->isError()) return unwind(ctx);
   ctx->frame->pushValue(result);
+  return false;
 }
 
 // opcode 62
@@ -1043,7 +1041,7 @@ void Interpreter::doInplacePower(Context* ctx, word) {
 }
 
 // opcode 68
-void Interpreter::doGetIter(Context* ctx, word) {
+bool Interpreter::doGetIter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object iterable(&scope, ctx->frame->topValue());
@@ -1051,23 +1049,22 @@ void Interpreter::doGetIter(Context* ctx, word) {
                                      SymbolId::kDunderIter));
   if (method->isError()) {
     thread->raiseTypeErrorWithCStr("object is not iterable");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
   Object iterator(&scope, callMethod1(thread, ctx->frame, method, iterable));
-  thread->abortOnPendingException();
+  if (iterator->isError()) return unwind(ctx);
   ctx->frame->setTopValue(*iterator);
+  return false;
 }
 
 // opcode 69
-void Interpreter::doGetYieldFromIter(Context* ctx, word) {
+bool Interpreter::doGetYieldFromIter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
   Object iterable(&scope, frame->topValue());
 
-  if (iterable->isGenerator()) {
-    return;
-  }
+  if (iterable->isGenerator()) return false;
 
   if (iterable->isCoroutine()) {
     Code code(&scope, frame->code());
@@ -1075,20 +1072,21 @@ void Interpreter::doGetYieldFromIter(Context* ctx, word) {
       thread->raiseTypeErrorWithCStr(
           "cannot 'yield from' a coroutine object in a non-coroutine "
           "generator");
-      thread->abortOnPendingException();
+      return unwind(ctx);
     }
-    return;
+    return false;
   }
 
   Object method(&scope,
                 lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (method->isError()) {
     thread->raiseTypeErrorWithCStr("object is not iterable");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
   Object iterator(&scope, callMethod1(thread, frame, method, iterable));
-  thread->abortOnPendingException();
+  if (iterator->isError()) return unwind(ctx);
   frame->setTopValue(*iterator);
+  return false;
 }
 
 // opcode 70
@@ -1114,7 +1112,7 @@ void Interpreter::doLoadBuildClass(Context* ctx, word) {
 }
 
 // opcode 73
-void Interpreter::doGetAwaitable(Context* ctx, word) {
+bool Interpreter::doGetAwaitable(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object obj(&scope, ctx->frame->topValue());
@@ -1126,12 +1124,13 @@ void Interpreter::doGetAwaitable(Context* ctx, word) {
   if (await->isError()) {
     thread->raiseTypeErrorWithCStr(
         "object can't be used in 'await' expression");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
   Object iter(&scope, callMethod1(thread, ctx->frame, await, obj));
-  thread->abortOnPendingException();
+  if (iter->isError()) return unwind(ctx);
 
   ctx->frame->setTopValue(*iter);
+  return false;
 }
 
 // opcode 75
@@ -1259,14 +1258,14 @@ bool Interpreter::doEndFinally(Context* ctx, word) {
 }
 
 // opcode 89
-void Interpreter::doPopExcept(Context* ctx, word) {
+bool Interpreter::doPopExcept(Context* ctx, word) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
 
   TryBlock block = ctx->frame->blockStack()->pop();
   if (block.kind() != TryBlock::kExceptHandler) {
     thread->raiseSystemErrorWithCStr("popped block is not an except handler");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
 
   // Drop all dead values except for the 3 that are popped into the caught
@@ -1275,6 +1274,7 @@ void Interpreter::doPopExcept(Context* ctx, word) {
   thread->setCaughtExceptionType(frame->popValue());
   thread->setCaughtExceptionValue(frame->popValue());
   thread->setCaughtExceptionTraceback(frame->popValue());
+  return false;
 }
 
 // opcode 90
@@ -1314,15 +1314,16 @@ bool Interpreter::doUnpackSequence(Context* ctx, word arg) {
       &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (iter_method->isError()) {
     thread->raiseTypeErrorWithCStr("object is not iterable");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
   Object iterator(&scope, callMethod1(thread, frame, iter_method, iterable));
-  thread->abortOnPendingException();
+  if (iterator->isError()) return unwind(ctx);
+
   Object next_method(
       &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
     thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
   word num_pushed = 0;
   Object value(&scope, RawNoneType::object());
@@ -1363,7 +1364,7 @@ bool Interpreter::doForIter(Context* ctx, word arg) {
                                           SymbolId::kDunderNext));
   if (next_method->isError()) {
     thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
-    thread->abortOnPendingException();
+    return unwind(ctx);
   }
   Object value(&scope, callMethod1(thread, ctx->frame, next_method, iterator));
   if (value->isError()) {
@@ -1392,7 +1393,8 @@ bool Interpreter::doUnpackEx(Context* ctx, word arg) {
     return unwind(ctx);
   }
   Object iterator(&scope, callMethod1(thread, frame, iter_method, iterable));
-  thread->abortOnPendingException();
+  if (iterator->isError()) return unwind(ctx);
+
   Object next_method(
       &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
   if (next_method->isError()) {
@@ -1458,28 +1460,32 @@ bool Interpreter::doUnpackEx(Context* ctx, word arg) {
 }
 
 // opcode 95
-void Interpreter::doStoreAttr(Context* ctx, word arg) {
+bool Interpreter::doStoreAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Object receiver(&scope, ctx->frame->popValue());
   auto names = RawCode::cast(ctx->frame->code())->names();
   Object name(&scope, RawTuple::cast(names)->at(arg));
   Object value(&scope, ctx->frame->popValue());
-  thread->runtime()->attributeAtPut(thread, receiver, name, value);
-  // TODO(T31788973): propagate an exception
-  thread->abortOnPendingException();
+  if (thread->runtime()
+          ->attributeAtPut(thread, receiver, name, value)
+          .isError()) {
+    return unwind(ctx);
+  }
+  return false;
 }
 
 // opcode 96
-void Interpreter::doDeleteAttr(Context* ctx, word arg) {
+bool Interpreter::doDeleteAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Object receiver(&scope, ctx->frame->popValue());
   auto names = RawCode::cast(ctx->frame->code())->names();
   Object name(&scope, RawTuple::cast(names)->at(arg));
-  thread->runtime()->attributeDel(ctx->thread, receiver, name);
-  // TODO(T31788973): propagate an exception
-  thread->abortOnPendingException();
+  if (thread->runtime()->attributeDel(ctx->thread, receiver, name).isError()) {
+    return unwind(ctx);
+  }
+  return false;
 }
 
 // opcode 97
@@ -1690,7 +1696,7 @@ bool Interpreter::doCompareOp(Context* ctx, word arg) {
 }
 
 // opcode 108
-void Interpreter::doImportName(Context* ctx, word arg) {
+bool Interpreter::doImportName(Context* ctx, word arg) {
   HandleScope scope;
   Code code(&scope, ctx->frame->code());
   Object name(&scope, RawTuple::cast(code->names())->at(arg));
@@ -1698,10 +1704,10 @@ void Interpreter::doImportName(Context* ctx, word arg) {
   Object level(&scope, ctx->frame->topValue());
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
-  RawObject result = runtime->importModule(name);
-  // TODO(T31788973): propagate an exception
-  thread->abortOnPendingException();
+  Object result(&scope, runtime->importModule(name));
+  if (result->isError()) return unwind(ctx);
   ctx->frame->setTopValue(result);
+  return false;
 }
 
 // opcode 109
@@ -2019,19 +2025,19 @@ void Interpreter::doDeleteDeref(Context* ctx, word arg) {
 }
 
 // opcode 141
-void Interpreter::doCallFunctionKw(Context* ctx, word arg) {
+bool Interpreter::doCallFunctionKw(Context* ctx, word arg) {
   RawObject result = callKw(ctx->thread, ctx->frame, arg);
-  // TODO(T31788973): propagate an exception
-  ctx->thread->abortOnPendingException();
+  if (result.isError()) return unwind(ctx);
   ctx->frame->pushValue(result);
+  return false;
 }
 
 // opcode 142
-void Interpreter::doCallFunctionEx(Context* ctx, word arg) {
+bool Interpreter::doCallFunctionEx(Context* ctx, word arg) {
   RawObject result = callEx(ctx->thread, ctx->frame, arg);
-  // TODO(T31788973): propagate an exception
-  ctx->thread->abortOnPendingException();
+  if (result.isError()) return unwind(ctx);
   ctx->frame->pushValue(result);
+  return false;
 }
 
 // opcode 143
@@ -2099,7 +2105,7 @@ void Interpreter::doLoadClassDeref(Context* ctx, word arg) {
 }
 
 // opcode 149
-void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
+bool Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
@@ -2108,17 +2114,15 @@ void Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (listExtend(thread, list, obj)->isError()) {
-      frame->dropValues(arg);
-      thread->abortOnPendingException();
-    }
+    if (listExtend(thread, list, obj).isError()) return unwind(ctx);
   }
   frame->dropValues(arg - 1);
   frame->setTopValue(*list);
+  return false;
 }
 
 // opcode 150
-void Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
+bool Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
@@ -2134,15 +2138,16 @@ void Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
         thread->clearPendingException();
         thread->raiseTypeErrorWithCStr("object is not a mapping");
       }
-      thread->abortOnPendingException();
+      return unwind(ctx);
     }
   }
   frame->dropValues(arg - 1);
   frame->setTopValue(*dict);
+  return false;
 }
 
 // opcode 151
-void Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
+bool Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
@@ -2169,15 +2174,16 @@ void Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
           thread->raiseTypeErrorWithCStr("keywords must be strings");
         }
       }
-      thread->abortOnPendingException();
+      return unwind(ctx);
     }
   }
   frame->dropValues(arg - 1);
   frame->setTopValue(*dict);
+  return false;
 }
 
 // opcode 152 & opcode 158
-void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
+bool Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
@@ -2186,10 +2192,7 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (listExtend(thread, list, obj)->isError()) {
-      frame->dropValues(arg);
-      thread->abortOnPendingException();
-    }
+    if (listExtend(thread, list, obj).isError()) return unwind(ctx);
   }
   Tuple tuple(&scope, runtime->newTuple(list->numItems()));
   for (word i = 0; i < list->numItems(); i++) {
@@ -2197,10 +2200,11 @@ void Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   }
   frame->dropValues(arg - 1);
   frame->setTopValue(*tuple);
+  return false;
 }
 
 // opcode 153
-void Interpreter::doBuildSetUnpack(Context* ctx, word arg) {
+bool Interpreter::doBuildSetUnpack(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
@@ -2209,13 +2213,11 @@ void Interpreter::doBuildSetUnpack(Context* ctx, word arg) {
   Object obj(&scope, NoneType::object());
   for (word i = 0; i < arg; i++) {
     obj = frame->peek(i);
-    if (runtime->setUpdate(thread, set, obj)->isError()) {
-      frame->dropValues(arg);
-      thread->abortOnPendingException();
-    }
+    if (runtime->setUpdate(thread, set, obj).isError()) return unwind(ctx);
   }
   frame->dropValues(arg - 1);
   frame->setTopValue(*set);
+  return false;
 }
 
 // opcode 154
@@ -2342,7 +2344,8 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
       }
       case Bytecode::YIELD_FROM: {
         RawObject result = yieldFrom(thread, frame);
-        if (result->isError()) {
+        if (result.isError() &&
+            (!thread->hasPendingException() || !unwind(&ctx))) {
           continue;
         }
         return result;
@@ -2355,10 +2358,7 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
         return *result;
       }
       default: {
-        if (kOpTable[bc](&ctx, arg)) {
-          thread->popFrame();
-          return Error::object();
-        }
+        if (kOpTable[bc](&ctx, arg)) return Error::object();
       }
     }
   }

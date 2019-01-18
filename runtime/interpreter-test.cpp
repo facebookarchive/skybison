@@ -1039,7 +1039,7 @@ a = AsyncIterable()
   EXPECT_EQ(42, RawSmallInt::cast(*result)->value());
 }
 
-TEST(InterpreterDeathTest, GetAiterOnNonIterable) {
+TEST(InterpreterTest, GetAiterOnNonIterable) {
   Runtime runtime;
   HandleScope scope;
   Code code(&scope, testing::newEmptyCode(&runtime));
@@ -1049,8 +1049,9 @@ TEST(InterpreterDeathTest, GetAiterOnNonIterable) {
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  ASSERT_DEATH(Thread::currentThread()->run(code),
-               "'async for' requires an object with __aiter__ method");
+  Object result(&scope, Thread::currentThread()->run(code));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest, BeforeAsyncWithCallsDunderAenter) {
@@ -1651,7 +1652,7 @@ a = AsyncIterator()
   EXPECT_EQ(*a, *await);
 }
 
-TEST(InterpreterDeathTest, GetAnextOnNonIterable) {
+TEST(InterpreterTest, GetAnextOnNonIterable) {
   Runtime runtime;
   HandleScope scope;
   Code code(&scope, testing::newEmptyCode(&runtime));
@@ -1661,11 +1662,12 @@ TEST(InterpreterDeathTest, GetAnextOnNonIterable) {
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  ASSERT_DEATH(Thread::currentThread()->run(code),
-               "'async for' requires an iterator with __anext__ method");
+  Object result(&scope, Thread::currentThread()->run(code));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
-TEST(InterpreterDeathTest, GetAnextWithInvalidAnext) {
+TEST(InterpreterTest, GetAnextWithInvalidAnext) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(
@@ -1685,8 +1687,9 @@ a = AsyncIterator()
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  ASSERT_DEATH(Thread::currentThread()->run(code),
-               "'async for' received an invalid object from __anext__");
+  Object result(&scope, Thread::currentThread()->run(code));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest, GetAwaitableCallsAwait) {
@@ -1715,7 +1718,7 @@ a = Awaitable()
   EXPECT_EQ(42, RawSmallInt::cast(*result)->value());
 }
 
-TEST(InterpreterDeathTest, GetAwaitableOnNonAwaitable) {
+TEST(InterpreterTest, GetAwaitableOnNonAwaitable) {
   Runtime runtime;
   HandleScope scope;
   Code code(&scope, testing::newEmptyCode(&runtime));
@@ -1725,8 +1728,9 @@ TEST(InterpreterDeathTest, GetAwaitableOnNonAwaitable) {
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
   code->setCode(runtime.newBytesWithAll(bytecode));
 
-  ASSERT_DEATH(Thread::currentThread()->run(code),
-               "can't be used in 'await' expression");
+  Object result(&scope, Thread::currentThread()->run(code));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithCallDict) {

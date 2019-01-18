@@ -2419,7 +2419,7 @@ del Foo.bar
   EXPECT_EQ(args->at(1), *attr);
 }
 
-TEST(ModuleAttributeDeletionDeathTest, DeleteUnknownAttribute) {
+TEST(ModuleAttributeDeletionTest, DeleteUnknownAttribute) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
@@ -2431,7 +2431,8 @@ def test(module):
   Function test(&scope, moduleAt(&runtime, main, "test"));
   Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *main);
-  EXPECT_DEATH(callFunction(test, args), "missing attribute");
+  ASSERT_TRUE(callFunction(test, args).isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kAttributeError));
 }
 
 TEST(ModuleAttributeDeletionTest, DeleteKnownAttribute) {

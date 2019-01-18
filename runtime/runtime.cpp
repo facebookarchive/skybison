@@ -1457,6 +1457,7 @@ RawObject Runtime::run(const char* buffer) {
   }
   Module main_module(&scope, *main);
   Object result(&scope, executeModule(buffer, main_module));
+  // TODO(bsimmers): Remove this and delete Thread::abortOnPendingException()
   Thread::currentThread()->abortOnPendingException();
   return *result;
 }
@@ -1674,6 +1675,7 @@ RawObject Runtime::typeOf(RawObject object) {
 }
 
 RawObject Runtime::layoutAt(LayoutId layout_id) {
+  DCHECK(layout_id != LayoutId::kError, "Error has no Layout");
   return RawList::cast(layouts_)->at(static_cast<word>(layout_id));
 }
 

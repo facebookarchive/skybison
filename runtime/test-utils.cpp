@@ -19,10 +19,8 @@
 namespace python {
 
 std::ostream& operator<<(std::ostream& os, const Str& str) {
-  char* data = str->toCStr();
-  os.write(data, str->length());
-  std::free(data);
-  return os;
+  unique_c_ptr<char[]> data(str->toCStr());
+  return os.write(data.get(), str->length());
 }
 
 std::ostream& operator<<(std::ostream& os, CastError err) {
@@ -375,12 +373,14 @@ RawObject listFromRange(word start, word stop) {
 
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object expected_type(&scope, runtime->typeAt(error_layout));
-  Object exception_type(&scope, thread->pendingExceptionType());
+  Type expected_type(&scope, runtime->typeAt(error_layout));
+  Type exception_type(&scope, thread->pendingExceptionType());
   if (exception_type != expected_type) {
+    Str expected_name(&scope, expected_type->name());
+    Str actual_name(&scope, exception_type->name());
     return ::testing::AssertionFailure()
-           << "pending exception has type '"
-           << typeName(runtime, exception_type) << "'";
+           << "pending exception has type '" << actual_name << "', expected '"
+           << expected_name << "'";
   }
 
   return ::testing::AssertionSuccess();

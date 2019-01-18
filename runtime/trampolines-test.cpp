@@ -1007,9 +1007,8 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsThrowsError) {
   code->setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_DEATH(Thread::currentThread()->run(code),
-               "function takes no keyword arguments");
-  // TODO(T31788973): Check that error type is TypeError
+  EXPECT_TRUE(Thread::currentThread()->run(code).isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
@@ -1076,9 +1075,8 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsThrowsError) {
   code->setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_DEATH(Thread::currentThread()->run(code),
-               "function takes no arguments");
-  // TODO(T31788973): Check that error type is TypeError
+  EXPECT_TRUE(Thread::currentThread()->run(code).isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
@@ -1273,9 +1271,9 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsThrowsError) {
   code->setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_DEATH(Thread::currentThread()->run(code),
-               "function takes no keyword arguments");
-  // TODO(T31788973): Check that error type is TypeError
+  Object result(&scope, Thread::currentThread()->run(code));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
@@ -1387,9 +1385,9 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndKwThrowsError) {
   code->setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_DEATH(Thread::currentThread()->run(code),
-               "function takes no keyword arguments");
-  // TODO(T31788973): Check that error type is TypeError
+  Object result(&scope, Thread::currentThread()->run(code));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
 }  // namespace python

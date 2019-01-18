@@ -101,9 +101,12 @@ class Interpreter {
                                     const Object& value,
                                     const Object& container);
 
-  // Perform the meat of YIELD_FROM. Returns Error if the subiterator is
-  // finished and execution should continue. Otherwise, returns the value from
-  // the subiterator to return to the caller.
+  // Perform the meat of YIELD_FROM.
+  //
+  // If the subiterator finishes and execution should continue, Error is
+  // returned with no exception set on the current Thread. Otherwise, the return
+  // value is either Error to indicate that an exception was raised, or the
+  // value from the subiterator to be returned to the caller.
   static RawObject yieldFrom(Thread* thread, Frame* frame);
 
   struct Context {
@@ -128,7 +131,14 @@ class Interpreter {
   static void doInvalidBytecode(Context* ctx, word arg);
   static void doNotImplemented(Context* ctx, word arg);
 
-  // Opcodes
+  // Opcode handlers
+  //
+  // Handlers that never raise exceptions return void, while those that could
+  // return bool. A return value of true means an exception was raised, escaped
+  // the frames owned by this Interpreter, and should be propagated to the
+  // caller by returning Error. A return value of false means execution should
+  // continue as normal (note that this doesn't mean no exception was raised; an
+  // exception could've been raised and caught in the same frame).
   static void doPopTop(Context* ctx, word arg);
   static void doRotTwo(Context* ctx, word arg);
   static void doRotThree(Context* ctx, word arg);
@@ -151,26 +161,26 @@ class Interpreter {
   static void doBinaryTrueDivide(Context* ctx, word arg);
   static void doInplaceFloorDivide(Context* ctx, word arg);
   static void doInplaceTrueDivide(Context* ctx, word arg);
-  static void doGetAiter(Context* ctx, word arg);
-  static void doGetAnext(Context* ctx, word arg);
-  static void doBeforeAsyncWith(Context* ctx, word arg);
+  static bool doGetAiter(Context* ctx, word arg);
+  static bool doGetAnext(Context* ctx, word arg);
+  static bool doBeforeAsyncWith(Context* ctx, word arg);
   static void doInplaceAdd(Context* ctx, word arg);
   static void doInplaceSubtract(Context* ctx, word arg);
   static void doInplaceMultiply(Context* ctx, word arg);
   static void doInplaceModulo(Context* ctx, word arg);
-  static void doStoreSubscr(Context* ctx, word arg);
-  static void doDeleteSubscr(Context* ctx, word arg);
+  static bool doStoreSubscr(Context* ctx, word arg);
+  static bool doDeleteSubscr(Context* ctx, word arg);
   static void doBinaryLshift(Context* ctx, word arg);
   static void doBinaryRshift(Context* ctx, word arg);
   static void doBinaryAnd(Context* ctx, word arg);
   static void doBinaryXor(Context* ctx, word arg);
   static void doBinaryOr(Context* ctx, word arg);
   static void doInplacePower(Context* ctx, word arg);
-  static void doGetIter(Context* ctx, word arg);
-  static void doGetYieldFromIter(Context* ctx, word arg);
+  static bool doGetIter(Context* ctx, word arg);
+  static bool doGetYieldFromIter(Context* ctx, word arg);
   static void doPrintExpr(Context* ctx, word);
   static void doLoadBuildClass(Context* ctx, word arg);
-  static void doGetAwaitable(Context* ctx, word arg);
+  static bool doGetAwaitable(Context* ctx, word arg);
   static void doInplaceLshift(Context* ctx, word arg);
   static void doInplaceRshift(Context* ctx, word arg);
   static void doInplaceAnd(Context* ctx, word arg);
@@ -183,13 +193,13 @@ class Interpreter {
   static void doSetupAnnotations(Context* ctx, word arg);
   static void doPopBlock(Context* ctx, word arg);
   static bool doEndFinally(Context* ctx, word arg);
-  static void doPopExcept(Context* ctx, word arg);
+  static bool doPopExcept(Context* ctx, word arg);
   static void doStoreName(Context* ctx, word arg);
   static void doDeleteName(Context* ctx, word arg);
   static bool doUnpackSequence(Context* ctx, word arg);
   static bool doForIter(Context* ctx, word arg);
   static bool doUnpackEx(Context* ctx, word arg);
-  static void doStoreAttr(Context* ctx, word arg);
+  static bool doStoreAttr(Context* ctx, word arg);
   static void doStoreGlobal(Context* ctx, word arg);
   static void doDeleteGlobal(Context* ctx, word arg);
   static void doLoadConst(Context* ctx, word arg);
@@ -200,7 +210,7 @@ class Interpreter {
   static void doBuildMap(Context* ctx, word arg);
   static bool doLoadAttr(Context* ctx, word arg);
   static bool doCompareOp(Context* ctx, word arg);
-  static void doImportName(Context* ctx, word arg);
+  static bool doImportName(Context* ctx, word arg);
   static void doImportFrom(Context* ctx, word arg);
   static void doJumpForward(Context* ctx, word arg);
   static void doJumpIfFalseOrPop(Context* ctx, word arg);
@@ -225,23 +235,23 @@ class Interpreter {
   static void doLoadDeref(Context* ctx, word arg);
   static void doStoreDeref(Context* ctx, word arg);
   static void doDeleteDeref(Context* ctx, word arg);
-  static void doCallFunctionKw(Context* ctx, word arg);
-  static void doCallFunctionEx(Context* ctx, word arg);
+  static bool doCallFunctionKw(Context* ctx, word arg);
+  static bool doCallFunctionEx(Context* ctx, word arg);
   static void doSetupWith(Context* ctx, word arg);
   static void doListAppend(Context* ctx, word arg);
   static void doSetAdd(Context* ctx, word arg);
   static void doMapAdd(Context* ctx, word arg);
   static void doLoadClassDeref(Context* ctx, word arg);
-  static void doBuildListUnpack(Context* ctx, word arg);
-  static void doBuildMapUnpack(Context* ctx, word arg);
-  static void doBuildMapUnpackWithCall(Context* ctx, word arg);
-  static void doBuildTupleUnpack(Context* ctx, word arg);
-  static void doBuildSetUnpack(Context* ctx, word arg);
+  static bool doBuildListUnpack(Context* ctx, word arg);
+  static bool doBuildMapUnpack(Context* ctx, word arg);
+  static bool doBuildMapUnpackWithCall(Context* ctx, word arg);
+  static bool doBuildTupleUnpack(Context* ctx, word arg);
+  static bool doBuildSetUnpack(Context* ctx, word arg);
   static void doSetupAsyncWith(Context* ctx, word flags);
   static void doFormatValue(Context* ctx, word arg);
   static void doBuildConstKeyMap(Context* ctx, word arg);
   static void doBuildString(Context* ctx, word arg);
-  static void doDeleteAttr(Context* ctx, word arg);
+  static bool doDeleteAttr(Context* ctx, word arg);
 
  private:
   // Re-arrange the stack so that it is in "normal" form.
