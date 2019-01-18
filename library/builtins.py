@@ -67,6 +67,9 @@ class list(bootstrap=True):
     def __repr__(self):
         return "[" + ", ".join([i.__repr__() for i in self]) + "]"
 
+    def __contains__(self, key: object) -> bool:
+        pass
+
 
 class str(bootstrap=True):
     def partition(self, sep):

@@ -212,6 +212,7 @@ const BuiltinAttribute ListBuiltins::kAttributes[] = {
 const BuiltinMethod ListBuiltins::kMethods[] = {
     {SymbolId::kAppend, nativeTrampoline<append>},
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
+    {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
     {SymbolId::kDunderDelItem, nativeTrampoline<dunderDelItem>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
@@ -279,6 +280,39 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
     return *new_list;
   }
   return thread->raiseTypeErrorWithCStr("can only concatenate list to list");
+}
+
+RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
+                                       word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfList(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__contains__' requires a 'list' object");
+  }
+
+  List self(&scope, *self_obj);
+  Object value(&scope, args.get(1));
+  Object item(&scope, NoneType::object());
+  Object comp_result(&scope, NoneType::object());
+  Object found(&scope, NoneType::object());
+  for (word i = 0, num_items = self->numItems(); i < num_items; ++i) {
+    item = self->at(i);
+    if (*value == *item) {
+      return Bool::trueObj();
+    }
+
+    comp_result = Interpreter::compareOperation(thread, frame, CompareOp::EQ,
+                                                value, item);
+    if (comp_result->isError()) return *comp_result;
+    found = Interpreter::isTrue(thread, frame, comp_result);
+    if (found->isError()) return *found;
+    if (found == Bool::trueObj()) {
+      return *found;
+    }
+  }
+  return Bool::falseObj();
 }
 
 RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {

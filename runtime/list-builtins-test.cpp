@@ -102,6 +102,140 @@ print(a[0], a[1], a[2][0])
   EXPECT_EQ(output, "1 2 3\n");
 }
 
+TEST(ListBuiltinsTest, DunderContainsWithContainedElementReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Int value0(&scope, runtime.newInt(1));
+  Bool value1(&scope, RawBool::falseObj());
+  Str value2(&scope, runtime.newStrFromCStr("hello"));
+  List list(&scope, runtime.newList());
+  runtime.listAdd(list, value0);
+  runtime.listAdd(list, value1);
+  runtime.listAdd(list, value2);
+  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value0),
+            RawBool::trueObj());
+  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value1),
+            RawBool::trueObj());
+  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value2),
+            RawBool::trueObj());
+}
+
+TEST(ListBuiltinsTest, DunderContainsWithUncontainedElementReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Int value0(&scope, runtime.newInt(7));
+  NoneType value1(&scope, RawNoneType::object());
+  List list(&scope, runtime.newList());
+  runtime.listAdd(list, value0);
+  runtime.listAdd(list, value1);
+  Int value2(&scope, runtime.newInt(42));
+  Bool value3(&scope, RawBool::trueObj());
+  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value2),
+            RawBool::falseObj());
+  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value3),
+            RawBool::falseObj());
+}
+
+TEST(ListBuiltinsTest, DunderContainsWithIdenticalObjectReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __eq__(self, other):
+    return False
+value = Foo()
+list = [value]
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  List list(&scope, moduleAt(&runtime, "__main__", "list"));
+  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value),
+            RawBool::trueObj());
+}
+
+TEST(ListBuiltinsTest,
+     DunderContainsWithNonIdenticalEqualKeyObjectReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __eq__(self, other):
+    return True
+value = Foo()
+list = [None]
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  List list(&scope, moduleAt(&runtime, "__main__", "list"));
+  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value),
+            RawBool::trueObj());
+}
+
+TEST(ListBuiltinsTest,
+     DunderContainsWithNonIdenticalEqualListObjectReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __eq__(self, other):
+    return True
+class Bar:
+  def __eq__(self, other):
+    return False
+value0 = Foo()
+value1 = Bar()
+list = [value0]
+)");
+  Object value1(&scope, moduleAt(&runtime, "__main__", "value1"));
+  List list(&scope, moduleAt(&runtime, "__main__", "list"));
+  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value1),
+            RawBool::falseObj());
+}
+
+TEST(ListBuiltinsTest, DunderContainsWithRaisingEqPropagatesException) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __eq__(self, other):
+    raise UserWarning("")
+value = Foo()
+list = [None]
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  List list(&scope, moduleAt(&runtime, "__main__", "list"));
+  Object result(&scope, runBuiltin(ListBuiltins::dunderContains, list, value));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kUserWarning));
+}
+
+TEST(ListBuiltinsTest, DunderContainsWithRaisingDunderBoolPropagatesException) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __bool__(self):
+    raise UserWarning("")
+class Bar:
+  def __eq__(self, other):
+    return Foo()
+value = Bar()
+list = [None]
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  List list(&scope, moduleAt(&runtime, "__main__", "list"));
+  Object result(&scope, runBuiltin(ListBuiltins::dunderContains, list, value));
+  EXPECT_TRUE(result->isError());
+  // TODO(T39221304) check for kWarning when isTrue() is fixed.
+}
+
+TEST(ListBuiltinsTest, DunderContainsWithNonListSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Int i(&scope, SmallInt::fromWord(3));
+  Object result(&scope, runBuiltin(ListBuiltins::dunderContains, i, i));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
 TEST(ListBuiltinsTest, ListExtend) {
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, R"(

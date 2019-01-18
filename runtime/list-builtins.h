@@ -38,6 +38,7 @@ class ListBuiltins {
   static RawObject append(Thread* thread, Frame* frame, word nargs);
   static RawObject extend(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderDelItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
