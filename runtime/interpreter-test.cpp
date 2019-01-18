@@ -47,6 +47,40 @@ TEST(InterpreterTest, IsTrueInt) {
   EXPECT_EQ(Interpreter::isTrue(thread, frame, false_value), Bool::falseObj());
 }
 
+TEST(InterpreterTest, IsTrueWithDunderBoolRaisingPropagatesException) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __bool__(self):
+    raise UserWarning('')
+value = Foo()
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  Object result(&scope, Interpreter::isTrue(thread, frame, value));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kUserWarning));
+}
+
+TEST(InterpreterTest, IsTrueWithDunderLenRaisingPropagatesException) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  Frame* frame = thread->currentFrame();
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __len__(self):
+    raise UserWarning('')
+value = Foo()
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  Object result(&scope, Interpreter::isTrue(thread, frame, value));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kUserWarning));
+}
+
 TEST(InterpreterTest, IsTrueDunderLen) {
   Runtime runtime;
   HandleScope scope;
