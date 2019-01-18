@@ -82,13 +82,39 @@ _imp.get_frozen_object("foo")
                "unimplemented: get_frozen_object");
 }
 
-TEST(ImportBuiltinsDeathTest, IsBuiltin) {
+TEST(ImportBuiltinsTest, IsBuiltinWithoutArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
-import _imp
-_imp.is_builtin("foo")
-  )"),
-               "unimplemented: is_builtin");
+  HandleScope scope;
+  Object result(&scope, runBuiltin(builtinImpIsBuiltin));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(ImportBuiltinsTest, IsBuiltinReturnsZero) {
+  Runtime runtime;
+  HandleScope scope;
+  Object module_name(&scope, runtime.newStrFromCStr("foo"));
+  Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(Int::cast(*result)->asWord(), 0);
+}
+
+TEST(ImportBuiltinsTest, IsBuiltinReturnsNegativeOne) {
+  Runtime runtime;
+  HandleScope scope;
+  Object module_name(&scope, runtime.newStrFromCStr("sys"));
+  Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(Int::cast(*result)->asWord(), -1);
+}
+
+TEST(ImportBuiltinsTest, IsBuiltinReturnsOne) {
+  Runtime runtime;
+  HandleScope scope;
+  Object module_name(&scope, runtime.newStrFromCStr("errno"));
+  Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(Int::cast(*result)->asWord(), 1);
 }
 
 TEST(ImportBuiltinsDeathTest, IsFrozenWithNoArgsThrowsTypeError) {

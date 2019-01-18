@@ -42,9 +42,36 @@ RawObject builtinImpGetFrozenObject(Thread* /* thread */, Frame* /* frame */,
   UNIMPLEMENTED("get_frozen_object");
 }
 
-RawObject builtinImpIsBuiltin(Thread* /* thread */, Frame* /* frame */,
-                              word /* nargs */) {
-  UNIMPLEMENTED("is_builtin");
+extern "C" struct _inittab _PyImport_Inittab[];
+
+RawObject builtinImpIsBuiltin(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "expected 1 argument, got %ld", nargs - 1));
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object name_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(name_obj)) {
+    return thread->raiseTypeErrorWithCStr("is_builtin requires a str object");
+  }
+  Str name(&scope, *name_obj);
+
+  // Special case internal runtime modules
+  Symbols* symbols = runtime->symbols();
+  if (name.equals(symbols->Builtins()) || name.equals(symbols->UnderThread()) ||
+      name.equals(symbols->Sys()) || name.equals(symbols->UnderWeakRef())) {
+    return RawSmallInt::fromWord(-1);
+  }
+
+  // Iterate the list of runtime and extension builtin modules
+  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
+    if (name.equalsCStr(_PyImport_Inittab[i].name)) {
+      return RawSmallInt::fromWord(1);
+    }
+  }
+  return RawSmallInt::fromWord(0);
 }
 
 RawObject builtinImpIsFrozen(Thread* thread, Frame* frame, word nargs) {
