@@ -457,6 +457,50 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
   return thread->raiseUnsupportedBinaryOperation(*left, *right, *op_name);
 }
 
+RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* caller,
+                                          const Object& value,
+                                          const Object& container) {
+  HandleScope scope(thread);
+  Object dunder_iter(
+      &scope, lookupMethod(thread, caller, container, SymbolId::kDunderIter));
+  if (dunder_iter->isError()) {
+    return thread->raiseTypeErrorWithCStr("__iter__ not defined on object");
+  }
+  Object iter(&scope, callMethod1(thread, caller, dunder_iter, container));
+  if (iter->isError()) {
+    return *iter;
+  }
+  Object dunder_next(&scope,
+                     lookupMethod(thread, caller, iter, SymbolId::kDunderNext));
+  if (dunder_next->isError()) {
+    return thread->raiseTypeErrorWithCStr("__next__ not defined on iterator");
+  }
+  Object current(&scope, NoneType::object());
+  Object compare_result(&scope, NoneType::object());
+  Object result(&scope, NoneType::object());
+  for (;;) {
+    current = callMethod1(thread, caller, dunder_next, iter);
+    if (current->isError()) {
+      if (thread->hasPendingStopIteration()) {
+        thread->clearPendingStopIteration();
+        break;
+      }
+      return *current;
+    }
+    compare_result = compareOperation(thread, caller, EQ, value, current);
+    if (compare_result->isError()) {
+      return *compare_result;
+    }
+    result = isTrue(thread, caller, compare_result);
+    // isTrue can return Error or Bool, and we would want to return on Error or
+    // True.
+    if (result != Bool::falseObj()) {
+      return *result;
+    }
+  }
+  return Bool::falseObj();
+}
+
 RawObject Interpreter::sequenceContains(Thread* thread, Frame* caller,
                                         const Object& value,
                                         const Object& container) {
@@ -468,7 +512,7 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* caller,
                   callMethod2(thread, caller, method, container, value));
     return isTrue(thread, caller, result);
   }
-  UNIMPLEMENTED("fallback to iter search.");
+  return sequenceIterSearch(thread, caller, value, container);
 }
 
 RawObject Interpreter::isTrue(Thread* thread, Frame* caller,

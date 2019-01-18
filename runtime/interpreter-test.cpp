@@ -484,6 +484,129 @@ c = 3
   EXPECT_EQ(contains_false, Bool::falseObj());
 }
 
+TEST(InterpreterTest, SequenceIterSearchWithNoDunderIterRaisesTypeError) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C: pass
+container = C()
+)");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Object container(&scope, moduleAt(&runtime, "__main__", "container"));
+  Object val(&scope, NoneType::object());
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread, frame, val, container));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(InterpreterTest,
+     SequenceIterSearchWithNonCallableDunderIterRaisesTypeError) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  __iter__ = None
+container = C()
+)");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Object container(&scope, moduleAt(&runtime, "__main__", "container"));
+  Object val(&scope, NoneType::object());
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread, frame, val, container));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(InterpreterTest, SequenceIterSearchWithNoDunderNextRaisesTypeError) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class D: pass
+class C:
+  def __iter__(self):
+    return D()
+container = C()
+)");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Object container(&scope, moduleAt(&runtime, "__main__", "container"));
+  Object val(&scope, NoneType::object());
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread, frame, val, container));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(InterpreterTest,
+     SequenceIterSearchWithNonCallableDunderNextRaisesTypeError) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class D:
+  __next__ = None
+class C:
+  def __iter__(self):
+    return D()
+container = C()
+)");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Object container(&scope, moduleAt(&runtime, "__main__", "container"));
+  Object val(&scope, NoneType::object());
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread, frame, val, container));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(InterpreterTest, SequenceIterSearchWithListReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  List container(&scope, listFromRange(1, 3));
+  Object val(&scope, SmallInt::fromWord(2));
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread, frame, val, container));
+  ASSERT_FALSE(result->isError());
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST(InterpreterTest, SequenceIterSearchWithListReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object container(&scope, listFromRange(1, 3));
+  Object val(&scope, SmallInt::fromWord(5));
+  Frame* frame = thread->currentFrame();
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread, frame, val, container));
+  ASSERT_FALSE(result->isError());
+  EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST(InterpreterTest, SequenceIterSearchWithIterThatRaisesPropagatesException) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  def __iter__(self):
+    raise ZeroDivisionError("boom")
+container = C()
+)");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object container(&scope, moduleAt(&runtime, "__main__", "container"));
+  Object val(&scope, SmallInt::fromWord(5));
+  Frame* frame = thread->currentFrame();
+  Object result(&scope,
+                Interpreter::sequenceIterSearch(thread, frame, val, container));
+  ASSERT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kZeroDivisionError));
+}
+
 TEST(InterpreterTest, ContextManagerCallEnterExit) {
   const char* src = R"(
 a = 1

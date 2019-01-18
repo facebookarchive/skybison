@@ -93,6 +93,10 @@ class Interpreter {
   static RawObject compareOperation(Thread* thread, Frame* caller, CompareOp op,
                                     const Object& left, const Object& right);
 
+  static RawObject sequenceIterSearch(Thread* thread, Frame* caller,
+                                      const Object& value,
+                                      const Object& container);
+
   static RawObject sequenceContains(Thread* thread, Frame* caller,
                                     const Object& value,
                                     const Object& container);
