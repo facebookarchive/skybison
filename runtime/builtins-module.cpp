@@ -406,6 +406,32 @@ RawObject Builtins::exec(Thread* thread, Frame* frame, word nargs) {
   return thread->exec(code, globals, locals);
 }
 
+static RawObject isinstanceImpl(Thread* thread, const Object& obj,
+                                const Object& type_obj) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  if (runtime->isInstanceOfType(*type_obj)) {
+    Type type(&scope, *type_obj);
+    return Bool::fromBool(runtime->isInstance(obj, type));
+  }
+
+  if (runtime->isInstanceOfTuple(*type_obj)) {
+    Tuple types(&scope, *type_obj);
+    Object elem(&scope, NoneType::object());
+    Object result(&scope, NoneType::object());
+    for (word i = 0, len = types->length(); i < len; i++) {
+      elem = types->at(i);
+      result = isinstanceImpl(thread, obj, elem);
+      if (result->isError() || result == Bool::trueObj()) return *result;
+    }
+    return Bool::falseObj();
+  }
+
+  return thread->raiseTypeErrorWithCStr(
+      "isinstance() arg 2 must be a type or tuple of types");
+}
+
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is
 // actually far more complicated than one might expect. This is enough to get
 // richards working.
@@ -415,17 +441,10 @@ RawObject Builtins::isinstance(Thread* thread, Frame* frame, word nargs) {
   }
 
   Arguments args(frame, nargs);
-  if (!args.get(1)->isType()) {
-    // TODO(mpage): This error message is misleading. Ultimately, isinstance()
-    // may accept a type or a tuple.
-    return thread->raiseTypeErrorWithCStr("isinstance arg 2 must be a type");
-  }
-
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
-  Type type(&scope, args.get(1));
-  return Bool::fromBool(runtime->isInstance(obj, type));
+  Object type(&scope, args.get(1));
+  return isinstanceImpl(thread, obj, type);
 }
 
 RawObject Builtins::issubclass(Thread* thread, Frame* frame, word nargs) {

@@ -113,9 +113,9 @@ TEST(BuiltinsModuleDeathTest, BuiltinIsinstance) {
       "aborting due to pending exception: isinstance expected 2 arguments");
 
   // 2nd argument must be a type
-  EXPECT_DEATH(
-      runFromCStr(&runtime, "print(isinstance(1, 1))"),
-      "aborting due to pending exception: isinstance arg 2 must be a type");
+  EXPECT_DEATH(runFromCStr(&runtime, "print(isinstance(1, 1))"),
+               "aborting due to pending exception: isinstance\\(\\) arg 2 must "
+               "be a type or tuple of types");
 
   const char* src = R"(
 class A: pass
@@ -178,6 +178,48 @@ def test(a, b):
   ASSERT_TRUE(type_a->isType());
   args->atPut(1, *type_a);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
+}
+
+TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  Tuple types(&scope, runtime.newTuple(3));
+  types->atPut(0, runtime.typeAt(LayoutId::kStr));
+  types->atPut(1, runtime.typeAt(LayoutId::kBool));
+  types->atPut(2, runtime.typeAt(LayoutId::kException));
+
+  Object str(&scope, runtime.newStrFromCStr("hello there!"));
+  EXPECT_EQ(runBuiltin(Builtins::isinstance, str, types), Bool::trueObj());
+
+  Object an_int(&scope, runtime.newInt(123));
+  EXPECT_EQ(runBuiltin(Builtins::isinstance, an_int, types), Bool::falseObj());
+
+  Object a_bool(&scope, Bool::falseObj());
+  EXPECT_EQ(runBuiltin(Builtins::isinstance, a_bool, types), Bool::trueObj());
+
+  Layout exc_layout(&scope, runtime.layoutAt(LayoutId::kException));
+  Object exc(&scope, runtime.newInstance(exc_layout));
+  EXPECT_EQ(runBuiltin(Builtins::isinstance, exc, types), Bool::trueObj());
+
+  Object bytes(&scope, runtime.newBytes(0, 0));
+  EXPECT_EQ(runBuiltin(Builtins::isinstance, bytes, types), Bool::falseObj());
+
+  Tuple inner(&scope, runtime.newTuple(2));
+  inner->atPut(0, runtime.typeAt(LayoutId::kInt));
+  inner->atPut(1, runtime.typeAt(LayoutId::kBytes));
+  types->atPut(2, *inner);
+
+  EXPECT_EQ(runBuiltin(Builtins::isinstance, str, types), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(Builtins::isinstance, an_int, types), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(Builtins::isinstance, a_bool, types), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(Builtins::isinstance, exc, types), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(Builtins::isinstance, bytes, types), Bool::trueObj());
+
+  inner->atPut(1, *an_int);
+  ASSERT_TRUE(runBuiltin(Builtins::isinstance, exc, types).isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
 TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithSubclassReturnsTrue) {
