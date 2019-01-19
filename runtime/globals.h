@@ -97,3 +97,20 @@ inline D bit_cast(const S& src) {
 // which almost always branches one way.
 #define LIKELY(x) __builtin_expect(!!(x), 1)
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
+
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
+
+// Endian enum (as proposed in the C++20 draft).
+enum class endian {
+// Implementation for gcc + clang compilers.
+#if defined(__ORDER_LITTLE_ENDIAN__) && defined(__ORDER_BIG_ENDIAN__) &&       \
+    defined(__BYTE_ORDER__)
+  little = __ORDER_LITTLE_ENDIAN__,
+  big = __ORDER_BIG_ENDIAN__,
+  native = __BYTE_ORDER__
+#else
+#error "endian class not implemented for this compiler"
+#endif
+};

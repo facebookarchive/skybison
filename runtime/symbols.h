@@ -118,6 +118,7 @@ class Runtime;
   V(AssertionError, "AssertionError")                                          \
   V(AttributeError, "AttributeError")                                          \
   V(BaseException, "BaseException")                                            \
+  V(Big, "big")                                                                \
   V(BitLength, "bit_length")                                                   \
   V(BlockingIOError, "BlockingIOError")                                        \
   V(Bool, "bool")                                                              \
@@ -126,6 +127,7 @@ class Runtime;
   V(BufferError, "BufferError")                                                \
   V(BuiltinModuleNames, "builtin_module_names")                                \
   V(Builtins, "builtins")                                                      \
+  V(Byteorder, "byteorder")                                                    \
   V(Bytes, "bytes")                                                            \
   V(BytesWarning, "BytesWarning")                                              \
   V(Callable, "callable")                                                      \
@@ -202,6 +204,7 @@ class Runtime;
   V(KeyError, "KeyError")                                                      \
   V(KeyboardInterrupt, "KeyboardInterrupt")                                    \
   V(Keys, "keys")                                                              \
+  V(Length, "length")                                                          \
   V(LStrip, "lstrip")                                                          \
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
@@ -209,6 +212,7 @@ class Runtime;
   V(Len, "len")                                                                \
   V(List, "list")                                                              \
   V(ListIterator, "list_iterator")                                             \
+  V(Little, "little")                                                          \
   V(Loads, "loads")                                                            \
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
@@ -262,6 +266,7 @@ class Runtime;
   V(SetIterator, "set_iterator")                                               \
   V(Setattr, "setattr")                                                        \
   V(Setter, "setter")                                                          \
+  V(Signed, "signed")                                                          \
   V(Size, "size")                                                              \
   V(Slice, "slice")                                                            \
   V(SmallInt, "smallint")                                                      \
@@ -283,6 +288,7 @@ class Runtime;
   V(TabError, "TabError")                                                      \
   V(Time, "time")                                                              \
   V(TimeoutError, "TimeoutError")                                              \
+  V(ToBytes, "to_bytes")                                                       \
   V(Traceback, "traceback")                                                    \
   V(Tuple, "tuple")                                                            \
   V(TupleIterator, "tuple_iterator")                                           \

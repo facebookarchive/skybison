@@ -119,6 +119,19 @@ word RawInt::compare(RawInt that) {
   return 0;
 }
 
+word RawInt::copyTo(byte* dst, word max_length) {
+  if (isLargeInt()) {
+    return RawLargeInt::cast(*this)->copyTo(dst, max_length);
+  }
+
+  DCHECK(isSmallInt() || isBool(), "not an integer");
+  uword val = isSmallInt() ? RawSmallInt::cast(*this)->value()
+                           : RawBool::cast(*this)->value();
+  word memcpy_length = std::min(word{kWordSize}, max_length);
+  std::memcpy(dst, &val, memcpy_length);
+  return memcpy_length;
+}
+
 // RawLargeInt
 
 bool RawLargeInt::isValid() {
@@ -162,6 +175,14 @@ word RawLargeInt::bitLength() {
     high_digit = ~high_digit + carry;
   }
   return (num_digits - 1) * kBitsPerWord + Utils::highestBit(high_digit);
+}
+
+word RawLargeInt::copyTo(byte* dst, word copy_length) {
+  word length = numDigits() * kWordSize;
+  auto digits = reinterpret_cast<uword*>(address() + kValueOffset);
+  word memcpy_size = std::min(length, copy_length);
+  std::memcpy(dst, digits, memcpy_size);
+  return memcpy_size;
 }
 
 // RawListIterator

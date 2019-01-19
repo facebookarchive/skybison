@@ -3762,4 +3762,45 @@ RawObject Runtime::intBinaryXor(Thread* thread, const Int& left,
   return normalizeLargeInt(result);
 }
 
+RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
+                              endian endianness) {
+  HandleScope scope(thread);
+  Bytes result(&scope, heap()->createBytes(length));
+  word extension_idx;
+  word extension_length;
+  if (endianness == endian::little && endian::native == endian::little) {
+    byte* dst = reinterpret_cast<byte*>(result->address());
+    word copied = num->copyTo(dst, length);
+    extension_idx = copied;
+    extension_length = length - copied;
+  } else {
+    word num_digits = num->numDigits();
+    for (word i = 0; i < num_digits; ++i) {
+      uword digit = num->digitAt(i);
+      for (int x = 0; x < kWordSize; ++x) {
+        word idx = i * kWordSize + x;
+        byte b = digit & kMaxByte;
+        // The last digit may have more (insignificant) bits than the
+        // resulting buffer.
+        if (idx >= length) return *result;
+        if (endianness == endian::big) {
+          idx = length - idx - 1;
+        }
+        result->byteAtPut(idx, b);
+        digit >>= kBitsPerByte;
+      }
+    }
+    word num_bytes = num_digits * kWordSize;
+    extension_idx = endianness == endian::big ? 0 : num_bytes;
+    extension_length = length - num_bytes;
+  }
+  if (extension_length > 0) {
+    byte sign_extension = num->isNegative() ? 0xff : 0;
+    for (word i = 0; i < extension_length; ++i) {
+      result->byteAtPut(extension_idx + i, sign_extension);
+    }
+  }
+  return *result;
+}
+
 }  // namespace python

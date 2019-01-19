@@ -605,6 +605,12 @@ class Runtime {
   // Returns the result of bitwise XOR of the arguments
   RawObject intBinaryXor(Thread* thread, const Int& left, const Int& right);
 
+  // Converts `num` into a bytes object with the given length. This function
+  // expects the length to be big enough to hold the number and does not check
+  // for overflow.
+  RawObject intToBytes(Thread* thread, const Int& num, word length,
+                       endian endianness);
+
   // Given a possibly invalid LargeInt remove redundant sign- and
   // zero-extension and convert to a SmallInt when possible.
   RawObject normalizeLargeInt(const LargeInt& large_int);

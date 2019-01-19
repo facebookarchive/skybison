@@ -41,6 +41,10 @@ void IntBuiltins::initialize(Runtime* runtime) {
   Type type(&scope,
             runtime->addBuiltinTypeWithMethods(SymbolId::kInt, LayoutId::kInt,
                                                LayoutId::kObject, kMethods));
+  runtime->typeAddBuiltinFunctionKw(type, SymbolId::kToBytes,
+                                    nativeTrampoline<toBytes>,
+                                    nativeTrampolineKw<toBytesKw>);
+
   Type largeint_type(
       &scope, runtime->addEmptyBuiltinType(
                   SymbolId::kLargeInt, LayoutId::kLargeInt, LayoutId::kInt));
@@ -377,6 +381,142 @@ RawObject IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(left->compare(RawInt::cast(other)) <= 0);
   }
   return thread->runtime()->notImplemented();
+}
+
+static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
+                             const Object& length_obj,
+                             const Object& byteorder_obj, bool is_signed) {
+  HandleScope scope;
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor 'to_bytes' requires a 'int' object");
+  }
+  Int self(&scope, *self_obj);
+
+  if (!runtime->isInstanceOfInt(length_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "length argument cannot be interpreted as an integer");
+  }
+  Int length_int(&scope, *length_obj);
+  OptInt<word> l = length_int->asInt<word>();
+  if (l.error != CastError::None) {
+    return thread->raiseOverflowErrorWithCStr(
+        "Python int too large to convert to C word");
+  }
+  word length = l.value;
+  if (length < 0) {
+    return thread->raiseValueErrorWithCStr(
+        "length argument must be non-negative");
+  }
+
+  if (!runtime->isInstanceOfStr(byteorder_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "to_bytes() argument 2 must be str, not int");
+  }
+  Str byteorder(&scope, *byteorder_obj);
+  endian endianness;
+  if (byteorder->equals(runtime->symbols()->Little())) {
+    endianness = endian::little;
+  } else if (byteorder->equals(runtime->symbols()->Big())) {
+    endianness = endian::big;
+  } else {
+    return thread->raiseValueErrorWithCStr(
+        "byteorder must be either 'little' or 'big'");
+  }
+
+  if (!is_signed && self->isNegative()) {
+    return thread->raiseOverflowErrorWithCStr(
+        "can't convert negative int to unsigned");
+  }
+
+  // Check for overflow.
+  word num_digits = self->numDigits();
+  uword high_digit = self->digitAt(num_digits - 1);
+  word bit_length =
+      num_digits * kBitsPerWord - Utils::numRedundantSignBits(high_digit);
+  if (bit_length > length * kBitsPerByte + !is_signed) {
+    return thread->raiseOverflowErrorWithCStr("int too big to convert");
+  }
+
+  return runtime->intToBytes(thread, self, length, endianness);
+}
+
+RawObject IntBuiltins::toBytes(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 3) {
+    return thread->raiseTypeErrorWithCStr("expected 2 arguments");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object length(&scope, args.get(1));
+  Object byteorder(&scope, args.get(2));
+  return toBytesImpl(thread, self, length, byteorder, false);
+}
+
+RawObject IntBuiltins::toBytesKw(Thread* thread, Frame* frame, word nargs) {
+  KwArguments args(frame, nargs);
+  if (args.numArgs() < 1) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor 'to_bytes' of 'int' object needs an argument");
+  }
+  if (args.numArgs() > 3) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "to_bytes() takes at most 2 positional arguments (%ld given)",
+        args.numArgs() - 1));
+  }
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  Object self(&scope, args.get(0));
+  word num_known_keywords = 0;
+  Object length(&scope, args.getKw(runtime->symbols()->Length()));
+  if (args.numArgs() > 1) {
+    if (!length.isError()) {
+      return thread->raiseValueErrorWithCStr(
+          "argument for to_bytes() given by name ('length') and position (1)");
+    }
+    length = args.get(1);
+  } else {
+    if (length.isError()) {
+      return thread->raiseValueErrorWithCStr(
+          "to_bytes() missing required argument 'length' (pos 1)");
+    }
+    ++num_known_keywords;
+  }
+
+  Object byteorder(&scope, args.getKw(runtime->symbols()->Byteorder()));
+  if (args.numArgs() > 2) {
+    if (!byteorder.isError()) {
+      return thread->raiseValueErrorWithCStr(
+          "argument for to_bytes() given by name ('byteorder') and position "
+          "(2)");
+    }
+    byteorder = args.get(2);
+  } else {
+    if (byteorder.isError()) {
+      return thread->raiseValueErrorWithCStr(
+          "to_bytes() missing required argument 'byteorder' (pos 2)");
+    }
+    ++num_known_keywords;
+  }
+
+  bool is_signed = false;
+  Object signed_arg(&scope, args.getKw(runtime->symbols()->Signed()));
+  if (!signed_arg->isError()) {
+    ++num_known_keywords;
+    Object is_true(&scope, Interpreter::isTrue(thread, frame, signed_arg));
+    if (is_true->isError()) return *is_true;
+    is_signed = is_true == Bool::trueObj();
+  }
+
+  if (args.numKeywords() != num_known_keywords) {
+    return thread->raiseTypeErrorWithCStr(
+        "to_bytes() called with invalid keyword arguments");
+  }
+
+  return toBytesImpl(thread, self, length, byteorder, is_signed);
 }
 
 RawObject SmallIntBuiltins::dunderFloorDiv(Thread* thread, Frame* frame,

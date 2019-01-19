@@ -1,5 +1,6 @@
 #pragma once
 
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <iosfwd>
@@ -124,6 +125,21 @@ class Utils {
 
   static int highestBit(word x) {
     return x == 0 ? 0 : kBitsPerWord - __builtin_clzl(x);
+  }
+
+  // Returns the number of leading redundant sign bits.
+  // This is equivalent to gccs __builtin_clrsbl but works for any compiler.
+  static int numRedundantSignBits(word x) {
+#if __has_builtin(__builtin_clrsbl) ||                                         \
+    (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
+    static_assert(sizeof(x) == sizeof(long),
+                  "Need to choose matching clrsbX builtin");
+    return __builtin_clrsbl(x);
+#else
+    if (x < 0) x = ~x;
+    if (x == 0) return sizeof(x) * kBitsPerByte - 1;
+    return __builtin_clzl(x) - 1;
+#endif
   }
 
   // Prints a python level stack trace to std::cerr or the ostream of your

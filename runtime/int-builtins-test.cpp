@@ -1392,6 +1392,458 @@ TEST(IntBuiltinsTest, DunderXorWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
+TEST(IntBuiltinsTest, ToBytesWithByteorderLittleEndianReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(42));
+  Int length(&scope, SmallInt::fromWord(3));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  ASSERT_TRUE(result->isBytes());
+  Bytes bytes(&scope, *result);
+  ASSERT_EQ(bytes->length(), 3);
+  EXPECT_EQ(bytes->byteAt(0), 42);
+  EXPECT_EQ(bytes->byteAt(1), 0);
+  EXPECT_EQ(bytes->byteAt(2), 0);
+}
+
+TEST(IntBuiltinsTest, ToBytesWithByteorderBigEndianReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(42));
+  Int length(&scope, SmallInt::fromWord(2));
+  Str byteorder(&scope, runtime.newStrFromCStr("big"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  ASSERT_TRUE(result->isBytes());
+  Bytes bytes(&scope, *result);
+  ASSERT_EQ(bytes->length(), 2);
+  EXPECT_EQ(bytes->byteAt(0), 0);
+  EXPECT_EQ(bytes->byteAt(1), 42);
+}
+
+TEST(IntBuiltinsTest, ToBytesKwReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime, R"(
+x0 = (0x1234).to_bytes(2, 'little')
+x1 = (0x1234).to_bytes(2, 'little', signed=False)
+x2 = (0x1234).to_bytes(2, 'little', signed=True)
+x3 = (0x1234).to_bytes(2, byteorder='little')
+x4 = (0x1234).to_bytes(length=2, byteorder='little')
+x5 = (0x1234).to_bytes(2, byteorder='little', signed=False)
+x6 = (0x1234).to_bytes(signed=False, byteorder='little', length=2)
+)");
+  for (const char* name : {"x0", "x1", "x2", "x3", "x4", "x5", "x6"}) {
+    Object x(&scope, moduleAt(&runtime, "__main__", name));
+    ASSERT_TRUE(x->isBytes()) << name;
+    Bytes x_bytes(&scope, *x);
+    ASSERT_EQ(x_bytes->length(), 2) << name;
+    EXPECT_EQ(x_bytes->byteAt(0), 0x34) << name;
+    EXPECT_EQ(x_bytes->byteAt(1), 0x12) << name;
+  }
+}
+
+TEST(IntBuiltinsTest, ToBytesKwWithNegativeNumberReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime, R"(
+x0 = (-777).to_bytes(4, 'little', signed=True)
+)");
+  Object x(&scope, moduleAt(&runtime, "__main__", "x0"));
+  ASSERT_TRUE(x->isBytes());
+  Bytes x_bytes(&scope, *x);
+  ASSERT_EQ(x_bytes->length(), 4);
+  EXPECT_EQ(x_bytes->byteAt(0), 0xf7);
+  EXPECT_EQ(x_bytes->byteAt(1), 0xfc);
+  EXPECT_EQ(x_bytes->byteAt(2), 0xff);
+  EXPECT_EQ(x_bytes->byteAt(3), 0xff);
+}
+
+TEST(IntBuiltinsTest, ToBytesWithSignedFalseReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+
+  // Test that the following numbers work fine with `signed=False` (they are the
+  // same numbers that are expected to overflow with `signed=True` in
+  // ToBytesWithSignedTrueOverflowRaisesOverflowError)
+  Int length_1(&scope, SmallInt::fromWord(1));
+  Int num_128(&scope, SmallInt::fromWord(128));
+  Object result_128(
+      &scope, runBuiltin(IntBuiltins::toBytes, num_128, length_1, byteorder));
+  ASSERT_TRUE(result_128->isBytes());
+  Bytes bytes_128(&scope, *result_128);
+  ASSERT_EQ(bytes_128->length(), 1);
+  EXPECT_EQ(bytes_128->byteAt(0), 0x80);
+
+  Int length_2(&scope, SmallInt::fromWord(2));
+  Int num_32768(&scope, SmallInt::fromWord(32768));
+  Object result_32768(
+      &scope, runBuiltin(IntBuiltins::toBytes, num_32768, length_2, byteorder));
+  EXPECT_TRUE(result_32768->isBytes());
+  Bytes bytes_32768(&scope, *result_32768);
+  ASSERT_EQ(bytes_32768->length(), 2);
+  EXPECT_EQ(bytes_32768->byteAt(0), 0);
+  EXPECT_EQ(bytes_32768->byteAt(1), 0x80);
+
+  Int length_8(&scope, SmallInt::fromWord(8));
+  Int num_min_word(&scope, newIntWithDigits(&runtime, {0x8000000000000000, 0}));
+  Object result_min_word(&scope, runBuiltin(IntBuiltins::toBytes, num_min_word,
+                                            length_8, byteorder));
+  EXPECT_TRUE(result_min_word->isBytes());
+  Bytes bytes_min_word(&scope, *result_min_word);
+  ASSERT_EQ(bytes_min_word->length(), 8);
+  EXPECT_EQ(bytes_min_word->byteAt(0), 0);
+  EXPECT_EQ(bytes_min_word->byteAt(1), 0);
+  EXPECT_EQ(bytes_min_word->byteAt(2), 0);
+  EXPECT_EQ(bytes_min_word->byteAt(3), 0);
+  EXPECT_EQ(bytes_min_word->byteAt(4), 0);
+  EXPECT_EQ(bytes_min_word->byteAt(5), 0);
+  EXPECT_EQ(bytes_min_word->byteAt(6), 0);
+  EXPECT_EQ(bytes_min_word->byteAt(7), 0x80);
+}
+
+TEST(IntBuiltinsTest, ToBytesWithLargeBufferByteorderBigEndianReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Test sign extension with zero when the buffer is larger than necessary.
+  Int num(&scope, SmallInt::fromWord(0xcafebabe));
+  Int length(&scope, SmallInt::fromWord(10));
+  Str byteorder(&scope, runtime.newStrFromCStr("big"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  ASSERT_TRUE(result->isBytes());
+  Bytes result_bytes(&scope, *result);
+  ASSERT_EQ(result_bytes->length(), 10);
+  EXPECT_EQ(result_bytes->byteAt(0), 0);
+  EXPECT_EQ(result_bytes->byteAt(1), 0);
+  EXPECT_EQ(result_bytes->byteAt(2), 0);
+  EXPECT_EQ(result_bytes->byteAt(3), 0);
+  EXPECT_EQ(result_bytes->byteAt(4), 0);
+  EXPECT_EQ(result_bytes->byteAt(5), 0);
+  EXPECT_EQ(result_bytes->byteAt(6), 0xca);
+  EXPECT_EQ(result_bytes->byteAt(7), 0xfe);
+  EXPECT_EQ(result_bytes->byteAt(8), 0xba);
+  EXPECT_EQ(result_bytes->byteAt(9), 0xbe);
+}
+
+TEST(IntBuiltinsTest, ToBytesWithLargeBufferByteorderLittleEndianReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Test sign extension with zero when the buffer is larger than necessary.
+  Int num(&scope, SmallInt::fromWord(0xcafebabe));
+  Int length(&scope, SmallInt::fromWord(10));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  ASSERT_TRUE(result->isBytes());
+  Bytes result_bytes(&scope, *result);
+  ASSERT_EQ(result_bytes->length(), 10);
+  EXPECT_EQ(result_bytes->byteAt(0), 0xbe);
+  EXPECT_EQ(result_bytes->byteAt(1), 0xba);
+  EXPECT_EQ(result_bytes->byteAt(2), 0xfe);
+  EXPECT_EQ(result_bytes->byteAt(3), 0xca);
+  EXPECT_EQ(result_bytes->byteAt(4), 0);
+  EXPECT_EQ(result_bytes->byteAt(5), 0);
+  EXPECT_EQ(result_bytes->byteAt(6), 0);
+  EXPECT_EQ(result_bytes->byteAt(7), 0);
+  EXPECT_EQ(result_bytes->byteAt(8), 0);
+  EXPECT_EQ(result_bytes->byteAt(9), 0);
+}
+
+TEST(IntBuiltinsTest, ToBytesWithSignedTrueReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime, R"(
+result = (0x7fffffffffffffff).to_bytes(8, 'little', signed=True)
+)");
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result_obj->isBytes());
+  Bytes result(&scope, *result_obj);
+  EXPECT_EQ(result->length(), 8);
+  EXPECT_EQ(result->byteAt(0), 0xff);
+  EXPECT_EQ(result->byteAt(1), 0xff);
+  EXPECT_EQ(result->byteAt(2), 0xff);
+  EXPECT_EQ(result->byteAt(3), 0xff);
+  EXPECT_EQ(result->byteAt(4), 0xff);
+  EXPECT_EQ(result->byteAt(5), 0xff);
+  EXPECT_EQ(result->byteAt(6), 0xff);
+  EXPECT_EQ(result->byteAt(7), 0x7f);
+
+  runFromCStr(&runtime, R"(
+result_n_128 = (-128).to_bytes(1, 'little', signed=True)
+)");
+  Object result_n_128(&scope, moduleAt(&runtime, "__main__", "result_n_128"));
+  ASSERT_TRUE(result_n_128->isBytes());
+  Bytes bytes_n_128(&scope, *result_n_128);
+  ASSERT_EQ(bytes_n_128->length(), 1);
+  EXPECT_EQ(bytes_n_128->byteAt(0), 0x80);
+
+  runFromCStr(&runtime, R"(
+result_n_32768 = (-32768).to_bytes(2, 'little', signed=True)
+)");
+  Object result_n_32768(&scope,
+                        moduleAt(&runtime, "__main__", "result_n_32768"));
+  ASSERT_TRUE(result_n_32768->isBytes());
+  Bytes bytes_n_32768(&scope, *result_n_32768);
+  ASSERT_EQ(bytes_n_32768->length(), 2);
+  EXPECT_EQ(bytes_n_32768->byteAt(0), 0x00);
+  EXPECT_EQ(bytes_n_32768->byteAt(1), 0x80);
+
+  runFromCStr(&runtime, R"(
+result_n_min_word = (-9223372036854775808).to_bytes(8, 'little', signed=True)
+)");
+  Object result_n_min_word(&scope,
+                           moduleAt(&runtime, "__main__", "result_n_min_word"));
+  ASSERT_TRUE(result_n_min_word->isBytes());
+  Bytes bytes_n_min_word(&scope, *result_n_min_word);
+  ASSERT_EQ(bytes_n_min_word->length(), 8);
+  EXPECT_EQ(bytes_n_min_word->byteAt(0), 0x00);
+  EXPECT_EQ(bytes_n_min_word->byteAt(1), 0x00);
+  EXPECT_EQ(bytes_n_min_word->byteAt(2), 0x00);
+  EXPECT_EQ(bytes_n_min_word->byteAt(3), 0x00);
+  EXPECT_EQ(bytes_n_min_word->byteAt(4), 0x00);
+  EXPECT_EQ(bytes_n_min_word->byteAt(5), 0x00);
+  EXPECT_EQ(bytes_n_min_word->byteAt(6), 0x00);
+  EXPECT_EQ(bytes_n_min_word->byteAt(7), 0x80);
+}
+
+TEST(IntBuiltinsTest,
+     ToBytesWithNegativeNumberLargeBufferBigEndianReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // test sign extension for negative number when buffer is larger than
+  // necessary.
+  Int num(&scope, SmallInt::fromWord(-1024));
+  Int length(&scope, SmallInt::fromWord(7));
+  Str byteorder(&scope, runtime.newStrFromCStr("big"));
+  runFromCStr(&runtime, R"(
+result = (-1024).to_bytes(7, 'big', signed=True)
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isBytes());
+  Bytes result_bytes(&scope, *result);
+  ASSERT_EQ(result_bytes->length(), 7);
+  EXPECT_EQ(result_bytes->byteAt(0), 0xff);
+  EXPECT_EQ(result_bytes->byteAt(1), 0xff);
+  EXPECT_EQ(result_bytes->byteAt(2), 0xff);
+  EXPECT_EQ(result_bytes->byteAt(3), 0xff);
+  EXPECT_EQ(result_bytes->byteAt(4), 0xff);
+  EXPECT_EQ(result_bytes->byteAt(5), 0xfc);
+  EXPECT_EQ(result_bytes->byteAt(6), 0x00);
+}
+
+TEST(IntBuiltinsTest, ToBytesWithZeroLengthBigEndianReturnsEmptyBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(0));
+  Int length(&scope, SmallInt::fromWord(0));
+  Str byteorder(&scope, runtime.newStrFromCStr("big"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  ASSERT_TRUE(result->isBytes());
+  Bytes result_bytes(&scope, *result);
+  ASSERT_EQ(result_bytes->length(), 0);
+}
+
+TEST(IntBuiltinsTest, ToBytesWithZeroLengthLittleEndianReturnsEmptyBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(0));
+  Int length(&scope, SmallInt::fromWord(0));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  ASSERT_TRUE(result->isBytes());
+  Bytes result_bytes(&scope, *result);
+  ASSERT_EQ(result_bytes->length(), 0);
+}
+
+TEST(IntBuiltinsTest, ToBytesWithSignedFalseRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(256));
+  Int length(&scope, SmallInt::fromWord(1));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kOverflowError));
+}
+
+TEST(IntBuiltinsTest, ToBytesWithBigOverflowRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, newIntWithDigits(&runtime, {1, 2, 3}));
+  Int length(&scope, SmallInt::fromWord(13));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kOverflowError));
+}
+
+TEST(IntBuiltinsDeathTest, ToBytesWithSignedTrueRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Now check that signed=True with the same inputs triggers an error.
+  Thread::currentThread()->clearPendingException();
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
+result = (128).to_bytes(1, 'little', signed=True)
+)"),
+               "int too big to convert");
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
+result = (32768).to_bytes(2, 'little', signed=True)
+)"),
+               "int too big to convert");
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
+result = (0x8000000000000000).to_bytes(8, 'little', signed=True)
+)"),
+               "int too big to convert");
+}
+
+TEST(IntBuiltinsTest, ToBytesWithTooFewArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(42));
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, ToBytesWithTooManyArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(42));
+  Int length(&scope, SmallInt::fromWord(10));
+  Str byteorder(&scope, runtime.newStrFromCStr("big"));
+  Bool f(&scope, Bool::trueObj());
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, byteorder, f));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, ToBytesWithNonIntRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str str(&scope, runtime.newStrFromCStr("not an int"));
+  Int length(&scope, SmallInt::fromWord(10));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, str, length, byteorder));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaises) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(42));
+  Str not_a_length(&scope, runtime.newStrFromCStr("not a length"));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result0(
+      &scope, runBuiltin(IntBuiltins::toBytes, num, not_a_length, byteorder));
+  EXPECT_TRUE(result0->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  Thread::currentThread()->clearPendingException();
+
+  Int negative_length(&scope, SmallInt::fromWord(-3));
+  Object result1(&scope, runBuiltin(IntBuiltins::toBytes, num, negative_length,
+                                    byteorder));
+  EXPECT_TRUE(result1->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kValueError));
+  Thread::currentThread()->clearPendingException();
+
+  Int huge_length(&scope, testing::newIntWithDigits(&runtime, {0, 1024}));
+  Object result2(&scope,
+                 runBuiltin(IntBuiltins::toBytes, num, huge_length, byteorder));
+  EXPECT_TRUE(result2->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kOverflowError));
+}
+
+TEST(IntBuiltinsTest, ToBytesWithNegativeNumberRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(-1));
+  Int length(&scope, SmallInt::fromWord(10));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kOverflowError));
+}
+
+TEST(IntBuiltinsTest, ToBytesWithInvalidByteorderStringRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(42));
+  Int length(&scope, SmallInt::fromWord(3));
+  Str invalid_byteorder(&scope, runtime.newStrFromCStr("hello"));
+  Object result(
+      &scope, runBuiltin(IntBuiltins::toBytes, num, length, invalid_byteorder));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kValueError));
+}
+
+TEST(IntBuiltinsTest, ToBytesWithInvalidByteorderTypeRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, SmallInt::fromWord(42));
+  Int length(&scope, SmallInt::fromWord(3));
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, num));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsDeathTest, ToBytesKwInvalidKeywordRaises) {
+  Runtime runtime;
+  EXPECT_DEATH(runFromCStr(&runtime, "(4).to_bytes(signed=False)"),
+               "missing required argument 'length'");
+  EXPECT_DEATH(runFromCStr(&runtime, "(4).to_bytes(byteorder='little')"),
+               "missing required argument 'length'");
+  EXPECT_DEATH(runFromCStr(&runtime, "(4).to_bytes(2, signed=False)"),
+               "missing required argument 'byteorder'");
+  EXPECT_DEATH(runFromCStr(&runtime, "(4).to_bytes(length=2, signed=False)"),
+               "missing required argument 'byteorder'");
+  EXPECT_DEATH(
+      runFromCStr(&runtime, "(4).to_bytes(2, 'little', not_valid=True)"),
+      "invalid keyword arguments");
+  EXPECT_DEATH(
+      runFromCStr(&runtime, "(4).to_bytes(2, 'little', True, signed=True)"),
+      "takes at most 2 positional arguments \\(3 given\\)");
+  EXPECT_DEATH(runFromCStr(&runtime, "(4).to_bytes(2, 'little', length=2)"),
+               "argument for to_bytes\\(\\) given by name \\('length'\\) and "
+               "position \\(1\\)");
+  EXPECT_DEATH(
+      runFromCStr(&runtime, "(4).to_bytes(2, 'little', byteorder='little')"),
+      "argument for to_bytes\\(\\) given by name \\('byteorder'\\) and "
+      "position \\(2\\)");
+}
+
 TEST(BoolBuiltinsTest, NewFromNonZeroIntegerReturnsTrue) {
   Runtime runtime;
   HandleScope scope;

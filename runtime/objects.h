@@ -369,6 +369,9 @@ class RawInt : public RawObject {
 
   // Number of digits
   word numDigits();
+
+  // Copies digits bytewise to `dst`. Returns number of bytes copied.
+  word copyTo(byte* dst, word max_length);
 };
 
 // Immediate objects
@@ -951,6 +954,9 @@ class RawLargeInt : public RawHeapObject {
 
   // Number of digits
   word numDigits();
+
+  // Copies digits bytewise to `dst`. Returns number of bytes copied.
+  word copyTo(byte* dst, word max_length);
 
   // Layout.
   static const int kValueOffset = RawHeapObject::kSize;

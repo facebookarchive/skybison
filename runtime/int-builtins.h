@@ -34,6 +34,8 @@ class IntBuiltins {
   static RawObject dunderXor(Thread* thread, Frame* frame, word nargs);
   static RawObject intFromString(Thread* thread, RawObject str, int base);
   static RawObject intFromBool(RawObject bool_obj);
+  static RawObject toBytes(Thread* thread, Frame* frame, word nargs);
+  static RawObject toBytesKw(Thread* thread, Frame* frame, word nargs);
 
  private:
   static RawObject negateLargeInt(Runtime* runtime, const Object& large_int);
