@@ -453,19 +453,28 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
   Object value(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "descriptor 'remove' requires a 'list' object");
+  if (!thread->runtime()->isInstanceOfList(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'remove' requires a 'list' object");
   }
-  List list(&scope, *self);
-  for (word i = 0; i < list->numItems(); i++) {
-    Object item(&scope, list->at(i));
-    if (RawBool::cast(Interpreter::compareOperation(thread, frame,
-                                                    CompareOp::EQ, item, value))
-            ->value()) {
-      listPop(list, i);
+  List self(&scope, *self_obj);
+  Object item(&scope, NoneType::object());
+  Object comp_result(&scope, NoneType::object());
+  Object found(&scope, NoneType::object());
+  for (word i = 0, num_items = self->numItems(); i < num_items; ++i) {
+    item = self->at(i);
+    if (*value == *item) {
+      listPop(self, i);
+      return NoneType::object();
+    }
+    comp_result = Interpreter::compareOperation(thread, frame, CompareOp::EQ,
+                                                item, value);
+    if (comp_result->isError()) return *comp_result;
+    found = Interpreter::isTrue(thread, frame, comp_result);
+    if (found->isError()) return *found;
+    if (found == Bool::trueObj()) {
+      listPop(self, i);
       return NoneType::object();
     }
   }

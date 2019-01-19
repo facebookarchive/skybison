@@ -334,6 +334,120 @@ print(len(a), a[0], a[1], a[2])
   EXPECT_EQ(output, "3 4 3 1\n");
 }
 
+TEST(ListBuiltinsTest, ListRemoveWithDuplicateItemsRemovesFirstMatchingItem) {
+  Runtime runtime;
+  HandleScope scope;
+  Int value0(&scope, runtime.newInt(0));
+  Int value1(&scope, runtime.newInt(1));
+  Int value2(&scope, runtime.newInt(2));
+  List list(&scope, runtime.newList());
+  runtime.listAdd(list, value0);
+  runtime.listAdd(list, value1);
+  runtime.listAdd(list, value2);
+  runtime.listAdd(list, value1);
+  runtime.listAdd(list, value0);
+
+  EXPECT_EQ(list->numItems(), 5);
+  runBuiltin(ListBuiltins::remove, list, value1);
+  ASSERT_EQ(list->numItems(), 4);
+  EXPECT_EQ(list->at(0), value0);
+  EXPECT_EQ(list->at(1), value2);
+  EXPECT_EQ(list->at(2), value1);
+  EXPECT_EQ(list->at(3), value0);
+}
+
+TEST(ListBuiltinsTest, ListRemoveWithIdenticalObjectGetsRemoved) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class C:
+  def __eq__(self, other):
+    return False
+value = C()
+list = [value]
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  List list(&scope, moduleAt(&runtime, "__main__", "list"));
+  EXPECT_EQ(list->numItems(), 1);
+  runBuiltin(ListBuiltins::remove, list, value);
+  EXPECT_EQ(list->numItems(), 0);
+}
+
+TEST(ListBuiltinsTest, ListRemoveWithNonIdenticalEqualObjectInListGetsRemoved) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class C:
+  def __eq__(self, other):
+    return True
+list = [C()]
+)");
+  Object value(&scope, NoneType::object());
+  List list(&scope, moduleAt(&runtime, "__main__", "list"));
+  EXPECT_EQ(list->numItems(), 1);
+  runBuiltin(ListBuiltins::remove, list, value);
+  EXPECT_EQ(list->numItems(), 0);
+}
+
+TEST(ListBuiltinsTest,
+     ListRemoveWithNonIdenticalEqualObjectAsKeyRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class C:
+  def __eq__(self, other):
+    return True
+class D:
+  def __eq__(self, other):
+    return False
+value = C()
+list = [D()]
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  List list(&scope, moduleAt(&runtime, "__main__", "list"));
+  Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kValueError));
+}
+
+TEST(ListBuiltinsTest, ListRemoveWithRaisingDunderEqualPropagatesException) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __eq__(self, other):
+    raise UserWarning('')
+value = Foo()
+list = [None]
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  List list(&scope, moduleAt(&runtime, "__main__", "list"));
+  Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kUserWarning));
+}
+
+TEST(ListBuiltinsTest, ListRemoveWithRaisingDunderBoolPropagatesException) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class C:
+  def __bool__(self):
+    raise UserWarning('')
+class D:
+  def __eq__(self, other):
+    raise C()
+value = D()
+list = [None]
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  List list(&scope, moduleAt(&runtime, "__main__", "list"));
+  Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
+  EXPECT_TRUE(result->isError());
+  // TODO(T39221304) check for kUserWarning here once isTrue() propagates
+  // exceptions correctly.
+}
+
 TEST(ListBuiltinsTest, PrintList) {
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, R"(
