@@ -958,6 +958,10 @@ class RawLargeInt : public RawHeapObject {
   // Copies digits bytewise to `dst`. Returns number of bytes copied.
   word copyTo(byte* dst, word max_length);
 
+  // Copy 'bytes' array into digits; if the array is too small set remaining
+  // data to 'sign_extension' byte.
+  void copyFrom(View<byte> bytes, byte sign_extension);
+
   // Layout.
   static const int kValueOffset = RawHeapObject::kSize;
   static const int kSize = kValueOffset + kPointerSize;

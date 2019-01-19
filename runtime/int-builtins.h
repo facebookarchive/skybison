@@ -32,6 +32,8 @@ class IntBuiltins {
   static RawObject dunderOr(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderPos(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderXor(Thread* thread, Frame* frame, word nargs);
+  static RawObject fromBytes(Thread* thread, Frame* frame, word nargs);
+  static RawObject fromBytesKw(Thread* thread, Frame* frame, word nargs);
   static RawObject intFromString(Thread* thread, RawObject str, int base);
   static RawObject intFromBool(RawObject bool_obj);
   static RawObject toBytes(Thread* thread, Frame* frame, word nargs);

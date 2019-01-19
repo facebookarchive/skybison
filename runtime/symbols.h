@@ -20,6 +20,7 @@ class Runtime;
   V(DunderBool, "__bool__")                                                    \
   V(DunderBuildClass, "__build_class__")                                       \
   V(DunderBuiltins, "__builtins__")                                            \
+  V(DunderBytes, "__bytes__")                                                  \
   V(DunderCall, "__call__")                                                    \
   V(DunderClass, "__class__")                                                  \
   V(DunderClassCell, "__classcell__")                                          \
@@ -174,6 +175,7 @@ class Runtime;
   V(Float, "float")                                                            \
   V(FloatingPointError, "FloatingPointError")                                  \
   V(Frame, "frame")                                                            \
+  V(FromBytes, "from_bytes")                                                   \
   V(FrozenSet, "frozenset")                                                    \
   V(Function, "function")                                                      \
   V(FutureWarning, "FutureWarning")                                            \

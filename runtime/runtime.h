@@ -593,6 +593,12 @@ class Runtime {
   // Import all the public module's symbols to the given dict
   void moduleImportAllFrom(const Dict& dict, const Module& module);
 
+  // Converts bytes object into an int object. The conversion is performed
+  // with the specified endianness. `is_signed` specifies whether the highest
+  // bit is considered a sign.
+  RawObject bytesToInt(Thread* thread, const Bytes& bytes, endian endianness,
+                       bool is_signed);
+
   // Returns the result of bitwise AND of the arguments
   RawObject intBinaryAnd(Thread* thread, const Int& left, const Int& right);
 

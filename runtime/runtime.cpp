@@ -3605,6 +3605,46 @@ RawObject Runtime::iteratorLengthHint(Thread* thread, const Object& iterator) {
   return *result;
 }
 
+RawObject Runtime::bytesToInt(Thread* thread, const Bytes& bytes,
+                              endian endianness, bool is_signed) {
+  word length = bytes->length();
+  DCHECK(length <= kMaxWord - kWordSize, "huge length will overflow");
+  if (length == 0) {
+    return SmallInt::fromWord(0);
+  }
+
+  // Positive numbers that end up having the highest bit of their highest digit
+  // set need an extra zero digit.
+  byte high_byte = bytes->byteAt(endianness == endian::big ? 0 : length - 1);
+  bool high_bit = high_byte & (1 << (kBitsPerByte - 1));
+  bool extra_digit = high_bit && !is_signed && length % kWordSize == 0;
+  word num_digits = (length + (kWordSize - 1)) / kWordSize + extra_digit;
+  HandleScope scope(thread);
+  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+
+  byte sign_extension = (is_signed && high_bit) ? kMaxByte : 0;
+  if (endianness == endian::little && endian::native == endian::little) {
+    auto src = reinterpret_cast<const byte*>(bytes->address());
+    result->copyFrom(View<byte>(src, bytes->length()), sign_extension);
+  } else {
+    for (word d = 0; d < num_digits; ++d) {
+      uword digit = 0;
+      for (int w = 0; w < kWordSize; ++w) {
+        word idx = d * kWordSize + w;
+        byte b;
+        if (idx >= length) {
+          b = sign_extension;
+        } else {
+          b = bytes->byteAt(endianness == endian::big ? length - idx - 1 : idx);
+        }
+        digit |= static_cast<uword>(b) << (w * kBitsPerByte);
+      }
+      result->digitAtPut(d, digit);
+    }
+  }
+  return normalizeLargeInt(result);
+}
+
 RawObject Runtime::normalizeLargeInt(const LargeInt& large_int) {
   word shrink_to_digits = large_int->numDigits();
   for (word digit = large_int->digitAt(shrink_to_digits - 1), next_digit;

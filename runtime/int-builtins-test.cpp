@@ -1313,6 +1313,205 @@ TEST(IntBuiltinsTest, DunderLeOnBool) {
             Bool::falseObj());
 }
 
+TEST(IntBuiltinsTest, FromBytesWithLittleEndianReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Bytes bytes(&scope, runtime.newBytesWithAll({0xca, 0xfe}));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Int result(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder));
+  EXPECT_EQ(result->asWord(), 0xfeca);
+}
+
+TEST(IntBuiltinsTest, FromBytesWithLittleEndianReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Bytes bytes(&scope,
+              runtime.newBytesWithAll({0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23, 0x45,
+                                       0x67, 0x89, 0xab, 0xcd}));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Int result(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder));
+  ASSERT_EQ(result->numDigits(), 2);
+  EXPECT_EQ(result->digitAt(0), 0x67452301bebafecaU);
+  EXPECT_EQ(result->digitAt(1), 0xcdab89U);
+}
+
+TEST(IntBuiltinsTest, FromBytesWithBigEndianReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Bytes bytes(&scope, runtime.newBytesWithAll({0xca, 0xfe}));
+  Str byteorder(&scope, runtime.newStrFromCStr("big"));
+  Int result(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder));
+  EXPECT_EQ(result->asWord(), 0xcafe);
+}
+
+TEST(IntBuiltinsTest, FromBytesWithBytesConvertibleReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class X:
+  def __bytes__(self):
+    return b'*'
+x = X()
+)");
+  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope, runBuiltin(IntBuiltins::fromBytes, x, byteorder));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(RawInt::cast(*result)->asWord(), 42);
+}
+
+TEST(IntBuiltinsTest, FromBytesWithBigEndianReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Bytes bytes(&scope,
+              runtime.newBytesWithAll({0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23, 0x45,
+                                       0x67, 0x89, 0xab, 0xcd}));
+  Str byteorder(&scope, runtime.newStrFromCStr("big"));
+  Int result(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder));
+  ASSERT_EQ(result->numDigits(), 2);
+  EXPECT_EQ(result->digitAt(0), 0xbe0123456789abcdU);
+  EXPECT_EQ(result->digitAt(1), 0xcafebaU);
+}
+
+TEST(IntBuiltinsTest, FromBytesWithEmptyBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Bytes bytes(&scope, runtime.newBytesWithAll({}));
+  Str bo_little(&scope, runtime.newStrFromCStr("little"));
+  Int result_little(&scope,
+                    runBuiltin(IntBuiltins::fromBytes, bytes, bo_little));
+  EXPECT_EQ(result_little->asWord(), 0);
+
+  Str bo_big(&scope, runtime.newStrFromCStr("big"));
+  Int result_big(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, bo_big));
+  EXPECT_EQ(result_big->asWord(), 0);
+}
+
+TEST(IntBuiltinsTest, FromBytesWithNumberWithDigitHighBitSet) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Test special case where a positive number having a high bit set at the end
+  // of a "digit" needs an extra digit in the LargeInt representation.
+  Bytes bytes(&scope, runtime.newBytes(kWordSize, 0xff));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Int result(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder));
+  Int expected(&scope, newIntWithDigits(&runtime, {kMaxUword, 0}));
+  EXPECT_EQ(result->compare(expected), 0);
+}
+
+TEST(IntBuiltinsTest, FromBytesWithNegativeNumberReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime,
+              "result = int.from_bytes(b'\\xff', 'little', signed=True)");
+  Int result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result->asWord(), -1);
+}
+
+TEST(IntBuiltinsTest, FromBytesWithNegativeNumberReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime, R"(
+result = int.from_bytes(b'\xca\xfe\xba\xbe\x01\x23\x45\x67\x89\xab\xcd', 'big',
+                        signed=True)
+)");
+  Int result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Int expected(&scope, newIntWithDigits(
+                           &runtime, {0xbe0123456789abcd, 0xffffffffffcafeba}));
+  EXPECT_EQ(result->compare(expected), 0);
+}
+
+TEST(IntBuiltinsTest, FromBytesWithKwArgumentsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime, R"(
+result = int.from_bytes(byteorder='big', bytes=b'\xbe\xef')
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(RawInt::cast(*result)->asWord(), 0xbeef);
+}
+
+TEST(IntBuiltinsTest, FromBytesWithTooManyArgsRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Bytes bytes(&scope, runtime.newBytesWithAll({0}));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Bool extra_arg(&scope, Bool::trueObj());
+  Object result(
+      &scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder, extra_arg));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, FromBytesWithInvalidBytesRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str not_bytes(&scope, runtime.newStrFromCStr("not a bytes object"));
+  Str byteorder(&scope, runtime.newStrFromCStr("big"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::fromBytes, not_bytes, byteorder));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderStringRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Bytes bytes(&scope, runtime.newBytesWithAll({0}));
+  Str invalid_byteorder(&scope, runtime.newStrFromCStr("Not a byteorder"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::fromBytes, bytes, invalid_byteorder));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kValueError));
+}
+
+TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Bytes bytes(&scope, runtime.newBytesWithAll({0}));
+  Int not_a_byteorder(&scope, SmallInt::fromWord(42));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::fromBytes, bytes, not_a_byteorder));
+  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, FromBytesKwInvalidKeywordRaises) {
+  Runtime runtime;
+  EXPECT_DEATH(runFromCStr(&runtime, "int.from_bytes(bytes=b'')"),
+               "missing required argument 'byteorder'");
+  EXPECT_DEATH(runFromCStr(&runtime, "int.from_bytes(byteorder='little')"),
+               "missing required argument 'bytes'");
+  EXPECT_DEATH(
+      runFromCStr(&runtime, "int.from_bytes(b'', 'little', bytes=b'')"),
+      "argument for from_bytes\\(\\) given by name \\('bytes'\\) and position "
+      "\\(1\\)");
+  EXPECT_DEATH(runFromCStr(&runtime,
+                           "int.from_bytes(b'', 'little', byteorder='little')"),
+               "argument for from_bytes\\(\\) given by name \\('byteorder'\\) "
+               "and position \\(2\\)");
+  EXPECT_DEATH(
+      runFromCStr(&runtime, "int.from_bytes(b'', 'little', not_valid=True)"),
+      "called with invalid keyword arguments");
+  EXPECT_DEATH(
+      runFromCStr(&runtime,
+                  "int.from_bytes(b'', 'little', True, byteorder='little')"),
+      "from_bytes\\(\\) takes at most 2 positional arguments \\(3 given\\)");
+}
+
 TEST(IntBuiltinsTest, SmallIntDunderRepr) {
   Runtime runtime;
   HandleScope scope;

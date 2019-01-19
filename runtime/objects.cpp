@@ -185,6 +185,15 @@ word RawLargeInt::copyTo(byte* dst, word copy_length) {
   return memcpy_size;
 }
 
+void RawLargeInt::copyFrom(View<byte> bytes, byte sign_extension) {
+  auto dst = reinterpret_cast<char*>(address() + kValueOffset);
+  word bytes_len = bytes.length();
+  DCHECK(bytes_len <= numDigits() * kWordSize, "too many bytes");
+  std::memcpy(dst, bytes.data(), bytes_len);
+  std::memset(dst + bytes_len, sign_extension,
+              (numDigits() * kWordSize) - bytes_len);
+}
+
 // RawListIterator
 
 RawObject RawListIterator::next() {

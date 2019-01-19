@@ -5,6 +5,7 @@
 #include <climits>
 #include <cmath>
 
+#include "bytes-builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
@@ -44,6 +45,9 @@ void IntBuiltins::initialize(Runtime* runtime) {
   runtime->typeAddBuiltinFunctionKw(type, SymbolId::kToBytes,
                                     nativeTrampoline<toBytes>,
                                     nativeTrampolineKw<toBytesKw>);
+  runtime->typeAddBuiltinFunctionKw(type, SymbolId::kFromBytes,
+                                    nativeTrampoline<fromBytes>,
+                                    nativeTrampolineKw<fromBytesKw>);
 
   Type largeint_type(
       &scope, runtime->addEmptyBuiltinType(
@@ -823,6 +827,128 @@ RawObject IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
   }
   return thread->raiseTypeErrorWithCStr(
       "__neg__() must be called with int instance as the first argument");
+}
+
+static RawObject asBytesObject(Thread* thread, const Object& object) {
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfBytes(object)) {
+    return *object;
+  }
+
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Object bytes_method(
+      &scope,
+      Interpreter::lookupMethod(thread, frame, object, SymbolId::kDunderBytes));
+  if (bytes_method->isError()) {
+    return thread->raiseTypeErrorWithCStr("cannot convert object to bytes");
+  }
+  Object bytes_result(
+      &scope, Interpreter::callMethod1(thread, frame, bytes_method, object));
+  if (bytes_result->isError() || runtime->isInstanceOfBytes(*bytes_result)) {
+    return *bytes_result;
+  }
+  // TODO(T39313322) implement missing ways to convert objects to bytes.
+
+  return thread->raiseTypeErrorWithCStr("__bytes__ returned non-bytes");
+}
+
+// TODO(T39167211): Merge with IntBuiltins::fromBytesKw / IntBuiltins::fromBytes
+// once argument parsing is automated.
+static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
+                               const Object& byteorder_obj, bool is_signed) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object maybe_bytes(&scope, asBytesObject(thread, bytes_obj));
+  if (maybe_bytes->isError()) return *maybe_bytes;
+  Bytes bytes(&scope, *maybe_bytes);
+
+  if (!runtime->isInstanceOfStr(byteorder_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "from_bytes() must be called with str instance as second argument");
+  }
+  Str byteorder(&scope, *byteorder_obj);
+  endian endianness;
+  if (byteorder->equals(runtime->symbols()->Little())) {
+    endianness = endian::little;
+  } else if (byteorder->equals(runtime->symbols()->Big())) {
+    endianness = endian::big;
+  } else {
+    return thread->raiseValueErrorWithCStr(
+        "from_bytes() byteorder argument must be 'little' or 'big'");
+  }
+
+  return runtime->bytesToInt(thread, bytes, endianness, is_signed);
+}
+
+RawObject IntBuiltins::fromBytes(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->raiseTypeErrorWithCStr("expected 2 arguments");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object bytes(&scope, args.get(0));
+  Object byteorder(&scope, args.get(1));
+  return fromBytesImpl(thread, bytes, byteorder, false);
+}
+
+RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
+  KwArguments args(frame, nargs);
+  if (args.numArgs() > 2) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "from_bytes() takes at most 2 positional arguments (%ld given)",
+        args.numArgs()));
+  }
+
+  HandleScope scope(thread);
+  word num_known_keywords = 0;
+  Runtime* runtime = thread->runtime();
+  Object bytes(&scope, args.getKw(runtime->symbols()->Bytes()));
+  if (args.numArgs() > 0) {
+    if (!bytes.isError()) {
+      return thread->raiseValueErrorWithCStr(
+          "argument for from_bytes() given by name ('bytes') and position (1)");
+    }
+    bytes = args.get(0);
+  } else {
+    if (bytes.isError()) {
+      return thread->raiseValueErrorWithCStr(
+          "from_bytes() missing required argument 'bytes' (pos 1)");
+    }
+    ++num_known_keywords;
+  }
+
+  Object byteorder(&scope, args.getKw(runtime->symbols()->Byteorder()));
+  if (args.numArgs() > 1) {
+    if (!byteorder->isError()) {
+      return thread->raiseValueErrorWithCStr(
+          "argument for from_bytes() given by name ('byteorder') and position "
+          "(2)");
+    }
+    byteorder = args.get(1);
+  } else {
+    if (byteorder.isError()) {
+      return thread->raiseValueErrorWithCStr(
+          "from_bytes() missing required argument 'byteorder' (pos 2)");
+    }
+    ++num_known_keywords;
+  }
+
+  bool is_signed = false;
+  Object signed_arg(&scope, args.getKw(runtime->symbols()->Signed()));
+  if (!signed_arg->isError()) {
+    ++num_known_keywords;
+    Object is_true(&scope, Interpreter::isTrue(thread, frame, signed_arg));
+    if (is_true->isError()) return *is_true;
+    is_signed = is_true == Bool::trueObj();
+  }
+
+  if (args.numKeywords() != num_known_keywords) {
+    return thread->raiseTypeErrorWithCStr(
+        "from_bytes() called with invalid keyword arguments");
+  }
+
+  return fromBytesImpl(thread, bytes, byteorder, is_signed);
 }
 
 inline RawObject IntBuiltins::intFromBool(RawObject bool_obj) {

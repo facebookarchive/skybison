@@ -1,5 +1,7 @@
 #pragma once
 
+#include <initializer_list>
+
 #include "globals.h"
 #include "utils.h"
 
@@ -12,6 +14,9 @@ class View {
 
   template <word N>
   View(const T (&data)[N]) : data_(data), length_(N) {}
+
+  View(std::initializer_list<T> list)
+      : data_(list.begin()), length_(list.size()) {}
 
   T get(word i) {
     DCHECK_INDEX(i, length_);
