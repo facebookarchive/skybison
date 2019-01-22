@@ -364,6 +364,44 @@ RawObject listFromRange(word start, word stop) {
   return *result;
 }
 
+::testing::AssertionResult isStrEquals(const Object& str1, const Object& str2) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(str1)) {
+    return ::testing::AssertionFailure()
+           << "is a '" << typeName(runtime, *str1) << "'";
+  }
+  if (!runtime->isInstanceOfStr(str2)) {
+    return ::testing::AssertionFailure()
+           << "is a '" << typeName(runtime, *str2) << "'";
+  }
+  Str s1(&scope, *str1);
+  if (!s1->equals(*str2)) {
+    Str s2(&scope, *str2);
+    return ::testing::AssertionFailure()
+           << "is not equal to '" << s2->toCStr() << "'";
+  }
+  return ::testing::AssertionSuccess();
+}
+
+::testing::AssertionResult isStrEqualsCStr(RawObject obj, const char* c_str) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object str_obj(&scope, obj);
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(str_obj)) {
+    return ::testing::AssertionFailure()
+           << "is a '" << typeName(runtime, *str_obj) << "'";
+  }
+  Str str(&scope, *str_obj);
+  if (!str->equalsCStr(c_str)) {
+    return ::testing::AssertionFailure()
+           << "'" << str->toCStr() << "' is not equal to '" << c_str << "'";
+  }
+  return ::testing::AssertionSuccess();
+}
+
 ::testing::AssertionResult hasPendingExceptionWithLayout(
     LayoutId error_layout) {
   Thread* thread = Thread::currentThread();

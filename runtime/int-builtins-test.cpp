@@ -1517,20 +1517,20 @@ TEST(IntBuiltinsTest, SmallIntDunderRepr) {
   HandleScope scope;
 
   Int minint(&scope, SmallInt::fromWord(RawSmallInt::kMinValue));
-  Str str(&scope, runBuiltin(SmallIntBuiltins::dunderRepr, minint));
-  EXPECT_PYSTRING_EQ(*str, "-4611686018427387904");
+  Object str(&scope, runBuiltin(SmallIntBuiltins::dunderRepr, minint));
+  EXPECT_TRUE(isStrEqualsCStr(*str, "-4611686018427387904"));
 
   Int maxint(&scope, SmallInt::fromWord(RawSmallInt::kMaxValue));
   str = runBuiltin(SmallIntBuiltins::dunderRepr, maxint);
-  EXPECT_PYSTRING_EQ(*str, "4611686018427387903");
+  EXPECT_TRUE(isStrEqualsCStr(*str, "4611686018427387903"));
 
   Int zero(&scope, SmallInt::fromWord(0));
   str = runBuiltin(SmallIntBuiltins::dunderRepr, zero);
-  EXPECT_PYSTRING_EQ(*str, "0");
+  EXPECT_TRUE(isStrEqualsCStr(*str, "0"));
 
   Int num(&scope, SmallInt::fromWord(0xdeadbeef));
   str = runBuiltin(SmallIntBuiltins::dunderRepr, num);
-  EXPECT_PYSTRING_EQ(*str, "3735928559");
+  EXPECT_TRUE(isStrEqualsCStr(*str, "3735928559"));
 }
 
 TEST(IntBuiltinsTest, DunderXorWithSmallIntsReturnsSmallInt) {

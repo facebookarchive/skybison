@@ -1102,8 +1102,7 @@ TEST(ListBuiltinsTest, DunderRepr) {
 result = [1, 2, 'hello'].__repr__()
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "[1, 2, 'hello']");
+  EXPECT_TRUE(isStrEqualsCStr(*result, "[1, 2, 'hello']"));
 }
 
 TEST(ListIteratorBuiltinsTest, CallDunderNext) {

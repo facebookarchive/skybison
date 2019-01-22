@@ -496,8 +496,8 @@ TEST(RuntimeTest, NewStrFromFormatWithCStrArg) {
   HandleScope scope;
 
   const char input[] = "hello";
-  Str str(&scope, runtime.newStrFromFormat("%s", input));
-  EXPECT_PYSTRING_EQ(*str, input);
+  Object str(&scope, runtime.newStrFromFormat("%s", input));
+  EXPECT_TRUE(isStrEqualsCStr(str, input));
 }
 
 TEST(RuntimeTest, NewStrWithAll) {
@@ -921,7 +921,7 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
   EXPECT_EQ(layout->instanceSize(), 1 * kPointerSize);
 
   Type cls(&scope, layout->describedType());
-  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyEmptyClass");
+  EXPECT_TRUE(isStrEqualsCStr(cls->name(), "MyEmptyClass"));
 
   Instance instance(&scope, runtime.newInstance(layout));
   EXPECT_TRUE(instance->isInstance());
@@ -947,7 +947,7 @@ class MyTypeWithAttributes():
   ASSERT_EQ(layout->instanceSize(), 4 * kPointerSize);
 
   Type cls(&scope, layout->describedType());
-  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithAttributes");
+  EXPECT_TRUE(isStrEqualsCStr(cls->name(), "MyTypeWithAttributes"));
 
   Instance instance(&scope, runtime.newInstance(layout));
   EXPECT_TRUE(instance->isInstance());
@@ -977,14 +977,15 @@ TEST(RuntimeTest, TypeIds) {
   Runtime runtime;
   HandleScope scope;
 
-  EXPECT_PYSTRING_EQ(className(&runtime, Bool::trueObj()), "bool");
-  EXPECT_PYSTRING_EQ(className(&runtime, NoneType::object()), "NoneType");
-  EXPECT_PYSTRING_EQ(className(&runtime, runtime.newStrFromCStr("abc")),
-                     "smallstr");
+  EXPECT_TRUE(isStrEqualsCStr(className(&runtime, Bool::trueObj()), "bool"));
+  EXPECT_TRUE(
+      isStrEqualsCStr(className(&runtime, NoneType::object()), "NoneType"));
+  EXPECT_TRUE(isStrEqualsCStr(
+      className(&runtime, runtime.newStrFromCStr("abc")), "smallstr"));
 
   for (word i = 0; i < 16; i++) {
     auto small_int = SmallInt::fromWord(i);
-    EXPECT_PYSTRING_EQ(className(&runtime, small_int), "smallint");
+    EXPECT_TRUE(isStrEqualsCStr(className(&runtime, small_int), "smallint"));
   }
 }
 
@@ -1075,7 +1076,7 @@ c = MyTypeWithNoInitMethod()
   EXPECT_EQ(layout->instanceSize(), 1 * kPointerSize);
 
   Type cls(&scope, layout->describedType());
-  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithNoInitMethod");
+  EXPECT_TRUE(isStrEqualsCStr(cls->name(), "MyTypeWithNoInitMethod"));
 }
 
 TEST(RuntimeTypeCallTest, TypeCallEmptyInitMethod) {
@@ -1101,7 +1102,7 @@ c = MyTypeWithEmptyInitMethod()
   EXPECT_EQ(layout->instanceSize(), 1 * kPointerSize);
 
   Type cls(&scope, layout->describedType());
-  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithEmptyInitMethod");
+  EXPECT_TRUE(isStrEqualsCStr(cls->name(), "MyTypeWithEmptyInitMethod"));
 }
 
 TEST(RuntimeTypeCallTest, TypeCallWithArguments) {
@@ -1131,7 +1132,7 @@ c = MyTypeWithAttributes(1)
   ASSERT_EQ(layout->instanceSize(), 2 * kPointerSize);
 
   Type cls(&scope, layout->describedType());
-  EXPECT_PYSTRING_EQ(RawStr::cast(cls->name()), "MyTypeWithAttributes");
+  EXPECT_TRUE(isStrEqualsCStr(cls->name(), "MyTypeWithAttributes"));
 
   Object name(&scope, runtime.newStrFromCStr("x"));
   Object value(&scope,
@@ -1665,8 +1666,9 @@ TEST_P(IntrinsicTypeSetAttrTest, SetAttr) {
 
   EXPECT_TRUE(result->isError());
   ASSERT_TRUE(thread->pendingExceptionValue()->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(thread->pendingExceptionValue()),
-                     "can't set attributes of built-in/extension type");
+  EXPECT_TRUE(
+      isStrEqualsCStr(thread->pendingExceptionValue(),
+                      "can't set attributes of built-in/extension type"));
 }
 
 INSTANTIATE_TEST_CASE_P(IntrinsicTypes, IntrinsicTypeSetAttrTest,
@@ -1860,8 +1862,7 @@ class Foo(metaclass=MyMeta):
   Object attr(&scope, runtime.newStrFromCStr("attr"));
   Object result(&scope,
                 runtime.attributeAt(Thread::currentThread(), foo, attr));
-  ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "foo");
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foo"));
 }
 
 TEST(InstanceAttributeTest, GetMissingAttributeThrowsAttributeError) {
@@ -2284,8 +2285,7 @@ del foo.bar
 
   Object foo(&scope, moduleAt(&runtime, main, "foo"));
   EXPECT_EQ(result->at(0), *foo);
-  ASSERT_TRUE(result->at(1)->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "bar");
+  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "bar"));
 }
 
 TEST(InstanceAttributeDeletionTest,
@@ -2316,8 +2316,7 @@ del bar.baz
 
   Object bar(&scope, moduleAt(&runtime, main, "bar"));
   EXPECT_EQ(result->at(0), *bar);
-  ASSERT_TRUE(result->at(1)->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(result->at(1)), "baz");
+  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "baz"));
 }
 
 TEST(ClassAttributeDeletionTest, DeleteKnownAttribute) {
@@ -3117,7 +3116,7 @@ TEST(ModuleImportTest, ModuleImportsAllPublicSymbols) {
   EXPECT_EQ(symbols_dict->numItems(), 1);
 
   ValueCell result(&scope, runtime.dictAt(symbols_dict, symbol_str1));
-  EXPECT_PYSTRING_EQ(RawStr::cast(result->value()), "public_symbol");
+  EXPECT_TRUE(isStrEqualsCStr(result->value(), "public_symbol"));
 }
 
 TEST(HeapFrameTest, Create) {

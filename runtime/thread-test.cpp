@@ -1502,10 +1502,10 @@ class C(A,B): pass
 
   Tuple mro(&scope, getMro(&runtime, src, "C"));
   EXPECT_EQ(mro->length(), 4);
-  EXPECT_PYSTRING_EQ(className(mro->at(0)), "C");
-  EXPECT_PYSTRING_EQ(className(mro->at(1)), "A");
-  EXPECT_PYSTRING_EQ(className(mro->at(2)), "B");
-  EXPECT_PYSTRING_EQ(className(mro->at(3)), "object");
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(0)), "C"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(1)), "A"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(2)), "B"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(3)), "object"));
 }
 
 TEST(ThreadTest, LoadBuildTypeVerifyMroInheritance) {
@@ -1520,10 +1520,10 @@ class C(B): pass
 
   Tuple mro(&scope, getMro(&runtime, src, "C"));
   EXPECT_EQ(mro->length(), 4);
-  EXPECT_PYSTRING_EQ(className(mro->at(0)), "C");
-  EXPECT_PYSTRING_EQ(className(mro->at(1)), "B");
-  EXPECT_PYSTRING_EQ(className(mro->at(2)), "A");
-  EXPECT_PYSTRING_EQ(className(mro->at(3)), "object");
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(0)), "C"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(1)), "B"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(2)), "A"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(3)), "object"));
 }
 
 TEST(ThreadTest, LoadBuildTypeVerifyMroMultiInheritance) {
@@ -1539,11 +1539,11 @@ class D(B,C): pass
 
   Tuple mro(&scope, getMro(&runtime, src, "D"));
   EXPECT_EQ(mro->length(), 5);
-  EXPECT_PYSTRING_EQ(className(mro->at(0)), "D");
-  EXPECT_PYSTRING_EQ(className(mro->at(1)), "B");
-  EXPECT_PYSTRING_EQ(className(mro->at(2)), "A");
-  EXPECT_PYSTRING_EQ(className(mro->at(3)), "C");
-  EXPECT_PYSTRING_EQ(className(mro->at(4)), "object");
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(0)), "D"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(1)), "B"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(2)), "A"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(3)), "C"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(4)), "object"));
 }
 
 TEST(ThreadTest, LoadBuildTypeVerifyMroDiamond) {
@@ -1559,11 +1559,11 @@ class D(B,C): pass
 
   Tuple mro(&scope, getMro(&runtime, src, "D"));
   EXPECT_EQ(mro->length(), 5);
-  EXPECT_PYSTRING_EQ(className(mro->at(0)), "D");
-  EXPECT_PYSTRING_EQ(className(mro->at(1)), "B");
-  EXPECT_PYSTRING_EQ(className(mro->at(2)), "C");
-  EXPECT_PYSTRING_EQ(className(mro->at(3)), "A");
-  EXPECT_PYSTRING_EQ(className(mro->at(4)), "object");
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(0)), "D"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(1)), "B"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(2)), "C"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(3)), "A"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(4)), "object"));
 }
 
 TEST(ThreadDeathTest, LoadBuildTypeVerifyMroError) {

@@ -107,8 +107,7 @@ TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {
   HandleScope scope;
   Type type(&scope, runtime.typeAt(LayoutId::kObject));
   Object result(&scope, runBuiltin(TypeBuiltins::dunderRepr, type));
-  ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "<class 'object'>");
+  EXPECT_TRUE(isStrEqualsCStr(*result, "<class 'object'>"));
 }
 
 TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsStr) {
@@ -121,10 +120,9 @@ class Foo:
   Object type(&scope, moduleAt(&runtime, "__main__", "Foo"));
 
   Object result(&scope, runBuiltin(TypeBuiltins::dunderRepr, type));
-  ASSERT_TRUE(result->isStr());
   // TODO(T32810595): Once module names are supported, this should become
   // "<class '__main__.Foo'>".
-  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "<class 'Foo'>");
+  EXPECT_TRUE(isStrEqualsCStr(*result, "<class 'Foo'>"));
 }
 
 TEST(TypeBuiltinTest, DunderNewWithOneArgReturnsTypeOfArg) {

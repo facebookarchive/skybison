@@ -867,12 +867,10 @@ class bumble():
   Dict str_dict(&scope, str_type->dict());
   patchFunctionAttrs(Thread::currentThread(), str_dict, bumble_lt);
 
-  Function dunder_lt(&scope, runtime.typeDictAt(str_dict, dunder_lt_sym));
+  Object dunder_lt(&scope, runtime.typeDictAt(str_dict, dunder_lt_sym));
   ASSERT_TRUE(dunder_lt->isFunction());
-  Object doc_object(&scope, dunder_lt->doc());
-  ASSERT_TRUE(doc_object->isStr());
-  Str doc(&scope, *doc_object);
-  EXPECT_PYSTRING_EQ(doc, "O, Canada");
+  Function func(&scope, *dunder_lt);
+  EXPECT_TRUE(isStrEqualsCStr(func->doc(), "O, Canada"));
 }
 
 TEST(BuiltinsModuleDeathTest,

@@ -463,8 +463,8 @@ c = C()
   RawObject a_eq_b =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, a, b);
   EXPECT_EQ(a_eq_b, Bool::falseObj());
-  Str called(&scope, moduleAt(&runtime, main, "called"));
-  EXPECT_PYSTRING_EQ(*called, "A");
+  Object called(&scope, moduleAt(&runtime, main, "called"));
+  EXPECT_TRUE(isStrEqualsCStr(*called, "A"));
 
   Str called_name(&scope, runtime.newStrFromCStr("called"));
   Object none(&scope, NoneType::object());
@@ -473,14 +473,14 @@ c = C()
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, b, a);
   EXPECT_EQ(b_eq_a, Bool::trueObj());
   called = moduleAt(&runtime, main, "called");
-  EXPECT_PYSTRING_EQ(*called, "B");
+  EXPECT_TRUE(isStrEqualsCStr(*called, "B"));
 
   runtime.moduleAtPut(main, called_name, none);
   RawObject c_eq_a =
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, c, a);
   EXPECT_EQ(c_eq_a, Bool::trueObj());
   called = moduleAt(&runtime, main, "called");
-  EXPECT_PYSTRING_EQ(*called, "C");
+  EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 
   // When rhs is a subtype of lhs, only rhs.__eq__(rhs) is tried.
   runtime.moduleAtPut(main, called_name, none);
@@ -488,7 +488,7 @@ c = C()
       Interpreter::compareOperation(thread, frame, CompareOp::EQ, a, c);
   EXPECT_EQ(a_eq_c, Bool::trueObj());
   called = moduleAt(&runtime, main, "called");
-  EXPECT_PYSTRING_EQ(*called, "C");
+  EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 }
 
 TEST(InterpreterTest, SequenceContains) {
@@ -2239,7 +2239,7 @@ foo = Foo()
   // Confirm that the returned value is the iterator of Foo
   Object result(&scope, Thread::currentThread()->run(code));
   Type result_type(&scope, runtime.typeOf(*result));
-  EXPECT_PYSTRING_EQ(RawStr::cast(result_type->name()), "FooIterator");
+  EXPECT_TRUE(isStrEqualsCStr(result_type->name(), "FooIterator"));
 }
 
 TEST(InterpreterDeathTest, YieldFromIterThrowsException) {

@@ -52,8 +52,8 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionNoArgs) {
 a = BaseException().__str__()
 )");
 
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_PYSTRING_EQ(*a, "");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, ""));
 }
 
 TEST(ExceptionBuiltinsTest, StrFromBaseExceptionOneArg) {
@@ -64,8 +64,8 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionOneArg) {
 a = BaseException("hello").__str__()
 )");
 
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_PYSTRING_EQ(*a, "hello");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
 }
 
 TEST(ExceptionBuiltinsTest, StrFromBaseExceptionManyArgs) {
@@ -76,8 +76,8 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionManyArgs) {
 a = BaseException("hello", "world").__str__()
 )");
 
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_PYSTRING_EQ(*a, "('hello', 'world')");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, "('hello', 'world')"));
 }
 
 TEST(ExceptionBuiltinsTest, ExceptionManyArguments) {
@@ -176,8 +176,8 @@ TEST(ExceptionBuiltinsTest, KeyErrorStrPrintsMissingKey) {
 s = KeyError("key").__str__()
 )");
 
-  Str s(&scope, moduleAt(&runtime, "__main__", "s"));
-  EXPECT_PYSTRING_EQ(*s, "'key'");
+  Object s(&scope, moduleAt(&runtime, "__main__", "s"));
+  EXPECT_TRUE(isStrEqualsCStr(*s, "'key'"));
 }
 
 TEST(ExceptionBuiltinsTest,
@@ -192,7 +192,7 @@ b = BaseException("key", "key2").__str__()
 
   Str s(&scope, moduleAt(&runtime, "__main__", "s"));
   Str b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_PYSTRING_EQ(*s, *b);
+  EXPECT_TRUE(isStrEquals(s, b));
 }
 
 TEST(ExceptionBuiltinsTest, TypeErrorReturnsTypeError) {

@@ -349,11 +349,11 @@ a = (1, 2, 3).__repr__()
 b = ("hello", 2, "world", 4).__repr__()
 )");
   HandleScope scope;
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
 
-  EXPECT_PYSTRING_EQ(*a, "(1, 2, 3)");
-  EXPECT_PYSTRING_EQ(*b, "('hello', 2, 'world', 4)");
+  EXPECT_TRUE(isStrEqualsCStr(*a, "(1, 2, 3)"));
+  EXPECT_TRUE(isStrEqualsCStr(*b, "('hello', 2, 'world', 4)"));
 }
 
 TEST(TupleBuiltinsTest, DunderReprWithOnePrimitive) {
@@ -363,20 +363,20 @@ a = (1,).__repr__()
 b = ("foo",).__repr__()
 )");
   HandleScope scope;
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
 
-  EXPECT_PYSTRING_EQ(*a, "(1,)");
-  EXPECT_PYSTRING_EQ(*b, "('foo',)");
+  EXPECT_TRUE(isStrEqualsCStr(*a, "(1,)"));
+  EXPECT_TRUE(isStrEqualsCStr(*b, "('foo',)"));
 }
 
 TEST(TupleBuiltinsTest, DunderReprWithNoElements) {
   Runtime runtime;
   runFromCStr(&runtime, "a = ().__repr__()");
   HandleScope scope;
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
 
-  EXPECT_PYSTRING_EQ(*a, "()");
+  EXPECT_TRUE(isStrEqualsCStr(*a, "()"));
 }
 
 TEST(TupleBuiltinsTest, DunderReprWithTupleSubclassReturnsTupleRepr) {
@@ -386,8 +386,8 @@ class Foo(tuple): pass
 repr = Foo((1, 2, 3)).__repr__()
 )");
   HandleScope scope;
-  Str repr(&scope, moduleAt(&runtime, "__main__", "repr"));
-  EXPECT_PYSTRING_EQ(*repr, "(1, 2, 3)");
+  Object repr(&scope, moduleAt(&runtime, "__main__", "repr"));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "(1, 2, 3)"));
 }
 
 TEST(TupleBuiltinsTest, DunderMulWithOneElement) {

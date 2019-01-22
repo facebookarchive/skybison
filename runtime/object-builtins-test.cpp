@@ -45,9 +45,9 @@ a = object.__str__(f)
 b = object.__repr__(f)
 )");
   HandleScope scope;
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_PYSTRING_EQ(*a, *b);
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  EXPECT_TRUE(isStrEquals(a, b));
 }
 
 TEST(ObjectBuiltinsTest, UserDefinedTypeInheritsDunderStr) {
@@ -61,9 +61,9 @@ a = object.__str__(f)
 b = f.__str__()
 )");
   HandleScope scope;
-  Str a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_PYSTRING_EQ(*a, *b);
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  EXPECT_TRUE(isStrEquals(a, b));
 }
 
 TEST(ObjectBuiltinsTest, DunderInitDoesNotThrowIfNewIsDifferentButInitIsSame) {
@@ -154,10 +154,8 @@ TEST(NoneBuiltinsTest, DunderReprReturnsNone) {
   Runtime runtime;
   runFromCStr(&runtime, "a = None.__repr__()");
   HandleScope scope;
-  Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a_obj->isStr());
-  Str a(&scope, *a_obj);
-  EXPECT_PYSTRING_EQ(a, "None");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(isStrEqualsCStr(a, "None"));
 }
 
 }  // namespace python

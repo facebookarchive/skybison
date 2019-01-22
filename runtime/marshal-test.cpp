@@ -35,8 +35,7 @@ TEST(MarshalReaderTest, ReadTypeAscii) {
   Marshal::Reader reader(&scope, &runtime, "\x61\x0a\x00\x00\x00testing123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
-  ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "testing123");
+  EXPECT_TRUE(isStrEqualsCStr(*result, "testing123"));
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
@@ -48,8 +47,7 @@ TEST(MarshalReaderTest, ReadTypeAscii) {
                              "\xe1\x0a\x00\x00\x00testing321");
   Object ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
-  ASSERT_TRUE(ref_result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*ref_result), "testing321");
+  EXPECT_TRUE(isStrEqualsCStr(*ref_result, "testing321"));
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
@@ -70,8 +68,7 @@ TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
   Marshal::Reader reader(&scope, &runtime, "\x41\x0a\x00\x00\x00testing123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
-  ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "testing123");
+  EXPECT_TRUE(isStrEqualsCStr(result, "testing123"));
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
@@ -83,8 +80,7 @@ TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
                              "\xc1\x0a\x00\x00\x00testing321");
   Object ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
-  ASSERT_TRUE(ref_result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*ref_result), "testing321");
+  EXPECT_TRUE(isStrEqualsCStr(*ref_result, "testing321"));
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
@@ -105,8 +101,7 @@ TEST(MarshalReaderTest, ReadTypeUnicode) {
   Marshal::Reader reader(&scope, &runtime, "\x75\x0a\x00\x00\x00testing123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
-  ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "testing123");
+  EXPECT_TRUE(isStrEqualsCStr(*result, "testing123"));
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
@@ -118,8 +113,7 @@ TEST(MarshalReaderTest, ReadTypeUnicode) {
                              "\xf5\x0a\x00\x00\x00testing321");
   Object ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
-  ASSERT_TRUE(ref_result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*ref_result), "testing321");
+  EXPECT_TRUE(isStrEqualsCStr(*ref_result, "testing321"));
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
@@ -140,8 +134,7 @@ TEST(MarshalReaderTest, ReadTypeInterned) {
   Marshal::Reader reader(&scope, &runtime, "\x74\x0a\x00\x00\x00testing123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
-  ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "testing123");
+  EXPECT_TRUE(isStrEqualsCStr(*result, "testing123"));
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
@@ -153,8 +146,7 @@ TEST(MarshalReaderTest, ReadTypeInterned) {
                              "\xf4\x0a\x00\x00\x00testing321");
   Object ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
-  ASSERT_TRUE(ref_result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*ref_result), "testing321");
+  EXPECT_TRUE(isStrEqualsCStr(*ref_result, "testing321"));
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
@@ -175,8 +167,7 @@ TEST(MarshalReaderTest, ReadTypeShortAsciiInterned) {
   Marshal::Reader reader(&scope, &runtime, "\x5a\x0atesting123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
-  ASSERT_TRUE(result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*result), "testing123");
+  EXPECT_TRUE(isStrEqualsCStr(*result, "testing123"));
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
@@ -187,8 +178,7 @@ TEST(MarshalReaderTest, ReadTypeShortAsciiInterned) {
   Marshal::Reader ref_reader(&scope, &runtime, "\xda\x0atesting321");
   Object ref_result(&scope, ref_reader.readObject());
   EXPECT_EQ(ref_reader.numRefs(), 1);
-  ASSERT_TRUE(ref_result->isStr());
-  EXPECT_PYSTRING_EQ(RawStr::cast(*ref_result), "testing321");
+  EXPECT_TRUE(isStrEqualsCStr(*ref_result, "testing321"));
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.

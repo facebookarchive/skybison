@@ -37,21 +37,6 @@ namespace testing {
 std::string compileAndRunToString(Runtime* runtime, const char* src);
 std::string compileAndRunToStderrString(Runtime* runtime, const char* src);
 
-// A predicate-formatter for checking if a python::RawStr has the same contents
-// as a std::string
-::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
-                                               const char* expected_string_expr,
-                                               RawStr actual_str,
-                                               std::string expected_string);
-
-::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
-                                               const char* expected_string_expr,
-                                               RawStr actual_str,
-                                               RawStr expected_str);
-
-#define EXPECT_PYSTRING_EQ(s1, s2)                                             \
-  EXPECT_PRED_FORMAT2(testing::AssertPyStringEqual, s1, s2)
-
 // Basic variant wrapper for a subset of Python values, used by
 // EXPECT_PYLIST_EQ().
 class Value {
@@ -185,6 +170,10 @@ using unique_file_ptr = std::unique_ptr<char, FileDeleter>;
 RawObject newEmptyCode(Runtime* runtime);
 
 RawObject listFromRange(word start, word stop);
+
+::testing::AssertionResult isStrEquals(const Object& s1, const Object& s2);
+
+::testing::AssertionResult isStrEqualsCStr(RawObject obj, const char* c_str);
 
 // Expect that the current thread has a specific exception pending.
 ::testing::AssertionResult hasPendingExceptionWithLayout(LayoutId layout_id);
