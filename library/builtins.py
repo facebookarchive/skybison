@@ -324,7 +324,7 @@ class dict(bootstrap=True):
     def get(self, key, default=None):
         pass
 
-    def item(self):
+    def items(self):
         pass
 
     def keys(self):
