@@ -1169,6 +1169,8 @@ void Runtime::initializeHeapTypes() {
                       LayoutId::kObject);
   TupleBuiltins::initialize(this);
   TupleIteratorBuiltins::initialize(this);
+  addEmptyBuiltinType(SymbolId::kUnderUnboundValue, LayoutId::kUnboundValue,
+                      LayoutId::kObject);
   initializePropertyType();
   RangeBuiltins::initialize(this);
   RangeIteratorBuiltins::initialize(this);
@@ -1529,6 +1531,7 @@ void Runtime::initializePrimitiveInstances() {
   ellipsis_ = heap()->createEllipsis();
   not_implemented_ = heap()->create<RawNotImplemented>();
   callbacks_ = NoneType::object();
+  unbound_value_ = heap()->create<RawUnboundValue>();
 }
 
 void Runtime::initializeInterned() { interned_ = newSet(); }
@@ -1569,6 +1572,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&not_implemented_);
   visitor->visitPointer(&build_class_);
   visitor->visitPointer(&display_hook_);
+  visitor->visitPointer(&unbound_value_);
 
   // Visit interned strings.
   visitor->visitPointer(&interned_);
@@ -1793,7 +1797,7 @@ RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
 
 void Runtime::createBuiltinsModule() {
   HandleScope scope;
-  Object name(&scope, newStrFromCStr("builtins"));
+  Object name(&scope, symbols()->Builtins());
   Module module(&scope, newModule(name));
 
   // Fill in builtins...
@@ -1803,46 +1807,51 @@ void Runtime::createBuiltinsModule() {
       nativeTrampolineKw<Builtins::buildClassKw>, unimplementedTrampoline);
 
   moduleAddBuiltinFunction(module, SymbolId::kCallable,
-                           nativeTrampoline<Builtins::callable>,
+                           builtinTrampolineWrapper<Builtins::callable>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kChr,
-                           nativeTrampoline<Builtins::chr>,
+                           builtinTrampolineWrapper<Builtins::chr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kCompile,
-                           nativeTrampoline<Builtins::compile>,
+                           builtinTrampolineWrapper<Builtins::compile>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kExec,
-                           nativeTrampoline<Builtins::exec>,
+                           builtinTrampolineWrapper<Builtins::exec>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kGetattr,
-                           nativeTrampoline<Builtins::getattr>,
+                           builtinTrampolineWrapper<Builtins::getattr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kHasattr,
-                           nativeTrampoline<Builtins::hasattr>,
+                           builtinTrampolineWrapper<Builtins::hasattr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kIsInstance,
-                           nativeTrampoline<Builtins::isinstance>,
+                           builtinTrampolineWrapper<Builtins::isinstance>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kIsSubclass,
-                           nativeTrampoline<Builtins::issubclass>,
+                           builtinTrampolineWrapper<Builtins::issubclass>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kLen,
-                           nativeTrampoline<Builtins::len>,
+                           builtinTrampolineWrapper<Builtins::len>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kOrd,
-                           nativeTrampoline<Builtins::ord>,
+                           builtinTrampolineWrapper<Builtins::ord>,
                            unimplementedTrampoline, unimplementedTrampoline);
+  // _patch is not patched because that would cause a circularity problem.
+  moduleAddBuiltinFunction(module, SymbolId::kUnderPatch,
+                           nativeTrampoline<Builtins::underPatch>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+  // print is not patched because it is a tricky function.
   moduleAddBuiltinFunction(
       module, SymbolId::kPrint, nativeTrampoline<Builtins::print>,
       nativeTrampolineKw<Builtins::printKw>, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kRange,
-                           nativeTrampoline<Builtins::range>,
+                           builtinTrampolineWrapper<Builtins::range>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kRepr,
-                           nativeTrampoline<Builtins::repr>,
+                           builtinTrampolineWrapper<Builtins::repr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kSetattr,
-                           nativeTrampoline<Builtins::setattr>,
+                           builtinTrampolineWrapper<Builtins::setattr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   // Add builtin types
   moduleAddBuiltinType(module, SymbolId::kArithmeticError,
@@ -1976,6 +1985,9 @@ void Runtime::createBuiltinsModule() {
 
   Object not_implemented(&scope, notImplemented());
   moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
+
+  Object unbound_value(&scope, unbound_value_);
+  moduleAddGlobal(module, SymbolId::kUnderUnboundValue, unbound_value);
 
   addModule(module);
   executeModule(kBuiltinsModuleData, module);

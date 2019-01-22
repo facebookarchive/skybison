@@ -95,9 +95,8 @@ TEST(BuiltinsModuleDeathTest, BuiltinChr) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(chr(65))");
   EXPECT_EQ(result, "A\n");
-  ASSERT_DEATH(
-      runFromCStr(&runtime, "print(chr(1,2))"),
-      "aborting due to pending exception: Unexpected 1 argumment in 'chr'");
+  ASSERT_DEATH(runFromCStr(&runtime, "print(chr(1,2))"),
+               "TypeError: 'chr' takes max 1 positional arguments but 2 given");
   ASSERT_DEATH(
       runFromCStr(&runtime, "print(chr('A'))"),
       "aborting due to pending exception: Unsupported type in builtin 'chr'");
@@ -110,7 +109,7 @@ TEST(BuiltinsModuleDeathTest, BuiltinIsinstance) {
   // Only accepts 2 arguments
   EXPECT_DEATH(
       runFromCStr(&runtime, "print(isinstance(1, 1, 1))"),
-      "aborting due to pending exception: isinstance expected 2 arguments");
+      "TypeError: 'isinstance' takes max 2 positional arguments but 3 given");
 
   // 2nd argument must be a type
   EXPECT_DEATH(runFromCStr(&runtime, "print(isinstance(1, 1))"),
@@ -310,8 +309,7 @@ TEST(BuiltinsModuleDeathTest, BuiltinLen) {
   std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");
   EXPECT_EQ(result, "3\n");
   ASSERT_DEATH(runFromCStr(&runtime, "print(len(1,2))"),
-               "aborting due to pending exception: "
-               "len\\(\\) takes exactly one argument");
+               "TypeError: 'len' takes max 1 positional arguments but 2 given");
   ASSERT_DEATH(runFromCStr(&runtime, "print(len(1))"),
                "aborting due to pending exception: "
                "object has no len()");
@@ -376,9 +374,8 @@ TEST(BuiltinsModuleDeathTest, BuiltinOrd) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(ord('A'))");
   EXPECT_EQ(result, "65\n");
-  ASSERT_DEATH(
-      runFromCStr(&runtime, "print(ord(1,2))"),
-      "aborting due to pending exception: Unexpected 1 argumment in 'ord'");
+  ASSERT_DEATH(runFromCStr(&runtime, "print(ord(1,2))"),
+               "TypeError: 'ord' takes max 1 positional arguments but 2 given");
   ASSERT_DEATH(
       runFromCStr(&runtime, "print(ord(1))"),
       "aborting due to pending exception: Unsupported type in builtin 'ord'");
@@ -672,14 +669,11 @@ d = getattr(list, '__qualname__')
 TEST(BuiltinsModuleTest, BuiltinCompile) {
   Runtime runtime;
   HandleScope scope;
-  const char* program = R"(
-a = 1
-b = 2
-  )";
-  Str code_str(&scope, runtime.newStrFromCStr(program));
+  runFromCStr(&runtime,
+              R"(code = compile("a = 1\nb = 2", "<string>", "eval"))");
   Str filename(&scope, runtime.newStrFromCStr("<string>"));
   Str mode(&scope, runtime.newStrFromCStr("eval"));
-  Code code(&scope, runBuiltin(Builtins::compile, code_str, filename, mode));
+  Code code(&scope, moduleAt(&runtime, "__main__", "code"));
   ASSERT_TRUE(code->filename().isStr());
   EXPECT_TRUE(Str::cast(code->filename()).equals(filename));
 
@@ -690,38 +684,23 @@ b = 2
   ASSERT_TRUE(names->contains(runtime.newStrFromCStr("b")));
 }
 
-TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenTooFewArgs) {
+TEST(BuiltinsModuleDeathTest, BuiltinCompileThrowsTypeErrorGivenTooFewArgs) {
   Runtime runtime;
-  HandleScope scope;
-  SmallInt one(&scope, RawSmallInt::fromWord(1));
-  Object result(&scope, runBuiltin(Builtins::compile, one));
-  ASSERT_TRUE(result->isError());
-  Thread* thread = Thread::currentThread();
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
-  EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
+  ASSERT_DEATH(runFromCStr(&runtime, "compile(1)"),
+               "'compile' takes min 3 positional arguments but 1 given");
 }
 
-TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenTooManyArgs) {
+TEST(BuiltinsModuleDeathTest, BuiltinCompileThrowsTypeErrorGivenTooManyArgs) {
   Runtime runtime;
-  HandleScope scope;
-  SmallInt one(&scope, RawSmallInt::fromWord(1));
-  Object result(
-      &scope, runBuiltin(Builtins::compile, one, one, one, one, one, one, one));
-  ASSERT_TRUE(result->isError());
-  Thread* thread = Thread::currentThread();
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
-  EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
+  ASSERT_DEATH(runFromCStr(&runtime, "compile(1, 2, 3, 4, 5, 6, 7, 8, 9)"),
+               "'compile' takes max 6 positional arguments but 9 given");
 }
 
 TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenBadMode) {
   Runtime runtime;
   HandleScope scope;
-  Str hello(&scope, RawSmallStr::fromCStr("hello"));
-  Object result(&scope, runBuiltin(Builtins::compile, hello, hello, hello));
-  ASSERT_TRUE(result->isError());
-  Thread* thread = Thread::currentThread();
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kValueError));
-  EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
+  ASSERT_DEATH(runFromCStr(&runtime, "compile('hello', 'hello', 'hello')"),
+               "Expected mode to be 'exec', 'eval', or 'single' in 'compile'");
 }
 
 TEST(BuiltinsModuleTest, BuiltinExecSetsGlobal) {
@@ -741,13 +720,16 @@ exec("a = 1338")
 TEST(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
   Runtime runtime;
   HandleScope scope;
+  runFromCStr(&runtime, "");
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Dict globals(&scope, main->dict());
+  Str globals_name(&scope, runtime.newStrFromCStr("gl"));
+  runtime.moduleDictAtPut(globals, globals_name, globals);
   runFromCStr(&runtime, R"(
 a = 1337
+result = exec("a = 1338", gl)
   )");
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Str code(&scope, runtime.newStrFromCStr("a = 1338"));
-  Dict globals(&scope, main->dict());
-  Object result(&scope, runBuiltin(Builtins::exec, code, globals));
+  Object result(&scope, moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(result->isNoneType());
   Object a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_TRUE(a->isSmallInt());
@@ -759,26 +741,24 @@ TEST(BuiltinsModuleTest, BuiltinExecWithEmptyGlobalsFailsToSetGlobal) {
   HandleScope scope;
   runFromCStr(&runtime, R"(
 a = 1337
+result = exec("a = 1338", {})
   )");
-  Str code(&scope, runtime.newStrFromCStr("a = 1338"));
-  Dict globals(&scope, runtime.newDict());
-  Object result(&scope, runBuiltin(Builtins::exec, code, globals));
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object result(&scope, moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(result->isNoneType());
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_TRUE(a->isSmallInt());
   EXPECT_EQ(SmallInt::cast(a)->value(), 1337);
 }
 
-TEST(BuiltinsModuleTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
+TEST(BuiltinsModuleDeathTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  Str code(&scope, runtime.newStrFromCStr("a = 1338"));
-  Object globals_not_a_dict(&scope, SmallInt::fromWord(5));
-  Object result(&scope, runBuiltin(Builtins::exec, code, globals_not_a_dict));
-  ASSERT_TRUE(result->isError());
-  Thread* thread = Thread::currentThread();
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
-  EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
+a = 1337
+result = exec("a = 1338", 7)
+  )"),
+               "Expected 'globals' to be dict in 'exec'");
 }
 
 TEST(BuiltinsModuleTest, PythonBuiltinAnnotationSetsFunctionSignature) {
@@ -820,7 +800,7 @@ class bumble():
 
   Dict bumble_dict(&scope, bumble_type->dict());
   Function bumble_lt(&scope, runtime.typeDictAt(bumble_dict, dunder_lt_sym));
-  patchFunctionAttrs(Thread::currentThread(), str_dict, bumble_lt);
+  patchFunctionAttrsInTypeDict(Thread::currentThread(), str_dict, bumble_lt);
 
   Dict annotations(&scope, str_lt->annotations());
   EXPECT_EQ(annotations->numItems(), 2);
@@ -865,7 +845,7 @@ class bumble():
   Dict bumble_dict(&scope, bumble_type->dict());
   Function bumble_lt(&scope, runtime.typeDictAt(bumble_dict, dunder_lt_sym));
   Dict str_dict(&scope, str_type->dict());
-  patchFunctionAttrs(Thread::currentThread(), str_dict, bumble_lt);
+  patchFunctionAttrsInTypeDict(Thread::currentThread(), str_dict, bumble_lt);
 
   Object dunder_lt(&scope, runtime.typeDictAt(str_dict, dunder_lt_sym));
   ASSERT_TRUE(dunder_lt->isFunction());
@@ -904,7 +884,8 @@ class bumble():
   Dict bumble_dict(&scope, bumble_type->dict());
   Function bumble_lt(&scope, runtime.typeDictAt(bumble_dict, dunder_lt_sym));
   Dict str_dict(&scope, str_type->dict());
-  ASSERT_DEATH(patchFunctionAttrs(Thread::currentThread(), str_dict, bumble_lt),
+  ASSERT_DEATH(patchFunctionAttrsInTypeDict(Thread::currentThread(), str_dict,
+                                            bumble_lt),
                "Redefinition of native code method __lt__ in managed code");
 }
 
@@ -946,6 +927,48 @@ result = any([False, True, False])
   HandleScope scope;
   Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result->value());
+}
+
+TEST(BuiltinsModuleTest, RangeOnNonIntegerRaisesTypeError) {
+  Runtime runtime;
+  ASSERT_DEATH(runFromCStr(&runtime, R"(range("foo", "bar", "baz"))"),
+               "Arguments to range\\(\\) must be integers");
+}
+
+TEST(BuiltinsModuleTest, RangeWithOnlyStopDefaultsOtherArguments) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = range(5)
+  )");
+  HandleScope scope;
+  Range result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result->start(), 0);
+  EXPECT_EQ(result->stop(), 5);
+  EXPECT_EQ(result->step(), 1);
+}
+
+TEST(BuiltinsModuleTest, RangeWithStartAndStopDefaultsStep) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = range(1, 5)
+  )");
+  HandleScope scope;
+  Range result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result->start(), 1);
+  EXPECT_EQ(result->stop(), 5);
+  EXPECT_EQ(result->step(), 1);
+}
+
+TEST(BuiltinsModuleTest, RangeWithAllArgsSetsAllArgs) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = range(1, 5, 7)
+  )");
+  HandleScope scope;
+  Range result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result->start(), 1);
+  EXPECT_EQ(result->stop(), 5);
+  EXPECT_EQ(result->step(), 7);
 }
 
 }  // namespace python

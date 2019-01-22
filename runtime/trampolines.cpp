@@ -83,35 +83,37 @@ static void processFreevarsAndCellvars(Thread* thread, const Function& function,
 static RawObject processDefaultArguments(Thread* thread,
                                          const Function& function,
                                          const Code& code, Frame* caller,
-                                         word argc) {
+                                         const word argc) {
   HandleScope scope(thread);
   Object tmp_varargs(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
-  if (argc < code->argcount() && function->hasDefaults()) {
+  word new_argc = argc;
+  if (new_argc < code->argcount() && function->hasDefaults()) {
     // Add default positional args
     Tuple default_args(&scope, function->defaults());
-    if (default_args->length() < (code->argcount() - argc)) {
+    if (default_args->length() < (code->argcount() - new_argc)) {
       // TODO(T39316354): Fix this up to remove the toCStr grossness.
       Str fn_name_str(&scope, function->name());
       unique_c_ptr<char> fn_name(fn_name_str->toCStr());
       return thread->raiseTypeError(runtime->newStrFromFormat(
-          "TypeError: '%s' takes %ld positional arguments but %ld given",
-          fn_name.get(), code->argcount() - argc, default_args->length()));
+          "TypeError: '%s' takes min %ld positional arguments but %ld given",
+          fn_name.get(), code->argcount() - default_args->length(), argc));
     }
     const word positional_only = code->argcount() - default_args->length();
-    for (; argc < code->argcount(); argc++) {
-      caller->pushValue(default_args->at(argc - positional_only));
+    for (; new_argc < code->argcount(); new_argc++) {
+      caller->pushValue(default_args->at(new_argc - positional_only));
     }
   }
-  if ((argc > code->argcount()) || code->hasVarargs()) {
+  if ((new_argc > code->argcount()) || code->hasVarargs()) {
     // VARARGS - spill extra positional args into the varargs tuple.
     if (code->hasVarargs()) {
-      word len = Utils::maximum(static_cast<word>(0), argc - code->argcount());
+      word len =
+          Utils::maximum(static_cast<word>(0), new_argc - code->argcount());
       Tuple varargs(&scope, thread->runtime()->newTuple(len));
       for (word i = (len - 1); i >= 0; i--) {
         varargs->atPut(i, caller->topValue());
         caller->popValue();
-        argc--;
+        new_argc--;
       }
       tmp_varargs = *varargs;
     } else {
@@ -119,7 +121,7 @@ static RawObject processDefaultArguments(Thread* thread,
       Str fn_name_str(&scope, function->name());
       unique_c_ptr<char> fn_name(fn_name_str->toCStr());
       return thread->raiseTypeError(runtime->newStrFromFormat(
-          "TypeError: '%s' takes %ld positional arguments but %ld given",
+          "TypeError: '%s' takes max %ld positional arguments but %ld given",
           fn_name.get(), code->argcount(), argc));
     }
   }
@@ -137,7 +139,7 @@ static RawObject processDefaultArguments(Thread* thread,
         RawObject val = thread->runtime()->dictAt(kw_defaults, name);
         if (!val->isError()) {
           caller->pushValue(val);
-          argc++;
+          new_argc++;
         } else {
           return thread->raiseTypeErrorWithCStr(
               "TypeError: missing keyword-only argument");
@@ -151,7 +153,7 @@ static RawObject processDefaultArguments(Thread* thread,
 
   if (code->hasVarargs()) {
     caller->pushValue(*tmp_varargs);
-    argc++;
+    new_argc++;
   }
 
   if (code->hasVarkeyargs()) {
@@ -159,18 +161,18 @@ static RawObject processDefaultArguments(Thread* thread,
     // provided.  Just add an empty dict.
     Object kwdict(&scope, thread->runtime()->newDict());
     caller->pushValue(*kwdict);
-    argc++;
+    new_argc++;
   }
 
   // At this point, we should have the correct number of arguments.  Throw if
   // not.
-  if (argc != code->totalArgs()) {
+  if (new_argc != code->totalArgs()) {
     // TODO(T39316354): Fix this up to remove the toCStr grossness.
     Str fn_name_str(&scope, function->name());
     unique_c_ptr<char> fn_name(fn_name_str->toCStr());
     return thread->raiseTypeError(runtime->newStrFromFormat(
         "TypeError: '%s' takes %ld arguments but %ld given", fn_name.get(),
-        code->totalArgs(), argc));
+        code->totalArgs(), new_argc));
   }
   return NoneType::object();  // value not significant, it's just not an error
 }

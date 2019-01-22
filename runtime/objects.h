@@ -61,6 +61,7 @@ class Frame;
   V(Traceback)                                                                 \
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
+  V(UnboundValue)                                                              \
   V(Type)                                                                      \
   V(ValueCell)                                                                 \
   V(WeakRef)
@@ -287,6 +288,7 @@ class RawObject {
   bool isTraceback();
   bool isTuple();
   bool isTupleIterator();
+  bool isUnboundValue();
   bool isValueCell();
   bool isWeakRef();
 
@@ -1216,6 +1218,17 @@ class RawTupleIterator : public RawHeapObject {
   static const int kSize = kIndexOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(TupleIterator);
+};
+
+class RawUnboundValue : public RawHeapObject {
+ public:
+  // Layout.
+  // kPaddingOffset is not used, but the GC expects the object to be
+  // at least one word.
+  static const int kPaddingOffset = RawHeapObject::kSize;
+  static const int kSize = kPaddingOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(UnboundValue);
 };
 
 class RawCode : public RawHeapObject {
@@ -2465,6 +2478,10 @@ inline bool RawObject::isTraceback() {
 
 inline bool RawObject::isTupleIterator() {
   return isHeapObjectWithLayout(LayoutId::kTupleIterator);
+}
+
+inline bool RawObject::isUnboundValue() {
+  return isHeapObjectWithLayout(LayoutId::kUnboundValue);
 }
 
 inline bool RawObject::isImportError() {

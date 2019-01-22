@@ -255,7 +255,7 @@ TEST(StrBuiltinsDeathTest, StringLenWithInt) {
 TEST(StrBuiltinsDeathTest, StringLenWithExtraArgument) {
   Runtime runtime;
   EXPECT_DEATH(runFromCStr(&runtime, "l = 'aloha'.__len__('arg')"),
-               "'__len__' takes 1 positional arguments but 2 given");
+               "'__len__' takes max 1 positional arguments but 2 given");
 }
 
 TEST(StrBuiltinsTest, IndexWithLargeIntRaisesIndexError) {

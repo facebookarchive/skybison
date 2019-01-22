@@ -115,12 +115,42 @@ static bool isPass(const Code& code) {
          bytes->byteAt(2) == RETURN_VALUE && bytes->byteAt(3) == 0;
 }
 
+static void patchFunctionAttrs(Thread* thread, const Function& base,
+                               const Function& patch) {
+  HandleScope scope(thread);
+  Str method_name(&scope, patch->name());
+  Code patch_code(&scope, patch->code());
+  CHECK(isPass(patch_code),
+        "Redefinition of native code method %s in managed code",
+        method_name->toCStr());
+  patch_code->setCode(NoneType::object());
+  base->setCode(*patch_code);
+  // The Python implementation will be used for all of its attributes, except
+  // for its code.
+  if (base->annotations()->isNoneType() &&
+      !patch->annotations()->isNoneType()) {
+    base->setAnnotations(patch->annotations());
+  }
+  if (base->defaults()->isNoneType() && !patch->defaults()->isNoneType()) {
+    base->setDefaults(patch->defaults());
+  }
+  if (base->doc()->isNoneType() && !patch->doc()->isNoneType()) {
+    base->setDoc(patch->doc());
+  }
+  if (base->kwDefaults()->isNoneType() && !patch->kwDefaults()->isNoneType()) {
+    base->setKwDefaults(patch->kwDefaults());
+  }
+  if (base->qualname()->isNoneType() && !patch->qualname()->isNoneType()) {
+    base->setQualname(patch->qualname());
+  }
+}
+
 // Given a native implementation of a class method and an annotated
 // counterpart, merge the two definitions. This is handy for allowing type
 // annotations from declarations in managed code to supplement methods defined
 // in the runtime.
-void patchFunctionAttrs(Thread* thread, const Dict& type_dict,
-                        const Function& patch) {
+void patchFunctionAttrsInTypeDict(Thread* thread, const Dict& type_dict,
+                                  const Function& patch) {
   HandleScope scope(thread);
   Object patch_code_obj(&scope, patch->code());
   if (!patch_code_obj->isCode()) {
@@ -128,18 +158,11 @@ void patchFunctionAttrs(Thread* thread, const Dict& type_dict,
   }
 
   Str method_name(&scope, patch->name());
-  Code patch_code(&scope, *patch_code_obj);
-  CHECK(isPass(patch_code),
-        "Redefinition of native code method %s in managed code",
-        method_name->toCStr());
-
   Runtime* runtime = thread->runtime();
   Object base_obj(&scope, runtime->typeDictAt(type_dict, method_name));
   CHECK(base_obj->isFunction(),
         "Python annotation of non-function native object");
   Function base(&scope, *base_obj);
-  patch_code->setCode(NoneType::object());
-  base->setCode(*patch_code);
 
   // The Python implementation will be used only for its attributes, and
   // not for its code.
@@ -159,6 +182,7 @@ void patchFunctionAttrs(Thread* thread, const Dict& type_dict,
   if (base->qualname()->isNoneType() && !patch->qualname()->isNoneType()) {
     base->setQualname(patch->qualname());
   }
+  patchFunctionAttrs(thread, base, patch);
 }
 
 void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
@@ -177,7 +201,7 @@ void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
       // Key is present in the base, so patch the base.
       CHECK(patch_obj->isFunction(), "Python should only annotate functions");
       Function patch_fn(&scope, *patch_obj);
-      patchFunctionAttrs(thread, base, patch_fn);
+      patchFunctionAttrsInTypeDict(thread, base, patch_fn);
     } else {
       // Key is not present in the base, so copy the value into the base.
       runtime->typeDictAtPut(base, key, patch_obj);
@@ -255,9 +279,6 @@ RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject Builtins::callable(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("callable expects one argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object arg(&scope, args.get(0));
@@ -276,9 +297,6 @@ RawObject Builtins::callable(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject Builtins::chr(Thread* thread, Frame* frame_frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("Unexpected 1 argumment in 'chr'");
-  }
   Arguments args(frame_frame, nargs);
   RawObject arg = args.get(0);
   if (!arg->isSmallInt()) {
@@ -302,10 +320,6 @@ static RawObject compileStr(Thread* thread, const Str& source) {
 }
 
 RawObject Builtins::compile(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 3 || nargs > 6) {
-    return thread->raiseTypeErrorWithCStr(
-        "Expected 3 to 6 arguments in 'compile'");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   if (!args.get(0).isStr()) {
@@ -316,15 +330,15 @@ RawObject Builtins::compile(Thread* thread, Frame* frame, word nargs) {
   Str filename(&scope, args.get(1));
   Str mode(&scope, args.get(2));
   // TODO(emacs): Refactor into sane argument-fetching code
-  if (nargs > 3 && args.get(3) != SmallInt::fromWord(0)) {  // not the default
+  if (args.get(3) != SmallInt::fromWord(0)) {  // not the default
     return thread->raiseTypeErrorWithCStr(
         "compile() does not yet support user-supplied flags");
   }
-  if (nargs > 4 && args.get(4) != Bool::falseObj()) {  // not the default
+  if (args.get(4) != Bool::falseObj()) {  // not the default
     return thread->raiseTypeErrorWithCStr(
         "compile() does not yet support user-supplied dont_inherit");
   }
-  if (nargs > 5 && args.get(5) != SmallInt::fromWord(-1)) {  // not the default
+  if (args.get(5) != SmallInt::fromWord(-1)) {  // not the default
     return thread->raiseTypeErrorWithCStr(
         "compile() does not yet support user-supplied optimize");
   }
@@ -341,10 +355,6 @@ RawObject Builtins::compile(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject Builtins::exec(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1 || nargs > 3) {
-    return thread->raiseTypeErrorWithCStr(
-        "Expected 1 to 3 arguments in 'exec'");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object source_obj(&scope, args.get(0));
@@ -356,10 +366,11 @@ RawObject Builtins::exec(Thread* thread, Frame* frame, word nargs) {
   //   In all cases, if the optional parts are omitted, the code is executed in
   //   the current scope. If only globals is provided, it must be a dictionary,
   //   which will be used for both the global and the local variables.
-  Object globals_obj(&scope, NoneType::object());
-  Object locals(&scope, NoneType::object());
+  Object globals_obj(&scope, args.get(1));
+  Object locals(&scope, args.get(2));
   Runtime* runtime = thread->runtime();
-  if (nargs == 1) {  // neither globals nor locals are provided
+  if (globals_obj->isNoneType() &&
+      locals->isNoneType()) {  // neither globals nor locals are provided
     Frame* caller_frame = frame->previousFrame();
     globals_obj = caller_frame->globals();
     DCHECK(globals_obj->isDict(),
@@ -371,20 +382,17 @@ RawObject Builtins::exec(Thread* thread, Frame* frame, word nargs) {
       UNIMPLEMENTED("exec() with 1 argument not at the module level");
     }
     locals = *globals_obj;
-  } else if (nargs == 2) {  // only globals is provided
-    globals_obj = args.get(1);
+  } else if (!globals_obj->isNoneType()) {  // only globals is provided
     if (!runtime->isInstanceOfDict(*globals_obj)) {
       return thread->raiseTypeErrorWithCStr(
           "Expected 'globals' to be dict in 'exec'");
     }
     locals = *globals_obj;
-  } else {  // nargs == 3, both globals and locals are provided
-    globals_obj = args.get(1);
+  } else {  // both globals and locals are provided
     if (!runtime->isInstanceOfDict(*globals_obj)) {
       return thread->raiseTypeErrorWithCStr(
           "Expected 'globals' to be dict in 'exec'");
     }
-    locals = args.get(2);
     if (!runtime->isMapping(thread, locals)) {
       return thread->raiseTypeErrorWithCStr(
           "Expected 'locals' to be a mapping in 'exec'");
@@ -436,10 +444,6 @@ static RawObject isinstanceImpl(Thread* thread, const Object& obj,
 // actually far more complicated than one might expect. This is enough to get
 // richards working.
 RawObject Builtins::isinstance(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("isinstance expected 2 arguments");
-  }
-
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
@@ -448,10 +452,6 @@ RawObject Builtins::isinstance(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject Builtins::issubclass(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("issubclass expected 2 arguments");
-  }
-
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -487,9 +487,6 @@ RawObject Builtins::issubclass(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject Builtins::len(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("len() takes exactly one argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -502,9 +499,6 @@ RawObject Builtins::len(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject Builtins::ord(Thread* thread, Frame* frame_frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("Unexpected 1 argumment in 'ord'");
-  }
   Arguments args(frame_frame, nargs);
   RawObject arg = args.get(0);
   if (!arg->isStr()) {
@@ -617,31 +611,25 @@ RawObject Builtins::printKw(Thread* thread, Frame* frame, word nargs) {
                         end_val, ostream);
 }
 
+// TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)
 RawObject Builtins::range(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1 || nargs > 3) {
-    return thread->raiseTypeErrorWithCStr(
-        "Incorrect number of arguments to range()");
-  }
-
   Arguments args(frame, nargs);
-
   for (word i = 0; i < nargs; i++) {
-    if (!args.get(i)->isSmallInt()) {
+    if (!args.get(i)->isSmallInt() && !args.get(i).isUnboundValue()) {
       return thread->raiseTypeErrorWithCStr(
-          "Arguments to range() must be an integers.");
+          "Arguments to range() must be integers.");
     }
   }
 
   word start = 0;
   word stop = 0;
   word step = 1;
-
-  if (nargs == 1) {
+  if (args.get(1).isUnboundValue() && args.get(2).isUnboundValue()) {
     stop = RawSmallInt::cast(args.get(0))->value();
-  } else if (nargs == 2) {
+  } else if (args.get(2).isUnboundValue()) {
     start = RawSmallInt::cast(args.get(0))->value();
     stop = RawSmallInt::cast(args.get(1))->value();
-  } else if (nargs == 3) {
+  } else {
     start = RawSmallInt::cast(args.get(0))->value();
     stop = RawSmallInt::cast(args.get(1))->value();
     step = RawSmallInt::cast(args.get(2))->value();
@@ -656,9 +644,6 @@ RawObject Builtins::range(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject Builtins::repr(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("repr() takes exactly one argument");
-  }
   Arguments args(frame, nargs);
 
   HandleScope scope(thread);
@@ -679,29 +664,25 @@ RawObject Builtins::repr(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject Builtins::getattr(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 2 || nargs > 3) {
-    return thread->raiseTypeErrorWithCStr("getattr expected 2 or 3 arguments.");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
+  Object default_obj(&scope, args.get(2));
   Object result(&scope, getAttribute(thread, self, name));
-  if (result->isError() && nargs == 3) {
+  Runtime* runtime = thread->runtime();
+  if (result->isError() && !default_obj.isUnboundValue()) {
     Type given(&scope, thread->pendingExceptionType());
-    Type exc(&scope, thread->runtime()->typeAt(LayoutId::kAttributeError));
+    Type exc(&scope, runtime->typeAt(LayoutId::kAttributeError));
     if (givenExceptionMatches(thread, given, exc)) {
       thread->clearPendingException();
-      result = args.get(2);
+      result = *default_obj;
     }
   }
   return *result;
 }
 
 RawObject Builtins::hasattr(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("hasattr expected 2 arguments.");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -710,15 +691,37 @@ RawObject Builtins::hasattr(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject Builtins::setattr(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 3) {
-    return thread->raiseTypeErrorWithCStr("setattr expected 3 arguments.");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
   Object value(&scope, args.get(2));
   return setAttribute(thread, self, name, value);
+}
+
+RawObject Builtins::underPatch(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  if (nargs != 1) {
+    return thread->raiseTypeErrorWithCStr("_patch expects 1 argument");
+  }
+
+  Object patch_fn_obj(&scope, args.get(0));
+  if (!patch_fn_obj->isFunction()) {
+    return thread->raiseTypeErrorWithCStr("_patch expects function argument");
+  }
+  Function patch_fn(&scope, *patch_fn_obj);
+  Str fn_name(&scope, patch_fn->name());
+  Runtime* runtime = thread->runtime();
+  Object builtins_name(&scope, runtime->symbols()->Builtins());
+  Module builtins(&scope, runtime->findModule(builtins_name));
+  Object base_fn_obj(&scope, runtime->moduleAt(builtins, fn_name));
+  if (!patch_fn_obj->isFunction()) {
+    return thread->raiseTypeErrorWithCStr("_patch can only patch functions");
+  }
+  Function base_fn(&scope, *base_fn_obj);
+  patchFunctionAttrs(thread, base_fn, patch_fn);
+  return *base_fn;
 }
 
 }  // namespace python

@@ -299,9 +299,11 @@ class Runtime;
   V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderImp, "_imp")                                                          \
   V(UnderIo, "_io")                                                            \
+  V(UnderPatch, "_patch")                                                      \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
   V(UnderThread, "_thread")                                                    \
+  V(UnderUnboundValue, "_UnboundValue")                                        \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
   V(Anonymous, "<anonymous>")                                                  \

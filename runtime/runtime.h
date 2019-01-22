@@ -782,6 +782,7 @@ class Runtime {
   RawObject not_implemented_;
   RawObject build_class_;
   RawObject display_hook_;
+  RawObject unbound_value_;
 
   // Interned strings
   RawObject interned_;

@@ -2,6 +2,13 @@
 """Built-in classes, functions, and constants."""
 
 
+# This is the patch decorator, injected by our boot process. flake8 has no
+# knowledge about its definition and will complain without this gross circular
+# helper here.
+_patch = _patch  # noqa: F821
+_UnboundValue = _UnboundValue  # noqa: F821
+
+
 class object(bootstrap=True):  # noqa: E999
     def __str__(self):
         return self.__repr__()
@@ -349,3 +356,71 @@ def any(iterable):
         if element:
             return True
     return False
+
+
+@_patch
+def callable(f):
+    pass
+
+
+@_patch
+def chr(c):
+    pass
+
+
+@_patch
+def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
+    pass
+
+
+@_patch
+def exec(source, globals=None, locals=None):
+    pass
+
+
+@_patch
+def getattr(obj, key, default=_UnboundValue):
+    pass
+
+
+# patch is not patched because that would cause a circularity problem.
+
+
+@_patch
+def range(start_or_stop, stop=_UnboundValue, step=_UnboundValue):
+    pass
+
+
+@_patch
+def hasattr(obj, name):
+    pass
+
+
+@_patch
+def isinstance(obj, ty):
+    pass
+
+
+@_patch
+def issubclass(obj, ty):
+    pass
+
+
+@_patch
+def len(seq):
+    pass
+
+
+@_patch
+def ord(c):
+    pass
+
+
+@_patch
+def repr(obj):
+    pass
+
+
+@_patch
+def setattr(obj, name, value):
+    pass

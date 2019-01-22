@@ -599,13 +599,13 @@ TEST(DictBuiltinsTest, ValueIteratorNextOnOneElementDictReturnsElement) {
 TEST(DictBuiltinsDeathTest, GetWithNotEnoughArgumentsThrowsTypeError) {
   Runtime runtime;
   EXPECT_DEATH(runFromCStr(&runtime, "dict.get()"),
-               "'get' takes 3 positional arguments but 1 given");
+               "'get' takes min 2 positional arguments but 0 given");
 }
 
 TEST(DictBuiltinsDeathTest, GetWithTooManyArgumentsThrowsTypeError) {
   Runtime runtime;
   EXPECT_DEATH(runFromCStr(&runtime, "dict.get({}, 123, 456, 789)"),
-               "'get' takes 3 positional arguments but 4 given");
+               "'get' takes max 3 positional arguments but 4 given");
 }
 
 TEST(DictBuiltinsTest, GetWithNonDictThrowsTypeError) {
