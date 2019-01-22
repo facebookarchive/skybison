@@ -12,6 +12,7 @@
 #include "str-builtins.h"
 #include "thread.h"
 #include "trampolines.h"
+#include "tuple-builtins.h"
 
 namespace python {
 
@@ -117,15 +118,24 @@ RawObject Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
   // Low bit of flags indicates whether var-keyword argument is on TOS.
   // In all cases, var-positional tuple is next, followed by the function
   // pointer.
+  HandleScope scope(thread);
   word function_position = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
   RawObject* sp = frame->valueStackTop() + function_position + 1;
-  RawObject function = frame->peek(function_position);
-  if (!function->isFunction()) {
-    HandleScope scope(thread);
-    Object callable(&scope, function);
+  Object callable(&scope, frame->peek(function_position));
+  word args_position = function_position - 1;
+  Object args_obj(&scope, frame->peek(args_position));
+  if (!args_obj->isTuple()) {
+    // Make sure the argument sequence is a tuple.
+    args_obj = sequenceAsTuple(thread, args_obj);
+    if (args_obj->isError()) {
+      frame->setValueStackTop(sp);
+      return *args_obj;
+    }
+    frame->setValueAt(*args_obj, args_position);
+  }
+  if (!callable->isFunction()) {
     // Create a new argument tuple with self as the first argument
-    word args_position = function_position - 1;
-    Tuple args(&scope, frame->peek(args_position));
+    Tuple args(&scope, *args_obj);
     Tuple new_args(&scope, thread->runtime()->newTuple(args->length() + 1));
     Object target(&scope, NoneType::object());
     if (callable->isBoundMethod()) {
@@ -139,10 +149,10 @@ RawObject Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
     new_args->replaceFromWith(1, *args);
     frame->setValueAt(*target, function_position);
     frame->setValueAt(*new_args, args_position);
-    function = *target;
+    callable = *target;
   }
   RawObject result =
-      RawFunction::cast(function)->entryEx()(thread, frame, flags);
+      RawFunction::cast(*callable)->entryEx()(thread, frame, flags);
   frame->setValueStackTop(sp);
   return result;
 }

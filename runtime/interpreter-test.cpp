@@ -2558,4 +2558,35 @@ TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   ASSERT_TRUE(result->isError());
 }
 
+TEST(InterpreterTest, ExplodeCallAcceptsList) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+def f(a, b):
+  return [b, a]
+
+args = ['a', 'b']
+result = f(*args)
+)");
+
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"b", "a"});
+}
+
+TEST(InterpreterDeathTest, ExplodeWithIterableRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  // TODO(bsimmers): Change this to inspect result once sequenceAsTuple() is
+  // fixed.
+  EXPECT_DEATH(runFromCStr(&runtime, R"(
+def f():
+  pass
+def gen():
+  yield 1
+  yield 2
+result = f(*gen())
+)"),
+               "Iterables not yet supported in sequenceAsTuple()");
+}
+
 }  // namespace python

@@ -8,6 +8,11 @@
 
 namespace python {
 
+// If seq is a tuple (not a tuple subtype), return it. Otherwise, attempt to
+// treat it as an iterable object and return a tuple with its elements. May
+// return Error if an exception is raised at any point.
+RawObject sequenceAsTuple(Thread* thread, const Object& seq);
+
 class TupleBuiltins {
  public:
   static void initialize(Runtime* runtime);

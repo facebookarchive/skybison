@@ -10,6 +10,27 @@
 
 namespace python {
 
+RawObject sequenceAsTuple(Thread* thread, const Object& seq) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  if (seq->isTuple()) return *seq;
+  if (runtime->isInstanceOfList(*seq)) {
+    List list(&scope, *seq);
+    word len = list->numItems();
+    Tuple ret(&scope, runtime->newTuple(len));
+    for (word i = 0; i < len; i++) {
+      ret->atPut(i, list->at(i));
+    }
+    return *ret;
+  }
+
+  // TODO(bsimmers): Support arbitrary iterables.
+  return thread->raiseWithCStr(
+      LayoutId::kNotImplementedError,
+      "Iterables not yet supported in sequenceAsTuple()");
+}
+
 const BuiltinAttribute TupleBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, RawUserTupleBase::kTupleOffset},
 };
