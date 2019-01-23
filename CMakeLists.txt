@@ -403,6 +403,7 @@ set(
   ext/Objects/moduleobject-test.cpp
   ext/Objects/object-test.cpp
   ext/Objects/setobject-test.cpp
+  ext/Objects/sliceobject-test.cpp
   ext/Objects/structseq-test.cpp
   ext/Objects/tupleobject-test.cpp
   ext/Objects/typeobject-test.cpp
