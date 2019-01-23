@@ -53,7 +53,10 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
           function->setEntryEx(moduleTrampolineVarArgsEx);
           break;
         case METH_VARARGS | METH_KEYWORDS:
-          UNIMPLEMENTED("METH_VARARGS | METH_KEYWORDS");
+          function->setEntry(moduleTrampolineKeywordArgs);
+          function->setEntryKw(moduleTrampolineKeywordArgsKw);
+          function->setEntryEx(moduleTrampolineKeywordArgsEx);
+          break;
         case METH_FASTCALL:
           UNIMPLEMENTED("METH_FASTCALL");
         default:

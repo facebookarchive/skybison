@@ -780,6 +780,71 @@ RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* caller, word argc) {
   return callMethVarArgs(thread, function, args);
 }
 
+static RawObject callMethKeywordArgs(Thread* thread, const Function& function,
+                                     const Tuple& varargs,
+                                     const Dict& keywords) {
+  HandleScope scope(thread);
+  Int address(&scope, function->code());
+  ternaryfunc method = bit_cast<ternaryfunc>(address->asCPtr());
+  DCHECK(function->module()->isModule(), "Function must have a module");
+  PyObject* module = ApiHandle::borrowedReference(thread, function->module());
+  PyObject* args = ApiHandle::borrowedReference(thread, *varargs);
+  PyObject* kwargs = ApiHandle::borrowedReference(thread, *keywords);
+  PyObject* result = (*method)(module, args, kwargs);
+  if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
+  if (thread->hasPendingException()) return Error::object();
+  return thread->raiseSystemErrorWithCStr("NULL return without exception set");
+}
+
+RawObject moduleTrampolineKeywordArgs(Thread* thread, Frame* caller,
+                                      word argc) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Function function(&scope, caller->peek(argc));
+  Tuple varargs(&scope, runtime->newTuple(argc));
+  for (word i = 0; i < argc; i++) {
+    varargs->atPut(argc - i - 1, caller->peek(i));
+  }
+  Dict keywords(&scope, runtime->newDict());
+  return callMethKeywordArgs(thread, function, varargs, keywords);
+}
+
+RawObject moduleTrampolineKeywordArgsKw(Thread* thread, Frame* caller,
+                                        word argc) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Tuple kw_names(&scope, caller->peek(0));
+  word num_keywords = kw_names->length();
+  Dict keywords(&scope, runtime->newDict());
+  for (word i = 0; i < num_keywords; i++) {
+    Object key(&scope, kw_names->at(i));
+    Object value(&scope, caller->peek(num_keywords - i));
+    runtime->dictAtPut(keywords, key, value);
+  }
+  word num_varargs = argc - num_keywords;
+  Tuple varargs(&scope, runtime->newTuple(num_varargs));
+  for (word i = 0; i < num_varargs; i++) {
+    varargs->atPut(i, caller->peek(argc - i));
+  }
+  Function function(&scope, caller->peek(argc + 1));
+  return callMethKeywordArgs(thread, function, varargs, keywords);
+}
+
+RawObject moduleTrampolineKeywordArgsEx(Thread* thread, Frame* caller,
+                                        word argc) {
+  HandleScope scope(thread);
+  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  Object args(&scope, caller->peek(has_varkeywords));
+  if (!args->isTuple()) UNIMPLEMENTED("sequence varargs");
+  Tuple varargs(&scope, *args);
+  Object kwargs(&scope, has_varkeywords ? caller->topValue()
+                                        : thread->runtime()->newDict());
+  if (!kwargs->isDict()) UNIMPLEMENTED("mapping kwargs");
+  Dict keywords(&scope, *kwargs);
+  Function function(&scope, caller->peek(has_varkeywords + 1));
+  return callMethKeywordArgs(thread, function, varargs, keywords);
+}
+
 typedef PyObject* (*PyCFunction)(PyObject*, PyObject*, PyObject*);
 
 RawObject extensionTrampoline(Thread* thread, Frame* caller, word argc) {

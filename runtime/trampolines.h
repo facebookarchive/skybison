@@ -75,6 +75,13 @@ RawObject moduleTrampolineVarArgsKw(Thread* thread, Frame* caller, word argc)
 RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* caller, word argc)
     __attribute__((aligned(16)));
 
+RawObject moduleTrampolineKeywordArgs(Thread* thread, Frame* caller, word argc)
+    __attribute__((aligned(16)));
+RawObject moduleTrampolineKeywordArgsKw(Thread* thread, Frame* caller,
+                                        word argc) __attribute__((aligned(16)));
+RawObject moduleTrampolineKeywordArgsEx(Thread* thread, Frame* caller,
+                                        word argc) __attribute__((aligned(16)));
+
 RawObject extensionTrampoline(Thread* thread, Frame* caller, word argc)
     __attribute__((aligned(16)));
 RawObject extensionTrampolineKw(Thread* thread, Frame* caller, word argc)
