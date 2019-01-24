@@ -247,6 +247,8 @@ add_library(
   runtime/scavenger.h
   runtime/set-builtins.cpp
   runtime/set-builtins.h
+  runtime/slice-builtins.cpp
+  runtime/slice-builtins.h
   runtime/space.cpp
   runtime/space.h
   runtime/str-builtins.cpp
@@ -360,6 +362,7 @@ add_library(
   runtime/runtime-test.cpp
   runtime/scavenger-test.cpp
   runtime/set-builtins-test.cpp
+  runtime/slice-builtins-test.cpp
   runtime/space-test.cpp
   runtime/str-builtins-test.cpp
   runtime/super-builtins-test.cpp

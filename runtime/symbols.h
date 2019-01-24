@@ -273,9 +273,12 @@ class Runtime;
   V(Slice, "slice")                                                            \
   V(SmallInt, "smallint")                                                      \
   V(SmallStr, "smallstr")                                                      \
+  V(Start, "start")                                                            \
   V(StaticMethod, "staticmethod")                                              \
   V(Stderr, "stderr")                                                          \
   V(Stdout, "stdout")                                                          \
+  V(Step, "step")                                                              \
+  V(Stop, "stop")                                                              \
   V(StopAsyncIteration, "StopAsyncIteration")                                  \
   V(StopIteration, "StopIteration")                                            \
   V(Str, "str")                                                                \

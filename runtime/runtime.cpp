@@ -41,6 +41,7 @@
 #include "scavenger.h"
 #include "set-builtins.h"
 #include "siphash.h"
+#include "slice-builtins.h"
 #include "str-builtins.h"
 #include "super-builtins.h"
 #include "sys-module.h"
@@ -1177,9 +1178,9 @@ void Runtime::initializeHeapTypes() {
   initializeRefType();
   SetBuiltins::initialize(this);
   SetIteratorBuiltins::initialize(this);
+  SliceBuiltins::initialize(this);
   StrIteratorBuiltins::initialize(this);
   GeneratorBaseBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject);
   initializeStaticMethodType();
   initializeSuperType();
   addEmptyBuiltinType(SymbolId::kTraceback, LayoutId::kTraceback,
