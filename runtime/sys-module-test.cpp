@@ -2,6 +2,8 @@
 
 #include <sys/utsname.h>
 
+#include <cstdlib>
+
 #include "runtime.h"
 #include "sys-module.h"
 #include "test-utils.h"
@@ -122,6 +124,20 @@ builtin_names = sys.builtin_module_names
   }
   EXPECT_TRUE(builtin_sys);
   EXPECT_TRUE(builtin__stat);
+}
+
+TEST(SysModuleTest, PathWithPythonPath) {
+  setenv("PYTHONPATH", "/foo/bar:/baz", 1);
+  Runtime runtime;
+  HandleScope scope;
+  Object sys(&scope, runtime.newStrFromCStr("sys"));
+  runtime.importModule(sys);
+  Object path_obj(&scope, moduleAt(&runtime, "sys", "path"));
+  ASSERT_TRUE(path_obj->isList());
+  List path(&scope, *path_obj);
+  ASSERT_EQ(path->numItems(), 2);
+  ASSERT_TRUE(isStrEqualsCStr(path->at(0), "/foo/bar"));
+  ASSERT_TRUE(isStrEqualsCStr(path->at(1), "/baz"));
 }
 
 }  // namespace python

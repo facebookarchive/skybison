@@ -765,6 +765,9 @@ class Runtime {
   // parent and contains no outgoing edges.
   RawObject layoutCreateChild(Thread* thread, const Layout& parent);
 
+  // Create initial value for sys.path.
+  RawObject initialSysPath();
+
   // The size listEnsureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
 
