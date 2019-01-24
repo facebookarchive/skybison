@@ -16,8 +16,7 @@ PY_EXPORT PyObject* PySlice_New(PyObject* start, PyObject* stop,
                                 PyObject* step) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
-  Object none(&scope, NoneType::object());
-  Slice slice(&scope, thread->runtime()->newSlice(none, none, none));
+  Slice slice(&scope, thread->runtime()->newSlice());
   if (start != nullptr) {
     slice->setStart(ApiHandle::fromPyObject(start)->asObject());
   }

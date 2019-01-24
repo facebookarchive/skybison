@@ -132,8 +132,7 @@ class Runtime {
 
   RawObject newSetIterator(const Object& set);
 
-  RawObject newSlice(const Object& start, const Object& stop,
-                     const Object& step);
+  RawObject newSlice();
 
   RawObject newStaticMethod();
 

@@ -256,10 +256,10 @@ TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
   HandleScope scope;
   byte hello[] = "hello world";
   Bytes self(&scope, runtime.newBytesWithAll(View<byte>(hello, 11)));
-  Object one(&scope, RawSmallInt::fromWord(1));
-  Object two(&scope, RawSmallInt::fromWord(2));
-  Object six(&scope, RawSmallInt::fromWord(6));
-  Object index(&scope, runtime.newSlice(one, six, two));
+  Slice index(&scope, runtime.newSlice());
+  index->setStart(SmallInt::fromWord(1));
+  index->setStop(SmallInt::fromWord(6));
+  index->setStep(SmallInt::fromWord(2));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
   ASSERT_TRUE(item->isBytes());
   Bytes result(&scope, *item);

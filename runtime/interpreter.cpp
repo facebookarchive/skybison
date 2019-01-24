@@ -2005,10 +2005,10 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
 void Interpreter::doBuildSlice(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
-  Object step(&scope, (arg == 3) ? ctx->frame->popValue() : NoneType::object());
-  Object stop(&scope, ctx->frame->popValue());
-  Object start(&scope, ctx->frame->topValue());  // TOP
-  Slice slice(&scope, thread->runtime()->newSlice(start, stop, step));
+  Slice slice(&scope, thread->runtime()->newSlice());
+  if (arg == 3) slice->setStep(ctx->frame->popValue());
+  slice->setStop(ctx->frame->popValue());
+  slice->setStart(ctx->frame->topValue());  // TOP
   ctx->frame->setTopValue(*slice);
 }
 

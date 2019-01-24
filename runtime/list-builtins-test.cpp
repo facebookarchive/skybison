@@ -496,10 +496,8 @@ TEST(ListBuiltinsTest, SlicePositiveStartIndex) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test [2:]
-  Object start(&scope, SmallInt::fromWord(2));
-  Object stop(&scope, NoneType::object());
-  Object step(&scope, NoneType::object());
-  Slice slice(&scope, runtime.newSlice(start, stop, step));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStart(SmallInt::fromWord(2));
   List test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->numItems(), 3);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 3);
@@ -514,10 +512,8 @@ TEST(ListBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test [-2:]
-  Object start(&scope, SmallInt::fromWord(-2));
-  Object stop(&scope, NoneType::object());
-  Object step(&scope, NoneType::object());
-  Slice slice(&scope, runtime.newSlice(start, stop, step));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStart(SmallInt::fromWord(-2));
   List test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->numItems(), 2);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 4);
@@ -531,10 +527,8 @@ TEST(ListBuiltinsTest, SlicePositiveStopIndex) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test [:2]
-  Object start(&scope, NoneType::object());
-  Object stop(&scope, SmallInt::fromWord(2));
-  Object step(&scope, NoneType::object());
-  Slice slice(&scope, runtime.newSlice(start, stop, step));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStop(SmallInt::fromWord(2));
   List test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->numItems(), 2);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
@@ -548,10 +542,8 @@ TEST(ListBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test [:-2]
-  Object start(&scope, NoneType::object());
-  Object stop(&scope, SmallInt::fromWord(-2));
-  Object step(&scope, NoneType::object());
-  Slice slice(&scope, runtime.newSlice(start, stop, step));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStop(SmallInt::fromWord(-2));
   List test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->numItems(), 3);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
@@ -566,10 +558,8 @@ TEST(ListBuiltinsTest, SlicePositiveStep) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test [::2]
-  Object start(&scope, NoneType::object());
-  Object stop(&scope, NoneType::object());
-  Object step(&scope, SmallInt::fromWord(2));
-  Slice slice(&scope, runtime.newSlice(start, stop, step));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStep(SmallInt::fromWord(2));
   List test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->numItems(), 3);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
@@ -584,10 +574,8 @@ TEST(ListBuiltinsTest, SliceNegativeStepReversesOrder) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test [::-2]
-  Object start(&scope, NoneType::object());
-  Object stop(&scope, NoneType::object());
-  Object step(&scope, SmallInt::fromWord(-2));
-  Slice slice(&scope, runtime.newSlice(start, stop, step));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStep(SmallInt::fromWord(-2));
   List test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->numItems(), 3);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 5);
@@ -602,10 +590,8 @@ TEST(ListBuiltinsTest, SliceStartOutOfBounds) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test [10::]
-  Object start(&scope, SmallInt::fromWord(10));
-  Object stop(&scope, NoneType::object());
-  Object step(&scope, NoneType::object());
-  Slice slice(&scope, runtime.newSlice(start, stop, step));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStart(SmallInt::fromWord(10));
   List test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->numItems(), 0);
 }
@@ -617,10 +603,8 @@ TEST(ListBuiltinsTest, SliceStopOutOfBounds) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test [:10]
-  Object start(&scope, NoneType::object());
-  Object stop(&scope, SmallInt::fromWord(10));
-  Object step(&scope, NoneType::object());
-  Slice slice(&scope, runtime.newSlice(start, stop, step));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStop(SmallInt::fromWord(10));
   List test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->numItems(), 5);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
@@ -634,10 +618,8 @@ TEST(ListBuiltinsTest, SliceStepOutOfBounds) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test [::10]
-  Object start(&scope, NoneType::object());
-  Object stop(&scope, NoneType::object());
-  Object step(&scope, SmallInt::fromWord(10));
-  Slice slice(&scope, runtime.newSlice(start, stop, step));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStep(SmallInt::fromWord(10));
   List test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->numItems(), 1);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
@@ -650,10 +632,7 @@ TEST(ListBuiltinsTest, IdenticalSliceIsCopy) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test: t[::] is t
-  Object start(&scope, NoneType::object());
-  Object stop(&scope, NoneType::object());
-  Object step(&scope, NoneType::object());
-  Slice slice(&scope, runtime.newSlice(start, stop, step));
+  Slice slice(&scope, runtime.newSlice());
   List test(&scope, ListBuiltins::slice(thread, *list1, *slice));
   ASSERT_EQ(test->numItems(), 5);
   EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);

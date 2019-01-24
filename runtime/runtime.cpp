@@ -917,15 +917,7 @@ RawObject Runtime::newSetIterator(const Object& set) {
   return *result;
 }
 
-RawObject Runtime::newSlice(const Object& start, const Object& stop,
-                            const Object& step) {
-  HandleScope scope;
-  Slice slice(&scope, heap()->create<RawSlice>());
-  slice->setStart(*start);
-  slice->setStop(*stop);
-  slice->setStep(*step);
-  return *slice;
-}
+RawObject Runtime::newSlice() { return heap()->create<RawSlice>(); }
 
 RawObject Runtime::newStaticMethod() {
   return heap()->create<RawStaticMethod>();

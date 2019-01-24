@@ -304,17 +304,13 @@ TEST(StrBuiltinsTest, IndexWithSliceWithPositiveInts) {
   Runtime runtime;
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
-  Int one(&scope, RawSmallInt::fromWord(1));
-  Int two(&scope, RawSmallInt::fromWord(2));
-  Int four(&scope, RawSmallInt::fromWord(4));
-  Object none(&scope, NoneType::object());
-  Slice slice_a(&scope, runtime.newSlice(one, two, none));
-  Object result_a(&scope,
-                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_a));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStart(SmallInt::fromWord(1));
+  slice->setStop(SmallInt::fromWord(2));
+  Object result_a(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_a, "e"));
-  Slice slice_b(&scope, runtime.newSlice(one, four, none));
-  Object result_b(&scope,
-                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_b));
+  slice->setStop(SmallInt::fromWord(4));
+  Object result_b(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_b, "ell"));
 }
 
@@ -322,17 +318,13 @@ TEST(StrBuiltinsTest, IndexWithSliceWithNegativeInts) {
   Runtime runtime;
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
-  Int negative_two(&scope, RawSmallInt::fromWord(-2));
-  Int negative_one(&scope, RawSmallInt::fromWord(-1));
-  Int one(&scope, RawSmallInt::fromWord(1));
-  Object none(&scope, NoneType::object());
-  Slice slice_a(&scope, runtime.newSlice(negative_one, none, none));
-  Object result_a(&scope,
-                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_a));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStart(SmallInt::fromWord(-1));
+  Object result_a(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_a, "o"));
-  Slice slice_b(&scope, runtime.newSlice(one, negative_two, none));
-  Object result_b(&scope,
-                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_b));
+  slice->setStart(SmallInt::fromWord(1));
+  slice->setStop(SmallInt::fromWord(-2));
+  Object result_b(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_b, "el"));
 }
 
@@ -340,18 +332,15 @@ TEST(StrBuiltinsTest, IndexWithSliceWithStep) {
   Runtime runtime;
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
-  Int zero(&scope, RawSmallInt::fromWord(0));
-  Int one(&scope, RawSmallInt::fromWord(1));
-  Int two(&scope, RawSmallInt::fromWord(2));
-  Int three(&scope, RawSmallInt::fromWord(3));
-  Int five(&scope, RawSmallInt::fromWord(5));
-  Slice slice_a(&scope, runtime.newSlice(zero, five, two));
-  Object result_a(&scope,
-                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_a));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStart(SmallInt::fromWord(0));
+  slice->setStop(SmallInt::fromWord(5));
+  slice->setStep(SmallInt::fromWord(2));
+  Object result_a(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_a, "hlo"));
-  Slice slice_b(&scope, runtime.newSlice(one, five, three));
-  Object result_b(&scope,
-                  runBuiltin(StrBuiltins::dunderGetItem, hello, slice_b));
+  slice->setStart(SmallInt::fromWord(1));
+  slice->setStep(SmallInt::fromWord(3));
+  Object result_b(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_b, "eo"));
 }
 
@@ -359,9 +348,8 @@ TEST(StrBuiltinsTest, EmptyStringIndexWithSliceWithNegativeOneStep) {
   Runtime runtime;
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr(""));
-  Object none(&scope, NoneType::object());
-  Int negative_one(&scope, RawSmallInt::fromWord(-1));
-  Slice slice(&scope, runtime.newSlice(none, none, negative_one));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStep(SmallInt::fromWord(-1));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
 }
@@ -370,9 +358,8 @@ TEST(StrBuiltinsTest, IndexWithSliceWithNegativeOneStep) {
   Runtime runtime;
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
-  Object none(&scope, NoneType::object());
-  Int negative_one(&scope, RawSmallInt::fromWord(-1));
-  Slice slice(&scope, runtime.newSlice(none, none, negative_one));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStep(SmallInt::fromWord(-1));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result, "olleh"));
 }
@@ -382,8 +369,8 @@ TEST(StrBuiltinsTest, IndexWithSliceWithNegativeTwoStep) {
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
   Object none(&scope, NoneType::object());
-  Int negative_one(&scope, RawSmallInt::fromWord(-2));
-  Slice slice(&scope, runtime.newSlice(none, none, negative_one));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStep(SmallInt::fromWord(-2));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result, "olh"));
 }

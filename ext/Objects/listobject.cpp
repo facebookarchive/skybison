@@ -155,10 +155,10 @@ PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
   } else if (high > list->numItems()) {
     high = list->numItems();
   }
-  Object low_obj(&scope, runtime->newInt(low));
-  Object high_obj(&scope, runtime->newInt(high));
-  Object step_obj(&scope, runtime->newInt(1));
-  Slice slice(&scope, runtime->newSlice(low_obj, high_obj, step_obj));
+  Slice slice(&scope, runtime->newSlice());
+  slice->setStart(runtime->newInt(low));
+  slice->setStop(runtime->newInt(high));
+  slice->setStep(SmallInt::fromWord(1));
   return ApiHandle::newReference(thread,
                                  ListBuiltins::slice(thread, *list, *slice));
 }
