@@ -11,8 +11,7 @@ TEST(BytesBuiltinsTest, DunderAddWithZeroArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd));
-  ASSERT_TRUE(sum->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderAddWithTooManyArgsRaisesTypeError) {
@@ -22,8 +21,7 @@ TEST(BytesBuiltinsTest, DunderAddWithTooManyArgsRaisesTypeError) {
   Object arg1(&scope, runtime.newBytes(2, '2'));
   Object arg2(&scope, runtime.newBytes(3, '3'));
   Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, arg1, arg2));
-  ASSERT_TRUE(sum->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderAddWithNonBytesSelfRaisesTypeError) {
@@ -31,8 +29,7 @@ TEST(BytesBuiltinsTest, DunderAddWithNonBytesSelfRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, SmallInt::fromWord(0));
   Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self));
-  ASSERT_TRUE(sum->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderAddWithNonBytesOtherRaisesTypeError) {
@@ -41,8 +38,7 @@ TEST(BytesBuiltinsTest, DunderAddWithNonBytesOtherRaisesTypeError) {
   Object self(&scope, runtime.newBytes(1, '1'));
   Object other(&scope, SmallInt::fromWord(2));
   Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd));
-  ASSERT_TRUE(sum->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderAddWithTwoBytesReturnsConcatenatedBytes) {
@@ -63,8 +59,7 @@ TEST(BytesBuiltinsTest, DunderEqWithWrongNumberOfArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq));
-  ASSERT_TRUE(eq->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*eq, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderEqWithNonBytesSelfRaisesTypeError) {
@@ -73,8 +68,7 @@ TEST(BytesBuiltinsTest, DunderEqWithNonBytesSelfRaisesTypeError) {
   Object self(&scope, SmallInt::fromWord(0));
   Object other(&scope, runtime.newBytes(1, 'a'));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
-  ASSERT_TRUE(eq->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*eq, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
@@ -120,8 +114,7 @@ TEST(BytesBuiltinsTest, DunderGeWithWrongNumberOfArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe));
-  ASSERT_TRUE(ge->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*ge, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithNonBytesSelfRaisesTypeError) {
@@ -130,8 +123,7 @@ TEST(BytesBuiltinsTest, DunderGeWithNonBytesSelfRaisesTypeError) {
   Object self(&scope, SmallInt::fromWord(0));
   Object other(&scope, runtime.newBytes(1, 'a'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self));
-  ASSERT_TRUE(ge->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*ge, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
@@ -197,8 +189,7 @@ TEST(BytesBuiltinsTest, DunderGetItemWithWrongNumberOfArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem));
-  ASSERT_TRUE(item->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*item, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
@@ -206,8 +197,7 @@ TEST(BytesBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, SmallInt::fromWord(0));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self));
-  ASSERT_TRUE(item->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*item, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithLargeIntRaisesIndexError) {
@@ -217,8 +207,7 @@ TEST(BytesBuiltinsTest, DunderGetItemWithLargeIntRaisesIndexError) {
   uword idx[] = {1, 1};
   Object index(&scope, runtime.newIntWithDigits(View<uword>(idx, 2)));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  ASSERT_TRUE(item->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kIndexError));
+  EXPECT_TRUE(raised(*item, LayoutId::kIndexError));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithIntGreaterOrEqualLenRaisesIndexError) {
@@ -227,8 +216,7 @@ TEST(BytesBuiltinsTest, DunderGetItemWithIntGreaterOrEqualLenRaisesIndexError) {
   Object self(&scope, runtime.newBytes(3, 'a'));
   Object index(&scope, RawSmallInt::fromWord(4));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  ASSERT_TRUE(item->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kIndexError));
+  EXPECT_TRUE(raised(*item, LayoutId::kIndexError));
 }
 
 TEST(BytesBuiltinsTest,
@@ -238,8 +226,7 @@ TEST(BytesBuiltinsTest,
   Object self(&scope, runtime.newBytes(3, 'a'));
   Object index(&scope, runtime.newInt(-4));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  ASSERT_TRUE(item->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kIndexError));
+  EXPECT_TRUE(raised(*item, LayoutId::kIndexError));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
@@ -288,16 +275,14 @@ TEST(BytesBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
   Object self(&scope, runtime.newBytes(1, 'a'));
   Object other(&scope, runtime.newFloat(1.5));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, other));
-  ASSERT_TRUE(item->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*item, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithWrongNumberOfArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt));
-  ASSERT_TRUE(gt->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*gt, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithNonBytesSelfRaisesTypeError) {
@@ -306,8 +291,7 @@ TEST(BytesBuiltinsTest, DunderGtWithNonBytesSelfRaisesTypeError) {
   Object self(&scope, SmallInt::fromWord(0));
   Object other(&scope, runtime.newBytes(1, 'a'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self));
-  ASSERT_TRUE(gt->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*gt, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
@@ -373,8 +357,7 @@ TEST(BytesBuiltinsTest, DunderLeWithWrongNumberOfArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe));
-  ASSERT_TRUE(le->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*le, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderLeWithNonBytesSelfRaisesTypeError) {
@@ -383,8 +366,7 @@ TEST(BytesBuiltinsTest, DunderLeWithNonBytesSelfRaisesTypeError) {
   Object self(&scope, SmallInt::fromWord(0));
   Object other(&scope, runtime.newBytes(1, 'a'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self));
-  ASSERT_TRUE(le->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*le, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
@@ -450,8 +432,7 @@ TEST(BytesBuiltinsTest, DunderLenWithZeroArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object len(&scope, runBuiltin(BytesBuiltins::dunderLen));
-  ASSERT_TRUE(len->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*len, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderLenWithTooManyArgsRaisesTypeError) {
@@ -460,8 +441,7 @@ TEST(BytesBuiltinsTest, DunderLenWithTooManyArgsRaisesTypeError) {
   Object self(&scope, runtime.newBytes(1, 'a'));
   Object arg1(&scope, runtime.newBytes(1, 'b'));
   Object len(&scope, runBuiltin(BytesBuiltins::dunderLen, self, arg1));
-  ASSERT_TRUE(len->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*len, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderLenWithNonBytesSelfRaisesTypeError) {
@@ -469,8 +449,7 @@ TEST(BytesBuiltinsTest, DunderLenWithNonBytesSelfRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, SmallInt::fromWord(0));
   Object len(&scope, runBuiltin(BytesBuiltins::dunderLen, self));
-  ASSERT_TRUE(len->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*len, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderLenWithEmptyBytesReturnsZero) {
@@ -493,8 +472,7 @@ TEST(BytesBuiltinsTest, DunderLtWithWrongNumberOfArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt));
-  ASSERT_TRUE(lt->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*lt, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithNonBytesSelfRaisesTypeError) {
@@ -503,8 +481,7 @@ TEST(BytesBuiltinsTest, DunderLtWithNonBytesSelfRaisesTypeError) {
   Object self(&scope, SmallInt::fromWord(0));
   Object other(&scope, runtime.newBytes(1, 'a'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self));
-  ASSERT_TRUE(lt->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*lt, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
@@ -570,8 +547,7 @@ TEST(BytesBuiltinsTest, DunderNeWithWrongNumberOfArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe));
-  ASSERT_TRUE(ne->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*ne, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderNeWithNonBytesSelfRaisesTypeError) {
@@ -580,8 +556,7 @@ TEST(BytesBuiltinsTest, DunderNeWithNonBytesSelfRaisesTypeError) {
   Object self(&scope, SmallInt::fromWord(0));
   Object other(&scope, runtime.newBytes(1, 'a'));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
-  ASSERT_TRUE(ne->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*ne, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {

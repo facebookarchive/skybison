@@ -1458,8 +1458,7 @@ TEST(ThreadTest, NativeExceptions) {
   code->setStacksize(1);
 
   Thread* thread = Thread::currentThread();
-  thread->run(code);
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kRuntimeError));
+  EXPECT_TRUE(raised(thread->run(code), LayoutId::kRuntimeError));
   Object value(&scope, thread->pendingExceptionValue());
   ASSERT_TRUE(value->isStr());
   Str str(&scope, *value);

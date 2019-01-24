@@ -43,10 +43,7 @@ c = C()
   Object dict(&scope, runtime.newDictWithSize(0));
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   Object result(&scope, runBuiltin(DictBuiltins::dunderContains, dict, c));
-  ASSERT_TRUE(result->isError());
-  Thread* thread = Thread::currentThread();
-  ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
-  EXPECT_TRUE(thread->pendingExceptionValue().isStr());
+  ASSERT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, DunderContainsWithNonCallableDunderHashRaisesTypeError) {
@@ -60,10 +57,7 @@ c = C()
   Object dict(&scope, runtime.newDictWithSize(0));
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   Object result(&scope, runBuiltin(DictBuiltins::dunderContains, dict, c));
-  ASSERT_TRUE(result->isError());
-  Thread* thread = Thread::currentThread();
-  ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
-  EXPECT_TRUE(thread->pendingExceptionValue().isStr());
+  ASSERT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest,
@@ -79,10 +73,7 @@ c = C()
   Object dict(&scope, runtime.newDictWithSize(0));
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   Object result(&scope, runBuiltin(DictBuiltins::dunderContains, dict, c));
-  ASSERT_TRUE(result->isError());
-  Thread* thread = Thread::currentThread();
-  ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
-  EXPECT_TRUE(thread->pendingExceptionValue().isStr());
+  ASSERT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, InWithExistingKeyReturnsTrue) {
@@ -285,8 +276,8 @@ TEST(DictBuiltinsTest, UpdateWithNonDictThrowsTypeError) {
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object none(&scope, NoneType::object());
-  EXPECT_TRUE(runBuiltin(DictBuiltins::update, list, none).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runBuiltin(DictBuiltins::update, list, none),
+                     LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, UpdateWithNonMappingTypeThrowsTypeError) {
@@ -618,8 +609,8 @@ TEST(DictBuiltinsTest, GetWithNonDictThrowsTypeError) {
   Object foo(&scope, runtime.newInt(123));
   Object bar(&scope, runtime.newInt(456));
   Object baz(&scope, runtime.newInt(789));
-  EXPECT_TRUE(runBuiltin(DictBuiltins::get, foo, bar, baz).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runBuiltin(DictBuiltins::get, foo, bar, baz),
+                     LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, GetWithUnhashableTypeThrowsTypeError) {
@@ -633,8 +624,8 @@ key = Foo()
   Dict dict(&scope, runtime.newDict());
   Object key(&scope, moduleAt(&runtime, "__main__", "key"));
   Object default_obj(&scope, NoneType::object());
-  EXPECT_TRUE(runBuiltin(DictBuiltins::get, dict, key, default_obj).isError());
-  ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  ASSERT_TRUE(raised(runBuiltin(DictBuiltins::get, dict, key, default_obj),
+                     LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, GetReturnsDefaultValue) {

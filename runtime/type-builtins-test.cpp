@@ -78,8 +78,7 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   Frame* frame = thread->pushFrame(code);
   frame->pushValue(runtime.newStrFromCStr("not_a_cls"));
   RawObject result = TypeBuiltins::dunderCall(thread, frame, 1);
-  ASSERT_TRUE(result->isError());
-  ASSERT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  ASSERT_TRUE(raised(result, LayoutId::kTypeError));
 }
 
 TEST(TypeBuiltinTest, BuiltinTypeCallInvokeDunderInitAsCallable) {

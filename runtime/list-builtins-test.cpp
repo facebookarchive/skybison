@@ -205,8 +205,7 @@ list = [None]
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   Object result(&scope, runBuiltin(ListBuiltins::dunderContains, list, value));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kUserWarning));
+  EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
 TEST(ListBuiltinsTest, DunderContainsWithRaisingDunderBoolPropagatesException) {
@@ -234,8 +233,7 @@ TEST(ListBuiltinsTest, DunderContainsWithNonListSelfRaisesTypeError) {
   HandleScope scope;
   Int i(&scope, SmallInt::fromWord(3));
   Object result(&scope, runBuiltin(ListBuiltins::dunderContains, i, i));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(ListBuiltinsTest, ListExtend) {
@@ -418,8 +416,7 @@ list = [D()]
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kValueError));
+  EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
 TEST(ListBuiltinsTest, ListRemoveWithRaisingDunderEqualPropagatesException) {
@@ -435,8 +432,7 @@ list = [None]
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kUserWarning));
+  EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
 TEST(ListBuiltinsTest, ListRemoveWithRaisingDunderBoolPropagatesException) {

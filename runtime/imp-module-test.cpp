@@ -92,8 +92,7 @@ TEST(ImportBuiltinsTest, IsBuiltinWithoutArgsThrowsTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object result(&scope, runBuiltin(builtinImpIsBuiltin));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(ImportBuiltinsTest, IsBuiltinReturnsZero) {
@@ -127,8 +126,7 @@ TEST(ImportBuiltinsTest, IsFrozenWithNoArgsThrowsTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object result(&scope, runBuiltin(builtinImpIsFrozen));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(ImportBuiltinsTest, IsFrozenReturnsFalse) {
@@ -153,8 +151,7 @@ TEST(ImportBuiltinsTest, ReleaseLockWithoutAcquireRaisesRuntimeError) {
   Runtime runtime;
   HandleScope scope;
   Object result(&scope, runBuiltin(builtinImpReleaseLock));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kRuntimeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kRuntimeError));
 }
 
 TEST(ImportBuiltins, AcquireLockCheckRecursiveCallsWorks) {

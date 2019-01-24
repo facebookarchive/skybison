@@ -270,8 +270,7 @@ TEST(StrBuiltinsTest, IndexWithLargeIntRaisesIndexError) {
   Str hello(&scope, runtime.newStrFromCStr("hello"));
   Int index(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, index));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kIndexError));
+  EXPECT_TRUE(raised(*result, LayoutId::kIndexError));
 }
 
 TEST(StrBuiltinsTest, IndexWithNegativeIntIndexesFromEnd) {
@@ -289,8 +288,7 @@ TEST(StrBuiltinsTest, IndexWithLessThanNegativeLenRaisesIndexError) {
   Str hello(&scope, runtime.newStrFromCStr("hello"));
   Int index(&scope, RawSmallInt::fromWord(-6));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, index));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kIndexError));
+  EXPECT_TRUE(raised(*result, LayoutId::kIndexError));
 }
 
 TEST(StrBuiltinsTest, IndexWithNonNegativeIntIndexesFromBeginning) {

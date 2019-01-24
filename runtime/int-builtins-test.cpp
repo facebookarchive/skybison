@@ -528,8 +528,7 @@ TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftThrowsException) {
   Object left(&scope, runtime.newStrFromCStr(""));
   LargeInt right(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, DunderAndWithTooFewArgsRaisesTypeError) {
@@ -537,8 +536,7 @@ TEST(IntBuiltinsTest, DunderAndWithTooFewArgsRaisesTypeError) {
   HandleScope scope;
   Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, i));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, DunderAndWithTooManyArgsRaisesTypeError) {
@@ -546,8 +544,7 @@ TEST(IntBuiltinsTest, DunderAndWithTooManyArgsRaisesTypeError) {
   HandleScope scope;
   Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, i, i, i));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, DunderLshift) {
@@ -628,8 +625,7 @@ TEST(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftThrowsException) {
   Object left(&scope, runtime.newStrFromCStr(""));
   LargeInt right(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, DunderOrWithTooFewArgsRaisesTypeError) {
@@ -637,8 +633,7 @@ TEST(IntBuiltinsTest, DunderOrWithTooFewArgsRaisesTypeError) {
   HandleScope scope;
   Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, i));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, DunderOrWithTooManyArgsRaisesTypeError) {
@@ -646,8 +641,7 @@ TEST(IntBuiltinsTest, DunderOrWithTooManyArgsRaisesTypeError) {
   HandleScope scope;
   Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, i, i, i));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, BinaryAddSmallInt) {
@@ -1460,8 +1454,7 @@ TEST(IntBuiltinsTest, FromBytesWithTooManyArgsRaisesTypeError) {
   Bool extra_arg(&scope, Bool::trueObj());
   Object result(
       &scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder, extra_arg));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, FromBytesWithInvalidBytesRaisesTypeError) {
@@ -1472,8 +1465,7 @@ TEST(IntBuiltinsTest, FromBytesWithInvalidBytesRaisesTypeError) {
   Str byteorder(&scope, runtime.newStrFromCStr("big"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::fromBytes, not_bytes, byteorder));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderStringRaisesValueError) {
@@ -1484,8 +1476,7 @@ TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderStringRaisesValueError) {
   Str invalid_byteorder(&scope, runtime.newStrFromCStr("Not a byteorder"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::fromBytes, bytes, invalid_byteorder));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kValueError));
+  EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
 TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderRaisesTypeError) {
@@ -1496,8 +1487,7 @@ TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderRaisesTypeError) {
   Int not_a_byteorder(&scope, SmallInt::fromWord(42));
   Object result(&scope,
                 runBuiltin(IntBuiltins::fromBytes, bytes, not_a_byteorder));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, FromBytesKwInvalidKeywordRaises) {
@@ -1600,8 +1590,7 @@ TEST(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftThrowsException) {
   Object left(&scope, runtime.newStrFromCStr(""));
   LargeInt right(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, DunderXorWithTooFewArgsRaisesTypeError) {
@@ -1609,8 +1598,7 @@ TEST(IntBuiltinsTest, DunderXorWithTooFewArgsRaisesTypeError) {
   HandleScope scope;
   Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, i));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, DunderXorWithTooManyArgsRaisesTypeError) {
@@ -1618,8 +1606,7 @@ TEST(IntBuiltinsTest, DunderXorWithTooManyArgsRaisesTypeError) {
   HandleScope scope;
   Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, i, i, i));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithByteorderLittleEndianReturnsBytes) {
@@ -1911,8 +1898,7 @@ TEST(IntBuiltinsTest, ToBytesWithSignedFalseRaisesOverflowError) {
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kOverflowError));
+  EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithBigOverflowRaisesOverflowError) {
@@ -1924,8 +1910,7 @@ TEST(IntBuiltinsTest, ToBytesWithBigOverflowRaisesOverflowError) {
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kOverflowError));
+  EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithSignedTrueRaisesOverflowError) {
@@ -1961,8 +1946,7 @@ TEST(IntBuiltinsTest, ToBytesWithTooFewArgsRaisesTypeError) {
 
   Int num(&scope, SmallInt::fromWord(42));
   Object result(&scope, runBuiltin(IntBuiltins::toBytes, num));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithTooManyArgsRaisesTypeError) {
@@ -1975,8 +1959,7 @@ TEST(IntBuiltinsTest, ToBytesWithTooManyArgsRaisesTypeError) {
   Bool f(&scope, Bool::trueObj());
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, num, length, byteorder, f));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithNonIntRaisesTypeError) {
@@ -1988,8 +1971,7 @@ TEST(IntBuiltinsTest, ToBytesWithNonIntRaisesTypeError) {
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, str, length, byteorder));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaises) {
@@ -2001,22 +1983,19 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaises) {
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Object result0(
       &scope, runBuiltin(IntBuiltins::toBytes, num, not_a_length, byteorder));
-  EXPECT_TRUE(result0->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result0, LayoutId::kTypeError));
   Thread::currentThread()->clearPendingException();
 
   Int negative_length(&scope, SmallInt::fromWord(-3));
   Object result1(&scope, runBuiltin(IntBuiltins::toBytes, num, negative_length,
                                     byteorder));
-  EXPECT_TRUE(result1->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kValueError));
+  EXPECT_TRUE(raised(*result1, LayoutId::kValueError));
   Thread::currentThread()->clearPendingException();
 
   Int huge_length(&scope, testing::newIntWithDigits(&runtime, {0, 1024}));
   Object result2(&scope,
                  runBuiltin(IntBuiltins::toBytes, num, huge_length, byteorder));
-  EXPECT_TRUE(result2->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kOverflowError));
+  EXPECT_TRUE(raised(*result2, LayoutId::kOverflowError));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithNegativeNumberRaisesOverflowError) {
@@ -2028,8 +2007,7 @@ TEST(IntBuiltinsTest, ToBytesWithNegativeNumberRaisesOverflowError) {
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kOverflowError));
+  EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithInvalidByteorderStringRaisesValueError) {
@@ -2041,8 +2019,7 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidByteorderStringRaisesValueError) {
   Str invalid_byteorder(&scope, runtime.newStrFromCStr("hello"));
   Object result(
       &scope, runBuiltin(IntBuiltins::toBytes, num, length, invalid_byteorder));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kValueError));
+  EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithInvalidByteorderTypeRaisesTypeError) {
@@ -2052,8 +2029,7 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidByteorderTypeRaisesTypeError) {
   Int num(&scope, SmallInt::fromWord(42));
   Int length(&scope, SmallInt::fromWord(3));
   Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, num));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, ToBytesKwInvalidKeywordRaises) {

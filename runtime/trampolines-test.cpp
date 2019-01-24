@@ -1007,8 +1007,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsThrowsError) {
   code->setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_TRUE(Thread::currentThread()->run(code).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(Thread::currentThread()->run(code), LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
@@ -1075,8 +1074,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsThrowsError) {
   code->setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_TRUE(Thread::currentThread()->run(code).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(Thread::currentThread()->run(code), LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
@@ -1272,8 +1270,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsThrowsError) {
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
@@ -1386,8 +1383,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndKwThrowsError) {
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
@@ -1475,8 +1471,8 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesError) {
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kSystemError));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kSystemError,
+                            "NULL return without exception set"));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {

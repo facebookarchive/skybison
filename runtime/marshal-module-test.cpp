@@ -13,8 +13,7 @@ TEST(MarshalModuleTest, LoadsWithTooFewArgumentsThrows) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
-  ASSERT_TRUE(runBuiltin(MarshalModule::loads).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runBuiltin(MarshalModule::loads), LayoutId::kTypeError));
 }
 
 TEST(MarshalModuleTest, LoadsWithTooManyArgumentsThrows) {
@@ -22,8 +21,8 @@ TEST(MarshalModuleTest, LoadsWithTooManyArgumentsThrows) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Object obj(&scope, RawNoneType::object());
-  ASSERT_TRUE(runBuiltin(MarshalModule::loads, obj, obj, obj).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runBuiltin(MarshalModule::loads, obj, obj, obj),
+                     LayoutId::kTypeError));
 }
 
 TEST(MarshalModuleTest, LoadsReadsSet) {

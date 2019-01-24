@@ -481,8 +481,7 @@ TEST(FloatBuiltinsTest, DunderFloatWithNonFloatReturnsError) {
 
   Int i(&scope, runtime.newInt(1));
   Object i_res(&scope, runBuiltin(FloatBuiltins::dunderFloat, i));
-  EXPECT_TRUE(i_res->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*i_res, LayoutId::kTypeError));
 }
 
 TEST(FloatBuiltinsTest, DunderFloatWithMissingSelfReturnsError) {
@@ -490,8 +489,7 @@ TEST(FloatBuiltinsTest, DunderFloatWithMissingSelfReturnsError) {
   HandleScope scope;
 
   Object error(&scope, runBuiltin(FloatBuiltins::dunderFloat));
-  EXPECT_TRUE(error->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*error, LayoutId::kTypeError));
 }
 
 TEST(FloatBuiltinsTest, DunderFloatWithTooManyArgumentsReturnsError) {
@@ -500,8 +498,7 @@ TEST(FloatBuiltinsTest, DunderFloatWithTooManyArgumentsReturnsError) {
 
   Float flt(&scope, runtime.newFloat(7.0));
   Object error(&scope, runBuiltin(FloatBuiltins::dunderFloat, flt, flt));
-  EXPECT_TRUE(error->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*error, LayoutId::kTypeError));
 }
 
 }  // namespace python

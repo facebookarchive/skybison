@@ -60,8 +60,7 @@ value = Foo()
 )");
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   Object result(&scope, Interpreter::isTrue(thread, frame, value));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kUserWarning));
+  EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
 TEST(InterpreterTest, IsTrueWithDunderLenRaisingPropagatesException) {
@@ -77,8 +76,7 @@ value = Foo()
 )");
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   Object result(&scope, Interpreter::isTrue(thread, frame, value));
-  EXPECT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kUserWarning));
+  EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
 TEST(InterpreterTest, IsTrueDunderLen) {
@@ -543,8 +541,7 @@ container = C()
   Object val(&scope, NoneType::object());
   Object result(&scope,
                 Interpreter::sequenceIterSearch(thread, frame, val, container));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest,
@@ -562,8 +559,7 @@ container = C()
   Object val(&scope, NoneType::object());
   Object result(&scope,
                 Interpreter::sequenceIterSearch(thread, frame, val, container));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest, SequenceIterSearchWithNoDunderNextRaisesTypeError) {
@@ -582,8 +578,7 @@ container = C()
   Object val(&scope, NoneType::object());
   Object result(&scope,
                 Interpreter::sequenceIterSearch(thread, frame, val, container));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest,
@@ -604,8 +599,7 @@ container = C()
   Object val(&scope, NoneType::object());
   Object result(&scope,
                 Interpreter::sequenceIterSearch(thread, frame, val, container));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest, SequenceIterSearchWithListReturnsTrue) {
@@ -649,8 +643,7 @@ container = C()
   Frame* frame = thread->currentFrame();
   Object result(&scope,
                 Interpreter::sequenceIterSearch(thread, frame, val, container));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kZeroDivisionError));
+  EXPECT_TRUE(raised(*result, LayoutId::kZeroDivisionError));
 }
 
 TEST(InterpreterTest, ContextManagerCallEnterExit) {
@@ -1097,8 +1090,7 @@ TEST(InterpreterTest, GetAiterOnNonIterable) {
   code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest, BeforeAsyncWithCallsDunderAenter) {
@@ -1714,8 +1706,7 @@ TEST(InterpreterTest, GetAnextOnNonIterable) {
   code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest, GetAnextWithInvalidAnext) {
@@ -1739,8 +1730,7 @@ a = AsyncIterator()
   code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest, GetAwaitableCallsAwait) {
@@ -1780,8 +1770,7 @@ TEST(InterpreterTest, GetAwaitableOnNonAwaitable) {
   code->setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithCallDict) {

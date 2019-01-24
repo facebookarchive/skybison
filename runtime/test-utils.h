@@ -176,9 +176,6 @@ RawObject listFromRange(word start, word stop);
 
 ::testing::AssertionResult isStrEqualsCStr(RawObject obj, const char* c_str);
 
-// Expect that the current thread has a specific exception pending.
-::testing::AssertionResult hasPendingExceptionWithLayout(LayoutId layout_id);
-
 // Check if the return value of a call and current thread state indicate that an
 // exception was raised with the given type.
 ::testing::AssertionResult raised(RawObject return_value, LayoutId layout_id);

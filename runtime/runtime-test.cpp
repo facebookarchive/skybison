@@ -2432,8 +2432,7 @@ def test(module):
   Function test(&scope, moduleAt(&runtime, main, "test"));
   Tuple args(&scope, runtime.newTuple(1));
   args->atPut(0, *main);
-  ASSERT_TRUE(callFunction(test, args).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kAttributeError));
+  EXPECT_TRUE(raised(callFunction(test, args), LayoutId::kAttributeError));
 }
 
 TEST(ModuleAttributeDeletionTest, DeleteKnownAttribute) {
@@ -3327,9 +3326,7 @@ TEST(RuntimeTest, SettingNewAttributeOnSealedClassThrows) {
   Str value(&scope, runtime.newStrFromCStr("value"));
   Thread* thread = Thread::currentThread();
   Object result(&scope, runtime.instanceAtPut(thread, set, attr, value));
-  ASSERT_TRUE(result->isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kAttributeError));
-  EXPECT_TRUE(thread->pendingExceptionValue().isStr());
+  EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
 }
 
 // Exception attributes can be set on the fly.

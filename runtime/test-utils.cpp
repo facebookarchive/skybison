@@ -444,9 +444,19 @@ RawObject listFromRange(word start, word stop) {
            << "call returned " << name << ", not Error";
   }
 
-  ::testing::AssertionResult layout_ok =
-      hasPendingExceptionWithLayout(layout_id);
-  if (!layout_ok) return layout_ok;
+  if (!thread->hasPendingException()) {
+    return ::testing::AssertionFailure() << "no exception pending";
+  }
+
+  Type expected_type(&scope, runtime->typeAt(layout_id));
+  Type exception_type(&scope, thread->pendingExceptionType());
+  if (!runtime->isSubclass(exception_type, expected_type)) {
+    Str expected_name(&scope, expected_type->name());
+    Str actual_name(&scope, exception_type->name());
+    return ::testing::AssertionFailure()
+           << "\npending exception has type:\n  " << actual_name
+           << "\nexpected:\n  " << expected_name << "\n";
+  }
 
   if (expected == nullptr) return ::testing::AssertionSuccess();
 

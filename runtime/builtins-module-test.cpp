@@ -219,8 +219,8 @@ TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
   EXPECT_EQ(runBuiltin(Builtins::isinstance, bytes, types), Bool::trueObj());
 
   inner->atPut(1, *an_int);
-  ASSERT_TRUE(runBuiltin(Builtins::isinstance, exc, types).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runBuiltin(Builtins::isinstance, exc, types),
+                     LayoutId::kTypeError));
 }
 
 TEST(BuiltinsModuleTest, BuiltinIssubclassWithSubclassReturnsTrue) {
