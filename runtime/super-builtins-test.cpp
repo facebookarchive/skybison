@@ -137,19 +137,19 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
   EXPECT_EQ(*e, Bool::trueObj());
 }
 
-TEST(SuperDeathTest, NoArugmentThrow) {
+TEST(SuperTest, NoArgumentThrow) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
-a = super()
-)"),
-               "aborting due to pending exception: super\\(\\): no arguments");
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "super()"),
+                            LayoutId::kRuntimeError, "super(): no arguments"));
+  Thread::currentThread()->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 def f(a):
     super()
 f(1)
 )"),
-               "aborting due to pending exception: super\\(\\): __class__ cell "
-               "not found");
+                            LayoutId::kRuntimeError,
+                            "super(): __class__ cell not found"));
 }
 
 }  // namespace python

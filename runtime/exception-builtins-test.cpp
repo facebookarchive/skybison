@@ -434,11 +434,12 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
   EXPECT_EQ(RawSmallInt::cast(err->path())->value(), 3333);
 }
 
-TEST(ExceptionBuiltinsDeathTest, ImportErrorConstructWithInvalidKwargs) {
+TEST(ExceptionBuiltinsTest, ImportErrorConstructWithInvalidKwargs) {
   Runtime runtime;
   HandleScope scope;
-  EXPECT_DEATH(runFromCStr(&runtime, "x = ImportError(foo=123)"),
-               "invalid keyword arguments supplied");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "x = ImportError(foo=123)"),
+                            LayoutId::kTypeError,
+                            "invalid keyword arguments supplied"));
 }
 
 TEST(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {

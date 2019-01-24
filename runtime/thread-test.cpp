@@ -1439,7 +1439,7 @@ static RawObject nativeExceptionTest(Thread* thread, Frame*, word) {
   return thread->raiseRuntimeError(*msg);
 }
 
-TEST(ThreadDeathTest, NativeExceptions) {
+TEST(ThreadTest, NativeExceptions) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1566,7 +1566,7 @@ class D(B,C): pass
   EXPECT_TRUE(isStrEqualsCStr(className(mro->at(4)), "object"));
 }
 
-TEST(ThreadDeathTest, LoadBuildTypeVerifyMroError) {
+TEST(ThreadTest, LoadBuildTypeVerifyMroError) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1576,8 +1576,9 @@ class B(A): pass
 class C(A, B): pass
 )";
 
-  EXPECT_DEATH(runFromCStr(&runtime, src),
-               "consistent method resolution order");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, src), LayoutId::kTypeError,
+      "Cannot create a consistent method resolution order (MRO)"));
 }
 
 // iteration
@@ -1695,10 +1696,11 @@ TEST_P(LocalsTest, ManipulateLocals) {
 INSTANTIATE_TEST_CASE_P(ManipulateLocals, LocalsTest,
                         ::testing::ValuesIn(kManipulateLocalsTests), TestName);
 
-TEST(ThreadDeathTest, RaiseVarargs) {
+TEST(ThreadTest, RaiseVarargs) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, "raise 1"),
-               "exceptions must derive from BaseException");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "raise 1"),
+                            LayoutId::kTypeError,
+                            "exceptions must derive from BaseException"));
 }
 
 TEST(ThreadTest, InheritFromObject) {
@@ -1751,7 +1753,7 @@ hello.say_hello()
   EXPECT_EQ(output, "hello\n");
 }
 
-TEST(ThreadDeathTest, FailedImportTest) {
+TEST(ThreadTest, FailedImportTest) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1760,11 +1762,12 @@ import hello
 hello.say_hello()
 )";
 
-  EXPECT_DEATH(runFromCStr(&runtime, main_src),
-               "importModule is unimplemented");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, main_src),
+                            LayoutId::kRuntimeError,
+                            "importModule is unimplemented!"));
 }
 
-TEST(ThreadDeathTest, ImportMissingAttributeTest) {
+TEST(ThreadTest, ImportMissingAttributeTest) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1783,7 +1786,8 @@ hello.foo()
   Object name(&scope, runtime.newStrFromCStr("hello"));
   runtime.importModuleFromBuffer(module_buf.get(), name);
 
-  EXPECT_DEATH(runFromCStr(&runtime, main_src), "missing attribute");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, main_src),
+                            LayoutId::kAttributeError, "missing attribute"));
 }
 
 TEST(ThreadTest, ModuleSetAttrTest) {
@@ -1830,7 +1834,7 @@ test()
   EXPECT_EQ(output, "1 2 3\n");
 }
 
-TEST(ThreadDeathTest, SubscriptDict) {
+TEST(ThreadTest, SubscriptDict) {
   const char* src = R"(
 a = {"1": 2, 2: 3}
 print(a["1"])
@@ -1846,7 +1850,7 @@ print(b[11])
 a = {"1": 2, 2: 3}
 print(a[1])
 )";
-  EXPECT_DEATH(runFromCStr(&runtime, src1), "RawKeyError");
+  EXPECT_TRUE(raised(runFromCStr(&runtime, src1), LayoutId::kKeyError));
 }
 
 TEST(ThreadTest, BuildDictNonLiteralKey) {
@@ -2325,12 +2329,13 @@ l.insert(-1, 3)
   EXPECT_EQ(RawSmallInt::cast(list_l->at(4))->value(), 4);
 }
 
-TEST(ThreadDeathTest, BaseTypeConflict) {
+TEST(ThreadTest, BaseTypeConflict) {
   const char* src = R"(
 class Foo(list, dict): pass
 )";
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "lay-out conflict");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "multiple bases have instance lay-out conflict"));
 }
 
 TEST(BuildSlice, noneSliceCopyList) {
@@ -2636,13 +2641,14 @@ f(100)
   EXPECT_EQ(output, "100\n");
 }
 
-TEST(ThreadDeathTest, ImportFromNeg) {
+TEST(ThreadTest, ImportFromNeg) {
   const char* src = R"(
 from time import foobarbaz
 )";
 
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "cannot import name\n");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kImportError,
+                            "cannot import name"));
 }
 
 TEST(ThreadTest, StrFormatEmpty) {
@@ -2677,14 +2683,15 @@ print("%%%s" % (""))
   EXPECT_EQ(output, "%\n");
 }
 
-TEST(ThreadDeathTest, StrFormatNeg1) {
+TEST(ThreadTest, StrFormatNeg1) {
   const char* src = R"(
 h = "hi"
 print("%" % (h, "world"))
 )";
 
   Runtime runtime;
-  ASSERT_DEATH(compileAndRunToString(&runtime, src), "");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kValueError,
+                            "Incomplete format"));
 }
 
 TEST(ThreadTest, StrFormatStr) {
@@ -2896,7 +2903,7 @@ class_anno_dict = Foo.__annotations__
   EXPECT_EQ(*c_value, runtime.typeAt(LayoutId::kInt));
 }
 
-TEST(ThreadDeathTest, DeleteFastThrow) {
+TEST(ThreadTest, DeleteFastThrow) {
   const char* src = R"(
 def foo(a, b, c):
   del a
@@ -2905,11 +2912,12 @@ foo(1, 2, 3)
 )";
   Runtime runtime;
   HandleScope scope;
-  EXPECT_DEATH(runFromCStr(&runtime, src),
-               "local variable 'a' referenced before assignment");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+                            LayoutId::kUnboundLocalError,
+                            "local variable 'a' referenced before assignment"));
 }
 
-TEST(ThreadTest, DeleteFastThrow) {
+TEST(ThreadTest, DeleteFast) {
   const char* src = R"(
 def foo(a, b, c):
   del a

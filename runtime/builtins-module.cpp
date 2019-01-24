@@ -25,7 +25,7 @@ RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(name)) {
     return thread->raiseTypeErrorWithCStr(
-        "getattr(): attribute name must be string.");
+        "getattr(): attribute name must be string");
   }
   return runtime->attributeAt(thread, self, name);
 }
@@ -34,7 +34,7 @@ RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(name)) {
     return thread->raiseTypeErrorWithCStr(
-        "hasattr(): attribute name must be string.");
+        "hasattr(): attribute name must be string");
   }
 
   HandleScope scope(thread);
@@ -58,7 +58,7 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(name)) {
     return thread->raiseTypeErrorWithCStr(
-        "setattr(): attribute name must be string.");
+        "setattr(): attribute name must be string");
   }
   return runtime->attributeAtPut(thread, self, name, value);
 }
@@ -617,7 +617,7 @@ RawObject Builtins::range(Thread* thread, Frame* frame, word nargs) {
   for (word i = 0; i < nargs; i++) {
     if (!args.get(i)->isSmallInt() && !args.get(i).isUnboundValue()) {
       return thread->raiseTypeErrorWithCStr(
-          "Arguments to range() must be integers.");
+          "Arguments to range() must be integers");
     }
   }
 

@@ -478,13 +478,13 @@ RawObject IntBuiltins::toBytesKw(Thread* thread, Frame* frame, word nargs) {
   Object length(&scope, args.getKw(runtime->symbols()->Length()));
   if (args.numArgs() > 1) {
     if (!length.isError()) {
-      return thread->raiseValueErrorWithCStr(
+      return thread->raiseTypeErrorWithCStr(
           "argument for to_bytes() given by name ('length') and position (1)");
     }
     length = args.get(1);
   } else {
     if (length.isError()) {
-      return thread->raiseValueErrorWithCStr(
+      return thread->raiseTypeErrorWithCStr(
           "to_bytes() missing required argument 'length' (pos 1)");
     }
     ++num_known_keywords;
@@ -493,14 +493,14 @@ RawObject IntBuiltins::toBytesKw(Thread* thread, Frame* frame, word nargs) {
   Object byteorder(&scope, args.getKw(runtime->symbols()->Byteorder()));
   if (args.numArgs() > 2) {
     if (!byteorder.isError()) {
-      return thread->raiseValueErrorWithCStr(
+      return thread->raiseTypeErrorWithCStr(
           "argument for to_bytes() given by name ('byteorder') and position "
           "(2)");
     }
     byteorder = args.get(2);
   } else {
     if (byteorder.isError()) {
-      return thread->raiseValueErrorWithCStr(
+      return thread->raiseTypeErrorWithCStr(
           "to_bytes() missing required argument 'byteorder' (pos 2)");
     }
     ++num_known_keywords;
@@ -906,13 +906,13 @@ RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
   Object bytes(&scope, args.getKw(runtime->symbols()->Bytes()));
   if (args.numArgs() > 0) {
     if (!bytes.isError()) {
-      return thread->raiseValueErrorWithCStr(
+      return thread->raiseTypeErrorWithCStr(
           "argument for from_bytes() given by name ('bytes') and position (1)");
     }
     bytes = args.get(0);
   } else {
     if (bytes.isError()) {
-      return thread->raiseValueErrorWithCStr(
+      return thread->raiseTypeErrorWithCStr(
           "from_bytes() missing required argument 'bytes' (pos 1)");
     }
     ++num_known_keywords;
@@ -921,14 +921,14 @@ RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
   Object byteorder(&scope, args.getKw(runtime->symbols()->Byteorder()));
   if (args.numArgs() > 1) {
     if (!byteorder->isError()) {
-      return thread->raiseValueErrorWithCStr(
+      return thread->raiseTypeErrorWithCStr(
           "argument for from_bytes() given by name ('byteorder') and position "
           "(2)");
     }
     byteorder = args.get(1);
   } else {
     if (byteorder.isError()) {
-      return thread->raiseValueErrorWithCStr(
+      return thread->raiseTypeErrorWithCStr(
           "from_bytes() missing required argument 'byteorder' (pos 2)");
     }
     ++num_known_keywords;

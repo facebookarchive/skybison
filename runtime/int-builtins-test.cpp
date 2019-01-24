@@ -550,7 +550,7 @@ TEST(IntBuiltinsTest, DunderAndWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
-TEST(IntBuiltinsDeathTest, DunderLshift) {
+TEST(IntBuiltinsTest, DunderLshift) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(
@@ -562,7 +562,7 @@ b = a << 3
   EXPECT_EQ(SmallInt::cast(*b)->value(), 0x68);  // 0b1101000
 }
 
-TEST(IntBuiltinsDeathTest, DunderLshiftWithNonIntReturnsNotImplemented) {
+TEST(IntBuiltinsTest, DunderLshiftWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, "a = int.__lshift__(10, '')");
@@ -570,15 +570,26 @@ TEST(IntBuiltinsDeathTest, DunderLshiftWithNonIntReturnsNotImplemented) {
   EXPECT_TRUE(a->isNotImplemented());
 }
 
-TEST(IntBuiltinsDeathTest, DunderLshiftWithInvalidArgumentThrowsException) {
+TEST(IntBuiltinsTest, DunderLshiftWithInvalidArgumentThrowsException) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << ''"),
-               "'__lshift__' is not supported");
-  EXPECT_DEATH(runFromCStr(&runtime, "a = int.__lshift__('', 3)"),
-               "'__lshift__' requires a 'int' object");
-  EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << -3"), "negative shift count");
-  EXPECT_DEATH(runFromCStr(&runtime, "a = 10 << (1 << 100)"),
-               "shift count too large");
+  Thread* thread = Thread::currentThread();
+
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "a = 10 << ''"),
+                            LayoutId::kTypeError,
+                            "'__lshift__' is not supported"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "a = int.__lshift__('', 3)"),
+                            LayoutId::kTypeError,
+                            "'__lshift__' requires a 'int' object"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "a = 10 << -3"),
+                            LayoutId::kValueError, "negative shift count"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "a = 10 << (1 << 100)"),
+                            LayoutId::kOverflowError, "shift count too large"));
 }
 
 TEST(IntBuiltinsTest, DunderOrWithSmallIntsReturnsSmallInt) {
@@ -1491,25 +1502,45 @@ TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderRaisesTypeError) {
 
 TEST(IntBuiltinsTest, FromBytesKwInvalidKeywordRaises) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "int.from_bytes(bytes=b'')"),
-               "missing required argument 'byteorder'");
-  EXPECT_DEATH(runFromCStr(&runtime, "int.from_bytes(byteorder='little')"),
-               "missing required argument 'bytes'");
-  EXPECT_DEATH(
+  Thread* thread = Thread::currentThread();
+
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "int.from_bytes(bytes=b'')"), LayoutId::kTypeError,
+      "from_bytes() missing required argument 'byteorder' (pos 2)"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "int.from_bytes(byteorder='little')"),
+                    LayoutId::kTypeError,
+                    "from_bytes() missing required argument 'bytes' (pos 1)"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "int.from_bytes(b'', 'little', bytes=b'')"),
-      "argument for from_bytes\\(\\) given by name \\('bytes'\\) and position "
-      "\\(1\\)");
-  EXPECT_DEATH(runFromCStr(&runtime,
-                           "int.from_bytes(b'', 'little', byteorder='little')"),
-               "argument for from_bytes\\(\\) given by name \\('byteorder'\\) "
-               "and position \\(2\\)");
-  EXPECT_DEATH(
+      LayoutId::kTypeError,
+      "argument for from_bytes() given by name ('bytes') and position "
+      "(1)"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime,
+                  "int.from_bytes(b'', 'little', byteorder='little')"),
+      LayoutId::kTypeError,
+      "argument for from_bytes() given by name ('byteorder') "
+      "and position (2)"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "int.from_bytes(b'', 'little', not_valid=True)"),
-      "called with invalid keyword arguments");
-  EXPECT_DEATH(
+      LayoutId::kTypeError,
+      "from_bytes() called with invalid keyword arguments"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime,
                   "int.from_bytes(b'', 'little', True, byteorder='little')"),
-      "from_bytes\\(\\) takes at most 2 positional arguments \\(3 given\\)");
+      LayoutId::kTypeError,
+      "from_bytes() takes at most 2 positional arguments (3 given)"));
 }
 
 TEST(IntBuiltinsTest, SmallIntDunderRepr) {
@@ -1897,24 +1928,31 @@ TEST(IntBuiltinsTest, ToBytesWithBigOverflowRaisesOverflowError) {
   EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kOverflowError));
 }
 
-TEST(IntBuiltinsDeathTest, ToBytesWithSignedTrueRaisesOverflowError) {
+TEST(IntBuiltinsTest, ToBytesWithSignedTrueRaisesOverflowError) {
   Runtime runtime;
+  Thread* thread = Thread::currentThread();
   HandleScope scope;
 
   // Now check that signed=True with the same inputs triggers an error.
-  Thread::currentThread()->clearPendingException();
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 result = (128).to_bytes(1, 'little', signed=True)
 )"),
-               "int too big to convert");
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+                            LayoutId::kOverflowError,
+                            "int too big to convert"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 result = (32768).to_bytes(2, 'little', signed=True)
 )"),
-               "int too big to convert");
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+                            LayoutId::kOverflowError,
+                            "int too big to convert"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 result = (0x8000000000000000).to_bytes(8, 'little', signed=True)
 )"),
-               "int too big to convert");
+                            LayoutId::kOverflowError,
+                            "int too big to convert"));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithTooFewArgsRaisesTypeError) {
@@ -2018,29 +2056,57 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidByteorderTypeRaisesTypeError) {
   EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
-TEST(IntBuiltinsDeathTest, ToBytesKwInvalidKeywordRaises) {
+TEST(IntBuiltinsTest, ToBytesKwInvalidKeywordRaises) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "(4).to_bytes(signed=False)"),
-               "missing required argument 'length'");
-  EXPECT_DEATH(runFromCStr(&runtime, "(4).to_bytes(byteorder='little')"),
-               "missing required argument 'length'");
-  EXPECT_DEATH(runFromCStr(&runtime, "(4).to_bytes(2, signed=False)"),
-               "missing required argument 'byteorder'");
-  EXPECT_DEATH(runFromCStr(&runtime, "(4).to_bytes(length=2, signed=False)"),
-               "missing required argument 'byteorder'");
-  EXPECT_DEATH(
+  Thread* thread = Thread::currentThread();
+
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "(4).to_bytes(signed=False)"), LayoutId::kTypeError,
+      "to_bytes() missing required argument 'length' (pos 1)"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "(4).to_bytes(byteorder='little')"),
+                    LayoutId::kTypeError,
+                    "to_bytes() missing required argument 'length' (pos 1)"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "(4).to_bytes(2, signed=False)"),
+      LayoutId::kTypeError,
+      "to_bytes() missing required argument 'byteorder' (pos 2)"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "(4).to_bytes(length=2, signed=False)"),
+      LayoutId::kTypeError,
+      "to_bytes() missing required argument 'byteorder' (pos 2)"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "(4).to_bytes(2, 'little', not_valid=True)"),
-      "invalid keyword arguments");
-  EXPECT_DEATH(
+      LayoutId::kTypeError,
+      "to_bytes() called with invalid keyword arguments"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "(4).to_bytes(2, 'little', True, signed=True)"),
-      "takes at most 2 positional arguments \\(3 given\\)");
-  EXPECT_DEATH(runFromCStr(&runtime, "(4).to_bytes(2, 'little', length=2)"),
-               "argument for to_bytes\\(\\) given by name \\('length'\\) and "
-               "position \\(1\\)");
-  EXPECT_DEATH(
+      LayoutId::kTypeError,
+      "to_bytes() takes at most 2 positional arguments (3 given)"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "(4).to_bytes(2, 'little', length=2)"),
+      LayoutId::kTypeError,
+      "argument for to_bytes() given by name ('length') and "
+      "position (1)"));
+  thread->clearPendingException();
+
+  EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "(4).to_bytes(2, 'little', byteorder='little')"),
-      "argument for to_bytes\\(\\) given by name \\('byteorder'\\) and "
-      "position \\(2\\)");
+      LayoutId::kTypeError,
+      "argument for to_bytes() given by name ('byteorder') and "
+      "position (2)"));
 }
 
 TEST(BoolBuiltinsTest, NewFromNonZeroIntegerReturnsTrue) {
@@ -2123,76 +2189,81 @@ bar = Bar()
   }
 }
 
-TEST(SmallIntBuiltinsDeathTest, DunderModZeroDivision) {
+TEST(SmallIntBuiltinsTest, DunderModZeroDivision) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = 0.0
 a % b
 )"),
-               "float modulo");
+                            LayoutId::kZeroDivisionError, "float modulo"));
 
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = False
 a % b
 )"),
-               "integer division or modulo by zero");
+                            LayoutId::kZeroDivisionError,
+                            "integer division or modulo by zero"));
 
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = 0
 a % b
 )"),
-               "integer division or modulo by zero");
+                            LayoutId::kZeroDivisionError,
+                            "integer division or modulo by zero"));
 }
 
-TEST(SmallIntBuiltinsDeathTest, DunderFloorDivZeroDivision) {
+TEST(SmallIntBuiltinsTest, DunderFloorDivZeroDivision) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = 0.0
 a // b
 )"),
-               "float divmod()");
+                            LayoutId::kZeroDivisionError, "float divmod()"));
 
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = False
 a // b
 )"),
-               "integer division or modulo by zero");
+                            LayoutId::kZeroDivisionError,
+                            "integer division or modulo by zero"));
 
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = 0
 a // b
 )"),
-               "integer division or modulo by zero");
+                            LayoutId::kZeroDivisionError,
+                            "integer division or modulo by zero"));
 }
 
-TEST(SmallIntBuiltinsDeathTest, DunderTrueDivZeroDivision) {
+TEST(SmallIntBuiltinsTest, DunderTrueDivZeroDivision) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = 0.0
 a / b
 )"),
-               "float division by zero");
+                            LayoutId::kZeroDivisionError,
+                            "float division by zero"));
 
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = False
 a / b
 )"),
-               "division by zero");
+                            LayoutId::kZeroDivisionError, "division by zero"));
 
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = 0
 a / b
 )"),
-               "division by zero");
+                            LayoutId::kZeroDivisionError, "division by zero"));
 }
 
 TEST(SmallIntBuiltinsTest, DunderModWithFloat) {

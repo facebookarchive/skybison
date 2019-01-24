@@ -123,7 +123,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   EXPECT_EQ(Int::cast(*result)->asWord(), 1);
 }
 
-TEST(ImportBuiltinsDeathTest, IsFrozenWithNoArgsThrowsTypeError) {
+TEST(ImportBuiltinsTest, IsFrozenWithNoArgsThrowsTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object result(&scope, runBuiltin(builtinImpIsFrozen));

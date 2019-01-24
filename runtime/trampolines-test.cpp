@@ -570,7 +570,7 @@ foo(**a)
   EXPECT_EQ(result, expected);
 }
 
-TEST(CallDeathTest, KeywordOnly) {
+TEST(CallTest, KeywordOnly) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, *, c):
@@ -578,10 +578,10 @@ def foo(a,b, *, c):
 foo(1, 2, 3);
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
+  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
-TEST(CallDeathTest, MissingKeyword) {
+TEST(CallTest, MissingKeyword) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, *, c):
@@ -589,10 +589,10 @@ def foo(a,b, *, c):
 foo(1, 2);
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
+  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
-TEST(CallDeathTest, ArgNameMismatch) {
+TEST(CallTest, ArgNameMismatch) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, *, c):
@@ -600,10 +600,10 @@ def foo(a,b, *, c):
 foo(1, d = 2, c = 3);
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
+  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
-TEST(CallDeathTest, TooManyKWArgs) {
+TEST(CallTest, TooManyKWArgs) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, *, c):
@@ -611,10 +611,10 @@ def foo(a,b, *, c):
 foo(1, 2, 4, c = 3);
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
+  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
-TEST(CallDeathTest, TooManyArgs) {
+TEST(CallTest, TooManyArgs) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, c):
@@ -622,10 +622,10 @@ def foo(a,b, c):
 foo(1, 2, 3, 4);
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
+  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
-TEST(CallDeathTest, TooFewArgs) {
+TEST(CallTest, TooFewArgs) {
   Runtime runtime;
   const char* src = R"(
 def foo(a,b, c):
@@ -633,7 +633,7 @@ def foo(a,b, c):
 foo(3, 4);
 )";
   std::unique_ptr<char[]> buffer(Runtime::compile(src));
-  EXPECT_DEATH(runtime.run(buffer.get()), "TypeError");
+  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
 static RawObject firstArg(Thread*, Frame* frame, word argc) {
@@ -864,13 +864,13 @@ result = foo(1)
 
 TEST(TrampolineTest, ExplodeCallWithBadKeywordFails) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 def take_kwargs(a): pass
 
 kwargs = {12: 34}
 take_kwargs(**kwargs)
 )"),
-               "keywords must be strings");
+                            LayoutId::kTypeError, "keywords must be strings"));
 }
 
 TEST(TrampolineTest, ExplodeCallWithZeroKeywords) {

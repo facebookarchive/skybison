@@ -88,40 +88,43 @@ object.__init__(object)
   // TypeError.
 }
 
-TEST(ObjectBuiltinsDeathTest, DunderInitWithNoArgsThrowsTypeError) {
+TEST(ObjectBuiltinsTest, DunderInitWithNoArgsThrowsTypeError) {
   Runtime runtime;
   // Passing no args to object.__init__ should throw a type error.
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 object.__init__()
 )"),
-               "aborting due to pending exception");
+                            LayoutId::kTypeError,
+                            "__init__ needs an argument"));
 }
 
-TEST(ObjectBuiltinsDeathTest, DunderInitWithArgsThrowsTypeError) {
+TEST(ObjectBuiltinsTest, DunderInitWithArgsThrowsTypeError) {
   Runtime runtime;
   // Passing extra args to object.__init__, without overwriting __new__,
   // should throw a type error.
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
 Foo.__init__(Foo(), 1)
 )"),
-               "aborting due to pending exception");
+                            LayoutId::kTypeError,
+                            "object.__init__() takes no parameters"));
 }
 
-TEST(ObjectBuiltinsDeathTest, DunderInitWithNewAndInitThrowsTypeError) {
+TEST(ObjectBuiltinsTest, DunderInitWithNewAndInitThrowsTypeError) {
   Runtime runtime;
   // Passing extra args to object.__init__, and overwriting only __init__,
   // should throw a type error.
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
   def __init__(self):
     object.__init__(self, 1)
 
 Foo()
 )"),
-               "aborting due to pending exception");
+                            LayoutId::kTypeError,
+                            "object.__init__() takes no parameters"));
 }
 
 TEST(NoneBuiltinsTest, NewReturnsNone) {

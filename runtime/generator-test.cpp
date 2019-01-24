@@ -55,8 +55,9 @@ def gen():
 gen().send(1)
 )";
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src),
-               "can't send non-None value to a just-started generator");
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                    "can't send non-None value to a just-started generator"));
 }
 
 TEST(GeneratorTest, YieldFrom) {
@@ -112,7 +113,7 @@ for i in g:
 
 TEST(GeneratorTest, ReraiseAfterYield) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 def gen():
   try:
     raise RuntimeError("inside generator")
@@ -127,7 +128,7 @@ try:
 except:
   g.__next__()
 )"),
-               "inside generator");
+                            LayoutId::kRuntimeError, "inside generator"));
 }
 
 TEST(CoroutineTest, Basic) {
@@ -151,8 +152,9 @@ async def coro():
 coro().send(1)
 )";
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src),
-               "can't send non-None value to a just-started coroutine");
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                    "can't send non-None value to a just-started coroutine"));
 }
 
 }  // namespace python

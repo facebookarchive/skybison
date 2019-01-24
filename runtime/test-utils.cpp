@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -417,8 +418,61 @@ RawObject listFromRange(word start, word stop) {
     Str expected_name(&scope, expected_type->name());
     Str actual_name(&scope, exception_type->name());
     return ::testing::AssertionFailure()
-           << "pending exception has type '" << actual_name << "', expected '"
-           << expected_name << "'";
+           << "\npending exception has type:\n  " << actual_name
+           << "\nexpected:\n  " << expected_name << "\n";
+  }
+
+  return ::testing::AssertionSuccess();
+}
+
+::testing::AssertionResult raised(RawObject return_value, LayoutId layout_id) {
+  return raisedWithStr(return_value, layout_id, nullptr);
+}
+
+::testing::AssertionResult raisedWithStr(RawObject return_value,
+                                         LayoutId layout_id,
+                                         const char* expected) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object return_value_obj(&scope, return_value);
+
+  if (!return_value_obj->isError()) {
+    Type type(&scope, runtime->typeOf(*return_value_obj));
+    Str name(&scope, type->name());
+    return ::testing::AssertionFailure()
+           << "call returned " << name << ", not Error";
+  }
+
+  ::testing::AssertionResult layout_ok =
+      hasPendingExceptionWithLayout(layout_id);
+  if (!layout_ok) return layout_ok;
+
+  if (expected == nullptr) return ::testing::AssertionSuccess();
+
+  Object exc_value(&scope, thread->pendingExceptionValue());
+  if (!runtime->isInstanceOfStr(*exc_value)) {
+    if (runtime->isInstanceOfBaseException(*exc_value)) {
+      BaseException exc(&scope, *exc_value);
+      Tuple args(&scope, exc->args());
+      if (args->length() == 0) {
+        return ::testing::AssertionFailure()
+               << "pending exception args tuple is empty";
+      }
+      exc_value = args->at(0);
+    }
+
+    if (!runtime->isInstanceOfStr(*exc_value)) {
+      return ::testing::AssertionFailure()
+             << "pending exception value is not str";
+    }
+  }
+
+  Str exc_msg(&scope, *exc_value);
+  if (!exc_msg->equalsCStr(expected)) {
+    return ::testing::AssertionFailure()
+           << "\npending exception value:\n  '" << exc_msg
+           << "'\nexpected:\n  '" << expected << "'\n";
   }
 
   return ::testing::AssertionSuccess();

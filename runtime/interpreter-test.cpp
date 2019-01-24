@@ -100,6 +100,18 @@ TEST(InterpreterTest, IsTrueDunderLen) {
   EXPECT_EQ(Interpreter::isTrue(thread, frame, empty_list), Bool::falseObj());
 }
 
+TEST(InterpreterTest, UnaryNotWithRaisingDunderBool) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class C:
+  def __bool__(self):
+    raise RuntimeError("too cool for bool")
+
+not C()
+)"),
+                            LayoutId::kRuntimeError, "too cool for bool"));
+}
+
 TEST(InterpreterTest, BinaryOpInvokesSelfMethod) {
   Runtime runtime;
   HandleScope scope;
@@ -865,30 +877,27 @@ c = C()
   EXPECT_EQ(*f, *method);
 }
 
-TEST(InterpreterDeathTest, CallingUncallableThrowsTypeError) {
+TEST(InterpreterTest, CallingUncallableThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
-c = 1
-c()
-  )"),
-               "object is not callable");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "(1)()"),
+                            LayoutId::kTypeError, "object is not callable"));
 }
 
-TEST(InterpreterDeathTest, CallingUncallableDunderCallThrowsTypeError) {
+TEST(InterpreterTest, CallingUncallableDunderCallThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class C:
   __call__ = 1
 
 c = C()
 c()
   )"),
-               "object is not callable");
+                            LayoutId::kTypeError, "object is not callable"));
 }
 
-TEST(InterpreterDeathTest, CallingNonDescriptorDunderCallThrowsTypeError) {
+TEST(InterpreterTest, CallingNonDescriptorDunderCallThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class D: pass
 
 class C:
@@ -897,12 +906,12 @@ class C:
 c = C()
 c()
   )"),
-               "object is not callable");
+                            LayoutId::kTypeError, "object is not callable"));
 }
 
-TEST(InterpreterDeathTest, CallDescriptorReturningUncallableThrowsTypeError) {
+TEST(InterpreterTest, CallDescriptorReturningUncallableThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class D:
   def __get__(self, instance, owner):
     return 1
@@ -913,7 +922,7 @@ class C:
 c = C()
 c()
   )"),
-               "object is not callable");
+                            LayoutId::kTypeError, "object is not callable"));
 }
 
 TEST(InterpreterTest, LookupMethodLoopsOnCallBoundToDescriptor) {
@@ -948,16 +957,17 @@ result = c(42)
   EXPECT_EQ(*result, SmallInt::fromWord(42));
 }
 
-TEST(InterpreterDeathTest, IterateOnNonIterable) {
+TEST(InterpreterTest, IterateOnNonIterable) {
   const char* src = R"(
 # Try to iterate on a None object which isn't iterable
 a, b = None
 )";
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, src), "object is not iterable");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "object is not iterable"));
 }
 
-TEST(InterpreterDeathTest, DunderIterReturnsNonIterable) {
+TEST(InterpreterTest, DunderIterReturnsNonIterable) {
   const char* src = R"(
 class Foo:
   def __iter__(self):
@@ -965,7 +975,8 @@ class Foo:
 a, b = Foo()
 )";
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, src), R"(iter\(\) returned non-iterator)");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "iter() returned non-iterator"));
 }
 
 TEST(InterpreterTest, UnpackSequence) {
@@ -987,24 +998,26 @@ a, b, c = l
   EXPECT_EQ(RawSmallInt::cast(*c)->value(), 3);
 }
 
-TEST(InterpreterDeathTest, UnpackSequenceTooFewObjects) {
+TEST(InterpreterTest, UnpackSequenceTooFewObjects) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
 l = [1, 2]
 a, b, c = l
 )";
-  ASSERT_DEATH(runFromCStr(&runtime, src), "not enough values to unpack");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kValueError,
+                            "not enough values to unpack"));
 }
 
-TEST(InterpreterDeathTest, UnpackSequenceTooManyObjects) {
+TEST(InterpreterTest, UnpackSequenceTooManyObjects) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
 l = [1, 2, 3, 4]
 a, b, c = l
 )";
-  ASSERT_DEATH(runFromCStr(&runtime, src), "too many values to unpack");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kValueError,
+                            "too many values to unpack"));
 }
 
 TEST(InterpreterTest, PrintExprInvokesDisplayhook) {
@@ -1439,20 +1452,20 @@ d = {**Foo(), 'd': 4}
   EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithNonMapping) {
+TEST(InterpreterTest, BuildMapUnpackWithNonMapping) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
     pass
 
 d = {**Foo(), 'd': 4}
   )"),
-               "object is not a mapping");
+                            LayoutId::kTypeError, "object is not a mapping"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithUnsubscriptableMapping) {
+TEST(InterpreterTest, BuildMapUnpackWithUnsubscriptableMapping) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self):
         self.idx = 0
@@ -1463,12 +1476,13 @@ class Foo:
 
 d = {**Foo(), 'd': 4}
   )"),
-               "object is not subscriptable");
+                            LayoutId::kTypeError,
+                            "object is not subscriptable"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithNonIterableKeys) {
+TEST(InterpreterTest, BuildMapUnpackWithNonIterableKeys) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self):
         self.idx = 0
@@ -1482,12 +1496,12 @@ class Foo:
 
 d = {**Foo(), 'd': 4}
   )"),
-               R"(keys\(\) is not iterable)");
+                            LayoutId::kTypeError, "keys() is not iterable"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithBadIteratorKeys) {
+TEST(InterpreterTest, BuildMapUnpackWithBadIteratorKeys) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class KeysIter:
     def __iter__(self):
         return self
@@ -1504,27 +1518,29 @@ class Foo:
 
 d = {**Foo(), 'd': 4}
   )"),
-               R"(keys\(\) is not iterable)");
+                            LayoutId::kTypeError, "keys() is not iterable"));
 }
 
-TEST(InterpreterDeathTest, UnpackSequenceExWithTooFewObjectsBefore) {
+TEST(InterpreterTest, UnpackSequenceExWithTooFewObjectsBefore) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
 l = [1, 2]
 a, b, c, *d  = l
 )";
-  ASSERT_DEATH(runFromCStr(&runtime, src), "not enough values to unpack");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kValueError,
+                            "not enough values to unpack"));
 }
 
-TEST(InterpreterDeathTest, UnpackSequenceExWithTooFewObjectsAfter) {
+TEST(InterpreterTest, UnpackSequenceExWithTooFewObjectsAfter) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
 l = [1, 2]
 *a, b, c, d = l
 )";
-  ASSERT_DEATH(runFromCStr(&runtime, src), "not enough values to unpack");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kValueError,
+                            "not enough values to unpack"));
 }
 
 TEST(InterpreterTest, BuildTupleUnpackWithCall) {
@@ -1569,7 +1585,7 @@ v = outer()
   EXPECT_EQ(result->asWord(), 0);
 }
 
-TEST(InterpreterDeathTest, FunctionAccessesUnboundVariable) {
+TEST(InterpreterTest, FunctionAccessesUnboundVariable) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
@@ -1583,8 +1599,9 @@ def outer():
 v = outer()
   )";
 
-  ASSERT_DEATH(runFromCStr(&runtime, src),
-               "local variable 'var' referenced before assignment");
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, src), LayoutId::kUnboundLocalError,
+                    "local variable 'var' referenced before assignment"));
 }
 
 TEST(InterpreterTest, ImportStarImportsPublicSymbols) {
@@ -1621,7 +1638,7 @@ b = public_symbol2()
   EXPECT_EQ(result2->asWord(), 2);
 }
 
-TEST(InterpreterDeathTest, ImportStarDoesNotImportPrivateSymbols) {
+TEST(InterpreterTest, ImportStarDoesNotImportPrivateSymbols) {
   Runtime runtime;
   HandleScope scope;
 
@@ -1643,8 +1660,9 @@ a = public_symbol()
 b = _private_symbol()
 )";
 
-  ASSERT_DEATH(compileAndRunToString(&runtime, main_src),
-               "name '_private_symbol' is not defined");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, main_src),
+                            LayoutId::kNameError,
+                            "name '_private_symbol' is not defined"));
 }
 
 TEST(InterpreterTest, GetAnextCallsAnextAndAwait) {
@@ -1966,31 +1984,32 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
   EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallDictNonStrKey) {
+TEST(InterpreterTest, BuildMapUnpackWithCallDictNonStrKey) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 def foo(**kwargs):
     return kwargs
 
 foo(**{'a': 1, 'b': 2}, **{'c': 3, 4: 4})
   )"),
-               "keywords must be strings");
+                            LayoutId::kTypeError, "keywords must be strings"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallDictRepeatedKeys) {
+TEST(InterpreterTest, BuildMapUnpackWithCallDictRepeatedKeys) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 def foo(**kwargs):
     return kwargs
 
 foo(**{'a': 1, 'b': 2}, **{'c': 3, 'a': 4})
   )"),
-               "got multiple values for keyword argument");
+                            LayoutId::kTypeError,
+                            "got multiple values for keyword argument"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallNonMapping) {
+TEST(InterpreterTest, BuildMapUnpackWithCallNonMapping) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
     pass
 
@@ -1999,12 +2018,12 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               "object is not a mapping");
+                            LayoutId::kTypeError, "object is not a mapping"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallNonSubscriptable) {
+TEST(InterpreterTest, BuildMapUnpackWithCallNonSubscriptable) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
     def keys(self):
         pass
@@ -2014,12 +2033,13 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               "object is not subscriptable");
+                            LayoutId::kTypeError,
+                            "object is not subscriptable"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallListKeysNonStrKey) {
+TEST(InterpreterTest, BuildMapUnpackWithCallListKeysNonStrKey) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
     def keys(self):
         return [1]
@@ -2032,12 +2052,12 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               "keywords must be strings");
+                            LayoutId::kTypeError, "keywords must be strings"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallListKeysRepeatedKeys) {
+TEST(InterpreterTest, BuildMapUnpackWithCallListKeysRepeatedKeys) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
     def keys(self):
         return ['a']
@@ -2050,12 +2070,13 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               "got multiple values for keyword argument");
+                            LayoutId::kTypeError,
+                            "got multiple values for keyword argument"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallTupleKeysNonStrKeys) {
+TEST(InterpreterTest, BuildMapUnpackWithCallTupleKeysNonStrKeys) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
     def keys(self):
         return (1,)
@@ -2068,12 +2089,12 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               "keywords must be strings");
+                            LayoutId::kTypeError, "keywords must be strings"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallTupleKeysRepeatedKeys) {
+TEST(InterpreterTest, BuildMapUnpackWithCallTupleKeysRepeatedKeys) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
     def keys(self):
         return ('a',)
@@ -2086,12 +2107,13 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               "got multiple values for keyword argument");
+                            LayoutId::kTypeError,
+                            "got multiple values for keyword argument"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallNonIterableKeys) {
+TEST(InterpreterTest, BuildMapUnpackWithCallNonIterableKeys) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo:
     def keys(self):
         return None
@@ -2104,12 +2126,12 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               R"(keys\(\) is not iterable)");
+                            LayoutId::kTypeError, "keys() is not iterable"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallIterableWithoutNext) {
+TEST(InterpreterTest, BuildMapUnpackWithCallIterableWithoutNext) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Iter:
     def __iter__(self):
         return self
@@ -2126,12 +2148,12 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               R"(keys\(\) is not iterable)");
+                            LayoutId::kTypeError, "keys() is not iterable"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallIterableNonStrKey) {
+TEST(InterpreterTest, BuildMapUnpackWithCallIterableNonStrKey) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Iter:
     def __init__(self, keys):
         self.idx = 0
@@ -2162,12 +2184,12 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               "keywords must be strings");
+                            LayoutId::kTypeError, "keywords must be strings"));
 }
 
-TEST(InterpreterDeathTest, BuildMapUnpackWithCallIterableRepeatedKeys) {
+TEST(InterpreterTest, BuildMapUnpackWithCallIterableRepeatedKeys) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Iter:
     def __init__(self, keys):
         self.idx = 0
@@ -2198,7 +2220,8 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-               "got multiple values for keyword argument");
+                            LayoutId::kTypeError,
+                            "got multiple values for keyword argument"));
 }
 
 TEST(InterpreterTest, YieldFromIterReturnsIter) {
@@ -2242,7 +2265,7 @@ foo = Foo()
   EXPECT_TRUE(isStrEqualsCStr(result_type->name(), "FooIterator"));
 }
 
-TEST(InterpreterDeathTest, YieldFromIterThrowsException) {
+TEST(InterpreterTest, YieldFromIterThrowsException) {
   Runtime runtime;
   HandleScope scope;
 
@@ -2254,7 +2277,8 @@ for i in yield_from_func():
     pass
 	)";
 
-  ASSERT_DEATH(runFromCStr(&runtime, src), "object is not iterable");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "object is not iterable"));
 }
 
 TEST(InterpreterTest, MakeFunctionSetsDunderModule) {
@@ -2452,32 +2476,30 @@ except (StopIteration, RuntimeError, ImportError):
 
 TEST(InterpreterTest, ExceptWithWrongTypePasses) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 try:
     raise RuntimeError("something went wrong")
 except StopIteration:
     pass
 )"),
-               "something went wrong");
+                            LayoutId::kRuntimeError, "something went wrong"));
 }
 
 TEST(InterpreterTest, ExceptWithWrongTupleTypePasses) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 try:
     raise RuntimeError("something went wrong")
 except (StopIteration, ImportError):
     pass
 )"),
-               "something went wrong");
+                            LayoutId::kRuntimeError, "something went wrong"));
 }
 
 TEST(InterpreterTest, RaiseTypeCreatesException) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
-raise StopIteration
-)"),
-               "aborting due to pending exception");
+  EXPECT_TRUE(raised(runFromCStr(&runtime, "raise StopIteration"),
+                     LayoutId::kStopIteration));
 }
 
 TEST(InterpreterTest, BareRaiseReraises) {
@@ -2509,32 +2531,35 @@ except Exception as exc:
 
 TEST(InterpreterTest, ExceptWithNonExceptionTypeRaises) {
   Runtime runtime;
-  EXPECT_DEATH(
-      runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 try:
   raise RuntimeError
 except str:
   pass
 )"),
-      "catching classes that do not inherit from BaseException is not allowed");
+                            LayoutId::kTypeError,
+                            "catching classes that do not inherit from "
+                            "BaseException is not allowed"));
 }
 
 TEST(InterpreterTest, ExceptWithNonExceptionTypeInTupleRaises) {
   Runtime runtime;
-  EXPECT_DEATH(
-      runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 try:
   raise RuntimeError
 except (StopIteration, int, RuntimeError):
   pass
 )"),
-      "catching classes that do not inherit from BaseException is not allowed");
+                            LayoutId::kTypeError,
+                            "catching classes that do not inherit from "
+                            "BaseException is not allowed"));
 }
 
 TEST(InterpreterTest, RaiseWithNoActiveExceptionRaises) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "raise\n"),
-               "No active exception to reraise");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "raise\n"),
+                            LayoutId::kRuntimeError,
+                            "No active exception to reraise"));
 }
 
 TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
@@ -2578,7 +2603,8 @@ TEST(InterpreterDeathTest, ExplodeWithIterableRaises) {
   HandleScope scope;
   // TODO(bsimmers): Change this to inspect result once sequenceAsTuple() is
   // fixed.
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
 def f():
   pass
 def gen():
@@ -2586,7 +2612,8 @@ def gen():
   yield 2
 result = f(*gen())
 )"),
-               "Iterables not yet supported in sequenceAsTuple()");
+                    LayoutId::kNotImplementedError,
+                    "Iterables not yet supported in sequenceAsTuple()"));
 }
 
 }  // namespace python

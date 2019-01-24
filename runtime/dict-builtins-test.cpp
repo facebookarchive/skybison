@@ -148,13 +148,13 @@ del d["foo"]
   EXPECT_FALSE(runtime.dictIncludes(d, foo));
 }
 
-TEST(DictBuiltinsDeathTest, DelOnNonexistentKeyThrowsKeyError) {
+TEST(DictBuiltinsTest, DelOnNonexistentKeyThrowsKeyError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 d = {}
 del d["foo"]
 )"),
-               "aborting due to pending exception");
+                            LayoutId::kKeyError, "foo"));
 }
 
 TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
@@ -187,21 +187,21 @@ TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
   ASSERT_EQ(runtime.dictAt(dict, key), *val);
 }
 
-TEST(DictBuiltinsDeathTest, NonTypeInDunderNew) {
+TEST(DictBuiltinsTest, NonTypeInDunderNew) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 dict.__new__(1)
 )"),
-               "not a type object");
+                            LayoutId::kTypeError, "not a type object"));
 }
 
-TEST(DictBuiltinsDeathTest, NonSubclassInDunderNew) {
+TEST(DictBuiltinsTest, NonSubclassInDunderNew) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo: pass
 dict.__new__(Foo)
 )"),
-               "not a subtype of dict");
+                            LayoutId::kTypeError, "not a subtype of dict"));
 }
 
 TEST(DictBuiltinsTest, DunderNewConstructsDict) {
@@ -272,10 +272,11 @@ TEST(DictBuiltinsTest, DunderEqWithNonDict) {
             runtime.notImplemented());
 }
 
-TEST(DictBuiltinsDeathTest, UpdateWithNoArgumentsThrowsTypeError) {
+TEST(DictBuiltinsTest, UpdateWithNoArgumentsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "dict.update()"),
-               "'update' takes 2 arguments but 0 given");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "dict.update()"), LayoutId::kTypeError,
+      "TypeError: 'update' takes 2 arguments but 0 given"));
 }
 
 TEST(DictBuiltinsTest, UpdateWithNonDictThrowsTypeError) {
@@ -288,14 +289,14 @@ TEST(DictBuiltinsTest, UpdateWithNonDictThrowsTypeError) {
   EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
-TEST(DictBuiltinsDeathTest, UpdateWithNonMappingTypeThrowsTypeError) {
+TEST(DictBuiltinsTest, UpdateWithNonMappingTypeThrowsTypeError) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Int i(&scope, runtime.newInt(1));
-  EXPECT_TRUE(runBuiltin(DictBuiltins::update, dict, i).isError());
-  EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(DictBuiltins::update, dict, i),
+                            LayoutId::kTypeError, "object is not a mapping"));
 }
 
 TEST(DictBuiltinsTest, UpdateWithDictReturnsUpdatedDict) {
@@ -596,16 +597,19 @@ TEST(DictBuiltinsTest, ValueIteratorNextOnOneElementDictReturnsElement) {
   ASSERT_TRUE(next->isError());
 }
 
-TEST(DictBuiltinsDeathTest, GetWithNotEnoughArgumentsThrowsTypeError) {
+TEST(DictBuiltinsTest, GetWithNotEnoughArgumentsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "dict.get()"),
-               "'get' takes min 2 positional arguments but 0 given");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "dict.get()"), LayoutId::kTypeError,
+      "TypeError: 'get' takes min 2 positional arguments but 0 given"));
 }
 
-TEST(DictBuiltinsDeathTest, GetWithTooManyArgumentsThrowsTypeError) {
+TEST(DictBuiltinsTest, GetWithTooManyArgumentsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "dict.get({}, 123, 456, 789)"),
-               "'get' takes max 3 positional arguments but 4 given");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "dict.get({}, 123, 456, 789)"),
+      LayoutId::kTypeError,
+      "TypeError: 'get' takes max 3 positional arguments but 4 given"));
 }
 
 TEST(DictBuiltinsTest, GetWithNonDictThrowsTypeError) {

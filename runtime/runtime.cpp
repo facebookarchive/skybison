@@ -1461,8 +1461,6 @@ RawObject Runtime::run(const char* buffer) {
   }
   Module main_module(&scope, *main);
   Object result(&scope, executeModule(buffer, main_module));
-  // TODO(bsimmers): Remove this and delete Thread::abortOnPendingException()
-  Thread::currentThread()->abortOnPendingException();
   return *result;
 }
 

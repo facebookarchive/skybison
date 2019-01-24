@@ -8,15 +8,14 @@ namespace python {
 
 using namespace testing;
 
-TEST(SetDeathTest, SetPopException) {
+TEST(SetTest, SetPopException) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 s = {1}
 s.pop()
 s.pop()
 )"),
-               "aborting due to pending exception: "
-               "pop from an empty set");
+                            LayoutId::kKeyError, "pop from an empty set"));
 }
 
 TEST(SetBuiltinsTest, SetPop) {
@@ -60,14 +59,14 @@ s.add("Hello, World")
   EXPECT_TRUE(runtime.setIncludes(s, hello_world));
 }
 
-TEST(SetDeathTest, SetAddException) {
+TEST(SetTest, SetAddException) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 s = set()
 s.add(1, 2)
 )"),
-               "aborting due to pending exception: "
-               "add\\(\\) takes exactly one argument");
+                            LayoutId::kTypeError,
+                            "add() takes exactly one argument"));
 }
 
 TEST(SetBuiltinsTest, DunderIterReturnsSetIterator) {
@@ -378,13 +377,13 @@ TEST(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedSetReturnsZero) {
   ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 0);
 }
 
-TEST(SetBuiltinsDeathTest, SetIsDisjointWithNonIterableArg) {
+TEST(SetBuiltinsTest, SetIsDisjointWithNonIterableArg) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 s = {1}
 s.isdisjoint(None)
 )"),
-               "object is not iterable");
+                            LayoutId::kTypeError, "object is not iterable"));
 }
 
 TEST(SetBuiltinsTest, SetIsDisjointWithSetArg) {
@@ -858,180 +857,201 @@ TEST(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
   ASSERT_EQ(*result, runtime.notImplemented());
 }
 
-TEST(SetBuiltinsDeathTest, DunderEqWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderEqWithTooFewArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__eq__()
 )"),
-               "__eq__\\(\\) of 'set' object needs an argument");
+                            LayoutId::kTypeError,
+                            "__eq__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderNeWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderNeWithTooFewArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ne__()
 )"),
-               "__ne__\\(\\) of 'set' object needs an argument");
+                            LayoutId::kTypeError,
+                            "__ne__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderGeWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGeWithTooFewArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ge__()
 )"),
-               "__ge__\\(\\) of 'set' object needs an argument");
+                            LayoutId::kTypeError,
+                            "__ge__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderGtWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGtWithTooFewArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__gt__()
 )"),
-               "__gt__\\(\\) of 'set' object needs an argument");
+                            LayoutId::kTypeError,
+                            "__gt__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderLeWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLeWithTooFewArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__le__()
 )"),
-               "__le__\\(\\) of 'set' object needs an argument");
+                            LayoutId::kTypeError,
+                            "__le__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderLtWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLtWithTooFewArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__lt__()
 )"),
-               "__lt__\\(\\) of 'set' object needs an argument");
+                            LayoutId::kTypeError,
+                            "__lt__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderEqWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderEqWithNonSetFirstArgThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__eq__(None, set())
 )"),
-               "__eq__\\(\\) requires a 'set' or 'frozenset' object");
+                            LayoutId::kTypeError,
+                            "__eq__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderNeWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderNeWithNonSetFirstArgThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ne__(None, set())
 )"),
-               "__ne__\\(\\) requires a 'set' or 'frozenset' object");
+                            LayoutId::kTypeError,
+                            "__ne__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderGeWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGeWithNonSetFirstArgThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ge__(None, set())
 )"),
-               "__ge__\\(\\) requires a 'set' or 'frozenset' object");
+                            LayoutId::kTypeError,
+                            "__ge__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderGtWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGtWithNonSetFirstArgThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__gt__(None, set())
 )"),
-               "__gt__\\(\\) requires a 'set' or 'frozenset' object");
+                            LayoutId::kTypeError,
+                            "__gt__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderLeWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLeWithNonSetFirstArgThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__le__(None, set())
 )"),
-               "__le__\\(\\) requires a 'set' or 'frozenset' object");
+                            LayoutId::kTypeError,
+                            "__le__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderLtWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLtWithNonSetFirstArgThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__lt__(None, set())
 )"),
-               "__lt__\\(\\) requires a 'set' or 'frozenset' object");
+                            LayoutId::kTypeError,
+                            "__lt__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderEqWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderEqWithTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__eq__(set(), set(), set())
 )"),
-               "expected 1 arguments, got 2");
+                            LayoutId::kTypeError,
+                            "expected 1 arguments, got 2"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderNeWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderNeWithTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ne__(set(), set(), set())
 )"),
-               "expected 1 argument, got 2");
+                            LayoutId::kTypeError,
+                            "expected 1 argument, got 2"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderGeWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGeWithTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ge__(set(), set(), set())
 )"),
-               "expected 1 argument, got 2");
+                            LayoutId::kTypeError,
+                            "expected 1 argument, got 2"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderGtWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGtWithTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__gt__(set(), set(), set())
 )"),
-               "expected 1 argument, got 2");
+                            LayoutId::kTypeError,
+                            "expected 1 argument, got 2"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderLeWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLeWithTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__le__(set(), set(), set())
 )"),
-               "expected 1 argument, got 2");
+                            LayoutId::kTypeError,
+                            "expected 1 argument, got 2"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderLtWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLtWithTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__lt__(set(), set(), set())
 )"),
-               "expected 1 argument, got 2");
+                            LayoutId::kTypeError,
+                            "expected 1 argument, got 2"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderInitWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderInitWithNonSetFirstArgThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__([])
 )"),
-               "__init__\\(\\) requires a 'set' object");
+                            LayoutId::kTypeError,
+                            "__init__() requires a 'set' object"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderInitWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderInitWithTooFewArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__()
 )"),
-               "__init__\\(\\) of 'set' object needs an argument");
+                            LayoutId::kTypeError,
+                            "__init__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderInitWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderInitWithTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__(set(), None, None, None)
 )"),
-               "set expected at most 1 argument, got 3");
+                            LayoutId::kTypeError,
+                            "set expected at most 1 argument, got 3"));
 }
 
-TEST(SetBuiltinsDeathTest, DunderInitWithNonIterableThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderInitWithNonIterableThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__(set(), None)
 )"),
-               "object is not iterable");
+                            LayoutId::kTypeError, "object is not iterable"));
 }
 
 TEST(SetBuiltinsTest, DunderInitWithIteratorUpdatesSet) {

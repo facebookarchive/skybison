@@ -168,8 +168,7 @@ print(c1.x, c2.x)
   EXPECT_EQ(output, "24 42\n");
 }
 
-TEST(DescriptorBuiltinsDeathTest,
-     PropertyNoGetterThrowsAttributeErrorUnreadable) {
+TEST(DescriptorBuiltinsTest, PropertyNoGetterThrowsAttributeErrorUnreadable) {
   const char* src = R"(
 class C:
   def __init__(self, x):
@@ -185,11 +184,11 @@ c1.x
 )";
 
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "unreadable attribute");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+                            LayoutId::kAttributeError, "unreadable attribute"));
 }
 
-TEST(DescriptorBuiltinsDeathTest,
-     PropertyNoSetterThrowsAttributeErrorCannotModify) {
+TEST(DescriptorBuiltinsTest, PropertyNoSetterThrowsAttributeErrorCannotModify) {
   const char* src = R"(
 class C:
   def __init__(self, x):
@@ -205,7 +204,8 @@ c1.x = 42
 )";
 
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "can't set attribute");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+                            LayoutId::kAttributeError, "can't set attribute"));
 }
 
 TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaClass) {

@@ -174,21 +174,23 @@ c = a + b
   EXPECT_EQ(RawFloat::cast(*c)->value(), 3.5);
 }
 
-TEST(FloatBuiltinsDeathTest, AddWithNonFloatSelfThrows) {
+TEST(FloatBuiltinsTest, AddWithNonFloatSelfThrows) {
   const char* src = R"(
 float.__add__(None, 1.0)
 )";
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, src),
-               "must be called with float instance as first argument");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, src), LayoutId::kTypeError,
+      "__add__() must be called with float instance as first argument"));
 }
 
-TEST(FloatBuiltinsDeathTest, AddWithNonFloatOtherThrows) {
+TEST(FloatBuiltinsTest, AddWithNonFloatOtherThrows) {
   const char* src = R"(
 1.0 + None
 )";
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, src), "'__add__' is not supported");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "'__add__' is not supported"));
 }
 
 TEST(FloatBuiltinsTest, BinarySubtractDouble) {
@@ -338,13 +340,14 @@ b = float.__new__(float, "-1.18973e+4932")
   EXPECT_EQ(b->value(), -std::numeric_limits<double>::infinity());
 }
 
-TEST(FloatBuiltinsDeathTest, SubWithNonFloatSelfThrows) {
+TEST(FloatBuiltinsTest, SubWithNonFloatSelfThrows) {
   const char* src = R"(
 float.__sub__(None, 1.0)
 )";
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, src),
-               "must be called with float instance as first argument");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, src), LayoutId::kTypeError,
+      "__sub__() must be called with float instance as first argument"));
 }
 
 TEST(FloatBuiltinsTest, PowFloatAndFloat) {
@@ -395,7 +398,7 @@ x **= 4
   EXPECT_EQ(result->value(), 16.0);
 }
 
-TEST(FloatBuiltinsDeathTest, FloatNewWithDunderFloatReturnsStringThrows) {
+TEST(FloatBuiltinsTest, FloatNewWithDunderFloatReturnsStringThrows) {
   const char* src = R"(
 class Foo:
   def __float__(self):
@@ -403,25 +406,28 @@ class Foo:
 a = float.__new__(Foo)
 )";
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "aborting due to pending exception");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "float.__new__(X): X is not a subtype of float"));
 }
 
-TEST(FloatBuiltinsDeathTest, DunderNewWithInvalidStringThrows) {
+TEST(FloatBuiltinsTest, DunderNewWithInvalidStringThrows) {
   Runtime runtime;
   HandleScope scope;
 
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = float.__new__(float, "abc")
 )"),
-               "aborting due to pending exception");
+                            LayoutId::kValueError,
+                            "could not convert string to float"));
 }
 
-TEST(FloatBuiltinsDeathTest, SubWithNonFloatOtherThrows) {
+TEST(FloatBuiltinsTest, SubWithNonFloatOtherThrows) {
   const char* src = R"(
 1.0 - None
 )";
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, src), "'__sub__' is not supported");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "'__sub__' is not supported"));
 }
 
 TEST(FloatBuiltins, NanIsNeqNan) {

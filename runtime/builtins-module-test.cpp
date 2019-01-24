@@ -8,7 +8,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(BuiltinsModuleDeathTest, BuiltinCallableOnTypeReturnsTrue) {
+TEST(BuiltinsModuleTest, BuiltinCallableOnTypeReturnsTrue) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -22,7 +22,7 @@ a = callable(Foo)
   EXPECT_TRUE(a->value());
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinCallableOnMethodReturnsTrue) {
+TEST(BuiltinsModuleTest, BuiltinCallableOnMethodReturnsTrue) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -40,7 +40,7 @@ b = callable(Foo().bar)
   EXPECT_TRUE(b->value());
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinCallableOnNonCallableReturnsFalse) {
+TEST(BuiltinsModuleTest, BuiltinCallableOnNonCallableReturnsFalse) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 a = callable(1)
@@ -54,8 +54,7 @@ b = callable("hello")
   EXPECT_FALSE(b->value());
 }
 
-TEST(BuiltinsModuleDeathTest,
-     BuiltinCallableOnObjectWithCallOnTypeReturnsTrue) {
+TEST(BuiltinsModuleTest, BuiltinCallableOnObjectWithCallOnTypeReturnsTrue) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -71,7 +70,7 @@ a = callable(f)
   EXPECT_TRUE(a->value());
 }
 
-TEST(BuiltinsModuleDeathTest,
+TEST(BuiltinsModuleTest,
      BuiltinCallableOnObjectWithInstanceCallButNoTypeCallReturnsFalse) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
@@ -91,30 +90,33 @@ a = callable(f)
   EXPECT_FALSE(a->value());
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinChr) {
+TEST(BuiltinsModuleTest, BuiltinChr) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(chr(65))");
   EXPECT_EQ(result, "A\n");
-  ASSERT_DEATH(runFromCStr(&runtime, "print(chr(1,2))"),
-               "TypeError: 'chr' takes max 1 positional arguments but 2 given");
-  ASSERT_DEATH(
-      runFromCStr(&runtime, "print(chr('A'))"),
-      "aborting due to pending exception: Unsupported type in builtin 'chr'");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "print(chr(1,2))"), LayoutId::kTypeError,
+      "TypeError: 'chr' takes max 1 positional arguments but 2 given"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "print(chr('A'))"),
+                            LayoutId::kTypeError,
+                            "Unsupported type in builtin 'chr'"));
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinIsinstance) {
+TEST(BuiltinsModuleTest, BuiltinIsinstance) {
   Runtime runtime;
   HandleScope scope;
 
   // Only accepts 2 arguments
-  EXPECT_DEATH(
-      runFromCStr(&runtime, "print(isinstance(1, 1, 1))"),
-      "TypeError: 'isinstance' takes max 2 positional arguments but 3 given");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "print(isinstance(1, 1, 1))"), LayoutId::kTypeError,
+      "TypeError: 'isinstance' takes max 2 positional arguments but 3 given"));
+  Thread::currentThread()->clearPendingException();
 
   // 2nd argument must be a type
-  EXPECT_DEATH(runFromCStr(&runtime, "print(isinstance(1, 1))"),
-               "aborting due to pending exception: isinstance\\(\\) arg 2 must "
-               "be a type or tuple of types");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "print(isinstance(1, 1))"), LayoutId::kTypeError,
+      "isinstance() arg 2 must be a type or tuple of types"));
+  Thread::currentThread()->clearPendingException();
 
   const char* src = R"(
 class A: pass
@@ -221,7 +223,7 @@ TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
   EXPECT_TRUE(hasPendingExceptionWithLayout(LayoutId::kTypeError));
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithSubclassReturnsTrue) {
+TEST(BuiltinsModuleTest, BuiltinIssubclassWithSubclassReturnsTrue) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -247,7 +249,7 @@ c = issubclass(Baz, type)
   EXPECT_TRUE(c->value());
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithNonSubclassReturnsFalse) {
+TEST(BuiltinsModuleTest, BuiltinIssubclassWithNonSubclassReturnsFalse) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -270,7 +272,7 @@ c = issubclass(dict, list)
   EXPECT_FALSE(c->value());
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithOneSuperclassReturnsTrue) {
+TEST(BuiltinsModuleTest, BuiltinIssubclassWithOneSuperclassReturnsTrue) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -290,7 +292,7 @@ b = issubclass(Bar, (Foo))
   EXPECT_TRUE(b->value());
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinIssubclassWithNoSuperclassReturnsFalse) {
+TEST(BuiltinsModuleTest, BuiltinIssubclassWithNoSuperclassReturnsFalse) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -304,15 +306,15 @@ a = issubclass(Foo, (str, int))
   EXPECT_FALSE(a->value());
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinLen) {
+TEST(BuiltinsModuleTest, BuiltinLen) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");
   EXPECT_EQ(result, "3\n");
-  ASSERT_DEATH(runFromCStr(&runtime, "print(len(1,2))"),
-               "TypeError: 'len' takes max 1 positional arguments but 2 given");
-  ASSERT_DEATH(runFromCStr(&runtime, "print(len(1))"),
-               "aborting due to pending exception: "
-               "object has no len()");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "print(len(1,2))"), LayoutId::kTypeError,
+      "TypeError: 'len' takes max 1 positional arguments but 2 given"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "print(len(1))"),
+                            LayoutId::kTypeError, "object has no len()"));
 }
 
 TEST(ThreadTest, BuiltinLenGetLenFromDict) {
@@ -370,15 +372,16 @@ len5 = len({1,2,3,4,5})
   EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinOrd) {
+TEST(BuiltinsModuleTest, BuiltinOrd) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(ord('A'))");
   EXPECT_EQ(result, "65\n");
-  ASSERT_DEATH(runFromCStr(&runtime, "print(ord(1,2))"),
-               "TypeError: 'ord' takes max 1 positional arguments but 2 given");
-  ASSERT_DEATH(
-      runFromCStr(&runtime, "print(ord(1))"),
-      "aborting due to pending exception: Unsupported type in builtin 'ord'");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "print(ord(1,2))"), LayoutId::kTypeError,
+      "TypeError: 'ord' takes max 1 positional arguments but 2 given"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "print(ord(1))"),
+                            LayoutId::kTypeError,
+                            "Unsupported type in builtin 'ord'"));
 }
 
 TEST(BuiltinsModuleTest, BuiltInPrintStdOut) {
@@ -496,32 +499,35 @@ obj = getattr(Foo(), 'bar', 2)
   EXPECT_EQ(*obj, SmallInt::fromWord(2));
 }
 
-TEST(BuiltinsModuleDeathTest, GetAttrWithNonStringAttrThrows) {
+TEST(BuiltinsModuleTest, GetAttrWithNonStringAttrThrows) {
   const char* src = R"(
 class Foo: pass
 getattr(Foo(), 1)
 )";
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "attribute name must be string");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "getattr(): attribute name must be string"));
 }
 
-TEST(BuiltinsModuleDeathTest, GetAttrWithNonStringAttrAndDefaultThrows) {
+TEST(BuiltinsModuleTest, GetAttrWithNonStringAttrAndDefaultThrows) {
   const char* src = R"(
 class Foo: pass
 getattr(Foo(), 1, 2)
 )";
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "attribute name must be string");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "getattr(): attribute name must be string"));
 }
 
-TEST(BuiltinsModuleDeathTest, GetAttrFromClassMissingAttrWithoutDefaultThrows) {
+TEST(BuiltinsModuleTest, GetAttrFromClassMissingAttrWithoutDefaultThrows) {
   const char* src = R"(
 class Foo:
   bar = 1
 getattr(Foo, 'foo')
 )";
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "missing attribute");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+                            LayoutId::kAttributeError, "missing attribute"));
 }
 
 TEST(BuiltinsModuleTest, HasAttrFromClassMissingAttrReturnsFalse) {
@@ -551,14 +557,15 @@ obj = hasattr(Foo, 'bar')
   EXPECT_EQ(*obj, Bool::trueObj());
 }
 
-TEST(BuiltinsModuleDeathTest, HasAttrWithNonStringAttrThrows) {
+TEST(BuiltinsModuleTest, HasAttrWithNonStringAttrThrows) {
   const char* src = R"(
 class Foo:
   bar = 1
 hasattr(Foo, 1)
 )";
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "attribute name must be string");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "hasattr(): attribute name must be string"));
 }
 
 TEST(BuiltinsModuleTest, HasAttrFromInstanceMissingAttrReturnsFalse) {
@@ -605,7 +612,7 @@ b = Foo.foo
   EXPECT_EQ(*b, SmallInt::fromWord(2));
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltInSetAttrThrow) {
+TEST(BuiltinsModuleTest, BuiltInSetAttrThrow) {
   const char* src = R"(
 class Foo:
   bar = 1
@@ -613,7 +620,8 @@ a = setattr(Foo, 2, 'foo')
 )";
   Runtime runtime;
   HandleScope scope;
-  EXPECT_DEATH(runFromCStr(&runtime, src), "attribute name must be string");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "setattr(): attribute name must be string"));
 }
 
 TEST(BuiltinsModuleTest, ModuleAttrReturnsBuiltinsName) {
@@ -686,21 +694,26 @@ TEST(BuiltinsModuleTest, BuiltinCompile) {
 
 TEST(BuiltinsModuleDeathTest, BuiltinCompileThrowsTypeErrorGivenTooFewArgs) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, "compile(1)"),
-               "'compile' takes min 3 positional arguments but 1 given");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "compile(1)"), LayoutId::kTypeError,
+      "TypeError: 'compile' takes min 3 positional arguments but 1 given"));
 }
 
 TEST(BuiltinsModuleDeathTest, BuiltinCompileThrowsTypeErrorGivenTooManyArgs) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, "compile(1, 2, 3, 4, 5, 6, 7, 8, 9)"),
-               "'compile' takes max 6 positional arguments but 9 given");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "compile(1, 2, 3, 4, 5, 6, 7, 8, 9)"),
+      LayoutId::kTypeError,
+      "TypeError: 'compile' takes max 6 positional arguments but 9 given"));
 }
 
 TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenBadMode) {
   Runtime runtime;
   HandleScope scope;
-  ASSERT_DEATH(runFromCStr(&runtime, "compile('hello', 'hello', 'hello')"),
-               "Expected mode to be 'exec', 'eval', or 'single' in 'compile'");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "compile('hello', 'hello', 'hello')"),
+      LayoutId::kValueError,
+      "Expected mode to be 'exec', 'eval', or 'single' in 'compile'"));
 }
 
 TEST(BuiltinsModuleTest, BuiltinExecSetsGlobal) {
@@ -754,11 +767,12 @@ result = exec("a = 1338", {})
 TEST(BuiltinsModuleDeathTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 1337
 result = exec("a = 1338", 7)
   )"),
-               "Expected 'globals' to be dict in 'exec'");
+                            LayoutId::kTypeError,
+                            "Expected 'globals' to be dict in 'exec'"));
 }
 
 TEST(BuiltinsModuleTest, PythonBuiltinAnnotationSetsFunctionSignature) {
@@ -931,8 +945,9 @@ result = any([False, True, False])
 
 TEST(BuiltinsModuleTest, RangeOnNonIntegerRaisesTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(range("foo", "bar", "baz"))"),
-               "Arguments to range\\(\\) must be integers");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, R"(range("foo", "bar", "baz"))"),
+      LayoutId::kTypeError, "Arguments to range() must be integers"));
 }
 
 TEST(BuiltinsModuleTest, RangeWithOnlyStopDefaultsOtherArguments) {

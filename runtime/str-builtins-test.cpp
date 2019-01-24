@@ -155,28 +155,32 @@ a = str.__new__(str, "hello")
   EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
 }
 
-TEST(StrBuiltinsDeathTest, DunderNewWithNoArgsThrows) {
+TEST(StrBuiltinsTest, DunderNewWithNoArgsThrows) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "str.__new__()"),
-               "aborting due to pending exception");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.__new__()"),
+                            LayoutId::kTypeError,
+                            "str.__new__(): not enough arguments"));
 }
 
-TEST(StrBuiltinsDeathTest, DunderNewWithTooManyArgsThrows) {
+TEST(StrBuiltinsTest, DunderNewWithTooManyArgsThrows) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "str.__new__(str, 1, 2, 3, 4)"),
-               "aborting due to pending exception");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "str.__new__(str, 1, 2, 3, 4)"),
+      LayoutId::kTypeError, "str() takes at most three arguments"));
 }
 
-TEST(StrBuiltinsDeathTest, DunderNewWithNonTypeArgThrows) {
+TEST(StrBuiltinsTest, DunderNewWithNonTypeArgThrows) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "str.__new__(1)"),
-               "aborting due to pending exception");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.__new__(1)"),
+                            LayoutId::kTypeError,
+                            "str.__new__(X): X is not a type object"));
 }
 
-TEST(StrBuiltinsDeathTest, DunderNewWithNonSubtypeArgThrows) {
+TEST(StrBuiltinsTest, DunderNewWithNonSubtypeArgThrows) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "str.__new__(object)"),
-               "aborting due to pending exception");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.__new__(object)"),
+                            LayoutId::kTypeError,
+                            "str.__new__(X): X is not a subtype of str"));
 }
 
 TEST(StrBuiltinsTest, DunderAddWithTwoStringsReturnsConcatenatedString) {
@@ -246,16 +250,18 @@ TEST(StrBuiltinsTest, StringLenWithEmptyString) {
   EXPECT_EQ(0, l->value());
 }
 
-TEST(StrBuiltinsDeathTest, StringLenWithInt) {
+TEST(StrBuiltinsTest, StringLenWithInt) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "l = str.__len__(3)"),
-               "descriptor '__len__' requires a 'str' object");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "l = str.__len__(3)"),
+                            LayoutId::kTypeError,
+                            "descriptor '__len__' requires a 'str' object"));
 }
 
-TEST(StrBuiltinsDeathTest, StringLenWithExtraArgument) {
+TEST(StrBuiltinsTest, StringLenWithExtraArgument) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "l = 'aloha'.__len__('arg')"),
-               "'__len__' takes max 1 positional arguments but 2 given");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "l = 'aloha'.__len__('arg')"), LayoutId::kTypeError,
+      "TypeError: '__len__' takes max 1 positional arguments but 2 given"));
 }
 
 TEST(StrBuiltinsTest, IndexWithLargeIntRaisesIndexError) {
@@ -684,20 +690,22 @@ a = "%d%s,%d%s,%d%s" % (1, s, 2, s, 3, s)
   EXPECT_TRUE(isStrEqualsCStr(*a, "1pyro,2pyro,3pyro"));
 }
 
-TEST(StrBuiltinsDeathTest, StringFormatMalformed) {
+TEST(StrBuiltinsTest, StringFormatMalformed) {
   Runtime runtime;
   const char* src = R"(
 a = "%" % ("pyro",)
 )";
-  EXPECT_DEATH(runFromCStr(&runtime, src), "Incomplete format");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kValueError,
+                            "Incomplete format"));
 }
 
-TEST(StrBuiltinsDeathTest, StringFormatMismatch) {
+TEST(StrBuiltinsTest, StringFormatMismatch) {
   Runtime runtime;
   const char* src = R"(
 a = "%d%s" % ("pyro",)
 )";
-  EXPECT_DEATH(runFromCStr(&runtime, src), "Argument mismatch");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "Argument mismatch"));
 }
 
 TEST(StrBuiltinsTest, DunderReprOnASCIIStr) {
@@ -840,20 +848,22 @@ a = ",".join(("1", "2", "3"))
   EXPECT_TRUE(isStrEqualsCStr(*a, "1,2,3"));
 }
 
-TEST(StrBuiltinsDeathTest, JoinWithNonStringInArrayThrowsTypeError) {
+TEST(StrBuiltinsTest, JoinWithNonStringInArrayThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = ",".join(["hello", 1])
 )"),
-               "aborting due to pending exception");
+                            LayoutId::kTypeError,
+                            "sequence item 1: expected str instance"));
 }
 
-TEST(StrBuiltinsDeathTest, JoinWithNonStringSeparatorThrowsTypeError) {
+TEST(StrBuiltinsTest, JoinWithNonStringSeparatorThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = str.join(1, ["hello", 1])
 )"),
-               "aborting due to pending exception");
+                            LayoutId::kTypeError,
+                            "'join' requires a 'str' object"));
 }
 
 TEST(StrBuiltinsTest, PartitionOnSingleCharStr) {
@@ -1302,100 +1312,112 @@ l = "1,2,3,4".rsplit(",", 5)
   EXPECT_TRUE(isStrEqualsCStr(result->at(3), "4"));
 }
 
-TEST(StrBuiltinsDeathTest, StrStripWithNoArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrStripWithNoArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.strip()
 )"),
-               R"(str.strip\(\) needs an argument)");
+                            LayoutId::kTypeError,
+                            "str.strip() needs an argument"));
 }
 
-TEST(StrBuiltinsDeathTest, StrLStripWithNoArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrLStripWithNoArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.lstrip()
 )"),
-               R"(str.lstrip\(\) needs an argument)");
+                            LayoutId::kTypeError,
+                            "str.lstrip() needs an argument"));
 }
 
-TEST(StrBuiltinsDeathTest, StrRStripWithNoArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrRStripWithNoArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.rstrip()
 )"),
-               R"(str.rstrip\(\) needs an argument)");
+                            LayoutId::kTypeError,
+                            "str.rstrip() needs an argument"));
 }
 
-TEST(StrBuiltinsDeathTest, StrStripTooManyArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrStripTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".strip(None, "test")
 )"),
-               R"(str.strip\(\) takes at most 1 argument \(2 given\))");
+                            LayoutId::kTypeError,
+                            "str.strip() takes at most 1 argument (2 given)"));
 }
 
-TEST(StrBuiltinsDeathTest, StrLStripTooManyArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrLStripTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".lstrip(None, "test")
 )"),
-               R"(str.lstrip\(\) takes at most 1 argument \(2 given\))");
+                            LayoutId::kTypeError,
+                            "str.lstrip() takes at most 1 argument (2 given)"));
 }
 
-TEST(StrBuiltinsDeathTest, StrRStripTooManyArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrRStripTooManyArgsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".rstrip(None, "test")
 )"),
-               R"(str.rstrip\(\) takes at most 1 argument \(2 given\))");
+                            LayoutId::kTypeError,
+                            "str.rstrip() takes at most 1 argument (2 given)"));
 }
 
-TEST(StrBuiltinsDeathTest, StrStripWithNonStrThrowsTypeError) {
+TEST(StrBuiltinsTest, StrStripWithNonStrThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.strip(None)
 )"),
-               R"(str.strip\(\) requires a str object)");
+                            LayoutId::kTypeError,
+                            "str.strip() requires a str object"));
 }
 
-TEST(StrBuiltinsDeathTest, StrLStripWithNonStrThrowsTypeError) {
+TEST(StrBuiltinsTest, StrLStripWithNonStrThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.lstrip(None)
 )"),
-               R"(str.lstrip\(\) requires a str object)");
+                            LayoutId::kTypeError,
+                            "str.lstrip() requires a str object"));
 }
 
-TEST(StrBuiltinsDeathTest, StrRStripWithNonStrThrowsTypeError) {
+TEST(StrBuiltinsTest, StrRStripWithNonStrThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.rstrip(None)
 )"),
-               R"(str.rstrip\(\) requires a str object)");
+                            LayoutId::kTypeError,
+                            "str.rstrip() requires a str object"));
 }
 
-TEST(StrBuiltinsDeathTest, StrStripWithInvalidCharsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrStripWithInvalidCharsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".strip(1)
 )"),
-               R"(str.strip\(\) arg must be None or str)");
+                            LayoutId::kTypeError,
+                            "str.strip() arg must be None or str"));
 }
 
-TEST(StrBuiltinsDeathTest, StrLStripWithInvalidCharsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrLStripWithInvalidCharsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".lstrip(1)
 )"),
-               R"(str.lstrip\(\) arg must be None or str)");
+                            LayoutId::kTypeError,
+                            "str.lstrip() arg must be None or str"));
 }
 
-TEST(StrBuiltinsDeathTest, StrRStripWithInvalidCharsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrRStripWithInvalidCharsThrowsTypeError) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".rstrip(1)
 )"),
-               R"(str.rstrip\(\) arg must be None or str)");
+                            LayoutId::kTypeError,
+                            "str.rstrip() arg must be None or str"));
 }
 
 TEST(StrBuiltinsTest, StripWithNoneArgStripsBoth) {

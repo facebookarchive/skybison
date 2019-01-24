@@ -72,20 +72,22 @@ c = a + b
   EXPECT_EQ(RawSmallInt::cast(list->at(2))->value(), 3);
 }
 
-TEST(ListBuiltinsDeathTest, AddWithNonListSelfThrows) {
+TEST(ListBuiltinsTest, AddWithNonListSelfThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, "list.__add__(None, [])"),
-               "must be called with list instance as first argument");
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "list.__add__(None, [])"), LayoutId::kTypeError,
+      "__add__() must be called with list instance as first argument"));
 }
 
-TEST(ListBuiltinsDeathTest, AddListToTupleThrowsTypeError) {
+TEST(ListBuiltinsTest, AddListToTupleThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = [1, 2, 3]
 b = (4, 5, 6)
 c = a + b
 )"),
-               "can only concatenate list to list");
+                            LayoutId::kTypeError,
+                            "can only concatenate list to list"));
 }
 
 TEST(ListBuiltinsTest, ListAppend) {
@@ -247,27 +249,30 @@ print(r is None, len(b) == 3)
   EXPECT_EQ(output, "True True\n");
 }
 
-TEST(ListBuiltinsDeathTest, ListInsertExcept) {
+TEST(ListBuiltinsTest, ListInsertExcept) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = [1, 2]
 a.insert()
 )"),
-               "aborting due to pending exception: "
-               "insert\\(\\) takes exactly two arguments");
+                            LayoutId::kTypeError,
+                            "insert() takes exactly two arguments"));
+  Thread::currentThread()->clearPendingException();
 
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 list.insert(1, 2, 3)
 )"),
-               "aborting due to pending exception: "
-               "descriptor 'insert' requires a 'list' object");
+                            LayoutId::kTypeError,
+                            "descriptor 'insert' requires a 'list' object"));
+  Thread::currentThread()->clearPendingException();
 
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
 a = [1, 2]
 a.insert("i", "val")
 )"),
-               "aborting due to pending exception: "
-               "index object cannot be interpreted as an integer");
+                    LayoutId::kTypeError,
+                    "index object cannot be interpreted as an integer"));
 }
 
 TEST(ListBuiltinsTest, ListPop) {
@@ -289,38 +294,45 @@ print(a.pop(), a.pop(0), a.pop(-2))
   EXPECT_EQ(output2, "5 1 3\n");
 }
 
-TEST(ListBuiltinsDeathTest, ListPopExcept) {
+TEST(ListBuiltinsTest, ListPopExcept) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  Thread* thread = Thread::currentThread();
+
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = [1, 2]
 a.pop(1, 2, 3, 4)
 )"),
-               "aborting due to pending exception: "
-               "pop\\(\\) takes at most 1 argument");
+                            LayoutId::kTypeError,
+                            "pop() takes at most 1 argument"));
+  thread->clearPendingException();
 
-  ASSERT_DEATH(runFromCStr(&runtime, "list.pop(1)"),
-               "aborting due to pending exception: "
-               "descriptor 'pop' requires a 'list' object");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "list.pop(1)"),
+                            LayoutId::kTypeError,
+                            "descriptor 'pop' requires a 'list' object"));
+  thread->clearPendingException();
 
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
 a = [1, 2]
 a.pop("i")
 )"),
-               "aborting due to pending exception: "
-               "index object cannot be interpreted as an integer");
+                    LayoutId::kTypeError,
+                    "index object cannot be interpreted as an integer"));
+  thread->clearPendingException();
 
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = [1]
 a.pop()
 a.pop()
 )"),
-               "pop from empty list");
+                            LayoutId::kIndexError, "pop from empty list"));
+  thread->clearPendingException();
 
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = [1]
 a.pop(3)
 )"),
-               "pop index out of range");
+                            LayoutId::kIndexError, "pop index out of range"));
 }
 
 TEST(ListBuiltinsTest, ListRemove) {
@@ -713,58 +725,62 @@ TEST(ListBuiltinsTest, SetItemWithNegativeIndex) {
   EXPECT_EQ(RawSmallInt::cast(list->at(2))->value(), 3);
 }
 
-TEST(ListBuiltinsDeathTest, GetItemWithInvalidNegativeIndexThrows) {
+TEST(ListBuiltinsTest, GetItemWithInvalidNegativeIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 l[-4]
 )"),
-               "list index out of range");
+                            LayoutId::kIndexError, "list index out of range"));
 }
 
-TEST(ListBuiltinsDeathTest, DelItemWithInvalidNegativeIndexThrows) {
+TEST(ListBuiltinsTest, DelItemWithInvalidNegativeIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 del l[-4]
 )"),
-               "list assignment index out of range");
+                            LayoutId::kIndexError,
+                            "list assignment index out of range"));
 }
 
-TEST(ListBuiltinsDeathTest, SetItemWithInvalidNegativeIndexThrows) {
+TEST(ListBuiltinsTest, SetItemWithInvalidNegativeIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 l[-4] = 0
 )"),
-               "list assignment index out of range");
+                            LayoutId::kIndexError,
+                            "list assignment index out of range"));
 }
 
-TEST(ListBuiltinsDeathTest, GetItemWithInvalidIndexThrows) {
+TEST(ListBuiltinsTest, GetItemWithInvalidIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 l[5]
 )"),
-               "list index out of range");
+                            LayoutId::kIndexError, "list index out of range"));
 }
 
-TEST(ListBuiltinsDeathTest, DelItemWithInvalidIndexThrows) {
+TEST(ListBuiltinsTest, DelItemWithInvalidIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 del l[5]
 )"),
-               "list assignment index out of range");
+                            LayoutId::kIndexError,
+                            "list assignment index out of range"));
 }
 
-TEST(ListBuiltinsDeathTest, SetItemWithInvalidIndexThrows) {
+TEST(ListBuiltinsTest, SetItemWithInvalidIndexThrows) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 l[5] = 4
 )"),
-               "list assignment index out of range");
+                            LayoutId::kIndexError,
+                            "list assignment index out of range"));
 }
 
 TEST(ListBuiltinsTest, SetItemSliceBasic) {
@@ -870,21 +886,23 @@ result = a
 
 TEST(ListBuiltinsTest, SetItemSliceStepSizeErr) {
   Runtime runtime;
-  ASSERT_DEATH(
+  EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, R"(
 a = list(range(20))
 a[2:10:3] = ['a', 'b', 'c', 'd']
 )"),
-      "attempt to assign sequence of size 4 to extended slice of size 3");
+      LayoutId::kValueError,
+      "attempt to assign sequence of size 4 to extended slice of size 3"));
 }
 
 TEST(ListBuiltinsTest, SetItemSliceScalarErr) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:6] = 5
 )"),
-               "can only assign an iterable");
+                            LayoutId::kTypeError,
+                            "can only assign an iterable"));
 }
 
 TEST(ListBuiltinsTest, SetItemSliceStepTuple) {
@@ -903,13 +921,14 @@ result = a
 TEST(ListBuiltinsTest, SetItemSliceShortValue) {
   Runtime runtime;
   HandleScope scope;
-  ASSERT_DEATH(
+  EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, R"(
 a = [1,2,3,4,5,6,7,8,9,10]
 b = [0,0,0]
 a[:8:2] = b
 )"),
-      "attempt to assign sequence of size 3 to extended slice of size 4");
+      LayoutId::kValueError,
+      "attempt to assign sequence of size 3 to extended slice of size 4"));
 }
 TEST(ListBuiltinsTest, SetItemSliceShortStop) {
   Runtime runtime;
@@ -950,93 +969,104 @@ result = a
   EXPECT_PYLIST_EQ(result, {0, 0, 0});
 }
 
-TEST(ListBuiltinsDeathTest, GetItemWithTooFewArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, GetItemWithTooFewArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
 [].__getitem__()
 )"),
-               R"(__getitem__\(\) takes exactly one argument \(0 given\))");
+                    LayoutId::kTypeError,
+                    "__getitem__() takes exactly one argument (0 given)"));
 }
 
-TEST(ListBuiltinsDeathTest, DelItemWithTooFewArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, DelItemWithTooFewArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__delitem__()
 )"),
-               "expected 1 arguments, got 0");
+                            LayoutId::kTypeError,
+                            "expected 1 arguments, got 0"));
 }
 
-TEST(ListBuiltinsDeathTest, SetItemWithTooFewArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, SetItemWithTooFewArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__setitem__(1)
 )"),
-               "expected 2 arguments, got 1");
+                            LayoutId::kTypeError,
+                            "expected 2 arguments, got 1"));
 }
 
-TEST(ListBuiltinsDeathTest, DelItemWithTooManyArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, DelItemWithTooManyArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__delitem__(1, 2)
 )"),
-               "expected 1 arguments, got 2");
+                            LayoutId::kTypeError,
+                            "expected 1 arguments, got 2"));
 }
 
-TEST(ListBuiltinsDeathTest, GetItemWithTooManyArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, GetItemWithTooManyArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
 [].__getitem__(1, 2)
 )"),
-               R"(__getitem__\(\) takes exactly one argument \(2 given\))");
+                    LayoutId::kTypeError,
+                    "__getitem__() takes exactly one argument (2 given)"));
 }
 
-TEST(ListBuiltinsDeathTest, SetItemWithTooManyArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, SetItemWithTooManyArgumentsThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__setitem__(1, 2, 3)
 )"),
-               "expected 2 arguments, got 3");
+                            LayoutId::kTypeError,
+                            "expected 2 arguments, got 3"));
 }
 
-TEST(ListBuiltinsDeathTest, GetItemWithNonIntegralIndexThrowsTypeError) {
+TEST(ListBuiltinsTest, GetItemWithNonIntegralIndexThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__getitem__("test")
 )"),
-               "list indices must be integers or slices");
+                            LayoutId::kTypeError,
+                            "list indices must be integers or slices"));
 }
 
-TEST(ListBuiltinsDeathTest, DelItemWithNonIntegralIndexThrowsTypeError) {
+TEST(ListBuiltinsTest, DelItemWithNonIntegralIndexThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__delitem__("test")
 )"),
-               "list indices must be integers or slices");
+                            LayoutId::kTypeError,
+                            "list indices must be integers or slices"));
 }
 
-TEST(ListBuiltinsDeathTest, SetItemWithNonIntegralIndexThrowsTypeError) {
+TEST(ListBuiltinsTest, SetItemWithNonIntegralIndexThrowsTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__setitem__("test", 1)
 )"),
-               "list indices must be integers or slices");
+                            LayoutId::kTypeError,
+                            "list indices must be integers or slices"));
 }
 
-TEST(ListBuiltinsDeathTest, NonTypeInDunderNew) {
+TEST(ListBuiltinsTest, NonTypeInDunderNew) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 list.__new__(1)
 )"),
-               "not a type object");
+                            LayoutId::kTypeError, "not a type object"));
 }
 
-TEST(ListBuiltinsDeathTest, NonSubclassInDunderNew) {
+TEST(ListBuiltinsTest, NonSubclassInDunderNew) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Foo: pass
 list.__new__(Foo)
 )"),
-               "not a subtype of list");
+                            LayoutId::kTypeError, "not a subtype of list"));
 }
 
 TEST(ListBuiltinsTest, SubclassList) {

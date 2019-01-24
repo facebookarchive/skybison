@@ -28,6 +28,14 @@ int main(int argc, const char** argv) {
   if (is_source) {
     buffer = python::Runtime::compile(buffer.get());
   }
-  runtime.run(buffer.get());
+
+  // TODO(T39499894): Move this code into PyErr_PrintEx(), rewrite this whole
+  // function to use the C-API.
+  python::HandleScope scope;
+  python::Object result(&scope, runtime.run(buffer.get()));
+  if (result->isError()) {
+    python::Thread::currentThread()->printPendingException();
+    return EXIT_FAILURE;
+  }
   return EXIT_SUCCESS;
 }

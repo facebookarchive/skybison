@@ -33,6 +33,7 @@ std::ostream& operator<<(std::ostream& os, const Str& str);
 std::ostream& operator<<(std::ostream& os, CastError err);
 
 namespace testing {
+
 // Compile the supplied python snippet, run it, and return stdout or stderr
 std::string compileAndRunToString(Runtime* runtime, const char* src);
 std::string compileAndRunToStderrString(Runtime* runtime, const char* src);
@@ -177,6 +178,26 @@ RawObject listFromRange(word start, word stop);
 
 // Expect that the current thread has a specific exception pending.
 ::testing::AssertionResult hasPendingExceptionWithLayout(LayoutId layout_id);
+
+// Check if the return value of a call and current thread state indicate that an
+// exception was raised with the given type.
+::testing::AssertionResult raised(RawObject return_value, LayoutId layout_id);
+
+// Check if the return value from a call and current thread state indicate that
+// an exception was raised with the given type and message.
+//
+// Since Python exceptions can contain any value, two conventions for finding a
+// string message are supported: directly in thread->pendingExceptionValue()
+// or, if pendingExceptionValue() contains an exception instance, the first
+// element of its args tuple. These situations result from
+// thread->raiseFooError(a_string) in C++ or "raise FooError('a string')" in
+// Python, respectively.
+//
+// message may be nullptr to indicate that the exception value should not be
+// checked.
+::testing::AssertionResult raisedWithStr(RawObject return_value,
+                                         LayoutId layout_id,
+                                         const char* message);
 
 }  // namespace testing
 }  // namespace python

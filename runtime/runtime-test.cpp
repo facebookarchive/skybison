@@ -1734,14 +1734,14 @@ print(C.foo, C.bar)
   EXPECT_EQ(output, "hello there\n");
 }
 
-TEST(ClassAttributeDeathTest, GetMissingAttribute) {
+TEST(ClassAttributeTest, GetMissingAttribute) {
   Runtime runtime;
   const char* src = R"(
 class A: pass
 print(A.foo)
 )";
-  ASSERT_DEATH(runFromCStr(&runtime, src),
-               "aborting due to pending exception: missing attribute");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+                            LayoutId::kAttributeError, "missing attribute"));
 }
 
 TEST(TypeAttributeTest, GetFunction) {
@@ -2135,7 +2135,7 @@ def test(x):
   EXPECT_EQ(callFunctionToString(test, args), "foo bar baz\naaa bbb ccc\n");
 }
 
-TEST(InstanceAttributeDeathTest, FetchConditionalInstanceAttribute) {
+TEST(InstanceAttributeTest, FetchConditionalInstanceAttribute) {
   Runtime runtime;
   const char* src = R"(
 def false():
@@ -2150,8 +2150,8 @@ class Foo:
 foo = Foo()
 print(foo.bar)
 )";
-  ASSERT_DEATH(runFromCStr(&runtime, src),
-               "aborting due to pending exception: missing attribute");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+                            LayoutId::kAttributeError, "missing attribute"));
 }
 
 TEST(InstanceAttributeTest, DunderClass) {
@@ -2248,7 +2248,7 @@ del foo.bar
   EXPECT_EQ(result->at(1), *foo);
 }
 
-TEST(InstanceAttributeDeletionDeathTest, DeleteUnknownAttribute) {
+TEST(InstanceAttributeDeletionTest, DeleteUnknownAttribute) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
@@ -2258,7 +2258,8 @@ class Foo:
 foo = Foo()
 del foo.bar
 )";
-  EXPECT_DEATH(compileAndRunToString(&runtime, src), "missing attribute");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+                            LayoutId::kAttributeError, "missing attribute"));
 }
 
 TEST(InstanceAttributeDeletionTest, DeleteAttributeWithDunderDelattr) {
@@ -2375,7 +2376,7 @@ del Foo.attr
   EXPECT_EQ(args->at(1), *foo);
 }
 
-TEST(ClassAttributeDeletionDeathTest, DeleteUnknownAttribute) {
+TEST(ClassAttributeDeletionTest, DeleteUnknownAttribute) {
   Runtime runtime;
   HandleScope scope;
   const char* src = R"(
@@ -2384,7 +2385,8 @@ class Foo:
 
 del Foo.bar
 )";
-  EXPECT_DEATH(compileAndRunToString(&runtime, src), "missing attribute");
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+                            LayoutId::kAttributeError, "missing attribute"));
 }
 
 TEST(ClassAttributeDeletionTest, DeleteAttributeWithDunderDelattrOnMetaclass) {
@@ -3205,13 +3207,13 @@ value = foo.__doc__
   EXPECT_TRUE(RawStr::cast(*value)->equalsCStr("bar"));
 }
 
-TEST(FunctionAttrDeathTest, GetInvalidAttribute) {
+TEST(FunctionAttrTest, GetInvalidAttribute) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 def foo(): pass
 value = foo.x
 )"),
-               "missing attr");
+                            LayoutId::kAttributeError, "missing attribute"));
 }
 
 TEST(RuntimeTest, LazilyInitializationOfFunctionDict) {
