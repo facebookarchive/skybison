@@ -403,28 +403,6 @@ RawObject listFromRange(word start, word stop) {
   return ::testing::AssertionSuccess();
 }
 
-::testing::AssertionResult hasPendingExceptionWithLayout(
-    LayoutId error_layout) {
-  Thread* thread = Thread::currentThread();
-  if (!thread->hasPendingException()) {
-    return ::testing::AssertionFailure() << "no exception pending";
-  }
-
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Type expected_type(&scope, runtime->typeAt(error_layout));
-  Type exception_type(&scope, thread->pendingExceptionType());
-  if (exception_type != expected_type) {
-    Str expected_name(&scope, expected_type->name());
-    Str actual_name(&scope, exception_type->name());
-    return ::testing::AssertionFailure()
-           << "\npending exception has type:\n  " << actual_name
-           << "\nexpected:\n  " << expected_name << "\n";
-  }
-
-  return ::testing::AssertionSuccess();
-}
-
 ::testing::AssertionResult raised(RawObject return_value, LayoutId layout_id) {
   return raisedWithStr(return_value, layout_id, nullptr);
 }
