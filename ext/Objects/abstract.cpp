@@ -251,7 +251,7 @@ PY_EXPORT PyObject* PyNumber_Xor(PyObject* v, PyObject* w) {
 
 PY_EXPORT int PyNumber_Check(PyObject* obj) {
   if (obj == nullptr) {
-    return 0;
+    return false;
   }
 
   Thread* thread = Thread::currentThread();
