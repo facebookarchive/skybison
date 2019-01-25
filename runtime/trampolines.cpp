@@ -723,6 +723,70 @@ RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* caller, word argc) {
   return callMethNoArgs(thread, function);
 }
 
+static RawObject callMethOneArg(Thread* thread, const Function& function,
+                                const Object& object) {
+  HandleScope scope(thread);
+  Int address(&scope, function->code());
+  binaryfunc method = bit_cast<binaryfunc>(address->asCPtr());
+  DCHECK(function->module()->isModule(), "Function must have a module");
+  PyObject* module = ApiHandle::borrowedReference(thread, function->module());
+  PyObject* arg = ApiHandle::borrowedReference(thread, *object);
+  PyObject* result = (*method)(module, arg);
+  if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
+  if (thread->hasPendingException()) return Error::object();
+  return thread->raiseSystemErrorWithCStr("NULL return without exception set");
+}
+
+RawObject moduleTrampolineOneArg(Thread* thread, Frame* caller, word argc) {
+  if (argc != 1) {
+    return thread->raiseTypeErrorWithCStr(
+        "function takes exactly one argument");
+  }
+  HandleScope scope(thread);
+  Object arg(&scope, caller->peek(0));
+  Function function(&scope, caller->peek(1));
+  return callMethOneArg(thread, function, arg);
+}
+
+RawObject moduleTrampolineOneArgKw(Thread* thread, Frame* caller, word argc) {
+  if (argc != 1) {
+    return thread->raiseTypeErrorWithCStr(
+        "function takes exactly one argument");
+  }
+  HandleScope scope(thread);
+  Tuple kwargs(&scope, caller->peek(0));
+  if (kwargs->length() != 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "function takes no keyword arguments");
+  }
+  Object arg(&scope, caller->peek(1));
+  Function function(&scope, caller->peek(2));
+  return callMethOneArg(thread, function, arg);
+}
+
+RawObject moduleTrampolineOneArgEx(Thread* thread, Frame* caller, word argc) {
+  HandleScope scope(thread);
+  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  if (has_varkeywords) {
+    Object kw_args(&scope, caller->topValue());
+    if (!kw_args->isDict()) UNIMPLEMENTED("mapping kwargs");
+    if (Dict::cast(kw_args)->numItems() != 0) {
+      return thread->raiseTypeErrorWithCStr(
+          "function takes no keyword arguments");
+    }
+  }
+  Object varargs(&scope, caller->peek(has_varkeywords));
+  if (!varargs->isTuple()) UNIMPLEMENTED("sequence varargs");
+  Tuple args(&scope, *varargs);
+  if (args->length() != 1) {
+    return thread->raiseTypeErrorWithCStr(
+        "function takes exactly one argument");
+  }
+  Object arg(&scope, args->at(0));
+  Function function(&scope, caller->peek(has_varkeywords + 1));
+  return callMethOneArg(thread, function, arg);
+}
+
 static RawObject callMethVarArgs(Thread* thread, const Function& function,
                                  const Tuple& varargs) {
   HandleScope scope(thread);
