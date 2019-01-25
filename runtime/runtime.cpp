@@ -1156,7 +1156,6 @@ void Runtime::initializeHeapTypes() {
   ListIteratorBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kMethod, LayoutId::kBoundMethod,
                       LayoutId::kObject);
-  addEmptyBuiltinType(SymbolId::kModule, LayoutId::kModule, LayoutId::kObject);
   ModuleBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
                       LayoutId::kObject);
@@ -1908,6 +1907,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
   moduleAddBuiltinType(module, SymbolId::kLookupError, LayoutId::kLookupError);
   moduleAddBuiltinType(module, SymbolId::kMemoryError, LayoutId::kMemoryError);
+  moduleAddBuiltinType(module, SymbolId::kModule, LayoutId::kModule);
   moduleAddBuiltinType(module, SymbolId::kModuleNotFoundError,
                        LayoutId::kModuleNotFoundError);
   moduleAddBuiltinType(module, SymbolId::kNameError, LayoutId::kNameError);
@@ -1982,6 +1982,12 @@ void Runtime::createBuiltinsModule() {
 
   addModule(module);
   executeModule(kBuiltinsModuleData, module);
+
+  // TODO(T39575976): Create a consistent way to remove from global dict
+  // Explicitly remove module as this is not exposed in CPython
+  Dict module_dict(&scope, module->dict());
+  Object module_name(&scope, symbols()->Module());
+  dictRemove(module_dict, module_name);
 }
 
 void Runtime::moduleAddBuiltinType(const Module& module, SymbolId name,

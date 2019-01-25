@@ -344,6 +344,11 @@ class dict(bootstrap=True):
         pass
 
 
+class module(bootstrap=True):
+    def __new__(cls, name):
+        pass
+
+
 def all(iterable):
     for element in iterable:
         if not element:
