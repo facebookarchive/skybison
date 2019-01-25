@@ -126,9 +126,6 @@ RawObject BytesBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     word start, stop, step;
     slice->unpack(&start, &stop, &step);
     word len = RawSlice::adjustIndices(self->length(), &start, &stop, step);
-    if (start == 0 && step == 1) {
-      return *slice;
-    }
     // TODO(T36997048): intern 1-element byte arrays
     Bytes result(&scope, runtime->newBytes(len, 0));
     for (word i = 0, idx = start; i < len; i++, idx += step) {

@@ -257,6 +257,24 @@ TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
   byte hello[] = "hello world";
   Bytes self(&scope, runtime.newBytesWithAll(View<byte>(hello, 11)));
   Slice index(&scope, runtime.newSlice());
+  index->setStart(SmallInt::fromWord(0));
+  index->setStop(SmallInt::fromWord(3));
+  index->setStep(SmallInt::fromWord(1));
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
+  ASSERT_TRUE(item->isBytes());
+  Bytes result(&scope, *item);
+  EXPECT_EQ(result->length(), 3);
+  EXPECT_EQ(result->byteAt(0), 'h');
+  EXPECT_EQ(result->byteAt(1), 'e');
+  EXPECT_EQ(result->byteAt(2), 'l');
+}
+
+TEST(BytesBuiltinsTest, DunderGetItemWithSliceStepReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  byte hello[] = "hello world";
+  Bytes self(&scope, runtime.newBytesWithAll(View<byte>(hello, 11)));
+  Slice index(&scope, runtime.newSlice());
   index->setStart(SmallInt::fromWord(1));
   index->setStop(SmallInt::fromWord(6));
   index->setStep(SmallInt::fromWord(2));
