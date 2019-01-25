@@ -22,6 +22,11 @@ class bool(bootstrap=True):
         return "True" if self else "False"
 
 
+class int(bootstrap=True):
+    def __add__(self, n: int) -> int:
+        pass
+
+
 class ImportError(bootstrap=True):
     def __init__(self, *args, name=None, path=None, **kwargs):
         if len(kwargs) > 0:

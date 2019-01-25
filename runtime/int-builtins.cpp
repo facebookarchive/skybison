@@ -21,6 +21,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderIndex, nativeTrampoline<dunderInt>},
     {SymbolId::kDunderInt, nativeTrampoline<dunderInt>},
     {SymbolId::kBitLength, nativeTrampoline<bitLength>},
+    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
     {SymbolId::kDunderBool, nativeTrampoline<dunderBool>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
@@ -168,7 +169,6 @@ RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod SmallIntBuiltins::kMethods[] = {
-    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderFloordiv, nativeTrampoline<dunderFloorDiv>},
     {SymbolId::kDunderInvert, nativeTrampoline<dunderInvert>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
@@ -254,6 +254,25 @@ RawObject IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
         "bit_length() must be called with int instance as the first argument");
   }
   return SmallInt::fromWord(RawInt::cast(self)->bitLength());
+}
+
+RawObject IntBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfInt(self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__add__() must be called with int instance as the first argument");
+  }
+  if (thread->runtime()->isInstanceOfInt(other_obj)) {
+    Int self(&scope, *self_obj);
+    Int other(&scope, *other_obj);
+    return runtime->intAdd(thread, self, other);
+  }
+  // signal to binary dispatch to try another method
+  return runtime->notImplemented();
 }
 
 RawObject IntBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
@@ -1002,29 +1021,6 @@ RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
     return runtime->intBinaryLshift(thread, self_int, arg_int->asWord());
   }
   // signal to binary dispatch to try another method
-  return thread->runtime()->notImplemented();
-}
-
-RawObject SmallIntBuiltins::dunderAdd(Thread* thread, Frame* frame,
-                                      word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
-
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-
-  if (!self->isSmallInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__add__() must be called with int instance as the first argument");
-  }
-
-  word left = RawSmallInt::cast(self)->value();
-  if (other->isInt()) {
-    word right = RawInt::cast(other)->asWord();
-    return thread->runtime()->newInt(left + right);
-  }
   return thread->runtime()->notImplemented();
 }
 

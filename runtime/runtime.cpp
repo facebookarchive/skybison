@@ -3684,6 +3684,51 @@ RawObject Runtime::normalizeLargeInt(const LargeInt& large_int) {
   return result;
 }
 
+static uword addWithCarry(uword x, uword y, uword carry_in, uword* carry_out) {
+  DCHECK(carry_in <= 1, "carry must be 0 or 1");
+  uword sum;
+  uword carry0 = __builtin_add_overflow(x, y, &sum);
+  uword carry1 = __builtin_add_overflow(sum, carry_in, &sum);
+  *carry_out = carry0 | carry1;
+  return sum;
+}
+
+RawObject Runtime::intAdd(Thread* thread, const Int& left, const Int& right) {
+  if (left->isSmallInt() && right->isSmallInt()) {
+    // Take a shortcut because we know the result fits in a word.
+    word left_digit = RawSmallInt::cast(left)->value();
+    word right_digit = RawSmallInt::cast(right)->value();
+    return newInt(left_digit + right_digit);
+  }
+
+  HandleScope scope(thread);
+  word left_digits = left->numDigits();
+  word right_digits = right->numDigits();
+  Int longer(&scope, left_digits > right_digits ? *left : *right);
+  Int shorter(&scope, left_digits <= right_digits ? *left : *right);
+
+  word shorter_digits = shorter->numDigits();
+  word longer_digits = longer->numDigits();
+  word result_digits = longer_digits + 1;
+  LargeInt result(&scope, heap()->createLargeInt(result_digits));
+  uword carry = 0;
+  for (word i = 0; i < shorter_digits; i++) {
+    uword sum =
+        addWithCarry(longer->digitAt(i), shorter->digitAt(i), carry, &carry);
+    result->digitAtPut(i, sum);
+  }
+  uword shorter_sign_extension = shorter->isNegative() ? kMaxUword : 0;
+  for (word i = shorter_digits; i < longer_digits; i++) {
+    uword sum =
+        addWithCarry(longer->digitAt(i), shorter_sign_extension, carry, &carry);
+    result->digitAtPut(i, sum);
+  }
+  uword longer_sign_extension = longer->isNegative() ? kMaxUword : 0;
+  uword high_digit = longer_sign_extension + shorter_sign_extension + carry;
+  result->digitAtPut(result_digits - 1, high_digit);
+  return normalizeLargeInt(result);
+}
+
 RawObject Runtime::intBinaryAnd(Thread* thread, const Int& left,
                                 const Int& right) {
   word left_digits = left->numDigits();

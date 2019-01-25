@@ -373,17 +373,6 @@ a = a * a * a
                           "small integer overflow");
 }
 
-TEST(IntBuiltinsTest, BinaryAddOverflowCheck) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Int maxint(&scope, SmallInt::fromWord(RawSmallInt::kMaxValue));
-  Object result(&scope,
-                runBuiltin(SmallIntBuiltins::dunderAdd, maxint, maxint));
-  ASSERT_TRUE(result->isLargeInt());
-  EXPECT_EQ(RawLargeInt::cast(*result)->asWord(), RawSmallInt::kMaxValue * 2);
-}
-
 TEST(IntBuiltinsTest, InplaceAdd) {
   Runtime runtime;
   HandleScope scope;
@@ -490,6 +479,73 @@ a ^= 0x03
   EXPECT_EQ(RawSmallInt::cast(*a)->value(), 0xFD);
   ASSERT_TRUE(b->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*b)->value(), 0xFE);
+}
+
+TEST(IntBuiltinsTest, DunderAddWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, SmallInt::fromWord(42));
+  Int right(&scope, SmallInt::fromWord(-7));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 35);
+}
+
+TEST(IntBuiltinsTest, DunderAddWithSmallIntsOverflowReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int max_small_int(&scope, SmallInt::fromWord(RawSmallInt::kMaxValue));
+  Int one(&scope, SmallInt::fromWord(1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAdd, max_small_int, one));
+  ASSERT_TRUE(result->isLargeInt());
+  EXPECT_EQ(RawLargeInt::cast(*result)->asWord(), RawSmallInt::kMaxValue + 1);
+}
+
+TEST(IntBuiltinsTest, DunderAddWithLargeInts) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, newIntWithDigits(&runtime,
+                                    {0xfedcba0987654321, 0x1234567890abcdef}));
+  Int right(&scope, newIntWithDigits(&runtime,
+                                     {0x9876543210abcdef, 0xfedcba0123456789}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
+  Int expected(&scope, newIntWithDigits(
+                           &runtime, {0x97530e3b98111110, 0x11111079b3f13579}));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  EXPECT_EQ(expected->compare(result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderAddWithPositiveLargeIntsCarrying) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, newIntWithDigits(&runtime, {kMaxUword, kMaxUword, 0}));
+  Int right(&scope, newIntWithDigits(&runtime, {1}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  Int expected(&scope, newIntWithDigits(&runtime, {0, 0, 1}));
+  EXPECT_EQ(expected->compare(result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderAddWithNegativeLargeIntsCarrying) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, newIntWithDigits(&runtime, {kMaxUword}));  // == -1.
+  // The smallest negative number representable with 2 digits.
+  Int right(&scope,
+            newIntWithDigits(&runtime, {0, static_cast<uword>(kMinWord)}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  Int expected(&scope,
+               newIntWithDigits(&runtime, {kMaxUword, kMaxWord, kMaxUword}));
+  EXPECT_EQ(expected->compare(result), 0);
 }
 
 TEST(IntBuiltinsTest, DunderAndWithSmallIntsReturnsSmallInt) {
@@ -657,18 +713,6 @@ c = a + b
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*c)->value(), 3);
-}
-
-TEST(IntBuiltinsTest, BinaryAddSmallIntOverflow) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Int int1(&scope, SmallInt::fromWord(RawSmallInt::kMaxValue - 1));
-  Int int2(&scope, SmallInt::fromWord(2));
-  Object c(&scope, runBuiltin(SmallIntBuiltins::dunderAdd, int1, int2));
-
-  ASSERT_TRUE(c->isLargeInt());
-  EXPECT_EQ(RawLargeInt::cast(*c)->asWord(), RawSmallInt::kMaxValue + 1);
 }
 
 TEST(IntBuiltinsTest, BitLength) {

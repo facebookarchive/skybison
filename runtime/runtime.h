@@ -598,6 +598,9 @@ class Runtime {
   RawObject bytesToInt(Thread* thread, const Bytes& bytes, endian endianness,
                        bool is_signed);
 
+  // Returns the sum of `left` and `right`.
+  RawObject intAdd(Thread* thread, const Int& left, const Int& right);
+
   // Returns the result of bitwise AND of the arguments
   RawObject intBinaryAnd(Thread* thread, const Int& left, const Int& right);
 
