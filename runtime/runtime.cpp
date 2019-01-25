@@ -1937,6 +1937,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kRuntimeWarning,
                        LayoutId::kRuntimeWarning);
   moduleAddBuiltinType(module, SymbolId::kSet, LayoutId::kSet);
+  moduleAddBuiltinType(module, SymbolId::kSlice, LayoutId::kSlice);
   moduleAddBuiltinType(module, SymbolId::kStaticMethod,
                        LayoutId::kStaticMethod);
   moduleAddBuiltinType(module, SymbolId::kStopAsyncIteration,

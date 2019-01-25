@@ -251,7 +251,9 @@ RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
     Dict globals(&scope, frame->previousFrame()->globals());
     Object type_obj(&scope, runtime->moduleDictAt(globals, name));
-    CHECK(type_obj->isType(), "name '%s' is not bound to a type object",
+    CHECK(type_obj->isType(),
+          "Name '%s' is not bound to a type object. "
+          "You may need to add it to the builtins module.",
           name->toCStr());
     Type type(&scope, *type_obj);
     type_dict = type->dict();

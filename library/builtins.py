@@ -83,6 +83,11 @@ class list(bootstrap=True):
         pass
 
 
+class slice(bootstrap=True):
+    def __new__(cls, start_or_stop, stop=_UnboundValue, step=None):
+        pass
+
+
 class str(bootstrap=True):
     def partition(self, sep):
         if not isinstance(self, str):
