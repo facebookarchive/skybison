@@ -41,4 +41,38 @@ RawObject builtinSysExit(Thread* thread, Frame* frame, word nargs) {
   std::exit(code);
 }
 
+RawObject initialSysPath(Thread* thread) {
+  // TODO(T39319124) move this function into sys-module.cpp.
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  List result(&scope, runtime->newList());
+
+  const char* python_path = getenv("PYTHONPATH");
+  if (!python_path || python_path[0] == '\0') return *result;
+
+  // TODO(T39226962): We should rewrite this in python so we have path
+  // manipulation helpers available. Current limitations:
+  // - Does not transform relative paths to absolute ones.
+  // - Does not normalize paths.
+  // - Does not filter out duplicate paths.
+  Object path(&scope, NoneType::object());
+  for (const char *c = python_path, *segment_begin = c;; ++c) {
+    if (*c != '\0' && *c != ':') continue;
+    const char* segment_end = c;
+
+    if (segment_begin[0] != '/') {
+      UNIMPLEMENTED("pathStringToList: Relative paths not supported yet\n");
+    }
+
+    View<byte> path_bytes(reinterpret_cast<const byte*>(segment_begin),
+                          segment_end - segment_begin);
+    path = runtime->newStrWithAll(path_bytes);
+    runtime->listAdd(result, path);
+
+    if (*c == '\0') break;
+    segment_begin = c + 1;
+  }
+  return *result;
+}
+
 }  // namespace python
