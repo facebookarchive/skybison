@@ -2,6 +2,7 @@
 
 #include "globals.h"
 #include "objects.h"
+#include "symbols.h"
 #include "vector.h"
 
 namespace python {
@@ -103,6 +104,9 @@ class Thread {
   void visitStackRoots(PointerVisitor* visitor);
 
   void setRuntime(Runtime* runtime) { runtime_ = runtime; }
+
+  // Calls out to the interpreter to lookup and call a method on the receiver.
+  RawObject invokeMethod1(const Handle<RawObject>& receiver, SymbolId selector);
 
   // Raises an exception with the given type and returns an Error that must be
   // returned up the stack by the caller.

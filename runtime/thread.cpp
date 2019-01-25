@@ -225,6 +225,14 @@ RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
   return Interpreter::execute(this, frame);
 }
 
+RawObject Thread::invokeMethod1(const Object& receiver, SymbolId selector) {
+  HandleScope scope(this);
+  Object method(&scope, Interpreter::lookupMethod(this, currentFrame_, receiver,
+                                                  selector));
+  if (method->isError()) return method;
+  return Interpreter::callMethod1(this, currentFrame_, method, receiver);
+}
+
 RawObject Thread::raise(LayoutId type, RawObject value) {
   setPendingExceptionType(runtime()->typeAt(type));
   setPendingExceptionValue(value);

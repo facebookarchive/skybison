@@ -10,43 +10,34 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-
-  Frame* caller = thread->currentFrame();
-  Object len_func(&scope, Interpreter::lookupMethod(thread, caller, obj,
-                                                    SymbolId::kDunderLen));
-  if (len_func->isError()) {
-    thread->raiseTypeErrorWithCStr("object has no __len__()");
+  Object len(&scope, thread->invokeMethod1(obj, SymbolId::kDunderLen));
+  if (len->isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("object has no __len__()");
+    }
     return -1;
   }
 
   OptInt<Py_ssize_t> len_or_error;
-  Object len_obj(&scope,
-                 Interpreter::callMethod1(thread, caller, len_func, obj));
   Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfInt(len_obj)) {
-    Int len(&scope, *len_obj);
-    len_or_error = len->asInt<Py_ssize_t>();
+  if (runtime->isInstanceOfInt(*len)) {
+    len_or_error = RawInt::cast(*len).asInt<Py_ssize_t>();
   } else {
-    Object index_func(&scope,
-                      Interpreter::lookupMethod(thread, caller, len_obj,
-                                                SymbolId::kDunderIndex));
-    if (index_func->isError()) {
-      thread->raiseTypeErrorWithCStr(
-          "__len__() cannot be interpreted as an integer");
+    Object len_index(&scope,
+                     thread->invokeMethod1(len, SymbolId::kDunderIndex));
+    if (len_index->isError()) {
+      if (!thread->hasPendingException()) {
+        thread->raiseTypeErrorWithCStr(
+            "__len__() cannot be interpreted as an integer");
+      }
       return -1;
     }
-
-    Object index_obj(
-        &scope, Interpreter::callMethod1(thread, caller, index_func, len_obj));
-    if (!runtime->isInstanceOfInt(index_obj)) {
+    if (!runtime->isInstanceOfInt(*len_index)) {
       thread->raiseTypeErrorWithCStr("__index__() returned non-int");
       return -1;
     }
-
-    Int len(&scope, *index_obj);
-    len_or_error = len->asInt<Py_ssize_t>();
+    len_or_error = RawInt::cast(*len_index).asInt<Py_ssize_t>();
   }
-
   switch (len_or_error.error) {
     case CastError::None:
       if (len_or_error.value < 0) {
@@ -284,34 +275,32 @@ PY_EXPORT PyObject* PyNumber_InPlaceMultiply(PyObject* /* v */,
 
 PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
   Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-
   if (item == nullptr) {
     thread->raiseSystemErrorWithCStr("null argument to internal routine");
     return nullptr;
   }
 
-  Object longobj(&scope, ApiHandle::fromPyObject(item)->asObject());
-  if (longobj->isInt()) {
-    Py_INCREF(item);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  ApiHandle* handle = ApiHandle::fromPyObject(item);
+  Object obj(&scope, handle->asObject());
+  if (runtime->isInstanceOfInt(*obj)) {
+    handle->incref();
     return item;
   }
-
-  Frame* frame = thread->currentFrame();
-  Object index_meth(&scope, Interpreter::lookupMethod(thread, frame, longobj,
-                                                      SymbolId::kDunderIndex));
-  if (index_meth->isError()) {
-    thread->raiseTypeErrorWithCStr(
-        "object cannot be interpreted as an integer");
+  Object index(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIndex));
+  if (index->isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr(
+          "object cannot be interpreted as an integer");
+    }
     return nullptr;
   }
-  Object int_obj(&scope,
-                 Interpreter::callMethod1(thread, frame, index_meth, longobj));
-  if (!int_obj->isInt()) {
-    thread->raiseTypeErrorWithCStr("__index__ returned non-int");
+  if (!runtime->isInstanceOfInt(*index)) {
+    thread->raiseTypeErrorWithCStr("__index__() returned non-int");
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *int_obj);
+  return ApiHandle::newReference(thread, *index);
 }
 
 PY_EXPORT PyObject* PyNumber_Invert(PyObject* /* o */) {
