@@ -1,11 +1,14 @@
 #include "imp-module.h"
 
+#include "builtins-module.h"
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
 #include "runtime.h"
 
 namespace python {
+
+extern "C" struct _inittab _PyImport_Inittab[];
 
 static Thread* import_lock_holder;
 static word import_lock_count;
@@ -24,9 +27,44 @@ RawObject builtinImpAcquireLock(Thread* thread, Frame* /* frame */,
   return RawNoneType::object();
 }
 
-RawObject builtinImpCreateBuiltin(Thread* /* thread */, Frame* /* frame */,
-                                  word /* nargs */) {
-  UNIMPLEMENTED("create_builtin");
+RawObject builtinImpCreateBuiltin(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 1) {
+    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+        "_imp.create_builtin() expected 1 argument, got %ld", nargs - 1));
+  }
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object spec(&scope, args.get(0));
+  Object key(&scope, runtime->symbols()->Name());
+  Object name_obj(&scope, getAttribute(thread, spec, key));
+  if (name_obj->isError()) {
+    return thread->raiseTypeErrorWithCStr("spec has no attribute 'name'");
+  }
+  if (!runtime->isInstanceOfStr(*name_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "spec name must be an instance of str");
+  }
+  Str name(&scope, *name_obj);
+  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
+    if (name->equalsCStr(_PyImport_Inittab[i].name)) {
+      PyObject* pymodule = (*_PyImport_Inittab[i].initfunc)();
+      if (pymodule == nullptr) {
+        if (thread->hasPendingException()) return Error::object();
+        return thread->raiseSystemErrorWithCStr(
+            "NULL return without exception set");
+      };
+      Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
+      if (!module_obj->isModule()) {
+        // TODO(T39542987): Enable multi-phase module initialization
+        UNIMPLEMENTED("Multi-phase module initialization");
+      }
+      Module module(&scope, *module_obj);
+      runtime->addModule(module);
+      return *module;
+    }
+  }
+  return NoneType::object();
 }
 
 RawObject builtinImpExecBuiltin(Thread* /* thread */, Frame* /* frame */,
@@ -62,8 +100,6 @@ RawObject builtinImpGetFrozenObject(Thread* /* thread */, Frame* /* frame */,
                                     word /* nargs */) {
   UNIMPLEMENTED("get_frozen_object");
 }
-
-extern "C" struct _inittab _PyImport_Inittab[];
 
 RawObject builtinImpIsBuiltin(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {

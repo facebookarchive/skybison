@@ -23,13 +23,65 @@ TEST(ImportBuiltins, AcquireLockAndReleaseLockWorks) {
   runBuiltin(builtinImpReleaseLock);
 }
 
-TEST(ImportBuiltinsDeathTest, CreateBuiltin) {
+TEST(ImportBuiltinsTest, CreateBuiltinWithoutArgsRaisesTypeError) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
-import _imp
-_imp.create_builtin("foo")
-  )"),
-               "unimplemented: create_builtin");
+  HandleScope scope;
+  Object result(&scope, runBuiltin(builtinImpCreateBuiltin));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(ImportBuiltinsTest, CreateBuiltinWithoutSpecNameRaisesTypeErrpr) {
+  Runtime runtime;
+  HandleScope scope;
+  Int foo(&scope, RawSmallInt::fromWord(123));
+  Object result(&scope, runBuiltin(builtinImpCreateBuiltin, foo));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(ImportBuiltinsTest, CreateBuiltinWithNonStrSpecNameRaisesTypeError) {
+  Runtime runtime;
+  // Mock of importlib._bootstrap.ModuleSpec
+  runFromCStr(&runtime, R"(
+class DummyModuleSpec():
+  def __init__(self, name):
+    self.name = name
+spec = DummyModuleSpec(5)
+)");
+  HandleScope scope;
+  Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
+  Object result(&scope, runBuiltin(builtinImpCreateBuiltin, spec));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(ImportBuiltinsTest, CreateBuiltinWithNonExistentModuleReturnsNone) {
+  Runtime runtime;
+  // Mock of importlib._bootstrap.ModuleSpec
+  runFromCStr(&runtime, R"(
+class DummyModuleSpec():
+  def __init__(self, name):
+    self.name = name
+spec = DummyModuleSpec("non_existent_module")
+)");
+  HandleScope scope;
+  Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
+  Object result(&scope, runBuiltin(builtinImpCreateBuiltin, spec));
+  EXPECT_TRUE(result->isNoneType());
+}
+
+TEST(ImportBuiltinsTest, CreateBuiltinReturnsModule) {
+  Runtime runtime;
+  // Mock of importlib._bootstrap.ModuleSpec
+  runFromCStr(&runtime, R"(
+class DummyModuleSpec():
+  def __init__(self, name):
+    self.name = name
+spec = DummyModuleSpec("errno")
+)");
+  HandleScope scope;
+  Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
+  Object result(&scope, runBuiltin(builtinImpCreateBuiltin, spec));
+  ASSERT_TRUE(result->isModule());
+  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result)->name(), "errno"));
 }
 
 TEST(ImportBuiltinsDeathTest, ExecBuiltin) {
