@@ -67,6 +67,15 @@ sys.exit(100)
   ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(100), "");
 }
 
+TEST(SysModuleTest, SysExitWithNonCodeReturnsOne) {  // pystone dependency
+  const char* src = R"(
+import sys
+sys.exit("barf")
+)";
+  Runtime runtime;
+  ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(1), "barf");
+}
+
 TEST(SysModuleTest, SysStdOutErr) {  // pystone dependency
   const char* src = R"(
 import sys

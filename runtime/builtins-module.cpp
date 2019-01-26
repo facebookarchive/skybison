@@ -514,7 +514,7 @@ RawObject Builtins::ord(Thread* thread, Frame* frame_frame, word nargs) {
   return SmallInt::fromWord(str->charAt(0));
 }
 
-static void printStr(RawStr str, std::ostream* ostream) {
+void printStr(RawStr str, std::ostream* ostream) {
   for (word i = 0; i < str->length(); i++) {
     *ostream << str->charAt(i);
   }

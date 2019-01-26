@@ -1442,6 +1442,39 @@ void Runtime::processCallbacks() {
   }
 }
 
+word Runtime::handleSysExit(Thread* thread) {
+  HandleScope scope(thread);
+  Object arg(&scope, thread->pendingExceptionValue());
+  if (isInstanceOfSystemExit(arg)) {
+    // The exception could be raised by either native or managed code. If
+    // native, there will be no SystemExit object. If managed, there will
+    // be one to unpack.
+    SystemExit exc(&scope, *arg);
+    arg = exc->code();
+  }
+  if (arg->isNoneType()) {
+    return EXIT_SUCCESS;
+  }
+  if (arg->isSmallInt()) {
+    return RawSmallInt::cast(arg).value();
+  }
+  // The calls below can't have an exception pending
+  thread->clearPendingException();
+
+  Object result(&scope, thread->invokeMethod1(arg, SymbolId::kDunderRepr));
+  if (!isInstanceOfStr(result)) {
+    // The calls below can't have an exception pending
+    thread->clearPendingException();
+    // No __repr__ method or __repr__ raised. Either way, we can't handle it.
+    result = newStrFromCStr("");
+  }
+  Str result_str(&scope, *result);
+  printStr(*result_str, builtinStderr);
+  Str newline(&scope, newStrFromCStr("\n"));
+  printStr(*newline, builtinStderr);
+  return EXIT_FAILURE;
+}
+
 RawObject Runtime::run(const char* buffer) {
   HandleScope scope;
 
@@ -1452,6 +1485,15 @@ RawObject Runtime::run(const char* buffer) {
   }
   Module main_module(&scope, *main);
   Object result(&scope, executeModule(buffer, main_module));
+  if (result->isError()) {
+    Thread* thread = Thread::currentThread();
+    DCHECK(thread->hasPendingException(), "error/exception mismatch");
+    Type exc_type(&scope, thread->pendingExceptionType());
+    if (exc_type->builtinBase() == LayoutId::kSystemExit) {
+      // Exit the runtime.
+      std::exit(handleSysExit(thread));
+    }
+  }
   return *result;
 }
 
@@ -2038,10 +2080,6 @@ void Runtime::createSysModule() {
       unimplementedTrampoline, unimplementedTrampoline);
 
   // Fill in sys...
-  moduleAddBuiltinFunction(module, SymbolId::kExit,
-                           nativeTrampoline<builtinSysExit>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-
   Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
   moduleAddGlobal(module, SymbolId::kStdout, stdout_val);
 
@@ -2082,6 +2120,7 @@ void Runtime::createSysModule() {
   moduleAddGlobal(module, SymbolId::kBuiltinModuleNames, builtins);
 
   addModule(module);
+  executeModule(kSysModuleData, module);
 }
 
 void Runtime::createImportModule() {

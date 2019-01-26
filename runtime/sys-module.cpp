@@ -1,5 +1,6 @@
 #include "sys-module.h"
 
+#include "builtins-module.h"
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
@@ -21,24 +22,6 @@ RawObject builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
     return NoneType::object();
   }
   UNIMPLEMENTED("sys.displayhook()");
-}
-
-RawObject builtinSysExit(Thread* thread, Frame* frame, word nargs) {
-  if (nargs > 1) {
-    return thread->raiseTypeErrorWithCStr("exit() accepts at most 1 argument");
-  }
-  // TODO(T36407058): raise SystemExit instead of calling std::exit
-  word code = 0;  // success
-  if (nargs == 1) {
-    Arguments args(frame, nargs);
-    RawObject arg = args.get(0);
-    if (!arg->isSmallInt()) {
-      return thread->raiseTypeErrorWithCStr("exit() expects numeric argument");
-    }
-    code = RawSmallInt::cast(arg)->value();
-  }
-
-  std::exit(code);
 }
 
 RawObject initialSysPath(Thread* thread) {

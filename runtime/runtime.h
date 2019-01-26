@@ -768,6 +768,11 @@ class Runtime {
   // parent and contains no outgoing edges.
   RawObject layoutCreateChild(Thread* thread, const Layout& parent);
 
+  // Transform the pendingExceptionValue into a reasonable exit code
+  //
+  // Handles SystemExit thrown both from native and from managed code.
+  word handleSysExit(Thread* thread);
+
   // The size listEnsureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
 
