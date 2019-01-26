@@ -300,6 +300,7 @@ class Runtime;
   V(Type, "type")                                                              \
   V(TypeError, "TypeError")                                                    \
   V(UnboundLocalError, "UnboundLocalError")                                    \
+  V(UnderAddress, "_address")                                                  \
   V(UnderImp, "_imp")                                                          \
   V(UnderIo, "_io")                                                            \
   V(UnderPatch, "_patch")                                                      \

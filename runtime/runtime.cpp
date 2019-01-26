@@ -1843,6 +1843,9 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinFunction(module, SymbolId::kSetattr,
                            builtinTrampolineWrapper<Builtins::setattr>,
                            unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderAddress,
+                           nativeTrampoline<Builtins::underAddress>,
+                           unimplementedTrampoline, unimplementedTrampoline);
   // Add builtin types
   moduleAddBuiltinType(module, SymbolId::kArithmeticError,
                        LayoutId::kArithmeticError);
@@ -1886,6 +1889,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kFloatingPointError,
                        LayoutId::kFloatingPointError);
   moduleAddBuiltinType(module, SymbolId::kFrozenSet, LayoutId::kFrozenSet);
+  moduleAddBuiltinType(module, SymbolId::kFunction, LayoutId::kFunction);
   moduleAddBuiltinType(module, SymbolId::kFutureWarning,
                        LayoutId::kFutureWarning);
   moduleAddBuiltinType(module, SymbolId::kGeneratorExit,

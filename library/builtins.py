@@ -7,6 +7,7 @@
 # helper here.
 _patch = _patch  # noqa: F821
 _UnboundValue = _UnboundValue  # noqa: F821
+_address = _address  # noqa: F821
 
 
 class object(bootstrap=True):  # noqa: E999
@@ -362,6 +363,11 @@ class module(bootstrap=True):
 class set(bootstrap=True):
     def __repr__(self):
         return f"{{{', '.join([item.__repr__() for item in self])}}}"
+
+
+class function(bootstrap=True):
+    def __repr__(self):
+        return f"<function {self.__name__} at 0x{repr(_address(self))}>"
 
 
 def all(iterable):

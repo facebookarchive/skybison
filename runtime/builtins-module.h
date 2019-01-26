@@ -37,6 +37,7 @@ class Builtins {
   static RawObject range(Thread* thread, Frame* frame, word nargs);
   static RawObject repr(Thread* thread, Frame* frame, word nargs);
   static RawObject setattr(Thread* thread, Frame* frame, word nargs);
+  static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
 };
 

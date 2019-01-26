@@ -701,6 +701,11 @@ RawObject Builtins::setattr(Thread* thread, Frame* frame, word nargs) {
   return setAttribute(thread, self, name, value);
 }
 
+RawObject Builtins::underAddress(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  return thread->runtime()->newInt(args.get(0).raw());
+}
+
 RawObject Builtins::underPatch(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

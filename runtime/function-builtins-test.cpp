@@ -93,5 +93,28 @@ TEST(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
   EXPECT_EQ(result, func);
 }
 
+TEST(FunctionBuiltinsTest, ReprHandlesNormalFunctions) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+def f(): pass
+result = repr(f)
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isStr());
+  unique_c_ptr<char> result_str(RawStr::cast(result).toCStr());
+  EXPECT_TRUE(std::strstr(result_str.get(), "<function f at 0x"));
+}
+
+TEST(FunctionBuiltinsTest, ReprHandlesLambda) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = repr(lambda x: x)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isStr());
+  unique_c_ptr<char> result_str(RawStr::cast(result).toCStr());
+  EXPECT_TRUE(std::strstr(result_str.get(), "<function <lambda> at 0x"));
+}
+
 }  // namespace testing
 }  // namespace python
