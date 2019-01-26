@@ -13,7 +13,7 @@ class object(bootstrap=True):  # noqa: E999
     def __str__(self):
         return self.__repr__()
 
-    def __hash__(self) -> int:
+    def __hash__(self):
         pass
 
 
@@ -357,6 +357,11 @@ class dict(bootstrap=True):
 class module(bootstrap=True):
     def __new__(cls, name):
         pass
+
+
+class set(bootstrap=True):
+    def __repr__(self):
+        return f"{{{', '.join([item.__repr__() for item in self])}}}"
 
 
 def all(iterable):

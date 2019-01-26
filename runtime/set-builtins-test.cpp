@@ -1327,4 +1327,21 @@ TEST(SetBuiltinsTest, SetIsProperSubsetWithSubsetReturnsFalse) {
   ASSERT_FALSE(setIsProperSubset(thread, set, set));
 }
 
+TEST(SetBuiltinsTest, ReprReturnsElements) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = set([3, 2, 1]).__repr__()");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isStr());
+  unique_c_ptr<char> result_str(RawStr::cast(result).toCStr());
+  word elts[3];
+  ASSERT_EQ(
+      sscanf(result_str.get(), "{%ld, %ld, %ld}", &elts[0], &elts[1], &elts[2]),
+      3);
+  std::sort(std::begin(elts), std::end(elts));
+  EXPECT_EQ(elts[0], 1);
+  EXPECT_EQ(elts[1], 2);
+  EXPECT_EQ(elts[2], 3);
+}
+
 }  // namespace python
