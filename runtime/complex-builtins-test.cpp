@@ -51,4 +51,12 @@ TEST(ComplexBuiltinsTest, NewWithComplexArgReturnsSameComplex) {
   EXPECT_EQ(cmplx->imag(), 2.0);
 }
 
+TEST(ComplexBuiltinsTest, DunderReprHasRealAndImag) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = repr(complex(1, 2))");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "(1+2j)"));
+}
+
 }  // namespace python

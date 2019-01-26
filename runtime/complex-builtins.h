@@ -4,6 +4,9 @@
 
 namespace python {
 
+RawObject complexGetImag(Thread* thread, Frame* frame, word nargs);
+RawObject complexGetReal(Thread* thread, Frame* frame, word nargs);
+
 class ComplexBuiltins final {
  public:
   static void initialize(Runtime* runtime);

@@ -12,10 +12,34 @@ const BuiltinMethod ComplexBuiltins::kMethods[] = {
 };
 
 void ComplexBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithMethods(
-                        SymbolId::kComplex, LayoutId::kComplex,
-                        LayoutId::kObject, kMethods));
+  runtime->addBuiltinTypeWithMethods(SymbolId::kComplex, LayoutId::kComplex,
+                                     LayoutId::kObject, kMethods);
+}
+
+RawObject complexGetImag(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfComplex(self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "_complex_imag requires a complex instance");
+  }
+  Complex self(&scope, *self_obj);
+  return runtime->newFloat(self->imag());
+}
+
+RawObject complexGetReal(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfComplex(self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "_complex_real requires a complex instance");
+  }
+  Complex self(&scope, *self_obj);
+  return runtime->newFloat(self->real());
 }
 
 RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

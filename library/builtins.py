@@ -370,6 +370,19 @@ class function(bootstrap=True):
         return f"<function {self.__name__} at 0x{repr(_address(self))}>"
 
 
+class complex(bootstrap=True):
+    def __repr__(self):
+        return f"({repr(self.real)}+{repr(self.imag)}j)"
+
+    @property
+    def imag(self):
+        return _complex_imag(self)
+
+    @property
+    def real(self):
+        return _complex_real(self)
+
+
 def all(iterable):
     for element in iterable:
         if not element:
@@ -382,6 +395,16 @@ def any(iterable):
         if element:
             return True
     return False
+
+
+@_patch
+def _complex_imag(c):
+    pass
+
+
+@_patch
+def _complex_real(c):
+    pass
 
 
 @_patch

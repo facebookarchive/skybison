@@ -301,6 +301,8 @@ class Runtime;
   V(TypeError, "TypeError")                                                    \
   V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderAddress, "_address")                                                  \
+  V(UnderComplexImag, "_complex_imag")                                         \
+  V(UnderComplexReal, "_complex_real")                                         \
   V(UnderImp, "_imp")                                                          \
   V(UnderIo, "_io")                                                            \
   V(UnderPatch, "_patch")                                                      \
