@@ -27,6 +27,9 @@ class int(bootstrap=True):
     def __add__(self, n: int) -> int:
         pass
 
+    def __sub__(self, n: int) -> int:
+        pass
+
 
 class ImportError(bootstrap=True):
     def __init__(self, *args, name=None, path=None, **kwargs):

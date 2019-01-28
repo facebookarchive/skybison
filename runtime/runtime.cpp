@@ -3909,6 +3909,59 @@ RawObject Runtime::intBinaryXor(Thread* thread, const Int& left,
   return normalizeLargeInt(result);
 }
 
+static uword subtractWithBorrow(uword x, uword y, uword borrow_in,
+                                uword* borrow_out) {
+  DCHECK(borrow_in <= 1, "borrow must be 0 or 1");
+  uword difference;
+  uword borrow0 = __builtin_sub_overflow(x, y, &difference);
+  uword borrow1 = __builtin_sub_overflow(difference, borrow_in, &difference);
+  *borrow_out = borrow0 | borrow1;
+  return difference;
+}
+
+RawObject Runtime::intSubtract(Thread* thread, const Int& left,
+                               const Int& right) {
+  if (left->isSmallInt() && right->isSmallInt()) {
+    // Take a shortcut because we know the result fits in a word.
+    word left_digit = RawSmallInt::cast(left)->value();
+    word right_digit = RawSmallInt::cast(right)->value();
+    return newInt(left_digit - right_digit);
+  }
+
+  HandleScope scope(thread);
+  word left_digits = left->numDigits();
+  word right_digits = right->numDigits();
+
+  word shorter_digits = Utils::minimum(left_digits, right_digits);
+  word longer_digits = Utils::maximum(left_digits, right_digits);
+  word result_digits = longer_digits + 1;
+  LargeInt result(&scope, heap()->createLargeInt(result_digits));
+  uword borrow = 0;
+  for (word i = 0; i < shorter_digits; i++) {
+    uword difference = subtractWithBorrow(left->digitAt(i), right->digitAt(i),
+                                          borrow, &borrow);
+    result->digitAtPut(i, difference);
+  }
+  uword left_sign_extension = left->isNegative() ? kMaxUword : 0;
+  uword right_sign_extension = right->isNegative() ? kMaxUword : 0;
+  if (right_digits == longer_digits) {
+    for (word i = shorter_digits; i < longer_digits; i++) {
+      uword difference = subtractWithBorrow(left_sign_extension,
+                                            right->digitAt(i), borrow, &borrow);
+      result->digitAtPut(i, difference);
+    }
+  } else {
+    for (word i = shorter_digits; i < longer_digits; i++) {
+      uword difference = subtractWithBorrow(
+          left->digitAt(i), right_sign_extension, borrow, &borrow);
+      result->digitAtPut(i, difference);
+    }
+  }
+  uword high_digit = left_sign_extension - right_sign_extension - borrow;
+  result->digitAtPut(result_digits - 1, high_digit);
+  return normalizeLargeInt(result);
+}
+
 RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
                               endian endianness) {
   HandleScope scope(thread);

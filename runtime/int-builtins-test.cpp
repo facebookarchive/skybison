@@ -1598,6 +1598,94 @@ TEST(IntBuiltinsTest, SmallIntDunderRepr) {
   EXPECT_TRUE(isStrEqualsCStr(*str, "3735928559"));
 }
 
+TEST(IntBuiltinsTest, DunderSubWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, SmallInt::fromWord(42));
+  Int right(&scope, SmallInt::fromWord(-7));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 49);
+}
+
+TEST(IntBuiltinsTest, DunderSubWithSmallIntsOverflowReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int min_small_int(&scope, SmallInt::fromWord(RawSmallInt::kMinValue));
+  Int one(&scope, SmallInt::fromWord(1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, min_small_int, one));
+  ASSERT_TRUE(result->isLargeInt());
+  EXPECT_EQ(RawLargeInt::cast(*result)->asWord(), RawSmallInt::kMinValue - 1);
+}
+
+TEST(IntBuiltinsTest, DunderSubWithLargeIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, newIntWithDigits(&runtime,
+                                    {0xfedcba0987654321, 0x1234567890abcdef}));
+  Int right(&scope, newIntWithDigits(&runtime,
+                                     {0x9876543210abcdef, 0xfedcba0123456789}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
+  Int expected(&scope, newIntWithDigits(
+                           &runtime, {0x666665d776b97532, 0x13579c776d666666}));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  EXPECT_EQ(expected->compare(result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderSubWithPositiveLargeIntsBorrowingReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, newIntWithDigits(&runtime, {1}));
+  Int right(&scope, newIntWithDigits(&runtime, {kMaxUword, kMaxUword, 0}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  Int expected(&scope, newIntWithDigits(&runtime, {2, 0, kMaxUword}));
+  EXPECT_EQ(expected->compare(result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderSubWithNegativeLargeIntsBorrowingReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // The smallest negative number representable with 2 digits.
+  Int left(&scope,
+           newIntWithDigits(&runtime, {0, static_cast<uword>(kMinWord)}));
+  Int right(&scope, newIntWithDigits(&runtime, {1}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  Int expected(&scope, newIntWithDigits(
+                           &runtime, {kMaxUword, static_cast<uword>(kMaxWord),
+                                      kMaxUword}));
+  EXPECT_EQ(expected->compare(result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderSubWithNonIntSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str str(&scope, runtime.newStrFromCStr(""));
+  Int right(&scope, runtime.newInt(1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, str, right));
+  EXPECT_TRUE(raised(result, LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderSubWithNonIntRightReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, runtime.newInt(1));
+  Str str(&scope, runtime.newStrFromCStr(""));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, str));
+  EXPECT_TRUE(result->isNotImplemented());
+}
+
 TEST(IntBuiltinsTest, DunderXorWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;

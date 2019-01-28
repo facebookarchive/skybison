@@ -615,6 +615,9 @@ class Runtime {
   // Returns the result of bitwise XOR of the arguments
   RawObject intBinaryXor(Thread* thread, const Int& left, const Int& right);
 
+  // Returns the result of subtracting `right` from `left`.
+  RawObject intSubtract(Thread* thread, const Int& left, const Int& right);
+
   // Converts `num` into a bytes object with the given length. This function
   // expects the length to be big enough to hold the number and does not check
   // for overflow.

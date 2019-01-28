@@ -35,6 +35,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderNeg, nativeTrampoline<dunderNeg>},
     {SymbolId::kDunderOr, nativeTrampoline<dunderOr>},
     {SymbolId::kDunderPos, nativeTrampoline<dunderPos>},
+    {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
     {SymbolId::kDunderXor, nativeTrampoline<dunderXor>},
 };
 
@@ -173,7 +174,6 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
     {SymbolId::kDunderInvert, nativeTrampoline<dunderInvert>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
-    {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
     {SymbolId::kDunderTruediv, nativeTrampoline<dunderTrueDiv>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
@@ -806,6 +806,25 @@ RawObject IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
       "__neg__() must be called with int instance as the first argument");
 }
 
+RawObject IntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfInt(self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__sub__() must be called with int instance as the first argument");
+  }
+  if (thread->runtime()->isInstanceOfInt(other_obj)) {
+    Int self(&scope, *self_obj);
+    Int other(&scope, *other_obj);
+    return runtime->intSubtract(thread, self, other);
+  }
+  // signal to binary dispatch to try another method
+  return thread->runtime()->notImplemented();
+}
+
 RawObject IntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
@@ -1021,31 +1040,6 @@ RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
     return runtime->intBinaryLshift(thread, self_int, arg_int->asWord());
   }
   // signal to binary dispatch to try another method
-  return thread->runtime()->notImplemented();
-}
-
-RawObject SmallIntBuiltins::dunderSub(Thread* thread, Frame* frame,
-                                      word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
-
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-
-  if (!self->isSmallInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__sub__() must be called with int instance as the first argument");
-  }
-
-  word left = RawSmallInt::cast(self)->value();
-  if (other->isInt()) {
-    word right = RawInt::cast(other)->asWord();
-    return thread->runtime()->newInt(left - right);
-  }
-
-  // TODO(T30610701): Handle LargeIntegers
   return thread->runtime()->notImplemented();
 }
 
