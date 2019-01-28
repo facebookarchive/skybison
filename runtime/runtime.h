@@ -265,6 +265,8 @@ class Runtime {
 
   Symbols* symbols() { return symbols_; }
 
+  RawObject unboundValue() { return unbound_value_; }
+
   // Returns a new Bytes containing the elements of self and then other.
   RawObject bytesConcat(Thread* thread, const Bytes& self, const Bytes& other);
 

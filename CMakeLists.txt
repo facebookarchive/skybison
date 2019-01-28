@@ -401,6 +401,7 @@ set(
   ext/Objects/classobject-test.cpp
   ext/Objects/complexobject-test.cpp
   ext/Objects/dictobject-test.cpp
+  ext/Objects/exceptions-test.cpp
   ext/Objects/floatobject-test.cpp
   ext/Objects/listobject-test.cpp
   ext/Objects/longobject-test.cpp

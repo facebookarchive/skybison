@@ -136,16 +136,18 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
         "'__init__' of 'BaseException' needs an argument");
   }
   Arguments args(frame, nargs);
-  if (!thread->runtime()->isInstanceOfBaseException(args.get(0))) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBaseException(args.get(0))) {
     return thread->raiseTypeErrorWithCStr(
         "'__init__' requires a 'BaseException' object");
   }
   BaseException self(&scope, args.get(0));
-  Tuple tuple(&scope, thread->runtime()->newTuple(nargs - 1));
+  Tuple tuple(&scope, runtime->newTuple(nargs - 1));
   for (word i = 1; i < nargs; i++) {
     tuple->atPut(i - 1, args.get(i));
   }
   self->setArgs(*tuple);
+  self->setCause(runtime->unboundValue());
   return NoneType::object();
 }
 
