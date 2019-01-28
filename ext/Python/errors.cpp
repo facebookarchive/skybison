@@ -47,8 +47,36 @@ PY_EXPORT PyObject* PyErr_NoMemory() {
   return nullptr;
 }
 
-PY_EXPORT PyObject* _PyErr_FormatFromCause(PyObject*, const char*, ...) {
-  UNIMPLEMENTED("_PyErr_FormatFromCause");
+PY_EXPORT PyObject* _PyErr_FormatFromCause(PyObject* exception,
+                                           const char* format, ...) {
+  CHECK(PyErr_Occurred(),
+        "_PyErr_FormatFromCause must be called with an exception set");
+  PyObject* exc = nullptr;
+  PyObject* val = nullptr;
+  PyObject* tb = nullptr;
+  PyErr_Fetch(&exc, &val, &tb);
+  PyErr_NormalizeException(&exc, &val, &tb);
+  if (tb != nullptr) {
+    PyException_SetTraceback(val, tb);
+    Py_DECREF(tb);
+  }
+  Py_DECREF(exc);
+  DCHECK(!PyErr_Occurred());
+
+  va_list vargs;
+  va_start(vargs, format);
+  PyErr_FormatV(exception, format, vargs);
+  va_end(vargs);
+
+  PyObject* val2 = nullptr;
+  PyErr_Fetch(&exc, &val2, &tb);
+  PyErr_NormalizeException(&exc, &val2, &tb);
+  Py_INCREF(val);
+  PyException_SetCause(val2, val);
+  PyException_SetContext(val2, val);
+  PyErr_Restore(exc, val2, tb);
+
+  return nullptr;
 }
 
 // Remove the preprocessor macro for PyErr_BadInternalCall() so that we can

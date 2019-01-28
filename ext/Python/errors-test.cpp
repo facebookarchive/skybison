@@ -408,4 +408,27 @@ TEST_F(ErrorsExtensionApiTest, FormatWithManyArgsSetsAppropriateFields) {
   EXPECT_EQ(traceback, nullptr);
 }
 
+TEST_F(ErrorsExtensionApiTest, FormatFromCauseWithoutExceptionFailsDeathTest) {
+  EXPECT_DEATH(_PyErr_FormatFromCause(PyExc_TypeError, ""), "");
+}
+
+TEST_F(ErrorsExtensionApiTest, FormatFromCauseSetsCauseAndContext) {
+  ASSERT_EQ(PyErr_Format(PyExc_MemoryError, "%s", "original cause"), nullptr);
+  ASSERT_EQ(_PyErr_FormatFromCause(PyExc_TypeError, "%s", "new error"),
+            nullptr);
+  PyObject* type = nullptr;
+  PyObject* value = nullptr;
+  PyObject* traceback = nullptr;
+  PyErr_Fetch(&type, &value, &traceback);
+  EXPECT_EQ(type, PyExc_TypeError);
+  Py_XDECREF(type);
+  EXPECT_EQ(traceback, nullptr);
+  Py_XDECREF(traceback);
+  PyObjectPtr cause(PyException_GetCause(value));
+  PyObjectPtr context(PyException_GetContext(value));
+  EXPECT_TRUE(PyErr_GivenExceptionMatches(cause, PyExc_MemoryError));
+  EXPECT_TRUE(PyErr_GivenExceptionMatches(context, PyExc_MemoryError));
+  Py_XDECREF(value);
+}
+
 }  // namespace python
