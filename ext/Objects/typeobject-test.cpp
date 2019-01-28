@@ -272,17 +272,16 @@ class Foo:
                "Get slots from types initialized through Python code");
 }
 
-TEST_F(TypeExtensionApiTest, GetNonExistentSlotFromManagedTypeReturnsNull) {
+TEST_F(TypeExtensionApiTest, GetNonExistentSlotFromManagedTypeAbortsPyro) {
   PyRun_SimpleString(R"(
 class Foo: pass
   )");
 
   PyObjectPtr foo_type(testing::moduleGet("__main__", "Foo"));
   ASSERT_TRUE(PyType_CheckExact(foo_type));
-  EXPECT_EQ(
+  EXPECT_DEATH(
       PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type.get()), Py_nb_or),
-      nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
+      "Get slots from types initialized through Python code");
 }
 
 TEST_F(TypeExtensionApiTest, GetSlotFromNegativeSlotThrowsSystemError) {
@@ -320,10 +319,12 @@ TEST_F(TypeExtensionApiTest, GetSlotFromExtensionType) {
     return reinterpret_cast<allocfunc>(slot)(type, 0);
   };
   initproc init_func = [](PyObject*, PyObject*, PyObject*) { return 0; };
+  binaryfunc add_func = [](PyObject*, PyObject*) { return PyLong_FromLong(7); };
   PyType_Slot slots[] = {
       {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
       {Py_tp_new, reinterpret_cast<void*>(new_func)},
       {Py_tp_init, reinterpret_cast<void*>(init_func)},
+      {Py_nb_add, reinterpret_cast<void*>(add_func)},
       {0, nullptr},
   };
   static PyType_Spec spec;
@@ -341,6 +342,8 @@ TEST_F(TypeExtensionApiTest, GetSlotFromExtensionType) {
             reinterpret_cast<void*>(new_func));
   EXPECT_EQ(PyType_GetSlot(typeobj, Py_tp_init),
             reinterpret_cast<void*>(init_func));
+  EXPECT_EQ(PyType_GetSlot(typeobj, Py_nb_add),
+            reinterpret_cast<void*>(add_func));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 

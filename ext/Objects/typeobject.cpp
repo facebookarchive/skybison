@@ -55,19 +55,163 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
 }
 
 static Type::ExtensionSlot slotToTypeSlot(int slot) {
-  // TODO(eelizondo): this should cover all of the slots but,
-  // we are starting with just these few for now
   switch (slot) {
+    case Py_mp_ass_subscript:
+      return Type::ExtensionSlot::kMapAssSubscript;
+    case Py_mp_length:
+      return Type::ExtensionSlot::kMapLength;
+    case Py_mp_subscript:
+      return Type::ExtensionSlot::kMapSubscript;
+    case Py_nb_absolute:
+      return Type::ExtensionSlot::kNumberAbsolute;
+    case Py_nb_add:
+      return Type::ExtensionSlot::kNumberAdd;
+    case Py_nb_and:
+      return Type::ExtensionSlot::kNumberAnd;
+    case Py_nb_bool:
+      return Type::ExtensionSlot::kNumberBool;
+    case Py_nb_divmod:
+      return Type::ExtensionSlot::kNumberDivmod;
+    case Py_nb_float:
+      return Type::ExtensionSlot::kNumberFloat;
+    case Py_nb_floor_divide:
+      return Type::ExtensionSlot::kNumberFloorDivide;
+    case Py_nb_index:
+      return Type::ExtensionSlot::kNumberIndex;
+    case Py_nb_inplace_add:
+      return Type::ExtensionSlot::kNumberInplaceAdd;
+    case Py_nb_inplace_and:
+      return Type::ExtensionSlot::kNumberInplaceAnd;
+    case Py_nb_inplace_floor_divide:
+      return Type::ExtensionSlot::kNumberInplaceFloorDivide;
+    case Py_nb_inplace_lshift:
+      return Type::ExtensionSlot::kNumberInplaceLshift;
+    case Py_nb_inplace_multiply:
+      return Type::ExtensionSlot::kNumberInplaceMultiply;
+    case Py_nb_inplace_or:
+      return Type::ExtensionSlot::kNumberInplaceOr;
+    case Py_nb_inplace_power:
+      return Type::ExtensionSlot::kNumberInplacePower;
+    case Py_nb_inplace_remainder:
+      return Type::ExtensionSlot::kNumberInplaceRemainder;
+    case Py_nb_inplace_rshift:
+      return Type::ExtensionSlot::kNumberInplaceRshift;
+    case Py_nb_inplace_subtract:
+      return Type::ExtensionSlot::kNumberInplaceSubtract;
+    case Py_nb_inplace_true_divide:
+      return Type::ExtensionSlot::kNumberInplaceTrueDivide;
+    case Py_nb_inplace_xor:
+      return Type::ExtensionSlot::kNumberInplaceXor;
+    case Py_nb_int:
+      return Type::ExtensionSlot::kNumberInt;
+    case Py_nb_invert:
+      return Type::ExtensionSlot::kNumberInvert;
+    case Py_nb_lshift:
+      return Type::ExtensionSlot::kNumberLshift;
+    case Py_nb_multiply:
+      return Type::ExtensionSlot::kNumberMultiply;
+    case Py_nb_negative:
+      return Type::ExtensionSlot::kNumberNegative;
+    case Py_nb_or:
+      return Type::ExtensionSlot::kNumberOr;
+    case Py_nb_positive:
+      return Type::ExtensionSlot::kNumberPositive;
+    case Py_nb_power:
+      return Type::ExtensionSlot::kNumberPower;
+    case Py_nb_remainder:
+      return Type::ExtensionSlot::kNumberRemainder;
+    case Py_nb_rshift:
+      return Type::ExtensionSlot::kNumberRshift;
+    case Py_nb_subtract:
+      return Type::ExtensionSlot::kNumberSubtract;
+    case Py_nb_true_divide:
+      return Type::ExtensionSlot::kNumberTrueDivide;
+    case Py_nb_xor:
+      return Type::ExtensionSlot::kNumberXor;
+    case Py_sq_ass_item:
+      return Type::ExtensionSlot::kSequenceAssItem;
+    case Py_sq_concat:
+      return Type::ExtensionSlot::kSequenceConcat;
+    case Py_sq_contains:
+      return Type::ExtensionSlot::kSequenceContains;
+    case Py_sq_inplace_concat:
+      return Type::ExtensionSlot::kSequenceInplaceConcat;
+    case Py_sq_inplace_repeat:
+      return Type::ExtensionSlot::kSequenceInplaceRepeat;
+    case Py_sq_item:
+      return Type::ExtensionSlot::kSequenceItem;
+    case Py_sq_length:
+      return Type::ExtensionSlot::kSequenceLength;
+    case Py_sq_repeat:
+      return Type::ExtensionSlot::kSequenceRepeat;
     case Py_tp_alloc:
       return Type::ExtensionSlot::kAlloc;
+    case Py_tp_base:
+      return Type::ExtensionSlot::kBase;
+    case Py_tp_bases:
+      return Type::ExtensionSlot::kBases;
+    case Py_tp_call:
+      return Type::ExtensionSlot::kCall;
+    case Py_tp_clear:
+      return Type::ExtensionSlot::kClear;
     case Py_tp_dealloc:
       return Type::ExtensionSlot::kDealloc;
+    case Py_tp_del:
+      return Type::ExtensionSlot::kDel;
+    case Py_tp_descr_get:
+      return Type::ExtensionSlot::kDescrGet;
+    case Py_tp_descr_set:
+      return Type::ExtensionSlot::kDescrSet;
+    case Py_tp_doc:
+      return Type::ExtensionSlot::kDoc;
+    case Py_tp_getattr:
+      return Type::ExtensionSlot::kGetattr;
+    case Py_tp_getattro:
+      return Type::ExtensionSlot::kGetattro;
+    case Py_tp_hash:
+      return Type::ExtensionSlot::kHash;
     case Py_tp_init:
       return Type::ExtensionSlot::kInit;
+    case Py_tp_is_gc:
+      return Type::ExtensionSlot::kIsGc;
+    case Py_tp_iter:
+      return Type::ExtensionSlot::kIter;
+    case Py_tp_iternext:
+      return Type::ExtensionSlot::kIternext;
+    case Py_tp_methods:
+      return Type::ExtensionSlot::kMethods;
     case Py_tp_new:
       return Type::ExtensionSlot::kNew;
+    case Py_tp_repr:
+      return Type::ExtensionSlot::kRepr;
+    case Py_tp_richcompare:
+      return Type::ExtensionSlot::kRichcokMapare;
+    case Py_tp_setattr:
+      return Type::ExtensionSlot::kSetattr;
+    case Py_tp_setattro:
+      return Type::ExtensionSlot::kSetattro;
+    case Py_tp_str:
+      return Type::ExtensionSlot::kStr;
+    case Py_tp_traverse:
+      return Type::ExtensionSlot::kTraverse;
+    case Py_tp_members:
+      return Type::ExtensionSlot::kMembers;
+    case Py_tp_getset:
+      return Type::ExtensionSlot::kGetset;
     case Py_tp_free:
       return Type::ExtensionSlot::kFree;
+    case Py_nb_matrix_multiply:
+      return Type::ExtensionSlot::kNumberMatrixMultiply;
+    case Py_nb_inplace_matrix_multiply:
+      return Type::ExtensionSlot::kNumberInplaceMatrixMultiply;
+    case Py_am_await:
+      return Type::ExtensionSlot::kAsyncAwait;
+    case Py_am_aiter:
+      return Type::ExtensionSlot::kAsyncAiter;
+    case Py_am_anext:
+      return Type::ExtensionSlot::kAsyncAnext;
+    case Py_tp_finalize:
+      return Type::ExtensionSlot::kFinalize;
     default:
       return Type::ExtensionSlot::kEnd;
   }
