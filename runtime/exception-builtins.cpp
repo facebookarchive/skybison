@@ -148,6 +148,7 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
   }
   self->setArgs(*tuple);
   self->setCause(runtime->unboundValue());
+  self->setContext(runtime->unboundValue());
   return NoneType::object();
 }
 

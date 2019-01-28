@@ -294,12 +294,30 @@ PY_EXPORT PyObject* PyException_GetCause(PyObject* self) {
   return ApiHandle::newReference(thread, *cause);
 }
 
-PY_EXPORT PyObject* PyException_GetContext(PyObject* /* f */) {
-  UNIMPLEMENTED("PyException_GetContext");
+PY_EXPORT PyObject* PyException_GetContext(PyObject* self) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
+  Object context(&scope, exc->context());
+  if (context->isUnboundValue()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *context);
 }
 
-PY_EXPORT void PyException_SetContext(PyObject* /* f */, PyObject* /* t */) {
-  UNIMPLEMENTED("PyException_SetContext");
+PY_EXPORT void PyException_SetContext(PyObject* self, PyObject* context) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
+  if (context == nullptr) {
+    exc->setContext(thread->runtime()->unboundValue());
+    return;
+  }
+  ApiHandle* new_context = ApiHandle::fromPyObject(context);
+  exc->setContext(new_context->asObject());
+  new_context->decref();
 }
 
 PY_EXPORT int PyException_SetTraceback(PyObject* /* f */, PyObject* /* b */) {
