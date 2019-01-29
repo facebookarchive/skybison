@@ -53,6 +53,11 @@ class BaseException(bootstrap=True):
             return str(self.args[0])
         return str(self.args)
 
+    def __repr__(self):
+        if not isinstance(self, BaseException):
+            raise TypeError("not a BaseException object")
+        return f"{self.__class__.__name__}{self.args.__repr__()}"
+
 
 class KeyError(bootstrap=True):
     def __str__(self):

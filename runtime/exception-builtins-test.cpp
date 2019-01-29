@@ -462,4 +462,31 @@ exc = ModuleNotFoundError(1111, name=2222, path=3333)
   EXPECT_EQ(RawSmallInt::cast(err->path())->value(), 3333);
 }
 
+TEST(ExceptionBuiltinsTest, DunderReprWithNoArgsHasEmptyParens) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime, R"(
+result = NameError().__repr__()
+)");
+
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "NameError()"));
+}
+
+TEST(ExceptionBuiltinsTest, DunderReprCallsTupleRepr) {
+  Runtime runtime;
+  HandleScope scope;
+
+  runFromCStr(&runtime, R"(
+n = NameError().__class__.__name__
+result = NameError(1, 2).__repr__()
+)");
+
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "n"), "NameError"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"),
+                              "NameError(1, 2)"));
+}
+
 }  // namespace python
