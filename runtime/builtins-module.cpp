@@ -720,10 +720,10 @@ RawObject Builtins::underPatch(Thread* thread, Frame* frame, word nargs) {
   Function patch_fn(&scope, *patch_fn_obj);
   Str fn_name(&scope, patch_fn->name());
   Runtime* runtime = thread->runtime();
-  Object builtins_name(&scope, runtime->symbols()->Builtins());
-  Module builtins(&scope, runtime->findModule(builtins_name));
-  Object base_fn_obj(&scope, runtime->moduleAt(builtins, fn_name));
-  if (!patch_fn_obj->isFunction()) {
+  Object module_name(&scope, patch_fn->module());
+  Module module(&scope, runtime->findModule(module_name));
+  Object base_fn_obj(&scope, runtime->moduleAt(module, fn_name));
+  if (!base_fn_obj->isFunction()) {
     return thread->raiseTypeErrorWithCStr("_patch can only patch functions");
   }
   Function base_fn(&scope, *base_fn_obj);

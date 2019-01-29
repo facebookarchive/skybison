@@ -47,4 +47,9 @@ RawObject builtinTrampolineWrapper(Thread* thread, Frame* caller, word argc) {
   return builtinTrampoline(thread, caller, argc, Fn);
 }
 
+template <Function::Entry Fn>
+RawObject builtinTrampolineWrapperKw(Thread* thread, Frame* caller, word argc) {
+  return builtinTrampolineKw(thread, caller, argc, Fn);
+}
+
 }  // namespace python

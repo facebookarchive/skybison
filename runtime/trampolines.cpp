@@ -953,10 +953,12 @@ RawObject unimplementedTrampoline(Thread*, Frame*, word) {
   UNIMPLEMENTED("Trampoline");
 }
 
-RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc,
-                            Function::Entry fn) {
+template <typename InitArgs>
+static RawObject builtinTrampolineImpl(Thread* thread, Frame* caller, word argc,
+                                       word function_idx, Function::Entry entry,
+                                       InitArgs init_args) {
   HandleScope scope(thread);
-  Function function(&scope, caller->peek(argc));
+  Function function(&scope, caller->peek(function_idx));
   DCHECK(!function->code().isNoneType(),
          "builtin functions should have annotated code objects");
   Code code(&scope, function->code());
@@ -964,18 +966,33 @@ RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc,
          "builtin functions should not have bytecode");
   // The native function has been annotated in managed code, so do some more
   // advanced argument checking.
-  Object result(&scope,
-                preparePositionalCall(thread, function, code, caller, argc));
-  if (result->isError()) {
-    return *result;
-  }
+  Object result(&scope, init_args(function, code));
+  if (result->isError()) return *result;
   argc = code->argcount();
-  Frame* frame = thread->pushNativeFrame(bit_cast<void*>(fn), argc);
-  result = fn(thread, frame, argc);
+  Frame* frame = thread->pushNativeFrame(bit_cast<void*>(entry), argc);
+  result = entry(thread, frame, argc);
   DCHECK(result->isError() == thread->hasPendingException(),
          "error/exception mismatch");
   thread->popFrame();
   return *result;
+}
+
+RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc,
+                            Function::Entry fn) {
+  return builtinTrampolineImpl(thread, caller, argc, argc, fn,
+                               [&](const Function& function, const Code& code) {
+                                 return preparePositionalCall(
+                                     thread, function, code, caller, argc);
+                               });
+}
+
+RawObject builtinTrampolineKw(Thread* thread, Frame* caller, word argc,
+                              Function::Entry fn) {
+  return builtinTrampolineImpl(
+      thread, caller, argc, argc + 1 /* skip over implicit tuple of kwargs */,
+      fn, [&](const Function&, const Code&) {
+        return processKeywordArguments(thread, caller, argc);
+      });
 }
 
 }  // namespace python

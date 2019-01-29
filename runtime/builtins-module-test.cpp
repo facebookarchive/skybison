@@ -903,6 +903,29 @@ class bumble():
                "Redefinition of native code method __lt__ in managed code");
 }
 
+TEST(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  Object not_func(&scope, runtime.newInt(12));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(Builtins::underPatch, not_func),
+                            LayoutId::kTypeError,
+                            "_patch expects function argument"));
+}
+
+TEST(BuiltinsModuleTest, UnderPatchWithBadBaseFuncRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+not_a_function = 1234
+
+@_patch
+def not_a_function():
+  pass
+)"),
+                            LayoutId::kTypeError,
+                            "_patch can only patch functions"));
+}
+
 TEST(BuiltinsModuleTest, AllOnListWithOnlyTrueReturnsTrue) {
   Runtime runtime;
   runFromCStr(&runtime, R"(

@@ -60,6 +60,9 @@ RawObject nativeTrampolineKw(Thread* thread, Frame* caller, word argc)
 template <RawObject (*Fn)(Thread*, Frame*, word)>
 RawObject builtinTrampolineWrapper(Thread* thread, Frame* caller, word argc)
     __attribute__((aligned(16)));
+template <RawObject (*Fn)(Thread*, Frame*, word)>
+RawObject builtinTrampolineWrapperKw(Thread* thread, Frame* caller, word argc)
+    __attribute__((aligned(16)));
 
 RawObject moduleTrampolineNoArgs(Thread* thread, Frame* caller, word argc)
     __attribute__((aligned(16)));
@@ -102,5 +105,7 @@ RawObject unimplementedTrampoline(Thread* thread, Frame* caller_frame,
 
 RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc,
                             Function::Entry fn);
+RawObject builtinTrampolineKw(Thread* thread, Frame* caller, word argc,
+                              Function::Entry fn);
 
 }  // namespace python

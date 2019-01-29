@@ -781,6 +781,47 @@ TEST(TrampolineTest,
   EXPECT_TRUE(RawStr::cast(tuple->at(2))->equalsCStr("bar_val"));
 }
 
+static RawObject builtinReturnSecondArg(Thread* /* thread */, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  return args.get(1);
+}
+
+static void createAndPatchBuiltinReturnSecondArg(Runtime* runtime) {
+  HandleScope scope;
+  // Ensure we have a __main__ module.
+  runFromCStr(runtime, "");
+  Module main(&scope, findModule(runtime, "__main__"));
+  runtime->moduleAddBuiltinFunction(
+      main, SymbolId::kDummy, unimplementedTrampoline,
+      builtinTrampolineWrapperKw<builtinReturnSecondArg>,
+      unimplementedTrampoline);
+  runFromCStr(runtime, R"(
+@_patch
+def dummy(first, second):
+  pass
+)");
+}
+
+TEST(TrampolineTest, BuiltinTrampolineKwPassesKwargs) {
+  Runtime runtime;
+  HandleScope scope;
+  createAndPatchBuiltinReturnSecondArg(&runtime);
+  runFromCStr(&runtime, "result = dummy(second=12345, first=None)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(RawInt::cast(*result).asWord(), 12345);
+}
+
+TEST(TrampolineTest, BuiltinTrampolineKwWithInvalidArgRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  createAndPatchBuiltinReturnSecondArg(&runtime);
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "dummy(third=3, first=1)"),
+                            LayoutId::kTypeError,
+                            "TypeError: invalid arguments"));
+}
+
 TEST(TrampolineTest, InterpreterClosureUsesArgOverCellValue) {
   Runtime runtime;
   HandleScope scope;

@@ -156,6 +156,7 @@ class Runtime;
   V(DictValueIterator, "dict_valueiterator")                                   \
   V(Displayhook, "displayhook")                                                \
   V(DotSo, ".so")                                                              \
+  V(Dummy, "dummy")                                                            \
   V(EOFError, "EOFError")                                                      \
   V(Ellipsis, "ellipsis")                                                      \
   V(End, "end")                                                                \
