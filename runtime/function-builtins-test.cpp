@@ -116,5 +116,18 @@ TEST(FunctionBuiltinsTest, ReprHandlesLambda) {
   EXPECT_TRUE(std::strstr(result_str.get(), "<function <lambda> at 0x"));
 }
 
+TEST(FunctionBuiltinsTest, DunderCallCallsFunction) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+def f(a):
+  return a
+result = f.__call__(3)
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result).value(), 3);
+}
+
 }  // namespace testing
 }  // namespace python

@@ -377,6 +377,9 @@ class function(bootstrap=True):
     def __repr__(self):
         return f"<function {self.__name__} at 0x{repr(_address(self))}>"
 
+    def __call__(self, *args, **kwargs):
+        return self(*args, **kwargs)
+
 
 class complex(bootstrap=True):
     def __repr__(self):
