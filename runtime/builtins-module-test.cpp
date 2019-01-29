@@ -775,6 +775,28 @@ result = exec("a = 1338", 7)
                             "Expected 'globals' to be dict in 'exec'"));
 }
 
+TEST(BuiltinsModuleTest, BuiltinExecExWithTupleCallsExec) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+exec(*("a = 1338",))
+  )");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(a)->value(), 1338);
+}
+
+TEST(BuiltinsModuleTest, BuiltinExecExWithListCallsExec) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+exec(*["a = 1338"])
+  )");
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  ASSERT_TRUE(a->isSmallInt());
+  EXPECT_EQ(SmallInt::cast(a)->value(), 1338);
+}
+
 TEST(BuiltinsModuleTest, PythonBuiltinAnnotationSetsFunctionSignature) {
   Runtime runtime;
   HandleScope scope;

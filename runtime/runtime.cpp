@@ -1854,9 +1854,9 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinFunction(module, SymbolId::kUnderComplexReal,
                            builtinTrampolineWrapper<complexGetReal>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kExec,
-                           builtinTrampolineWrapper<Builtins::exec>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(
+      module, SymbolId::kExec, builtinTrampolineWrapper<Builtins::exec>,
+      unimplementedTrampoline, builtinTrampolineWrapperEx<Builtins::exec>);
   moduleAddBuiltinFunction(module, SymbolId::kGetattr,
                            builtinTrampolineWrapper<Builtins::getattr>,
                            unimplementedTrampoline, unimplementedTrampoline);

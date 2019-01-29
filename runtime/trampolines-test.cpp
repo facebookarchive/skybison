@@ -2007,4 +2007,59 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
   EXPECT_EQ(Int::cast(result)->asWord(), 1111);
 }
 
+static RawObject numArgs(Thread*, Frame*, word nargs) {
+  return SmallInt::fromWord(nargs);
+}
+
+static void createAndPatchBuiltinNumArgs(Runtime* runtime) {
+  // Ensure we have a __main__ module.
+  runFromCStr(runtime, "");
+  HandleScope scope;
+  Module main(&scope, findModule(runtime, "__main__"));
+  runtime->moduleAddBuiltinFunction(
+      main, SymbolId::kDummy, unimplementedTrampoline,
+      builtinTrampolineWrapperKw<numArgs>, builtinTrampolineWrapperEx<numArgs>);
+  runFromCStr(runtime, R"(
+@_patch
+def dummy(first, second):
+  pass
+)");
+}
+
+TEST(TrampolinesTest, BuiltinTrampolineExReceivesExArgs) {
+  Runtime runtime;
+  createAndPatchBuiltinNumArgs(&runtime);
+  HandleScope scope;
+  runFromCStr(&runtime, "result = dummy(*(1,2))");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
+}
+
+TEST(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
+  Runtime runtime;
+  createAndPatchBuiltinNumArgs(&runtime);
+  HandleScope scope;
+  runFromCStr(&runtime, "result = dummy(*(1,), second=5)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
+}
+
+TEST(TrampolinesDeathTest, BuiltinTrampolineExWithTooFewArgsRaisesTypeError) {
+  Runtime runtime;
+  createAndPatchBuiltinNumArgs(&runtime);
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "dummy(*(1,))"), LayoutId::kTypeError,
+                    "TypeError: 'dummy' takes 2 arguments but 1 given"));
+}
+
+TEST(TrampolinesDeathTest, BuiltinTrampolineExWithTooManyArgsRaisesTypeError) {
+  Runtime runtime;
+  createAndPatchBuiltinNumArgs(&runtime);
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "dummy(*(1,2,3,4,5))"), LayoutId::kTypeError,
+      "TypeError: 'dummy' takes max 2 positional arguments but 5 given"));
+}
+
 }  // namespace python

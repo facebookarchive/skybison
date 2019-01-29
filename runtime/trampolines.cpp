@@ -420,12 +420,12 @@ static RawObject processExplodeArguments(Thread* thread, Frame* caller,
     caller->popValue();
   }
   Tuple positional_args(&scope, caller->popValue());
-  for (word i = 0; i < positional_args->length(); i++) {
+  word argc = positional_args->length();
+  for (word i = 0; i < argc; i++) {
     caller->pushValue(positional_args->at(i));
   }
-  word argc = positional_args->length();
+  Runtime* runtime = thread->runtime();
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
-    Runtime* runtime = thread->runtime();
     Dict dict(&scope, *kw_dict);
     Tuple keys(&scope, runtime->dictKeys(dict));
     for (word i = 0; i < keys->length(); i++) {
@@ -460,8 +460,8 @@ RawObject preparePositionalCall(Thread* thread, const Function& function,
 // Takes the outgoing arguments of an explode argument call and rearranges them
 // into the form expected by the callee and opens a new frame for the callee to
 // execute in.
-RawObject prepareExplodeCall(Thread* thread, const Function& function,
-                             const Code& code, Frame* caller, word arg) {
+static RawObject prepareExplodeCall(Thread* thread, const Function& function,
+                                    const Code& code, Frame* caller, word arg) {
   RawObject arg_obj = processExplodeArguments(thread, caller, arg);
   if (arg_obj.isError()) return arg_obj;
   word new_argc = RawSmallInt::cast(arg_obj).value();
@@ -992,6 +992,15 @@ RawObject builtinTrampolineKw(Thread* thread, Frame* caller, word argc,
       thread, caller, argc, argc + 1 /* skip over implicit tuple of kwargs */,
       fn, [&](const Function&, const Code&) {
         return processKeywordArguments(thread, caller, argc);
+      });
+}
+
+RawObject builtinTrampolineEx(Thread* thread, Frame* caller, word argc,
+                              Function::Entry fn) {
+  return builtinTrampolineImpl(
+      thread, caller, argc, (argc & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1,
+      fn, [&](const Function& function, const Code& code) {
+        return prepareExplodeCall(thread, function, code, caller, argc);
       });
 }
 
