@@ -783,7 +783,7 @@ exec(*("a = 1338",))
   )");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(a)->value(), 1338);
+  EXPECT_EQ(SmallInt::cast(*a).value(), 1338);
 }
 
 TEST(BuiltinsModuleTest, BuiltinExecExWithListCallsExec) {
@@ -794,7 +794,7 @@ exec(*["a = 1338"])
   )");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(a)->value(), 1338);
+  EXPECT_EQ(SmallInt::cast(*a).value(), 1338);
 }
 
 TEST(BuiltinsModuleTest, PythonBuiltinAnnotationSetsFunctionSignature) {
