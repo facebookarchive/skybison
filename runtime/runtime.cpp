@@ -302,6 +302,11 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
   Type type(&scope, *receiver);
   Type meta_type(&scope, typeOf(*receiver));
 
+  if (RawStr::cast(*name)->equals(symbols()->DunderClass())) {
+    // TODO(T27735822): Make __class__ a descriptor
+    return *meta_type;
+  }
+
   // Look for the attribute in the meta class
   Object meta_attr(&scope, lookupNameInMro(thread, meta_type, name));
   if (!meta_attr->isError()) {
@@ -322,6 +327,12 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
     return *attr;
   }
 
+  // No data descriptor found on the meta class, look on the type
+  Object result(&scope, instanceAt(thread, type, name));
+  if (!result->isError()) {
+    return *result;
+  }
+
   // No attr found in type or its mro, use the non-data descriptor found in
   // the metaclass (if any).
   if (!meta_attr->isError()) {
@@ -330,11 +341,8 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
                                             meta_attr, receiver, owner);
     }
-
     // If a regular attribute was found in the metaclass, return it
-    if (!meta_attr->isError()) {
-      return *meta_attr;
-    }
+    return *meta_attr;
   }
 
   // TODO(T25140871): Refactor this into something like:
@@ -436,9 +444,9 @@ RawObject Runtime::instanceGetAttr(Thread* thread, const Object& receiver,
   // No data descriptor found on the class, look at the instance.
   if (receiver->isHeapObject()) {
     HeapObject instance(&scope, *receiver);
-    RawObject result = thread->runtime()->instanceAt(thread, instance, name);
+    Object result(&scope, instanceAt(thread, instance, name));
     if (!result->isError()) {
-      return result;
+      return *result;
     }
   }
 
@@ -510,6 +518,7 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   return *result;
 }
 
+// TODO(T39611261): Replace this with instanceGetAttr
 RawObject Runtime::functionGetAttr(Thread* thread, const Object& receiver,
                                    const Object& name) {
   DCHECK(name->isStr(), "Name is not a string");
@@ -521,17 +530,7 @@ RawObject Runtime::functionGetAttr(Thread* thread, const Object& receiver,
     func->setDict(newDict());
   }
 
-  AttributeInfo info;
-  Layout layout(&scope, layoutAt(receiver->layoutId()));
-  if (layoutFindAttribute(thread, layout, name, &info)) {
-    return instanceGetAttr(thread, receiver, name);
-  }
-  Dict function_dict(&scope, func->dict());
-  Object result(&scope, dictAt(function_dict, name));
-  if (!result->isError()) {
-    return *result;
-  }
-  return thread->raiseAttributeErrorWithCStr("missing attribute");
+  return instanceGetAttr(thread, receiver, name);
 }
 
 RawObject Runtime::functionSetAttr(Thread* thread, const Object& receiver,
@@ -3297,6 +3296,27 @@ RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
   return *candidate;
 }
 
+bool Runtime::layoutHasDictOverflow(const Layout& layout) {
+  // SmallInt -> offset of the dict attribute on the object
+  return layout->overflowAttributes().isSmallInt();
+}
+
+RawObject Runtime::layoutGetOverflowDict(Thread* thread,
+                                         const HeapObject& instance,
+                                         const Layout& layout) {
+  DCHECK(layout->overflowAttributes().isSmallInt(),
+         "layout must have dict overflow");
+  word offset = RawSmallInt::cast(layout->overflowAttributes()).value();
+  HandleScope scope(thread);
+  if (instance->instanceVariableAt(offset).isNoneType()) {
+    // Lazily initialize the dict
+    instance->instanceVariableAtPut(offset, newDict());
+  }
+  Object overflow(&scope, instance->instanceVariableAt(offset));
+  DCHECK(overflow->isDict(), "layout dict overflow must be dict");
+  return *overflow;
+}
+
 RawObject Runtime::instanceAt(Thread* thread, const HeapObject& instance,
                               const Object& name) {
   HandleScope scope(thread);
@@ -3304,21 +3324,24 @@ RawObject Runtime::instanceAt(Thread* thread, const HeapObject& instance,
   // Figure out where the attribute lives in the instance
   Layout layout(&scope, layoutAt(instance->layoutId()));
   AttributeInfo info;
-  if (!layoutFindAttribute(thread, layout, name, &info)) {
-    return Error::object();
-  }
-
-  // Retrieve the attribute
-  RawObject result;
-  if (info.isInObject()) {
-    result = instance->instanceVariableAt(info.offset());
-  } else {
+  if (layoutFindAttribute(thread, layout, name, &info)) {
+    // Retrieve the attribute
+    if (info.isInObject()) {
+      return instance->instanceVariableAt(info.offset());
+    }
     Tuple overflow(&scope,
                    instance->instanceVariableAt(layout->overflowOffset()));
-    result = overflow->at(info.offset());
+    return overflow->at(info.offset());
   }
-
-  return result;
+  if (layoutHasDictOverflow(layout)) {
+    Dict overflow(&scope, layoutGetOverflowDict(thread, instance, layout));
+    Object obj(&scope, dictAt(overflow, name));
+    if (obj->isValueCell()) {
+      return RawValueCell::cast(*obj).value();
+    }
+    return *obj;
+  }
+  return Error::object();
 }
 
 RawObject Runtime::instanceAtPut(Thread* thread, const HeapObject& instance,
@@ -3426,6 +3449,10 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
 
   // Check overflow attributes
   if (layout->overflowAttributes().isNoneType()) {
+    return false;
+  }
+  // There is an overflow dict; don't try and read the tuple
+  if (layout->overflowAttributes().isSmallInt()) {
     return false;
   }
   Tuple overflow(&scope, layout->overflowAttributes());

@@ -85,13 +85,11 @@ RawObject Builtins::buildClass(Thread* thread, Frame* frame, word nargs) {
     bases->atPut(i, args.get(j));
   }
 
-  Dict dict(&scope, runtime->newDict());
-  Object key(&scope, runtime->symbols()->DunderName());
-  runtime->dictAtPutInValueCell(dict, key, name);
   // TODO(cshapiro): might need to do some kind of callback here and we want
   // backtraces to work correctly.  The key to doing that would be to put some
   // state on the stack in between the the incoming arguments from the builtin
   // caller and the on-stack state for the class body function call.
+  Dict dict(&scope, runtime->newDict());
   thread->runClassFunction(body, dict);
 
   Type type(&scope, runtime->typeAt(LayoutId::kType));
@@ -261,11 +259,7 @@ RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
     Dict patch_type(&scope, runtime->newDict());
     thread->runClassFunction(body, patch_type);
     patchTypeDict(thread, type_dict, patch_type);
-
-    // A bootstrap type initialization is complete at this point.  Add a type
-    // name to the type dictionary and return the initialized type object.
-    Object key(&scope, runtime->symbols()->DunderName());
-    runtime->typeDictAtPut(type_dict, key, name);
+    // A bootstrap type initialization is complete at this point.
     return *type;
   }
 

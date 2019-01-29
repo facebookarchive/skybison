@@ -32,8 +32,6 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
         ->setValue(*type);
     runtime->dictRemove(dict, class_cell_key);
   }
-  Object name_key(&scope, runtime->symbols()->DunderName());
-  runtime->dictAtPutInValueCell(dict, name_key, name);
   type->setDict(*dict);
 
   // Compute builtin base class
@@ -64,6 +62,13 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   return *type;
 }
 
+const BuiltinAttribute TypeBuiltins::kAttributes[] = {
+    {SymbolId::kDunderMro, RawType::kMroOffset},
+    {SymbolId::kDunderName, RawType::kNameOffset},
+    {SymbolId::kDunderFlags, RawType::kFlagsOffset},
+    {SymbolId::kDunderDict, RawType::kDictOffset},
+};
+
 const BuiltinMethod TypeBuiltins::kMethods[] = {
     {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
@@ -73,8 +78,10 @@ const BuiltinMethod TypeBuiltins::kMethods[] = {
 void TypeBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Type type(&scope,
-            runtime->addBuiltinTypeWithMethods(SymbolId::kType, LayoutId::kType,
-                                               LayoutId::kObject, kMethods));
+            runtime->addBuiltinType(SymbolId::kType, LayoutId::kType,
+                                    LayoutId::kObject, kAttributes, kMethods));
+  Layout layout(&scope, type->instanceLayout());
+  layout->setOverflowAttributes(SmallInt::fromWord(RawType::kDictOffset));
   runtime->typeAddBuiltinFunctionKw(
       type, SymbolId::kDunderCall, nativeTrampoline<TypeBuiltins::dunderCall>,
       nativeTrampolineKw<TypeBuiltins::dunderCallKw>);

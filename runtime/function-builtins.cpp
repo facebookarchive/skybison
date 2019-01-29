@@ -27,6 +27,8 @@ void FunctionBuiltins::initialize(Runtime* runtime) {
   Type function(&scope, runtime->addBuiltinType(
                             SymbolId::kFunction, LayoutId::kFunction,
                             LayoutId::kObject, kAttributes, kMethods));
+  Layout layout(&scope, function->instanceLayout());
+  layout->setOverflowAttributes(SmallInt::fromWord(RawFunction::kDictOffset));
 }
 
 RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,

@@ -3215,14 +3215,25 @@ value = foo.x
                             LayoutId::kAttributeError, "missing attribute"));
 }
 
-TEST(RuntimeTest, LazilyInitializationOfFunctionDict) {
+TEST(RuntimeTest, LazyInitializationOfFunctionDictWithAttribute) {
   Runtime runtime;
   HandleScope scope;
   Function function(&scope, runtime.newFunction());
   ASSERT_TRUE(function->dict()->isNoneType());
 
-  Object dict_name(&scope, runtime.newStrFromCStr("__dict__"));
-  runtime.attributeAt(Thread::currentThread(), function, dict_name);
+  Object key(&scope, runtime.newStrFromCStr("bar"));
+  runtime.attributeAt(Thread::currentThread(), function, key);
+  EXPECT_TRUE(function->dict()->isDict());
+}
+
+TEST(RuntimeTest, LazyInitializationOfFunctionDict) {
+  Runtime runtime;
+  HandleScope scope;
+  Function function(&scope, runtime.newFunction());
+  ASSERT_TRUE(function->dict()->isNoneType());
+
+  Object key(&scope, runtime.newStrFromCStr("__dict__"));
+  runtime.attributeAt(Thread::currentThread(), function, key);
   EXPECT_TRUE(function->dict()->isDict());
 }
 

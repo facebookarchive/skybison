@@ -38,6 +38,7 @@ class Runtime;
   V(DunderEq, "__eq__")                                                        \
   V(DunderExit, "__exit__")                                                    \
   V(DunderFile, "__file__")                                                    \
+  V(DunderFlags, "__flags__")                                                  \
   V(DunderFloat, "__float__")                                                  \
   V(DunderFloordiv, "__floordiv__")                                            \
   V(DunderGe, "__ge__")                                                        \
@@ -74,6 +75,7 @@ class Runtime;
   V(DunderMatmul, "__matmul__")                                                \
   V(DunderMod, "__mod__")                                                      \
   V(DunderModule, "__module__")                                                \
+  V(DunderMro, "__mro__")                                                      \
   V(DunderMul, "__mul__")                                                      \
   V(DunderName, "__name__")                                                    \
   V(DunderNe, "__ne__")                                                        \

@@ -150,4 +150,37 @@ a = type.__new__(type, Foo);
   EXPECT_EQ(RawLayout::cast(a->instanceLayout())->id(), LayoutId::kType);
 }
 
+TEST(TypeBuiltinsTest, TypeHasDunderMroAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = str.__class__.__mro__");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isTuple());
+}
+
+TEST(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = str.__class__.__name__");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isStr());
+  EXPECT_TRUE(isStrEqualsCStr(RawStr::cast(*result), "type"));
+}
+
+TEST(TypeBuiltinsTest, TypeHasDunderFlagsAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = str.__class__.__flags__");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+}
+
+TEST(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = str.__class__.__dict__");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isDict());
+}
+
 }  // namespace python
