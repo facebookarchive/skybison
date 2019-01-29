@@ -149,7 +149,8 @@ target_include_directories(
 set(
   FROZEN_MODULE_INPUT
   library/builtins.py
-  library/sys.py)
+  library/sys.py
+  library/_warnings.py)
 set(
   FROZEN_MODULE_OUTPUT_DIR
   ${CMAKE_BINARY_DIR}/bootstrap)
@@ -275,6 +276,8 @@ add_library(
   runtime/vector.h
   runtime/view.h
   runtime/visitor.h
+  runtime/warnings-module.cpp
+  runtime/warnings-module.h
   ${RUNTIME_OS_SOURCES})
 target_compile_options(
   runtime

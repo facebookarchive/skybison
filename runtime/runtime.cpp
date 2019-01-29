@@ -52,6 +52,7 @@
 #include "type-builtins.h"
 #include "utils.h"
 #include "visitor.h"
+#include "warnings-module.h"
 
 namespace python {
 
@@ -2034,7 +2035,8 @@ void Runtime::createBuiltinsModule() {
   moduleAddGlobal(module, SymbolId::kUnderUnboundValue, unbound_value);
 
   addModule(module);
-  executeModule(kBuiltinsModuleData, module);
+  CHECK(!executeModule(kBuiltinsModuleData, module).isError(),
+        "Failed to initialize builtins module");
 
   // TODO(T39575976): Create a consistent way to remove from global dict
   // Explicitly remove module as this is not exposed in CPython
@@ -2189,7 +2191,13 @@ void Runtime::createWarningsModule() {
   HandleScope scope;
   Object name(&scope, symbols()->UnderWarnings());
   Module module(&scope, newModule(name));
+
+  moduleAddBuiltinFunction(
+      module, SymbolId::kWarn, builtinTrampolineWrapper<warningsWarn>,
+      builtinTrampolineWrapperKw<warningsWarn>, unimplementedTrampoline);
   addModule(module);
+  CHECK(!executeModule(k_warningsModuleData, module).isError(),
+        "Failed to initialize _warnings module");
 }
 
 void Runtime::createWeakRefModule() {

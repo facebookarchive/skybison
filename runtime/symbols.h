@@ -326,6 +326,7 @@ class Runtime;
   V(ValueCell, "valuecell")                                                    \
   V(ValueError, "ValueError")                                                  \
   V(Version, "version")                                                        \
+  V(Warn, "warn")                                                              \
   V(Warning, "Warning")                                                        \
   V(ZeroDivisionError, "ZeroDivisionError")
 
