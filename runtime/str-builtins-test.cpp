@@ -1810,19 +1810,19 @@ TEST(StringIterTest, SimpleIter) {
   StrIterator iter(&scope, runtime.newStrIterator(str));
   Object ch(&scope, strIteratorNext(thread, iter));
   ASSERT_TRUE(ch->isStr());
-  EXPECT_TRUE(RawStr::cast(ch)->equalsCStr("t"));
+  EXPECT_TRUE(RawStr::cast(*ch)->equalsCStr("t"));
 
   ch = strIteratorNext(thread, iter);
   ASSERT_TRUE(ch->isStr());
-  EXPECT_TRUE(RawStr::cast(ch)->equalsCStr("e"));
+  EXPECT_TRUE(RawStr::cast(*ch)->equalsCStr("e"));
 
   ch = strIteratorNext(thread, iter);
   ASSERT_TRUE(ch->isStr());
-  EXPECT_TRUE(RawStr::cast(ch)->equalsCStr("s"));
+  EXPECT_TRUE(RawStr::cast(*ch)->equalsCStr("s"));
 
   ch = strIteratorNext(thread, iter);
   ASSERT_TRUE(ch->isStr());
-  EXPECT_TRUE(RawStr::cast(ch)->equalsCStr("t"));
+  EXPECT_TRUE(RawStr::cast(*ch)->equalsCStr("t"));
 
   ch = strIteratorNext(thread, iter);
   ASSERT_TRUE(ch->isError());
@@ -1840,7 +1840,7 @@ TEST(StringIterTest, SetIndex) {
   iter->setIndex(1);
   Object ch(&scope, strIteratorNext(thread, iter));
   ASSERT_TRUE(ch->isStr());
-  EXPECT_TRUE(RawStr::cast(ch)->equalsCStr("e"));
+  EXPECT_TRUE(RawStr::cast(*ch)->equalsCStr("e"));
 
   iter->setIndex(5);
   ch = strIteratorNext(thread, iter);

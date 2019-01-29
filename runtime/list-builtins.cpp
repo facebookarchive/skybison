@@ -197,9 +197,9 @@ RawObject listSort(Thread* thread, const List& list) {
         break;
       }
       cur = list->at(j);
-      list->atPut(j + 1, cur);
+      list->atPut(j + 1, *cur);
     }
-    list->atPut(j + 1, tmp);
+    list->atPut(j + 1, *tmp);
   }
   return NoneType::object();
 }
@@ -620,7 +620,7 @@ RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
 static RawObject setItemSlice(Thread* thread, List& list, Object& slice_index,
                               Object& src) {
   HandleScope scope(thread);
-  Slice slice(&scope, Slice::cast(slice_index));
+  Slice slice(&scope, Slice::cast(*slice_index));
   word start, stop, step;
   slice->unpack(&start, &stop, &step);
   word slice_length =
@@ -705,7 +705,7 @@ static RawObject setItemSlice(Thread* thread, List& list, Object& slice_index,
       } else {
         value = list->at(i);
       }
-      result_list->atPut(i, value);
+      result_list->atPut(i, *value);
     }
   }
 
@@ -746,7 +746,7 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   Object src(&scope, args.get(2));
 
   if (index->isSmallInt()) {
-    word idx = RawSmallInt::cast(index)->value();
+    word idx = RawSmallInt::cast(*index)->value();
     word length = list->numItems();
     if (idx < 0) {
       idx += length;

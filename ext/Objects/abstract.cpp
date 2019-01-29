@@ -173,7 +173,7 @@ static PyObject* doBinaryOp(PyObject* v, PyObject* w,
   Object right(&scope, ApiHandle::fromPyObject(w)->asObject());
   Object result(&scope, doBinaryOpImpl(thread, op, left, right));
   if (!result->isError()) {
-    return ApiHandle::newReference(thread, result);
+    return ApiHandle::newReference(thread, *result);
   }
 
   // TODO(T32655200): Once we have a real string formatter, use that instead of
@@ -399,7 +399,7 @@ PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...) {
   HandleScope scope(thread);
   Object function(&scope, ApiHandle::fromPyObject(callable)->asObject());
   Frame* frame = thread->currentFrame();
-  frame->pushValue(function);
+  frame->pushValue(*function);
 
   word nargs = 0;
   {
@@ -523,8 +523,8 @@ PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
 
   Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->typeOf(obj));
-  return ApiHandle::newReference(thread, type);
+  Type type(&scope, runtime->typeOf(*obj));
+  return ApiHandle::newReference(thread, *type);
 }
 
 PY_EXPORT int PySequence_Check(PyObject* py_obj) {
@@ -533,11 +533,11 @@ PY_EXPORT int PySequence_Check(PyObject* py_obj) {
 
   Object obj(&scope, ApiHandle::fromPyObject(py_obj)->asObject());
   Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfDict(obj)) {
+  if (runtime->isInstanceOfDict(*obj)) {
     return 0;
   }
 
-  Type type(&scope, runtime->typeOf(obj));
+  Type type(&scope, runtime->typeOf(*obj));
   Object getitem(&scope, runtime->lookupSymbolInMro(thread, type,
                                                     SymbolId::kDunderGetItem));
 

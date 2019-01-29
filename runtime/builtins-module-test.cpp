@@ -640,13 +640,13 @@ d = getattr(list, '__module__')
   EXPECT_EQ(*a, Bool::trueObj());
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   ASSERT_TRUE(b->isStr());
-  EXPECT_TRUE(Str::cast(b)->equalsCStr("builtins"));
+  EXPECT_TRUE(Str::cast(*b)->equalsCStr("builtins"));
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_EQ(*a, Bool::trueObj());
   Object d(&scope, moduleAt(&runtime, "__main__", "d"));
   ASSERT_TRUE(b->isStr());
-  EXPECT_TRUE(Str::cast(b)->equalsCStr("builtins"));
+  EXPECT_TRUE(Str::cast(*b)->equalsCStr("builtins"));
 }
 
 TEST(BuiltinsModuleTest, QualnameAttrReturnsTypeName) {
@@ -665,13 +665,13 @@ d = getattr(list, '__qualname__')
   EXPECT_EQ(*a, Bool::trueObj());
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   ASSERT_TRUE(b->isStr());
-  EXPECT_TRUE(Str::cast(b)->equalsCStr("object"));
+  EXPECT_TRUE(Str::cast(*b)->equalsCStr("object"));
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_EQ(*c, Bool::trueObj());
   Object d(&scope, moduleAt(&runtime, "__main__", "d"));
   ASSERT_TRUE(d->isStr());
-  EXPECT_TRUE(Str::cast(d)->equalsCStr("list"));
+  EXPECT_TRUE(Str::cast(*d)->equalsCStr("list"));
 }
 
 TEST(BuiltinsModuleTest, BuiltinCompile) {
@@ -683,7 +683,7 @@ TEST(BuiltinsModuleTest, BuiltinCompile) {
   Str mode(&scope, runtime.newStrFromCStr("eval"));
   Code code(&scope, moduleAt(&runtime, "__main__", "code"));
   ASSERT_TRUE(code->filename().isStr());
-  EXPECT_TRUE(Str::cast(code->filename()).equals(filename));
+  EXPECT_TRUE(Str::cast(code->filename()).equals(*filename));
 
   ASSERT_TRUE(code->names().isTuple());
   Tuple names(&scope, code->names());
@@ -727,7 +727,7 @@ exec("a = 1338")
   // for functions that need globals, implicitGlobals, etc
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(a)->value(), 1338);
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 1338);
 }
 
 TEST(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
@@ -746,7 +746,7 @@ result = exec("a = 1338", gl)
   ASSERT_TRUE(result->isNoneType());
   Object a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(a)->value(), 1338);
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 1338);
 }
 
 TEST(BuiltinsModuleTest, BuiltinExecWithEmptyGlobalsFailsToSetGlobal) {
@@ -761,7 +761,7 @@ result = exec("a = 1338", {})
   ASSERT_TRUE(result->isNoneType());
   Object a(&scope, moduleAt(&runtime, main, "a"));
   ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(a)->value(), 1337);
+  EXPECT_EQ(SmallInt::cast(*a)->value(), 1337);
 }
 
 TEST(BuiltinsModuleDeathTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {

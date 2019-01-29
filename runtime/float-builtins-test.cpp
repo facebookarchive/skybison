@@ -297,11 +297,11 @@ subfloat_foo = subfloat.foo
   UserFloatBase user_float(&scope, *subfloat);
   Object float_value(&scope, user_float->floatValue());
   ASSERT_TRUE(float_value->isFloat());
-  EXPECT_EQ(Float::cast(float_value)->value(), 1.5);
+  EXPECT_EQ(Float::cast(*float_value)->value(), 1.5);
 
   Object foo_attr(&scope, moduleAt(&runtime, "__main__", "subfloat_foo"));
   ASSERT_TRUE(foo_attr->isInt());
-  EXPECT_EQ(3, Int::cast(foo_attr)->asWord());
+  EXPECT_EQ(3, Int::cast(*foo_attr)->asWord());
 }
 
 TEST(FloatBuiltins, FloatSubclassKeepsFloatInMro) {

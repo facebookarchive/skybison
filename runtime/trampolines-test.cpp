@@ -856,7 +856,7 @@ result = foo(1)
 )");
   Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1);
+  EXPECT_EQ(Int::cast(*result)->asWord(), 1);
 }
 
 TEST(TrampolineTest, InterpreterClosureUsesCellValue) {
@@ -900,7 +900,7 @@ result = foo(1)
 )");
   Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 10);
+  EXPECT_EQ(Int::cast(*result)->asWord(), 10);
 }
 
 TEST(TrampolineTest, ExplodeCallWithBadKeywordFails) {

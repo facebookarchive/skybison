@@ -262,11 +262,11 @@ RawObject IntBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfInt(self_obj)) {
+  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "__add__() must be called with int instance as the first argument");
   }
-  if (thread->runtime()->isInstanceOfInt(other_obj)) {
+  if (thread->runtime()->isInstanceOfInt(*other_obj)) {
     Int self(&scope, *self_obj);
     Int other(&scope, *other_obj);
     return runtime->intAdd(thread, self, other);
@@ -284,11 +284,11 @@ RawObject IntBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfInt(self)) {
+  if (!thread->runtime()->isInstanceOfInt(*self)) {
     return thread->raiseTypeErrorWithCStr(
         "__and__() must be called with int instance as the first argument");
   }
-  if (thread->runtime()->isInstanceOfInt(other)) {
+  if (thread->runtime()->isInstanceOfInt(*other)) {
     Int self_int(&scope, *self);
     Int other_int(&scope, *other);
     return runtime->intBinaryAnd(thread, self_int, other_int);
@@ -417,7 +417,7 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   }
   Int self(&scope, *self_obj);
 
-  if (!runtime->isInstanceOfInt(length_obj)) {
+  if (!runtime->isInstanceOfInt(*length_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "length argument cannot be interpreted as an integer");
   }
@@ -433,7 +433,7 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
         "length argument must be non-negative");
   }
 
-  if (!runtime->isInstanceOfStr(byteorder_obj)) {
+  if (!runtime->isInstanceOfStr(*byteorder_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "to_bytes() argument 2 must be str, not int");
   }
@@ -812,11 +812,11 @@ RawObject IntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfInt(self_obj)) {
+  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "__sub__() must be called with int instance as the first argument");
   }
-  if (thread->runtime()->isInstanceOfInt(other_obj)) {
+  if (thread->runtime()->isInstanceOfInt(*other_obj)) {
     Int self(&scope, *self_obj);
     Int other(&scope, *other_obj);
     return runtime->intSubtract(thread, self, other);
@@ -834,11 +834,11 @@ RawObject IntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfInt(self)) {
+  if (!thread->runtime()->isInstanceOfInt(*self)) {
     return thread->raiseTypeErrorWithCStr(
         "__xor__() must be called with int instance as the first argument");
   }
-  if (thread->runtime()->isInstanceOfInt(other)) {
+  if (thread->runtime()->isInstanceOfInt(*other)) {
     Int self_int(&scope, *self);
     Int other_int(&scope, *other);
     return runtime->intBinaryXor(thread, self_int, other_int);
@@ -869,7 +869,7 @@ RawObject IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
 
 static RawObject asBytesObject(Thread* thread, const Object& object) {
   Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfBytes(object)) {
+  if (runtime->isInstanceOfBytes(*object)) {
     return *object;
   }
 
@@ -901,7 +901,7 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
   if (maybe_bytes->isError()) return *maybe_bytes;
   Bytes bytes(&scope, *maybe_bytes);
 
-  if (!runtime->isInstanceOfStr(byteorder_obj)) {
+  if (!runtime->isInstanceOfStr(*byteorder_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "from_bytes() must be called with str instance as second argument");
   }
@@ -1127,7 +1127,7 @@ RawObject asIntObject(Thread* thread, const Object& object) {
   Object int_res(&scope,
                  Interpreter::callMethod1(thread, frame, int_method, object));
   if (int_res->isError()) return *int_res;
-  if (!thread->runtime()->isInstanceOfInt(int_res)) {
+  if (!thread->runtime()->isInstanceOfInt(*int_res)) {
     return thread->raiseTypeErrorWithCStr("__int__ returned non-int");
   }
 

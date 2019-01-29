@@ -164,7 +164,7 @@ PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
                                                   SymbolId::kDunderRepr));
   Object result(&scope,
                 Interpreter::callMethod1(thread, frame, method, object));
-  if (result->isError() || !thread->runtime()->isInstanceOfStr(result)) {
+  if (result->isError() || !thread->runtime()->isInstanceOfStr(*result)) {
     // If __repr__ doesn't return a string or error, throw a type error
     thread->raiseTypeErrorWithCStr(
         "__repr__ not callable or returned non-string");
@@ -234,7 +234,7 @@ PY_EXPORT PyObject* PyObject_Str(PyObject* obj) {
                                                   SymbolId::kDunderStr));
   Object result(&scope,
                 Interpreter::callMethod1(thread, frame, method, object));
-  if (result->isError() || !thread->runtime()->isInstanceOfStr(result)) {
+  if (result->isError() || !thread->runtime()->isInstanceOfStr(*result)) {
     // If __str__ doesn't return a string or error, throw a type error
     thread->raiseTypeErrorWithCStr(
         "__str__ not callable or returned non-string");

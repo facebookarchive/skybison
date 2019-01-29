@@ -23,7 +23,7 @@ std::ostream* builtinStderr = &std::cerr;
 
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(name)) {
+  if (!runtime->isInstanceOfStr(*name)) {
     return thread->raiseTypeErrorWithCStr(
         "getattr(): attribute name must be string");
   }
@@ -32,7 +32,7 @@ RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
 
 RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(name)) {
+  if (!runtime->isInstanceOfStr(*name)) {
     return thread->raiseTypeErrorWithCStr(
         "hasattr(): attribute name must be string");
   }
@@ -56,7 +56,7 @@ RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
                        const Object& value) {
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(name)) {
+  if (!runtime->isInstanceOfStr(*name)) {
     return thread->raiseTypeErrorWithCStr(
         "setattr(): attribute name must be string");
   }
@@ -195,7 +195,7 @@ void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
     Object patch_value_cell(&scope, Dict::Bucket::value(*patch_data, i));
     DCHECK(patch_value_cell->isValueCell(),
            "Values in type dict should be ValueCell");
-    Object patch_obj(&scope, RawValueCell::cast(patch_value_cell).value());
+    Object patch_obj(&scope, RawValueCell::cast(*patch_value_cell).value());
 
     if (runtime->dictIncludes(base, key)) {
       // Key is present in the base, so patch the base.
@@ -352,7 +352,7 @@ RawObject Builtins::compile(Thread* thread, Frame* frame, word nargs) {
   }
 
   Code code(&scope, compileStr(thread, source_str));
-  code->setFilename(filename);
+  code->setFilename(*filename);
   return *code;
 }
 

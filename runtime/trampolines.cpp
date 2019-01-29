@@ -63,7 +63,7 @@ static void processFreevarsAndCellvars(Thread* thread, const Function& function,
     }
 
     // Allocate a cell for an argument
-    word local_idx = Int::cast(arg_index)->asWord();
+    word local_idx = Int::cast(*arg_index)->asWord();
     value_cell->setValue(callee_frame->getLocal(local_idx));
     callee_frame->setLocal(local_idx, NoneType::object());
     callee_frame->setLocal(num_locals + i, *value_cell);
@@ -708,13 +708,13 @@ RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* caller, word argc) {
   bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
   Object varargs(&scope, caller->peek(has_varkeywords));
   if (!varargs->isTuple()) UNIMPLEMENTED("sequence varargs");
-  if (Tuple::cast(varargs)->length() != 0) {
+  if (Tuple::cast(*varargs)->length() != 0) {
     return thread->raiseTypeErrorWithCStr("function takes no arguments");
   }
   if (has_varkeywords) {
     Object kw_args(&scope, caller->topValue());
     if (!kw_args->isDict()) UNIMPLEMENTED("mapping kwargs");
-    if (Dict::cast(kw_args)->numItems() != 0) {
+    if (Dict::cast(*kw_args)->numItems() != 0) {
       return thread->raiseTypeErrorWithCStr(
           "function takes no keyword arguments");
     }
@@ -770,7 +770,7 @@ RawObject moduleTrampolineOneArgEx(Thread* thread, Frame* caller, word argc) {
   if (has_varkeywords) {
     Object kw_args(&scope, caller->topValue());
     if (!kw_args->isDict()) UNIMPLEMENTED("mapping kwargs");
-    if (Dict::cast(kw_args)->numItems() != 0) {
+    if (Dict::cast(*kw_args)->numItems() != 0) {
       return thread->raiseTypeErrorWithCStr(
           "function takes no keyword arguments");
     }
@@ -832,7 +832,7 @@ RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* caller, word argc) {
   if (has_varkeywords) {
     Object kw_args(&scope, caller->topValue());
     if (!kw_args->isDict()) UNIMPLEMENTED("mapping kwargs");
-    if (Dict::cast(kw_args)->numItems() != 0) {
+    if (Dict::cast(*kw_args)->numItems() != 0) {
       return thread->raiseTypeErrorWithCStr(
           "function takes no keyword arguments");
     }

@@ -424,13 +424,13 @@ TEST(DictItemIteratorBuiltinsTest, CallDunderNextReadsItemsSequentially) {
 
   Object item1(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item1->isTuple());
-  EXPECT_EQ(Tuple::cast(item1)->at(0), hello);
-  EXPECT_EQ(Tuple::cast(item1)->at(1), world);
+  EXPECT_EQ(Tuple::cast(*item1)->at(0), hello);
+  EXPECT_EQ(Tuple::cast(*item1)->at(1), world);
 
   Object item2(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item2->isTuple());
-  EXPECT_EQ(Tuple::cast(item2)->at(0), goodbye);
-  EXPECT_EQ(Tuple::cast(item2)->at(1), moon);
+  EXPECT_EQ(Tuple::cast(*item2)->at(0), goodbye);
+  EXPECT_EQ(Tuple::cast(*item2)->at(1), moon);
 
   Object item3(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item3->isError());
@@ -450,11 +450,11 @@ TEST(DictKeyIteratorBuiltinsTest, CallDunderNextReadsKeysSequentially) {
 
   Object item1(&scope, runBuiltin(DictKeyIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item1->isStr());
-  EXPECT_EQ(Str::cast(item1), hello);
+  EXPECT_EQ(Str::cast(*item1), hello);
 
   Object item2(&scope, runBuiltin(DictKeyIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item2->isStr());
-  EXPECT_EQ(Str::cast(item2), goodbye);
+  EXPECT_EQ(Str::cast(*item2), goodbye);
 
   Object item3(&scope, runBuiltin(DictKeyIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item3->isError());
@@ -474,11 +474,11 @@ TEST(DictValueIteratorBuiltinsTest, CallDunderNextReadsValuesSequentially) {
 
   Object item1(&scope, runBuiltin(DictValueIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item1->isStr());
-  EXPECT_EQ(Str::cast(item1), world);
+  EXPECT_EQ(Str::cast(*item1), world);
 
   Object item2(&scope, runBuiltin(DictValueIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item2->isStr());
-  EXPECT_EQ(Str::cast(item2), moon);
+  EXPECT_EQ(Str::cast(*item2), moon);
 
   Object item3(&scope, runBuiltin(DictValueIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item3->isError());
@@ -551,8 +551,8 @@ TEST(DictBuiltinsTest, ItemIteratorNextOnOneElementDictReturnsElement) {
   DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
   Object next(&scope, dictItemIteratorNext(Thread::currentThread(), iter));
   ASSERT_TRUE(next->isTuple());
-  EXPECT_EQ(Tuple::cast(next)->at(0), key);
-  EXPECT_EQ(Tuple::cast(next)->at(1), value);
+  EXPECT_EQ(Tuple::cast(*next)->at(0), key);
+  EXPECT_EQ(Tuple::cast(*next)->at(1), value);
 
   next = dictItemIteratorNext(Thread::currentThread(), iter);
   ASSERT_TRUE(next->isError());
@@ -650,7 +650,7 @@ TEST(DictBuiltinsTest, GetReturnsValue) {
   Object dflt(&scope, runtime.newInt(789));
   Object result(&scope, runBuiltin(DictBuiltins::get, dict, key, dflt));
   ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 456);
+  EXPECT_EQ(Int::cast(*result)->asWord(), 456);
 }
 
 TEST(DictBuiltinsTest, NextOnDictWithOnlyTombstonesReturnsFalse) {

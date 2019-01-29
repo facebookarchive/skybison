@@ -110,7 +110,7 @@ RawObject builtinImpIsBuiltin(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object name_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(name_obj)) {
+  if (!runtime->isInstanceOfStr(*name_obj)) {
     return thread->raiseTypeErrorWithCStr("is_builtin requires a str object");
   }
   Str name(&scope, *name_obj);
@@ -139,7 +139,7 @@ RawObject builtinImpIsFrozen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object name(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfStr(name)) {
+  if (!thread->runtime()->isInstanceOfStr(*name)) {
     return thread->raiseTypeErrorWithCStr("is_frozen requires a str object");
   }
   // Always return False

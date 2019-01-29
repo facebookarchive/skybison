@@ -157,7 +157,7 @@ PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
 
   Object bytes_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
 
-  if (!runtime->isInstanceOfBytes(bytes_obj)) {
+  if (!runtime->isInstanceOfBytes(*bytes_obj)) {
     thread->raiseTypeErrorWithCStr("PyBytes_Size expected bytes");
     return -1;
   }

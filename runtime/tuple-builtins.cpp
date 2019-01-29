@@ -63,7 +63,7 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object lhs(&scope, args.get(0));
-  if (!runtime->isInstanceOfTuple(lhs)) {
+  if (!runtime->isInstanceOfTuple(*lhs)) {
     return thread->raiseTypeErrorWithCStr("'__add__' requires a tuple");
   }
   if (!lhs->isTuple()) {
@@ -72,7 +72,7 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   }
   Tuple left(&scope, *lhs);
   Object rhs(&scope, args.get(1));
-  if (!runtime->isInstanceOfTuple(rhs)) {
+  if (!runtime->isInstanceOfTuple(*rhs)) {
     return thread->raiseTypeErrorWithCStr(
         "can only concatenate tuple to tuple");
   }
@@ -109,10 +109,10 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(self_obj)) {
+  if (!runtime->isInstanceOfTuple(*self_obj)) {
     return thread->raiseTypeErrorWithCStr("'__eq__' requires a 'tuple' object");
   }
-  if (!runtime->isInstanceOfTuple(other_obj)) {
+  if (!runtime->isInstanceOfTuple(*other_obj)) {
     return runtime->notImplemented();
   }
 
@@ -156,7 +156,7 @@ RawObject TupleBuiltins::sliceWithWords(Thread* thread, const Tuple& tuple,
                                         word start, word stop, word step) {
   word length = Slice::adjustIndices(tuple->length(), &start, &stop, step);
   if (start == 0 && stop >= tuple->length() && step == 1) {
-    return tuple;
+    return *tuple;
   }
 
   HandleScope scope(thread);
@@ -176,7 +176,7 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(self)) {
+  if (!runtime->isInstanceOfTuple(*self)) {
     return thread->raiseTypeErrorWithCStr(
         "__getitem__() must be called with a tuple instance as the first "
         "argument");
@@ -216,7 +216,7 @@ RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(obj)) {
+  if (!runtime->isInstanceOfTuple(*obj)) {
     return thread->raiseTypeErrorWithCStr(
         "tuple.__len__(self): self is not a tuple");
   }
@@ -387,7 +387,7 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
 
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(self)) {
+  if (!runtime->isInstanceOfTuple(*self)) {
     return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a tuple instance as the first "
         "argument");

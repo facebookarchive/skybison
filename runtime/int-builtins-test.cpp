@@ -516,7 +516,7 @@ TEST(IntBuiltinsTest, DunderAddWithLargeInts) {
                            &runtime, {0x97530e3b98111110, 0x11111079b3f13579}));
   ASSERT_TRUE(result_obj->isLargeInt());
   Int result(&scope, *result_obj);
-  EXPECT_EQ(expected->compare(result), 0);
+  EXPECT_EQ(expected->compare(*result), 0);
 }
 
 TEST(IntBuiltinsTest, DunderAddWithPositiveLargeIntsCarrying) {
@@ -529,7 +529,7 @@ TEST(IntBuiltinsTest, DunderAddWithPositiveLargeIntsCarrying) {
   ASSERT_TRUE(result_obj->isLargeInt());
   Int result(&scope, *result_obj);
   Int expected(&scope, newIntWithDigits(&runtime, {0, 0, 1}));
-  EXPECT_EQ(expected->compare(result), 0);
+  EXPECT_EQ(expected->compare(*result), 0);
 }
 
 TEST(IntBuiltinsTest, DunderAddWithNegativeLargeIntsCarrying) {
@@ -545,7 +545,7 @@ TEST(IntBuiltinsTest, DunderAddWithNegativeLargeIntsCarrying) {
   Int result(&scope, *result_obj);
   Int expected(&scope,
                newIntWithDigits(&runtime, {kMaxUword, kMaxWord, kMaxUword}));
-  EXPECT_EQ(expected->compare(result), 0);
+  EXPECT_EQ(expected->compare(*result), 0);
 }
 
 TEST(IntBuiltinsTest, DunderAndWithSmallIntsReturnsSmallInt) {
@@ -555,7 +555,7 @@ TEST(IntBuiltinsTest, DunderAndWithSmallIntsReturnsSmallInt) {
   Int right(&scope, SmallInt::fromWord(0x38));  // 0b111000
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), 0x10);  // 0b10000
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 0x10);  // 0b10000
 }
 
 TEST(IntBuiltinsTest, DunderAndWithLargeIntsReturnsLargeInt) {
@@ -566,7 +566,7 @@ TEST(IntBuiltinsTest, DunderAndWithLargeIntsReturnsLargeInt) {
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
   ASSERT_TRUE(result->isLargeInt());
   Int expected(&scope, newIntWithDigits(&runtime, {0x03, 0x30}));
-  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
 }
 
 TEST(IntBuiltinsTest, DunderAndWithNonIntReturnsNotImplemented) {
@@ -652,7 +652,7 @@ TEST(IntBuiltinsTest, DunderOrWithSmallIntsReturnsSmallInt) {
   Int right(&scope, SmallInt::fromWord(0x38));  // 0b111000
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), 0x3D);  // 0b111101
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 0x3D);  // 0b111101
 }
 
 TEST(IntBuiltinsTest, DunderOrWithLargeIntsReturnsLargeInt) {
@@ -663,7 +663,7 @@ TEST(IntBuiltinsTest, DunderOrWithLargeIntsReturnsLargeInt) {
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
   ASSERT_TRUE(result->isLargeInt());
   Int expected(&scope, newIntWithDigits(&runtime, {0x0F, 0xF0, 0xCAFE}));
-  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
 }
 
 TEST(IntBuiltinsTest, DunderOrWithNonIntReturnsNotImplemented) {
@@ -1451,7 +1451,7 @@ TEST(IntBuiltinsTest, FromBytesWithNumberWithDigitHighBitSet) {
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Int result(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder));
   Int expected(&scope, newIntWithDigits(&runtime, {kMaxUword, 0}));
-  EXPECT_EQ(result->compare(expected), 0);
+  EXPECT_EQ(result->compare(*expected), 0);
 }
 
 TEST(IntBuiltinsTest, FromBytesWithNegativeNumberReturnsSmallInt) {
@@ -1475,7 +1475,7 @@ result = int.from_bytes(b'\xca\xfe\xba\xbe\x01\x23\x45\x67\x89\xab\xcd', 'big',
   Int result(&scope, moduleAt(&runtime, "__main__", "result"));
   Int expected(&scope, newIntWithDigits(
                            &runtime, {0xbe0123456789abcd, 0xffffffffffcafeba}));
-  EXPECT_EQ(result->compare(expected), 0);
+  EXPECT_EQ(result->compare(*expected), 0);
 }
 
 TEST(IntBuiltinsTest, FromBytesWithKwArgumentsReturnsSmallInt) {
@@ -1633,7 +1633,7 @@ TEST(IntBuiltinsTest, DunderSubWithLargeIntsReturnsLargeInt) {
                            &runtime, {0x666665d776b97532, 0x13579c776d666666}));
   ASSERT_TRUE(result_obj->isLargeInt());
   Int result(&scope, *result_obj);
-  EXPECT_EQ(expected->compare(result), 0);
+  EXPECT_EQ(expected->compare(*result), 0);
 }
 
 TEST(IntBuiltinsTest, DunderSubWithPositiveLargeIntsBorrowingReturnsLargeInt) {
@@ -1646,7 +1646,7 @@ TEST(IntBuiltinsTest, DunderSubWithPositiveLargeIntsBorrowingReturnsLargeInt) {
   ASSERT_TRUE(result_obj->isLargeInt());
   Int result(&scope, *result_obj);
   Int expected(&scope, newIntWithDigits(&runtime, {2, 0, kMaxUword}));
-  EXPECT_EQ(expected->compare(result), 0);
+  EXPECT_EQ(expected->compare(*result), 0);
 }
 
 TEST(IntBuiltinsTest, DunderSubWithNegativeLargeIntsBorrowingReturnsLargeInt) {
@@ -1663,7 +1663,7 @@ TEST(IntBuiltinsTest, DunderSubWithNegativeLargeIntsBorrowingReturnsLargeInt) {
   Int expected(&scope, newIntWithDigits(
                            &runtime, {kMaxUword, static_cast<uword>(kMaxWord),
                                       kMaxUword}));
-  EXPECT_EQ(expected->compare(result), 0);
+  EXPECT_EQ(expected->compare(*result), 0);
 }
 
 TEST(IntBuiltinsTest, DunderSubWithNonIntSelfRaisesTypeError) {
@@ -1673,7 +1673,7 @@ TEST(IntBuiltinsTest, DunderSubWithNonIntSelfRaisesTypeError) {
   Str str(&scope, runtime.newStrFromCStr(""));
   Int right(&scope, runtime.newInt(1));
   Object result(&scope, runBuiltin(IntBuiltins::dunderSub, str, right));
-  EXPECT_TRUE(raised(result, LayoutId::kTypeError));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, DunderSubWithNonIntRightReturnsNotImplemented) {
@@ -1693,7 +1693,7 @@ TEST(IntBuiltinsTest, DunderXorWithSmallIntsReturnsSmallInt) {
   Int right(&scope, SmallInt::fromWord(0x38));  // 0b111000
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), 0x2D);  // 0b101101
+  EXPECT_EQ(SmallInt::cast(*result)->value(), 0x2D);  // 0b101101
 }
 
 TEST(IntBuiltinsTest, DunderXorWithLargeIntsReturnsLargeInt) {
@@ -1704,7 +1704,7 @@ TEST(IntBuiltinsTest, DunderXorWithLargeIntsReturnsLargeInt) {
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
   ASSERT_TRUE(result->isLargeInt());
   Int expected(&scope, newIntWithDigits(&runtime, {0x0C, 0xC0, 0xCAFE}));
-  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
 }
 
 TEST(IntBuiltinsTest, DunderXorWithNonIntReturnsNotImplemented) {

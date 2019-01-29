@@ -127,11 +127,11 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
   Module module(&scope, *module_obj);
   Str key(&scope, runtime->symbols()->DunderName());
   Object name(&scope, runtime->moduleAt(module, key));
-  if (!runtime->isInstanceOfStr(name)) {
+  if (!runtime->isInstanceOfStr(*name)) {
     thread->raiseSystemErrorWithCStr("nameless module");
     return nullptr;
   }
-  return ApiHandle::newReference(thread, name);
+  return ApiHandle::newReference(thread, *name);
 }
 
 PY_EXPORT void* PyModule_GetState(PyObject* mod) {
@@ -234,11 +234,11 @@ PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
   Module module(&scope, *module_obj);
   Str key(&scope, runtime->symbols()->DunderFile());
   Object filename(&scope, runtime->moduleAt(module, key));
-  if (!runtime->isInstanceOfStr(filename)) {
+  if (!runtime->isInstanceOfStr(*filename)) {
     thread->raiseSystemErrorWithCStr("module filename missing");
     return nullptr;
   }
-  return ApiHandle::newReference(thread, filename);
+  return ApiHandle::newReference(thread, *filename);
 }
 
 PY_EXPORT const char* PyModule_GetName(PyObject* pymodule) {

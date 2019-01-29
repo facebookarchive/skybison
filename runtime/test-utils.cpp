@@ -369,11 +369,11 @@ RawObject listFromRange(word start, word stop) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(str1)) {
+  if (!runtime->isInstanceOfStr(*str1)) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, *str1) << "'";
   }
-  if (!runtime->isInstanceOfStr(str2)) {
+  if (!runtime->isInstanceOfStr(*str2)) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, *str2) << "'";
   }
@@ -391,7 +391,7 @@ RawObject listFromRange(word start, word stop) {
   HandleScope scope(thread);
   Object str_obj(&scope, obj);
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(str_obj)) {
+  if (!runtime->isInstanceOfStr(*str_obj)) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, *str_obj) << "'";
   }

@@ -1079,7 +1079,7 @@ class Set(set): pass
 s = Set([0, 1, 2])
 )");
   Object s(&scope, moduleAt(&runtime, "__main__", "s"));
-  ASSERT_TRUE(runtime.isInstanceOfSet(s));
+  ASSERT_TRUE(runtime.isInstanceOfSet(*s));
   Object key(&scope, SmallInt::fromWord(0));
   Set set(&scope, *s);
   EXPECT_TRUE(runtime.setIncludes(set, key));
@@ -1098,7 +1098,7 @@ class Set(set): pass
 s = Set([0, 1, 2])
 )");
   Object s(&scope, moduleAt(&runtime, "__main__", "s"));
-  ASSERT_TRUE(runtime.isInstanceOfSet(s));
+  ASSERT_TRUE(runtime.isInstanceOfSet(*s));
 
   Object result(&scope, runBuiltin(SetBuiltins::dunderLen, s));
   ASSERT_TRUE(result.isInt());
@@ -1333,7 +1333,7 @@ TEST(SetBuiltinsTest, ReprReturnsElements) {
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isStr());
-  unique_c_ptr<char> result_str(RawStr::cast(result).toCStr());
+  unique_c_ptr<char> result_str(RawStr::cast(*result).toCStr());
   word elts[3];
   ASSERT_EQ(
       sscanf(result_str.get(), "{%ld, %ld, %ld}", &elts[0], &elts[1], &elts[2]),

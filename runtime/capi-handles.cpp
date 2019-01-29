@@ -28,7 +28,7 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
 
   // Fast path: All initialized builtin objects
   if (!value->isError()) {
-    return castFromObject(value);
+    return castFromObject(*value);
   }
 
   // Get the PyObject pointer from extension instances

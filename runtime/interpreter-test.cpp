@@ -2286,10 +2286,10 @@ b = getattr(baz, '__module__')
 )");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a->isStr());
-  EXPECT_TRUE(Str::cast(a)->equalsCStr("foo"));
+  EXPECT_TRUE(Str::cast(*a)->equalsCStr("foo"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   ASSERT_TRUE(b->isStr());
-  EXPECT_TRUE(Str::cast(b)->equalsCStr("__main__"));
+  EXPECT_TRUE(Str::cast(*b)->equalsCStr("__main__"));
 }
 
 TEST(InterpreterTest, MakeFunctionSetsDunderQualname) {
@@ -2304,10 +2304,10 @@ b = getattr(baz, '__qualname__')
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a->isStr());
-  EXPECT_TRUE(Str::cast(a)->equalsCStr("Foo.bar"));
+  EXPECT_TRUE(Str::cast(*a)->equalsCStr("Foo.bar"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   ASSERT_TRUE(b->isStr());
-  EXPECT_TRUE(Str::cast(b)->equalsCStr("baz"));
+  EXPECT_TRUE(Str::cast(*b)->equalsCStr("baz"));
 }
 
 TEST(InterpreterTest, MakeFunctionSetsDunderDoc) {
@@ -2321,13 +2321,13 @@ def bar(): pass
   HandleScope scope;
   Object foo(&scope, testing::moduleAt(&runtime, "__main__", "foo"));
   ASSERT_TRUE(foo->isFunction());
-  Object foo_docstring(&scope, RawFunction::cast(foo)->doc());
+  Object foo_docstring(&scope, RawFunction::cast(*foo)->doc());
   ASSERT_TRUE(foo_docstring->isStr());
-  EXPECT_TRUE(RawStr::cast(foo_docstring)->equalsCStr("This is a docstring"));
+  EXPECT_TRUE(RawStr::cast(*foo_docstring)->equalsCStr("This is a docstring"));
 
   Object bar(&scope, testing::moduleAt(&runtime, "__main__", "bar"));
   ASSERT_TRUE(bar->isFunction());
-  Object bar_docstring(&scope, RawFunction::cast(bar)->doc());
+  Object bar_docstring(&scope, RawFunction::cast(*bar)->doc());
   EXPECT_TRUE(bar_docstring->isNoneType());
 }
 

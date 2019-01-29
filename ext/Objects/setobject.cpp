@@ -29,7 +29,7 @@ PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
   Object set_obj(&scope, ApiHandle::fromPyObject(anyset)->asObject());
 
   // TODO(T28454727): add FrozenSet
-  if (!runtime->isInstanceOfSet(set_obj)) {
+  if (!runtime->isInstanceOfSet(*set_obj)) {
     thread->raiseBadInternalCall();
     return -1;
   }
@@ -49,7 +49,7 @@ PY_EXPORT int PySet_Clear(PyObject* anyset) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object set_obj(&scope, ApiHandle::fromPyObject(anyset)->asObject());
-  if (!runtime->isInstanceOfSetBase(set_obj)) {
+  if (!runtime->isInstanceOfSetBase(*set_obj)) {
     thread->raiseBadInternalCall();
     return -1;
   }
@@ -68,7 +68,7 @@ PY_EXPORT int PySet_Contains(PyObject* anyset, PyObject* key) {
 
   Object set_obj(&scope, ApiHandle::fromPyObject(anyset)->asObject());
 
-  if (!runtime->isInstanceOfSetBase(set_obj)) {
+  if (!runtime->isInstanceOfSetBase(*set_obj)) {
     thread->raiseBadInternalCall();
     return -1;
   }
@@ -84,7 +84,7 @@ PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object set_obj(&scope, ApiHandle::fromPyObject(pyset)->asObject());
-  if (!runtime->isInstanceOfSet(set_obj)) {
+  if (!runtime->isInstanceOfSet(*set_obj)) {
     thread->raiseBadInternalCall();
     return -1;
   }
@@ -120,7 +120,7 @@ PY_EXPORT PyObject* PySet_Pop(PyObject* pyset) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object set_obj(&scope, ApiHandle::fromPyObject(pyset)->asObject());
-  if (!runtime->isInstanceOfSet(set_obj)) {
+  if (!runtime->isInstanceOfSet(*set_obj)) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
@@ -138,7 +138,7 @@ PY_EXPORT Py_ssize_t PySet_Size(PyObject* anyset) {
   HandleScope scope(thread);
 
   Object set_obj(&scope, ApiHandle::fromPyObject(anyset)->asObject());
-  if (!runtime->isInstanceOfSetBase(set_obj)) {
+  if (!runtime->isInstanceOfSetBase(*set_obj)) {
     thread->raiseBadInternalCall();
     return -1;
   }

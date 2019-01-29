@@ -591,7 +591,7 @@ PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char* u,
   const byte* data = reinterpret_cast<const byte*>(u);
   Object value(&scope,
                thread->runtime()->newStrWithAll(View<byte>(data, size)));
-  return ApiHandle::newReference(thread, value);
+  return ApiHandle::newReference(thread, *value);
 }
 
 PY_EXPORT PyObject* PyUnicode_EncodeFSDefault(PyObject* /* e */) {
@@ -749,8 +749,8 @@ PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
 
   Object left_obj(&scope, ApiHandle::fromPyObject(left)->asObject());
   Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
-  if (!runtime->isInstanceOfStr(left_obj) ||
-      !runtime->isInstanceOfStr(right_obj)) {
+  if (!runtime->isInstanceOfStr(*left_obj) ||
+      !runtime->isInstanceOfStr(*right_obj)) {
     thread->raiseTypeErrorWithCStr("can only concatenate str to str");
     return nullptr;
   }
@@ -1063,7 +1063,7 @@ PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* py_str) {
   HandleScope scope(thread);
 
   Object str_obj(&scope, ApiHandle::fromPyObject(py_str)->asObject());
-  if (!runtime->isInstanceOfStr(str_obj)) {
+  if (!runtime->isInstanceOfStr(*str_obj)) {
     thread->raiseBadArgument();
     return -1;
   }
@@ -1083,7 +1083,7 @@ PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* py_str) {
   HandleScope scope(thread);
 
   Object str_obj(&scope, ApiHandle::fromPyObject(py_str)->asObject());
-  if (!runtime->isInstanceOfStr(str_obj)) {
+  if (!runtime->isInstanceOfStr(*str_obj)) {
     thread->raiseBadArgument();
     return -1;
   }

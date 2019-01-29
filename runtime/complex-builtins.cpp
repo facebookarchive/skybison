@@ -21,7 +21,7 @@ RawObject complexGetImag(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfComplex(self_obj)) {
+  if (!runtime->isInstanceOfComplex(*self_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "_complex_imag requires a complex instance");
   }
@@ -34,7 +34,7 @@ RawObject complexGetReal(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfComplex(self_obj)) {
+  if (!runtime->isInstanceOfComplex(*self_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "_complex_real requires a complex instance");
   }

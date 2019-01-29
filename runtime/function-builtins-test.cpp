@@ -76,7 +76,7 @@ TEST(FunctionBuiltinsTest,
   HandleScope scope;
   Object func(&scope, runtime.newFunction());
   Object none(&scope, NoneType::object());
-  Type none_type(&scope, runtime.typeOf(none));
+  Type none_type(&scope, runtime.typeOf(*none));
   Object result(&scope,
                 runBuiltin(FunctionBuiltins::dunderGet, func, none, none_type));
   EXPECT_TRUE(result->isBoundMethod());
@@ -87,7 +87,7 @@ TEST(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
   HandleScope scope;
   Object func(&scope, runtime.newFunction());
   Object none(&scope, NoneType::object());
-  Type some_type(&scope, runtime.typeOf(func));
+  Type some_type(&scope, runtime.typeOf(*func));
   Object result(&scope,
                 runBuiltin(FunctionBuiltins::dunderGet, func, none, some_type));
   EXPECT_EQ(result, func);
@@ -102,7 +102,7 @@ result = repr(f)
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isStr());
-  unique_c_ptr<char> result_str(RawStr::cast(result).toCStr());
+  unique_c_ptr<char> result_str(RawStr::cast(*result).toCStr());
   EXPECT_TRUE(std::strstr(result_str.get(), "<function f at 0x"));
 }
 
@@ -112,7 +112,7 @@ TEST(FunctionBuiltinsTest, ReprHandlesLambda) {
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isStr());
-  unique_c_ptr<char> result_str(RawStr::cast(result).toCStr());
+  unique_c_ptr<char> result_str(RawStr::cast(*result).toCStr());
   EXPECT_TRUE(std::strstr(result_str.get(), "<function <lambda> at 0x"));
 }
 

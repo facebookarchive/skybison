@@ -9,6 +9,8 @@
 namespace python {
 
 class Frame;
+template <typename T>
+class Handle;
 
 // Python types that store their value directly in a RawObject.
 #define INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                     \
@@ -198,6 +200,11 @@ INTRINSIC_CLASS_NAMES(CASE)
 // Add functionality common to all RawObject subclasses, split into two parts
 // since some types manually define cast() but want everything else.
 #define RAW_OBJECT_COMMON_NO_CAST(ty)                                          \
+  /* TODO(T34683229): Once Handle<T> doesn't inherit from T, delete this.      \
+   * Right now it exists to prevent implicit conversion of Handle<T> to T. */  \
+  template <typename T>                                                        \
+  Raw##ty(const Handle<T>&) = delete;                                          \
+                                                                               \
   /* TODO(T34683229) The const_cast here is temporary for a migration */       \
   Raw##ty* operator->() const { return const_cast<Raw##ty*>(this); }           \
   DISALLOW_HEAP_ALLOCATION()
@@ -2585,9 +2592,7 @@ inline bool RawObject::operator!=(const RawObject& other) const {
 
 template <typename T>
 T RawObject::rawCast() const {
-  T dest;
-  dest.raw_ = raw();
-  return dest;
+  return *static_cast<const T*>(this);
 }
 
 // RawInt

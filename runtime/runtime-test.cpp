@@ -497,7 +497,7 @@ TEST(RuntimeTest, NewStrFromFormatWithCStrArg) {
 
   const char input[] = "hello";
   Object str(&scope, runtime.newStrFromFormat("%s", input));
-  EXPECT_TRUE(isStrEqualsCStr(str, input));
+  EXPECT_TRUE(isStrEqualsCStr(*str, input));
 }
 
 TEST(RuntimeTest, NewStrWithAll) {
@@ -998,10 +998,10 @@ TEST(RuntimeTest, CallRunTwice) {
   Module main(&scope, findModule(&runtime, "__main__"));
   Object x(&scope, moduleAt(&runtime, main, "x"));
   EXPECT_TRUE(x->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(x)->value(), 42);
+  EXPECT_EQ(SmallInt::cast(*x)->value(), 42);
   Object y(&scope, moduleAt(&runtime, main, "y"));
   EXPECT_TRUE(y->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(y)->value(), 1764);
+  EXPECT_EQ(SmallInt::cast(*y)->value(), 1764);
 }
 
 struct LookupNameInMroData {
@@ -2531,12 +2531,12 @@ TEST(RuntimeIntTest, BinaryAndWithLargeInts) {
   // {0b00000111, 0b01110000}
   Int expected(&scope, newIntWithDigits(&runtime, {0x03, 0x30}));
   ASSERT_TRUE(result->isLargeInt());
-  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
 
   Object result_commuted(
       &scope, runtime.intBinaryAnd(Thread::currentThread(), right, left));
   ASSERT_TRUE(result_commuted->isLargeInt());
-  EXPECT_EQ(Int::cast(result)->compare(Int::cast(result_commuted)), 0);
+  EXPECT_EQ(Int::cast(*result)->compare(Int::cast(*result_commuted)), 0);
 }
 
 TEST(RuntimeIntTest, BinaryAndWithNegativeLargeInts) {
@@ -2551,7 +2551,7 @@ TEST(RuntimeIntTest, BinaryAndWithNegativeLargeInts) {
   ASSERT_TRUE(result->isLargeInt());
   Int expected(&scope, newIntWithDigits(&runtime, {static_cast<uword>(-42),
                                                    0xF0, 0x2, 0x7}));
-  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
 }
 
 TEST(RuntimeIntTest, BinaryOrWithSmallInts) {
@@ -2577,12 +2577,12 @@ TEST(RuntimeIntTest, BinaryOrWithLargeInts) {
   // {0b00001111, 0b11110000, 0b00000011, 0b00000111}
   Int expected(&scope, newIntWithDigits(&runtime, {0x0F, 0xF0, 0x3, 0x7}));
   ASSERT_TRUE(result->isLargeInt());
-  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
 
   Object result_commuted(
       &scope, runtime.intBinaryOr(Thread::currentThread(), right, left));
   ASSERT_TRUE(result_commuted->isLargeInt());
-  EXPECT_EQ(Int::cast(result)->compare(Int::cast(result_commuted)), 0);
+  EXPECT_EQ(Int::cast(*result)->compare(Int::cast(*result_commuted)), 0);
 }
 
 TEST(RuntimeIntTest, BinaryOrWithNegativeLargeInts) {
@@ -2595,7 +2595,7 @@ TEST(RuntimeIntTest, BinaryOrWithNegativeLargeInts) {
   Object result(&scope,
                 runtime.intBinaryOr(Thread::currentThread(), left, right));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), -2);
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), -2);
 }
 
 TEST(RuntimeIntTest, BinaryXorWithSmallInts) {
@@ -2621,12 +2621,12 @@ TEST(RuntimeIntTest, BinaryXorWithLargeInts) {
   // {0b00001111, 0b11100000, 0b00000011, 0b00000111}
   Int expected(&scope, newIntWithDigits(&runtime, {0x0F, 0xE0, 0x3, 0x7}));
   ASSERT_TRUE(result->isLargeInt());
-  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
 
   Object result_commuted(
       &scope, runtime.intBinaryXor(Thread::currentThread(), right, left));
   ASSERT_TRUE(result_commuted->isLargeInt());
-  EXPECT_EQ(Int::cast(result)->compare(Int::cast(result_commuted)), 0);
+  EXPECT_EQ(Int::cast(*result)->compare(Int::cast(*result_commuted)), 0);
 }
 
 TEST(RuntimeIntTest, BinaryXorWithNegativeLargeInts) {
@@ -2642,7 +2642,7 @@ TEST(RuntimeIntTest, BinaryXorWithNegativeLargeInts) {
                newIntWithDigits(&runtime, {0x29, ~static_cast<uword>(0xF0),
                                            ~static_cast<uword>(0x2), 0}));
   ASSERT_TRUE(result->isLargeInt());
-  EXPECT_EQ(expected->compare(Int::cast(result)), 0);
+  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
 }
 
 TEST(RuntimeIntTest, NormalizeLargeIntToSmallInt) {
@@ -2652,41 +2652,41 @@ TEST(RuntimeIntTest, NormalizeLargeIntToSmallInt) {
   LargeInt lint_42(&scope, newLargeIntWithDigits({42}));
   Object norm_42(&scope, runtime.normalizeLargeInt(lint_42));
   ASSERT_TRUE(norm_42->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(norm_42)->value(), 42);
+  EXPECT_EQ(SmallInt::cast(*norm_42)->value(), 42);
 
   LargeInt lint_neg1(&scope, newLargeIntWithDigits({uword(-1)}));
   Object norm_neg1(&scope, runtime.normalizeLargeInt(lint_neg1));
   ASSERT_TRUE(norm_neg1->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(norm_neg1)->value(), -1);
+  EXPECT_EQ(SmallInt::cast(*norm_neg1)->value(), -1);
 
   LargeInt lint_min(&scope,
                     newLargeIntWithDigits({uword(RawSmallInt::kMinValue)}));
   Object norm_min(&scope, runtime.normalizeLargeInt(lint_min));
   ASSERT_TRUE(norm_min->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(norm_min)->value(), RawSmallInt::kMinValue);
+  EXPECT_EQ(SmallInt::cast(*norm_min)->value(), RawSmallInt::kMinValue);
 
   LargeInt lint_max(&scope, newLargeIntWithDigits({RawSmallInt::kMaxValue}));
   Object norm_max(&scope, runtime.normalizeLargeInt(lint_max));
   ASSERT_TRUE(norm_max->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(norm_max)->value(), RawSmallInt::kMaxValue);
+  EXPECT_EQ(SmallInt::cast(*norm_max)->value(), RawSmallInt::kMaxValue);
 
   LargeInt lint_sext_neg_4(&scope,
                            newLargeIntWithDigits({uword(-4), kMaxUword}));
   Object norm_neg_4(&scope, runtime.normalizeLargeInt(lint_sext_neg_4));
   ASSERT_TRUE(norm_neg_4->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(norm_neg_4)->value(), -4);
+  EXPECT_EQ(SmallInt::cast(*norm_neg_4)->value(), -4);
 
   LargeInt lint_sext_neg_13(
       &scope,
       newLargeIntWithDigits({uword(-13), kMaxUword, kMaxUword, kMaxUword}));
   Object norm_neg_13(&scope, runtime.normalizeLargeInt(lint_sext_neg_13));
   ASSERT_TRUE(norm_neg_13->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(norm_neg_13)->value(), -13);
+  EXPECT_EQ(SmallInt::cast(*norm_neg_13)->value(), -13);
 
   LargeInt lint_zext_66(&scope, newLargeIntWithDigits({66, 0}));
   Object norm_66(&scope, runtime.normalizeLargeInt(lint_zext_66));
   ASSERT_TRUE(norm_66->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(norm_66)->value(), 66);
+  EXPECT_EQ(SmallInt::cast(*norm_66)->value(), 66);
 }
 
 TEST(RuntimeIntTest, NormalizeLargeIntToLargeInt) {
@@ -2696,39 +2696,39 @@ TEST(RuntimeIntTest, NormalizeLargeIntToLargeInt) {
   LargeInt lint_max(&scope, newLargeIntWithDigits({kMaxWord}));
   Object norm_max(&scope, runtime.normalizeLargeInt(lint_max));
   ASSERT_TRUE(norm_max->isLargeInt());
-  EXPECT_EQ(RawLargeInt::cast(norm_max)->asWord(), kMaxWord);
+  EXPECT_EQ(RawLargeInt::cast(*norm_max)->asWord(), kMaxWord);
 
   LargeInt lint_min(&scope, newLargeIntWithDigits({uword(kMinWord)}));
   Object norm_min(&scope, runtime.normalizeLargeInt(lint_min));
   ASSERT_TRUE(norm_min->isLargeInt());
-  EXPECT_EQ(RawLargeInt::cast(norm_min)->asWord(), kMinWord);
+  EXPECT_EQ(RawLargeInt::cast(*norm_min)->asWord(), kMinWord);
 
   LargeInt lint_max_sub_7_zext(&scope,
                                newLargeIntWithDigits({kMaxWord - 7, 0, 0}));
   Object norm_max_sub_7(&scope, runtime.normalizeLargeInt(lint_max_sub_7_zext));
   ASSERT_TRUE(norm_max_sub_7->isLargeInt());
-  EXPECT_EQ(RawLargeInt::cast(norm_max_sub_7)->asWord(), kMaxWord - 7);
+  EXPECT_EQ(RawLargeInt::cast(*norm_max_sub_7)->asWord(), kMaxWord - 7);
 
   LargeInt lint_min_plus_9_sext(
       &scope, newLargeIntWithDigits({uword(kMinWord) + 9, kMaxUword}));
   Object norm_min_plus_9(&scope,
                          runtime.normalizeLargeInt(lint_min_plus_9_sext));
   ASSERT_TRUE(norm_min_plus_9->isLargeInt());
-  EXPECT_EQ(RawLargeInt::cast(norm_min_plus_9)->asWord(), kMinWord + 9);
+  EXPECT_EQ(RawLargeInt::cast(*norm_min_plus_9)->asWord(), kMinWord + 9);
 
   LargeInt lint_no_sext(&scope, newLargeIntWithDigits({0, kMaxUword}));
   Object norm_no_sext(&scope, runtime.normalizeLargeInt(lint_no_sext));
   ASSERT_TRUE(norm_no_sext->isLargeInt());
-  EXPECT_EQ(RawLargeInt::cast(norm_no_sext)->numDigits(), 2);
-  EXPECT_EQ(RawLargeInt::cast(norm_no_sext)->digitAt(0), uword{0});
-  EXPECT_EQ(RawLargeInt::cast(norm_no_sext)->digitAt(1), kMaxUword);
+  EXPECT_EQ(RawLargeInt::cast(*norm_no_sext)->numDigits(), 2);
+  EXPECT_EQ(RawLargeInt::cast(*norm_no_sext)->digitAt(0), uword{0});
+  EXPECT_EQ(RawLargeInt::cast(*norm_no_sext)->digitAt(1), kMaxUword);
 
   LargeInt lint_no_zext(&scope, newLargeIntWithDigits({kMaxUword, 0}));
   Object norm_no_zext(&scope, runtime.normalizeLargeInt(lint_no_zext));
   ASSERT_TRUE(norm_no_zext->isLargeInt());
-  EXPECT_EQ(RawLargeInt::cast(norm_no_zext)->numDigits(), 2);
-  EXPECT_EQ(RawLargeInt::cast(norm_no_zext)->digitAt(0), kMaxUword);
-  EXPECT_EQ(RawLargeInt::cast(norm_no_zext)->digitAt(1), uword{0});
+  EXPECT_EQ(RawLargeInt::cast(*norm_no_zext)->numDigits(), 2);
+  EXPECT_EQ(RawLargeInt::cast(*norm_no_zext)->digitAt(0), kMaxUword);
+  EXPECT_EQ(RawLargeInt::cast(*norm_no_zext)->digitAt(1), uword{0});
 }
 
 TEST(RuntimeIntTest, BinaryLshiftWithPositive) {
@@ -2772,13 +2772,13 @@ TEST(RuntimeIntTest, BinaryLshiftReturnsSmallInt) {
   Int max(&scope, SmallInt::fromWord(SmallInt::kMaxValue >> 2));
   Object result(&scope, runtime.intBinaryLshift(thread, max, 2));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), SmallInt::kMaxValue & ~0x3);
+  EXPECT_EQ(SmallInt::cast(*result)->value(), SmallInt::kMaxValue & ~0x3);
 
   // (SmallInt::min >> 2) << 2 = SmallInt::min with last two bits zeroed
   Int min(&scope, SmallInt::fromWord(SmallInt::kMinValue >> 2));
   result = runtime.intBinaryLshift(thread, min, 2);
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(result)->value(), SmallInt::kMinValue & ~0x3);
+  EXPECT_EQ(SmallInt::cast(*result)->value(), SmallInt::kMinValue & ~0x3);
 }
 
 TEST(RuntimeIntTest, BinaryLshiftFitsOneWord) {
@@ -3176,7 +3176,7 @@ foo.x = 3
   Object key(&scope, runtime.newStrFromCStr("x"));
   Object value(&scope, runtime.dictAt(function_dict, key));
   ASSERT_TRUE(value->isInt());
-  EXPECT_EQ(Int::cast(value)->asWord(), 3);
+  EXPECT_EQ(Int::cast(*value)->asWord(), 3);
 }
 
 TEST(FunctionAttrTest, GetAttribute) {
@@ -3189,7 +3189,7 @@ value = foo.x
   HandleScope scope;
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   ASSERT_TRUE(value->isInt());
-  EXPECT_EQ(Int::cast(value)->asWord(), 3);
+  EXPECT_EQ(Int::cast(*value)->asWord(), 3);
 }
 
 TEST(FunctionAttrTest, GetAttributePrefersBuiltinAttributesOverDict) {

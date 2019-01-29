@@ -200,23 +200,23 @@ TEST(IntTest, LargeIntCompare) {
   HandleScope scope;
   Int great(&scope, testing::newIntWithDigits(&runtime, {1, 1}));
   Int small(&scope, testing::newIntWithDigits(&runtime, {0, 0, kMaxUword}));
-  EXPECT_EQ(great->compare(small), 1);
-  EXPECT_EQ(small->compare(great), -1);
+  EXPECT_EQ(great->compare(*small), 1);
+  EXPECT_EQ(small->compare(*great), -1);
 
   great = testing::newIntWithDigits(&runtime, {1, 1, 1});
   small = testing::newIntWithDigits(&runtime, {1, 1});
-  EXPECT_EQ(great->compare(small), 1);
-  EXPECT_EQ(small->compare(great), -1);
+  EXPECT_EQ(great->compare(*small), 1);
+  EXPECT_EQ(small->compare(*great), -1);
 
   great = testing::newIntWithDigits(&runtime, {kMaxUword - 1, 1});
   small = testing::newIntWithDigits(&runtime, {2, 1});
-  EXPECT_EQ(great->compare(small), 1);
-  EXPECT_EQ(small->compare(great), -1);
+  EXPECT_EQ(great->compare(*small), 1);
+  EXPECT_EQ(small->compare(*great), -1);
 
   great = testing::newIntWithDigits(&runtime, {kMaxUword - 1, kMaxUword - 1});
   small = testing::newIntWithDigits(&runtime, {2, kMaxUword - 1});
-  EXPECT_EQ(great->compare(small), 1);
-  EXPECT_EQ(small->compare(great), -1);
+  EXPECT_EQ(great->compare(*small), 1);
+  EXPECT_EQ(small->compare(*great), -1);
 }
 
 #define EXPECT_VALID(expr, expected_value)                                     \

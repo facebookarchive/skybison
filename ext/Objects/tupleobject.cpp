@@ -32,7 +32,7 @@ PY_EXPORT Py_ssize_t PyTuple_Size(PyObject* pytuple) {
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(tupleobj)) {
+  if (!runtime->isInstanceOfTuple(*tupleobj)) {
     thread->raiseBadInternalCall();
     return -1;
   }
@@ -74,7 +74,7 @@ PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(tupleobj)) {
+  if (!runtime->isInstanceOfTuple(*tupleobj)) {
     return nullptr;
   }
 

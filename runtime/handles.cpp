@@ -35,7 +35,7 @@ SUBTYPE_HANDLE_TYPES(SUBTYPE_CHECK)
 // now, and manually instantiate Handle as needed.
 template <typename T>
 bool Handle<T>::isValidType() const {
-  return do_type_check<T>()(scope_->thread(), *this);
+  return do_type_check<T>()(scope_->thread(), **this);
 }
 
 #define INSTANTIATE(ty) template class Handle<Raw##ty>;

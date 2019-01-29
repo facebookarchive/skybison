@@ -1446,7 +1446,7 @@ void Runtime::processCallbacks() {
 word Runtime::handleSysExit(Thread* thread) {
   HandleScope scope(thread);
   Object arg(&scope, thread->pendingExceptionValue());
-  if (isInstanceOfSystemExit(arg)) {
+  if (isInstanceOfSystemExit(*arg)) {
     // The exception could be raised by either native or managed code. If
     // native, there will be no SystemExit object. If managed, there will
     // be one to unpack.
@@ -1457,13 +1457,13 @@ word Runtime::handleSysExit(Thread* thread) {
     return EXIT_SUCCESS;
   }
   if (arg->isSmallInt()) {
-    return RawSmallInt::cast(arg).value();
+    return RawSmallInt::cast(*arg).value();
   }
   // The calls below can't have an exception pending
   thread->clearPendingException();
 
   Object result(&scope, thread->invokeMethod1(arg, SymbolId::kDunderRepr));
-  if (!isInstanceOfStr(result)) {
+  if (!isInstanceOfStr(*result)) {
     // The calls below can't have an exception pending
     thread->clearPendingException();
     // No __repr__ method or __repr__ raised. Either way, we can't handle it.
@@ -2575,7 +2575,7 @@ RawObject Runtime::dictItems(Thread* thread, const Dict& dict) {
     Tuple kvpair(&scope, newTuple(2));
     kvpair->atPut(0, Dict::Bucket::key(*data, i));
     kvpair->atPut(1, Dict::Bucket::value(*data, i));
-    items->atPut(num_items++, kvpair);
+    items->atPut(num_items++, *kvpair);
   }
   return *items;
 }
@@ -3754,8 +3754,8 @@ static uword addWithCarry(uword x, uword y, uword carry_in, uword* carry_out) {
 RawObject Runtime::intAdd(Thread* thread, const Int& left, const Int& right) {
   if (left->isSmallInt() && right->isSmallInt()) {
     // Take a shortcut because we know the result fits in a word.
-    word left_digit = RawSmallInt::cast(left)->value();
-    word right_digit = RawSmallInt::cast(right)->value();
+    word left_digit = RawSmallInt::cast(*left)->value();
+    word right_digit = RawSmallInt::cast(*right)->value();
     return newInt(left_digit + right_digit);
   }
 
@@ -3931,8 +3931,8 @@ RawObject Runtime::intSubtract(Thread* thread, const Int& left,
                                const Int& right) {
   if (left->isSmallInt() && right->isSmallInt()) {
     // Take a shortcut because we know the result fits in a word.
-    word left_digit = RawSmallInt::cast(left)->value();
-    word right_digit = RawSmallInt::cast(right)->value();
+    word left_digit = RawSmallInt::cast(*left)->value();
+    word right_digit = RawSmallInt::cast(*right)->value();
     return newInt(left_digit - right_digit);
   }
 

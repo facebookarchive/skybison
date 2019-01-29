@@ -281,7 +281,7 @@ RawObject DictBuiltins::dunderContains(Thread* thread, Frame* frame,
   if (key_hash->isError()) {
     return *key_hash;
   }
-  if (!runtime->isInstanceOfInt(key_hash)) {
+  if (!runtime->isInstanceOfInt(*key_hash)) {
     return thread->raiseTypeErrorWithCStr("__hash__ must return 'int'");
   }
   return Bool::fromBool(runtime->dictIncludesWithHash(dict, key, key_hash));
@@ -492,7 +492,7 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
   if (key_hash->isError()) {
     return *key_hash;
   }
-  if (!runtime->isInstanceOfInt(key_hash)) {
+  if (!runtime->isInstanceOfInt(*key_hash)) {
     return thread->raiseTypeErrorWithCStr("__hash__ must return 'int'");
   }
 
@@ -525,7 +525,7 @@ RawObject DictBuiltins::update(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfDict(self)) {
+  if (!runtime->isInstanceOfDict(*self)) {
     return thread->raiseTypeErrorWithCStr("'update' requires a 'dict' object");
   }
   Dict dict(&scope, *self);

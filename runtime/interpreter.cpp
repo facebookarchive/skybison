@@ -1005,7 +1005,7 @@ bool Interpreter::doDeleteSubscr(Context* ctx, word) {
   Object result(&scope,
                 callMethod2(thread, ctx->frame, delitem, container, key));
   if (result->isError()) return unwind(ctx);
-  ctx->frame->pushValue(result);
+  ctx->frame->pushValue(*result);
   return false;
 }
 
@@ -1237,7 +1237,7 @@ bool Interpreter::doEndFinally(Context* ctx, word) {
   HandleScope scope(thread);
 
   Object status(&scope, ctx->frame->popValue());
-  if (thread->runtime()->isInstanceOfType(status)) {
+  if (thread->runtime()->isInstanceOfType(*status)) {
     Type type(&scope, *status);
     if (type->isBaseExceptionSubclass()) {
       thread->setPendingExceptionType(*type);
@@ -1714,7 +1714,7 @@ bool Interpreter::doImportName(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   Object result(&scope, runtime->importModule(name));
   if (result->isError()) return unwind(ctx);
-  ctx->frame->setTopValue(result);
+  ctx->frame->setTopValue(*result);
   return false;
 }
 
@@ -1858,7 +1858,7 @@ bool Interpreter::doLoadFast(Context* ctx, word arg) {
     Str msg(&scope, thread->runtime()->newStrFromFormat(
                         "local variable '%.200s' referenced before assignment",
                         unique_c_ptr<char[]>(name->toCStr()).get()));
-    thread->raise(LayoutId::kUnboundLocalError, msg);
+    thread->raise(LayoutId::kUnboundLocalError, *msg);
     return unwind(ctx);
   }
   ctx->frame->pushValue(ctx->frame->getLocal(arg));
@@ -1943,17 +1943,17 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   function->setCode(frame->popValue());
   function->setName(RawCode::cast(function->code())->name());
   Dict globals(&scope, frame->globals());
-  function->setGlobals(globals);
+  function->setGlobals(*globals);
   Object name_key(&scope, runtime->symbols()->at(SymbolId::kDunderName));
   Object value_cell(&scope, runtime->dictAt(globals, name_key));
   if (value_cell->isValueCell()) {
-    DCHECK(!RawValueCell::cast(value_cell)->isUnbound(), "unbound globals");
-    function->setModule(RawValueCell::cast(value_cell)->value());
+    DCHECK(!RawValueCell::cast(*value_cell)->isUnbound(), "unbound globals");
+    function->setModule(RawValueCell::cast(*value_cell)->value());
   }
   Dict builtins(&scope, frame->builtins());
   Code code(&scope, function->code());
   Object consts_obj(&scope, code->consts());
-  if (consts_obj->isTuple() && RawTuple::cast(consts_obj)->length() >= 1) {
+  if (consts_obj->isTuple() && RawTuple::cast(*consts_obj)->length() >= 1) {
     Tuple consts(&scope, *consts_obj);
     if (consts->at(0)->isStr()) {
       function->setDoc(consts->at(0));

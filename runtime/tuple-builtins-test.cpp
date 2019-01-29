@@ -561,7 +561,7 @@ right = Foo((1, 2))
 )");
   Object right(&scope, moduleAt(&runtime, "__main__", "right"));
   ASSERT_FALSE(right->isTuple());
-  ASSERT_TRUE(runtime.isInstanceOfTuple(right));
+  ASSERT_TRUE(runtime.isInstanceOfTuple(*right));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
   ASSERT_TRUE(a->isBool());
   EXPECT_TRUE(Bool::cast(*a)->value());

@@ -271,10 +271,10 @@ RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(self)) {
+  if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseTypeErrorWithCStr("str.__add__ requires a str object");
   }
-  if (!runtime->isInstanceOfStr(other)) {
+  if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr("can only concatenate str to str");
   }
   if (!self->isStr()) {
@@ -297,7 +297,7 @@ RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self->isStr() && other->isStr()) {
-    return Bool::fromBool(RawStr::cast(self)->compare(other) == 0);
+    return Bool::fromBool(RawStr::cast(*self)->compare(*other) == 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -312,7 +312,7 @@ RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self->isStr() && other->isStr()) {
-    return Bool::fromBool(RawStr::cast(self)->compare(other) >= 0);
+    return Bool::fromBool(RawStr::cast(*self)->compare(*other) >= 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -327,7 +327,7 @@ RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self->isStr() && other->isStr()) {
-    return Bool::fromBool(RawStr::cast(self)->compare(other) > 0);
+    return Bool::fromBool(RawStr::cast(*self)->compare(*other) > 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -372,7 +372,7 @@ RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self->isStr() && other->isStr()) {
-    return Bool::fromBool(RawStr::cast(self)->compare(other) <= 0);
+    return Bool::fromBool(RawStr::cast(*self)->compare(*other) <= 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -428,7 +428,7 @@ RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self->isStr() && other->isStr()) {
-    return Bool::fromBool(RawStr::cast(self)->compare(other) < 0);
+    return Bool::fromBool(RawStr::cast(*self)->compare(*other) < 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -573,7 +573,7 @@ RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self->isStr() && other->isStr()) {
-    return Bool::fromBool(RawStr::cast(self)->compare(other) != 0);
+    return Bool::fromBool(RawStr::cast(*self)->compare(*other) != 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -592,7 +592,7 @@ RawObject StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object type_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfType(type_obj)) {
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "str.__new__(X): X is not a type object");
   }
@@ -625,7 +625,7 @@ RawObject StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   DCHECK(!method->isError(),
          "No __str__ found on the object even though everything inherits one");
   Object ret(&scope, Interpreter::callMethod1(thread, frame, method, arg));
-  if (!ret->isError() && !runtime->isInstanceOfStr(ret)) {
+  if (!ret->isError() && !runtime->isInstanceOfStr(*ret)) {
     return thread->raiseTypeErrorWithCStr("__str__ returned non-string");
   }
   return *ret;
@@ -666,7 +666,7 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
       return thread->raiseIndexErrorWithCStr(
           "cannot fit index into an index-sized integer");
     }
-    word idx = RawSmallInt::cast(index)->value();
+    word idx = RawSmallInt::cast(*index)->value();
     if (idx < 0) {
       idx += string->length();
     }
@@ -693,7 +693,7 @@ RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self->isStr()) {
-    if (thread->runtime()->isInstanceOfStr(self)) {
+    if (thread->runtime()->isInstanceOfStr(*self)) {
       UNIMPLEMENTED("str.__iter__(<subtype of str>)");
     }
     return thread->raiseTypeErrorWithCStr(
@@ -721,7 +721,7 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(obj)) {
+  if (!runtime->isInstanceOfStr(*obj)) {
     return thread->raiseTypeErrorWithCStr(
         "str.__repr__(self): self is not a str");
   }
@@ -842,7 +842,7 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(self)) {
+  if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseTypeErrorWithCStr("str.lstrip() requires a str object");
   }
   if (!self->isStr()) {
@@ -857,7 +857,7 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   if (other->isNoneType()) {
     return strStripSpace(thread, str, StrStripDirection::Left);
   }
-  if (!runtime->isInstanceOfStr(other)) {
+  if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr(
         "str.lstrip() arg must be None or str");
   }
@@ -880,7 +880,7 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(self)) {
+  if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseTypeErrorWithCStr("str.rstrip() requires a str object");
   }
   if (!self->isStr()) {
@@ -895,7 +895,7 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   if (other->isNoneType()) {
     return strStripSpace(thread, str, StrStripDirection::Right);
   }
-  if (!runtime->isInstanceOfStr(other)) {
+  if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr(
         "str.rstrip() arg must be None or str");
   }
@@ -918,7 +918,7 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(self)) {
+  if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseTypeErrorWithCStr("str.strip() requires a str object");
   }
   if (!self->isStr()) {
@@ -933,7 +933,7 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   if (other->isNoneType()) {
     return strStripSpace(thread, str, StrStripDirection::Both);
   }
-  if (!runtime->isInstanceOfStr(other)) {
+  if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr(
         "str.strip() arg must be None or str");
   }

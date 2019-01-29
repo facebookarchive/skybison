@@ -159,8 +159,8 @@ Frame* Thread::pushModuleFunctionFrame(const Module& module, const Code& code) {
 Frame* Thread::pushClassFunctionFrame(const Function& function,
                                       const Dict& dict) {
   HandleScope scope(this);
-  Code code(&scope, RawFunction::cast(function)->code());
-  Dict globals(&scope, RawFunction::cast(function)->globals());
+  Code code(&scope, RawFunction::cast(*function)->code());
+  Dict globals(&scope, RawFunction::cast(*function)->globals());
   Frame* result = pushExecFrame(code, globals, dict);
 
   word num_locals = code->nlocals();
@@ -174,12 +174,12 @@ Frame* Thread::pushClassFunctionFrame(const Function& function,
   DCHECK(
       code->numFreevars() == 0 ||
           code->numFreevars() ==
-              RawTuple::cast(RawFunction::cast(function)->closure())->length(),
+              RawTuple::cast(RawFunction::cast(*function)->closure())->length(),
       "Number of freevars is different than the closure.");
   for (word i = 0; i < code->numFreevars(); i++) {
     result->setLocal(
         num_locals + num_cellvars + i,
-        RawTuple::cast(RawFunction::cast(function)->closure())->at(i));
+        RawTuple::cast(RawFunction::cast(*function)->closure())->at(i));
   }
   return result;
 }

@@ -68,7 +68,7 @@ TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
   Marshal::Reader reader(&scope, &runtime, "\x41\x0a\x00\x00\x00testing123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
-  EXPECT_TRUE(isStrEqualsCStr(result, "testing123"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "testing123"));
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.

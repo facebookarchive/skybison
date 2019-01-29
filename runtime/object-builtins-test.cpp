@@ -158,7 +158,7 @@ TEST(NoneBuiltinsTest, DunderReprReturnsNone) {
   runFromCStr(&runtime, "a = None.__repr__()");
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_TRUE(isStrEqualsCStr(a, "None"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, "None"));
 }
 
 }  // namespace python

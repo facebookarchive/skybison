@@ -670,7 +670,7 @@ TEST(ListBuiltinsTest, GetItemWithNegativeIndex) {
   Object idx(&scope, SmallInt::fromWord(-3));
   Object result(&scope, runBuiltin(ListBuiltins::dunderGetItem, list, idx));
   ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1);
 }
 
 TEST(ListBuiltinsTest, DelItemWithNegativeIndex) {
