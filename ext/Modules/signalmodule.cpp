@@ -12,4 +12,6 @@ PY_EXPORT int PyOS_InterruptOccurred() {
   UNIMPLEMENTED("PyOS_InterruptOccurred");
 }
 
+PY_EXPORT void PyOS_AfterFork() { UNIMPLEMENTED("PyOS_AfterFork"); }
+
 }  // namespace python

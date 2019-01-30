@@ -112,4 +112,12 @@ PY_EXPORT PyObject* PyImport_ReloadModule(PyObject* /* m */) {
   UNIMPLEMENTED("PyImport_ReloadModule");
 }
 
+PY_EXPORT void _PyImport_AcquireLock() {
+  UNIMPLEMENTED("_PyImport_AcquireLock");
+}
+
+PY_EXPORT int _PyImport_ReleaseLock() {
+  UNIMPLEMENTED("_PyImport_ReleaseLock");
+}
+
 }  // namespace python

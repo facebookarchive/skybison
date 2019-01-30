@@ -1233,4 +1233,20 @@ PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t) {
   UNIMPLEMENTED("PyUnicode_READ_CHAR_Func");
 }
 
+PY_EXPORT int _Py_normalize_encoding(const char* /* encoding */,
+                                     char* /* lower */,
+                                     size_t /* lower_len */) {
+  UNIMPLEMENTED("_Py_normalize_encoding");
+}
+
+PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* /* unicode */,
+                                            const char* /* errors */) {
+  UNIMPLEMENTED("_PyUnicode_AsUTF8String");
+}
+
+PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* /* s */,
+                                                  Py_ssize_t /* size */) {
+  UNIMPLEMENTED("_Py_DecodeUTF8_surrogateescape");
+}
+
 }  // namespace python

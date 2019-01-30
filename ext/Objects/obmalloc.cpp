@@ -63,4 +63,6 @@ PY_EXPORT void* PyMem_Resize_Func(void* p, size_t size, size_t n) {
   return PyMem_Realloc(p, n * size);
 }
 
+PY_EXPORT char* _PyMem_Strdup(const char*) { UNIMPLEMENTED("_PyMem_Strdup"); }
+
 }  // namespace python

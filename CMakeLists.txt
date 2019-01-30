@@ -131,8 +131,10 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Python/pystrcmp.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pystrtod.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pythonrun.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/random.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/sysmodule.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/traceback.cpp)
+  ${CMAKE_SOURCE_DIR}/ext/Python/traceback.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Modules/signalmodule.cpp)
 include(CPythonBuild.cmake)
 
 add_library(capi-headers INTERFACE)

@@ -832,6 +832,15 @@ PyAPI_FUNC(struct symtable*) Py_SymtableString(const char*, const char*, int);
 PyAPI_FUNC(size_t) Py_UNICODE_strlen(const Py_UNICODE*);
 PyAPI_FUNC(char*) Py_UniversalNewlineFgets(char*, int, FILE*, PyObject*);
 PyAPI_FUNC(PyObject*) Py_VaBuildValue(const char*, va_list);
+PyAPI_FUNC(PyObject*) _PyUnicode_AsUTF8String(PyObject*, const char*);
+PyAPI_FUNC(char*) _PyMem_Strdup(const char*);
+PyAPI_FUNC(int) _PyBytes_Resize(PyObject**, Py_ssize_t);
+PyAPI_FUNC(int) _PyImport_ReleaseLock();
+PyAPI_FUNC(int) _PyLong_AsInt(PyObject*);
+PyAPI_FUNC(int) _PyOS_URandom(void*, Py_ssize_t);
+PyAPI_FUNC(int) _Py_normalize_encoding(const char*, char*, size_t);
+PyAPI_FUNC(void) _PyImport_AcquireLock();
+PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
 
 /* Non C-API functions */
 PyAPI_FUNC(int) PyBool_Check_Func(PyObject*);

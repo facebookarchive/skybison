@@ -168,4 +168,8 @@ PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
   return bytes->length();
 }
 
+PY_EXPORT int _PyBytes_Resize(PyObject**, Py_ssize_t) {
+  UNIMPLEMENTED("_PyBytes_Resize");
+}
+
 }  // namespace python
