@@ -54,7 +54,7 @@ TEST(WarningsModuleTest, WarnWithLargeStacklevelRaises) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 import _warnings
-_warnings.warn("hello", stacklevel=2 ** 70)
+_warnings.warn("hello", stacklevel=1180591620717411303424)  # 2 ** 70
 )"),
                             LayoutId::kOverflowError,
                             "Python int too large to convert to C ssize_t"));
