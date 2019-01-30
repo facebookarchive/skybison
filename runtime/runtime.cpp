@@ -3843,6 +3843,103 @@ RawObject Runtime::intBinaryAnd(Thread* thread, const Int& left,
   return normalizeLargeInt(result);
 }
 
+static uword subtractWithBorrow(uword x, uword y, uword borrow_in,
+                                uword* borrow_out) {
+  DCHECK(borrow_in <= 1, "borrow must be 0 or 1");
+  uword difference;
+  uword borrow0 = __builtin_sub_overflow(x, y, &difference);
+  uword borrow1 = __builtin_sub_overflow(difference, borrow_in, &difference);
+  *borrow_out = borrow0 | borrow1;
+  return difference;
+}
+
+static void fullMultiply(uword x, uword y, uword* result_low,
+                         uword* result_high) {
+  static_assert(sizeof(uword) == 8, "assuming uword is 64bit");
+  auto result = __extension__ static_cast<unsigned __int128>(x) * y;
+  *result_low = static_cast<uword>(result);
+  *result_high = static_cast<uword>(result >> 64);
+}
+
+RawObject Runtime::intMultiply(Thread* thread, const Int& left,
+                               const Int& right) {
+  // See also Hackers Delight Chapter 8 Multiplication.
+  word left_digits = left->numDigits();
+  word right_digits = right->numDigits();
+  if (left_digits == 1 && right_digits == 1) {
+    word left_digit = static_cast<word>(left->digitAt(0));
+    word right_digit = static_cast<word>(right->digitAt(0));
+    word result;
+    if (!__builtin_mul_overflow(left_digit, right_digit, &result)) {
+      return newInt(result);
+    }
+  }
+
+  HandleScope scope(thread);
+  word result_digits = left->numDigits() + right->numDigits();
+  LargeInt result(&scope, heap()->createLargeInt(result_digits));
+
+  for (word i = 0; i < result_digits; i++) {
+    result->digitAtPut(i, 0);
+  }
+
+  // Perform an unsigned multiplication.
+  for (word l = 0; l < left_digits; l++) {
+    uword digit_left = left->digitAt(l);
+    uword carry = 0;
+    for (word r = 0; r < right_digits; r++) {
+      uword digit_right = right->digitAt(r);
+      uword result_digit = result->digitAt(l + r);
+
+      uword product_low;
+      uword product_high;
+      fullMultiply(digit_left, digit_right, &product_low, &product_high);
+      uword carry0;
+      uword sum0 = addWithCarry(result_digit, product_low, 0, &carry0);
+      uword carry1;
+      uword sum1 = addWithCarry(sum0, carry, 0, &carry1);
+      result->digitAtPut(l + r, sum1);
+      // Note that this cannot overflow: Even with digit_left and digit_right
+      // being kMaxUword the result is something like 0xfff...e0000...1, so
+      // carry1 will be zero in these cases where the high word is close to
+      // overflow.
+      carry = product_high + carry0 + carry1;
+    }
+    result->digitAtPut(l + right_digits, carry);
+  }
+
+  // Correct for `left` signedness:
+  // Interpreting a negative number as unsigned means we are off by
+  // `2**num_bits` (i.e. for a single byte `-3 = 0b11111101` gets interpreted
+  // as 253, which is off by `256 = 253 - -3 = 2**8`).
+  // Hence if we interpreted a negative `left` as unsigned, the multiplication
+  // result will be off by `right * 2**left_num_bits`. We can correct that by
+  // subtracting `right << left_num_bits`.
+  if (left->isNegative()) {
+    uword borrow = 0;
+    for (word r = 0; r < right_digits; r++) {
+      uword right_digit = right->digitAt(r);
+      uword result_digit = result->digitAt(r + left_digits);
+      uword difference =
+          subtractWithBorrow(result_digit, right_digit, borrow, &borrow);
+      result->digitAtPut(r + left_digits, difference);
+    }
+  }
+  // Correct for `right` signedness, analogous to the `left` correction.
+  if (right->isNegative()) {
+    uword borrow = 0;
+    for (word l = 0; l < left_digits; l++) {
+      uword left_digit = left->digitAt(l);
+      uword result_digit = result->digitAt(l + right_digits);
+      uword difference =
+          subtractWithBorrow(result_digit, left_digit, borrow, &borrow);
+      result->digitAtPut(l + right_digits, difference);
+    }
+  }
+
+  return normalizeLargeInt(result);
+}
+
 RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
                                const Int& right) {
   word left_digits = left->numDigits();
@@ -3942,16 +4039,6 @@ RawObject Runtime::intBinaryXor(Thread* thread, const Int& left,
     }
   }
   return normalizeLargeInt(result);
-}
-
-static uword subtractWithBorrow(uword x, uword y, uword borrow_in,
-                                uword* borrow_out) {
-  DCHECK(borrow_in <= 1, "borrow must be 0 or 1");
-  uword difference;
-  uword borrow0 = __builtin_sub_overflow(x, y, &difference);
-  uword borrow1 = __builtin_sub_overflow(difference, borrow_in, &difference);
-  *borrow_out = borrow0 | borrow1;
-  return difference;
 }
 
 RawObject Runtime::intSubtract(Thread* thread, const Int& left,

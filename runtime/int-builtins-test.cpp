@@ -362,17 +362,6 @@ d * 0 == 0
 )");
 }
 
-TEST(IntBuiltinsTest, BinaryMulOverflowCheck) {
-  Runtime runtime;
-
-  // Overflows in the multiplication itself.
-  EXPECT_DEBUG_ONLY_DEATH(runFromCStr(&runtime, R"(
-a = 268435456
-a = a * a * a
-)"),
-                          "small integer overflow");
-}
-
 TEST(IntBuiltinsTest, InplaceAdd) {
   Runtime runtime;
   HandleScope scope;
@@ -643,6 +632,162 @@ TEST(IntBuiltinsTest, DunderLshiftWithInvalidArgumentThrowsException) {
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "a = 10 << (1 << 100)"),
                             LayoutId::kOverflowError, "shift count too large"));
+}
+
+TEST(IntBuiltinsTest, DunderMulWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, runtime.newInt(13));
+  Int right(&scope, runtime.newInt(-3));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), -39);
+}
+
+TEST(IntBuiltinsTest, DunderMulWithSmallIntsReturnsSingleDigitLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, RawSmallInt::fromWord(RawSmallInt::kMaxValue));
+  Int right(&scope, RawSmallInt::fromWord(2));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  EXPECT_EQ(RawLargeInt::cast(*result)->asWord(), RawSmallInt::kMaxValue * 2);
+}
+
+TEST(IntBuiltinsTest, DunderMulWithSmallIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, RawSmallInt::fromWord(RawSmallInt::kMaxValue));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, num, num));
+  EXPECT_TRUE(result->isLargeInt());
+  Int expected(&scope, newIntWithDigits(
+                           &runtime, {0x8000000000000001, 0xfffffffffffffff}));
+  EXPECT_EQ(expected->compare(RawInt::cast(*result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderMulWithSmallIntLargeIntReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, RawSmallInt::fromWord(-3));
+  Int right(&scope,
+            newIntWithDigits(&runtime, {0xa1b2c3d4e5f67890, 0xaabbccddeeff}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(&scope, newIntWithDigits(
+                           &runtime, {0x1ae7b4814e1c9650, 0xfffdffcc99663301}));
+  EXPECT_EQ(expected->compare(RawInt::cast(*result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderMulWithZeroReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, newIntWithDigits(&runtime, {0, 1}));
+  Int right(&scope, RawSmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  EXPECT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 0);
+}
+
+TEST(IntBuiltinsTest, DunderMulWithPositiveLargeIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, newIntWithDigits(&runtime,
+                                    {0xfedcba0987654321, 0x1234567890abcdef}));
+  Int right(&scope, newIntWithDigits(
+                        &runtime, {0x0123456789abcdef, 0xfedcba9876543210, 0}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  ASSERT_TRUE(result_obj->isInt());
+  Int result(&scope, *result_obj);
+  Int expected(&scope, newIntWithDigits(
+                           &runtime, {0x2236d928fe5618cf, 0xaa6c87569f0ec6a4,
+                                      0x213cff7595234949, 0x121fa00acd77d743}));
+  EXPECT_EQ(expected->compare(*result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderMulWithMaxPositiveLargeIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, newIntWithDigits(&runtime, {kMaxUword, 0}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderMul, num, num));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  Int expected(&scope, newIntWithDigits(&runtime, {1, kMaxUword - 1, 0}));
+  EXPECT_EQ(expected->compare(*result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderMulWithNegativeLargeIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Smallest negative number representable with 2 digits.
+  Int num(&scope,
+          newIntWithDigits(&runtime, {0, static_cast<uword>(kMinWord)}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderMul, num, num));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  Int expected(
+      &scope,
+      newIntWithDigits(&runtime, {0, 0, 0, static_cast<uword>(kMinWord) >> 1}));
+  EXPECT_EQ(expected->compare(*result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderMulWithNegativePositiveLargeIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, newIntWithDigits(&runtime, {0xada6d35d8ef7c790}));
+  Int right(&scope, newIntWithDigits(&runtime,
+                                     {0x3ff2ca02c44fbb1c, 0x5873a2744317c09a}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  Int expected(&scope, newIntWithDigits(&runtime,
+                                        {0x6d80780b775003c0, 0xb46184fc0839baa0,
+                                         0xe38c265747f0661f}));
+  EXPECT_EQ(expected->compare(*result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderMulWithPositiveNegativeLargeIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, newIntWithDigits(&runtime,
+                                    {0x3ff2ca02c44fbb1c, 0x5873a2744317c09a}));
+  Int right(&scope, newIntWithDigits(&runtime, {0xada6d35d8ef7c790}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  Int expected(&scope, newIntWithDigits(&runtime,
+                                        {0x6d80780b775003c0, 0xb46184fc0839baa0,
+                                         0xe38c265747f0661f}));
+  EXPECT_EQ(expected->compare(*result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderMulWithNonIntSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str str(&scope, runtime.newStrFromCStr(""));
+  Int right(&scope, runtime.newInt(1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, str, right));
+  ASSERT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderMulWithNonIntRightReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int left(&scope, runtime.newInt(1));
+  Str str(&scope, runtime.newStrFromCStr(""));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, str));
+  ASSERT_TRUE(result->isNotImplemented());
 }
 
 TEST(IntBuiltinsTest, DunderOrWithSmallIntsReturnsSmallInt) {

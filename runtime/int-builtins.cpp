@@ -31,6 +31,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
     {SymbolId::kDunderLshift, nativeTrampoline<dunderLshift>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
+    {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
     {SymbolId::kDunderNeg, nativeTrampoline<dunderNeg>},
     {SymbolId::kDunderOr, nativeTrampoline<dunderOr>},
@@ -173,7 +174,6 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
     {SymbolId::kDunderFloordiv, nativeTrampoline<dunderFloorDiv>},
     {SymbolId::kDunderInvert, nativeTrampoline<dunderInvert>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
-    {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderTruediv, nativeTrampoline<dunderTrueDiv>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
@@ -731,27 +731,22 @@ RawObject SmallIntBuiltins::dunderMod(Thread* thread, Frame* frame,
   return runtime->notImplemented();
 }
 
-RawObject SmallIntBuiltins::dunderMul(Thread* thread, Frame* frame,
-                                      word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
+RawObject IntBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (!self->isSmallInt()) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
     return thread->raiseTypeErrorWithCStr(
-        "__mul__() must be called with int instance as first argument");
+        "__mul__() must be called with int instance as the first argument");
   }
-  word left = RawSmallInt::cast(self)->value();
-  if (other->isInt()) {
-    word right = RawInt::cast(other)->asWord();
-    word product;
-    if (__builtin_mul_overflow(left, right, &product)) {
-      UNIMPLEMENTED("small integer overflow");
-    }
-    return thread->runtime()->newInt(product);
+  if (thread->runtime()->isInstanceOfInt(*other_obj)) {
+    Int self(&scope, *self_obj);
+    Int other(&scope, *other_obj);
+    return runtime->intMultiply(thread, self, other);
   }
+  // signal to binary dispatch to try another method
   return thread->runtime()->notImplemented();
 }
 
