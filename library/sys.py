@@ -4,3 +4,6 @@
 
 def exit(code=0):
     raise SystemExit(code)
+
+
+path_importer_cache = {}

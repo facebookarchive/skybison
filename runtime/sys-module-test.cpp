@@ -109,6 +109,17 @@ sysname = sys.platform
   }
 }
 
+TEST(SysModuleTest, PathImporterCache) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+import sys
+result = sys.path_importer_cache
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result->isDict());
+}
+
 TEST(SysModuleTest, BuiltinModuleNames) {
   Runtime runtime;
   HandleScope scope;
