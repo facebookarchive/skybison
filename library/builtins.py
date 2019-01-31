@@ -69,6 +69,35 @@ class KeyError(bootstrap=True):
         return super(KeyError, self).__str__()
 
 
+class bytes(bootstrap=True):
+    def __add__(self, other: bytes) -> bytes:
+        pass
+
+    def __eq__(self, other):
+        pass
+
+    def __ge__(self, other):
+        pass
+
+    def __getitem__(self, key):
+        pass
+
+    def __gt__(self, other):
+        pass
+
+    def __le__(self, other):
+        pass
+
+    def __len__(self) -> int:
+        pass
+
+    def __lt__(self, other):
+        pass
+
+    def __ne__(self, other):
+        pass
+
+
 class tuple(bootstrap=True):
     def __repr__(self):
         num_elems = len(self)

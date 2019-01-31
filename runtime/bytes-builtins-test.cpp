@@ -7,28 +7,27 @@ namespace python {
 
 using namespace testing;
 
-TEST(BytesBuiltinsTest, DunderAddWithZeroArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderAddWithTooFewArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd));
-  EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__add__(b'')"), LayoutId::kTypeError,
+      "TypeError: '__add__' takes 2 arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderAddWithTooManyArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderAddWithTooManyArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, '1'));
-  Object arg1(&scope, runtime.newBytes(2, '2'));
-  Object arg2(&scope, runtime.newBytes(3, '3'));
-  Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, arg1, arg2));
-  EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__add__(b'', b'', b'')"),
+      LayoutId::kTypeError,
+      "TypeError: '__add__' takes max 2 positional arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderAddWithNonBytesSelfRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, SmallInt::fromWord(0));
-  Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self));
+  Object other(&scope, runtime.newBytes(1, '1'));
+  Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, other));
   EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
 }
 
@@ -37,7 +36,7 @@ TEST(BytesBuiltinsTest, DunderAddWithNonBytesOtherRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, runtime.newBytes(1, '1'));
   Object other(&scope, SmallInt::fromWord(2));
-  Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd));
+  Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, other));
   EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
 }
 
@@ -55,11 +54,19 @@ TEST(BytesBuiltinsTest, DunderAddWithTwoBytesReturnsConcatenatedBytes) {
   EXPECT_EQ(result->byteAt(2), '2');
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithWrongNumberOfArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderEqWithTooFewArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq));
-  EXPECT_TRUE(raised(*eq, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__eq__(b'')"), LayoutId::kTypeError,
+      "TypeError: '__eq__' takes 2 arguments but 1 given"));
+}
+
+TEST(BytesBuiltinsTest, DunderEqWithTooManyArgsRaises) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__eq__(b'', b'', b'')"),
+      LayoutId::kTypeError,
+      "TypeError: '__eq__' takes max 2 positional arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderEqWithNonBytesSelfRaisesTypeError) {
@@ -110,11 +117,19 @@ TEST(BytesBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
   EXPECT_FALSE(RawBool::cast(*eq)->value());
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithWrongNumberOfArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderGeWithTooFewArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe));
-  EXPECT_TRUE(raised(*ge, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__ge__(b'')"), LayoutId::kTypeError,
+      "TypeError: '__ge__' takes 2 arguments but 1 given"));
+}
+
+TEST(BytesBuiltinsTest, DunderGeWithTooManyArgsRaises) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__ge__(b'', b'', b'')"),
+      LayoutId::kTypeError,
+      "TypeError: '__ge__' takes max 2 positional arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithNonBytesSelfRaisesTypeError) {
@@ -122,7 +137,7 @@ TEST(BytesBuiltinsTest, DunderGeWithNonBytesSelfRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, SmallInt::fromWord(0));
   Object other(&scope, runtime.newBytes(1, 'a'));
-  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self));
+  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   EXPECT_TRUE(raised(*ge, LayoutId::kTypeError));
 }
 
@@ -185,18 +200,27 @@ TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyLaterOtherReturnsFalse) {
   EXPECT_FALSE(RawBool::cast(*ge)->value());
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithWrongNumberOfArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderGetItemWithTooFewArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem));
-  EXPECT_TRUE(raised(*item, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__getitem__(b'')"), LayoutId::kTypeError,
+      "TypeError: '__getitem__' takes 2 arguments but 1 given"));
+}
+
+TEST(BytesBuiltinsTest, DunderGetItemWithTooManyArgsRaises) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__getitem__(b'', b'', b'')"),
+      LayoutId::kTypeError,
+      "TypeError: '__getitem__' takes max 2 positional arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, SmallInt::fromWord(0));
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self));
+  Object index(&scope, SmallInt::fromWord(4));
+  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
   EXPECT_TRUE(raised(*item, LayoutId::kTypeError));
 }
 
@@ -236,8 +260,7 @@ TEST(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
   Object self(&scope, runtime.newBytesWithAll(View<byte>(hello, 5)));
   Object index(&scope, runtime.newInt(-5));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  ASSERT_TRUE(item->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*item), RawSmallInt::fromWord('h'));
+  EXPECT_EQ(*item, RawSmallInt::fromWord('h'));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
@@ -247,8 +270,7 @@ TEST(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
   Object self(&scope, runtime.newBytesWithAll(View<byte>(hello, 5)));
   Object index(&scope, RawSmallInt::fromWord(0));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  ASSERT_TRUE(item->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*item), RawSmallInt::fromWord('h'));
+  EXPECT_EQ(*item, RawSmallInt::fromWord('h'));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
@@ -296,11 +318,19 @@ TEST(BytesBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
   EXPECT_TRUE(raised(*item, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithWrongNumberOfArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderGtWithTooFewArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt));
-  EXPECT_TRUE(raised(*gt, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__gt__(b'')"), LayoutId::kTypeError,
+      "TypeError: '__gt__' takes 2 arguments but 1 given"));
+}
+
+TEST(BytesBuiltinsTest, DunderGtWithTooManyArgsRaises) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__gt__(b'', b'', b'')"),
+      LayoutId::kTypeError,
+      "TypeError: '__gt__' takes max 2 positional arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithNonBytesSelfRaisesTypeError) {
@@ -308,7 +338,7 @@ TEST(BytesBuiltinsTest, DunderGtWithNonBytesSelfRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, SmallInt::fromWord(0));
   Object other(&scope, runtime.newBytes(1, 'a'));
-  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self));
+  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   EXPECT_TRUE(raised(*gt, LayoutId::kTypeError));
 }
 
@@ -371,11 +401,19 @@ TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyLaterOtherReturnsFalse) {
   EXPECT_FALSE(RawBool::cast(*gt)->value());
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithWrongNumberOfArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderLeWithTooFewArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe));
-  EXPECT_TRUE(raised(*le, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__le__(b'')"), LayoutId::kTypeError,
+      "TypeError: '__le__' takes 2 arguments but 1 given"));
+}
+
+TEST(BytesBuiltinsTest, DunderLeWithTooManyArgsRaises) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__le__(b'', b'', b'')"),
+      LayoutId::kTypeError,
+      "TypeError: '__le__' takes max 2 positional arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderLeWithNonBytesSelfRaisesTypeError) {
@@ -383,7 +421,7 @@ TEST(BytesBuiltinsTest, DunderLeWithNonBytesSelfRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, SmallInt::fromWord(0));
   Object other(&scope, runtime.newBytes(1, 'a'));
-  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self));
+  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   EXPECT_TRUE(raised(*le, LayoutId::kTypeError));
 }
 
@@ -446,20 +484,18 @@ TEST(BytesBuiltinsTest, DunderLeWithLexicographicallyLaterOtherReturnsTrue) {
   EXPECT_TRUE(RawBool::cast(*le)->value());
 }
 
-TEST(BytesBuiltinsTest, DunderLenWithZeroArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderLenWithTooFewArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object len(&scope, runBuiltin(BytesBuiltins::dunderLen));
-  EXPECT_TRUE(raised(*len, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__len__()"), LayoutId::kTypeError,
+      "TypeError: '__len__' takes 1 arguments but 0 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderLenWithTooManyArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderLenWithTooManyArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
-  Object arg1(&scope, runtime.newBytes(1, 'b'));
-  Object len(&scope, runBuiltin(BytesBuiltins::dunderLen, self, arg1));
-  EXPECT_TRUE(raised(*len, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__len__(b'', b'')"), LayoutId::kTypeError,
+      "TypeError: '__len__' takes max 1 positional arguments but 2 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderLenWithNonBytesSelfRaisesTypeError) {
@@ -486,11 +522,19 @@ TEST(BytesBuiltinsTest, DunderLenWithNonEmptyBytesReturnsLength) {
   EXPECT_EQ(len, SmallInt::fromWord(4));
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithWrongNumberOfArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderLtWithTooFewArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt));
-  EXPECT_TRUE(raised(*lt, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__lt__(b'')"), LayoutId::kTypeError,
+      "TypeError: '__lt__' takes 2 arguments but 1 given"));
+}
+
+TEST(BytesBuiltinsTest, DunderLtWithTooManyArgsRaises) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__lt__(b'', b'', b'')"),
+      LayoutId::kTypeError,
+      "TypeError: '__lt__' takes max 2 positional arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithNonBytesSelfRaisesTypeError) {
@@ -498,7 +542,7 @@ TEST(BytesBuiltinsTest, DunderLtWithNonBytesSelfRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, SmallInt::fromWord(0));
   Object other(&scope, runtime.newBytes(1, 'a'));
-  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self));
+  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   EXPECT_TRUE(raised(*lt, LayoutId::kTypeError));
 }
 
@@ -561,11 +605,19 @@ TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
   EXPECT_TRUE(RawBool::cast(*lt)->value());
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithWrongNumberOfArgsRaisesTypeError) {
+TEST(BytesBuiltinsTest, DunderNeWithTooFewArgsRaises) {
   Runtime runtime;
-  HandleScope scope;
-  Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe));
-  EXPECT_TRUE(raised(*ne, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__ne__(b'')"), LayoutId::kTypeError,
+      "TypeError: '__ne__' takes 2 arguments but 1 given"));
+}
+
+TEST(BytesBuiltinsTest, DunderNeWithTooManyArgsRaises) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__ne__(b'', b'', b'')"),
+      LayoutId::kTypeError,
+      "TypeError: '__ne__' takes max 2 positional arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderNeWithNonBytesSelfRaisesTypeError) {

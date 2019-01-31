@@ -7,15 +7,15 @@
 namespace python {
 
 const BuiltinMethod BytesBuiltins::kMethods[] = {
-    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
-    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
-    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
-    {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
-    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
-    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
-    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
-    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
-    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
+    {SymbolId::kDunderAdd, builtinTrampolineWrapper<dunderAdd>},
+    {SymbolId::kDunderEq, builtinTrampolineWrapper<dunderEq>},
+    {SymbolId::kDunderGe, builtinTrampolineWrapper<dunderGe>},
+    {SymbolId::kDunderGetItem, builtinTrampolineWrapper<dunderGetItem>},
+    {SymbolId::kDunderGt, builtinTrampolineWrapper<dunderGt>},
+    {SymbolId::kDunderLe, builtinTrampolineWrapper<dunderLe>},
+    {SymbolId::kDunderLen, builtinTrampolineWrapper<dunderLen>},
+    {SymbolId::kDunderLt, builtinTrampolineWrapper<dunderLt>},
+    {SymbolId::kDunderNe, builtinTrampolineWrapper<dunderNe>},
 };
 
 void BytesBuiltins::initialize(Runtime* runtime) {
@@ -27,10 +27,6 @@ void BytesBuiltins::initialize(Runtime* runtime) {
 
 RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -50,10 +46,6 @@ RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BytesBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -71,10 +63,6 @@ RawObject BytesBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BytesBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -93,10 +81,6 @@ RawObject BytesBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
 RawObject BytesBuiltins::dunderGetItem(Thread* thread, Frame* frame,
                                        word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -139,10 +123,6 @@ RawObject BytesBuiltins::dunderGetItem(Thread* thread, Frame* frame,
 
 RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -160,10 +140,6 @@ RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -181,10 +157,6 @@ RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BytesBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs != 1) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 0 arguments, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -199,10 +171,6 @@ RawObject BytesBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -220,10 +188,6 @@ RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
