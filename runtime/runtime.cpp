@@ -1874,10 +1874,6 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinFunction(module, SymbolId::kUnderPatch,
                            nativeTrampoline<Builtins::underPatch>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  // print is not patched because it is a tricky function.
-  moduleAddBuiltinFunction(
-      module, SymbolId::kPrint, nativeTrampoline<Builtins::print>,
-      nativeTrampolineKw<Builtins::printKw>, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kRange,
                            builtinTrampolineWrapper<Builtins::range>,
                            unimplementedTrampoline, unimplementedTrampoline);
@@ -1889,6 +1885,9 @@ void Runtime::createBuiltinsModule() {
                            unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kUnderAddress,
                            nativeTrampoline<Builtins::underAddress>,
+                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderPrintStr,
+                           builtinTrampolineWrapper<Builtins::underPrintStr>,
                            unimplementedTrampoline, unimplementedTrampoline);
   // Add builtin types
   moduleAddBuiltinType(module, SymbolId::kArithmeticError,
@@ -2029,9 +2028,15 @@ void Runtime::createBuiltinsModule() {
   Object unbound_value(&scope, unbound_value_);
   moduleAddGlobal(module, SymbolId::kUnderUnboundValue, unbound_value);
 
+  // For use in builtins :(
+  Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
+  moduleAddGlobal(module, SymbolId::kUnderStdout, stdout_val);
+
   addModule(module);
-  CHECK(!executeModule(kBuiltinsModuleData, module).isError(),
-        "Failed to initialize builtins module");
+  if (executeModule(kBuiltinsModuleData, module).isError()) {
+    Thread::currentThread()->printPendingException();
+    std::exit(EXIT_FAILURE);
+  }
 
   // TODO(T39575976): Create a consistent way to remove from global dict
   // Explicitly remove module as this is not exposed in CPython

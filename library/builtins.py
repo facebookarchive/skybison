@@ -8,6 +8,7 @@
 _patch = _patch  # noqa: F821
 _UnboundValue = _UnboundValue  # noqa: F821
 _address = _address  # noqa: F821
+_stdout = _stdout  # noqa: F821
 
 
 class object(bootstrap=True):  # noqa: E999
@@ -448,6 +449,25 @@ def _complex_imag(c):
 @_patch
 def _complex_real(c):
     pass
+
+
+@_patch
+def _print_str(s, file):
+    pass
+
+
+def print(*args, sep=" ", end="\n", file=_stdout, flush=None):
+    if args:
+        _print_str(args[0].__str__(), file)
+        length = len(args)
+        i = 1
+        while i < length:
+            _print_str(sep, file)
+            _print_str(args[i].__str__(), file)
+            i += 1
+    _print_str(end, file)
+    if flush:
+        raise NotImplementedError("flush in print")
 
 
 @_patch

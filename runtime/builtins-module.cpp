@@ -504,97 +504,23 @@ void printStr(RawStr str, std::ostream* ostream) {
   }
 }
 
-// NB: The print functions do not represent the final state of builtin functions
-// and should not be emulated when creating new builtins. They are minimal
-// implementations intended to get the Richards & Pystone benchmark working.
-static RawObject doBuiltinPrint(Thread* thread, const Arguments& args,
-                                word nargs, const Object& end,
-                                std::ostream* ostream) {
-  const char separator = ' ';
-  for (word i = 0; i < nargs; i++) {
-    word str_nargs = 2;
-    Frame* frame = thread->openAndLinkFrame(0, str_nargs, 0);
-    frame->setLocal(0, thread->runtime()->typeAt(LayoutId::kStr));
-    frame->setLocal(1, args.get(i));
-    RawObject result = StrBuiltins::dunderNew(thread, frame, str_nargs);
-    thread->popFrame();
-    if (result.isError()) {
-      return result;
-    }
-    if (!result.isStr()) {
-      return thread->raiseTypeErrorWithCStr("str() returned non-str");
-    }
-    printStr(RawStr::cast(result), ostream);
-    if ((i + 1) != nargs) {
-      *ostream << separator;
-    }
-  }
-  if (end->isNoneType()) {
-    *ostream << "\n";
-  } else if (end->isStr()) {
-    printStr(RawStr::cast(*end), ostream);
+RawObject Builtins::underPrintStr(Thread* thread, Frame* frame_frame,
+                                  word nargs) {
+  Arguments args(frame_frame, nargs);
+  HandleScope scope(thread);
+  CHECK(args.get(0).isStr(), "Unsupported argument type for 'obj'");
+  Str str(&scope, args.get(0));
+  CHECK(args.get(1).isSmallInt(), "Unsupported argument type for 'file'");
+  word fileno = RawSmallInt::cast(args.get(1)).value();
+  if (fileno == STDOUT_FILENO) {
+    printStr(*str, builtInStdout);
+  } else if (fileno == STDERR_FILENO) {
+    printStr(*str, builtinStderr);
   } else {
-    UNIMPLEMENTED("Unexpected type for end: %ld",
-                  static_cast<word>(end->layoutId()));
+    return thread->raiseTypeErrorWithCStr(
+        "Unsupported argument type for 'file'");
   }
-
   return NoneType::object();
-}
-
-RawObject Builtins::print(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Object end(&scope, NoneType::object());
-  Arguments args(frame, nargs);
-  return doBuiltinPrint(thread, args, nargs, end, builtInStdout);
-}
-
-RawObject Builtins::printKw(Thread* thread, Frame* frame, word nargs) {
-  KwArguments kw_args(frame, nargs);
-  HandleScope scope(thread);
-  if (kw_args.numKeywords() > 2) {
-    return thread->raiseRuntimeErrorWithCStr(
-        "Too many keyword arguments supplied to print");
-  }
-
-  Runtime* runtime = thread->runtime();
-  RawObject end = NoneType::object();
-  std::ostream* ostream = builtInStdout;
-
-  Object file_arg(&scope, kw_args.getKw(runtime->symbols()->File()));
-  if (!file_arg->isError()) {
-    if (file_arg->isSmallInt()) {
-      word stream_val = RawSmallInt::cast(*file_arg)->value();
-      switch (stream_val) {
-        case STDOUT_FILENO:
-          ostream = builtInStdout;
-          break;
-        case STDERR_FILENO:
-          ostream = builtinStderr;
-          break;
-        default:
-          return thread->raiseTypeErrorWithCStr(
-              "Unsupported argument type for 'file'");
-      }
-    } else {
-      return thread->raiseTypeErrorWithCStr(
-          "Unsupported argument type for 'file'");
-    }
-  }
-
-  Object end_arg(&scope, kw_args.getKw(runtime->symbols()->End()));
-  if (!end_arg->isError()) {
-    if ((end_arg->isStr() || end_arg->isNoneType())) {
-      end = *end_arg;
-    } else {
-      return thread->raiseTypeErrorWithCStr("Unsupported argument for 'end'");
-    }
-  }
-
-  // Remove kw arg tuple and the value for the end keyword argument
-  Arguments rest(frame, nargs - kw_args.numKeywords() - 1);
-  Object end_val(&scope, end);
-  return doBuiltinPrint(thread, rest, nargs - kw_args.numKeywords() - 1,
-                        end_val, ostream);
 }
 
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)

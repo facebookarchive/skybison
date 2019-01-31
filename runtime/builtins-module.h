@@ -39,6 +39,7 @@ class Builtins {
   static RawObject setattr(Thread* thread, Frame* frame, word nargs);
   static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
+  static RawObject underPrintStr(Thread* thread, Frame* frame, word nargs);
 };
 
 }  // namespace python

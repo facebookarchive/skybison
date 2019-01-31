@@ -250,7 +250,6 @@ class Runtime;
   V(PermissionError, "PermissionError")                                        \
   V(Platform, "platform")                                                      \
   V(Pop, "pop")                                                                \
-  V(Print, "print")                                                            \
   V(ProcessLookupError, "ProcessLookupError")                                  \
   V(Property, "property")                                                      \
   V(RStrip, "rstrip")                                                          \
@@ -308,8 +307,10 @@ class Runtime;
   V(UnderImp, "_imp")                                                          \
   V(UnderIo, "_io")                                                            \
   V(UnderPatch, "_patch")                                                      \
+  V(UnderPrintStr, "_print_str")                                               \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
+  V(UnderStdout, "_stdout")                                                    \
   V(UnderThread, "_thread")                                                    \
   V(UnderUnboundValue, "_UnboundValue")                                        \
   V(UnderWarnings, "_warnings")                                                \

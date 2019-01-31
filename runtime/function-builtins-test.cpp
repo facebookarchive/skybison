@@ -8,16 +8,6 @@
 namespace python {
 namespace testing {
 
-TEST(FunctionBuiltinsTest, NativeFunctionObjectsExposeNoneDunderCode) {
-  Runtime runtime;
-  runFromCStr(&runtime, R"(
-code = print.__code__
-)");
-  HandleScope scope;
-  Object code(&scope, moduleAt(&runtime, "__main__", "code"));
-  ASSERT_TRUE(code->isNoneType());
-}
-
 TEST(FunctionBuiltinsTest, ManagedFunctionObjectsExposeDunderCode) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
