@@ -11,14 +11,10 @@ namespace python {
 // TODO(T38930404): Make this part of the interface instead of an ugly enum
 enum class StrStripDirection { Left, Right, Both };
 
-RawObject strConcat(Thread* thread, const Str& left, const Str& right);
-RawObject strJoin(Thread* thread, const Str& sep, const Tuple& items,
-                  word allocated);
 RawObject strStripSpace(Thread* thread, const Str& src,
                         const StrStripDirection direction);
 RawObject strStrip(Thread* thread, const Str& src, const Str& str,
                    StrStripDirection direction);
-RawObject strSubstr(Thread* thread, const Str& str, word start, word length);
 
 // Returns the length of the maximum initial span of src composed of code
 // points found in str. Analogous to the C string API function strspn().

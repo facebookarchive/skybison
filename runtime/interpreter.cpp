@@ -2295,7 +2295,7 @@ void Interpreter::doFormatValue(Context* ctx, word flags) {
     Str fmt_str(&scope, ctx->frame->popValue());
     Str value(&scope, ctx->frame->popValue());
     // TODO(T38930359): Handle out of memory error
-    ctx->frame->pushValue(strConcat(thread, fmt_str, value));
+    ctx->frame->pushValue(thread->runtime()->strConcat(thread, fmt_str, value));
   }  // else no-op
 }
 

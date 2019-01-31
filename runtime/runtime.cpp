@@ -3178,6 +3178,103 @@ RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
   return result;
 }
 
+RawObject Runtime::strConcat(Thread* thread, const Str& left,
+                             const Str& right) {
+  HandleScope scope(thread);
+  word left_len = left->length();
+  word right_len = right->length();
+  word result_len = left_len + right_len;
+  // Small result
+  if (result_len <= RawSmallStr::kMaxLength) {
+    byte buffer[RawSmallStr::kMaxLength];
+    left->copyTo(buffer, left_len);
+    right->copyTo(buffer + left_len, right_len);
+    return SmallStr::fromBytes(View<byte>(buffer, result_len));
+  }
+  // Large result
+  LargeStr result(&scope, heap()->createLargeStr(result_len));
+  left->copyTo(reinterpret_cast<byte*>(result->address()), left_len);
+  right->copyTo(reinterpret_cast<byte*>(result->address() + left_len),
+                right_len);
+  return *result;
+}
+
+RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
+                           word allocated) {
+  HandleScope scope(thread);
+  word result_len = 0;
+  for (word i = 0; i < allocated; ++i) {
+    Object elt(&scope, items->at(i));
+    if (!elt->isStr() && !isInstanceOfStr(*elt)) {
+      return thread->raiseTypeError(
+          newStrFromFormat("sequence item %ld: expected str instance", i));
+    }
+    Str str(&scope, items->at(i));
+    result_len += str->length();
+  }
+  if (allocated > 1) {
+    result_len += sep->length() * (allocated - 1);
+  }
+  // Small result
+  if (result_len <= RawSmallStr::kMaxLength) {
+    byte buffer[RawSmallStr::kMaxLength];
+    for (word i = 0, offset = 0; i < allocated; ++i) {
+      Str str(&scope, items->at(i));
+      word str_len = str->length();
+      str->copyTo(&buffer[offset], str_len);
+      offset += str_len;
+      if ((i + 1) < allocated) {
+        word sep_len = sep->length();
+        sep->copyTo(&buffer[offset], sep_len);
+        offset += sep->length();
+      }
+    }
+    return SmallStr::fromBytes(View<byte>(buffer, result_len));
+  }
+  // Large result
+  LargeStr result(&scope, heap()->createLargeStr(result_len));
+  for (word i = 0, offset = 0; i < allocated; ++i) {
+    Str str(&scope, items->at(i));
+    word str_len = str->length();
+    str->copyTo(reinterpret_cast<byte*>(result->address() + offset), str_len);
+    offset += str_len;
+    if ((i + 1) < allocated) {
+      word sep_len = sep->length();
+      sep->copyTo(reinterpret_cast<byte*>(result->address() + offset), sep_len);
+      offset += sep_len;
+    }
+  }
+  return *result;
+}
+
+RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
+                             word length) {
+  DCHECK(start >= 0, "from should be > 0");
+  if (length <= 0) {
+    return SmallStr::fromCStr("");
+  }
+  word str_len = str->length();
+  DCHECK(start + length <= str_len, "overflow");
+  if (start == 0 && length == str_len) {
+    return *str;
+  }
+  // SmallStr result
+  if (length <= RawSmallStr::kMaxLength) {
+    byte buffer[RawSmallStr::kMaxLength];
+    for (word i = 0; i < length; i++) {
+      buffer[i] = str->charAt(start + i);
+    }
+    return SmallStr::fromBytes(View<byte>(buffer, length));
+  }
+  // LargeStr result
+  HandleScope scope(thread);
+  LargeStr source(&scope, *str);
+  LargeStr result(&scope, heap()->createLargeStr(length));
+  std::memcpy(reinterpret_cast<void*>(result->address()),
+              reinterpret_cast<void*>(source->address() + start), length);
+  return *result;
+}
+
 RawObject Runtime::computeFastGlobals(const Code& code, const Dict& globals,
                                       const Dict& builtins) {
   HandleScope scope;

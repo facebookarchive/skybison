@@ -1849,35 +1849,4 @@ TEST(StringIterTest, SetIndex) {
   ASSERT_TRUE(ch->isError());
 }
 
-TEST(StrBuiltinsTest, Concat) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Str str1(&scope, runtime.newStrFromCStr("abc"));
-  Str str2(&scope, runtime.newStrFromCStr("def"));
-
-  // Large strings.
-  Str str3(&scope, runtime.newStrFromCStr("0123456789abcdef"));
-  Str str4(&scope, runtime.newStrFromCStr("fedbca9876543210"));
-
-  Thread* thread = Thread::currentThread();
-
-  Object concat12(&scope, strConcat(thread, str1, str2));
-  Object concat34(&scope, strConcat(thread, str3, str4));
-
-  Object concat13(&scope, strConcat(thread, str1, str3));
-  Object concat31(&scope, strConcat(thread, str3, str1));
-
-  // Test that we don't make large strings when small srings would suffice.
-  EXPECT_TRUE(isStrEqualsCStr(*concat12, "abcdef"));
-  EXPECT_TRUE(isStrEqualsCStr(*concat34, "0123456789abcdeffedbca9876543210"));
-  EXPECT_TRUE(isStrEqualsCStr(*concat13, "abc0123456789abcdef"));
-  EXPECT_TRUE(isStrEqualsCStr(*concat31, "0123456789abcdefabc"));
-
-  EXPECT_TRUE(concat12->isSmallStr());
-  EXPECT_TRUE(concat34->isLargeStr());
-  EXPECT_TRUE(concat13->isLargeStr());
-  EXPECT_TRUE(concat31->isLargeStr());
-}
-
 }  // namespace python

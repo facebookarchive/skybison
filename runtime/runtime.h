@@ -151,6 +151,11 @@ class Runtime {
 
   void processCallbacks();
 
+  RawObject strConcat(Thread* thread, const Str& left, const Str& right);
+  RawObject strJoin(Thread* thread, const Str& sep, const Tuple& items,
+                    word allocated);
+  RawObject strSubstr(Thread* thread, const Str& str, word start, word length);
+
   RawObject newValueCell();
 
   RawObject newWeakRef();

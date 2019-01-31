@@ -8,7 +8,6 @@
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
-#include "str-builtins.h"
 #include "utils.h"
 
 namespace python {
@@ -762,8 +761,8 @@ PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
     thread->raiseOverflowErrorWithCStr("strings are too large to concat");
     return nullptr;
   }
-  return ApiHandle::newReference(thread,
-                                 strConcat(thread, left_str, right_str));
+  return ApiHandle::newReference(
+      thread, runtime->strConcat(thread, left_str, right_str));
 }
 
 PY_EXPORT int PyUnicode_Contains(PyObject* /* r */, PyObject* /* r */) {
