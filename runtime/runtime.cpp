@@ -567,9 +567,8 @@ RawObject Runtime::moduleGetAttr(Thread* thread, const Object& receiver,
   if (!ret->isError()) {
     return *ret;
   }
-  // TODO(T25140871): Refactor this into something like:
-  //     thread->throwMissingAttributeError(name)
-  return thread->raiseAttributeErrorWithCStr("missing attribute");
+
+  return instanceGetAttr(thread, receiver, name);
 }
 
 RawObject Runtime::moduleSetAttr(Thread* thread, const Object& receiver,

@@ -88,4 +88,16 @@ TEST(ModuleBuiltinsTest, DunderNewWithNonStrNameRaises) {
   EXPECT_TRUE(raised(*module, LayoutId::kTypeError));
 }
 
+TEST(ModuleBuiltinsTest, DunderDict) {
+  Runtime runtime;
+
+  runFromCStr(&runtime, R"(
+import sys
+result = sys.__dict__
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result->isDict());
+}
+
 }  // namespace python

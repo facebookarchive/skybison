@@ -11,6 +11,7 @@ namespace python {
 
 const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
     {SymbolId::kDunderName, RawModule::kNameOffset},
+    {SymbolId::kDunderDict, RawModule::kDictOffset},
 };
 
 const BuiltinMethod ModuleBuiltins::kMethods[] = {
