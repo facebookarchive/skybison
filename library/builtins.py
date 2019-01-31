@@ -352,8 +352,8 @@ class str(bootstrap=True):
 
 
 class dict(bootstrap=True):
-    def __contains__(self, obj) -> bool:
-        pass
+    def __contains__(self, key) -> bool:
+        return self.get(key, _UnboundValue) is not _UnboundValue
 
     def __delitem__(self, key):
         pass
@@ -368,7 +368,10 @@ class dict(bootstrap=True):
         pass
 
     def __getitem__(self, key):
-        pass
+        result = self.get(key, _UnboundValue)
+        if result is _UnboundValue:
+            raise KeyError(key)
+        return result
 
     def __setitem__(self, key, value):
         pass

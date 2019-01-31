@@ -48,10 +48,8 @@ class DictBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
-  static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderDelItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);

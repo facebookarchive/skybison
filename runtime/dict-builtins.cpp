@@ -237,10 +237,8 @@ const BuiltinAttribute DictBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod DictBuiltins::kMethods[] = {
-    {SymbolId::kDunderContains, builtinTrampolineWrapper<dunderContains>},
     {SymbolId::kDunderDelItem, builtinTrampolineWrapper<dunderDelItem>},
     {SymbolId::kDunderEq, builtinTrampolineWrapper<dunderEq>},
-    {SymbolId::kDunderGetItem, builtinTrampolineWrapper<dunderGetItem>},
     {SymbolId::kDunderIter, builtinTrampolineWrapper<dunderIter>},
     {SymbolId::kDunderLen, builtinTrampolineWrapper<dunderLen>},
     {SymbolId::kDunderNew, builtinTrampolineWrapper<dunderNew>},
@@ -257,34 +255,6 @@ void DictBuiltins::initialize(Runtime* runtime) {
   Type dict_type(&scope, runtime->addBuiltinType(
                              SymbolId::kDict, LayoutId::kDict,
                              LayoutId::kObject, kAttributes, kMethods));
-}
-
-RawObject DictBuiltins::dunderContains(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object key(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "dict.__contains__(self): self must be a dict");
-  }
-  Dict dict(&scope, *self);
-  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key,
-                                                       SymbolId::kDunderHash));
-  if (dunder_hash->isNoneType()) {
-    return thread->raiseTypeErrorWithCStr("unhashable type");
-  }
-  Object key_hash(&scope,
-                  Interpreter::callMethod1(thread, frame, dunder_hash, key));
-  if (key_hash->isError()) {
-    return *key_hash;
-  }
-  if (!runtime->isInstanceOfInt(*key_hash)) {
-    return thread->raiseTypeErrorWithCStr("__hash__ must return 'int'");
-  }
-  return Bool::fromBool(runtime->dictIncludesWithHash(dict, key, key_hash));
 }
 
 RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
@@ -355,30 +325,6 @@ RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 
   Dict dict(&scope, *self);
   return SmallInt::fromWord(dict->numItems());
-}
-
-RawObject DictBuiltins::dunderGetItem(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object key(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__getitem__() must be called with a dict instance as the first "
-        "argument");
-  }
-  Dict dict(&scope, *self);
-  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key,
-                                                       SymbolId::kDunderHash));
-  Object key_hash(&scope,
-                  Interpreter::callMethod1(thread, frame, dunder_hash, key));
-  Object value(&scope, runtime->dictAtWithHash(dict, key, key_hash));
-  if (value->isError()) {
-    return thread->raiseKeyErrorWithCStr("RawKeyError");
-  }
-  return *value;
 }
 
 RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,

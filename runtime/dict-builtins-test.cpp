@@ -11,25 +11,20 @@ using namespace testing;
 
 TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
   Runtime runtime;
+  runFromCStr(&runtime, "result = {'foo': 0}.__contains__('foo')");
   HandleScope scope;
-  Dict dict(&scope, runtime.newDictWithSize(1));
-  Object key(&scope, runtime.newStrFromCStr("foo"));
-  Object val(&scope, runtime.newInt(0));
-  runtime.dictAtPut(dict, key, val);
-
-  RawObject result = runBuiltin(DictBuiltins::dunderContains, dict, key);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isBool());
-  EXPECT_TRUE(RawBool::cast(result)->value());
+  EXPECT_TRUE(RawBool::cast(*result).value());
 }
 
 TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
   Runtime runtime;
+  runFromCStr(&runtime, "result = {}.__contains__('foo')");
   HandleScope scope;
-  Object dict(&scope, runtime.newDictWithSize(0));
-  Object str(&scope, runtime.newStrFromCStr("foo"));
-  RawObject result = runBuiltin(DictBuiltins::dunderContains, dict, str);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result->isBool());
-  EXPECT_FALSE(RawBool::cast(result)->value());
+  EXPECT_FALSE(RawBool::cast(*result).value());
 }
 
 TEST(DictBuiltinsTest, DunderContainsWithUnhashableTypeRaisesTypeError) {
@@ -39,11 +34,8 @@ class C:
   __hash__ = None
 c = C()
 )");
-  HandleScope scope;
-  Object dict(&scope, runtime.newDictWithSize(0));
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Object result(&scope, runBuiltin(DictBuiltins::dunderContains, dict, c));
-  ASSERT_TRUE(raised(*result, LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, "{}.__contains__(C())"),
+                     LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, DunderContainsWithNonCallableDunderHashRaisesTypeError) {
@@ -51,13 +43,9 @@ TEST(DictBuiltinsTest, DunderContainsWithNonCallableDunderHashRaisesTypeError) {
   runFromCStr(&runtime, R"(
 class C:
   __hash__ = 4
-c = C()
 )");
-  HandleScope scope;
-  Object dict(&scope, runtime.newDictWithSize(0));
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Object result(&scope, runBuiltin(DictBuiltins::dunderContains, dict, c));
-  ASSERT_TRUE(raised(*result, LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, "{}.__contains__(C())"),
+                     LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest,
@@ -67,13 +55,9 @@ TEST(DictBuiltinsTest,
 class C:
   def __hash__(self):
     return "boo"
-c = C()
 )");
-  HandleScope scope;
-  Object dict(&scope, runtime.newDictWithSize(0));
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Object result(&scope, runBuiltin(DictBuiltins::dunderContains, dict, c));
-  ASSERT_TRUE(raised(*result, LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, "{}.__contains__(C())"),
+                     LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, InWithExistingKeyReturnsTrue) {
