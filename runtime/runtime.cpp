@@ -1868,9 +1868,6 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinFunction(module, SymbolId::kIsSubclass,
                            builtinTrampolineWrapper<Builtins::issubclass>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kLen,
-                           builtinTrampolineWrapper<Builtins::len>,
-                           unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kOrd,
                            builtinTrampolineWrapper<Builtins::ord>,
                            unimplementedTrampoline, unimplementedTrampoline);

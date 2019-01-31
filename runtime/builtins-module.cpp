@@ -484,18 +484,6 @@ RawObject Builtins::issubclass(Thread* thread, Frame* frame, word nargs) {
   return Bool::falseObj();
 }
 
-RawObject Builtins::len(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object method(&scope, Interpreter::lookupMethod(thread, frame, self,
-                                                  SymbolId::kDunderLen));
-  if (method->isError()) {
-    return thread->raiseTypeErrorWithCStr("object has no len()");
-  }
-  return Interpreter::callMethod1(thread, frame, method, self);
-}
-
 RawObject Builtins::ord(Thread* thread, Frame* frame_frame, word nargs) {
   Arguments args(frame_frame, nargs);
   RawObject arg = args.get(0);

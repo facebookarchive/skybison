@@ -498,9 +498,11 @@ def issubclass(obj, ty):
     pass
 
 
-@_patch
 def len(seq):
-    pass
+    dunder_len = getattr(seq, "__len__", None)
+    if dunder_len is None:
+        raise TypeError("object has no len()")
+    return dunder_len()
 
 
 @_patch

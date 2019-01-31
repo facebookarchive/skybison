@@ -214,7 +214,6 @@ class Runtime;
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
   V(Layout, "layout")                                                          \
-  V(Len, "len")                                                                \
   V(List, "list")                                                              \
   V(ListIterator, "list_iterator")                                             \
   V(Little, "little")                                                          \

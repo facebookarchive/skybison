@@ -31,7 +31,6 @@ class Builtins {
   static RawObject hasattr(Thread* thread, Frame* frame, word nargs);
   static RawObject isinstance(Thread* thread, Frame* frame, word nargs);
   static RawObject issubclass(Thread* thread, Frame* frame, word nargs);
-  static RawObject len(Thread* thread, Frame* frame, word nargs);
   static RawObject ord(Thread* thread, Frame* frame, word nargs);
   static RawObject print(Thread* thread, Frame* frame, word nargs);
   static RawObject printKw(Thread* thread, Frame* frame, word nargs);
