@@ -341,29 +341,20 @@ RawObject IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1) {
-    return thread->raiseTypeErrorWithCStr("missing self");
-  }
-  if (nargs > 1) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "expected 0 arguments, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (self->isBool()) {
-    return runtime->newFloat(*self == Bool::trueObj() ? 1 : 0);
+  if (!runtime->isInstanceOfInt(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__float__' requires a 'int' object");
   }
-  if (self->isInt()) {
-    Int self_int(&scope, *self);
-    return runtime->newFloat(self_int->floatValue());
-  }
-  if (runtime->isInstanceOfInt(*self)) {
-    UNIMPLEMENTED("Strict subclass of int");
-  }
-  return thread->raiseTypeErrorWithCStr(
-      "object cannot be interpreted as an integer");
+  Int self(&scope, *self_obj);
+
+  double value;
+  Object maybe_error(&scope, convertIntToDouble(thread, self, &value));
+  if (!maybe_error->isNoneType()) return *maybe_error;
+  return runtime->newFloat(value);
 }
 
 RawObject SmallIntBuiltins::dunderInvert(Thread* thread, Frame* frame,
@@ -1129,6 +1120,117 @@ RawObject asIntObject(Thread* thread, const Object& object) {
   // TODO(T38780562): Handle Int subclasses
 
   return *int_res;
+}
+
+RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
+  if (value->numDigits() == 1) {
+    *result = static_cast<double>(value->asWord());
+    return NoneType::object();
+  }
+
+  // The following algorithm looks at the highest n bits of the integer and puts
+  // them into the mantissa of the floating point number. It extracts two
+  // extra bits to account for the highest bit not being explicitly encoded
+  // in floating point and the lowest bit to decide whether we should round
+  // up or down.
+
+  // We construct the IEEE754 number representation in an equally sized integer.
+  static_assert(kWordSize == kDoubleSize, "expect equal word and double size");
+
+  // Extract the highest two digits of the numbers magnitude.
+  HandleScope scope(thread);
+  LargeInt large_int(&scope, *value);
+  word num_digits = large_int.numDigits();
+  uword high_digit = large_int.digitAt(num_digits - 1);
+  uword second_highest_digit = large_int.digitAt(num_digits - 2);
+  bool is_negative = large_int.isNegative();
+  uword carry_to_second_highest = 0;
+  if (is_negative) {
+    // The magnitude of a negative value is `~value + 1`. We compute the
+    // complement of the highest two digits and possibly add a carry.
+    carry_to_second_highest = 1;
+    for (word i = num_digits - 3; i >= 0; i--) {
+      // Any `digit != 0` will have a zero bit so we won't have a carry.
+      if (large_int.digitAt(i) != 0) {
+        carry_to_second_highest = 0;
+        break;
+      }
+    }
+    second_highest_digit = ~second_highest_digit + carry_to_second_highest;
+    uword carry_to_highest = second_highest_digit == 0 ? 1 : 0;
+    high_digit = ~high_digit + carry_to_highest;
+    // A negative number has the highest bit set so incrementing the complement
+    // cannot overflow.
+    DCHECK(carry_to_highest == 0 || high_digit != 0,
+           "highest digit cannot overflow");
+  }
+
+  // Determine the exponent bits.
+  int high_bit = Utils::highestBit(high_digit);
+  uword exponent_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
+  uword exponent_bias = (1 << (exponent_bits - 1)) - 1;
+  uword exponent =
+      (num_digits - 1) * kBitsPerWord + high_bit - 1 + exponent_bias;
+
+  // Extract mantissa bits including the high bit which is implicit in the
+  // float representation and one extra bit to help determine if we need to
+  // round up.
+  // We also keep track if the bits shifted out on the right side are zero.
+  int shift = high_bit - (kDoubleMantissaBits + 2);
+  int shift_right = Utils::maximum(shift, 0);
+  int shift_left = -Utils::minimum(shift, 0);
+  uword value_as_word = (high_digit >> shift_right) << shift_left;
+  bool lesser_significand_bits_zero;
+  if (shift_left > 0) {
+    int lower_shift_right = kBitsPerWord - shift_left;
+    value_as_word |= second_highest_digit >> lower_shift_right;
+    lesser_significand_bits_zero =
+        (second_highest_digit << lower_shift_right) == 0;
+  } else {
+    lesser_significand_bits_zero =
+        second_highest_digit == 0 &&
+        (shift_right == 0 || (high_digit << (kBitsPerWord - shift_right)) == 0);
+  }
+
+  // Returns true if all digits (in the numbers magnitude) below the 2 highest
+  // digits are zero.
+  auto lower_digits_zero = [&]() -> bool {
+    // Already scanned the digits in the negative case and can look at carry.
+    if (is_negative) return carry_to_second_highest != 0;
+    for (word i = num_digits - 3; i >= 0; i--) {
+      if (large_int->digitAt(i) != 0) return false;
+    }
+    return true;
+  };
+  // We need to round down if the least significand bit is zero, we need to
+  // round up if the least significand and any other bit is one. If the
+  // least significand bit is one and all other bits are zero then we look at
+  // second least significand bit to round towards an even number.
+  if ((value_as_word & 0x3) == 0x3 ||
+      ((value_as_word & 1) &&
+       (!lesser_significand_bits_zero || !lower_digits_zero()))) {
+    value_as_word++;
+    // This may have triggered an overflow, so we need to add 1 to the exponent.
+    if (value_as_word == (uword{1} << (kDoubleMantissaBits + 2))) {
+      exponent++;
+    }
+  }
+  value_as_word >>= 1;
+
+  // Check for overflow.
+  // The biggest exponent is used to mark special numbers like NAN or INF.
+  uword max_exponent = (1 << exponent_bits) - 1;
+  if (exponent > max_exponent - 1) {
+    return thread->raiseOverflowErrorWithCStr(
+        "int too large to convert to float");
+  }
+
+  // Mask out implicit bit, combine mantissa, exponent and sign.
+  value_as_word &= (uword{1} << kDoubleMantissaBits) - 1;
+  value_as_word |= exponent << kDoubleMantissaBits;
+  value_as_word |= uword{is_negative} << (kDoubleMantissaBits + exponent_bits);
+  std::memcpy(result, &value_as_word, kDoubleSize);
+  return NoneType::object();
 }
 
 }  // namespace python

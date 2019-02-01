@@ -42,6 +42,9 @@ class int(bootstrap=True):
     def __add__(self, n: int) -> int:
         pass
 
+    def __float__(self) -> float:
+        pass
+
     def __mul__(self, n: int) -> int:
         pass
 

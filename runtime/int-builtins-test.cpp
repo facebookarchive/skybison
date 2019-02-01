@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <cmath>
+#include <limits>
 
 #include "handles.h"
 #include "int-builtins.h"
@@ -1013,24 +1014,185 @@ TEST(IntBuiltinsTest, DunderFloatWithBoolReturnsFloat) {
   EXPECT_EQ(RawFloat::cast(*b_float)->value(), 0.0);
 }
 
-TEST(IntBuiltinsTest, DunderFloatWithIntLiteralReturnsSameValue) {
+TEST(IntBuiltinsTest, DunderFloatWithSmallIntReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, "a = (7).__float__()");
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a->isFloat());
-  EXPECT_EQ(RawFloat::cast(*a)->value(), 7.0);
+  Int num(&scope, RawSmallInt::fromWord(-7));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), -7.0);
 }
 
-TEST(IntBuiltinsTest, DunderFloatFromIntClassReturnsFloat) {
+TEST(IntBuiltinsTest, DunderFloatWithOneDigitLargeIntReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  Int b_int(&scope, runtime.newInt(7));
-  Object b(&scope, runBuiltin(IntBuiltins::dunderFloat, b_int));
-  ASSERT_TRUE(b->isFloat());
-  EXPECT_EQ(RawFloat::cast(*b)->value(), 7.0);
+  Int num(&scope, newIntWithDigits(&runtime, {static_cast<uword>(kMinWord)}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), static_cast<double>(kMinWord));
+}
+
+TEST(IntBuiltinsTest, DunderFloatWithLargeIntReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, newIntWithDigits(&runtime, {0x85b3f6fb0496ac6f, 0x129ef6}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(),
+            std::strtod("0x1.29ef685b3f6fbp+84", nullptr));
+}
+
+TEST(IntBuiltinsTest, DunderFloatWithNegativeLargeIntReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope,
+          newIntWithDigits(&runtime, {0x937822557f9bad3f, 0xb31911a86c86a071}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(),
+            std::strtod("-0x1.339bb95e4de58p+126", nullptr));
+}
+
+TEST(IntBuiltinsTest,
+     DunderFloatWithNegativeLargeIntMagnitudeComputationCarriesReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, newIntWithDigits(&runtime, {1, 0, 0, 0xfffedcc000000000}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(),
+            std::strtod("-0x1.234p240", nullptr));
+}
+
+TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Produce a 1 so that all of the mantissa lies in the high digit but the bit
+  // triggering the rounding is in the low digit.
+  uword mantissa_high_bit = static_cast<uword>(1) << kDoubleMantissaBits;
+  Int num(&scope, newIntWithDigits(&runtime, {0, mantissa_high_bit}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), std::strtod("0x1.p116", nullptr));
+}
+
+TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownToEvenReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  uword mantissa_high_bit = static_cast<uword>(1) << kDoubleMantissaBits;
+  uword high_one = static_cast<uword>(1) << (kBitsPerWord - 1);
+  Int num(&scope, newIntWithDigits(&runtime, {high_one, mantissa_high_bit}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), std::strtod("0x1.p116", nullptr));
+}
+
+TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedUpToEvenReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  uword mantissa_high_bit_plus_one =
+      (static_cast<uword>(1) << kDoubleMantissaBits) + 1;
+  uword high_one = static_cast<uword>(1) << (kBitsPerWord - 1);
+  Int num(&scope,
+          newIntWithDigits(&runtime, {high_one, mantissa_high_bit_plus_one}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(),
+            std::strtod("0x1.0000000000002p116", nullptr));
+}
+
+TEST(IntBuiltinsTest,
+     DunderFloatWithNegativeLargeIntRoundedDownToEvenReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  uword mantissa_high_bit = static_cast<uword>(1) << kDoubleMantissaBits;
+  uword high_one = static_cast<uword>(1) << (kBitsPerWord - 1);
+  Int num(&scope,
+          newIntWithDigits(&runtime, {0, high_one, ~mantissa_high_bit}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(),
+            std::strtod("-0x1.p180", nullptr));
+}
+
+TEST(IntBuiltinsTest,
+     DunderFloatWithNegativeLargeIntRoundedUpToEvenReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  uword mantissa_high_bit_plus_one =
+      (static_cast<uword>(1) << kDoubleMantissaBits) | 1;
+  uword high_one = static_cast<uword>(1) << (kBitsPerWord - 1);
+  Int num(&scope, newIntWithDigits(&runtime,
+                                   {0, high_one, ~mantissa_high_bit_plus_one}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(),
+            std::strtod("-0x1.0000000000002p180", nullptr));
+}
+
+TEST(IntBuiltinsTest,
+     DunderFloatWithLargeIntRoundedUpIncreasingExponentReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  uword mantissa_all_one =
+      (static_cast<uword>(1) << (kDoubleMantissaBits + 1)) - 1;
+  uword high_one = static_cast<uword>(1) << (kBitsPerWord - 1);
+  Int num(&scope, newIntWithDigits(&runtime, {high_one, mantissa_all_one}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), std::strtod("0x1.p117", nullptr));
+}
+
+static RawObject largestIntBeforeFloatOverflow(Runtime* runtime) {
+  int exponent_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
+  word max_unbiased_exponent = (1 << (exponent_bits - 1)) - 1;
+  CHECK((max_unbiased_exponent + 1) % kBitsPerWord == 0,
+        "assuming max exponent position matches highest bit in digit");
+  // Note: Need an extra digit for the sign.
+  word num_digits = (max_unbiased_exponent + 1) / kBitsPerWord + 1;
+  std::unique_ptr<uword[]> digits(new uword[num_digits]);
+  for (word i = 0; i < num_digits - 1; i++) {
+    digits[i] = kMaxUword;
+  }
+  // Set the bit immediately below the mantissa to zero to avoid rounding up.
+  digits[num_digits - 2] &= ~(1 << (kBitsPerWord - kDoubleMantissaBits - 2));
+  digits[num_digits - 1] = 0;
+  return runtime->newIntWithDigits(View<uword>(digits.get(), num_digits));
+}
+
+TEST(IntBuiltinsTest,
+     DunderFloatLargestPossibleLargeIntBeforeOverflowReturnsFloat) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Int num(&scope, largestIntBeforeFloatOverflow(&runtime));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  ASSERT_TRUE(result->isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(),
+            std::numeric_limits<double>::max());
+}
+
+TEST(IntBuiltinsTest, DunderFloatOverflowRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Add 1 to the largest number that is still convertible to float.
+  Int num0(&scope, largestIntBeforeFloatOverflow(&runtime));
+  Int one(&scope, runtime.newInt(1));
+  Int num1(&scope, runBuiltin(IntBuiltins::dunderAdd, num0, one));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num1));
+  EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithNonIntReturnsError) {

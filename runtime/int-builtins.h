@@ -11,6 +11,11 @@ namespace python {
 // Throws if the conversion isn't possible.
 RawObject asIntObject(Thread* thread, const Object& object);
 
+// Convert int `value` to double.
+// Returns a NoneType and sets `result` if the conversion was successful,
+// raises an error otherwise.
+RawObject convertIntToDouble(Thread* thread, const Int& value, double* result);
+
 class IntBuiltins {
  public:
   static void initialize(Runtime* runtime);

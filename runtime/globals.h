@@ -23,6 +23,9 @@ const int kWordDigits10 = 20;
 const int kBitsPerByte = 8;
 const int kBitsPerPointer = kBitsPerByte * kWordSize;
 const int kBitsPerWord = kBitsPerByte * kWordSize;
+const int kBitsPerDouble = kBitsPerByte * kDoubleSize;
+
+const int kDoubleMantissaBits = 52;
 
 const int16 kMaxInt16 = 0x7FFF;
 const int16 kMinInt16 = -kMaxInt16 - 1;

@@ -363,8 +363,6 @@ class RawInt : public RawObject {
   // -1, 0, or 1.
   word compare(RawInt other);
 
-  double floatValue();
-
   word bitLength();
 
   bool isNegative();
@@ -2598,6 +2596,9 @@ inline word RawInt::asWord() {
   if (isSmallInt()) {
     return RawSmallInt::cast(*this)->value();
   }
+  if (isBool()) {
+    return RawBool::cast(*this)->value();
+  }
   return RawLargeInt::cast(*this)->asWord();
 }
 
@@ -2612,21 +2613,6 @@ template <typename T>
 OptInt<T> RawInt::asInt() {
   if (isSmallInt()) return RawSmallInt::cast(*this)->asInt<T>();
   return RawLargeInt::cast(*this)->asInt<T>();
-}
-
-inline double RawInt::floatValue() {
-  if (isSmallInt()) {
-    return static_cast<double>(asWord());
-  }
-  if (isBool()) {
-    return RawBool::cast(*this) == RawBool::trueObj() ? 1.0 : 0.0;
-  }
-  RawLargeInt large_int = RawLargeInt::cast(*this);
-  if (large_int->numDigits() == 1) {
-    return static_cast<double>(asWord());
-  }
-  // TODO(T30610701): Handle arbitrary precision LargeInts
-  UNIMPLEMENTED("LargeInts with > 1 digit");
 }
 
 inline word RawInt::bitLength() {

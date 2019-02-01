@@ -5,6 +5,7 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "int-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
@@ -39,6 +40,28 @@ RawObject asFloatObject(Thread* thread, const Object& obj) {
   }
   UserFloatBase user_float(&scope, *obj);
   return user_float->floatValue();
+}
+
+// Convert `object` to double.
+// Returns a NoneType and sets `value` if the conversion was successful.
+// Returns an error or unimplemented otherwise. This does specifically not
+// look for `__float__` to match the behavior of `CONVERT_TO_DOUBLE()` in
+// cpython.
+static RawObject convertToDouble(Thread* thread, const Object& object,
+                                 double* result) {
+  if (object->isFloat()) {
+    *result = RawFloat::cast(*object)->value();
+    return NoneType::object();
+  }
+
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfInt(*object)) {
+    HandleScope scope(thread);
+    Int value(&scope, *object);
+    return convertIntToDouble(thread, value, result);
+  }
+
+  return runtime->notImplemented();
 }
 
 const BuiltinMethod FloatBuiltins::kMethods[] = {
@@ -305,22 +328,20 @@ RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
 
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
-  RawObject other = args.get(1);
   if (!self->isFloat()) {
     return thread->raiseTypeErrorWithCStr(
         "__add__() must be called with float instance as first argument");
   }
-
   double left = RawFloat::cast(self)->value();
-  if (other->isFloat()) {
-    double right = RawFloat::cast(other)->value();
-    return thread->runtime()->newFloat(left + right);
-  }
-  if (other->isInt()) {
-    double right = RawInt::cast(other)->floatValue();
-    return thread->runtime()->newFloat(left + right);
-  }
-  return thread->runtime()->notImplemented();
+
+  double right;
+  HandleScope scope(thread);
+  Object other(&scope, args.get(1));
+  Object maybe_error(&scope, convertToDouble(thread, other, &right));
+  // May have returned NotImplemented or raised an exception.
+  if (!maybe_error->isNoneType()) return *maybe_error;
+
+  return thread->runtime()->newFloat(left + right);
 }
 
 RawObject FloatBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
@@ -348,22 +369,20 @@ RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
 
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
-  RawObject other = args.get(1);
   if (!self->isFloat()) {
     return thread->raiseTypeErrorWithCStr(
         "__sub__() must be called with float instance as first argument");
   }
-
   double left = RawFloat::cast(self)->value();
-  if (other->isFloat()) {
-    double right = RawFloat::cast(other)->value();
-    return thread->runtime()->newFloat(left - right);
-  }
-  if (other->isInt()) {
-    double right = RawInt::cast(other)->floatValue();
-    return thread->runtime()->newFloat(left - right);
-  }
-  return thread->runtime()->notImplemented();
+
+  double right;
+  HandleScope scope(thread);
+  Object other(&scope, args.get(1));
+  Object maybe_error(&scope, convertToDouble(thread, other, &right));
+  // May have returned NotImplemented or raised an exception.
+  if (!maybe_error->isNoneType()) return *maybe_error;
+
+  return thread->runtime()->newFloat(left - right);
 }
 
 RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
@@ -372,7 +391,6 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
-  RawObject other = args.get(1);
   if (!self->isFloat()) {
     return thread->raiseTypeErrorWithCStr(
         "__pow__() must be called with float instance as first argument");
@@ -382,15 +400,15 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
         "pow() 3rd argument not allowed unless all arguments are integers");
   }
   double left = RawFloat::cast(self)->value();
-  if (other->isFloat()) {
-    double right = RawFloat::cast(other)->value();
-    return thread->runtime()->newFloat(std::pow(left, right));
-  }
-  if (other->isInt()) {
-    double right = RawInt::cast(other)->floatValue();
-    return thread->runtime()->newFloat(std::pow(left, right));
-  }
-  return thread->runtime()->notImplemented();
+
+  double right;
+  HandleScope scope(thread);
+  Object other(&scope, args.get(1));
+  Object maybe_error(&scope, convertToDouble(thread, other, &right));
+  // May have returned NotImplemented or raised an exception.
+  if (!maybe_error->isNoneType()) return *maybe_error;
+
+  return thread->runtime()->newFloat(std::pow(left, right));
 }
 
 }  // namespace python
