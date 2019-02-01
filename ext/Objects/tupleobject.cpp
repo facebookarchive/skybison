@@ -52,9 +52,15 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
   HandleScope scope(thread);
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
-  if (!tupleobj->isTuple()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfTuple(*tupleobj)) {
     thread->raiseBadInternalCall();
     return -1;
+  }
+
+  if (!tupleobj->isTuple()) {
+    UserTupleBase user_tuple(&scope, *tupleobj);
+    tupleobj = user_tuple->tupleValue();
   }
 
   Tuple tuple(&scope, *tupleobj);

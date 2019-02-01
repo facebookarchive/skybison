@@ -58,15 +58,17 @@ TEST_F(TupleExtensionApiTest, SetItemReturnsZero) {
   EXPECT_EQ(result, 0);
 }
 
-TEST_F(TupleExtensionApiTest, SetItemWithTupleSubclassRaisesSystemError) {
+TEST_F(TupleExtensionApiTest, SetItemWithTupleSubclassReturnsZero) {
   PyRun_SimpleString(R"(
 class Foo(tuple): pass
 obj = Foo((1, 2));
 )");
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
-  ASSERT_EQ(PyTuple_SetItem(obj, 0, Py_None), -1);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+  PyObjectPtr pytuple(moduleGet("__main__", "obj"));
+  Py_DECREF(pytuple);  // Assume the object has just been created
+  int result = PyTuple_SetItem(pytuple, 0, Py_None);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ(PyTuple_GetItem(pytuple, 0), Py_None);
 }
 
 TEST_F(TupleExtensionApiTest, GetItemFromNonTupleReturnsNull) {
