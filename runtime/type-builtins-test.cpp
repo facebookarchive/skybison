@@ -183,4 +183,36 @@ TEST(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
   ASSERT_TRUE(result->isDict());
 }
 
+TEST(TypeBuiltinTest, DunderCallReceivesExArgs) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  def __init__(self, *args):
+    self.args = args
+
+  def num_args(self):
+    return len(self.args)
+
+result = C(*(1,2,3)).num_args()
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(*result, RawSmallInt::fromWord(3));
+}
+
+TEST(TypeBuiltinTest, ClassMethodDunderCallReceivesExArgs) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo:
+  @classmethod
+  def foo(cls, *args):
+    return len(args)
+
+result = Foo.foo(*(1,2,3))
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(*result, RawSmallInt::fromWord(3));
+}
+
 }  // namespace python

@@ -82,9 +82,10 @@ void TypeBuiltins::initialize(Runtime* runtime) {
                                     LayoutId::kObject, kAttributes, kMethods));
   Layout layout(&scope, type->instanceLayout());
   layout->setOverflowAttributes(SmallInt::fromWord(RawType::kDictOffset));
-  runtime->typeAddBuiltinFunctionKw(
+  runtime->typeAddBuiltinFunctionKwEx(
       type, SymbolId::kDunderCall, nativeTrampoline<TypeBuiltins::dunderCall>,
-      nativeTrampolineKw<TypeBuiltins::dunderCallKw>);
+      nativeTrampolineKw<TypeBuiltins::dunderCallKw>,
+      builtinTrampolineWrapperEx<TypeBuiltins::dunderCall>);
 }
 
 RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
