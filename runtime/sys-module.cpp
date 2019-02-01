@@ -25,10 +25,11 @@ RawObject builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject initialSysPath(Thread* thread) {
-  // TODO(T39319124) move this function into sys-module.cpp.
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   List result(&scope, runtime->newList());
+  Object empty_string(&scope, runtime->newStrWithAll(View<byte>(nullptr, 0)));
+  runtime->listAdd(result, empty_string);
 
   const char* python_path = getenv("PYTHONPATH");
   if (!python_path || python_path[0] == '\0') return *result;
@@ -39,22 +40,21 @@ RawObject initialSysPath(Thread* thread) {
   // - Does not normalize paths.
   // - Does not filter out duplicate paths.
   Object path(&scope, NoneType::object());
-  for (const char *c = python_path, *segment_begin = c;; ++c) {
-    if (*c != '\0' && *c != ':') continue;
-    const char* segment_end = c;
-
-    if (segment_begin[0] != '/') {
-      UNIMPLEMENTED("pathStringToList: Relative paths not supported yet\n");
+  const char* c = python_path;
+  do {
+    const char* segment_begin = c;
+    // Advance to the next delimiter or end of string.
+    while (*c != ':' && *c != '\0') {
+      c++;
     }
 
     View<byte> path_bytes(reinterpret_cast<const byte*>(segment_begin),
-                          segment_end - segment_begin);
+                          c - segment_begin);
+    CHECK(path_bytes.data()[0] == '/',
+          "relative paths in PYTHONPATH not supported yet");
     path = runtime->newStrWithAll(path_bytes);
     runtime->listAdd(result, path);
-
-    if (*c == '\0') break;
-    segment_begin = c + 1;
-  }
+  } while (*c++ != '\0');
   return *result;
 }
 

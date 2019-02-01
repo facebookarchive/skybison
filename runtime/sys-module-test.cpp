@@ -146,6 +146,32 @@ builtin_names = sys.builtin_module_names
   EXPECT_TRUE(builtin__stat);
 }
 
+TEST(SysModuleTest, PathWithUnsetPythonPath) {
+  unsetenv("PYTHONPATH");
+  Runtime runtime;
+  HandleScope scope;
+  Object sys(&scope, runtime.newStrFromCStr("sys"));
+  runtime.importModule(sys);
+  Object path_obj(&scope, moduleAt(&runtime, "sys", "path"));
+  ASSERT_TRUE(path_obj->isList());
+  List path(&scope, *path_obj);
+  ASSERT_EQ(path->numItems(), 1);
+  ASSERT_TRUE(isStrEqualsCStr(path->at(0), ""));
+}
+
+TEST(SysModuleTest, PathWithEmptyPythonPath) {
+  setenv("PYTHONPATH", "", 1);
+  Runtime runtime;
+  HandleScope scope;
+  Object sys(&scope, runtime.newStrFromCStr("sys"));
+  runtime.importModule(sys);
+  Object path_obj(&scope, moduleAt(&runtime, "sys", "path"));
+  ASSERT_TRUE(path_obj->isList());
+  List path(&scope, *path_obj);
+  ASSERT_EQ(path->numItems(), 1);
+  ASSERT_TRUE(isStrEqualsCStr(path->at(0), ""));
+}
+
 TEST(SysModuleTest, PathWithPythonPath) {
   setenv("PYTHONPATH", "/foo/bar:/baz", 1);
   Runtime runtime;
@@ -155,9 +181,10 @@ TEST(SysModuleTest, PathWithPythonPath) {
   Object path_obj(&scope, moduleAt(&runtime, "sys", "path"));
   ASSERT_TRUE(path_obj->isList());
   List path(&scope, *path_obj);
-  ASSERT_EQ(path->numItems(), 2);
-  ASSERT_TRUE(isStrEqualsCStr(path->at(0), "/foo/bar"));
-  ASSERT_TRUE(isStrEqualsCStr(path->at(1), "/baz"));
+  ASSERT_EQ(path->numItems(), 3);
+  ASSERT_TRUE(isStrEqualsCStr(path->at(0), ""));
+  ASSERT_TRUE(isStrEqualsCStr(path->at(1), "/foo/bar"));
+  ASSERT_TRUE(isStrEqualsCStr(path->at(2), "/baz"));
 }
 
 }  // namespace python
