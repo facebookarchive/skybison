@@ -69,7 +69,6 @@ set(
   "${CPYTHON_DIR}/Modules/sha1module.c"
   "${CPYTHON_DIR}/Modules/sha256module.c"
   "${CPYTHON_DIR}/Modules/sha512module.c"
-  "${CPYTHON_DIR}/Modules/signalmodule.c"
   "${CPYTHON_DIR}/Modules/unicodedata.c")
 
 # Add some Python files all the core Modules sources
@@ -77,7 +76,9 @@ set(
 	CPYTHON_SOURCES
 	${CPYTHON_SOURCES}
   ${CPYTHON_SOURCES_WITH_CLINIC_ANNOTATIONS}
+  "${CPYTHON_DIR}/Python/fileutils.c"
   "${CPYTHON_DIR}/Python/pyctype.c"
+  "${CPYTHON_DIR}/Python/pytime.c"
   "${CPYTHON_DIR}/Modules/_bisectmodule.c"
   "${CPYTHON_DIR}/Modules/_blake2/blake2module.c"
   "${CPYTHON_DIR}/Modules/_blake2/blake2ns.h"

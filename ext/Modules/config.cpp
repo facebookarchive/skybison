@@ -3,6 +3,7 @@
 
 extern "C" PyObject* PyInit__stat();
 extern "C" PyObject* PyInit_errno();
+extern "C" PyObject* PyInit_posix();
 
 // _empty module to test loading from init tab
 PyObject* PyInit__empty() {
@@ -12,9 +13,12 @@ PyObject* PyInit__empty() {
   return PyModule_Create(&def);
 }
 
+// clang-format off
 struct _inittab _PyImport_Inittab[] = {
     {"_empty", PyInit__empty},
     {"_stat", PyInit__stat},
     {"errno", PyInit_errno},
+    {"posix", PyInit_posix},
     {nullptr, nullptr},
 };
+// clang-format on
