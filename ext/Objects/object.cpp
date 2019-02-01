@@ -158,16 +158,12 @@ PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  // Only one argument, the value to be repr'ed.
-  Frame* frame = thread->currentFrame();
-  Object method(&scope, Interpreter::lookupMethod(thread, frame, object,
-                                                  SymbolId::kDunderRepr));
-  Object result(&scope,
-                Interpreter::callMethod1(thread, frame, method, object));
-  if (result->isError() || !thread->runtime()->isInstanceOfStr(*result)) {
-    // If __repr__ doesn't return a string or error, throw a type error
-    thread->raiseTypeErrorWithCStr(
-        "__repr__ not callable or returned non-string");
+  Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderRepr));
+  if (result->isError()) {
+    return nullptr;
+  }
+  if (!thread->runtime()->isInstanceOfStr(*result)) {
+    thread->raiseTypeErrorWithCStr("__repr__ returned non-str instance");
     return nullptr;
   }
   return ApiHandle::newReference(thread, *result);
@@ -228,16 +224,12 @@ PY_EXPORT PyObject* PyObject_Str(PyObject* obj) {
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  // Only one argument, the value to be str'ed.
-  Frame* frame = thread->currentFrame();
-  Object method(&scope, Interpreter::lookupMethod(thread, frame, object,
-                                                  SymbolId::kDunderStr));
-  Object result(&scope,
-                Interpreter::callMethod1(thread, frame, method, object));
-  if (result->isError() || !thread->runtime()->isInstanceOfStr(*result)) {
-    // If __str__ doesn't return a string or error, throw a type error
-    thread->raiseTypeErrorWithCStr(
-        "__str__ not callable or returned non-string");
+  Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderStr));
+  if (result->isError()) {
+    return nullptr;
+  }
+  if (!thread->runtime()->isInstanceOfStr(*result)) {
+    thread->raiseTypeErrorWithCStr("__str__ returned non-str instance");
     return nullptr;
   }
   return ApiHandle::newReference(thread, *result);
