@@ -313,6 +313,7 @@ class Runtime;
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
   V(UnderStdout, "_stdout")                                                    \
+  V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderThread, "_thread")                                                    \
   V(UnderUnboundValue, "_UnboundValue")                                        \
   V(UnderWarnings, "_warnings")                                                \

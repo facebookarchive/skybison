@@ -555,26 +555,6 @@ RawObject Builtins::range(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newRange(start, stop, step);
 }
 
-RawObject Builtins::repr(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-
-  HandleScope scope(thread);
-  Object obj(&scope, args.get(0));
-  // Only one argument, the value to be repr'ed.
-  Object method(&scope, Interpreter::lookupMethod(thread, frame, obj,
-                                                  SymbolId::kDunderRepr));
-  CHECK(!method->isError(),
-        "__repr__ doesn't exist for this object, which is impossible since "
-        "object has a __repr__, and everything descends from object");
-  RawObject ret = Interpreter::callMethod1(thread, frame, method, obj);
-  if (!ret->isStr() && !ret->isError()) {
-    // TODO(T31744782): Change this to allow subtypes of string.
-    // If __repr__ doesn't return a string or error, throw a type error
-    return thread->raiseTypeErrorWithCStr("__repr__ returned non-string");
-  }
-  return ret;
-}
-
 RawObject Builtins::getattr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -639,6 +619,16 @@ RawObject Builtins::underPatch(Thread* thread, Frame* frame, word nargs) {
   Function base_fn(&scope, *base_fn_obj);
   patchFunctionAttrs(thread, base_fn, patch_fn);
   return *base_fn;
+}
+
+RawObject Builtins::underStrEscapeNonAscii(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  CHECK(thread->runtime()->isInstanceOfStr(args.get(0)),
+        "_str_escape_non_ascii expected str instance");
+  Str obj(&scope, args.get(0));
+  return strEscapeNonASCII(thread, obj);
 }
 
 }  // namespace python

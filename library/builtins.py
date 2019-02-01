@@ -493,6 +493,22 @@ def print(*args, sep=" ", end="\n", file=_stdout, flush=None):
 
 
 @_patch
+def _str_escape_non_ascii(s):
+    pass
+
+
+def repr(obj):
+    result = obj.__repr__()
+    if not isinstance(result, str):
+        raise TypeError("__repr__ returned non-string")
+    return result
+
+
+def ascii(obj):
+    return _str_escape_non_ascii(repr(obj))
+
+
+@_patch
 def callable(f):
     pass
 
@@ -549,11 +565,6 @@ def len(seq):
 
 @_patch
 def ord(c):
-    pass
-
-
-@_patch
-def repr(obj):
     pass
 
 

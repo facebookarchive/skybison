@@ -1877,9 +1877,6 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinFunction(module, SymbolId::kRange,
                            builtinTrampolineWrapper<Builtins::range>,
                            unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kRepr,
-                           builtinTrampolineWrapper<Builtins::repr>,
-                           unimplementedTrampoline, unimplementedTrampoline);
   moduleAddBuiltinFunction(module, SymbolId::kSetattr,
                            builtinTrampolineWrapper<Builtins::setattr>,
                            unimplementedTrampoline, unimplementedTrampoline);
@@ -1889,6 +1886,10 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinFunction(module, SymbolId::kUnderPrintStr,
                            builtinTrampolineWrapper<Builtins::underPrintStr>,
                            unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(
+      module, SymbolId::kUnderStrEscapeNonAscii,
+      builtinTrampolineWrapper<Builtins::underStrEscapeNonAscii>,
+      unimplementedTrampoline, unimplementedTrampoline);
   // Add builtin types
   moduleAddBuiltinType(module, SymbolId::kArithmeticError,
                        LayoutId::kArithmeticError);

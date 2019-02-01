@@ -454,8 +454,22 @@ a = repr(Foo())
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, "foo"));
+}
 
-  EXPECT_TRUE(RawStr::cast(*a)->equalsCStr("foo"));
+TEST(BuiltinsModuleTest, BuiltInAsciiCallsDunderRepr) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __repr__(self):
+    return "foo"
+
+a = ascii(Foo())
+)");
+  HandleScope scope;
+  Module main(&scope, findModule(&runtime, "__main__"));
+  Object a(&scope, moduleAt(&runtime, main, "a"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, "foo"));
 }
 
 TEST(BuiltinsModuleTest, GetAttrFromClassReturnsValue) {
