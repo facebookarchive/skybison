@@ -1,3 +1,4 @@
+#include "bytes-builtins.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "runtime.h"
@@ -104,8 +105,24 @@ PY_EXPORT PyObject* PyBytes_FromFormatV(const char* /* t */, va_list /* s */) {
   UNIMPLEMENTED("PyBytes_FromFormatV");
 }
 
-PY_EXPORT PyObject* PyBytes_FromObject(PyObject* /* x */) {
-  UNIMPLEMENTED("PyBytes_FromObject");
+PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {
+  Thread* thread = Thread::currentThread();
+  if (pyobj == nullptr) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+
+  HandleScope scope(thread);
+  ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
+  Object obj(&scope, handle->asObject());
+  if (obj->isBytes()) {
+    handle->incref();
+    return pyobj;
+  }
+
+  Object result(&scope, bytesFromIterable(thread, obj));
+  if (result->isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyBytes_FromStringAndSize(const char* str,

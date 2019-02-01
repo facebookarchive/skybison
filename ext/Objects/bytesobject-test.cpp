@@ -173,6 +173,100 @@ TEST_F(BytesExtensionApiTest, ConcatAndDelDecrefsSecondArg) {
   Py_DECREF(bar);
 }
 
+TEST_F(BytesExtensionApiTest, FromObjectWithBytesReturnsArgument) {
+  PyObjectPtr bytes(PyBytes_FromString("foo"));
+  PyObjectPtr copy(PyBytes_FromObject(bytes));
+  EXPECT_EQ(copy, bytes);
+}
+
+TEST_F(BytesExtensionApiTest, FromObjectWithListReturnsBytes) {
+  PyObjectPtr list(PyList_New(3));
+  PyList_SetItem(list, 0, PyLong_FromLong('a'));
+  PyList_SetItem(list, 1, PyLong_FromLong('b'));
+  PyList_SetItem(list, 2, PyLong_FromLong('c'));
+  PyObjectPtr bytes(PyBytes_FromObject(list));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "abc");
+}
+
+TEST_F(BytesExtensionApiTest, FromObjectWithTupleReturnsBytes) {
+  PyObjectPtr tuple(PyTuple_New(3));
+  PyTuple_SetItem(tuple, 0, PyLong_FromLong('a'));
+  PyTuple_SetItem(tuple, 1, PyLong_FromLong('b'));
+  PyTuple_SetItem(tuple, 2, PyLong_FromLong('c'));
+  PyObjectPtr bytes(PyBytes_FromObject(tuple));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "abc");
+}
+
+TEST_F(BytesExtensionApiTest, FromObjectWithNonIntTupleRaises) {
+  PyObjectPtr tuple(PyTuple_New(1));
+  PyTuple_SetItem(tuple, 0, Py_None);
+  ASSERT_EQ(PyBytes_FromObject(tuple), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, FromObjectWithNonIntIndexTupleRaises) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __index__(self): return ''
+obj = (Foo(),)
+)");
+  PyObjectPtr tuple(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyBytes_FromObject(tuple), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, FromObjectWithNegativeIntTupleRaises) {
+  PyObjectPtr tuple(PyTuple_New(1));
+  PyTuple_SetItem(tuple, 0, PyLong_FromLong(-1));
+  ASSERT_EQ(PyBytes_FromObject(tuple), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(BytesExtensionApiTest, FromObjectWithOverflowTupleRaises) {
+  PyObjectPtr tuple(PyTuple_New(1));
+  PyTuple_SetItem(tuple, 0, PyLong_FromLong(256));
+  ASSERT_EQ(PyBytes_FromObject(tuple), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(BytesExtensionApiTest, FromObjectWithStringRaises) {
+  PyObjectPtr str(PyUnicode_FromString("hello"));
+  ASSERT_EQ(PyBytes_FromObject(str), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, FromObjectWithNonIterableRaises) {
+  PyObjectPtr num(PyLong_FromLong(1));
+  ASSERT_EQ(PyBytes_FromObject(num), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, FromObjectWithBadIteratorRaises) {
+  PyRun_SimpleString(R"(
+class NotIterator: pass
+class HasIter:
+  def __iter__(self): return NotIterator()
+obj = HasIter()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyBytes_FromObject(obj), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, FromObjectWithSetReturnsBytes) {
+  PyObjectPtr set(PySet_New(nullptr));
+  PySet_Add(set, PyLong_FromLong('a'));
+  PyObjectPtr bytes(PyBytes_FromObject(set));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "a");
+}
+
 TEST_F(BytesExtensionApiTest, FromStringAndSizeIncrementsRefCount) {
   PyObject* bytes = PyBytes_FromStringAndSize("foo", 3);
   ASSERT_NE(bytes, nullptr);

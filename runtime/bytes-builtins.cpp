@@ -6,6 +6,92 @@
 
 namespace python {
 
+RawObject bytesFromIterable(Thread* thread, const Object& obj) {
+  // TODO(T38246066): objects other than bytes (and subclasses) as buffers
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfBytes(*obj)) {
+    UNIMPLEMENTED("strict subclass of bytes");  // TODO(T36619847)
+  }
+  HandleScope scope(thread);
+  if (obj->isList()) {
+    List list(&scope, *obj);
+    Tuple tuple(&scope, list->items());
+    return bytesFromTuple(thread, tuple, list->numItems());
+  }
+  if (obj->isTuple()) {
+    Tuple tuple(&scope, *obj);
+    return bytesFromTuple(thread, tuple, tuple->length());
+  }
+  if (!runtime->isInstanceOfStr(*obj)) {
+    Object iter(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIter));
+    if (iter->isError()) {
+      if (!thread->hasPendingException()) {
+        return thread->raiseTypeErrorWithCStr("object is not iterable");
+      }
+      return *iter;
+    }
+    Frame* frame = thread->currentFrame();
+    Object next(&scope, Interpreter::lookupMethod(thread, frame, iter,
+                                                  SymbolId::kDunderNext));
+    if (next->isError()) {
+      return thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+    }
+    Object value(&scope, NoneType::object());
+    List buffer(&scope, runtime->newList());
+    for (;;) {
+      value = Interpreter::callMethod1(thread, frame, next, iter);
+      if (value->isError()) {
+        if (thread->clearPendingStopIteration()) break;
+        return *value;
+      }
+      runtime->listAdd(buffer, value);
+    }
+    Tuple tuple(&scope, buffer->items());
+    return bytesFromTuple(thread, tuple, buffer->numItems());
+  }
+
+  return thread->raiseTypeErrorWithCStr("cannot convert object to bytes");
+}
+
+RawObject bytesFromTuple(Thread* thread, const Tuple& items, word size) {
+  DCHECK_BOUND(size, items->length());
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Bytes result(&scope, runtime->newBytes(size, 0));
+
+  for (word idx = 0; idx < size; idx++) {
+    Object item(&scope, items->at(idx));
+    if (!runtime->isInstanceOfInt(*item)) {
+      Object index(&scope, thread->invokeMethod1(item, SymbolId::kDunderIndex));
+      if (index->isError()) {
+        if (!thread->hasPendingException()) {
+          return thread->raiseTypeErrorWithCStr(
+              "object cannot be interpreted as an integer");
+        }
+        return *index;
+      }
+      if (!runtime->isInstanceOfInt(*index)) {
+        return thread->raiseTypeErrorWithCStr("__index__() returned non-int");
+      }
+      item = *index;
+    }
+
+    // item is now an instance of Int
+    OptInt<byte> current_byte = RawInt::cast(*item).asInt<byte>();
+    switch (current_byte.error) {
+      case CastError::None:
+        result->byteAtPut(idx, current_byte.value);
+        continue;
+      case CastError::Overflow:
+      case CastError::Underflow:
+        return thread->raiseValueErrorWithCStr(
+            "bytes must be in range(0, 256)");
+    }
+  }
+
+  return *result;
+}
+
 const BuiltinMethod BytesBuiltins::kMethods[] = {
     {SymbolId::kDunderAdd, builtinTrampolineWrapper<dunderAdd>},
     {SymbolId::kDunderEq, builtinTrampolineWrapper<dunderEq>},

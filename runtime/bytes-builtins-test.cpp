@@ -7,6 +7,100 @@ namespace python {
 
 using namespace testing;
 
+TEST(BytesBuiltinsTest, FromIterableWithListReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, runtime.newList());
+  Object num(&scope, SmallInt::fromWord(42));
+  runtime.listAdd(list, num);
+  runtime.listAdd(list, num);
+  runtime.listAdd(list, num);
+  Object result(&scope, bytesFromIterable(Thread::currentThread(), list));
+  ASSERT_TRUE(result->isBytes());
+  Bytes expected(&scope, runtime.newBytesWithAll({42, 42, 42}));
+  EXPECT_EQ(Bytes::cast(*result).compare(*expected), 0);
+}
+
+TEST(BytesBuiltinsTest, FromIterableWithTupleReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Tuple tuple(&scope, runtime.newTuple(3));
+  tuple->atPut(0, SmallInt::fromWord(42));
+  tuple->atPut(1, SmallInt::fromWord(123));
+  tuple->atPut(2, SmallInt::fromWord(0));
+  Object result(&scope, bytesFromIterable(Thread::currentThread(), tuple));
+  ASSERT_TRUE(result->isBytes());
+  Bytes expected(&scope, runtime.newBytesWithAll({42, 123, 0}));
+  EXPECT_EQ(Bytes::cast(*result).compare(*expected), 0);
+}
+
+TEST(BytesBuiltinsTest, FromIterableWithIterableReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Range range(&scope, runtime.newRange('a', 'j', 2));
+  Object result(&scope, bytesFromIterable(Thread::currentThread(), range));
+  ASSERT_TRUE(result->isBytes());
+  Bytes expected(&scope, runtime.newBytesWithAll({'a', 'c', 'e', 'g', 'i'}));
+  EXPECT_EQ(Bytes::cast(*result).compare(*expected), 0);
+}
+
+TEST(BytesBuiltinsTest, FromIterableWithNonIterableRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  Int num(&scope, SmallInt::fromWord(0));
+  Object result(&scope, bytesFromIterable(Thread::currentThread(), num));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, FromIterableWithStrRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  Str str(&scope, runtime.newStrFromCStr("hello"));
+  Object result(&scope, bytesFromIterable(Thread::currentThread(), str));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, FromTupleWithSizeReturnsBytesMatchingSize) {
+  Runtime runtime;
+  HandleScope scope;
+  Tuple tuple(&scope, runtime.newTuple(3));
+  tuple->atPut(0, SmallInt::fromWord(42));
+  tuple->atPut(1, SmallInt::fromWord(123));
+  Object result(&scope, bytesFromTuple(Thread::currentThread(), tuple, 2));
+  ASSERT_TRUE(result->isBytes());
+  Bytes bytes(&scope, *result);
+  EXPECT_EQ(bytes->length(), 2);
+  EXPECT_EQ(bytes->byteAt(0), 42);
+  EXPECT_EQ(bytes->byteAt(1), 123);
+}
+
+TEST(BytesBuiltinsTest, FromTupleWithNonIndexRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  Tuple tuple(&scope, runtime.newTuple(1));
+  tuple->atPut(0, runtime.newFloat(1));
+  Object result(&scope, bytesFromTuple(Thread::currentThread(), tuple, 1));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(BytesBuiltinsTest, FromTupleWithNegativeIntRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  Tuple tuple(&scope, runtime.newTuple(1));
+  tuple->atPut(0, SmallInt::fromWord(-1));
+  Object result(&scope, bytesFromTuple(Thread::currentThread(), tuple, 1));
+  EXPECT_TRUE(raised(*result, LayoutId::kValueError));
+}
+
+TEST(BytesBuiltinsTest, FromTupleWithNonByteRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  Tuple tuple(&scope, runtime.newTuple(1));
+  tuple->atPut(0, SmallInt::fromWord(256));
+  Object result(&scope, bytesFromTuple(Thread::currentThread(), tuple, 1));
+  EXPECT_TRUE(raised(*result, LayoutId::kValueError));
+}
+
 TEST(BytesBuiltinsTest, DunderAddWithTooFewArgsRaises) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
