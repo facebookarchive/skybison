@@ -74,7 +74,7 @@ class BaseException(bootstrap=True):
     def __repr__(self):
         if not isinstance(self, BaseException):
             raise TypeError("not a BaseException object")
-        return f"{self.__class__.__name__}{self.args.__repr__()}"
+        return f"{self.__class__.__name__}{self.args!r}"
 
 
 class KeyError(bootstrap=True):
@@ -117,7 +117,7 @@ class tuple(bootstrap=True):
     def __repr__(self):
         num_elems = len(self)
         if num_elems == 1:
-            return f"({repr(self[0])},)"
+            return f"({self[0]!r},)"
         output = "("
         i = 0
         while i < num_elems:
@@ -399,7 +399,7 @@ class dict(bootstrap=True):
         pass
 
     def __repr__(self):
-        kwpairs = [f"{repr(key)}: {repr(self[key])}" for key in self.keys()]
+        kwpairs = [f"{key!r}: {self[key]!r}" for key in self.keys()]
         return "{" + ", ".join(kwpairs) + "}"
 
     def get(self, key, default=None):
@@ -430,7 +430,9 @@ class set(bootstrap=True):
 
 class function(bootstrap=True):
     def __repr__(self):
-        return f"<function {self.__name__} at 0x{repr(_address(self))}>"
+        # TODO(T32655200): Good candidate for #x when formatting language is
+        # implemented
+        return f"<function {self.__name__} at 0x{_address(self)}>"
 
     def __call__(self, *args, **kwargs):
         return self(*args, **kwargs)
@@ -438,7 +440,7 @@ class function(bootstrap=True):
 
 class complex(bootstrap=True):
     def __repr__(self):
-        return f"({repr(self.real)}+{repr(self.imag)}j)"
+        return f"({self.real}+{self.imag}j)"
 
     @property
     def imag(self):
