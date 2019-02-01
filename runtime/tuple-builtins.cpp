@@ -5,6 +5,7 @@
 #include "interpreter.h"
 #include "objects.h"
 #include "runtime.h"
+#include "slice-builtins.h"
 #include "thread.h"
 #include "trampolines-inl.h"
 
@@ -147,8 +148,10 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 
 RawObject TupleBuiltins::slice(Thread* thread, const Tuple& tuple,
                                const Slice& slice) {
+  HandleScope scope(thread);
   word start, stop, step;
-  slice->unpack(&start, &stop, &step);
+  Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
+  if (err->isError()) return *err;
   return sliceWithWords(thread, tuple, start, stop, step);
 }
 

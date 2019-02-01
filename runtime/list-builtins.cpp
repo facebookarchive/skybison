@@ -4,6 +4,7 @@
 #include "globals.h"
 #include "objects.h"
 #include "runtime.h"
+#include "slice-builtins.h"
 #include "thread.h"
 #include "trampolines-inl.h"
 
@@ -481,12 +482,13 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   return thread->raiseValueErrorWithCStr("list.remove(x) x not in list");
 }
 
-RawObject ListBuiltins::slice(Thread* thread, RawList list, RawSlice slice) {
+RawObject listSlice(Thread* thread, const List& list, const Slice& slice) {
+  HandleScope scope(thread);
   word start, stop, step;
-  slice->unpack(&start, &stop, &step);
+  Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
+  if (err->isError()) return *err;
   word length = Slice::adjustIndices(list->numItems(), &start, &stop, step);
 
-  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Tuple items(&scope, runtime->newTuple(length));
   for (word i = 0, index = start; i < length; i++, index += step) {
@@ -529,8 +531,8 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     return list->at(idx);
   }
   if (index->isSlice()) {
-    Slice list_slice(&scope, RawSlice::cast(index));
-    return slice(thread, *list, *list_slice);
+    Slice slice(&scope, index);
+    return listSlice(thread, list, slice);
   }
   return thread->raiseTypeErrorWithCStr(
       "list indices must be integers or slices");
@@ -617,12 +619,12 @@ RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   return SmallInt::fromWord(list->numItems() - list_iterator->index());
 }
 
-static RawObject setItemSlice(Thread* thread, List& list, Object& slice_index,
-                              Object& src) {
+static RawObject setItemSlice(Thread* thread, const List& list,
+                              const Slice& slice, const Object& src) {
   HandleScope scope(thread);
-  Slice slice(&scope, Slice::cast(*slice_index));
   word start, stop, step;
-  slice->unpack(&start, &stop, &step);
+  Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
+  if (err->isError()) return *err;
   word slice_length =
       Slice::adjustIndices(list->numItems(), &start, &stop, step);
   word suffix_start = Utils::maximum(start + 1, stop);
@@ -759,7 +761,8 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   if (index->isSlice()) {
-    return setItemSlice(thread, list, index, src);
+    Slice slice(&scope, *index);
+    return setItemSlice(thread, list, slice, src);
   }
   return thread->raiseTypeErrorWithCStr(
       "list indices must be integers or slices");

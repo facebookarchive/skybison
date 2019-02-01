@@ -5,6 +5,7 @@
 #include "list-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "slice-builtins.h"
 #include "thread.h"
 #include "trampolines-inl.h"
 
@@ -538,8 +539,10 @@ RawObject StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
 RawObject StrBuiltins::slice(Thread* thread, const Str& str,
                              const Slice& slice) {
+  HandleScope scope(thread);
   word start, stop, step;
-  slice->unpack(&start, &stop, &step);
+  Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
+  if (err->isError()) return *err;
   word length = Slice::adjustIndices(str->length(), &start, &stop, step);
   std::unique_ptr<char[]> buf(new char[length + 1]);
   buf[length] = '\0';

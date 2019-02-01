@@ -159,8 +159,7 @@ PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
   slice->setStart(runtime->newInt(low));
   slice->setStop(runtime->newInt(high));
   slice->setStep(SmallInt::fromWord(1));
-  return ApiHandle::newReference(thread,
-                                 ListBuiltins::slice(thread, *list, *slice));
+  return ApiHandle::newReference(thread, listSlice(thread, list, slice));
 }
 
 PY_EXPORT int PyList_Insert(PyObject* pylist, Py_ssize_t where,

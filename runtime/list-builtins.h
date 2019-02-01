@@ -26,6 +26,9 @@ RawObject listReplicate(Thread* thread, const List& list, word ntimes);
 
 void listReverse(Thread* thread, const List& list);
 
+// Returns a new list by slicing the given list
+RawObject listSlice(Thread* thread, const List& list, const Slice& slice);
+
 // Sort a list in place.
 // Returns None when there has been no error, or throws a TypeError and returns
 // Error otherwise.
@@ -49,7 +52,6 @@ class ListBuiltins {
   static RawObject insert(Thread* thread, Frame* frame, word nargs);
   static RawObject pop(Thread* thread, Frame* frame, word nargs);
   static RawObject remove(Thread* thread, Frame* frame, word nargs);
-  static RawObject slice(Thread* thread, RawList list, RawSlice slice);
 
  private:
   static const BuiltinAttribute kAttributes[];

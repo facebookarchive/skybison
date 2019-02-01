@@ -2,6 +2,7 @@
 
 #include "frame.h"
 #include "runtime.h"
+#include "slice-builtins.h"
 #include "trampolines-inl.h"
 
 namespace python {
@@ -194,7 +195,8 @@ RawObject BytesBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   if (index->isSlice()) {
     Slice slice(&scope, *index);
     word start, stop, step;
-    slice->unpack(&start, &stop, &step);
+    Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
+    if (err->isError()) return *err;
     word len = RawSlice::adjustIndices(self->length(), &start, &stop, step);
     // TODO(T36997048): intern 1-element byte arrays
     Bytes result(&scope, runtime->newBytes(len, 0));

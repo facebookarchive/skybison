@@ -8,6 +8,153 @@ namespace python {
 
 using namespace testing;
 
+TEST(SliceBuiltinsTest, UnpackWithAllNoneSetsDefaults) {
+  Runtime runtime;
+  HandleScope scope;
+  Slice slice(&scope, runtime.newSlice());
+  word start, stop, step;
+  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
+                                    &stop, &step));
+  ASSERT_FALSE(result->isError());
+  EXPECT_EQ(start, 0);
+  EXPECT_EQ(stop, SmallInt::kMaxValue);
+  EXPECT_EQ(step, 1);
+}
+
+TEST(SliceBuiltinsTest, UnpackWithNegativeStepSetsReverseDefaults) {
+  Runtime runtime;
+  HandleScope scope;
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStep(SmallInt::fromWord(-1));
+  word start, stop, step;
+  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
+                                    &stop, &step));
+  ASSERT_FALSE(result->isError());
+  EXPECT_EQ(start, SmallInt::kMaxValue);
+  EXPECT_EQ(stop, SmallInt::kMinValue);
+  EXPECT_EQ(step, -1);
+}
+
+TEST(SliceBuiltinsTest, UnpackWithNonIndexStartRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStart(runtime.newSet());
+  word start, stop, step;
+  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
+                                    &stop, &step));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(SliceBuiltinsTest, UnpackWithNonIndexStopRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStop(runtime.newSet());
+  word start, stop, step;
+  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
+                                    &stop, &step));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(SliceBuiltinsTest, UnpackWithNonIndexStepRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStep(runtime.newSet());
+  word start, stop, step;
+  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
+                                    &stop, &step));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(SliceBuiltinsTest, UnpackWithMistypedDunderIndexRaisesTypeError) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __index__(self): return ""
+foo = Foo()
+)");
+  HandleScope scope;
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStep(moduleAt(&runtime, "__main__", "foo"));
+  word start, stop, step;
+  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
+                                    &stop, &step));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(SliceBuiltinsTest, UnpackWithNonIntIndicesCallsDunderIndex) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __init__(self):
+    self.count = 0
+  def __index__(self):
+    self.count += 1
+    return self.count
+foo = Foo()
+)");
+  HandleScope scope;
+  Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStart(*foo);
+  slice->setStop(*foo);
+  slice->setStep(*foo);
+  word start, stop, step;
+  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
+                                    &stop, &step));
+  ASSERT_FALSE(result->isError());
+  EXPECT_EQ(start, 2);
+  EXPECT_EQ(stop, 3);
+  EXPECT_EQ(step, 1);
+}
+
+TEST(SliceBuiltinsTest, UnpackWithZeroStepRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  Slice slice(&scope, runtime.newSlice());
+  slice->setStep(SmallInt::fromWord(0));
+  word start, stop, step;
+  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
+                                    &stop, &step));
+  EXPECT_TRUE(raised(*result, LayoutId::kValueError));
+}
+
+TEST(SliceBuiltinsTest, UnpackWithOverflowSilentlyReducesValues) {
+  Runtime runtime;
+  HandleScope scope;
+  Slice slice(&scope, runtime.newSlice());
+  Object large(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
+  slice->setStart(*large);
+  slice->setStop(*large);
+  slice->setStep(*large);
+  word start, stop, step;
+  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
+                                    &stop, &step));
+  ASSERT_FALSE(result->isError());
+  EXPECT_EQ(start, SmallInt::kMaxValue);
+  EXPECT_EQ(stop, SmallInt::kMaxValue);
+  EXPECT_EQ(step, SmallInt::kMaxValue);
+}
+
+TEST(SliceBuiltinsTest, UnpackWithUnderflowSilentlyBoostsValues) {
+  Runtime runtime;
+  HandleScope scope;
+  Slice slice(&scope, runtime.newSlice());
+  Object large(&scope, runtime.newInt(SmallInt::kMinValue - 1));
+  slice->setStart(*large);
+  slice->setStop(*large);
+  slice->setStep(*large);
+  word start, stop, step;
+  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
+                                    &stop, &step));
+  ASSERT_FALSE(result->isError());
+  EXPECT_EQ(start, SmallInt::kMinValue);
+  EXPECT_EQ(stop, SmallInt::kMinValue);
+  EXPECT_EQ(step, -SmallInt::kMaxValue);
+}
+
 TEST(SliceBuiltinsTest, SliceHasStartAttribute) {
   Runtime runtime;
   HandleScope scope;
