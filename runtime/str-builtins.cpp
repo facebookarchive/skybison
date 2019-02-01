@@ -11,6 +11,21 @@
 
 namespace python {
 
+// TODO(T39861344): This can be replaced by a real string codec.
+RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj) {
+  CHECK(str_obj->isStr(), "strEscapeNonASCII cannot currently handle non-str");
+  HandleScope scope(thread);
+  Str str(&scope, *str_obj);
+  for (word i = 0; i < str->length(); i++) {
+    if (str->charAt(i) > kMaxASCII) {
+      UNIMPLEMENTED(
+          "Character '%d' at index %ld is not yet escapable in strEscape",
+          str->charAt(i), i);
+    }
+  }
+  return *str;
+}
+
 word strSpan(const Str& src, const Str& str) {
   word length = src->length();
   word str_length = str->length();

@@ -11,6 +11,7 @@ namespace python {
 // TODO(T38930404): Make this part of the interface instead of an ugly enum
 enum class StrStripDirection { Left, Right, Both };
 
+RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj);
 RawObject strStripSpace(Thread* thread, const Str& src,
                         const StrStripDirection direction);
 RawObject strStrip(Thread* thread, const Str& src, const Str& str,

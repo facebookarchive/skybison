@@ -1031,4 +1031,33 @@ result = range(1, 5, 7)
   EXPECT_EQ(result->step(), 7);
 }
 
+TEST(BuiltinsModuleTest, FormatWithNonStrFmtSpecRaises) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raised(runFromCStr(&runtime, "format('hi', 1)"), LayoutId::kTypeError));
+}
+
+TEST(BuiltinsModuleTest, FormatCallsDunderFormat) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  def __format__(self, fmt_spec):
+    return "foobar"
+result = format(C(), 'hi')
+)");
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "foobar"));
+}
+
+TEST(BuiltinsModuleTest, FormatRaisesWhenDunderFormatReturnsNonStr) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  def __format__(self, fmt_spec):
+    return 1
+)");
+  EXPECT_TRUE(
+      raised(runFromCStr(&runtime, "format(C(), 'hi')"), LayoutId::kTypeError));
+}
+
 }  // namespace python

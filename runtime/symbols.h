@@ -41,6 +41,7 @@ class Runtime;
   V(DunderFlags, "__flags__")                                                  \
   V(DunderFloat, "__float__")                                                  \
   V(DunderFloordiv, "__floordiv__")                                            \
+  V(DunderFormat, "__format__")                                                \
   V(DunderGe, "__ge__")                                                        \
   V(DunderGet, "__get__")                                                      \
   V(DunderGetItem, "__getitem__")                                              \
@@ -175,6 +176,7 @@ class Runtime;
   V(FileExistsError, "FileExistsError")                                        \
   V(FileNotFoundError, "FileNotFoundError")                                    \
   V(FixCoFilename, "_fix_co_filename")                                         \
+  V(Format, "format")                                                          \
   V(Float, "float")                                                            \
   V(FloatingPointError, "FloatingPointError")                                  \
   V(Frame, "frame")                                                            \

@@ -11,12 +11,26 @@ _address = _address  # noqa: F821
 _stdout = _stdout  # noqa: F821
 
 
+def format(obj, fmt_spec):
+    if not isinstance(fmt_spec, str):
+        raise TypeError("fmt_spec must be str instance")
+    result = obj.__format__(fmt_spec)
+    if not isinstance(result, str):
+        raise TypeError("__format__ must return str instance")
+    return result
+
+
 class object(bootstrap=True):  # noqa: E999
     def __str__(self):
         return self.__repr__()
 
     def __hash__(self):
         pass
+
+    def __format__(self, format_spec):
+        if format_spec != "":
+            raise TypeError("format_spec must be empty string")
+        return str(self)
 
 
 class bool(bootstrap=True):

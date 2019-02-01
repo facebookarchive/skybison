@@ -248,7 +248,7 @@ class Interpreter {
   static bool doBuildTupleUnpack(Context* ctx, word arg);
   static bool doBuildSetUnpack(Context* ctx, word arg);
   static void doSetupAsyncWith(Context* ctx, word flags);
-  static void doFormatValue(Context* ctx, word arg);
+  static bool doFormatValue(Context* ctx, word arg);
   static void doBuildConstKeyMap(Context* ctx, word arg);
   static void doBuildString(Context* ctx, word arg);
   static bool doDeleteAttr(Context* ctx, word arg);

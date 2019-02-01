@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "builtins-module.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
@@ -2276,27 +2277,83 @@ void Interpreter::doSetupAsyncWith(Context* ctx, word arg) {
 }
 
 // opcode 155
-// A incomplete impl of FORMAT_VALUE; assumes no conv
-void Interpreter::doFormatValue(Context* ctx, word flags) {
+bool Interpreter::doFormatValue(Context* ctx, word flags) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   int conv = (flags & FVC_MASK_FLAG);
   int have_fmt_spec = (flags & FVS_MASK_FLAG) == FVS_HAVE_SPEC_FLAG;
+  Runtime* runtime = thread->runtime();
+  Object fmt_spec(&scope, runtime->newStrFromCStr(""));
+  if (have_fmt_spec) {
+    fmt_spec = ctx->frame->popValue();
+  }
+  Object value(&scope, ctx->frame->popValue());
+  Object method(&scope, NoneType::object());
+  Frame* frame = ctx->frame;
   switch (conv) {
-    case FVC_STR_FLAG:
-    case FVC_REPR_FLAG:
-    case FVC_ASCII_FLAG:
-      UNIMPLEMENTED("Conversion not supported.");
+    case FVC_STR_FLAG: {
+      method = lookupMethod(thread, frame, value, SymbolId::kDunderStr);
+      CHECK(!method->isError(),
+            "__str__ doesn't exist for this object, which is impossible since "
+            "object has a __str__, and everything descends from object");
+      value = callMethod1(thread, frame, method, value);
+      if (value->isError()) {
+        return unwind(ctx);
+      }
+      if (!runtime->isInstanceOfStr(*value)) {
+        thread->raiseTypeErrorWithCStr("__str__ returned non-string");
+        return unwind(ctx);
+      }
+      break;
+    }
+    case FVC_REPR_FLAG: {
+      method = lookupMethod(thread, frame, value, SymbolId::kDunderRepr);
+      CHECK(!method->isError(),
+            "__repr__ doesn't exist for this object, which is impossible since "
+            "object has a __repr__, and everything descends from object");
+      value = callMethod1(thread, frame, method, value);
+      if (value->isError()) {
+        return unwind(ctx);
+      }
+      if (!runtime->isInstanceOfStr(*value)) {
+        thread->raiseTypeErrorWithCStr("__repr__ returned non-string");
+        return unwind(ctx);
+      }
+      break;
+    }
+    case FVC_ASCII_FLAG: {
+      method = lookupMethod(thread, frame, value, SymbolId::kDunderRepr);
+      CHECK(!method->isError(),
+            "__repr__ doesn't exist for this object, which is impossible since "
+            "object has a __repr__, and everything descends from object");
+      value = callMethod1(thread, frame, method, value);
+      if (value->isError()) {
+        return unwind(ctx);
+      }
+      if (!runtime->isInstanceOfStr(*value)) {
+        thread->raiseTypeErrorWithCStr("__repr__ returned non-string");
+        return unwind(ctx);
+      }
+      value = strEscapeNonASCII(thread, value);
+      break;
+    }
     default:  // 0: no conv
       break;
   }
-
-  if (have_fmt_spec) {
-    Str fmt_str(&scope, ctx->frame->popValue());
-    Str value(&scope, ctx->frame->popValue());
-    // TODO(T38930359): Handle out of memory error
-    ctx->frame->pushValue(thread->runtime()->strConcat(thread, fmt_str, value));
-  }  // else no-op
+  method = lookupMethod(thread, frame, value, SymbolId::kDunderFormat);
+  if (method->isError()) {
+    return unwind(ctx);
+  }
+  value = callMethod2(thread, frame, method, value, fmt_spec);
+  if (value->isError()) {
+    return unwind(ctx);
+  }
+  if (!runtime->isInstanceOfStr(*value)) {
+    thread->raiseTypeErrorWithCStr("__format__ returned non-string");
+    return unwind(ctx);
+  }
+  ctx->frame->pushValue(*value);
+  return false;
 }
 
 // opcode 156

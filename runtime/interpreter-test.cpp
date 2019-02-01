@@ -2605,4 +2605,60 @@ result = f(*gen())
                     "Iterables not yet supported in sequenceAsTuple()"));
 }
 
+TEST(InterpreterTest, FormatValueCallsDunderStr) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  runFromCStr(&runtime, R"(
+class C:
+  def __str__(self):
+    return "foobar"
+result = f"{C()!s}"
+)");
+  HandleScope scope(thread);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
+}
+
+TEST(InterpreterTest, FormatValueFallsBackToDunderRepr) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  runFromCStr(&runtime, R"(
+class C:
+  def __repr__(self):
+    return "foobar"
+result = f"{C()!s}"
+)");
+  HandleScope scope(thread);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
+}
+
+TEST(InterpreterTest, FormatValueCallsDunderRepr) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  runFromCStr(&runtime, R"(
+class C:
+  def __repr__(self):
+    return "foobar"
+result = f"{C()!r}"
+)");
+  HandleScope scope(thread);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
+}
+
+TEST(InterpreterTest, FormatValueAsciiCallsDunderRepr) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  runFromCStr(&runtime, R"(
+class C:
+  def __repr__(self):
+    return "foobar"
+result = f"{C()!a}"
+)");
+  HandleScope scope(thread);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
+}
+
 }  // namespace python
