@@ -1697,7 +1697,6 @@ struct {
     {SymbolId::kUnderImp, &Runtime::createImportModule},
     {SymbolId::kUnderIo, &Runtime::createUnderIoModule},
     {SymbolId::kMarshal, &Runtime::createMarshalModule},
-    {SymbolId::kUnderThread, &Runtime::createThreadModule},
     {SymbolId::kUnderWarnings, &Runtime::createWarningsModule},
     {SymbolId::kUnderWeakRef, &Runtime::createWeakRefModule},
 };
@@ -2218,13 +2217,6 @@ void Runtime::createWeakRefModule() {
   Module module(&scope, newModule(name));
 
   moduleAddBuiltinType(module, SymbolId::kRef, LayoutId::kWeakRef);
-  addModule(module);
-}
-
-void Runtime::createThreadModule() {
-  HandleScope scope;
-  Object name(&scope, symbols()->UnderThread());
-  Module module(&scope, newModule(name));
   addModule(module);
 }
 

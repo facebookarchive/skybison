@@ -166,7 +166,6 @@ class Runtime {
   void createImportModule();
   void createMarshalModule();
   void createSysModule();
-  void createThreadModule();
   void createTimeModule();
   void createUnderIoModule();
   void createWarningsModule();
