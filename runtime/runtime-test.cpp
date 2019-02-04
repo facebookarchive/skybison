@@ -362,6 +362,8 @@ TEST(RuntimeListTest, ListGrowth) {
   Tuple array16(&scope, list->items());
   EXPECT_NE(*array8, *array16);
   EXPECT_EQ(array16->length(), 16);
+  runtime.listEnsureCapacity(list, 32);
+  EXPECT_GT(list->capacity(), 32);
 }
 
 TEST(RuntimeListTest, EmptyListInvariants) {

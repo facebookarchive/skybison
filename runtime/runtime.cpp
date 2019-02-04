@@ -2295,7 +2295,7 @@ void Runtime::listEnsureCapacity(const List& list, word index) {
   word new_capacity = (list->capacity() < kInitialEnsuredCapacity)
                           ? kInitialEnsuredCapacity
                           : list->capacity() << 1;
-  if (new_capacity < index) {
+  if (new_capacity <= index) {
     new_capacity = Utils::nextPowerOfTwo(index);
   }
   Tuple old_array(&scope, list->items());
