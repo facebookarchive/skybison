@@ -948,6 +948,14 @@ PyAPI_FUNC(void)
 #define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define Py_ABS(x) ((x) < 0 ? -(x) : (x))
 
+#define Py_CLEAR(op)                                                           \
+  do {                                                                         \
+    PyObject* _py_tmp = (PyObject*)(op);                                       \
+    if (_py_tmp != NULL) {                                                     \
+      (op) = NULL;                                                             \
+      Py_DECREF_Func(_py_tmp);                                                 \
+    }                                                                          \
+  } while (0)
 #define Py_DECREF(op) Py_DECREF_Func((PyObject*)op)
 #define Py_INCREF(op) Py_INCREF_Func((PyObject*)op)
 #define Py_REFCNT(op) Py_REFCNT_Func((PyObject*)op)

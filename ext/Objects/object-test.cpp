@@ -444,4 +444,28 @@ c = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
+TEST_F(ObjectExtensionApiTest, ClearWithNullDoesntThrow) {
+  PyObject* null = nullptr;
+  Py_CLEAR(null);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(null, nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, ClearWithObjectSetsNull) {
+  PyObject* num = PyLong_FromLong(1);
+  Py_CLEAR(num);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(num, nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, ClearWithObjectDecrefsObject) {
+  PyObject* original = PyLong_FromLong(1);
+  PyObject* num = original;
+  Py_ssize_t original_count = Py_REFCNT(original);
+  Py_CLEAR(num);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(num, nullptr);
+  EXPECT_LT(Py_REFCNT(original), original_count);
+}
+
 }  // namespace python
