@@ -601,13 +601,30 @@ PY_EXPORT PyObject* PyUnicode_New(Py_ssize_t /* e */, Py_UCS4 /* r */) {
   UNIMPLEMENTED("PyUnicode_New");
 }
 
-PY_EXPORT void PyUnicode_Append(PyObject** /* p_left */, PyObject* /* t */) {
-  UNIMPLEMENTED("PyUnicode_Append");
+PY_EXPORT void PyUnicode_Append(PyObject** p_left, PyObject* right) {
+  if (p_left == nullptr) {
+    if (!PyErr_Occurred()) {
+      PyErr_BadInternalCall();
+    }
+    return;
+  }
+
+  PyObject* left = *p_left;
+  if (left == nullptr || right == nullptr || !PyUnicode_Check(left) ||
+      !PyUnicode_Check(right)) {
+    if (!PyErr_Occurred()) {
+      PyErr_BadInternalCall();
+    }
+    Py_CLEAR(*p_left);
+    return;
+  }
+  *p_left = PyUnicode_Concat(left, right);
+  Py_DECREF(left);
 }
 
-PY_EXPORT void PyUnicode_AppendAndDel(PyObject** /* pleft */,
-                                      PyObject* /* t */) {
-  UNIMPLEMENTED("PyUnicode_AppendAndDel");
+PY_EXPORT void PyUnicode_AppendAndDel(PyObject** p_left, PyObject* right) {
+  PyUnicode_Append(p_left, right);
+  Py_XDECREF(right);
 }
 
 PY_EXPORT PyObject* PyUnicode_AsASCIIString(PyObject* /* e */) {

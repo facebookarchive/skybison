@@ -690,4 +690,63 @@ TEST_F(UnicodeExtensionApiTest, ConcatWithTwoStringsReturnsString) {
   EXPECT_TRUE(_PyUnicode_EqualToASCIIString(result, "hello world"));
 }
 
+TEST_F(UnicodeExtensionApiTest, AppendWithNullFails) {
+  PyUnicode_Append(nullptr, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(UnicodeExtensionApiTest, AppendWithNonStringFails) {
+  PyObject* not_str = PyLong_FromLong(1);
+  PyUnicode_Append(&not_str, not_str);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(UnicodeExtensionApiTest, AppendWithEmptyArgumentReturnsString) {
+  PyObject* hello = PyUnicode_FromString("hello");
+  PyObject* empty = PyUnicode_FromString("");
+  PyUnicode_Append(&hello, empty);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(hello));
+  EXPECT_EQ(PyUnicode_GetLength(hello), 5);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(hello, "hello"));
+
+  PyUnicode_Append(&empty, hello);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(empty));
+  EXPECT_EQ(PyUnicode_GetLength(empty), 5);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(empty, "hello"));
+  Py_DECREF(hello);
+  Py_DECREF(empty);
+}
+
+TEST_F(UnicodeExtensionApiTest, AppendWithTwoStringsReturnsString) {
+  PyObject* hello = PyUnicode_FromString("hello ");
+  PyObjectPtr world(PyUnicode_FromString("world"));
+  PyUnicode_Append(&hello, world);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(hello));
+  EXPECT_EQ(PyUnicode_GetLength(hello), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(hello, "hello world"));
+  Py_DECREF(hello);
+}
+
+TEST_F(UnicodeExtensionApiTest, AppendAndDelWithStringDecreasesRefcnt) {
+  PyObject* hello = PyUnicode_FromString("hello ");
+  PyObject* world = PyUnicode_FromString("world");
+  Py_INCREF(world);
+  Py_ssize_t original_refcnt = Py_REFCNT(world);
+  PyUnicode_AppendAndDel(&hello, world);
+
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(hello));
+  EXPECT_EQ(PyUnicode_GetLength(hello), 11);
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(hello, "hello world"));
+  Py_DECREF(hello);
+
+  EXPECT_LT(Py_REFCNT(world), original_refcnt);
+  Py_DECREF(world);
+}
+
 }  // namespace python
