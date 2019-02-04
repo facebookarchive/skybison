@@ -262,6 +262,14 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
   return *subclass;
 }
 
+RawObject Runtime::newByteArray() {
+  HandleScope scope;
+  ByteArray result(&scope, heap()->create<RawByteArray>());
+  result->setNumBytes(0);
+  result->setBytes(empty_byte_array_);
+  return *result;
+}
+
 RawObject Runtime::newBytes(word length, byte fill) {
   DCHECK(length >= 0, "invalid length %ld", length);
   if (length == 0) {
@@ -1132,6 +1140,8 @@ void Runtime::initializeHeapTypes() {
   initializeExceptionTypes();
 
   // Concrete classes.
+  addEmptyBuiltinType(SymbolId::kByteArray, LayoutId::kByteArray,
+                      LayoutId::kObject);
   BytesBuiltins::initialize(this);
   initializeClassMethodType();
   addEmptyBuiltinType(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
@@ -1905,6 +1915,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kBrokenPipeError,
                        LayoutId::kBrokenPipeError);
   moduleAddBuiltinType(module, SymbolId::kBufferError, LayoutId::kBufferError);
+  moduleAddBuiltinType(module, SymbolId::kByteArray, LayoutId::kByteArray);
   moduleAddBuiltinType(module, SymbolId::kBytes, LayoutId::kBytes);
   moduleAddBuiltinType(module, SymbolId::kBytesWarning,
                        LayoutId::kBytesWarning);
@@ -2267,6 +2278,27 @@ void Runtime::createMarshalModule() {
                            nativeTrampoline<MarshalModule::loads>,
                            unimplementedTrampoline, unimplementedTrampoline);
   addModule(module);
+}
+
+// ByteArray
+
+void Runtime::byteArrayEnsureCapacity(const ByteArray& array, word index) {
+  word existing_capacity = array->capacity();
+  if (index < existing_capacity) return;
+  HandleScope scope;
+  word new_capacity = (existing_capacity < kInitialEnsuredCapacity)
+                          ? kInitialEnsuredCapacity
+                          : existing_capacity << 1;
+  if (new_capacity <= index) {
+    new_capacity = Utils::nextPowerOfTwo(index);
+  }
+  Bytes old_bytes(&scope, array->bytes());
+  Bytes new_bytes(&scope, newBytes(new_capacity, 0));
+  word len = array->numBytes();
+  for (word idx = 0; idx < len; idx++) {
+    new_bytes->byteAtPut(idx, old_bytes->byteAt(idx));
+  }
+  array->setBytes(*new_bytes);
 }
 
 // Bytes

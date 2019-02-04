@@ -24,6 +24,7 @@ class Handle;
   V(Object)                                                                    \
   V(BoundMethod)                                                               \
   V(Bytes)                                                                     \
+  V(ByteArray)                                                                 \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \
@@ -242,6 +243,7 @@ class RawObject {
   // Heap objects
   bool isBaseException();
   bool isBoundMethod();
+  bool isByteArray();
   bool isBytes();
   bool isType();
   bool isClassMethod();
@@ -1579,6 +1581,35 @@ class RawNotImplemented : public RawHeapObject {
 };
 
 /**
+ * A mutable array of bytes.
+ *
+ * RawLayout:
+ *   [RawType pointer]
+ *   [NumBytes       ] - Number of bytes currently in the array.
+ *   [Bytes          ] - Pointer to a RawBytes with the underlying data.
+ */
+class RawByteArray : public RawHeapObject {
+ public:
+  // Getters and setters
+  byte byteAt(word index);
+  void byteAtPut(word index, byte value);
+  RawObject bytes();
+  void setBytes(RawObject new_bytes);
+  word numBytes();
+  void setNumBytes(word num_bytes);
+
+  // The size of the underlying bytes
+  word capacity();
+
+  // Layout
+  static const int kNumBytesOffset = RawHeapObject::kSize;
+  static const int kBytesOffset = kNumBytesOffset + kPointerSize;
+  static const int kSize = kBytesOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(ByteArray);
+};
+
+/**
  * A simple dict that uses open addressing and linear probing.
  *
  * RawLayout:
@@ -2362,6 +2393,10 @@ inline bool RawObject::isExceptionState() {
 
 inline bool RawObject::isBoundMethod() {
   return isHeapObjectWithLayout(LayoutId::kBoundMethod);
+}
+
+inline bool RawObject::isByteArray() {
+  return isHeapObjectWithLayout(LayoutId::kByteArray);
 }
 
 inline bool RawObject::isBytes() {
@@ -3556,6 +3591,38 @@ inline RawObject RawStaticMethod::function() {
 
 inline void RawStaticMethod::setFunction(RawObject function) {
   instanceVariableAtPut(kFunctionOffset, function);
+}
+
+// RawByteArray
+
+inline byte RawByteArray::byteAt(word index) {
+  DCHECK_BOUND(index, numBytes());
+  return RawBytes::cast(bytes())->byteAt(index);
+}
+
+inline void RawByteArray::byteAtPut(word index, byte value) {
+  DCHECK_BOUND(index, numBytes());
+  RawBytes::cast(bytes())->byteAtPut(index, value);
+}
+
+inline word RawByteArray::numBytes() {
+  return RawSmallInt::cast(instanceVariableAt(kNumBytesOffset))->value();
+}
+
+inline void RawByteArray::setNumBytes(word num_bytes) {
+  instanceVariableAtPut(kNumBytesOffset, RawSmallInt::fromWord(num_bytes));
+}
+
+inline RawObject RawByteArray::bytes() {
+  return instanceVariableAt(kBytesOffset);
+}
+
+inline void RawByteArray::setBytes(RawObject new_bytes) {
+  instanceVariableAtPut(kBytesOffset, new_bytes);
+}
+
+inline word RawByteArray::capacity() {
+  return RawBytes::cast(bytes())->length();
 }
 
 // RawDict

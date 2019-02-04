@@ -49,6 +49,8 @@ class Runtime {
 
   RawObject newBoundMethod(const Object& function, const Object& self);
 
+  RawObject newByteArray();
+
   RawObject newBytes(word length, byte fill);
   RawObject newBytesWithAll(View<byte> array);
 
@@ -271,6 +273,10 @@ class Runtime {
   Symbols* symbols() { return symbols_; }
 
   RawObject unboundValue() { return unbound_value_; }
+
+  // Ensures that the byte array has enough space for a byte at index.
+  // Allocates if the given index is not currently within bounds.
+  void byteArrayEnsureCapacity(const ByteArray& array, word index);
 
   // Returns a new Bytes containing the elements of self and then other.
   RawObject bytesConcat(Thread* thread, const Bytes& self, const Bytes& other);
@@ -516,6 +522,7 @@ class Runtime {
     return typeOf(obj).rawCast<RawType>().builtinBase() == LayoutId::k##ty;    \
   }
   DEFINE_IS_INSTANCE(Bytes)
+  DEFINE_IS_INSTANCE(ByteArray)
   DEFINE_IS_INSTANCE(Complex)
   DEFINE_IS_INSTANCE(Dict)
   DEFINE_IS_INSTANCE(Float)

@@ -123,6 +123,7 @@ class Handle : public T {
   V(Object)                                                                    \
   V(Bool)                                                                      \
   V(BoundMethod)                                                               \
+  V(ByteArray)                                                                 \
   V(Bytes)                                                                     \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \

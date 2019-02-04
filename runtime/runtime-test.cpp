@@ -86,6 +86,30 @@ static const LayoutId kBuiltinHeapTypeIds[] = {
 INSTANTIATE_TEST_CASE_P(BuiltinTypeIdsParameters, BuiltinTypeIdsTest,
                         ::testing::ValuesIn(kBuiltinHeapTypeIds), );
 
+TEST(RuntimeByteArrayTest, EnsureCapacity) {
+  Runtime runtime;
+  HandleScope scope;
+
+  ByteArray array(&scope, runtime.newByteArray());
+  Bytes initial_bytes(&scope, runtime.newBytes(10, 0));
+  array->setBytes(*initial_bytes);
+
+  word index = 0;
+  word expected_capacity = 10;
+  runtime.byteArrayEnsureCapacity(array, index);
+  EXPECT_EQ(array->capacity(), expected_capacity);
+
+  index = 10;
+  expected_capacity = 20;
+  runtime.byteArrayEnsureCapacity(array, index);
+  EXPECT_EQ(array->capacity(), expected_capacity);
+
+  index = 40;
+  expected_capacity = 64;
+  runtime.byteArrayEnsureCapacity(array, index);
+  EXPECT_EQ(array->capacity(), expected_capacity);
+}
+
 TEST(RuntimeDictTest, EmptyDictInvariants) {
   Runtime runtime;
   HandleScope scope;
@@ -393,6 +417,15 @@ TEST(RuntimeListTest, AppendToList) {
     RawSmallInt elem = RawSmallInt::cast(list->at(i));
     ASSERT_EQ(elem->value(), i);
   }
+}
+
+TEST(RuntimeTest, NewByteArray) {
+  Runtime runtime;
+  HandleScope scope;
+
+  ByteArray array(&scope, runtime.newByteArray());
+  EXPECT_EQ(array->numBytes(), 0);
+  EXPECT_EQ(array->capacity(), 0);
 }
 
 TEST(RuntimeTest, NewBytes) {
