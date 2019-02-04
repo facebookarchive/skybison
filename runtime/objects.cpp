@@ -383,12 +383,8 @@ bool RawStr::equalsCStr(const char* c_str) {
 
 RawObject RawTupleIterator::next() {
   word idx = index();
-  RawTuple underlying = RawTuple::cast(tuple());
-  if (idx >= underlying->length()) {
-    return RawError::object();
-  }
-
-  RawObject item = underlying->at(idx);
+  if (idx == tupleLength()) return RawError::object();
+  RawObject item = RawTuple::cast(tuple()).at(idx);
   setIndex(idx + 1);
   return item;
 }

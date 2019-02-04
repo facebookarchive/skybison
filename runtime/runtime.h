@@ -149,7 +149,7 @@ class Runtime {
 
   RawObject newSuper();
 
-  RawObject newTupleIterator(const Object& iterable);
+  RawObject newTupleIterator(const Tuple& tuple, word length);
 
   void processCallbacks();
 

@@ -3391,11 +3391,12 @@ RawObject Runtime::newStrIterator(const Object& str) {
   return *result;
 }
 
-RawObject Runtime::newTupleIterator(const Object& tuple) {
+RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
   HandleScope scope;
   TupleIterator result(&scope, heap()->create<RawTupleIterator>());
   result->setIndex(0);
   result->setTuple(*tuple);
+  result->setTupleLength(length);
   return *result;
 }
 

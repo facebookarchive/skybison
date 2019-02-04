@@ -1280,15 +1280,18 @@ class RawTupleIterator : public RawHeapObject {
   void setIndex(word index);
 
   RawObject tuple();
+  word tupleLength();
 
   void setTuple(RawObject tuple);
+  void setTupleLength(word length);
 
   // Iteration.
   RawObject next();
 
   // Layout.
   static const int kTupleOffset = RawHeapObject::kSize;
-  static const int kIndexOffset = kTupleOffset + kPointerSize;
+  static const int kTupleLengthOffset = kTupleOffset + kPointerSize;
+  static const int kIndexOffset = kTupleLengthOffset + kPointerSize;
   static const int kSize = kIndexOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(TupleIterator);
@@ -4154,6 +4157,14 @@ inline RawObject RawTupleIterator::tuple() {
 
 inline void RawTupleIterator::setTuple(RawObject tuple) {
   instanceVariableAtPut(kTupleOffset, tuple);
+}
+
+inline word RawTupleIterator::tupleLength() {
+  return RawSmallInt::cast(instanceVariableAt(kTupleLengthOffset)).value();
+}
+
+inline void RawTupleIterator::setTupleLength(word length) {
+  instanceVariableAtPut(kTupleLengthOffset, RawSmallInt::fromWord(length));
 }
 
 inline word RawTupleIterator::index() {

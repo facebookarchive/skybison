@@ -399,7 +399,8 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
     UserTupleBase user_tuple(&scope, *self);
     self = user_tuple->tupleValue();
   }
-  return runtime->newTupleIterator(self);
+  Tuple tuple(&scope, *self);
+  return runtime->newTupleIterator(tuple, tuple->length());
 }
 
 const BuiltinMethod TupleIteratorBuiltins::kMethods[] = {
