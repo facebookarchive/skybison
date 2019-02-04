@@ -4,8 +4,10 @@
 #include "heap.h"
 #include "os.h"
 #include "runtime.h"
+#include "test-utils.h"
 
 namespace python {
+using namespace testing;
 
 TEST(HeapTest, AllocateObjects) {
   const int size = OS::kPageSize * 4;
@@ -46,6 +48,23 @@ TEST(HeapTest, AllocateFails) {
   EXPECT_TRUE(heap->contains(raw3));
 
   ASSERT_EQ(heap->space()->end(), heap->space()->fill());
+}
+
+TEST(HeapTest, AllocateBigLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object result(&scope, runtime.heap()->createLargeInt(100000));
+  ASSERT_TRUE(result->isLargeInt());
+  EXPECT_EQ(RawLargeInt::cast(*result)->numDigits(), 100000);
+}
+
+TEST(HeapTest, AllocateBigInstance) {
+  Runtime runtime;
+  HandleScope scope;
+  Layout layout(&scope, runtime.layoutCreateEmpty(Thread::currentThread()));
+  Object result(&scope, runtime.heap()->createInstance(layout->id(), 100000));
+  ASSERT_TRUE(result->isInstance());
+  EXPECT_EQ(RawInstance::cast(*result)->headerCountOrOverflow(), 100000);
 }
 
 }  // namespace python

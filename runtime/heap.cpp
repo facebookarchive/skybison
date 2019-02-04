@@ -144,8 +144,8 @@ RawObject Heap::createInstance(LayoutId layout_id, word num_attributes) {
   RawObject raw = allocate(size, HeapObject::headerSize(num_attributes));
   CHECK(raw != Error::object(), "out of memory");
   auto result = raw.rawCast<RawInstance>();
-  result->setHeader(Header::from(num_attributes, 0, layout_id,
-                                 ObjectFormat::kObjectInstance));
+  result->setHeaderAndOverflow(num_attributes, 0, layout_id,
+                               ObjectFormat::kObjectInstance);
   result->initialize(num_attributes * kPointerSize, NoneType::object());
   return result;
 }
@@ -156,8 +156,8 @@ RawObject Heap::createLargeInt(word num_digits) {
   RawObject raw = allocate(size, LargeInt::headerSize(num_digits));
   CHECK(raw != Error::object(), "out of memory");
   auto result = raw.rawCast<RawLargeInt>();
-  result->setHeader(Header::from(num_digits, 0, LayoutId::kLargeInt,
-                                 ObjectFormat::kDataArray64));
+  result->setHeaderAndOverflow(num_digits, 0, LayoutId::kLargeInt,
+                               ObjectFormat::kDataArray64);
   return RawLargeInt::cast(result);
 }
 
