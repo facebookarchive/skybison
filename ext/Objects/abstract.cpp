@@ -6,8 +6,20 @@
 
 namespace python {
 
+static PyObject* nullError(Thread* thread) {
+  if (!thread->hasPendingException()) {
+    thread->raiseSystemErrorWithCStr("null argument to internal routine");
+  }
+  return nullptr;
+}
+
 static Py_ssize_t objectLength(PyObject* pyobj) {
   Thread* thread = Thread::currentThread();
+  if (pyobj == nullptr) {
+    nullError(thread);
+    return -1;
+  }
+
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object len(&scope, thread->invokeMethod1(obj, SymbolId::kDunderLen));
@@ -276,8 +288,7 @@ PY_EXPORT PyObject* PyNumber_InPlaceMultiply(PyObject* /* v */,
 PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
   Thread* thread = Thread::currentThread();
   if (item == nullptr) {
-    thread->raiseSystemErrorWithCStr("null argument to internal routine");
-    return nullptr;
+    return nullError(thread);
   }
 
   HandleScope scope(thread);
@@ -387,11 +398,9 @@ PY_EXPORT PyObject* PyObject_CallFunction(PyObject* /* e */,
 PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...) {
   Thread* thread = Thread::currentThread();
   if (callable == nullptr) {
-    if (!thread->hasPendingException()) {
-      thread->raiseSystemErrorWithCStr("null argument to internal routine");
-    }
-    return nullptr;
+    return nullError(thread);
   }
+
   DCHECK(!thread->hasPendingException(),
          "This function should not be called with an exception set as it might "
          "be cleared");
@@ -519,6 +528,10 @@ PY_EXPORT Py_ssize_t PyObject_Size(PyObject* pyobj) {
 
 PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
   Thread* thread = Thread::currentThread();
+  if (pyobj == nullptr) {
+    return nullError(thread);
+  }
+
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
 

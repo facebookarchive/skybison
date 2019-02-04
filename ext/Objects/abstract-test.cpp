@@ -89,6 +89,11 @@ TEST_F(AbstractExtensionApiTest, PyMappingCheckWithDictReturnsTrue) {
   EXPECT_TRUE(PyMapping_Check(dict));
 }
 
+TEST_F(AbstractExtensionApiTest, PyMappingLengthOnNullRaisesSystemError) {
+  EXPECT_EQ(PyMapping_Length(nullptr), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
 TEST_F(AbstractExtensionApiTest, PyMappingLengthWithNonMappingReturnsLen) {
   PyRun_SimpleString(R"(
 class Foo:
@@ -100,6 +105,11 @@ obj = Foo()
   PyObjectPtr obj(moduleGet("__main__", "obj"));
   EXPECT_EQ(PyMapping_Length(obj), 1);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyMappingSizeOnNullRaisesSystemError) {
+  EXPECT_EQ(PyMapping_Size(nullptr), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(AbstractExtensionApiTest, PyNumberIndexOnIntReturnsSelf) {
@@ -162,6 +172,11 @@ i = IntLikeClass();
   EXPECT_EQ(42, PyLong_AsLong(index));
 }
 
+TEST_F(AbstractExtensionApiTest, PyNumberIndexOnNullRaisesSystemError) {
+  EXPECT_EQ(PyNumber_Index(nullptr), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberIndexOnNonInt) {
   PyObject* str = PyUnicode_FromString("not an int");
   EXPECT_EQ(PyNumber_Index(str), nullptr);
@@ -200,6 +215,11 @@ TEST_F(AbstractExtensionApiTest,
   PyObjectPtr num(PyLong_FromLong(3));
   ASSERT_EQ(PyObject_Length(num), -1);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthOnNullRaisesSystemError) {
+  EXPECT_EQ(PyObject_Length(nullptr), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(AbstractExtensionApiTest, PyObjectLengthWithNonIntLenRaisesTypeError) {
@@ -345,6 +365,16 @@ TEST_F(AbstractExtensionApiTest, PyObjectLengthWithNonEmptyStringReturnsValue) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectSizeOnNullRaisesSystemError) {
+  EXPECT_EQ(PyObject_Size(nullptr), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectTypeOnNullRaisesSystemError) {
+  EXPECT_EQ(PyObject_Type(nullptr), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectTypeReturnsType) {
   PyObjectPtr num(PyLong_FromLong(4));
   PyObjectPtr type(PyObject_Type(num));
@@ -441,6 +471,11 @@ TEST_F(AbstractExtensionApiTest, PySequenceCheckWithListReturnsTrue) {
   EXPECT_TRUE(PySequence_Check(list));
 }
 
+TEST_F(AbstractExtensionApiTest, PySequenceLengthOnNull) {
+  EXPECT_EQ(PySequence_Length(nullptr), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
 TEST_F(AbstractExtensionApiTest, PySequenceLengthWithNonSequenceReturnsValue) {
   PyRun_SimpleString(R"(
 class Foo:
@@ -485,6 +520,11 @@ obj = Foo()
 
   EXPECT_EQ(PySequence_Length(obj), 2);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceSizeOnNull) {
+  EXPECT_EQ(PySequence_Size(nullptr), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(AbstractExtensionApiTest, PyObjCallFunctionObjArgsWithNullReturnsNull) {
