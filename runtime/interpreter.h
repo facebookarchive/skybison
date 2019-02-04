@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bytecode.h"
+#include "frame.h"
 #include "globals.h"
 #include "handles.h"
 #include "symbols.h"
@@ -127,18 +128,40 @@ class Interpreter {
   // caller.
   static bool unwind(Context* ctx);
 
+  // Unwind an ExceptHandler from the stack, restoring the previous handler
+  // state.
+  static void unwindExceptHandler(Thread* thread, Frame* frame, TryBlock block);
+
+  // Pop a block off of the block stack and act appropriately.
+  //
+  // `why` should indicate the reason for the pop, and must not be
+  // Why::kException (which is handled completely within unwind()). For
+  // Why::kContinue, `value` should be the opcode's arg as a SmallInt; for
+  // Why::kReturn, it should be the value to be returned. It is ignored for
+  // other Whys.
+  //
+  // Returns true if a handler was found and the calling opcode handler should
+  // return to the dispatch loop (the "handler" is either a loop for
+  // break/continue, or a finally block for break/continue/return). Returns
+  // false if the popped block was not relevant to the given Why.
+  static bool popBlock(Context* ctx, TryBlock::Why why, const Object& value);
+
   // Pseudo-opcodes
   static void doInvalidBytecode(Context* ctx, word arg);
   static void doNotImplemented(Context* ctx, word arg);
 
   // Opcode handlers
   //
-  // Handlers that never raise exceptions return void, while those that could
-  // return bool. A return value of true means an exception was raised, escaped
-  // the frames owned by this Interpreter, and should be propagated to the
-  // caller by returning Error. A return value of false means execution should
-  // continue as normal (note that this doesn't mean no exception was raised; an
-  // exception could've been raised and caught in the same frame).
+  // Handlers that never exit the Frame return void, while those that could
+  // return bool.
+  //
+  // A return value of true means the top Frame owned by this Interpreter is
+  // finished. The dispatch loop will pop TOS, pop the Frame, and return the
+  // popped value. For raised exceptions, this value will always be Error, and
+  // for opcodes like RETURN_VALUE it will be the returned value.
+  //
+  // A return value of false means execution should continue as normal in the
+  // current Frame.
   static void doPopTop(Context* ctx, word arg);
   static void doRotTwo(Context* ctx, word arg);
   static void doRotThree(Context* ctx, word arg);
@@ -189,6 +212,7 @@ class Interpreter {
   static void doBreakLoop(Context* ctx, word arg);
   static void doWithCleanupStart(Context* ctx, word arg);
   static void doWithCleanupFinish(Context* ctx, word arg);
+  static bool doReturnValue(Context* ctx, word arg);
   static void doImportStar(Context* ctx, word arg);
   static void doSetupAnnotations(Context* ctx, word arg);
   static void doPopBlock(Context* ctx, word arg);

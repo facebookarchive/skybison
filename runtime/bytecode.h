@@ -92,7 +92,7 @@ namespace python {
   V(BREAK_LOOP, 80, doBreakLoop)                                               \
   V(WITH_CLEANUP_START, 81, doWithCleanupStart)                                \
   V(WITH_CLEANUP_FINISH, 82, doWithCleanupFinish)                              \
-  V(RETURN_VALUE, 83, doInvalidBytecode)                                       \
+  V(RETURN_VALUE, 83, doReturnValue)                                           \
   V(IMPORT_STAR, 84, doImportStar)                                             \
   V(SETUP_ANNOTATIONS, 85, doSetupAnnotations)                                 \
   V(YIELD_VALUE, 86, doInvalidBytecode)                                        \

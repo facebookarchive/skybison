@@ -2661,4 +2661,59 @@ result = f"{C()!a}"
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
 
+TEST(InterpreterTest, BreakInTryBreaks) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+result = 0
+for i in range(5):
+  try:
+    break
+  except:
+    pass
+result = 10
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result).value(), 10);
+}
+
+TEST(InterpreterTest, ContinueInExceptContinues) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+result = 0
+for i in range(5):
+  try:
+    if i == 3:
+      raise RuntimeError()
+  except:
+    result += i
+    continue
+  result -= i
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result).value(), -4);
+}
+
+TEST(InterpreterTest, RaiseInLoopRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+result = 0
+try:
+  for i in range(5):
+    result += i
+    if i == 2:
+      raise RuntimeError()
+  result += 100
+except:
+  result += 1000
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result).value(), 1003);
+}
+
 }  // namespace python

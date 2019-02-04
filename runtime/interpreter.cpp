@@ -659,6 +659,59 @@ void Interpreter::raise(Context* ctx, RawObject raw_exc, RawObject raw_cause) {
   ctx->thread->setPendingExceptionValue(*value);
 }
 
+void Interpreter::unwindExceptHandler(Thread* thread, Frame* frame,
+                                      TryBlock block) {
+  // Drop all dead values except for the 3 that are popped into the caught
+  // exception state.
+  frame->dropValues(frame->valueStackSize() - block.level() - 3);
+  thread->setCaughtExceptionType(frame->popValue());
+  thread->setCaughtExceptionValue(frame->popValue());
+  thread->setCaughtExceptionTraceback(frame->popValue());
+}
+
+bool Interpreter::popBlock(Context* ctx, TryBlock::Why why,
+                           const Object& value) {
+  Frame* frame = ctx->frame;
+  DCHECK(frame->blockStack()->depth() > 0,
+         "Tried to pop from empty blockstack");
+  DCHECK(why != TryBlock::Why::kException, "Unsupported Why");
+
+  TryBlock block = frame->blockStack()->peek();
+  if (block.kind() == TryBlock::kLoop && why == TryBlock::Why::kContinue) {
+    ctx->pc = RawSmallInt::cast(*value).value();
+    return true;
+  }
+
+  frame->blockStack()->pop();
+  if (block.kind() == TryBlock::kExceptHandler) {
+    unwindExceptHandler(ctx->thread, frame, block);
+    return false;
+  }
+  frame->dropValues(frame->valueStackSize() - block.level());
+
+  if (block.kind() == TryBlock::kLoop) {
+    if (why == TryBlock::Why::kBreak) {
+      ctx->pc = block.handler();
+      return true;
+    }
+    return false;
+  }
+
+  if (block.kind() == TryBlock::kExcept) {
+    // Exception unwinding is handled in Interpreter::unwind() and doesn't come
+    // through here. Ignore the Except block.
+    return false;
+  }
+
+  DCHECK(block.kind() == TryBlock::kFinally, "Unexpected TryBlock kind");
+  if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
+    frame->pushValue(*value);
+  }
+  frame->pushValue(RawSmallInt::fromWord(static_cast<int>(why)));
+  ctx->pc = block.handler();
+  return true;
+}
+
 bool Interpreter::unwind(Context* ctx) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -673,20 +726,15 @@ bool Interpreter::unwind(Context* ctx) {
   while (stack->depth() > 0) {
     TryBlock block = stack->pop();
     if (block.kind() == TryBlock::kExceptHandler) {
-      // Drop all dead values except for the 3 that are popped into the caught
-      // exception state.
-      frame->dropValues(frame->valueStackSize() - block.level() - 3);
-      thread->setCaughtExceptionType(frame->popValue());
-      thread->setCaughtExceptionValue(frame->popValue());
-      thread->setCaughtExceptionTraceback(frame->popValue());
-    } else {
-      frame->dropValues(frame->valueStackSize() - block.level());
-    }
-
-    if (block.kind() != TryBlock::kExcept &&
-        block.kind() != TryBlock::kFinally) {
+      unwindExceptHandler(thread, frame, block);
       continue;
     }
+    frame->dropValues(frame->valueStackSize() - block.level());
+
+    if (block.kind() == TryBlock::kLoop) continue;
+    DCHECK(
+        block.kind() == TryBlock::kExcept || block.kind() == TryBlock::kFinally,
+        "Unexpected TryBlock::Kind");
 
     // Push a handler block and save the current caught exception, if any.
     stack->push(TryBlock{TryBlock::kExceptHandler, 0, frame->valueStackSize()});
@@ -714,7 +762,7 @@ bool Interpreter::unwind(Context* ctx) {
     return false;
   }
 
-  thread->popFrame();
+  frame->pushValue(Error::object());
   return true;
 }
 
@@ -1160,9 +1208,12 @@ bool Interpreter::doInplaceOr(Context* ctx, word) {
 
 // opcode 80
 void Interpreter::doBreakLoop(Context* ctx, word) {
-  Frame* frame = ctx->frame;
-  TryBlock block = frame->blockStack()->pop();
-  ctx->pc = block.handler();
+  HandleScope scope(ctx->thread);
+  Object none(&scope, NoneType::object());
+
+  for (;;) {
+    if (popBlock(ctx, TryBlock::Why::kBreak, none)) return;
+  }
 }
 
 // opcode 81
@@ -1191,6 +1242,28 @@ void Interpreter::doWithCleanupFinish(Context* ctx, word) {
   if (!exc->isNoneType()) {
     UNIMPLEMENTED("exception handling in context manager");
   }
+}
+
+// opcode 83
+bool Interpreter::doReturnValue(Context* ctx, word) {
+  HandleScope scope(ctx->thread);
+  Frame* frame = ctx->frame;
+
+  Object result(&scope, frame->popValue());
+  Code code(&scope, frame->code());
+  if (code->hasGenerator()) {
+    // TODO(T39845336): This raise should be deferred until after processing the
+    // return normally.
+    ctx->thread->raiseStopIteration(*result);
+    return unwind(ctx);
+  }
+
+  for (;;) {
+    if (frame->blockStack()->depth() == 0) break;
+    if (popBlock(ctx, TryBlock::Why::kReturn, result)) return false;
+  }
+  frame->pushValue(*result);
+  return true;
 }
 
 // opcode 85
@@ -1268,12 +1341,7 @@ bool Interpreter::doPopExcept(Context* ctx, word) {
     return unwind(ctx);
   }
 
-  // Drop all dead values except for the 3 that are popped into the caught
-  // exception state.
-  frame->dropValues(frame->valueStackSize() - block.level() - 3);
-  thread->setCaughtExceptionType(frame->popValue());
-  thread->setCaughtExceptionValue(frame->popValue());
-  thread->setCaughtExceptionTraceback(frame->popValue());
+  unwindExceptHandler(thread, frame, block);
   return false;
 }
 
@@ -1809,17 +1877,11 @@ void Interpreter::doLoadGlobal(Context* ctx, word arg) {
 
 // opcode 119
 void Interpreter::doContinueLoop(Context* ctx, word arg) {
-  Frame* frame = ctx->frame;
-  TryBlock block = frame->blockStack()->peek();
-  TryBlock::Kind kind = block.kind();
-  while (kind != TryBlock::kLoop) {
-    frame->blockStack()->pop();
-    kind = frame->blockStack()->peek().kind();
-    if (kind != TryBlock::kLoop && kind != TryBlock::kExcept) {
-      UNIMPLEMENTED("Can only unwind loop and exception blocks");
-    }
+  HandleScope scope(ctx->thread);
+  Object arg_int(&scope, RawSmallInt::fromWord(arg));
+  for (;;) {
+    if (popBlock(ctx, TryBlock::Why::kContinue, arg_int)) return;
   }
-  ctx->pc = arg;
 }
 
 // opcode 120
@@ -2417,7 +2479,7 @@ const BoolOp kOpTable[] = {
 
 RawObject Interpreter::execute(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
-  Code code(&scope, RawCode::cast(frame->code()));
+  Code code(&scope, frame->code());
   Bytes byte_array(&scope, code->code());
   Context ctx;
   ctx.pc = frame->virtualPC();
@@ -2433,15 +2495,6 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
         bc = static_cast<Bytecode>(byte_array->byteAt(ctx.pc++));
         arg = (arg << 8) | byte_array->byteAt(ctx.pc++);
         goto dispatch;
-      }
-      case Bytecode::RETURN_VALUE: {
-        RawObject result = ctx.frame->popValue();
-        // Clean up after ourselves
-        thread->popFrame();
-        if (code->hasGenerator()) {
-          return thread->raiseStopIteration(result);
-        }
-        return result;
       }
       case Bytecode::YIELD_FROM: {
         RawObject result = yieldFrom(thread, frame);
@@ -2459,7 +2512,11 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
         return *result;
       }
       default: {
-        if (kOpTable[bc](&ctx, arg)) return Error::object();
+        if (kOpTable[bc](&ctx, arg)) {
+          RawObject return_val = frame->popValue();
+          thread->popFrame();
+          return return_val;
+        }
       }
     }
   }

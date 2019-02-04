@@ -1153,10 +1153,25 @@ TEST(ThreadTest, SetupLoop) {
   Runtime runtime;
   HandleScope scope;
 
-  const byte bc[] = {SETUP_LOOP, 100, RETURN_VALUE, 0};
+  auto inspect_block = [](Thread*, Frame* frame, word) -> RawObject {
+    // SETUP_LOOP should have pushed an entry onto the block stack with a
+    // stack depth of 3
+    TryBlock block = frame->blockStack()->pop();
+    EXPECT_EQ(block.kind(), TryBlock::kLoop);
+    EXPECT_EQ(block.handler(), 102);
+    EXPECT_EQ(block.level(), 3);
+    return NoneType::object();
+  };
+  Tuple consts(&scope, runtime.newTuple(1));
+  consts->atPut(0, runtime.newBuiltinFunction(SymbolId::kDummy, inspect_block,
+                                              unimplementedTrampoline,
+                                              unimplementedTrampoline));
+  const byte bc[] = {SETUP_LOOP, 100, LOAD_CONST,   0, CALL_FUNCTION, 0,
+                     POP_TOP,    0,   RETURN_VALUE, 0};
   Code code(&scope, testing::newEmptyCode(&runtime));
   code->setCode(runtime.newBytesWithAll(bc));
-  code->setStacksize(3);
+  code->setConsts(*consts);
+  code->setStacksize(4);
 
   // Create a frame with three items on the stack
   auto thread = Thread::currentThread();
@@ -1167,14 +1182,7 @@ TEST(ThreadTest, SetupLoop) {
   *--sp = SmallInt::fromWord(3333);
   frame->setValueStackTop(sp);
 
-  Interpreter::execute(thread, frame);
-
-  // SETUP_LOOP should have pushed an entry onto the block stack with a
-  // stack depth of 3
-  TryBlock block = frame->blockStack()->pop();
-  EXPECT_EQ(block.kind(), TryBlock::kLoop);
-  EXPECT_EQ(block.handler(), 102);
-  EXPECT_EQ(block.level(), 3);
+  EXPECT_NO_FATAL_FAILURE(Interpreter::execute(thread, frame));
 }
 
 TEST(ThreadTest, PopBlock) {

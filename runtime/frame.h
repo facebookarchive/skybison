@@ -31,6 +31,16 @@ class TryBlock {
     kFinally,
   };
 
+  // Reason code for entering a finally block.
+  enum class Why {
+    kException,
+    kReturn,
+    kBreak,
+    kContinue,
+    kYield,
+    kSilenced,
+  };
+
   explicit TryBlock(RawObject value) {
     DCHECK(value->isSmallInt(), "expected small integer");
     value_ = value.raw();
