@@ -153,15 +153,13 @@ PY_EXPORT PyObject* PyBytes_FromStringAndSize(const char* str,
 
 PY_EXPORT PyObject* PyBytes_FromString(const char* str) {
   DCHECK(str, "nullptr argument");
-  Thread* thread = Thread::currentThread();
-
-  uword size = strlen(str);
+  uword size = std::strlen(str);
   if (size > kMaxWord) {
-    thread->raiseOverflowErrorWithCStr("byte string is too large");
+    PyErr_SetString(PyExc_OverflowError, "byte string is too large");
     return nullptr;
   }
 
-  return PyBytes_FromStringAndSize(str, static_cast<word>(size));
+  return PyBytes_FromStringAndSize(str, static_cast<Py_ssize_t>(size));
 }
 
 PY_EXPORT PyObject* PyBytes_Repr(PyObject* /* j */, int /* s */) {
