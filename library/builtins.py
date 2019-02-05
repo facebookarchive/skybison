@@ -503,7 +503,7 @@ def _str_escape_non_ascii(s):
 
 
 def repr(obj):
-    result = obj.__repr__()
+    result = type(obj).__repr__(obj)
     if not isinstance(result, str):
         raise TypeError("__repr__ returned non-string")
     return result

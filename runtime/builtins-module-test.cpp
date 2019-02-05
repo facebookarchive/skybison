@@ -457,6 +457,14 @@ a = repr(Foo())
   EXPECT_TRUE(isStrEqualsCStr(*a, "foo"));
 }
 
+TEST(BuiltinsModuleTest, BuiltInReprOnClass) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = repr(int)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "<class 'int'>"));
+}
+
 TEST(BuiltinsModuleTest, BuiltInAsciiCallsDunderRepr) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
