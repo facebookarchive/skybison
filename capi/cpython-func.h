@@ -922,9 +922,10 @@ PyAPI_FUNC(void)
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_Create(module) PyModule_Create2(module, PYTHON_API_VERSION)
 
+#define PyByteArray_AS_STRING(op) PyByteArray_AsString((PyObject*)op)
+#define PyByteArray_GET_SIZE(op) PyByteArray_Size((PyObject*)op)
 #define PyBytes_AS_STRING(op) PyBytes_AsString((PyObject*)op)
 #define PyBytes_GET_SIZE(op) PyBytes_Size((PyObject*)op)
-#define PyByteArray_AS_STRING(op) PyByteArray_AsString((PyObject*)op)
 
 #define PyList_GET_ITEM(op, i) PyList_GetItem((PyObject*)op, i)
 #define PyList_GET_SIZE(op) PyList_Size((PyObject*)op)

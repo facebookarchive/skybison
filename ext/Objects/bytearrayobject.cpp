@@ -51,8 +51,16 @@ PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* /* t */) {
   UNIMPLEMENTED("PyByteArray_FromObject");
 }
 
-PY_EXPORT Py_ssize_t PyByteArray_Size(PyObject* /* f */) {
-  UNIMPLEMENTED("PyByteArray_Size");
+PY_EXPORT Py_ssize_t PyByteArray_Size(PyObject* pyobj) {
+  DCHECK(pyobj != nullptr, "null argument to PyByteArray_Size");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  if (!thread->runtime()->isInstanceOfByteArray(*obj)) {
+    thread->raiseBadArgument();
+    return -1;
+  }
+  return static_cast<Py_ssize_t>(ByteArray::cast(*obj)->numBytes());
 }
 
 }  // namespace python

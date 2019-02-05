@@ -22,10 +22,29 @@ TEST_F(ByteArrayExtensionApiTest, FromStringAndSizeReturnsByteArray) {
   EXPECT_TRUE(PyByteArray_CheckExact(array));
 }
 
+TEST_F(ByteArrayExtensionApiTest, FromStringAndSizeSetsSize) {
+  PyObjectPtr array(PyByteArray_FromStringAndSize("hello", 3));
+  ASSERT_TRUE(PyByteArray_CheckExact(array));
+  EXPECT_EQ(PyByteArray_Size(array), 3);
+}
+
 TEST_F(ByteArrayExtensionApiTest, FromStringAndSizeWithNegativeSizeRaises) {
   ASSERT_EQ(PyByteArray_FromStringAndSize("hello", -1), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ByteArrayExtensionApiTest, FromStringAndSizeWithNullReturnsNew) {
+  PyObjectPtr array(PyByteArray_FromStringAndSize(nullptr, 10));
+  ASSERT_TRUE(PyByteArray_CheckExact(array));
+  EXPECT_EQ(PyByteArray_Size(array), 10);
+}
+
+TEST_F(ByteArrayExtensionApiTest, SizeWithNonByteArrayRaisesPyro) {
+  PyObjectPtr bytes(PyBytes_FromString("hello"));
+  ASSERT_EQ(PyByteArray_Size(bytes), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 }  // namespace python
