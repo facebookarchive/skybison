@@ -17,6 +17,83 @@ TEST_F(ObjectExtensionApiTest, PyNoneIdentityIsEqual) {
   EXPECT_EQ(none1, none2);
 }
 
+TEST_F(ObjectExtensionApiTest, BytesWithNullReturnsBytes) {
+  PyObjectPtr result(PyObject_Bytes(nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ(PyBytes_AsString(result), "<NULL>");
+}
+
+TEST_F(ObjectExtensionApiTest, BytesWithBytesReturnsSameObject) {
+  PyObjectPtr bytes(PyBytes_FromString("hello"));
+  PyObjectPtr result(PyObject_Bytes(bytes));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, bytes);
+}
+
+TEST_F(ObjectExtensionApiTest, BytesWithBadDunderBytesRaises) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __bytes__(self):
+    return 1
+obj = Foo()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyObject_Bytes(obj), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest, BytesWithDunderBytesReturnsBytes) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __bytes__(self):
+    return b'123'
+obj = Foo()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr result(PyObject_Bytes(obj));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ(PyBytes_AsString(result), "123");
+}
+
+TEST_F(ObjectExtensionApiTest, BytesWithDunderBytesErrorRaises) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __bytes__(self):
+    raise ValueError
+obj = Foo()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyObject_Bytes(obj), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(ObjectExtensionApiTest, BytesWithListOfByteReturnsBytes) {
+  PyObjectPtr list(PyList_New(2));
+  ASSERT_EQ(PyList_SetItem(list, 0, PyLong_FromLong('h')), 0);
+  ASSERT_EQ(PyList_SetItem(list, 1, PyLong_FromLong('i')), 0);
+  PyObjectPtr result(PyObject_Bytes(list));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ(PyBytes_AsString(result), "hi");
+}
+
+TEST_F(ObjectExtensionApiTest, BytesWithTupleOfByteReturnsBytes) {
+  PyObjectPtr tuple(PyTuple_New(2));
+  ASSERT_EQ(PyTuple_SetItem(tuple, 0, PyLong_FromLong('h')), 0);
+  ASSERT_EQ(PyTuple_SetItem(tuple, 1, PyLong_FromLong('i')), 0);
+  PyObjectPtr result(PyObject_Bytes(tuple));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ(PyBytes_AsString(result), "hi");
+}
+
+TEST_F(ObjectExtensionApiTest, BytesWithStringRaises) {
+  PyObjectPtr str(PyUnicode_FromString("hello"));
+  PyObjectPtr result(PyObject_Bytes(str));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidTypeReturnsNegative) {
   PyObject* key = PyUnicode_FromString("a_key");
   PyObject* value = PyLong_FromLong(5);

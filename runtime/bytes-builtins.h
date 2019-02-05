@@ -5,6 +5,10 @@
 
 namespace python {
 
+// Converts a non-bytes obj to bytes, using `__bytes__` if possible.
+// If the object does not have `__bytes__`, then calls bytesFromIterable.
+RawObject asBytes(Thread* thread, const Object& obj);
+
 // Converts obj, which should be list, tuple, or iterable, into bytes.
 // Assumes that obj is not bytes. Fails if obj is an instance of str.
 // Shared between PyObject_Bytes and PyBytes_FromObject.

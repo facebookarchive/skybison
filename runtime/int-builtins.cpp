@@ -853,38 +853,17 @@ RawObject IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
       "__neg__() must be called with int instance as the first argument");
 }
 
-static RawObject asBytesObject(Thread* thread, const Object& object) {
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfBytes(*object)) {
-    return *object;
-  }
-
-  HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
-  Object bytes_method(
-      &scope,
-      Interpreter::lookupMethod(thread, frame, object, SymbolId::kDunderBytes));
-  if (bytes_method->isError()) {
-    return thread->raiseTypeErrorWithCStr("cannot convert object to bytes");
-  }
-  Object bytes_result(
-      &scope, Interpreter::callMethod1(thread, frame, bytes_method, object));
-  if (bytes_result->isError() || runtime->isInstanceOfBytes(*bytes_result)) {
-    return *bytes_result;
-  }
-  // TODO(T39313322) implement missing ways to convert objects to bytes.
-
-  return thread->raiseTypeErrorWithCStr("__bytes__ returned non-bytes");
-}
-
 // TODO(T39167211): Merge with IntBuiltins::fromBytesKw / IntBuiltins::fromBytes
 // once argument parsing is automated.
 static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
                                const Object& byteorder_obj, bool is_signed) {
   HandleScope scope(thread);
+  Object maybe_bytes(&scope, *bytes_obj);
   Runtime* runtime = thread->runtime();
-  Object maybe_bytes(&scope, asBytesObject(thread, bytes_obj));
-  if (maybe_bytes->isError()) return *maybe_bytes;
+  if (!runtime->isInstanceOfBytes(*maybe_bytes)) {
+    maybe_bytes = asBytes(thread, bytes_obj);
+    if (maybe_bytes->isError()) return *maybe_bytes;
+  }
   Bytes bytes(&scope, *maybe_bytes);
 
   if (!runtime->isInstanceOfStr(*byteorder_obj)) {

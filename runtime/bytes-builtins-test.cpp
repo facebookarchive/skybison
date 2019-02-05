@@ -7,6 +7,68 @@ namespace python {
 
 using namespace testing;
 
+TEST(BytesBuiltinsTest, AsBytesCallsDunderBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __bytes__(self):
+    return b'111'
+obj = Foo()
+)");
+  Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
+  Object result(&scope, asBytes(Thread::currentThread(), obj));
+  ASSERT_TRUE(result->isBytes());
+  Bytes expected(&scope, runtime.newBytes(3, '1'));
+  EXPECT_EQ(RawBytes::cast(*result).compare(*expected), 0);
+}
+
+TEST(BytesBuiltinsTest, AsBytesWithNonBytesDunderBytesRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __bytes__(self):
+    return 1
+obj = Foo()
+)");
+  Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
+  Object result(&scope, asBytes(Thread::currentThread(), obj));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
+                            "__bytes__ returned non-bytes"));
+}
+
+TEST(BytesBuiltinsTest, AsBytesWithDunderBytesErrorRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __bytes__(self):
+    raise ValueError("__bytes__() raised an error")
+obj = Foo()
+)");
+  Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
+  Object result(&scope, asBytes(Thread::currentThread(), obj));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError,
+                            "__bytes__() raised an error"));
+}
+
+TEST(BytesBuiltinsTest, AsBytesWithoutDunderBytesIterates) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __iter__(self):
+    return [97,98,99].__iter__()
+obj = Foo()
+)");
+  Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
+  Object result(&scope, asBytes(Thread::currentThread(), obj));
+  ASSERT_TRUE(result->isBytes());
+  Bytes expected(&scope, runtime.newBytesWithAll({'a', 'b', 'c'}));
+  EXPECT_EQ(RawBytes::cast(*result).compare(*expected), 0);
+}
+
 TEST(BytesBuiltinsTest, FromIterableWithListReturnsBytes) {
   Runtime runtime;
   HandleScope scope;

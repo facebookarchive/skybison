@@ -7,6 +7,22 @@
 
 namespace python {
 
+RawObject asBytes(Thread* thread, const Object& obj) {
+  HandleScope scope(thread);
+  Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderBytes));
+  if (result->isError()) {
+    if (!thread->hasPendingException()) {
+      // Attribute lookup failed, try PyBytes_FromObject
+      return bytesFromIterable(thread, obj);
+    }
+    return *result;
+  }
+  if (!thread->runtime()->isInstanceOfBytes(*result)) {
+    return thread->raiseTypeErrorWithCStr("__bytes__ returned non-bytes");
+  }
+  return *result;
+}
+
 RawObject bytesFromIterable(Thread* thread, const Object& obj) {
   // TODO(T38246066): objects other than bytes (and subclasses) as buffers
   Runtime* runtime = thread->runtime();

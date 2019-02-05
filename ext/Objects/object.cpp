@@ -1,6 +1,7 @@
 // object.c implementation
 
 #include "builtins-module.h"
+#include "bytes-builtins.h"
 #include "cpython-func.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -37,8 +38,25 @@ PY_EXPORT PyObject* PyObject_ASCII(PyObject* /* v */) {
   UNIMPLEMENTED("PyObject_ASCII");
 }
 
-PY_EXPORT PyObject* PyObject_Bytes(PyObject* /* v */) {
-  UNIMPLEMENTED("PyObject_Bytes");
+PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  if (pyobj == nullptr) {
+    View<byte> view(reinterpret_cast<const byte*>("<NULL>"), 6);
+    Bytes result(&scope, thread->runtime()->newBytesWithAll(view));
+    return ApiHandle::newReference(thread, *result);
+  }
+
+  ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
+  Object obj(&scope, handle->asObject());
+  if (obj->isBytes()) {
+    handle->incref();
+    return pyobj;
+  }
+
+  Object result(&scope, asBytes(thread, obj));
+  if (result->isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* /* f */) {
