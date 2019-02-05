@@ -2,6 +2,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "runtime.h"
+#include "utils.h"
 
 namespace python {
 
@@ -185,8 +186,31 @@ PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
   return bytes->length();
 }
 
-PY_EXPORT int _PyBytes_Resize(PyObject**, Py_ssize_t) {
-  UNIMPLEMENTED("_PyBytes_Resize");
+PY_EXPORT int _PyBytes_Resize(PyObject** pyobj, Py_ssize_t newsize) {
+  DCHECK(pyobj != nullptr, "_PyBytes_Resize given null argument");
+  DCHECK(*pyobj != nullptr, "_PyBytes_Resize given pointer to null");
+  Thread* thread = Thread::currentThread();
+  ApiHandle* handle = ApiHandle::fromPyObject(*pyobj);
+  HandleScope scope(thread);
+  Object obj(&scope, handle->asObject());
+  Runtime* runtime = thread->runtime();
+  if (newsize < 0 || !runtime->isInstanceOfBytes(*obj)) {
+    *pyobj = nullptr;
+    handle->decref();
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  Bytes bytes(&scope, *obj);
+  if (bytes->length() == newsize) return 0;
+  // we don't check here that Py_REFCNT(*pyobj) == 1
+  Bytes resized(&scope, runtime->newBytes(newsize, 0));
+  word min_size = Utils::minimum(bytes->length(), static_cast<word>(newsize));
+  for (word i = 0; i < min_size; i++) {
+    resized->byteAtPut(i, bytes->byteAt(i));
+  }
+  *pyobj = ApiHandle::newReference(thread, *resized);
+  handle->decref();
+  return 0;
 }
 
 }  // namespace python

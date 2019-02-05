@@ -326,6 +326,49 @@ TEST_F(BytesExtensionApiTest, FromStringWithEmptyStringReturnsEmptyBytes) {
   EXPECT_EQ(PyBytes_Size(bytes), 0);
 }
 
+TEST_F(BytesExtensionApiTest, ResizeWithNonBytesRaises) {
+  PyObject* num = PyLong_FromLong(0);
+  ASSERT_EQ(_PyBytes_Resize(&num, 1), -1);
+  ASSERT_EQ(num, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(BytesExtensionApiTest, ResizeWithNegativeNewSizeRaises) {
+  PyObject* bytes = PyBytes_FromString("hello");
+  ASSERT_EQ(_PyBytes_Resize(&bytes, -1), -1);
+  ASSERT_EQ(bytes, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(BytesExtensionApiTest, ResizeWithSameSizeKeepsBytes) {
+  PyObject* bytes = PyBytes_FromString("hello");
+  PyObject** arg = &bytes;
+  ASSERT_EQ(_PyBytes_Resize(&bytes, 5), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(&bytes, arg);
+  Py_DECREF(bytes);
+}
+
+TEST_F(BytesExtensionApiTest, ResizeWithLargerSizeAllocatesLargerBytes) {
+  PyObject* bytes = PyBytes_FromString("hello");
+  ASSERT_EQ(_PyBytes_Resize(&bytes, 10), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyBytes_Size(bytes), 10);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "hello");  // sixth byte is 0
+  Py_DECREF(bytes);
+}
+
+TEST_F(BytesExtensionApiTest, ResizeWithSmallerSizeAllocatesSmallerBytes) {
+  PyObject* bytes = PyBytes_FromString("hello");
+  ASSERT_EQ(_PyBytes_Resize(&bytes, 2), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyBytes_Size(bytes), 2);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "he");
+  Py_DECREF(bytes);
+}
+
 TEST_F(BytesExtensionApiTest, SizeWithNonBytesReturnsNegative) {
   PyObjectPtr dict(PyDict_New());
 
