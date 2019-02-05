@@ -844,6 +844,7 @@ PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
 
 /* Non C-API functions */
 PyAPI_FUNC(int) PyBool_Check_Func(PyObject*);
+PyAPI_FUNC(int) PyByteArray_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyByteArray_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyBytes_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyBytes_Check_Func(PyObject*);
@@ -892,6 +893,8 @@ PyAPI_FUNC(void)
  * "PyBytes_Check(state = PyTuple_GET_ITEM(args, 0))" */
 #define PyBool_Check(op) (PyBool_Check_Func((PyObject*)(op)))
 #define PyByteArray_Check(op) (PyByteArray_Check_Func((PyObject*)(op)))
+#define PyByteArray_CheckExact(op)                                             \
+  (PyByteArray_CheckExact_Func((PyObject*)(op)))
 #define PyBytes_Check(op) (PyBytes_Check_Func((PyObject*)(op)))
 #define PyBytes_CheckExact(op) (PyBytes_CheckExact_Func((PyObject*)(op)))
 #define PyComplex_Check(op) (PyComplex_Check_Func((PyObject*)(op)))

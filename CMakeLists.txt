@@ -401,6 +401,7 @@ set(
   EXTENSION_TESTS
   ext/Objects/abstract-test.cpp
   ext/Objects/boolobject-test.cpp
+  ext/Objects/bytearrayobject-test.cpp
   ext/Objects/bytesobject-test.cpp
   ext/Objects/classobject-test.cpp
   ext/Objects/complexobject-test.cpp
