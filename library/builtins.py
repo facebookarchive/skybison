@@ -375,7 +375,7 @@ class str(bootstrap=True):
 
 class dict(bootstrap=True):
     def __contains__(self, key) -> bool:
-        return self.get(key, _UnboundValue) is not _UnboundValue
+        return self.get(key, _UnboundValue) is not _UnboundValue  # noqa: T484
 
     def __delitem__(self, key):
         pass
