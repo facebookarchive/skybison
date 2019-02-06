@@ -113,7 +113,7 @@ RawObject builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
   }
 
   Object getter(&scope, property->getter());
-  return Interpreter::callMethod1(thread, frame, getter, obj);
+  return Interpreter::callFunction1(thread, frame, getter, obj);
 }
 
 RawObject builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
@@ -137,7 +137,7 @@ RawObject builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
   }
 
   Object setter(&scope, property->setter());
-  return Interpreter::callMethod2(thread, frame, setter, obj, value);
+  return Interpreter::callFunction2(thread, frame, setter, obj, value);
 }
 
 RawObject builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {

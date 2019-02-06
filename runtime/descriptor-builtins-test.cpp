@@ -287,4 +287,42 @@ x = c1.x
   EXPECT_EQ(RawSmallInt::cast(*x)->value(), 42);
 }
 
+TEST(DescriptorBuiltinsTest, PropertyWithCallableGetterReturnsValue) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Getter:
+    def __call__(self, obj):
+        return 123
+
+class Foo:
+  x = property(Getter())
+
+result = Foo().x
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 123);
+}
+
+TEST(DescriptorBuiltinsTest, PropertyWithCallableSetterSetsValue) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Setter:
+    def __call__(self, obj, value):
+        obj.y = value
+
+class Foo:
+  x = property(None, Setter(), None)
+
+foo = Foo()
+foo.x = 123
+result = foo.y
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 123);
+}
+
 }  // namespace python

@@ -262,6 +262,15 @@ RawObject Interpreter::callFunction1(Thread* thread, Frame* caller,
   return call(thread, caller, 1);
 }
 
+RawObject Interpreter::callFunction2(Thread* thread, Frame* caller,
+                                     const Object& func, const Object& arg1,
+                                     const Object& arg2) {
+  caller->pushValue(*func);
+  caller->pushValue(*arg1);
+  caller->pushValue(*arg2);
+  return call(thread, caller, 2);
+}
+
 RawObject Interpreter::callFunction(Thread* thread, Frame* caller,
                                     const Object& func, const Tuple& args) {
   caller->pushValue(*func);
