@@ -3967,6 +3967,54 @@ RawObject Runtime::intBinaryAnd(Thread* thread, const Int& left,
   return normalizeLargeInt(result);
 }
 
+RawObject Runtime::intNegate(Thread* thread, const Int& value) {
+  word num_digits = value->numDigits();
+  if (num_digits == 1) {
+    word value_word = value->asWord();
+    // Negating kMinWord results in a number with two digits.
+    if (value_word == kMinWord) {
+      return newIntWithDigits({static_cast<uword>(kMinWord), 0});
+    }
+    return newInt(-value_word);
+  }
+
+  HandleScope scope(thread);
+  LargeInt large_int(&scope, *value);
+
+  // The smallest possible negative number (digits == {0, 0, ..., 0x8000...}
+  // is a special case because the negation needs an extra digit.
+  // The result happens to have the same digits with just a zero digit appended
+  // to indicate the positive sign.
+  bool is_min_int =
+      value->digitAt(num_digits - 1) == static_cast<uword>(kMinWord);
+  for (word i = 0; is_min_int && i < num_digits - 1; i++) {
+    if (value->digitAt(i) != 0) {
+      is_min_int = false;
+    }
+  }
+  if (is_min_int) {
+    LargeInt result(&scope, heap()->createLargeInt(num_digits + 1));
+    for (word i = 0; i < num_digits; i++) {
+      result->digitAtPut(i, large_int->digitAt(i));
+    }
+    result->digitAtPut(num_digits, 0);
+    DCHECK(result->isValid(), "Invalid RawLargeInt");
+    return *result;
+  }
+
+  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  word carry = 1;
+  for (word i = 0; i < num_digits; i++) {
+    uword digit = large_int->digitAt(i);
+    static_assert(sizeof(digit) == sizeof(long), "invalid builtin size");
+    carry = __builtin_uaddl_overflow(~digit, carry, &digit);
+    result->digitAtPut(i, digit);
+  }
+  DCHECK(carry == 0, "Carry should be zero");
+  DCHECK(result->isValid(), "Invalid RawLargeInt");
+  return *result;
+}
+
 static uword subtractWithBorrow(uword x, uword y, uword borrow_in,
                                 uword* borrow_out) {
   DCHECK(borrow_in <= 1, "borrow must be 0 or 1");

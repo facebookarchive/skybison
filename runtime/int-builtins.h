@@ -48,7 +48,6 @@ class IntBuiltins {
   static RawObject toBytesKw(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static RawObject negateLargeInt(Runtime* runtime, const Object& large_int);
   static const BuiltinMethod kMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntBuiltins);

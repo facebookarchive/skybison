@@ -48,6 +48,9 @@ class int(bootstrap=True):
     def __mul__(self, n: int) -> int:
         pass
 
+    def __neg__(self) -> int:
+        pass
+
     def __sub__(self, n: int) -> int:
         pass
 

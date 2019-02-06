@@ -629,6 +629,9 @@ class Runtime {
   // Returns the product of `left` and `right`.
   RawObject intMultiply(Thread* thread, const Int& left, const Int& right);
 
+  // Returns `0 - value`.
+  RawObject intNegate(Thread* thread, const Int& value);
+
   // Returns the result of subtracting `right` from `left`.
   RawObject intSubtract(Thread* thread, const Int& left, const Int& right);
 

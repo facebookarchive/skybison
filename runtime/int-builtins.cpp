@@ -195,51 +195,6 @@ void SmallIntBuiltins::initialize(Runtime* runtime) {
   }
 }
 
-// Does this LargeInt use fewer digits now than it would after being negated?
-static bool negationOverflows(const LargeInt& value) {
-  word num_digits = value->numDigits();
-  for (word i = 0; i < num_digits - 1; i++) {
-    if (value->digitAt(i) != 0) {
-      return false;
-    }
-  }
-  return value->digitAt(num_digits - 1) == uword{1} << (kBitsPerWord - 1);
-}
-
-RawObject IntBuiltins::negateLargeInt(Runtime* runtime,
-                                      const Object& large_int) {
-  HandleScope scope;
-  LargeInt src(&scope, *large_int);
-
-  word num_digits = src->numDigits();
-  // -i needs more digits than i if negating it overflows.
-  if (negationOverflows(src)) {
-    LargeInt result(&scope, runtime->heap()->createLargeInt(num_digits + 1));
-    for (word i = 0; i < num_digits; i++) {
-      result->digitAtPut(i, src->digitAt(i));
-    }
-    result->digitAtPut(num_digits, 0);
-    DCHECK(result->isValid(), "Invalid RawLargeInt");
-    return *result;
-  }
-
-  // -i fits in a SmallInt when i == SmallInt::kMaxValue + 1.
-  if (num_digits == 1 && src->digitAt(0) == RawSmallInt::kMaxValue + 1) {
-    return SmallInt::fromWord(RawSmallInt::kMinValue);
-  }
-
-  LargeInt result(&scope, runtime->heap()->createLargeInt(num_digits));
-  word carry = 1;
-  for (word i = 0; i < num_digits; i++) {
-    word digit = src->digitAt(i);
-    carry = __builtin_saddl_overflow(~digit, carry, &digit);
-    result->digitAtPut(i, digit);
-  }
-  DCHECK(carry == 0, "Carry should be zero");
-  DCHECK(result->isValid(), "Invalid RawLargeInt");
-  return *result;
-}
-
 RawObject IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 1) {
     return thread->raiseTypeErrorWithCStr("expected 1 argument");
@@ -770,26 +725,13 @@ RawObject IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
 
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected no arguments");
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__neg__' requires a 'int' object");
   }
-  Object self(&scope, args.get(0));
-  if (self->isSmallInt()) {
-    RawSmallInt tos = RawSmallInt::cast(*self);
-    word neg = -tos->value();
-    if (SmallInt::isValid(neg)) {
-      return SmallInt::fromWord(neg);
-    }
-    return thread->runtime()->newInt(neg);
-  }
-  if (self->isLargeInt()) {
-    return negateLargeInt(thread->runtime(), self);
-  }
-  if (self->isBool()) {
-    return SmallInt::fromWord(*self == Bool::trueObj() ? -1 : 0);
-  }
-  return thread->raiseTypeErrorWithCStr(
-      "__neg__() must be called with int instance as the first argument");
+  Int self(&scope, *self_obj);
+  return runtime->intNegate(thread, self);
 }
 
 RawObject IntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
