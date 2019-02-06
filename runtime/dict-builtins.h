@@ -34,15 +34,15 @@ RawObject dictMergeIgnore(Thread* thread, const Dict& dict,
 
 // Returns next item in the dict as (key, value) tuple (Tuple)
 // Returns Error::object() if there are no more objects
-RawObject dictItemIteratorNext(Thread* thread, DictItemIterator& iter);
+RawObject dictItemIteratorNext(Thread* thread, const DictItemIterator& iter);
 
 // Returns next key in the dict
 // Returns Error::object() if there are no more objects
-RawObject dictKeyIteratorNext(Thread* thread, DictKeyIterator& iter);
+RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter);
 
 // Returns next value in the dict
 // Returns Error::object() if there are no more objects
-RawObject dictValueIteratorNext(Thread* thread, DictValueIterator& iter);
+RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter);
 
 class DictBuiltins {
  public:

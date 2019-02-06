@@ -172,12 +172,12 @@ RawObject dictMergeIgnore(Thread* thread, const Dict& dict,
   return dictMergeImpl(thread, dict, mapping, Override::kIgnore);
 }
 
-RawObject dictItemIteratorNext(Thread* thread, DictItemIterator& iter) {
+RawObject dictItemIteratorNext(Thread* thread, const DictItemIterator& iter) {
   HandleScope scope(thread);
-  Dict dict(&scope, iter.dict());
-  Tuple buckets(&scope, dict.data());
+  Dict dict(&scope, iter->dict());
+  Tuple buckets(&scope, dict->data());
 
-  word i = iter.index();
+  word i = iter->index();
   if (Dict::Bucket::nextItem(*buckets, &i)) {
     // At this point, we have found a valid index in the buckets.
     Object key(&scope, Dict::Bucket::key(*buckets, i));
@@ -185,49 +185,49 @@ RawObject dictItemIteratorNext(Thread* thread, DictItemIterator& iter) {
     Tuple kv_pair(&scope, thread->runtime()->newTuple(2));
     kv_pair->atPut(0, *key);
     kv_pair->atPut(1, *value);
-    iter.setIndex(i);
-    iter.setNumFound(iter.numFound() + 1);
+    iter->setIndex(i);
+    iter->setNumFound(iter->numFound() + 1);
     return *kv_pair;
   }
 
   // We hit the end.
-  iter.setIndex(i);
+  iter->setIndex(i);
   return Error::object();
 }
 
-RawObject dictKeyIteratorNext(Thread* thread, DictKeyIterator& iter) {
+RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter) {
   HandleScope scope(thread);
-  Dict dict(&scope, iter.dict());
-  Tuple buckets(&scope, dict.data());
+  Dict dict(&scope, iter->dict());
+  Tuple buckets(&scope, dict->data());
 
-  word i = iter.index();
+  word i = iter->index();
   if (Dict::Bucket::nextItem(*buckets, &i)) {
     // At this point, we have found a valid index in the buckets.
-    iter.setIndex(i);
-    iter.setNumFound(iter.numFound() + 1);
+    iter->setIndex(i);
+    iter->setNumFound(iter->numFound() + 1);
     return Dict::Bucket::key(*buckets, i);
   }
 
   // We hit the end.
-  iter.setIndex(i);
+  iter->setIndex(i);
   return Error::object();
 }
 
-RawObject dictValueIteratorNext(Thread* thread, DictValueIterator& iter) {
+RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter) {
   HandleScope scope(thread);
-  Dict dict(&scope, iter.dict());
-  Tuple buckets(&scope, dict.data());
+  Dict dict(&scope, iter->dict());
+  Tuple buckets(&scope, dict->data());
 
-  word i = iter.index();
+  word i = iter->index();
   if (Dict::Bucket::nextItem(*buckets, &i)) {
     // At this point, we have found a valid index in the buckets.
-    iter.setIndex(i);
-    iter.setNumFound(iter.numFound() + 1);
+    iter->setIndex(i);
+    iter->setNumFound(iter->numFound() + 1);
     return Dict::Bucket::value(*buckets, i);
   }
 
   // We hit the end.
-  iter.setIndex(i);
+  iter->setIndex(i);
   return Error::object();
 }
 
