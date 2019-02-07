@@ -545,4 +545,36 @@ TEST_F(ObjectExtensionApiTest, ClearWithObjectDecrefsObject) {
   EXPECT_LT(Py_REFCNT(original), original_count);
 }
 
+TEST_F(ObjectExtensionApiTest, ASCIIOnNullReturnsSpecialNullString) {
+  PyObjectPtr ascii(PyObject_ASCII(nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(ascii, "<NULL>"), 0);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       ASCIIWithObjectWithBadDunderReprRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __repr__ = None
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  PyObjectPtr ascii(PyObject_ASCII(pyc));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest, ASCIIcallsDunderRepr) {
+  PyRun_SimpleString(R"(
+class C:
+  def __repr__(self):
+    return "bongo"
+c = C()
+)");
+  PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
+  PyObjectPtr ascii(PyObject_ASCII(pyc));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(ascii, "bongo"), 0);
+}
+
 }  // namespace python

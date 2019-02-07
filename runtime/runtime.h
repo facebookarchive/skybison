@@ -199,11 +199,15 @@ class Runtime {
                                      const Function::Entry entry_ex);
 
   RawObject findModule(const Object& name);
+  RawObject findModuleById(SymbolId name);
+  RawObject lookupNameInModule(Thread* thread, SymbolId module_name,
+                               SymbolId name);
 
   RawObject moduleDictAt(const Dict& module_dict, const Object& key);
   RawObject moduleDictAtPut(const Dict& dict, const Object& key,
                             const Object& value);
   RawObject moduleAt(const Module& module, const Object& key);
+  RawObject moduleAtById(const Module& module, SymbolId key);
   void moduleAtPut(const Module& module, const Object& key,
                    const Object& value);
 

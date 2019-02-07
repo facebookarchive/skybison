@@ -34,8 +34,20 @@ PY_EXPORT int PyCallable_Check(PyObject* /* x */) {
   UNIMPLEMENTED("PyCallable_Check");
 }
 
-PY_EXPORT PyObject* PyObject_ASCII(PyObject* /* v */) {
-  UNIMPLEMENTED("PyObject_ASCII");
+PY_EXPORT PyObject* PyObject_ASCII(PyObject* pyobj) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  if (pyobj == nullptr) {
+    return ApiHandle::newReference(thread, runtime->symbols()->Null());
+  }
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                SymbolId::kAscii, obj));
+  if (result->isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {

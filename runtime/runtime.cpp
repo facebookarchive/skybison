@@ -1658,6 +1658,22 @@ RawObject Runtime::findModule(const Object& name) {
   return value;
 }
 
+RawObject Runtime::findModuleById(SymbolId name) {
+  HandleScope scope;
+  Str name_str(&scope, symbols()->at(name));
+  return findModule(name_str);
+}
+
+RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
+                                      SymbolId name) {
+  HandleScope scope(thread);
+  Object module_obj(&scope, findModuleById(module_name));
+  DCHECK(module_obj->isModule(),
+         "The given module doesn't exist in modules dict");
+  Module module(&scope, *module_obj);
+  return moduleAtById(module, name);
+}
+
 RawObject Runtime::moduleDictAt(const Dict& dict, const Object& key) {
   HandleScope scope;
   Object value_cell(&scope, dictAt(dict, key));
@@ -1673,6 +1689,12 @@ RawObject Runtime::moduleAt(const Module& module, const Object& key) {
   HandleScope scope;
   Dict dict(&scope, module->dict());
   return moduleDictAt(dict, key);
+}
+
+RawObject Runtime::moduleAtById(const Module& module, SymbolId key) {
+  HandleScope scope;
+  Str key_str(&scope, symbols()->at(key));
+  return moduleAt(module, key_str);
 }
 
 RawObject Runtime::moduleDictAtPut(const Dict& dict, const Object& key,

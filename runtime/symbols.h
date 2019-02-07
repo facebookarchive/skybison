@@ -119,6 +119,7 @@ class Runtime;
   V(Args, "args")                                                              \
   V(Argv, "argv")                                                              \
   V(ArithmeticError, "ArithmeticError")                                        \
+  V(Ascii, "ascii")                                                            \
   V(AssertionError, "AssertionError")                                          \
   V(AttributeError, "AttributeError")                                          \
   V(BaseException, "BaseException")                                            \

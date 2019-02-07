@@ -108,6 +108,11 @@ class Thread {
   // Calls out to the interpreter to lookup and call a method on the receiver.
   RawObject invokeMethod1(const Handle<RawObject>& receiver, SymbolId selector);
 
+  // Calls out to the interpreter to lookup and call a function with one
+  // argument
+  RawObject invokeFunction1(SymbolId module, SymbolId name,
+                            const Handle<RawObject>& arg1);
+
   // Raises an exception with the given type and returns an Error that must be
   // returned up the stack by the caller.
   RawObject raise(LayoutId type, RawObject value);
