@@ -119,6 +119,10 @@ static T asIntWithoutOverflowCheck(PyObject* pylong) {
 
 // Converting to signed ints.
 
+PY_EXPORT int _PyLong_AsInt(PyObject* pylong) {
+  return asInt<int>(pylong, "int", nullptr);
+}
+
 PY_EXPORT long PyLong_AsLong(PyObject* pylong) {
   return asInt<long>(pylong, "long", nullptr);
 }
@@ -184,7 +188,5 @@ PY_EXPORT PyObject* PyLong_FromVoidPtr(void* /* p */) {
 }
 
 PY_EXPORT PyObject* PyLong_GetInfo() { UNIMPLEMENTED("PyLong_GetInfo"); }
-
-PY_EXPORT int _PyLong_AsInt(PyObject*) { UNIMPLEMENTED("_PyLong_AsInt"); }
 
 }  // namespace python

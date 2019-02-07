@@ -39,6 +39,48 @@ TEST_F(LongExtensionApiTest, PyLongCheckOnType) {
   EXPECT_FALSE(PyLong_CheckExact(type));
 }
 
+TEST_F(LongExtensionApiTest, AsIntWithNullRaisesSystemError) {
+  ASSERT_EQ(_PyLong_AsInt(nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(LongExtensionApiTest, AsIntWithNonIntegerRaisesTypeError) {
+  ASSERT_EQ(_PyLong_AsInt(Py_None), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest, AsIntWithLongMaxRaisesOverflowError) {
+  PyObjectPtr num(PyLong_FromLongLong(static_cast<long long>(INT_MAX) + 1));
+  ASSERT_EQ(_PyLong_AsInt(num), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(LongExtensionApiTest, AsIntWithInvalidDunderIntRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class X:
+  def __int__(self): return ""
+x = X()
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  ASSERT_EQ(_PyLong_AsInt(x), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest, AsIntWithValidDunderIntReturnsInt) {
+  PyRun_SimpleString(R"(
+class X:
+    def __int__(self): return 42
+x = X()
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(_PyLong_AsInt(x), 42);
+}
+
 TEST_F(LongExtensionApiTest, AsLongWithNullReturnsNegative) {
   long res = PyLong_AsLong(nullptr);
   EXPECT_EQ(res, -1);
