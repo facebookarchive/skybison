@@ -51,6 +51,9 @@ class int(bootstrap=True):
     def __neg__(self) -> int:
         pass
 
+    def __rshift__(self, n: int) -> int:
+        pass
+
     def __sub__(self, n: int) -> int:
         pass
 

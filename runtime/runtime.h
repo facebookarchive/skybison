@@ -623,6 +623,9 @@ class Runtime {
   // Returns the result of bitwise logical OR of the arguments
   RawObject intBinaryOr(Thread* thread, const Int& left, const Int& right);
 
+  // Returns the result of bitwise right shift of `num` by `shift`.
+  RawObject intBinaryRshift(Thread* thread, const Int& num, const Int& amount);
+
   // Returns the result of bitwise XOR of the arguments
   RawObject intBinaryXor(Thread* thread, const Int& left, const Int& right);
 

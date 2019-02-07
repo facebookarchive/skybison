@@ -4140,6 +4140,65 @@ RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
   return normalizeLargeInt(result);
 }
 
+RawObject Runtime::intBinaryRshift(Thread* thread, const Int& num,
+                                   const Int& amount) {
+  DCHECK(!amount->isNegative(), "shift amount must be positive");
+  if (num->numDigits() == 1) {
+    if (amount->numDigits() > 1) {
+      return SmallInt::fromWord(0);
+    }
+    word amount_word = amount->asWord();
+    if (amount_word >= kBitsPerWord) {
+      return SmallInt::fromWord(0);
+    }
+    word num_word = num->asWord();
+    return newInt(num_word >> amount_word);
+  }
+
+  word amount_digits = amount->numDigits();
+  uword digit0 = amount->digitAt(0);
+  word shift_words = digit0 / kBitsPerWord;
+  word shift_bits = digit0 % kBitsPerWord;
+  if (amount_digits > 1) {
+    // It is impossible to create a LargeInt so big that a two-digit amount
+    // would result in a non-zero result.
+    if (amount_digits > 2) {
+      return SmallInt::fromWord(0);
+    }
+    uword digit1 = amount->digitAt(1);
+    // Must fit in a word and be positive.
+    if (digit1 / kBitsPerWord / 2 != 0) {
+      return SmallInt::fromWord(0);
+    }
+    shift_words |= digit1 * (kMaxUword / kBitsPerWord + 1);
+  }
+
+  word result_digits = num->numDigits() - shift_words;
+  if (result_digits < 0) {
+    return SmallInt::fromWord(0);
+  }
+  if (shift_bits == 0 && shift_words == 0) {
+    return *num;
+  }
+  HandleScope scope(thread);
+  LargeInt result(&scope, heap()->createLargeInt(result_digits));
+  if (shift_bits == 0) {
+    for (word i = 0; i < result_digits; i++) {
+      result->digitAtPut(i, num->digitAt(shift_words + i));
+    }
+  } else {
+    uword prev = num->isNegative() ? kMaxUword : 0;
+    word prev_shift = kBitsPerWord - shift_bits;
+    for (word i = result_digits - 1; i >= 0; i--) {
+      uword digit = num->digitAt(shift_words + i);
+      uword result_digit = prev << prev_shift | digit >> shift_bits;
+      result->digitAtPut(i, result_digit);
+      prev = digit;
+    }
+  }
+  return normalizeLargeInt(result);
+}
+
 RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num, word shift) {
   DCHECK(shift >= 0, "shift count needs to be non-negative");
   if (shift == 0 || (num->isSmallInt() && num->asWord() == 0)) {

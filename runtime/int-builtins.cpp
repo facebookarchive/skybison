@@ -36,6 +36,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderNeg, nativeTrampoline<dunderNeg>},
     {SymbolId::kDunderOr, nativeTrampoline<dunderOr>},
     {SymbolId::kDunderPos, nativeTrampoline<dunderPos>},
+    {SymbolId::kDunderRshift, nativeTrampoline<dunderRshift>},
     {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
     {SymbolId::kDunderXor, nativeTrampoline<dunderXor>},
 };
@@ -732,6 +733,28 @@ RawObject IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   }
   Int self(&scope, *self_obj);
   return runtime->intNegate(thread, self);
+}
+
+RawObject IntBuiltins::dunderRshift(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__rshift__' requires a 'int' object");
+  }
+  if (runtime->isInstanceOfInt(*other_obj)) {
+    Int self(&scope, *self_obj);
+    Int other(&scope, *other_obj);
+    if (other->isNegative()) {
+      return thread->raiseValueErrorWithCStr("negative shift count");
+    }
+    return runtime->intBinaryRshift(thread, self, other);
+  }
+  // Signal binary dispatch to try another method.
+  return runtime->notImplemented();
 }
 
 RawObject IntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
