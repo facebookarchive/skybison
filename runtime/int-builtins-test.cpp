@@ -616,22 +616,6 @@ TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftRaisesException) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST(IntBuiltinsTest, DunderAndWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, i));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
-TEST(IntBuiltinsTest, DunderAndWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, i, i, i));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
 TEST(IntBuiltinsTest, DunderLshiftWithBoolsTrueFalseReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
@@ -1018,22 +1002,6 @@ TEST(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftRaisesException) {
   Object left(&scope, runtime.newStrFromCStr(""));
   LargeInt right(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
-TEST(IntBuiltinsTest, DunderOrWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, i));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
-TEST(IntBuiltinsTest, DunderOrWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, i, i, i));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2419,22 +2387,6 @@ TEST(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftRaisesException) {
   Object left(&scope, runtime.newStrFromCStr(""));
   LargeInt right(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
-TEST(IntBuiltinsTest, DunderXorWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, i));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
-TEST(IntBuiltinsTest, DunderXorWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Int i(&scope, newIntWithDigits(&runtime, {1, 2}));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, i, i, i));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 

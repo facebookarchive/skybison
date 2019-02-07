@@ -15,31 +15,29 @@
 namespace python {
 
 const BuiltinMethod IntBuiltins::kMethods[] = {
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
-    // For ints, __index__ and __int__ have the same behavior so they are mapped
-    // to the same function
+    {SymbolId::kBitLength, builtinTrampolineWrapper<bitLength>},
+    {SymbolId::kDunderAbs, builtinTrampolineWrapper<dunderAbs>},
+    {SymbolId::kDunderAdd, builtinTrampolineWrapper<dunderAdd>},
+    {SymbolId::kDunderAnd, builtinTrampolineWrapper<dunderAnd>},
+    {SymbolId::kDunderBool, builtinTrampolineWrapper<dunderBool>},
+    {SymbolId::kDunderEq, builtinTrampolineWrapper<dunderEq>},
+    {SymbolId::kDunderFloat, builtinTrampolineWrapper<dunderFloat>},
+    {SymbolId::kDunderGe, builtinTrampolineWrapper<dunderGe>},
+    {SymbolId::kDunderGt, builtinTrampolineWrapper<dunderGt>},
     {SymbolId::kDunderIndex, builtinTrampolineWrapper<dunderInt>},
     {SymbolId::kDunderInt, builtinTrampolineWrapper<dunderInt>},
-    {SymbolId::kBitLength, nativeTrampoline<bitLength>},
-    {SymbolId::kDunderAbs, builtinTrampolineWrapper<dunderAbs>},
-    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
-    {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
-    {SymbolId::kDunderBool, nativeTrampoline<dunderBool>},
-    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
-    {SymbolId::kDunderFloat, nativeTrampoline<dunderFloat>},
-    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
-    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
-    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
+    {SymbolId::kDunderLe, builtinTrampolineWrapper<dunderLe>},
     {SymbolId::kDunderLshift, builtinTrampolineWrapper<dunderLshift>},
-    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
-    {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
-    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
-    {SymbolId::kDunderNeg, nativeTrampoline<dunderNeg>},
-    {SymbolId::kDunderOr, nativeTrampoline<dunderOr>},
-    {SymbolId::kDunderPos, nativeTrampoline<dunderPos>},
-    {SymbolId::kDunderRshift, nativeTrampoline<dunderRshift>},
-    {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
-    {SymbolId::kDunderXor, nativeTrampoline<dunderXor>},
+    {SymbolId::kDunderLt, builtinTrampolineWrapper<dunderLt>},
+    {SymbolId::kDunderMul, builtinTrampolineWrapper<dunderMul>},
+    {SymbolId::kDunderNe, builtinTrampolineWrapper<dunderNe>},
+    {SymbolId::kDunderNeg, builtinTrampolineWrapper<dunderNeg>},
+    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+    {SymbolId::kDunderOr, builtinTrampolineWrapper<dunderOr>},
+    {SymbolId::kDunderPos, builtinTrampolineWrapper<dunderPos>},
+    {SymbolId::kDunderRshift, builtinTrampolineWrapper<dunderRshift>},
+    {SymbolId::kDunderSub, builtinTrampolineWrapper<dunderSub>},
+    {SymbolId::kDunderXor, builtinTrampolineWrapper<dunderXor>},
 };
 
 void IntBuiltins::initialize(Runtime* runtime) {
@@ -192,9 +190,6 @@ void SmallIntBuiltins::initialize(Runtime* runtime) {
 }
 
 RawObject IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   if (self->isBool()) {
@@ -239,9 +234,6 @@ RawObject IntBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -261,9 +253,6 @@ RawObject IntBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   if (args.get(0)->isBool()) {
     return args.get(0);
@@ -279,9 +268,6 @@ RawObject IntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -336,9 +322,6 @@ RawObject SmallIntBuiltins::dunderInvert(Thread* thread, Frame* frame,
 }
 
 RawObject IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -566,9 +549,6 @@ RawObject SmallIntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
 }
 
 RawObject IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -591,9 +571,6 @@ RawObject IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -616,9 +593,6 @@ RawObject IntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -705,9 +679,6 @@ RawObject IntBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -784,9 +755,6 @@ RawObject IntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -806,10 +774,6 @@ RawObject IntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected no arguments");
-  }
-
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   if (self->isSmallInt()) {
@@ -931,9 +895,6 @@ inline RawObject IntBuiltins::intFromBool(RawObject bool_obj) {
 }
 
 RawObject IntBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);

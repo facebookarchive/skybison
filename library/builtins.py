@@ -45,7 +45,22 @@ class int(bootstrap=True):
     def __add__(self, n: int) -> int:
         pass
 
+    def __and__(self, n: int) -> int:
+        pass
+
+    def __bool__(self) -> bool:
+        pass
+
+    def __eq__(self, n: int) -> bool:  # noqa: T484
+        pass
+
     def __float__(self) -> float:
+        pass
+
+    def __ge__(self, n: int) -> bool:
+        pass
+
+    def __gt__(self, n: int) -> bool:
         pass
 
     def __index__(self) -> int:
@@ -54,19 +69,40 @@ class int(bootstrap=True):
     def __int__(self) -> int:
         pass
 
+    def __le__(self, n: int) -> bool:
+        pass
+
     def __lshift__(self, n: int) -> int:
+        pass
+
+    def __lt__(self, n: int) -> bool:
         pass
 
     def __mul__(self, n: int) -> int:
         pass
 
+    def __ne__(self, n: int) -> int:  # noqa: T484
+        pass
+
     def __neg__(self) -> int:
+        pass
+
+    def __or__(self, n: int) -> int:
+        pass
+
+    def __pos__(self) -> int:
         pass
 
     def __rshift__(self, n: int) -> int:
         pass
 
     def __sub__(self, n: int) -> int:
+        pass
+
+    def __xor__(self, n: int) -> int:
+        pass
+
+    def bit_length(self) -> int:
         pass
 
 
