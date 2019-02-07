@@ -27,7 +27,7 @@ RawObject RawSmallStr::fromBytes(View<byte> data) {
   return cast(RawObject{result});
 }
 
-char* RawSmallStr::toCStr() {
+char* RawSmallStr::toCStr() const {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   CHECK(result != nullptr, "out of memory");
@@ -43,7 +43,7 @@ const word RawSmallInt::kMaxValue;
 
 // RawBytes
 
-word RawBytes::compare(RawBytes that) {
+word RawBytes::compare(RawBytes that) const {
   word this_len = this->length();
   word that_len = that->length();
   word len = Utils::minimum(this_len, that_len);
@@ -56,7 +56,7 @@ word RawBytes::compare(RawBytes that) {
 
 // RawLargeStr
 
-bool RawLargeStr::equals(RawObject that) {
+bool RawLargeStr::equals(RawObject that) const {
   if (*this == that) {
     return true;
   }
@@ -72,12 +72,12 @@ bool RawLargeStr::equals(RawObject that) {
   return std::memcmp(s1, s2, length()) == 0;
 }
 
-void RawLargeStr::copyTo(byte* dst, word length) {
+void RawLargeStr::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, this->length());
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
-char* RawLargeStr::toCStr() {
+char* RawLargeStr::toCStr() const {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   CHECK(result != nullptr, "out of memory");
@@ -88,7 +88,7 @@ char* RawLargeStr::toCStr() {
 
 // RawInt
 
-word RawInt::compare(RawInt that) {
+word RawInt::compare(RawInt that) const {
   if (this->isSmallInt() && that->isSmallInt()) {
     return this->asWord() - that->asWord();
   }
@@ -119,7 +119,7 @@ word RawInt::compare(RawInt that) {
   return 0;
 }
 
-word RawInt::copyTo(byte* dst, word max_length) {
+word RawInt::copyTo(byte* dst, word max_length) const {
   if (isLargeInt()) {
     return RawLargeInt::cast(*this)->copyTo(dst, max_length);
   }
@@ -134,7 +134,7 @@ word RawInt::copyTo(byte* dst, word max_length) {
 
 // RawLargeInt
 
-bool RawLargeInt::isValid() {
+bool RawLargeInt::isValid() const {
   word digits = numDigits();
   if (digits <= 0) {
     return false;
@@ -160,7 +160,7 @@ bool RawLargeInt::isValid() {
   return true;
 }
 
-word RawLargeInt::bitLength() {
+word RawLargeInt::bitLength() const {
   word num_digits = numDigits();
   word high_digit = digitAt(num_digits - 1);
 
@@ -177,7 +177,7 @@ word RawLargeInt::bitLength() {
   return (num_digits - 1) * kBitsPerWord + Utils::highestBit(high_digit);
 }
 
-word RawLargeInt::copyTo(byte* dst, word copy_length) {
+word RawLargeInt::copyTo(byte* dst, word copy_length) const {
   word length = numDigits() * kWordSize;
   auto digits = reinterpret_cast<uword*>(address() + kValueOffset);
   word memcpy_size = std::min(length, copy_length);
@@ -185,7 +185,7 @@ word RawLargeInt::copyTo(byte* dst, word copy_length) {
   return memcpy_size;
 }
 
-void RawLargeInt::copyFrom(View<byte> bytes, byte sign_extension) {
+void RawLargeInt::copyFrom(View<byte> bytes, byte sign_extension) const {
   auto dst = reinterpret_cast<char*>(address() + kValueOffset);
   word bytes_len = bytes.length();
   DCHECK(bytes_len <= numDigits() * kWordSize, "too many bytes");
@@ -196,7 +196,7 @@ void RawLargeInt::copyFrom(View<byte> bytes, byte sign_extension) {
 
 // RawListIterator
 
-RawObject RawListIterator::next() {
+RawObject RawListIterator::next() const {
   word idx = index();
   RawList underlying = RawList::cast(list());
   if (idx >= underlying->numItems()) {
@@ -210,7 +210,7 @@ RawObject RawListIterator::next() {
 
 // RawTuple
 
-bool RawTuple::contains(RawObject object) {
+bool RawTuple::contains(RawObject object) const {
   word len = length();
   for (word i = 0; i < len; i++) {
     if (at(i) == object) {
@@ -220,7 +220,7 @@ bool RawTuple::contains(RawObject object) {
   return false;
 }
 
-void RawTuple::copyTo(RawObject array) {
+void RawTuple::copyTo(RawObject array) const {
   RawTuple dst = RawTuple::cast(array);
   word len = length();
   DCHECK_BOUND(len, dst->length());
@@ -230,7 +230,7 @@ void RawTuple::copyTo(RawObject array) {
   }
 }
 
-void RawTuple::replaceFromWith(word start, RawObject array) {
+void RawTuple::replaceFromWith(word start, RawObject array) const {
   RawTuple src = RawTuple::cast(array);
   word count = Utils::minimum(this->length() - start, src->length());
   word stop = start + count;
@@ -257,7 +257,7 @@ bool RawRangeIterator::isOutOfRange(word cur, word stop, word step) {
   return false;
 }
 
-word RawRangeIterator::pendingLength() {
+word RawRangeIterator::pendingLength() const {
   RawRange range = RawRange::cast(instanceVariableAt(kRangeOffset));
   word stop = range->stop();
   word step = range->step();
@@ -269,7 +269,7 @@ word RawRangeIterator::pendingLength() {
   return std::abs((stop - current) / step);
 }
 
-RawObject RawRangeIterator::next() {
+RawObject RawRangeIterator::next() const {
   RawSmallInt ret = RawSmallInt::cast(instanceVariableAt(kCurValueOffset));
   word cur = ret->value();
 
@@ -291,7 +291,7 @@ RawObject RawRangeIterator::next() {
 
 // RawSetIterator
 
-RawObject RawSetIterator::next() {
+RawObject RawSetIterator::next() const {
   word idx = index();
   RawSet underlying = RawSet::cast(set());
   RawTuple data = RawTuple::cast(underlying->data());
@@ -305,6 +305,39 @@ RawObject RawSetIterator::next() {
 }
 
 // RawSlice
+
+void RawSlice::unpack(word* start, word* stop, word* step) const {
+  if (this->step()->isNoneType()) {
+    *step = 1;
+  } else {
+    // TODO(T27897506): CPython uses _PyEval_SliceIndex to convert any
+    //       integer to eval any object into a valid index. For now, it'll
+    //       assume that all indices are SmallInts.
+    *step = RawSmallInt::cast(this->step())->value();
+    if (*step == 0) {
+      UNIMPLEMENTED("Throw ValueError. slice step cannot be zero");
+    }
+    // Here *step might be -RawSmallInt::kMaxValue-1; in this case we replace
+    // it with -RawSmallInt::kMaxValue.  This doesn't affect the semantics,
+    // and it guards against later undefined behaviour resulting from code that
+    // does "step = -step" as part of a slice reversal.
+    if (*step < -RawSmallInt::kMaxValue) {
+      *step = -RawSmallInt::kMaxValue;
+    }
+  }
+
+  if (this->start()->isNoneType()) {
+    *start = (*step < 0) ? RawSmallInt::kMaxValue : 0;
+  } else {
+    *start = RawSmallInt::cast(this->start())->value();
+  }
+
+  if (this->stop()->isNoneType()) {
+    *stop = (*step < 0) ? RawSmallInt::kMinValue : RawSmallInt::kMaxValue;
+  } else {
+    *stop = RawSmallInt::cast(this->stop())->value();
+  }
+}
 
 word RawSlice::adjustIndices(word length, word* start, word* stop, word step) {
   DCHECK(step != 0, "Step should be non zero");
@@ -341,7 +374,7 @@ word RawSlice::adjustIndices(word length, word* start, word* stop, word step) {
 
 // RawStr
 
-word RawStr::compare(RawObject string) {
+word RawStr::compare(RawObject string) const {
   RawStr that = RawStr::cast(string);
   word length = Utils::minimum(this->length(), that->length());
   for (word i = 0; i < length; i++) {
@@ -354,7 +387,7 @@ word RawStr::compare(RawObject string) {
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
-word RawStr::compareCStr(const char* c_str) {
+word RawStr::compareCStr(const char* c_str) const {
   word c_length = std::strlen(c_str);
   word length = Utils::minimum(this->length(), c_length);
   for (word i = 0; i < length; i++) {
@@ -367,7 +400,7 @@ word RawStr::compareCStr(const char* c_str) {
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
-bool RawStr::equalsCStr(const char* c_str) {
+bool RawStr::equalsCStr(const char* c_str) const {
   const char* cp = c_str;
   const word len = length();
   for (word i = 0; i < len; i++, cp++) {
@@ -381,7 +414,7 @@ bool RawStr::equalsCStr(const char* c_str) {
 
 // RawTupleIterator
 
-RawObject RawTupleIterator::next() {
+RawObject RawTupleIterator::next() const {
   word idx = index();
   if (idx == tupleLength()) return RawError::object();
   RawObject item = RawTuple::cast(tuple()).at(idx);
