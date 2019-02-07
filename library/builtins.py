@@ -45,6 +45,9 @@ class int(bootstrap=True):
     def __float__(self) -> float:
         pass
 
+    def __lshift__(self, n: int) -> int:
+        pass
+
     def __mul__(self, n: int) -> int:
         pass
 

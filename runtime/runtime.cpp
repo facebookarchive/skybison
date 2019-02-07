@@ -4204,14 +4204,25 @@ RawObject Runtime::intBinaryRshift(Thread* thread, const Int& num,
   return normalizeLargeInt(result);
 }
 
-RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num, word shift) {
-  DCHECK(shift >= 0, "shift count needs to be non-negative");
-  if (shift == 0 || (num->isSmallInt() && num->asWord() == 0)) {
+RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num,
+                                   const Int& amount) {
+  DCHECK(!amount->isNegative(), "shift amount must be non-negative");
+
+  word num_digits = num->numDigits();
+  if (num_digits == 1 && num->asWord() == 0) return RawSmallInt::fromWord(0);
+  CHECK(amount->numDigits() == 1, "lshift result is too large");
+
+  word amount_word = amount->asWord();
+  if (amount_word == 0) {
+    if (num->isBool()) {
+      return RawSmallInt::fromWord(RawBool::cast(*num)->value() ? 1 : 0);
+    }
     return *num;
   }
-  const word shift_bits = shift % kBitsPerWord;
-  const word shift_words = shift / kBitsPerWord;
-  const word high_digit = num->digitAt(num->numDigits() - 1);
+
+  word shift_bits = amount_word % kBitsPerWord;
+  word shift_words = amount_word / kBitsPerWord;
+  word high_digit = num->digitAt(num->numDigits() - 1);
 
   // check if high digit overflows when shifted - if we need an extra digit
   word bit_length =
@@ -4219,32 +4230,40 @@ RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num, word shift) {
   bool overflow = bit_length + shift_bits >= kBitsPerWord;
 
   // check if result fits into one word
-  if (num->numDigits() == 1 && (shift_words == 0 && !overflow)) {
+  word result_digits = num_digits + shift_words + overflow;
+  if (result_digits == 1) {
     return newInt(high_digit << shift_bits);
   }
 
   // allocate large int and zero-initialize low digits
-  const word num_digits = num->numDigits() + shift_words + overflow;
   HandleScope scope(thread);
-  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  LargeInt result(&scope, heap()->createLargeInt(result_digits));
   for (word i = 0; i < shift_words; i++) {
     result->digitAtPut(i, 0);
   }
 
   // iterate over digits of num and handle carrying
-  const word right_shift = kBitsPerWord - shift_bits;
-  uword prev = 0;
-  for (word i = 0; i < num->numDigits(); i++) {
-    const uword digit = num->digitAt(i);
-    result->digitAtPut(i + shift_words,
-                       (digit << shift_bits) + (prev >> right_shift));
-    prev = digit;
+  if (shift_bits == 0) {
+    for (word i = 0; i < num_digits; i++) {
+      result->digitAtPut(i + shift_words, num->digitAt(i));
+    }
+    DCHECK(!overflow, "overflow must be false with shift_bits==0");
+  } else {
+    word right_shift = kBitsPerWord - shift_bits;
+    uword prev = 0;
+    for (word i = 0; i < num_digits; i++) {
+      uword digit = num->digitAt(i);
+      uword result_digit = (digit << shift_bits) | (prev >> right_shift);
+      result->digitAtPut(i + shift_words, result_digit);
+      prev = digit;
+    }
+    if (overflow) {
+      // signed shift takes cares of keeping the sign
+      word overflow_digit = static_cast<word>(prev) >> right_shift;
+      result->digitAtPut(result_digits - 1, static_cast<uword>(overflow_digit));
+    }
   }
-  if (overflow) {
-    // signed shift takes cares of keeping the sign
-    word overflow_digit = static_cast<word>(prev) >> right_shift;
-    result->digitAtPut(num_digits - 1, static_cast<uword>(overflow_digit));
-  }
+  DCHECK(result->isValid(), "result must be valid");
   return *result;
 }
 

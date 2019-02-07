@@ -593,46 +593,198 @@ TEST(IntBuiltinsTest, DunderAndWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST(IntBuiltinsTest, DunderLshift) {
+TEST(IntBuiltinsTest, DunderLshiftWithBoolsTrueFalseReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
-a = 0b1101
-b = a << 3
-)");
-  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
-  ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*b)->value(), 0x68);  // 0b1101000
+  Object left(&scope, Bool::trueObj());
+  Object right(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithBoolsFalseTrueReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, Bool::falseObj());
+  Object right(&scope, Bool::trueObj());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 0);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithBoolSmallIntReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, Bool::trueObj());
+  Object right(&scope, runtime.newInt(kBitsPerWord));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  Int result(&scope, *result_obj);
+  Int expected(&scope, newIntWithDigits(&runtime, {0, 1}));
+  EXPECT_EQ(expected->compare(*result), 0);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(0xd));  // 0b1101
+  Object right(&scope, runtime.newInt(3));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 0x68);  // 0b1101000
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithNegativeSmallIntReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(-2));
+  Object right(&scope, runtime.newInt(1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), -4);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithZeroReturnsZero) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(0));
+  Object right(&scope, newIntWithDigits(&runtime, {1, 2, 3, 4}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 0);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithBigSmallIntReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(RawSmallInt::kMaxValue >> 1));
+  Object right(&scope, runtime.newInt(1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), RawSmallInt::kMaxValue - 1);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithBigNegativeSmallIntReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(RawSmallInt::kMinValue >> 1));
+  Object right(&scope, runtime.newInt(1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), RawSmallInt::kMinValue);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithSmallIntsReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(4));
+  Object right(&scope, runtime.newInt(kBitsPerWord - 4));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result_obj->isLargeInt());
+  LargeInt result(&scope, *result_obj);
+  EXPECT_EQ(result->numDigits(), 1);
+  EXPECT_EQ(result->digitAt(0), uword{1} << (kBitsPerWord - 2));
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithSmallIntsNegativeReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(-4));
+  Object right(&scope, runtime.newInt(kBitsPerWord - 3));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(&scope, newLargeIntWithDigits(
+                           {static_cast<uword>(-4) << (kBitsPerWord - 3)}));
+  EXPECT_EQ(expected->compare(RawInt::cast(*result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithSmallIntOverflowReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(4));
+  Object right(&scope, runtime.newInt(kBitsPerWord - 3));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(&scope,
+               newLargeIntWithDigits({uword{1} << (kBitsPerWord - 1), 0}));
+  EXPECT_EQ(expected->compare(RawInt::cast(*result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithNegativeSmallIntOverflowReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(-4));
+  Object right(&scope, runtime.newInt(kBitsPerWord - 2));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(&scope, newLargeIntWithDigits({0, kMaxUword}));
+  EXPECT_EQ(expected->compare(RawInt::cast(*result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithLargeIntReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(&runtime, {1, 1}));
+  Object right(&scope, runtime.newInt(2 * kBitsPerWord + 2));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(&scope, newIntWithDigits(&runtime, {0, 0, 4, 4}));
+  EXPECT_EQ(expected->compare(RawInt::cast(*result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithNegativeLargeIntReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope,
+              newIntWithDigits(&runtime, {kMaxUword - 1, kMaxUword - 1}));
+  Object right(&scope, runtime.newInt(2 * kBitsPerWord + 2));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(
+      &scope, newIntWithDigits(&runtime, {0, 0, kMaxUword - 7, kMaxUword - 4}));
+  EXPECT_EQ(expected->compare(RawInt::cast(*result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithLargeIntWholeWordReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(
+                          &runtime, {0xfe84754526de453c, 0x47e8218b97f94763}));
+  Object right(&scope, runtime.newInt(kBitsPerWord * 2));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  ASSERT_TRUE(result->isLargeInt());
+  Int expected(&scope, newIntWithDigits(&runtime, {0, 0, 0xfe84754526de453c,
+                                                   0x47e8218b97f94763}));
+  EXPECT_EQ(expected->compare(RawInt::cast(*result)), 0);
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithNegativeShiftAmountRaiseValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(0));
+  Object right(&scope, runtime.newInt(-1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  EXPECT_TRUE(
+      raisedWithStr(*result, LayoutId::kValueError, "negative shift count"));
+}
+
+TEST(IntBuiltinsTest, DunderLshiftWithNonIntSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, runtime.newInt(0));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, DunderLshiftWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "a = int.__lshift__(10, '')");
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_TRUE(a->isNotImplemented());
-}
-
-TEST(IntBuiltinsTest, DunderLshiftWithInvalidArgumentRaisesException) {
-  Runtime runtime;
-  Thread* thread = Thread::currentThread();
-
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "a = 10 << ''"),
-                            LayoutId::kTypeError,
-                            "'__lshift__' is not supported"));
-  thread->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "a = int.__lshift__('', 3)"),
-                            LayoutId::kTypeError,
-                            "'__lshift__' requires a 'int' object"));
-  thread->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "a = 10 << -3"),
-                            LayoutId::kValueError, "negative shift count"));
-  thread->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "a = 10 << (1 << 100)"),
-                            LayoutId::kOverflowError, "shift count too large"));
+  Object left(&scope, runtime.newInt(0));
+  Object right(&scope, runtime.newStrFromCStr(""));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  EXPECT_TRUE(result->isNotImplemented());
 }
 
 TEST(IntBuiltinsTest, DunderMulWithSmallIntsReturnsSmallInt) {

@@ -29,7 +29,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
     {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
-    {SymbolId::kDunderLshift, nativeTrampoline<dunderLshift>},
+    {SymbolId::kDunderLshift, builtinTrampolineWrapper<dunderLshift>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
@@ -946,31 +946,25 @@ RawObject IntBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
+  HandleScope scope(thread);
   Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
-  HandleScope scope;
-  Object self(&scope, args.get(0));
-  Object arg(&scope, args.get(1));
-  if (!self->isInt()) {
+  if (!runtime->isInstanceOfInt(*self_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "'__lshift__' requires a 'int' object");
   }
-  if (arg->isInt()) {
-    Int arg_int(&scope, *arg);
-    if (arg_int->isNegative()) {
+  if (runtime->isInstanceOfInt(*other_obj)) {
+    Int self(&scope, *self_obj);
+    Int other(&scope, *other_obj);
+    if (other->isNegative()) {
       return thread->raiseValueErrorWithCStr("negative shift count");
     }
-    if (arg_int->isLargeInt()) {
-      return thread->raiseOverflowErrorWithCStr("shift count too large");
-    }
-    Int self_int(&scope, *self);
-    return runtime->intBinaryLshift(thread, self_int, arg_int->asWord());
+    return runtime->intBinaryLshift(thread, self, other);
   }
-  // signal to binary dispatch to try another method
-  return thread->runtime()->notImplemented();
+  // Signal binary dispatch to try another method.
+  return runtime->notImplemented();
 }
 
 RawObject SmallIntBuiltins::dunderRepr(Thread* thread, Frame* frame,
