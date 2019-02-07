@@ -471,6 +471,45 @@ a ^= 0x03
   EXPECT_EQ(RawSmallInt::cast(*b)->value(), 0xFE);
 }
 
+TEST(IntBuiltinsTest, DunderAbsWithBoolFalseReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int self(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 0);
+}
+
+TEST(IntBuiltinsTest, DunderAbsWithBoolTrueReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int self(&scope, Bool::trueObj());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1);
+}
+
+TEST(IntBuiltinsTest, DunderAbsWithPositiveIntReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int self(&scope, runtime.newInt(1234));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1234);
+}
+
+TEST(IntBuiltinsTest, DunderAbsWithNegativeIntReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Int self(&scope, newIntWithDigits(&runtime,
+                                    {0x154a0071b091fb7e, 0x9661bb54b4e68c59}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
+  ASSERT_TRUE(result->isInt());
+  Int expected(&scope, newIntWithDigits(
+                           &runtime, {0xeab5ff8e4f6e0482, 0x699e44ab4b1973a6}));
+  EXPECT_EQ(expected->compare(RawInt::cast(*result)), 0);
+}
+
 TEST(IntBuiltinsTest, DunderAddWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;

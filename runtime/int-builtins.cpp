@@ -21,6 +21,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderIndex, builtinTrampolineWrapper<dunderInt>},
     {SymbolId::kDunderInt, builtinTrampolineWrapper<dunderInt>},
     {SymbolId::kBitLength, nativeTrampoline<bitLength>},
+    {SymbolId::kDunderAbs, builtinTrampolineWrapper<dunderAbs>},
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
     {SymbolId::kDunderBool, nativeTrampoline<dunderBool>},
@@ -204,6 +205,18 @@ RawObject IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
         "bit_length() must be called with int instance as the first argument");
   }
   return SmallInt::fromWord(RawInt::cast(self)->bitLength());
+}
+
+RawObject IntBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__abs__' requires a 'int' object");
+  }
+  Int self(&scope, *self_obj);
+  return self->isNegative() ? thread->runtime()->intNegate(thread, self)
+                            : asInt(self);
 }
 
 RawObject IntBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {

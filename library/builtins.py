@@ -39,6 +39,9 @@ class bool(bootstrap=True):
 
 
 class int(bootstrap=True):
+    def __abs__(self) -> int:
+        pass
+
     def __add__(self, n: int) -> int:
         pass
 

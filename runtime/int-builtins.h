@@ -21,6 +21,7 @@ class IntBuiltins {
   static void initialize(Runtime* runtime);
 
   static RawObject bitLength(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderAbs(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderBool(Thread* thread, Frame* frame, word nargs);
