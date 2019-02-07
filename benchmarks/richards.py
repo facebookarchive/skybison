@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 based on a Java version:
  Based on original version written in BCPL by Dr Martin Richards
@@ -29,7 +30,6 @@ BUFSIZE_RANGE = range(BUFSIZE)
 
 
 class Packet(object):
-
     def __init__(self, l, i, k):
         self.link = l
         self.ident = i
@@ -50,6 +50,7 @@ class Packet(object):
             p.link = self
             return lst
 
+
 # Task Records
 
 
@@ -58,20 +59,17 @@ class TaskRec(object):
 
 
 class DeviceTaskRec(TaskRec):
-
     def __init__(self):
         self.pending = None
 
 
 class IdleTaskRec(TaskRec):
-
     def __init__(self):
         self.control = 1
         self.count = 10000
 
 
 class HandlerTaskRec(TaskRec):
-
     def __init__(self):
         self.work_in = None
         self.device_in = None
@@ -86,15 +84,15 @@ class HandlerTaskRec(TaskRec):
 
 
 class WorkerTaskRec(TaskRec):
-
     def __init__(self):
         self.destination = I_HANDLERA
         self.count = 0
+
+
 # Task
 
 
 class TaskState(object):
-
     def __init__(self):
         self.packet_pending = True
         self.task_waiting = False
@@ -150,14 +148,13 @@ def trace(a):
     if layout <= 0:
         print()
         layout = 50
-    print(a, end='')
+    print(a, end="")
 
 
 TASKTABSIZE = 10
 
 
 class TaskWorkArea(object):
-
     def __init__(self):
         self.taskTab = [None] * TASKTABSIZE
 
@@ -171,7 +168,6 @@ taskWorkArea = TaskWorkArea()
 
 
 class Task(TaskState):
-
     def __init__(self, i, p, w, initialState, r):
         self.link = taskWorkArea.taskList
         self.ident = i
@@ -248,7 +244,6 @@ class Task(TaskState):
 
 
 class DeviceTask(Task):
-
     def __init__(self, i, p, w, s, r):
         Task.__init__(self, i, p, w, s, r)
 
@@ -270,7 +265,6 @@ class DeviceTask(Task):
 
 
 class HandlerTask(Task):
-
     def __init__(self, i, p, w, s, r):
         Task.__init__(self, i, p, w, s, r)
 
@@ -299,11 +293,11 @@ class HandlerTask(Task):
         work.datum = count + 1
         return self.qpkt(dev)
 
+
 # IdleTask
 
 
 class IdleTask(Task):
-
     def __init__(self, i, p, w, s, r):
         Task.__init__(self, i, 0, None, s, r)
 
@@ -317,18 +311,17 @@ class IdleTask(Task):
             i.control //= 2
             return self.release(I_DEVA)
         else:
-            i.control = i.control // 2 ^ 0xd008
+            i.control = i.control // 2 ^ 0xD008
             return self.release(I_DEVB)
 
 
 # WorkTask
 
 
-A = ord('A')
+A = ord("A")
 
 
 class WorkTask(Task):
-
     def __init__(self, i, p, w, s, r):
         Task.__init__(self, i, p, w, s, r)
 
@@ -371,9 +364,8 @@ def schedule():
 
 
 class Richards(object):
-
     def run(self, iterations):
-        for i in range(iterations):
+        for _i in range(iterations):
             taskWorkArea.holdCount = 0
             taskWorkArea.qpktCount = 0
 
@@ -381,26 +373,27 @@ class Richards(object):
 
             wkq = Packet(None, 0, K_WORK)
             wkq = Packet(wkq, 0, K_WORK)
-            WorkTask(I_WORK, 1000, wkq, TaskState(
-            ).waitingWithPacket(), WorkerTaskRec())
+            WorkTask(
+                I_WORK, 1000, wkq, TaskState().waitingWithPacket(), WorkerTaskRec()
+            )
 
             wkq = Packet(None, I_DEVA, K_DEV)
             wkq = Packet(wkq, I_DEVA, K_DEV)
             wkq = Packet(wkq, I_DEVA, K_DEV)
-            HandlerTask(I_HANDLERA, 2000, wkq, TaskState(
-            ).waitingWithPacket(), HandlerTaskRec())
+            HandlerTask(
+                I_HANDLERA, 2000, wkq, TaskState().waitingWithPacket(), HandlerTaskRec()
+            )
 
             wkq = Packet(None, I_DEVB, K_DEV)
             wkq = Packet(wkq, I_DEVB, K_DEV)
             wkq = Packet(wkq, I_DEVB, K_DEV)
-            HandlerTask(I_HANDLERB, 3000, wkq, TaskState(
-            ).waitingWithPacket(), HandlerTaskRec())
+            HandlerTask(
+                I_HANDLERB, 3000, wkq, TaskState().waitingWithPacket(), HandlerTaskRec()
+            )
 
             wkq = None
-            DeviceTask(I_DEVA, 4000, wkq,
-                       TaskState().waiting(), DeviceTaskRec())
-            DeviceTask(I_DEVB, 5000, wkq,
-                       TaskState().waiting(), DeviceTaskRec())
+            DeviceTask(I_DEVA, 4000, wkq, TaskState().waiting(), DeviceTaskRec())
+            DeviceTask(I_DEVB, 5000, wkq, TaskState().waiting(), DeviceTaskRec())
 
             schedule()
             if taskWorkArea.holdCount == 9297 and taskWorkArea.qpktCount == 23246:
@@ -411,5 +404,6 @@ class Richards(object):
 
         return True
 
+
 richards = Richards()
-richards.run(1)
+richards.run(5)
