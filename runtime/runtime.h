@@ -384,11 +384,13 @@ class Runtime {
   // PYRO_COMPILE_CACHE is set in the environment or ~/.pyro-compile-cache is a
   // writable directory, the result will be cached on disk to speed up future
   // calls with the same source.
-  static std::unique_ptr<char[]> compile(const char* src);
+  static std::unique_ptr<char[]> compile(View<char> src);
+
+  static std::unique_ptr<char[]> compileFromCStr(const char* src);
 
   // Like compile(), but bypass the cache and return the length of the resuling
   // buffer in len.
-  static std::unique_ptr<char[]> compileWithLen(const char* src, word* len);
+  static std::unique_ptr<char[]> compileWithLen(View<char> src, word* len);
 
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.

@@ -12,17 +12,15 @@ using namespace testing;
 
 TEST(CallTest, CallBoundMethod) {
   Runtime runtime;
-
-  const char* src = R"(
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
 def func(self):
   print(self)
 
 def test(callable):
   return callable()
-)";
-  runFromCStr(&runtime, src);
+)");
 
-  HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
@@ -43,17 +41,15 @@ def test(callable):
 
 TEST(CallTest, CallBoundMethodWithArgs) {
   Runtime runtime;
-
-  const char* src = R"(
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
 def func(self, a, b):
   print(self, a, b)
 
 def test(callable):
   return callable(2222, 3333)
-)";
-  runFromCStr(&runtime, src);
+)");
 
-  HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
@@ -74,8 +70,8 @@ def test(callable):
 
 TEST(CallTest, CallBoundMethodKw) {
   Runtime runtime;
-
-  const char* src = R"(
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -88,10 +84,8 @@ def func(self, a, b):
 
 def test(callable):
   return callable(a=2222, b=3333)
-)";
-  runFromCStr(&runtime, src);
+)");
 
-  HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
@@ -121,8 +115,8 @@ def test(callable):
 
 TEST(CallTest, CallBoundMethodExArgs) {
   Runtime runtime;
-
-  const char* src = R"(
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -136,10 +130,8 @@ def func(self, a, b):
 def test(callable):
   args = (2222, 3333)
   return callable(*args)
-)";
-  runFromCStr(&runtime, src);
+)");
 
-  HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
@@ -169,8 +161,8 @@ def test(callable):
 
 TEST(CallTest, CallBoundMethodExKwargs) {
   Runtime runtime;
-
-  const char* src = R"(
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -184,10 +176,8 @@ def func(self, a, b):
 def test(callable):
   kwargs = {'a': 2222, 'b': 3333}
   return callable(**kwargs)
-)";
-  runFromCStr(&runtime, src);
+)");
 
-  HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
@@ -217,8 +207,8 @@ def test(callable):
 
 TEST(CallTest, CallBoundMethodExArgsAndKwargs) {
   Runtime runtime;
-
-  const char* src = R"(
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -233,10 +223,8 @@ def test(callable):
   args = (2222,)
   kwargs = {'b': 3333}
   return callable(*args, **kwargs)
-)";
-  runFromCStr(&runtime, src);
+)");
 
-  HandleScope scope;
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
   ASSERT_TRUE(function->isFunction());
@@ -266,9 +254,7 @@ def test(callable):
 
 TEST(CallTest, CallDefaultArgs) {
   Runtime runtime;
-  HandleScope scope;
-
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a=1, b=2, c=3):
   print(a, b, c)
 
@@ -278,9 +264,7 @@ foo()
 foo(1001)
 foo(1001, 1002)
 foo(1001, 1002, 1003)
-)";
-
-  std::string output = compileAndRunToString(&runtime, src);
+)");
   EXPECT_EQ(output, R"(
 33 22 11
 1 2 3
@@ -291,283 +275,237 @@ foo(1001, 1002, 1003)
 }
 
 TEST(CallTest, CallMethodMixPosDefaultArgs) {
-  const char* src = R"(
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a, b=2):
   print(a, b)
 foo(1)
-)";
-
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+)");
   EXPECT_EQ(output, "1 2\n");
 }
 
 TEST(CallTest, CallBoundMethodMixed) {
-  const char* src = R"(
+  Runtime runtime;
+  std::string output = compileAndRunToString(&runtime, R"(
 class R:
   def __init__(self, a, b=2):
     print(a, b)
 a = R(9)
-)";
-
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+)");
   EXPECT_EQ(output, "9 2\n");
 }
 
 TEST(CallTest, SingleKW) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(bar):
    print('bar =',bar)
 foo(bar=2)
-)";
-  const char* expected = "bar = 2\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "bar = 2\n");
 }
 
 TEST(CallTest, MixedKW) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a, b, c):
    print(a, b, c)
 foo(1, b = 2, c = 3)
-)";
-  const char* expected = "1 2 3\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3\n");
 }
 
 TEST(CallTest, FullKW) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a, b, c):
    print(a, b, c)
 foo(a = 1, b = 2, c = 3)
-)";
-  const char* expected = "1 2 3\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3\n");
 }
 
 TEST(CallTest, KWOutOfOrder1) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a, b, c):
    print(a, b, c)
 foo(c = 3, a = 1, b = 2)
-)";
-  const char* expected = "1 2 3\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3\n");
 }
 
 TEST(CallTest, KWOutOfOrder2) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a, b, c):
    print(a, b, c)
 foo(1, c = 3, b = 2)
-)";
-  const char* expected = "1 2 3\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3\n");
 }
 
 TEST(CallTest, KeywordOnly1) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a,b, *, c):
   print(a,b,c)
 foo(1, 2, c = 3);
-)";
-  const char* expected = "1 2 3\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3\n");
 }
 
 TEST(CallTest, KeywordOnly2) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a,b, *, c):
   print(a,b,c)
 foo(1, b = 2, c = 3);
-)";
-  const char* expected = "1 2 3\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3\n");
 }
 
 TEST(CallTest, KeyWordDefaults) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a, b = 22, c = 33):
   print(a,b,c)
 foo(11, c = 3);
-)";
-  const char* expected = "11 22 3\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "11 22 3\n");
 }
 
 TEST(CallTest, VarArgsWithExcess) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a, b, *c):
   print(a,b,c)
 foo(1,2,3,4,5,6);
-)";
-  const char* expected = "1 2 (3, 4, 5, 6)\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 (3, 4, 5, 6)\n");
 }
 
 TEST(CallTest, VarArgsEmpty) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a, b, *c):
   print(a,b,c)
 foo(1,2);
-)";
-  const char* expected = "1 2 ()\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 ()\n");
 }
 
 TEST(CallTest, CallWithKeywordsCalleeWithVarkeyword) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a,b,c,**d):
     print(a,b,c,d)
 foo(1,2,c=3,g=4,h=5,i=6,j="bar")
-)";
-  const char* expected = "1 2 3 {'g': 4, 'h': 5, 'i': 6, 'j': 'bar'}\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3 {'g': 4, 'h': 5, 'i': 6, 'j': 'bar'}\n");
 }
 
 TEST(CallTest, CallWithNoArgsCalleeDefaultArgsVarargsVarkeyargs) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def bar(a=1, b=2, *c, **d):
     print(a,b,c,d)
 bar()
-)";
-  const char* expected = "1 2 () {}\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 () {}\n");
 }
 
 TEST(CallTest, CallPositionalCalleeVargsEmptyVarkeyargs) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def bar(a=1, b=2, *c, **d):
     print(a,b,c,d)
 bar(1,2,3,4,5,6,7)
-)";
-  const char* expected = "1 2 (3, 4, 5, 6, 7) {}\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 (3, 4, 5, 6, 7) {}\n");
 }
 
 TEST(CallTest, CallWithKeywordsCalleeEmptyVarargsFullVarkeyargs) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def bar(a=1, b=2, *c, **d):
     print(a,b,c,d)
 bar(a1=11, a2=12, a3=13)
-)";
-  const char* expected = "1 2 () {'a1': 11, 'a2': 12, 'a3': 13}\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 () {'a1': 11, 'a2': 12, 'a3': 13}\n");
 }
 
 TEST(CallTest, CallWithKeywordsCalleeFullVarargsFullVarkeyargs) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def bar(a=1, b=2, *c, **d):
     print(a,b,c,d)
 bar(1,2,3,4,5,6,7,a9=9)
-)";
-  const char* expected = "1 2 (3, 4, 5, 6, 7) {'a9': 9}\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 (3, 4, 5, 6, 7) {'a9': 9}\n");
 }
 
 TEST(CallTest, CallWithOutOfOrderKeywords) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foobar(a,b,*,c):
     print(a,b,c)
 foobar(c=3,a=1,b=2)
-)";
-  const char* expected = "1 2 3\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3\n");
 }
 
 TEST(CallTest, CallWithKeywordsCalleeVarargsKeywordOnly) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foobar1(a,b,*c,d):
     print(a,b,c,d)
 foobar1(1,2,3,4,5,d=9)
-)";
-  const char* expected = "1 2 (3, 4, 5) 9\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 (3, 4, 5) 9\n");
 }
 
 TEST(CallTest, CallWithKeywordsCalleeVarargsVarkeyargsKeywordOnly) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foobar2(a,b,*c, e, **d):
     print(a,b,c,d,e)
 foobar2(1,e=9,b=2,f1="a",f11=12)
-)";
-  const char* expected = "1 2 () {'f1': 'a', 'f11': 12} 9\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 () {'f1': 'a', 'f11': 12} 9\n");
 }
 
 TEST(CallTest, CallEx) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a,b,c,d):
     print(a,b,c,d)
 a = (1,2,3,4)
 foo(*a)
-)";
-  const char* expected = "1 2 3 4\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3 4\n");
 }
 
 TEST(CallTest, CallExBuildTupleUnpackWithCall) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a,b,c,d):
     print(a,b,c,d)
 a = (3,4)
 foo(1,2,*a)
-)";
-  const char* expected = "1 2 3 4\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3 4\n");
 }
 
 TEST(CallTest, CallExKw) {
   Runtime runtime;
-  const char* src = R"(
+  std::string output = compileAndRunToString(&runtime, R"(
 def foo(a,b,c,d):
     print(a,b,c,d)
 a = {'d': 4, 'b': 2, 'a': 1, 'c': 3}
 foo(**a)
-)";
-  const char* expected = "1 2 3 4\n";
-  std::string result = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(result, expected);
+)");
+  EXPECT_EQ(output, "1 2 3 4\n");
 }
 
 TEST(CallTest, KeywordOnly) {
@@ -577,7 +515,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, 2, 3);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
   EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
@@ -588,7 +526,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, 2);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
   EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
@@ -599,7 +537,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, d = 2, c = 3);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
   EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
@@ -610,7 +548,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, 2, 4, c = 3);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
   EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
@@ -621,7 +559,7 @@ def foo(a,b, c):
   print(a,b,c)
 foo(1, 2, 3, 4);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
   EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 
@@ -632,7 +570,7 @@ def foo(a,b, c):
   print(a,b,c)
 foo(3, 4);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compile(src));
+  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
   EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
 }
 

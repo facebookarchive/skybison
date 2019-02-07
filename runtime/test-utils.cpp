@@ -349,7 +349,7 @@ RawObject newEmptyCode(Runtime* runtime) {
 }
 
 RawObject runFromCStr(Runtime* runtime, const char* c_str) {
-  return runtime->run(Runtime::compile(c_str).get());
+  return runtime->run(Runtime::compileFromCStr(c_str).get());
 }
 
 // Equivalent to evaluating "list(range(start, stop))" in Python

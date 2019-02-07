@@ -3,6 +3,7 @@
 
 #include "runtime/os.h"
 #include "runtime/runtime.h"
+#include "runtime/view.h"
 
 int main(int argc, const char** argv) {
   if (argc < 2) {
@@ -11,7 +12,8 @@ int main(int argc, const char** argv) {
   python::Runtime runtime;
   runtime.setArgv(argc, argv);
   const char* file_name = argv[1];
-  std::unique_ptr<char[]> buffer(python::OS::readFile(file_name));
+  word file_len;
+  std::unique_ptr<char[]> buffer(python::OS::readFile(file_name, &file_len));
   if (buffer.get() == nullptr) {
     std::exit(EXIT_FAILURE);
   }
@@ -26,7 +28,8 @@ int main(int argc, const char** argv) {
     }
   }
   if (is_source) {
-    buffer = python::Runtime::compile(buffer.get());
+    buffer =
+        python::Runtime::compile(python::View<char>(buffer.get(), file_len));
   }
 
   // TODO(T39499894): Move this code into PyErr_PrintEx(), rewrite this whole

@@ -2336,14 +2336,19 @@ void Runtime::listAdd(const List& list, const Object& value) {
   list->atPut(index, *value);
 }
 
-std::unique_ptr<char[]> Runtime::compile(const char* src) {
+std::unique_ptr<char[]> Runtime::compileFromCStr(const char* src) {
+  size_t len = strlen(src);
+  return compile(View<char>(src, static_cast<word>(len)));
+}
+
+std::unique_ptr<char[]> Runtime::compile(View<char> src) {
   // increment this if you change the caching code, to invalidate existing
   // cache entries.
   uint64_t seed[2] = {0, 1};
   word hash = 0;
 
   // Hash the input.
-  ::siphash(reinterpret_cast<const uint8_t*>(src), strlen(src),
+  ::siphash(reinterpret_cast<const uint8_t*>(src.data()), src.length(),
             reinterpret_cast<const uint8_t*>(seed),
             reinterpret_cast<uint8_t*>(&hash), sizeof(hash));
 
@@ -2379,14 +2384,14 @@ std::unique_ptr<char[]> Runtime::compile(const char* src) {
   return result;
 }
 
-std::unique_ptr<char[]> Runtime::compileWithLen(const char* src, word* len) {
+std::unique_ptr<char[]> Runtime::compileWithLen(View<char> src, word* len) {
   std::unique_ptr<char[]> tmp_dir(OS::temporaryDirectory("python-tests"));
   const std::string dir(tmp_dir.get());
   const std::string py = dir + "/foo.py";
   const std::string pyc = dir + "/foo.pyc";
   const std::string cleanup = "rm -rf " + dir;
   std::ofstream output(py);
-  output << src;
+  output.write(src.data(), src.length());
   output.close();
   const std::string command =
       "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6 -m compileall -q -b " +

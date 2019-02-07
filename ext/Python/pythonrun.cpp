@@ -10,7 +10,7 @@ PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
   }
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
-  runtime->run(Runtime::compile(str).get());
+  runtime->run(Runtime::compileFromCStr(str).get());
   if (!thread->hasPendingException()) return 0;
 
   // TODO(T36745559): handle exceptions and add tests once we have exception

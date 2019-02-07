@@ -308,7 +308,8 @@ RawObject Builtins::chr(Thread* thread, Frame* frame_frame, word nargs) {
 static RawObject compileStr(Thread* thread, const Str& source) {
   HandleScope scope(thread);
   unique_c_ptr<char[]> source_str(source->toCStr());
-  std::unique_ptr<char[]> bytecode_str(Runtime::compile(source_str.get()));
+  std::unique_ptr<char[]> bytecode_str(
+      Runtime::compileFromCStr(source_str.get()));
   source_str.reset();
   Marshal::Reader reader(&scope, thread->runtime(), bytecode_str.get());
   reader.readLong();  // magic
