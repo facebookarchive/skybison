@@ -45,6 +45,12 @@ class int(bootstrap=True):
     def __float__(self) -> float:
         pass
 
+    def __index__(self) -> int:
+        pass
+
+    def __int__(self) -> int:
+        pass
+
     def __lshift__(self, n: int) -> int:
         pass
 

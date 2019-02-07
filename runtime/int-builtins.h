@@ -49,6 +49,7 @@ class IntBuiltins {
   static RawObject toBytesKw(Thread* thread, Frame* frame, word nargs);
 
  private:
+  static RawObject asInt(const Int& value);
   static const BuiltinMethod kMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntBuiltins);

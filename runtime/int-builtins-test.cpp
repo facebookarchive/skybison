@@ -1632,6 +1632,35 @@ b = int.__index__(7)
   EXPECT_EQ(7, RawSmallInt::cast(*b)->value());
 }
 
+TEST(IntBuiltinsTest, DunderIntWithBoolFalseReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Object self(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderInt, self));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 0);
+}
+
+TEST(IntBuiltinsTest, DunderIntWithBoolTrueReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Object self(&scope, Bool::trueObj());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderInt, self));
+  ASSERT_TRUE(result->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1);
+}
+
+TEST(IntBuiltinsTest, DunderIntWithSmallIntReturnsSame) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Object self(&scope, RawSmallInt::fromWord(7));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderInt, self));
+  EXPECT_EQ(self, result);
+}
+
 TEST(IntBuiltinsTest, DunderIntReturnsSameValue) {
   Runtime runtime;
   HandleScope scope;
@@ -1650,21 +1679,6 @@ b = int.__int__(7)
   Str str(&scope, runtime.newStrFromCStr("python"));
   Object res(&scope, runBuiltin(IntBuiltins::dunderInt, str));
   EXPECT_TRUE(res->isError());
-}
-
-TEST(IntBuiltinsTest, DunderIntOnBool) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Object true_obj(&scope, Bool::trueObj());
-  Object a(&scope, runBuiltin(IntBuiltins::dunderInt, true_obj));
-  ASSERT_TRUE(a->isSmallInt());
-  EXPECT_EQ(1, RawSmallInt::cast(*a)->value());
-
-  Object false_obj(&scope, Bool::falseObj());
-  Object b(&scope, runBuiltin(IntBuiltins::dunderInt, false_obj));
-  ASSERT_TRUE(b->isSmallInt());
-  EXPECT_EQ(0, RawSmallInt::cast(*b)->value());
 }
 
 TEST(IntBuiltinsTest, DunderBoolOnBool) {

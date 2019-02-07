@@ -18,8 +18,8 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     // For ints, __index__ and __int__ have the same behavior so they are mapped
     // to the same function
-    {SymbolId::kDunderIndex, nativeTrampoline<dunderInt>},
-    {SymbolId::kDunderInt, nativeTrampoline<dunderInt>},
+    {SymbolId::kDunderIndex, builtinTrampolineWrapper<dunderInt>},
+    {SymbolId::kDunderInt, builtinTrampolineWrapper<dunderInt>},
     {SymbolId::kBitLength, nativeTrampoline<bitLength>},
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
@@ -57,6 +57,13 @@ void IntBuiltins::initialize(Runtime* runtime) {
       &scope, runtime->addEmptyBuiltinType(
                   SymbolId::kLargeInt, LayoutId::kLargeInt, LayoutId::kInt));
   largeint_type->setBuiltinBase(LayoutId::kInt);
+}
+
+RawObject IntBuiltins::asInt(const Int& value) {
+  if (value->isBool()) {
+    return RawSmallInt::fromWord(RawBool::cast(*value)->value() ? 1 : 0);
+  }
+  return *value;
 }
 
 RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
@@ -148,27 +155,14 @@ RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
 }
 
 RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1) {
-    return thread->raiseTypeErrorWithCStr("not enough arguments");
-  }
-  if (nargs > 1) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "expected 0 arguments, %ld given", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object arg(&scope, args.get(0));
-  if (arg->isBool()) {
-    return intFromBool(*arg);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__int__' requires a 'int' object");
   }
-  if (arg->isInt()) {
-    return *arg;
-  }
-  if (thread->runtime()->isInstanceOfInt(*arg)) {
-    UNIMPLEMENTED("Strict subclass of int");
-  }
-  return thread->raiseTypeErrorWithCStr(
-      "object cannot be interpreted as an integer");
+  Int self(&scope, *self_obj);
+  return asInt(self);
 }
 
 const BuiltinMethod SmallIntBuiltins::kMethods[] = {
