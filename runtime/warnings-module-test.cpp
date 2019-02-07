@@ -29,7 +29,7 @@ result = _warnings.warn("something went wrong")
   EXPECT_TRUE(result->isNoneType());
 }
 
-TEST(WarningsModuleTest, WarnWithNoArgsRaises) {
+TEST(WarningsModuleTest, WarnWithNoArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, R"(
@@ -40,7 +40,7 @@ _warnings.warn()
       "TypeError: 'warn' takes min 1 positional arguments but 0 given"));
 }
 
-TEST(WarningsModuleTest, WarnWithInvalidCategoryRaises) {
+TEST(WarningsModuleTest, WarnWithInvalidCategoryRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 import _warnings
@@ -50,7 +50,7 @@ _warnings.warn("warning!", 1234)
                             "category must be a Warning subclass"));
 }
 
-TEST(WarningsModuleTest, WarnWithLargeStacklevelRaises) {
+TEST(WarningsModuleTest, WarnWithLargeStacklevelRaisesOverflowError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 import _warnings
@@ -60,7 +60,7 @@ _warnings.warn("hello", stacklevel=1180591620717411303424)  # 2 ** 70
                             "Python int too large to convert to C ssize_t"));
 }
 
-TEST(WarningsModuleTest, WarnWithInvalidKwRaises) {
+TEST(WarningsModuleTest, WarnWithInvalidKwRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 import _warnings

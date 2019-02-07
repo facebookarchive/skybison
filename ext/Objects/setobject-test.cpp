@@ -202,7 +202,7 @@ TEST_F(SetExtensionApiTest, SizeWithFrozenSetDoesNotRaiseSystemError) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(SetExtensionApiTest, ClearWithNonSetThrows) {
+TEST_F(SetExtensionApiTest, ClearWithNonSetRaisesSystemError) {
   ASSERT_EQ(PySet_Clear(Py_None), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));

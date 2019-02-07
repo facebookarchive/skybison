@@ -174,7 +174,7 @@ c = a + b
   EXPECT_EQ(RawFloat::cast(*c)->value(), 3.5);
 }
 
-TEST(FloatBuiltinsTest, AddWithNonFloatSelfThrows) {
+TEST(FloatBuiltinsTest, AddWithNonFloatSelfRaisesTypeError) {
   const char* src = R"(
 float.__add__(None, 1.0)
 )";
@@ -184,7 +184,7 @@ float.__add__(None, 1.0)
       "__add__() must be called with float instance as first argument"));
 }
 
-TEST(FloatBuiltinsTest, AddWithNonFloatOtherThrows) {
+TEST(FloatBuiltinsTest, AddWithNonFloatOtherRaisesTypeError) {
   const char* src = R"(
 1.0 + None
 )";
@@ -340,7 +340,7 @@ b = float.__new__(float, "-1.18973e+4932")
   EXPECT_EQ(b->value(), -std::numeric_limits<double>::infinity());
 }
 
-TEST(FloatBuiltinsTest, SubWithNonFloatSelfThrows) {
+TEST(FloatBuiltinsTest, SubWithNonFloatSelfRaisesTypeError) {
   const char* src = R"(
 float.__sub__(None, 1.0)
 )";
@@ -398,7 +398,7 @@ x **= 4
   EXPECT_EQ(result->value(), 16.0);
 }
 
-TEST(FloatBuiltinsTest, FloatNewWithDunderFloatReturnsStringThrows) {
+TEST(FloatBuiltinsTest, FloatNewWithDunderFloatReturnsStringRaisesTypeError) {
   const char* src = R"(
 class Foo:
   def __float__(self):
@@ -410,7 +410,7 @@ a = float.__new__(Foo)
                             "float.__new__(X): X is not a subtype of float"));
 }
 
-TEST(FloatBuiltinsTest, DunderNewWithInvalidStringThrows) {
+TEST(FloatBuiltinsTest, DunderNewWithInvalidStringRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
 
@@ -421,7 +421,7 @@ a = float.__new__(float, "abc")
                             "could not convert string to float"));
 }
 
-TEST(FloatBuiltinsTest, SubWithNonFloatOtherThrows) {
+TEST(FloatBuiltinsTest, SubWithNonFloatOtherRaisesTypeError) {
   const char* src = R"(
 1.0 - None
 )";

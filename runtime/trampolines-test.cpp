@@ -813,7 +813,7 @@ TEST(TrampolineTest, BuiltinTrampolineKwPassesKwargs) {
   EXPECT_EQ(RawInt::cast(*result).asWord(), 12345);
 }
 
-TEST(TrampolineTest, BuiltinTrampolineKwWithInvalidArgRaises) {
+TEST(TrampolineTest, BuiltinTrampolineKwWithInvalidArgRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   createAndPatchBuiltinReturnSecondArg(&runtime);
@@ -954,7 +954,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
   EXPECT_EQ(Int::cast(result)->asWord(), 123);
 }
 
-TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsThrowsError) {
+TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
     return ApiHandle::newReference(Thread::currentThread(),
                                    SmallInt::fromWord(123));
@@ -988,7 +988,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsThrowsError) {
   EXPECT_EQ(exception_type->builtinBase(), LayoutId::kTypeError);
 }
 
-TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullThrowsError) {
+TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* { return nullptr; };
 
   Runtime runtime;
@@ -1017,7 +1017,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullThrowsError) {
   EXPECT_EQ(exception_type->builtinBase(), LayoutId::kSystemError);
 }
 
-TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsThrowsError) {
+TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
     return ApiHandle::newReference(Thread::currentThread(),
                                    SmallInt::fromWord(123));
@@ -1085,7 +1085,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
   EXPECT_EQ(Int::cast(result)->asWord(), 123);
 }
 
-TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsThrowsError) {
+TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
     return ApiHandle::newReference(Thread::currentThread(),
                                    SmallInt::fromWord(123));
@@ -1498,7 +1498,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
   EXPECT_EQ(Int::cast(result)->asWord(), 1111);
 }
 
-TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullThrowsError) {
+TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* { return nullptr; };
 
   Runtime runtime;
@@ -1563,7 +1563,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
   EXPECT_EQ(Int::cast(result)->asWord(), 1111);
 }
 
-TEST(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsThrowsError) {
+TEST(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
     return ApiHandle::newReference(Thread::currentThread(),
                                    SmallInt::fromWord(123));
@@ -1673,7 +1673,8 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
   EXPECT_EQ(Int::cast(result)->asWord(), 1111);
 }
 
-TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndKwThrowsError) {
+TEST(TrampolinesTest,
+     ExtensionModuleVarArgReceivesVarArgsAndKwRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
     return ApiHandle::newReference(Thread::currentThread(),
                                    SmallInt::fromWord(123));
@@ -1773,7 +1774,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
   EXPECT_EQ(Int::cast(result)->asWord(), 1111);
 }
 
-TEST(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesError) {
+TEST(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
   ternaryfunc func = [](PyObject*, PyObject*, PyObject*) -> PyObject* {
     return nullptr;
   };

@@ -155,28 +155,28 @@ a = str.__new__(str, "hello")
   EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
 }
 
-TEST(StrBuiltinsTest, DunderNewWithNoArgsThrows) {
+TEST(StrBuiltinsTest, DunderNewWithNoArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.__new__()"),
                             LayoutId::kTypeError,
                             "str.__new__(): not enough arguments"));
 }
 
-TEST(StrBuiltinsTest, DunderNewWithTooManyArgsThrows) {
+TEST(StrBuiltinsTest, DunderNewWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "str.__new__(str, 1, 2, 3, 4)"),
       LayoutId::kTypeError, "str() takes at most three arguments"));
 }
 
-TEST(StrBuiltinsTest, DunderNewWithNonTypeArgThrows) {
+TEST(StrBuiltinsTest, DunderNewWithNonTypeArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.__new__(1)"),
                             LayoutId::kTypeError,
                             "str.__new__(X): X is not a type object"));
 }
 
-TEST(StrBuiltinsTest, DunderNewWithNonSubtypeArgThrows) {
+TEST(StrBuiltinsTest, DunderNewWithNonSubtypeArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.__new__(object)"),
                             LayoutId::kTypeError,
@@ -833,7 +833,7 @@ a = ",".join(("1", "2", "3"))
   EXPECT_TRUE(isStrEqualsCStr(*a, "1,2,3"));
 }
 
-TEST(StrBuiltinsTest, JoinWithNonStringInArrayThrowsTypeError) {
+TEST(StrBuiltinsTest, JoinWithNonStringInArrayRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = ",".join(["hello", 1])
@@ -842,7 +842,7 @@ a = ",".join(["hello", 1])
                             "sequence item 1: expected str instance"));
 }
 
-TEST(StrBuiltinsTest, JoinWithNonStringSeparatorThrowsTypeError) {
+TEST(StrBuiltinsTest, JoinWithNonStringSeparatorRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = str.join(1, ["hello", 1])
@@ -1297,7 +1297,7 @@ l = "1,2,3,4".rsplit(",", 5)
   EXPECT_TRUE(isStrEqualsCStr(result->at(3), "4"));
 }
 
-TEST(StrBuiltinsTest, StrStripWithNoArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrStripWithNoArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.strip()
@@ -1306,7 +1306,7 @@ str.strip()
                             "str.strip() needs an argument"));
 }
 
-TEST(StrBuiltinsTest, StrLStripWithNoArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrLStripWithNoArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.lstrip()
@@ -1315,7 +1315,7 @@ str.lstrip()
                             "str.lstrip() needs an argument"));
 }
 
-TEST(StrBuiltinsTest, StrRStripWithNoArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrRStripWithNoArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.rstrip()
@@ -1324,7 +1324,7 @@ str.rstrip()
                             "str.rstrip() needs an argument"));
 }
 
-TEST(StrBuiltinsTest, StrStripTooManyArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrStripTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".strip(None, "test")
@@ -1333,7 +1333,7 @@ TEST(StrBuiltinsTest, StrStripTooManyArgsThrowsTypeError) {
                             "str.strip() takes at most 1 argument (2 given)"));
 }
 
-TEST(StrBuiltinsTest, StrLStripTooManyArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrLStripTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".lstrip(None, "test")
@@ -1342,7 +1342,7 @@ TEST(StrBuiltinsTest, StrLStripTooManyArgsThrowsTypeError) {
                             "str.lstrip() takes at most 1 argument (2 given)"));
 }
 
-TEST(StrBuiltinsTest, StrRStripTooManyArgsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrRStripTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".rstrip(None, "test")
@@ -1351,7 +1351,7 @@ TEST(StrBuiltinsTest, StrRStripTooManyArgsThrowsTypeError) {
                             "str.rstrip() takes at most 1 argument (2 given)"));
 }
 
-TEST(StrBuiltinsTest, StrStripWithNonStrThrowsTypeError) {
+TEST(StrBuiltinsTest, StrStripWithNonStrRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.strip(None)
@@ -1360,7 +1360,7 @@ str.strip(None)
                             "str.strip() requires a str object"));
 }
 
-TEST(StrBuiltinsTest, StrLStripWithNonStrThrowsTypeError) {
+TEST(StrBuiltinsTest, StrLStripWithNonStrRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.lstrip(None)
@@ -1369,7 +1369,7 @@ str.lstrip(None)
                             "str.lstrip() requires a str object"));
 }
 
-TEST(StrBuiltinsTest, StrRStripWithNonStrThrowsTypeError) {
+TEST(StrBuiltinsTest, StrRStripWithNonStrRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 str.rstrip(None)
@@ -1378,7 +1378,7 @@ str.rstrip(None)
                             "str.rstrip() requires a str object"));
 }
 
-TEST(StrBuiltinsTest, StrStripWithInvalidCharsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrStripWithInvalidCharsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".strip(1)
@@ -1387,7 +1387,7 @@ TEST(StrBuiltinsTest, StrStripWithInvalidCharsThrowsTypeError) {
                             "str.strip() arg must be None or str"));
 }
 
-TEST(StrBuiltinsTest, StrLStripWithInvalidCharsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrLStripWithInvalidCharsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".lstrip(1)
@@ -1396,7 +1396,7 @@ TEST(StrBuiltinsTest, StrLStripWithInvalidCharsThrowsTypeError) {
                             "str.lstrip() arg must be None or str"));
 }
 
-TEST(StrBuiltinsTest, StrRStripWithInvalidCharsThrowsTypeError) {
+TEST(StrBuiltinsTest, StrRStripWithInvalidCharsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 "test".rstrip(1)

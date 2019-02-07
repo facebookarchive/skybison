@@ -1930,7 +1930,7 @@ class Foo(metaclass=MyMeta):
   EXPECT_TRUE(isStrEqualsCStr(*result, "foo"));
 }
 
-TEST(InstanceAttributeTest, GetMissingAttributeThrowsAttributeError) {
+TEST(InstanceAttributeTest, GetMissingAttributeRaisesAttributeError) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo: pass
@@ -3394,7 +3394,7 @@ TEST(RuntimeTest, SealedClassLayoutDoesNotHaveSpaceForOverflowAttributes) {
   EXPECT_EQ(layout->instanceSize(), expected_set_size);
 }
 
-TEST(RuntimeTest, SettingNewAttributeOnSealedClassThrows) {
+TEST(RuntimeTest, SettingNewAttributeOnSealedClassRaisesAttributeError) {
   Runtime runtime;
   HandleScope scope;
   Set set(&scope, runtime.newSet());

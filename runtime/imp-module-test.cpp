@@ -30,7 +30,7 @@ TEST(ImportBuiltinsTest, CreateBuiltinWithoutArgsRaisesTypeError) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST(ImportBuiltinsTest, CreateBuiltinWithoutSpecNameRaisesTypeErrpr) {
+TEST(ImportBuiltinsTest, CreateBuiltinWithoutSpecNameRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Int foo(&scope, RawSmallInt::fromWord(123));
@@ -102,7 +102,7 @@ _imp.exec_dynamic("foo")
                "unimplemented: exec_dynamic");
 }
 
-TEST(ImportBuiltinsTest, ExtensionSuffixesWithoutArgsThrowsTypeError) {
+TEST(ImportBuiltinsTest, ExtensionSuffixesWithoutArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("foo"));
@@ -140,7 +140,7 @@ _imp.get_frozen_object("foo")
                "unimplemented: get_frozen_object");
 }
 
-TEST(ImportBuiltinsTest, IsBuiltinWithoutArgsThrowsTypeError) {
+TEST(ImportBuiltinsTest, IsBuiltinWithoutArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object result(&scope, runBuiltin(builtinImpIsBuiltin));
@@ -174,7 +174,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   EXPECT_EQ(Int::cast(*result)->asWord(), 1);
 }
 
-TEST(ImportBuiltinsTest, IsFrozenWithNoArgsThrowsTypeError) {
+TEST(ImportBuiltinsTest, IsFrozenWithNoArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object result(&scope, runBuiltin(builtinImpIsFrozen));

@@ -168,7 +168,7 @@ print(c1.x, c2.x)
   EXPECT_EQ(output, "24 42\n");
 }
 
-TEST(DescriptorBuiltinsTest, PropertyNoGetterThrowsAttributeErrorUnreadable) {
+TEST(DescriptorBuiltinsTest, PropertyNoGetterRaisesAttributeErrorUnreadable) {
   const char* src = R"(
 class C:
   def __init__(self, x):
@@ -188,7 +188,7 @@ c1.x
                             LayoutId::kAttributeError, "unreadable attribute"));
 }
 
-TEST(DescriptorBuiltinsTest, PropertyNoSetterThrowsAttributeErrorCannotModify) {
+TEST(DescriptorBuiltinsTest, PropertyNoSetterRaisesAttributeErrorCannotModify) {
   const char* src = R"(
 class C:
   def __init__(self, x):

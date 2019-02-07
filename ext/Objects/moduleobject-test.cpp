@@ -643,7 +643,7 @@ x = foo.noargs()
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(ModuleExtensionApiTest, MethodWithClassFlagThrowsException) {
+TEST_F(ModuleExtensionApiTest, MethodWithClassFlagRaisesException) {
   binaryfunc foo_func = [](PyObject*, PyObject*) {
     return PyLong_FromLong(10);
   };

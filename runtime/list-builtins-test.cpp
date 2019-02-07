@@ -72,14 +72,14 @@ c = a + b
   EXPECT_EQ(RawSmallInt::cast(list->at(2))->value(), 3);
 }
 
-TEST(ListBuiltinsTest, AddWithNonListSelfThrows) {
+TEST(ListBuiltinsTest, AddWithNonListSelfRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "list.__add__(None, [])"), LayoutId::kTypeError,
       "__add__() must be called with list instance as first argument"));
 }
 
-TEST(ListBuiltinsTest, AddListToTupleThrowsTypeError) {
+TEST(ListBuiltinsTest, AddListToTupleRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = [1, 2, 3]
@@ -700,7 +700,7 @@ TEST(ListBuiltinsTest, SetItemWithNegativeIndex) {
   EXPECT_EQ(RawSmallInt::cast(list->at(2))->value(), 3);
 }
 
-TEST(ListBuiltinsTest, GetItemWithInvalidNegativeIndexThrows) {
+TEST(ListBuiltinsTest, GetItemWithInvalidNegativeIndexRaisesIndexError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
@@ -709,7 +709,7 @@ l[-4]
                             LayoutId::kIndexError, "list index out of range"));
 }
 
-TEST(ListBuiltinsTest, DelItemWithInvalidNegativeIndexThrows) {
+TEST(ListBuiltinsTest, DelItemWithInvalidNegativeIndexRaisesIndexError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
@@ -719,7 +719,7 @@ del l[-4]
                             "list assignment index out of range"));
 }
 
-TEST(ListBuiltinsTest, SetItemWithInvalidNegativeIndexThrows) {
+TEST(ListBuiltinsTest, SetItemWithInvalidNegativeIndexRaisesIndexError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
@@ -729,7 +729,7 @@ l[-4] = 0
                             "list assignment index out of range"));
 }
 
-TEST(ListBuiltinsTest, GetItemWithInvalidIndexThrows) {
+TEST(ListBuiltinsTest, GetItemWithInvalidIndexRaisesIndexError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
@@ -738,7 +738,7 @@ l[5]
                             LayoutId::kIndexError, "list index out of range"));
 }
 
-TEST(ListBuiltinsTest, DelItemWithInvalidIndexThrows) {
+TEST(ListBuiltinsTest, DelItemWithInvalidIndexRaisesIndexError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
@@ -748,7 +748,7 @@ del l[5]
                             "list assignment index out of range"));
 }
 
-TEST(ListBuiltinsTest, SetItemWithInvalidIndexThrows) {
+TEST(ListBuiltinsTest, SetItemWithInvalidIndexRaisesIndexError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
@@ -944,7 +944,7 @@ result = a
   EXPECT_PYLIST_EQ(result, {0, 0, 0});
 }
 
-TEST(ListBuiltinsTest, GetItemWithTooFewArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, GetItemWithTooFewArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(&runtime, R"(
@@ -954,7 +954,7 @@ TEST(ListBuiltinsTest, GetItemWithTooFewArgumentsThrowsTypeError) {
                     "__getitem__() takes exactly one argument (0 given)"));
 }
 
-TEST(ListBuiltinsTest, DelItemWithTooFewArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, DelItemWithTooFewArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__delitem__()
@@ -963,7 +963,7 @@ TEST(ListBuiltinsTest, DelItemWithTooFewArgumentsThrowsTypeError) {
                             "expected 1 arguments, got 0"));
 }
 
-TEST(ListBuiltinsTest, SetItemWithTooFewArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, SetItemWithTooFewArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__setitem__(1)
@@ -972,7 +972,7 @@ TEST(ListBuiltinsTest, SetItemWithTooFewArgumentsThrowsTypeError) {
                             "expected 2 arguments, got 1"));
 }
 
-TEST(ListBuiltinsTest, DelItemWithTooManyArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, DelItemWithTooManyArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__delitem__(1, 2)
@@ -981,7 +981,7 @@ TEST(ListBuiltinsTest, DelItemWithTooManyArgumentsThrowsTypeError) {
                             "expected 1 arguments, got 2"));
 }
 
-TEST(ListBuiltinsTest, GetItemWithTooManyArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, GetItemWithTooManyArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(&runtime, R"(
@@ -991,7 +991,7 @@ TEST(ListBuiltinsTest, GetItemWithTooManyArgumentsThrowsTypeError) {
                     "__getitem__() takes exactly one argument (2 given)"));
 }
 
-TEST(ListBuiltinsTest, SetItemWithTooManyArgumentsThrowsTypeError) {
+TEST(ListBuiltinsTest, SetItemWithTooManyArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__setitem__(1, 2, 3)
@@ -1000,7 +1000,7 @@ TEST(ListBuiltinsTest, SetItemWithTooManyArgumentsThrowsTypeError) {
                             "expected 2 arguments, got 3"));
 }
 
-TEST(ListBuiltinsTest, GetItemWithNonIntegralIndexThrowsTypeError) {
+TEST(ListBuiltinsTest, GetItemWithNonIntegralIndexRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__getitem__("test")
@@ -1009,7 +1009,7 @@ TEST(ListBuiltinsTest, GetItemWithNonIntegralIndexThrowsTypeError) {
                             "list indices must be integers or slices"));
 }
 
-TEST(ListBuiltinsTest, DelItemWithNonIntegralIndexThrowsTypeError) {
+TEST(ListBuiltinsTest, DelItemWithNonIntegralIndexRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__delitem__("test")
@@ -1018,7 +1018,7 @@ TEST(ListBuiltinsTest, DelItemWithNonIntegralIndexThrowsTypeError) {
                             "list indices must be integers or slices"));
 }
 
-TEST(ListBuiltinsTest, SetItemWithNonIntegralIndexThrowsTypeError) {
+TEST(ListBuiltinsTest, SetItemWithNonIntegralIndexRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__setitem__("test", 1)

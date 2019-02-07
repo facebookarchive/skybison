@@ -23,7 +23,7 @@ obj = Foo()
   EXPECT_EQ(RawBytes::cast(*result).compare(*expected), 0);
 }
 
-TEST(BytesBuiltinsTest, AsBytesWithNonBytesDunderBytesRaises) {
+TEST(BytesBuiltinsTest, AsBytesWithNonBytesDunderBytesRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(
@@ -38,7 +38,7 @@ obj = Foo()
                             "__bytes__ returned non-bytes"));
 }
 
-TEST(BytesBuiltinsTest, AsBytesWithDunderBytesErrorRaises) {
+TEST(BytesBuiltinsTest, AsBytesWithDunderBytesErrorRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(
@@ -106,7 +106,7 @@ TEST(BytesBuiltinsTest, FromIterableWithIterableReturnsBytes) {
   EXPECT_EQ(Bytes::cast(*result).compare(*expected), 0);
 }
 
-TEST(BytesBuiltinsTest, FromIterableWithNonIterableRaises) {
+TEST(BytesBuiltinsTest, FromIterableWithNonIterableRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Int num(&scope, SmallInt::fromWord(0));
@@ -114,7 +114,7 @@ TEST(BytesBuiltinsTest, FromIterableWithNonIterableRaises) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, FromIterableWithStrRaises) {
+TEST(BytesBuiltinsTest, FromIterableWithStrRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("hello"));
@@ -136,7 +136,7 @@ TEST(BytesBuiltinsTest, FromTupleWithSizeReturnsBytesMatchingSize) {
   EXPECT_EQ(bytes->byteAt(1), 123);
 }
 
-TEST(BytesBuiltinsTest, FromTupleWithNonIndexRaises) {
+TEST(BytesBuiltinsTest, FromTupleWithNonIndexRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Tuple tuple(&scope, runtime.newTuple(1));
@@ -145,7 +145,7 @@ TEST(BytesBuiltinsTest, FromTupleWithNonIndexRaises) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, FromTupleWithNegativeIntRaises) {
+TEST(BytesBuiltinsTest, FromTupleWithNegativeIntRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
   Tuple tuple(&scope, runtime.newTuple(1));
@@ -154,7 +154,7 @@ TEST(BytesBuiltinsTest, FromTupleWithNegativeIntRaises) {
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
-TEST(BytesBuiltinsTest, FromTupleWithNonByteRaises) {
+TEST(BytesBuiltinsTest, FromTupleWithNonByteRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
   Tuple tuple(&scope, runtime.newTuple(1));
@@ -163,14 +163,14 @@ TEST(BytesBuiltinsTest, FromTupleWithNonByteRaises) {
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
-TEST(BytesBuiltinsTest, DunderAddWithTooFewArgsRaises) {
+TEST(BytesBuiltinsTest, DunderAddWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__add__(b'')"), LayoutId::kTypeError,
       "TypeError: '__add__' takes 2 arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderAddWithTooManyArgsRaises) {
+TEST(BytesBuiltinsTest, DunderAddWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__add__(b'', b'', b'')"),
@@ -210,14 +210,14 @@ TEST(BytesBuiltinsTest, DunderAddWithTwoBytesReturnsConcatenatedBytes) {
   EXPECT_EQ(result->byteAt(2), '2');
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithTooFewArgsRaises) {
+TEST(BytesBuiltinsTest, DunderEqWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__eq__(b'')"), LayoutId::kTypeError,
       "TypeError: '__eq__' takes 2 arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithTooManyArgsRaises) {
+TEST(BytesBuiltinsTest, DunderEqWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__eq__(b'', b'', b'')"),
@@ -273,14 +273,14 @@ TEST(BytesBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
   EXPECT_FALSE(RawBool::cast(*eq)->value());
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithTooFewArgsRaises) {
+TEST(BytesBuiltinsTest, DunderGeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__ge__(b'')"), LayoutId::kTypeError,
       "TypeError: '__ge__' takes 2 arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithTooManyArgsRaises) {
+TEST(BytesBuiltinsTest, DunderGeWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__ge__(b'', b'', b'')"),
@@ -356,14 +356,14 @@ TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyLaterOtherReturnsFalse) {
   EXPECT_FALSE(RawBool::cast(*ge)->value());
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithTooFewArgsRaises) {
+TEST(BytesBuiltinsTest, DunderGetItemWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__getitem__(b'')"), LayoutId::kTypeError,
       "TypeError: '__getitem__' takes 2 arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithTooManyArgsRaises) {
+TEST(BytesBuiltinsTest, DunderGetItemWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__getitem__(b'', b'', b'')"),
@@ -474,14 +474,14 @@ TEST(BytesBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
   EXPECT_TRUE(raised(*item, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithTooFewArgsRaises) {
+TEST(BytesBuiltinsTest, DunderGtWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__gt__(b'')"), LayoutId::kTypeError,
       "TypeError: '__gt__' takes 2 arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithTooManyArgsRaises) {
+TEST(BytesBuiltinsTest, DunderGtWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__gt__(b'', b'', b'')"),
@@ -557,14 +557,14 @@ TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyLaterOtherReturnsFalse) {
   EXPECT_FALSE(RawBool::cast(*gt)->value());
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithTooFewArgsRaises) {
+TEST(BytesBuiltinsTest, DunderLeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__le__(b'')"), LayoutId::kTypeError,
       "TypeError: '__le__' takes 2 arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithTooManyArgsRaises) {
+TEST(BytesBuiltinsTest, DunderLeWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__le__(b'', b'', b'')"),
@@ -640,14 +640,14 @@ TEST(BytesBuiltinsTest, DunderLeWithLexicographicallyLaterOtherReturnsTrue) {
   EXPECT_TRUE(RawBool::cast(*le)->value());
 }
 
-TEST(BytesBuiltinsTest, DunderLenWithTooFewArgsRaises) {
+TEST(BytesBuiltinsTest, DunderLenWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__len__()"), LayoutId::kTypeError,
       "TypeError: '__len__' takes 1 arguments but 0 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderLenWithTooManyArgsRaises) {
+TEST(BytesBuiltinsTest, DunderLenWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__len__(b'', b'')"), LayoutId::kTypeError,
@@ -678,14 +678,14 @@ TEST(BytesBuiltinsTest, DunderLenWithNonEmptyBytesReturnsLength) {
   EXPECT_EQ(len, SmallInt::fromWord(4));
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithTooFewArgsRaises) {
+TEST(BytesBuiltinsTest, DunderLtWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__lt__(b'')"), LayoutId::kTypeError,
       "TypeError: '__lt__' takes 2 arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithTooManyArgsRaises) {
+TEST(BytesBuiltinsTest, DunderLtWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__lt__(b'', b'', b'')"),
@@ -761,14 +761,14 @@ TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
   EXPECT_TRUE(RawBool::cast(*lt)->value());
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithTooFewArgsRaises) {
+TEST(BytesBuiltinsTest, DunderNeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__ne__(b'')"), LayoutId::kTypeError,
       "TypeError: '__ne__' takes 2 arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithTooManyArgsRaises) {
+TEST(BytesBuiltinsTest, DunderNeWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__ne__(b'', b'', b'')"),

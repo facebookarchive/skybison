@@ -9,14 +9,14 @@ namespace python {
 
 namespace testing {
 
-TEST(MarshalModuleTest, LoadsWithTooFewArgumentsThrows) {
+TEST(MarshalModuleTest, LoadsWithTooFewArgumentsRaisesTypeError) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   EXPECT_TRUE(raised(runBuiltin(MarshalModule::loads), LayoutId::kTypeError));
 }
 
-TEST(MarshalModuleTest, LoadsWithTooManyArgumentsThrows) {
+TEST(MarshalModuleTest, LoadsWithTooManyArgumentsRaisesTypeError) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);

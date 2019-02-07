@@ -95,7 +95,7 @@ TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
   EXPECT_TRUE(result->isNoneType());
 }
 
-TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyThrowsKeyError) {
+TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyRaisesKeyError) {
   Runtime runtime;
   HandleScope scope;
   Dict dict(&scope, runtime.newDictWithSize(1));
@@ -123,7 +123,7 @@ del d["foo"]
   EXPECT_FALSE(runtime.dictIncludes(d, foo));
 }
 
-TEST(DictBuiltinsTest, DelOnNonexistentKeyThrowsKeyError) {
+TEST(DictBuiltinsTest, DelOnNonexistentKeyRaisesKeyError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 d = {}
@@ -247,14 +247,14 @@ TEST(DictBuiltinsTest, DunderEqWithNonDict) {
             runtime.notImplemented());
 }
 
-TEST(DictBuiltinsTest, UpdateWithNoArgumentsThrowsTypeError) {
+TEST(DictBuiltinsTest, UpdateWithNoArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "dict.update()"), LayoutId::kTypeError,
       "TypeError: 'update' takes 2 arguments but 0 given"));
 }
 
-TEST(DictBuiltinsTest, UpdateWithNonDictThrowsTypeError) {
+TEST(DictBuiltinsTest, UpdateWithNonDictRaisesTypeError) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
@@ -264,7 +264,7 @@ TEST(DictBuiltinsTest, UpdateWithNonDictThrowsTypeError) {
                      LayoutId::kTypeError));
 }
 
-TEST(DictBuiltinsTest, UpdateWithNonMappingTypeThrowsTypeError) {
+TEST(DictBuiltinsTest, UpdateWithNonMappingTypeRaisesTypeError) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
@@ -572,14 +572,14 @@ TEST(DictBuiltinsTest, ValueIteratorNextOnOneElementDictReturnsElement) {
   ASSERT_TRUE(next->isError());
 }
 
-TEST(DictBuiltinsTest, GetWithNotEnoughArgumentsThrowsTypeError) {
+TEST(DictBuiltinsTest, GetWithNotEnoughArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "dict.get()"), LayoutId::kTypeError,
       "TypeError: 'get' takes min 2 positional arguments but 0 given"));
 }
 
-TEST(DictBuiltinsTest, GetWithTooManyArgumentsThrowsTypeError) {
+TEST(DictBuiltinsTest, GetWithTooManyArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "dict.get({}, 123, 456, 789)"),
@@ -587,7 +587,7 @@ TEST(DictBuiltinsTest, GetWithTooManyArgumentsThrowsTypeError) {
       "TypeError: 'get' takes max 3 positional arguments but 4 given"));
 }
 
-TEST(DictBuiltinsTest, GetWithNonDictThrowsTypeError) {
+TEST(DictBuiltinsTest, GetWithNonDictRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object foo(&scope, runtime.newInt(123));
@@ -597,7 +597,7 @@ TEST(DictBuiltinsTest, GetWithNonDictThrowsTypeError) {
                      LayoutId::kTypeError));
 }
 
-TEST(DictBuiltinsTest, GetWithUnhashableTypeThrowsTypeError) {
+TEST(DictBuiltinsTest, GetWithUnhashableTypeRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(

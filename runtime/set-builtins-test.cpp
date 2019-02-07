@@ -857,7 +857,7 @@ TEST(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
   ASSERT_EQ(*result, runtime.notImplemented());
 }
 
-TEST(SetBuiltinsTest, DunderEqWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderEqWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__eq__()
@@ -866,7 +866,7 @@ set.__eq__()
                             "__eq__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsTest, DunderNeWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderNeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ne__()
@@ -875,7 +875,7 @@ set.__ne__()
                             "__ne__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsTest, DunderGeWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ge__()
@@ -884,7 +884,7 @@ set.__ge__()
                             "__ge__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsTest, DunderGtWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGtWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__gt__()
@@ -893,7 +893,7 @@ set.__gt__()
                             "__gt__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsTest, DunderLeWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__le__()
@@ -902,7 +902,7 @@ set.__le__()
                             "__le__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsTest, DunderLtWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLtWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__lt__()
@@ -911,7 +911,7 @@ set.__lt__()
                             "__lt__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsTest, DunderEqWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderEqWithNonSetFirstArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__eq__(None, set())
@@ -920,7 +920,7 @@ set.__eq__(None, set())
                             "__eq__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderNeWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderNeWithNonSetFirstArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ne__(None, set())
@@ -929,7 +929,7 @@ set.__ne__(None, set())
                             "__ne__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderGeWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGeWithNonSetFirstArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ge__(None, set())
@@ -938,7 +938,7 @@ set.__ge__(None, set())
                             "__ge__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderGtWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGtWithNonSetFirstArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__gt__(None, set())
@@ -947,7 +947,7 @@ set.__gt__(None, set())
                             "__gt__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderLeWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLeWithNonSetFirstArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__le__(None, set())
@@ -956,7 +956,7 @@ set.__le__(None, set())
                             "__le__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderLtWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLtWithNonSetFirstArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__lt__(None, set())
@@ -965,7 +965,7 @@ set.__lt__(None, set())
                             "__lt__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderEqWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderEqWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__eq__(set(), set(), set())
@@ -974,7 +974,7 @@ set.__eq__(set(), set(), set())
                             "expected 1 arguments, got 2"));
 }
 
-TEST(SetBuiltinsTest, DunderNeWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderNeWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ne__(set(), set(), set())
@@ -983,7 +983,7 @@ set.__ne__(set(), set(), set())
                             "expected 1 argument, got 2"));
 }
 
-TEST(SetBuiltinsTest, DunderGeWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGeWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__ge__(set(), set(), set())
@@ -992,7 +992,7 @@ set.__ge__(set(), set(), set())
                             "expected 1 argument, got 2"));
 }
 
-TEST(SetBuiltinsTest, DunderGtWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderGtWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__gt__(set(), set(), set())
@@ -1001,7 +1001,7 @@ set.__gt__(set(), set(), set())
                             "expected 1 argument, got 2"));
 }
 
-TEST(SetBuiltinsTest, DunderLeWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLeWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__le__(set(), set(), set())
@@ -1010,7 +1010,7 @@ set.__le__(set(), set(), set())
                             "expected 1 argument, got 2"));
 }
 
-TEST(SetBuiltinsTest, DunderLtWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderLtWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__lt__(set(), set(), set())
@@ -1019,7 +1019,7 @@ set.__lt__(set(), set(), set())
                             "expected 1 argument, got 2"));
 }
 
-TEST(SetBuiltinsTest, DunderInitWithNonSetFirstArgThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderInitWithNonSetFirstArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__([])
@@ -1028,7 +1028,7 @@ set.__init__([])
                             "__init__() requires a 'set' object"));
 }
 
-TEST(SetBuiltinsTest, DunderInitWithTooFewArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderInitWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__()
@@ -1037,7 +1037,7 @@ set.__init__()
                             "__init__() of 'set' object needs an argument"));
 }
 
-TEST(SetBuiltinsTest, DunderInitWithTooManyArgsThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderInitWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__(set(), None, None, None)
@@ -1046,7 +1046,7 @@ set.__init__(set(), None, None, None)
                             "set expected at most 1 argument, got 3"));
 }
 
-TEST(SetBuiltinsTest, DunderInitWithNonIterableThrowsTypeError) {
+TEST(SetBuiltinsTest, DunderInitWithNonIterableRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__(set(), None)
@@ -1183,7 +1183,7 @@ TEST(SetBuiltinsTest, FrozenSetFromIterableIsNotSingleton) {
   ASSERT_NE(*result1, *result2);
 }
 
-TEST(SetBuiltinsTest, FrozenSetDunderNewWithNonIterableThrowsTypeError) {
+TEST(SetBuiltinsTest, FrozenSetDunderNewWithNonIterableRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));

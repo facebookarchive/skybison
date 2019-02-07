@@ -77,7 +77,7 @@ TEST_F(TypeExtensionApiTest, FromSpecCreatesRuntimeType) {
   EXPECT_TRUE(PyType_CheckExact(testing::moduleGet("__main__", "x")));
 }
 
-TEST_F(TypeExtensionApiTest, FromSpecWithInvalidSlotThrowsError) {
+TEST_F(TypeExtensionApiTest, FromSpecWithInvalidSlotRaisesError) {
   PyType_Slot slots[] = {
       {-1, nullptr},
   };
@@ -192,7 +192,7 @@ TEST_F(TypeExtensionApiTest, IsSubtypeWithDifferentTypesReturnsFalse) {
                        reinterpret_cast<PyTypeObject*>(pyuni_type.get())));
 }
 
-TEST_F(TypeExtensionApiTest, GetSlotFromBuiltinTypeThrowsSystemError) {
+TEST_F(TypeExtensionApiTest, GetSlotFromBuiltinTypeRaisesSystemError) {
   PyObjectPtr pylong(PyLong_FromLong(5));
   PyObjectPtr pylong_type(PyObject_Type(pylong));
   ASSERT_TRUE(
@@ -284,7 +284,7 @@ class Foo: pass
       "Get slots from types initialized through Python code");
 }
 
-TEST_F(TypeExtensionApiTest, GetSlotFromNegativeSlotThrowsSystemError) {
+TEST_F(TypeExtensionApiTest, GetSlotFromNegativeSlotRaisesSystemError) {
   PyRun_SimpleString(R"(
 class Foo: pass
   )");

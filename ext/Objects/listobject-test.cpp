@@ -122,7 +122,7 @@ TEST_F(ListExtensionApiTest, GetItemWithNonListReturnsNull) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
-TEST_F(ListExtensionApiTest, GetItemWithBadIndexThrowsIndexError) {
+TEST_F(ListExtensionApiTest, GetItemWithBadIndexRaisesIndexError) {
   Py_ssize_t size = 0;
   PyObjectPtr list(PyList_New(size));
   ASSERT_EQ(PyList_GetItem(list, size + 1), nullptr);
@@ -153,7 +153,7 @@ TEST_F(ListExtensionApiTest, SetItemWithNonListReturnsNegativeOne) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
-TEST_F(ListExtensionApiTest, SetItemWithBadIndexThrowsIndexError) {
+TEST_F(ListExtensionApiTest, SetItemWithBadIndexRaisesIndexError) {
   Py_ssize_t size = 0;
   ASSERT_EQ(PyList_SetItem(PyList_New(size), size + 1, nullptr), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);

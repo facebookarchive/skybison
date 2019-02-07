@@ -2910,7 +2910,7 @@ class_anno_dict = Foo.__annotations__
   EXPECT_EQ(*c_value, runtime.typeAt(LayoutId::kInt));
 }
 
-TEST(ThreadTest, DeleteFastThrow) {
+TEST(ThreadTest, DeleteFastRaisesUnboundLocalError) {
   const char* src = R"(
 def foo(a, b, c):
   del a

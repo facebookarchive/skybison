@@ -28,7 +28,8 @@ TEST_F(ByteArrayExtensionApiTest, FromStringAndSizeSetsSize) {
   EXPECT_EQ(PyByteArray_Size(array), 3);
 }
 
-TEST_F(ByteArrayExtensionApiTest, FromStringAndSizeWithNegativeSizeRaises) {
+TEST_F(ByteArrayExtensionApiTest,
+       FromStringAndSizeWithNegativeSizeRaisesSystemError) {
   ASSERT_EQ(PyByteArray_FromStringAndSize("hello", -1), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));

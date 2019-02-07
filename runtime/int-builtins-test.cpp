@@ -568,7 +568,7 @@ TEST(IntBuiltinsTest, DunderAndWithNonIntReturnsNotImplemented) {
   EXPECT_TRUE(result->isNotImplemented());
 }
 
-TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftThrowsException) {
+TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftRaisesException) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newStrFromCStr(""));
@@ -613,7 +613,7 @@ TEST(IntBuiltinsTest, DunderLshiftWithNonIntReturnsNotImplemented) {
   EXPECT_TRUE(a->isNotImplemented());
 }
 
-TEST(IntBuiltinsTest, DunderLshiftWithInvalidArgumentThrowsException) {
+TEST(IntBuiltinsTest, DunderLshiftWithInvalidArgumentRaisesException) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
 
@@ -821,7 +821,7 @@ TEST(IntBuiltinsTest, DunderOrWithNonIntReturnsNotImplemented) {
   EXPECT_TRUE(result->isNotImplemented());
 }
 
-TEST(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftThrowsException) {
+TEST(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftRaisesException) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newStrFromCStr(""));
@@ -1908,7 +1908,7 @@ TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderRaisesTypeError) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST(IntBuiltinsTest, FromBytesKwInvalidKeywordRaises) {
+TEST(IntBuiltinsTest, FromBytesKwInvalidKeywordRaisesTypeError) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
 
@@ -2090,7 +2090,7 @@ TEST(IntBuiltinsTest, DunderXorWithNonIntReturnsNotImplemented) {
   EXPECT_TRUE(result->isNotImplemented());
 }
 
-TEST(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftThrowsException) {
+TEST(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftRaisesException) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newStrFromCStr(""));
@@ -2480,28 +2480,37 @@ TEST(IntBuiltinsTest, ToBytesWithNonIntRaisesTypeError) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaises) {
+TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-
   Int num(&scope, SmallInt::fromWord(42));
   Str not_a_length(&scope, runtime.newStrFromCStr("not a length"));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
-  Object result0(
-      &scope, runBuiltin(IntBuiltins::toBytes, num, not_a_length, byteorder));
-  EXPECT_TRUE(raised(*result0, LayoutId::kTypeError));
-  Thread::currentThread()->clearPendingException();
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, not_a_length, byteorder));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
 
+TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  Int num(&scope, SmallInt::fromWord(42));
   Int negative_length(&scope, SmallInt::fromWord(-3));
-  Object result1(&scope, runBuiltin(IntBuiltins::toBytes, num, negative_length,
-                                    byteorder));
-  EXPECT_TRUE(raised(*result1, LayoutId::kValueError));
-  Thread::currentThread()->clearPendingException();
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, negative_length,
+                                   byteorder));
+  EXPECT_TRUE(raised(*result, LayoutId::kValueError));
+}
 
+TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  Int num(&scope, SmallInt::fromWord(42));
   Int huge_length(&scope, testing::newIntWithDigits(&runtime, {0, 1024}));
-  Object result2(&scope,
-                 runBuiltin(IntBuiltins::toBytes, num, huge_length, byteorder));
-  EXPECT_TRUE(raised(*result2, LayoutId::kOverflowError));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, huge_length, byteorder));
+  EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithNegativeNumberRaisesOverflowError) {
@@ -2538,7 +2547,7 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidByteorderTypeRaisesTypeError) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST(IntBuiltinsTest, ToBytesKwInvalidKeywordRaises) {
+TEST(IntBuiltinsTest, ToBytesKwInvalidKeywordRaisesTypeError) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
 

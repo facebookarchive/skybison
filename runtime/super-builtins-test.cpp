@@ -137,7 +137,7 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
   EXPECT_EQ(*e, Bool::trueObj());
 }
 
-TEST(SuperTest, NoArgumentThrow) {
+TEST(SuperTest, NoArgumentRaisesRuntimeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "super()"),
                             LayoutId::kRuntimeError, "super(): no arguments"));

@@ -521,7 +521,7 @@ obj = getattr(Foo(), 'bar', 2)
   EXPECT_EQ(*obj, SmallInt::fromWord(2));
 }
 
-TEST(BuiltinsModuleTest, GetAttrWithNonStringAttrThrows) {
+TEST(BuiltinsModuleTest, GetAttrWithNonStringAttrRaisesTypeError) {
   const char* src = R"(
 class Foo: pass
 getattr(Foo(), 1)
@@ -531,7 +531,7 @@ getattr(Foo(), 1)
                             "getattr(): attribute name must be string"));
 }
 
-TEST(BuiltinsModuleTest, GetAttrWithNonStringAttrAndDefaultThrows) {
+TEST(BuiltinsModuleTest, GetAttrWithNonStringAttrAndDefaultRaisesTypeError) {
   const char* src = R"(
 class Foo: pass
 getattr(Foo(), 1, 2)
@@ -541,7 +541,8 @@ getattr(Foo(), 1, 2)
                             "getattr(): attribute name must be string"));
 }
 
-TEST(BuiltinsModuleTest, GetAttrFromClassMissingAttrWithoutDefaultThrows) {
+TEST(BuiltinsModuleTest,
+     GetAttrFromClassMissingAttrWithoutDefaultRaisesAttributeError) {
   const char* src = R"(
 class Foo:
   bar = 1
@@ -579,7 +580,7 @@ obj = hasattr(Foo, 'bar')
   EXPECT_EQ(*obj, Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest, HasAttrWithNonStringAttrThrows) {
+TEST(BuiltinsModuleTest, HasAttrWithNonStringAttrRaisesTypeError) {
   const char* src = R"(
 class Foo:
   bar = 1
@@ -634,7 +635,7 @@ b = Foo.foo
   EXPECT_EQ(*b, SmallInt::fromWord(2));
 }
 
-TEST(BuiltinsModuleTest, BuiltInSetAttrThrow) {
+TEST(BuiltinsModuleTest, BuiltInSetAttrRaisesTypeError) {
   const char* src = R"(
 class Foo:
   bar = 1
@@ -714,14 +715,14 @@ TEST(BuiltinsModuleTest, BuiltinCompile) {
   ASSERT_TRUE(names->contains(runtime.newStrFromCStr("b")));
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinCompileThrowsTypeErrorGivenTooFewArgs) {
+TEST(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooFewArgs) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "compile(1)"), LayoutId::kTypeError,
       "TypeError: 'compile' takes min 3 positional arguments but 1 given"));
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinCompileThrowsTypeErrorGivenTooManyArgs) {
+TEST(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooManyArgs) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "compile(1, 2, 3, 4, 5, 6, 7, 8, 9)"),
@@ -729,7 +730,7 @@ TEST(BuiltinsModuleDeathTest, BuiltinCompileThrowsTypeErrorGivenTooManyArgs) {
       "TypeError: 'compile' takes max 6 positional arguments but 9 given"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinCompileThrowsTypeErrorGivenBadMode) {
+TEST(BuiltinsModuleTest, BuiltinCompileRaisesTypeErrorGivenBadMode) {
   Runtime runtime;
   HandleScope scope;
   EXPECT_TRUE(raisedWithStr(
@@ -947,7 +948,7 @@ class bumble():
                "Redefinition of native code method __lt__ in managed code");
 }
 
-TEST(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaises) {
+TEST(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object not_func(&scope, runtime.newInt(12));
@@ -956,7 +957,7 @@ TEST(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaises) {
                             "_patch expects function argument"));
 }
 
-TEST(BuiltinsModuleTest, UnderPatchWithBadBaseFuncRaises) {
+TEST(BuiltinsModuleTest, UnderPatchWithBadBaseFuncRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
@@ -1053,7 +1054,7 @@ result = range(1, 5, 7)
   EXPECT_EQ(result->step(), 7);
 }
 
-TEST(BuiltinsModuleTest, FormatWithNonStrFmtSpecRaises) {
+TEST(BuiltinsModuleTest, FormatWithNonStrFmtSpecRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(
       raised(runFromCStr(&runtime, "format('hi', 1)"), LayoutId::kTypeError));

@@ -254,7 +254,7 @@ TEST_F(DictExtensionApiTest, ValuesWithNonEmptyDictReturnsNonEmptyList) {
   EXPECT_EQ(PyList_GetItem(result, 0), value);
 }
 
-TEST_F(DictExtensionApiTest, ClearWithNonDictDoesNotThrow) {
+TEST_F(DictExtensionApiTest, ClearWithNonDictDoesNotRaise) {
   PyDict_Clear(Py_None);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }

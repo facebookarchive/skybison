@@ -24,7 +24,7 @@ TEST_F(FloatExtensionApiTest, NegativeFromDoubleReturnsFloat) {
   EXPECT_EQ(PyFloat_AsDouble(flt), val);
 }
 
-TEST_F(FloatExtensionApiTest, AsDoubleFromNullThrowsException) {
+TEST_F(FloatExtensionApiTest, AsDoubleFromNullRaisesException) {
   double res = PyFloat_AsDouble(nullptr);
   EXPECT_EQ(res, -1);
 
@@ -32,7 +32,7 @@ TEST_F(FloatExtensionApiTest, AsDoubleFromNullThrowsException) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
-TEST_F(FloatExtensionApiTest, AsDoubleFromNonFloatThrowsException) {
+TEST_F(FloatExtensionApiTest, AsDoubleFromNonFloatRaisesException) {
   PyObject* list = PyList_New(0);
   double res = PyFloat_AsDouble(list);
   EXPECT_EQ(res, -1);

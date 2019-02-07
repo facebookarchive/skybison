@@ -44,7 +44,7 @@ TEST(ModuleBuiltinsDeathTest, DunderNewTooManyArgumentsRaisesTypeError) {
       "TypeError: '__new__' takes max 2 positional arguments but 3 given"));
 }
 
-TEST(ModuleBuiltinsTest, DunderNewWithNonTypeRaises) {
+TEST(ModuleBuiltinsTest, DunderNewWithNonTypeRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Int nontype(&scope, SmallInt::fromWord(123));
@@ -55,7 +55,7 @@ TEST(ModuleBuiltinsTest, DunderNewWithNonTypeRaises) {
       raisedWithStr(*module, LayoutId::kTypeError, "not a type object"));
 }
 
-TEST(ModuleBuiltinsTest, DunderNewWithNonModuleRaises) {
+TEST(ModuleBuiltinsTest, DunderNewWithNonModuleRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Type nonmodule(&scope, runtime.typeAt(LayoutId::kSmallStr));
@@ -78,7 +78,7 @@ TEST(ModuleBuiltinsTest, DunderNewReturnsModule) {
   EXPECT_TRUE(isStrEquals(result_module_name, module_name));
 }
 
-TEST(ModuleBuiltinsTest, DunderNewWithNonStrNameRaises) {
+TEST(ModuleBuiltinsTest, DunderNewWithNonStrNameRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Type moduletype(&scope, runtime.typeAt(LayoutId::kModule));

@@ -30,7 +30,7 @@ TEST_F(ObjectExtensionApiTest, BytesWithBytesReturnsSameObject) {
   EXPECT_EQ(result, bytes);
 }
 
-TEST_F(ObjectExtensionApiTest, BytesWithBadDunderBytesRaises) {
+TEST_F(ObjectExtensionApiTest, BytesWithBadDunderBytesRaisesTypeError) {
   PyRun_SimpleString(R"(
 class Foo:
   def __bytes__(self):
@@ -56,7 +56,7 @@ obj = Foo()
   EXPECT_STREQ(PyBytes_AsString(result), "123");
 }
 
-TEST_F(ObjectExtensionApiTest, BytesWithDunderBytesErrorRaises) {
+TEST_F(ObjectExtensionApiTest, BytesWithDunderBytesErrorRaisesValueError) {
   PyRun_SimpleString(R"(
 class Foo:
   def __bytes__(self):
@@ -87,7 +87,7 @@ TEST_F(ObjectExtensionApiTest, BytesWithTupleOfByteReturnsBytes) {
   EXPECT_STREQ(PyBytes_AsString(result), "hi");
 }
 
-TEST_F(ObjectExtensionApiTest, BytesWithStringRaises) {
+TEST_F(ObjectExtensionApiTest, BytesWithStringRaisesTypeError) {
   PyObjectPtr str(PyUnicode_FromString("hello"));
   PyObjectPtr result(PyObject_Bytes(str));
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -521,7 +521,7 @@ c = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
-TEST_F(ObjectExtensionApiTest, ClearWithNullDoesntThrow) {
+TEST_F(ObjectExtensionApiTest, ClearWithNullDoesNotRaise) {
   PyObject* null = nullptr;
   Py_CLEAR(null);
   ASSERT_EQ(PyErr_Occurred(), nullptr);

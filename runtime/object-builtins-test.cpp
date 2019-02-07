@@ -66,7 +66,7 @@ b = f.__str__()
   EXPECT_TRUE(isStrEquals(a, b));
 }
 
-TEST(ObjectBuiltinsTest, DunderInitDoesNotThrowIfNewIsDifferentButInitIsSame) {
+TEST(ObjectBuiltinsTest, DunderInitDoesNotRaiseIfNewIsDifferentButInitIsSame) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -88,7 +88,7 @@ object.__init__(object)
   // TypeError.
 }
 
-TEST(ObjectBuiltinsTest, DunderInitWithNoArgsThrowsTypeError) {
+TEST(ObjectBuiltinsTest, DunderInitWithNoArgsRaisesTypeError) {
   Runtime runtime;
   // Passing no args to object.__init__ should throw a type error.
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
@@ -98,7 +98,7 @@ object.__init__()
                             "__init__ needs an argument"));
 }
 
-TEST(ObjectBuiltinsTest, DunderInitWithArgsThrowsTypeError) {
+TEST(ObjectBuiltinsTest, DunderInitWithArgsRaisesTypeError) {
   Runtime runtime;
   // Passing extra args to object.__init__, without overwriting __new__,
   // should throw a type error.
@@ -112,7 +112,7 @@ Foo.__init__(Foo(), 1)
                             "object.__init__() takes no parameters"));
 }
 
-TEST(ObjectBuiltinsTest, DunderInitWithNewAndInitThrowsTypeError) {
+TEST(ObjectBuiltinsTest, DunderInitWithNewAndInitRaisesTypeError) {
   Runtime runtime;
   // Passing extra args to object.__init__, and overwriting only __init__,
   // should throw a type error.
@@ -134,7 +134,7 @@ TEST(NoneBuiltinsTest, NewReturnsNone) {
   EXPECT_TRUE(runBuiltin(NoneBuiltins::dunderNew, type)->isNoneType());
 }
 
-TEST(NoneBuiltinsTest, NewWithExtraArgsThrows) {
+TEST(NoneBuiltinsTest, NewWithExtraArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Type type(&scope, runtime.typeAt(LayoutId::kNoneType));
@@ -142,7 +142,8 @@ TEST(NoneBuiltinsTest, NewWithExtraArgsThrows) {
   Int num2(&scope, runtime.newInt(2));
   Int num3(&scope, runtime.newInt(3));
   EXPECT_TRUE(
-      runBuiltin(NoneBuiltins::dunderNew, type, num1, num2, num3)->isError());
+      raised(runBuiltin(NoneBuiltins::dunderNew, type, num1, num2, num3),
+             LayoutId::kTypeError));
 }
 
 TEST(NoneBuiltinsTest, DunderReprIsBoundMethod) {

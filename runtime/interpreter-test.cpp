@@ -870,13 +870,13 @@ c = C()
   EXPECT_EQ(*f, *method);
 }
 
-TEST(InterpreterTest, CallingUncallableThrowsTypeError) {
+TEST(InterpreterTest, CallingUncallableRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "(1)()"),
                             LayoutId::kTypeError, "object is not callable"));
 }
 
-TEST(InterpreterTest, CallingUncallableDunderCallThrowsTypeError) {
+TEST(InterpreterTest, CallingUncallableDunderCallRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class C:
@@ -888,7 +888,7 @@ c()
                             LayoutId::kTypeError, "object is not callable"));
 }
 
-TEST(InterpreterTest, CallingNonDescriptorDunderCallThrowsTypeError) {
+TEST(InterpreterTest, CallingNonDescriptorDunderCallRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class D: pass
@@ -902,7 +902,7 @@ c()
                             LayoutId::kTypeError, "object is not callable"));
 }
 
-TEST(InterpreterTest, CallDescriptorReturningUncallableThrowsTypeError) {
+TEST(InterpreterTest, CallDescriptorReturningUncallableRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class D:
@@ -2254,7 +2254,7 @@ foo = Foo()
   EXPECT_TRUE(isStrEqualsCStr(result_type->name(), "FooIterator"));
 }
 
-TEST(InterpreterTest, YieldFromIterThrowsException) {
+TEST(InterpreterTest, YieldFromIterRaisesException) {
   Runtime runtime;
   HandleScope scope;
 
@@ -2518,7 +2518,7 @@ except Exception as exc:
   EXPECT_EQ(*inner, *outer);
 }
 
-TEST(InterpreterTest, ExceptWithNonExceptionTypeRaises) {
+TEST(InterpreterTest, ExceptWithNonExceptionTypeRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 try:
@@ -2531,7 +2531,7 @@ except str:
                             "BaseException is not allowed"));
 }
 
-TEST(InterpreterTest, ExceptWithNonExceptionTypeInTupleRaises) {
+TEST(InterpreterTest, ExceptWithNonExceptionTypeInTupleRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 try:
@@ -2544,7 +2544,7 @@ except (StopIteration, int, RuntimeError):
                             "BaseException is not allowed"));
 }
 
-TEST(InterpreterTest, RaiseWithNoActiveExceptionRaises) {
+TEST(InterpreterTest, RaiseWithNoActiveExceptionRaisesRuntimeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "raise\n"),
                             LayoutId::kRuntimeError,
@@ -2587,7 +2587,7 @@ result = f(*args)
   EXPECT_PYLIST_EQ(result, {"b", "a"});
 }
 
-TEST(InterpreterDeathTest, ExplodeWithIterableRaises) {
+TEST(InterpreterDeathTest, ExplodeWithIterableRaisesNotImplementedError) {
   Runtime runtime;
   HandleScope scope;
   // TODO(bsimmers): Change this to inspect result once sequenceAsTuple() is
@@ -2697,7 +2697,7 @@ for i in range(5):
   EXPECT_EQ(RawSmallInt::cast(*result).value(), -4);
 }
 
-TEST(InterpreterTest, RaiseInLoopRaises) {
+TEST(InterpreterTest, RaiseInLoopRaisesRuntimeError) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(
