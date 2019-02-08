@@ -1975,6 +1975,68 @@ TEST(TrampolinesTest, BuiltinTrampolineExReceivesExArgs) {
   EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
 }
 
+TEST(TrampolinesTest, BuiltinTrampolineExReceivesMixOfPositionalAndExArgs1) {
+  Runtime runtime;
+  createAndPatchBuiltinNumArgs(&runtime);
+  HandleScope scope;
+  runFromCStr(&runtime, "result = dummy(1, *(2,))");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
+}
+
+static void createAndPatchBuiltinNumArgsVariadic(Runtime* runtime) {
+  // Ensure we have a __main__ module.
+  runFromCStr(runtime, "");
+  HandleScope scope;
+  Module main(&scope, findModule(runtime, "__main__"));
+  runtime->moduleAddBuiltinFunction(
+      main, SymbolId::kDummy, unimplementedTrampoline,
+      builtinTrampolineWrapperKw<numArgs>, builtinTrampolineWrapperEx<numArgs>);
+  runFromCStr(runtime, R"(
+@_patch
+def dummy(*args):
+  pass
+)");
+}
+
+TEST(TrampolinesTest,
+     BuiltinTrampolineExReceivesOnePositionalArgAndTwoVariableArgs) {
+  Runtime runtime;
+  createAndPatchBuiltinNumArgsVariadic(&runtime);
+  HandleScope scope;
+  runFromCStr(&runtime, "result = dummy(1, *(2, 3))");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(RawInt::cast(*result).asWord(), 1);
+}
+
+static void createAndPatchBuiltinNumArgsArgsKwargs(Runtime* runtime) {
+  // Ensure we have a __main__ module.
+  runFromCStr(runtime, "");
+  HandleScope scope;
+  Module main(&scope, findModule(runtime, "__main__"));
+  runtime->moduleAddBuiltinFunction(
+      main, SymbolId::kDummy, unimplementedTrampoline,
+      builtinTrampolineWrapperKw<numArgs>, builtinTrampolineWrapperEx<numArgs>);
+  runFromCStr(runtime, R"(
+@_patch
+def dummy(*args, **kwargs):
+  pass
+)");
+}
+
+TEST(TrampolinesTest,
+     BuiltinTrampolineExReceivesTwoPositionalOneVariableAndTwoKwArgs) {
+  Runtime runtime;
+  createAndPatchBuiltinNumArgsArgsKwargs(&runtime);
+  HandleScope scope;
+  runFromCStr(&runtime, "result = dummy(1, 2, *(3,), **{'foo': 1, 'bar': 2})");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result->isInt());
+  EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
+}
+
 TEST(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
   Runtime runtime;
   createAndPatchBuiltinNumArgs(&runtime);

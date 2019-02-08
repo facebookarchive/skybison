@@ -968,7 +968,7 @@ static RawObject builtinTrampolineImpl(Thread* thread, Frame* caller, word argc,
   // advanced argument checking.
   Object result(&scope, init_args(function, code));
   if (result->isError()) return *result;
-  argc = code->argcount();
+  argc = code->totalArgs();
   Frame* frame = thread->pushNativeFrame(bit_cast<void*>(entry), argc);
   result = entry(thread, frame, argc);
   DCHECK(result->isError() == thread->hasPendingException(),
