@@ -1149,20 +1149,28 @@ TEST(ThreadTest, BuildSet) {
   EXPECT_TRUE(runtime.setIncludes(set, none));
 }
 
+static RawObject inspect_block(Thread*, Frame* frame, word)
+    __attribute__((aligned(16)));
+
+// inspect_block is meant to be called raw, without any trampoline. When
+// trampolines become mandatory in the future, this function should inspect
+// frame->callerFrame instead of directly inspecting the frame.
+static RawObject inspect_block(Thread*, Frame* frame, word) {
+  // SETUP_LOOP should have pushed an entry onto the block stack with a
+  // stack depth of 3
+  TryBlock block = frame->blockStack()->pop();
+  EXPECT_EQ(block.kind(), TryBlock::kLoop);
+  EXPECT_EQ(block.handler(), 102);
+  EXPECT_EQ(block.level(), 3);
+  return NoneType::object();
+}
+
 TEST(ThreadTest, SetupLoop) {
   Runtime runtime;
   HandleScope scope;
 
-  auto inspect_block = [](Thread*, Frame* frame, word) -> RawObject {
-    // SETUP_LOOP should have pushed an entry onto the block stack with a
-    // stack depth of 3
-    TryBlock block = frame->blockStack()->pop();
-    EXPECT_EQ(block.kind(), TryBlock::kLoop);
-    EXPECT_EQ(block.handler(), 102);
-    EXPECT_EQ(block.level(), 3);
-    return NoneType::object();
-  };
   Tuple consts(&scope, runtime.newTuple(1));
+  // inspect_block is meant to be called raw, without any trampoline.
   consts->atPut(0, runtime.newBuiltinFunction(SymbolId::kDummy, inspect_block,
                                               unimplementedTrampoline,
                                               unimplementedTrampoline));
