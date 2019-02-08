@@ -30,13 +30,13 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
   // Special case for list iterators
   if (iterable->isListIterator()) {
     ListIterator list_iter(&scope, *iterable);
-    List src(&scope, list_iter->list());
+    List src(&scope, list_iter->iterable());
     word new_capacity = index + src->numItems();
     runtime->listEnsureCapacity(dst, new_capacity);
     dst->setNumItems(new_capacity);
     Object elt(&scope, NoneType::object());
     for (word i = 0; i < src->numItems(); i++) {
-      elt = list_iter->next();
+      elt = listIteratorNext(thread, list_iter);
       if (elt->isError()) {
         break;
       }
@@ -203,6 +203,18 @@ RawObject listSort(Thread* thread, const List& list) {
     list->atPut(j + 1, *tmp);
   }
   return NoneType::object();
+}
+
+RawObject listIteratorNext(Thread* thread, const ListIterator& iter) {
+  HandleScope scope(thread);
+  word idx = iter->index();
+  List underlying(&scope, iter->iterable());
+  if (idx >= underlying->numItems()) {
+    return RawError::object();
+  }
+  RawObject item = underlying->at(idx);
+  iter->setIndex(idx + 1);
+  return item;
 }
 
 const BuiltinAttribute ListBuiltins::kAttributes[] = {
@@ -587,13 +599,14 @@ RawObject ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (!self->isListIterator()) {
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj->isListIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a list iterator instance as the first "
         "argument");
   }
-  Object value(&scope, RawListIterator::cast(*self)->next());
+  ListIterator self(&scope, *self_obj);
+  Object value(&scope, listIteratorNext(thread, self));
   if (value->isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
@@ -615,7 +628,7 @@ RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
         "first argument");
   }
   ListIterator list_iterator(&scope, *self);
-  List list(&scope, list_iterator->list());
+  List list(&scope, list_iterator->iterable());
   return SmallInt::fromWord(list->numItems() - list_iterator->index());
 }
 

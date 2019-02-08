@@ -89,7 +89,7 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
     }
     SetIterator set_iter(&scope, runtime->newSetIterator(a));
     for (;;) {
-      value = set_iter->next();
+      value = setIteratorNext(thread, set_iter);
       if (value->isError()) {
         break;
       }
@@ -538,6 +538,20 @@ RawObject setPop(Thread* thread, const Set& set) {
   return thread->raiseKeyErrorWithCStr("pop from an empty set");
 }
 
+RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
+  word idx = iter->index();
+  HandleScope scope(thread);
+  SetBase underlying(&scope, iter->iterable());
+  Tuple data(&scope, underlying->data());
+  // Find the next non empty bucket
+  if (!SetBase::Bucket::nextItem(*data, &idx)) {
+    return Error::object();
+  }
+  iter->setConsumedCount(iter->consumedCount() + 1);
+  iter->setIndex(idx);
+  return RawSet::Bucket::key(*data, idx);
+}
+
 RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeErrorWithCStr("add() takes exactly one argument");
@@ -682,13 +696,14 @@ RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (!self->isSetIterator()) {
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj->isSetIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a set iterator instance as the first "
         "argument");
   }
-  Object value(&scope, RawSetIterator::cast(*self)->next());
+  SetIterator self(&scope, *self_obj);
+  Object value(&scope, setIteratorNext(thread, self));
   if (value->isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
@@ -710,7 +725,8 @@ RawObject SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
         "the first argument");
   }
   SetIterator set_iterator(&scope, *self);
-  return SmallInt::fromWord(set_iterator->pendingLength());
+  Set set(&scope, set_iterator->iterable());
+  return SmallInt::fromWord(set->numItems() - set_iterator->consumedCount());
 }
 
 }  // namespace python

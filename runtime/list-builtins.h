@@ -34,6 +34,9 @@ RawObject listSlice(Thread* thread, const List& list, const Slice& slice);
 // Error otherwise.
 RawObject listSort(Thread* thread, const List& list);
 
+// Return the next item from the iterator, or Error if there are no items left.
+RawObject listIteratorNext(Thread* thread, const ListIterator& iter);
+
 class ListBuiltins {
  public:
   static void initialize(Runtime* runtime);

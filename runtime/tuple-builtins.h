@@ -13,6 +13,9 @@ namespace python {
 // return Error if an exception is raised at any point.
 RawObject sequenceAsTuple(Thread* thread, const Object& seq);
 
+// Return the next item from the iterator, or Error if there are no items left.
+RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter);
+
 class TupleBuiltins {
  public:
   static void initialize(Runtime* runtime);

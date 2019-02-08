@@ -27,7 +27,8 @@ word strSpan(const Str& src, const Str& str);
 // to scan the whole string.
 word strRSpan(const Str& src, const Str& str, word rend);
 
-RawObject strIteratorNext(Thread* thread, StrIterator& iter);
+// Return the next item from the iterator, or Error if there are no items left.
+RawObject strIteratorNext(Thread* thread, const StrIterator& iter);
 
 class SmallStrBuiltins {
  public:

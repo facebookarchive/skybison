@@ -30,6 +30,9 @@ bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other);
 // Returns None on success and raises + returns KeyError if the set is empty.
 RawObject setPop(Thread* thread, const Set& set);
 
+// Return the next item from the iterator, or Error if there are no items left.
+RawObject setIteratorNext(Thread* thread, const SetIterator& iter);
+
 class SetBaseBuiltins {
  public:
   static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);

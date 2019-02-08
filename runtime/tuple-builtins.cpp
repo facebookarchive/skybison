@@ -32,6 +32,18 @@ RawObject sequenceAsTuple(Thread* thread, const Object& seq) {
       "Iterables not yet supported in sequenceAsTuple()");
 }
 
+RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
+  word idx = iter->index();
+  if (idx == iter->tupleLength()) {
+    return RawError::object();
+  }
+  HandleScope scope(thread);
+  Tuple underlying(&scope, iter->iterable());
+  RawObject item = underlying->at(idx);
+  iter->setIndex(idx + 1);
+  return item;
+}
+
 const BuiltinAttribute TupleBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, RawUserTupleBase::kTupleOffset},
 };
@@ -439,13 +451,14 @@ RawObject TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (!self->isTupleIterator()) {
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj->isTupleIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a tuple iterator instance as the first "
         "argument");
   }
-  Object value(&scope, RawTupleIterator::cast(*self)->next());
+  TupleIterator self(&scope, *self_obj);
+  Object value(&scope, tupleIteratorNext(thread, self));
   if (value->isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
@@ -468,7 +481,7 @@ RawObject TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
         "first argument");
   }
   TupleIterator tuple_iterator(&scope, *self);
-  Tuple tuple(&scope, tuple_iterator->tuple());
+  Tuple tuple(&scope, tuple_iterator->iterable());
   return SmallInt::fromWord(tuple->length() - tuple_iterator->index());
 }
 

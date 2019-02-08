@@ -194,20 +194,6 @@ void RawLargeInt::copyFrom(View<byte> bytes, byte sign_extension) const {
               (numDigits() * kWordSize) - bytes_len);
 }
 
-// RawListIterator
-
-RawObject RawListIterator::next() const {
-  word idx = index();
-  RawList underlying = RawList::cast(list());
-  if (idx >= underlying->numItems()) {
-    return RawError::object();
-  }
-
-  RawObject item = underlying->at(idx);
-  setIndex(idx + 1);
-  return item;
-}
-
 // RawTuple
 
 bool RawTuple::contains(RawObject object) const {
@@ -287,21 +273,6 @@ RawObject RawRangeIterator::next() const {
 
   instanceVariableAtPut(kCurValueOffset, RawSmallInt::fromWord(cur + step));
   return ret;
-}
-
-// RawSetIterator
-
-RawObject RawSetIterator::next() const {
-  word idx = index();
-  RawSet underlying = RawSet::cast(set());
-  RawTuple data = RawTuple::cast(underlying->data());
-  // Find the next non empty bucket
-  if (!SetBase::Bucket::nextItem(data, &idx)) {
-    return Error::object();
-  }
-  setConsumedCount(consumedCount() + 1);
-  setIndex(idx);
-  return RawSet::Bucket::key(data, idx);
 }
 
 // RawSlice
@@ -410,16 +381,6 @@ bool RawStr::equalsCStr(const char* c_str) const {
     }
   }
   return *cp == '\0';
-}
-
-// RawTupleIterator
-
-RawObject RawTupleIterator::next() const {
-  word idx = index();
-  if (idx == tupleLength()) return RawError::object();
-  RawObject item = RawTuple::cast(tuple()).at(idx);
-  setIndex(idx + 1);
-  return item;
 }
 
 // RawWeakRef

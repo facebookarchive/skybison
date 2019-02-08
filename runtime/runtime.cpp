@@ -818,7 +818,7 @@ RawObject Runtime::newListIterator(const Object& list) {
   HandleScope scope;
   ListIterator list_iterator(&scope, heap()->create<RawListIterator>());
   list_iterator->setIndex(0);
-  list_iterator->setList(*list);
+  list_iterator->setIterable(*list);
   return *list_iterator;
 }
 
@@ -936,7 +936,7 @@ RawObject Runtime::newRangeIterator(const Object& range) {
 RawObject Runtime::newSetIterator(const Object& set) {
   HandleScope scope;
   SetIterator result(&scope, heap()->create<RawSetIterator>());
-  result->setSet(*set);
+  result->setIterable(*set);
   result->setIndex(SetBase::Bucket::kFirst);
   result->setConsumedCount(0);
   return *result;
@@ -2682,7 +2682,7 @@ RawObject Runtime::newDictItemIterator(const Dict& dict) {
   HandleScope scope;
   DictItemIterator result(&scope, heap()->create<RawDictItemIterator>());
   result->setIndex(Dict::Bucket::kFirst);
-  result->setDict(*dict);
+  result->setIterable(*dict);
   result->setNumFound(0);
   return *result;
 }
@@ -2702,7 +2702,7 @@ RawObject Runtime::newDictKeyIterator(const Dict& dict) {
   HandleScope scope;
   DictKeyIterator result(&scope, heap()->create<RawDictKeyIterator>());
   result->setIndex(Dict::Bucket::kFirst);
-  result->setDict(*dict);
+  result->setIterable(*dict);
   result->setNumFound(0);
   return *result;
 }
@@ -2722,7 +2722,7 @@ RawObject Runtime::newDictValueIterator(const Dict& dict) {
   HandleScope scope;
   DictValueIterator result(&scope, heap()->create<RawDictValueIterator>());
   result->setIndex(Dict::Bucket::kFirst);
-  result->setDict(*dict);
+  result->setIterable(*dict);
   result->setNumFound(0);
   return *result;
 }
@@ -2942,7 +2942,7 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
   // Special case for lists iterators
   if (iterable->isListIterator()) {
     ListIterator list_iter(&scope, *iterable);
-    List src(&scope, list_iter->list());
+    List src(&scope, list_iter->iterable());
     for (word i = 0; i < src->numItems(); i++) {
       elt = src->at(i);
       setAdd(dst, elt);
@@ -3426,7 +3426,7 @@ RawObject Runtime::newStrIterator(const Object& str) {
   HandleScope scope;
   StrIterator result(&scope, heap()->create<RawStrIterator>());
   result->setIndex(0);
-  result->setStr(*str);
+  result->setIterable(*str);
   return *result;
 }
 
@@ -3434,7 +3434,7 @@ RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
   HandleScope scope;
   TupleIterator result(&scope, heap()->create<RawTupleIterator>());
   result->setIndex(0);
-  result->setTuple(*tuple);
+  result->setIterable(*tuple);
   result->setTupleLength(length);
   return *result;
 }

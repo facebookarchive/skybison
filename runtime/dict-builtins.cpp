@@ -174,7 +174,7 @@ RawObject dictMergeIgnore(Thread* thread, const Dict& dict,
 
 RawObject dictItemIteratorNext(Thread* thread, const DictItemIterator& iter) {
   HandleScope scope(thread);
-  Dict dict(&scope, iter->dict());
+  Dict dict(&scope, iter->iterable());
   Tuple buckets(&scope, dict->data());
 
   word i = iter->index();
@@ -197,7 +197,7 @@ RawObject dictItemIteratorNext(Thread* thread, const DictItemIterator& iter) {
 
 RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter) {
   HandleScope scope(thread);
-  Dict dict(&scope, iter->dict());
+  Dict dict(&scope, iter->iterable());
   Tuple buckets(&scope, dict->data());
 
   word i = iter->index();
@@ -215,7 +215,7 @@ RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter) {
 
 RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter) {
   HandleScope scope(thread);
-  Dict dict(&scope, iter->dict());
+  Dict dict(&scope, iter->iterable());
   Tuple buckets(&scope, dict->data());
 
   word i = iter->index();
@@ -551,7 +551,7 @@ RawObject DictItemIteratorBuiltins::dunderLengthHint(Thread* thread,
         "the first argument");
   }
   DictItemIterator iter(&scope, *self);
-  Dict dict(&scope, iter->dict());
+  Dict dict(&scope, iter->iterable());
   return SmallInt::fromWord(dict->numItems() - iter->numFound());
 }
 
@@ -644,7 +644,7 @@ RawObject DictKeyIteratorBuiltins::dunderLengthHint(Thread* thread,
         "the first argument");
   }
   DictKeyIterator iter(&scope, *self);
-  Dict dict(&scope, iter->dict());
+  Dict dict(&scope, iter->iterable());
   return SmallInt::fromWord(dict->numItems() - iter->numFound());
 }
 
@@ -738,7 +738,7 @@ RawObject DictValueIteratorBuiltins::dunderLengthHint(Thread* thread,
         "as the first argument");
   }
   DictValueIterator iter(&scope, *self);
-  Dict dict(&scope, iter->dict());
+  Dict dict(&scope, iter->iterable());
   return SmallInt::fromWord(dict->numItems() - iter->numFound());
 }
 

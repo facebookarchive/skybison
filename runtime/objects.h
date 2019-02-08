@@ -1232,91 +1232,38 @@ class RawSeqIterator : public RawIteratorBase {
   RAW_OBJECT_COMMON(SeqIterator);
 };
 
-class RawStrIterator : public RawHeapObject {
+class RawStrIterator : public RawIteratorBase {
  public:
-  // Getters and setters.
-  word index() const;
-  void setIndex(word index) const;
-
-  RawObject str() const;
-  void setStr(RawObject str) const;
-
-  // Layout.
-  static const int kStrOffset = RawHeapObject::kSize;
-  static const int kIndexOffset = kStrOffset + kPointerSize;
-  static const int kSize = kIndexOffset + kPointerSize;
-
   RAW_OBJECT_COMMON(StrIterator);
 };
 
-class RawListIterator : public RawHeapObject {
+class RawListIterator : public RawIteratorBase {
  public:
-  // Getters and setters.
-  word index() const;
-  void setIndex(word index) const;
-
-  RawObject list() const;
-  void setList(RawObject list) const;
-
-  // Iteration.
-  RawObject next() const;
-
-  // Layout.
-  static const int kListOffset = RawHeapObject::kSize;
-  static const int kIndexOffset = kListOffset + kPointerSize;
-  static const int kSize = kIndexOffset + kPointerSize;
-
   RAW_OBJECT_COMMON(ListIterator);
 };
 
-class RawSetIterator : public RawHeapObject {
+class RawSetIterator : public RawIteratorBase {
  public:
   // Getters and setters
   word consumedCount() const;
   void setConsumedCount(word consumed) const;
 
-  word index() const;
-  void setIndex(word index) const;
-
-  RawObject set() const;
-  void setSet(RawObject set) const;
-
-  // Iteration.
-  RawObject next() const;
-
-  // Number of unconsumed values in the set iterator
-  word pendingLength() const;
-
   // Layout.
-  static const int kSetOffset = RawHeapObject::kSize;
-  static const int kIndexOffset = kSetOffset + kPointerSize;
-  static const int kConsumedCountOffset = kIndexOffset + kPointerSize;
+  static const int kConsumedCountOffset = RawIteratorBase::kSize;
   static const int kSize = kConsumedCountOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(SetIterator);
 };
 
-class RawTupleIterator : public RawHeapObject {
+class RawTupleIterator : public RawIteratorBase {
  public:
   // Getters and setters.
-  word index() const;
-
-  void setIndex(word index) const;
-
-  RawObject tuple() const;
   word tupleLength() const;
-
-  void setTuple(RawObject tuple) const;
   void setTupleLength(word length) const;
 
-  // Iteration.
-  RawObject next() const;
-
   // Layout.
-  static const int kTupleOffset = RawHeapObject::kSize;
-  static const int kTupleLengthOffset = kTupleOffset + kPointerSize;
-  static const int kIndexOffset = kTupleLengthOffset + kPointerSize;
-  static const int kSize = kIndexOffset + kPointerSize;
+  static const int kTupleLengthOffset = RawIteratorBase::kSize;
+  static const int kSize = kTupleLengthOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(TupleIterator);
 };
@@ -1747,15 +1694,9 @@ class RawDict::Bucket {
   DISALLOW_HEAP_ALLOCATION();
 };
 
-class RawDictIteratorBase : public RawHeapObject {
+class RawDictIteratorBase : public RawIteratorBase {
  public:
   // Getters and setters.
-  RawObject dict() const;
-  void setDict(RawObject dict) const;
-
-  word index() const;
-  void setIndex(word index) const;
-
   /*
    * This looks similar to index but is different and required in order to
    * implement interators properly. We cannot use index in __length_hint__
@@ -1768,9 +1709,7 @@ class RawDictIteratorBase : public RawHeapObject {
   void setNumFound(word num_found) const;
 
   // Layout
-  static const int kDictOffset = RawHeapObject::kSize;
-  static const int kIndexOffset = kDictOffset + kPointerSize;
-  static const int kNumFoundOffset = kIndexOffset + kPointerSize;
+  static const int kNumFoundOffset = RawIteratorBase::kSize;
   static const int kSize = kNumFoundOffset + kPointerSize;
 };
 
@@ -3571,24 +3510,6 @@ inline void RawRange::setStep(word value) const {
   instanceVariableAtPut(kStepOffset, RawSmallInt::fromWord(value));
 }
 
-// RawListIterator
-
-inline word RawListIterator::index() const {
-  return RawSmallInt::cast(instanceVariableAt(kIndexOffset))->value();
-}
-
-inline void RawListIterator::setIndex(word index) const {
-  instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
-}
-
-inline RawObject RawListIterator::list() const {
-  return instanceVariableAt(kListOffset);
-}
-
-inline void RawListIterator::setList(RawObject list) const {
-  instanceVariableAtPut(kListOffset, list);
-}
-
 // RawProperty
 
 inline RawObject RawProperty::getter() const {
@@ -3710,22 +3631,6 @@ inline void RawDict::setData(RawObject data) const {
 }
 
 // RawDictIteratorBase
-
-inline RawObject RawDictIteratorBase::dict() const {
-  return instanceVariableAt(kDictOffset);
-}
-
-inline void RawDictIteratorBase::setDict(RawObject dict) const {
-  instanceVariableAtPut(kDictOffset, dict);
-}
-
-inline word RawDictIteratorBase::index() const {
-  return RawSmallInt::cast(instanceVariableAt(kIndexOffset))->value();
-}
-
-inline void RawDictIteratorBase::setIndex(word index) const {
-  instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
-}
 
 inline word RawDictIteratorBase::numFound() const {
   return RawSmallInt::cast(instanceVariableAt(kNumFoundOffset))->value();
@@ -4165,33 +4070,12 @@ inline void RawLayout::sealAttributes() const {
 
 // RawSetIterator
 
-inline RawObject RawSetIterator::set() const {
-  return instanceVariableAt(kSetOffset);
-}
-
-inline void RawSetIterator::setSet(RawObject set) const {
-  instanceVariableAtPut(kSetOffset, set);
-}
-
 inline word RawSetIterator::consumedCount() const {
   return RawSmallInt::cast(instanceVariableAt(kConsumedCountOffset))->value();
 }
 
 inline void RawSetIterator::setConsumedCount(word consumed) const {
   instanceVariableAtPut(kConsumedCountOffset, RawSmallInt::fromWord(consumed));
-}
-
-inline word RawSetIterator::index() const {
-  return RawSmallInt::cast(instanceVariableAt(kIndexOffset))->value();
-}
-
-inline void RawSetIterator::setIndex(word index) const {
-  instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
-}
-
-inline word RawSetIterator::pendingLength() const {
-  RawSet set = RawSet::cast(instanceVariableAt(kSetOffset));
-  return set->numItems() - consumedCount();
 }
 
 // RawIteratorBase
@@ -4209,24 +4093,6 @@ inline word RawIteratorBase::index() const {
 }
 
 inline void RawIteratorBase::setIndex(word index) const {
-  instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
-}
-
-// RawStrIterator
-
-inline RawObject RawStrIterator::str() const {
-  return instanceVariableAt(kStrOffset);
-}
-
-inline void RawStrIterator::setStr(RawObject str) const {
-  instanceVariableAtPut(kStrOffset, str);
-}
-
-inline word RawStrIterator::index() const {
-  return RawSmallInt::cast(instanceVariableAt(kIndexOffset))->value();
-}
-
-inline void RawStrIterator::setIndex(word index) const {
   instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
 }
 
@@ -4260,28 +4126,12 @@ inline void RawSuper::setObjectType(RawObject tp) const {
 
 // RawTupleIterator
 
-inline RawObject RawTupleIterator::tuple() const {
-  return instanceVariableAt(kTupleOffset);
-}
-
-inline void RawTupleIterator::setTuple(RawObject tuple) const {
-  instanceVariableAtPut(kTupleOffset, tuple);
-}
-
 inline word RawTupleIterator::tupleLength() const {
   return RawSmallInt::cast(instanceVariableAt(kTupleLengthOffset)).value();
 }
 
 inline void RawTupleIterator::setTupleLength(word length) const {
   instanceVariableAtPut(kTupleLengthOffset, RawSmallInt::fromWord(length));
-}
-
-inline word RawTupleIterator::index() const {
-  return RawSmallInt::cast(instanceVariableAt(kIndexOffset))->value();
-}
-
-inline void RawTupleIterator::setIndex(word index) const {
-  instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
 }
 
 // RawExceptionState

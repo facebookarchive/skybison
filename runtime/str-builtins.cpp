@@ -123,17 +123,17 @@ RawObject strStrip(Thread* thread, const Str& src, const Str& str,
                                       length - first - last);
 }
 
-RawObject strIteratorNext(Thread* thread, StrIterator& iter) {
+RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   HandleScope scope(thread);
-  word idx = iter.index();
-  Str underlying(&scope, iter.str());
+  word idx = iter->index();
+  Str underlying(&scope, iter->iterable());
   if (idx >= underlying->length()) {
     return Error::object();
   }
 
   char item = underlying->charAt(idx);
   char buffer[] = {item, '\0'};
-  iter.setIndex(idx + 1);
+  iter->setIndex(idx + 1);
   return RawSmallStr::fromCStr(buffer);
 }
 
@@ -934,7 +934,7 @@ RawObject StrIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
         "first argument");
   }
   StrIterator str_iterator(&scope, *self);
-  Str str(&scope, str_iterator->str());
+  Str str(&scope, str_iterator->iterable());
   return SmallInt::fromWord(str->length() - str_iterator->index());
 }
 
