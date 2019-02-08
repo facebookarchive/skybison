@@ -8,6 +8,9 @@
 
 namespace python {
 
+// Runs the executable functions found in the PyModuleDef
+int execDef(Thread* thread, const Module& module, PyModuleDef* def);
+
 class ModuleBuiltins {
  public:
   static void initialize(Runtime* runtime);

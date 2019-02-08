@@ -3,6 +3,7 @@
 #include "builtins-module.h"
 #include "frame.h"
 #include "globals.h"
+#include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 
@@ -67,9 +68,29 @@ RawObject builtinImpCreateBuiltin(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject builtinImpExecBuiltin(Thread* /* thread */, Frame* /* frame */,
-                                word /* nargs */) {
-  UNIMPLEMENTED("exec_builtin");
+RawObject builtinImpExecBuiltin(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object module_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfModule(*module_obj)) {
+    return runtime->newInt(0);
+  }
+  Module module(&scope, *module_obj);
+  Object module_def_obj(&scope, module.def());
+  if (!runtime->isInstanceOfInt(*module_def_obj)) {
+    return runtime->newInt(0);
+  }
+  Int module_def(&scope, *module_def_obj);
+  PyModuleDef* def = static_cast<PyModuleDef*>(module_def.asCPtr());
+  if (def == nullptr) {
+    return runtime->newInt(0);
+  }
+  ApiHandle* mod_handle = ApiHandle::borrowedReference(thread, *module);
+  if (mod_handle->cache() != nullptr) {
+    return runtime->newInt(0);
+  }
+  return runtime->newInt(execDef(thread, module, def));
 }
 
 RawObject builtinImpExecDynamic(Thread* /* thread */, Frame* /* frame */,

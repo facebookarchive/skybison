@@ -3,6 +3,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "handles.h"
+#include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "trampolines.h"
@@ -155,59 +156,15 @@ PY_EXPORT int PyModule_AddFunctions(PyObject* /* m */, PyMethodDef* /* s */) {
   UNIMPLEMENTED("PyModule_AddFunctions");
 }
 
-PY_EXPORT int PyModule_ExecDef(PyObject* module, PyModuleDef* def) {
-  const char* name = PyModule_GetName(module);
-  if (name == nullptr) return -1;
-
+PY_EXPORT int PyModule_ExecDef(PyObject* pymodule, PyModuleDef* def) {
   Thread* thread = Thread::currentThread();
-  if (def->m_size >= 0) {
-    ApiHandle* handle = ApiHandle::fromPyObject(module);
-    if (handle->cache() == nullptr) {
-      handle->setCache(std::calloc(def->m_size, 1));
-      if (!handle->cache()) {
-        thread->raiseMemoryError();
-        return -1;
-      }
-    }
+  HandleScope scope(thread);
+  Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
+  if (!thread->runtime()->isInstanceOfModule(*module_obj)) {
+    return -1;
   }
-
-  if (def->m_slots == nullptr) {
-    return 0;
-  }
-
-  for (PyModuleDef_Slot* cur_slot = def->m_slots; cur_slot && cur_slot->slot;
-       cur_slot++) {
-    switch (cur_slot->slot) {
-      case Py_mod_create:
-        // handled in PyModule_FromDefAndSpec2
-        break;
-      case Py_mod_exec: {
-        typedef int (*slot_func)(PyObject*);
-        slot_func thunk = reinterpret_cast<slot_func>(cur_slot->value);
-        if ((*thunk)(module) != 0) {
-          if (!thread->hasPendingException()) {
-            thread->raiseSystemError(thread->runtime()->newStrFromFormat(
-                "execution of module %s failed without setting an exception",
-                name));
-          }
-          return -1;
-        }
-        if (thread->hasPendingException()) {
-          thread->raiseSystemError(thread->runtime()->newStrFromFormat(
-              "execution of module %s failed without setting an exception",
-              name));
-          return -1;
-        }
-        break;
-      }
-      default:
-        thread->raiseSystemError(thread->runtime()->newStrFromFormat(
-            "module %s initialized with unknown slot %i", name,
-            cur_slot->slot));
-        return -1;
-    }
-  }
-  return 0;
+  Module module(&scope, *module_obj);
+  return execDef(thread, module, def);
 }
 
 PY_EXPORT PyObject* PyModule_FromDefAndSpec2(struct PyModuleDef* /* f */,

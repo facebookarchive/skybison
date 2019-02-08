@@ -2194,8 +2194,9 @@ void Runtime::createImportModule() {
 
   // _imp.exec_builtin
   moduleAddBuiltinFunction(module, SymbolId::kExecBuiltin,
-                           nativeTrampoline<builtinImpExecBuiltin>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+                           builtinTrampolineWrapper<builtinImpExecBuiltin>,
+                           builtinTrampolineWrapperKw<builtinImpExecBuiltin>,
+                           builtinTrampolineWrapperEx<builtinImpExecBuiltin>);
 
   // _imp.exec_dynamic
   moduleAddBuiltinFunction(module, SymbolId::kExecDynamic,
@@ -2237,6 +2238,8 @@ void Runtime::createImportModule() {
                            nativeTrampoline<builtinImpReleaseLock>,
                            unimplementedTrampoline, unimplementedTrampoline);
   addModule(module);
+  CHECK(!executeModule(k_impModuleData, module).isError(),
+        "Failed to initialize _imp module");
 }
 
 void Runtime::createWarningsModule() {

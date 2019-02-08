@@ -84,13 +84,67 @@ spec = DummyModuleSpec("errno")
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result)->name(), "errno"));
 }
 
-TEST(ImportBuiltinsDeathTest, ExecBuiltin) {
+TEST(ImportBuiltins, ExecBuiltinWithNonModuleReturnsZero) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
-import _imp
-_imp.exec_builtin("foo")
-  )"),
-               "unimplemented: exec_builtin");
+  HandleScope scope;
+  Int not_mod(&scope, runtime.newInt(1));
+  Object a(&scope, runBuiltin(builtinImpExecBuiltin, not_mod));
+  ASSERT_TRUE(a.isInt());
+  EXPECT_TRUE(RawInt::cast(*a).isZero());
+}
+
+TEST(ImportBuiltins, ExecBuiltinWithModuleWithNoDefReturnsZero) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class DummyModuleSpec():
+  def __init__(self, name):
+    self.name = name
+spec = DummyModuleSpec("errno")
+)");
+  HandleScope scope;
+  Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
+  Object module(&scope, runBuiltin(builtinImpCreateBuiltin, spec));
+  ASSERT_TRUE(module.isModule());
+
+  Object a(&scope, runBuiltin(builtinImpExecBuiltin, module));
+  ASSERT_TRUE(a.isInt());
+  EXPECT_TRUE(RawInt::cast(*a).isZero());
+}
+
+TEST(ImportBuiltins, ExecBuiltinWithSingleSlotExecutesCorrectly) {
+  using slot_func = int (*)(Module*);
+  slot_func mod_exec = [](Module* module) {
+    Runtime runtime;
+    module->setName(runtime.newStrFromCStr("testing"));
+    return 0;
+  };
+
+  static PyModuleDef_Slot slots[] = {
+      {Py_mod_exec, reinterpret_cast<void*>(mod_exec)},
+      {0, nullptr},
+  };
+  static PyModuleDef def = {
+      // Empty header to mimic a PyModuleDef_HEAD_INIT
+      {{nullptr, 0, nullptr}, nullptr, 0, nullptr},
+      "mymodule",
+      nullptr,
+      0,
+      nullptr,
+      slots,
+  };
+
+  Runtime runtime;
+  HandleScope scope;
+  Str name(&scope, runtime.newStrFromCStr("mymodule"));
+  Module module(&scope, runtime.newModule(name));
+  module.setDef(runtime.newIntFromCPtr(&def));
+
+  Object a(&scope, runBuiltin(builtinImpExecBuiltin, module));
+  ASSERT_TRUE(a.isInt());
+  EXPECT_TRUE(RawInt::cast(*a).isZero());
+
+  Str mod_name(&scope, module.name());
+  EXPECT_TRUE(mod_name.equalsCStr("testing"));
 }
 
 TEST(ImportBuiltinsDeathTest, ExecDynamic) {

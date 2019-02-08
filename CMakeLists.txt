@@ -153,6 +153,7 @@ set(
   library/builtins.py
   library/operator.py
   library/sys.py
+  library/_imp.py
   library/_warnings.py)
 set(
   FROZEN_MODULE_OUTPUT_DIR
