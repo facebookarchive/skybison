@@ -408,6 +408,7 @@ set(
   ext/Objects/dictobject-test.cpp
   ext/Objects/exceptions-test.cpp
   ext/Objects/floatobject-test.cpp
+  ext/Objects/iterobject-test.cpp
   ext/Objects/listobject-test.cpp
   ext/Objects/longobject-test.cpp
   ext/Objects/moduleobject-test.cpp

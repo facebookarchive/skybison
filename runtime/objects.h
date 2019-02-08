@@ -54,6 +54,7 @@ class Handle;
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
+  V(SeqIterator)                                                               \
   V(Set)                                                                       \
   V(SetIterator)                                                               \
   V(Slice)                                                                     \
@@ -285,6 +286,7 @@ class RawObject {
   bool isRangeIterator() const;
   bool isGeneratorBase() const;
   bool isRuntimeError() const;
+  bool isSeqIterator() const;
   bool isSet() const;
   bool isSetIterator() const;
   bool isSlice() const;
@@ -1208,6 +1210,26 @@ class RawStaticMethod : public RawHeapObject {
   static const int kSize = kFunctionOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(StaticMethod);
+};
+
+class RawIteratorBase : public RawHeapObject {
+ public:
+  // Getters and setters.
+  word index() const;
+  void setIndex(word index) const;
+
+  RawObject iterable() const;
+  void setIterable(RawObject iterable) const;
+
+  // Layout.
+  static const int kIterableOffset = RawHeapObject::kSize;
+  static const int kIndexOffset = kIterableOffset + kPointerSize;
+  static const int kSize = kIndexOffset + kPointerSize;
+};
+
+class RawSeqIterator : public RawIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(SeqIterator);
 };
 
 class RawStrIterator : public RawHeapObject {
@@ -2482,6 +2504,10 @@ inline bool RawObject::isFloat() const {
 
 inline bool RawObject::isHeapFrame() const {
   return isHeapObjectWithLayout(LayoutId::kHeapFrame);
+}
+
+inline bool RawObject::isSeqIterator() const {
+  return isHeapObjectWithLayout(LayoutId::kSeqIterator);
 }
 
 inline bool RawObject::isSetBase() const { return isSet() || isFrozenSet(); }
@@ -4166,6 +4192,24 @@ inline void RawSetIterator::setIndex(word index) const {
 inline word RawSetIterator::pendingLength() const {
   RawSet set = RawSet::cast(instanceVariableAt(kSetOffset));
   return set->numItems() - consumedCount();
+}
+
+// RawIteratorBase
+
+inline RawObject RawIteratorBase::iterable() const {
+  return instanceVariableAt(kIterableOffset);
+}
+
+inline void RawIteratorBase::setIterable(RawObject iterable) const {
+  instanceVariableAtPut(kIterableOffset, iterable);
+}
+
+inline word RawIteratorBase::index() const {
+  return RawSmallInt::cast(instanceVariableAt(kIndexOffset))->value();
+}
+
+inline void RawIteratorBase::setIndex(word index) const {
+  instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
 }
 
 // RawStrIterator

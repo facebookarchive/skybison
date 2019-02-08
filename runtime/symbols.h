@@ -272,6 +272,7 @@ class Runtime;
   V(Send, "send")                                                              \
   V(Set, "set")                                                                \
   V(SetIterator, "set_iterator")                                               \
+  V(SeqIterator, "iterator")                                                   \
   V(Setattr, "setattr")                                                        \
   V(Setter, "setter")                                                          \
   V(Signed, "signed")                                                          \

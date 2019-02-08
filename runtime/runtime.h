@@ -118,6 +118,8 @@ class Runtime {
 
   RawObject newListIterator(const Object& list);
 
+  RawObject newSeqIterator(const Object& sequence);
+
   RawObject newModule(const Object& name);
 
   // Returns an Int that stores the numerical address of the pointer.
@@ -598,6 +600,9 @@ class Runtime {
 
   // Returns whether object's class provides a __delete__ method
   bool isDeleteDescriptor(Thread* thread, const Object& object);
+
+  // Return whether object's class supports the sequence protocol
+  bool isSequence(Thread* thread, const Object& obj);
 
   // Return whether object's class provides a __getitem__ method
   bool isMapping(Thread* thread, const Object& obj);

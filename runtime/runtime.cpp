@@ -654,6 +654,16 @@ bool Runtime::isMapping(Thread* thread, const Object& obj) {
   return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetItem).isError();
 }
 
+bool Runtime::isSequence(Thread* thread, const Object& obj) {
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfDict(*obj)) {
+    return false;
+  }
+  HandleScope scope(thread);
+  Type type(&scope, runtime->typeOf(*obj));
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetItem).isError();
+}
+
 RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
                            word stacksize, word flags, const Object& code,
                            const Object& consts, const Object& names,
@@ -810,6 +820,14 @@ RawObject Runtime::newListIterator(const Object& list) {
   list_iterator->setIndex(0);
   list_iterator->setList(*list);
   return *list_iterator;
+}
+
+RawObject Runtime::newSeqIterator(const Object& sequence) {
+  HandleScope scope;
+  SeqIterator iter(&scope, heap()->create<RawSeqIterator>());
+  iter->setIndex(0);
+  iter->setIterable(*sequence);
+  return *iter;
 }
 
 RawObject Runtime::newModule(const Object& name) {
@@ -1180,6 +1198,8 @@ void Runtime::initializeHeapTypes() {
   SetIteratorBuiltins::initialize(this);
   SliceBuiltins::initialize(this);
   StrIteratorBuiltins::initialize(this);
+  addEmptyBuiltinType(SymbolId::kSeqIterator, LayoutId::kSeqIterator,
+                      LayoutId::kObject);
   GeneratorBaseBuiltins::initialize(this);
   initializeStaticMethodType();
   initializeSuperType();

@@ -164,6 +164,7 @@ class Handle : public T {
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
   V(RuntimeError)                                                              \
+  V(SeqIterator)                                                               \
   V(SetIterator)                                                               \
   V(Slice)                                                                     \
   V(SmallInt)                                                                  \

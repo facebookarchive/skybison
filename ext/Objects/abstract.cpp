@@ -81,8 +81,23 @@ PY_EXPORT void PyBuffer_Release(Py_buffer* /* w */) {
   UNIMPLEMENTED("PyBuffer_Release");
 }
 
-PY_EXPORT PyObject* PyIter_Next(PyObject* /* r */) {
-  UNIMPLEMENTED("PyIter_Next");
+PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object iter_obj(&scope, ApiHandle::fromPyObject(iter)->asObject());
+  Object next(&scope, thread->invokeMethod1(iter_obj, SymbolId::kDunderNext));
+  if (thread->clearPendingStopIteration()) {
+    // End of iterable
+    return nullptr;
+  }
+  if (next->isError()) {
+    // Method lookup or call failed
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("failed to call __next__ on iterable");
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *next);
 }
 
 PY_EXPORT int PyMapping_Check(PyObject* py_obj) {
@@ -496,8 +511,31 @@ PY_EXPORT PyObject* PyObject_GetItem(PyObject* /* o */, PyObject* /* y */) {
   UNIMPLEMENTED("PyObject_GetItem");
 }
 
-PY_EXPORT PyObject* PyObject_GetIter(PyObject* /* o */) {
-  UNIMPLEMENTED("PyObject_GetIter");
+PY_EXPORT PyObject* PyObject_GetIter(PyObject* pyobj) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object iter(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIter));
+  Runtime* runtime = thread->runtime();
+  if (iter->isError()) {
+    // If the object is a sequence, make a new sequence iterator. It doesn't
+    // need to have __iter__.
+    if (runtime->isSequence(thread, obj)) {
+      return ApiHandle::newReference(thread, runtime->newSeqIterator(obj));
+    }
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("object is not iterable");
+    }
+    return nullptr;
+  }
+  // If the object has __iter__, ensure that the resulting object has __next__.
+  Type type(&scope, runtime->typeOf(*iter));
+  if (runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderNext)
+          .isError()) {
+    thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *iter);
 }
 
 PY_EXPORT int PyObject_IsInstance(PyObject* /* t */, PyObject* /* s */) {
@@ -543,22 +581,20 @@ PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
 PY_EXPORT int PySequence_Check(PyObject* py_obj) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
-
   Object obj(&scope, ApiHandle::fromPyObject(py_obj)->asObject());
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfDict(*obj)) {
-    return 0;
-  }
-
-  Type type(&scope, runtime->typeOf(*obj));
-  Object getitem(&scope, runtime->lookupSymbolInMro(thread, type,
-                                                    SymbolId::kDunderGetItem));
-
-  return !getitem->isError();
+  return thread->runtime()->isSequence(thread, obj);
 }
 
-PY_EXPORT PyObject* PySequence_Concat(PyObject* /* s */, PyObject* /* o */) {
-  UNIMPLEMENTED("PySequence_Concat");
+PY_EXPORT PyObject* PySequence_Concat(PyObject* left, PyObject* right) {
+  Thread* thread = Thread::currentThread();
+  if (left == nullptr || right == nullptr) {
+    return nullError(thread);
+  }
+  if (!PySequence_Check(left) || !PySequence_Check(right)) {
+    thread->raiseTypeErrorWithCStr("objects cannot be concatenated");
+    return nullptr;
+  }
+  return PyNumber_Add(left, right);
 }
 
 PY_EXPORT int PySequence_Contains(PyObject* /* q */, PyObject* /* b */) {
@@ -617,8 +653,19 @@ PY_EXPORT PyObject* PySequence_List(PyObject* /* v */) {
   UNIMPLEMENTED("PySequence_List");
 }
 
-PY_EXPORT PyObject* PySequence_Repeat(PyObject* /* o */, Py_ssize_t /* t */) {
-  UNIMPLEMENTED("PySequence_Repeat");
+PY_EXPORT PyObject* PySequence_Repeat(PyObject* pyseq, Py_ssize_t count) {
+  Thread* thread = Thread::currentThread();
+  if (pyseq == nullptr) {
+    return nullError(thread);
+  }
+  if (!PySequence_Check(pyseq)) {
+    thread->raiseTypeErrorWithCStr("object cannot be repeated");
+    return nullptr;
+  }
+  PyObject* count_obj(PyLong_FromSsize_t(count));
+  PyObject* result = PyNumber_Multiply(pyseq, count_obj);
+  Py_DECREF(count_obj);
+  return result;
 }
 
 PY_EXPORT int PySequence_SetItem(PyObject* /* s */, Py_ssize_t /* i */,
